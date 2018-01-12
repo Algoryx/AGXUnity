@@ -35,6 +35,7 @@ sysinfo.txt
 
 LICENSE.meta
 README.md.meta
+DeveloperGuide.md.meta
 
 Plugins/x86_64/agxDotNet.dll*
 Editor/Data/Data.asset*
