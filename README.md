@@ -57,19 +57,19 @@ For more information about how to develop new functionality in AGXUnity - [read 
 
 ## Tutorials
 
-[**Modelling with primitives:**](https://www.youtube.com/watch?v=1ddfgIwAd0U)
+[**Modelling with primitives:**](https://www.youtube.com/watch?v=1ddfgIwAd0U)  
 [![](https://img.youtube.com/vi/1ddfgIwAd0U/1.jpg)](https://www.youtube.com/watch?v=1ddfgIwAd0U)
 
-[**Modelling with materials:**](https://www.youtube.com/watch?v=bB6d8ZI8bt4)
+[**Modelling with materials:**](https://www.youtube.com/watch?v=bB6d8ZI8bt4)  
 [![](https://img.youtube.com/vi/bB6d8ZI8bt4/1.jpg)](https://www.youtube.com/watch?v=bB6d8ZI8bt4)
 
-[**Modelling with constraints:**](https://www.youtube.com/watch?v=dmlyozKuVlM)
+[**Modelling with constraints:**](https://www.youtube.com/watch?v=dmlyozKuVlM)  
 [![](https://img.youtube.com/vi/dmlyozKuVlM/1.jpg)](https://www.youtube.com/watch?v=dmlyozKuVlM)
 
-[**Modelling with triangle meshes:**](https://www.youtube.com/watch?v=L2kRByHcT7g)
+[**Modelling with triangle meshes:**](https://www.youtube.com/watch?v=L2kRByHcT7g)  
 [![](https://img.youtube.com/vi/L2kRByHcT7g/1.jpg)](https://www.youtube.com/watch?v=L2kRByHcT7g)
 
-[**Modelling with wires:**](https://www.youtube.com/watch?v=Accpit3LmIA)
+[**Modelling with wires:**](https://www.youtube.com/watch?v=Accpit3LmIA)  
 [![](https://img.youtube.com/vi/Accpit3LmIA/1.jpg)](https://www.youtube.com/watch?v=Accpit3LmIA)
 
 ## Issues and contributions
