@@ -36,6 +36,7 @@ C:\>"Program Files\Unity\Editor\Unity.exe"
 Without the AGX environment, Unity could crash or output error: `DllNotFoundException: agxDotNetRuntime.dll`
 
 ### From package
+You can find packages in [Releases](releases).
 
 1. Drag and drop `AGXUnity-x.y.unitypackage` into the `Assets` folder in Unity.
 2. Copy `agxDotNet.dll` (`<agx_dynamics_install_dir>/bin/x64/agxDotNet.dll`) into AGXUnity plugins folder (`Assets/AGXUnity/Plugins/x86_64`).
