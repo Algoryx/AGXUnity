@@ -70,10 +70,32 @@ namespace AGXUnityEditor
       }
     }
 
-    private static bool IsAGXFile( string path )
+    [MenuItem( "Assets/Convert AgXUnity-deprecated -> AGXUnity" )]
+    public static void ConvertDeprecatedToAGXUnity()
     {
-      var fi = new System.IO.FileInfo( path );
-      return fi.Exists && ( fi.Extension == ".agx" || fi.Extension == ".aagx" );
+      foreach ( var obj in Selection.GetFiltered<UnityEngine.Object>( SelectionMode.Assets ) ) {
+        var localAssetPath = AssetDatabase.GetAssetPath( obj ).Remove( 0, "Assets".Length );
+        var path = UnityEngine.Application.dataPath + localAssetPath;
+        if ( AssetDatabase.IsValidFolder( AssetDatabase.GetAssetPath( obj ) ) ) {
+          try {
+            //UnityEngine.Debug.Log( path );
+            var dllToScriptResolver = new IO.DllToScriptResolver();
+            var searchSubFolders = EditorUtility.DisplayDialog( "Convert AgXUnity-deprecated -> AGXUnity", "Search sub-folders for files to patch?", "Yes", "No" );
+            var saveBackup = EditorUtility.DisplayDialog( "Convert AgXUnity-deprecated -> AGXUnity", "Save backup of affected files?", "Yes", "No" );
+            var numChanged = dllToScriptResolver.PatchFilesInDirectory( path,
+                                                                        searchSubFolders ?
+                                                                          System.IO.SearchOption.AllDirectories :
+                                                                          System.IO.SearchOption.TopDirectoryOnly,
+                                                                        saveBackup );
+            UnityEngine.Debug.Log( "Num changed: " + numChanged );
+          }
+          catch ( Exception e ) {
+            UnityEngine.Debug.LogException( e );
+          }
+        }
+        else
+          UnityEngine.Debug.Log( "Is something else: " + path );
+      }
     }
   }
 }
