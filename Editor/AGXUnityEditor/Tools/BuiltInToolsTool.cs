@@ -102,7 +102,11 @@ namespace AGXUnityEditor.Tools
       // trigger onSelectionChanged (desired behavior).
       UnityEngine.Object[] selectedObjects = Selection.objects;
       bool selectRigidBodyMode = SelectRigidBodyTrigger( current, sceneView );
+      bool hasChanges = false;
       for ( int i = 0; i < selectedObjects.Length; ++i ) {
+        if ( selectedObjects[ i ] == null )
+          continue;
+
         // TODO: Key combo to select bodies etc.
         UnityEngine.Object routedObject = Manager.RouteObject( selectedObjects[ i ] );
         AGXUnity.RigidBody rigidBody = selectRigidBodyMode &&
@@ -111,8 +115,10 @@ namespace AGXUnityEditor.Tools
                                          ( routedObject as GameObject ).GetComponentInParent<AGXUnity.RigidBody>() :
                                          null;
         selectedObjects[ i ] = rigidBody != null ? rigidBody.gameObject : routedObject;
+        hasChanges = true;
       }
-      Selection.objects = selectedObjects;
+      if ( hasChanges )
+        Selection.objects = selectedObjects;
 
       if ( SelectGameObjectTrigger( current, sceneView ) ) {
         // User is holding activate select tool - SelectGameObjectTool is waiting for the mouse click.

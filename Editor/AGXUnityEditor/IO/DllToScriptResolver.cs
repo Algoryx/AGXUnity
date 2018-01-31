@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -9,37 +10,17 @@ namespace AGXUnityEditor.IO
 {
   public class DllToScriptResolver
   {
-    //[MenuItem( "Test/Try load file" )]
-    //public static void TestLoad()
-    //{
-    //  var test = new DllToScriptResolver();
-    //  try {
-    //    test.TryLoadTypeMaps();
-    //    Debug.Log( "Successfully parsed file: #entries = " + test.m_oldFileIdTypeMap.Count );
-    //    var allScripts = AGXUnityScriptData.CollectAll();
-    //    var assetFiles = Directory.GetFiles( Application.dataPath + @"/AGXUnityScenes", "*.asset", SearchOption.AllDirectories );
-    //    var sceneFiles = Directory.GetFiles( Application.dataPath + @"/AGXUnityScenes", "*.unity", SearchOption.AllDirectories );
-    //    var prefabFiles = Directory.GetFiles( Application.dataPath + @"/AGXUnityScenes", "*.prefab", SearchOption.AllDirectories );
-    //    Action<string[], string> print = ( paths, prefix ) =>
-    //    {
-    //      foreach ( var path in paths )
-    //        Debug.Log( prefix + path );
-    //    };
-    //    print( assetFiles, "Asset: " );
-    //    print( sceneFiles, "Scene: " );
-    //    print( prefabFiles, "Prefab: " );
-    //  }
-    //  catch ( Exception e ) {
-    //    Debug.LogException( e );
-    //  }
-    //}
-
     public static string[] GetFiles( string directory, string searchPattern, SearchOption searchOption )
     {
       List<string> files = new List<string>();
       var patterns = searchPattern.Split( '|' );
-      foreach ( var pattern in patterns )
-        files.AddRange( Directory.GetFiles( directory, pattern, searchOption ) );
+      foreach ( var pattern in patterns ) {
+        var filtered = ( from filename
+                         in Directory.GetFiles( directory, pattern, searchOption )
+                         where !filename.Replace( '\\', '/' ).Contains( "/Assets/AGXUnity/" )
+                         select filename ).ToArray();
+        files.AddRange( filtered );
+      }
       return files.ToArray();
     }
 
@@ -63,15 +44,29 @@ namespace AGXUnityEditor.IO
                                       SearchOption searchOption = SearchOption.AllDirectories,
                                       bool saveBackup = true )
     {
-      var filenames = GetFiles( directory, "*.asset|*.unity|*.prefab|*.controller|*.anim", searchOption );
+      var filenames = GetFiles( directory, "*.asset|*.unity|*.prefab|*.controller|*.anim|*.cs", searchOption );
       return PatchFiles( filenames, saveBackup );
     }
 
     public int PatchFiles( string[] filenames, bool saveBackup = true )
     {
+      if ( filenames.Length == 0 )
+        return 0;
+
       int numChanges = 0;
-      foreach ( var filename in filenames )
-        numChanges += Convert.ToInt32( PatchFile( filename, saveBackup ) );
+      try {
+        float progress = 0.0f;
+        foreach ( var filename in filenames ) {
+          EditorUtility.DisplayProgressBar( "Updating broken assets for AGXUnity.", Path.GetFileName( filename ), progress );
+          numChanges += Convert.ToInt32( PatchFile( filename, saveBackup ) );
+          progress += 1.0f / filenames.Length;
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+      }
+
+      EditorUtility.ClearProgressBar();
 
       return numChanges;
     }
@@ -85,6 +80,60 @@ namespace AGXUnityEditor.IO
       if ( !file.Exists )
         throw new FileNotFoundException( "Unable to find file.", filename );
 
+      var changed = false;
+      if ( file.Extension == ".cs" )
+        changed = TryPatchCsFile( file, saveBackup );
+      else
+        changed = TryPatchYamlFile( file, saveBackup );
+
+      AssetDatabase.Refresh();
+
+      return changed;
+    }
+
+    private Dictionary<int, string> m_oldFileIdTypeMap = null;
+    private Dictionary<string, AGXUnityScriptData> m_newNameScriptMap = null;
+    private bool m_typeMapsLoaded = false;
+
+    private bool TryPatchCsFile( FileInfo file, bool saveBackup )
+    {
+      var tmpFile = Path.GetTempFileName();
+      var numChanges = 0;
+      try {
+        using ( var input = file.OpenText() ) {
+          using ( var output = new StreamWriter( tmpFile ) ) {
+            var line = string.Empty;
+            while ( ( line = input.ReadLine() ) != null ) {
+              var newLine = line.Replace( "AgXUnity", "AGXUnity" );
+              numChanges += Convert.ToInt32( newLine != line );
+              output.WriteLine( newLine );
+            }
+          }
+        }
+      }
+      catch ( Exception e ) {
+        File.Delete( tmpFile );
+        throw new Exception( "Caught exception while patching script.", e );
+      }
+
+      if ( numChanges > 0 ) {
+        if ( saveBackup )
+          File.Move( file.FullName, file.FullName + ".bak" );
+        else
+          File.Delete( file.FullName );
+
+        File.Copy( tmpFile, file.FullName );
+
+        Debug.Log( "Patched: " + AGXFileInfo.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
+      }
+
+      File.Delete( tmpFile );
+
+      return numChanges > 0;
+    }
+
+    private bool TryPatchYamlFile( FileInfo file, bool saveBackup )
+    {
       var tmpFile = Path.GetTempFileName();
       var numChanges = 0;
       try {
@@ -138,7 +187,7 @@ namespace AGXUnityEditor.IO
         }
       }
       catch ( Exception e ) {
-        Debug.LogError( "Caught exception while patching file: " + filename );
+        Debug.LogError( "Caught exception while patching file: " + file.FullName );
         File.Delete( tmpFile );
 
         throw new Exception( "Exception while patching file.", e );
@@ -146,23 +195,19 @@ namespace AGXUnityEditor.IO
 
       if ( numChanges > 0 ) {
         if ( saveBackup )
-          File.Move( filename, filename + ".bak" );
+          File.Move( file.FullName, file.FullName + ".bak" );
         else
-          File.Delete( filename );
+          File.Delete( file.FullName );
 
-        File.Copy( tmpFile, filename );
+        File.Copy( tmpFile, file.FullName );
 
-        Debug.Log( "Patched: " + AGXFileInfo.MakeRelative( filename, Application.dataPath ) + " with " + numChanges + " changes." );
+        Debug.Log( "Patched: " + AGXFileInfo.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
       }
 
       File.Delete( tmpFile );
 
       return numChanges > 0;
     }
-
-    private Dictionary<int, string> m_oldFileIdTypeMap = null;
-    private Dictionary<string, AGXUnityScriptData> m_newNameScriptMap = null;
-    private bool m_typeMapsLoaded = false;
 
     private void TryLoadTypeMaps()
     {
