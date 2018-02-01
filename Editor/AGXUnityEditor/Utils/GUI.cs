@@ -374,7 +374,7 @@ namespace AGXUnityEditor.Utils
         string result = EditorUtility.SaveFilePanel( "Create new material", "Assets", "new material.mat", "mat" );
         if ( result != string.Empty ) {
           System.IO.FileInfo info = new System.IO.FileInfo( result );
-          var relativePath = IO.AGXFileInfo.MakeRelative( result, Application.dataPath );
+          var relativePath = IO.Utils.MakeRelative( result, Application.dataPath );
 
           newMaterial = new Material( material ?? Manager.GetOrCreateShapeVisualDefaultMaterial() );
           newMaterial.name = info.Name;

@@ -38,7 +38,7 @@ namespace AGXUnityEditor.Tools
                                 GUILayout.Width( 28 ) ) ) {
           var newDirectory = EditorUtility.OpenFolderPanel( "Prefab data directory", "Assets", "" );
           if ( newDirectory.Length > 0 ) {
-            var relPath = IO.AGXFileInfo.MakeRelative( newDirectory, Application.dataPath ).Replace( '\\', '/' );
+            var relPath = IO.Utils.MakeRelative( newDirectory, Application.dataPath ).Replace( '\\', '/' );
             if ( AssetDatabase.IsValidFolder( relPath ) ) {
               RestoredAGXFile.DataDirectoryId = AssetDatabase.AssetPathToGUID( relPath );
               EditorUtility.SetDirty( RestoredAGXFile );

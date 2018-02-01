@@ -12,12 +12,11 @@ namespace AGXUnityEditor.IO
     public static Dictionary<string, AGXUnityScriptData> CollectAll()
     {
       Dictionary<string, AGXUnityScriptData> nameScriptMap = ( from script
-                                                           in Resources.FindObjectsOfTypeAll<MonoScript>()
-                                                           where script.GetClass() != null &&
-                                                                 script.GetClass().FullName.StartsWith( "AGXUnity." )
-                                                           select script ).ToDictionary( script => script.GetClass().FullName,
-                                                                                         script => new AGXUnityScriptData( script ) );
-
+                                                               in Resources.FindObjectsOfTypeAll<MonoScript>()
+                                                               where script.GetClass() != null &&
+                                                                     script.GetClass().FullName.StartsWith( "AGXUnity." )
+                                                                select script ).ToDictionary( script => script.GetClass().FullName,
+                                                                                              script => new AGXUnityScriptData( script ) );
       return nameScriptMap;
     }
 

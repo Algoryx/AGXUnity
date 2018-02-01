@@ -124,7 +124,7 @@ namespace AGXUnityEditor.IO
 
         File.Copy( tmpFile, file.FullName );
 
-        Debug.Log( "Patched: " + AGXFileInfo.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
+        Debug.Log( "Patched: " + Utils.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
       }
 
       File.Delete( tmpFile );
@@ -201,7 +201,7 @@ namespace AGXUnityEditor.IO
 
         File.Copy( tmpFile, file.FullName );
 
-        Debug.Log( "Patched: " + AGXFileInfo.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
+        Debug.Log( "Patched: " + Utils.MakeRelative( file.FullName, Application.dataPath ) + " with " + numChanges + " changes." );
       }
 
       File.Delete( tmpFile );

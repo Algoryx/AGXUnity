@@ -20,20 +20,6 @@ namespace AGXUnityEditor.IO
     }
 
     /// <summary>
-    /// Makes relative path given complete path.
-    /// </summary>
-    /// <param name="complete">Complete path.</param>
-    /// <param name="root">New root directory.</param>
-    /// <returns>Path with <paramref name="root"/> as root.</returns>
-    public static string MakeRelative( string complete, string root )
-    {
-      Uri completeUri = new Uri( complete );
-      Uri rootUri = new Uri( root );
-      Uri relUri = rootUri.MakeRelativeUri( completeUri );
-      return relUri.ToString();
-    }
-
-    /// <summary>
     /// Returns true if file is an existing AGX file.
     /// </summary>
     /// <param name="info">File info.</param>
@@ -305,7 +291,7 @@ namespace AGXUnityEditor.IO
                                           "Would you like to manually select directory for the given prefab?",
                                           "Yes", "No" ) ) {
           var dataDirectory    = EditorUtility.OpenFolderPanel( "Data directory for: " + PrefabInstance.name, m_fileInfo.Directory.FullName, "" );
-          var relDataDirectory = MakeRelative( dataDirectory, Application.dataPath ).Replace( '\\', '/' );
+          var relDataDirectory = Utils.MakeRelative( dataDirectory, Application.dataPath ).Replace( '\\', '/' );
           if ( AssetDatabase.IsValidFolder( relDataDirectory ) ) {
             Type = FileType.AGXPrefab;
             PrefabInstance.GetComponent<AGXUnity.IO.RestoredAGXFile>().DataDirectoryId = AssetDatabase.AssetPathToGUID( relDataDirectory );
@@ -314,7 +300,7 @@ namespace AGXUnityEditor.IO
         }
       }
 
-      RootDirectory = MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
+      RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
       // If the file is located in the root Assets folder the relative directory
       // is the empty string and Unity requires the relative path to include "Assets".
       if ( RootDirectory == string.Empty )
