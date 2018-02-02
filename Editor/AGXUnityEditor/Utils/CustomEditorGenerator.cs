@@ -10,7 +10,7 @@ namespace AGXUnityEditor.Utils
 {
   public static class CustomEditorGenerator
   {
-    public static string Path { get { return Application.dataPath + @"/AGXUnity/Editor/CustomEditors/"; } }
+    public static string Path { get { return IO.Utils.AGXUnityEditorDirectoryFull + "/CustomEditors/"; } }
 
     public static void Generate( Type type, bool refreshAssetDatabase = true )
     {

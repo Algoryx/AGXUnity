@@ -9,9 +9,6 @@ namespace AGXUnity
     public static string ResourcePath { get { return ResourceDirectory + @"/DefaultConstraintThresholds"; } }
 
     [HideInInspector]
-    public static string AssetPath { get { return @"Assets/AGXUnity/Resources/" + ResourcePath + ".asset"; } }
-
-    [HideInInspector]
     public static ConstraintMergeSplitThresholds DefaultResource { get { return Resources.Load<ConstraintMergeSplitThresholds>( ResourcePath ); } }
 
     [SerializeField]

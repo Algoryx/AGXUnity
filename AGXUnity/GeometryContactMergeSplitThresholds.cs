@@ -9,9 +9,6 @@ namespace AGXUnity
     public static string ResourcePath { get { return ResourceDirectory + @"/DefaultGeometryContactThresholds"; } }
 
     [HideInInspector]
-    public static string AssetPath { get { return @"Assets/AGXUnity/Resources/" + ResourcePath + ".asset"; } }
-
-    [HideInInspector]
     public static GeometryContactMergeSplitThresholds DefaultResource { get { return Resources.Load<GeometryContactMergeSplitThresholds>( ResourcePath ); } }
 
     [SerializeField]

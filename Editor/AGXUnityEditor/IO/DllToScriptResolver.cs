@@ -217,7 +217,7 @@ namespace AGXUnityEditor.IO
       m_oldFileIdTypeMap = new Dictionary<int, string>();
       m_newNameScriptMap = AGXUnityScriptData.CollectAll();
 
-      var path = Application.dataPath + @"/AGXUnity/Editor/Data/dep_fileID_types.txt";
+      var path = Utils.AGXUnityEditorDirectoryFull + "/Data/dep_fileID_types.txt";
       var file = new FileInfo( path );
       if ( !file.Exists )
         throw new FileNotFoundException( "Unable to find file which maps fileID to script.", "dep_fileID_types.txt" );

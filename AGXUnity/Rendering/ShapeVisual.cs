@@ -108,11 +108,6 @@ namespace AGXUnity.Rendering
     public static string DefaultMaterialPathResources { get { return @"Materials/ShapeVisualDefaultMaterial"; } }
 
     /// <summary>
-    /// Path to material given "absolute" relative path.
-    /// </summary>
-    public static string DefaultMaterialPath { get { return @"Assets/AGXUnity/Resources/" + DefaultMaterialPathResources + ".mat"; } }
-
-    /// <summary>
     /// Default material used.
     /// </summary>
     public static Material DefaultMaterial { get { return PrefabLoader.Load<Material>( DefaultMaterialPathResources ); } }

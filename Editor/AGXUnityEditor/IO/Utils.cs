@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 
@@ -28,6 +30,36 @@ namespace AGXUnityEditor.IO
     public static string AGXUnitySourceDirectoryFull { get { return ProjectDirectory + '/' + AGXUnitySourceDirectory; } }
 
     /// <summary>
+    /// AGXUnity resources directory, i.e, package directory + /Resources.
+    /// </summary>
+    public static string AGXUnityResourceDirectory { get { return AGXUnityPackageDirectory + "/Resources"; } }
+
+    /// <summary>
+    /// Absolute directory of AGXUnity resources, i.e., package directory full + /Resources.
+    /// </summary>
+    public static string AGXUnityResourceDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityResourceDirectory; } }
+
+    /// <summary>
+    /// Native plugin directory, i.e., package directory + /Plugins/x86_64.
+    /// </summary>
+    public static string AGXUnityPluginDirectory { get { return AGXUnityPackageDirectory + "/Plugins/x86_64"; } }
+
+    /// <summary>
+    /// Native plugin directory, i.e., package directory full + /Plugins/x86_64.
+    /// </summary>
+    public static string AGXUnityPluginDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityPluginDirectory; } }
+
+    /// <summary>
+    /// AGXUnity package editor directory, i.e., package directory + /Editor.
+    /// </summary>
+    public static string AGXUnityEditorDirectory { get { return AGXUnityPackageDirectory + "/Editor"; } }
+
+    /// <summary>
+    /// Absolute directory of AGXUnity editor, i.e. package directory full + /Editor.
+    /// </summary>
+    public static string AGXUnityEditorDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityEditorDirectory; } }
+
+    /// <summary>
     /// Directory of AGXUnityEditor source code, i.e, package directory + /Editor/AGXUnityEditor.
     /// </summary>
     public static string AGXUnityEditorSourceDirectory { get { return AGXUnityPackageDirectory + "/Editor/AGXUnityEditor"; } }
@@ -35,7 +67,7 @@ namespace AGXUnityEditor.IO
     /// <summary>
     /// Absolute directory of AGXUnityEditor source code, i.e, full package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectoryFull  { get { return AGXUnityPackageDirectory + '/' + AGXUnityEditorSourceDirectory; } }
+    public static string AGXUnityEditorSourceDirectoryFull  { get { return ProjectDirectory + '/' + AGXUnityEditorSourceDirectory; } }
 
     /// <summary>
     /// AGXUnity package directory relative Unity project, e.g., Assets/Foo if AGXUnity source
@@ -59,8 +91,6 @@ namespace AGXUnityEditor.IO
           }
         }
 
-        Debug.Log( "NEW!" );
-
         return "Assets/" + m_relDataPathDir;
       }
     }
@@ -69,6 +99,23 @@ namespace AGXUnityEditor.IO
     /// Full path to the AGXUnity install directory.
     /// </summary>
     public static string AGXUnityPackageDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityPackageDirectory; } }
+
+    public static void VerifyDirectories()
+    {
+      Predicate<string> isRelDirectory = name => name.Contains( "AGXUnity" ) &&
+                                                 name.Contains( "Directory" ) &&
+                                                !name.Contains( "Full" );
+      var directories = ( from propertyInfo
+                          in typeof( Utils ).GetProperties( BindingFlags.Public | BindingFlags.Static )
+                          where isRelDirectory( propertyInfo.Name )
+                          select (string)propertyInfo.GetGetMethod().Invoke( null, new object[] { } ) ).ToArray();
+      foreach ( var dir in directories ) {
+        if ( !AssetDatabase.IsValidFolder( dir ) )
+          Debug.LogWarning( "Missing AGXUnity directory: " + dir );
+        else
+          Debug.Log( "Verified: " + dir );
+      }
+    }
 
     /// <summary>
     /// Makes relative path given complete path.
