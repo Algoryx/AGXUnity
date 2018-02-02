@@ -112,8 +112,6 @@ namespace AGXUnityEditor.IO
       foreach ( var dir in directories ) {
         if ( !AssetDatabase.IsValidFolder( dir ) )
           Debug.LogWarning( "Missing AGXUnity directory: " + dir );
-        else
-          Debug.Log( "Verified: " + dir );
       }
     }
 
