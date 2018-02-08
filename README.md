@@ -52,6 +52,10 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 + Unity 3D 2017.1.1 (64-bit) or later. Could work in earlier version but hasn't been tested.
 + Valid AGX Dynamics license. [Contact us for more information.](https://www.algoryx.se/contact/)
 
+## Migrating from AGXUnity-deprecated to AGXUnity
+
+[See "Migration" in the AGXUnity-deprecated repository.](https://github.com/Algoryx/AGXUnity-deprecated/#migration)
+
 ## Developer
 
 For more information about how to develop new functionality in AGXUnity - [read the developer guide](DeveloperGuide.md).
