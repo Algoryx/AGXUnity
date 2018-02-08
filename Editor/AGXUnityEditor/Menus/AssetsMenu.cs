@@ -70,10 +70,54 @@ namespace AGXUnityEditor
       }
     }
 
-    private static bool IsAGXFile( string path )
+    [MenuItem( "Assets/Patch AGXUnity asset(s)" )]
+    public static void ConvertDeprecatedToAGXUnity()
     {
-      var fi = new System.IO.FileInfo( path );
-      return fi.Exists && ( fi.Extension == ".agx" || fi.Extension == ".aagx" );
+      var hasFolder = false;
+      var hasFile = false;
+
+      foreach ( var guid in Selection.assetGUIDs ) {
+        var isFolder = AssetDatabase.IsValidFolder( AssetDatabase.GUIDToAssetPath( guid ) );
+        hasFolder = hasFolder || isFolder;
+        hasFile = hasFile || !isFolder;
+      }
+
+      var searchSubFolders = hasFolder && EditorUtility.DisplayDialog( "Patch AGXUnity assets(s)", "Search sub-folders for files to patch?", "Yes", "No" );
+      if ( hasFolder )
+        System.Threading.Thread.Sleep( 250 );
+      var saveBackup = ( hasFolder || hasFile ) && EditorUtility.DisplayDialog( "Patch AGXUnity assets(s)", "Save backup of affected files?", "Yes", "No" );
+
+      var dllToScriptResolver = new IO.DllToScriptResolver();
+      if ( !dllToScriptResolver.IsValid )
+        return;
+
+      var numChanged = 0;
+      foreach ( var guid in Selection.assetGUIDs ) {
+        var localAssetPath = AssetDatabase.GUIDToAssetPath( guid ).Remove( 0, "Assets".Length );
+        var path = UnityEngine.Application.dataPath + localAssetPath;
+        if ( AssetDatabase.IsValidFolder( AssetDatabase.GUIDToAssetPath( guid ) ) ) {
+          try {
+            numChanged += dllToScriptResolver.PatchFilesInDirectory( path,
+                                                                     searchSubFolders ?
+                                                                       System.IO.SearchOption.AllDirectories :
+                                                                       System.IO.SearchOption.TopDirectoryOnly,
+                                                                     saveBackup );
+          }
+          catch ( Exception e ) {
+            UnityEngine.Debug.LogException( e );
+          }
+        }
+        else {
+          try {
+            numChanged += System.Convert.ToInt32( dllToScriptResolver.PatchFile( path, saveBackup ) );
+          }
+          catch ( Exception e ) {
+            UnityEngine.Debug.LogException( e );
+          }
+        }
+
+        UnityEngine.Debug.Log( "Number of files changed: " + numChanged );
+      }
     }
   }
 }

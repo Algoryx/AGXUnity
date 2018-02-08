@@ -10,24 +10,6 @@ namespace AGXUnityEditor
   {
     #region Static properties
     [HideInInspector]
-    public static string AGXUnityPath { get { return @"Assets/AGXUnity"; } }
-
-    [HideInInspector]
-    public static string AGXUnityEditorPath { get { return AGXUnityPath + @"/Editor"; } }
-
-    [HideInInspector]
-    public static string AGXUnityEditorDataPath { get { return AGXUnityEditorPath + @"/Data"; } }
-
-    [HideInInspector]
-    public static bool AGXUnityFolderExist { get { return AssetDatabase.IsValidFolder( AGXUnityPath ); } }
-
-    [HideInInspector]
-    public static bool AGXUnityEditorFolderExist { get { return AssetDatabase.IsValidFolder( AGXUnityEditorPath ); } }
-
-    [HideInInspector]
-    public static bool AGXUnityEditorDataFolderExist { get { return AssetDatabase.IsValidFolder( AGXUnityEditorDataPath ); } }
-
-    [HideInInspector]
     public static EditorSettings Instance { get { return GetOrCreateInstance(); } }
 
     [HideInInspector]
@@ -138,18 +120,8 @@ namespace AGXUnityEditor
     #region Static singleton initialization methods
     public static bool PrepareEditorDataFolder()
     {
-      if ( !AGXUnityFolderExist ) {
-        Debug.LogError( "AGXUnity folder is not present in the Assets folder. Something is wrong with the configuration." );
-        return false;
-      }
-
-      if ( !AGXUnityEditorFolderExist ) {
-        AssetDatabase.CreateFolder( AGXUnityEditorPath, "Editor" );
-        AssetDatabase.SaveAssets();
-      }
-
-      if ( !AGXUnityEditorDataFolderExist ) {
-        AssetDatabase.CreateFolder( AGXUnityEditorPath, "Data" );
+      if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityEditorDirectory + "/Data" ) ) {
+        AssetDatabase.CreateFolder( IO.Utils.AGXUnityEditorDirectory, "Data" );
         AssetDatabase.SaveAssets();
       }
 
@@ -161,7 +133,7 @@ namespace AGXUnityEditor
       if ( !PrepareEditorDataFolder() )
         return null;
 
-      string settingsPathAndName = AGXUnityEditorDataPath + @name;
+      string settingsPathAndName = IO.Utils.AGXUnityEditorDirectory + "/Data" + @name;
       T instance = AssetDatabase.LoadAssetAtPath<T>( settingsPathAndName );
       if ( instance == null ) {
         instance = CreateInstance<T>();

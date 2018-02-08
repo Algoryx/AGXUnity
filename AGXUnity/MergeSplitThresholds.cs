@@ -9,8 +9,6 @@ namespace AGXUnity
   {
     [HideInInspector]
     public static string ResourceDirectory { get { return @"MergeSplit"; } }
-    [HideInInspector]
-    public static string AssetDirectory { get { return @"Assets/AGXUnity/Resources/MergeSplit"; } }
 
     [InvokableInInspector("Reset to default")]
     public void OnResetToDefault()

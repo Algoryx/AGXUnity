@@ -52,6 +52,8 @@ namespace AGXUnityEditor
     /// </summary>
     static Manager()
     {
+      IO.Utils.VerifyDirectories();
+
       // If compatibility issues, this method will try to fix them and this manager
       // will probably be loaded again after the fix.
       if ( !VerifyCompatibility() )
@@ -205,7 +207,8 @@ namespace AGXUnityEditor
     /// <returns>Material asset.</returns>
     public static Material GetOrCreateShapeVisualDefaultMaterial()
     {
-      return GetOrCreateAsset<Material>( AGXUnity.Rendering.ShapeVisual.DefaultMaterialPath,
+      return GetOrCreateAsset<Material>( IO.Utils.AGXUnityResourceDirectory +
+                                         '/' + AGXUnity.Rendering.ShapeVisual.DefaultMaterialPathResources + ".mat",
                                          () => AGXUnity.Rendering.ShapeVisual.CreateDefaultMaterial() );
     }
 
@@ -521,7 +524,7 @@ namespace AGXUnityEditor
 
     private static bool VerifyCompatibility()
     {
-      string localDllFilename = Application.dataPath + @"/AGXUnity/Plugins/x86_64/agxDotNet.dll";
+      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
       FileInfo currDll        = new FileInfo( localDllFilename );
       FileInfo installedDll   = AGXUnity.IO.Utils.GetFileInEnvironmentPath( "agxDotNet.dll" );
 
@@ -572,10 +575,10 @@ namespace AGXUnityEditor
       GetOrCreateShapeVisualDefaultMaterial();
 
       // Merge split thresholds.
-      if ( !Directory.Exists( AGXUnity.MergeSplitThresholds.AssetDirectory ) )
-        Directory.CreateDirectory( AGXUnity.MergeSplitThresholds.AssetDirectory );
-      GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( AGXUnity.GeometryContactMergeSplitThresholds.AssetPath );
-      GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( AGXUnity.ConstraintMergeSplitThresholds.AssetPath );
+      if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.MergeSplitThresholds.ResourceDirectory ) )
+        AssetDatabase.CreateFolder( IO.Utils.AGXUnityResourceDirectory, AGXUnity.MergeSplitThresholds.ResourceDirectory );
+      GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.GeometryContactMergeSplitThresholds.ResourcePath + ".asset" );
+      GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.ConstraintMergeSplitThresholds.ResourcePath + ".asset" );
     }
 
     private class CollisionGroupEntryEqualityComparer : IEqualityComparer<AGXUnity.CollisionGroupEntry>
