@@ -70,7 +70,7 @@ namespace AGXUnityEditor
       }
     }
 
-    [MenuItem( "Assets/Patch AGXUnity asset(s)" )]
+    [MenuItem( "Assets/AGXUnity/Utils/Patch AGXUnity asset(s)" )]
     public static void ConvertDeprecatedToAGXUnity()
     {
       var hasFolder = false;

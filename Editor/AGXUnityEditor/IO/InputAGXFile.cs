@@ -475,6 +475,8 @@ namespace AGXUnityEditor.IO
                                            renderData.getIndexArray(),
                                            v => toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) );
         meshes = splitter.Meshes;
+        for ( int i = 0; i < meshes.Length; ++i )
+          meshes[ i ].name = shape.name + "_Visual_Mesh_" + i.ToString();
       }
       else {
         var mesh     = new Mesh();
