@@ -77,6 +77,54 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [**Modelling with wires:**](https://www.youtube.com/watch?v=Accpit3LmIA)  
 [![](https://img.youtube.com/vi/Accpit3LmIA/1.jpg)](https://www.youtube.com/watch?v=Accpit3LmIA)
 
+## Binary distribution
+To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application. agxDotNet.dll will already be present in the *Managed* subdirectory of the application.
+
+Below is a list of required files/directories which come from the <agx-install-dir>/bin/x64/ directory. These files should be placed in the top directory together with your Unity exe-file:
+
+```
+agx.lic
+agxCable.dll
+agxCore.dll
+agxDotNetRuntime.dll
+agxHydraulics.dll
+agxLua.dll
+agxMex.dll
+agxModel.dll
+agxOSG.dll
+agxPhysics.dll
+agxPython.dll
+agxSabre.dll
+agxSensor.dll
+agxVehicle.dll
+colamd.dll
+glew.dll
+libpng.dll
+lua.dll
+ois.dll
+osg141-osg.dll
+osg141-osgDB.dll
+osg141-osgGA.dll
+osg141-osgShadow.dll
+osg141-osgSim.dll
+osg141-osgText.dll
+osg141-osgUtil.dll
+osg141-osgViewer.dll
+ot20-OpenThreads.dll
+websockets.dll
+zlib.dll
+```
+
+Directory: **plugins**
+
+Depending on Visual Studio version, the following files might differ:
+
+```
+mscorlib.dll
+msvcp140.dll
+vcruntime140.dll
+```
+
 ## Issues and contributions
 
 Do not hesitate to send us a Pull Request.
