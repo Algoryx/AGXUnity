@@ -77,6 +77,45 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [**Modelling with wires:**](https://www.youtube.com/watch?v=Accpit3LmIA)  
 [![](https://img.youtube.com/vi/Accpit3LmIA/1.jpg)](https://www.youtube.com/watch?v=Accpit3LmIA)
 
+## Binary distribution
+agx.lic
+agxCable.dll
+agxCore.dll
+agxDotNet.dll
+agxDotNetRuntime.dll
+agxHydraulics.dll
+agxLua.dll
+agxMex.dll
+agxModel.dll
+agxOSG.dll
+agxPhysics.dll
+agxPython.dll
+agxSabre.dll
+agxSensor.dll
+agxVehicle.dll
+agxViewer.exe
+colamd.dll
+glew.dll
+libpng.dll
+lua.dll
+ois.dll
+osg141-osg.dll
+osg141-osgDB.dll
+osg141-osgGA.dll
+osg141-osgShadow.dll
+osg141-osgSim.dll
+osg141-osgText.dll
+osg141-osgUtil.dll
+osg141-osgViewer.dll
+ot20-OpenThreads.dll
+**plugins**
+
+websockets.dll
+zlib.dll
+mscorlib.dll
+msvcp140.dll
+
+vcruntime140.dll
 ## Issues and contributions
 
 Do not hesitate to send us a Pull Request.
