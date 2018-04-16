@@ -47,7 +47,7 @@ namespace AGXUnity
       m_groups.Add( new CollisionGroupEntry() { Tag = tag } );
 
       if ( State == States.INITIALIZED )
-        AddGroup( m_groups.Last(), CollectData( propagateToChildren ) );
+        AddGroup( m_groups.Last(), Find.LeafObjects( gameObject, propagateToChildren ) );
 
       return true;
     }
@@ -63,7 +63,7 @@ namespace AGXUnity
       if ( index < 0 )
         return false;
 
-      RemoveGroup( m_groups[ index ], CollectData( m_groups[ index ].PropagateToChildren ) );
+      RemoveGroup( m_groups[ index ], Find.LeafObjects( gameObject, m_groups[ index ].PropagateToChildren ) );
 
       m_groups.RemoveAt( index );
 
@@ -78,63 +78,14 @@ namespace AGXUnity
       if ( m_groups.Count == 0 )
         return base.Initialize();
 
-      Data[] data = new Data[] { CollectData( false ), CollectData( true ) };
+      var data = new Find.LeafData[] { Find.LeafObjects( gameObject, false ), Find.LeafObjects( gameObject, true ) };
       foreach ( var entry in m_groups )
         AddGroup( entry, data[ Convert.ToInt32( entry.PropagateToChildren ) ] );
 
       return base.Initialize();
     }
 
-    private class Data
-    {
-      public Collide.Shape[] Shapes = new Collide.Shape[] { };
-      public Wire[] Wires = new Wire[] { };
-      public Cable[] Cables = new Cable[] { };
-    }
-
-    private Data CollectData( bool propagateToChildren )
-    {
-      Data data = new Data(); 
-
-      RigidBody rb        =                                                      GetComponent<RigidBody>();
-      Collide.Shape shape = rb != null                  ? null                 : GetComponent<Collide.Shape>();
-      Wire wire           = rb != null || shape != null ? null                 : GetComponent<Wire>();
-      Cable cable         = rb != null || shape != null || wire != null ? null : GetComponent<Cable>();
-
-      bool allPredefinedAreNull = rb == null && shape == null && wire == null && cable == null;
-
-      if ( allPredefinedAreNull && propagateToChildren ) {
-        data.Shapes = GetComponentsInChildren<Collide.Shape>();
-        data.Wires  = GetComponentsInChildren<Wire>();
-        data.Cables = GetComponentsInChildren<Cable>();
-      }
-      // A wire is by definition independent of PropagateToChildren, since
-      // it's not defined to add children to a wire game object.
-      else if ( wire != null ) {
-        data.Wires = new Wire[] { wire };
-      }
-      // Same logics for Cable.
-      else if ( cable != null ) {
-        data.Cables = new Cable[] { cable };
-      }
-      // Bodies have shapes so if 'rb' != null we should collect all shape children
-      // independent of 'propagate' flag.
-      // If 'shape' != null and propagate is true we have the same condition as for bodies.
-      else if ( rb != null || shape != null || ( rb == null && shape == null && propagateToChildren ) ) {
-        data.Shapes = shape != null && !propagateToChildren ? GetComponents<Collide.Shape>() :
-                      shape != null || rb != null           ? GetComponentsInChildren<Collide.Shape>() :
-                                                              // Both shape and rb == null and PropagateToChildren == true.
-                                                              GetComponentsInChildren<Collide.Shape>();
-      }
-      else {
-        // These groups has no effect.
-        Debug.LogWarning( "Collision groups has no effect. Are you missing a PropagateToChildren = true?", this );
-      }
-
-      return data;
-    }
-
-    private void AddGroup( CollisionGroupEntry entry, Data data )
+    private void AddGroup( CollisionGroupEntry entry, Find.LeafData data )
     {
       foreach ( Collide.Shape shape in data.Shapes )
         if ( shape.GetInitialized<Collide.Shape>() != null )
@@ -149,7 +100,7 @@ namespace AGXUnity
           cable.GetInitialized<Cable>().Native.addGroup( entry.Tag.To32BitFnv1aHash() );
     }
 
-    private void RemoveGroup( CollisionGroupEntry entry, Data data )
+    private void RemoveGroup( CollisionGroupEntry entry, Find.LeafData data )
     {
       foreach ( Collide.Shape shape in data.Shapes )
         if ( shape.GetInitialized<Collide.Shape>() != null )
