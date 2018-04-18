@@ -78,15 +78,17 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [![](https://img.youtube.com/vi/Accpit3LmIA/1.jpg)](https://www.youtube.com/watch?v=Accpit3LmIA)
 
 ## Binary distribution
-To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application. agxDotNet.dll will already be present in the *Managed* subdirectory of the application.
+To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application.
 
-Below is a list of required files/directories which come from the <agx-install-dir>/bin/x64/ directory. These files should be placed in the top directory together with your Unity exe-file:
+Below is a list of required files/directories which come from the <agx-install-dir>/bin/x64/ directory. These files should be placed in the top directory together with your Unity exe-file.
+In version 2.22.1.0 and later, AGX Dynamics comes with a python script that will copy the required runtime files to a named (non-existing) directory: <agx-dir>\data\python\utilities\copy_runtimes.py
 
 ```
 agx.lic
 agxCable.dll
 agxCore.dll
 agxDotNetRuntime.dll
+agxDotNet.dll
 agxHydraulics.dll
 agxLua.dll
 agxMex.dll
@@ -101,6 +103,7 @@ colamd.dll
 glew.dll
 libpng.dll
 lua.dll
+python35.dll
 ois.dll
 osg141-osg.dll
 osg141-osgDB.dll
