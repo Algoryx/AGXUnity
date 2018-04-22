@@ -302,11 +302,14 @@ namespace AGXUnityEditor
         IFrame frame = wrapper.Get<IFrame>();
         Utils.GUI.HandleFrame( frame, skin );
       }
-      else if ( ( typeof( ScriptAsset ).IsAssignableFrom( type ) || type.BaseType == typeof( UnityEngine.Object ) || type.BaseType == typeof( ScriptComponent ) ) && wrapper.CanRead() ) {
+      else if ( ( typeof( ScriptAsset ).IsAssignableFrom( type ) ||
+                  type.BaseType == typeof( UnityEngine.Object ) ||
+                  type.BaseType == typeof( ScriptComponent ) ) && wrapper.CanRead() ) {
         bool allowSceneObject         = type == typeof( GameObject ) ||
                                         type.BaseType == typeof( ScriptComponent );
         UnityEngine.Object valInField = wrapper.Get<UnityEngine.Object>();
         bool recursiveEditing         = wrapper.HasAttribute<AllowRecursiveEditing>();
+        bool createNewAssetButton     = false;
 
         if ( recursiveEditing ) {
           var foldoutData = EditorData.Instance.GetData( target as UnityEngine.Object, wrapper.Member.Name );
@@ -325,6 +328,14 @@ namespace AGXUnityEditor
                                  valInField != null && foldoutData.Bool;
             UnityEngine.GUI.enabled = true;
             value = EditorGUILayout.ObjectField( objFieldLabel, valInField, type, allowSceneObject, new GUILayoutOption[] { } );
+
+            if ( typeof( ScriptAsset ).IsAssignableFrom( type ) ) {
+              GUILayout.Space( 4 );
+              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
+                createNewAssetButton = GUILayout.Button( GUI.MakeLabel( "New", false, "Create new asset" ),
+                                                         GUILayout.Width( 42 ),
+                                                         GUILayout.Height( buttonSize ) );
+            }
           }
           GUILayout.EndHorizontal();
 
@@ -363,6 +374,22 @@ namespace AGXUnityEditor
         }
         else
           value = EditorGUILayout.ObjectField( MakeLabel( wrapper.Member ), valInField, type, allowSceneObject, new GUILayoutOption[] { } );
+
+        if ( createNewAssetButton ) {
+          var assetName = type.Name.SplitCamelCase().ToLower();
+          var result = EditorUtility.SaveFilePanel( "Create new " + assetName, "Assets", "new " + assetName + ".asset", "asset" );
+          if ( result != string.Empty ) {
+            var info         = new System.IO.FileInfo( result );
+            var relativePath = IO.Utils.MakeRelative( result, Application.dataPath );
+            var newInstance  = ScriptAsset.Create( type );
+            newInstance.name = info.Name;
+            AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension == ".asset" ? "" : ".asset" ) );
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            value = newInstance;
+          }
+        }
 
         isNullable = true;
       }
