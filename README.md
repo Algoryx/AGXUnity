@@ -77,6 +77,10 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [**Modelling with wires:**](https://www.youtube.com/watch?v=Accpit3LmIA)  
 [![](https://img.youtube.com/vi/Accpit3LmIA/1.jpg)](https://www.youtube.com/watch?v=Accpit3LmIA)
 
+[**Modelling a terrain vehicle:**](https://www.youtube.com/watch?v=ku6GyMba9Cw)  
+[![](https://img.youtube.com/vi/ku6GyMba9Cw/1.jpg)](https://www.youtube.com/watch?v=ku6GyMba9Cw)
+
+
 ## Binary distribution
 To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application.
 
