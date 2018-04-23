@@ -80,6 +80,8 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [**Modelling a terrain vehicle:**](https://www.youtube.com/watch?v=ku6GyMba9Cw)  
 [![](https://img.youtube.com/vi/ku6GyMba9Cw/1.jpg)](https://www.youtube.com/watch?v=ku6GyMba9Cw)
 
+## Sample scenes
+The project [AGXUnityScenes](https://github.com/Algoryx/AGXUnityScenes) contains a growing list of various demonstration scenes.
 
 ## Binary distribution
 To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application.
