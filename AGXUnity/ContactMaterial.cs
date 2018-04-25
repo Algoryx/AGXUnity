@@ -8,6 +8,39 @@ namespace AGXUnity
   /// </summary>
   public class ContactMaterial : ScriptAsset
   {
+    public enum ContactReductionType
+    {
+      /// <summary>
+      /// Contact reduction disabled.
+      /// </summary>
+      None,
+      /// <summary>
+      /// Geometry <-> geometry contact reduction.
+      /// </summary>
+      Geometry,
+      /// <summary>
+      /// Rigid body <-> rigid body, rigid body <-> geometry or
+      /// geometry <-> geometry contact reduction.
+      /// </summary>
+      All
+    }
+
+    public enum ContactReductionLevelType
+    {
+      /// <summary>
+      /// Bin resolution = 3.
+      /// </summary>
+      Minimal,
+      /// <summary>
+      /// Bin resolution = 2.
+      /// </summary>
+      Moderate,
+      /// <summary>
+      /// Bin resolution = 1.
+      /// </summary>
+      Aggressive
+    }
+
     /// <summary>
     /// Native instance.
     /// </summary>
@@ -169,8 +202,79 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Damping of the contact constraint, paired with property Damping.
+    /// </summary>
+    [SerializeField]
+    private float m_damping = 4.5f / 60.0f;
+
+    /// <summary>
+    /// Damping of the contact constraint. Default: 4.5 / 60 = 0.075.
+    /// </summary>
+    public float Damping
+    {
+      get { return m_damping; }
+      set
+      {
+        m_damping = value;
+        if ( Native != null )
+          Native.setDamping( m_damping );
+      }
+    }
+
+    /// <summary>
+    /// Adhesive force, paired with property AdhesiveForce.
+    /// </summary>
+    [SerializeField]
+    private float m_adhesiveForce = 0.0f;
+
+    /// <summary>
+    /// Adhesive force of the contacts with this contact material.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float AdhesiveForce
+    {
+      get { return m_adhesiveForce; }
+      set
+      {
+        m_adhesiveForce = value;
+        if ( Native != null )
+          Native.setAdhesion( m_adhesiveForce, AdhesiveOverlap );
+      }
+    }
+
+    /// <summary>
+    /// Adhesive overlap, paired with property AdhesiveOverlap.
+    /// </summary>
+    [SerializeField]
+    private float m_adhesiveOverlap = 0.0f;
+
+    /// <summary>
+    /// Allowed overlap >= 0 from surface for resting contact. At this overlap,
+    /// no force is applied. At lower overlap, the adhesion force will work,
+    /// at higher overlap, the (usual) contact force.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float AdhesiveOverlap
+    {
+      get { return m_adhesiveOverlap; }
+      set
+      {
+        m_adhesiveOverlap = value;
+        if ( Native != null )
+          Native.setAdhesion( AdhesiveForce, m_adhesiveOverlap );
+      }
+    }
+
+    /// <summary>
+    /// Calculate contact area, paired with property UseContactArea.
+    /// </summary>
     [SerializeField]
     private bool m_useContactArea = false;
+
+    /// <summary>
+    /// Enable/disable contact area approach of contacts using this contact material.
+    /// </summary>
     public bool UseContactArea
     {
       get { return m_useContactArea; }
@@ -182,14 +286,67 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Contact reduction mode, paired with property ContactReductionMode.
+    /// </summary>
+    [SerializeField]
+    private ContactReductionType m_contactReductionMode = ContactReductionType.None;
+
+    /// <summary>
+    /// Contact reduction mode, default None (disabled).
+    /// </summary>
+    public ContactReductionType ContactReductionMode
+    {
+      get { return m_contactReductionMode; }
+      set
+      {
+        m_contactReductionMode = value;
+        if ( Native != null )
+          Native.setContactReductionMode( (agx.ContactMaterial.ContactReductionMode)m_contactReductionMode );
+      }
+    }
+
+    /// <summary>
+    /// Contact reduction level if contact reduction is enabled, paired with property ContactReductionLevel.
+    /// </summary>
+    [SerializeField]
+    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Moderate;
+
+    /// <summary>
+    /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
+    /// </summary>
+    public ContactReductionLevelType ContactReductionLevel
+    {
+      get { return m_contactReductionLevel; }
+      set
+      {
+        m_contactReductionLevel = value;
+        if ( Native != null ) {
+          var binResolution = m_contactReductionLevel == ContactReductionLevelType.Minimal  ? 3 :
+                              m_contactReductionLevel == ContactReductionLevelType.Moderate ? 2 :
+                                                                                              1;
+          Native.setContactReductionBinResolution( Convert.ToByte( binResolution ) );
+        }
+      }
+    }
+
     public ContactMaterial RestoreLocalDataFrom( agx.ContactMaterial contactMaterial )
     {
-      YoungsModulus        = Convert.ToSingle( contactMaterial.getYoungsModulus() );
-      SurfaceViscosity     = new Vector2( Convert.ToSingle( contactMaterial.getSurfaceViscosity( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
-                                          Convert.ToSingle( contactMaterial.getSurfaceViscosity( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
-      FrictionCoefficients = new Vector2( Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
-                                          Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
-      Restitution          = Convert.ToSingle( contactMaterial.getRestitution() );
+      YoungsModulus         = Convert.ToSingle( contactMaterial.getYoungsModulus() );
+      SurfaceViscosity      = new Vector2( Convert.ToSingle( contactMaterial.getSurfaceViscosity( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
+                                           Convert.ToSingle( contactMaterial.getSurfaceViscosity( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
+      FrictionCoefficients  = new Vector2( Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
+                                           Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
+      Restitution           = Convert.ToSingle( contactMaterial.getRestitution() );
+      Damping               = Convert.ToSingle( contactMaterial.getDamping() );
+      AdhesiveForce         = Convert.ToSingle( contactMaterial.getAdhesion() );
+      AdhesiveOverlap       = Convert.ToSingle( contactMaterial.getAdhesiveOverlap() );
+      UseContactArea        = contactMaterial.getUseContactAreaApproach();
+      ContactReductionMode  = (ContactReductionType)contactMaterial.getContactReductionMode();
+      var binResolution     = Convert.ToInt32( contactMaterial.getContactReductionBinResolution() );
+      ContactReductionLevel = binResolution == 3 ? ContactReductionLevelType.Minimal :
+                              binResolution == 2 ? ContactReductionLevelType.Moderate :
+                                                   ContactReductionLevelType.Aggressive;
 
       return this;
     }

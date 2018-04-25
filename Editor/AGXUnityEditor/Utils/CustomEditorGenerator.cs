@@ -123,6 +123,8 @@ namespace AGXUnityEditor.Utils
       return type != null &&
              !type.IsAbstract &&
              !type.ContainsGenericParameters &&
+             type.Namespace != null &&
+             type.Namespace.Contains( "AGXUnity" ) &&
             ( type.IsSubclassOf( typeof( ScriptComponent ) ) ||
               type.IsSubclassOf( typeof( ScriptAsset ) ) ) &&
               type.GetCustomAttributes( typeof( DoNotGenerateCustomEditor ), false ).Length == 0;
