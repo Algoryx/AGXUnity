@@ -30,6 +30,27 @@
     }
 
     /// <summary>
+    /// Construct given minimum and maximum values.
+    /// </summary>
+    /// <param name="min">Minimum/Lower bound value.</param>
+    /// <param name="max">Maximum/Upper bound value.</param>
+    public RangeReal( float min, float max )
+    {
+      Min = min;
+      Max = max;
+    }
+
+    /// <summary>
+    /// Construct given value of negative and positive bound, i.e.,
+    /// range = (-value, value).
+    /// </summary>
+    /// <param name="value">Negative and positive value of the range.</param>
+    public RangeReal( float value )
+      : this( -UnityEngine.Mathf.Abs( value ), UnityEngine.Mathf.Abs( value ) )
+    {
+    }
+
+    /// <summary>
     /// Copy constructor.
     /// </summary>
     public RangeReal( RangeReal other )

@@ -49,6 +49,28 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Translational degrees of freedom.
+    /// </summary>
+    public enum TranslationalDof
+    {
+      X,
+      Y,
+      Z,
+      All
+    }
+
+    /// <summary>
+    /// Rotational degrees of freedom.
+    /// </summary>
+    public enum RotationalDof
+    {
+      X,
+      Y,
+      Z,
+      All
+    }
+
+    /// <summary>
     /// Create a new constraint component given constraint type.
     /// </summary>
     /// <param name="type">Type of constraint.</param>
@@ -315,6 +337,133 @@ namespace AGXUnity
       }
 
       return null;
+    }
+
+    /// <summary>
+    /// Traverse ElementaryConstraintRowData instances of this constraints
+    /// ordinary elementary constraints.
+    /// </summary>
+    /// <typeparam name="T">Either TranslationalDof or RotationalDof.</typeparam>
+    /// <param name="callback">Callback for each valid row data instance.</param>
+    /// <param name="value">Enum value X, Y, Z or All.</param>
+    public void TraverseRowData<T>( Action<ElementaryConstraintRowData> callback, T value )
+      where T : struct
+    {
+      var rowParser = ConstraintUtils.ConstraintRowParser.Create( this );
+      var rows = typeof( T ) == typeof( TranslationalDof ) ?
+                   rowParser.TranslationalRows :
+                   rowParser.RotationalRows;
+
+      // Dof.All
+      if ( System.Convert.ToInt32( value ) > 2 ) {
+        foreach ( var data in rows )
+          if ( data != null )
+            callback( data.RowData );
+      }
+      else {
+        var data = rows[ System.Convert.ToInt32( value ) ];
+        if ( data != null )
+          callback( data.RowData );
+      }
+    }
+
+    /// <summary>
+    /// Set compliance to all ordinary degrees of freedom (not including controllers)
+    /// of this constraint.
+    /// </summary>
+    /// <param name="compliance">New compliance.</param>
+    public void SetCompliance( float compliance )
+    {
+      TraverseRowData( data => data.Compliance = compliance, TranslationalDof.All );
+      TraverseRowData( data => data.Compliance = compliance, RotationalDof.All );
+    }
+
+    /// <summary>
+    /// Set compliance to one or all translational ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="compliance">New compliance.</param>
+    /// <param name="dof">Specific translational degree of freedom or all.</param>
+    public void SetCompliance( float compliance, TranslationalDof dof )
+    {
+      TraverseRowData( data => data.Compliance = compliance, dof );
+    }
+
+    /// <summary>
+    /// Set compliance to one or all rotatinal ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="compliance">New compliance.</param>
+    /// <param name="dof">Specific rotational degree of freedom or all.</param>
+    public void SetCompliance( float compliance, RotationalDof dof )
+    {
+      TraverseRowData( data => data.Compliance = compliance, dof );
+    }
+
+    /// <summary>
+    /// Set damping to all ordinary degrees of freedom (not including controllers)
+    /// of this constraint.
+    /// </summary>
+    /// <param name="damping">New damping.</param>
+    public void SetDamping( float damping )
+    {
+      TraverseRowData( data => data.Damping = damping, TranslationalDof.All );
+      TraverseRowData( data => data.Damping = damping, RotationalDof.All );
+    }
+
+    /// <summary>
+    /// Set damping to one or all translational ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="damping">New damping.</param>
+    /// <param name="dof">Specific translational degree of freedom or all.</param>
+    public void SetDamping( float damping, TranslationalDof dof )
+    {
+      TraverseRowData( data => data.Damping = damping, dof );
+    }
+
+    /// <summary>
+    /// Set damping to one or all rotatinal ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="damping">New damping.</param>
+    /// <param name="dof">Specific rotational degree of freedom or all.</param>
+    public void SetDamping( float damping, RotationalDof dof )
+    {
+      TraverseRowData( data => data.Damping = damping, dof );
+    }
+
+    /// <summary>
+    /// Set force range to all ordinary degrees of freedom (not including controllers)
+    /// of this constraint.
+    /// </summary>
+    /// <param name="forceRange">New force range.</param>
+    public void SetForceRange( RangeReal forceRange )
+    {
+      TraverseRowData( data => data.ForceRange = forceRange, TranslationalDof.All );
+      TraverseRowData( data => data.ForceRange = forceRange, RotationalDof.All );
+    }
+
+    /// <summary>
+    /// Set force range to one or all translational ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="forceRange">New force range.</param>
+    /// <param name="dof">Specific translational degree of freedom or all.</param>
+    public void SetForceRange( RangeReal forceRange, TranslationalDof dof )
+    {
+      TraverseRowData( data => data.ForceRange = forceRange, dof );
+    }
+
+    /// <summary>
+    /// Set force range to one or all rotatinal ordinary degrees of freedom
+    /// (not including controllers) of this constraint.
+    /// </summary>
+    /// <param name="forceRange">New force range.</param>
+    /// <param name="dof">Specific rotational degree of freedom or all.</param>
+    public void SetForceRange( RangeReal forceRange, RotationalDof dof )
+    {
+      TraverseRowData( data => data.ForceRange = forceRange, dof );
     }
 
     /// <summary>
