@@ -30,6 +30,17 @@
     }
 
     /// <summary>
+    /// Construct given minimum and maximum values.
+    /// </summary>
+    /// <param name="min">Minimum/Lower bound value.</param>
+    /// <param name="max">Maximum/Upper bound value.</param>
+    public RangeReal( float min, float max )
+    {
+      Min = min;
+      Max = max;
+    }
+
+    /// <summary>
     /// Copy constructor.
     /// </summary>
     public RangeReal( RangeReal other )
