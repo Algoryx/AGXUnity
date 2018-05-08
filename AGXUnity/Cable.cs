@@ -434,6 +434,9 @@ namespace AGXUnity
 
       GetSimulation().add( Native );
 
+      if ( Properties != null )
+        Properties.GetInitialized<CableProperties>();
+
       SynchronizeProperties();
 
       return true;

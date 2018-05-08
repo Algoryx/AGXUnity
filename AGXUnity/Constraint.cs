@@ -71,20 +71,23 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Create a new constraint component given constraint type.
+    /// Create a new constraint given type and constraint frames.
     /// </summary>
-    /// <param name="type">Type of constraint.</param>
-    /// <param name="givenAttachmentPair">Optional initial attachment pair. When given, values and fields will be copied to this objects attachment pair.</param>
+    /// <param name="type">Constraint type.</param>
+    /// <param name="referenceFrame">Reference frame.</param>
+    /// <param name="connectedFrame">Connected frame.</param>
     /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
-    public static Constraint Create( ConstraintType type, AttachmentPair givenAttachmentPair = null )
+    public static Constraint Create( ConstraintType type,
+                                     ConstraintFrame referenceFrame,
+                                     ConstraintFrame connectedFrame )
     {
       GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity." + type ) );
       try {
         Constraint constraint = constraintGameObject.AddComponent<Constraint>();
-        constraint.Type       = type;
+        constraint.Type = type;
 
-        // Property AttachmentPair will create a new one if it doesn't exist.
-        constraint.AttachmentPair.CopyFrom( givenAttachmentPair );
+        constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
+        constraint.AttachmentPair.ConnectedFrame = connectedFrame ?? new ConstraintFrame();
 
         // Creating a temporary native instance of the constraint, including a rigid body and frames.
         // Given this native instance we copy the default configuration.
@@ -98,6 +101,25 @@ namespace AGXUnity
         DestroyImmediate( constraintGameObject );
         return null;
       }
+    }
+
+    /// <summary>
+    /// Create a new constraint component given constraint type.
+    /// </summary>
+    /// <param name="type">Constraint type.</param>
+    /// <param name="givenAttachmentPair">Optional initial attachment pair. When given,
+    ///                                   values and fields will be copied to this objects
+    ///                                   attachment pair.</param>
+    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
+    public static Constraint Create( ConstraintType type, AttachmentPair givenAttachmentPair = null )
+    {
+      var instance = Create( type, new ConstraintFrame(), new ConstraintFrame() );
+      if ( instance == null )
+        return null;
+
+      instance.AttachmentPair.CopyFrom( givenAttachmentPair );
+
+      return instance;
     }
 
     /// <summary>
@@ -650,7 +672,7 @@ namespace AGXUnity
       }
 
       // Synchronize frames to make sure connected frame is up to date.
-      AttachmentPair.Update();
+      AttachmentPair.Synchronize();
 
       // TODO: Disabling rigid body game object (activeSelf == false) and will not be
       //       able to create native body (since State == Constructed and not Awake).
@@ -816,7 +838,7 @@ namespace AGXUnity
           // Some constraints, e.g., Distance Joints depends on the constraint angle during
           // creation so we feed the frames with the world transform of the reference and
           // connecting frame.
-          attachmentPair.Update();
+          attachmentPair.Synchronize();
 
           m_f1.setLocalTranslate( attachmentPair.ReferenceFrame.Position.ToHandedVec3() );
           m_f1.setLocalRotate( attachmentPair.ReferenceFrame.Rotation.ToHandedQuat() );

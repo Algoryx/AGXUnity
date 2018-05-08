@@ -6,11 +6,10 @@ namespace AGXUnity
   [Serializable]
   public class CableProperty
   {
-    public static CableProperty Create( CableProperties.Direction dir, Action<CableProperties.Direction> onValueChanged )
+    public static CableProperty Create( CableProperties.Direction dir )
     {
       CableProperty property = new CableProperty();
       property.Direction = dir;
-      property.OnValueCanged += onValueChanged;
 
       return property;
     }
@@ -133,16 +132,21 @@ namespace AGXUnity
 
     public override void Destroy()
     {
+      foreach ( Direction dir in Directions )
+        this[ dir ].OnValueCanged -= OnPropertyChanged;
     }
 
     protected override void Construct()
     {
       foreach ( Direction dir in Directions )
-        this[ dir ] = CableProperty.Create( dir, OnPropertyChanged );
+        this[ dir ] = CableProperty.Create( dir );
     }
 
     protected override bool Initialize()
     {
+      foreach ( Direction dir in Directions )
+        this[ dir ].OnValueCanged += OnPropertyChanged;
+
       return true;
     }
 

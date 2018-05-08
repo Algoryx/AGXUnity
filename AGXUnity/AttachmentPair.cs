@@ -63,6 +63,11 @@ namespace AGXUnity
     public ConstraintFrame ReferenceFrame
     {
       get { return m_referenceFrame; }
+      set
+      {
+        m_referenceFrame = value;
+        Synchronize();
+      }
     }
 
     /// <summary>
@@ -79,6 +84,11 @@ namespace AGXUnity
     public ConstraintFrame ConnectedFrame
     {
       get { return m_connectedFrame; }
+      set
+      {
+        m_connectedFrame = value;
+        Synchronize();
+      }
     }
 
     /// <summary>
@@ -143,7 +153,7 @@ namespace AGXUnity
     /// <summary>
     /// Update callback from some manager, synchronizing the frames if Synchronized == true.
     /// </summary>
-    public void Update()
+    public void Synchronize()
     {
       if ( Synchronized ) {
         m_connectedFrame.Position = m_referenceFrame.Position;
