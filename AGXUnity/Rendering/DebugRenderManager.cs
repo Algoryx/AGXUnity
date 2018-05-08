@@ -303,7 +303,7 @@ namespace AGXUnity.Rendering
       );
 
       FindObjectsOfType<Constraint>().ToList().ForEach(
-        constraint => constraint.AttachmentPair.Update()
+        constraint => constraint.AttachmentPair.Synchronize()
       );
 
       List<GameObject> gameObjectsToDestroy = new List<GameObject>();
