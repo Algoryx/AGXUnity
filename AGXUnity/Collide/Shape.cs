@@ -177,7 +177,7 @@ namespace AGXUnity.Collide
       // Using the world position of the shape - which includes scaling etc.
       agx.AffineMatrix4x4 shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(), transform.position.ToHandedVec3() );
       agx.AffineMatrix4x4 rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(), rb.transform.position.ToHandedVec3() );
-      return shapeInWorld.Multiply( rbInWorld.inverse() );
+      return shapeInWorld * rbInWorld.inverse();
     }
 
     /// <summary>

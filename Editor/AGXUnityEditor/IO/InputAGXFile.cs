@@ -681,7 +681,7 @@ namespace AGXUnityEditor.IO
                    findRigidBody( nativeBeginWinch.getRigidBody() ) );
       }
       // Connecting nodes will show up in render iterators.
-      else if ( nativeIt.get().getNodeType() != agxWire.Node.Type.CONNECTING && nativeWire.getFirstNode().getNodeType() == agxWire.Node.Type.BODY_FIXED )
+      else if ( nativeIt.get().getNodeType() != agxWire.WireNode.Type.CONNECTING && nativeWire.getFirstNode().getNodeType() == agxWire.WireNode.Type.BODY_FIXED )
         route.Add( nativeWire.getFirstNode(), findRigidBody( nativeWire.getFirstNode().getRigidBody() ) );
 
       while ( !nativeIt.EqualWith( nativeEndIt ) ) {
@@ -689,13 +689,13 @@ namespace AGXUnityEditor.IO
 
         // Handing ContactNode and ShapeContactNode parenting.
         GameObject nodeParent = null;
-        if ( nativeNode.getType() == agxWire.Node.Type.CONTACT ) {
+        if ( nativeNode.getType() == agxWire.WireNode.Type.CONTACT ) {
           var nativeGeometry = nativeNode.getAsContact().getGeometry();
           var geometryNode = m_tree.GetNode( nativeGeometry.getUuid() );
           if ( geometryNode != null && geometryNode.GetChildren( Node.NodeType.Shape ).Length > 0 )
             nodeParent = geometryNode.GetChildren( Node.NodeType.Shape )[ 0 ].GameObject;
         }
-        else if ( nativeNode.getType() == agxWire.Node.Type.SHAPE_CONTACT ) {
+        else if ( nativeNode.getType() == agxWire.WireNode.Type.SHAPE_CONTACT ) {
           var nativeShape = nativeNode.getAsShapeContact().getShape();
           var shapeNode = m_tree.GetNode( nativeShape.getUuid() );
           if ( shapeNode != null )
@@ -710,14 +710,14 @@ namespace AGXUnityEditor.IO
       }
 
       // Remove last node if we should have a winch or a body fixed node there.
-      if ( route.Last().Type == Wire.NodeType.FreeNode && nativeWire.getLastNode().getNodeType() == agxWire.Node.Type.BODY_FIXED )
+      if ( route.Last().Type == Wire.NodeType.FreeNode && nativeWire.getLastNode().getNodeType() == agxWire.WireNode.Type.BODY_FIXED )
         route.Remove( route.Last() );
 
       if ( nativeEndWinch != null ) {
         route.Add( nativeEndWinch,
                    findRigidBody( nativeEndWinch.getRigidBody() ) );
       }
-      else if ( nativeIt.prev().get().getNodeType() != agxWire.Node.Type.CONNECTING && nativeWire.getLastNode().getNodeType() == agxWire.Node.Type.BODY_FIXED )
+      else if ( nativeIt.prev().get().getNodeType() != agxWire.WireNode.Type.CONNECTING && nativeWire.getLastNode().getNodeType() == agxWire.WireNode.Type.BODY_FIXED )
         route.Add( nativeWire.getLastNode(), findRigidBody( nativeWire.getLastNode().getRigidBody() ) );
 
       var materials = node.GetReferences( Node.NodeType.Material );

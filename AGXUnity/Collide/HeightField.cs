@@ -29,8 +29,7 @@ namespace AGXUnity.Collide
     /// <returns>Shape transform to be used between native geometry and shape.</returns>
     public override agx.AffineMatrix4x4 GetNativeGeometryOffset()
     {
-      return agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ).Multiply(
-             agx.AffineMatrix4x4.translate( transform.position.ToHandedVec3() + new Vector3( 0.5f * GetWidth(), 0, 0.5f * GetHeight() ).ToHandedVec3() ) );
+      return agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ) * agx.AffineMatrix4x4.translate( transform.position.ToHandedVec3() + new Vector3( 0.5f * GetWidth(), 0, 0.5f * GetHeight() ).ToHandedVec3() );
     }
 
     /// <summary>
