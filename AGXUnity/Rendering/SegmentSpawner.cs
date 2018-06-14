@@ -27,6 +27,13 @@ namespace AGXUnity.Rendering
 
     [SerializeField]
     private Material m_material = null;
+
+    // Use this instead of new every time we need one
+    private static Vector3 s_y_vec = new Vector3( 0, 1, 0 );
+
+    // Set this and use = operator instead of new every timestep
+    private Vector3 m_vec = new Vector3(-20, -20, -20);
+
     public Material Material
     {
       get { return m_material ?? DefaultMaterial; }
@@ -129,8 +136,17 @@ namespace AGXUnity.Rendering
         Transform main   = instance.transform.GetChild( 1 );
         Transform bottom = instance.transform.GetChild( 2 );
 
-        main.localScale                    = new Vector3( width, length, height );
-        top.localScale = bottom.localScale = new Vector3( width, width, height );
+        //main.localScale                    = new Vector3( width, length, height );
+        m_vec.Set(width, length, height);
+        main.localScale = m_vec;
+
+        //top.localScale = bottom.localScale = new Vector3( width, width, height );
+        //top.localScale = bottom.localScale = m_vec;
+        top.localScale = m_vec;
+        m_vec.Set(width, length, height);
+        bottom.localScale = new Vector3(width, width, height);
+
+
         top.transform.localPosition        =  0.5f * length * Vector3.up;
         bottom.transform.localPosition     = -0.5f * length * Vector3.up;
       }
@@ -138,12 +154,22 @@ namespace AGXUnity.Rendering
         Transform main = instance.transform.GetChild( 0 );
         Transform top  = instance.transform.GetChild( 1 );
 
-        main.localScale             = new Vector3( width, length, height );
-        top.localScale              = new Vector3( width, width, height );
-        top.transform.localPosition = new Vector3( 0, 0.5f * length, 0 );
+
+//         main.localScale             = new Vector3( width, length, height );
+//         top.localScale              = new Vector3( width, width, height );
+//         top.transform.localPosition = new Vector3( 0, 0.5f * length, 0 );
+
+        m_vec.Set(width, length, height);
+        top.localScale = main.localScale = m_vec;
+
+        //top.transform.localPosition = new Vector3(0, 0.5f * length, 0);
+
+        m_vec.Set(0, 0.5f * length, 0);
+        top.transform.localPosition = m_vec;
+
       }
 
-      instance.transform.rotation = Quaternion.FromToRotation( new Vector3( 0, 1, 0 ), startToEnd );
+      instance.transform.rotation = Quaternion.FromToRotation( s_y_vec, startToEnd );
       instance.transform.position = start + 0.5f * length * startToEnd;
 
       return instance;

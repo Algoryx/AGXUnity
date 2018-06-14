@@ -160,7 +160,7 @@ namespace AGXUnity.Collide
     /// <returns>Relative transform geometry -> shape.</returns>
     public virtual agx.AffineMatrix4x4 GetNativeGeometryOffset()
     {
-      return new agx.AffineMatrix4x4();
+      return agx.AffineMatrix4x4.identity();
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ namespace AGXUnity.Collide
       // If we're on the same level as the rigid body we have by
       // definition no offset to the body.
       if ( rb == null || rb.gameObject == gameObject )
-        return new agx.AffineMatrix4x4();
+        return agx.AffineMatrix4x4.identity();
 
       // Using the world position of the shape - which includes scaling etc.
       agx.AffineMatrix4x4 shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(), transform.position.ToHandedVec3() );
