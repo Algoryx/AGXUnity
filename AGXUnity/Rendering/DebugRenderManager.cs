@@ -371,20 +371,24 @@ namespace AGXUnity.Rendering
       if ( simulation == null )
         return;
 
-      var gcs = simulation.getSpace().getGeometryContacts();
-      m_contactList.Clear();
-      m_contactList.Capacity = 4 * gcs.Count;
-      for ( int i = 0; i < gcs.Count; ++i ) {
-        var gc = gcs[ i ];
-        if ( !gc.isEnabled() )
-          continue;
-
-        for ( uint j = 0; j < gc.points().size(); ++j ) {
-          var p = gc.points().at( j );
-          if ( !p.enabled )
+      // Only collect data for contacts if they are enabled
+      if (m_renderContacts)
+      {
+        var gcs = simulation.getSpace().getGeometryContacts();
+        m_contactList.Clear();
+        m_contactList.Capacity = 4 * gcs.Count;
+        for ( int i = 0; i < gcs.Count; ++i ) {
+          var gc = gcs[ i ];
+          if ( !gc.isEnabled() )
             continue;
 
-          m_contactList.Add( new ContactData() { Point = p.point.ToHandedVector3(), Normal = p.normal.ToHandedVector3() } );
+          for ( uint j = 0; j < gc.points().size(); ++j ) {
+            var p = gc.points().at( j );
+            if ( !p.enabled )
+              continue;
+
+            m_contactList.Add( new ContactData() { Point = p.point.ToHandedVector3(), Normal = p.normal.ToHandedVector3() } );
+          }
         }
       }
     }
