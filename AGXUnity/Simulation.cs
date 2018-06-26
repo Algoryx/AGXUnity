@@ -17,6 +17,8 @@ namespace AGXUnity
     /// Native instance.
     /// </summary>
     private agxSDK.Simulation m_simulation = null;
+	
+	public bool EnableAutomaticStepping = true;
     
     public static float DefaultTimeStep { get { return Time.fixedDeltaTime; } }
 
@@ -152,7 +154,13 @@ namespace AGXUnity
       return base.Initialize();
     }
 
-    protected void FixedUpdate()
+    private void FixedUpdate()
+    {
+      if (EnableAutomaticStepping)
+    	DoStep()
+    }		
+
+    public void DoStep()
     {
       if ( !NativeHandler.Instance.HasValidLicense )
         return;
