@@ -18,7 +18,13 @@ namespace AGXUnity
     /// </summary>
     private agxSDK.Simulation m_simulation = null;
 	
-    public bool EnableAutomaticStepping = true;
+    [SerializeField]
+    private bool m_enableAutomaticStepping = true;
+    public bool EnableAutomaticStepping
+    {
+      get { return m_enableAutomaticStepping; }
+      set { m_enableAutomaticStepping = value; }
+    }
     
     public static float DefaultTimeStep { get { return Time.fixedDeltaTime; } }
 
