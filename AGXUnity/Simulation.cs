@@ -18,7 +18,7 @@ namespace AGXUnity
     /// </summary>
     private agxSDK.Simulation m_simulation = null;
 	
-	public bool EnableAutomaticStepping = true;
+    public bool EnableAutomaticStepping = true;
     
     public static float DefaultTimeStep { get { return Time.fixedDeltaTime; } }
 
@@ -157,7 +157,7 @@ namespace AGXUnity
     private void FixedUpdate()
     {
       if (EnableAutomaticStepping)
-    	DoStep()
+    	DoStep();
     }		
 
     public void DoStep()
