@@ -171,8 +171,8 @@ namespace AGXUnity
 
     private void FixedUpdate()
     {
-      if (EnableAutomaticStepping)
-    	DoStep();
+      if (m_enableAutomaticStepping)
+        DoStep();
     }		
 
     public void DoStep()
