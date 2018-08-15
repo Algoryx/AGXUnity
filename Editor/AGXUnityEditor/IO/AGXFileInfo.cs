@@ -197,11 +197,14 @@ namespace AGXUnityEditor.IO
 
     /// <summary>
     /// Find asset path (in the data directory) given asset name.
+    /// If asset.name contains '\\', it will be replaced with '_'
     /// </summary>
     /// <param name="asset">Asset.</param>
     /// <returns>Path (relative) including .asset extension.</returns>
     public string GetAssetPath( UnityEngine.Object asset )
     {
+      // We cannot have \\ in the name
+      asset.name = asset.name.Replace("\\", "_");
       return DataDirectory + "/" +
              ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset );
     }
