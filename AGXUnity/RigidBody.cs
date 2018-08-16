@@ -278,7 +278,10 @@ namespace AGXUnity
       MassProperties.RestoreLocalDataFrom( native.getMassProperties() );
 
       enabled                = native.getEnable();
-      MotionControl          = native.getMotionControl();
+      // Should the body be enabled?
+      gameObject.SetActive(native.isEnabled());
+
+      MotionControl = native.getMotionControl();
       HandleAsParticle       = native.getHandleAsParticle();
       LinearVelocity         = native.getVelocity().ToHandedVector3();
       LinearVelocityDamping  = native.getLinearVelocityDamping().ToHandedVector3();
