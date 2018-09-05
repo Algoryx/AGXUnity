@@ -338,7 +338,8 @@ namespace AGXUnity
       SyncUnityTransform();
       SyncProperties();
 
-      Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
+      if (Rendering.DebugRenderManager.Instance.isActiveAndEnabled)
+        Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
     #endregion
 

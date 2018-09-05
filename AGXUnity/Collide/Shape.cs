@@ -344,8 +344,13 @@ namespace AGXUnity.Collide
     {
       SyncUnityTransform();
 
+      // If DebugRenderManager is disabled, we should NOT try to update anything.
+      // the m_geometry.getRigidBody will allocate memory for a RigidBodyInstance, so we
+      // want to avoid that.
+      bool enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
+
       // If we have a body the debug rendering synchronization is made from that body.
-      if ( m_geometry != null && m_geometry.getRigidBody() == null )
+      if (enabled &&  m_geometry != null && m_geometry.getRigidBody() == null )
         Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
 
