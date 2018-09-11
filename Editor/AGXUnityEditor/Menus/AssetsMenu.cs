@@ -43,6 +43,13 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<ConstraintMergeSplitThresholds>( "constraint merge split thresholds" );
     }
 
+    [MenuItem("Assets/AGXUnity/Two Body Tire Properties")]
+    public static UnityEngine.Object CreateTwoBodyTireProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
+    }
+
+
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
     public static bool IsAGXFileSelected()
     {
