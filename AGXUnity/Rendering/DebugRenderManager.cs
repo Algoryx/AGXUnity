@@ -329,7 +329,7 @@ namespace AGXUnity.Rendering
     }
 
     private static bool m_isActiveForSynchronize = false;
-    private static bool IsActiveForSynchronize { get { return m_isActiveForSynchronize; } }
+    public static bool IsActiveForSynchronize { get { return m_isActiveForSynchronize; } }
 
     private bool UpdateIsActiveForSynchronize()
     {

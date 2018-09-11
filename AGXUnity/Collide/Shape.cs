@@ -347,7 +347,11 @@ namespace AGXUnity.Collide
       // If DebugRenderManager is disabled, we should NOT try to update anything.
       // the m_geometry.getRigidBody will allocate memory for a RigidBodyInstance, so we
       // want to avoid that.
-      bool enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
+      bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
+      bool enabled = false;
+
+      if (isInstanced)
+        enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
 
       // If we have a body the debug rendering synchronization is made from that body.
       if (enabled &&  m_geometry != null && m_geometry.getRigidBody() == null )
