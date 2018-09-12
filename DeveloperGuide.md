@@ -163,3 +163,55 @@ class TestComponentEditor : AGXUnityEditor.BaseEditor<TestComponent>
 ```
 
 The TestComponent will be rendered the same in the Inspector tab, but when changing the value, the new value will be printed in the Console tab.
+
+## Using EventListeners
+EventListeners such as agxSDK.StepEventListener and agxSDK.ContactEventListeners has both a C# implementation (your code implementing the virtual methods) and a C++ implementation (the C# - C++ bridge). It is important to keep a reference to the C# object even though the listener object is added to a simulation.
+
+Wrong way:
+
+```c#
+public class TestListener : ScriptComponent {
+  class MyListener : agxSDK.StepEventListener
+  {
+    private override void pre(double t)
+    {
+    }
+  }
+
+  protected override bool Initialize()
+  {
+    // A C# instance is created, the C++ representation will be added to the simulation.
+    // However, later when GC is run, the C# implementation will be deleted and C++ will try to call an object that does no longer exist!
+    // At some point you will get:
+    //    NullReferenceException: Object reference not set to an instance of an object
+    //    at agxSDK.StepEventListener.SwigDirectorpost (Double arg0) [0x00000] in <filename unknown>:0     
+    GetSimulation().add(new MyListener());
+  }
+}
+
+
+```
+
+Correct way:
+
+```c#
+public class TestListener : ScriptComponent {
+  class MyListener : agxSDK.StepEventListener
+  {
+    private override void pre(double t)
+    {
+    }
+  }
+
+  private: agxSDK.StepEventListener m_listener = null;
+  
+  protected override bool Initialize()
+  {
+    // A C# instance is created, we will keep a reference to it!
+    m_listener = new MyListener();
+    GetSimulation().add(m_listener);
+  }
+}
+
+
+```
