@@ -54,6 +54,29 @@ namespace AGXUnity.Collide
       }
     }
 
+
+    /// <summary>
+    /// Is Shape a sensor?
+    /// </summary>
+    [SerializeField]
+    private bool m_isSensor = false;
+
+    /// <summary>
+    /// Specify if this shape is a sensor or not
+    /// </summary>
+    public bool IsSensor
+    {
+      get { return m_isSensor; }
+      set
+      {
+        m_isSensor = value;
+        if (NativeGeometry != null)
+          NativeGeometry.setSensor(m_isSensor);
+      }
+    }
+
+  
+
     /// <summary>
     /// Shape material instance paired with property Material.
     /// </summary>
