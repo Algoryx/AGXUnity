@@ -238,6 +238,9 @@ namespace AGXUnity
       Radius                  = System.Convert.ToSingle( native.getRadius() );
       ResolutionPerUnitLength = System.Convert.ToSingle( native.getResolutionPerUnitLength() );
       ScaleConstant           = System.Convert.ToSingle( native.getParameterController().getScaleConstant() );
+
+      // Is the wire enabled/active?
+      gameObject.SetActive(native.isEnabled());
     }
 
     protected override bool Initialize()
