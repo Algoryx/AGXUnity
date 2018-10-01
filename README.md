@@ -93,8 +93,8 @@ In version 2.22.1.0 and later, AGX Dynamics comes with a python script that will
 agx.lic
 agxCable.dll
 agxCore.dll
-agxDotNetRuntime.dll
 agxDotNet.dll
+agxDotNetRuntime.dll
 agxHydraulics.dll
 agxLua.dll
 agxMex.dll
@@ -109,7 +109,8 @@ colamd.dll
 glew.dll
 libpng.dll
 lua.dll
-python35.dll
+mscorlib.dll
+msvcp140.dll
 ois.dll
 osg141-osg.dll
 osg141-osgDB.dll
@@ -120,8 +121,12 @@ osg141-osgText.dll
 osg141-osgUtil.dll
 osg141-osgViewer.dll
 ot20-OpenThreads.dll
+python35.dll
+vcruntime140.dll
 websockets.dll
 zlib.dll
+
+And also, the directory: Components (from bin\x64\plugins)
 ```
 
 Directory: **plugins**

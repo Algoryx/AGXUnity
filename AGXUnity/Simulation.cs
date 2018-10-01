@@ -19,6 +19,23 @@ namespace AGXUnity
     private agxSDK.Simulation m_simulation = null;
     private agx.DynamicsSystem m_system = null;
     private agxCollide.Space m_space = null;
+  
+    /// <summary>
+    /// Control automatic stepping of simulation.
+    /// Also see the EnableAutomaticStepping property.
+    /// </summary>
+    [SerializeField]
+    private bool m_enableAutomaticStepping = true;
+
+    /// <summary>
+    /// Set to true to enable automatic stepping during FixedUpdate.
+    /// If set to false, the DoStep() method will have to be manually called.
+    /// </summary>
+    public bool EnableAutomaticStepping
+    {
+      get { return m_enableAutomaticStepping; }
+      set { m_enableAutomaticStepping = value; }
+    }
     
     public static float DefaultTimeStep { get { return Time.fixedDeltaTime; } }
 
@@ -255,7 +272,13 @@ namespace AGXUnity
       return base.Initialize();
     }
 
-    protected void FixedUpdate()
+    private void FixedUpdate()
+    {
+      if (m_enableAutomaticStepping)
+        DoStep();
+    }		
+
+    public void DoStep()
     {
       if ( !NativeHandler.Instance.HasValidLicense )
         return;

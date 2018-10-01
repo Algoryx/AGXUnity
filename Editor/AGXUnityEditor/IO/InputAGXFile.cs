@@ -204,10 +204,12 @@ namespace AGXUnityEditor.IO
           node.GameObject        = GetOrCreateGameObject( node );
           node.GameObject.name   = FindName( nativeRb.getName(), node.Type.ToString() );
 
+
           node.GameObject.transform.position = nativeRb.getPosition().ToHandedVector3();
           node.GameObject.transform.rotation = nativeRb.getRotation().ToHandedQuaternion();
 
           node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );
+          
 
           break;
         case Node.NodeType.Geometry:
@@ -429,6 +431,12 @@ namespace AGXUnityEditor.IO
       }
 
       var shape = node.GameObject.GetComponent<AGXUnity.Collide.Shape>();
+
+      // Is the geometry enabled?
+      shape.gameObject.SetActive(nativeGeometry.isEnabled());
+
+    
+
       if ( nativeGeometry.getMaterial() != null ) {
         var shapeMaterial = m_tree.GetNode( nativeGeometry.getMaterial().getUuid() ).Asset as ShapeMaterial;
         if ( shapeMaterial == null )
@@ -580,6 +588,12 @@ namespace AGXUnityEditor.IO
       }
 
       Constraint constraint = node.GameObject.GetOrCreateComponent<Constraint>();
+
+      // Is the constraint enabled/active? 
+      // Somewhat strange though: Why is not only the Constraint component disabled?
+      // For RigidBody component, only that component is disabled, but the below code disables the whole constraint GameObject.
+      // Works for now
+      constraint.gameObject.SetActive(nativeConstraint.isEnabled());
 
       constraint.SetType( constraintType, true );
 
