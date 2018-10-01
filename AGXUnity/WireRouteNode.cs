@@ -30,7 +30,7 @@ namespace AGXUnity
       return node;
     }
 
-    public agxWire.Node Native { get; private set; }
+    public agxWire.WireNode Native { get; private set; }
 
     /// <summary>
     /// Type of this node. Paired with property Type.
@@ -107,16 +107,16 @@ namespace AGXUnity
 
       agx.RigidBody nativeRb = rb != null ? rb.Native : null;
       if ( Type == Wire.NodeType.BodyFixedNode )
-        Native = new agxWire.BodyFixedNode( nativeRb, point );
+        Native = new agxWire.WireBodyFixedNode( nativeRb, point );
       // Create a free node if type is contact and shape == null.
       else if ( Type == Wire.NodeType.FreeNode || ( Type == Wire.NodeType.ContactNode && shape == null ) )
-        Native = new agxWire.FreeNode( point );
+        Native = new agxWire.WireFreeNode( point );
       else if ( Type == Wire.NodeType.ConnectingNode )
-        Native = new agxWire.ConnectingNode( nativeRb, point, double.PositiveInfinity );
+        Native = new agxWire.WireConnectingNode( nativeRb, point, double.PositiveInfinity );
       else if ( Type == Wire.NodeType.EyeNode )
-        Native = new agxWire.EyeNode( nativeRb, point );
+        Native = new agxWire.WireEyeNode( nativeRb, point );
       else if ( Type == Wire.NodeType.ContactNode )
-        Native = new agxWire.ContactNode( shape.NativeGeometry, CalculateLocalPosition( shape.gameObject ).ToHandedVec3() );
+        Native = new agxWire.WireContactNode( shape.NativeGeometry, CalculateLocalPosition( shape.gameObject ).ToHandedVec3() );
       else if ( Type == Wire.NodeType.WinchNode ) {
         if ( m_winch == null )
           throw new AGXUnity.Exception( "No reference to a wire winch component in the winch node." );

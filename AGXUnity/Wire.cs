@@ -30,17 +30,17 @@ namespace AGXUnity
     /// </summary>
     /// <param name="nativeType">Native node type.</param>
     /// <returns>NodeType if supported - otherwise NodeType.Unknwon.</returns>
-    public static NodeType Convert( agxWire.Node.Type nativeType )
+    public static NodeType Convert( agxWire.WireNode.Type nativeType )
     {
-      return nativeType == agxWire.Node.Type.BODY_FIXED ?
+      return nativeType == agxWire.WireNode.Type.BODY_FIXED ?
                NodeType.BodyFixedNode :
-             nativeType == agxWire.Node.Type.FREE ?
+             nativeType == agxWire.WireNode.Type.FREE ?
                NodeType.FreeNode :
-             nativeType == agxWire.Node.Type.CONNECTING ?
+             nativeType == agxWire.WireNode.Type.CONNECTING ?
                NodeType.ConnectingNode :
-             nativeType == agxWire.Node.Type.EYE ?
+             nativeType == agxWire.WireNode.Type.EYE ?
                NodeType.EyeNode :
-             nativeType == agxWire.Node.Type.CONTACT || nativeType == agxWire.Node.Type.SHAPE_CONTACT ?
+             nativeType == agxWire.WireNode.Type.CONTACT || nativeType == agxWire.WireNode.Type.SHAPE_CONTACT ?
                NodeType.ContactNode :
                NodeType.Unknown;
     }
@@ -50,19 +50,19 @@ namespace AGXUnity
     /// </summary>
     /// <param name="nodeType">Node type.</param>
     /// <returns>Native node type given NodeType.</returns>
-    public static agxWire.Node.Type Convert( NodeType nodeType )
+    public static agxWire.WireNode.Type Convert( NodeType nodeType )
     {
       return nodeType == NodeType.BodyFixedNode ?
-               agxWire.Node.Type.BODY_FIXED :
+               agxWire.WireNode.Type.BODY_FIXED :
              nodeType == NodeType.FreeNode ?
-               agxWire.Node.Type.FREE :
+               agxWire.WireNode.Type.FREE :
              nodeType == NodeType.ConnectingNode ?
-               agxWire.Node.Type.CONNECTING :
+               agxWire.WireNode.Type.CONNECTING :
              nodeType == NodeType.EyeNode ?
-               agxWire.Node.Type.EYE :
+               agxWire.WireNode.Type.EYE :
              nodeType == NodeType.ContactNode ?
-               agxWire.Node.Type.SHAPE_CONTACT :
-               agxWire.Node.Type.NOT_DEFINED;
+               agxWire.WireNode.Type.SHAPE_CONTACT :
+               agxWire.WireNode.Type.NOT_DEFINED;
     }
 
     /// <summary>
@@ -260,10 +260,10 @@ namespace AGXUnity
         Material = m_material != null ? m_material.GetInitialized<ShapeMaterial>() : null;
         int nodeCounter = 0;
         foreach ( WireRouteNode routeNode in Route ) {
-          agxWire.Node node = routeNode.GetInitialized<WireRouteNode>().Native;
+          agxWire.WireNode node = routeNode.GetInitialized<WireRouteNode>().Native;
 
           bool success = true;
-          if ( node.getType() == agxWire.Node.Type.CONNECTING ) {
+          if ( node.getType() == agxWire.WireNode.Type.CONNECTING ) {
             // This is the first node, CM-node goes first.
             if ( nodeCounter == 0 ) {
               success = success && Native.add( node.getAsConnecting().getCmNode() );

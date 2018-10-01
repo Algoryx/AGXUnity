@@ -279,6 +279,8 @@ namespace AGXUnity
     [SerializeField]
     private bool m_drawGizmosEnable = true;
 
+    private bool m_isAnimated = false;
+
     /// <summary>
     /// Enable/disable gizmos drawing of this constraint. Enabled by default.
     /// </summary>
@@ -745,18 +747,31 @@ namespace AGXUnity
         bool valid = added && Native.getValid();
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += OnPreStepForwardUpdate;
 
+        // It's not possible to check which properties an animator
+        // is controlling, for now we update all properties in the
+        // controllers if we have an animator.
+        m_isAnimated = GetComponent<Animator>() != null;
+
         return valid;
       }
       catch ( System.Exception e ) {
         Debug.LogException( e, gameObject );
         return false;
       }
+
+
     }
 
     protected override void OnEnable()
     {
       if ( Native != null && !Native.getEnable() )
         Native.setEnable( true );
+
+
+      // It's not possible to check which properties an animator
+      // is controlling, for now we update all properties in the
+      // controllers if we have an animator.
+      m_isAnimated = GetComponent<Animator>() != null;
     }
 
     protected override void OnDisable()
@@ -784,12 +799,8 @@ namespace AGXUnity
 
       SynchronizeNativeFramesWithAttachmentPair();
 
-      // It's not possible to check which properties an animator
-      // is controlling, for now we update all properties in the
-      // controllers if we have an animator. This could probably
-      // be a flag (IsAnimated).
-      var isAnimated = GetComponent<Animator>() != null;
-      if ( isAnimated ) {
+
+      if (m_isAnimated) {
         var controllers = GetElementaryConstraintControllers();
         for ( int i = 0; i < controllers.Length; ++i )
           PropertySynchronizer.Synchronize( controllers[ i ] );

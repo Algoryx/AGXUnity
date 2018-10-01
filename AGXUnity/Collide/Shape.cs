@@ -54,6 +54,29 @@ namespace AGXUnity.Collide
       }
     }
 
+
+    /// <summary>
+    /// Is Shape a sensor?
+    /// </summary>
+    [SerializeField]
+    private bool m_isSensor = false;
+
+    /// <summary>
+    /// Specify if this shape is a sensor or not
+    /// </summary>
+    public bool IsSensor
+    {
+      get { return m_isSensor; }
+      set
+      {
+        m_isSensor = value;
+        if (NativeGeometry != null)
+          NativeGeometry.setSensor(m_isSensor);
+      }
+    }
+
+  
+
     /// <summary>
     /// Shape material instance paired with property Material.
     /// </summary>
@@ -160,7 +183,7 @@ namespace AGXUnity.Collide
     /// <returns>Relative transform geometry -> shape.</returns>
     public virtual agx.AffineMatrix4x4 GetNativeGeometryOffset()
     {
-      return new agx.AffineMatrix4x4();
+      return agx.AffineMatrix4x4.identity();
     }
 
     /// <summary>
@@ -172,12 +195,12 @@ namespace AGXUnity.Collide
       // If we're on the same level as the rigid body we have by
       // definition no offset to the body.
       if ( rb == null || rb.gameObject == gameObject )
-        return new agx.AffineMatrix4x4();
+        return agx.AffineMatrix4x4.identity();
 
       // Using the world position of the shape - which includes scaling etc.
       agx.AffineMatrix4x4 shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(), transform.position.ToHandedVec3() );
       agx.AffineMatrix4x4 rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(), rb.transform.position.ToHandedVec3() );
-      return shapeInWorld.Multiply( rbInWorld.inverse() );
+      return shapeInWorld * rbInWorld.inverse();
     }
 
     /// <summary>
@@ -344,8 +367,17 @@ namespace AGXUnity.Collide
     {
       SyncUnityTransform();
 
+      // If DebugRenderManager is disabled, we should NOT try to update anything.
+      // the m_geometry.getRigidBody will allocate memory for a RigidBodyInstance, so we
+      // want to avoid that.
+      bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
+      bool enabled = false;
+
+      if (isInstanced)
+        enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
+
       // If we have a body the debug rendering synchronization is made from that body.
-      if ( m_geometry != null && m_geometry.getRigidBody() == null )
+      if (enabled &&  m_geometry != null && m_geometry.getRigidBody() == null )
         Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
 

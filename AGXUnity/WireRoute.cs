@@ -140,7 +140,7 @@ namespace AGXUnity
     /// <param name="nativeNode">Native node instance.</param>
     /// <param name="parent">Parent game object as in nativeNode.getRigidBody().</param>
     /// <returns>Wire route node if added, otherwise null.</returns>
-    public WireRouteNode Add( agxWire.Node nativeNode, GameObject parent )
+    public WireRouteNode Add( agxWire.WireNode nativeNode, GameObject parent )
     {
       if ( nativeNode == null )
         return null;

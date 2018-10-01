@@ -17,7 +17,9 @@ namespace AGXUnity
     /// Native instance.
     /// </summary>
     private agxSDK.Simulation m_simulation = null;
-	
+    private agx.DynamicsSystem m_system = null;
+    private agxCollide.Space m_space = null;
+  
     /// <summary>
     /// Control automatic stepping of simulation.
     /// Also see the EnableAutomaticStepping property.
@@ -63,6 +65,91 @@ namespace AGXUnity
     [SerializeField]
     private float m_timeStep = 1.0f / 50.0f;
 
+
+    /// <summary>
+    /// Specifies whether the warmstarting algorithm should be used for warm starting of contacts
+    /// using the direct solver
+    /// </summary>
+    [SerializeField]
+    private bool m_warmStartingDirectContacts = false;
+
+
+
+    /// <summary>
+    /// Specifies whether the warmstarting algorithm should be used for warm starting of contacts
+    /// using the direct solver
+    /// </summary>
+    public bool WarmStartingDirectContacts
+    {
+      get { return m_warmStartingDirectContacts; }
+      set
+      {
+        m_warmStartingDirectContacts = value;
+        if (m_system != null)
+          m_system.setEnableContactWarmstarting(m_warmStartingDirectContacts);
+      }
+    }
+
+    /// <summary>
+    /// Specifies number of iterations for resting iterations for the iterative solver
+    /// default is -1 indicating it will be initialized from the default in the Dynamics Engine
+    /// </summary>
+    [SerializeField]
+    private int m_numRestingIterations = -1;
+
+    /// <summary>
+    /// Get or set the number of iterations for resting contacts
+    /// </summary>
+    public int NumRestingIterations
+    {
+      get { return m_numRestingIterations; }
+      set
+      {
+        // A value below zero will indicate use default
+        m_numRestingIterations = value;
+        int numIterations = m_numRestingIterations;
+        if (m_numRestingIterations < 0)
+          numIterations = m_defaultNumRestingIterations;
+
+        if (m_simulation != null)
+          m_simulation.getSolver().setNumRestingIterations((ulong)numIterations);
+      }
+    }
+
+    /// <summary>
+    /// Specifies number of iterations for dry friction for the iterative solver
+    /// default is -1 indicating it will be initialized from the default in the Dynamics Engine
+    /// </summary>
+    [SerializeField]
+    private int m_numDryFrictionIterations = -1;
+
+    [NonSerialized]
+    private int m_defaultNumDryFrictionIterations = 0;
+
+    [NonSerialized]
+    private int m_defaultNumRestingIterations = 0;
+
+
+    /// <summary>
+    /// Get or set the number of iterations for resting contacts
+    /// </summary>
+    public int NumDryFrictionIterations
+    {
+      get { return m_numDryFrictionIterations; }
+      set
+      {
+        m_numDryFrictionIterations = value;
+
+        // A value below zero will indicate use default
+        int numIterations = m_numDryFrictionIterations;
+        if (m_numDryFrictionIterations < 0)
+          numIterations = m_defaultNumDryFrictionIterations;
+
+        if (m_simulation != null)
+          m_simulation.getSolver().setNumDryFrictionIterations((ulong)numIterations);
+      }
+    }
+
     /// <summary>
     /// Get or set time step size. Note that the time step has to
     /// match Unity update frequency.
@@ -100,6 +187,22 @@ namespace AGXUnity
           m_statisticsWindowData.Dispose();
           m_statisticsWindowData = null;
         }
+      }
+    }
+
+    [SerializeField]
+    bool m_memorySnapEnabled = false;
+
+
+    /// <summary>
+    /// Enable/disable statistics window showing timing and simulation data.
+    /// </summary>
+    public bool MemorySnapEnabled
+    {
+      get { return m_memorySnapEnabled; }
+      set
+      {
+        m_memorySnapEnabled = value;        
       }
     }
 
@@ -195,17 +298,20 @@ namespace AGXUnity
         if ( DisplayStatistics )
           timer = new agx.Timer( true );
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
 
         if ( StepCallbacks.PreStepForward != null )
           StepCallbacks.PreStepForward.Invoke();
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
         if ( StepCallbacks.PreSynchronizeTransforms != null )
           StepCallbacks.PreSynchronizeTransforms.Invoke();
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
 
         if ( timer != null )
           timer.stop();
@@ -215,17 +321,20 @@ namespace AGXUnity
         if ( timer != null )
           timer.start();
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
         if ( StepCallbacks.PostSynchronizeTransforms != null )
           StepCallbacks.PostSynchronizeTransforms.Invoke();
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
 
         if ( StepCallbacks.PostStepForward != null )
           StepCallbacks.PostStepForward.Invoke();
 
-        MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
+        if (m_memorySnapEnabled)
+          MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
 
         Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
 
@@ -367,19 +476,19 @@ namespace AGXUnity
       var memoryColor   = Color.Lerp( Color.white, Color.red, 0.2f );
 
       var labelStyle = m_statisticsWindowData.LabelStyle;
+      var stats = agx.Statistics.instance();
+      var simTime            = stats.getTimingInfo( "Simulation", "Step forward time" );
+      var spaceTime          = stats.getTimingInfo( "Simulation", "Collision-detection time" );
+      var dynamicsSystemTime = stats.getTimingInfo( "Simulation", "Dynamics-system time" );
+      var preCollideTime     = stats.getTimingInfo( "Simulation", "Pre-collide event time" );
+      var preTime            = stats.getTimingInfo( "Simulation", "Pre-step event time" );
+      var postTime           = stats.getTimingInfo( "Simulation", "Post-step event time" );
+      var lastTime           = stats.getTimingInfo( "Simulation", "Last-step event time" );
 
-      var simTime            = agx.Statistics.instance().getTimingInfo( "Simulation", "Step forward time" );
-      var spaceTime          = agx.Statistics.instance().getTimingInfo( "Simulation", "Collision-detection time" );
-      var dynamicsSystemTime = agx.Statistics.instance().getTimingInfo( "Simulation", "Dynamics-system time" );
-      var preCollideTime     = agx.Statistics.instance().getTimingInfo( "Simulation", "Pre-collide event time" );
-      var preTime            = agx.Statistics.instance().getTimingInfo( "Simulation", "Pre-step event time" );
-      var postTime           = agx.Statistics.instance().getTimingInfo( "Simulation", "Post-step event time" );
-      var lastTime           = agx.Statistics.instance().getTimingInfo( "Simulation", "Last-step event time" );
-
-      var numBodies      = m_simulation.getDynamicsSystem().getRigidBodies().Count;
-      var numShapes      = m_simulation.getSpace().getGeometries().Count;
-      var numConstraints = m_simulation.getDynamicsSystem().getConstraints().Count +
-                           m_simulation.getSpace().getGeometryContacts().Count;
+      var numBodies      = m_system.getRigidBodies().Count;
+      var numShapes      = m_space.getGeometries().Count;
+      var numConstraints = m_system.getConstraints().Count +
+                           m_space.getGeometryContacts().Count;
 
       GUILayout.Window( m_statisticsWindowData.Id,
                         m_statisticsWindowData.Rect,
@@ -432,6 +541,14 @@ namespace AGXUnity
         NativeHandler.Instance.MakeMainThread();
 
         m_simulation = new agxSDK.Simulation();
+
+        m_defaultNumDryFrictionIterations = (int)m_simulation.getSolver().getNumDryFrictionIterations();
+        m_defaultNumRestingIterations = (int)m_simulation.getSolver().getNumRestingIterations();
+
+        m_space = m_simulation.getSpace();
+        m_system = m_simulation.getDynamicsSystem();
+
+        m_system.setEnableContactWarmstarting(m_warmStartingDirectContacts);
       }
 
       return m_simulation;

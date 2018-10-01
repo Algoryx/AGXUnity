@@ -20,6 +20,9 @@ namespace AGXUnity.Rendering
 
     [SerializeField]
     private Material m_material = null;
+
+    private List<Vector3> m_positions;
+
     public Material Material
     {
       get { return m_material ?? m_segmentSpawner.DefaultMaterial; }
@@ -107,36 +110,50 @@ namespace AGXUnity.Rendering
         return;
       }
 
-      List<Vector3> positions      = new List<Vector3>();
-      positions.Capacity           = 256;
-      agxWire.RenderIterator it    = wire.Native.getRenderBeginIterator();
-      agxWire.RenderIterator endIt = wire.Native.getRenderEndIterator();
-      while ( !it.EqualWith( endIt ) ) {
-        positions.Add( it.get().getWorldPosition().ToHandedVector3() );
-        it.inc();
+      if (m_positions == null)
+      {
+        m_positions = new List<Vector3>();
+        m_positions.Capacity = 256;
       }
 
+      //UnityEngine.Profiling.Profiler.BeginSample("CollectingWirePoints");
+      m_positions.Clear();
+
+      agxWire.RenderIterator it = wire.Native.getRenderBeginIterator();
+      agxWire.RenderIterator endIt = wire.Native.getRenderEndIterator();
+      while (!it.EqualWith(endIt))
+      {
+        m_positions.Add(it.getWorldPosition().ToHandedVector3());
+        it.inc();
+      }
+      //UnityEngine.Profiling.Profiler.EndSample();
       m_segmentSpawner.Begin();
 
-      try {
-        for ( int i = 0; i < positions.Count - 1; ++i ) {
-          Vector3 curr       = positions[ i ];
-          Vector3 next       = positions[ i + 1 ];
+      try
+      {
+        //UnityEngine.Profiling.Profiler.BeginSample("GeneratingSegments");
+        for (int i = 0; i < m_positions.Count - 1; ++i)
+        {
+          Vector3 curr = m_positions[i];
+          Vector3 next = m_positions[i + 1];
           Vector3 currToNext = next - curr;
-          float distance     = currToNext.magnitude;
-          currToNext        /= distance;
-          int numSegments    = Convert.ToInt32( distance * NumberOfSegmentsPerMeter + 0.5f );
-          float dl           = distance / numSegments;
-          for ( int j = 0; j < numSegments; ++j ) {
+          float distance = currToNext.magnitude;
+          currToNext /= distance;
+          int numSegments = Convert.ToInt32(distance * NumberOfSegmentsPerMeter + 0.5f);
+          float dl = distance / numSegments;
+          for (int j = 0; j < numSegments; ++j)
+          {
             next = curr + dl * currToNext;
 
-            m_segmentSpawner.CreateSegment( curr, next, wire.Radius );
+            m_segmentSpawner.CreateSegment(curr, next, wire.Radius);
             curr = next;
           }
         }
+        //UnityEngine.Profiling.Profiler.EndSample();
       }
-      catch ( System.Exception e ) {
-        Debug.LogException( e );
+      catch (System.Exception e)
+      {
+        Debug.LogException(e);
       }
 
       m_segmentSpawner.End();

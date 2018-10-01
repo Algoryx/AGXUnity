@@ -341,7 +341,14 @@ namespace AGXUnity
       SyncUnityTransform();
       SyncProperties();
 
-      Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
+      bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
+      bool enabled = false;
+
+      if (isInstanced)
+        enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
+
+      if (enabled)
+        Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
     #endregion
 
