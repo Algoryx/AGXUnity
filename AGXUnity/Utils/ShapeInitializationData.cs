@@ -78,7 +78,7 @@ namespace AGXUnity.Utils
     public void SetPositionRotation( GameObject gameObject, Vector3 axis )
     {
       gameObject.transform.position = WorldCenter;
-      gameObject.transform.rotation = Rotation * Quaternion.FromToRotation( Vector3.up, axis ).Normalize();
+      gameObject.transform.rotation = Rotation * Quaternion.FromToRotation( Vector3.up, axis ).normalized;
     }
 
     public AxisData FindAxisData( Axes axis, bool expandRadius )
