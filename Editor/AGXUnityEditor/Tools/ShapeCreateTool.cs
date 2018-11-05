@@ -290,7 +290,11 @@ namespace AGXUnityEditor.Tools
       else {
         vp.Node.transform.localScale = Vector3.one;
         vp.Node.transform.position   = shapeInitData.WorldCenter;
+#if UNITY_2018_1_OR_NEWER
         vp.Node.transform.rotation   = shapeInitData.Rotation * Quaternion.FromToRotation( Vector3.up, axisData.Direction ).normalized;
+#else
+        vp.Node.transform.rotation   = shapeInitData.Rotation * Quaternion.FromToRotation( Vector3.up, axisData.Direction ).Normalize();
+#endif
       }
 
       if ( vp is Utils.VisualPrimitiveBox )

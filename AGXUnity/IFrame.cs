@@ -204,7 +204,11 @@ namespace AGXUnity
       if ( gameObject == null )
         return worldRotation;
 
+#if UNITY_2018_1_OR_NEWER
       return ( Quaternion.Inverse( gameObject.transform.rotation ) * worldRotation ).normalized;
+#else
+      return ( Quaternion.Inverse( gameObject.transform.rotation ) * worldRotation ).Normalize();
+#endif
     }
 
     public static Quaternion CalculateWorldRotation( GameObject gameObject, Quaternion localRotation )
@@ -212,7 +216,11 @@ namespace AGXUnity
       if ( gameObject == null )
         return localRotation;
 
+#if UNITY_2018_1_OR_NEWER
       return ( gameObject.transform.rotation * localRotation ).normalized;
+#else
+      return ( gameObject.transform.rotation * localRotation ).Normalize();
+#endif
     }
   }
 }
