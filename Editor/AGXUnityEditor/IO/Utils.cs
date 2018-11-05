@@ -7,7 +7,7 @@ using UnityEditor;
 
 namespace AGXUnityEditor.IO
 {
-  public static class Utils
+  public static partial class Utils
   {
     private const string m_refDirectory = "AGXUnity";
     private const string m_refScript = "RigidBody.cs";

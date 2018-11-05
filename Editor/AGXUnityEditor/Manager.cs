@@ -60,7 +60,11 @@ namespace AGXUnityEditor
         return;
 
       SceneView.onSceneGUIDelegate += OnSceneView;
+#if UNITY_2018_1_OR_NEWER
+      EditorApplication.hierarchyChanged += OnHierarchyWindowChanged;
+#else
       EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
+#endif
       Selection.selectionChanged += OnSelectionChanged;
 
       while ( VisualsParent != null && VisualsParent.transform.childCount > 0 )
@@ -410,6 +414,26 @@ namespace AGXUnityEditor
             }
           }
         }
+
+        {
+          var simulation = UnityEngine.Object.FindObjectOfType<AGXUnity.Simulation>();
+          if ( simulation != null ) {
+            using ( new TimerBlock( "Parse scene" ) ) {
+              var guid = AssetDatabase.AssetPathToGUID( IO.Utils.AGXUnitySourceDirectory + "/Simulation.cs" );
+              var objects = IO.Utils.FindScriptInSceneFile( scene.path, guid, false );
+              if ( objects.Length == 1 && objects[ 0 ].Fields.ContainsKey( "m_warmStartingDirectContacts" ) ) {
+                var warmStartingContacts = false;
+                var numRestingIterations = -1;
+                var numDryFrictionIterations = -1;
+                var success = objects[ 0 ].Fields[ "m_warmStartingDirectContacts" ].TryGet( out warmStartingContacts );
+                success = success && objects[ 0 ].Fields[ "m_numRestingIterations" ].TryGet( out numRestingIterations );
+                success = success && objects[ 0 ].Fields[ "m_numDryFrictionIterations" ].TryGet( out numDryFrictionIterations );
+                if ( success )
+                  Debug.Log( warmStartingContacts + ", " + numRestingIterations + ", " + numDryFrictionIterations );
+              }
+            }
+          }
+        }
       }
       else if ( Selection.activeGameObject != null ) {
         if ( Selection.activeGameObject.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null )
@@ -601,7 +625,11 @@ namespace AGXUnityEditor
     {
       // Collecting disabled collision groups for the created prefab.
       if ( AGXUnity.CollisionGroupsManager.HasInstance ) {
+#if UNITY_2018_1_OR_NEWER
+        var prefab = PrefabUtility.GetCorrespondingObjectFromSource( go ) as GameObject;
+#else
         var prefab = PrefabUtility.GetPrefabParent( go ) as GameObject;
+#endif
         if ( prefab != null ) {
           var allGroups = prefab.GetComponentsInChildren<AGXUnity.CollisionGroups>();
           var tags = ( from objectGroups
