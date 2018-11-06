@@ -182,7 +182,10 @@ namespace AGXUnity
         m_displayStatistics = value;
 
         if ( m_displayStatistics && m_statisticsWindowData == null )
-          m_statisticsWindowData = new StatisticsWindowData( new Rect( new Vector2( 10, 10 ), new Vector2( 275, 320 ) ) );
+          m_statisticsWindowData = new StatisticsWindowData( new Rect( new Vector2( 10, 10 ),
+                                                                       new Vector2( 275, 236 ) ),
+                                                             new Rect( new Vector2( 10, 10 ),
+                                                                       new Vector2( 275, 320 ) ) );
         else if ( !m_displayStatistics && m_statisticsWindowData != null ) {
           m_statisticsWindowData.Dispose();
           m_statisticsWindowData = null;
@@ -192,7 +195,6 @@ namespace AGXUnity
 
     [SerializeField]
     bool m_memorySnapEnabled = false;
-
 
     /// <summary>
     /// Enable/disable statistics window showing timing and simulation data.
@@ -298,19 +300,19 @@ namespace AGXUnity
         if ( DisplayStatistics )
           timer = new agx.Timer( true );
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
 
         if ( StepCallbacks.PreStepForward != null )
           StepCallbacks.PreStepForward.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
         if ( StepCallbacks.PreSynchronizeTransforms != null )
           StepCallbacks.PreSynchronizeTransforms.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
 
         if ( timer != null )
@@ -321,19 +323,19 @@ namespace AGXUnity
         if ( timer != null )
           timer.start();
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
         if ( StepCallbacks.PostSynchronizeTransforms != null )
           StepCallbacks.PostSynchronizeTransforms.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
 
         if ( StepCallbacks.PostStepForward != null )
           StepCallbacks.PostStepForward.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( m_memorySnapEnabled )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
 
         Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
@@ -401,15 +403,17 @@ namespace AGXUnity
     {
       public int Id { get; private set; }
       public Rect Rect { get; set; }
+      public Rect RectMemoryEnabled { get; set; }
       public Font Font { get; private set; }
       public GUIStyle LabelStyle { get; set; }
       public float ManagedStepForward { get; set; }
 
-      public StatisticsWindowData( Rect rect )
+      public StatisticsWindowData( Rect rect, Rect rectMemoryEnabled )
       {
         agx.Statistics.instance().setEnable( true );
         Id = GUIUtility.GetControlID( FocusType.Passive );
         Rect = rect;
+        RectMemoryEnabled = rectMemoryEnabled;
 
         MemoryAllocations.Instance = new MemoryAllocations();
         ManagedStepForward = 0.0f;
@@ -491,7 +495,7 @@ namespace AGXUnity
                            m_space.getGeometryContacts().Count;
 
       GUILayout.Window( m_statisticsWindowData.Id,
-                        m_statisticsWindowData.Rect,
+                        MemorySnapEnabled ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Total time:            ", simColor ) + simTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms", 14, true ), labelStyle );
@@ -509,6 +513,8 @@ namespace AGXUnity
                           GUILayout.Label( "" );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "StepForward (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
+                          if ( !MemorySnapEnabled )
+                            return;
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Allocations (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre step callbacks:    ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreStepForward ).PadLeft( 6, ' ' ) ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre synchronize:       ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreSynchronizeTransforms ).PadLeft( 6, ' ' ) ), labelStyle );
