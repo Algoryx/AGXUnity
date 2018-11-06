@@ -49,6 +49,11 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
     }
 
+    [MenuItem( "Assets/AGXUnity/Solver Settings" )]
+    public static UnityEngine.Object CrateSolverSettings()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<SolverSettings>( "solver settings" );
+    }
 
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
     public static bool IsAGXFileSelected()

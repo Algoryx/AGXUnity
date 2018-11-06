@@ -415,21 +415,55 @@ namespace AGXUnityEditor
           }
         }
 
-        {
+        if ( !EditorApplication.isPlaying ) {
           var simulation = UnityEngine.Object.FindObjectOfType<AGXUnity.Simulation>();
-          if ( simulation != null ) {
-            using ( new TimerBlock( "Parse scene" ) ) {
-              var guid = AssetDatabase.AssetPathToGUID( IO.Utils.AGXUnitySourceDirectory + "/Simulation.cs" );
-              var objects = IO.Utils.FindScriptInSceneFile( scene.path, guid, false );
-              if ( objects.Length == 1 && objects[ 0 ].Fields.ContainsKey( "m_warmStartingDirectContacts" ) ) {
-                var warmStartingContacts = false;
-                var numRestingIterations = -1;
-                var numDryFrictionIterations = -1;
-                var success = objects[ 0 ].Fields[ "m_warmStartingDirectContacts" ].TryGet( out warmStartingContacts );
-                success = success && objects[ 0 ].Fields[ "m_numRestingIterations" ].TryGet( out numRestingIterations );
-                success = success && objects[ 0 ].Fields[ "m_numDryFrictionIterations" ].TryGet( out numDryFrictionIterations );
-                if ( success )
-                  Debug.Log( warmStartingContacts + ", " + numRestingIterations + ", " + numDryFrictionIterations );
+          if ( simulation != null && simulation.SolverSettings == null ) {
+            var guid = AssetDatabase.AssetPathToGUID( IO.Utils.AGXUnitySourceDirectory + "/Simulation.cs" );
+            var objects = IO.Utils.FindScriptInSceneFile( scene.path, guid, false );
+            if ( objects.Length == 1 && objects[ 0 ].Fields.ContainsKey( "m_warmStartingDirectContacts" ) ) {
+              var warmStartingContacts = false;
+              var numRestingIterations = -1;
+              var numDryFrictionIterations = -1;
+              try {
+                if ( !objects[ 0 ].Fields[ "m_warmStartingDirectContacts" ].TryGet( out warmStartingContacts ) )
+                  warmStartingContacts = false;
+                if ( !objects[ 0 ].Fields[ "m_numRestingIterations" ].TryGet( out numRestingIterations ) )
+                  numRestingIterations = -1;
+                if ( !objects[ 0 ].Fields[ "m_numDryFrictionIterations" ].TryGet( out numDryFrictionIterations ) )
+                  numDryFrictionIterations = -1;
+              }
+              catch ( Exception ) {
+              }
+
+              if ( warmStartingContacts || numRestingIterations >= 0 || numDryFrictionIterations >= 0 ) {
+                var doIt = EditorUtility.DisplayDialog( "Solver settings asset",
+                                                        "Solver settings moved from Simulation to SolverSettings asset.\n\nCreate new solver settings asset with previous values?",
+                                                        "Yes",
+                                                        "No" );
+                if ( doIt ) {
+                  var path = EditorUtility.SaveFilePanel( "Create new Solver Settings",
+                                                          "Assets",
+                                                          "solver settings.asset",
+                                                          "asset" );
+                  if ( path != string.Empty ) {
+                    var info = new FileInfo( path );
+                    var relPath = IO.Utils.MakeRelative( path, Application.dataPath );
+                    var solverSettings = AGXUnity.ScriptAsset.Create<AGXUnity.SolverSettings>();
+                    solverSettings.name = info.Name;
+                    AssetDatabase.CreateAsset( solverSettings, relPath + ( info.Extension == ".asset" ? "" : ".asset" ) );
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+
+                    solverSettings.WarmStartDirectContacts = warmStartingContacts;
+                    if ( numRestingIterations >= 0 )
+                      solverSettings.RestingIterations = numRestingIterations;
+                    if ( numDryFrictionIterations >= 0 )
+                      solverSettings.DryFrictionIterations = numDryFrictionIterations;
+                    simulation.SolverSettings = solverSettings;
+
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
+                  }
+                }
               }
             }
           }
