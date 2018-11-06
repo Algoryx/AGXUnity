@@ -174,6 +174,7 @@ namespace AGXUnity
     /// <summary>
     /// Enable/disable statistics window showing timing and simulation data.
     /// </summary>
+    [HideInInspector]
     public bool DisplayStatistics
     {
       get { return m_displayStatistics; }
@@ -194,18 +195,23 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    bool m_memorySnapEnabled = false;
+    [UnityEngine.Serialization.FormerlySerializedAs( "m_memorySnapEnabled" )]
+    bool m_displayMemoryAllocations = false;
 
     /// <summary>
-    /// Enable/disable statistics window showing timing and simulation data.
+    /// Enable/disable track of memory allocations during DoStep. If enabled,
+    /// the collected data will be shown in the statistics window.
     /// </summary>
-    public bool MemorySnapEnabled
+    [HideInInspector]
+    public bool DisplayMemoryAllocations
     {
-      get { return m_memorySnapEnabled; }
-      set
-      {
-        m_memorySnapEnabled = value;        
-      }
+      get { return m_displayMemoryAllocations; }
+      set { m_displayMemoryAllocations = value; }
+    }
+
+    private bool TrackMemoryAllocations()
+    {
+      return DisplayMemoryAllocations && DisplayStatistics;
     }
 
     [SerializeField]
@@ -296,23 +302,24 @@ namespace AGXUnity
             Debug.Log( "Successfully wrote initial state to: " + SavePreFirstStepPath );
         }
 
+        var trackMemory = TrackMemoryAllocations();
         agx.Timer timer = null;
         if ( DisplayStatistics )
           timer = new agx.Timer( true );
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
 
         if ( StepCallbacks.PreStepForward != null )
           StepCallbacks.PreStepForward.Invoke();
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
         if ( StepCallbacks.PreSynchronizeTransforms != null )
           StepCallbacks.PreSynchronizeTransforms.Invoke();
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
 
         if ( timer != null )
@@ -323,19 +330,19 @@ namespace AGXUnity
         if ( timer != null )
           timer.start();
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
         if ( StepCallbacks.PostSynchronizeTransforms != null )
           StepCallbacks.PostSynchronizeTransforms.Invoke();
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
 
         if ( StepCallbacks.PostStepForward != null )
           StepCallbacks.PostStepForward.Invoke();
 
-        if ( m_memorySnapEnabled )
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
 
         Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
@@ -495,7 +502,7 @@ namespace AGXUnity
                            m_space.getGeometryContacts().Count;
 
       GUILayout.Window( m_statisticsWindowData.Id,
-                        MemorySnapEnabled ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
+                        DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Total time:            ", simColor ) + simTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms", 14, true ), labelStyle );
@@ -513,7 +520,7 @@ namespace AGXUnity
                           GUILayout.Label( "" );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "StepForward (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          if ( !MemorySnapEnabled )
+                          if ( !DisplayMemoryAllocations )
                             return;
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Allocations (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre step callbacks:    ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreStepForward ).PadLeft( 6, ' ' ) ), labelStyle );

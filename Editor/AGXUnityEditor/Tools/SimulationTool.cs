@@ -31,6 +31,15 @@ namespace AGXUnityEditor.Tools
     public override void OnPostTargetMembersGUI( GUISkin skin )
     {
       GUI.Separator();
+
+      Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics, skin.button, skin.label );
+      if ( Simulation.DisplayStatistics ) {
+        using ( new GUI.Indent( 12 ) )
+          Simulation.DisplayMemoryAllocations = GUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations, skin.button, skin.label );
+      }
+
+      GUI.Separator();
+
       using ( new GUILayout.HorizontalScope() ) {
         EditorGUI.BeginDisabledGroup( !Application.isPlaying );
         if ( GUILayout.Button( GUI.MakeLabel( "Save current step as (.agx)...",
@@ -53,6 +62,7 @@ namespace AGXUnityEditor.Tools
       }
 
       GUI.Separator();
+
       Simulation.SavePreFirstStep = GUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
                                                                 Simulation.SavePreFirstStep,
                                                                 skin.button,
