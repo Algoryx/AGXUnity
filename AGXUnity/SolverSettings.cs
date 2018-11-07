@@ -251,6 +251,24 @@ namespace AGXUnity
       SimulationInstance = simulation;
     }
 
+    public SolverSettings RestoreLocalDataFrom( agxSDK.Simulation simulation )
+    {
+      var solver = simulation.getSolver();
+      var config = solver.getNlMcpConfig();
+
+      NumberOfThreads         = System.Convert.ToInt32( agx.agxSWIG.getNumThreads() );
+      WarmStartDirectContacts = simulation.getDynamicsSystem().getUpdateTask().getSubtask( "MatchContactStates" ).isEnabled();
+      RestingIterations       = System.Convert.ToInt32( solver.getNumRestingIterations() );
+      DryFrictionIterations   = System.Convert.ToInt32( solver.getNumDryFrictionIterations() );
+      McpAlgorithm            = Convert( config.mcpAlgorithmType );
+      McpInnerIterations      = System.Convert.ToInt32( config.numMcpIterations );
+      McpInnerTolerance       = System.Convert.ToSingle( config.mcpTolerance );
+      McpOuterIterations      = System.Convert.ToInt32( config.numOuterIterations );
+      McpOuterTolerance       = System.Convert.ToSingle( config.outerTolerance );
+
+      return this;
+    }
+
     public override void Destroy()
     {
       SimulationInstance = null;
