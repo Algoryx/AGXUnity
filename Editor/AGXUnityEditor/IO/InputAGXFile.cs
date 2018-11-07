@@ -107,6 +107,10 @@ namespace AGXUnityEditor.IO
 
         fileData.DataDirectoryId = FileInfo.DataDirectoryId;
 
+        fileData.SolverSettings = ScriptAsset.Create<SolverSettings>().RestoreLocalDataFrom( Simulation );
+        fileData.SolverSettings.name = FindName( "SolverSettings_" + FileInfo.Name, "SolverSettings" );
+        fileData.SolverSettings = AddOrReplaceAsset( fileData.SolverSettings, AGXUnity.IO.AssetType.Unknown );
+
         foreach ( var root in m_tree.Roots ) {
           subProgress.Tick( root.Name == string.Empty ? root.Type.ToString() : root.Name );
           Generate( root );
@@ -239,7 +243,7 @@ namespace AGXUnityEditor.IO
           node.Asset         = ScriptAsset.Create<ShapeMaterial>().RestoreLocalDataFrom( nativeMaterial );
           node.Asset.name    = FindName( nativeMaterial.getName(), node.Type.ToString() );
 
-          node.Asset = AddOrReplaceAsset( node.Asset as ShapeMaterial, node, AGXUnity.IO.AssetType.ShapeMaterial );
+          node.Asset = AddOrReplaceAsset( node.Asset as ShapeMaterial, AGXUnity.IO.AssetType.ShapeMaterial );
 
           break;
         case Node.NodeType.ContactMaterial:
@@ -268,10 +272,10 @@ namespace AGXUnityEditor.IO
           if ( nativeFrictionModel != null ) {
             var frictionModelAsset        = ScriptAsset.Create<FrictionModel>().RestoreLocalDataFrom( nativeFrictionModel );
             frictionModelAsset.name       = "FrictionModel_" + contactMaterial.name;
-            contactMaterial.FrictionModel = AddOrReplaceAsset( frictionModelAsset, node, AGXUnity.IO.AssetType.FrictionModel );
+            contactMaterial.FrictionModel = AddOrReplaceAsset( frictionModelAsset,  AGXUnity.IO.AssetType.FrictionModel );
           }
 
-          node.Asset = contactMaterial = AddOrReplaceAsset( contactMaterial, node, AGXUnity.IO.AssetType.ContactMaterial );
+          node.Asset = contactMaterial = AddOrReplaceAsset( contactMaterial, AGXUnity.IO.AssetType.ContactMaterial );
 
           break;
         case Node.NodeType.Constraint:
@@ -339,7 +343,7 @@ namespace AGXUnityEditor.IO
       return node.GameObject;
     }
 
-    private T AddOrReplaceAsset<T>( T asset, Node node, AGXUnity.IO.AssetType type )
+    private T AddOrReplaceAsset<T>( T asset, AGXUnity.IO.AssetType type )
       where T : UnityEngine.Object
     {
       var existingAsset = AssetDatabase.LoadAssetAtPath<T>( FileInfo.GetAssetPath( asset ) );
@@ -394,7 +398,7 @@ namespace AGXUnityEditor.IO
           var subMeshes      = splitter.Meshes;
           for ( int i = 0; i < subMeshes.Length; ++i ) {
             subMeshes[ i ].name = "Mesh_" + mesh.name + ( i == 0 ? "" : "_Sub_" + i.ToString() );
-            mesh.AddSourceObject( AddOrReplaceAsset( subMeshes[ i ], node, AGXUnity.IO.AssetType.CollisionMesh ) );
+            mesh.AddSourceObject( AddOrReplaceAsset( subMeshes[ i ], AGXUnity.IO.AssetType.CollisionMesh ) );
           }
         }
         else {
@@ -420,7 +424,7 @@ namespace AGXUnityEditor.IO
           source.RecalculateNormals();
           source.RecalculateTangents();
 
-          source = AddOrReplaceAsset( source, node, AGXUnity.IO.AssetType.CollisionMesh );
+          source = AddOrReplaceAsset( source, AGXUnity.IO.AssetType.CollisionMesh );
 
           mesh.SetSourceObject( source );
         }
@@ -547,9 +551,9 @@ namespace AGXUnityEditor.IO
       if ( renderMaterial.getTransparency() > 0.0f )
         material.SetBlendMode( BlendMode.Transparent );
 
-      material = AddOrReplaceAsset( material, node, AGXUnity.IO.AssetType.Material );
+      material = AddOrReplaceAsset( material, AGXUnity.IO.AssetType.Material );
       foreach ( var mesh in meshes )
-        AddOrReplaceAsset( mesh, node, AGXUnity.IO.AssetType.RenderMesh );
+        AddOrReplaceAsset( mesh, AGXUnity.IO.AssetType.RenderMesh );
 
       var shapeVisual = ShapeVisual.Find( shape );
       if ( shapeVisual != null ) {
@@ -773,7 +777,7 @@ namespace AGXUnityEditor.IO
       var properties = CableProperties.Create<CableProperties>().RestoreLocalDataFrom( nativeCable.getCableProperties(),
                                                                                        nativeCable.getCablePlasticity() );
       properties.name  = cable.name + "_properties";
-      cable.Properties = properties = AddOrReplaceAsset( properties, node, AGXUnity.IO.AssetType.CableProperties );
+      cable.Properties = properties = AddOrReplaceAsset( properties, AGXUnity.IO.AssetType.CableProperties );
 
       for ( var it = nativeCable.getSegments().begin(); !it.EqualWith( nativeCable.getSegments().end() ); it.inc() ) {
         var segment = it.get();

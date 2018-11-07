@@ -60,6 +60,8 @@ namespace AGXUnityEditor
         renderData.transform.hideFlags |= HideFlags.NotEditable;
       }
 
+      // TODO: Handle fileData.SolverSettings?
+
       Undo.CollapseUndoOperations( grouId );
     }
 

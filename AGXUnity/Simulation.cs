@@ -65,91 +65,6 @@ namespace AGXUnity
     [SerializeField]
     private float m_timeStep = 1.0f / 50.0f;
 
-
-    /// <summary>
-    /// Specifies whether the warmstarting algorithm should be used for warm starting of contacts
-    /// using the direct solver
-    /// </summary>
-    [SerializeField]
-    private bool m_warmStartingDirectContacts = false;
-
-
-
-    /// <summary>
-    /// Specifies whether the warmstarting algorithm should be used for warm starting of contacts
-    /// using the direct solver
-    /// </summary>
-    public bool WarmStartingDirectContacts
-    {
-      get { return m_warmStartingDirectContacts; }
-      set
-      {
-        m_warmStartingDirectContacts = value;
-        if (m_system != null)
-          m_system.setEnableContactWarmstarting(m_warmStartingDirectContacts);
-      }
-    }
-
-    /// <summary>
-    /// Specifies number of iterations for resting iterations for the iterative solver
-    /// default is -1 indicating it will be initialized from the default in the Dynamics Engine
-    /// </summary>
-    [SerializeField]
-    private int m_numRestingIterations = -1;
-
-    /// <summary>
-    /// Get or set the number of iterations for resting contacts
-    /// </summary>
-    public int NumRestingIterations
-    {
-      get { return m_numRestingIterations; }
-      set
-      {
-        // A value below zero will indicate use default
-        m_numRestingIterations = value;
-        int numIterations = m_numRestingIterations;
-        if (m_numRestingIterations < 0)
-          numIterations = m_defaultNumRestingIterations;
-
-        if (m_simulation != null)
-          m_simulation.getSolver().setNumRestingIterations((ulong)numIterations);
-      }
-    }
-
-    /// <summary>
-    /// Specifies number of iterations for dry friction for the iterative solver
-    /// default is -1 indicating it will be initialized from the default in the Dynamics Engine
-    /// </summary>
-    [SerializeField]
-    private int m_numDryFrictionIterations = -1;
-
-    [NonSerialized]
-    private int m_defaultNumDryFrictionIterations = 0;
-
-    [NonSerialized]
-    private int m_defaultNumRestingIterations = 0;
-
-
-    /// <summary>
-    /// Get or set the number of iterations for resting contacts
-    /// </summary>
-    public int NumDryFrictionIterations
-    {
-      get { return m_numDryFrictionIterations; }
-      set
-      {
-        m_numDryFrictionIterations = value;
-
-        // A value below zero will indicate use default
-        int numIterations = m_numDryFrictionIterations;
-        if (m_numDryFrictionIterations < 0)
-          numIterations = m_defaultNumDryFrictionIterations;
-
-        if (m_simulation != null)
-          m_simulation.getSolver().setNumDryFrictionIterations((ulong)numIterations);
-      }
-    }
-
     /// <summary>
     /// Get or set time step size. Note that the time step has to
     /// match Unity update frequency.
@@ -165,6 +80,34 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private SolverSettings m_solverSettings = null;
+
+    /// <summary>
+    /// Get or set solver settings.
+    /// </summary>
+    [AllowRecursiveEditing]
+    [IgnoreSynchronization]
+    public SolverSettings SolverSettings
+    {
+      get { return m_solverSettings; }
+      set
+      {
+        if ( m_solverSettings != null ) {
+          m_solverSettings.SetSimulation( null );
+          if ( value == null )
+            SolverSettings.AssignDefault( m_simulation );
+        }
+
+        m_solverSettings = value;
+
+        if ( m_solverSettings != null && m_simulation != null ) {
+          m_solverSettings.SetSimulation( m_simulation );
+          m_solverSettings.GetInitialized<SolverSettings>();
+        }
+      }
+    }
+
     /// <summary>
     /// Display statistics window toggle.
     /// </summary>
@@ -174,6 +117,7 @@ namespace AGXUnity
     /// <summary>
     /// Enable/disable statistics window showing timing and simulation data.
     /// </summary>
+    [HideInInspector]
     public bool DisplayStatistics
     {
       get { return m_displayStatistics; }
@@ -182,7 +126,10 @@ namespace AGXUnity
         m_displayStatistics = value;
 
         if ( m_displayStatistics && m_statisticsWindowData == null )
-          m_statisticsWindowData = new StatisticsWindowData( new Rect( new Vector2( 10, 10 ), new Vector2( 275, 320 ) ) );
+          m_statisticsWindowData = new StatisticsWindowData( new Rect( new Vector2( 10, 10 ),
+                                                                       new Vector2( 275, 236 ) ),
+                                                             new Rect( new Vector2( 10, 10 ),
+                                                                       new Vector2( 275, 320 ) ) );
         else if ( !m_displayStatistics && m_statisticsWindowData != null ) {
           m_statisticsWindowData.Dispose();
           m_statisticsWindowData = null;
@@ -191,19 +138,23 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    bool m_memorySnapEnabled = false;
-
+    [UnityEngine.Serialization.FormerlySerializedAs( "m_memorySnapEnabled" )]
+    bool m_displayMemoryAllocations = false;
 
     /// <summary>
-    /// Enable/disable statistics window showing timing and simulation data.
+    /// Enable/disable track of memory allocations during DoStep. If enabled,
+    /// the collected data will be shown in the statistics window.
     /// </summary>
-    public bool MemorySnapEnabled
+    [HideInInspector]
+    public bool DisplayMemoryAllocations
     {
-      get { return m_memorySnapEnabled; }
-      set
-      {
-        m_memorySnapEnabled = value;        
-      }
+      get { return m_displayMemoryAllocations; }
+      set { m_displayMemoryAllocations = value; }
+    }
+
+    private bool TrackMemoryAllocations()
+    {
+      return DisplayMemoryAllocations && DisplayStatistics;
     }
 
     [SerializeField]
@@ -294,23 +245,24 @@ namespace AGXUnity
             Debug.Log( "Successfully wrote initial state to: " + SavePreFirstStepPath );
         }
 
+        var trackMemory = TrackMemoryAllocations();
         agx.Timer timer = null;
         if ( DisplayStatistics )
           timer = new agx.Timer( true );
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
 
         if ( StepCallbacks.PreStepForward != null )
           StepCallbacks.PreStepForward.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
         if ( StepCallbacks.PreSynchronizeTransforms != null )
           StepCallbacks.PreSynchronizeTransforms.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
 
         if ( timer != null )
@@ -321,19 +273,19 @@ namespace AGXUnity
         if ( timer != null )
           timer.start();
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
         if ( StepCallbacks.PostSynchronizeTransforms != null )
           StepCallbacks.PostSynchronizeTransforms.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
 
         if ( StepCallbacks.PostStepForward != null )
           StepCallbacks.PostStepForward.Invoke();
 
-        if (m_memorySnapEnabled)
+        if ( trackMemory )
           MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
 
         Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
@@ -401,15 +353,17 @@ namespace AGXUnity
     {
       public int Id { get; private set; }
       public Rect Rect { get; set; }
+      public Rect RectMemoryEnabled { get; set; }
       public Font Font { get; private set; }
       public GUIStyle LabelStyle { get; set; }
       public float ManagedStepForward { get; set; }
 
-      public StatisticsWindowData( Rect rect )
+      public StatisticsWindowData( Rect rect, Rect rectMemoryEnabled )
       {
         agx.Statistics.instance().setEnable( true );
         Id = GUIUtility.GetControlID( FocusType.Passive );
         Rect = rect;
+        RectMemoryEnabled = rectMemoryEnabled;
 
         MemoryAllocations.Instance = new MemoryAllocations();
         ManagedStepForward = 0.0f;
@@ -491,7 +445,7 @@ namespace AGXUnity
                            m_space.getGeometryContacts().Count;
 
       GUILayout.Window( m_statisticsWindowData.Id,
-                        m_statisticsWindowData.Rect,
+                        DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Total time:            ", simColor ) + simTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms", 14, true ), labelStyle );
@@ -509,6 +463,8 @@ namespace AGXUnity
                           GUILayout.Label( "" );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "StepForward (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
+                          if ( !DisplayMemoryAllocations )
+                            return;
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Allocations (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre step callbacks:    ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreStepForward ).PadLeft( 6, ' ' ) ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre synchronize:       ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreSynchronizeTransforms ).PadLeft( 6, ' ' ) ), labelStyle );
@@ -530,8 +486,11 @@ namespace AGXUnity
     protected override void OnDestroy()
     {
       base.OnDestroy();
-      if ( m_simulation != null )
+      if ( m_simulation != null ) {
+        if ( m_solverSettings != null )
+          m_solverSettings.SetSimulation( null );
         m_simulation.cleanup();
+      }
       m_simulation = null;
     }
 
@@ -541,14 +500,17 @@ namespace AGXUnity
         NativeHandler.Instance.MakeMainThread();
 
         m_simulation = new agxSDK.Simulation();
-
-        m_defaultNumDryFrictionIterations = (int)m_simulation.getSolver().getNumDryFrictionIterations();
-        m_defaultNumRestingIterations = (int)m_simulation.getSolver().getNumRestingIterations();
-
         m_space = m_simulation.getSpace();
         m_system = m_simulation.getDynamicsSystem();
 
-        m_system.setEnableContactWarmstarting(m_warmStartingDirectContacts);
+        // Solver settings will assign number of threads.
+        if ( m_solverSettings != null ) {
+          m_solverSettings.SetSimulation( m_simulation );
+          m_solverSettings.GetInitialized<SolverSettings>();
+        }
+        // No solver settings - set the default.
+        else
+          agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
       }
 
       return m_simulation;

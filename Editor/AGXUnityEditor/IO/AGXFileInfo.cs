@@ -163,7 +163,11 @@ namespace AGXUnityEditor.IO
     public AGXFileInfo( GameObject prefabInstance )
     {
       PrefabInstance = prefabInstance;
+#if UNITY_2018_1_OR_NEWER
+      Construct( AssetDatabase.GetAssetPath( PrefabUtility.GetCorrespondingObjectFromSource( prefabInstance ) as GameObject ) );
+#else
       Construct( AssetDatabase.GetAssetPath( PrefabUtility.GetPrefabParent( prefabInstance ) as GameObject ) );
+#endif
     }
 
     /// <summary>

@@ -53,5 +53,15 @@ namespace AGXUnity.IO
 
       m_disabledGroups.Add( new GroupPair() { First = group1, Second = group2 } );
     }
+
+    [SerializeField]
+    private SolverSettings m_solverSettings = null;
+
+    [HideInInspector]
+    public SolverSettings SolverSettings
+    {
+      get { return m_solverSettings; }
+      set { m_solverSettings = value; }
+    }
   }
 }
