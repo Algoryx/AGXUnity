@@ -1,8 +1,6 @@
 ﻿using System;
 using UnityEngine;
 using UnityEditor;
-using AGXUnity;
-using AGXUnity.Utils;
 using AGXUnity.Rendering;
 using AGXUnity.Collide;
 
@@ -30,9 +28,21 @@ namespace AGXUnityEditor.Menus
       }
 
       int numValidCreateVisual = 0;
-      foreach ( var shape in shapes )
-        numValidCreateVisual += Convert.ToInt32( !ShapeVisual.HasShapeVisual( shape ) && ShapeVisual.SupportsShapeVisual( shape ) );
-      if ( numValidCreateVisual == 0 ) {
+      int numSensors = 0;
+      foreach ( var shape in shapes ) {
+        var validForVisual    = !ShapeVisual.HasShapeVisual( shape ) && ShapeVisual.SupportsShapeVisual( shape );
+        numValidCreateVisual += Convert.ToInt32( validForVisual );
+        numSensors           += Convert.ToInt32( validForVisual && shape.IsSensor );
+      }
+
+      var createVisualForSensors = false;
+      if ( numSensors > 0 )
+        createVisualForSensors = EditorUtility.DisplayDialog( "Sensors",
+                                                              "There are " + numSensors + " sensors in this object. Would you like to create visuals for sensors as well?",
+                                                              "Yes",
+                                                              "No" );
+
+      if ( numValidCreateVisual == 0 || numSensors >= numValidCreateVisual ) {
         Debug.Log( "Create visual ignored: All shapes already have visual data or doesn't support to be visualized.", Selection.activeGameObject );
         return;
       }
@@ -40,7 +50,9 @@ namespace AGXUnityEditor.Menus
       Undo.SetCurrentGroupName( "Create GameObject shape visual." );
       var grouId = Undo.GetCurrentGroup();
       foreach ( var shape in shapes ) {
-        if ( !ShapeVisual.HasShapeVisual( shape ) ) {
+        var createVisual = !ShapeVisual.HasShapeVisual( shape ) &&
+                           ( createVisualForSensors || !shape.IsSensor );
+        if ( createVisual ) {
           var go = ShapeVisual.Create( shape );
           if ( go != null )
             Undo.RegisterCreatedObjectUndo( go, "Shape visual" );

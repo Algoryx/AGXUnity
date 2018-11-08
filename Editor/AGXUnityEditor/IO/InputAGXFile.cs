@@ -422,10 +422,8 @@ namespace AGXUnityEditor.IO
 
       var shape = node.GameObject.GetComponent<AGXUnity.Collide.Shape>();
 
-      // Is the geometry enabled?
-      shape.gameObject.SetActive(nativeGeometry.isEnabled());
-
-    
+      shape.gameObject.SetActive( nativeGeometry.isEnabled() );
+      shape.IsSensor = nativeGeometry.isSensor();
 
       if ( nativeGeometry.getMaterial() != null ) {
         var shapeMaterial = m_tree.GetNode( nativeGeometry.getMaterial().getUuid() ).Asset as ShapeMaterial;
