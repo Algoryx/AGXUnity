@@ -214,29 +214,44 @@ namespace AGXUnityEditor.IO
     }
 
     /// <summary>
-    /// Add an asset to in the data directory.
+    /// Add an asset to the data directory or updates an existing asset
+    /// of same type and name with the current values of <paramref name="asset"/>.
+    /// Known assets types will be grouped together and AGXFileInfo.GetAssets
+    /// has to be used to find them.
+    /// 
+    /// Type AssetType.Unknown will always create a new asset.
     /// </summary>
     /// <param name="asset">Asset to add.</param>
     /// <param name="type">Asset type.</param>
-    public void AddAssetToDataDirectory( UnityEngine.Object asset, AGXUnity.IO.AssetType type )
+    /// <returns><paramref name="asset"/> if previous version doesn't exist - otherwise the already existing asset.</returns>
+    public T AddOrUpdateExistingAsset<T>( T asset, AGXUnity.IO.AssetType type )
+      where T : UnityEngine.Object
     {
       if ( asset == null ) {
         Debug.LogWarning( "Trying to add null asset to file: " + NameWithExtension );
-        return;
+        return null;
       }
 
       // Grouping assets given known types - unknown types are written directly to the data folder.
       if ( type == AGXUnity.IO.AssetType.Unknown ) {
         AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
-        return;
+        return asset;
       }
 
-      if ( m_assetRoots[ (int)type ] != null )
-        AssetDatabase.AddObjectToAsset( asset, m_assetRoots[ (int)type ] );
-      else {
-        m_assetRoots[ (int)type ] = asset;
-        AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
+      T[] assets = GetAssets<T>();
+      foreach ( var existing in assets ) {
+        if ( existing.name == asset.name ) {
+          EditorUtility.CopySerialized( asset, existing );
+          return existing;
+        }
       }
+
+      if ( assets.Length == 0 )
+        AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
+      else
+        AssetDatabase.AddObjectToAsset( asset, AssetDatabase.GetAssetPath( assets[ 0 ] ) );
+
+      return asset;
     }
 
     /// <summary>
@@ -247,7 +262,16 @@ namespace AGXUnityEditor.IO
     public T[] GetAssets<T>()
       where T : UnityEngine.Object
     {
-      var guids = AssetDatabase.FindAssets( "t:" + typeof( T ).FullName, new string[] { DataDirectory } );
+      // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
+      // if we have 17 ContactMaterial assets in a group FindAsset will return an array
+      // of 17 where all entries are identical.
+      var type = typeof( T );
+      var typeName = string.Empty;
+      if ( type.Namespace != null && type.Namespace.StartsWith( "UnityEngine" ) )
+        typeName = type.Name;
+      else
+        typeName = type.FullName;
+      var guids = AssetDatabase.FindAssets( "t:" + typeName, new string[] { DataDirectory } ).Distinct();
       return ( from guid
                in guids
                from obj
@@ -325,8 +349,7 @@ namespace AGXUnityEditor.IO
       }
     }
 
-    private FileInfo m_fileInfo               = null;
-    private UnityEngine.Object[] m_assetRoots = new UnityEngine.Object[ (int)AGXUnity.IO.AssetType.NumTypes ];
-    private UuidObjectDb m_uuidObjectDb       = null;
+    private FileInfo m_fileInfo         = null;
+    private UuidObjectDb m_uuidObjectDb = null;
   }
 }
