@@ -414,7 +414,7 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Set compliance to one or all rotatinal ordinary degrees of freedom
+    /// Set compliance to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
     /// <param name="compliance">New compliance.</param>
@@ -447,7 +447,7 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Set damping to one or all rotatinal ordinary degrees of freedom
+    /// Set damping to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
     /// <param name="damping">New damping.</param>
@@ -480,7 +480,7 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Set force range to one or all rotatinal ordinary degrees of freedom
+    /// Set force range to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
     /// <param name="forceRange">New force range.</param>
