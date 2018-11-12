@@ -262,7 +262,26 @@ namespace AGXUnityEditor
     [MenuItem( "AGXUnity/Pick Handler (Game View)" )]
     public static GameObject PickHandler()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<PickHandler>().gameObject;
+      var ph = GetOrCreateUniqueGameObject<PickHandler>();
+      if ( ph.MainCamera == null ) {
+        // Check for tagged main camera.
+        if ( Camera.main != null ) {
+          ph.MainCamera = Camera.main.gameObject;
+        }
+        // Search for any camera containing "Main".
+        else {
+          foreach ( var camera in Camera.allCameras ) {
+            if ( camera.name.Contains( "Main" ) ) {
+              ph.MainCamera = camera.gameObject;
+              break;
+            }
+          }
+        }
+
+        if ( ph.MainCamera == null )
+          Debug.LogWarning( "Unable to find Main Camera. You have to manually assign view camera for pick handler to work.", ph );
+      }
+      return Selection.activeGameObject = ph.gameObject;
     }
     #endregion
 

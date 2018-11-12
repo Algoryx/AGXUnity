@@ -144,6 +144,14 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private GameObject m_mainCamera = null;
+    public GameObject MainCamera
+    {
+      get { return m_mainCamera; }
+      set { m_mainCamera = value; }
+    }
+
     public DofTypes MouseButtonToDofTypes( MouseButton button )
     {
       return button == BallJointMouseButton ?
@@ -197,10 +205,13 @@ namespace AGXUnity
 
     private MouseButtonState m_mouseButtonState = new MouseButtonState();
     private float m_distanceFromCamera = -1f;
+    private Camera m_camera = null;
 
     protected override void OnEnable()
     {
       Simulation.Instance.StepCallbacks.PreStepForward += OnPreStepForwardCallback;
+      if ( MainCamera != null )
+        m_camera = MainCamera.GetComponent<Camera>();
     }
 
     protected override void OnDisable()
@@ -212,6 +223,7 @@ namespace AGXUnity
         Destroy( ConstraintGameObject );
       ConstraintGameObject = null;
       m_distanceFromCamera = -1f;
+      m_camera = null;
     }
 
     private void OnGUI()
@@ -221,19 +233,22 @@ namespace AGXUnity
 
     private void OnPreStepForwardCallback()
     {
-      Camera camera = Camera.main;
-      if ( camera == null )
+      if ( m_camera == null )
         return;
 
       if ( ConstraintGameObject == null && Input.GetKey( TriggerKey ) && m_mouseButtonState.ButtonDown != MouseButton.None ) {
-        Ray ray = camera.ScreenPointToRay( Input.mousePosition );
+        Ray ray = m_camera.ScreenPointToRay( Input.mousePosition );
         List<BroadPhaseResult> results = FindRayBoundingVolumeOverlaps( ray );
         if ( results.Count > 0 ) {
-          ConstraintGameObject = TryCreateConstraint( ray, results[ 0 ].GameObject, MouseButtonToDofTypes( m_mouseButtonState.ButtonDown ), "PickHandlerConstraint" );
+          ConstraintGameObject = TryCreateConstraint( ray,
+                                                      results[ 0 ].GameObject,
+                                                      MouseButtonToDofTypes( m_mouseButtonState.ButtonDown ),
+                                                      "PickHandlerConstraint" );
           if ( ConstraintGameObject != null ) {
             ConstraintGameObject.AddComponent<Rendering.PickHandlerRenderer>();
             Constraint.DrawGizmosEnable = false;
-            m_distanceFromCamera = FindDistanceFromCamera( camera, Constraint.AttachmentPair.ReferenceFrame.Position );
+            m_distanceFromCamera = FindDistanceFromCamera( m_camera,
+                                                           Constraint.AttachmentPair.ReferenceFrame.Position );
           }
         }
 
@@ -248,9 +263,9 @@ namespace AGXUnity
       }
 
       if ( ConstraintGameObject != null ) {
-        Constraint.AttachmentPair.ConnectedFrame.Position = camera.ScreenToWorldPoint( new Vector3( Input.mousePosition.x,
-                                                                                                    Input.mousePosition.y,
-                                                                                                    m_distanceFromCamera ) );
+        Constraint.AttachmentPair.ConnectedFrame.Position = m_camera.ScreenToWorldPoint( new Vector3( Input.mousePosition.x,
+                                                                                                      Input.mousePosition.y,
+                                                                                                      m_distanceFromCamera ) );
 
         SetComplianceDamping( Constraint );
 

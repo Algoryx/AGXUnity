@@ -46,9 +46,7 @@ namespace AGXUnityEditor.Tools
       if ( !Event.current.isMouse )
         return;
 
-      constraint.AttachmentPair.ConnectedFrame.Position = sceneView.camera.ScreenToWorldPoint( new Vector3( Event.current.mousePosition.x,
-                                                                                                            sceneView.camera.pixelHeight - Event.current.mousePosition.y,
-                                                                                                            m_distanceFromCamera ) );
+      constraint.AttachmentPair.ConnectedFrame.Position = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ).GetPoint( m_distanceFromCamera );
 
       PickHandler.SetComplianceDamping( constraint );
     }

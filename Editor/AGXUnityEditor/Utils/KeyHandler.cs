@@ -226,6 +226,7 @@ namespace AGXUnityEditor.Utils
       m_keyData = m_keyData.Distinct( new KeyDataEqualityComparer() ).ToList();
     }
 
+    [NonSerialized]
     private bool m_isDown = false;
     private Tools.Tool.HideDefaultState m_defaultHandleStateHidden = null;
 
