@@ -84,9 +84,6 @@ namespace AGXUnity.Rendering
         var points = Cable.GetRoutePoints();
         for ( int i = 1; i < points.Length; ++i )
           m_segmentSpawner.CreateSegment( points[ i - 1 ], points[ i ], radius );
-        //CableRouteNode[] nodes = route.ToArray();
-        //for ( int i = 1; i < nodes.Length; ++i )
-        //  m_segmentSpawner.CreateSegment( nodes[ i - 1 ].Position, nodes[ i ].Position, radius );
       }
       catch ( System.Exception e ) {
         Debug.LogException( e, this );
@@ -108,10 +105,11 @@ namespace AGXUnity.Rendering
         return;
       }
 
+      agxCable.CableIterator it = native.begin();
+      agxCable.CableIterator endIt = native.end();
+
       m_segmentSpawner.Begin();
       try {
-        agxCable.CableIterator it = native.begin();
-        agxCable.CableIterator endIt = native.end();
         float radius = Cable.Radius;
         while ( !it.EqualWith( endIt ) ) {
           m_segmentSpawner.CreateSegment( it.getBeginPosition().ToHandedVector3(), it.getEndPosition().ToHandedVector3(), radius );
@@ -122,6 +120,9 @@ namespace AGXUnity.Rendering
         Debug.LogException( e, this );
       }
       m_segmentSpawner.End();
+
+      it.ReturnToPool();
+      endIt.ReturnToPool();
     }
   }
 }

@@ -110,46 +110,39 @@ namespace AGXUnity.Rendering
         return;
       }
 
-      if (m_positions == null)
-      {
+      if ( m_positions == null ) {
         m_positions = new List<Vector3>();
         m_positions.Capacity = 256;
       }
 
-      //UnityEngine.Profiling.Profiler.BeginSample("CollectingWirePoints");
       m_positions.Clear();
 
       agxWire.RenderIterator it = wire.Native.getRenderBeginIterator();
       agxWire.RenderIterator endIt = wire.Native.getRenderEndIterator();
-      while (!it.EqualWith(endIt))
-      {
-        m_positions.Add(it.getWorldPosition().ToHandedVector3());
+      while ( !it.EqualWith( endIt ) ) {
+        m_positions.Add( it.getWorldPosition().ToHandedVector3() );
         it.inc();
       }
-      //UnityEngine.Profiling.Profiler.EndSample();
+
       m_segmentSpawner.Begin();
 
       try
       {
-        //UnityEngine.Profiling.Profiler.BeginSample("GeneratingSegments");
-        for (int i = 0; i < m_positions.Count - 1; ++i)
-        {
-          Vector3 curr = m_positions[i];
-          Vector3 next = m_positions[i + 1];
-          Vector3 currToNext = next - curr;
-          float distance = currToNext.magnitude;
-          currToNext /= distance;
-          int numSegments = Convert.ToInt32(distance * NumberOfSegmentsPerMeter + 0.5f);
-          float dl = distance / numSegments;
-          for (int j = 0; j < numSegments; ++j)
-          {
+        for ( int i = 0; i < m_positions.Count - 1; ++i ) {
+          Vector3 curr        = m_positions[i];
+          Vector3 next        = m_positions[i + 1];
+          Vector3 currToNext  = next - curr;
+          float distance      = currToNext.magnitude;
+          currToNext         /= distance;
+          int numSegments     = Convert.ToInt32(distance * NumberOfSegmentsPerMeter + 0.5f);
+          float dl            = distance / numSegments;
+          for ( int j = 0; j < numSegments; ++j ) {
             next = curr + dl * currToNext;
 
             m_segmentSpawner.CreateSegment(curr, next, wire.Radius);
             curr = next;
           }
         }
-        //UnityEngine.Profiling.Profiler.EndSample();
       }
       catch (System.Exception e)
       {
@@ -157,6 +150,9 @@ namespace AGXUnity.Rendering
       }
 
       m_segmentSpawner.End();
+
+      it.ReturnToPool();
+      endIt.ReturnToPool();
     }
   }
 }
