@@ -283,7 +283,7 @@ namespace AGXUnityEditor
           GUILayout.BeginHorizontal();
           {
             GUILayout.Label( MakeLabel( wrapper.Member ), skin.label );
-            GUILayout.Label( Utils.GUI.MakeLabel( "Empty array", true ) );
+            GUILayout.Label( Utils.GUI.MakeLabel( "Empty array", true ), skin.label );
           }
           GUILayout.EndHorizontal();
         }
@@ -439,7 +439,7 @@ namespace AGXUnityEditor
           }
 
           if ( list.Count == 0 )
-            GUILayout.Label( Utils.GUI.MakeLabel( "Empty", true ) );
+            GUILayout.Label( Utils.GUI.MakeLabel( "Empty", true ), skin.label );
           else
             Utils.GUI.Separator();
         }

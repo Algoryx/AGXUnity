@@ -46,6 +46,10 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
+
+      GUI.Separator();
+
+      AssemblyTool.OnObjectListsGUI( RestoredAGXFile, skin );
     }
   }
 }
