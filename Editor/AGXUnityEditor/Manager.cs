@@ -590,6 +590,12 @@ namespace AGXUnityEditor
       if ( installedDll == null || !installedDll.Exists )
         return true;
 
+      // Initializes AGX Dynamics. We're trying to be first to do this, preventing:
+      //   - Recursive Serialization is not supported. You can't dereference a PPtr while loading.
+      // when e.g., starting Unity with an empty scene and click on a (agx) restored prefab
+      // in project tab, loading RestoredAGXFile. No clue why this error appears.
+      AGXUnity.NativeHandler.Instance.Register( null );
+
       if ( !currDll.Exists || HasBeenChanged( currDll, installedDll ) ) {
         Debug.Log( "<color=green>New version of agxDotNet.dll located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
         installedDll.CopyTo( localDllFilename, true );
