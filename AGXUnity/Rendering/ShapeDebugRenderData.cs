@@ -210,7 +210,6 @@ namespace AGXUnity.Rendering
 
         subMesh.AddComponent<MeshRenderer>();
         MeshFilter filter = subMesh.AddComponent<MeshFilter>();
-        filter.sharedMesh = new UnityEngine.Mesh();
 
         RescaleRenderedMesh( mesh, sub, filter );
       }
@@ -233,29 +232,27 @@ namespace AGXUnity.Rendering
       if ( source == null )
         throw new AGXUnity.Exception( "Source object is null during rescale." );
 
-      Vector3[] vertices = filter.sharedMesh.vertices;
-      if ( vertices == null || vertices.Length == 0 )
-        vertices = new Vector3[ source.vertexCount ];
-
-      int[] triangles = filter.sharedMesh.triangles;
-      if ( triangles == null || triangles.Length == 0 )
-        triangles = (int[])source.triangles.Clone();
+      Vector3[] vertices = null;
+      if ( filter.sharedMesh == null ) {
+        filter.sharedMesh = Instantiate( source );
+        vertices = filter.sharedMesh.vertices;
+      }
+      else
+        vertices = filter.sharedMesh.vertices;
 
       if ( vertices.Length != source.vertexCount )
         throw new AGXUnity.Exception( "Shape debug render mesh mismatch." );
 
-      Matrix4x4 scaledToWorld  = mesh.transform.localToWorldMatrix;
-      Vector3[] sourceVertices = source.vertices;
-
       // Transforms each vertex from local to world given scales, then
       // transforms each vertex back to local again - unscaled.
+      Matrix4x4 scaledToWorld  = mesh.transform.localToWorldMatrix;
+      Vector3[] sourceVertices = source.vertices;
       for ( int i = 0; i < vertices.Length; ++i ) {
-        Vector3 worldVertex = scaledToWorld * sourceVertices[ i ];
-        vertices[ i ]       = mesh.transform.InverseTransformDirection( worldVertex );
+        var worldVertex = scaledToWorld * sourceVertices[ i ];
+        vertices[ i ] = mesh.transform.InverseTransformDirection( worldVertex );
       }
 
-      filter.sharedMesh.vertices  = vertices;
-      filter.sharedMesh.triangles = triangles;
+      filter.sharedMesh.vertices = vertices;
 
       filter.sharedMesh.RecalculateBounds();
       filter.sharedMesh.RecalculateNormals();

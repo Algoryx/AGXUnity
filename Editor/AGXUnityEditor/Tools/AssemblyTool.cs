@@ -195,6 +195,26 @@ namespace AGXUnityEditor.Tools
         ChangeMode( Mode.Shape );
       if ( constraintButtonPressed )
         ChangeMode( Mode.Constraint );
+
+      GUI.Separator();
+
+      OnObjectListsGUI( Assembly, skin );
+    }
+
+    public static void OnObjectListsGUI( ScriptComponent context, GUISkin skin )
+    {
+      if ( context == null )
+        return;
+
+      RigidBodyTool.OnRigidBodyListGUI( context.GetComponentsInChildren<RigidBody>(), context, skin );
+
+      GUI.Separator();
+
+      RigidBodyTool.OnConstraintListGUI( context.GetComponentsInChildren<Constraint>(), context, skin );
+
+      GUI.Separator();
+
+      RigidBodyTool.OnShapeListGUI( context.GetComponentsInChildren<AGXUnity.Collide.Shape>(), context, skin );
     }
 
     private void HandleModeGUI( GUISkin skin )

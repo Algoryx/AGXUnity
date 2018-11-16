@@ -143,8 +143,25 @@ namespace AGXUnity
       set
       {
         m_material = value;
-        if ( Native != null && m_material != null && m_material.Native != null )
-          Native.setMaterial( m_material.Native );
+        if ( Native != null ) {
+          if ( m_material != null && m_material.Native == null )
+            m_material.GetInitialized<ShapeMaterial>();
+
+          if ( m_material != null )
+            Native.setMaterial( m_material.Native );
+          else {
+            var currMaterial = Native.getMaterial();
+            var currIsDefault = currMaterial != null &&
+                                currMaterial.getName() == "DefaultCableMaterial";
+                                Mathf.Approximately( (float)currMaterial.getBulkMaterial().getDensity(), 700.0f );
+            if ( currMaterial == null || !currIsDefault ) {
+              var defaultMaterial = new agx.Material( "DefaultCableMaterial" );
+              defaultMaterial.getBulkMaterial().setDensity( 700.0 );
+              defaultMaterial.getBulkMaterial().setYoungsModulus( 5.0E10 );
+              Native.setMaterial( defaultMaterial );
+            }
+          }
+        }
       }
     }
 
@@ -245,6 +262,7 @@ namespace AGXUnity
     /// <summary>
     /// Checks if route point curve is up to date.
     /// </summary>
+    [HideInInspector]
     public bool RoutePointCurveUpToDate
     {
       get
