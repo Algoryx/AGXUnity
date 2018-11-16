@@ -40,11 +40,13 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 1. Drag and drop `AGXUnity-x.y.unitypackage` into the `Assets` folder in Unity.
 2. Copy `agxDotNet.dll` (`<agx_dynamics_install_dir>/bin/x64/agxDotNet.dll`) into AGXUnity plugins folder (`Assets/AGXUnity/Plugins/x86_64`).
+3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent` (Unity 2017.x: `Experimental (.NET 4.6 Equivalent)`). [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
 
 ### From source
 
 1. `git clone https://github.com/Algoryx/AGXUnity.git` in the `Assets` folder of your Unity project.
 2. Copy `agxDotNet.dll` (`<agx_dynamics_install_dir>/bin/x64/agxDotNet.dll`) into AGXUnity plugins folder (`Assets/AGXUnity/Plugins/x86_64`).
+3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent` (Unity 2017.x: `Experimental (.NET 4.6 Equivalent)`). [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
 
 ### Requirements
 
