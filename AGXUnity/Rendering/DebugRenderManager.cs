@@ -329,6 +329,8 @@ namespace AGXUnity.Rendering
     }
 
     private static bool m_isActiveForSynchronize = false;
+
+    [HideInInspector]
     public static bool IsActiveForSynchronize { get { return m_isActiveForSynchronize; } }
 
     private bool UpdateIsActiveForSynchronize()
@@ -372,23 +374,30 @@ namespace AGXUnity.Rendering
         return;
 
       // Only collect data for contacts if they are enabled
-      if (m_renderContacts)
-      {
+      if ( m_renderContacts ) {
         var gcs = simulation.getSpace().getGeometryContacts();
+
         m_contactList.Clear();
-        m_contactList.Capacity = 4 * gcs.Count;
+        m_contactList.Capacity = System.Math.Max( m_contactList.Capacity, 4 * gcs.Count );
+
         for ( int i = 0; i < gcs.Count; ++i ) {
           var gc = gcs[ i ];
-          if ( !gc.isEnabled() )
-            continue;
-
-          for ( uint j = 0; j < gc.points().size(); ++j ) {
-            var p = gc.points().at( j );
-            if ( !p.enabled )
-              continue;
-
-            m_contactList.Add( new ContactData() { Point = p.point.ToHandedVector3(), Normal = p.normal.ToHandedVector3() } );
+          if ( gc.isEnabled() ) {
+            var contactPoints = gc.points();
+            for ( uint j = 0; j < contactPoints.size(); ++j ) {
+              var contactPoint = contactPoints.at( j );
+              if ( contactPoint.enabled ) {
+                m_contactList.Add( new ContactData()
+                {
+                  Point = contactPoint.point.ToHandedVector3(),
+                  Normal = contactPoint.normal.ToHandedVector3()
+                } );
+              }
+              contactPoint.ReturnToPool();
+            }
+            contactPoints.ReturnToPool();
           }
+          gc.ReturnToPool();
         }
       }
     }

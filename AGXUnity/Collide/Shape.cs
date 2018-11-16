@@ -373,11 +373,11 @@ namespace AGXUnity.Collide
       bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
       bool enabled = false;
 
-      if (isInstanced)
+      if ( isInstanced )
         enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
 
       // If we have a body the debug rendering synchronization is made from that body.
-      if (enabled &&  m_geometry != null && m_geometry.getRigidBody() == null )
+      if ( enabled && m_geometry != null && m_geometry.getRigidBody() == null )
         Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
 
