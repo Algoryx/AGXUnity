@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using AGXUnity.Utils;
 using UnityEngine;
@@ -19,25 +20,54 @@ namespace AGXUnity
     private agxSDK.Simulation m_simulation = null;
     private agx.DynamicsSystem m_system = null;
     private agxCollide.Space m_space = null;
-  
-    /// <summary>
-    /// Control automatic stepping of simulation.
-    /// Also see the EnableAutomaticStepping property.
-    /// </summary>
+
+    public enum AutoSteppingModes
+    {
+      /// <summary>
+      /// [Not recommended]
+      /// Simulation step from FixedUpdate. By default Time.fixedDeltaTime is
+      /// 0.02 and this delta time has to match the time step size.
+      /// </summary>
+      FixedUpdate,
+      /// <summary>
+      /// [Recommended]
+      /// Simulation step from Update. Update callback is executed each frame,
+      /// e.g, 60 Hz with VSync enabled on a 60 Hz monitor. Step forward is called when
+      /// the elapsed time exceeds the time step size.
+      /// </summary>
+      Update,
+      /// <summary>
+      /// [Experimental]
+      /// Simulation step from Coroutine waiting for next end-of-frame.
+      /// This option will step the simulation after all update calls and after the
+      /// cameras rendered the scene.
+      /// </summary>
+      Coroutine,
+      /// <summary>
+      /// Simulation step invoked manually by the user.
+      /// Previously EnableAutoStepping = false.
+      /// </summary>
+      Disabled
+    }
+
     [SerializeField]
-    private bool m_enableAutomaticStepping = true;
+    private AutoSteppingModes m_autoSteppingMode = AutoSteppingModes.Update;
 
     /// <summary>
-    /// Set to true to enable automatic stepping during FixedUpdate.
-    /// If set to false, the DoStep() method will have to be manually called.
+    /// Simulation step mode.
     /// </summary>
-    public bool EnableAutomaticStepping
+    public AutoSteppingModes AutoSteppingMode
     {
-      get { return m_enableAutomaticStepping; }
-      set { m_enableAutomaticStepping = value; }
+      get { return m_autoSteppingMode; }
+      set
+      {
+        if ( m_simulation == null )
+          m_autoSteppingMode = value;
+      }
     }
-    
-    public static float DefaultTimeStep { get { return Time.fixedDeltaTime; } }
+
+    [HideInInspector]
+    public static readonly float DefaultTimeStep = 1.0f / 60.0f;
 
     /// <summary>
     /// Gravity, default -9.82 in y-direction. Paired with property Gravity.
@@ -63,12 +93,13 @@ namespace AGXUnity
     /// Time step size is the default callback frequency in Unity.
     /// </summary>
     [SerializeField]
-    private float m_timeStep = 1.0f / 50.0f;
+    private float m_timeStep = DefaultTimeStep;
 
     /// <summary>
     /// Get or set time step size. Note that the time step has to
     /// match Unity update frequency.
     /// </summary>
+    [ClampAboveZeroInInspector]
     public float TimeStep
     {
       get { return m_timeStep; }
@@ -152,9 +183,9 @@ namespace AGXUnity
       set { m_displayMemoryAllocations = value; }
     }
 
-    private bool TrackMemoryAllocations()
+    private bool TrackMemoryAllocations
     {
-      return DisplayMemoryAllocations && DisplayStatistics;
+      get { return DisplayMemoryAllocations && DisplayStatistics; }
     }
 
     [SerializeField]
@@ -193,12 +224,10 @@ namespace AGXUnity
     /// </summary>
     public agxSDK.Simulation Native { get { return GetOrCreateSimulation(); } }
 
-    private StepCallbackFunctions m_stepCallbackFunctions = new StepCallbackFunctions();
-
     /// <summary>
     /// Step callback interface. Valid use from "initialize" to "Destroy".
     /// </summary>
-    public StepCallbackFunctions StepCallbacks { get { return m_stepCallbackFunctions; } }
+    public StepCallbackFunctions StepCallbacks { get; } = new StepCallbackFunctions();
 
     /// <summary>
     /// Save current simulation/scene to an AGX native file (.agx or .aagx).
@@ -216,84 +245,187 @@ namespace AGXUnity
       return numObjects > 0;
     }
 
+    /// <summary>
+    /// Perform explicit simulation step.
+    /// </summary>
+    /// <remarks>
+    /// Calling this method when AutoSteppingMode != AutoSteppingModes.Disabled will
+    /// result in several steps being made each update loop.
+    /// </remarks>
+    public void DoStep()
+    {
+      if ( AutoSteppingMode != AutoSteppingModes.Disabled )
+        Debug.LogWarning( "Explicit call to Simulation.DoStep() when auto stepping mode is enabled.", this );
+
+      DoStepInternal();
+    }
+
     protected override bool Initialize()
     {
       GetOrCreateSimulation();
 
+      if ( AutoSteppingMode == AutoSteppingModes.Coroutine )
+        StartCoroutine( DoStepCoroutine() );
+
       return base.Initialize();
     }
 
+    protected override void OnDestroy()
+    {
+      base.OnDestroy();
+      if ( m_simulation != null ) {
+        if ( m_solverSettings != null )
+          m_solverSettings.SetSimulation( null );
+        m_simulation.cleanup();
+      }
+      m_simulation = null;
+    }
+
+    protected override void OnApplicationQuit()
+    {
+      base.OnApplicationQuit();
+      if ( m_simulation != null )
+        m_simulation.cleanup();
+    }
+
+    private agxSDK.Simulation GetOrCreateSimulation()
+    {
+      if ( m_simulation == null ) {
+        NativeHandler.Instance.MakeMainThread();
+
+        m_simulation = new agxSDK.Simulation();
+        m_space = m_simulation.getSpace();
+        m_system = m_simulation.getDynamicsSystem();
+
+        // Solver settings will assign number of threads.
+        if ( m_solverSettings != null ) {
+          m_solverSettings.SetSimulation( m_simulation );
+          m_solverSettings.GetInitialized<SolverSettings>();
+        }
+        // No solver settings - set the default.
+        else
+          agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
+      }
+
+      return m_simulation;
+    }
+
+    private float m_prevTime = -1.0f;
+
     private void FixedUpdate()
     {
-      if (m_enableAutomaticStepping)
-        DoStep();
-    }		
+      if ( AutoSteppingMode == AutoSteppingModes.FixedUpdate )
+        DoStepInternal();
+    }
 
-    public void DoStep()
+    private void Update()
     {
-      if ( !NativeHandler.Instance.HasValidLicense )
+      var performStep = AutoSteppingMode == AutoSteppingModes.Update &&
+                        (
+                          // First step.
+                          m_prevTime < 0.0f ||
+                          // Time since last call exceeds the time step size.
+                          Time.timeSinceLevelLoad - ( m_prevTime + TimeStep ) > -0.007f
+                        );
+      if ( performStep ) {
+        m_prevTime = Time.timeSinceLevelLoad;
+        DoStepInternal();
+      }
+    }
+
+    private IEnumerator DoStepCoroutine()
+    {
+      if ( !NativeHandler.Instance.HasValidLicense || m_simulation == null )
+        yield return null;
+
+      while ( AutoSteppingMode == AutoSteppingModes.Coroutine ) {
+        if ( State == States.INITIALIZING )
+          yield return new WaitForEndOfFrame();
+
+        DoStepInternal();
+
+        yield return new WaitForEndOfFrame();
+      }
+
+      yield return null;
+    }
+
+    private void DoStepInternal()
+    {
+      if ( !NativeHandler.Instance.HasValidLicense || m_simulation == null )
         return;
 
-      if ( m_simulation != null ) {
-        bool savePreFirstTimeStep = Application.isEditor &&
-                                    SavePreFirstStep &&
-                                    SavePreFirstStepPath != string.Empty &&
-                                    m_simulation.getTimeStamp() == 0.0;
-        if ( savePreFirstTimeStep ) {
-          var saveSuccess = SaveToNativeFile( SavePreFirstStepPath );
-          if ( saveSuccess )
-            Debug.Log( "Successfully wrote initial state to: " + SavePreFirstStepPath );
-        }
+      PreStepForward();
+      InvokeStepForward();
+      PostStepForward();
+    }
 
-        var trackMemory = TrackMemoryAllocations();
-        agx.Timer timer = null;
-        if ( DisplayStatistics )
-          timer = new agx.Timer( true );
+    private void PreStepForward()
+    {
+      bool savePreFirstTimeStep = Application.isEditor &&
+                                  SavePreFirstStep &&
+                                  SavePreFirstStepPath != string.Empty &&
+                                  m_simulation.getTimeStamp() == 0.0;
+      if ( savePreFirstTimeStep ) {
+        var saveSuccess = SaveToNativeFile( SavePreFirstStepPath );
+        if ( saveSuccess )
+          Debug.Log( "Successfully wrote initial state to: " + SavePreFirstStepPath );
+      }
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
+      agx.Timer timer = null;
+      if ( DisplayStatistics )
+        timer = new agx.Timer( true );
 
-        if ( StepCallbacks.PreStepForward != null )
-          StepCallbacks.PreStepForward.Invoke();
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.Begin );
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
+      if ( StepCallbacks.PreStepForward != null )
+        StepCallbacks.PreStepForward.Invoke();
 
-        if ( StepCallbacks.PreSynchronizeTransforms != null )
-          StepCallbacks.PreSynchronizeTransforms.Invoke();
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
+      if ( StepCallbacks.PreSynchronizeTransforms != null )
+        StepCallbacks.PreSynchronizeTransforms.Invoke();
 
-        if ( timer != null )
-          timer.stop();
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.PreSynchronizeTransforms );
 
-        m_simulation.stepForward();
+      if ( timer != null )
+        timer.stop();
+    }
 
-        if ( timer != null )
-          timer.start();
+    private void InvokeStepForward()
+    {
+      m_simulation.stepForward();
+    }
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
+    private void PostStepForward()
+    {
+      agx.Timer timer = null;
+      if ( DisplayStatistics )
+        timer = new agx.Timer( true );
 
-        if ( StepCallbacks.PostSynchronizeTransforms != null )
-          StepCallbacks.PostSynchronizeTransforms.Invoke();
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
+      if ( StepCallbacks.PostSynchronizeTransforms != null )
+        StepCallbacks.PostSynchronizeTransforms.Invoke();
 
-        if ( StepCallbacks.PostStepForward != null )
-          StepCallbacks.PostStepForward.Invoke();
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
 
-        if ( trackMemory )
-          MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
+      if ( StepCallbacks.PostStepForward != null )
+        StepCallbacks.PostStepForward.Invoke();
 
-        Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
+      if ( TrackMemoryAllocations )
+        MemoryAllocations.Snap( MemoryAllocations.Section.PostStepForward );
 
-        if ( timer != null ) {
-          timer.stop();
-          m_statisticsWindowData.ManagedStepForward = Convert.ToSingle( timer.getTime() );
-        }
+      Rendering.DebugRenderManager.OnActiveSimulationPostStep( m_simulation );
+
+      if ( timer != null ) {
+        timer.stop();
+        m_statisticsWindowData.ManagedStepForward = Convert.ToSingle( timer.getTime() );
       }
     }
 
@@ -474,46 +606,6 @@ namespace AGXUnity
                         },
                         "AGX Dynamics statistics",
                         Utils.GUI.Skin.window );
-    }
-
-    protected override void OnApplicationQuit()
-    {
-      base.OnApplicationQuit();
-      if ( m_simulation != null )
-        m_simulation.cleanup();
-    }
-
-    protected override void OnDestroy()
-    {
-      base.OnDestroy();
-      if ( m_simulation != null ) {
-        if ( m_solverSettings != null )
-          m_solverSettings.SetSimulation( null );
-        m_simulation.cleanup();
-      }
-      m_simulation = null;
-    }
-
-    private agxSDK.Simulation GetOrCreateSimulation()
-    {
-      if ( m_simulation == null ) {
-        NativeHandler.Instance.MakeMainThread();
-
-        m_simulation = new agxSDK.Simulation();
-        m_space = m_simulation.getSpace();
-        m_system = m_simulation.getDynamicsSystem();
-
-        // Solver settings will assign number of threads.
-        if ( m_solverSettings != null ) {
-          m_solverSettings.SetSimulation( m_simulation );
-          m_solverSettings.GetInitialized<SolverSettings>();
-        }
-        // No solver settings - set the default.
-        else
-          agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
-      }
-
-      return m_simulation;
     }
 
     public void OpenInNativeViewer()
