@@ -595,7 +595,7 @@ namespace AGXUnityEditor.IO
       }
 
       // Scaling damping to our (sigh) hard coded time step.
-      float fixedStepTime = AGXUnity.Simulation.DefaultTimeStep;
+      float fixedStepTime = Time.fixedDeltaTime;
       float readTimeStep  = Convert.ToSingle( Simulation.getTimeStep() );
       float timeStepRatio = fixedStepTime / readTimeStep;
       if ( !Mathf.Approximately( timeStepRatio, 1.0f ) ) {
