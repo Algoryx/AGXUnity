@@ -28,6 +28,63 @@ namespace AGXUnityEditor.Tools
       Simulation = simulation;
     }
 
+    public override void OnPreTargetMembersGUI( GUISkin skin )
+    {
+      var prevMode = Simulation.AutoSteppingMode;
+
+      UnityEngine.GUI.enabled = !Application.isPlaying;
+      Simulation.AutoSteppingMode = (Simulation.AutoSteppingModes)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Auto Stepping Mode",
+                                                                                                            false,
+                                                                                                            "Location (in Unity frame loop) where simulation step forward is called.\n\n" +
+                                                                                                            "Fixed Update: Called from MonoBehaviour.FixedUpdate with Time.fixedDeltaTime time step size.\n" +
+                                                                                                            "Update: Called from MonoBehaviour.Update with arbitrary time step size.\n" +
+                                                                                                            "Disabled: User has to manually invoke Simulation.Instance.DoStep()."),
+                                                                                             Simulation.AutoSteppingMode,
+                                                                                             skin.button );
+
+      if ( prevMode != Simulation.AutoSteppingMode ) {
+        if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate )
+          Simulation.TimeStep = Time.fixedDeltaTime;
+        else
+          Simulation.TimeStep = 1.0f / 60.0f;
+      }
+
+      UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
+      Simulation.TimeStep = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Time Step",
+                                                                                  false,
+                                                                                  "Simulation step size in seconds.\n\n" +
+                                                                                  "Fixed Update: Project Settings -> Time -> Fixed Timestep (Time.fixedDeltaTime)\n" +
+                                                                                  "Update: User defined - verify it's compatible with current VSync settings. Default: 0.01666667\n" +
+                                                                                  "Disabled: User defined. Default: 0.01666667" ),
+                                                                   Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate ?
+                                                                     Simulation.TimeStep :
+                                                                     Time.fixedDeltaTime,
+                                                                   skin.textField ),
+                                       0.0f );
+      UnityEngine.GUI.enabled = true;
+
+      if ( prevMode == Simulation.AutoSteppingModes.FixedUpdate )
+        Simulation.FixedUpdateRealTimeFactor = EditorGUILayout.FloatField( GUI.MakeLabel( "Real Time Factor",
+                                                                                          false,
+                                                                                          "< 1 means AGX is allowed to spend more time than Time.fixedDeltaTime executing stepForward, " +
+                                                                                          "resulting in low camera FPS in performance heavy simulations.\n\n" +
+                                                                                          "= 1 means AGX wont execute stepForward during additional FixedUpdate callbacks, " +
+                                                                                          "resulting in slow motion looking simulations but (relatively) high camera FPS in " +
+                                                                                          "performance heavy simulations." ),
+                                                                           Simulation.FixedUpdateRealTimeFactor,
+                                                                           skin.textField );
+      else if ( prevMode == Simulation.AutoSteppingModes.Update )
+        Simulation.UpdateRealTimeCorrectionFactor = EditorGUILayout.FloatField( GUI.MakeLabel( "Real Time Correction Factor",
+                                                                                               false,
+                                                                                               "Given 60 Hz, 1 frame VSync, the Update callbacks will be executed in 58 - 64 Hz. " +
+                                                                                               "This value scales the time since last frame so that we don't lose a stepForward " +
+                                                                                               "call when Update is called > 60 Hz. Default: 0.9." ),
+                                                                                Simulation.UpdateRealTimeCorrectionFactor,
+                                                                                skin.textField );
+
+      GUI.Separator();
+    }
+
     public override void OnPostTargetMembersGUI( GUISkin skin )
     {
       GUI.Separator();

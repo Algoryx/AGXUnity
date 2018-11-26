@@ -24,25 +24,16 @@ namespace AGXUnity
     public enum AutoSteppingModes
     {
       /// <summary>
-      /// [Not recommended]
       /// Simulation step from FixedUpdate. By default Time.fixedDeltaTime is
-      /// 0.02 and this delta time has to match the time step size.
+      /// 0.02 and Time.fixedDeltaTime will be used as time step size.
       /// </summary>
       FixedUpdate,
       /// <summary>
-      /// [Recommended]
       /// Simulation step from Update. Update callback is executed each frame,
       /// e.g, 60 Hz with VSync enabled on a 60 Hz monitor. Step forward is called when
       /// the elapsed time exceeds the time step size.
       /// </summary>
       Update,
-      /// <summary>
-      /// [Experimental]
-      /// Simulation step from Coroutine waiting for next end-of-frame.
-      /// This option will step the simulation after all update calls and after the
-      /// cameras rendered the scene.
-      /// </summary>
-      Coroutine,
       /// <summary>
       /// Simulation step invoked manually by the user.
       /// Previously EnableAutoStepping = false.
@@ -51,11 +42,12 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private AutoSteppingModes m_autoSteppingMode = AutoSteppingModes.Update;
+    private AutoSteppingModes m_autoSteppingMode = AutoSteppingModes.FixedUpdate;
 
     /// <summary>
     /// Simulation step mode.
     /// </summary>
+    [HideInInspector]
     public AutoSteppingModes AutoSteppingMode
     {
       get { return m_autoSteppingMode; }
@@ -66,8 +58,43 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private float m_fixedUpdateRealTimeFactor = 0.333f;
+
+    /// <summary>
+    /// Value defining the maximum time we may spend in FixedUpdate. Setting
+    /// this value to 1.0 means we may not spend more time than Time.fixedDeltaTime,
+    /// resulting in slow-motion looking simulations when the simulation time is
+    /// high - but the rendering FPS is still (relatively) high. Default: 0.333,
+    /// i.e., 3 * Time.fixedDeltaTime as maximum time spent in FixedUpdate to
+    /// resolve simulation performance spikes.
+    /// 
+    /// 0.0: Disabled - every FixedUpdate callback will call simulation.stepForward().
+    /// 0.333: Three times fixedDeltaTime may be spent stepping the simulation.
+    /// 1.0: Additional FixedUpdate callbacks before Update will be ignored if the
+    ///      simulation stepping time is high.
+    /// </summary>
     [HideInInspector]
-    public static readonly float DefaultTimeStep = 1.0f / 60.0f;
+    public float FixedUpdateRealTimeFactor
+    {
+      get { return m_fixedUpdateRealTimeFactor; }
+      set { m_fixedUpdateRealTimeFactor = Mathf.Max( value, 0.0f ); }
+    }
+
+    [SerializeField]
+    private float m_updateRealTimeCorrectionFactor = 0.9f;
+
+    /// <summary>
+    /// Given 60 Hz, 1 frame VSync, the Update callbacks will be executed in 58 - 64 Hz.
+    /// This value scales the time since last frame so that we don't lose a stepForward
+    /// call when Update is called > 60 Hz. Default: 0.9.
+    /// </summary>
+    [HideInInspector]
+    public float UpdateRealTimeCorrectionFactor
+    {
+      get { return m_updateRealTimeCorrectionFactor; }
+      set { m_updateRealTimeCorrectionFactor = Mathf.Max( value, 0.0f ); }
+    }
 
     /// <summary>
     /// Gravity, default -9.82 in y-direction. Paired with property Gravity.
@@ -93,19 +120,19 @@ namespace AGXUnity
     /// Time step size is the default callback frequency in Unity.
     /// </summary>
     [SerializeField]
-    private float m_timeStep = DefaultTimeStep;
+    private float m_timeStep = 0.02f;
 
     /// <summary>
     /// Get or set time step size. Note that the time step has to
     /// match Unity update frequency.
     /// </summary>
-    [ClampAboveZeroInInspector]
+    [HideInInspector]
     public float TimeStep
     {
       get { return m_timeStep; }
       set
       {
-        m_timeStep = value;
+        m_timeStep = Mathf.Max( value, float.Epsilon );
         if ( m_simulation != null )
           m_simulation.setTimeStep( m_timeStep );
       }
@@ -260,12 +287,13 @@ namespace AGXUnity
       DoStepInternal();
     }
 
+    private agx.Timer m_stepForwardTimer = null;
+
     protected override bool Initialize()
     {
       GetOrCreateSimulation();
 
-      if ( AutoSteppingMode == AutoSteppingModes.Coroutine )
-        StartCoroutine( DoStepCoroutine() );
+      m_stepForwardTimer = new agx.Timer();
 
       return base.Initialize();
     }
@@ -310,44 +338,48 @@ namespace AGXUnity
       return m_simulation;
     }
 
-    private float m_prevTime = -1.0f;
-
     private void FixedUpdate()
     {
-      if ( AutoSteppingMode == AutoSteppingModes.FixedUpdate )
+      var doFixedStep = AutoSteppingMode == AutoSteppingModes.FixedUpdate &&
+                        (
+                          // First time step.
+                          !m_stepForwardTimer.isRunning() ||
+                          // Do step as long as this FixedUpdate hasn't been called
+                          // several times exceeding wall clock time > factor * time step size.
+                          0.001f * (float)m_stepForwardTimer.getTime() / TimeStep <= 1.0f / FixedUpdateRealTimeFactor
+                        );
+      if ( doFixedStep ) {
+        if ( !m_stepForwardTimer.isRunning() )
+          m_stepForwardTimer.start();
+
         DoStepInternal();
+      }
+      else if ( AutoSteppingMode == AutoSteppingModes.FixedUpdate && !doFixedStep ) {
+        Debug.Log( "Ignoring step spending too long in stepForward: " + m_stepForwardTimer.getTime() + " ms." );
+      }
     }
 
     private void Update()
     {
+      // Resetting timer during AutoSteppingMode == FixedUpdate, flagging
+      // that next call to FixedUpdate may step the simulation.
+      if ( AutoSteppingMode != AutoSteppingModes.Update ) {
+        m_stepForwardTimer.reset();
+        return;
+      }
+
+      var currTime = 0.001f * (float)m_stepForwardTimer.getTime();
       var performStep = AutoSteppingMode == AutoSteppingModes.Update &&
                         (
                           // First step.
-                          m_prevTime < 0.0f ||
+                          !m_stepForwardTimer.isRunning() ||
                           // Time since last call exceeds the time step size.
-                          Time.timeSinceLevelLoad - ( m_prevTime + TimeStep ) > -0.007f
+                          currTime >= UpdateRealTimeCorrectionFactor * TimeStep
                         );
       if ( performStep ) {
-        m_prevTime = Time.timeSinceLevelLoad;
+        m_stepForwardTimer.reset( true );
         DoStepInternal();
       }
-    }
-
-    private IEnumerator DoStepCoroutine()
-    {
-      if ( !NativeHandler.Instance.HasValidLicense || m_simulation == null )
-        yield return null;
-
-      while ( AutoSteppingMode == AutoSteppingModes.Coroutine ) {
-        if ( State == States.INITIALIZING )
-          yield return new WaitForEndOfFrame();
-
-        DoStepInternal();
-
-        yield return new WaitForEndOfFrame();
-      }
-
-      yield return null;
     }
 
     private void DoStepInternal()
