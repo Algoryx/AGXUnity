@@ -354,9 +354,6 @@ namespace AGXUnity
 
         DoStepInternal();
       }
-      else if ( AutoSteppingMode == AutoSteppingModes.FixedUpdate && !doFixedStep ) {
-        Debug.Log( "Ignoring step spending too long in stepForward: " + m_stepForwardTimer.getTime() + " ms." );
-      }
     }
 
     private void Update()
