@@ -7,7 +7,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
-  public class RouteTool<ParentT, NodeT> : Tool
+  public class RouteTool<ParentT, NodeT> : CustomTargetTool
     where ParentT : ScriptComponent
     where NodeT : RouteNode, new()
   {
@@ -48,7 +48,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public RouteNodeTool SelectedTool { get { return FindActive<RouteNodeTool>( this, tool => tool.Node == m_selected ); } }
+    public RouteNodeTool SelectedTool { get { return FindActive<RouteNodeTool>( tool => tool.Node == m_selected ); } }
 
     /// <summary>
     /// Not visual in scene view when the editor is playing or selected in project (asset).
@@ -70,6 +70,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public RouteTool( ParentT parent, Route<NodeT> route )
+      : base( parent )
     {
       Parent = parent;
       Route = route;
@@ -145,7 +146,7 @@ namespace AGXUnityEditor.Tools
 
     protected RouteNodeTool GetRouteNodeTool( NodeT node )
     {
-      return FindActive<RouteNodeTool>( this, tool => tool.Node == node );
+      return FindActive<RouteNodeTool>( tool => tool.Node == node );
     }
 
     private void RouteGUI( GUISkin skin )

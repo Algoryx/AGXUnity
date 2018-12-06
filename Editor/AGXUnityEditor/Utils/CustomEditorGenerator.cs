@@ -31,14 +31,16 @@ namespace AGXUnityEditor.Utils
 
     public static Assembly GetAGXUnityAssembly()
     {
-      return Assembly.Load( "Assembly-CSharp" );
+      return Assembly.Load( Manager.AGXUnityAssemblyName );
     }
 
     public static Type[] GetAGXUnityTypes()
     {
       var assembly = GetAGXUnityAssembly();
       if ( assembly == null ) {
-        Debug.LogWarning( "Updating custom editors failed - unable to load Assembly-CSharp.dll." );
+        Debug.LogWarning( "Updating custom editors failed - unable to load " +
+                          Manager.AGXUnityAssemblyName +
+                          ".dll." );
         return new Type[] { };
       }
 

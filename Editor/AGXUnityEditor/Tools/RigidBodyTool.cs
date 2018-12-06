@@ -10,7 +10,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( RigidBody ) )]
-  public class RigidBodyTool : Tool
+  public class RigidBodyTool : CustomTargetTool
   {
     private List<Constraint> m_constraints = new List<Constraint>();
 
@@ -135,6 +135,7 @@ namespace AGXUnityEditor.Tools
     public bool ToolsActive = true;
 
     public RigidBodyTool( RigidBody rb )
+      : base( rb )
     {
       RigidBody = rb;
 

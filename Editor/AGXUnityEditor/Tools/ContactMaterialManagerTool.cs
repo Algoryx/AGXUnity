@@ -6,11 +6,12 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof ( ContactMaterialManager ) )]
-  public class ContactMaterialManagerTool : Tool
+  public class ContactMaterialManagerTool : CustomTargetTool
   {
     public ContactMaterialManager Manager { get; private set; }
 
     public ContactMaterialManagerTool( ContactMaterialManager manager )
+      : base( manager )
     {
       Manager = manager;
       Manager.RemoveNullEntries();

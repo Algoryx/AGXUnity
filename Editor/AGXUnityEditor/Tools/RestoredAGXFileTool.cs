@@ -8,11 +8,12 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( RestoredAGXFile ) )]
-  public class RestoredAGXFileTool : Tool
+  public class RestoredAGXFileTool : CustomTargetTool
   {
     public RestoredAGXFile RestoredAGXFile { get; private set; }
 
     public RestoredAGXFileTool( RestoredAGXFile restoredAGXFile )
+      : base( restoredAGXFile )
     {
       RestoredAGXFile = restoredAGXFile;
     }

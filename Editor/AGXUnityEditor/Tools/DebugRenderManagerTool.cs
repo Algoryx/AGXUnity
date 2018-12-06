@@ -7,11 +7,12 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( DebugRenderManager ) )]
-  public class DebugRenderManagerTool : Tool
+  public class DebugRenderManagerTool : CustomTargetTool
   {
     public DebugRenderManager Manager { get; private set; }
 
     public DebugRenderManagerTool( DebugRenderManager manager )
+      : base( manager )
     {
       Manager = manager;
     }

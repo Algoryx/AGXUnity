@@ -169,7 +169,7 @@ namespace AGXUnityEditor.Tools
       if ( obj == null )
         return null;
 
-      var types = Assembly.Load( "Assembly-CSharp-Editor" ).GetTypes();
+      var types = Assembly.Load( Manager.AGXUnityEditorAssemblyName ).GetTypes();
       var assignableFromTypes = new List<Type>();
       foreach ( var type in types ) {
         var customToolAttributes = type.GetCustomAttributes( typeof( CustomTool ), false );
@@ -323,33 +323,21 @@ namespace AGXUnityEditor.Tools
     /// Searches active tool from top level, depth first, given predicate.
     /// </summary>
     /// <typeparam name="T">Type of the tool.</typeparam>
-    /// <param name="pred">Tool predicate.</param>
-    /// <returns>Tool given type and predicate if active - otherwise null.</returns>
-    public static T FindActive<T>( Predicate<T> pred ) where T : Tool
-    {
-      return FindActive( m_active, pred );
-    }
-
-    /// <summary>
-    /// Searches active tool from top level, depth first, given predicate.
-    /// </summary>
-    /// <typeparam name="T">Type of the tool.</typeparam>
     /// <param name="tool">Parent tool to start from.</param>
     /// <param name="pred">Tool predicate.</param>
     /// <returns>Tool given type and predicate if active - otherwise null.</returns>
-    public static T FindActive<T>( Tool tool, Predicate<T> pred ) where T : Tool
+    public T FindActive<T>( Predicate<T> pred ) where T : Tool
     {
-      if ( tool == null )
-        return null;
+      if ( this is T && pred( this as T ) )
+        return this as T;
 
-      T result = tool as T;
-      if ( result != null && !pred( result ) )
-        return null;
+      foreach ( var child in m_children ) {
+        var result = child.FindActive( pred );
+        if ( result != null )
+          return result;
+      }
 
-      for ( int i = 0; result == null && i < tool.m_children.Count; ++i )
-        result = FindActive( tool.m_children[ i ], pred );
-
-      return result;
+      return null;
     }
 
     /// <summary>
@@ -390,7 +378,7 @@ namespace AGXUnityEditor.Tools
     private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
     private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
 
-    public Tool()
+    protected Tool()
     {
     }
 
@@ -426,6 +414,8 @@ namespace AGXUnityEditor.Tools
     {
       return m_children.ToArray();
     }
+
+    public Utils.KeyHandler[] KeyHandlers { get { return m_keyHandlers.Values.ToArray(); } }
 
     public void PerformRemoveFromParent()
     {
@@ -545,13 +535,13 @@ namespace AGXUnityEditor.Tools
     /// <param name="sceneView">Current scene view.</param>
     private void HandleOnSceneView( SceneView sceneView )
     {
-      foreach ( var child in m_children.ToList() )
-        child.HandleOnSceneView( sceneView );
-
       foreach ( var keyHandler in m_keyHandlers.Values )
         keyHandler.Update( Event.current );
 
       OnSceneViewGUI( sceneView );
+
+      foreach ( var child in m_children.ToList() )
+        child.HandleOnSceneView( sceneView );
     }
 
     public class HideDefaultState

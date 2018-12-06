@@ -5,7 +5,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
-  public class ConstraintAttachmentFrameTool : Tool
+  public class ConstraintAttachmentFrameTool : CustomTargetTool
   {
     public AttachmentPair AttachmentPair { get; private set; }
 
@@ -16,6 +16,7 @@ namespace AGXUnityEditor.Tools
     public FrameTool ConnectedFrameTool { get; private set; }
 
     public ConstraintAttachmentFrameTool( AttachmentPair attachmentPair, UnityEngine.Object onChangeDirtyTarget = null )
+      : base( onChangeDirtyTarget )
     {
       AttachmentPair = attachmentPair;
       OnChangeDirtyTarget = onChangeDirtyTarget;

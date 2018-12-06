@@ -8,7 +8,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( CollisionGroupsManager ) )]
-  public class CollisionGroupsManagerTool : Tool
+  public class CollisionGroupsManagerTool : CustomTargetTool
   {
     private List<string> m_groups = new List<string>();
     private CollisionGroupEntry m_findActiveGroupNameEntry = null;
@@ -18,6 +18,7 @@ namespace AGXUnityEditor.Tools
     public CollisionGroupsManager Manager { get; private set; }
 
     public CollisionGroupsManagerTool( CollisionGroupsManager manager )
+      : base( manager )
     {
       Manager = manager;
     }

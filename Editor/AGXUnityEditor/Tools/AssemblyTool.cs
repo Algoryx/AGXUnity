@@ -10,7 +10,7 @@ using Assembly = AGXUnity.Assembly;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Assembly ) )]
-  public class AssemblyTool : Tool
+  public class AssemblyTool : CustomTargetTool
   {
     private class SelectionEntry
     {
@@ -83,6 +83,7 @@ namespace AGXUnityEditor.Tools
     public Assembly Assembly { get; private set; }
 
     public AssemblyTool( Assembly assembly )
+      : base( assembly )
     {
       Assembly = assembly;
     }

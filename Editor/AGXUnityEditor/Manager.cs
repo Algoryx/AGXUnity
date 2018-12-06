@@ -47,6 +47,16 @@ namespace AGXUnityEditor
     public static bool IsCameraControl { get; private set; }
 
     /// <summary>
+    /// Name of assembly AGXUnity is built in to.
+    /// </summary>
+    public static readonly string AGXUnityAssemblyName = "Assembly-CSharp";
+
+    /// <summary>
+    /// Name of assembly AGXUnityEditor is built in to.
+    /// </summary>
+    public static readonly string AGXUnityEditorAssemblyName = "Assembly-CSharp-Editor";
+
+    /// <summary>
     /// Constructor called when the Unity editor is initialized.
     /// </summary>
     static Manager()

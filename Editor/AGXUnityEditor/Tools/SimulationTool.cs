@@ -7,7 +7,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Simulation ) )]
-  public class SimulationTool : Tool
+  public class SimulationTool : CustomTargetTool
   {
     public Simulation Simulation { get; private set; }
 
@@ -24,6 +24,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public SimulationTool( Simulation simulation )
+      : base( simulation )
     {
       Simulation = simulation;
     }

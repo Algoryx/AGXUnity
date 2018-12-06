@@ -8,7 +8,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Shape ) )]
-  public class ShapeTool : Tool
+  public class ShapeTool : CustomTargetTool
   {
     public Shape Shape { get; private set; }
 
@@ -83,6 +83,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public ShapeTool( Shape shape )
+      : base( shape )
     {
       Shape = shape;
     }
