@@ -89,8 +89,6 @@ namespace AGXUnityEditor
       // key event.
       RequestSceneViewFocus();
 
-      Tools.Tool.ActivateBuiltInTools();
-
       CreateDefaultAssets();
 
       PrefabUtility.prefabInstanceUpdated += OnPrefabUpdate;
@@ -312,7 +310,7 @@ namespace AGXUnityEditor
 
       UpdateMouseOverPrimitives( current );
 
-      Tools.Tool.HandleOnSceneViewGUI( sceneView );
+      ToolManager.HandleOnSceneViewGUI( sceneView );
 
       HandleWindowsGUI( sceneView );
 
@@ -428,10 +426,9 @@ namespace AGXUnityEditor
     /// </summary>
     private static void OnSelectionChanged()
     {
-      var activeTool = Tools.Tool.GetActiveTool();
       // If the active tool is hiding the position/rotation/scale handles
       // we ignore this 'auto-hiding'.
-      if ( activeTool == null || !activeTool.IsHidingTools ) {
+      if ( !ToolManager.IsHidingDefaultTools ) {
         bool mouseOverHierarchy = EditorWindow.mouseOverWindow != null &&
                                   EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
 
@@ -581,7 +578,7 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
-    /// Callback when a prefab is created from a gameobject <paramref name="go"/>.
+    /// Callback when a prefab is created from a game object <paramref name="go"/>.
     /// </summary>
     private static void OnPrefabUpdate( GameObject go )
     {

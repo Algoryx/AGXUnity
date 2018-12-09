@@ -20,7 +20,22 @@ namespace AGXUnityEditor
     /// <summary>
     /// All current, active tools (parents).
     /// </summary>
-    public static Tool[] ActiveTools { get { return m_activeTools.ToArray(); } }
+    public static CustomTargetTool[] ActiveTools { get { return m_activeTools.ToArray(); } }
+
+    /// <summary>
+    /// True if any active tool (including children) is hiding the
+    /// default tools (translate, rotate, scale) - otherwise false.
+    /// </summary>
+    public static bool IsHidingDefaultTools
+    {
+      get
+      {
+        foreach ( var tool in m_activeTools )
+          if ( tool.IsHidingDefaultTools )
+            return true;
+        return false;
+      }
+    }
 
     /// <summary>
     /// Find (depth-first) active tool given predicate.
@@ -41,10 +56,21 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Find active tool given target.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <returns>Active tool on target - otherwise false.</returns>
+    public static CustomTargetTool FindActive( object target )
+    {
+      return m_activeTools.FirstOrDefault( tool => tool.Target == target );
+    }
+
+    /// <summary>
     /// Traverse (depth-first) active tools and their children.
     /// </summary>
     /// <param name="visitor">Visitor.</param>
-    public static void Traverse( Action<Tool> visitor )
+    public static void Traverse<T>( Action<T> visitor )
+      where T : Tool
     {
       foreach ( var tool in m_activeTools )
         Traverse( tool, visitor );
@@ -64,7 +90,7 @@ namespace AGXUnityEditor
     }
 
     public static void OnTargetEditorEnable<T>( T target )
-      where T : UnityEngine.Object
+      where T : class
     {
       if ( target == null )
         return;
@@ -75,15 +101,33 @@ namespace AGXUnityEditor
       if ( toolType == null )
         return;
 
-      foreach ( var tool in m_activeTools )
-        if ( tool.GetType() == toolType && tool.Target == target )
-          return;
+      var tool = FindActive( target );
+      if ( tool != null && tool.GetType() == toolType )
+        return;
 
-      // Create, Add and invoke OnAdd.
+      try {
+        tool = (CustomTargetTool)Activator.CreateInstance( toolType, new object[] { target } );
+      }
+      catch ( Exception ) {
+        return;
+      }
+
+      m_activeTools.Add( tool );
+
+      tool.OnAdd();
+    }
+
+    public static void OnPreTargetMembers( object target, GUISkin skin )
+    {
+      var tool = FindActive( target );
+      if ( tool == null )
+        return;
+
+      tool.OnPreTargetMembersGUI( skin );
     }
 
     public static bool OnTargetEditorInspectorGUI<T>( T target )
-      where T : UnityEngine.Object
+      where T : class
     {
       if ( target == null )
         return false;
@@ -91,8 +135,17 @@ namespace AGXUnityEditor
       return Utils.KeyHandler.HandleDetectKeyOnGUI( target, Event.current );
     }
 
+    public static void OnPostTargetMembers( object target, GUISkin skin )
+    {
+      var tool = FindActive( target );
+      if ( tool == null )
+        return;
+
+      tool.OnPostTargetMembersGUI( skin );
+    }
+
     public static void OnTargetEditorDisable<T>( T target )
-      where T : UnityEngine.Object
+      where T : class
     {
       if ( target == null )
         return;
@@ -105,12 +158,14 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="tool">Current parent tool.</param>
     /// <param name="visitor">Visitor.</param>
-    private static void Traverse( Tool tool, Action<Tool> visitor )
+    private static void Traverse<T>( Tool tool, Action<T> visitor )
+      where T : Tool
     {
       if ( tool == null || visitor == null )
         return;
 
-      visitor( tool );
+      if ( tool is T )
+        visitor( tool as T );
 
       foreach ( var child in tool.GetChildren() )
         Traverse( child, visitor );

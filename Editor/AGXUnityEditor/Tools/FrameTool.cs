@@ -16,7 +16,7 @@ namespace AGXUnityEditor.Tools
     /// <returns>First frame tool that matches <paramref name="frame"/>.</returns>
     public static FrameTool FindActive( IFrame frame )
     {
-      return GetActiveTool()?.FindActive<FrameTool>( frameTool => frameTool.Frame == frame );
+      return ToolManager.FindActive<FrameTool>( frameTool => frameTool.Frame == frame );
     }
 
     /// <summary>

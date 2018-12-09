@@ -11,7 +11,8 @@ using GUI = AGXUnityEditor.Utils.GUI;
 
 namespace AGXUnityEditor
 {
-  public class BaseEditor<T> : Editor where T : class
+  public class BaseEditor<T> : Editor
+    where T : class
   {
     public static GUISkin CurrentSkin { get { return EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector ); } }
 
@@ -54,7 +55,7 @@ namespace AGXUnityEditor
 
     public override sealed void OnInspectorGUI()
     {
-      if ( Utils.GUI.TargetEditorOnInspectorGUI<T>( target as T, CurrentSkin ) )
+      if ( ToolManager.OnTargetEditorInspectorGUI( target as T ) )
         return;
 
       if ( OverrideOnInspectorGUI( target as T, CurrentSkin ) )
@@ -78,7 +79,7 @@ namespace AGXUnityEditor
       if ( EditorGUIUtility.isProSkin )
         guiSkin.label.normal.textColor = 204.0f / 255.0f * Color.white;
 
-      Utils.GUI.TargetEditorEnable<T>( target as T, guiSkin );
+      ToolManager.OnTargetEditorEnable( target as T );
 
       // Entire class/component marked as hidden - enable "hide in inspector".
       if ( target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
@@ -91,7 +92,7 @@ namespace AGXUnityEditor
 
     public void OnDestroy()
     {
-      Utils.GUI.TargetEditorDisable<T>( target as T );
+      ToolManager.OnTargetEditorDisable( target as T );
 
       // It's possible to detect when this editor/object is being deleted
       // e.g., when the user presses delete.
@@ -134,7 +135,7 @@ namespace AGXUnityEditor
         return false;
 
       if ( obj == target )
-        Utils.GUI.PreTargetMembers( target, skin );
+        ToolManager.OnPreTargetMembers( target, skin );
 
       bool changed = false;
       InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( obj );
@@ -149,7 +150,7 @@ namespace AGXUnityEditor
       methods.ToList().ForEach( methodInfo => changed = HandleMethod( methodInfo, target, skin ) || changed );
 
       if ( obj == target )
-        Utils.GUI.PostTargetMembers( target, skin );
+        ToolManager.OnPostTargetMembers( target, skin );
 
       return changed;
     }

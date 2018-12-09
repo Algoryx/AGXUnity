@@ -35,43 +35,6 @@ namespace AGXUnityEditor.Utils
       public const char Synchronized            = '\u2194';
     }
 
-    public static void TargetEditorEnable<T>( T target, GUISkin skin ) where T : class
-    {
-      KeyHandler.HandleDetectKeyOnEnable( target );
-
-      Tools.Tool.ActivateToolGivenTarget( target );
-    }
-
-    public static bool TargetEditorOnInspectorGUI<T>( T target, GUISkin skin ) where T : class
-    {
-      return KeyHandler.HandleDetectKeyOnGUI( target, Event.current );
-    }
-
-    public static void TargetEditorDisable<T>( T target ) where T : class
-    {
-      KeyHandler.HandleDetectKeyOnDisable( target );
-
-      var targetTool = Tools.Tool.GetActiveTool( target );
-      if ( targetTool != null )
-        Tools.Tool.RemoveActiveTool();
-    }
-
-    private enum TargetToolGUICallbackType
-    {
-      Pre,
-      Post
-    }
-
-    public static void PreTargetMembers<T>( T target, GUISkin skin ) where T : class
-    {
-      OnToolInspectorGUI( target, skin, TargetToolGUICallbackType.Pre );
-    }
-
-    public static void PostTargetMembers<T>( T target, GUISkin skin ) where T : class
-    {
-      OnToolInspectorGUI( target, skin, TargetToolGUICallbackType.Post );
-    }
-
     public static Vector3 Vector3Field( GUIContent content, Vector3 value, GUIStyle style = null )
     {
       GUILayout.BeginHorizontal();
@@ -436,18 +399,6 @@ namespace AGXUnityEditor.Utils
       GUILayout.EndHorizontal();
 
       return newSource != currentSource ? newSource : null;
-    }
-
-    private static void OnToolInspectorGUI( object target, GUISkin skin, TargetToolGUICallbackType callbackType )
-    {
-      var targetTool = Tools.Tool.GetActiveTool( target );
-      if ( targetTool == null )
-        return;
-
-      if ( callbackType == TargetToolGUICallbackType.Pre )
-        targetTool.OnPreTargetMembersGUI( skin );
-      else if ( callbackType == TargetToolGUICallbackType.Post )
-        targetTool.OnPostTargetMembersGUI( skin );
     }
   }
 }
