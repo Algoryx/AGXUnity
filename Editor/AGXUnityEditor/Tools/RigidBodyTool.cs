@@ -124,8 +124,8 @@ namespace AGXUnityEditor.Tools
         if ( value && !RigidBodyVisualCreateTool ) {
           RemoveAllChildren();
 
-          var createShapeVisualTool = new RigidBodyVisualCreateTool( RigidBody );
-          AddChild( createShapeVisualTool );
+          var createRigidBodyVisualTool = new RigidBodyVisualCreateTool( RigidBody );
+          AddChild( createRigidBodyVisualTool );
         }
         else if ( !value )
           RemoveChild( GetChild<RigidBodyVisualCreateTool>() );
@@ -213,7 +213,7 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
       using ( new GUI.Indent( 12 ) )
-        BaseEditor<MassProperties>.Update( RigidBody.MassProperties, RigidBody.MassProperties, skin );
+        BaseEditor<MassProperties>.Update( RigidBody, RigidBody.MassProperties, skin );
       GUI.Separator();
 
       if ( toggleFindTransformGivenPoint )
@@ -300,7 +300,7 @@ namespace AGXUnityEditor.Tools
                 ( shape as AGXUnity.Collide.Mesh ).SetSourceObject( newMeshSource );
             }
             GUI.Separator();
-            BaseEditor<Shape>.Update( shape, shape, skin );
+            BaseEditor<Shape>.Update( context, shape, skin );
           }
         }
       }
@@ -358,7 +358,7 @@ namespace AGXUnityEditor.Tools
           var rbTool = new RigidBodyTool( rb ) { ToolsActive = false };
           using ( new GUI.Indent( 12 ) ) {
             rbTool.OnPreTargetMembersGUI( skin );
-            BaseEditor<RigidBody>.Update( rb, rb, skin );
+            BaseEditor<RigidBody>.Update( context, rb, skin );
           }
         }
       }

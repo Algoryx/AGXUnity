@@ -92,7 +92,7 @@ namespace AGXUnityEditor
 
     public void OnDestroy()
     {
-      ToolManager.OnTargetEditorDisable( target as T );
+      ToolManager.OnTargetEditorDisable( target );
 
       // It's possible to detect when this editor/object is being deleted
       // e.g., when the user presses delete.
@@ -131,19 +131,19 @@ namespace AGXUnityEditor
 
     private static bool DrawMembersGUI( object obj, T target, GUISkin skin )
     {
-      if ( obj == null )
+      if ( target == null )
         return false;
 
       if ( obj == target )
         ToolManager.OnPreTargetMembers( target, skin );
 
       bool changed = false;
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( obj );
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( target );
       foreach ( InvokeWrapper wrapper in fieldsAndProperties )
         if ( ShouldBeShownInInspector( wrapper.Member ) )
           changed = HandleType( wrapper, target, skin ) || changed;
 
-      var methods = from methodInfo in obj.GetType().GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+      var methods = from methodInfo in target.GetType().GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
                     where
                       ShouldBeShownInInspector( methodInfo )
                     select methodInfo;

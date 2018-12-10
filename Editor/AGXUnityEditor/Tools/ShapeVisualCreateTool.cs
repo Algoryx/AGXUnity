@@ -53,7 +53,7 @@ namespace AGXUnityEditor.Tools
 
     public GameObject Preview { get; private set; }
 
-    public ShapeVisualCreateTool( Shape shape )
+    public ShapeVisualCreateTool( Shape shape, bool isGloballyUnique = true )
     {
       Shape = shape;
       Preview = ShapeVisual.Create( shape );

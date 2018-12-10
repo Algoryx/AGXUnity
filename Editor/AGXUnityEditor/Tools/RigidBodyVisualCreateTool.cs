@@ -33,7 +33,7 @@ namespace AGXUnityEditor.Tools
     {
       var shapes = RigidBody.GetComponentsInChildren<Shape>();
       foreach ( var shape in shapes )
-        AddChild( new ShapeVisualCreateTool( shape ) );
+        AddChild( new ShapeVisualCreateTool( shape, false ) );
     }
 
     public override void OnRemove()

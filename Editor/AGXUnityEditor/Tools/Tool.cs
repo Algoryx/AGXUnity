@@ -227,14 +227,9 @@ namespace AGXUnityEditor.Tools
 
     public void PerformRemoveFromParent()
     {
-      // #ToolManager
-      //if ( GetActiveTool() == this ) {
-      //  RemoveActiveTool();
-      //  return;
-      //}
-
       PerformRemove();
     }
+
     public void Remove()
     {
       PerformRemoveFromParent();

@@ -89,6 +89,12 @@ namespace AGXUnityEditor
         HandleOnSceneView( tool, sceneView );
     }
 
+    /// <summary>
+    /// Callback from Editor OnEnable. Checks for classes with
+    /// CustomToolAttribute matching <paramref name="target"/> type.
+    /// </summary>
+    /// <typeparam name="T">Target type.</typeparam>
+    /// <param name="target">Target object.</param>
     public static void OnTargetEditorEnable<T>( T target )
       where T : class
     {
@@ -117,6 +123,12 @@ namespace AGXUnityEditor
       tool.OnAdd();
     }
 
+    /// <summary>
+    /// Callback from Editor before member fields are being
+    /// rendered for a given target.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <param name="skin">Current GUI skin.</param>
     public static void OnPreTargetMembers( object target, GUISkin skin )
     {
       var tool = FindActive( target );
@@ -126,8 +138,7 @@ namespace AGXUnityEditor
       tool.OnPreTargetMembersGUI( skin );
     }
 
-    public static bool OnTargetEditorInspectorGUI<T>( T target )
-      where T : class
+    public static bool OnTargetEditorInspectorGUI( object target )
     {
       if ( target == null )
         return false;
@@ -135,6 +146,12 @@ namespace AGXUnityEditor
       return Utils.KeyHandler.HandleDetectKeyOnGUI( target, Event.current );
     }
 
+    /// <summary>
+    /// Callback from Editor after member fields are being
+    /// rendered for a given target.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <param name="skin">Current GUI skin.</param>
     public static void OnPostTargetMembers( object target, GUISkin skin )
     {
       var tool = FindActive( target );
@@ -144,13 +161,25 @@ namespace AGXUnityEditor
       tool.OnPostTargetMembersGUI( skin );
     }
 
-    public static void OnTargetEditorDisable<T>( T target )
-      where T : class
+    /// <summary>
+    /// Callback from Editor OnDisable. If <paramref name="target"/>
+    /// has an active custom target tool - the tool will be removed.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    public static void OnTargetEditorDisable( object target )
     {
       if ( target == null )
         return;
 
       Utils.KeyHandler.HandleDetectKeyOnDisable( target );
+
+      var tool = FindActive( target );
+      if ( tool == null )
+        return;
+
+      tool.Remove();
+
+      m_activeTools.Remove( tool );
     }
 
     /// <summary>
