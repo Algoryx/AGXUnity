@@ -77,6 +77,35 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Callback from Tool.AddChild to try to handle other
+    /// active tools - trying to disable them.
+    /// </summary>
+    /// <param name="child">Child that has just been added.</param>
+    public static void OnChildAdded( Tool child )
+    {
+      if ( child == null )
+        return;
+
+      var root = child.GetRoot() as CustomTargetTool;
+      if ( root == null )
+        return;
+
+      foreach ( var targetTool in ActiveTools ) {
+        if ( targetTool == root )
+          continue;
+
+        foreach ( var targetToolChild in targetTool.GetChildren() ) {
+          // Ignoring any route node tools for now. This should disable
+          // any FrameTool that's active under the route node tool.
+          if ( targetToolChild is RouteNodeTool )
+            continue;
+
+          targetToolChild.PerformRemoveFromParent();
+        }
+      }
+    }
+
+    /// <summary>
     /// Callback from Manager at OnSceneView event.
     /// </summary>
     /// <param name="sceneView">Scene view.</param>

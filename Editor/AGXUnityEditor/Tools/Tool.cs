@@ -205,6 +205,14 @@ namespace AGXUnityEditor.Tools
       return m_parent;
     }
 
+    public Tool GetRoot()
+    {
+      Tool root = GetParent();
+      while ( root != null && root.GetParent() != null )
+        root = root.GetParent();
+      return root;
+    }
+
     public T GetChild<T>() where T : Tool
     {
       for ( int i = 0; i < m_children.Count; ++i )
@@ -243,6 +251,8 @@ namespace AGXUnityEditor.Tools
       m_children.Add( child );
       child.m_parent = this;
       child.OnAdd();
+
+      ToolManager.OnChildAdded( child );
     }
 
     protected void RemoveChild( Tool child )
