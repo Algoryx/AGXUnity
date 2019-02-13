@@ -231,8 +231,6 @@ namespace AGXUnityEditor.Tools
         value = EditorGUILayout.FloatField( wrapper.Get<float>( rowData ) );
       else if ( wrapper.IsType<RangeReal>() ) {
         RangeReal currValue = wrapper.Get<RangeReal>( rowData );
-        if ( currValue == null )
-          currValue = new RangeReal();
 
         currValue.Min = EditorGUILayout.FloatField( currValue.Min, GUILayout.MaxWidth( 128 ) );
         currValue.Max = EditorGUILayout.FloatField( currValue.Max, GUILayout.MaxWidth( 128 ) );

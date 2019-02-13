@@ -5,29 +5,22 @@
   /// max value (default +infinity).
   /// </summary>
   [System.Serializable]
-  public class RangeReal
+  public struct RangeReal
   {
     /// <summary>
     /// Get or set min value less than max value.
     /// </summary>
-    public float Min = float.NegativeInfinity;
+    public float Min;
 
     /// <summary>
     /// Get or set max value larger than min value.
     /// </summary>
-    public float Max = float.PositiveInfinity;
+    public float Max;
 
     /// <summary>
     /// Convert to native type agx.RangeReal given current min and max.
     /// </summary>
     public agx.RangeReal Native { get { return new agx.RangeReal( Min, Max ); } }
-
-    /// <summary>
-    /// Default constructor.
-    /// </summary>
-    public RangeReal()
-    {
-    }
 
     /// <summary>
     /// Construct given minimum and maximum values.

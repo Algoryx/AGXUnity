@@ -330,7 +330,11 @@ namespace AGXUnity
     /// <returns>Array of ordinary elementary constraints.</returns>
     public ElementaryConstraint[] GetOrdinaryElementaryConstraints()
     {
-      return ( from ec in m_elementaryConstraints where ( ec as ElementaryConstraintController ) == null select ec ).ToArray();
+      return ( from ec
+               in m_elementaryConstraints
+               where !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller.
+                     ec as ElementaryConstraintController == null
+               select ec ).ToArray();
     }
 
     /// <summary>
@@ -339,7 +343,10 @@ namespace AGXUnity
     /// <returns>Array of controllers - if present.</returns>
     public ElementaryConstraintController[] GetElementaryConstraintControllers()
     {
-      return ( from ec in m_elementaryConstraints where ec is ElementaryConstraintController select ec as ElementaryConstraintController ).ToArray();
+      return ( from ec
+               in m_elementaryConstraints
+               where ec is ElementaryConstraintController
+               select ec as ElementaryConstraintController ).ToArray();
     }
 
     /// <summary>

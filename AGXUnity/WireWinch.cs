@@ -49,7 +49,7 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private RangeReal m_forceRange = new RangeReal();
+    private RangeReal m_forceRange = new RangeReal( float.NegativeInfinity, float.PositiveInfinity );
     public RangeReal ForceRange
     {
       get { return m_forceRange; }
