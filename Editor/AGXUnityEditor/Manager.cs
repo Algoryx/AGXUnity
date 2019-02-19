@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using AGXUnity.Utils;
 
 namespace AGXUnityEditor
@@ -373,8 +374,8 @@ namespace AGXUnityEditor
 
     private static void OnHierarchyWindowChanged()
     {
-      var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
-      if ( scene.name != m_currentSceneName ) {
+      var scene = EditorSceneManager.GetActiveScene();
+      if ( scene.name != m_currentSceneName || EditorSceneManager.sceneCount > EditorSceneManager.previewSceneCount ) {
         EditorData.Instance.GC();
 
         m_currentSceneName = scene.name;
@@ -575,6 +576,10 @@ namespace AGXUnityEditor
     /// </summary>
     private static void OnPrefabUpdate( GameObject go )
     {
+#if UNITY_2018_3_OR_NEWER
+      // Can't remember why we do this and we're not allowed to add
+      // components to a prefab.
+#else
       // Collecting disabled collision groups for the created prefab.
       if ( AGXUnity.CollisionGroupsManager.HasInstance ) {
 #if UNITY_2018_1_OR_NEWER
@@ -603,6 +608,7 @@ namespace AGXUnityEditor
           }
         }
       }
+#endif
     }
   }
 }

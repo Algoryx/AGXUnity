@@ -1,7 +1,8 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
@@ -10,7 +11,7 @@ namespace AGXUnityEditor
 {
   public static class AutoUpdateSceneHandler
   {
-    public static void HandleUpdates( UnityEngine.SceneManagement.Scene scene )
+    public static void HandleUpdates( Scene scene )
     {
       // Ignoring updates when the editor presses play.
       if ( EditorApplication.isPlaying )
@@ -19,21 +20,55 @@ namespace AGXUnityEditor
       VerifyOnSelectionTarget( scene );
       VerifyShapeVisualsMaterial( scene );
       VerifySimulationInstance( scene );
+      VerifyCableWireRendering( scene );
+    }
+
+    /// <summary>
+    /// * Verifies prefab instance doesn't contain WireRenderer with SegmentSpawner as child.
+    /// * Verifies prefab instance doesn't contain CableRenderer with SegmentSpawner as child.
+    /// </summary>
+    /// <param name="instance">Prefab instance.</param>
+    /// <returns>true if changes were made, otherwise false</returns>
+    public static bool VerifyPrefabInstance( GameObject instance )
+    {
+      var isDisconnected = PrefabUtility.IsDisconnectedFromPrefabAsset( instance );
+      // Patching the instance when we've a disconnected prefab - otherwise patch
+      // the source asset object.
+      var objectToCheck = isDisconnected ?
+                            instance :
+                            PrefabUtility.GetCorrespondingObjectFromSource( instance );
+
+      if ( !HandleSegmentSpawner( objectToCheck ) )
+        return false;
+
+      try {
+        if ( !isDisconnected )
+          PrefabUtility.SaveAsPrefabAssetAndConnect( objectToCheck,
+                                                     AssetDatabase.GetAssetPath( objectToCheck ),
+                                                     InteractionMode.UserAction );
+      }
+      catch ( System.ArgumentException ) {
+        // Silencing Unity bug where everything seems right but we
+        // get an ArgumentException thrown at us:
+        //    https://forum.unity.com/threads/creating-prefabs-from-models-by-script.606760/
+      }
+
+      return true;
     }
 
     /// <summary>
     /// * Verifies version of OnSelectionProxy and patches it if Target == null.
     /// * Verifies so that our shapes doesn't have multiple debug rendering components.
     /// </summary>
-    private static void VerifyOnSelectionTarget( UnityEngine.SceneManagement.Scene scene )
+    private static void VerifyOnSelectionTarget( Scene scene )
     {
-      AGXUnity.Collide.Shape[] shapes = UnityEngine.Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
+      var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
       foreach ( var shape in shapes ) {
         OnSelectionProxy selectionProxy = shape.GetComponent<OnSelectionProxy>();
         if ( selectionProxy != null && selectionProxy.Target == null )
           selectionProxy.Component = shape;
 
-        AGXUnity.Rendering.ShapeDebugRenderData[] data = shape.GetComponents<AGXUnity.Rendering.ShapeDebugRenderData>();
+        var data = shape.GetComponents<AGXUnity.Rendering.ShapeDebugRenderData>();
         if ( data.Length > 1 ) {
           Debug.Log( "Shape has several ShapeDebugRenderData. Removing/resetting.", shape );
           foreach ( var instance in data )
@@ -46,9 +81,9 @@ namespace AGXUnityEditor
     /// <summary>
     /// Shape visual components with sharedMaterial == null are assigned default material.
     /// </summary>
-    private static void VerifyShapeVisualsMaterial( UnityEngine.SceneManagement.Scene scene )
+    private static void VerifyShapeVisualsMaterial( Scene scene )
     {
-      AGXUnity.Rendering.ShapeVisual[] shapeVisuals = UnityEngine.Object.FindObjectsOfType<AGXUnity.Rendering.ShapeVisual>();
+      var shapeVisuals = Object.FindObjectsOfType<AGXUnity.Rendering.ShapeVisual>();
       foreach ( var shapeVisual in shapeVisuals ) {
         var renderers = shapeVisual.GetComponentsInChildren<MeshRenderer>();
         foreach ( var renderer in renderers ) {
@@ -64,9 +99,9 @@ namespace AGXUnityEditor
       }
     }
 
-    private static void VerifySimulationInstance( UnityEngine.SceneManagement.Scene scene )
+    private static void VerifySimulationInstance( Scene scene )
     {
-      var simulation = UnityEngine.Object.FindObjectOfType<Simulation>();
+      var simulation = Object.FindObjectOfType<Simulation>();
       if ( simulation == null )
         return;
 
@@ -79,7 +114,35 @@ namespace AGXUnityEditor
       HandleSimulationStepMode( scene, simulation, script );
     }
 
-    private static void HandleSolverSettings( UnityEngine.SceneManagement.Scene scene,
+    private static void VerifyCableWireRendering( Scene scene )
+    {
+      var containsChanges = false;
+      System.Action<GameObject> checkGameObject = go =>
+      {
+        var root = PrefabUtility.GetOutermostPrefabInstanceRoot( go );
+        if ( root != null )
+          containsChanges = VerifyPrefabInstance( root ) || containsChanges;
+        else
+          containsChanges = HandleSegmentSpawner( go ) || containsChanges;
+      };
+
+      var cables = Object.FindObjectsOfType<Cable>();
+      foreach ( var cable in cables )
+        checkGameObject( cable.gameObject );
+
+      var wires  = Object.FindObjectsOfType<Wire>();
+      foreach ( var wire in wires )
+        checkGameObject( wire.gameObject );
+
+      if ( containsChanges ) {
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
+    }
+
+    private static void HandleSolverSettings( Scene scene,
                                               Simulation simulation,
                                               IO.Utils.YamlObject script )
     {
@@ -141,7 +204,7 @@ namespace AGXUnityEditor
       simulation.SolverSettings = solverSettings;
     }
 
-    private static void HandleSimulationStepMode( UnityEngine.SceneManagement.Scene scene,
+    private static void HandleSimulationStepMode( Scene scene,
                                                   Simulation simulation,
                                                   IO.Utils.YamlObject script )
     {
@@ -155,6 +218,31 @@ namespace AGXUnityEditor
                                       Simulation.AutoSteppingModes.FixedUpdate :
                                       Simulation.AutoSteppingModes.Disabled;
       UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
+    }
+
+    private static bool HandleSegmentSpawner( GameObject go )
+    {
+      if ( go == null )
+        return false;
+
+      var cRenderers = go.GetComponentsInChildren<AGXUnity.Rendering.CableRenderer>();
+      var wRenderers = go.GetComponentsInChildren<AGXUnity.Rendering.WireRenderer>();
+      var toRemove   = new List<GameObject>();
+      toRemove.AddRange( from cRenderer
+                         in cRenderers
+                         where cRenderer.transform.Find( "RenderSegments" ) != null
+                         select cRenderer.transform.Find( "RenderSegments" ).gameObject );
+      toRemove.AddRange( from wRenderer
+                         in wRenderers
+                         where wRenderer.transform.Find( "RenderSegments" ) != null
+                         select wRenderer.transform.Find( "RenderSegments" ).gameObject );
+      if ( toRemove.Count == 0 )
+        return false;
+
+      foreach ( var obj in toRemove )
+        GameObject.DestroyImmediate( obj, true );
+
+      return true;
     }
   }
 }

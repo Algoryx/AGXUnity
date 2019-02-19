@@ -5,12 +5,12 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
-  [System.Serializable]
+  [Serializable]
   public class SegmentSpawner
   {
     [SerializeField]
     private GameObject m_segmentInstance = null;
-    [SerializeField]
+    [NonSerialized]
     private GameObject m_segments = null;
     [SerializeField]
     private int m_counter = 0;
@@ -97,10 +97,9 @@ namespace AGXUnity.Rendering
       if ( m_segments == null )
         return;
 
-      m_segments.transform.parent = null;
-      DestroyFrom( 0 );
-      GameObject.DestroyImmediate( m_segmentInstance );
       GameObject.DestroyImmediate( m_segments );
+
+      m_firstSegmentInstance = null;
       m_segmentInstance = null;
       m_segments = null;
     }
@@ -167,32 +166,30 @@ namespace AGXUnity.Rendering
       // Moving create parent m_segments from Initialize to here because the
       // editor will delete it when the user presses play then stop then "Undo".
       if ( m_segments == null ) {
-        var segmentsTransform = m_parentComponent.transform.Find( "RenderSegments" );
-        if ( segmentsTransform != null ) {
-          m_segments = segmentsTransform.gameObject;
-          if ( segmentsTransform.childCount > 0 ) {
-            if ( m_separateFirstObjectPrefabPath != string.Empty )
-              m_firstSegmentInstance = segmentsTransform.GetChild( 0 ).gameObject;
-            if ( m_firstSegmentInstance != null && segmentsTransform.childCount > 1 )
-              m_segmentInstance = segmentsTransform.GetChild( 1 ).gameObject;
-            else if ( m_firstSegmentInstance == null )
-              m_segmentInstance = segmentsTransform.GetChild( 0 ).gameObject;
-          }
-        }
-        else {
-          m_segments = new GameObject( "RenderSegments" );
-          m_parentComponent.gameObject.AddChild( m_segments, false );
+        m_segments = RuntimeObjects.GetOrCreateRoot( m_parentComponent );
+        if ( m_segments == null )
+          return null;
+
+        if ( m_segments.transform.childCount > 0 ) {
+          if ( m_separateFirstObjectPrefabPath != string.Empty )
+            m_firstSegmentInstance = m_segments.transform.GetChild( 0 ).gameObject;
+          if ( m_firstSegmentInstance != null && m_segments.transform.childCount > 1 )
+            m_segmentInstance = m_segments.transform.GetChild( 1 ).gameObject;
+          else if ( m_firstSegmentInstance == null )
+            m_segmentInstance = m_segments.transform.GetChild( 0 ).gameObject;
         }
       }
 
       if ( m_separateFirstObjectPrefabPath != string.Empty && m_firstSegmentInstance == null ) {
         m_firstSegmentInstance = PrefabLoader.Instantiate<GameObject>( m_separateFirstObjectPrefabPath );
+        m_firstSegmentInstance.hideFlags = HideFlags.DontSaveInEditor;
         setMaterialFunc( m_firstSegmentInstance, Material );
         AddSelectionProxy( m_firstSegmentInstance );
         Add( m_firstSegmentInstance );
       }
       else if ( m_segmentInstance == null ) {
         m_segmentInstance = PrefabLoader.Instantiate<GameObject>( m_prefabObjectPath );
+        m_segmentInstance.hideFlags = HideFlags.DontSaveInEditor;
         setMaterialFunc( m_segmentInstance, Material );
         AddSelectionProxy( m_segmentInstance );
         Add( m_segmentInstance );
@@ -226,12 +223,6 @@ namespace AGXUnity.Rendering
 
     private void AddSelectionProxy( GameObject instance )
     {
-      // Handling old version where this object was used by the Wire only and
-      // m_parentComponent wasn't present. I.e., if m_parenComponent == null
-      // it has to be a Wire present.
-      if ( m_parentComponent == null )
-        m_parentComponent = m_segments.transform.parent.GetComponent<Wire>();
-
       instance.GetOrCreateComponent<OnSelectionProxy>().Component = m_parentComponent;
       foreach ( Transform child in instance.transform )
         child.gameObject.GetOrCreateComponent<OnSelectionProxy>().Component = m_parentComponent;

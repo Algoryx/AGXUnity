@@ -185,6 +185,9 @@ namespace AGXUnityEditor.IO
 
     public static YamlObject[] FindScriptInSceneFile( string sceneFile, string guid, bool searchMultiple = true )
     {
+      if ( sceneFile == string.Empty )
+        return new YamlObject[] { };
+
       List<YamlObject> objects = new List<YamlObject>();
       try {
         var file = new FileInfo( sceneFile );

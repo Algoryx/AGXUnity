@@ -45,6 +45,11 @@ namespace AGXUnityEditor
         return;
       }
 
+      if ( AutoUpdateSceneHandler.VerifyPrefabInstance( instance ) ) {
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
+
       Undo.SetCurrentGroupName( "Adding: " + instance.name + " to scene." );
       var grouId = Undo.GetCurrentGroup();
 
@@ -52,7 +57,8 @@ namespace AGXUnityEditor
         TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>().Add( cm );
 
       var fileData = fileInfo.ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>();
-      AddDisabledPairsToManager( fileData.DisabledGroups );
+      foreach ( var disabledPair in fileData.DisabledGroups )
+        TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>().SetEnablePair( disabledPair.First, disabledPair.Second, false );
 
       var renderDatas = instance.GetComponentsInChildren<AGXUnity.Rendering.ShapeVisual>();
       foreach ( var renderData in renderDatas ) {
@@ -63,12 +69,6 @@ namespace AGXUnityEditor
       // TODO: Handle fileData.SolverSettings?
 
       Undo.CollapseUndoOperations( grouId );
-    }
-
-    private static void AddDisabledPairsToManager( AGXUnity.IO.GroupPair[] disabledPairs )
-    {
-      foreach ( var disabledPair in disabledPairs )
-        TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>().SetEnablePair( disabledPair.First, disabledPair.Second, false );
     }
   }
 }

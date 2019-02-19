@@ -6,8 +6,8 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
-  [AddComponentMenu( "" )]
   [ExecuteInEditMode]
+  [RequireComponent( typeof( Wire ) )]
   public class WireRenderer : ScriptComponent
   {
     [SerializeField]

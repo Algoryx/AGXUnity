@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 
@@ -110,8 +109,8 @@ namespace AGXUnity.Rendering
         }
 
         // Forcing the debug render node to be parent to the static DebugRenderManger.
-        if ( Node.transform.parent != manager.gameObject.transform )
-          manager.gameObject.AddChild( Node );
+        if ( Node.transform.parent != manager.Root.transform )
+          manager.Root.AddChild( Node );
 
         Node.transform.position = shape.transform.position;
         Node.transform.rotation = shape.transform.rotation;

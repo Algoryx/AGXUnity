@@ -18,8 +18,8 @@ namespace AGXUnity
   /// var freeNodes = from node in route select node.Type == Wire.NodeType.FreeNode;
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
-  [Serializable]
   [HideInInspector]
+  [AddComponentMenu("")]
   public class WireRoute : Route<WireRouteNode>
   {
     /// <summary>
