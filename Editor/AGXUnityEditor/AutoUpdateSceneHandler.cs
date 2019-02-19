@@ -31,24 +31,40 @@ namespace AGXUnityEditor
     /// <returns>true if changes were made, otherwise false</returns>
     public static bool VerifyPrefabInstance( GameObject instance )
     {
+#if UNITY_2018_3_OR_NEWER
       var isDisconnected = PrefabUtility.IsDisconnectedFromPrefabAsset( instance );
+
       // Patching the instance when we've a disconnected prefab - otherwise patch
       // the source asset object.
       var objectToCheck = isDisconnected ?
                             instance :
-                            PrefabUtility.GetCorrespondingObjectFromSource( instance );
+                            (GameObject)PrefabUtility.GetCorrespondingObjectFromSource( instance );
+#else
+      var isDisconnected = PrefabUtility.GetPrefabType( instance ) != PrefabType.PrefabInstance;
+      
+      // We're modifying the instance and replacing the prefab in this "old" prefab
+      // work flow.
+      var objectToCheck = instance;
+#endif
 
       if ( !HandleSegmentSpawner( objectToCheck ) )
         return false;
 
       try {
-        if ( !isDisconnected )
+        if ( !isDisconnected ) {
+#if UNITY_2018_3_OR_NEWER
           PrefabUtility.SaveAsPrefabAssetAndConnect( objectToCheck,
                                                      AssetDatabase.GetAssetPath( objectToCheck ),
                                                      InteractionMode.UserAction );
+#else
+          PrefabUtility.ReplacePrefab( objectToCheck,
+                                       (GameObject)PrefabUtility.GetCorrespondingObjectFromSource( instance ),
+                                       ReplacePrefabOptions.ConnectToPrefab );
+#endif
+        }
       }
       catch ( System.ArgumentException ) {
-        // Silencing Unity bug where everything seems right but we
+        // Silencing Unity (2018.3) bug where everything seems right but we
         // get an ArgumentException thrown at us:
         //    https://forum.unity.com/threads/creating-prefabs-from-models-by-script.606760/
       }
@@ -119,7 +135,11 @@ namespace AGXUnityEditor
       var containsChanges = false;
       System.Action<GameObject> checkGameObject = go =>
       {
+#if UNITY_2018_3_OR_NEWER
         var root = PrefabUtility.GetOutermostPrefabInstanceRoot( go );
+#else
+        var root = PrefabUtility.FindPrefabRoot( go );
+#endif
         if ( root != null )
           containsChanges = VerifyPrefabInstance( root ) || containsChanges;
         else

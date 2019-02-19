@@ -36,6 +36,11 @@ namespace AGXUnityEditor
 
     public static void OnPrefabAddedToScene( GameObject instance )
     {
+      if ( AutoUpdateSceneHandler.VerifyPrefabInstance( instance ) ) {
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
+
       var fileInfo = new IO.AGXFileInfo( instance );
       if ( !fileInfo.IsValid || fileInfo.Type != IO.AGXFileInfo.FileType.AGXPrefab )
         return;
@@ -43,11 +48,6 @@ namespace AGXUnityEditor
       if ( fileInfo.ExistingPrefab == null ) {
         Debug.LogWarning( "Unable to load parent prefab from file: " + fileInfo.NameWithExtension );
         return;
-      }
-
-      if ( AutoUpdateSceneHandler.VerifyPrefabInstance( instance ) ) {
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
       }
 
       Undo.SetCurrentGroupName( "Adding: " + instance.name + " to scene." );

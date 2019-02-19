@@ -241,6 +241,7 @@ namespace AGXUnityEditor
     }
 
     private static string m_currentSceneName = string.Empty;
+    private static int m_numScenesLoaded = 0;
     private static bool m_requestSceneViewFocus = false;
     private static HijackLeftMouseClickData m_hijackLeftMouseClickData = null;
 
@@ -375,7 +376,11 @@ namespace AGXUnityEditor
     private static void OnHierarchyWindowChanged()
     {
       var scene = EditorSceneManager.GetActiveScene();
-      if ( scene.name != m_currentSceneName || EditorSceneManager.sceneCount > EditorSceneManager.previewSceneCount ) {
+      var isSceneLoaded = scene.name != m_currentSceneName ||
+                          // Drag drop of scene into hierarchy.
+                          EditorSceneManager.loadedSceneCount > m_numScenesLoaded;
+
+      if ( isSceneLoaded ) {
         EditorData.Instance.GC();
 
         m_currentSceneName = scene.name;
@@ -395,6 +400,8 @@ namespace AGXUnityEditor
           Undo.CollapseUndoOperations( grouId );
         }
       }
+
+      m_numScenesLoaded = EditorSceneManager.loadedSceneCount;
     }
 
     /// <summary>
