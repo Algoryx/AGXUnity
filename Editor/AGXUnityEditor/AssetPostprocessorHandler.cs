@@ -89,16 +89,27 @@ namespace AGXUnityEditor
                                 where !CollisionGroupsManager.Instance.GetEnablePair( tag1.Tag, tag2.Tag )
                                 select new AGXUnity.IO.GroupPair() { First = tag1.Tag, Second = tag2.Tag };
             if ( disabledPairs.Count() > 0 ) {
+#if UNITY_2018_1_OR_NEWER
+#if UNITY_2018_3_OR_NEWER
               var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
               if ( savedData == null ) {
                 savedData = instance.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
                 PrefabUtility.ApplyAddedComponent( savedData, AssetDatabase.GetAssetPath( prefab ), InteractionMode.AutomatedAction );
               }
-
+#else
+              var savedData = prefab.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
+              if ( savedData == null )
+                savedData = prefab.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
+#endif
+#endif
               foreach ( var disabledPair in disabledPairs )
                 savedData.AddDisabledPair( disabledPair.First, disabledPair.Second );
 
+#if UNITY_2018_3_OR_NEWER
               PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
+#else
+              EditorUtility.SetDirty( prefab );
+#endif
             }
           }
           finally {
