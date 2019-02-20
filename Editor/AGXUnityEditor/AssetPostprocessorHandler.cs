@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 
@@ -34,44 +36,20 @@ namespace AGXUnityEditor
       return null;
     }
 
-    private static void OnPrefabUpdate( GameObject go )
+    private class CollisionGroupEntryEqualityComparer : IEqualityComparer<CollisionGroupEntry>
     {
-#if UNITY_2018_3_OR_NEWER
-      // Can't remember why we do this and we're not allowed to add
-      // components to a prefab.
-      Debug.Log( "Update: " + go.name + ", instance status: " + PrefabUtility.GetPrefabInstanceStatus( go ) + ", prefab status: " + PrefabUtility.GetPrefabAssetType( go ) );
-      Debug.Log( "Instance id: " + go.GetInstanceID() + ", source id: " + PrefabUtility.GetCorrespondingObjectFromSource<GameObject>( go ).GetInstanceID() );
-#else
-      // Collecting disabled collision groups for the created prefab.
-      if ( AGXUnity.CollisionGroupsManager.HasInstance ) {
-#if UNITY_2018_1_OR_NEWER
-        var prefab = PrefabUtility.GetCorrespondingObjectFromSource( go ) as GameObject;
-#else
-        var prefab = PrefabUtility.GetPrefabParent( go ) as GameObject;
-#endif
-        if ( prefab != null ) {
-          var allGroups = prefab.GetComponentsInChildren<AGXUnity.CollisionGroups>();
-          var tags = ( from objectGroups
-                       in allGroups
-                       from tag
-                       in objectGroups.Groups
-                       select tag ).Distinct( new CollisionGroupEntryEqualityComparer() ).ToList();
-          var disabledPairs = new List<AGXUnity.IO.GroupPair>();
-          foreach ( var t1 in tags )
-            foreach ( var t2 in tags )
-              if ( !AGXUnity.CollisionGroupsManager.Instance.GetEnablePair( t1.Tag, t2.Tag ) )
-                disabledPairs.Add( new AGXUnity.IO.GroupPair() { First = t1.Tag, Second = t2.Tag } );
-
-          if ( disabledPairs.Count > 0 ) {
-            var prefabLocalData = prefab.GetOrCreateComponent<AGXUnity.IO.SavedPrefabLocalData>();
-            foreach ( var groupPair in disabledPairs )
-              prefabLocalData.AddDisabledPair( groupPair.First, groupPair.Second );
-            EditorUtility.SetDirty( prefabLocalData );
-          }
-        }
+      public bool Equals( CollisionGroupEntry cg1, CollisionGroupEntry cg2 )
+      {
+        return cg1.Tag == cg2.Tag;
       }
-#endif
+
+      public int GetHashCode( CollisionGroupEntry entry )
+      {
+        return entry.Tag.GetHashCode();
+      }
     }
+
+    private static bool m_isProcessingPrefabInstance = false;
 
     /// <summary>
     /// Callback when a prefab is created from a scene game object <paramref name="go"/>,
@@ -80,10 +58,53 @@ namespace AGXUnityEditor
     /// <param name="instance">Prefab instance.</param>
     public static void OnPrefabCreatedFromScene( GameObject instance )
     {
+      // Avoiding recursion when we're manipulating the prefab from inside
+      // this callback.
+      if ( m_isProcessingPrefabInstance )
+        return;
+
       // Collect group ids that are disabled in the CollisionGroupsManager so that
       // when this prefab is added to a scene, the disabled collisions will be
       // added again.
       if ( CollisionGroupsManager.HasInstance ) {
+#if UNITY_2018_1_OR_NEWER
+        var prefab = PrefabUtility.GetCorrespondingObjectFromSource( instance ) as GameObject;
+#else
+        var prefab = PrefabUtility.GetPrefabParent( instance ) as GameObject;
+#endif
+        if ( prefab != null ) {
+          try {
+            m_isProcessingPrefabInstance = true;
+
+            var groups = prefab.GetComponentsInChildren<CollisionGroups>();
+            var tags   = ( from componentGroups
+                           in groups
+                           from tag
+                           in componentGroups.Groups
+                           select tag ).Distinct( new CollisionGroupEntryEqualityComparer() );
+            var disabledPairs = from tag1
+                                in tags
+                                from tag2
+                                in tags
+                                where !CollisionGroupsManager.Instance.GetEnablePair( tag1.Tag, tag2.Tag )
+                                select new AGXUnity.IO.GroupPair() { First = tag1.Tag, Second = tag2.Tag };
+            if ( disabledPairs.Count() > 0 ) {
+              var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
+              if ( savedData == null ) {
+                savedData = instance.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
+                PrefabUtility.ApplyAddedComponent( savedData, AssetDatabase.GetAssetPath( prefab ), InteractionMode.AutomatedAction );
+              }
+
+              foreach ( var disabledPair in disabledPairs )
+                savedData.AddDisabledPair( disabledPair.First, disabledPair.Second );
+
+              PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
+            }
+          }
+          finally {
+            m_isProcessingPrefabInstance = false;
+          }
+        }
       }
     }
 

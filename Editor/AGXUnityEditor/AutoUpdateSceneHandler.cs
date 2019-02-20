@@ -58,7 +58,11 @@ namespace AGXUnityEditor
                                                      InteractionMode.UserAction );
 #else
           PrefabUtility.ReplacePrefab( objectToCheck,
+#if UNITY_2018_1_OR_NEWER
                                        (GameObject)PrefabUtility.GetCorrespondingObjectFromSource( instance ),
+#else
+                                       PrefabUtility.GetPrefabParent( instance ),
+#endif
                                        ReplacePrefabOptions.ConnectToPrefab );
 #endif
         }

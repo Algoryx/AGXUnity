@@ -561,18 +561,5 @@ namespace AGXUnityEditor
       GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.GeometryContactMergeSplitThresholds.ResourcePath + ".asset" );
       GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.ConstraintMergeSplitThresholds.ResourcePath + ".asset" );
     }
-
-    private class CollisionGroupEntryEqualityComparer : IEqualityComparer<AGXUnity.CollisionGroupEntry>
-    {
-      public bool Equals( AGXUnity.CollisionGroupEntry cg1, AGXUnity.CollisionGroupEntry cg2 )
-      {
-        return cg1.Tag == cg2.Tag;
-      }
-
-      public int GetHashCode( AGXUnity.CollisionGroupEntry entry )
-      {
-        return entry.Tag.GetHashCode();
-      }
-    }
   }
 }
