@@ -31,9 +31,8 @@ namespace AGXUnity.Rendering
         return;
 
       List<GameObject> gameObjectsToDestroy = new List<GameObject>();
-      foreach ( Transform childTransform in Instance.gameObject.transform ) {
-        GameObject child = childTransform.gameObject;
-        OnSelectionProxy selectionProxy = child.GetComponent<OnSelectionProxy>();
+      foreach ( var node in Instance.Children ) {
+        OnSelectionProxy selectionProxy = node.GetComponent<OnSelectionProxy>();
         if ( selectionProxy != null )
           gameObjectsToDestroy.Add( selectionProxy.gameObject );
       }
@@ -242,6 +241,32 @@ namespace AGXUnity.Rendering
       }
     }
 
+    [System.NonSerialized]
+    private GameObject m_root = null;
+
+    [HideInInspector]
+    public GameObject Root
+    {
+      get
+      {
+        if ( m_root == null )
+          m_root = RuntimeObjects.GetOrCreateRoot( this );
+        return m_root;
+      }
+    }
+
+    private IEnumerable<GameObject> Children
+    {
+      get
+      {
+        if ( Root == null )
+          yield break;
+
+        foreach ( Transform child in Root.transform )
+          yield return child.gameObject;
+      }
+    }
+
     /// <summary>
     /// Contact list built after each simulation step if debug render of contacts is enabled.
     /// </summary>
@@ -270,7 +295,10 @@ namespace AGXUnity.Rendering
 
     protected override void OnDisable()
     {
-      SetShapesVisible( false );
+      RuntimeObjects.RegisterAsPotentiallyDeleted( this );
+
+      if ( !RuntimeObjects.IsDestroyed )
+        SetShapesVisible( false );
 
       base.OnDisable();
 
@@ -279,15 +307,6 @@ namespace AGXUnity.Rendering
 
     protected void Update()
     {
-      gameObject.transform.position   = Vector3.zero;
-      gameObject.transform.rotation   = Quaternion.identity;
-      // Change parent before scale is set - otherwise scale will be preserved.
-      // E.g., move "this" to a parent with scale x, scale will be set,
-      // parent = null will remove the parent but the scale will be preserved.
-      // Fix - set scale after set parent.
-      gameObject.transform.parent     = null;
-      gameObject.transform.localScale = Vector3.one;
-
       UpdateIsActiveForSynchronize();
 
       // When the application is playing we rely on callbacks
@@ -307,8 +326,7 @@ namespace AGXUnity.Rendering
       );
 
       List<GameObject> gameObjectsToDestroy = new List<GameObject>();
-      foreach ( Transform child in gameObject.transform ) {
-        GameObject node        = child.gameObject;
+      foreach ( var node in Children ) {
         OnSelectionProxy proxy = node.GetComponent<OnSelectionProxy>();
 
         if ( proxy == null )
@@ -328,14 +346,12 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private static bool m_isActiveForSynchronize = false;
-
     [HideInInspector]
-    public static bool IsActiveForSynchronize { get { return m_isActiveForSynchronize; } }
+    public static bool IsActiveForSynchronize { get; private set; } = false;
 
     private bool UpdateIsActiveForSynchronize()
     {
-      return ( m_isActiveForSynchronize = gameObject.activeInHierarchy && enabled );
+      return ( IsActiveForSynchronize = gameObject.activeInHierarchy && enabled );
     }
 
     private void SynchronizeShape( Collide.Shape shape )
@@ -364,8 +380,8 @@ namespace AGXUnity.Rendering
 
     private void SetShapesVisible( bool visible )
     {
-      foreach ( Transform child in transform )
-        child.gameObject.SetActive( visible );
+      foreach ( var child in Children )
+        child.SetActive( visible );
     }
 
     private void OnSimulationPostStep( agxSDK.Simulation simulation )

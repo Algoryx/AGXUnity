@@ -21,5 +21,12 @@ namespace AGXUnity.IO
 
       m_disabledGroups.Add( new GroupPair() { First = group1, Second = group2 } );
     }
+
+    protected override bool Initialize()
+    {
+      m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+
+      return true;
+    }
   }
 }

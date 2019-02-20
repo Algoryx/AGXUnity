@@ -7,7 +7,6 @@ namespace AGXUnity
   /// Wire object.
   /// </summary>
   [AddComponentMenu( "" )]
-  [RequireComponent( typeof( Rendering.WireRenderer ) )]
   [RequireComponent( typeof( WireRoute ) )]
   public class Wire : ScriptComponent
   {
@@ -315,9 +314,14 @@ namespace AGXUnity
       base.OnDestroy();
     }
 
+    private Rendering.WireRenderer m_renderer = null;
     private void OnPostStepForward()
     {
-      GetComponent<Rendering.WireRenderer>().OnPostStepForward( this );
+      if ( m_renderer == null )
+        m_renderer = GetComponent<Rendering.WireRenderer>();
+
+      if ( m_renderer != null )
+        m_renderer.OnPostStepForward( this );
 
       if ( BeginWinch != null )
         BeginWinch.OnPostStepForward( this );
@@ -325,5 +329,26 @@ namespace AGXUnity
       if ( EndWinch != null )
         EndWinch.OnPostStepForward( this );
     }
+
+    //private void DrawGizmos( Color color )
+    //{
+    //  if ( Application.isPlaying )
+    //    return;
+
+    //  var nodes = Route.ToArray();
+    //  Gizmos.color = color;
+    //  for ( int i = 1; i < nodes.Length; ++i )
+    //    Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
+    //}
+
+    //private void OnDrawGizmos()
+    //{
+    //  DrawGizmos( Color.red );
+    //}
+
+    //private void OnDrawGizmosSelected()
+    //{
+    //  DrawGizmos( Color.green );
+    //}
   }
 }

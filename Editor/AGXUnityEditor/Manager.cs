@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using AGXUnity.Utils;
 
 namespace AGXUnityEditor
@@ -83,7 +84,7 @@ namespace AGXUnityEditor
 
       CreateDefaultAssets();
 
-      PrefabUtility.prefabInstanceUpdated += OnPrefabUpdate;
+      PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
     }
 
     /// <summary>
@@ -240,6 +241,7 @@ namespace AGXUnityEditor
     }
 
     private static string m_currentSceneName = string.Empty;
+    private static int m_numScenesLoaded = 0;
     private static bool m_requestSceneViewFocus = false;
     private static HijackLeftMouseClickData m_hijackLeftMouseClickData = null;
 
@@ -373,8 +375,12 @@ namespace AGXUnityEditor
 
     private static void OnHierarchyWindowChanged()
     {
-      var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
-      if ( scene.name != m_currentSceneName ) {
+      var scene = EditorSceneManager.GetActiveScene();
+      var isSceneLoaded = scene.name != m_currentSceneName ||
+                          // Drag drop of scene into hierarchy.
+                          EditorSceneManager.loadedSceneCount > m_numScenesLoaded;
+
+      if ( isSceneLoaded ) {
         EditorData.Instance.GC();
 
         m_currentSceneName = scene.name;
@@ -382,18 +388,17 @@ namespace AGXUnityEditor
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
       else if ( Selection.activeGameObject != null ) {
-        if ( Selection.activeGameObject.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null )
+#if UNITY_2018_3_OR_NEWER
+        var isPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) != PrefabInstanceStatus.NotAPrefab;
+#else
+        var isPrefabInstance = PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.PrefabInstance ||
+                               PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.DisconnectedPrefabInstance;
+#endif
+        if ( isPrefabInstance )
           AssetPostprocessorHandler.OnPrefabAddedToScene( Selection.activeGameObject );
-
-        var savedPrefabData = Selection.activeGameObject.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
-        if ( savedPrefabData != null && savedPrefabData.DisabledGroups.Length > 0 ) {
-          Undo.SetCurrentGroupName( "Adding prefab data for " + Selection.activeGameObject.name + " to scene." );
-          var grouId = Undo.GetCurrentGroup();
-          foreach ( var disabledGroup in savedPrefabData.DisabledGroups )
-            TopMenu.GetOrCreateUniqueGameObject<AGXUnity.CollisionGroupsManager>().SetEnablePair( disabledGroup.First, disabledGroup.Second, false );
-          Undo.CollapseUndoOperations( grouId );
-        }
       }
+
+      m_numScenesLoaded = EditorSceneManager.loadedSceneCount;
     }
 
     /// <summary>
@@ -555,54 +560,6 @@ namespace AGXUnityEditor
         AssetDatabase.CreateFolder( IO.Utils.AGXUnityResourceDirectory, AGXUnity.MergeSplitThresholds.ResourceDirectory );
       GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.GeometryContactMergeSplitThresholds.ResourcePath + ".asset" );
       GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.ConstraintMergeSplitThresholds.ResourcePath + ".asset" );
-    }
-
-    private class CollisionGroupEntryEqualityComparer : IEqualityComparer<AGXUnity.CollisionGroupEntry>
-    {
-      public bool Equals( AGXUnity.CollisionGroupEntry cg1, AGXUnity.CollisionGroupEntry cg2 )
-      {
-        return cg1.Tag == cg2.Tag;
-      }
-
-      public int GetHashCode( AGXUnity.CollisionGroupEntry entry )
-      {
-        return entry.Tag.GetHashCode();
-      }
-    }
-
-    /// <summary>
-    /// Callback when a prefab is created from a gameobject <paramref name="go"/>.
-    /// </summary>
-    private static void OnPrefabUpdate( GameObject go )
-    {
-      // Collecting disabled collision groups for the created prefab.
-      if ( AGXUnity.CollisionGroupsManager.HasInstance ) {
-#if UNITY_2018_1_OR_NEWER
-        var prefab = PrefabUtility.GetCorrespondingObjectFromSource( go ) as GameObject;
-#else
-        var prefab = PrefabUtility.GetPrefabParent( go ) as GameObject;
-#endif
-        if ( prefab != null ) {
-          var allGroups = prefab.GetComponentsInChildren<AGXUnity.CollisionGroups>();
-          var tags = ( from objectGroups
-                       in allGroups
-                       from tag
-                       in objectGroups.Groups
-                       select tag ).Distinct( new CollisionGroupEntryEqualityComparer() ).ToList();
-          var disabledPairs = new List<AGXUnity.IO.GroupPair>();
-          foreach ( var t1 in tags )
-            foreach ( var t2 in tags )
-              if ( !AGXUnity.CollisionGroupsManager.Instance.GetEnablePair( t1.Tag, t2.Tag ) )
-                disabledPairs.Add( new AGXUnity.IO.GroupPair() { First = t1.Tag, Second = t2.Tag } );
-
-          if ( disabledPairs.Count > 0 ) {
-            var prefabLocalData = prefab.GetOrCreateComponent<AGXUnity.IO.SavedPrefabLocalData>();
-            foreach ( var groupPair in disabledPairs )
-              prefabLocalData.AddDisabledPair( groupPair.First, groupPair.Second );
-            EditorUtility.SetDirty( prefabLocalData );
-          }
-        }
-      }
     }
   }
 }

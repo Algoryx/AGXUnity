@@ -5,8 +5,8 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
-  [AddComponentMenu( "" )]
   [ExecuteInEditMode]
+  [RequireComponent( typeof( Cable ) )]
   public class CableRenderer : ScriptComponent
   {
     [SerializeField]

@@ -63,5 +63,12 @@ namespace AGXUnity.IO
       get { return m_solverSettings; }
       set { m_solverSettings = value; }
     }
+
+    protected override bool Initialize()
+    {
+      m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+
+      return true;
+    }
   }
 }
