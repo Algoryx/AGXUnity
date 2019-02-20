@@ -66,8 +66,7 @@ namespace AGXUnity.IO
 
     protected override bool Initialize()
     {
-      using ( var foo = new AGXUnity.Utils.TimerBlock( "Adding pairs." ) )
-        m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+      m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
 
       return true;
     }
