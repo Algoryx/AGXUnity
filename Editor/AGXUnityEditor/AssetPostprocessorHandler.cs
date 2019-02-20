@@ -89,7 +89,7 @@ namespace AGXUnityEditor
                                 where !CollisionGroupsManager.Instance.GetEnablePair( tag1.Tag, tag2.Tag )
                                 select new AGXUnity.IO.GroupPair() { First = tag1.Tag, Second = tag2.Tag };
             if ( disabledPairs.Count() > 0 ) {
-#if UNITY_2018_1_OR_NEWER
+#if UNITY_2017_3_OR_NEWER
 #if UNITY_2018_3_OR_NEWER
               var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
               if ( savedData == null ) {
