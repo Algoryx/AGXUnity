@@ -63,10 +63,12 @@ namespace AGXUnityEditor
       if ( m_isProcessingPrefabInstance )
         return;
 
+      var isAGXPrefab = instance.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null;
+
       // Collect group ids that are disabled in the CollisionGroupsManager so that
       // when this prefab is added to a scene, the disabled collisions will be
       // added again.
-      if ( CollisionGroupsManager.HasInstance ) {
+      if ( !isAGXPrefab && CollisionGroupsManager.HasInstance ) {
 #if UNITY_2018_1_OR_NEWER
         var prefab = PrefabUtility.GetCorrespondingObjectFromSource( instance ) as GameObject;
 #else
