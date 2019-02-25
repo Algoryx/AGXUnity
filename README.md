@@ -65,6 +65,9 @@ For more information about how to develop new functionality in AGXUnity - [read 
 
 ## Tutorials
 
+[**Getting started :**](https://youtu.be/IUj0QcniSik)  
+[![](https://img.youtube.com/vi/IUj0QcniSik/1.jpg)](https://youtu.be/IUj0QcniSik)
+
 [**Modelling with primitives:**](https://www.youtube.com/watch?v=1ddfgIwAd0U)  
 [![](https://img.youtube.com/vi/1ddfgIwAd0U/1.jpg)](https://www.youtube.com/watch?v=1ddfgIwAd0U)
 
