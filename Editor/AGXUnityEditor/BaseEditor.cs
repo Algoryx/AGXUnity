@@ -138,12 +138,12 @@ namespace AGXUnityEditor
         ToolManager.OnPreTargetMembers( target, skin );
 
       bool changed = false;
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( target );
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( obj );
       foreach ( InvokeWrapper wrapper in fieldsAndProperties )
         if ( ShouldBeShownInInspector( wrapper.Member ) )
           changed = HandleType( wrapper, target, skin ) || changed;
 
-      var methods = from methodInfo in target.GetType().GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
+      var methods = from methodInfo in obj.GetType().GetMethods( BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static )
                     where
                       ShouldBeShownInInspector( methodInfo )
                     select methodInfo;

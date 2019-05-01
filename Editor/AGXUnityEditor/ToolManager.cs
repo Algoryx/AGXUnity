@@ -16,6 +16,7 @@ namespace AGXUnityEditor
     private static List<CustomTargetTool> m_activeTools = new List<CustomTargetTool>();
     private static BuiltInToolsTool m_builtInTools = new BuiltInToolsTool();
     private static Dictionary<Type, Type> m_cachedCustomToolTypeMap = new Dictionary<Type, Type>();
+    private static HashSet<Type> m_cachedIgnoredTypes = new HashSet<Type>();
 
     /// <summary>
     /// All current, active tools (parents).
@@ -263,7 +264,7 @@ namespace AGXUnityEditor
     /// <returns>Type of tool matching <paramref name="targetType"/>.</returns>
     private static Type FindCustomToolType( Type targetType )
     {
-      if ( targetType == null )
+      if ( targetType == null || m_cachedIgnoredTypes.Contains( targetType ) )
         return null;
 
       Type customToolType = null;
@@ -297,6 +298,9 @@ namespace AGXUnityEditor
         if ( customToolType != null )
           m_cachedCustomToolTypeMap.Add( targetType, customToolType );
       }
+
+      if ( customToolType == null )
+        m_cachedIgnoredTypes.Add( targetType );
 
       return customToolType;
     }
