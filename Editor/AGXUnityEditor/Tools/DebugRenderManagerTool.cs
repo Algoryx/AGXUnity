@@ -23,7 +23,11 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      Manager.RenderShapes = GUI.Toggle( GUI.MakeLabel( "Debug render shapes" ), Manager.RenderShapes, skin.button, skin.label );
+      var newRenderState = GUI.Toggle( GUI.MakeLabel( "Debug render shapes" ), Manager.RenderShapes, skin.button, skin.label );
+      if ( newRenderState != Manager.RenderShapes ) {
+        Manager.RenderShapes = newRenderState;
+        EditorUtility.SetDirty( Manager );
+      }
       GUI.MaterialEditor( GUI.MakeLabel( "Shape material" ), 100, Manager.ShapeRenderMaterial, skin, newMaterial => Manager.ShapeRenderMaterial = newMaterial, true );
 
       GUI.Separator();

@@ -170,6 +170,11 @@ namespace AGXUnityEditor.IO
 #endif
     }
 
+    public void SetPrefabInstance( GameObject instance )
+    {
+      PrefabInstance = instance;
+    }
+
     /// <summary>
     /// Creates an instance from an existing project prefab or creates
     /// a new game object. Accessible trough this.PrefabInstance.
@@ -290,11 +295,15 @@ namespace AGXUnityEditor.IO
         return null;
       }
 
+#if UNITY_2018_3_OR_NEWER
+      return PrefabUtility.SaveAsPrefabAssetAndConnect( PrefabInstance, PrefabPath, InteractionMode.UserAction );
+#else
       var prefab = ExistingPrefab ?? PrefabUtility.CreateEmptyPrefab( PrefabPath );
       if ( prefab == null )
         return null;
 
       return PrefabUtility.ReplacePrefab( PrefabInstance, prefab, ReplacePrefabOptions.ReplaceNameBased );
+#endif
     }
 
     /// <summary>

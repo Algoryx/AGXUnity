@@ -39,6 +39,18 @@ namespace AGXUnityEditor.Utils
       } );
     }
 
+    [DrawGizmo( GizmoType.Active | GizmoType.Selected | GizmoType.NotInSelectionHierarchy | GizmoType.Pickable )]
+    public static void OnDrawGizmosWire( Wire wire, GizmoType gizmoType )
+    {
+      if ( wire.Native != null )
+        return;
+
+      var nodes = wire.Route.ToArray();
+      Gizmos.color = (gizmoType & GizmoType.Selected) != 0 ? Color.green : Color.red;
+      for ( int i = 1; i < nodes.Length; ++i )
+        Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
+    }
+
     [DrawGizmo( GizmoType.Active | GizmoType.NotInSelectionHierarchy )]
     public static void OnDrawGizmosDebugRenderManager( DebugRenderManager manager, GizmoType gizmoType )
     {

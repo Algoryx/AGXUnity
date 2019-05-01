@@ -6,7 +6,6 @@ using AGXUnity.Utils;
 namespace AGXUnity
 {
   [AddComponentMenu( "" )]
-  [RequireComponent( typeof( Rendering.CableRenderer ) )]
   [RequireComponent( typeof( CableRoute ) )]
   public class Cable : ScriptComponent
   {

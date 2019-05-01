@@ -671,6 +671,8 @@ namespace AGXUnityEditor.IO
 
       route.Clear();
 
+      node.GameObject.GetOrCreateComponent<WireRenderer>();
+
       wire.RestoreLocalDataFrom( nativeWire );
 
       var nativeIt         = nativeWire.getRenderBeginIterator();
@@ -754,6 +756,8 @@ namespace AGXUnityEditor.IO
       var route = cable.Route;
 
       route.Clear();
+
+      node.GameObject.GetOrCreateComponent<CableRenderer>();
 
       cable.RestoreLocalDataFrom( nativeCable );
       cable.RouteAlgorithm = Cable.RouteType.Identity;

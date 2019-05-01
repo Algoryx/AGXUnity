@@ -45,6 +45,8 @@ namespace AGXUnity
 
     public static bool HasInstance { get { return m_instance != null || (FindObjectOfType( typeof( T ) ) as T ) != null; } }
 
+    public static bool IsDestroyed { get { return m_destroyed; } }
+
     /// <summary>
     /// Use with care. Reset the internal reset state so this
     /// object may be created again.

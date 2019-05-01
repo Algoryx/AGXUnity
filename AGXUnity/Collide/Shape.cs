@@ -220,6 +220,11 @@ namespace AGXUnity.Collide
       m_geometry.setEnable( IsEnabled );
 
       rb.Native.add( m_geometry, GetNativeRigidBodyOffset( rb ) );
+
+      // Removing us from synchronization the transform since
+      // we're implicitly updated from the synchronization of
+      // the body.
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
     }
 
     /// <summary>
@@ -285,15 +290,11 @@ namespace AGXUnity.Collide
 
       GetSimulation().add( m_geometry );
 
-      // Temp hack to get "pulley property" of a RigidBody which name
-      // contains the name "sheave".
-      //RigidBody rbTmp = Find.FirstParentWithComponent<RigidBody>( gameObject );
-      //if ( rbTmp != null && rbTmp.gameObject.name.ToLower().Contains( "sheave" ) ) {
-      //  Debug.Log( "Adding pulley property to: " + gameObject.name + " from rb.name = " + rbTmp.gameObject.name );
-      //  m_geometry.getPropertyContainer().addPropertyBool( "Pulley", true );
-      //}
-
       // TODO: Add pre-synch to be able to move geometries during play?
+
+      // Adding transform synchronization. This will be removed if this
+      // shape is part of a rigid body (SetRigidBody) since our transform
+      // will be updated with our parent body.
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
 
       return base.Initialize();

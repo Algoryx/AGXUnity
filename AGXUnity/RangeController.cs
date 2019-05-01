@@ -13,7 +13,7 @@ namespace AGXUnity
     /// Valid range of the constraint angle. Paired with property Range.
     /// </summary>
     [SerializeField]
-    private RangeReal m_range = new RangeReal();
+    private RangeReal m_range = new RangeReal( float.NegativeInfinity, float.PositiveInfinity );
 
     /// <summary>
     /// Valid range of the constraint angle.

@@ -92,7 +92,7 @@ namespace AGXUnity
     /// Force range of this row in the elementary constraint. Paired with property ForceRange.
     /// </summary>
     [SerializeField]
-    private RangeReal m_forceRange = new RangeReal();
+    private RangeReal m_forceRange = new RangeReal( float.NegativeInfinity, float.PositiveInfinity );
 
     /// <summary>
     /// Force range of this row in the elementary constraint.
