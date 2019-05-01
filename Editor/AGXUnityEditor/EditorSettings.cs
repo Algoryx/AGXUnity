@@ -40,6 +40,11 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler, skin );
       }
 
+      GUI.Separator();
+
+      if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.button ) )
+        Utils.CustomEditorGenerator.Synchronize( true );
+
       GUI.Separator3D();
     }
 

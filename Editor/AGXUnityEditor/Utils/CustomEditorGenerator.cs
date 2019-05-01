@@ -59,18 +59,15 @@ namespace AGXUnityEditor.Utils
         yield return new FileInfo( file );
     }
 
-    public static void Synchronize()
+    public static void Synchronize( bool regenerate = false )
     {
       // Newer versions replaces '.' with '+' so if our files
       // doesn't contains any '+' we regenerate all.
       {
-        bool regenerate = false;
-        foreach ( var info in GetEditorFileInfos() ) {
-          if ( info.Name.StartsWith( "AGXUnity" ) && !info.Name.Contains( '+' ) ) {
-            regenerate = true;
-            break;
-          }
-        }
+        regenerate = regenerate ||
+                     GetEditorFileInfos().FirstOrDefault( info => info.Name.StartsWith( "AGXUnity" ) &&
+                                                                  !info.Name.Contains( '+' )
+                                                        ) != null;
 
         if ( regenerate ) {
           Debug.Log( "Wrong version of custom editor files. Regenerating." );
@@ -165,7 +162,8 @@ using UnityEditor;
 namespace AGXUnityEditor.Editors
 {
   [CustomEditor( typeof( " + type.ToString() + @" ) )]
-  public class " + classAndFilename + @"Editor : BaseEditor<" + type.ToString() + @">
+  [CanEditMultipleObjects]
+  public class " + classAndFilename + @"Editor : InspectorEditor
   { }
 }";
       File.WriteAllText( path + GetFilename( type, false ), csFileContent );
