@@ -125,15 +125,14 @@ namespace AGXUnityEditor
     /// </summary>
     /// <typeparam name="T">Target type.</typeparam>
     /// <param name="target">Target object.</param>
-    public static void OnTargetEditorEnable<T>( T target )
-      where T : class
+    public static void OnTargetEditorEnable( object target )
     {
       if ( target == null )
         return;
 
       Utils.KeyHandler.HandleDetectKeyOnEnable( target );
 
-      var toolType = FindCustomToolType( typeof( T ) );
+      var toolType = FindCustomToolType( target.GetType() );
       if ( toolType == null )
         return;
 

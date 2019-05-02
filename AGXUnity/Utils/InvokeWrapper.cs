@@ -136,6 +136,8 @@ namespace AGXUnity.Utils
     /// <param name="value">Value to set.</param>
     /// <returns>true if set method was called with new value.</returns>
     public abstract bool ConditionalSet( object value );
+
+    public abstract bool AreValuesEqual( object[] instances );
   }
 
   /// <summary>
@@ -168,6 +170,19 @@ namespace AGXUnity.Utils
       if ( Field.IsLiteral || !IsValid( value ) || ( Object == null && !IsStatic() ) )
         return false;
       Field.SetValue( Object, value );
+      return true;
+    }
+
+    public override bool AreValuesEqual( object[] instances )
+    {
+      if ( instances.Length <= 1 )
+        return true;
+
+      var refValue = Field.GetValue( instances[ 0 ] );
+      for ( int i = 1; i < instances.Length; ++i )
+        if ( !refValue.Equals( Field.GetValue( instances[ i ] ) ) )
+          return false;
+
       return true;
     }
   }
@@ -206,6 +221,19 @@ namespace AGXUnity.Utils
       if ( Property.GetSetMethod() == null || !IsValid( value ) || ( Object == null && !IsStatic() ) )
         return false;
       Property.SetValue( Object, value, null );
+      return true;
+    }
+
+    public override bool AreValuesEqual( object[] instances )
+    {
+      if ( instances.Length <= 1 )
+        return true;
+
+      var refValue = Property.GetValue( instances[ 0 ], null );
+      for ( int i = 1; i < instances.Length; ++i )
+        if ( !refValue.Equals( Property.GetValue( instances[ i ], null ) ) )
+          return false;
+
       return true;
     }
   }

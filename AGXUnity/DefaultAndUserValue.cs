@@ -4,7 +4,7 @@ using UnityEngine;
 namespace AGXUnity
 {
   /// <summary>
-  /// Object handling values (real or vec3) which has one default and
+  /// Object handling values (float or Vector3) which has one default and
   /// one user defined value. This object enables switching between
   /// the two, e.g., mass and inertia in MassProperties.
   /// </summary>
@@ -104,26 +104,48 @@ namespace AGXUnity
   }
 
   /// <summary>
-  /// Object handling values (real or vec3) which has one default and
+  /// Object handling values float which has one default and
   /// one user defined value. This object enables switching between
-  /// the two, e.g., mass and inertia in MassProperties.
+  /// the two, e.g., mass in MassProperties.
   /// </summary>
   [Serializable]
   public class DefaultAndUserValueFloat : DefaultAndUserValue<float>
   {
     public DefaultAndUserValueFloat()
       : base( 1.0f, 1.0f ) { }
+
+    public override bool Equals( object obj )
+    {
+      var other = obj as DefaultAndUserValueFloat;
+      return other != null &&
+             other.UseDefault == UseDefault &&
+             Mathf.Approximately( other.Value, Value );
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
   }
 
   /// <summary>
-  /// Object handling values (real or vec3) which has one default and
+  /// Object handling values Vector3 which has one default and
   /// one user defined value. This object enables switching between
-  /// the two, e.g., mass and inertia in MassProperties.
+  /// the two, e.g., inertia in MassProperties.
   /// </summary>
   [Serializable]
   public class DefaultAndUserValueVector3 : DefaultAndUserValue<Vector3>
   {
     public DefaultAndUserValueVector3()
       : base( new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ) ) { }
+
+    public override bool Equals( object obj )
+    {
+      var other = obj as DefaultAndUserValueVector3;
+      return other != null &&
+             other.UseDefault == UseDefault &&
+             Mathf.Approximately( other.Value.x, Value.x ) &&
+             Mathf.Approximately( other.Value.y, Value.y ) &&
+             Mathf.Approximately( other.Value.z, Value.z );
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
   }
 }
