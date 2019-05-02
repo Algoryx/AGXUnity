@@ -70,7 +70,7 @@ namespace AGXUnityEditor.Utils
                                                         ) != null;
 
         if ( regenerate ) {
-          Debug.Log( "Wrong version of custom editor files. Regenerating." );
+          Debug.Log( "Regenerating custom editors..." );
           foreach ( var info in GetEditorFileInfos() )
             DeleteFile( info );
         }

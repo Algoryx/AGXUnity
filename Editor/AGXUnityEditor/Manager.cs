@@ -277,14 +277,26 @@ namespace AGXUnityEditor
     /// </summary>
     private static void UndoRedoPerformedCallback()
     {
-      if ( Selection.activeGameObject == null )
-        return;
+      // TODO: Should we perform full synchronize when the editor is
+      //       playing to synchronize native instances?
 
-      var scriptComponents = Selection.activeGameObject.GetComponents<AGXUnity.ScriptComponent>();
-      foreach ( var scriptComponent in scriptComponents )
-        EditorUtility.SetDirty( scriptComponent );
+      var components = from obj in Selection.objects
+                       where obj is GameObject
+                       from component in (obj as GameObject).GetComponents<AGXUnity.ScriptComponent>()
+                       select component;
+      foreach ( var component in components ) {
+        EditorUtility.SetDirty( component );
 
-      if ( scriptComponents.Length > 0 )
+        // Synchronizing size for shape visuals if size dependent
+        // properties has been reverted.
+        if ( component is AGXUnity.Collide.Shape ) {
+          var visual = AGXUnity.Rendering.ShapeVisual.Find( component as AGXUnity.Collide.Shape );
+          if ( visual != null )
+            visual.OnSizeUpdated();
+        }
+      }
+
+      if ( components.Count() > 0 )
         SceneView.RepaintAll();
     }
 
