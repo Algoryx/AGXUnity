@@ -122,10 +122,12 @@ namespace AGXUnityEditor.Tools
       EditorUtility.SetDirty( Parent );
     }
 
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI( InspectorEditor editor )
     {
       if ( HandleKeyEscape( false ) )
         return;
+
+      var skin = InspectorEditor.Skin;
 
       UnityEngine.GUI.enabled = m_selection.Count > 0;
       m_buttons.OnGUI( Event.current, skin, 12 );

@@ -74,6 +74,7 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( DefaultAndUserValueFloat ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
     public static object DefaultAndUserValueFloatDrawer( InvokeWrapper wrapper, GUISkin skin )
     {
       var obj   = wrapper.Get<DefaultAndUserValueFloat>();
@@ -90,7 +91,18 @@ namespace AGXUnityEditor
       return null;
     }
 
+    public static void DefaultAndUserValueFloatDrawerCopyOp( object source, object destination )
+    {
+      var s = source as DefaultAndUserValueFloat;
+      var d = destination as DefaultAndUserValueFloat;
+      if ( s == null || d == null )
+        return;
+
+      d.CopyFrom( s );
+    }
+
     [InspectorDrawer( typeof( DefaultAndUserValueVector3 ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
     public static object DefaultAndUserValueVector3Drawer( InvokeWrapper wrapper, GUISkin skin )
     {
       var obj   = wrapper.Get<DefaultAndUserValueVector3>();
@@ -105,6 +117,16 @@ namespace AGXUnityEditor
       }
 
       return null;
+    }
+
+    public static void DefaultAndUserValueVector3DrawerCopyOp( object source, object destination )
+    {
+      var s = source as DefaultAndUserValueVector3;
+      var d = destination as DefaultAndUserValueVector3;
+      if ( s == null || d == null )
+        return;
+
+      d.CopyFrom( s );
     }
 
     [InspectorDrawer( typeof( RangeReal ) )]
@@ -132,7 +154,7 @@ namespace AGXUnityEditor
       return EditorGUILayout.TextField( MakeLabel( wrapper.Member ), wrapper.Get<string>(), skin.textField );
     }
 
-    [InspectorDrawer( typeof( Enum ), BaseType = true )]
+    [InspectorDrawer( typeof( Enum ), IsBaseType = true )]
     public static object EnumDrawer( InvokeWrapper wrapper, GUISkin skin )
     {
       if ( !wrapper.GetContainingType().IsVisible )
@@ -156,8 +178,8 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( ScriptAsset ), AssignableFrom = true )]
-    [InspectorDrawer( typeof( ScriptComponent ), BaseType = true )]
-    [InspectorDrawer( typeof( UnityEngine.Object ), BaseType = true )]
+    [InspectorDrawer( typeof( ScriptComponent ), IsBaseType = true )]
+    [InspectorDrawer( typeof( UnityEngine.Object ), IsBaseType = true )]
     [InspectorDrawerResult( IsNullable = true )]
     public static object ScriptDrawer( InvokeWrapper wrapper, GUISkin skin )
     {
@@ -255,46 +277,53 @@ namespace AGXUnityEditor
       return result;
     }
 
-    public static MethodInfo GetDrawerMethod( Type type )
+    public struct DrawerInfo
     {
-      bool ignored = false;
-      return GetDrawerMethod( type, out ignored );
+      public MethodInfo Drawer;
+      public MethodInfo CopyOp;
+      public bool IsNullable;
+
+      public bool IsValid { get { return Drawer != null; } }
     }
 
-    public static MethodInfo GetDrawerMethod( Type type, out bool isNullable )
+    public static DrawerInfo GetDrawerMethod( Type type )
     {
-      MethodInfo drawer = null;
-      if ( !m_drawerMethodsCache.TryGetValue( type, out drawer ) ) {
+      DrawerInfo drawerInfo;
+      if ( !m_drawerMethodsCache.TryGetValue( type, out drawerInfo ) ) {
+        drawerInfo = new DrawerInfo() { Drawer = null, CopyOp = null, IsNullable = false };
         foreach ( var drawerClass in m_drawerClasses ) {
           var methods = drawerClass.GetMethods( BindingFlags.Public | BindingFlags.Static );
           foreach ( var method in methods ) {
             if ( method.GetCustomAttributes<InspectorDrawerAttribute>().FirstOrDefault( attribute => attribute.Match( type ) ) != null ) {
-              drawer = method;
-              isNullable = MayResultNull( drawer );
-              m_drawerMethodsCache.Add( type, drawer );
+              drawerInfo.Drawer = method;
+              FindDrawerResult( ref drawerInfo, drawerClass );
+              m_drawerMethodsCache.Add( type, drawerInfo );
               break;
             }
           }
 
-          if ( drawer != null )
+          if ( drawerInfo.Drawer != null )
             break;
         }
       }
 
-      isNullable = MayResultNull( drawer );
-
-      return drawer;
+      return drawerInfo;
     }
 
-    public static bool MayResultNull( MethodInfo drawer )
+    public static void FindDrawerResult( ref DrawerInfo info, Type drawerClass )
     {
-      InspectorDrawerResultAttribute attribute = null;
-      return drawer != null &&
-             ( attribute = drawer.GetCustomAttribute<InspectorDrawerResultAttribute>() ) != null &&
-             attribute.IsNullable;
+      if ( info.Drawer == null )
+        return;
+
+      var resultAttribute = info.Drawer.GetCustomAttribute<InspectorDrawerResultAttribute>();
+      if ( resultAttribute == null )
+        return;
+
+      info.IsNullable = resultAttribute.IsNullable;
+      info.CopyOp     = drawerClass.GetMethod( info.Drawer.Name + "CopyOp", BindingFlags.Public | BindingFlags.Static );
     }
 
-    private static Dictionary<Type, MethodInfo> m_drawerMethodsCache = new Dictionary<Type, MethodInfo>();
+    private static Dictionary<Type, DrawerInfo> m_drawerMethodsCache = new Dictionary<Type, DrawerInfo>();
     private static List<Type> m_drawerClasses = new List<Type>() { typeof( InspectorGUI ) };
   }
 }

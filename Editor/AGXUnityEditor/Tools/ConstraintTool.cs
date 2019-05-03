@@ -30,7 +30,7 @@ namespace AGXUnityEditor.Tools
       base.OnRemove();
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
       // Possible undo performed that deleted the constraint. Remove us.
       if ( Constraint == null ) {
@@ -38,11 +38,13 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+      var skin = InspectorEditor.Skin;
+
       GUILayout.Label( GUI.MakeLabel( Constraint.Type.ToString(), 24, true ), GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
       GUI.Separator();
 
       // Render AttachmentPair GUI.
-      base.OnPreTargetMembersGUI( skin );
+      base.OnPreTargetMembersGUI( editor );
 
       GUI.Separator();
 
@@ -175,9 +177,6 @@ namespace AGXUnityEditor.Tools
       {
         m_guiWasEnabled = UnityEngine.GUI.enabled;
 
-        if ( row != null )
-          Undo.RecordObject( row.ElementaryConstraint, "RowUpdate" );
-
         UnityEngine.GUI.enabled = m_guiWasEnabled && row != null && row.Valid;
       }
 
@@ -223,6 +222,8 @@ namespace AGXUnityEditor.Tools
 
     private void HandleConstraintRowType( ConstraintUtils.ConstraintRow row, int rowIndex, InvokeWrapper wrapper, GUISkin skin )
     {
+      Undo.RecordObject( row.ElementaryConstraint, "Row" );
+
       RowLabel( rowIndex, skin );
 
       var rowData = row != null ? row.RowData : null;
@@ -262,7 +263,7 @@ namespace AGXUnityEditor.Tools
                         OnFoldoutStateChange ) ) {
         using ( new GUI.Indent( 12 ) ) {
           controller.Enable = GUI.Toggle( GUI.MakeLabel( "Enable", controller.Enable ), controller.Enable, skin.button, skin.label );
-          BaseEditor<ElementaryConstraint>.Update( controller, controller, skin );
+          InspectorEditor.DrawMembersGUI( new UnityEngine.Object[] { controller } );
         }
       }
     }

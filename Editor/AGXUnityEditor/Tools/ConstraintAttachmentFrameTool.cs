@@ -51,20 +51,21 @@ namespace AGXUnityEditor.Tools
       OnChangeDirtyTarget = null;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
       if ( AttachmentPair == null ) {
         PerformRemoveFromParent();
         return;
       }
 
-      bool guiWasEnabled = UnityEngine.GUI.enabled;
+      var skin          = InspectorEditor.Skin;
+      var guiWasEnabled = UnityEngine.GUI.enabled;
 
       using ( new GUI.Indent( 12 ) ) {
         Undo.RecordObject( AttachmentPair, "Constraint Tool" );
 
         GUILayout.Label( GUI.MakeLabel( "Reference frame", true ), skin.label );
-        GUI.HandleFrame( AttachmentPair.ReferenceFrame, skin, 4 + 12 );
+        GUI.HandleFrame( AttachmentPair.ReferenceFrame, editor, 4 + 12 );
         GUILayout.BeginHorizontal();
         GUILayout.Space( 12 );
         if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(), false, "Synchronized with reference frame" ),
@@ -77,7 +78,7 @@ namespace AGXUnityEditor.Tools
         GUILayout.Label( GUI.MakeLabel( "Connected frame", true ), skin.label );
         GUILayout.EndHorizontal();
         UnityEngine.GUI.enabled = !AttachmentPair.Synchronized;
-        GUI.HandleFrame( AttachmentPair.ConnectedFrame, skin, 4 + 12 );
+        GUI.HandleFrame( AttachmentPair.ConnectedFrame, editor, 4 + 12 );
         UnityEngine.GUI.enabled = guiWasEnabled;
       }
     }

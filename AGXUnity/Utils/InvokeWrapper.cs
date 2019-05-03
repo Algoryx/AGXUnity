@@ -81,6 +81,15 @@ namespace AGXUnity.Utils
       return value;
     }
 
+    public object GetValue( object obj )
+    {
+      var prevObj = Object;
+      Object = obj;
+      var value = GetValue();
+      Object = prevObj;
+      return value;
+    }
+
     /// <summary>
     /// Invoke set method in <paramref name="obj"/> given value.
     /// </summary>
@@ -131,12 +140,24 @@ namespace AGXUnity.Utils
     public abstract U Get<U>();
 
     /// <summary>
+    /// Get current value without explicit type information.
+    /// </summary>
+    /// <returns>Current value.</returns>
+    public abstract object GetValue();
+
+    /// <summary>
     /// Invoke set method if exist and the input is valid.
     /// </summary>
     /// <param name="value">Value to set.</param>
     /// <returns>true if set method was called with new value.</returns>
     public abstract bool ConditionalSet( object value );
 
+    /// <summary>
+    /// Checks Equals for each instance and returns true if all Equals
+    /// calls return true - otherwise false.
+    /// </summary>
+    /// <param name="instances">Array of instances.</param>
+    /// <returns>true if all values are equal - otherwise false.</returns>
     public abstract bool AreValuesEqual( object[] instances );
   }
 
@@ -160,11 +181,34 @@ namespace AGXUnity.Utils
     public FieldInfo Field { get { return (FieldInfo)Member; } }
 
     public FieldWrapper( object obj, FieldInfo fieldInfo )
-      : base( obj, fieldInfo ) { }
+      : base( obj, fieldInfo )
+    {
+    }
 
-    public override bool IsStatic() { return Field.IsStatic; }
-    public override Type GetContainingType() { return Field.FieldType; }
-    public override U Get<U>() { return Object == null && !IsStatic() ? default( U ) : (U)Field.GetValue( Object ); }
+    public override bool IsStatic()
+    {
+      return Field.IsStatic;
+    }
+
+    public override Type GetContainingType()
+    {
+      return Field.FieldType;
+    }
+
+    public override U Get<U>()
+    {
+      return Object == null && !IsStatic() ?
+               default( U ) :
+               (U)Field.GetValue( Object );
+    }
+
+    public override object GetValue()
+    {
+      return Object == null && !IsStatic() ?
+               null :
+               Field.GetValue( Object );
+    }
+
     public override bool ConditionalSet( object value )
     {
       if ( Field.IsLiteral || !IsValid( value ) || ( Object == null && !IsStatic() ) )
@@ -179,9 +223,16 @@ namespace AGXUnity.Utils
         return true;
 
       var refValue = Field.GetValue( instances[ 0 ] );
-      for ( int i = 1; i < instances.Length; ++i )
-        if ( !refValue.Equals( Field.GetValue( instances[ i ] ) ) )
-          return false;
+      if ( refValue == null ) {
+        for ( int i = 1; i < instances.Length; ++i )
+          if ( Field.GetValue( instances[ i ] ) != null )
+            return false;
+      }
+      else {
+        for ( int i = 1; i < instances.Length; ++i )
+          if ( !refValue.Equals( Field.GetValue( instances[ i ] ) ) )
+            return false;
+      }
 
       return true;
     }
@@ -208,14 +259,44 @@ namespace AGXUnity.Utils
     public PropertyInfo Property { get { return (PropertyInfo)Member; } }
 
     public PropertyWrapper( object obj, PropertyInfo propertyInfo )
-      : base( obj, propertyInfo ) { }
+      : base( obj, propertyInfo )
+    {
+    }
 
-    public override bool IsStatic() { return CanRead() && Property.GetGetMethod().IsStatic; }
-    public override bool CanRead() { return Property.GetGetMethod() != null; }
-    public override bool CanWrite() { return Property.GetSetMethod() != null; }
+    public override bool IsStatic()
+    {
+      return CanRead() && Property.GetGetMethod().IsStatic;
+    }
 
-    public override Type GetContainingType() { return Property.PropertyType; }
-    public override U Get<U>() { return Object == null && !IsStatic() ? default( U ) : (U)Property.GetValue( Object, null ); }
+    public override bool CanRead()
+    {
+      return Property.GetGetMethod() != null;
+    }
+
+    public override bool CanWrite()
+    {
+      return Property.GetSetMethod() != null;
+    }
+
+    public override Type GetContainingType()
+    {
+      return Property.PropertyType;
+    }
+
+    public override U Get<U>()
+    {
+      return Object == null && !IsStatic() ?
+               default( U ) :
+               (U)Property.GetValue( Object, null );
+    }
+
+    public override object GetValue()
+    {
+      return Object == null && !IsStatic() ?
+               null :
+               Property.GetValue( Object, null );
+    }
+
     public override bool ConditionalSet( object value )
     {
       if ( Property.GetSetMethod() == null || !IsValid( value ) || ( Object == null && !IsStatic() ) )
@@ -230,9 +311,16 @@ namespace AGXUnity.Utils
         return true;
 
       var refValue = Property.GetValue( instances[ 0 ], null );
-      for ( int i = 1; i < instances.Length; ++i )
-        if ( !refValue.Equals( Property.GetValue( instances[ i ], null ) ) )
-          return false;
+      if ( refValue == null ) {
+        for ( int i = 1; i < instances.Length; ++i )
+          if ( Property.GetValue( instances[ i ], null ) != null )
+            return false;
+      }
+      else {
+        for ( int i = 1; i < instances.Length; ++i )
+          if ( !refValue.Equals( Property.GetValue( instances[ i ], null ) ) )
+            return false;
+      }
 
       return true;
     }

@@ -47,12 +47,14 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI( InspectorEditor editor )
     {
       if ( AttachmentFrameTool == null || AttachmentFrameTool.AttachmentPair == null ) {
         PerformRemoveFromParent();
         return;
       }
+
+      var skin = InspectorEditor.Skin;
 
       using ( new GUI.Indent( 16 ) ) {
         GUILayout.BeginHorizontal();
@@ -73,7 +75,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator3D();
 
-      AttachmentFrameTool.OnPreTargetMembersGUI( skin );
+      AttachmentFrameTool.OnPreTargetMembersGUI( editor );
       AttachmentFrameTool.AttachmentPair.Synchronize();
 
       m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState, skin );

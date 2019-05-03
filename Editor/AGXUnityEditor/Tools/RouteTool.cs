@@ -111,9 +111,10 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
       bool toggleDisableCollisions = false;
+      var skin = InspectorEditor.Skin;
 
       GUILayout.BeginHorizontal();
       {
@@ -126,7 +127,7 @@ namespace AGXUnityEditor.Tools
       GUILayout.EndHorizontal();
 
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( skin );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI( editor );
 
         GUI.Separator();
       }

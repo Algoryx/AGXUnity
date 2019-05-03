@@ -18,8 +18,9 @@ namespace AGXUnityEditor.Tools
       RestoredAGXFile = restoredAGXFile;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      var skin           = InspectorEditor.Skin;
       var directory      = AssetDatabase.GUIDToAssetPath( RestoredAGXFile.DataDirectoryId );
       var directoryValid = directory.Length > 0 && AssetDatabase.IsValidFolder( directory );
 
@@ -50,7 +51,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      AssemblyTool.OnObjectListsGUI( RestoredAGXFile, skin );
+      AssemblyTool.OnObjectListsGUI( RestoredAGXFile, editor );
     }
   }
 }

@@ -5,28 +5,53 @@ using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
 
-using GUI = AGXUnityEditor.Utils.GUI;
-
 namespace AGXUnityEditor
 {
   public class InspectorEditor : Editor
   {
     public static GUISkin Skin = null;
 
-    private struct Result
+    public static void DrawMembersGUI( Object[] objects )
     {
-      public bool Changed;
-      public object Value;
+      if ( objects.Length == 0 )
+        return;
+
+      Undo.RecordObjects( objects, "Inspector" );
+
+      var hasChanges = false;
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ] );
+      foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
+        if ( !ShouldBeShownInInspector( wrapper.Member ) )
+          continue;
+
+        hasChanges = HandleType( wrapper, objects ) || hasChanges;
+      }
+
+      if ( hasChanges ) {
+        foreach ( var obj in objects )
+          EditorUtility.SetDirty( obj );
+      }
+    }
+
+    public bool IsMultiSelect { get { return targets.Length > 1; } }
+
+    public sealed override void OnInspectorGUI()
+    {
+      ToolManager.OnPreTargetMembers( target, this );
+
+      DrawMembersGUI( targets );
+
+      ToolManager.OnPostTargetMembers( target, this );
     }
 
     private void OnEnable()
     {
       if ( Skin == null ) {
-        Skin                    = EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector );
-        Skin.label.richText     = true;
-        Skin.toggle.richText    = true;
-        Skin.button.richText    = true;
-        Skin.textArea.richText  = true;
+        Skin = EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector );
+        Skin.label.richText = true;
+        Skin.toggle.richText = true;
+        Skin.button.richText = true;
+        Skin.textArea.richText = true;
         Skin.textField.richText = true;
 
         if ( EditorGUIUtility.isProSkin )
@@ -37,8 +62,7 @@ namespace AGXUnityEditor
       if ( target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
         target.hideFlags |= HideFlags.HideInInspector;
 
-      if ( targets.Length == 1 )
-        ToolManager.OnTargetEditorEnable( target );
+      ToolManager.OnTargetEditorEnable( target );
     }
 
     private void OnDisable()
@@ -46,59 +70,36 @@ namespace AGXUnityEditor
       ToolManager.OnTargetEditorDisable( target );
     }
 
-    public sealed override void OnInspectorGUI()
+    private static bool HandleType( InvokeWrapper wrapper, Object[] objects )
     {
-      // Disable tool when doing multi-edit until they can indicate
-      // support for it.
-      if ( targets.Length > 1 && ToolManager.FindActive( target ) != null )
-        ToolManager.OnTargetEditorDisable( target );
-
-      ToolManager.OnPreTargetMembers( target, Skin );
-
-      DrawMembersGUI( target );
-
-      ToolManager.OnPostTargetMembers( target, Skin );
-    }
-
-    private void DrawMembersGUI( object obj )
-    {
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( obj );
-      foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
-        if ( !ShouldBeShownInInspector( wrapper.Member ) )
-          continue;
-
-        var result = HandleType( wrapper );
-        if ( !result.Changed )
-          continue;
-
-        Undo.RecordObjects( targets, "Modification: " + wrapper.Member.Name.SplitCamelCase() );
-        foreach ( var targetObject in targets ) {
-          wrapper.ConditionalSet( targetObject, result.Value );
-          EditorUtility.SetDirty( targetObject );
-        }
-      }
-    }
-
-    private Result HandleType( InvokeWrapper wrapper )
-    {
-      var result = new Result() { Changed = false, Value = null };
       if ( !wrapper.CanRead() )
-        return result;
-      var isNullable = false;
-      var drawer     = InspectorGUI.GetDrawerMethod( wrapper.GetContainingType(),
-                                                     out isNullable );
-      if ( drawer == null )
-        return result;
+        return false;
 
-      EditorGUI.showMixedValue = !wrapper.AreValuesEqual( targets );
+      var drawerInfo = InspectorGUI.GetDrawerMethod( wrapper.GetContainingType() );
+      if ( !drawerInfo.IsValid )
+        return false;
 
-      result.Value   = drawer.Invoke( null, new object[] { wrapper, Skin } );
-      result.Changed = UnityEngine.GUI.changed &&
-                       ( isNullable || result.Value != null );
+      EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
+
+      var value   = drawerInfo.Drawer.Invoke( null, new object[] { wrapper, Skin } );
+      var changed = UnityEngine.GUI.changed &&
+                    ( drawerInfo.IsNullable || value != null );
 
       EditorGUI.showMixedValue = false;
 
-      return result;
+      if ( !changed )
+        return false;
+
+      foreach ( var obj in objects ) {
+        object newValue = value;
+        if ( drawerInfo.CopyOp != null ) {
+          newValue = wrapper.GetValue( obj );
+          drawerInfo.CopyOp.Invoke( null, new object[] { value, newValue } );
+        }
+        wrapper.ConditionalSet( obj, newValue );
+      }
+
+      return true;
     }
 
     private static bool ShouldBeShownInInspector( MemberInfo memberInfo )

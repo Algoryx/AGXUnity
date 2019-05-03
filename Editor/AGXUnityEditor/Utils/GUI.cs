@@ -145,6 +145,38 @@ namespace AGXUnityEditor.Utils
                                ToolButtonData.Height );
     }
 
+    public static void HandleFrame( IFrame frame, InspectorEditor editor, float numPixelsIndentation = 0.0f, bool includeFrameToolIfPresent = true )
+    {
+      var skin           = InspectorEditor.Skin;
+      bool guiWasEnabled = UnityEngine.GUI.enabled;
+
+      using ( new Indent( numPixelsIndentation ) ) {
+        UnityEngine.GUI.enabled = true;
+        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ), frame.Parent, typeof( GameObject ), true );
+        UnityEngine.GUI.enabled = guiWasEnabled;
+
+        if ( newParent != frame.Parent )
+          frame.SetParent( newParent );
+
+        frame.LocalPosition = Vector3Field( MakeLabel( "Local position" ), frame.LocalPosition, skin.label );
+
+        // Converting from quaternions to Euler - make sure the actual Euler values has
+        // changed before updating local rotation to not mess up the undo stack.
+        Vector3 inputEuler  = frame.LocalRotation.eulerAngles;
+        Vector3 outputEuler = Vector3Field( MakeLabel( "Local rotation" ), inputEuler, skin.label );
+        if ( !ValueType.Equals( inputEuler, outputEuler ) )
+          frame.LocalRotation = Quaternion.Euler( outputEuler );
+
+        Separator();
+
+        Tools.FrameTool frameTool = null;
+        if ( includeFrameToolIfPresent && ( frameTool = Tools.FrameTool.FindActive( frame ) ) != null )
+          using ( new Indent( 12 ) )
+            frameTool.OnPreTargetMembersGUI( editor );
+      }
+    }
+
+    [Obsolete( "BaseEditor is obsolete - use InspectorEditor version." )]
     public static void HandleFrame( IFrame frame, GUISkin skin, float numPixelsIndentation = 0.0f, bool includeFrameToolIfPresent = true )
     {
       bool guiWasEnabled = UnityEngine.GUI.enabled;

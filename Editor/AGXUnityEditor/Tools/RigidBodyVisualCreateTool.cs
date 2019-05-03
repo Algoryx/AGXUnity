@@ -40,12 +40,14 @@ namespace AGXUnityEditor.Tools
     {
     }
 
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI( InspectorEditor editor )
     {
       if ( RigidBody == null || GetChildren().Length == 0 ) {
         PerformRemoveFromParent();
         return;
       }
+
+      var skin = InspectorEditor.Skin;
 
       GUILayout.Space( 4 );
       using ( GUI.AlignBlock.Center )
@@ -61,7 +63,7 @@ namespace AGXUnityEditor.Tools
 
         using ( GUI.AlignBlock.Center )
           GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.label );
-        tool.OnInspectorGUI( skin, true );
+        tool.OnInspectorGUI( editor, true );
       }
 
       var createCancelState = GUI.CreateCancelButtons( true, skin, "Create shape visual for shapes that hasn't already got one." );

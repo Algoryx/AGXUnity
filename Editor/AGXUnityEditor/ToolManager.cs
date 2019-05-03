@@ -152,12 +152,31 @@ namespace AGXUnityEditor
       tool.OnAdd();
     }
 
+    public static void OnPreTargetMembers( object target, InspectorEditor editor )
+    {
+      var tool = FindActive( target );
+      if ( tool == null )
+        return;
+
+      tool.OnPreTargetMembersGUI( editor );
+    }
+
+    public static void OnPostTargetMembers( object target, InspectorEditor editor )
+    {
+      var tool = FindActive( target );
+      if ( tool == null )
+        return;
+
+      tool.OnPostTargetMembersGUI( editor );
+    }
+
     /// <summary>
     /// Callback from Editor before member fields are being
     /// rendered for a given target.
     /// </summary>
     /// <param name="target">Target object.</param>
     /// <param name="skin">Current GUI skin.</param>
+    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
     public static void OnPreTargetMembers( object target, GUISkin skin )
     {
       var tool = FindActive( target );
@@ -167,6 +186,7 @@ namespace AGXUnityEditor
       tool.OnPreTargetMembersGUI( skin );
     }
 
+    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
     public static bool OnTargetEditorInspectorGUI( object target )
     {
       if ( target == null )
@@ -181,6 +201,7 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="target">Target object.</param>
     /// <param name="skin">Current GUI skin.</param>
+    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
     public static void OnPostTargetMembers( object target, GUISkin skin )
     {
       var tool = FindActive( target );

@@ -96,8 +96,14 @@ namespace AGXUnityEditor.Tools
     {
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      if ( editor.IsMultiSelect ) {
+        GUI.Separator();
+        return;
+      }
+
+      var skin                     = InspectorEditor.Skin;
       bool toggleShapeResizeTool   = false;
       bool toggleShapeCreate       = false;
       bool toggleDisableCollisions = false;
@@ -137,17 +143,17 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI( skin );
+        GetChild<ShapeCreateTool>().OnInspectorGUI( editor );
 
         GUI.Separator();
       }
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( skin );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI( editor );
 
         GUI.Separator();
       }
       if ( ShapeVisualCreateTool ) {
-        GetChild<ShapeVisualCreateTool>().OnInspectorGUI( skin );
+        GetChild<ShapeVisualCreateTool>().OnInspectorGUI( editor );
 
         GUI.Separator();
       }
@@ -162,11 +168,13 @@ namespace AGXUnityEditor.Tools
         ShapeVisualCreateTool = !ShapeVisualCreateTool;
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI( InspectorEditor editor )
     {
       var shapeVisual = ShapeVisual.Find( Shape );
       if ( shapeVisual == null )
         return;
+
+      var skin = InspectorEditor.Skin;
 
       GUI.Separator();
       if ( !GUI.FoldoutEx( EditorData.Instance.GetData( Shape,

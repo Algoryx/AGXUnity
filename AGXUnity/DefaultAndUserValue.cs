@@ -9,7 +9,8 @@ namespace AGXUnity
   /// the two, e.g., mass and inertia in MassProperties.
   /// </summary>
   [Serializable]
-  public class DefaultAndUserValue<T> where T : struct
+  public class DefaultAndUserValue<T>
+    where T : struct
   {
     [SerializeField]
     private bool m_defaultToggle = true;

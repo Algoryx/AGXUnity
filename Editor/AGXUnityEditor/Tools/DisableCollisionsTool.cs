@@ -46,8 +46,10 @@ namespace AGXUnityEditor.Tools
         SelectGameObjectTool = true;
     }
 
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI( InspectorEditor editor )
     {
+      var skin = InspectorEditor.Skin;
+
       GUILayout.BeginHorizontal();
       {
         GUILayout.Label( GUI.MakeLabel( "Disable: ", true ), skin.label );

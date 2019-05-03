@@ -34,7 +34,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Set to true if drawing method handles givenType.BaseType == this.Type.
     /// </summary>
-    public bool BaseType { get; set; } = false;
+    public bool IsBaseType { get; set; } = false;
 
     public InspectorDrawerAttribute( Type type )
     {
@@ -50,7 +50,7 @@ namespace AGXUnityEditor
     {
       return type == Type ||
              ( AssignableFrom && Type.IsAssignableFrom( type ) ) ||
-             ( BaseType && type.BaseType == Type );
+             ( IsBaseType && type.BaseType == Type );
     }
   }
 
@@ -69,5 +69,7 @@ namespace AGXUnityEditor
     /// null results will be ignored.
     /// </summary>
     public bool IsNullable { get; set; } = false;
+
+    public bool HasCopyOp { get; set; } = false;
   }
 }

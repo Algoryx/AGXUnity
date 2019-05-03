@@ -195,8 +195,9 @@ namespace AGXUnityEditor.Tools
         DirtyTarget();
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      var skin           = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
 
       bool toggleSelectParent   = false;

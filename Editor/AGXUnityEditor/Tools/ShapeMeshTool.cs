@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -26,18 +27,31 @@ namespace AGXUnityEditor.Tools
       base.OnRemove();
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
-      base.OnPreTargetMembersGUI( skin );
+      base.OnPreTargetMembersGUI( editor );
 
       var sourceObjects = Mesh.SourceObjects;
       var singleSource  = sourceObjects.FirstOrDefault();
 
-      Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
+      if ( editor.IsMultiSelect ) {
+        var undoCollection = new List<Object>();
+        foreach ( var target in editor.targets )
+          undoCollection.AddRange( ( target as AGXUnity.Collide.Mesh ).GetUndoCollection() );
+        Undo.RecordObjects( undoCollection.ToArray(), "Mesh source" );
+      }
+      else
+        Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
 
-      var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource, skin );
-      if ( newSingleSource != null )
-        Mesh.SetSourceObject( newSingleSource );
+      var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource, InspectorEditor.Skin );
+      if ( newSingleSource != null ) {
+        if ( editor.IsMultiSelect ) {
+          foreach ( var target in editor.targets )
+            ( target as AGXUnity.Collide.Mesh ).SetSourceObject( newSingleSource );
+        }
+        else
+          Mesh.SetSourceObject( newSingleSource );
+      }
 
       GUI.Separator();
     }
