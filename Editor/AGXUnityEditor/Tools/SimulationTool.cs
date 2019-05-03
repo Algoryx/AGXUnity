@@ -32,7 +32,6 @@ namespace AGXUnityEditor.Tools
     {
       var prevMode = Simulation.AutoSteppingMode;
 
-      UnityEngine.GUI.enabled = !Application.isPlaying;
       Simulation.AutoSteppingMode = (Simulation.AutoSteppingModes)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Auto Stepping Mode",
                                                                                                             false,
                                                                                                             "Location (in Unity frame loop) where simulation step forward is called.\n\n" +

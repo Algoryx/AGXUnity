@@ -51,11 +51,7 @@ namespace AGXUnity
     public AutoSteppingModes AutoSteppingMode
     {
       get { return m_autoSteppingMode; }
-      set
-      {
-        if ( m_simulation == null )
-          m_autoSteppingMode = value;
-      }
+      set { m_autoSteppingMode = value; }
     }
 
     [SerializeField]
@@ -132,7 +128,7 @@ namespace AGXUnity
       get { return m_timeStep; }
       set
       {
-        m_timeStep = Mathf.Max( value, float.Epsilon );
+        m_timeStep = Mathf.Max( value, 1.0E-8f );
         if ( m_simulation != null )
           m_simulation.setTimeStep( m_timeStep );
       }
