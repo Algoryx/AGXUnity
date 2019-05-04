@@ -23,8 +23,9 @@ namespace AGXUnityEditor.Tools
       Manager = manager;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      var skin                          = InspectorEditor.Skin;
       var disabledPairs                 = Manager.DisabledPairs;
       bool clearPressed                 = false;
       bool addPressed                   = false;

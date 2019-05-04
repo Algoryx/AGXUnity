@@ -17,8 +17,9 @@ namespace AGXUnityEditor.Tools
       Manager = manager;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      var skin = InspectorEditor.Skin;
       GUILayout.Label( GUI.MakeLabel( "Debug render manager", 16, true ), GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
 
       GUI.Separator();

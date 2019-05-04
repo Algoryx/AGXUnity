@@ -17,17 +17,18 @@ namespace AGXUnityEditor.Tools
       Manager.RemoveNullEntries();
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
       Manager.RemoveNullEntries();
 
-      OnContactMaterialsList( skin );
+      OnContactMaterialsList( editor );
     }
 
     private EditorDataEntry FoldoutDataEntry { get { return EditorData.Instance.GetData( Manager, "ContactMaterials" ); } }
 
-    private void OnContactMaterialsList( GUISkin skin )
+    private void OnContactMaterialsList( InspectorEditor editor )
     {
+      var skin = InspectorEditor.Skin;
       ContactMaterial contactMaterialToAdd = null;
       ContactMaterial contactMaterialToRemove = null;
 
@@ -62,7 +63,7 @@ namespace AGXUnityEditor.Tools
 
               if ( foldoutActive ) {
                 using ( new GUI.Indent( 12 ) )
-                  BaseEditor<ContactMaterial>.Update( contactMaterial, contactMaterial, skin );
+                  InspectorEditor.DrawMembersGUI( new Object[] { contactMaterial } );
               }
             }
           }

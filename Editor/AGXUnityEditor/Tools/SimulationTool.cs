@@ -29,8 +29,9 @@ namespace AGXUnityEditor.Tools
       Simulation = simulation;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      var skin = InspectorEditor.Skin;
       var prevMode = Simulation.AutoSteppingMode;
 
       Simulation.AutoSteppingMode = (Simulation.AutoSteppingModes)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Auto Stepping Mode",
@@ -85,8 +86,10 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI( InspectorEditor editor )
     {
+      var skin = InspectorEditor.Skin;
+
       GUI.Separator();
 
       Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics, skin.button, skin.label );

@@ -11,6 +11,7 @@ using GUI = AGXUnityEditor.Utils.GUI;
 
 namespace AGXUnityEditor
 {
+  [Obsolete( "Use InspectorEditor instead." )]
   public class BaseEditor<T> : Editor
     where T : class
   {
