@@ -13,7 +13,26 @@ namespace AGXUnityEditor
 {
   public class InspectorEditor : Editor
   {
-    public static GUISkin Skin = null;
+    private static GUISkin m_skin = null;
+
+    public static GUISkin Skin
+    {
+      get
+      {
+        if ( m_skin == null ) {
+          m_skin                    = EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector );
+          m_skin.label.richText     = true;
+          m_skin.toggle.richText    = true;
+          m_skin.button.richText    = true;
+          m_skin.textArea.richText  = true;
+          m_skin.textField.richText = true;
+
+          if ( EditorGUIUtility.isProSkin )
+            m_skin.label.normal.textColor = 204.0f / 255.0f * Color.white;
+        }
+        return m_skin;
+      }
+    }
 
     public static void DrawMembersGUI( Object[] objects )
     {
@@ -37,6 +56,23 @@ namespace AGXUnityEditor
         foreach ( var obj in objects )
           EditorUtility.SetDirty( obj );
       }
+    }
+
+    public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
+    {
+      if ( memberInfo == null )
+        return false;
+
+      // Override hidden in inspector.
+      if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) )
+        return false;
+
+      // In general, don't show UnityEngine objects unless ShowInInspector is set.
+      bool show = memberInfo.IsDefined( typeof( ShowInInspector ), true ) ||
+                  !( memberInfo.DeclaringType.Namespace != null &&
+                     memberInfo.DeclaringType.Namespace.Contains( "UnityEngine" ) );
+
+      return show;
     }
 
     public int NumTargets { get { return this.targets.Length; } }
@@ -66,6 +102,9 @@ namespace AGXUnityEditor
 
     public sealed override void OnInspectorGUI()
     {
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+        return;
+
       ToolManager.OnPreTargetMembers( this.target, this );
 
       DrawMembersGUI( this.targets );
@@ -75,18 +114,6 @@ namespace AGXUnityEditor
 
     private void OnEnable()
     {
-      if ( Skin == null ) {
-        Skin = EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector );
-        Skin.label.richText = true;
-        Skin.toggle.richText = true;
-        Skin.button.richText = true;
-        Skin.textArea.richText = true;
-        Skin.textField.richText = true;
-
-        if ( EditorGUIUtility.isProSkin )
-          Skin.label.normal.textColor = 204.0f / 255.0f * Color.white;
-      }
-
       // Entire class/component marked as hidden - enable "hide in inspector".
       if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
         this.target.hideFlags |= HideFlags.HideInInspector;
@@ -114,6 +141,10 @@ namespace AGXUnityEditor
       var changed = UnityEngine.GUI.changed &&
                     ( drawerInfo.IsNullable || value != null );
 
+      // Reset changed state so that non-edited values
+      // are propagated to other properties.
+      UnityEngine.GUI.changed = false;
+
       EditorGUI.showMixedValue = false;
 
       if ( !changed )
@@ -129,23 +160,6 @@ namespace AGXUnityEditor
       }
 
       return true;
-    }
-
-    private static bool ShouldBeShownInInspector( MemberInfo memberInfo )
-    {
-      if ( memberInfo == null )
-        return false;
-
-      // Override hidden in inspector.
-      if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) )
-        return false;
-
-      // In general, don't show UnityEngine objects unless ShowInInspector is set.
-      bool show = memberInfo.IsDefined( typeof( ShowInInspector ), true ) ||
-                  !( memberInfo.DeclaringType.Namespace != null &&
-                     memberInfo.DeclaringType.Namespace.Contains( "UnityEngine" ) );
-
-      return show;
     }
   }
 }

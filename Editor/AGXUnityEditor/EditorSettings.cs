@@ -174,12 +174,11 @@ namespace AGXUnityEditor
   }
 
   [CustomEditor( typeof( EditorSettings ) )]
-  public class EditorSettingsEditor : BaseEditor<EditorSettings>
+  public class EditorSettingsEditor : Editor
   {
-    protected override bool OverrideOnInspectorGUI( EditorSettings target, GUISkin skin )
+    public override void OnInspectorGUI()
     {
-      EditorSettings.Instance.OnInspectorGUI( CurrentSkin );
-      return true;
+      EditorSettings.Instance.OnInspectorGUI( InspectorEditor.Skin );
     }
   }
 }

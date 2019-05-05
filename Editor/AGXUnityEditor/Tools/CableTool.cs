@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
@@ -55,45 +57,68 @@ namespace AGXUnityEditor.Tools
   }
 
   [CustomEditor( typeof( CableProperties ) )]
-  public class CablePropertiesEditor : BaseEditor<CableProperties>
+  [CanEditMultipleObjects]
+  public class CablePropertiesEditor : Editor
   {
-    protected override bool OverrideOnInspectorGUI( CableProperties properties, GUISkin skin )
+    public override void OnInspectorGUI()
     {
-      if ( properties == null )
-        return true;
+      var selected = from obj in this.targets select obj as CableProperties;
+      if ( selected.Count() == 0 )
+        return;
 
-      Undo.RecordObject( properties, "Cable properties" );
+      Undo.RecordObjects( selected.ToArray(), "Cable properties" );
 
+      var skin = InspectorEditor.Skin;
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.label );
 
       GUI.Separator();
 
+      Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       using ( new GUI.Indent( 12 ) ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {
-          OnPropertyGUI( dir, properties, skin );
+          var tmp = OnPropertyGUI( dir, selected.First(), skin );
+          if ( tmp != null )
+            changed = tmp;
           GUI.Separator();
         }
       }
 
-      if ( UnityEngine.GUI.changed )
-        EditorUtility.SetDirty( properties );
-
-      return true;
+      if ( changed != null ) {
+        foreach ( var properties in selected ) {
+          changed.Item1.ConditionalSet( properties[ changed.Item2 ], changed.Item3 );
+          EditorUtility.SetDirty( properties );
+        }
+      }
     }
 
-    private void OnPropertyGUI( CableProperties.Direction dir, CableProperties properties, GUISkin skin )
+    private Tuple<PropertyWrapper, CableProperties.Direction, object> OnPropertyGUI( CableProperties.Direction dir,
+                                                                                     CableProperties properties,
+                                                                                     GUISkin skin )
     {
+      Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       var data = EditorData.Instance.GetData( properties, "CableProperty" + dir.ToString() );
       if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ), skin ) ) {
         using ( new GUI.Indent( 12 ) ) {
           GUI.Separator();
 
-          properties[ dir ].YoungsModulus = Mathf.Clamp( EditorGUILayout.FloatField( GUI.MakeLabel( "Young's modulus" ), properties[ dir ].YoungsModulus ), 1.0E-6f, float.PositiveInfinity );
-          properties[ dir ].YieldPoint = Mathf.Clamp( EditorGUILayout.FloatField( GUI.MakeLabel( "Yield point" ), properties[ dir ].YieldPoint ), 0.0f, float.PositiveInfinity );
-          properties[ dir ].Damping = Mathf.Clamp( EditorGUILayout.FloatField( GUI.MakeLabel( "Spook damping" ), properties[ dir ].Damping ), 0.0f, float.PositiveInfinity );
+          var wrappers = PropertyWrapper.FindProperties( properties[ dir ],
+                                                         typeof( CableProperty ),
+                                                         System.Reflection.BindingFlags.Instance |
+                                                           System.Reflection.BindingFlags.Public );
+          foreach ( var wrapper in wrappers ) {
+            if ( wrapper.GetContainingType() == typeof( float ) && InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ) {
+              var value = EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                      wrapper.Get<float>() );
+              if ( UnityEngine.GUI.changed ) {
+                changed = new Tuple<PropertyWrapper, CableProperties.Direction, object>( wrapper, dir, value );
+                UnityEngine.GUI.changed = false;
+              }
+            }
+          }
         }
       }
+      return changed;
     }
   }
 }

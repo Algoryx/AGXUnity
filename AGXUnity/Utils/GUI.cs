@@ -154,10 +154,13 @@ namespace AGXUnity.Utils
 
     public static void WarningLabel( string warning, GUISkin skin )
     {
+      var prevBgc = UnityEngine.GUI.backgroundColor;
+      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
       GUILayout.Label( MakeLabel( warning,
                                   Color.Lerp( Color.red, Color.white, 0.25f ),
                                   true ),
                        new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
+      UnityEngine.GUI.backgroundColor = prevBgc;
     }
   }
 }

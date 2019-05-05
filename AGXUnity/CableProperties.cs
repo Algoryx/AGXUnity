@@ -26,6 +26,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_youngsModulus = 1.0E9f;
+    [ClampAboveZeroInInspector]
     public float YoungsModulus
     {
       get { return m_youngsModulus; }
@@ -39,6 +40,8 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_poissonsRatio = 0.333f;
+
+    [HideInInspector]
     public float PoissonsRatio
     {
       get { return m_poissonsRatio; }
@@ -51,6 +54,8 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_yieldPoint = float.PositiveInfinity;
+
+    [ClampAboveZeroInInspector( true )]
     public float YieldPoint
     {
       get { return m_yieldPoint; }
@@ -64,6 +69,8 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_damping = 2.0f / 50;
+
+    [ClampAboveZeroInInspector( true )]
     public float Damping
     {
       get { return m_damping; }
