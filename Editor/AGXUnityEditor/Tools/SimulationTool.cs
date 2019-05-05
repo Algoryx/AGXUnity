@@ -49,7 +49,7 @@ namespace AGXUnityEditor.Tools
         else
           Simulation.TimeStep = 1.0f / 60.0f;
       }
-
+      
       UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
       Simulation.TimeStep = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Time Step",
                                                                                   false,

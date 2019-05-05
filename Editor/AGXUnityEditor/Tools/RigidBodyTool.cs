@@ -215,7 +215,8 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
       using ( new GUI.Indent( 12 ) )
-        InspectorEditor.DrawMembersGUI( (from target in editor.targets select (target as RigidBody).MassProperties).ToArray() );
+        editor.DrawMembersGUI<RigidBody>( rb => rb.MassProperties );
+
       GUI.Separator();
 
       if ( toggleFindTransformGivenPoint )

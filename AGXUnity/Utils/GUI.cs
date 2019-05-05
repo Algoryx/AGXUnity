@@ -151,5 +151,13 @@ namespace AGXUnity.Utils
 
       return selectedStyle;
     }
+
+    public static void WarningLabel( string warning, GUISkin skin )
+    {
+      GUILayout.Label( MakeLabel( warning,
+                                  Color.Lerp( Color.red, Color.white, 0.25f ),
+                                  true ),
+                       new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
+    }
   }
 }

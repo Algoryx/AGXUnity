@@ -236,10 +236,8 @@ namespace AGXUnityEditor
 
             GUILayout.Space( 6 );
 
-            GUILayout.Label( Utils.GUI.MakeLabel( "Changes made to this object will affect all objects referencing this asset.",
-                                                  Color.Lerp( Color.red, Color.white, 0.25f ),
-                                                  true ),
-                             new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
+            AGXUnity.Utils.GUI.WarningLabel( "Changes made to this object will affect all objects referencing this asset.",
+                                             skin );
 
             GUILayout.Space( 6 );
 

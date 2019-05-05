@@ -30,22 +30,33 @@ namespace AGXUnityEditor.Tools
       return GetColor( node as WireRouteNode );
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI( InspectorEditor editor )
     {
-      if ( Wire.BeginWinch != null ) {
+      var skin = InspectorEditor.Skin;
+
+      var beginWinches = editor.Targets<Wire, WireWinch>( wire => wire.BeginWinch ).Where( winch => winch != null );
+      var endWinches   = editor.Targets<Wire, WireWinch>( wire => wire.EndWinch ).Where( winch => winch != null );
+
+      if ( beginWinches.Count() > 0 ) {
         GUI.Separator();
         GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.label );
-        using ( new GUI.Indent( 12 ) )
-          BaseEditor<Wire>.Update( Wire.BeginWinch, Wire, skin );
+        using ( new GUI.Indent( 12 ) ) {
+          if ( beginWinches.Count() != editor.NumTargets )
+            AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has a begin winch.", skin );
+          InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
+        }
         GUI.Separator();
       }
-      if ( Wire.EndWinch != null ) {
-        if ( Wire.BeginWinch == null )
+      if ( endWinches.Count() > 0 ) {
+        if ( beginWinches.Count() == 0 )
           GUI.Separator();
 
         GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.label );
-        using ( new GUI.Indent( 12 ) )
-          BaseEditor<Wire>.Update( Wire.EndWinch, Wire, skin );
+        using ( new GUI.Indent( 12 ) ) {
+          if ( endWinches.Count() != editor.NumTargets )
+            AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has an end winch.", skin );
+          InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
+        }
         GUI.Separator();
       }
     }

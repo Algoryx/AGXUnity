@@ -113,6 +113,9 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
+      if ( editor.IsMultiSelect )
+        return;
+
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
 
@@ -121,7 +124,10 @@ namespace AGXUnityEditor.Tools
         GUI.ToolsLabel( skin );
 
         using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool, DisableCollisionsTool, "Disable collisions against other objects", skin );
+          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
+                                                    DisableCollisionsTool,
+                                                    "Disable collisions against other objects",
+                                                    skin );
         }
       }
       GUILayout.EndHorizontal();
@@ -133,7 +139,7 @@ namespace AGXUnityEditor.Tools
       }
 
       if ( !EditorApplication.isPlaying )
-        RouteGUI( skin );
+        RouteGUI( editor );
 
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
@@ -150,9 +156,10 @@ namespace AGXUnityEditor.Tools
       return FindActive<RouteNodeTool>( tool => tool.Node == node );
     }
 
-    private void RouteGUI( GUISkin skin )
+    private void RouteGUI( InspectorEditor editor )
     {
-      GUIStyle invalidNodeStyle = new GUIStyle( skin.label );
+      var skin                           = InspectorEditor.Skin;
+      GUIStyle invalidNodeStyle          = new GUIStyle( skin.label );
       invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
 
       bool addNewPressed        = false;
@@ -190,7 +197,7 @@ namespace AGXUnityEditor.Tools
 
               OnPreFrameGUI( node, skin );
 
-              GUI.HandleFrame( node, skin, 12 );
+              GUI.HandleFrame( node, editor, 12 );
 
               OnPostFrameGUI( node, skin );
 

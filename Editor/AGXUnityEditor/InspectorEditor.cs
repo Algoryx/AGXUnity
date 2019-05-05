@@ -1,9 +1,13 @@
-﻿using System.Reflection;
-using System.ComponentModel;
+﻿using System;
+using System.Reflection;
+using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
+
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -13,13 +17,15 @@ namespace AGXUnityEditor
 
     public static void DrawMembersGUI( Object[] objects )
     {
+      objects = objects.Where( obj => obj != null ).ToArray();
+
       if ( objects.Length == 0 )
         return;
 
       Undo.RecordObjects( objects, "Inspector" );
 
       var hasChanges = false;
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ] );
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects.FirstOrDefault( obj => obj != null ) );
       foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
         if ( !ShouldBeShownInInspector( wrapper.Member ) )
           continue;
@@ -33,15 +39,38 @@ namespace AGXUnityEditor
       }
     }
 
-    public bool IsMultiSelect { get { return targets.Length > 1; } }
+    public int NumTargets { get { return this.targets.Length; } }
+
+    public bool IsMultiSelect { get { return NumTargets > 1; } }
+
+    public void DrawMembersGUI<T>( Func<T, Object> func )
+      where T : Object
+    {
+      DrawMembersGUI( Targets( func ).ToArray() );
+    }
+
+    public IEnumerable<T> Targets<T>()
+      where T : Object
+    {
+      foreach ( var obj in this.targets )
+        yield return obj as T;
+    }
+
+    public IEnumerable<U> Targets<T, U>( Func<T, U> func )
+      where U : Object
+      where T : Object
+    {
+      foreach ( var obj in Targets<T>() )
+        yield return func( obj );
+    }
 
     public sealed override void OnInspectorGUI()
     {
-      ToolManager.OnPreTargetMembers( target, this );
+      ToolManager.OnPreTargetMembers( this.target, this );
 
-      DrawMembersGUI( targets );
+      DrawMembersGUI( this.targets );
 
-      ToolManager.OnPostTargetMembers( target, this );
+      ToolManager.OnPostTargetMembers( this.target, this );
     }
 
     private void OnEnable()
@@ -59,15 +88,15 @@ namespace AGXUnityEditor
       }
 
       // Entire class/component marked as hidden - enable "hide in inspector".
-      if ( target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
-        target.hideFlags |= HideFlags.HideInInspector;
+      if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
+        this.target.hideFlags |= HideFlags.HideInInspector;
 
-      ToolManager.OnTargetEditorEnable( target );
+      ToolManager.OnTargetEditorEnable( this.target );
     }
 
     private void OnDisable()
     {
-      ToolManager.OnTargetEditorDisable( target );
+      ToolManager.OnTargetEditorDisable( this.target );
     }
 
     private static bool HandleType( InvokeWrapper wrapper, Object[] objects )
