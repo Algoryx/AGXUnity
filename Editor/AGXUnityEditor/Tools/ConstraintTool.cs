@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -38,6 +39,11 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+      if ( editor.IsMultiSelect ) {
+        OnPreTargetMembersGUIMultiSelect( editor );
+        return;
+      }
+
       var skin = InspectorEditor.Skin;
 
       GUILayout.Label( GUI.MakeLabel( Constraint.Type.ToString(), 24, true ), GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
@@ -60,26 +66,98 @@ namespace AGXUnityEditor.Tools
       ConstraintRowsGUI( skin );
     }
 
-    public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state, GUISkin skin )
+    private static void OnPreTargetMembersGUIMultiSelect( InspectorEditor editor )
+    {
+      var skin           = InspectorEditor.Skin;
+      var constraints    = editor.Targets<Constraint>().ToArray();
+      var differentTypes = false;
+      for ( int i = 1; i < constraints.Length; ++i )
+        differentTypes = differentTypes || constraints[ 0 ].Type != constraints[ i ].Type;
+
+      if ( differentTypes ) {
+        GUI.WarningLabel( "Constraints are of different types.\nMulti-selection edit not supported.", skin );
+        return;
+      }
+
+      Undo.RecordObjects( constraints, "ConstraintTool" );
+
+      GUILayout.Label( GUI.MakeLabel( constraints[ 0 ].Type.ToString() + 's', 24, true ), GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
+
+      // Frames goes here.
+
+      GUI.Separator();
+
+      UnityEngine.GUI.changed = false;
+
+      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => constraints[ 0 ].CollisionsState != constraint.CollisionsState ) != null;
+      var collisionsState = ConstraintCollisionsStateGUI( constraints[ 0 ].CollisionsState, skin );
+      EditorGUI.showMixedValue = false;
+
+      if ( UnityEngine.GUI.changed ) {
+        foreach ( var constraint in constraints )
+          constraint.CollisionsState = collisionsState;
+        UnityEngine.GUI.changed = false;
+      }
+
+      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => constraints[ 0 ].SolveType != constraint.SolveType ) != null;
+      var solveType = ConstraintSolveTypeGUI( constraints[ 0 ].SolveType, skin );
+      EditorGUI.showMixedValue = false;
+
+      if ( UnityEngine.GUI.changed ) {
+        foreach ( var constraint in constraints )
+          constraint.SolveType = solveType;
+        UnityEngine.GUI.changed = false;
+      }
+
+      GUI.Separator();
+
+      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint =>
+                                                               constraints[ 0 ].ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled ) != null;
+      var frameNativeSync = ConstraintConnectedFrameSyncGUI( constraints[ 0 ].ConnectedFrameNativeSyncEnabled, skin );
+      EditorGUI.showMixedValue = false;
+
+      if ( UnityEngine.GUI.changed ) {
+        foreach ( var constraint in constraints )
+          constraint.ConnectedFrameNativeSyncEnabled = frameNativeSync;
+        UnityEngine.GUI.changed = false;
+      }
+    }
+
+    public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state,
+                                                                            GUISkin skin )
     {
       bool guiWasEnabled = UnityEngine.GUI.enabled;
 
       using ( new GUI.Indent( 12 ) ) {
         GUILayout.BeginHorizontal();
         {
-          GUILayout.Label( GUI.MakeLabel( "Disable collisions: ", true ), GUI.Align( skin.label, TextAnchor.MiddleLeft ), new GUILayoutOption[] { GUILayout.Width( 140 ), GUILayout.Height( 25 ) } );
+          GUILayout.Label( GUI.MakeLabel( "Disable collisions: ",
+                                          true ),
+                           GUI.Align( skin.label,
+                                      TextAnchor.MiddleLeft ),
+                           new GUILayoutOption[] { GUILayout.Width( 140 ),
+                                                   GUILayout.Height( 25 ) } );
 
           UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
-          if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb", false, "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                 GUI.ConditionalCreateSelectedStyle( state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2, skin.button ),
+          if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb",
+                                                false,
+                                                "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
+                                 GUI.ConditionalCreateSelectedStyle( !EditorGUI.showMixedValue &&
+                                                                       state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
+                                                                     skin.button ),
                                  new GUILayoutOption[] { GUILayout.Width( 76 ), GUILayout.Height( 25 ) } ) )
             state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
-          if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con", false, "Disable Reference object vs. Connected object." ),
-                                 GUI.ConditionalCreateSelectedStyle( state == Constraint.ECollisionsState.DisableReferenceVsConnected, skin.button ),
-                                 new GUILayoutOption[] { GUILayout.Width( 76 ), GUILayout.Height( 25 ) } ) )
+          if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con",
+                                                false,
+                                                "Disable Reference object vs. Connected object." ),
+                                 GUI.ConditionalCreateSelectedStyle( !EditorGUI.showMixedValue &&
+                                                                       state == Constraint.ECollisionsState.DisableReferenceVsConnected,
+                                                                     skin.button ),
+                                 new GUILayoutOption[] { GUILayout.Width( 76 ),
+                                                         GUILayout.Height( 25 ) } ) )
             state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableReferenceVsConnected;
@@ -107,7 +185,10 @@ namespace AGXUnityEditor.Tools
     public static bool ConstraintConnectedFrameSyncGUI( bool enabled, GUISkin skin )
     {
       using ( new GUI.Indent( 12 ) ) {
-        enabled = GUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ), enabled, skin.button, skin.label );
+        enabled = GUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
+                              !EditorGUI.showMixedValue && enabled,
+                              skin.button,
+                              skin.label );
       }
 
       return enabled;
@@ -120,7 +201,10 @@ namespace AGXUnityEditor.Tools
 
         InvokeWrapper[] memberWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
         if ( constraintRowParser.HasTranslationalRows ) {
-          if ( GUI.Foldout( Selected( SelectedFoldout.OrdinaryElementaryTranslational ), GUI.MakeLabel( "Translational properties </b>(along constraint axis)<b>", true ), skin, OnFoldoutStateChange ) )
+          if ( GUI.Foldout( Selected( SelectedFoldout.OrdinaryElementaryTranslational ),
+                            GUI.MakeLabel( "Translational properties </b>(along constraint axis)<b>", true ),
+                            skin,
+                            OnFoldoutStateChange ) )
             using ( new GUI.Indent( 12 ) )
               HandleConstraintRowsGUI( constraintRowParser.TranslationalRows, memberWrappers, skin );
         }
@@ -128,7 +212,10 @@ namespace AGXUnityEditor.Tools
         if ( constraintRowParser.HasRotationalRows ) {
           GUI.Separator();
 
-          if ( GUI.Foldout( Selected( SelectedFoldout.OrdinaryElementaryRotational ), GUI.MakeLabel( "Rotational properties </b>(about constraint axis)<b>", true ), skin, OnFoldoutStateChange ) )
+          if ( GUI.Foldout( Selected( SelectedFoldout.OrdinaryElementaryRotational ),
+                            GUI.MakeLabel( "Rotational properties </b>(about constraint axis)<b>", true ),
+                            skin,
+                            OnFoldoutStateChange ) )
             using ( new GUI.Indent( 12 ) )
               HandleConstraintRowsGUI( constraintRowParser.RotationalRows, memberWrappers, skin );
         }
@@ -138,7 +225,10 @@ namespace AGXUnityEditor.Tools
           if ( !constraintRowParser.Empty )
             GUI.Separator();
 
-          if ( GUI.Foldout( Selected( SelectedFoldout.Controllers ), GUI.MakeLabel( "Controllers", true ), skin, OnFoldoutStateChange ) ) {
+          if ( GUI.Foldout( Selected( SelectedFoldout.Controllers ),
+                            GUI.MakeLabel( "Controllers", true ),
+                            skin,
+                            OnFoldoutStateChange ) ) {
             using ( new GUI.Indent( 12 ) ) {
               GUI.Separator();
               foreach ( var controller in controllers ) {
@@ -222,7 +312,8 @@ namespace AGXUnityEditor.Tools
 
     private void HandleConstraintRowType( ConstraintUtils.ConstraintRow row, int rowIndex, InvokeWrapper wrapper, GUISkin skin )
     {
-      Undo.RecordObject( row.ElementaryConstraint, "Row" );
+      if ( UnityEngine.GUI.enabled )
+        Undo.RecordObject( row.ElementaryConstraint, "Row" );
 
       RowLabel( rowIndex, skin );
 
