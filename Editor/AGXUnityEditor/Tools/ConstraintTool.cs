@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -70,9 +71,10 @@ namespace AGXUnityEditor.Tools
     {
       var skin           = InspectorEditor.Skin;
       var constraints    = editor.Targets<Constraint>().ToArray();
+      var refConstraint  = constraints[ 0 ];
       var differentTypes = false;
       for ( int i = 1; i < constraints.Length; ++i )
-        differentTypes = differentTypes || constraints[ 0 ].Type != constraints[ i ].Type;
+        differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
       if ( differentTypes ) {
         GUI.WarningLabel( "Constraints are of different types.\nMulti-selection edit not supported.", skin );
@@ -89,8 +91,8 @@ namespace AGXUnityEditor.Tools
 
       UnityEngine.GUI.changed = false;
 
-      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => constraints[ 0 ].CollisionsState != constraint.CollisionsState ) != null;
-      var collisionsState = ConstraintCollisionsStateGUI( constraints[ 0 ].CollisionsState, skin );
+      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => refConstraint.CollisionsState != constraint.CollisionsState ) != null;
+      var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState, skin );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -99,8 +101,8 @@ namespace AGXUnityEditor.Tools
         UnityEngine.GUI.changed = false;
       }
 
-      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => constraints[ 0 ].SolveType != constraint.SolveType ) != null;
-      var solveType = ConstraintSolveTypeGUI( constraints[ 0 ].SolveType, skin );
+      EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint => refConstraint.SolveType != constraint.SolveType ) != null;
+      var solveType = ConstraintSolveTypeGUI( refConstraint.SolveType, skin );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -112,8 +114,8 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       EditorGUI.showMixedValue = constraints.FirstOrDefault( constraint =>
-                                                               constraints[ 0 ].ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled ) != null;
-      var frameNativeSync = ConstraintConnectedFrameSyncGUI( constraints[ 0 ].ConnectedFrameNativeSyncEnabled, skin );
+                                                               refConstraint.ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled ) != null;
+      var frameNativeSync = ConstraintConnectedFrameSyncGUI( refConstraint.ConnectedFrameNativeSyncEnabled, skin );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -121,6 +123,73 @@ namespace AGXUnityEditor.Tools
           constraint.ConnectedFrameNativeSyncEnabled = frameNativeSync;
         UnityEngine.GUI.changed = false;
       }
+
+      var constraintsRowData = ( from constraint
+                                 in constraints
+                                 select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
+      var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
+      foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
+        // Foldout
+        GUILayout.Label( GUI.MakeLabel( rowType.ToString() + " properties", true ), skin.label );
+
+        using ( new GUI.Indent( 12 ) ) {
+          var refRowData = constraintsRowData[ 0 ][ rowType ];
+          foreach ( var wrapper in ecRowDataWrappers ) {
+            if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
+              continue;
+            using ( new GUILayout.HorizontalScope() ) {
+              GUILayout.Label( InspectorGUI.MakeLabel( wrapper.Member ), skin.label );
+              GUILayout.FlexibleSpace();
+              using ( new GUILayout.VerticalScope() ) {
+                for ( int i = 0; i < 3; ++i ) {
+                  using ( new GUILayout.HorizontalScope() )
+                  using ( new GUI.EnabledBlock( refRowData[ i ] != null ) ) {
+                    RowLabel( i, skin );
+
+                    // Handling type float, e.g., compliance and damping.
+                    if ( wrapper.IsType<float>() ) {
+                      var value = EditorGUILayout.FloatField( wrapper.Get<float>( refRowData[ i ]?.RowData ) );
+                      if ( UnityEngine.GUI.changed ) {
+                        foreach ( var constraintRowData in constraintsRowData )
+                          wrapper.ConditionalSet( constraintRowData[ rowType ][ i ].RowData, value );
+                        UnityEngine.GUI.changed = false;
+                      }
+                    }
+                    // Handling type RangeReal, e.g., force range.
+                    // Note: During multi-selection we don't want to write, e.g., Min from
+                    //       reference row data when value for Max is changed.
+                    else if ( wrapper.IsType<RangeReal>() ) {
+                      var forceRangeMin = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refRowData[ i ]?.RowData ).Min,
+                                                                      GUILayout.MaxWidth( 128 ) );
+                      var forceRangeMinChanged = UnityEngine.GUI.changed;
+                      UnityEngine.GUI.changed = false;
+                      var forceRangeMax = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refRowData[ i ]?.RowData ).Max,
+                                                                      GUILayout.MaxWidth( 128 ) );
+                      if ( forceRangeMinChanged || UnityEngine.GUI.changed ) {
+                        foreach ( var constraintRowData in constraintsRowData ) {
+                          var range = wrapper.Get<RangeReal>( constraintRowData[ rowType ][ i ].RowData );
+                          if ( forceRangeMinChanged )
+                            range.Min = forceRangeMin;
+                          if ( UnityEngine.GUI.changed )
+                            range.Max = forceRangeMax;
+
+                          // Validation of Min > Max has to go somewhere else because if e.g.,
+                          // Min = 50 and the user wants to type Max = 200 we're receiving
+                          // Max = 2 as the user types.
+
+                          wrapper.ConditionalSet( constraintRowData[ rowType ][ i ].RowData, range );
+                        }
+                        UnityEngine.GUI.changed = false;
+                      }
+                    } // IsType RangeReal.
+                  } // Horizontal and GUI Enabled blocks.
+                } // For U, V, N.
+              } // Right align vertical scope.
+            } // Horizontal with flexible space for alignment.
+            GUI.Separator();
+          } // For type wrappers.
+        } // Indentation.
+      } // For Translational, Rotational.
     }
 
     public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state,
@@ -277,8 +346,19 @@ namespace AGXUnityEditor.Tools
     }
 
     private static string[] RowLabels = new string[] { "U", "V", "N" };
-    private static GUILayoutOption RowLabelsWidth { get { return GUILayout.Width( 12 ); } }
-    private static void RowLabel( int i, GUISkin skin ) { GUILayout.Label( GUI.MakeLabel( RowLabels[ i ] ), skin.label, RowLabelsWidth ); }
+    private static Color[] RowColors = new Color[]
+    {
+      Color.Lerp( Color.red, Color.white, 0.55f ),
+      Color.Lerp( Color.green, Color.white, 0.55f ),
+      Color.Lerp( Color.blue, Color.white, 0.55f )
+    };
+
+    private static void RowLabel( int i, GUISkin skin )
+    {
+      GUILayout.Label( GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ),
+                       skin.label,
+                       GUILayout.Width( 12 ) );
+    }
 
     private void HandleConstraintRowsGUI( ConstraintUtils.ConstraintRow[] rows, InvokeWrapper[] wrappers, GUISkin skin )
     {

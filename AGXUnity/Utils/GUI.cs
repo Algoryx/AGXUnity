@@ -75,6 +75,22 @@ namespace AGXUnity.Utils
       }
     }
 
+    public class EnabledBlock : IDisposable
+    {
+      private bool m_prevEnabled = true;
+
+      public EnabledBlock( bool enable )
+      {
+        m_prevEnabled = UnityEngine.GUI.enabled;
+        UnityEngine.GUI.enabled = enable;
+      }
+
+      public void Dispose()
+      {
+        UnityEngine.GUI.enabled = m_prevEnabled;
+      }
+    }
+
     public static string AddColorTag( string str, Color color )
     {
       return @"<color=" + color.ToHexStringRGBA() + @">" + str + @"</color>";
