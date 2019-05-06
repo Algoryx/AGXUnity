@@ -178,6 +178,9 @@ namespace AGXUnityEditor
   {
     public override void OnInspectorGUI()
     {
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+        return;
+
       EditorSettings.Instance.OnInspectorGUI( InspectorEditor.Skin );
     }
   }

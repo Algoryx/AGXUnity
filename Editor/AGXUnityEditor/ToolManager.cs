@@ -171,47 +171,6 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
-    /// Callback from Editor before member fields are being
-    /// rendered for a given target.
-    /// </summary>
-    /// <param name="target">Target object.</param>
-    /// <param name="skin">Current GUI skin.</param>
-    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
-    public static void OnPreTargetMembers( object target, GUISkin skin )
-    {
-      var tool = FindActive( target );
-      if ( tool == null )
-        return;
-
-      tool.OnPreTargetMembersGUI( skin );
-    }
-
-    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
-    public static bool OnTargetEditorInspectorGUI( object target )
-    {
-      if ( target == null )
-        return false;
-
-      return Utils.KeyHandler.HandleDetectKeyOnGUI( target, Event.current );
-    }
-
-    /// <summary>
-    /// Callback from Editor after member fields are being
-    /// rendered for a given target.
-    /// </summary>
-    /// <param name="target">Target object.</param>
-    /// <param name="skin">Current GUI skin.</param>
-    [Obsolete( "BaseEditor is obsolete - use InspectorEditor instead." )]
-    public static void OnPostTargetMembers( object target, GUISkin skin )
-    {
-      var tool = FindActive( target );
-      if ( tool == null )
-        return;
-
-      tool.OnPostTargetMembersGUI( skin );
-    }
-
-    /// <summary>
     /// Callback from Editor OnDisable. If <paramref name="target"/>
     /// has an active custom target tool - the tool will be removed.
     /// </summary>

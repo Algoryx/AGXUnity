@@ -62,6 +62,9 @@ namespace AGXUnityEditor.Tools
   {
     public override void OnInspectorGUI()
     {
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+        return;
+
       var selected = from obj in this.targets select obj as CableProperties;
       if ( selected.Count() == 0 )
         return;

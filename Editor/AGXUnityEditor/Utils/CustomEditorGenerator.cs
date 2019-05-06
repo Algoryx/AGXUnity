@@ -81,10 +81,14 @@ namespace AGXUnityEditor.Utils
       // Removing editors which classes has been removed.
       {
         var assembly = GetAGXUnityAssembly();
+        var editorAssembly = Assembly.Load( Manager.AGXUnityEditorAssemblyName );
         foreach ( var info in GetEditorFileInfos() ) {
-          string className = GetClassName( info.Name );
-          Type type = assembly.GetType( className, false );
-          if ( !IsMatch( type ) ) {
+          var className            = GetClassName( info.Name );
+          var type                 = assembly.GetType( className, false );
+          var editorClassName      = "AGXUnityEditor.Editors." + GetClassName( type ) + "Editor";
+          var editorType           = editorAssembly.GetType( editorClassName, false );
+          var isEditorBaseMismatch = editorType != null && editorType.BaseType != typeof( InspectorEditor );
+          if ( !IsMatch( type ) || isEditorBaseMismatch ) {
             Debug.Log( "Mismatching editor for class: " + className + ", removing custom editor." );
             DeleteFile( info );
             assetDatabaseDirty = true;
@@ -129,14 +133,14 @@ namespace AGXUnityEditor.Utils
               type.GetCustomAttributes( typeof( DoNotGenerateCustomEditor ), false ).Length == 0;
     }
 
-    private static string GetClassName( Type type )
-    {
-      return type.ToString().Replace( ".", string.Empty );
-    }
-
     private static string GetTypeFilename( Type type )
     {
       return type.ToString().Replace( ".", "+" );
+    }
+
+    private static string GetClassName( Type type )
+    {
+      return type.ToString().Replace( ".", string.Empty );
     }
 
     private static string GetClassName( string filename )

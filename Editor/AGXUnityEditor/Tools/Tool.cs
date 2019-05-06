@@ -192,12 +192,6 @@ namespace AGXUnityEditor.Tools
 
     public virtual void OnSceneViewGUI( SceneView sceneView ) { }
 
-    [Obsolete( "BaseEditor is obsolete - implement OnPreTargetMembersGUI( InspectorEditor ) instead." )]
-    public virtual void OnPreTargetMembersGUI( GUISkin skin ) { }
-
-    [Obsolete( "BaseEditor is obsolete - implement OnPostTargetMembersGUI( InspectorEditor ) instead." )]
-    public virtual void OnPostTargetMembersGUI( GUISkin skin ) { }
-
     public virtual void OnPreTargetMembersGUI( InspectorEditor editor ) { }
 
     public virtual void OnPostTargetMembersGUI( InspectorEditor editor ) { }
