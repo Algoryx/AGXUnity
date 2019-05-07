@@ -127,10 +127,21 @@ namespace AGXUnityEditor.Tools
       var constraintsRowData = ( from constraint
                                  in constraints
                                  select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
+      var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
+      Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
+
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
+      GUI.Separator();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
-        // Foldout
-        GUILayout.Label( GUI.MakeLabel( rowType.ToString() + " properties", true ), skin.label );
+        Func<EditorDataEntry> selected = () =>
+        {
+          return EditorData.Instance.GetData( refConstraint, "ec_" + rowType.ToString(), entry => entry.Bool = false );
+        };
+
+        if ( !GUI.Foldout( selected(), GUI.MakeLabel( rowType.ToString() + " properties", true ), skin ) ) {
+          GUI.Separator();
+          continue;
+        }
 
         using ( new GUI.Indent( 12 ) ) {
           var refRowData = constraintsRowData[ 0 ][ rowType ];
@@ -189,6 +200,7 @@ namespace AGXUnityEditor.Tools
             GUI.Separator();
           } // For type wrappers.
         } // Indentation.
+        GUI.Separator();
       } // For Translational, Rotational.
     }
 
