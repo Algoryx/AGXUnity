@@ -118,13 +118,8 @@ namespace AGXUnity
 
     NativeHandler()
     {
-      HasValidLicense = false;
       m_isAgx         = new InitShutdownAGXDynamics();
-
-      if ( m_isAgx.Initialized && !agx.Runtime.instance().isValid() )
-        Debug.LogError( "AGX Dynamics: " + agx.Runtime.instance().getStatus() );
-      else if ( m_isAgx.Initialized )
-        HasValidLicense = true;
+      HasValidLicense = m_isAgx.Initialized && agx.Runtime.instance().isValid();
     }
 
     ~NativeHandler()
@@ -154,6 +149,49 @@ namespace AGXUnity
     {
       if ( !agx.Thread.isMainThread() )
         agx.Thread.registerAsAgxThread();
+    }
+
+    /// <summary>
+    /// Unlock AGX Dynamics using obfuscated license string.
+    /// </summary>
+    /// <remarks>
+    /// AGXUnity searches for an AGX Dynamics license directly when
+    /// an AGXUnity component or script is instantiated. If no license
+    /// file is found or the file is invalid, NativeHandler.Instance.HasValidLicense
+    /// returns false. To minimize the risks of undefined behavior,
+    /// AGX Dynamics has to be unlocked as soon as possible when the
+    /// application is loading. E.g., RuntimeInitializeOnLoadMethod which
+    /// executes after Awake.
+    /// </remarks>
+    /// <example>
+    /// namespace Scripts
+    /// {
+    ///   class UnlockAGXDynamics
+    ///   {
+    ///     [UnityEngine.RuntimeInitializeOnLoadMethod]
+    ///     static OnLoad()
+    ///     {
+    ///       var success = AGXUnity.NativeHandler.VerifyAndUnlock( "myobfuscatedlicensestring" );
+    ///       if ( success )
+    ///         Debug.Log( "Successfully unlocked AGX Dynamics" );
+    ///       else {
+    ///         // An overlay will be displayed in the game view.
+    ///         Debug.LogError( "Unable to unlock AGX Dynamics." )
+    ///       }
+    ///     }
+    ///   }
+    /// }
+    /// </example>
+    /// <param name="licenseStr"></param>
+    /// <returns>True if unlocked successfully, otherwise false (uninitialized AGX Dynamics or invalid license).</returns>
+    public bool VerifyAndUnlock( string licenseStr )
+    {
+      if ( !m_isAgx.Initialized ) {
+        Debug.LogError( "Unable to unlock AGX Dynamics - AGX Dynamics failed to initialize." );
+        return false;
+      }
+
+      return (HasValidLicense = agx.Runtime.instance().verifyAndUnlock( licenseStr ));
     }
   }
 }
