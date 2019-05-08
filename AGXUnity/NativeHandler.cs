@@ -182,7 +182,7 @@ namespace AGXUnity
     ///   }
     /// }
     /// </example>
-    /// <param name="licenseStr"></param>
+    /// <param name="licenseStr">Obfuscated license string.</param>
     /// <returns>True if unlocked successfully, otherwise false (uninitialized AGX Dynamics or invalid license).</returns>
     public bool VerifyAndUnlock( string licenseStr )
     {
