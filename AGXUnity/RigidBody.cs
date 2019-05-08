@@ -206,6 +206,15 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Synchronizes native instance position and rotation with current
+    /// game object transform position and rotation.
+    /// </summary>
+    public void SyncNativeTransform()
+    {
+      SyncNativeTransform( m_rb );
+    }
+
+    /// <summary>
     /// Peek at a temporary native instance or the current (if initialized).
     /// </summary>
     /// <param name="callback">Callback with temporary or already initialized native instance. Callback signature ( nativeRb, isTemporary ).</param>
