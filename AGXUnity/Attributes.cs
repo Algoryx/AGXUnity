@@ -13,6 +13,17 @@ namespace AGXUnity
     public ShowInInspector() { }
   }
 
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorPriorityAttribute : Attribute
+  {
+    public int Priority { get; private set; }
+
+    public InspectorPriorityAttribute( int priority )
+    {
+      Priority = priority;
+    }
+  }
+
   /// <summary>
   /// Ignore synchronization of properties during initialize of a ScriptComponent/Asset.
   /// </summary>

@@ -129,21 +129,61 @@ namespace AGXUnityEditor
       d.CopyFrom( s );
     }
 
+    private static GUIStyle m_rangeRealInvalidStyle = null;
+    private struct RangeRealResult
+    {
+      public float Min;
+      public bool MinChanged;
+      public float Max;
+      public bool MaxChanged;
+    }
+
     [InspectorDrawer( typeof( RangeReal ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
+    [Obsolete( "Needs patch to not propagate unchanged values." )]
     public static object RangeRealDrawer( InvokeWrapper wrapper, GUISkin skin )
     {
       var value = wrapper.Get<RangeReal>();
-
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( MakeLabel( wrapper.Member ), skin.label );
-        value.Min = EditorGUILayout.FloatField( "", (float)value.Min, skin.textField, GUILayout.MaxWidth( 64 ) );
-        value.Max = EditorGUILayout.FloatField( "", (float)value.Max, skin.textField, GUILayout.MaxWidth( 64 ) );
+      GUIStyle labelStyle = skin.label;
+      if ( value.Min > value.Max ) {
+        if ( m_rangeRealInvalidStyle == null ) {
+          m_rangeRealInvalidStyle = new GUIStyle( skin.label );
+          m_rangeRealInvalidStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
+        }
+        labelStyle = m_rangeRealInvalidStyle;
       }
-      GUILayout.EndHorizontal();
 
-      if ( value.Min > value.Max )
-        value.Min = value.Max;
+      RangeRealResult result = new RangeRealResult()
+      {
+        Min = value.Min,
+        MinChanged = false,
+        Max = value.Max,
+        MaxChanged = false
+      };
+      using ( new GUILayout.HorizontalScope( labelStyle ) ) {
+        GUILayout.Label( MakeLabel( wrapper.Member ), skin.label );
+        result.Min              = EditorGUILayout.FloatField( "", value.Min, skin.textField, GUILayout.MaxWidth( 64 ) );
+        result.MinChanged       = UnityEngine.GUI.changed;
+        UnityEngine.GUI.changed = false;
+        result.Max              = EditorGUILayout.FloatField( "", value.Max, skin.textField, GUILayout.MaxWidth( 64 ) );
+        result.MaxChanged       = UnityEngine.GUI.changed;
+        UnityEngine.GUI.changed = result.MinChanged || result.MaxChanged;
+      }
+
+      if ( labelStyle == m_rangeRealInvalidStyle )
+        GUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")", skin );
+
+      return result;
+    }
+
+    public static object RangeRealDrawerCopyOp( object data, object destination )
+    {
+      var result = (RangeRealResult)data;
+      var value  = (RangeReal)destination;
+      if ( result.MinChanged )
+        value.Min = result.Min;
+      if ( result.MaxChanged )
+        value.Max = result.Max;
 
       return value;
     }

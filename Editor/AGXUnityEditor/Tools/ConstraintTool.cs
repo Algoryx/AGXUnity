@@ -55,16 +55,17 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      Constraint.CollisionsState = ConstraintCollisionsStateGUI( Constraint.CollisionsState, skin );
-      Constraint.SolveType = ConstraintSolveTypeGUI( Constraint.SolveType, skin );
+      OnPreTargetMembersGUIMultiSelect( editor );
+      //Constraint.CollisionsState = ConstraintCollisionsStateGUI( Constraint.CollisionsState, skin );
+      //Constraint.SolveType = ConstraintSolveTypeGUI( Constraint.SolveType, skin );
 
-      GUI.Separator();
+      //GUI.Separator();
 
-      Constraint.ConnectedFrameNativeSyncEnabled = ConstraintConnectedFrameSyncGUI( Constraint.ConnectedFrameNativeSyncEnabled, skin );
+      //Constraint.ConnectedFrameNativeSyncEnabled = ConstraintConnectedFrameSyncGUI( Constraint.ConnectedFrameNativeSyncEnabled, skin );
 
-      GUI.Separator();
+      //GUI.Separator();
 
-      ConstraintRowsGUI( skin );
+      //ConstraintRowsGUI( skin );
     }
 
     private static void OnPreTargetMembersGUIMultiSelect( InspectorEditor editor )
@@ -124,6 +125,11 @@ namespace AGXUnityEditor.Tools
         UnityEngine.GUI.changed = false;
       }
 
+      Func<string, EditorDataEntry> selected = ( id ) =>
+      {
+        return EditorData.Instance.GetData( refConstraint, id, entry => entry.Bool = false );
+      };
+
       var constraintsRowData = ( from constraint
                                  in constraints
                                  select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
@@ -133,12 +139,9 @@ namespace AGXUnityEditor.Tools
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
       GUI.Separator();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
-        Func<EditorDataEntry> selected = () =>
-        {
-          return EditorData.Instance.GetData( refConstraint, "ec_" + rowType.ToString(), entry => entry.Bool = false );
-        };
-
-        if ( !GUI.Foldout( selected(), GUI.MakeLabel( rowType.ToString() + " properties", true ), skin ) ) {
+        if ( !GUI.Foldout( selected( "ec_" + rowType.ToString() ),
+                           GUI.MakeLabel( rowType.ToString() + " properties", true ),
+                           skin ) ) {
           GUI.Separator();
           continue;
         }
@@ -156,6 +159,10 @@ namespace AGXUnityEditor.Tools
                   using ( new GUILayout.HorizontalScope() )
                   using ( new GUI.EnabledBlock( refRowData[ i ] != null ) ) {
                     RowLabel( i, skin );
+
+                    // TODO: This could probably be replaced by using InspectorEditor.HandleType
+                    //       with a tweak. We use wrapper.Get<type>( foo.RowData ) while our
+                    //       drawers uses wrapper.Get<type>().
 
                     // Handling type float, e.g., compliance and damping.
                     if ( wrapper.IsType<float>() ) {
@@ -202,6 +209,43 @@ namespace AGXUnityEditor.Tools
         } // Indentation.
         GUI.Separator();
       } // For Translational, Rotational.
+
+      if ( GUI.Foldout( selected( "controllers" ),
+                        GUI.MakeLabel( "Controllers", true ),
+                        skin ) ) {
+        GUI.Separator();
+        using ( new GUI.Indent( 12 ) ) {
+          foreach ( var refController in refConstraint.GetElementaryConstraintControllers() ) {
+            var controllerType    = refController.GetControllerType();
+            var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
+            var controllerName    = ConstraintUtils.FindName( refController );
+            string dimString      = "[" + GUI.AddColorTag( controllerTypeTag,
+                                                           controllerType == Constraint.ControllerType.Rotational ?
+                                                             Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) :
+                                                             Color.Lerp( UnityEngine.GUI.color, Color.green, 0.75f ) ) + "] ";
+            if ( !GUI.Foldout( selected( controllerTypeTag + controllerName ),
+                              GUI.MakeLabel( dimString + controllerName, true ),
+                              skin ) ) {
+              GUI.Separator();
+              continue;
+            }
+
+            var controllers = ( from constraint
+                                in constraints
+                                from controller
+                                in constraint.GetElementaryConstraintControllers()
+                                where controller.GetType() == refController.GetType()
+                                select controller ).ToArray();
+            using ( new GUI.Indent( 12 ) ) {
+              InspectorEditor.DrawMembersGUI( controllers );
+              GUI.Separator();
+              InspectorEditor.DrawMembersGUI( controllers, controller => (controller as ElementaryConstraint).RowData[ 0 ] );
+            }
+
+            GUI.Separator();
+          }
+        }
+      }
     }
 
     public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state,

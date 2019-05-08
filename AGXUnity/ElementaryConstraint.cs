@@ -87,7 +87,7 @@ namespace AGXUnity
     /// <summary>
     /// Enable flag.
     /// </summary>
-    [HideInInspector]
+    [InspectorPriority( 10 )]
     public bool Enable
     {
       get { return m_enable; }

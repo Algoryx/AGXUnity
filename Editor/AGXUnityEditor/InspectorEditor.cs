@@ -34,17 +34,35 @@ namespace AGXUnityEditor
       }
     }
 
-    public static void DrawMembersGUI( Object[] objects )
+    /// <summary>
+    /// Draw supported member GUI for given targets. This method supports
+    /// non-UnityEngine.Object instances, such as pure Serializable classes,
+    /// that are part of <paramref name="targets"/>. <paramref name="getChildCallback"/>
+    /// is called to access these serializable objects. If <paramref name="getChildCallback"/>
+    /// is null, targets will be rendered.
+    /// </summary>
+    /// <param name="targets">Target UnityEngine.Object instances (used for Undo and SetDirty).</param>
+    /// <param name="getChildCallback">Null and targets will be rendered, otherwise the returned
+    ///                                instance from this callback.</param>
+    public static void DrawMembersGUI( Object[] targets, Func<Object, object> getChildCallback = null )
     {
-      objects = objects.Where( obj => obj != null ).ToArray();
+      targets = targets.Where( obj => obj != null ).ToArray();
 
+      if ( targets.Length == 0 )
+        return;
+
+      var objects = targets.Select( target => getChildCallback == null ?
+                                      target :
+                                      getChildCallback( target ) )
+                           .Where( obj => obj != null ).ToArray();
       if ( objects.Length == 0 )
         return;
 
-      Undo.RecordObjects( objects, "Inspector" );
+      Undo.RecordObjects( targets, "Inspector" );
 
       var hasChanges = false;
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects.FirstOrDefault( obj => obj != null ) );
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ] );
+      Array.Sort( fieldsAndProperties, ( wrapper1, wrapper2 ) => wrapper2.Priority.CompareTo( wrapper1.Priority ) );
       foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
         if ( !ShouldBeShownInInspector( wrapper.Member ) )
           continue;
@@ -53,7 +71,7 @@ namespace AGXUnityEditor
       }
 
       if ( hasChanges ) {
-        foreach ( var obj in objects )
+        foreach ( var obj in targets )
           EditorUtility.SetDirty( obj );
       }
     }
@@ -126,7 +144,7 @@ namespace AGXUnityEditor
       ToolManager.OnTargetEditorDisable( this.target );
     }
 
-    private static bool HandleType( InvokeWrapper wrapper, Object[] objects )
+    private static bool HandleType( InvokeWrapper wrapper, object[] objects )
     {
       if ( !wrapper.CanRead() )
         return false;
@@ -154,7 +172,10 @@ namespace AGXUnityEditor
         object newValue = value;
         if ( drawerInfo.CopyOp != null ) {
           newValue = wrapper.GetValue( obj );
-          drawerInfo.CopyOp.Invoke( null, new object[] { value, newValue } );
+          // CopyOp returns the new value for value types.
+          var ret = drawerInfo.CopyOp.Invoke( null, new object[] { value, newValue } );
+          if ( ret != null )
+            newValue = ret;
         }
         wrapper.ConditionalSet( obj, newValue );
       }

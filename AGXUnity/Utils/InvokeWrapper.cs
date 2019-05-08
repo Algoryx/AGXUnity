@@ -30,11 +30,15 @@ namespace AGXUnity.Utils
     {
       Object = obj;
       Member = member;
+      var priorityAttribute = GetAttribute<InspectorPriorityAttribute>();
+      Priority = priorityAttribute != null ? priorityAttribute.Priority : 0;
     }
 
     public object Object { get; set; }
 
     public MemberInfo Member { get; private set; }
+
+    public int Priority { get; private set; }
 
     public U GetAttribute<U>() where U : Attribute
     {
