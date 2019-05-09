@@ -45,7 +45,7 @@ namespace AGXUnity
       }
       set
       {
-        m_geometryContactThresholds = value;
+        m_geometryContactThresholds = value ?? GeometryContactMergeSplitThresholds.DefaultResource;
         foreach ( var native in m_natives )
           native.setContactThresholds( m_geometryContactThresholds.GetInitialized<GeometryContactMergeSplitThresholds>().Native );
       }
@@ -64,7 +64,7 @@ namespace AGXUnity
       }
       set
       {
-        m_constraintThresholds = value;
+        m_constraintThresholds = value ?? ConstraintMergeSplitThresholds.DefaultResource;
         foreach ( var native in m_natives )
           native.setConstraintThresholds( m_constraintThresholds.GetInitialized<ConstraintMergeSplitThresholds>().Native );
       }
@@ -115,7 +115,7 @@ namespace AGXUnity
       }
 
       GeometryContactThresholds.GetInitialized<GeometryContactMergeSplitThresholds>();
-      GeometryContactThresholds.GetInitialized<ConstraintMergeSplitThresholds>();
+      ConstraintThresholds.GetInitialized<ConstraintMergeSplitThresholds>();
 
       return true;
     }
