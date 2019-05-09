@@ -130,13 +130,13 @@ namespace AGXUnityEditor.Tools
         return EditorData.Instance.GetData( refConstraint, id, entry => entry.Bool = false );
       };
 
-      var constraintsRowData = ( from constraint
-                                 in constraints
-                                 select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
+      var constraintsParser = ( from constraint
+                                in constraints
+                                select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
       Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
 
-      var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
+      var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       GUI.Separator();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
         if ( !GUI.Foldout( selected( "ec_" + rowType.ToString() ),
@@ -147,7 +147,7 @@ namespace AGXUnityEditor.Tools
         }
 
         using ( new GUI.Indent( 12 ) ) {
-          var refRowData = constraintsRowData[ 0 ][ rowType ];
+          var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
           foreach ( var wrapper in ecRowDataWrappers ) {
             if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
               continue;
@@ -156,20 +156,33 @@ namespace AGXUnityEditor.Tools
               GUILayout.FlexibleSpace();
               using ( new GUILayout.VerticalScope() ) {
                 for ( int i = 0; i < 3; ++i ) {
-                  using ( new GUILayout.HorizontalScope() )
-                  using ( new GUI.EnabledBlock( refRowData[ i ] != null ) ) {
-                    RowLabel( i, skin );
+                  // TODO: This could probably be replaced by using InspectorEditor.HandleType
+                  //       with a tweak. We use wrapper.Get<type>( foo.RowData ) while our
+                  //       drawers uses wrapper.Get<type>().
+                  // UPDATE: Probably not worth it because we have to override all labels
+                  //         written by our default drawers.
+                  // ****************************************************************************
+                  //var objects = ( from constraintParser
+                  //                in constraintsParser
+                  //                where constraintParser[ rowType ][ i ] != null
+                  //                select constraintParser[ rowType ][ i ].RowData ).ToArray();
+                  //using ( new GUILayout.HorizontalScope() )
+                  //using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
+                  //  RowLabel( i, skin );
+                  //  InspectorEditor.HandleType( wrapper, objects );
+                  //}
+                  // ****************************************************************************
 
-                    // TODO: This could probably be replaced by using InspectorEditor.HandleType
-                    //       with a tweak. We use wrapper.Get<type>( foo.RowData ) while our
-                    //       drawers uses wrapper.Get<type>().
+                  using ( new GUILayout.HorizontalScope() )
+                  using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
+                    RowLabel( i, skin );
 
                     // Handling type float, e.g., compliance and damping.
                     if ( wrapper.IsType<float>() ) {
-                      var value = EditorGUILayout.FloatField( wrapper.Get<float>( refRowData[ i ]?.RowData ) );
+                      var value = EditorGUILayout.FloatField( wrapper.Get<float>( refTransOrRotRowData[ i ]?.RowData ) );
                       if ( UnityEngine.GUI.changed ) {
-                        foreach ( var constraintRowData in constraintsRowData )
-                          wrapper.ConditionalSet( constraintRowData[ rowType ][ i ].RowData, value );
+                        foreach ( var constraintParser in constraintsParser )
+                          wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, value );
                         UnityEngine.GUI.changed = false;
                       }
                     }
@@ -177,15 +190,15 @@ namespace AGXUnityEditor.Tools
                     // Note: During multi-selection we don't want to write, e.g., Min from
                     //       reference row data when value for Max is changed.
                     else if ( wrapper.IsType<RangeReal>() ) {
-                      var forceRangeMin = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refRowData[ i ]?.RowData ).Min,
+                      var forceRangeMin = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
                                                                       GUILayout.MaxWidth( 128 ) );
                       var forceRangeMinChanged = UnityEngine.GUI.changed;
                       UnityEngine.GUI.changed = false;
-                      var forceRangeMax = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refRowData[ i ]?.RowData ).Max,
+                      var forceRangeMax = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
                                                                       GUILayout.MaxWidth( 128 ) );
                       if ( forceRangeMinChanged || UnityEngine.GUI.changed ) {
-                        foreach ( var constraintRowData in constraintsRowData ) {
-                          var range = wrapper.Get<RangeReal>( constraintRowData[ rowType ][ i ].RowData );
+                        foreach ( var constraintParser in constraintsParser ) {
+                          var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
                           if ( forceRangeMinChanged )
                             range.Min = forceRangeMin;
                           if ( UnityEngine.GUI.changed )
@@ -195,7 +208,7 @@ namespace AGXUnityEditor.Tools
                           // Min = 50 and the user wants to type Max = 200 we're receiving
                           // Max = 2 as the user types.
 
-                          wrapper.ConditionalSet( constraintRowData[ rowType ][ i ].RowData, range );
+                          wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, range );
                         }
                         UnityEngine.GUI.changed = false;
                       }
@@ -324,7 +337,7 @@ namespace AGXUnityEditor.Tools
       try {
         ConstraintUtils.ConstraintRowParser constraintRowParser = ConstraintUtils.ConstraintRowParser.Create( Constraint );
 
-        InvokeWrapper[] memberWrappers = InvokeWrapper.FindFieldsAndProperties( null, typeof( ElementaryConstraintRowData ) );
+        InvokeWrapper[] memberWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
         if ( constraintRowParser.HasTranslationalRows ) {
           if ( GUI.Foldout( Selected( SelectedFoldout.OrdinaryElementaryTranslational ),
                             GUI.MakeLabel( "Translational properties </b>(along constraint axis)<b>", true ),

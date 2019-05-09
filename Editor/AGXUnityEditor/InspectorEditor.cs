@@ -61,8 +61,7 @@ namespace AGXUnityEditor
       Undo.RecordObjects( targets, "Inspector" );
 
       var hasChanges = false;
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ] );
-      Array.Sort( fieldsAndProperties, ( wrapper1, wrapper2 ) => wrapper2.Priority.CompareTo( wrapper1.Priority ) );
+      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
       foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
         if ( !ShouldBeShownInInspector( wrapper.Member ) )
           continue;
@@ -144,7 +143,7 @@ namespace AGXUnityEditor
       ToolManager.OnTargetEditorDisable( this.target );
     }
 
-    private static bool HandleType( InvokeWrapper wrapper, object[] objects )
+    public static bool HandleType( InvokeWrapper wrapper, object[] objects )
     {
       if ( !wrapper.CanRead() )
         return false;
@@ -155,7 +154,7 @@ namespace AGXUnityEditor
 
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 
-      var value   = drawerInfo.Drawer.Invoke( null, new object[] { wrapper, Skin } );
+      var value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper, Skin } );
       var changed = UnityEngine.GUI.changed &&
                     ( drawerInfo.IsNullable || value != null );
 

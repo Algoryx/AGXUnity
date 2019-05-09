@@ -105,14 +105,12 @@ namespace AGXUnityEditor.Tools
         using ( new GUI.Indent( 12 ) ) {
           GUI.Separator();
 
-          var wrappers = PropertyWrapper.FindProperties( properties[ dir ],
-                                                         typeof( CableProperty ),
-                                                         System.Reflection.BindingFlags.Instance |
-                                                           System.Reflection.BindingFlags.Public );
+          var wrappers = PropertyWrapper.FindProperties<CableProperty>( System.Reflection.BindingFlags.Instance |
+                                                                        System.Reflection.BindingFlags.Public );
           foreach ( var wrapper in wrappers ) {
             if ( wrapper.GetContainingType() == typeof( float ) && InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ) {
               var value = EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                                      wrapper.Get<float>() );
+                                                      wrapper.Get<float>( properties[ dir ] ) );
               if ( UnityEngine.GUI.changed ) {
                 changed = new Tuple<PropertyWrapper, CableProperties.Direction, object>( wrapper, dir, value );
                 UnityEngine.GUI.changed = false;
