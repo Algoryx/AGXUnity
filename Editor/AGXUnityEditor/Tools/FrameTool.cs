@@ -119,6 +119,12 @@ namespace AGXUnityEditor.Tools
     public bool TransformHandleActive { get; set; }
 
     /// <summary>
+    /// Regardless of TransformHandleActive, force this tool to
+    /// not render transform handle, e.g., during multi-selection.
+    /// </summary>
+    public bool ForceDisableTransformHandle { get; set; }
+
+    /// <summary>
     /// Callback when a local frame tool successfully exits.
     /// </summary>
     public Action<Tool> OnToolDoneCallback = delegate { };
@@ -144,6 +150,7 @@ namespace AGXUnityEditor.Tools
       Size  = size;
       Alpha = alpha;
       TransformHandleActive = true;
+      ForceDisableTransformHandle = false;
     }
 
     public override void OnAdd()
@@ -166,7 +173,7 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      if ( !TransformHandleActive )
+      if ( !TransformHandleActive || ForceDisableTransformHandle )
         return;
 
       if ( UndoRedoRecordObject != null )

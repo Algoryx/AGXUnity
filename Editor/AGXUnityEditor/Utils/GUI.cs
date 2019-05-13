@@ -134,7 +134,9 @@ namespace AGXUnityEditor.Utils
 
     public static void ToolsLabel( GUISkin skin )
     {
-      GUILayout.Label( GUI.MakeLabel( "Tools:", true ), Align( skin.label, TextAnchor.MiddleLeft ), new GUILayoutOption[] { GUILayout.Width( 64 ), GUILayout.Height( 25 ) } );
+      GUILayout.Label( GUI.MakeLabel( "Tools:", true ),
+                       Align( skin.label, TextAnchor.MiddleLeft ),
+                       new GUILayoutOption[] { GUILayout.Width( 64 ), GUILayout.Height( 25 ) } );
     }
 
     public static bool ToolButton( char symbol, bool active, string toolTip, GUISkin skin, int fontSize = 18 )
@@ -145,32 +147,73 @@ namespace AGXUnityEditor.Utils
                                ToolButtonData.Height );
     }
 
-    public static void HandleFrame( IFrame frame, InspectorEditor editor, float numPixelsIndentation = 0.0f, bool includeFrameToolIfPresent = true )
+    public static void HandleFrame( IFrame frame,
+                                    InspectorEditor editor,
+                                    float numPixelsIndentation = 0.0f,
+                                    bool includeFrameToolIfPresent = true )
+    {
+      if ( frame == null )
+        return;
+
+      HandleFrames( new IFrame[] { frame },
+                    editor,
+                    numPixelsIndentation,
+                    includeFrameToolIfPresent );
+    }
+
+    public static void HandleFrames( IFrame[] frames,
+                                     InspectorEditor editor,
+                                     float numPixelsIndentation = 0.0f,
+                                     bool includeFrameToolIfPresent = true )
     {
       var skin           = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
+      var refFrame       = frames[ 0 ];
 
       using ( new Indent( numPixelsIndentation ) ) {
         UnityEngine.GUI.enabled = true;
-        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ), frame.Parent, typeof( GameObject ), true );
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
+        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ),
+                                                                        refFrame.Parent,
+                                                                        typeof( GameObject ),
+                                                                        true );
+        EditorGUI.showMixedValue = false;
         UnityEngine.GUI.enabled = guiWasEnabled;
 
-        if ( newParent != frame.Parent )
-          frame.SetParent( newParent );
+        if ( newParent != refFrame.Parent ) {
+          foreach ( var frame in frames )
+            frame.SetParent( newParent );
+        }
 
-        frame.LocalPosition = Vector3Field( MakeLabel( "Local position" ), frame.LocalPosition, skin.label );
+        UnityEngine.GUI.changed = false;
+
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalPosition, frame.LocalPosition ) );
+        var localPosition = Vector3Field( MakeLabel( "Local position" ), refFrame.LocalPosition, skin.label );
+        if ( UnityEngine.GUI.changed ) {
+          foreach ( var frame in frames )
+            frame.LocalPosition = localPosition;
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
 
         // Converting from quaternions to Euler - make sure the actual Euler values has
         // changed before updating local rotation to not mess up the undo stack.
-        Vector3 inputEuler  = frame.LocalRotation.eulerAngles;
+        Vector3 inputEuler = refFrame.LocalRotation.eulerAngles;
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalRotation, frame.LocalRotation ) );
         Vector3 outputEuler = Vector3Field( MakeLabel( "Local rotation" ), inputEuler, skin.label );
-        if ( !ValueType.Equals( inputEuler, outputEuler ) )
-          frame.LocalRotation = Quaternion.Euler( outputEuler );
+        if ( !Equals( inputEuler, outputEuler ) ) {
+          foreach ( var frame in frames )
+            frame.LocalRotation = Quaternion.Euler( outputEuler );
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
 
         Separator();
 
-        Tools.FrameTool frameTool = null;
-        if ( includeFrameToolIfPresent && ( frameTool = Tools.FrameTool.FindActive( frame ) ) != null )
+        Tools.FrameTool frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
+                                      Tools.FrameTool.FindActive( refFrame ) :
+                                      null;
+        if ( frameTool != null )
           using ( new Indent( 12 ) )
             frameTool.OnPreTargetMembersGUI( editor );
       }
