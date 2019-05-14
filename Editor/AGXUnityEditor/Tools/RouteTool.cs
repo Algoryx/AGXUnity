@@ -80,7 +80,8 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
-      VisualInSceneView = !EditorApplication.isPlaying && !AssetDatabase.Contains( Parent.gameObject );
+      VisualInSceneView = !EditorApplication.isPlaying &&
+                          !AssetDatabase.Contains( Parent.gameObject );
 
       HideDefaultHandlesEnableWhenRemoved();
 
@@ -113,8 +114,14 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI( InspectorEditor editor )
     {
-      if ( editor.IsMultiSelect )
+      if ( editor.IsMultiSelect ) {
+        if ( VisualInSceneView ) {
+          foreach ( var node in Route )
+            RemoveChild( GetRouteNodeTool( node ) );
+          VisualInSceneView = false;
+        }
         return;
+      }
 
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
