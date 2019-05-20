@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -13,7 +14,14 @@ namespace AGXUnityEditor.Tools
   {
     public Func<float> NodeVisualRadius = null;
 
-    public ParentT Parent { get; private set; }
+    public ParentT Parent
+    {
+      get
+      {
+        return Targets[ 0 ] as ParentT;
+      }
+    }
+
     public Route<NodeT> Route { get; private set; }
 
     private NodeT m_selected = null;
@@ -69,11 +77,12 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public RouteTool( ParentT parent, Route<NodeT> route )
-      : base( parent )
+    public RouteTool( Object[] targets )
+      : base( targets )
     {
-      Parent = parent;
-      Route = route;
+      // , Route<NodeT> route
+      Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
+                                                                   System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
 
       VisualInSceneView = true;
     }
@@ -112,9 +121,9 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
-      if ( editor.IsMultiSelect ) {
+      if ( IsMultiSelect ) {
         if ( VisualInSceneView ) {
           foreach ( var node in Route )
             RemoveChild( GetRouteNodeTool( node ) );
@@ -140,13 +149,13 @@ namespace AGXUnityEditor.Tools
       GUILayout.EndHorizontal();
 
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( editor );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
 
       if ( !EditorApplication.isPlaying )
-        RouteGUI( editor );
+        RouteGUI();
 
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
@@ -163,7 +172,7 @@ namespace AGXUnityEditor.Tools
       return FindActive<RouteNodeTool>( tool => tool.Node == node );
     }
 
-    private void RouteGUI( InspectorEditor editor )
+    private void RouteGUI()
     {
       var skin                           = InspectorEditor.Skin;
       GUIStyle invalidNodeStyle          = new GUIStyle( skin.label );
@@ -196,7 +205,7 @@ namespace AGXUnityEditor.Tools
                                              !validatedNode.Valid,
                                              validatedNode.ErrorString ),
                               skin,
-                              ( newState ) =>
+                              newState =>
                               {
                                 Selected = newState ? node : null;
                                 EditorUtility.SetDirty( Parent );
@@ -204,7 +213,7 @@ namespace AGXUnityEditor.Tools
 
               OnPreFrameGUI( node, skin );
 
-              GUI.HandleFrame( node, editor, 12 );
+              GUI.HandleFrame( node, 12 );
 
               OnPostFrameGUI( node, skin );
 

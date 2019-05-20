@@ -6,38 +6,47 @@ using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Constraint ) )]
-  public class ConstraintTool : ConstraintAttachmentFrameTool
+  public class ConstraintTool : CustomTargetTool
   {
-    public Constraint Constraint { get; private set; }
+    public Constraint Constraint
+    {
+      get
+      {
+        return Targets[ 0 ] as Constraint;
+      }
+    }
+
+    public ConstraintAttachmentFrameTool ConstraintAttachmentFrameTool { get; private set; }
 
     public Action<bool> OnFoldoutStateChange = delegate { };
 
-    public ConstraintTool( Constraint constraint )
-      : base( constraint.AttachmentPair, constraint )
+    public ConstraintTool( Object[] targets )
+      : base( targets )
     {
-      Constraint = constraint;
     }
 
     public override void OnAdd()
     {
-      base.OnAdd();
+      ConstraintAttachmentFrameTool = new ConstraintAttachmentFrameTool( GetTargets<Constraint>().Select( constraint => constraint.AttachmentPair ).ToArray() );
+      AddChild( ConstraintAttachmentFrameTool );
     }
 
     public override void OnRemove()
     {
-      base.OnRemove();
+      RemoveAllChildren();
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
       // TODO: Handle OnFoldoutStateChange.
 
       var skin           = InspectorEditor.Skin;
-      var constraints    = editor.Targets<Constraint>().ToArray();
+      var constraints    = GetTargets<Constraint>().ToArray();
       var refConstraint  = constraints[ 0 ];
       var differentTypes = false;
       for ( int i = 1; i < constraints.Length; ++i )
@@ -48,7 +57,7 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      GUILayout.Label( GUI.MakeLabel( refConstraint.Type.ToString() + (editor.IsMultiSelect ? "s" : string.Empty),
+      GUILayout.Label( GUI.MakeLabel( refConstraint.Type.ToString() + (IsMultiSelect ? "s" : string.Empty),
                                       24,
                                       true ),
                        GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
@@ -56,7 +65,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       // Render AttachmentPair GUI.
-      OnPreTargetMembersGUI( editor, constraints.Select( constraint => constraint.AttachmentPair ).ToArray() );
+      ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
       Undo.RecordObjects( constraints, "ConstraintTool" );
 

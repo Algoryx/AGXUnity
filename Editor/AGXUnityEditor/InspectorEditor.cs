@@ -92,55 +92,33 @@ namespace AGXUnityEditor
       return show;
     }
 
-    public int NumTargets { get { return this.targets.Length; } }
-
-    public bool IsMultiSelect { get { return NumTargets > 1; } }
-
-    public void DrawMembersGUI<T>( Func<T, Object> func )
-      where T : Object
-    {
-      DrawMembersGUI( Targets( func ).ToArray() );
-    }
-
-    public IEnumerable<T> Targets<T>()
-      where T : Object
-    {
-      foreach ( var obj in this.targets )
-        yield return obj as T;
-    }
-
-    public IEnumerable<U> Targets<T, U>( Func<T, U> func )
-      where U : Object
-      where T : Object
-    {
-      foreach ( var obj in Targets<T>() )
-        yield return func( obj );
-    }
-
     public sealed override void OnInspectorGUI()
     {
-      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
-      ToolManager.OnPreTargetMembers( this.target, this );
+      ToolManager.OnPreTargetMembers( this.targets );
 
       DrawMembersGUI( this.targets );
 
-      ToolManager.OnPostTargetMembers( this.target, this );
+      ToolManager.OnPostTargetMembers( this.targets );
     }
 
     private void OnEnable()
     {
+      if ( this.target == null )
+        return;
+
       // Entire class/component marked as hidden - enable "hide in inspector".
       if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
         this.target.hideFlags |= HideFlags.HideInInspector;
 
-      ToolManager.OnTargetEditorEnable( this.target );
+      ToolManager.OnTargetEditorEnable( this.targets );
     }
 
     private void OnDisable()
     {
-      ToolManager.OnTargetEditorDisable( this.target );
+      ToolManager.OnTargetEditorDisable( this.targets );
     }
 
     public static bool HandleType( InvokeWrapper wrapper, object[] objects )

@@ -81,7 +81,7 @@ namespace AGXUnityEditor
   {
     public override void OnInspectorGUI()
     {
-      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
       var editorData = this.target as EditorData;

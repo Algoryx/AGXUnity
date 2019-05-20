@@ -122,7 +122,7 @@ namespace AGXUnityEditor.Tools
       EditorUtility.SetDirty( Parent );
     }
 
-    public void OnInspectorGUI( InspectorEditor editor )
+    public void OnInspectorGUI()
     {
       if ( HandleKeyEscape( false ) )
         return;

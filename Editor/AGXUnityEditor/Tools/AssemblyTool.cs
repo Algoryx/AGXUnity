@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
+
 using GUI = AGXUnityEditor.Utils.GUI;
 using Assembly = AGXUnity.Assembly;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -80,12 +83,17 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public Assembly Assembly { get; private set; }
-
-    public AssemblyTool( Assembly assembly )
-      : base( assembly )
+    public Assembly Assembly
     {
-      Assembly = assembly;
+      get
+      {
+        return Targets[ 0 ] as Assembly;
+      }
+    }
+
+    public AssemblyTool( Object[] targets )
+      : base( targets )
+    {
     }
 
     public override void OnAdd()
@@ -157,7 +165,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
       // TODO: Improvements.
       //   - "Copy-paste" shape.
@@ -189,7 +197,7 @@ namespace AGXUnityEditor.Tools
       }
       GUILayout.EndHorizontal();
 
-      HandleModeGUI( editor );
+      HandleModeGUI();
 
       if ( rbButtonPressed )
         ChangeMode( Mode.RigidBody );
@@ -200,36 +208,36 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      OnObjectListsGUI( Assembly, editor );
+      OnObjectListsGUI( this );
     }
 
-    public static void OnObjectListsGUI( ScriptComponent context, InspectorEditor editor )
+    public static void OnObjectListsGUI( CustomTargetTool context )
     {
       if ( context == null )
         return;
 
-      RigidBodyTool.OnRigidBodyListGUI( context.GetComponentsInChildren<RigidBody>(), context, editor );
+      RigidBodyTool.OnRigidBodyListGUI( context.CollectComponentsInChildred<RigidBody>().ToArray(), context );
 
       GUI.Separator();
 
-      RigidBodyTool.OnConstraintListGUI( context.GetComponentsInChildren<Constraint>(), context, editor );
+      RigidBodyTool.OnConstraintListGUI( context.CollectComponentsInChildred<Constraint>().ToArray(), context );
 
       GUI.Separator();
 
-      RigidBodyTool.OnShapeListGUI( context.GetComponentsInChildren<AGXUnity.Collide.Shape>(), context, editor );
+      RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<AGXUnity.Collide.Shape>().ToArray(), context );
     }
 
-    private void HandleModeGUI( InspectorEditor editor )
+    private void HandleModeGUI()
     {
       if ( m_mode == Mode.RigidBody )
-        HandleModeRigidBodyGUI( editor );
+        HandleModeRigidBodyGUI();
       else if ( m_mode == Mode.Shape )
-        HandleModeShapeGUI( editor );
+        HandleModeShapeGUI();
       else if ( m_mode == Mode.Constraint )
-        HandleModeConstraintGUI( editor );
+        HandleModeConstraintGUI();
     }
 
-    private void HandleModeRigidBodyGUI( InspectorEditor editor )
+    private void HandleModeRigidBodyGUI()
     {
       var skin = InspectorEditor.Skin;
 
@@ -286,7 +294,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    private void HandleModeShapeGUI( InspectorEditor editor )
+    private void HandleModeShapeGUI()
     {
       if ( ShapeCreateTool == null ) {
         ChangeMode( Mode.None );
@@ -295,10 +303,10 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator3D();
 
-      ShapeCreateTool.OnInspectorGUI( editor );
+      ShapeCreateTool.OnInspectorGUI();
     }
 
-    private void HandleModeConstraintGUI( InspectorEditor editor )
+    private void HandleModeConstraintGUI()
     {
       if ( ConstraintCreateTool == null ) {
         ChangeMode( Mode.None );
@@ -307,7 +315,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator3D();
 
-      ConstraintCreateTool.OnInspectorGUI( editor );
+      ConstraintCreateTool.OnInspectorGUI();
     }
 
     private void CreateOrMoveToRigidBodyFromSelectionEntries( List<SelectionEntry> selectionEntries, GameObject rbGameObject = null )

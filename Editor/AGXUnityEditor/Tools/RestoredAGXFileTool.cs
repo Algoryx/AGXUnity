@@ -4,21 +4,27 @@ using UnityEditor;
 using AGXUnity;
 using AGXUnity.IO;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( RestoredAGXFile ) )]
   public class RestoredAGXFileTool : CustomTargetTool
   {
-    public RestoredAGXFile RestoredAGXFile { get; private set; }
-
-    public RestoredAGXFileTool( RestoredAGXFile restoredAGXFile )
-      : base( restoredAGXFile )
+    public RestoredAGXFile RestoredAGXFile
     {
-      RestoredAGXFile = restoredAGXFile;
+      get
+      {
+        return Targets[ 0 ] as RestoredAGXFile;
+      }
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public RestoredAGXFileTool( Object[] targets )
+      : base( targets )
+    {
+    }
+
+    public override void OnPreTargetMembersGUI()
     {
       var skin           = InspectorEditor.Skin;
       var directory      = AssetDatabase.GUIDToAssetPath( RestoredAGXFile.DataDirectoryId );
@@ -51,7 +57,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      AssemblyTool.OnObjectListsGUI( RestoredAGXFile, editor );
+      AssemblyTool.OnObjectListsGUI( this );
     }
   }
 }

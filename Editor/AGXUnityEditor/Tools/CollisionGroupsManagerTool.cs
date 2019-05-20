@@ -15,15 +15,20 @@ namespace AGXUnityEditor.Tools
     private class StringLowerComparer : IComparer<string> { public int Compare( string a, string b ) { return a.ToLower().CompareTo( b.ToLower() ); } }
     private CollisionGroupEntryPair m_groupEntryPairToAdd = new CollisionGroupEntryPair();
 
-    public CollisionGroupsManager Manager { get; private set; }
-
-    public CollisionGroupsManagerTool( CollisionGroupsManager manager )
-      : base( manager )
+    public CollisionGroupsManager Manager
     {
-      Manager = manager;
+      get
+      {
+        return Targets[ 0 ] as CollisionGroupsManager;
+      }
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public CollisionGroupsManagerTool( Object[] targets )
+      : base( targets )
+    {
+    }
+
+    public override void OnPreTargetMembersGUI()
     {
       var skin                          = InspectorEditor.Skin;
       var disabledPairs                 = Manager.DisabledPairs;

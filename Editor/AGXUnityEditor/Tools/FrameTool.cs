@@ -202,7 +202,7 @@ namespace AGXUnityEditor.Tools
         DirtyTarget();
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
       var skin           = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;

@@ -12,8 +12,8 @@ namespace AGXUnityEditor.Tools
   {
     public AGXUnity.Collide.Mesh Mesh { get { return Shape as AGXUnity.Collide.Mesh; } }
 
-    public ShapeMeshTool( AGXUnity.Collide.Shape shape )
-      : base( shape )
+    public ShapeMeshTool( Object[] targets )
+      : base( targets )
     {
     }
 
@@ -27,17 +27,18 @@ namespace AGXUnityEditor.Tools
       base.OnRemove();
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
-      base.OnPreTargetMembersGUI( editor );
+      base.OnPreTargetMembersGUI();
 
       var sourceObjects = Mesh.SourceObjects;
       var singleSource  = sourceObjects.FirstOrDefault();
 
-      if ( editor.IsMultiSelect ) {
+      if ( IsMultiSelect ) {
         var undoCollection = new List<Object>();
-        foreach ( var target in editor.targets )
-          undoCollection.AddRange( ( target as AGXUnity.Collide.Mesh ).GetUndoCollection() );
+        foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
+          if ( target != null )
+            undoCollection.AddRange( target.GetUndoCollection() );
         Undo.RecordObjects( undoCollection.ToArray(), "Mesh source" );
       }
       else
@@ -45,9 +46,10 @@ namespace AGXUnityEditor.Tools
 
       var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource, InspectorEditor.Skin );
       if ( newSingleSource != null ) {
-        if ( editor.IsMultiSelect ) {
-          foreach ( var target in editor.targets )
-            ( target as AGXUnity.Collide.Mesh ).SetSourceObject( newSingleSource );
+        if ( IsMultiSelect ) {
+          foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
+            if ( target != null )
+              target.SetSourceObject( newSingleSource );
         }
         else
           Mesh.SetSourceObject( newSingleSource );

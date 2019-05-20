@@ -10,12 +10,17 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof( Wire ) )]
   public class WireTool : RouteTool<Wire, WireRouteNode>
   {
-    public Wire Wire { get; private set; }
-
-    public WireTool( Wire wire )
-      : base( wire, wire.Route )
+    public Wire Wire
     {
-      Wire = wire;
+      get
+      {
+        return Targets[ 0 ] as Wire;
+      }
+    }
+
+    public WireTool( Object[] targets )
+      : base( targets )
+    {
       NodeVisualRadius += () => { return Wire.Radius; };
     }
 
@@ -30,18 +35,18 @@ namespace AGXUnityEditor.Tools
       return GetColor( node as WireRouteNode );
     }
 
-    public override void OnPostTargetMembersGUI( InspectorEditor editor )
+    public override void OnPostTargetMembersGUI()
     {
       var skin = InspectorEditor.Skin;
 
-      var beginWinches = editor.Targets<Wire, WireWinch>( wire => wire.BeginWinch ).Where( winch => winch != null );
-      var endWinches   = editor.Targets<Wire, WireWinch>( wire => wire.EndWinch ).Where( winch => winch != null );
+      var beginWinches = GetTargets<Wire, WireWinch>( wire => wire.BeginWinch ).Where( winch => winch != null );
+      var endWinches   = GetTargets<Wire, WireWinch>( wire => wire.EndWinch ).Where( winch => winch != null );
 
       if ( beginWinches.Count() > 0 ) {
         GUI.Separator();
         GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.label );
         using ( new GUI.Indent( 12 ) ) {
-          if ( beginWinches.Count() != editor.NumTargets )
+          if ( beginWinches.Count() != NumTargets )
             AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has a begin winch.", skin );
           InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
         }
@@ -53,7 +58,7 @@ namespace AGXUnityEditor.Tools
 
         GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.label );
         using ( new GUI.Indent( 12 ) ) {
-          if ( endWinches.Count() != editor.NumTargets )
+          if ( endWinches.Count() != NumTargets )
             AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has an end winch.", skin );
           InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
         }

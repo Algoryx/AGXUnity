@@ -148,7 +148,6 @@ namespace AGXUnityEditor.Utils
     }
 
     public static void HandleFrame( IFrame frame,
-                                    InspectorEditor editor,
                                     float numPixelsIndentation = 0.0f,
                                     bool includeFrameToolIfPresent = true )
     {
@@ -156,13 +155,11 @@ namespace AGXUnityEditor.Utils
         return;
 
       HandleFrames( new IFrame[] { frame },
-                    editor,
                     numPixelsIndentation,
                     includeFrameToolIfPresent );
     }
 
     public static void HandleFrames( IFrame[] frames,
-                                     InspectorEditor editor,
                                      float numPixelsIndentation = 0.0f,
                                      bool includeFrameToolIfPresent = true )
     {
@@ -215,7 +212,7 @@ namespace AGXUnityEditor.Utils
                                       null;
         if ( frameTool != null )
           using ( new Indent( 12 ) )
-            frameTool.OnPreTargetMembersGUI( editor );
+            frameTool.OnPreTargetMembersGUI();
       }
     }
 
@@ -229,13 +226,22 @@ namespace AGXUnityEditor.Utils
       GUILayout.BeginHorizontal();
       {
         var buttonSize = labelStyle.CalcHeight( label, Screen.width );
-        bool expandPressed = GUILayout.Button( MakeLabel( state.Bool ? "-" : "+" ), buttonStyle, GUILayout.Width( 20.0f ), GUILayout.Height( buttonSize ) );
+        bool expandPressed = GUILayout.Button( MakeLabel( state.Bool ? "-" : "+" ),
+                                               buttonStyle,
+                                               GUILayout.Width( 20.0f ),
+                                               GUILayout.Height( buttonSize ) );
         GUILayout.Label( label, labelStyle, GUILayout.ExpandWidth( true ) );
-        if ( expandPressed ||
-             ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
-               Event.current.type == EventType.MouseDown &&
-               Event.current.button == 0 ) ) {
+        bool labelPressed = ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
+                              Event.current.type == EventType.MouseDown &&
+                              Event.current.button == 0 );
+        if ( expandPressed || labelPressed ) {
           state.Bool = !state.Bool;
+
+          // Clicked label - flag used event for the GUI to respond. When
+          // the user presses the button it seems like the button implementation
+          // handles the event.
+          if ( labelPressed )
+            Event.current.Use();
 
           if ( onStateChanged != null )
             onStateChanged.Invoke( state.Bool );

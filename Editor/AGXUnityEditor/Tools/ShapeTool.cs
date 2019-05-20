@@ -10,7 +10,13 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof( Shape ) )]
   public class ShapeTool : CustomTargetTool
   {
-    public Shape Shape { get; private set; }
+    public Shape Shape
+    {
+      get
+      {
+        return Targets[ 0 ] as Shape;
+      }
+    }
 
     public bool ShapeResizeTool
     {
@@ -82,10 +88,9 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public ShapeTool( Shape shape )
-      : base( shape )
+    public ShapeTool( Object[] targets )
+      : base( targets )
     {
-      Shape = shape;
     }
 
     public override void OnAdd()
@@ -96,9 +101,9 @@ namespace AGXUnityEditor.Tools
     {
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
-      if ( editor.IsMultiSelect ) {
+      if ( IsMultiSelect ) {
         GUI.Separator();
         return;
       }
@@ -143,17 +148,17 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI( editor );
+        GetChild<ShapeCreateTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( editor );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
       if ( ShapeVisualCreateTool ) {
-        GetChild<ShapeVisualCreateTool>().OnInspectorGUI( editor );
+        GetChild<ShapeVisualCreateTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
@@ -168,7 +173,7 @@ namespace AGXUnityEditor.Tools
         ShapeVisualCreateTool = !ShapeVisualCreateTool;
     }
 
-    public override void OnPostTargetMembersGUI( InspectorEditor editor )
+    public override void OnPostTargetMembersGUI()
     {
       var shapeVisual = ShapeVisual.Find( Shape );
       if ( shapeVisual == null )

@@ -3,13 +3,20 @@ using AGXUnity;
 using UnityEngine;
 using UnityEditor;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Simulation ) )]
   public class SimulationTool : CustomTargetTool
   {
-    public Simulation Simulation { get; private set; }
+    public Simulation Simulation
+    {
+      get
+      {
+        return Targets[ 0 ] as Simulation;
+      }
+    }
 
     public string SaveInitialPath
     {
@@ -23,13 +30,12 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public SimulationTool( Simulation simulation )
-      : base( simulation )
+    public SimulationTool( Object[] targets )
+      : base( targets )
     {
-      Simulation = simulation;
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
       var skin = InspectorEditor.Skin;
       var prevMode = Simulation.AutoSteppingMode;
@@ -86,7 +92,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
     }
 
-    public override void OnPostTargetMembersGUI( InspectorEditor editor )
+    public override void OnPostTargetMembersGUI()
     {
       var skin = InspectorEditor.Skin;
 

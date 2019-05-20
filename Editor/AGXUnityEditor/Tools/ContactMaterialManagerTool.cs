@@ -8,25 +8,30 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof ( ContactMaterialManager ) )]
   public class ContactMaterialManagerTool : CustomTargetTool
   {
-    public ContactMaterialManager Manager { get; private set; }
-
-    public ContactMaterialManagerTool( ContactMaterialManager manager )
-      : base( manager )
+    public ContactMaterialManager Manager
     {
-      Manager = manager;
+      get
+      {
+        return Targets[ 0 ] as ContactMaterialManager;
+      }
+    }
+
+    public ContactMaterialManagerTool( Object[] targets )
+      : base( targets )
+    {
       Manager.RemoveNullEntries();
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
       Manager.RemoveNullEntries();
 
-      OnContactMaterialsList( editor );
+      OnContactMaterialsList();
     }
 
     private EditorDataEntry FoldoutDataEntry { get { return EditorData.Instance.GetData( Manager, "ContactMaterials" ); } }
 
-    private void OnContactMaterialsList( InspectorEditor editor )
+    private void OnContactMaterialsList()
     {
       var skin = InspectorEditor.Skin;
       ContactMaterial contactMaterialToAdd = null;
@@ -52,7 +57,12 @@ namespace AGXUnityEditor.Tools
 
               GUILayout.BeginHorizontal();
               {
-                foldoutActive = GUI.Foldout( EditorData.Instance.GetData( Manager, contactMaterial.name ), GUI.MakeLabel( contactMaterial.name ), skin );
+                foldoutActive = GUI.Foldout( EditorData.Instance.GetData( Manager,
+                                                                          contactMaterial.name +
+                                                                          "_" +
+                                                                          contactMaterial.GetInstanceID().ToString() ),
+                                             GUI.MakeLabel( contactMaterial.name ),
+                                             skin );
                 using ( GUI.NodeListButtonColor )
                   if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(), false, "Erase this element" ),
                                          skin.button,

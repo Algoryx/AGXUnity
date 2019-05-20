@@ -7,6 +7,7 @@ using UnityEditor;
 using AGXUnityEditor.Tools;
 
 using Tool = AGXUnityEditor.Tools.Tool;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -57,13 +58,13 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
-    /// Find active tool given target.
+    /// Find active tool given targets.
     /// </summary>
-    /// <param name="target">Target object.</param>
-    /// <returns>Active tool on target - otherwise false.</returns>
-    public static CustomTargetTool FindActive( object target )
+    /// <param name="target">Target objects.</param>
+    /// <returns>Active tool on targets - otherwise null.</returns>
+    public static CustomTargetTool FindActive( Object[] targets )
     {
-      return m_activeTools.FirstOrDefault( tool => tool.Target == target );
+      return m_activeTools.FirstOrDefault( tool => tool.Targets.SequenceEqual( targets ) );
     }
 
     /// <summary>
@@ -121,27 +122,24 @@ namespace AGXUnityEditor
 
     /// <summary>
     /// Callback from Editor OnEnable. Checks for classes with
-    /// CustomToolAttribute matching <paramref name="target"/> type.
+    /// CustomToolAttribute matching <paramref name="targets"/> type.
     /// </summary>
     /// <typeparam name="T">Target type.</typeparam>
-    /// <param name="target">Target object.</param>
-    public static void OnTargetEditorEnable( object target )
+    /// <param name="targets">Target objects.</param>
+    public static void OnTargetEditorEnable( Object[] targets )
     {
-      if ( target == null )
+      if ( targets.Length == 0 )
         return;
 
-      Utils.KeyHandler.HandleDetectKeyOnEnable( target );
+      Utils.KeyHandler.HandleDetectKeyOnEnable( targets );
 
-      var toolType = FindCustomToolType( target.GetType() );
+      var toolType = FindCustomToolType( targets[ 0 ].GetType() );
       if ( toolType == null )
         return;
 
-      var tool = FindActive( target );
-      if ( tool != null && tool.GetType() == toolType )
-        return;
-
+      CustomTargetTool tool = null;
       try {
-        tool = (CustomTargetTool)Activator.CreateInstance( toolType, new object[] { target } );
+        tool = (CustomTargetTool)Activator.CreateInstance( toolType, new object[] { targets } );
       }
       catch ( Exception ) {
         return;
@@ -152,37 +150,37 @@ namespace AGXUnityEditor
       tool.OnAdd();
     }
 
-    public static void OnPreTargetMembers( object target, InspectorEditor editor )
+    public static void OnPreTargetMembers( Object[] targets )
     {
-      var tool = FindActive( target );
+      var tool = FindActive( targets );
       if ( tool == null )
         return;
 
-      tool.OnPreTargetMembersGUI( editor );
+      tool.OnPreTargetMembersGUI();
     }
 
-    public static void OnPostTargetMembers( object target, InspectorEditor editor )
+    public static void OnPostTargetMembers( Object[] targets )
     {
-      var tool = FindActive( target );
+      var tool = FindActive( targets );
       if ( tool == null )
         return;
 
-      tool.OnPostTargetMembersGUI( editor );
+      tool.OnPostTargetMembersGUI();
     }
 
     /// <summary>
-    /// Callback from Editor OnDisable. If <paramref name="target"/>
+    /// Callback from Editor OnDisable. If <paramref name="targets"/>
     /// has an active custom target tool - the tool will be removed.
     /// </summary>
-    /// <param name="target">Target object.</param>
-    public static void OnTargetEditorDisable( object target )
+    /// <param name="targets">Target objects.</param>
+    public static void OnTargetEditorDisable( Object[] targets )
     {
-      if ( target == null )
+      if ( targets.Length == 0 )
         return;
 
-      Utils.KeyHandler.HandleDetectKeyOnDisable( target );
+      Utils.KeyHandler.HandleDetectKeyOnDisable( targets );
 
-      var tool = FindActive( target );
+      var tool = FindActive( targets );
       if ( tool == null )
         return;
 

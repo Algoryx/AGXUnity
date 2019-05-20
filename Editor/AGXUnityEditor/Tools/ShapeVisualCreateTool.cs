@@ -86,7 +86,7 @@ namespace AGXUnityEditor.Tools
       Preview.transform.rotation = Shape.transform.rotation;
     }
 
-    public void OnInspectorGUI( InspectorEditor editor, bool onlyNameAndMaterial = false )
+    public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
       var skin = InspectorEditor.Skin;
 

@@ -31,7 +31,7 @@ namespace AGXUnityEditor.Tools
     public override void OnAdd()
     {
       m_createConstraintData.CreateInitialState( Parent.name );
-      AttachmentFrameTool = new ConstraintAttachmentFrameTool( m_createConstraintData.AttachmentPair, Parent );
+      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[] { m_createConstraintData.AttachmentPair }, Parent );
     }
 
     public override void OnRemove()
@@ -47,9 +47,9 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public void OnInspectorGUI( InspectorEditor editor )
+    public void OnInspectorGUI()
     {
-      if ( AttachmentFrameTool == null || AttachmentFrameTool.AttachmentPair == null ) {
+      if ( AttachmentFrameTool == null || AttachmentFrameTool.AttachmentPairs[ 0 ] == null ) {
         PerformRemoveFromParent();
         return;
       }
@@ -68,15 +68,18 @@ namespace AGXUnityEditor.Tools
         {
           GUILayout.Label( GUI.MakeLabel( "Type", true ), skin.label, GUILayout.Width( 64 ) );
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
-            m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType, skin.button, GUILayout.ExpandWidth( true ), GUILayout.Height( 18 ) );
+            m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
+                                                                                               skin.button,
+                                                                                               GUILayout.ExpandWidth( true ),
+                                                                                               GUILayout.Height( 18 ) );
         }
         GUILayout.EndHorizontal();
       }
 
       GUI.Separator3D();
 
-      AttachmentFrameTool.OnPreTargetMembersGUI( editor );
-      AttachmentFrameTool.AttachmentPair.Synchronize();
+      AttachmentFrameTool.OnPreTargetMembersGUI();
+      AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
 
       m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState, skin );
       m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType, skin );

@@ -5,18 +5,24 @@ using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Cable ) )]
   public class CableTool : RouteTool<Cable, CableRouteNode>
   {
-    public Cable Cable { get; private set; }
-
-    public CableTool( Cable cable )
-      : base( cable, cable.Route )
+    public Cable Cable
     {
-      Cable = cable;
+      get
+      {
+        return Targets[ 0 ] as Cable;
+      }
+    }
+
+    public CableTool( Object[] targets )
+      : base( targets )
+    {
       NodeVisualRadius = () => { return Cable.Radius; };
     }
 
@@ -62,7 +68,7 @@ namespace AGXUnityEditor.Tools
   {
     public override void OnInspectorGUI()
     {
-      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.target, Event.current ) )
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
       var selected = from obj in this.targets select obj as CableProperties;

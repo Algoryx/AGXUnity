@@ -266,6 +266,7 @@ namespace AGXUnityEditor
         if ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
              Event.current.type == EventType.MouseDown &&
              Event.current.button == 0 ) {
+          Event.current.Use();
           foldoutData.Bool = !foldoutData.Bool;
           GUIUtility.ExitGUI();
         }

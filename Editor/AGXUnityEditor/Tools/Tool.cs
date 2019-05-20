@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -185,6 +186,7 @@ namespace AGXUnityEditor.Tools
 
     private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
     private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
+    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
 
     protected Tool()
     {
@@ -192,9 +194,9 @@ namespace AGXUnityEditor.Tools
 
     public virtual void OnSceneViewGUI( SceneView sceneView ) { }
 
-    public virtual void OnPreTargetMembersGUI( InspectorEditor editor ) { }
+    public virtual void OnPreTargetMembersGUI() { }
 
-    public virtual void OnPostTargetMembersGUI( InspectorEditor editor ) { }
+    public virtual void OnPostTargetMembersGUI() { }
 
     public virtual void OnAdd() { }
 
@@ -241,6 +243,31 @@ namespace AGXUnityEditor.Tools
     public void Remove()
     {
       PerformRemoveFromParent();
+    }
+
+    public Editor GetOrCreateEditor( Object target )
+    {
+      Editor editor = null;
+      if ( m_editors.TryGetValue( target, out editor ) )
+        return editor;
+      editor = Editor.CreateEditor( target );
+      m_editors.Add( target, editor );
+      return editor;
+    }
+
+    public void RemoveEditor( Object target )
+    {
+      Editor editor = null;
+      if ( !m_editors.TryGetValue( target, out editor ) )
+        return;
+      m_editors.Remove( target );
+      Object.DestroyImmediate( editor );
+    }
+
+    public void RemoveEditors( Object[] targets )
+    {
+      foreach ( var target in targets )
+        RemoveEditor( target );
     }
 
     protected void AddChild( Tool child )
@@ -430,14 +457,19 @@ namespace AGXUnityEditor.Tools
       ClearVisualizedSelection();
 
       // Remove all key handlers that hasn't been removed.
-      string[] keyHandlerNames = m_keyHandlers.Keys.ToArray();
-      foreach ( string keyHandlerName in keyHandlerNames )
+      var keyHandlerNames = m_keyHandlers.Keys.ToArray();
+      foreach ( var keyHandlerName in keyHandlerNames )
         RemoveKeyHandler( keyHandlerName );
 
       // Remove all visual primitives that hasn't been removed.
-      string[] visualPrimitiveNames = m_visualPrimitives.Keys.ToArray();
-      foreach ( string visualPrimitiveName in visualPrimitiveNames )
+      var visualPrimitiveNames = m_visualPrimitives.Keys.ToArray();
+      foreach ( var visualPrimitiveName in visualPrimitiveNames )
         RemoveVisualPrimitive( visualPrimitiveName );
+
+      // Remove all editors that hasn't been removed.
+      var editorTargets = m_editors.Keys.ToArray();
+      foreach ( var editorTarget in editorTargets )
+        RemoveEditor( editorTarget );
 
       // Remove us from our parent.
       if ( m_parent != null )
@@ -445,8 +477,8 @@ namespace AGXUnityEditor.Tools
       m_parent = null;
 
       // Remove children.
-      Tool[] children = m_children.ToArray();
-      foreach ( Tool child in children )
+      var children = m_children.ToArray();
+      foreach ( var child in children )
         child.PerformRemove();
 
       if ( m_hideDefaultState != null )

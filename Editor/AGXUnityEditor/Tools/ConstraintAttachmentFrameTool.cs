@@ -6,9 +6,9 @@ using GUI = AGXUnityEditor.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
-  public class ConstraintAttachmentFrameTool : CustomTargetTool
+  public class ConstraintAttachmentFrameTool : Tool
   {
-    public AttachmentPair AttachmentPair { get; private set; }
+    public AttachmentPair[] AttachmentPairs { get; private set; }
 
     public Object OnChangeDirtyTarget { get; private set; }
 
@@ -16,11 +16,10 @@ namespace AGXUnityEditor.Tools
 
     public FrameTool ConnectedFrameTool { get; private set; }
 
-    public ConstraintAttachmentFrameTool( AttachmentPair attachmentPair,
+    public ConstraintAttachmentFrameTool( AttachmentPair[] attachmentPairs,
                                           Object onChangeDirtyTarget = null )
-      : base( onChangeDirtyTarget )
     {
-      AttachmentPair = attachmentPair;
+      AttachmentPairs = attachmentPairs;
       OnChangeDirtyTarget = onChangeDirtyTarget;
     }
 
@@ -28,16 +27,19 @@ namespace AGXUnityEditor.Tools
     {
       HideDefaultHandlesEnableWhenRemoved();
 
-      ReferenceFrameTool = new FrameTool( AttachmentPair.ReferenceFrame )
+      if ( AttachmentPairs.Length > 1 )
+        return;
+
+      ReferenceFrameTool = new FrameTool( AttachmentPairs[ 0 ].ReferenceFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
-        UndoRedoRecordObject = AttachmentPair
+        UndoRedoRecordObject = AttachmentPairs[ 0 ]
       };
-      ConnectedFrameTool = new FrameTool( AttachmentPair.ConnectedFrame )
+      ConnectedFrameTool = new FrameTool( AttachmentPairs[ 0 ].ConnectedFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
-        UndoRedoRecordObject = AttachmentPair,
-        TransformHandleActive = !AttachmentPair.Synchronized
+        UndoRedoRecordObject = AttachmentPairs[ 0 ],
+        TransformHandleActive = !AttachmentPairs[ 0 ].Synchronized
       };
 
       AddChild( ReferenceFrameTool );
@@ -46,6 +48,9 @@ namespace AGXUnityEditor.Tools
 
     public override void OnRemove()
     {
+      if ( AttachmentPairs.Length > 1 )
+        return;
+
       RemoveChild( ReferenceFrameTool );
       RemoveChild( ConnectedFrameTool );
 
@@ -53,15 +58,16 @@ namespace AGXUnityEditor.Tools
       OnChangeDirtyTarget = null;
     }
 
-    public override void OnPreTargetMembersGUI( InspectorEditor editor )
+    public override void OnPreTargetMembersGUI()
     {
-      OnPreTargetMembersGUI( editor, new AttachmentPair[] { AttachmentPair } );
+      OnPreTargetMembersGUI( AttachmentPairs );
     }
 
-    public void OnPreTargetMembersGUI( InspectorEditor editor, AttachmentPair[] attachmentPairs )
+    public void OnPreTargetMembersGUI( AttachmentPair[] attachmentPairs )
     {
-      ReferenceFrameTool.ForceDisableTransformHandle = editor.IsMultiSelect;
-      ConnectedFrameTool.ForceDisableTransformHandle = editor.IsMultiSelect;
+      var isMultiSelect = attachmentPairs.Length > 1;
+      ReferenceFrameTool.ForceDisableTransformHandle = isMultiSelect;
+      ConnectedFrameTool.ForceDisableTransformHandle = isMultiSelect;
 
       Undo.RecordObjects( attachmentPairs, "Constraint Attachment" );
 
@@ -72,7 +78,7 @@ namespace AGXUnityEditor.Tools
         var connectedFrameSynchronized = attachmentPairs.All( ap => ap.Synchronized );
 
         GUILayout.Label( GUI.MakeLabel( "Reference frame", true ), skin.label );
-        GUI.HandleFrames( attachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), editor, 4 + 12 );
+        GUI.HandleFrames( attachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 4 + 12 );
 
         using ( new GUILayout.HorizontalScope() ) {
           GUILayout.Space( 12 );
@@ -84,14 +90,14 @@ namespace AGXUnityEditor.Tools
             foreach ( var ap in attachmentPairs )
               ap.Synchronized = !connectedFrameSynchronized;
 
-            if ( !editor.IsMultiSelect && AttachmentPair.Synchronized )
+            if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
               ConnectedFrameTool.TransformHandleActive = false;
           }
           GUILayout.Label( GUI.MakeLabel( "Connected frame", true ), skin.label );
         }
 
-        UnityEngine.GUI.enabled = !connectedFrameSynchronized && !editor.IsMultiSelect;
-        GUI.HandleFrames( attachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), editor, 4 + 12 );
+        UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;
+        GUI.HandleFrames( attachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 4 + 12 );
         UnityEngine.GUI.enabled = guiWasEnabled;
       }
     }

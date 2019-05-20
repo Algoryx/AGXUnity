@@ -46,7 +46,7 @@ namespace AGXUnityEditor.Tools
         SelectGameObjectTool = true;
     }
 
-    public void OnInspectorGUI( InspectorEditor editor )
+    public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
 
