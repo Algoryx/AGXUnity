@@ -68,8 +68,13 @@ namespace AGXUnityEditor
       // will probably be loaded again after the fix.
       if ( !VerifyCompatibility() )
         return;
-      
+
+#if UNITY_2019_1_OR_NEWER
+      SceneView.duringSceneGui += OnSceneView;
+#else
       SceneView.onSceneGUIDelegate += OnSceneView;
+#endif
+
 #if UNITY_2018_1_OR_NEWER
       EditorApplication.hierarchyChanged += OnHierarchyWindowChanged;
 #else
