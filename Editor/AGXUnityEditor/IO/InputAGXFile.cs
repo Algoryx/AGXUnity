@@ -123,7 +123,7 @@ namespace AGXUnityEditor.IO
           fileData.AddDisabledPair( namePair.first, namePair.second );
         foreach ( var idPair in disabledCollisionsState.getDisabledIds() )
           fileData.AddDisabledPair( idPair.first.ToString(), idPair.second.ToString() );
-        foreach ( var geometryPair in disabledCollisionsState.getDisabledGeometyPairs() ) {
+        foreach ( var geometryPair in disabledCollisionsState.getDisabledGeometryPairs() ) {
           if ( !Tree.IsValid( geometryPair.first ) || !Tree.IsValid( geometryPair.second ) )
             continue;
 
