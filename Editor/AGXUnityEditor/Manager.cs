@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using AGXUnity.Utils;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -285,23 +286,22 @@ namespace AGXUnityEditor
       // TODO: Should we perform full synchronize when the editor is
       //       playing to synchronize native instances?
 
-      var components = from obj in Selection.objects
-                       where obj is GameObject
-                       from component in (obj as GameObject).GetComponents<AGXUnity.ScriptComponent>()
-                       select component;
-      foreach ( var component in components ) {
-        EditorUtility.SetDirty( component );
+      // Trigger repaint of inspector GUI for our targets.
+      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
+      foreach ( var target in targets )
+        EditorUtility.SetDirty( target );
 
-        // Synchronizing size for shape visuals if size dependent
-        // properties has been reverted.
-        if ( component is AGXUnity.Collide.Shape ) {
-          var visual = AGXUnity.Rendering.ShapeVisual.Find( component as AGXUnity.Collide.Shape );
-          if ( visual != null )
-            visual.OnSizeUpdated();
-        }
+      // Synchronizing all shape sizes with visuals - it's not possible
+      // to determine affected shapes from tools targets or selection
+      // since it may have changed when undo is performed.
+      var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
+      foreach ( var shape in shapes ) {
+        var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
+        if ( visual )
+          visual.OnSizeUpdated();
       }
 
-      if ( components.Count() > 0 )
+      if ( targets.Count() > 0 )
         SceneView.RepaintAll();
     }
 
