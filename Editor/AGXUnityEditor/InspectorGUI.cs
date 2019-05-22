@@ -9,6 +9,7 @@ using AGXUnity;
 using AGXUnity.Utils;
 
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -217,22 +218,118 @@ namespace AGXUnityEditor
         return EditorGUILayout.FloatField( MakeLabel( wrapper.Member ), value, skin.textField );
     }
 
+    [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
+    public static object GenericListDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    {
+      System.Collections.IList list = wrapper.Get<System.Collections.IList>( obj );
+      var target = obj as Object;
+
+      if ( GUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+                        MakeLabel( wrapper.Member ),
+                        skin ) ) {
+        object insertElementBefore = null;
+        object insertElementAfter = null;
+        object eraseElement = null;
+        var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
+        using ( new GUI.Indent( 12 ) ) {
+          foreach ( var listObject in list ) {
+            GUI.Separator();
+            using ( new GUI.Indent( 12 ) ) {
+              GUILayout.BeginHorizontal();
+              {
+                GUILayout.BeginVertical();
+                {
+                  // Using target to render listObject since it normally (CollisionGroupEntry) isn't an Object.
+                  InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
+                }
+                GUILayout.EndVertical();
+
+                using ( GUI.NodeListButtonColor ) {
+                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
+                                                        false,
+                                                        "Insert new element before this" ),
+                                         skin.button,
+                                         buttonLayout ) )
+                    insertElementBefore = listObject;
+                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                        false,
+                                                        "Insert new element after this" ),
+                                         skin.button,
+                                         buttonLayout ) )
+                    insertElementAfter = listObject;
+                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
+                                                        false,
+                                                        "Erase this element" ),
+                                         skin.button,
+                                         buttonLayout ) )
+                    eraseElement = listObject;
+                }
+              }
+              GUILayout.EndHorizontal();
+            }
+          }
+
+          if ( list.Count == 0 )
+            GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
+          else
+            GUI.Separator();
+        }
+
+        bool addElementToList = false;
+        GUILayout.BeginHorizontal();
+        {
+          GUILayout.FlexibleSpace();
+          using ( GUI.NodeListButtonColor )
+            addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                                false,
+                                                                "Add new element to list" ),
+                                                 skin.button,
+                                                 buttonLayout );
+        }
+        GUILayout.EndHorizontal();
+
+        object newObject = null;
+        if ( addElementToList || insertElementBefore != null || insertElementAfter != null )
+          newObject = Activator.CreateInstance( list.GetType().GetGenericArguments()[ 0 ], new object[] { } );
+
+        if ( eraseElement != null )
+          list.Remove( eraseElement );
+        else if ( newObject != null ) {
+          if ( addElementToList || ( list.Count > 0 && insertElementAfter != null && insertElementAfter == list[ list.Count - 1 ] ) )
+            list.Add( newObject );
+          else if ( insertElementAfter != null )
+            list.Insert( list.IndexOf( insertElementAfter ) + 1, newObject );
+          else if ( insertElementBefore != null )
+            list.Insert( list.IndexOf( insertElementBefore ), newObject );
+        }
+
+        if ( eraseElement != null || newObject != null )
+          EditorUtility.SetDirty( target );
+      }
+
+      // A bit of a hack until I figure out how to handle multi-selection
+      // of lists, if that should be possible at all. We're handling the
+      // list from inside this drawer and by returning null the return
+      // value isn't propagated to any targets.
+      return null;
+    }
+
     [InspectorDrawer( typeof( ScriptAsset ), AssignableFrom = true )]
     [InspectorDrawer( typeof( ScriptComponent ), IsBaseType = true )]
-    [InspectorDrawer( typeof( UnityEngine.Object ), IsBaseType = true )]
+    [InspectorDrawer( typeof( Object ), IsBaseType = true )]
     [InspectorDrawerResult( IsNullable = true )]
     public static object ScriptDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
     {
-      object result                 = null;
-      var type                      = wrapper.GetContainingType();
-      bool allowSceneObject         = type == typeof( GameObject ) ||
-                                      type.BaseType == typeof( ScriptComponent );
-      UnityEngine.Object valInField = wrapper.Get<UnityEngine.Object>( obj );
-      bool recursiveEditing         = wrapper.HasAttribute<AllowRecursiveEditing>();
-      bool createNewAssetButton     = false;
+      object result             = null;
+      var type                  = wrapper.GetContainingType();
+      bool allowSceneObject     = type == typeof( GameObject ) ||
+                                  type.BaseType == typeof( ScriptComponent );
+      Object valInField         = wrapper.Get<Object>( obj );
+      bool recursiveEditing     = wrapper.HasAttribute<AllowRecursiveEditing>();
+      bool createNewAssetButton = false;
 
       if ( recursiveEditing ) {
-        var foldoutData = EditorData.Instance.GetData( obj as UnityEngine.Object, wrapper.Member.Name );
+        var foldoutData = EditorData.Instance.GetData( obj as Object, wrapper.Member.Name );
 
         GUILayout.BeginHorizontal();
         {
@@ -282,7 +379,7 @@ namespace AGXUnityEditor
 
             GUILayout.Space( 6 );
 
-            Editor editor = Editor.CreateEditor( result as UnityEngine.Object );
+            Editor editor = Editor.CreateEditor( result as Object );
             if ( editor != null )
               editor.OnInspectorGUI();
 

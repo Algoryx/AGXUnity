@@ -36,6 +36,19 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsBaseType { get; set; } = false;
 
+    /// <summary>
+    /// Set to o true if type is generic and:
+    ///     givenType.IsGenericType && givenType.GetGenericTypeDefinition() == this.Type
+    /// </summary>
+    /// <example>
+    /// [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
+    /// </example>
+    public bool IsGeneric { get; set; } = false;
+
+    /// <summary>
+    /// Construct given type the inspector drawer handles.
+    /// </summary>
+    /// <param name="type">Handling type of the inspector drawer.</param>
     public InspectorDrawerAttribute( Type type )
     {
       Type = type;
@@ -48,9 +61,10 @@ namespace AGXUnityEditor
     /// <returns>True if given type is a match - otherwise false.</returns>
     public bool Match( Type type )
     {
-      return type == Type ||
+      return ( type == Type ) ||
              ( AssignableFrom && Type.IsAssignableFrom( type ) ) ||
-             ( IsBaseType && type.BaseType == Type );
+             ( IsBaseType && type.BaseType == Type ) ||
+             ( IsGeneric && type.IsGenericType && type.GetGenericTypeDefinition() == Type );
     }
   }
 
