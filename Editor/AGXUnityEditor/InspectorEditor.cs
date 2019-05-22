@@ -97,11 +97,15 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
+      GUILayout.BeginVertical();
+
       ToolManager.OnPreTargetMembers( this.targets );
 
       DrawMembersGUI( this.targets );
 
       ToolManager.OnPostTargetMembers( this.targets );
+
+      GUILayout.EndHorizontal();
     }
 
     private void OnEnable()
