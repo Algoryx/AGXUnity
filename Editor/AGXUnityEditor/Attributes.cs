@@ -2,12 +2,28 @@
 
 namespace AGXUnityEditor
 {
-  [AttributeUsage( AttributeTargets.Class, AllowMultiple = false, Inherited = false )]
-  public class CustomTool : Attribute
+  /// <summary>
+  /// Inspector Editor Tool extension attribute. Class with this
+  /// attribute may act as tool for given type. When InspectorEditor
+  /// is invoked the tool receives the same targets as the editor
+  /// and may draw inspector GUI before and after members are drawn.
+  /// <seealso cref="Tools.CustomTargetTool"/>
+  /// </summary>
+  [AttributeUsage( AttributeTargets.Class,
+                   AllowMultiple = false,
+                   Inherited = false )]
+  public class CustomToolAttribute : Attribute
   {
+    /// <summary>
+    /// Instance type of the tool is implemented for.
+    /// </summary>
     public Type Type = null;
 
-    public CustomTool( Type type )
+    /// <summary>
+    /// Construct given instance type the tool is implemented for.
+    /// </summary>
+    /// <param name="type">Instance target type.</param>
+    public CustomToolAttribute( Type type )
     {
       Type = type;
     }
@@ -17,7 +33,9 @@ namespace AGXUnityEditor
   /// Inspector type drawer attribute for GUI draw methods
   /// handling specific types.
   /// </summary>
-  [AttributeUsage( AttributeTargets.Method, AllowMultiple = true, Inherited = false )]
+  [AttributeUsage( AttributeTargets.Method,
+                   AllowMultiple = true,
+                   Inherited = false )]
   public class InspectorDrawerAttribute : Attribute
   {
     /// <summary>
@@ -84,6 +102,10 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsNullable { get; set; } = false;
 
+    /// <summary>
+    /// True if drawer implements a copy operator for nullable types.
+    /// Name of copy method is method of this attribute + CopyOp.
+    /// </summary>
     public bool HasCopyOp { get; set; } = false;
   }
 }

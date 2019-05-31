@@ -254,7 +254,7 @@ namespace AGXUnityEditor
           if ( !typeof( CustomTargetTool ).IsAssignableFrom( type ) )
             continue;
 
-          var customToolAttribute = type.GetCustomAttribute<CustomTool>( false );
+          var customToolAttribute = type.GetCustomAttribute<CustomToolAttribute>( false );
           if ( customToolAttribute == null )
             continue;
 
