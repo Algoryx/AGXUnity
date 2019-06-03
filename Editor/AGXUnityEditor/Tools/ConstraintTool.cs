@@ -43,8 +43,6 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      // TODO: Handle OnFoldoutStateChange.
-
       var skin           = InspectorEditor.Skin;
       var constraints    = GetTargets<Constraint>().ToArray();
       var refConstraint  = constraints[ 0 ];
@@ -52,12 +50,9 @@ namespace AGXUnityEditor.Tools
       for ( int i = 1; i < constraints.Length; ++i )
         differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
-      if ( differentTypes ) {
-        GUI.WarningLabel( "Constraints are of different types.\nMulti-selection edit not supported.", skin );
-        return;
-      }
-
-      GUILayout.Label( GUI.MakeLabel( refConstraint.Type.ToString() + (IsMultiSelect ? "s" : string.Empty),
+      GUILayout.Label( GUI.MakeLabel( ( differentTypes ?
+                                        "Constraints" :
+                                        refConstraint.Type.ToString() + ( IsMultiSelect ? "s" : string.Empty ) ),
                                       24,
                                       true ),
                        GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
@@ -101,6 +96,11 @@ namespace AGXUnityEditor.Tools
         foreach ( var constraint in constraints )
           constraint.ConnectedFrameNativeSyncEnabled = frameNativeSync;
         UnityEngine.GUI.changed = false;
+      }
+
+      if ( differentTypes ) {
+        GUI.WarningLabel( "Constraints are of different types.\nRow data editing not supported.", skin );
+        return;
       }
 
       Func<string, EditorDataEntry> selected = ( id ) =>
