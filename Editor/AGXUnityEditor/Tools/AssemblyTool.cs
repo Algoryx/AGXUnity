@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
+using AGXUnity.Collide;
 using AGXUnity.Utils;
 
 using GUI = AGXUnityEditor.Utils.GUI;
@@ -124,7 +125,7 @@ namespace AGXUnityEditor.Tools
 
       if ( m_mode == Mode.RigidBody ) {
         if ( Manager.HijackLeftMouseClick() ) {
-          Predicate<GameObject> filter = m_subMode == SubMode.None            ? new Predicate<GameObject>( obj => { return obj != null && obj.GetComponent<AGXUnity.Collide.Shape>() == null; } ) :
+          Predicate<GameObject> filter = m_subMode == SubMode.None            ? new Predicate<GameObject>( obj => { return obj != null && obj.GetComponent<Shape>() == null; } ) :
                                          m_subMode == SubMode.SelectRigidBody ? new Predicate<GameObject>( obj => { return obj != null && obj.GetComponentInParent<RigidBody>() != null; } ) :
                                                                                 null;
 
@@ -180,31 +181,47 @@ namespace AGXUnityEditor.Tools
       if ( !AGXUnity.Utils.Math.IsUniform( Assembly.transform.lossyScale, 1.0E-3f ) )
         Debug.LogWarning( "Scale of AGXUnity.Assembly transform isn't uniform. If a child rigid body is moving under this transform the (visual) behavior is undefined.", Assembly );
 
-      var skin                     = InspectorEditor.Skin;
-      bool rbButtonPressed         = false;
-      bool shapeButtonPressed      = false;
-      bool constraintButtonPressed = false;
+      var skin = InspectorEditor.Skin;
+      if ( !IsMultiSelect ) {
+        bool rbButtonPressed         = false;
+        bool shapeButtonPressed      = false;
+        bool constraintButtonPressed = false;
 
-      GUI.ToolsLabel( skin );
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Space( 12 );
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          rbButtonPressed         = GUILayout.Button( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ), GUI.ConditionalCreateSelectedStyle( m_mode == Mode.RigidBody, skin.button ), GUILayout.Width( 30f ), GUI.ToolButtonData.Height );
-          shapeButtonPressed      = GUILayout.Button( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ), GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Shape, skin.button ), GUILayout.Width( 54f ), GUI.ToolButtonData.Height );
-          constraintButtonPressed = GUILayout.Button( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ), GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Constraint, skin.button ), GUILayout.Width( 80f ), GUI.ToolButtonData.Height );
+        GUI.ToolsLabel( skin );
+        GUILayout.BeginHorizontal();
+        {
+          GUILayout.Space( 12 );
+          using ( GUI.ToolButtonData.ColorBlock ) {
+            rbButtonPressed         = GUILayout.Button( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
+                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.RigidBody,
+                                                                                            skin.button ),
+                                                        GUILayout.Width( 30f ),
+                                                        GUI.ToolButtonData.Height );
+            shapeButtonPressed      = GUILayout.Button( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
+                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Shape, skin.button ),
+                                                        GUILayout.Width( 54f ),
+                                                        GUI.ToolButtonData.Height );
+            constraintButtonPressed = GUILayout.Button( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
+                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Constraint, skin.button ),
+                                                        GUILayout.Width( 80f ),
+                                                        GUI.ToolButtonData.Height );
+          }
         }
+        GUILayout.EndHorizontal();
+
+        HandleModeGUI();
+
+        if ( rbButtonPressed )
+          ChangeMode( Mode.RigidBody );
+        if ( shapeButtonPressed )
+          ChangeMode( Mode.Shape );
+        if ( constraintButtonPressed )
+          ChangeMode( Mode.Constraint );
       }
-      GUILayout.EndHorizontal();
-
-      HandleModeGUI();
-
-      if ( rbButtonPressed )
-        ChangeMode( Mode.RigidBody );
-      if ( shapeButtonPressed )
-        ChangeMode( Mode.Shape );
-      if ( constraintButtonPressed )
-        ChangeMode( Mode.Constraint );
+      else {
+        GUILayout.Label( GUI.MakeLabel( "Assemblies", 24, true ),
+                         GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
+      }
 
       GUI.Separator();
 
@@ -224,7 +241,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<AGXUnity.Collide.Shape>().ToArray(), context );
+      RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<Shape>().ToArray(), context );
     }
 
     private void HandleModeGUI()
@@ -349,7 +366,7 @@ namespace AGXUnityEditor.Tools
           // Do not add shapes to our orphans since they've PROBABLY/HOPEFULLY
           // been created earlier by this tool. This implicit state probably has
           // to be revised.
-          bool inSelectedList = child.GetComponent<AGXUnity.Collide.Shape>() != null || selectionEntries.FindIndex( selectedEntry => { return selectedEntry.Object == child.gameObject; } ) >= 0;
+          bool inSelectedList = child.GetComponent<Shape>() != null || selectionEntries.FindIndex( selectedEntry => { return selectedEntry.Object == child.gameObject; } ) >= 0;
           if ( !inSelectedList )
             orphans.Add( child );
         }
