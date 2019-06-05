@@ -68,6 +68,11 @@ For more information about how to develop new functionality in AGXUnity - [read 
 [**Getting started :**](https://youtu.be/IUj0QcniSik)  
 [![](https://img.youtube.com/vi/IUj0QcniSik/1.jpg)](https://youtu.be/IUj0QcniSik)
 
+[**Modelling a crane :**](https://www.youtube.com/watch?v=YNEDk1417iM)  
+[![](https://img.youtube.com/vi/YNEDk1417iM/1.jpg)](https://www.youtube.com/watch?v=YNEDk1417iM)
+
+### Older tutorials
+
 [**Modelling with primitives:**](https://www.youtube.com/watch?v=1ddfgIwAd0U)  
 [![](https://img.youtube.com/vi/1ddfgIwAd0U/1.jpg)](https://www.youtube.com/watch?v=1ddfgIwAd0U)
 
