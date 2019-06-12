@@ -40,4 +40,4 @@ DeveloperGuide.md.meta
 Plugins/x86_64/agxDotNet.dll*
 Editor/Data/Data.asset*
 Editor/Data/Settings.asset*
-Editor/CustomEditors/*.cs*
+Editor/CustomEditors
