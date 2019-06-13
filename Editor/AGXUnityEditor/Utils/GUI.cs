@@ -35,43 +35,6 @@ namespace AGXUnityEditor.Utils
       public const char Synchronized            = '\u2194';
     }
 
-    public static void TargetEditorEnable<T>( T target, GUISkin skin ) where T : class
-    {
-      KeyHandler.HandleDetectKeyOnEnable( target );
-
-      Tools.Tool.ActivateToolGivenTarget( target );
-    }
-
-    public static bool TargetEditorOnInspectorGUI<T>( T target, GUISkin skin ) where T : class
-    {
-      return KeyHandler.HandleDetectKeyOnGUI( target, Event.current );
-    }
-
-    public static void TargetEditorDisable<T>( T target ) where T : class
-    {
-      KeyHandler.HandleDetectKeyOnDisable( target );
-
-      var targetTool = Tools.Tool.GetActiveTool( target );
-      if ( targetTool != null )
-        Tools.Tool.RemoveActiveTool();
-    }
-
-    private enum TargetToolGUICallbackType
-    {
-      Pre,
-      Post
-    }
-
-    public static void PreTargetMembers<T>( T target, GUISkin skin ) where T : class
-    {
-      OnToolInspectorGUI( target, skin, TargetToolGUICallbackType.Pre );
-    }
-
-    public static void PostTargetMembers<T>( T target, GUISkin skin ) where T : class
-    {
-      OnToolInspectorGUI( target, skin, TargetToolGUICallbackType.Post );
-    }
-
     public static Vector3 Vector3Field( GUIContent content, Vector3 value, GUIStyle style = null )
     {
       GUILayout.BeginHorizontal();
@@ -171,7 +134,9 @@ namespace AGXUnityEditor.Utils
 
     public static void ToolsLabel( GUISkin skin )
     {
-      GUILayout.Label( GUI.MakeLabel( "Tools:", true ), Align( skin.label, TextAnchor.MiddleLeft ), new GUILayoutOption[] { GUILayout.Width( 64 ), GUILayout.Height( 25 ) } );
+      GUILayout.Label( GUI.MakeLabel( "Tools:", true ),
+                       Align( skin.label, TextAnchor.MiddleLeft ),
+                       new GUILayoutOption[] { GUILayout.Width( 64 ), GUILayout.Height( 25 ) } );
     }
 
     public static bool ToolButton( char symbol, bool active, string toolTip, GUISkin skin, int fontSize = 18 )
@@ -182,33 +147,72 @@ namespace AGXUnityEditor.Utils
                                ToolButtonData.Height );
     }
 
-    public static void HandleFrame( IFrame frame, GUISkin skin, float numPixelsIndentation = 0.0f, bool includeFrameToolIfPresent = true )
+    public static void HandleFrame( IFrame frame,
+                                    float numPixelsIndentation = 0.0f,
+                                    bool includeFrameToolIfPresent = true )
     {
+      if ( frame == null )
+        return;
+
+      HandleFrames( new IFrame[] { frame },
+                    numPixelsIndentation,
+                    includeFrameToolIfPresent );
+    }
+
+    public static void HandleFrames( IFrame[] frames,
+                                     float numPixelsIndentation = 0.0f,
+                                     bool includeFrameToolIfPresent = true )
+    {
+      var skin           = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
+      var refFrame       = frames[ 0 ];
 
       using ( new Indent( numPixelsIndentation ) ) {
         UnityEngine.GUI.enabled = true;
-        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ), frame.Parent, typeof( GameObject ), true );
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
+        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ),
+                                                                        refFrame.Parent,
+                                                                        typeof( GameObject ),
+                                                                        true );
+        EditorGUI.showMixedValue = false;
         UnityEngine.GUI.enabled = guiWasEnabled;
 
-        if ( newParent != frame.Parent )
-          frame.SetParent( newParent );
+        if ( newParent != refFrame.Parent ) {
+          foreach ( var frame in frames )
+            frame.SetParent( newParent );
+        }
 
-        frame.LocalPosition = Vector3Field( MakeLabel( "Local position" ), frame.LocalPosition, skin.label );
+        UnityEngine.GUI.changed = false;
+
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalPosition, frame.LocalPosition ) );
+        var localPosition = Vector3Field( MakeLabel( "Local position" ), refFrame.LocalPosition, skin.label );
+        if ( UnityEngine.GUI.changed ) {
+          foreach ( var frame in frames )
+            frame.LocalPosition = localPosition;
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
 
         // Converting from quaternions to Euler - make sure the actual Euler values has
         // changed before updating local rotation to not mess up the undo stack.
-        Vector3 inputEuler  = frame.LocalRotation.eulerAngles;
+        Vector3 inputEuler = refFrame.LocalRotation.eulerAngles;
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalRotation, frame.LocalRotation ) );
         Vector3 outputEuler = Vector3Field( MakeLabel( "Local rotation" ), inputEuler, skin.label );
-        if ( !ValueType.Equals( inputEuler, outputEuler ) )
-          frame.LocalRotation = Quaternion.Euler( outputEuler );
+        if ( !Equals( inputEuler, outputEuler ) ) {
+          foreach ( var frame in frames )
+            frame.LocalRotation = Quaternion.Euler( outputEuler );
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
 
         Separator();
 
-        Tools.FrameTool frameTool = null;
-        if ( includeFrameToolIfPresent && ( frameTool = Tools.FrameTool.FindActive( frame ) ) != null )
+        Tools.FrameTool frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
+                                      Tools.FrameTool.FindActive( refFrame ) :
+                                      null;
+        if ( frameTool != null )
           using ( new Indent( 12 ) )
-            frameTool.OnPreTargetMembersGUI( skin );
+            frameTool.OnPreTargetMembersGUI();
       }
     }
 
@@ -222,13 +226,22 @@ namespace AGXUnityEditor.Utils
       GUILayout.BeginHorizontal();
       {
         var buttonSize = labelStyle.CalcHeight( label, Screen.width );
-        bool expandPressed = GUILayout.Button( MakeLabel( state.Bool ? "-" : "+" ), buttonStyle, GUILayout.Width( 20.0f ), GUILayout.Height( buttonSize ) );
+        bool expandPressed = GUILayout.Button( MakeLabel( state.Bool ? "-" : "+" ),
+                                               buttonStyle,
+                                               GUILayout.Width( 20.0f ),
+                                               GUILayout.Height( buttonSize ) );
         GUILayout.Label( label, labelStyle, GUILayout.ExpandWidth( true ) );
-        if ( expandPressed ||
-             ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
-               Event.current.type == EventType.MouseDown &&
-               Event.current.button == 0 ) ) {
+        bool labelPressed = ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
+                              Event.current.type == EventType.MouseDown &&
+                              Event.current.button == 0 );
+        if ( expandPressed || labelPressed ) {
           state.Bool = !state.Bool;
+
+          // Clicked label - flag used event for the GUI to respond. When
+          // the user presses the button it seems like the button implementation
+          // handles the event.
+          if ( labelPressed )
+            Event.current.Use();
 
           if ( onStateChanged != null )
             onStateChanged.Invoke( state.Bool );
@@ -436,18 +449,6 @@ namespace AGXUnityEditor.Utils
       GUILayout.EndHorizontal();
 
       return newSource != currentSource ? newSource : null;
-    }
-
-    private static void OnToolInspectorGUI( object target, GUISkin skin, TargetToolGUICallbackType callbackType )
-    {
-      var targetTool = Tools.Tool.GetActiveTool( target );
-      if ( targetTool == null )
-        return;
-
-      if ( callbackType == TargetToolGUICallbackType.Pre )
-        targetTool.OnPreTargetMembersGUI( skin );
-      else if ( callbackType == TargetToolGUICallbackType.Post )
-        targetTool.OnPostTargetMembersGUI( skin );
     }
   }
 }

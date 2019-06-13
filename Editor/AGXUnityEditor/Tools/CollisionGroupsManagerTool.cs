@@ -8,22 +8,29 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( CollisionGroupsManager ) )]
-  public class CollisionGroupsManagerTool : Tool
+  public class CollisionGroupsManagerTool : CustomTargetTool
   {
     private List<string> m_groups = new List<string>();
     private CollisionGroupEntry m_findActiveGroupNameEntry = null;
     private class StringLowerComparer : IComparer<string> { public int Compare( string a, string b ) { return a.ToLower().CompareTo( b.ToLower() ); } }
     private CollisionGroupEntryPair m_groupEntryPairToAdd = new CollisionGroupEntryPair();
 
-    public CollisionGroupsManager Manager { get; private set; }
-
-    public CollisionGroupsManagerTool( CollisionGroupsManager manager )
+    public CollisionGroupsManager Manager
     {
-      Manager = manager;
+      get
+      {
+        return Targets[ 0 ] as CollisionGroupsManager;
+      }
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public CollisionGroupsManagerTool( Object[] targets )
+      : base( targets )
     {
+    }
+
+    public override void OnPreTargetMembersGUI()
+    {
+      var skin                          = InspectorEditor.Skin;
       var disabledPairs                 = Manager.DisabledPairs;
       bool clearPressed                 = false;
       bool addPressed                   = false;

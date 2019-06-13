@@ -40,6 +40,11 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler, skin );
       }
 
+      GUI.Separator();
+
+      if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.button ) )
+        Utils.CustomEditorGenerator.Synchronize( true );
+
       GUI.Separator3D();
     }
 
@@ -169,12 +174,14 @@ namespace AGXUnityEditor
   }
 
   [CustomEditor( typeof( EditorSettings ) )]
-  public class EditorSettingsEditor : BaseEditor<EditorSettings>
+  public class EditorSettingsEditor : Editor
   {
-    protected override bool OverrideOnInspectorGUI( EditorSettings target, GUISkin skin )
+    public override void OnInspectorGUI()
     {
-      EditorSettings.Instance.OnInspectorGUI( CurrentSkin );
-      return true;
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
+        return;
+
+      EditorSettings.Instance.OnInspectorGUI( InspectorEditor.Skin );
     }
   }
 }

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
+using Object = UnityEngine.Object;
+
 namespace AGXUnityEditor.Utils
 {
   /// <summary>
@@ -130,7 +132,7 @@ namespace AGXUnityEditor.Utils
     /// <param name="target">Target object with BaseEditor custom editor.</param>
     /// <param name="flag">True to enable, false to disable.</param>
     /// <param name="keyIndex">Index of key to detect. </param>
-    public void DetectKey( object target, bool flag, int keyIndex )
+    public void DetectKey( Object target, bool flag, int keyIndex )
     {
       if ( flag && IsValidKeyIndex( keyIndex ) )
         m_detectKeyData = new DetectKeyData() { Target = target, KeyHandler = this, KeyIndex = keyIndex };
@@ -240,23 +242,28 @@ namespace AGXUnityEditor.Utils
     #region Detect key manager
     private class DetectKeyData
     {
-      public object Target = null;
+      public Object Target = null;
       public KeyHandler KeyHandler = null;
       public int KeyIndex = -1;
     }
 
     private static DetectKeyData m_detectKeyData = null;
 
-    public static void HandleDetectKeyOnEnable( object target ) { }
+    public static void HandleDetectKeyOnEnable( Object[] targets ) { }
 
-    public static bool HandleDetectKeyOnGUI( object target, Event current )
+    public static bool HandleDetectKeyOnGUI( Object[] targets, Event current )
     {
       if ( m_detectKeyData == null )
         return false;
 
-      if ( m_detectKeyData.Target == target && ( current.type == EventType.KeyDown || current.shift ) ) {
+      if ( targets.Contains( m_detectKeyData.Target ) && ( current.type == EventType.KeyDown || current.shift ) ) {
         KeyCode keyCode = current.shift ? KeyCode.LeftShift : current.keyCode;
-        if ( keyCode != m_detectKeyData.KeyHandler[ m_detectKeyData.KeyIndex ] && EditorUtility.DisplayDialog( "Key detected", "Change '" + m_detectKeyData.KeyHandler[ m_detectKeyData.KeyIndex ].ToString() + "' to '" + keyCode.ToString() + "'?", "Ok", "Cancel" ) ) {
+        if ( keyCode != m_detectKeyData.KeyHandler[ m_detectKeyData.KeyIndex ] &&
+             EditorUtility.DisplayDialog( "Key detected", "Change '" +
+                                          m_detectKeyData.KeyHandler[ m_detectKeyData.KeyIndex ].ToString() +
+                                          "' to '" +
+                                          keyCode.ToString() +
+                                          "'?", "Ok", "Cancel" ) ) {
           m_detectKeyData.KeyHandler[ m_detectKeyData.KeyIndex ] = keyCode;
           m_detectKeyData = null;
           current.Use();
@@ -264,16 +271,17 @@ namespace AGXUnityEditor.Utils
         }
         else {
           m_detectKeyData = null;
-          EditorUtility.SetDirty( target as UnityEngine.Object );
+          foreach ( var target in targets )
+            EditorUtility.SetDirty( target );
         }
       }
 
       return false;
     }
 
-    public static void HandleDetectKeyOnDisable( object target )
+    public static void HandleDetectKeyOnDisable( Object[] targets )
     {
-      if ( m_detectKeyData != null && m_detectKeyData.Target == target )
+      if ( m_detectKeyData != null && targets.Contains( m_detectKeyData.Target ) )
         m_detectKeyData = null;
     }
     #endregion

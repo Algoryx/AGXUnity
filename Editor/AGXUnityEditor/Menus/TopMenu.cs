@@ -1,121 +1,154 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using AGXUnity;
+using AGXUnity.Collide;
+
+using Plane = AGXUnity.Collide.Plane;
+using Mesh = AGXUnity.Collide.Mesh;
 
 namespace AGXUnityEditor
 {
   public static class TopMenu
   {
     #region Shapes
-    [MenuItem( "AGXUnity/Collide/Box" )]
-    public static GameObject Box()
+    private static GameObject CreateShape<T>( MenuCommand command )
+      where T : Shape
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Box>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      var go = Factory.Create<T>();
+      if ( go == null )
+        return null;
+
+      var parent = command.context as GameObject;
+      if ( parent != null )
+        go.transform.SetParent( parent.transform, false );
+
+      Undo.RegisterCreatedObjectUndo( go, "shape" );
+
+      return go;
+    }
+
+    [MenuItem( "AGXUnity/Collide/Box" )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Box" )]
+    public static GameObject CreateBox( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateShape<Box>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Sphere" )]
-    public static GameObject Sphere()
+    [MenuItem( "GameObject/AGX Unity/Collide/Sphere" )]
+    public static GameObject CreateSphere( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Sphere>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateShape<Sphere>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Capsule" )]
-    public static GameObject Capsule()
+    [MenuItem( "GameObject/AGX Unity/Collide/Capsule" )]
+    public static GameObject CreateCapsule( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Capsule>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateShape<Capsule>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Cylinder" )]
-    public static GameObject Cylinder()
+    [MenuItem( "GameObject/AGX Unity/Collide/Cylinder" )]
+    public static GameObject CreateCylinder( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Cylinder>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateShape<Cylinder>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Plane" )]
-    public static GameObject Plane()
+    [MenuItem( "GameObject/AGX Unity/Collide/Plane" )]
+    public static GameObject CreatePlane( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Plane>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateShape<Plane>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Mesh" )]
-    public static GameObject Mesh()
+    [MenuItem( "GameObject/AGX Unity/Collide/Mesh" )]
+    public static GameObject CreateMesh( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "shape" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateShape<Mesh>( command );
     }
     #endregion
 
     #region Rigid bodies
-    [MenuItem( "AGXUnity/Rigid body/Empty" )]
-    public static GameObject RigidBodyEmpty()
+    private static GameObject CreateRigidBody( MenuCommand command, GameObject child = null )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      // It's possible, but very unintuitive, to have validation methods
+      // for GameObject context menu since validation is performed when
+      // the menu item is clicked (i.e., not when shown), so the invalid items
+      // aren't grayed out. Currently it's better to given the user a warning
+      // with context.
+      var parent      = command.context as GameObject;
+      var parentValid = parent == null ||
+                        parent.GetComponentInParent<RigidBody>() == null;
+      if ( !parentValid ) {
+        Debug.LogWarning( "Invalid to create child rigid body to " +
+                          parent.name +
+                          " because parent rigid body already exists.",
+                          parent.GetComponentInParent<RigidBody>() );
+        return null;
+      }
+
+      var go = child != null ?
+                 Factory.Create<RigidBody>( child ) :
+                 Factory.Create<RigidBody>();
+      if ( go == null )
+        return null;
+
+      if ( parent != null )
+        go.transform.SetParent( parent.transform, false );
+
+      Undo.RegisterCreatedObjectUndo( go, "Rigid body" );
+
+      return go;
+    }
+
+    private static GameObject CreateRigidBody<T>( MenuCommand command )
+      where T : Shape
+    {
+      return CreateRigidBody( command, Factory.Create<T>() );
+    }
+
+    [MenuItem( "AGXUnity/Rigid body/Empty" ) ]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Empty" )]
+    public static GameObject CreateRigidBodyEmpty( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateRigidBody( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Box" )]
-    public static GameObject RigidBodyBox()
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Box" )]
+    public static GameObject CreateRigidBodyBox( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>( Factory.Create<AGXUnity.Collide.Box>() );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateRigidBody<Box>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Sphere" )]
-    public static GameObject RigidBodySphere()
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Sphere" )]
+    public static GameObject CreateRigidBodySphere( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>( Factory.Create<AGXUnity.Collide.Sphere>() );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateRigidBody<Sphere>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Capsule" )]
-    public static GameObject RigidBodyCapsule()
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Capsule" )]
+    public static GameObject CreateRigidBodyCapsule( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>( Factory.Create<AGXUnity.Collide.Capsule>() );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateRigidBody<Capsule>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Cylinder" )]
-    public static GameObject RigidBodyCylinder()
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Cylinder" )]
+    public static GameObject CreateRigidBodyCylinder( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>( Factory.Create<AGXUnity.Collide.Cylinder>() );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateRigidBody<Cylinder>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Mesh" )]
-    public static GameObject RigidBodyMesh()
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Mesh" )]
+    public static GameObject CreateRigidBodyMesh( MenuCommand command )
     {
-      GameObject go = Factory.Create<AGXUnity.RigidBody>( Factory.Create<AGXUnity.Collide.Mesh>() );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "body" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateRigidBody<Mesh>( command );
     }
     #endregion
 

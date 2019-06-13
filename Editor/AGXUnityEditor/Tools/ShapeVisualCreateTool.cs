@@ -53,7 +53,7 @@ namespace AGXUnityEditor.Tools
 
     public GameObject Preview { get; private set; }
 
-    public ShapeVisualCreateTool( Shape shape )
+    public ShapeVisualCreateTool( Shape shape, bool isGloballyUnique = true )
     {
       Shape = shape;
       Preview = ShapeVisual.Create( shape );
@@ -86,8 +86,10 @@ namespace AGXUnityEditor.Tools
       Preview.transform.rotation = Shape.transform.rotation;
     }
 
-    public void OnInspectorGUI( GUISkin skin, bool onlyNameAndMaterial = false )
+    public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
+      var skin = InspectorEditor.Skin;
+
       if ( !onlyNameAndMaterial ) {
         GUILayout.Space( 4 );
         using ( GUI.AlignBlock.Center )

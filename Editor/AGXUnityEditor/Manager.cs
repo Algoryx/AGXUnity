@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using AGXUnity.Utils;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -48,6 +49,16 @@ namespace AGXUnityEditor
     public static bool IsCameraControl { get; private set; }
 
     /// <summary>
+    /// Name of assembly AGXUnity is built in to.
+    /// </summary>
+    public static readonly string AGXUnityAssemblyName = "Assembly-CSharp";
+
+    /// <summary>
+    /// Name of assembly AGXUnityEditor is built in to.
+    /// </summary>
+    public static readonly string AGXUnityEditorAssemblyName = "Assembly-CSharp-Editor";
+
+    /// <summary>
     /// Constructor called when the Unity editor is initialized.
     /// </summary>
     static Manager()
@@ -84,8 +95,6 @@ namespace AGXUnityEditor
       // scene view is focused since some other event is taking the
       // key event.
       RequestSceneViewFocus();
-
-      Tools.Tool.ActivateBuiltInTools();
 
       CreateDefaultAssets();
 
@@ -274,14 +283,25 @@ namespace AGXUnityEditor
     /// </summary>
     private static void UndoRedoPerformedCallback()
     {
-      if ( Selection.activeGameObject == null )
-        return;
+      // TODO: Should we perform full synchronize when the editor is
+      //       playing to synchronize native instances?
 
-      var scriptComponents = Selection.activeGameObject.GetComponents<AGXUnity.ScriptComponent>();
-      foreach ( var scriptComponent in scriptComponents )
-        EditorUtility.SetDirty( scriptComponent );
+      // Trigger repaint of inspector GUI for our targets.
+      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
+      foreach ( var target in targets )
+        EditorUtility.SetDirty( target );
 
-      if ( scriptComponents.Length > 0 )
+      // Synchronizing all shape sizes with visuals - it's not possible
+      // to determine affected shapes from tools targets or selection
+      // since it may have changed when undo is performed.
+      var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
+      foreach ( var shape in shapes ) {
+        var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
+        if ( visual )
+          visual.OnSizeUpdated();
+      }
+
+      if ( targets.Count() > 0 )
         SceneView.RepaintAll();
     }
 
@@ -309,7 +329,7 @@ namespace AGXUnityEditor
 
       UpdateMouseOverPrimitives( current );
 
-      Tools.Tool.HandleOnSceneViewGUI( sceneView );
+      ToolManager.HandleOnSceneViewGUI( sceneView );
 
       HandleWindowsGUI( sceneView );
 
@@ -428,10 +448,9 @@ namespace AGXUnityEditor
     /// </summary>
     private static void OnSelectionChanged()
     {
-      var activeTool = Tools.Tool.GetActiveTool();
       // If the active tool is hiding the position/rotation/scale handles
       // we ignore this 'auto-hiding'.
-      if ( activeTool == null || !activeTool.IsHidingTools ) {
+      if ( !ToolManager.IsHidingDefaultTools ) {
         bool mouseOverHierarchy = EditorWindow.mouseOverWindow != null &&
                                   EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
 

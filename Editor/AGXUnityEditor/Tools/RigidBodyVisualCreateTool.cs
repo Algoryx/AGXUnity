@@ -33,19 +33,21 @@ namespace AGXUnityEditor.Tools
     {
       var shapes = RigidBody.GetComponentsInChildren<Shape>();
       foreach ( var shape in shapes )
-        AddChild( new ShapeVisualCreateTool( shape ) );
+        AddChild( new ShapeVisualCreateTool( shape, false ) );
     }
 
     public override void OnRemove()
     {
     }
 
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI()
     {
       if ( RigidBody == null || GetChildren().Length == 0 ) {
         PerformRemoveFromParent();
         return;
       }
+
+      var skin = InspectorEditor.Skin;
 
       GUILayout.Space( 4 );
       using ( GUI.AlignBlock.Center )
@@ -61,7 +63,7 @@ namespace AGXUnityEditor.Tools
 
         using ( GUI.AlignBlock.Center )
           GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.label );
-        tool.OnInspectorGUI( skin, true );
+        tool.OnInspectorGUI( true );
       }
 
       var createCancelState = GUI.CreateCancelButtons( true, skin, "Create shape visual for shapes that hasn't already got one." );

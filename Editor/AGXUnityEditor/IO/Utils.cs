@@ -126,7 +126,7 @@ namespace AGXUnityEditor.IO
       Uri completeUri = new Uri( complete );
       Uri rootUri = new Uri( root );
       Uri relUri = rootUri.MakeRelativeUri( completeUri );
-      return relUri.ToString();
+      return Uri.UnescapeDataString( relUri.ToString() );
     }
   }
 }

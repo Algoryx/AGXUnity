@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -14,9 +15,9 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="alpha">Alpha value.</param>
     /// <returns>Color of the x axis.</returns>
-    public static UnityEngine.Color GetXAxisColor( float alpha = 1.0f )
+    public static Color GetXAxisColor( float alpha = 1.0f )
     {
-      return new UnityEngine.Color( 1.0f, 0, 0, alpha );
+      return new Color( 1.0f, 0, 0, alpha );
     }
 
     /// <summary>
@@ -24,9 +25,9 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="alpha">Alpha value.</param>
     /// <returns>Color of the y axis.</returns>
-    public static UnityEngine.Color GetYAxisColor( float alpha = 1.0f )
+    public static Color GetYAxisColor( float alpha = 1.0f )
     {
-      return new UnityEngine.Color( 0, 1.0f, 0, alpha );
+      return new Color( 0, 1.0f, 0, alpha );
     }
 
     /// <summary>
@@ -34,9 +35,9 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="alpha">Alpha value.</param>
     /// <returns>Color of the z axis.</returns>
-    public static UnityEngine.Color GetZAxisColor( float alpha = 1.0f )
+    public static Color GetZAxisColor( float alpha = 1.0f )
     {
-      return new UnityEngine.Color( 0, 0, 1.0f, alpha );
+      return new Color( 0, 0, 1.0f, alpha );
     }
 
     /// <summary>
@@ -44,9 +45,9 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="alpha">Alpha value.</param>
     /// <returns>Color of the center.</returns>
-    public static UnityEngine.Color GetCenterColor( float alpha = 1.0f )
+    public static Color GetCenterColor( float alpha = 1.0f )
     {
-      return new UnityEngine.Color( 0.7f, 0.7f, 0.7f, alpha );
+      return new Color( 0.7f, 0.7f, 0.7f, alpha );
     }
 
     /// <summary>
@@ -160,245 +161,42 @@ namespace AGXUnityEditor.Tools
     }
 
     /// <summary>
-    /// Searches types in AGXUnityEditor for CustomTool attribute which matches the type of <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">Object with potential custom tool.</param>
-    /// <returns>Type of custom tool of given object.</returns>
-    public static Type FindToolType( object obj )
-    {
-      if ( obj == null )
-        return null;
-
-      var types = Assembly.Load( "Assembly-CSharp-Editor" ).GetTypes();
-      var assignableFromTypes = new List<Type>();
-      foreach ( var type in types ) {
-        var customToolAttributes = type.GetCustomAttributes( typeof( CustomTool ), false );
-        if ( customToolAttributes.Length == 0 )
-          continue;
-
-        var attr = customToolAttributes.First() as CustomTool;
-        // Returning if we've found exact match.
-        if ( attr.Type == obj.GetType() )
-          return type;
-        // Type of tool is assignable from current obj type - store this if
-        // an exact match comes after this type.
-        else if ( attr.Type.IsAssignableFrom( obj.GetType() ) )
-          assignableFromTypes.Add( type );
-      }
-
-      return assignableFromTypes.FirstOrDefault();
-    }
-
-    /// <summary>
-    /// Remove old tool (if present) and activate new. If <paramref name="tool"/> is null
-    /// the current active tool is removed.
-    /// </summary>
-    /// <param name="tool">New top level tool to activate - null is equal to RemoveActiveTool.</param>
-    /// <returns>The new tool.</returns>
-    public static Tool ActivateTool( Tool tool )
-    {
-      RemoveActiveTool();
-
-      m_active = tool;
-      if ( m_active != null )
-        m_active.OnAdd();
-
-      return m_active;
-    }
-
-    /// <summary>
-    /// Remove old tool (if present) and activate new. If <paramref name="tool"/> is null
-    /// the current active tool is removed.
-    /// </summary>
-    /// <typeparam name="T">Type of the tool passed to this method.</typeparam>
-    /// <param name="tool">New top level tool to activate - null is equal to RemoveActiveTool.</param>
-    /// <returns>The new tool.</returns>
-    public static T ActivateTool<T>( Tool tool ) where T : Tool
-    {
-      return ActivateTool( tool ) as T;
-    }
-
-    /// <summary>
-    /// Activates tool given target and checks if target has attribute CustomTool.
-    /// If the attribute CustomTool is set this method tries to instantiate the
-    /// given implementation.
-    /// </summary>
-    /// <typeparam name="T">Target type.</typeparam>
-    /// <param name="target">Target object.</param>
-    /// <returns>New active tool if successful.</returns>
-    public static Tool ActivateToolGivenTarget<T>( T target ) where T : class
-    {
-      Type toolType = FindToolType( target );
-      if ( toolType == null )
-        return null;
-
-      try {
-        return ActivateTool( (Tool)Activator.CreateInstance( toolType, new object[] { target } ) );
-      }
-      catch ( Exception e ) {
-        Debug.LogException( e, target as UnityEngine.Object );
-      }
-
-      return null;
-    }
-
-    /// <summary>
-    /// Remove current, top level, active tool.
-    /// </summary>
-    public static void RemoveActiveTool()
-    {
-      if ( m_active != null ) {
-        Tool tool = m_active;
-
-        // PerformRemoveFromParent will check if the tool is the current active.
-        // If the tool wants to remove itself and is our m_activeToolData then
-        // we'll receive a call back to this method from PerformRemoveFromParent.
-        m_active = null;
-
-        tool.PerformRemoveFromParent();
-      }
-    }
-
-    /// <summary>
-    /// Fetch current active, top level, tool given type.
-    /// </summary>
-    /// <typeparam name="T">Type of the tool.</typeparam>
-    /// <returns>Active tool of type T.</returns>
-    public static T GetActiveTool<T>() where T : Tool
-    {
-      return m_active as T;
-    }
-
-    /// <summary>
-    /// Fetch current active, top level, tool given object with optional CustomTool attribute.
-    /// </summary>
-    /// <param name="toolClassName"></param>
-    /// <returns></returns>
-    public static Tool GetActiveTool( object obj )
-    {
-      if ( m_active == null || obj == null )
-        return null;
-
-      Type customToolType = FindToolType( obj );
-      if ( customToolType == null )
-        return null;
-
-      if ( m_active.GetType() == customToolType )
-        return (Tool)Convert.ChangeType( m_active, customToolType );
-
-      return null;
-    }
-
-    /// <summary>
-    /// Fetch current active, top level, tool.
-    /// </summary>
-    /// <returns>Current active, top level, tool.</returns>
-    public static Tool GetActiveTool()
-    {
-      return m_active;
-    }
-
-    /// <summary>
-    /// Depth first traverse of the tool tree.
-    /// </summary>
-    /// <param name="visitor">The Tool visitor.</param>
-    public static void TraverseActive( Action<Tool> visitor )
-    {
-      TraverseActive( GetActiveTool(), visitor );
-      TraverseActive( BuiltInTools, visitor );
-    }
-
-    private static void TraverseActive( Tool parent, Action<Tool> visitor )
-    {
-      if ( parent == null || visitor == null )
-        return;
-
-      visitor( parent );
-
-      foreach ( var child in parent.GetChildren() )
-        TraverseActive( child, visitor );
-    }
-
-    /// <summary>
-    /// Searches active tool from top level, depth first, given predicate.
-    /// </summary>
-    /// <typeparam name="T">Type of the tool.</typeparam>
-    /// <param name="pred">Tool predicate.</param>
-    /// <returns>Tool given type and predicate if active - otherwise null.</returns>
-    public static T FindActive<T>( Predicate<T> pred ) where T : Tool
-    {
-      return FindActive( m_active, pred );
-    }
-
-    /// <summary>
     /// Searches active tool from top level, depth first, given predicate.
     /// </summary>
     /// <typeparam name="T">Type of the tool.</typeparam>
     /// <param name="tool">Parent tool to start from.</param>
     /// <param name="pred">Tool predicate.</param>
     /// <returns>Tool given type and predicate if active - otherwise null.</returns>
-    public static T FindActive<T>( Tool tool, Predicate<T> pred ) where T : Tool
+    public T FindActive<T>( Predicate<T> pred ) where T : Tool
     {
-      if ( tool == null )
-        return null;
+      if ( this is T && pred( this as T ) )
+        return this as T;
 
-      T result = tool as T;
-      if ( result != null && !pred( result ) )
-        return null;
+      foreach ( var child in m_children ) {
+        var result = child.FindActive( pred );
+        if ( result != null )
+          return result;
+      }
 
-      for ( int i = 0; result == null && i < tool.m_children.Count; ++i )
-        result = FindActive( tool.m_children[ i ], pred );
-
-      return result;
+      return null;
     }
-
-    /// <summary>
-    /// The built in tools handler.
-    /// </summary>
-    public static BuiltInToolsTool BuiltInTools { get { return m_builtInTools; } }
-
-    /// <summary>
-    /// Activate the built in tools.
-    /// </summary>
-    public static void ActivateBuiltInTools()
-    {
-      if ( m_builtInTools != null )
-        return;
-
-      m_builtInTools = new BuiltInToolsTool();
-    }
-
-    /// <summary>
-    /// Call from Manager when it's time to update active tool scene view GUI.
-    /// </summary>
-    /// <param name="sceneView">Current scene view.</param>
-    public static void HandleOnSceneViewGUI( SceneView sceneView )
-    {
-      if ( m_builtInTools != null )
-        m_builtInTools.HandleOnSceneView( sceneView );
-
-      if ( m_active != null )
-        m_active.HandleOnSceneView( sceneView );
-    }
-
-    private static Tool m_active                   = null;
-    private static BuiltInToolsTool m_builtInTools = null;
 
     private List<Tool> m_children = new List<Tool>();
     private Tool m_parent         = null;
 
     private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
     private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
+    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
 
-    public Tool()
+    protected Tool()
     {
     }
 
     public virtual void OnSceneViewGUI( SceneView sceneView ) { }
 
-    public virtual void OnPreTargetMembersGUI( GUISkin skin ) { }
+    public virtual void OnPreTargetMembersGUI() { }
 
-    public virtual void OnPostTargetMembersGUI( GUISkin skin ) { }
+    public virtual void OnPostTargetMembersGUI() { }
 
     public virtual void OnAdd() { }
 
@@ -407,6 +205,14 @@ namespace AGXUnityEditor.Tools
     public Tool GetParent()
     {
       return m_parent;
+    }
+
+    public Tool GetRoot()
+    {
+      Tool root = GetParent();
+      while ( root != null && root.GetParent() != null )
+        root = root.GetParent();
+      return root;
     }
 
     public T GetChild<T>() where T : Tool
@@ -427,18 +233,41 @@ namespace AGXUnityEditor.Tools
       return m_children.ToArray();
     }
 
+    public Utils.KeyHandler[] KeyHandlers { get { return m_keyHandlers.Values.ToArray(); } }
+
     public void PerformRemoveFromParent()
     {
-      if ( GetActiveTool() == this ) {
-        RemoveActiveTool();
-        return;
-      }
-
       PerformRemove();
     }
+
     public void Remove()
     {
       PerformRemoveFromParent();
+    }
+
+    public Editor GetOrCreateEditor( Object target )
+    {
+      Editor editor = null;
+      if ( m_editors.TryGetValue( target, out editor ) )
+        return editor;
+      editor = Editor.CreateEditor( target );
+      m_editors.Add( target, editor );
+      return editor;
+    }
+
+    public void RemoveEditor( Object target )
+    {
+      Editor editor = null;
+      if ( !m_editors.TryGetValue( target, out editor ) )
+        return;
+      m_editors.Remove( target );
+      Object.DestroyImmediate( editor );
+    }
+
+    public void RemoveEditors( Object[] targets )
+    {
+      foreach ( var target in targets )
+        RemoveEditor( target );
     }
 
     protected void AddChild( Tool child )
@@ -449,6 +278,8 @@ namespace AGXUnityEditor.Tools
       m_children.Add( child );
       child.m_parent = this;
       child.OnAdd();
+
+      ToolManager.OnChildAdded( child );
     }
 
     protected void RemoveChild( Tool child )
@@ -545,13 +376,13 @@ namespace AGXUnityEditor.Tools
     /// <param name="sceneView">Current scene view.</param>
     private void HandleOnSceneView( SceneView sceneView )
     {
-      foreach ( var child in m_children.ToList() )
-        child.HandleOnSceneView( sceneView );
-
       foreach ( var keyHandler in m_keyHandlers.Values )
         keyHandler.Update( Event.current );
 
       OnSceneViewGUI( sceneView );
+
+      foreach ( var child in m_children.ToList() )
+        child.HandleOnSceneView( sceneView );
     }
 
     public class HideDefaultState
@@ -572,7 +403,7 @@ namespace AGXUnityEditor.Tools
 
     private HideDefaultState m_hideDefaultState = null;
 
-    public bool IsHidingTools
+    public bool IsHidingDefaultTools
     {
       get
       {
@@ -580,7 +411,7 @@ namespace AGXUnityEditor.Tools
           return true;
 
         for ( int i = 0; i < m_children.Count; ++i )
-          if ( m_children[ i ].IsHidingTools )
+          if ( m_children[ i ].IsHidingDefaultTools )
             return true;
 
         return false;
@@ -626,14 +457,19 @@ namespace AGXUnityEditor.Tools
       ClearVisualizedSelection();
 
       // Remove all key handlers that hasn't been removed.
-      string[] keyHandlerNames = m_keyHandlers.Keys.ToArray();
-      foreach ( string keyHandlerName in keyHandlerNames )
+      var keyHandlerNames = m_keyHandlers.Keys.ToArray();
+      foreach ( var keyHandlerName in keyHandlerNames )
         RemoveKeyHandler( keyHandlerName );
 
       // Remove all visual primitives that hasn't been removed.
-      string[] visualPrimitiveNames = m_visualPrimitives.Keys.ToArray();
-      foreach ( string visualPrimitiveName in visualPrimitiveNames )
+      var visualPrimitiveNames = m_visualPrimitives.Keys.ToArray();
+      foreach ( var visualPrimitiveName in visualPrimitiveNames )
         RemoveVisualPrimitive( visualPrimitiveName );
+
+      // Remove all editors that hasn't been removed.
+      var editorTargets = m_editors.Keys.ToArray();
+      foreach ( var editorTarget in editorTargets )
+        RemoveEditor( editorTarget );
 
       // Remove us from our parent.
       if ( m_parent != null )
@@ -641,8 +477,8 @@ namespace AGXUnityEditor.Tools
       m_parent = null;
 
       // Remove children.
-      Tool[] children = m_children.ToArray();
-      foreach ( Tool child in children )
+      var children = m_children.ToArray();
+      foreach ( var child in children )
         child.PerformRemove();
 
       if ( m_hideDefaultState != null )

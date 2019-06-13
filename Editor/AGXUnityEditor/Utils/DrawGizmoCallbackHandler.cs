@@ -68,7 +68,7 @@ namespace AGXUnityEditor.Utils
       // Active assembly tool has special rendering needs.
       Tools.AssemblyTool assemblyTool = null;
 
-      Tool.TraverseActive( activeTool =>
+      ToolManager.Traverse<Tool>( activeTool =>
       {
         if ( assemblyTool == null && activeTool is Tools.AssemblyTool )
           assemblyTool = activeTool as Tools.AssemblyTool;

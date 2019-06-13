@@ -3,13 +3,20 @@ using AGXUnity;
 using UnityEngine;
 using UnityEditor;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Simulation ) )]
-  public class SimulationTool : Tool
+  public class SimulationTool : CustomTargetTool
   {
-    public Simulation Simulation { get; private set; }
+    public Simulation Simulation
+    {
+      get
+      {
+        return Targets[ 0 ] as Simulation;
+      }
+    }
 
     public string SaveInitialPath
     {
@@ -23,13 +30,14 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public SimulationTool( Simulation simulation )
+    public SimulationTool( Object[] targets )
+      : base( targets )
     {
-      Simulation = simulation;
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI()
     {
+      var skin = InspectorEditor.Skin;
       var prevMode = Simulation.AutoSteppingMode;
 
       Simulation.AutoSteppingMode = (Simulation.AutoSteppingModes)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Auto Stepping Mode",
@@ -47,7 +55,7 @@ namespace AGXUnityEditor.Tools
         else
           Simulation.TimeStep = 1.0f / 60.0f;
       }
-
+      
       UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
       Simulation.TimeStep = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Time Step",
                                                                                   false,
@@ -84,8 +92,10 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI()
     {
+      var skin = InspectorEditor.Skin;
+
       GUI.Separator();
 
       Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics, skin.button, skin.label );

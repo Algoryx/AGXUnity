@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -10,11 +9,17 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( RigidBody ) )]
-  public class RigidBodyTool : Tool
+  public class RigidBodyTool : CustomTargetTool
   {
     private List<Constraint> m_constraints = new List<Constraint>();
 
-    public RigidBody RigidBody { get; private set; }
+    public RigidBody RigidBody
+    {
+      get
+      {
+        return Targets[ 0 ] as RigidBody;
+      }
+    }
 
     public bool FindTransformGivenPointTool
     {
@@ -124,8 +129,8 @@ namespace AGXUnityEditor.Tools
         if ( value && !RigidBodyVisualCreateTool ) {
           RemoveAllChildren();
 
-          var createShapeVisualTool = new RigidBodyVisualCreateTool( RigidBody );
-          AddChild( createShapeVisualTool );
+          var createRigidBodyVisualTool = new RigidBodyVisualCreateTool( RigidBody );
+          AddChild( createRigidBodyVisualTool );
         }
         else if ( !value )
           RemoveChild( GetChild<RigidBodyVisualCreateTool>() );
@@ -134,29 +139,33 @@ namespace AGXUnityEditor.Tools
 
     public bool ToolsActive = true;
 
-    public RigidBodyTool( RigidBody rb )
+    public RigidBodyTool( Object[] targets )
+      : base( targets )
     {
-      RigidBody = rb;
-
       var allConstraints = GameObject.FindObjectsOfType<Constraint>();
       foreach ( var constraint in allConstraints ) {
-        if ( constraint.AttachmentPair.Contains( RigidBody ) )
-          m_constraints.Add( constraint );
+        foreach ( var rb in GetTargets<RigidBody>() )
+          if ( constraint.AttachmentPair.Contains( rb ) )
+            m_constraints.Add( constraint );
       }
     }
 
     public override void OnAdd()
     {
-      var forceUpdateMassProperties = RigidBody.MassProperties.Mass.UseDefault &&
-                                      RigidBody.MassProperties.Mass.Value == 1.0f &&
-                                      RigidBody.MassProperties.InertiaDiagonal.UseDefault &&
-                                      RigidBody.MassProperties.InertiaDiagonal.Value == Vector3.one;
-      if ( forceUpdateMassProperties )
-        RigidBody.MassProperties.OnForcedMassInertiaUpdate();
+      foreach ( var rb in GetTargets<RigidBody>() ) {
+        var forceUpdateMassProperties = ( rb.MassProperties.Mass.UseDefault &&
+                                          rb.MassProperties.Mass.Value == 1.0f ) ||
+                                        ( rb.MassProperties.InertiaDiagonal.UseDefault &&
+                                          rb.MassProperties.InertiaDiagonal.Value == Vector3.one );
+        if ( forceUpdateMassProperties )
+          rb.MassProperties.OnForcedMassInertiaUpdate();
+      }
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI()
     {
+      var skin = InspectorEditor.Skin;
+
       bool toggleFindTransformGivenPoint = false;
       bool toggleFindTransformGivenEdge  = false;
       bool toggleShapeCreate             = false;
@@ -164,18 +173,31 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions       = false;
       bool toggleRigidBodyVisualCreate   = false;
 
-      if ( ToolsActive ) {
-        GUILayout.BeginHorizontal();
-        {
+      if ( !IsMultiSelect && ToolsActive ) {
+        using ( new GUILayout.HorizontalScope() ) {
           GUI.ToolsLabel( skin );
           using ( GUI.ToolButtonData.ColorBlock ) {
-            toggleFindTransformGivenPoint = GUI.ToolButton( GUI.Symbols.SelectPointTool, FindTransformGivenPointTool, "Find rigid body transform given point on object.", skin );
-            toggleFindTransformGivenEdge  = GUI.ToolButton( GUI.Symbols.SelectEdgeTool, FindTransformGivenEdgeTool, "Find rigid body transform given edge on object.", skin );
-            toggleShapeCreate             = GUI.ToolButton( GUI.Symbols.ShapeCreateTool, ShapeCreateTool, "Create shape from visual objects", skin );
-            toggleConstraintCreate        = GUI.ToolButton( GUI.Symbols.ConstraintCreateTool, ConstraintCreateTool, "Create constraint to this rigid body", skin );
-            toggleDisableCollisions       = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool, DisableCollisionsTool, "Disable collisions against other objects", skin );
-            bool createShapeVisualValid   = Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody );
-            using ( new EditorGUI.DisabledGroupScope( !createShapeVisualValid ) )
+            toggleFindTransformGivenPoint = GUI.ToolButton( GUI.Symbols.SelectPointTool,
+                                                            FindTransformGivenPointTool,
+                                                            "Find rigid body transform given point on object.",
+                                                            skin );
+            toggleFindTransformGivenEdge  = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
+                                                            FindTransformGivenEdgeTool,
+                                                            "Find rigid body transform given edge on object.",
+                                                            skin );
+            toggleShapeCreate             = GUI.ToolButton( GUI.Symbols.ShapeCreateTool,
+                                                            ShapeCreateTool,
+                                                            "Create shape from visual objects",
+                                                            skin );
+            toggleConstraintCreate        = GUI.ToolButton( GUI.Symbols.ConstraintCreateTool,
+                                                            ConstraintCreateTool,
+                                                            "Create constraint to this rigid body",
+                                                            skin );
+            toggleDisableCollisions       = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
+                                                            DisableCollisionsTool,
+                                                            "Disable collisions against other objects",
+                                                            skin );
+            using ( new EditorGUI.DisabledGroupScope( !Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) )
               toggleRigidBodyVisualCreate = GUI.ToolButton( GUI.Symbols.ShapeVisualCreateTool,
                                                             RigidBodyVisualCreateTool,
                                                             "Create visual representation of each physical shape in this body",
@@ -184,35 +206,35 @@ namespace AGXUnityEditor.Tools
 
           }
         }
-        GUILayout.EndHorizontal();
       }
 
       if ( ShapeCreateTool ) {
         GUI.Separator();
 
-        GetChild<ShapeCreateTool>().OnInspectorGUI( skin );
+        GetChild<ShapeCreateTool>().OnInspectorGUI();
       }
       if ( ConstraintCreateTool ) {
         GUI.Separator();
 
-        GetChild<ConstraintCreateTool>().OnInspectorGUI( skin );
+        GetChild<ConstraintCreateTool>().OnInspectorGUI();
       }
       if ( DisableCollisionsTool ) {
         GUI.Separator();
 
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( skin );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI();
       }
       if ( RigidBodyVisualCreateTool ) {
         GUI.Separator();
 
-        GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI( skin );
+        GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
       }
 
       GUI.Separator();
 
       GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
       using ( new GUI.Indent( 12 ) )
-        BaseEditor<MassProperties>.Update( RigidBody.MassProperties, RigidBody.MassProperties, skin );
+        InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
+
       GUI.Separator();
 
       if ( toggleFindTransformGivenPoint )
@@ -229,8 +251,10 @@ namespace AGXUnityEditor.Tools
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI()
     {
+      var skin = InspectorEditor.Skin;
+
       GUI.Separator();
 
       GUIStyle dragDropFieldStyle = new GUIStyle( skin.textArea );
@@ -262,14 +286,21 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      OnShapeListGUI( RigidBody.GetComponentsInChildren<Shape>(), RigidBody, skin );
-      OnConstraintListGUI( m_constraints.ToArray(), RigidBody, skin );
+      OnShapeListGUI( RigidBody.GetComponentsInChildren<Shape>(), this );
+
+      GUI.Separator();
+
+      OnConstraintListGUI( m_constraints.ToArray(), this );
     }
 
-    public static void OnShapeListGUI( Shape[] shapes, UnityEngine.Object context, GUISkin skin )
+    public static void OnShapeListGUI( Shape[] shapes, CustomTargetTool context )
     {
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context, "Shapes" ), GUI.MakeLabel( "Shapes", true ), skin ) )
+      var skin = InspectorEditor.Skin;
+
+      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Shapes" ), GUI.MakeLabel( "Shapes", true ), skin ) ) {
+        context.RemoveEditors( shapes );
         return;
+      }
 
       if ( shapes.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
@@ -280,35 +311,33 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.Indent( 12 ) ) {
         foreach ( var shape in shapes ) {
           GUI.Separator();
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context,
+          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                           shape.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" + GUI.AddColorTag( shape.GetType().Name, Color.Lerp( Color.green, Color.black, 0.4f ) ) + "] " + shape.name ),
-                             skin ) )
+                             skin ) ) {
+            context.RemoveEditor( shape );
             continue;
+          }
 
           GUI.Separator();
           using ( new GUI.Indent( 12 ) ) {
-            Undo.RecordObjects( shape.GetUndoCollection(), "Shape" );
-
-            shape.enabled = GUI.Toggle( GUI.MakeLabel( "Enable" ), shape.enabled, skin.button, skin.label );
-            if ( shape is AGXUnity.Collide.Mesh ) {
-              GUI.Separator();
-
-              var newMeshSource = GUI.ShapeMeshSourceGUI( ( shape as AGXUnity.Collide.Mesh ).SourceObjects.FirstOrDefault(), skin );
-              if ( newMeshSource != null )
-                ( shape as AGXUnity.Collide.Mesh ).SetSourceObject( newMeshSource );
-            }
-            GUI.Separator();
-            BaseEditor<Shape>.Update( shape, shape, skin );
+            var editor = context.GetOrCreateEditor( shape );
+            using ( new GUILayout.VerticalScope() )
+              editor.OnInspectorGUI();
           }
         }
       }
     }
 
-    public static void OnConstraintListGUI( Constraint[] constraints, UnityEngine.Object context, GUISkin skin )
+    public static void OnConstraintListGUI( Constraint[] constraints, CustomTargetTool context )
     {
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context, "Constraints" ), GUI.MakeLabel( "Constraints", true ), skin ) )
+      var skin = InspectorEditor.Skin;
+
+      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Constraints" ),
+                         GUI.MakeLabel( "Constraints", true ), skin ) ) {
+        context.RemoveEditors( constraints );
         return;
+      }
 
       if ( constraints.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
@@ -319,24 +348,31 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.Indent( 12 ) ) {
         foreach ( var constraint in constraints ) {
           GUI.Separator();
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context, constraint.GetInstanceID().ToString() ),
+          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], constraint.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" + GUI.AddColorTag( constraint.Type.ToString(), Color.Lerp( Color.magenta, Color.black, 0.4f ) ) + "] " + constraint.name ),
-                             skin ) )
+                             skin ) ) {
+            context.RemoveEditor( constraint );
             continue;
+          }
 
           GUI.Separator();
-          var constraintTool = new ConstraintTool( constraint ) { OnFoldoutStateChange = state => EditorUtility.SetDirty( context ) };
           using ( new GUI.Indent( 12 ) ) {
-            constraintTool.OnPreTargetMembersGUI( skin );
+            var editor = context.GetOrCreateEditor( constraint );
+            editor.OnInspectorGUI();
           }
         }
       }
     }
 
-    public static void OnRigidBodyListGUI( RigidBody[] rigidBodies, UnityEngine.Object context, GUISkin skin )
+    public static void OnRigidBodyListGUI( RigidBody[] rigidBodies, CustomTargetTool context )
     {
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context, "Rigid Bodies" ), GUI.MakeLabel( "Rigid Bodies", true ), skin ) )
+      var skin = InspectorEditor.Skin;
+
+      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Rigid Bodies" ),
+                         GUI.MakeLabel( "Rigid Bodies", true ), skin ) ) {
+        context.RemoveEditors( rigidBodies );
         return;
+      }
 
       if ( rigidBodies.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
@@ -348,16 +384,18 @@ namespace AGXUnityEditor.Tools
         foreach ( var rb in rigidBodies ) {
           GUI.Separator();
 
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context, rb.GetInstanceID().ToString() ),
+          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], rb.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" + GUI.AddColorTag( "RigidBody", Color.Lerp( Color.blue, Color.white, 0.35f ) ) + "] " + rb.name ),
-                             skin ) )
+                             skin ) ) {
+            context.RemoveEditor( rb );
             continue;
+          }
 
           GUI.Separator();
-          var rbTool = new RigidBodyTool( rb ) { ToolsActive = false };
+
           using ( new GUI.Indent( 12 ) ) {
-            rbTool.OnPreTargetMembersGUI( skin );
-            BaseEditor<RigidBody>.Update( rb, rb, skin );
+            var editor = context.GetOrCreateEditor( rb );
+            editor.OnInspectorGUI();
           }
         }
       }

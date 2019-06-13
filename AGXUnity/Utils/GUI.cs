@@ -75,6 +75,22 @@ namespace AGXUnity.Utils
       }
     }
 
+    public class EnabledBlock : IDisposable
+    {
+      private bool m_prevEnabled = true;
+
+      public EnabledBlock( bool enable )
+      {
+        m_prevEnabled = UnityEngine.GUI.enabled;
+        UnityEngine.GUI.enabled = enable;
+      }
+
+      public void Dispose()
+      {
+        UnityEngine.GUI.enabled = m_prevEnabled;
+      }
+    }
+
     public static string AddColorTag( string str, Color color )
     {
       return @"<color=" + color.ToHexStringRGBA() + @">" + str + @"</color>";
@@ -150,6 +166,17 @@ namespace AGXUnity.Utils
       selectedStyle.normal = orgStyle.onActive;
 
       return selectedStyle;
+    }
+
+    public static void WarningLabel( string warning, GUISkin skin )
+    {
+      var prevBgc = UnityEngine.GUI.backgroundColor;
+      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
+      GUILayout.Label( MakeLabel( warning,
+                                  Color.Lerp( Color.red, Color.white, 0.25f ),
+                                  true ),
+                       new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
+      UnityEngine.GUI.backgroundColor = prevBgc;
     }
   }
 }

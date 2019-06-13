@@ -22,6 +22,12 @@ namespace AGXUnity.Utils
 
     public class ConstraintRowParser
     {
+      public enum RowType
+      {
+        Translational,
+        Rotational
+      }
+
       public static ConstraintRowParser Create( Constraint constraint )
       {
         if ( constraint == null || constraint.ElementaryConstraints.Length == 0 )
@@ -83,6 +89,7 @@ namespace AGXUnity.Utils
 
       public ConstraintRow[] TranslationalRows = new ConstraintRow[] { null, null, null };
       public ConstraintRow[] RotationalRows    = new ConstraintRow[] { null, null, null };
+      public ConstraintRow[] this[ RowType rowType ] { get { return rowType == RowType.Translational ? TranslationalRows : RotationalRows; } }
 
       private ConstraintRowParser()
       {

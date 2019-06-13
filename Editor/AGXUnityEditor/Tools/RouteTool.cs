@@ -4,16 +4,24 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
-  public class RouteTool<ParentT, NodeT> : Tool
+  public class RouteTool<ParentT, NodeT> : CustomTargetTool
     where ParentT : ScriptComponent
     where NodeT : RouteNode, new()
   {
     public Func<float> NodeVisualRadius = null;
 
-    public ParentT Parent { get; private set; }
+    public ParentT Parent
+    {
+      get
+      {
+        return Targets[ 0 ] as ParentT;
+      }
+    }
+
     public Route<NodeT> Route { get; private set; }
 
     private NodeT m_selected = null;
@@ -48,7 +56,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public RouteNodeTool SelectedTool { get { return FindActive<RouteNodeTool>( this, tool => tool.Node == m_selected ); } }
+    public RouteNodeTool SelectedTool { get { return FindActive<RouteNodeTool>( tool => tool.Node == m_selected ); } }
 
     /// <summary>
     /// Not visual in scene view when the editor is playing or selected in project (asset).
@@ -69,17 +77,20 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public RouteTool( ParentT parent, Route<NodeT> route )
+    public RouteTool( Object[] targets )
+      : base( targets )
     {
-      Parent = parent;
-      Route = route;
+      // , Route<NodeT> route
+      Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
+                                                                   System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
 
       VisualInSceneView = true;
     }
 
     public override void OnAdd()
     {
-      VisualInSceneView = !EditorApplication.isPlaying && !AssetDatabase.Contains( Parent.gameObject );
+      VisualInSceneView = !EditorApplication.isPlaying &&
+                          !AssetDatabase.Contains( Parent.gameObject );
 
       HideDefaultHandlesEnableWhenRemoved();
 
@@ -110,28 +121,41 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI()
     {
+      if ( IsMultiSelect ) {
+        if ( VisualInSceneView ) {
+          foreach ( var node in Route )
+            RemoveChild( GetRouteNodeTool( node ) );
+          VisualInSceneView = false;
+        }
+        return;
+      }
+
       bool toggleDisableCollisions = false;
+      var skin = InspectorEditor.Skin;
 
       GUILayout.BeginHorizontal();
       {
         GUI.ToolsLabel( skin );
 
         using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool, DisableCollisionsTool, "Disable collisions against other objects", skin );
+          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
+                                                    DisableCollisionsTool,
+                                                    "Disable collisions against other objects",
+                                                    skin );
         }
       }
       GUILayout.EndHorizontal();
 
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( skin );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
 
       if ( !EditorApplication.isPlaying )
-        RouteGUI( skin );
+        RouteGUI();
 
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
@@ -145,12 +169,13 @@ namespace AGXUnityEditor.Tools
 
     protected RouteNodeTool GetRouteNodeTool( NodeT node )
     {
-      return FindActive<RouteNodeTool>( this, tool => tool.Node == node );
+      return FindActive<RouteNodeTool>( tool => tool.Node == node );
     }
 
-    private void RouteGUI( GUISkin skin )
+    private void RouteGUI()
     {
-      GUIStyle invalidNodeStyle = new GUIStyle( skin.label );
+      var skin                           = InspectorEditor.Skin;
+      GUIStyle invalidNodeStyle          = new GUIStyle( skin.label );
       invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
 
       bool addNewPressed        = false;
@@ -180,7 +205,7 @@ namespace AGXUnityEditor.Tools
                                              !validatedNode.Valid,
                                              validatedNode.ErrorString ),
                               skin,
-                              ( newState ) =>
+                              newState =>
                               {
                                 Selected = newState ? node : null;
                                 EditorUtility.SetDirty( Parent );
@@ -188,7 +213,7 @@ namespace AGXUnityEditor.Tools
 
               OnPreFrameGUI( node, skin );
 
-              GUI.HandleFrame( node, skin, 12 );
+              GUI.HandleFrame( node, 12 );
 
               OnPostFrameGUI( node, skin );
 

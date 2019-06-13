@@ -31,14 +31,16 @@ namespace AGXUnityEditor.Utils
 
     public static Assembly GetAGXUnityAssembly()
     {
-      return Assembly.Load( "Assembly-CSharp" );
+      return Assembly.Load( Manager.AGXUnityAssemblyName );
     }
 
     public static Type[] GetAGXUnityTypes()
     {
       var assembly = GetAGXUnityAssembly();
       if ( assembly == null ) {
-        Debug.LogWarning( "Updating custom editors failed - unable to load Assembly-CSharp.dll." );
+        Debug.LogWarning( "Updating custom editors failed - unable to load " +
+                          Manager.AGXUnityAssemblyName +
+                          ".dll." );
         return new Type[] { };
       }
 
@@ -57,21 +59,18 @@ namespace AGXUnityEditor.Utils
         yield return new FileInfo( file );
     }
 
-    public static void Synchronize()
+    public static void Synchronize( bool regenerate = false )
     {
       // Newer versions replaces '.' with '+' so if our files
       // doesn't contains any '+' we regenerate all.
       {
-        bool regenerate = false;
-        foreach ( var info in GetEditorFileInfos() ) {
-          if ( info.Name.StartsWith( "AGXUnity" ) && !info.Name.Contains( '+' ) ) {
-            regenerate = true;
-            break;
-          }
-        }
+        regenerate = regenerate ||
+                     GetEditorFileInfos().FirstOrDefault( info => info.Name.StartsWith( "AGXUnity" ) &&
+                                                                  !info.Name.Contains( '+' )
+                                                        ) != null;
 
         if ( regenerate ) {
-          Debug.Log( "Wrong version of custom editor files. Regenerating." );
+          Debug.Log( "Regenerating custom editors..." );
           foreach ( var info in GetEditorFileInfos() )
             DeleteFile( info );
         }
@@ -82,10 +81,14 @@ namespace AGXUnityEditor.Utils
       // Removing editors which classes has been removed.
       {
         var assembly = GetAGXUnityAssembly();
+        var editorAssembly = Assembly.Load( Manager.AGXUnityEditorAssemblyName );
         foreach ( var info in GetEditorFileInfos() ) {
-          string className = GetClassName( info.Name );
-          Type type = assembly.GetType( className, false );
-          if ( !IsMatch( type ) ) {
+          var className            = GetClassName( info.Name );
+          var type                 = assembly.GetType( className, false );
+          var editorClassName      = "AGXUnityEditor.Editors." + GetClassName( type ) + "Editor";
+          var editorType           = editorAssembly.GetType( editorClassName, false );
+          var isEditorBaseMismatch = editorType != null && editorType.BaseType != typeof( InspectorEditor );
+          if ( !IsMatch( type ) || isEditorBaseMismatch ) {
             Debug.Log( "Mismatching editor for class: " + className + ", removing custom editor." );
             DeleteFile( info );
             assetDatabaseDirty = true;
@@ -130,14 +133,14 @@ namespace AGXUnityEditor.Utils
               type.GetCustomAttributes( typeof( DoNotGenerateCustomEditor ), false ).Length == 0;
     }
 
-    private static string GetClassName( Type type )
-    {
-      return type.ToString().Replace( ".", string.Empty );
-    }
-
     private static string GetTypeFilename( Type type )
     {
       return type.ToString().Replace( ".", "+" );
+    }
+
+    private static string GetClassName( Type type )
+    {
+      return type.ToString().Replace( ".", string.Empty );
     }
 
     private static string GetClassName( string filename )
@@ -163,7 +166,8 @@ using UnityEditor;
 namespace AGXUnityEditor.Editors
 {
   [CustomEditor( typeof( " + type.ToString() + @" ) )]
-  public class " + classAndFilename + @"Editor : BaseEditor<" + type.ToString() + @">
+  [CanEditMultipleObjects]
+  public class " + classAndFilename + @"Editor : InspectorEditor
   { }
 }";
       File.WriteAllText( path + GetFilename( type, false ), csFileContent );

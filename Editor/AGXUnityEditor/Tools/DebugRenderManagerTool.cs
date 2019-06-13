@@ -7,17 +7,24 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( DebugRenderManager ) )]
-  public class DebugRenderManagerTool : Tool
+  public class DebugRenderManagerTool : CustomTargetTool
   {
-    public DebugRenderManager Manager { get; private set; }
-
-    public DebugRenderManagerTool( DebugRenderManager manager )
+    public DebugRenderManager Manager
     {
-      Manager = manager;
+      get
+      {
+        return Targets[ 0 ] as DebugRenderManager;
+      }
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public DebugRenderManagerTool( Object[] targets )
+      : base( targets )
     {
+    }
+
+    public override void OnPreTargetMembersGUI()
+    {
+      var skin = InspectorEditor.Skin;
       GUILayout.Label( GUI.MakeLabel( "Debug render manager", 16, true ), GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
 
       GUI.Separator();

@@ -8,9 +8,15 @@ using GUI = AGXUnityEditor.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( Shape ) )]
-  public class ShapeTool : Tool
+  public class ShapeTool : CustomTargetTool
   {
-    public Shape Shape { get; private set; }
+    public Shape Shape
+    {
+      get
+      {
+        return Targets[ 0 ] as Shape;
+      }
+    }
 
     public bool ShapeResizeTool
     {
@@ -82,9 +88,9 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public ShapeTool( Shape shape )
+    public ShapeTool( Object[] targets )
+      : base( targets )
     {
-      Shape = shape;
     }
 
     public override void OnAdd()
@@ -95,8 +101,14 @@ namespace AGXUnityEditor.Tools
     {
     }
 
-    public override void OnPreTargetMembersGUI( GUISkin skin )
+    public override void OnPreTargetMembersGUI()
     {
+      if ( IsMultiSelect ) {
+        GUI.Separator();
+        return;
+      }
+
+      var skin                     = InspectorEditor.Skin;
       bool toggleShapeResizeTool   = false;
       bool toggleShapeCreate       = false;
       bool toggleDisableCollisions = false;
@@ -136,17 +148,17 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI( skin );
+        GetChild<ShapeCreateTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
       if ( DisableCollisionsTool ) {
-        GetChild<DisableCollisionsTool>().OnInspectorGUI( skin );
+        GetChild<DisableCollisionsTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
       if ( ShapeVisualCreateTool ) {
-        GetChild<ShapeVisualCreateTool>().OnInspectorGUI( skin );
+        GetChild<ShapeVisualCreateTool>().OnInspectorGUI();
 
         GUI.Separator();
       }
@@ -161,11 +173,13 @@ namespace AGXUnityEditor.Tools
         ShapeVisualCreateTool = !ShapeVisualCreateTool;
     }
 
-    public override void OnPostTargetMembersGUI( GUISkin skin )
+    public override void OnPostTargetMembersGUI()
     {
       var shapeVisual = ShapeVisual.Find( Shape );
       if ( shapeVisual == null )
         return;
+
+      var skin = InspectorEditor.Skin;
 
       GUI.Separator();
       if ( !GUI.FoldoutEx( EditorData.Instance.GetData( Shape,
