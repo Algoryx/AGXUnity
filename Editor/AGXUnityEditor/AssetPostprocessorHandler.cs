@@ -27,6 +27,24 @@ namespace AGXUnityEditor
           prefab = inputFile.TryCreatePrefab();
         }
 
+        // Updating scene instances with e.g., shape visual size etc.
+        if ( prefab != null ) {
+          var gameObjects = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
+          foreach ( var restoredGameObject in gameObjects ) {
+            var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredGameObject.gameObject ) == PrefabInstanceStatus.Connected &&
+                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredGameObject.gameObject ) == prefab;
+            if ( !isReadPrefabInstance )
+              continue;
+
+            var shapes = restoredGameObject.GetComponentsInChildren<AGXUnity.Collide.Shape>();
+            foreach ( var shape in shapes ) {
+              var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
+              if ( visual != null )
+                visual.OnSizeUpdated();
+            }
+          }
+        }
+
         return prefab;
       }
       catch ( System.Exception e ) {
