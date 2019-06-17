@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Linq;
 using System.Diagnostics;
 using AGXUnity.Utils;
 using UnityEngine;
@@ -644,20 +644,26 @@ namespace AGXUnity
       if ( !System.IO.Directory.Exists( path ) )
         System.IO.Directory.CreateDirectory( path );
 
-      string tmpFilename    = "openedInViewer.agx";
-      string tmpLuaFilename = "openedInViewer.agxLua";
+      var tmpFilename    = "openedInViewer.agx";
+      var tmpLuaFilename = "openedInViewer.agxLua";
+      var camera         = Camera.main ?? Camera.allCameras.FirstOrDefault();
+
+      if ( camera == null ) {
+        Debug.Log( "Unable to find a camera - failed to open simulation in native viewer." );
+        return;
+      }
 
       var cameraData = new
       {
-        Eye               = Camera.main.transform.position.ToHandedVec3().ToVector3(),
-        Center            = ( Camera.main.transform.position + 25.0f * Camera.main.transform.forward ).ToHandedVec3().ToVector3(),
-        Up                = Camera.main.transform.up.ToHandedVec3().ToVector3(),
-        NearClippingPlane = Camera.main.nearClipPlane,
-        FarClippingPlane  = Camera.main.farClipPlane,
-        FOV               = Camera.main.fieldOfView
+        Eye               = camera.transform.position.ToHandedVec3().ToVector3(),
+        Center            = ( camera.transform.position + 25.0f * camera.transform.forward ).ToHandedVec3().ToVector3(),
+        Up                = camera.transform.up.ToHandedVec3().ToVector3(),
+        NearClippingPlane = camera.nearClipPlane,
+        FarClippingPlane  = camera.farClipPlane,
+        FOV               = camera.fieldOfView
       };
 
-      string luaFileContent = @"
+      var luaFileContent = @"
 assert( requestPlugin( ""agxOSG"" ) )
 function buildScene( sim, app, root )
   assert( agxOSG.readFile( """ + path + tmpFilename + @""", sim, root ) )
@@ -693,16 +699,15 @@ end";
       System.IO.File.WriteAllText( path + tmpLuaFilename, luaFileContent );
 
       try {
-        Process.Start( "luaagx.exe", path + tmpLuaFilename + " -p --renderDebug 1" );
+        Process.Start( new ProcessStartInfo()
+        {
+          FileName = @"luaagx.exe",
+          Arguments = path + tmpLuaFilename + @" -p --renderDebug 1",
+          UseShellExecute = false
+        } );
       }
-      catch ( System.Exception ) {
-        // Installed version.
-        try {
-          Process.Start( path + tmpLuaFilename );
-        }
-        catch ( System.Exception e ) {
-          Debug.LogException( e );
-        }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
       }
     }
   }
