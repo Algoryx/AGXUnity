@@ -29,14 +29,19 @@ namespace AGXUnityEditor
 
         // Updating scene instances with e.g., shape visual size etc.
         if ( prefab != null ) {
-          var gameObjects = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
-          foreach ( var restoredGameObject in gameObjects ) {
-            var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredGameObject.gameObject ) == PrefabInstanceStatus.Connected &&
-                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredGameObject.gameObject ) == prefab;
+          var restoredFileInstances = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
+          foreach ( var restoredFileInstance in restoredFileInstances ) {
+#if UNITY_2018_3_OR_NEWER
+            var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredFileInstance.gameObject ) == PrefabInstanceStatus.Connected &&
+                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
+#else
+            var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
+                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
+#endif
             if ( !isReadPrefabInstance )
               continue;
 
-            var shapes = restoredGameObject.GetComponentsInChildren<AGXUnity.Collide.Shape>();
+            var shapes = restoredFileInstance.GetComponentsInChildren<AGXUnity.Collide.Shape>();
             foreach ( var shape in shapes ) {
               var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
               if ( visual != null )
