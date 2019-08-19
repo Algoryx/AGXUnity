@@ -349,6 +349,7 @@ namespace AGXUnityEditor.Utils
       return selected ? CreateSelectedStyle( orgStyle ) : orgStyle;
     }
 
+    private static Editor m_cachedMaterialEditor = null;
     public static void MaterialEditor( GUIContent objFieldLabel,
                                        float objFieldLabelWidth,
                                        Material material,
@@ -375,11 +376,15 @@ namespace AGXUnityEditor.Utils
                                !AssetDatabase.GetAssetPath( material ).StartsWith( "Assets" ) ||
                                material == Manager.GetOrCreateShapeVisualDefaultMaterial();
 
-      var materialEditor = Editor.CreateEditor( material, typeof( MaterialEditor ) ) as MaterialEditor;
+      if ( m_cachedMaterialEditor == null )
+        m_cachedMaterialEditor = Editor.CreateEditor( material, typeof( MaterialEditor ) );
+      else
+        Editor.CreateCachedEditor( material, typeof( MaterialEditor ), ref m_cachedMaterialEditor );
+
       using ( new EditorGUI.DisabledGroupScope( !forceEnableEditing && isBuiltInMaterial ) ) {
-        if ( materialEditor != null ) {
-          materialEditor.DrawHeader();
-          materialEditor.OnInspectorGUI();
+        if ( m_cachedMaterialEditor != null ) {
+          m_cachedMaterialEditor.DrawHeader();
+          m_cachedMaterialEditor.OnInspectorGUI();
         }
       }
 
@@ -397,7 +402,7 @@ namespace AGXUnityEditor.Utils
         }
       }
 
-      Editor.DestroyImmediate( materialEditor );
+      //Editor.DestroyImmediate( materialEditor );
 
       if ( newMaterial != null && newMaterial != material && onMaterialChanged != null )
         onMaterialChanged.Invoke( newMaterial );
