@@ -5,60 +5,6 @@ namespace AGXUnity.Utils
   public static class MeshUtils
   {
     /// <summary>
-    /// Edge containing a start and an end point.
-    /// </summary>
-    public class Edge
-    {
-      public enum EdgeType
-      {
-        Triangle,
-        Principal
-      }
-
-      /// <summary>
-      /// Construct given start and end point.
-      /// </summary>
-      /// <param name="start">Start point.</param>
-      /// <param name="end">End point.</param>
-      public Edge( Vector3 start, Vector3 end, Vector3 normal, EdgeType edgeType = EdgeType.Triangle ) { Start = start; End = end; Normal = normal; Type = edgeType; }
-
-      /// <summary>
-      /// Start point.
-      /// </summary>
-      public Vector3 Start;
-
-      /// <summary>
-      /// Center point.
-      /// </summary>
-      public Vector3 Center { get { return 0.5f * ( Start + End ); } }
-
-      /// <summary>
-      /// End point.
-      /// </summary>
-      public Vector3 End;
-
-      /// <summary>
-      /// Normal of this edge - if possible to calculate.
-      /// </summary>
-      public Vector3 Normal;
-
-      /// <summary>
-      /// Length of the edge.
-      /// </summary>
-      public float Length { get { return Vector3.Magnitude( End - Start ); } }
-
-      /// <summary>
-      /// Direction of the edge, start to end.
-      /// </summary>
-      public Vector3 Direction { get { return Vector3.Normalize( End - Start ); } }
-
-      /// <summary>
-      /// Type of edge if along triangle edge or a principal axis of a known shape type.
-      /// </summary>
-      public EdgeType Type { get; private set; }
-    }
-
-    /// <summary>
     /// Intersection test triangle vs ray with resulting point in the triangle and time t along the ray.
     /// </summary>
     /// <param name="ray">Ray in same coordinate system as the vertices.</param>

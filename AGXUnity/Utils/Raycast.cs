@@ -17,20 +17,20 @@ namespace AGXUnity.Utils
 
       public Vector3[] Vertices { get; set; }
 
-      public MeshUtils.Edge[] Edges
+      public Edge[] Edges
       {
         get
         {
-          return new MeshUtils.Edge[]
+          return new Edge[]
           {
-            new MeshUtils.Edge( Vertices[ 0 ], Vertices[ 1 ], Normal ),
-            new MeshUtils.Edge( Vertices[ 1 ], Vertices[ 2 ], Normal ),
-            new MeshUtils.Edge( Vertices[ 2 ], Vertices[ 0 ], Normal )
+            new Edge() { Start = Vertices[ 0 ], End = Vertices[ 1 ], Normal = Normal },
+            new Edge() { Start = Vertices[ 1 ], End = Vertices[ 2 ], Normal = Normal },
+            new Edge() { Start = Vertices[ 2 ], End = Vertices[ 0 ], Normal = Normal }
           };
         }
       }
 
-      public MeshUtils.Edge ClosestEdge { get; set; }
+      public Edge ClosestEdge { get; set; }
 
       public Vector3 Point { get; set; }
 
@@ -41,13 +41,13 @@ namespace AGXUnity.Utils
 
     public class ClosestEdgeHit
     {
-      public static ClosestEdgeHit Invalid { get { return new ClosestEdgeHit() { Target = null, Edge = null, Distance = float.PositiveInfinity }; } }
+      public static ClosestEdgeHit Invalid { get { return new ClosestEdgeHit() { Target = null, Edge = new Edge(), Distance = float.PositiveInfinity }; } }
 
-      public bool Valid { get { return Edge != null && Distance != float.PositiveInfinity; } }
+      public bool Valid { get { return Edge.Valid && Distance != float.PositiveInfinity; } }
 
       public GameObject Target { get; set; }
 
-      public MeshUtils.Edge Edge { get; set; }
+      public Edge Edge { get; set; }
 
       public float Distance { get; set; }
     }
@@ -111,7 +111,7 @@ namespace AGXUnity.Utils
       if ( hit.Triangle.Valid )
         hit.Triangle.ClosestEdge = ShapeUtils.FindClosestEdgeToSegment( ray.GetPoint( 0 ), ray.GetPoint( rayLength ), hit.Triangle.Edges ).Edge;
 
-      List<MeshUtils.Edge> allEdges = FindPrincipalEdges( shape, 10.0f ).ToList();
+      List<Edge> allEdges = FindPrincipalEdges( shape, 10.0f ).ToList();
       if ( hit.Triangle.Valid )
         allEdges.Add( hit.Triangle.ClosestEdge );
 
@@ -121,15 +121,6 @@ namespace AGXUnity.Utils
       hit.ClosestEdge.Distance       = closestEdgeToSegmentResult.Distance;
 
       return ( LastHit = hit );
-    }
-
-    public static bool HasRayCompatibleComponents( GameObject gameObject )
-    {
-      return gameObject != null &&
-             (
-               gameObject.GetComponent<MeshFilter>() != null ||
-               ( gameObject.GetComponent<Collide.Shape>() != null && gameObject.GetComponent<Collide.HeightField>() == null )
-             );
     }
 
     public static Hit Test( GameObject target, Ray ray, float rayLength = 500.0f, bool includeAllChildren = false )
@@ -184,7 +175,7 @@ namespace AGXUnity.Utils
       return bestHit;
     }
 
-    private MeshUtils.Edge[] FindPrincipalEdges( Collide.Shape shape, float principalEdgeExtension )
+    private Edge[] FindPrincipalEdges( Collide.Shape shape, float principalEdgeExtension )
     {
       if ( shape != null && shape.GetUtils() != null )
         return shape.GetUtils().GetPrincipalEdgesWorld( principalEdgeExtension );
@@ -199,24 +190,32 @@ namespace AGXUnity.Utils
       if ( mesh != null )
         halfExtents = mesh.bounds.extents;
 
-      MeshUtils.Edge[] edges = ShapeUtils.ExtendAndTransformEdgesToWorld( Target.transform,
-                                new MeshUtils.Edge[]
-                                {
-                                  new MeshUtils.Edge( BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_X ),
-                                                      BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_X ),
-                                                      ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Y ),
-                                                      MeshUtils.Edge.EdgeType.Principal ),
-                                  new MeshUtils.Edge( BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Y ),
-                                                      BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Y ),
-                                                      ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Z ),
-                                                      MeshUtils.Edge.EdgeType.Principal ),
-                                  new MeshUtils.Edge( BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Z ),
-                                                      BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Z ),
-                                                      ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_X ),
-                                                      MeshUtils.Edge.EdgeType.Principal )
-                                },
-                                principalEdgeExtension );
-
+      var edges = ShapeUtils.ExtendAndTransformEdgesToWorld( Target.transform,
+                                                             new Edge[]
+                                                             {
+                                                               new Edge()
+                                                               {
+                                                                 Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_X ),
+                                                                 End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_X ),
+                                                                 Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Y ),
+                                                                 Type   = Edge.EdgeType.Principal
+                                                               },
+                                                               new Edge()
+                                                               {
+                                                                 Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Y ),
+                                                                 End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Y ),
+                                                                 Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Z ),
+                                                                 Type   = Edge.EdgeType.Principal
+                                                               },
+                                                               new Edge()
+                                                               {
+                                                                 Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Z ),
+                                                                 End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Z ),
+                                                                 Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_X ),
+                                                                 Type   = Edge.EdgeType.Principal
+                                                               }
+                                                             },
+                                                             principalEdgeExtension );
       return edges;
     }
   }

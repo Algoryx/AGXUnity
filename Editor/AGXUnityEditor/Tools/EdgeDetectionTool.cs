@@ -21,18 +21,21 @@ namespace AGXUnityEditor.Tools
       /// <summary>
       /// Target game object.
       /// </summary>
-      public GameObject Target   = null;
+      public GameObject Target = null;
 
       /// <summary>
       /// Edge on the target.
       /// </summary>
-      public MeshUtils.Edge Edge = null;
+      public AGXUnity.Edge Edge = new AGXUnity.Edge();
 
       /// <summary>
       /// Position on the edge.
       /// </summary>
-      public Vector3 Position    = Vector3.zero;
+      public Vector3 Position = Vector3.zero;
 
+      /// <summary>
+      /// Rotation of the edge.
+      /// </summary>
       public Quaternion Rotation = Quaternion.identity;
     }
     
@@ -112,13 +115,17 @@ namespace AGXUnityEditor.Tools
       }
       // 5. Done, fire callback with result and remove us.
       else {
-        MeshUtils.Edge orgEdge = m_collectedData.SelectedEdge.Edge;
-        Result resultingData = new Result()
+        var orgEdge = m_collectedData.SelectedEdge.Edge;
+        var resultingData = new Result()
         {
           Target   = m_collectedData.Target,
-          Edge     = new MeshUtils.Edge( m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.back ),
-                                         m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.forward ),
-                                         m_collectedData.DirectionRotation * Vector3.up, MeshUtils.Edge.EdgeType.Triangle ),
+          Edge     = new AGXUnity.Edge()
+          {
+            Start  = m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.back ),
+            End    = m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.forward ),
+            Normal = m_collectedData.DirectionRotation * Vector3.up,
+            Type   = AGXUnity.Edge.EdgeType.Triangle
+          },
           Position = m_collectedData.PointOnEdge,
           Rotation = m_collectedData.DirectionRotation
         };
@@ -138,11 +145,11 @@ namespace AGXUnityEditor.Tools
 
         EdgeVisual.SetTransform( m_collectedData.CurrentEdge.Edge.Start, m_collectedData.CurrentEdge.Edge.End, edgeRadius );
 
-        if ( m_collectedData.CurrentEdge.Edge.Type == MeshUtils.Edge.EdgeType.Triangle ) {
+        if ( m_collectedData.CurrentEdge.Edge.Type == AGXUnity.Edge.EdgeType.Triangle ) {
           EdgeVisual.Color = new Color( Color.yellow.r, Color.yellow.g, Color.yellow.b, defaultAlpha );
           EdgeVisual.MouseOverColor = new Color( Color.yellow.r, Color.yellow.g, Color.yellow.b, mouseOverAlpha );
         }
-        else if ( m_collectedData.CurrentEdge.Edge.Type == MeshUtils.Edge.EdgeType.Principal ) {
+        else if ( m_collectedData.CurrentEdge.Edge.Type == AGXUnity.Edge.EdgeType.Principal ) {
           EdgeVisual.Color = new Color( Color.red.r, Color.red.g, Color.red.b, defaultAlpha );
           EdgeVisual.MouseOverColor = new Color( Color.red.r, Color.red.g, Color.red.b, mouseOverAlpha );
         }
@@ -209,7 +216,7 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// Finds point on edge given mouse ray.
     /// </summary>
-    private Vector3 FindClosestPointOnEdge( MeshUtils.Edge edge )
+    private Vector3 FindClosestPointOnEdge( AGXUnity.Edge edge )
     {
       var ray = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
       return ShapeUtils.ShortestDistanceSegmentSegment( ray.origin,
@@ -226,20 +233,20 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="edge">Edge to find predefined points on.</param>
     /// <returns>Iterator to point on the edge.</returns>
-    private IEnumerable<Vector3> FindPredefinedEdgePoints( MeshUtils.Edge edge )
+    private IEnumerable<Vector3> FindPredefinedEdgePoints( AGXUnity.Edge edge )
     {
       yield return edge.Start;
       yield return edge.Center;
       yield return edge.End;
 
-      if ( edge.Type == MeshUtils.Edge.EdgeType.Triangle || m_collectedData == null || m_collectedData.Target == null || m_collectedData.Target.GetComponent<Shape>() == null )
+      if ( edge.Type == AGXUnity.Edge.EdgeType.Triangle || m_collectedData == null || m_collectedData.Target == null || m_collectedData.Target.GetComponent<Shape>() == null )
         yield break;
 
-      ShapeUtils utils = m_collectedData.Target.GetComponent<Shape>().GetUtils();
+      var utils = m_collectedData.Target.GetComponent<Shape>().GetUtils();
       if ( utils == null )
         yield break;
 
-      ShapeUtils.Direction[] edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
+      var edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
       yield return utils.GetWorldFace( edgeDirections[ 0 ] );
       yield return utils.GetWorldFace( edgeDirections[ 1 ] );
     }
