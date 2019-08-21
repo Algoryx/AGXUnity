@@ -94,7 +94,7 @@ namespace AGXUnityEditor.Utils
 
     public MoveToAction CurrentMoveToAction { get; set; }
 
-    public System.Action<AGXUnity.Utils.Raycast.Hit, VisualPrimitive> OnMouseClick = delegate {};
+    public System.Action<Raycast.Result, VisualPrimitive> OnMouseClick = delegate {};
 
     public void Destruct()
     {

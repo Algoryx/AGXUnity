@@ -3,6 +3,9 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
+using AGXUnity.Collide;
+
+using Mesh = UnityEngine.Mesh;
 
 namespace AGXUnityEditor.Utils
 {
@@ -14,7 +17,6 @@ namespace AGXUnityEditor.Utils
       public Vector3 Vertex2;
       public Vector3 Vertex3;
       public Vector3 Normal;
-      public int Index;
     }
 
     public struct Result
@@ -32,6 +34,8 @@ namespace AGXUnityEditor.Utils
       public GameObject Target;
 
       public Mesh Mesh;
+
+      public static readonly Result Invalid = new Result() { Hit = false };
 
       public static implicit operator bool( Result result )
       {
@@ -62,8 +66,7 @@ namespace AGXUnityEditor.Utils
             Vertex1 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 0 ] ] ),
             Vertex2 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 1 ] ] ),
             Vertex3 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 2 ] ] ),
-            Normal  = raycastHit.normal,
-            Index   = raycastHit.triangleIndex
+            Normal  = raycastHit.normal
           },
           Mesh     = mesh
         };
@@ -80,10 +83,25 @@ namespace AGXUnityEditor.Utils
       }
     }
 
-    public static Result Intersect( Ray ray, GameObject target )
+    public static Result Intersect( Ray ray, MeshFilter[] meshes )
+    {
+      var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+      for ( int i = 0; i < meshes.Length; ++i ) {
+        var result = Intersect( ray, meshes[ i ].sharedMesh, meshes[ i ].transform.localToWorldMatrix );
+        if ( result && result.Distance < bestResult.Distance )
+          bestResult = result;
+      }
+
+      return bestResult;
+    }
+
+    public static Result Intersect( Ray ray, GameObject target, bool includeChildren )
     {
       if ( target == null )
         return new Result() { Hit = false };
+
+      if ( includeChildren )
+        return Intersect( ray, target.GetComponentsInChildren<MeshFilter>() );
 
       var filter = target.GetComponent<MeshFilter>();
       if ( filter == null )

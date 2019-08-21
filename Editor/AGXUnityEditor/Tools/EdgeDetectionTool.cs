@@ -198,7 +198,7 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// Callback when the edge has been picked.
     /// </summary>
-    private void OnEdgeClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnEdgeClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       m_collectedData.SelectedEdge = m_collectedData.CurrentEdge;
       EdgeVisual.Pickable          = false;
