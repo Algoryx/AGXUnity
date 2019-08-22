@@ -74,7 +74,7 @@ namespace AGXUnityEditor.Tools
           pointTool.OnPointFound = data =>
           {
             Frame.SetParent( data.Target );
-            Frame.Position = data.Triangle.Point;
+            Frame.Position = data.RaycastResult.Point;
             Frame.Rotation = data.Rotation;
 
             OnLocalToolDone( pointTool );

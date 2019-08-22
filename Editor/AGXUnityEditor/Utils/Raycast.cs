@@ -7,6 +7,10 @@ using AGXUnity.Collide;
 
 using Mesh = UnityEngine.Mesh;
 
+// TODO:
+//     * Handle shapes.
+//     * Principal axes (not here, but EdgeDetectionTool).
+
 namespace AGXUnityEditor.Utils
 {
   public static class Raycast
@@ -63,9 +67,9 @@ namespace AGXUnityEditor.Utils
           Distance = raycastHit.distance,
           Triangle = new Triangle()
           {
-            Vertex1 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 0 ] ] ),
-            Vertex2 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 1 ] ] ),
-            Vertex3 = localToWorld.MultiplyPoint( vertices[ triangles[ raycastHit.triangleIndex + 2 ] ] ),
+            Vertex1 = localToWorld.MultiplyPoint( vertices[ triangles[ 3 * raycastHit.triangleIndex + 0 ] ] ),
+            Vertex2 = localToWorld.MultiplyPoint( vertices[ triangles[ 3 * raycastHit.triangleIndex + 1 ] ] ),
+            Vertex3 = localToWorld.MultiplyPoint( vertices[ triangles[ 3 * raycastHit.triangleIndex + 2 ] ] ),
             Normal  = raycastHit.normal
           },
           Mesh     = mesh
@@ -95,7 +99,29 @@ namespace AGXUnityEditor.Utils
       return bestResult;
     }
 
-    public static Result Intersect( Ray ray, GameObject target, bool includeChildren )
+    public static Result Intersect( Ray ray, Shape shape )
+    {
+      if ( shape is AGXUnity.Collide.Mesh ) {
+        var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+        foreach ( var mesh in ( shape as AGXUnity.Collide.Mesh ).SourceObjects ) {
+          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix );
+          if ( result && result.Distance < bestResult.Distance )
+            bestResult = result;
+        }
+        return bestResult;
+      }
+      else if ( shape is HeightField ) {
+        // Is this possible?
+        return new Result() { Hit = false };
+      }
+      else if ( shape != null ) {
+        var tmp = Resources.Load<GameObject>( AGXUnity.Rendering.DebugRenderData.GetPrefabName( shape.GetType().Name ) );
+      }
+
+      return new Result() { Hit = false };
+    }
+
+    public static Result Intersect( Ray ray, GameObject target, bool includeChildren = false )
     {
       if ( target == null )
         return new Result() { Hit = false };
