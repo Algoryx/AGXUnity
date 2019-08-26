@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
@@ -6,10 +8,6 @@ using AGXUnity;
 using AGXUnity.Collide;
 
 using Mesh = UnityEngine.Mesh;
-
-// TODO:
-//     * Handle shapes.
-//     * Principal axes (not here, but EdgeDetectionTool).
 
 namespace AGXUnityEditor.Utils
 {
@@ -49,6 +47,9 @@ namespace AGXUnityEditor.Utils
 
     public static Result Intersect( Ray ray, Mesh mesh, Matrix4x4 localToWorld )
     {
+      if ( mesh == null )
+        return new Result() { Hit = false };
+
       m_args[ 0 ] = ray;
       m_args[ 1 ] = mesh;
       m_args[ 2 ] = localToWorld;
@@ -101,10 +102,16 @@ namespace AGXUnityEditor.Utils
 
     public static Result Intersect( Ray ray, Shape shape )
     {
+      var parentUnscale = Vector3.one;
+      if ( shape != null && shape.transform.parent != null )
+        parentUnscale = new Vector3( 1.0f / shape.transform.parent.lossyScale.x,
+                                     1.0f / shape.transform.parent.lossyScale.y,
+                                     1.0f / shape.transform.parent.lossyScale.z );
+
       if ( shape is AGXUnity.Collide.Mesh ) {
         var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
         foreach ( var mesh in ( shape as AGXUnity.Collide.Mesh ).SourceObjects ) {
-          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix );
+          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix * Matrix4x4.Scale( parentUnscale ) );
           if ( result && result.Distance < bestResult.Distance )
             bestResult = result;
         }
@@ -112,13 +119,71 @@ namespace AGXUnityEditor.Utils
       }
       else if ( shape is HeightField ) {
         // Is this possible?
-        return new Result() { Hit = false };
+      }
+      else if ( shape is Capsule ) {
+        var radius      = ( shape as Capsule ).Radius;
+        var height      = ( shape as Capsule ).Height;
+        var capsule     = GetOrCreatePrimitive( shape );
+        var sphereUpper = capsule.transform.GetChild( 0 ).GetComponent<MeshFilter>();
+        var cylinder    = capsule.transform.GetChild( 1 ).GetComponent<MeshFilter>();
+        var sphereLower = capsule.transform.GetChild( 2 ).GetComponent<MeshFilter>();
+
+        var results = new Result[]
+        {
+          Intersect( ray,
+                     sphereUpper.sharedMesh,
+                     shape.transform.localToWorldMatrix *
+                       Matrix4x4.Translate( Vector3.Scale( 0.5f * height * Vector3.up, parentUnscale ) ) *
+                       Matrix4x4.Scale( Vector3.Scale( 2.0f * radius * Vector3.one, parentUnscale ) ) ),
+          Intersect( ray,
+                     cylinder.sharedMesh,
+                     shape.transform.localToWorldMatrix *
+                       Matrix4x4.Scale( Vector3.Scale( new Vector3( 2.0f * radius, height, 2.0f * radius ), parentUnscale ) ) ),
+          Intersect( ray,
+                     sphereLower.sharedMesh,
+                     shape.transform.localToWorldMatrix *
+                       Matrix4x4.Translate( Vector3.Scale( 0.5f * height * Vector3.down, parentUnscale ) ) *
+                       Matrix4x4.Scale( Vector3.Scale( 2.0f * radius * Vector3.one, parentUnscale ) ) *
+                       Matrix4x4.Rotate( sphereLower.transform.localRotation ) )
+        };
+
+        var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+        foreach ( var result in results )
+          if ( result && result.Distance < bestResult.Distance )
+            bestResult = result;
+
+        return bestResult;
       }
       else if ( shape != null ) {
-        var tmp = Resources.Load<GameObject>( AGXUnity.Rendering.DebugRenderData.GetPrefabName( shape.GetType().Name ) );
+        var primitive = GetOrCreatePrimitive( shape );
+        if ( primitive != null ) {
+          var filters = primitive.GetComponentsInChildren<MeshFilter>();
+          var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+          foreach ( var filter in filters ) {
+            var result = Intersect( ray,
+                                    filter.sharedMesh,
+                                    shape.transform.localToWorldMatrix * filter.transform.localToWorldMatrix * Matrix4x4.Scale( Vector3.Scale( shape.GetScale(), parentUnscale ) ) );
+            if ( result && result.Distance < bestResult.Distance )
+              bestResult = result;
+          }
+
+          return bestResult;
+        }
       }
 
       return new Result() { Hit = false };
+    }
+
+    public static Result Intersect( Ray ray, Shape[] shapes )
+    {
+      var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+      foreach ( var shape in shapes ) {
+        var result = Intersect( ray, shape );
+        if ( result && result.Distance < bestResult.Distance )
+          bestResult = result;
+      }
+
+      return bestResult;
     }
 
     public static Result Intersect( Ray ray, GameObject target, bool includeChildren = false )
@@ -126,14 +191,20 @@ namespace AGXUnityEditor.Utils
       if ( target == null )
         return new Result() { Hit = false };
 
-      if ( includeChildren )
-        return Intersect( ray, target.GetComponentsInChildren<MeshFilter>() );
-
-      var filter = target.GetComponent<MeshFilter>();
-      if ( filter == null )
-        return new Result() { Hit = false };
-
-      return Intersect( ray, filter.sharedMesh, filter.transform.localToWorldMatrix );
+      var hasShape = target.GetComponent<Shape>() != null;
+      if ( includeChildren ) {
+        return hasShape ?
+                 Intersect( ray, target.GetComponentsInChildren<Shape>() ) :
+                 Intersect( ray, target.GetComponentsInChildren<MeshFilter>() );
+      }
+      else {
+        var filter = target.GetComponent<MeshFilter>();
+        return hasShape ?
+                 Intersect( ray, target.GetComponent<Shape>() ) :
+               filter != null ?
+                 Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix ) :
+                 new Result() { Hit = false };
+      }
     }
 
     private static object[] m_args = new object[] { null, null, null, null };
@@ -152,6 +223,21 @@ namespace AGXUnityEditor.Utils
 
         return m_intersectMethod;
       }
+    }
+
+    private static Dictionary<Type, GameObject> m_shapePrimitiveCache = new Dictionary<Type, GameObject>();
+
+    private static GameObject GetOrCreatePrimitive( Shape shape )
+    {
+      GameObject go = null;
+      if ( m_shapePrimitiveCache.TryGetValue( shape.GetType(), out go ) )
+        return go;
+
+      go = Resources.Load<GameObject>( AGXUnity.Rendering.DebugRenderData.GetPrefabName( shape.GetType().Name ) );
+      if ( go != null )
+        m_shapePrimitiveCache.Add( shape.GetType(), go );
+
+      return go;
     }
 
     private static void FindClosestEdge( Ray ray, ref Result result )

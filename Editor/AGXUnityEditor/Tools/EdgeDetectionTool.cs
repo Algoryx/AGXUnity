@@ -70,11 +70,10 @@ namespace AGXUnityEditor.Tools
       }
       // 2. Select edge on target game object.
       else if ( !m_collectedData.SelectedEdge.Valid ) {
-        var result = Utils.Raycast.Intersect( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
-                                              m_collectedData.Target );
-
-        if ( result )
-          m_collectedData.CurrentEdge = result.ClosestEdge;
+        var ray                     = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
+        var result                  = Utils.Raycast.Intersect( ray,
+                                                               m_collectedData.Target );
+        m_collectedData.CurrentEdge = FindClosestEdgeIncludingTargetPrincipalAxes( ray, result.ClosestEdge );
       }
       // 3. Find point on edge - hold ctrl for "no-snap" mode.
       else if ( !m_collectedData.PointOnEdgeGiven ) {
@@ -212,6 +211,61 @@ namespace AGXUnityEditor.Tools
     private void OnPointClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
     {
       m_collectedData.PointOnEdgeGiven = true;
+    }
+
+    /// <summary>
+    /// Finds closest edge to ray, including principal axes of the target object.
+    /// </summary>
+    /// <param name="ray">The ray.</param>
+    /// <param name="triangleEdge">Triangle edge from raycast result.</param>
+    /// <param name="principalEdgeExtension">Extension of principal axes relative to bounding box or object faces.</param>
+    /// <returns>Edge (principal or triangle) closest to the given ray.</returns>
+    private AGXUnity.Edge FindClosestEdgeIncludingTargetPrincipalAxes( Ray ray, AGXUnity.Edge triangleEdge, float principalEdgeExtension = 10.0f )
+    {
+      var edges      = new AGXUnity.Edge[ 4 ];
+      var shape      = m_collectedData.Target.GetComponent<Shape>();
+      var shapeUtils = shape?.GetUtils();
+      if ( shapeUtils != null )
+        Array.Copy( shapeUtils.GetPrincipalEdgesWorld( principalEdgeExtension ), edges, 3 );
+      else {
+        var mesh = shape is AGXUnity.Collide.Mesh ?
+                     ( shape as AGXUnity.Collide.Mesh ).SourceObjects.FirstOrDefault() :
+                     m_collectedData.Target.GetComponent<MeshFilter>()?.sharedMesh;
+        var halfExtents = 0.5f * Vector3.zero;
+        if ( mesh != null )
+          halfExtents = mesh.bounds.extents;
+
+        Array.Copy( ShapeUtils.ExtendAndTransformEdgesToWorld( m_collectedData.Target.transform,
+                                                               new AGXUnity.Edge[]
+                                                               {
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_X ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_X ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Y ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 },
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Y ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Y ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Z ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 },
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Z ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Z ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_X ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 }
+                                                               },
+                                                               principalEdgeExtension ), edges, 3 );
+      }
+
+      edges[ 3 ] = triangleEdge;
+
+      return ShapeUtils.FindClosestEdgeToSegment( ray.GetPoint( 0.0f ), ray.GetPoint( 5000.0f ), edges ).Edge;
     }
 
     /// <summary>
