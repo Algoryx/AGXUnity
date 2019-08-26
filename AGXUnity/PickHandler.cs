@@ -16,39 +16,6 @@ namespace AGXUnity
     [HideInInspector]
     public static Color ConnectingCylinderColor { get { return Color.HSVToRGB( 0.02f, 0.78f, 0.95f ); } }
 
-    public static GameObject TryCreateConstraint( Ray ray, GameObject gameObject, DofTypes constrainedDofs, string gameObjectName )
-    {
-      if ( gameObject == null || gameObject.GetComponentInParent<RigidBody>() == null )
-        return null;
-
-      var hit = Raycast.Test( gameObject, ray );
-      if ( !hit.Triangle.Valid )
-        return null;
-
-      ConstraintType constraintType = constrainedDofs == DofTypes.Translation ?
-                                        ConstraintType.BallJoint :
-                                      constrainedDofs == DofTypes.Rotation ?
-                                        ConstraintType.AngularLockJoint :
-                                      ( constrainedDofs & DofTypes.Translation ) != 0 && ( constrainedDofs & DofTypes.Rotation ) != 0 ?
-                                        ConstraintType.LockJoint :
-                                        ConstraintType.BallJoint;
-
-      GameObject constraintGameObject = Factory.Create( constraintType );
-      constraintGameObject.name       = gameObjectName;
-
-      Constraint constraint                             = constraintGameObject.GetComponent<Constraint>();
-      constraint.ConnectedFrameNativeSyncEnabled        = true;
-      constraint.AttachmentPair.ReferenceObject         = hit.Triangle.Target;
-      constraint.AttachmentPair.ReferenceFrame.Position = hit.Triangle.Point;
-
-      constraint.AttachmentPair.ConnectedObject         = null;
-      constraint.AttachmentPair.ConnectedFrame.Position = hit.Triangle.Point;
-
-      constraint.AttachmentPair.Synchronized            = false;
-
-      return constraintGameObject;
-    }
-
     public static float FindDistanceFromCamera( Camera camera, Vector3 worldPoint )
     {
       return camera.WorldToViewportPoint( worldPoint ).z;
@@ -286,6 +253,40 @@ namespace AGXUnity
         m_angularLockJointMouseButton = oldValue;
 
       return newValue;
+    }
+
+    private GameObject TryCreateConstraint( Ray ray, GameObject gameObject, DofTypes constrainedDofs, string gameObjectName )
+    {
+      return null;
+      //if ( gameObject == null || gameObject.GetComponentInParent<RigidBody>() == null )
+      //  return null;
+
+      //var hit = Raycast.Test( gameObject, ray );
+      //if ( !hit.Triangle.Valid )
+      //  return null;
+
+      //ConstraintType constraintType = constrainedDofs == DofTypes.Translation ?
+      //                                  ConstraintType.BallJoint :
+      //                                constrainedDofs == DofTypes.Rotation ?
+      //                                  ConstraintType.AngularLockJoint :
+      //                                ( constrainedDofs & DofTypes.Translation ) != 0 && ( constrainedDofs & DofTypes.Rotation ) != 0 ?
+      //                                  ConstraintType.LockJoint :
+      //                                  ConstraintType.BallJoint;
+
+      //GameObject constraintGameObject = Factory.Create( constraintType );
+      //constraintGameObject.name = gameObjectName;
+
+      //Constraint constraint = constraintGameObject.GetComponent<Constraint>();
+      //constraint.ConnectedFrameNativeSyncEnabled = true;
+      //constraint.AttachmentPair.ReferenceObject = hit.Triangle.Target;
+      //constraint.AttachmentPair.ReferenceFrame.Position = hit.Triangle.Point;
+
+      //constraint.AttachmentPair.ConnectedObject = null;
+      //constraint.AttachmentPair.ConnectedFrame.Position = hit.Triangle.Point;
+
+      //constraint.AttachmentPair.Synchronized = false;
+
+      //return constraintGameObject;
     }
 
     class BroadPhaseResult

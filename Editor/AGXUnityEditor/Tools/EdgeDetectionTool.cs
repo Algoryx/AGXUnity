@@ -163,7 +163,7 @@ namespace AGXUnityEditor.Tools
 
         // The user doesn't have to hit the node sphere.
         if ( Manager.HijackLeftMouseClick() )
-          OnPointClick( null, NodeVisual );
+          OnPointClick( new Utils.Raycast.Result() { Hit = false }, NodeVisual );
       }
     }
 
@@ -208,7 +208,7 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// Callback when the node/position has been picked.
     /// </summary>
-    private void OnPointClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnPointClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       m_collectedData.PointOnEdgeGiven = true;
     }

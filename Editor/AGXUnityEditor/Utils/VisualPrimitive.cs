@@ -101,14 +101,6 @@ namespace AGXUnityEditor.Utils
       Manager.OnVisualPrimitiveNodeDestruct( this );
     }
 
-    AGXUnity.Utils.Raycast.TriangleHit Raycast( Ray ray, float rayLength = 500.0f )
-    {
-      var result = AGXUnity.Utils.MeshUtils.FindClosestTriangle( Node, ray, rayLength );
-      if ( result.Valid )
-        result.Target = Node;
-      return result;
-    }
-
     public virtual void OnSceneView( SceneView sceneView )
     {
       if ( CurrentMoveToAction != null && Visible ) {

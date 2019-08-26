@@ -6,8 +6,12 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Utils;
 
 using Mesh = UnityEngine.Mesh;
+
+// TODO:
+//     - Patch runtime pick handler.
 
 namespace AGXUnityEditor.Utils
 {
@@ -45,7 +49,7 @@ namespace AGXUnityEditor.Utils
       }
     }
 
-    public static Result Intersect( Ray ray, Mesh mesh, Matrix4x4 localToWorld )
+    public static Result Intersect( Ray ray, Mesh mesh, Matrix4x4 localToWorld, GameObject target )
     {
       if ( mesh == null )
         return new Result() { Hit = false };
@@ -73,7 +77,8 @@ namespace AGXUnityEditor.Utils
             Vertex3 = localToWorld.MultiplyPoint( vertices[ triangles[ 3 * raycastHit.triangleIndex + 2 ] ] ),
             Normal  = raycastHit.normal
           },
-          Mesh     = mesh
+          Mesh     = mesh,
+          Target   = target
         };
 
         FindClosestEdge( ray, ref result );
@@ -92,7 +97,7 @@ namespace AGXUnityEditor.Utils
     {
       var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
       for ( int i = 0; i < meshes.Length; ++i ) {
-        var result = Intersect( ray, meshes[ i ].sharedMesh, meshes[ i ].transform.localToWorldMatrix );
+        var result = Intersect( ray, meshes[ i ].sharedMesh, meshes[ i ].transform.localToWorldMatrix, meshes[ i ].gameObject );
         if ( result && result.Distance < bestResult.Distance )
           bestResult = result;
       }
@@ -111,7 +116,7 @@ namespace AGXUnityEditor.Utils
       if ( shape is AGXUnity.Collide.Mesh ) {
         var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
         foreach ( var mesh in ( shape as AGXUnity.Collide.Mesh ).SourceObjects ) {
-          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix * Matrix4x4.Scale( parentUnscale ) );
+          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix * Matrix4x4.Scale( parentUnscale ), shape.gameObject );
           if ( result && result.Distance < bestResult.Distance )
             bestResult = result;
         }
@@ -134,17 +139,20 @@ namespace AGXUnityEditor.Utils
                      sphereUpper.sharedMesh,
                      shape.transform.localToWorldMatrix *
                        Matrix4x4.Translate( Vector3.Scale( 0.5f * height * Vector3.up, parentUnscale ) ) *
-                       Matrix4x4.Scale( Vector3.Scale( 2.0f * radius * Vector3.one, parentUnscale ) ) ),
+                       Matrix4x4.Scale( Vector3.Scale( 2.0f * radius * Vector3.one, parentUnscale ) ),
+                     shape.gameObject ),
           Intersect( ray,
                      cylinder.sharedMesh,
                      shape.transform.localToWorldMatrix *
-                       Matrix4x4.Scale( Vector3.Scale( new Vector3( 2.0f * radius, height, 2.0f * radius ), parentUnscale ) ) ),
+                       Matrix4x4.Scale( Vector3.Scale( new Vector3( 2.0f * radius, height, 2.0f * radius ), parentUnscale ) ),
+                     shape.gameObject ),
           Intersect( ray,
                      sphereLower.sharedMesh,
                      shape.transform.localToWorldMatrix *
                        Matrix4x4.Translate( Vector3.Scale( 0.5f * height * Vector3.down, parentUnscale ) ) *
                        Matrix4x4.Scale( Vector3.Scale( 2.0f * radius * Vector3.one, parentUnscale ) ) *
-                       Matrix4x4.Rotate( sphereLower.transform.localRotation ) )
+                       Matrix4x4.Rotate( sphereLower.transform.localRotation ),
+                     shape.gameObject )
         };
 
         var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
@@ -162,7 +170,10 @@ namespace AGXUnityEditor.Utils
           foreach ( var filter in filters ) {
             var result = Intersect( ray,
                                     filter.sharedMesh,
-                                    shape.transform.localToWorldMatrix * filter.transform.localToWorldMatrix * Matrix4x4.Scale( Vector3.Scale( shape.GetScale(), parentUnscale ) ) );
+                                    shape.transform.localToWorldMatrix *
+                                      filter.transform.localToWorldMatrix *
+                                      Matrix4x4.Scale( Vector3.Scale( shape.GetScale(), parentUnscale ) ),
+                                    shape.gameObject );
             if ( result && result.Distance < bestResult.Distance )
               bestResult = result;
           }
@@ -202,9 +213,29 @@ namespace AGXUnityEditor.Utils
         return hasShape ?
                  Intersect( ray, target.GetComponent<Shape>() ) :
                filter != null ?
-                 Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix ) :
+                 Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix, filter.gameObject ) :
                  new Result() { Hit = false };
       }
+    }
+
+    public static Result[] IntersectChildren( Ray ray, GameObject parent, Predicate<GameObject> predicate = null )
+    {
+      var results = new List<Result>();
+      if ( parent == null )
+        return results.ToArray();
+
+      parent.TraverseChildren( go =>
+      {
+        if ( predicate == null || predicate( go ) ) {
+          var result = Intersect( ray, go );
+          if ( result )
+            results.Add( result );
+        }
+      } );
+
+      results.Sort( ( r1, r2 ) => { return r1.Distance < r2.Distance ? -1 : 1; } );
+
+      return results.ToArray();
     }
 
     private static object[] m_args = new object[] { null, null, null, null };
@@ -244,18 +275,18 @@ namespace AGXUnityEditor.Utils
     {
       var rayStart = ray.GetPoint( 0 );
       var rayEnd   = ray.GetPoint( 5000.0f );
-      var d1 = AGXUnity.Utils.ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
-                                                                         rayEnd,
-                                                                         result.Triangle.Vertex1,
-                                                                         result.Triangle.Vertex2 );
-      var d2 = AGXUnity.Utils.ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
-                                                                         rayEnd,
-                                                                         result.Triangle.Vertex2,
-                                                                         result.Triangle.Vertex3);
-      var d3 = AGXUnity.Utils.ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
-                                                                         rayEnd,
-                                                                         result.Triangle.Vertex3,
-                                                                         result.Triangle.Vertex1 );
+      var d1 = ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
+                                                          rayEnd,
+                                                          result.Triangle.Vertex1,
+                                                          result.Triangle.Vertex2 );
+      var d2 = ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
+                                                          rayEnd,
+                                                          result.Triangle.Vertex2,
+                                                          result.Triangle.Vertex3);
+      var d3 = ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
+                                                          rayEnd,
+                                                          result.Triangle.Vertex3,
+                                                          result.Triangle.Vertex1 );
       result.ClosestEdge = d1.Distance < d2.Distance && d1.Distance < d3.Distance ? new Edge()
                                                                                     {
                                                                                       Start  = result.Triangle.Vertex1,

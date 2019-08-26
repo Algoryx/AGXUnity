@@ -39,9 +39,9 @@ namespace AGXUnityEditor.Tools
         //     present a list of all parents to MenuTool.Target.
         GameObject target = Manager.MouseOverObject;
         if ( target != null && target.transform.childCount > 0 ) {
-          var childHits = AGXUnity.Utils.Raycast.TestChildren( target, HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), 500f );
-          if ( childHits.Count > 0 && childHits[ 0 ].Triangle.Valid )
-            target = childHits[ 0 ].Triangle.Target;
+          var childHits = Utils.Raycast.IntersectChildren( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), target );
+          if ( childHits.Length > 0 )
+            target = childHits[ 0 ].Target;
         }
 
         MenuTool.Target = target;
