@@ -18,19 +18,6 @@ namespace AGXUnityEditor.Tools
 
     public Utils.VisualPrimitiveSphere PointVisual { get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( "point", "GUI/Text Shader" ); } }
 
-    public Utils.VisualPrimitiveCylinder[] TriangleVisual
-    {
-      get
-      {
-        return new Utils.VisualPrimitiveCylinder[]
-        {
-          GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( "v1", "GUI/Text Shader" ),
-          GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( "v2", "GUI/Text Shader" ),
-          GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( "v3", "GUI/Text Shader" )
-        };
-      }
-    }
-
     public FindPointTool()
     {
       PointVisual.Pickable       = false;
@@ -89,23 +76,8 @@ namespace AGXUnityEditor.Tools
       }
 
       PointVisual.Visible = m_collectedData != null && m_collectedData.RaycastResult && !m_collectedData.TriangleGiven;
-      if ( PointVisual.Visible ) {
+      if ( PointVisual.Visible )
         PointVisual.SetTransform( m_collectedData.RaycastResult.Point, Quaternion.identity, 0.05f );
-        TriangleVisual[ 0 ].SetTransform( m_collectedData.RaycastResult.Triangle.Vertex1,
-                                          m_collectedData.RaycastResult.Triangle.Vertex2,
-                                          0.05f );
-        TriangleVisual[ 1 ].SetTransform( m_collectedData.RaycastResult.Triangle.Vertex2,
-                                          m_collectedData.RaycastResult.Triangle.Vertex3,
-                                          0.05f );
-        TriangleVisual[ 2 ].SetTransform( m_collectedData.RaycastResult.Triangle.Vertex3,
-                                          m_collectedData.RaycastResult.Triangle.Vertex1,
-                                          0.05f );
-      }
-      foreach ( var cyl in TriangleVisual ) {
-        cyl.Visible = PointVisual.Visible;
-        cyl.Pickable = false;
-        cyl.Color = Color.green;
-      }
     }
 
     private class CollectedData
