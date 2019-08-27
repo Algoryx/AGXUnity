@@ -298,6 +298,7 @@ namespace AGXUnity
     {
       base.OnDestroy();
       if ( m_simulation != null ) {
+        StepCallbacks.OnDestroy( m_simulation );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
         m_simulation.cleanup();
@@ -329,6 +330,8 @@ namespace AGXUnity
         // No solver settings - set the default.
         else
           agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
+
+        StepCallbacks.OnInitialize( m_simulation );
       }
 
       return m_simulation;

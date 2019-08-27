@@ -265,7 +265,7 @@ namespace AGXUnityEditor.Tools
 
       edges[ 3 ] = triangleEdge;
 
-      return ShapeUtils.FindClosestEdgeToSegment( ray.GetPoint( 0.0f ), ray.GetPoint( 5000.0f ), edges ).Edge;
+      return ShapeUtils.FindClosestEdgeToSegment( ray.origin, ray.GetPoint( 5000.0f ), edges ).Edge;
     }
 
     /// <summary>

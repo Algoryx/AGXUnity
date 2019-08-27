@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
@@ -173,24 +172,40 @@ namespace AGXUnity
     private MouseButtonState m_mouseButtonState = new MouseButtonState();
     private float m_distanceFromCamera = -1f;
     private Camera m_camera = null;
+    private agxCollide.Geometry m_lineGeometry = null;
+    private agxCollide.Line m_lineShape = null;
 
     protected override void OnEnable()
     {
       Simulation.Instance.StepCallbacks.PreStepForward += OnPreStepForwardCallback;
+      Simulation.Instance.StepCallbacks.SimulationPre  += OnSimulationPre;
       if ( MainCamera != null )
         m_camera = MainCamera.GetComponent<Camera>();
+
+      m_lineShape = new agxCollide.Line( new agx.Vec3(), new agx.Vec3() );
+      m_lineGeometry = new agxCollide.Geometry( m_lineShape );
+      m_lineGeometry.setEnable( false );
+      m_lineGeometry.setSensor( true );
+      GetSimulation().add( m_lineGeometry );
     }
 
     protected override void OnDisable()
     {
-      if ( Simulation.HasInstance )
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreStepForward -= OnPreStepForwardCallback;
+        Simulation.Instance.StepCallbacks.SimulationPre  -= OnSimulationPre;
+
+        GetSimulation().remove( m_lineGeometry );
+      }
 
       if ( ConstraintGameObject != null )
         Destroy( ConstraintGameObject );
+
       ConstraintGameObject = null;
       m_distanceFromCamera = -1f;
-      m_camera = null;
+      m_camera             = null;
+      m_lineShape          = null;
+      m_lineGeometry       = null;
     }
 
     private void OnGUI()
@@ -198,26 +213,65 @@ namespace AGXUnity
       m_mouseButtonState.Update( Event.current, Input.GetKey( TriggerKey ) );
     }
 
-    private void OnPreStepForwardCallback()
+    private void OnSimulationPre()
     {
-      if ( m_camera == null )
-        return;
+      if ( ConstraintGameObject == null && m_lineGeometry.isEnabled() ) {
+        var geometryContacts = new agxCollide.GeometryContactPtrVector();
+        var numContacts = GetSimulation().getSpace().getGeometryContacts( geometryContacts, m_lineGeometry );
+        if ( numContacts > 0 ) {
+          var ray = m_camera.ScreenPointToRay( Input.mousePosition );
+          var rayHandedOrigin = ray.origin.ToHandedVec3();
+          var closestGeometryContact = geometryContacts[ 0 ];
+          var closestDistance2 = rayHandedOrigin.distance2( closestGeometryContact.points().at( 0 ).point );
+          for ( int i = 1; i < geometryContacts.Count; ++i ) {
+            var gc = geometryContacts[ i ];
+            var distance2 = rayHandedOrigin.distance2( gc.points().at( 0 ).point );
+            if ( distance2 < closestDistance2 ) {
+              closestDistance2 = distance2;
+              closestGeometryContact = gc;
+            }
+          }
 
-      if ( ConstraintGameObject == null && Input.GetKey( TriggerKey ) && m_mouseButtonState.ButtonDown != MouseButton.None ) {
-        Ray ray = m_camera.ScreenPointToRay( Input.mousePosition );
-        List<BroadPhaseResult> results = FindRayBoundingVolumeOverlaps( ray );
-        if ( results.Count > 0 ) {
-          ConstraintGameObject = TryCreateConstraint( ray,
-                                                      results[ 0 ].GameObject,
+          var raycastBody = closestGeometryContact.rigidBody( 0 );
+          RigidBody body = null;
+          if ( raycastBody != null && raycastBody.getMotionControl() == agx.RigidBody.MotionControl.DYNAMICS ) {
+            var bodies = FindObjectsOfType<RigidBody>();
+            for ( int i = 0; body == null && i < bodies.Length; ++i )
+              if ( bodies[ i ].Native != null && bodies[ i ].Native.getUuid().str() == raycastBody.getUuid().str() )
+                body = bodies[ i ];
+          }
+
+          ConstraintGameObject = TryCreateConstraint( closestGeometryContact.points().at( 0 ).point.ToHandedVector3(),
+                                                      body,
                                                       MouseButtonToDofTypes( m_mouseButtonState.ButtonDown ),
                                                       "PickHandlerConstraint" );
+
           if ( ConstraintGameObject != null ) {
             ConstraintGameObject.AddComponent<Rendering.PickHandlerRenderer>();
             Constraint.DrawGizmosEnable = false;
             m_distanceFromCamera = FindDistanceFromCamera( m_camera,
                                                            Constraint.AttachmentPair.ReferenceFrame.Position );
           }
+
+          m_lineGeometry.setEnable( false );
         }
+      }
+    }
+
+    private void OnPreStepForwardCallback()
+    {
+      // Trigger key + mouse button down and we enable the line geometry
+      // here - similar to preCollide. In pre-step event if the line
+      // geometry is enabled, collect geometry contacts with our line
+      // and create constraint with the closest point.
+
+      if ( m_camera == null )
+        return;
+
+      if ( ConstraintGameObject == null && Input.GetKey( TriggerKey ) && m_mouseButtonState.ButtonDown != MouseButton.None ) {
+        var ray = m_camera.ScreenPointToRay( Input.mousePosition );
+        m_lineShape.set( ray.origin.ToHandedVec3(), ray.GetPoint( 5000.0f ).ToHandedVec3() );
+        m_lineGeometry.setEnable( true );
 
         m_mouseButtonState.Use( m_mouseButtonState.ButtonDown, buttonUp =>
         {
@@ -226,6 +280,7 @@ namespace AGXUnity
             ConstraintGameObject = null;
             m_distanceFromCamera = -1f;
           }
+          m_lineGeometry.setEnable( false );
         } );
       }
 
@@ -236,7 +291,7 @@ namespace AGXUnity
 
         SetComplianceDamping( Constraint );
 
-        ConstraintGameObject.GetComponent<Rendering.PickHandlerRenderer>().ThisMethodIsntAllowedToBeNamedUpdateByUnity( Constraint );
+        ConstraintGameObject.GetComponent<Rendering.PickHandlerRenderer>().ThisMethodIsntAllowedToBeNamedUpdateByUnity( Constraint, m_camera );
       }
     }
 
@@ -255,94 +310,33 @@ namespace AGXUnity
       return newValue;
     }
 
-    private GameObject TryCreateConstraint( Ray ray, GameObject gameObject, DofTypes constrainedDofs, string gameObjectName )
+    private GameObject TryCreateConstraint( Vector3 worldPoint, RigidBody rb, DofTypes constrainedDofs, string gameObjectName )
     {
-      return null;
-      //if ( gameObject == null || gameObject.GetComponentInParent<RigidBody>() == null )
-      //  return null;
+      if ( rb == null )
+        return null;
 
-      //var hit = Raycast.Test( gameObject, ray );
-      //if ( !hit.Triangle.Valid )
-      //  return null;
+      var constraintType = constrainedDofs == DofTypes.Translation ?
+                             ConstraintType.BallJoint :
+                           constrainedDofs == DofTypes.Rotation ?
+                             ConstraintType.AngularLockJoint :
+                           ( constrainedDofs & DofTypes.Translation ) != 0 && ( constrainedDofs & DofTypes.Rotation ) != 0 ?
+                             ConstraintType.LockJoint :
+                             ConstraintType.BallJoint;
 
-      //ConstraintType constraintType = constrainedDofs == DofTypes.Translation ?
-      //                                  ConstraintType.BallJoint :
-      //                                constrainedDofs == DofTypes.Rotation ?
-      //                                  ConstraintType.AngularLockJoint :
-      //                                ( constrainedDofs & DofTypes.Translation ) != 0 && ( constrainedDofs & DofTypes.Rotation ) != 0 ?
-      //                                  ConstraintType.LockJoint :
-      //                                  ConstraintType.BallJoint;
+      var constraintGameObject = Factory.Create( constraintType );
+      constraintGameObject.name = gameObjectName;
 
-      //GameObject constraintGameObject = Factory.Create( constraintType );
-      //constraintGameObject.name = gameObjectName;
+      var constraint = constraintGameObject.GetComponent<Constraint>();
+      constraint.ConnectedFrameNativeSyncEnabled = true;
+      constraint.AttachmentPair.ReferenceObject = rb.gameObject;
+      constraint.AttachmentPair.ReferenceFrame.Position = worldPoint;
 
-      //Constraint constraint = constraintGameObject.GetComponent<Constraint>();
-      //constraint.ConnectedFrameNativeSyncEnabled = true;
-      //constraint.AttachmentPair.ReferenceObject = hit.Triangle.Target;
-      //constraint.AttachmentPair.ReferenceFrame.Position = hit.Triangle.Point;
+      constraint.AttachmentPair.ConnectedObject = null;
+      constraint.AttachmentPair.ConnectedFrame.Position = worldPoint;
 
-      //constraint.AttachmentPair.ConnectedObject = null;
-      //constraint.AttachmentPair.ConnectedFrame.Position = hit.Triangle.Point;
+      constraint.AttachmentPair.Synchronized = false;
 
-      //constraint.AttachmentPair.Synchronized = false;
-
-      //return constraintGameObject;
-    }
-
-    class BroadPhaseResult
-    {
-      public GameObject GameObject = null;
-      public float Distance = float.MaxValue;
-    }
-
-    private List<BroadPhaseResult> FindRayBoundingVolumeOverlaps( Ray worldRay )
-    {
-      List<BroadPhaseResult> result = new List<BroadPhaseResult>();
-
-      // Testing shapes - only if we have a DebugRenderManager instance so that the
-      // user only picks "visual" objects.
-      if ( Rendering.DebugRenderManager.HasInstance ) {
-        MeshFilter[] shapeFilters = Rendering.DebugRenderManager.Instance.GetComponentsInChildren<MeshFilter>();
-        for ( int i = 0; i < shapeFilters.Length; ++i ) {
-          BroadPhaseResult bpr = TestFilter( worldRay, shapeFilters[ i ] );
-          if ( bpr != null && bpr.GameObject.GetComponent<OnSelectionProxy>() != null ) {
-            bpr.GameObject = bpr.GameObject.GetComponent<OnSelectionProxy>().Target;
-            result.Add( bpr );
-          }
-        }
-      }
-
-      // Testing mesh filters in rigid bodies.
-      RigidBody[] bodies = FindObjectsOfType<RigidBody>();
-      for ( int i = 0; i < bodies.Length; ++i ) {
-        MeshFilter[] rbFilters = bodies[ i ].GetComponentsInChildren<MeshFilter>();
-        for ( int j = 0; j < rbFilters.Length; ++j ) {
-          BroadPhaseResult bpr = TestFilter( worldRay, rbFilters[ j ] );
-          if ( bpr != null )
-            result.Add( bpr );
-        }
-      }
-
-      result.Sort( ( bfr1, bfr2 ) => { return bfr1.Distance < bfr2.Distance ? -1 : 1; } );
-
-      return result;
-    }
-
-    private BroadPhaseResult TestFilter( Ray worldRay, MeshFilter filter )
-    {
-      // Filter mesh bounds are object oriented (local to vertices).
-      // Transform world ray to filter space to be able to test against the OOBB.
-      Ray localRay = new Ray( filter.transform.InverseTransformPoint( worldRay.origin ), filter.transform.InverseTransformVector( worldRay.direction ).normalized );
-
-      float distanceLocal;
-      if ( filter.sharedMesh.bounds.IntersectRay( localRay, out distanceLocal ) ) {
-        // The test is in local space so we have to transform the intersection point
-        // to world in order to get the wanted/expected distance.
-        Vector3 worldHitPoint = filter.transform.TransformPoint( localRay.GetPoint( distanceLocal ) );
-        return new BroadPhaseResult() { GameObject = filter.gameObject, Distance = ( worldHitPoint - worldRay.origin ).magnitude };
-      }
-
-      return null;
+      return constraintGameObject;
     }
   }
 }

@@ -17,42 +17,104 @@ namespace AGXUnityEditor.Utils
 {
   public static class Raycast
   {
+    /// <summary>
+    /// Raycast result triangle vertices and normal given
+    /// in world coordinate system.
+    /// </summary>
     public struct Triangle
     {
+      /// <summary>
+      /// First vertex of the triangle given in world coordinate system.
+      /// </summary>
       public Vector3 Vertex1;
+
+      /// <summary>
+      /// Second vertex of the triangle given in world coordinate system.
+      /// </summary>
       public Vector3 Vertex2;
+
+      /// <summary>
+      /// Third vertex of the triangle given in world coordinate system.
+      /// </summary>
       public Vector3 Vertex3;
+
+      /// <summary>
+      /// Triangle normal given in world coordinate system.
+      /// </summary>
       public Vector3 Normal;
     }
 
+    /// <summary>
+    /// Editor raycast result which contains valid data when Hit == true.
+    /// </summary>
     public struct Result
     {
+      /// <summary>
+      /// True if the ray intersects object - otherwise false.
+      /// </summary>
       public bool Hit;
 
+      /// <summary>
+      /// Ray intersection point given in world coordinate system.
+      /// </summary>
       public Vector3 Point;
 
+      /// <summary>
+      /// Distance from ray origin to ray intersection point.
+      /// </summary>
       public float Distance;
 
+      /// <summary>
+      /// Triangle data of the ray intersection.
+      /// </summary>
       public Triangle Triangle;
 
+      /// <summary>
+      /// Closest triangle edge to the ray.
+      /// </summary>
       public Edge ClosestEdge;
 
+      /// <summary>
+      /// Game object the ray is intersecting.
+      /// </summary>
       public GameObject Target;
 
-      public Mesh Mesh;
+      /// <summary>
+      /// Invalid or default construct of raycast result.
+      /// </summary>
+      public static readonly Result Invalid = new Result()
+      {
+        Hit      = false,
+        Distance = float.PositiveInfinity
+      };
 
-      public static readonly Result Invalid = new Result() { Hit = false };
-
+      /// <summary>
+      /// Instance evaluates to true when Hit == true, e.g.,
+      /// var result = Raycast.Intersect( ray, @object );
+      /// if ( result )
+      ///   DoSomething();
+      /// </summary>
       public static implicit operator bool( Result result )
       {
         return result.Hit;
       }
     }
 
+    /// <summary>
+    /// Calculates ray intersection of given mesh with arbitrary transform (local-to-world).
+    /// The target is assumed to relate to the given mesh and is propagated to the result
+    /// if the ray intersects the mesh.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="mesh">Mesh instance.</param>
+    /// <param name="localToWorld">Mesh vertex transform.</param>
+    /// <param name="target">Target object (mesh subject), assigned to the result if the
+    ///                      ray intersects the mesh.</param>
+    /// <returns>The result of the intersection test.</returns>
     public static Result Intersect( Ray ray, Mesh mesh, Matrix4x4 localToWorld, GameObject target )
     {
       if ( mesh == null )
-        return new Result() { Hit = false };
+        return Result.Invalid;
 
       m_args[ 0 ] = ray;
       m_args[ 1 ] = mesh;
@@ -77,7 +139,6 @@ namespace AGXUnityEditor.Utils
             Vertex3 = localToWorld.MultiplyPoint( vertices[ triangles[ 3 * raycastHit.triangleIndex + 2 ] ] ),
             Normal  = raycastHit.normal
           },
-          Mesh     = mesh,
           Target   = target
         };
 
@@ -85,17 +146,20 @@ namespace AGXUnityEditor.Utils
 
         return result;
       }
-      else {
-        return new Result()
-        {
-          Hit = false
-        };
-      }
+
+      return Result.Invalid;
     }
 
+    /// <summary>
+    /// Calculates ray intersection of given mesh filters shared meshes and their transforms.
+    /// The result closest to the ray origin is returned in case of several valid intersections.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="meshes">Mesh filters.</param>
+    /// <returns>The result closest to the ray origin in case of intersections.</returns>
     public static Result Intersect( Ray ray, MeshFilter[] meshes )
     {
-      var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+      var bestResult = Result.Invalid;
       for ( int i = 0; i < meshes.Length; ++i ) {
         var result = Intersect( ray, meshes[ i ].sharedMesh, meshes[ i ].transform.localToWorldMatrix, meshes[ i ].gameObject );
         if ( result && result.Distance < bestResult.Distance )
@@ -105,6 +169,13 @@ namespace AGXUnityEditor.Utils
       return bestResult;
     }
 
+    /// <summary>
+    /// Calculates ray intersection of given shape, assuming no visual representation of
+    /// the shape is present.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="shape">Shape instance.</param>
+    /// <returns>The result of the intersection test.</returns>
     public static Result Intersect( Ray ray, Shape shape )
     {
       var parentUnscale = Vector3.one;
@@ -114,7 +185,7 @@ namespace AGXUnityEditor.Utils
                                      1.0f / shape.transform.parent.lossyScale.z );
 
       if ( shape is AGXUnity.Collide.Mesh ) {
-        var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+        var bestResult = Result.Invalid;
         foreach ( var mesh in ( shape as AGXUnity.Collide.Mesh ).SourceObjects ) {
           var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix * Matrix4x4.Scale( parentUnscale ), shape.gameObject );
           if ( result && result.Distance < bestResult.Distance )
@@ -155,7 +226,7 @@ namespace AGXUnityEditor.Utils
                      shape.gameObject )
         };
 
-        var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+        var bestResult = Result.Invalid;
         foreach ( var result in results )
           if ( result && result.Distance < bestResult.Distance )
             bestResult = result;
@@ -185,9 +256,16 @@ namespace AGXUnityEditor.Utils
       return new Result() { Hit = false };
     }
 
+    /// <summary>
+    /// Calculates ray intersection of given shapes.
+    /// The result closest to the ray origin is returned in case of several valid intersections.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="shapes">Shapes to test.</param>
+    /// <returns>The result closest to the ray origin in case of intersections.</returns>
     public static Result Intersect( Ray ray, Shape[] shapes )
     {
-      var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+      var bestResult = Result.Invalid;
       foreach ( var shape in shapes ) {
         var result = Intersect( ray, shape );
         if ( result && result.Distance < bestResult.Distance )
@@ -197,10 +275,20 @@ namespace AGXUnityEditor.Utils
       return bestResult;
     }
 
+    /// <summary>
+    /// Calculates ray intersection of given game object. If the game object has
+    /// a shape, the raycast will only test for shapes. If the game object doesn't
+    /// have a shape, the raycast will only test for mesh filters.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="target">Target game object.</param>
+    /// <param name="includeChildren">Default false, if true, all children of <paramref name="target"/> will
+    ///                               be included in the test and the best hit will be returned.</param>
+    /// <returns>The result closest to the ray origin in case of intersections.</returns>
     public static Result Intersect( Ray ray, GameObject target, bool includeChildren = false )
     {
       if ( target == null )
-        return new Result() { Hit = false };
+        return Result.Invalid;
 
       var hasShape = target.GetComponent<Shape>() != null;
       if ( includeChildren ) {
@@ -214,10 +302,17 @@ namespace AGXUnityEditor.Utils
                  Intersect( ray, target.GetComponent<Shape>() ) :
                filter != null ?
                  Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix, filter.gameObject ) :
-                 new Result() { Hit = false };
+                 Result.Invalid;
       }
     }
 
+    /// <summary>
+    /// Calculates ray intersections of children (only) to parent game object.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="parent">Parent game object.</param>
+    /// <param name="predicate">Optional predicate to filter <paramref name="parent"/> children.</param>
+    /// <returns>Array of valid results, closest hit first.</returns>
     public static Result[] IntersectChildren( Ray ray, GameObject parent, Predicate<GameObject> predicate = null )
     {
       var results = new List<Result>();
@@ -241,6 +336,13 @@ namespace AGXUnityEditor.Utils
     private static object[] m_args = new object[] { null, null, null, null };
     private static MethodInfo m_intersectMethod = null;
 
+    /// <summary>
+    /// Reflected intersect method:
+    ///     bool HandleUtility.IntersectRayMesh( UnityEngine.Ray,
+    ///                                          UnityEngine.Mesh,
+    ///                                          UnityEngine.Matrix4x4,
+    ///                                          out UnityEngine.RaycastResult )
+    /// </summary>
     private static MethodInfo IntersectMethod
     {
       get
@@ -258,6 +360,11 @@ namespace AGXUnityEditor.Utils
 
     private static Dictionary<Type, GameObject> m_shapePrimitiveCache = new Dictionary<Type, GameObject>();
 
+    /// <summary>
+    /// Cached unit shape resources.
+    /// </summary>
+    /// <param name="shape">Shape instance.</param>
+    /// <returns>Unit primitive with mesh (not an instance).</returns>
     private static GameObject GetOrCreatePrimitive( Shape shape )
     {
       GameObject go = null;
@@ -271,9 +378,15 @@ namespace AGXUnityEditor.Utils
       return go;
     }
 
+    /// <summary>
+    /// Finds closest triangle edge given ray and valid raycast result. The
+    /// Result.ClosestEdge field will be updated.
+    /// </summary>
+    /// <param name="ray">Ray in world coordinate system.</param>
+    /// <param name="result">Reference to valid result.</param>
     private static void FindClosestEdge( Ray ray, ref Result result )
     {
-      var rayStart = ray.GetPoint( 0 );
+      var rayStart = ray.origin;
       var rayEnd   = ray.GetPoint( 5000.0f );
       var d1 = ShapeUtils.ShortestDistanceSegmentSegment( rayStart,
                                                           rayEnd,
