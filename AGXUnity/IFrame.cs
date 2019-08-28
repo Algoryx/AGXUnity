@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
