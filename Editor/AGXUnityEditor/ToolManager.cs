@@ -178,6 +178,20 @@ namespace AGXUnityEditor
       if ( targets.Length == 0 )
         return;
 
+      // Target component has been destroyed.
+      if ( targets.Contains( null ) ) {
+        List<CustomTargetTool> toolsToRemove = new List<CustomTargetTool>();
+        foreach ( var activeTool in m_activeTools )
+          if ( activeTool.HasInvalidTargets )
+            toolsToRemove.Add( activeTool );
+        foreach ( var toolToRemove in toolsToRemove ) {
+          toolToRemove.Remove();
+          m_activeTools.Remove( toolToRemove );
+        }
+
+        return;
+      }
+
       Utils.KeyHandler.HandleDetectKeyOnDisable( targets );
 
       var tool = FindActive( targets );

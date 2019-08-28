@@ -9,6 +9,17 @@ namespace AGXUnityEditor.Tools
   {
     public Object[] Targets { get; private set; }
 
+    public bool HasInvalidTargets
+    {
+      get
+      {
+        foreach ( var target in Targets )
+          if ( target == null )
+            return true;
+        return false;
+      }
+    }
+
     public IEnumerable<T> GetTargets<T>()
       where T : Object
     {
