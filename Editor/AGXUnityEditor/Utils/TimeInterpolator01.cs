@@ -48,6 +48,8 @@ namespace AGXUnityEditor.Utils
 
       m_goingUp = Time > 1f || Time < 0f ? !m_goingUp : m_goingUp;
       Time      = Mathf.Clamp01( Time );
+
+      SceneView.RepaintAll();
     }
   }
 }

@@ -124,12 +124,6 @@ namespace AGXUnity.Utils
 
     public struct ShortestDistanceSegmentSegmentResult
     {
-      public ShortestDistanceSegmentSegmentResult( Vector3 pointOnSegment1, Vector3 pointOnSegment2 )
-      {
-        PointOnSegment1 = pointOnSegment1;
-        PointOnSegment2 = pointOnSegment2;
-      }
-
       public Vector3 PointOnSegment1;
       public Vector3 PointOnSegment2;
 
@@ -138,13 +132,7 @@ namespace AGXUnity.Utils
 
     public struct ClosestEdgeSegmentResult
     {
-      public ClosestEdgeSegmentResult( MeshUtils.Edge edge, float distance )
-      {
-        Edge = edge;
-        Distance = distance;
-      }
-
-      public MeshUtils.Edge Edge;
+      public Edge Edge;
       public float Distance;
     }
 
@@ -156,25 +144,28 @@ namespace AGXUnity.Utils
     /// <param name="segment2Begin">Begin point, second segment.</param>
     /// <param name="segment2End">End point, second segment.</param>
     /// <returns>Shortest distance between the two line segments.</returns>
-    public static ShortestDistanceSegmentSegmentResult ShortestDistanceSegmentSegment( Vector3 segment1Begin, Vector3 segment1End, Vector3 segment2Begin, Vector3 segment2End )
+    public static ShortestDistanceSegmentSegmentResult ShortestDistanceSegmentSegment( Vector3 segment1Begin,
+                                                                                       Vector3 segment1End,
+                                                                                       Vector3 segment2Begin,
+                                                                                       Vector3 segment2End )
     {
-      float eps       = float.Epsilon;
-      Vector3 d1      = segment1End - segment1Begin;
-      Vector3 d2      = segment2End - segment2Begin;
-      Vector3 r       = segment1Begin - segment2Begin;
+      float eps = float.Epsilon;
+      Vector3 d1 = segment1End - segment1Begin;
+      Vector3 d2 = segment2End - segment2Begin;
+      Vector3 r = segment1Begin - segment2Begin;
 
       float d1Length2 = Vector3.Dot( d1, d1 );
       float d2Length2 = Vector3.Dot( d2, d2 );
-      float d2r       = Vector3.Dot( r, d2 );
+      float d2r = Vector3.Dot( r, d2 );
 
-      float t1        = 0.0f;
-      float t2        = 0.0f;
-      float pt1       = 0.0f;
-      float pt2       = 0.0f;
+      float t1 = 0.0f;
+      float t2 = 0.0f;
+      float pt1 = 0.0f;
+      float pt2 = 0.0f;
       bool isParallel = false;
 
       if ( d1Length2 <= eps && d2Length2 <= eps )
-        return new ShortestDistanceSegmentSegmentResult( segment1Begin, segment2Begin );
+        return new ShortestDistanceSegmentSegmentResult() { PointOnSegment1 = segment1Begin, PointOnSegment2 = segment2Begin };
 
       if ( d1Length2 <= eps ) {
         t1 = 0.0f;
@@ -226,15 +217,25 @@ namespace AGXUnity.Utils
         }
       }
 
-      return new ShortestDistanceSegmentSegmentResult( segment1Begin + t1 * d1, segment2Begin + t2 * d2 );
+      return new ShortestDistanceSegmentSegmentResult()
+      {
+        PointOnSegment1 = segment1Begin + t1 * d1,
+        PointOnSegment2 = segment2Begin + t2 * d2
+      };
     }
 
-    public static ClosestEdgeSegmentResult FindClosestEdgeToSegment( Vector3 segmentStart, Vector3 segmentEnd, MeshUtils.Edge[] edges )
+    public static ClosestEdgeSegmentResult FindClosestEdgeToSegment( Vector3 segmentStart,
+                                                                     Vector3 segmentEnd,
+                                                                     Edge[] edges )
     {
-      ClosestEdgeSegmentResult result = new ClosestEdgeSegmentResult( null, float.PositiveInfinity );
+      var result = new ClosestEdgeSegmentResult()
+      {
+        Edge = new Edge(),
+        Distance = float.PositiveInfinity
+      };
       for ( int i = 0; i < edges.Length; ++i ) {
         var edge = edges[ i ];
-        if ( edge == null )
+        if ( !edge.Valid )
           continue;
 
         float distance = ShortestDistanceSegmentSegment( segmentStart, segmentEnd, edge.Start, edge.End ).Distance;
@@ -330,7 +331,7 @@ namespace AGXUnity.Utils
       return m_shape.transform.TransformDirection( GetLocalFaceDirection( direction ) );
     }
 
-    public Direction FindDirectionGivenWorldEdge( MeshUtils.Edge worldEdge )
+    public Direction FindDirectionGivenWorldEdge( Edge worldEdge )
     {
       float bestResult      = float.NegativeInfinity;
       Vector3 edgeDirection = worldEdge.Direction;
@@ -347,18 +348,39 @@ namespace AGXUnity.Utils
       return result;
     }
 
-    public MeshUtils.Edge[] GetPrincipalEdgesWorld( float principalEdgeExtension )
+    public Edge[] GetPrincipalEdgesWorld( float principalEdgeExtension )
     {
-      MeshUtils.Edge[] edges = new MeshUtils.Edge[ 3 ];
-
-      edges[ 0 ] = new MeshUtils.Edge( GetLocalFace( Direction.Negative_X ), GetLocalFace( Direction.Positive_X ), GetLocalFaceDirection( Direction.Positive_Y ), MeshUtils.Edge.EdgeType.Principal );
-      edges[ 1 ] = new MeshUtils.Edge( GetLocalFace( Direction.Negative_Y ), GetLocalFace( Direction.Positive_Y ), GetLocalFaceDirection( Direction.Positive_Z ), MeshUtils.Edge.EdgeType.Principal );
-      edges[ 2 ] = new MeshUtils.Edge( GetLocalFace( Direction.Negative_Z ), GetLocalFace( Direction.Positive_Z ), GetLocalFaceDirection( Direction.Positive_X ), MeshUtils.Edge.EdgeType.Principal );
+      var edges = new Edge[]
+      {
+        new Edge()
+        {
+          Start  = GetLocalFace( Direction.Negative_X ),
+          End    = GetLocalFace( Direction.Positive_X ),
+          Normal = GetLocalFaceDirection( Direction.Positive_Y ),
+          Type   = Edge.EdgeType.Principal
+        },
+        new Edge()
+        {
+          Start  = GetLocalFace( Direction.Negative_Y ),
+          End    = GetLocalFace( Direction.Positive_Y ),
+          Normal = GetLocalFaceDirection( Direction.Positive_Z ),
+          Type   = Edge.EdgeType.Principal
+        },
+        new Edge()
+        {
+          Start  = GetLocalFace( Direction.Negative_Z ),
+          End    = GetLocalFace( Direction.Positive_Z ),
+          Normal = GetLocalFaceDirection( Direction.Positive_X ),
+          Type   = Edge.EdgeType.Principal
+        }
+      };
 
       return ExtendAndTransformEdgesToWorld( m_shape.transform, edges, principalEdgeExtension );
     }
 
-    public static MeshUtils.Edge[] ExtendAndTransformEdgesToWorld( Transform transform, MeshUtils.Edge[] edges, float principalEdgeExtension )
+    public static Edge[] ExtendAndTransformEdgesToWorld( Transform transform,
+                                                         Edge[] edges,
+                                                         float principalEdgeExtension )
     {
       for ( int i = 0; i < edges.Length; ++i ) {
         edges[ i ].Start -= principalEdgeExtension * edges[ i ].Direction;

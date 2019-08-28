@@ -134,10 +134,12 @@ namespace AGXUnityEditor.Tools
             return;
           }
 
-          var hitResults = Raycast.TestChildren( Assembly.gameObject, HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), 500f, filter );
-          if ( hitResults.Count > 0 ) {
+          var hitResults = Utils.Raycast.IntersectChildren( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
+                                                            Assembly.gameObject,
+                                                            filter );
+          if ( hitResults.Length > 0 ) {
             // TODO: If count > 1 - the user should be able to chose which object to select.
-            GameObject selected = hitResults[ 0 ].Triangle.Target;
+            GameObject selected = hitResults[ 0 ].Target;
             if ( m_subMode == SubMode.SelectRigidBody ) {
               if ( m_rbSelection != null && m_rbSelection.RigidBody == selected.GetComponentInParent<RigidBody>() )
                 m_rbSelection = null;

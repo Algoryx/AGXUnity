@@ -94,19 +94,11 @@ namespace AGXUnityEditor.Utils
 
     public MoveToAction CurrentMoveToAction { get; set; }
 
-    public System.Action<AGXUnity.Utils.Raycast.Hit, VisualPrimitive> OnMouseClick = delegate {};
+    public System.Action<Raycast.Result, VisualPrimitive> OnMouseClick = delegate {};
 
     public void Destruct()
     {
       Manager.OnVisualPrimitiveNodeDestruct( this );
-    }
-
-    AGXUnity.Utils.Raycast.TriangleHit Raycast( Ray ray, float rayLength = 500.0f )
-    {
-      var result = AGXUnity.Utils.MeshUtils.FindClosestTriangle( Node, ray, rayLength );
-      if ( result.Valid )
-        result.Target = Node;
-      return result;
     }
 
     public virtual void OnSceneView( SceneView sceneView )

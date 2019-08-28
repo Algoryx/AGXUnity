@@ -21,18 +21,21 @@ namespace AGXUnityEditor.Tools
       /// <summary>
       /// Target game object.
       /// </summary>
-      public GameObject Target   = null;
+      public GameObject Target = null;
 
       /// <summary>
       /// Edge on the target.
       /// </summary>
-      public MeshUtils.Edge Edge = null;
+      public AGXUnity.Edge Edge = new AGXUnity.Edge();
 
       /// <summary>
       /// Position on the edge.
       /// </summary>
-      public Vector3 Position    = Vector3.zero;
+      public Vector3 Position = Vector3.zero;
 
+      /// <summary>
+      /// Rotation of the edge.
+      /// </summary>
       public Quaternion Rotation = Quaternion.identity;
     }
     
@@ -67,14 +70,14 @@ namespace AGXUnityEditor.Tools
       }
       // 2. Select edge on target game object.
       else if ( !m_collectedData.SelectedEdge.Valid ) {
-        Raycast.Hit hit = Raycast.Test( m_collectedData.Target, HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ) );
-
-        if ( hit.ClosestEdge.Valid )
-          m_collectedData.CurrentEdge = hit.ClosestEdge;
+        var ray                     = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
+        var result                  = Utils.Raycast.Intersect( ray,
+                                                               m_collectedData.Target );
+        m_collectedData.CurrentEdge = FindClosestEdgeIncludingTargetPrincipalAxes( ray, result.ClosestEdge );
       }
       // 3. Find point on edge - hold ctrl for "no-snap" mode.
       else if ( !m_collectedData.PointOnEdgeGiven ) {
-        Vector3 pointOnEdge = FindClosestPointOnEdge( m_collectedData.SelectedEdge.Edge );
+        Vector3 pointOnEdge = FindClosestPointOnEdge( m_collectedData.SelectedEdge );
 
         if ( Event.current.control )
           m_collectedData.PointOnEdge = pointOnEdge;
@@ -82,7 +85,7 @@ namespace AGXUnityEditor.Tools
           float snapValue            = 0.5f * HandleUtility.GetHandleSize( pointOnEdge );
           float closestDistance      = float.PositiveInfinity;
           Vector3 closestPoint       = pointOnEdge;
-          Vector3[] predefinedPoints = FindPredefinedEdgePoints( m_collectedData.SelectedEdge.Edge ).ToArray();
+          Vector3[] predefinedPoints = FindPredefinedEdgePoints( m_collectedData.SelectedEdge ).ToArray();
           // Given set of predefined points along the edge, finds the
           // closest to the mouse ray (i.e., the actual point on the edge).
           foreach ( var point in predefinedPoints ) {
@@ -100,8 +103,8 @@ namespace AGXUnityEditor.Tools
       else if ( !m_collectedData.DirectionGiven ) {
         if ( GetChild<DirectionTool>() == null ) {
           DirectionTool directionTool = new DirectionTool( m_collectedData.PointOnEdge,
-                                                           m_collectedData.SelectedEdge.Edge.Direction,
-                                                           m_collectedData.SelectedEdge.Edge.Normal );
+                                                           m_collectedData.SelectedEdge.Direction,
+                                                           m_collectedData.SelectedEdge.Normal );
           directionTool.OnSelect += ( position, rotation ) =>
           {
             m_collectedData.DirectionRotation = rotation;
@@ -112,13 +115,17 @@ namespace AGXUnityEditor.Tools
       }
       // 5. Done, fire callback with result and remove us.
       else {
-        MeshUtils.Edge orgEdge = m_collectedData.SelectedEdge.Edge;
-        Result resultingData = new Result()
+        var orgEdge = m_collectedData.SelectedEdge;
+        var resultingData = new Result()
         {
           Target   = m_collectedData.Target,
-          Edge     = new MeshUtils.Edge( m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.back ),
-                                         m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.forward ),
-                                         m_collectedData.DirectionRotation * Vector3.up, MeshUtils.Edge.EdgeType.Triangle ),
+          Edge     = new AGXUnity.Edge()
+          {
+            Start  = m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.back ),
+            End    = m_collectedData.PointOnEdge + 0.5f * orgEdge.Length * ( m_collectedData.DirectionRotation * Vector3.forward ),
+            Normal = m_collectedData.DirectionRotation * Vector3.up,
+            Type   = AGXUnity.Edge.EdgeType.Triangle
+          },
           Position = m_collectedData.PointOnEdge,
           Rotation = m_collectedData.DirectionRotation
         };
@@ -136,13 +143,13 @@ namespace AGXUnityEditor.Tools
         const float defaultAlpha   = 0.25f;
         const float mouseOverAlpha = 0.65f;
 
-        EdgeVisual.SetTransform( m_collectedData.CurrentEdge.Edge.Start, m_collectedData.CurrentEdge.Edge.End, edgeRadius );
+        EdgeVisual.SetTransform( m_collectedData.CurrentEdge.Start, m_collectedData.CurrentEdge.End, edgeRadius );
 
-        if ( m_collectedData.CurrentEdge.Edge.Type == MeshUtils.Edge.EdgeType.Triangle ) {
+        if ( m_collectedData.CurrentEdge.Type == AGXUnity.Edge.EdgeType.Triangle ) {
           EdgeVisual.Color = new Color( Color.yellow.r, Color.yellow.g, Color.yellow.b, defaultAlpha );
           EdgeVisual.MouseOverColor = new Color( Color.yellow.r, Color.yellow.g, Color.yellow.b, mouseOverAlpha );
         }
-        else if ( m_collectedData.CurrentEdge.Edge.Type == MeshUtils.Edge.EdgeType.Principal ) {
+        else if ( m_collectedData.CurrentEdge.Type == AGXUnity.Edge.EdgeType.Principal ) {
           EdgeVisual.Color = new Color( Color.red.r, Color.red.g, Color.red.b, defaultAlpha );
           EdgeVisual.MouseOverColor = new Color( Color.red.r, Color.red.g, Color.red.b, mouseOverAlpha );
         }
@@ -156,7 +163,7 @@ namespace AGXUnityEditor.Tools
 
         // The user doesn't have to hit the node sphere.
         if ( Manager.HijackLeftMouseClick() )
-          OnPointClick( null, NodeVisual );
+          OnPointClick( new Utils.Raycast.Result() { Hit = false }, NodeVisual );
       }
     }
 
@@ -166,12 +173,12 @@ namespace AGXUnityEditor.Tools
     private class CollectedData
     {
       public GameObject Target                   = null;
-      public Raycast.ClosestEdgeHit SelectedEdge = Raycast.ClosestEdgeHit.Invalid;
+      public AGXUnity.Edge SelectedEdge;
 
       public Vector3 PointOnEdge                 = Vector3.zero;
       public Quaternion DirectionRotation        = Quaternion.identity;
 
-      public Raycast.ClosestEdgeHit CurrentEdge  = Raycast.ClosestEdgeHit.Invalid;
+      public AGXUnity.Edge CurrentEdge;
       public bool PointOnEdgeGiven               = false;
       public bool DirectionGiven                 = false;
     }
@@ -191,7 +198,7 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// Callback when the edge has been picked.
     /// </summary>
-    private void OnEdgeClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnEdgeClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       m_collectedData.SelectedEdge = m_collectedData.CurrentEdge;
       EdgeVisual.Pickable          = false;
@@ -201,15 +208,70 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// Callback when the node/position has been picked.
     /// </summary>
-    private void OnPointClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnPointClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       m_collectedData.PointOnEdgeGiven = true;
     }
 
     /// <summary>
+    /// Finds closest edge to ray, including principal axes of the target object.
+    /// </summary>
+    /// <param name="ray">The ray.</param>
+    /// <param name="triangleEdge">Triangle edge from raycast result.</param>
+    /// <param name="principalEdgeExtension">Extension of principal axes relative to bounding box or object faces.</param>
+    /// <returns>Edge (principal or triangle) closest to the given ray.</returns>
+    private AGXUnity.Edge FindClosestEdgeIncludingTargetPrincipalAxes( Ray ray, AGXUnity.Edge triangleEdge, float principalEdgeExtension = 10.0f )
+    {
+      var edges      = new AGXUnity.Edge[ 4 ];
+      var shape      = m_collectedData.Target.GetComponent<Shape>();
+      var shapeUtils = shape?.GetUtils();
+      if ( shapeUtils != null )
+        Array.Copy( shapeUtils.GetPrincipalEdgesWorld( principalEdgeExtension ), edges, 3 );
+      else {
+        var mesh = shape is AGXUnity.Collide.Mesh ?
+                     ( shape as AGXUnity.Collide.Mesh ).SourceObjects.FirstOrDefault() :
+                     m_collectedData.Target.GetComponent<MeshFilter>()?.sharedMesh;
+        var halfExtents = 0.5f * Vector3.zero;
+        if ( mesh != null )
+          halfExtents = mesh.bounds.extents;
+
+        Array.Copy( ShapeUtils.ExtendAndTransformEdgesToWorld( m_collectedData.Target.transform,
+                                                               new AGXUnity.Edge[]
+                                                               {
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_X ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_X ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Y ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 },
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Y ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Y ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_Z ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 },
+                                                                 new AGXUnity.Edge()
+                                                                 {
+                                                                   Start  = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Negative_Z ),
+                                                                   End    = BoxShapeUtils.GetLocalFace( halfExtents, ShapeUtils.Direction.Positive_Z ),
+                                                                   Normal = ShapeUtils.GetLocalFaceDirection( ShapeUtils.Direction.Positive_X ),
+                                                                   Type   = AGXUnity.Edge.EdgeType.Principal
+                                                                 }
+                                                               },
+                                                               principalEdgeExtension ), edges, 3 );
+      }
+
+      edges[ 3 ] = triangleEdge;
+
+      return ShapeUtils.FindClosestEdgeToSegment( ray.origin, ray.GetPoint( 5000.0f ), edges ).Edge;
+    }
+
+    /// <summary>
     /// Finds point on edge given mouse ray.
     /// </summary>
-    private Vector3 FindClosestPointOnEdge( MeshUtils.Edge edge )
+    private Vector3 FindClosestPointOnEdge( AGXUnity.Edge edge )
     {
       var ray = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
       return ShapeUtils.ShortestDistanceSegmentSegment( ray.origin,
@@ -226,20 +288,20 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     /// <param name="edge">Edge to find predefined points on.</param>
     /// <returns>Iterator to point on the edge.</returns>
-    private IEnumerable<Vector3> FindPredefinedEdgePoints( MeshUtils.Edge edge )
+    private IEnumerable<Vector3> FindPredefinedEdgePoints( AGXUnity.Edge edge )
     {
       yield return edge.Start;
       yield return edge.Center;
       yield return edge.End;
 
-      if ( edge.Type == MeshUtils.Edge.EdgeType.Triangle || m_collectedData == null || m_collectedData.Target == null || m_collectedData.Target.GetComponent<Shape>() == null )
+      if ( edge.Type == AGXUnity.Edge.EdgeType.Triangle || m_collectedData == null || m_collectedData.Target == null || m_collectedData.Target.GetComponent<Shape>() == null )
         yield break;
 
-      ShapeUtils utils = m_collectedData.Target.GetComponent<Shape>().GetUtils();
+      var utils = m_collectedData.Target.GetComponent<Shape>().GetUtils();
       if ( utils == null )
         yield break;
 
-      ShapeUtils.Direction[] edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
+      var edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
       yield return utils.GetWorldFace( edgeDirections[ 0 ] );
       yield return utils.GetWorldFace( edgeDirections[ 1 ] );
     }

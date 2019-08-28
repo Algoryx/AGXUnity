@@ -101,13 +101,14 @@ namespace AGXUnityEditor.Tools
       if ( !Manager.HijackLeftMouseClick() )
         return;
 
-      var hitResults = Raycast.TestChildren( Parent, HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ) );
+      var hitResults = Utils.Raycast.IntersectChildren( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
+                                                        Parent );
 
       // Find target. Ignoring shapes.
       GameObject selected = null;
-      for ( int i = 0; selected == null && i < hitResults.Count; ++i ) {
-        if ( hitResults[ i ].Triangle.Target.GetComponent<Shape>() == null )
-          selected = hitResults[ i ].Triangle.Target;
+      for ( int i = 0; selected == null && i < hitResults.Length; ++i ) {
+        if ( hitResults[ i ].Target.GetComponent<Shape>() == null )
+          selected = hitResults[ i ].Target;
       }
 
       // Single selection mode.

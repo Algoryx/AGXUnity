@@ -73,7 +73,7 @@ namespace AGXUnityEditor.Tools
       Visual.SetTransform( Node.Position, Node.Rotation, radius, true, 1.2f * m_radius(), Mathf.Max( 1.5f * m_radius(), 0.25f ) );
     }
 
-    private void OnClick( AGXUnity.Utils.Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       Selected = true;
     }

@@ -34,7 +34,7 @@ namespace AGXUnityEditor.Tools
           {
             Undo.RecordObject( RigidBody.transform, "Rigid body transform" );
 
-            RigidBody.transform.position = data.Triangle.Point;
+            RigidBody.transform.position = data.RaycastResult.Point;
             RigidBody.transform.rotation = data.Rotation;
 
             EditorUtility.SetDirty( RigidBody );

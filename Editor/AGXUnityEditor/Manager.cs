@@ -348,12 +348,12 @@ namespace AGXUnityEditor
       // Update mouse over before we reveal the VisualPrimitives.
       // NOTE: We're putting our "visual primitives" in the ignore list.
       if ( current.isMouse || forced ) {
-        List<GameObject> ignoreList = new List<GameObject>();
+        var ignoreList = new List<GameObject>();
         foreach ( var primitive in m_visualPrimitives ) {
           if ( !primitive.Visible )
             continue;
 
-          MeshFilter[] primitiveFilters = primitive.Node.GetComponentsInChildren<MeshFilter>();
+          var primitiveFilters = primitive.Node.GetComponentsInChildren<MeshFilter>();
           ignoreList.AddRange( primitiveFilters.Select( pf => { return pf.gameObject; } ) );
         }
 
@@ -370,19 +370,19 @@ namespace AGXUnityEditor
       if ( m_visualPrimitives.Count == 0 )
         return;
 
-      var primitiveHitList = new[] { new { Primitive = (Utils.VisualPrimitive)null, RaycastResult = Raycast.Hit.Invalid } }.ToList();
+      var primitiveHitList = new[] { new { Primitive = (Utils.VisualPrimitive)null, RaycastResult = Utils.Raycast.Result.Invalid } }.ToList();
       primitiveHitList.Clear();
 
-      Ray mouseRay = HandleUtility.GUIPointToWorldRay( current.mousePosition );
+      var mouseRay = HandleUtility.GUIPointToWorldRay( current.mousePosition );
       foreach ( var primitive in m_visualPrimitives ) {
         primitive.MouseOver = false;
 
         if ( !primitive.Pickable )
           continue;
 
-        Raycast.Hit hit = Raycast.Test( primitive.Node, mouseRay, 500f, true );
-        if ( hit.Triangle.Valid )
-          primitiveHitList.Add( new { Primitive = primitive, RaycastResult = hit } );
+        var result = Utils.Raycast.Intersect( mouseRay, primitive.Node, true );
+        if ( result )
+          primitiveHitList.Add( new { Primitive = primitive, RaycastResult = result } );
       }
 
       if ( primitiveHitList.Count == 0 )
@@ -390,7 +390,7 @@ namespace AGXUnityEditor
 
       var bestResult = primitiveHitList[ 0 ];
       for ( int i = 1; i < primitiveHitList.Count; ++i )
-        if ( primitiveHitList[ i ].RaycastResult.Triangle.Distance < bestResult.RaycastResult.Triangle.Distance )
+        if ( primitiveHitList[ i ].RaycastResult.Distance < bestResult.RaycastResult.Distance )
           bestResult = primitiveHitList[ i ];
 
       bestResult.Primitive.MouseOver = true;

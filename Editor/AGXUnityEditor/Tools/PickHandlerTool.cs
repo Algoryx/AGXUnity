@@ -63,10 +63,10 @@ namespace AGXUnityEditor.Tools
       if ( Manager.MouseOverObject == null )
         return;
 
-      ConstraintGameObject = PickHandler.TryCreateConstraint( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
-                                                              Manager.MouseOverObject,
-                                                              ConstrainedDofTypes,
-                                                              "PickHandlerToolConstraint" );
+      ConstraintGameObject = TryCreateConstraint( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
+                                                  Manager.MouseOverObject,
+                                                  ConstrainedDofTypes,
+                                                  "PickHandlerToolConstraint" );
       if ( ConstraintGameObject == null )
         return;
 
@@ -101,5 +101,39 @@ namespace AGXUnityEditor.Tools
       VisualSphereConnected.SetTransform( constraint.AttachmentPair.ConnectedFrame.Position, Quaternion.identity, sphereRadius );
       VisualCylinder.SetTransform( constraint.AttachmentPair.ReferenceFrame.Position, constraint.AttachmentPair.ConnectedFrame.Position, cylinderRadius );
     }
+
+    private GameObject TryCreateConstraint( Ray ray, GameObject gameObject, PickHandler.DofTypes constrainedDofs, string gameObjectName )
+    {
+      if ( gameObject == null || gameObject.GetComponentInParent<RigidBody>() == null )
+        return null;
+
+      var result = Utils.Raycast.Intersect( ray, gameObject );
+      if ( !result )
+        return null;
+
+      ConstraintType constraintType = constrainedDofs == PickHandler.DofTypes.Translation ?
+                                        ConstraintType.BallJoint :
+                                      constrainedDofs == PickHandler.DofTypes.Rotation ?
+                                        ConstraintType.AngularLockJoint :
+                                      ( constrainedDofs & PickHandler.DofTypes.Translation ) != 0 && ( constrainedDofs & PickHandler.DofTypes.Rotation ) != 0 ?
+                                        ConstraintType.LockJoint :
+                                        ConstraintType.BallJoint;
+
+      GameObject constraintGameObject = Factory.Create( constraintType );
+      constraintGameObject.name       = gameObjectName;
+
+      Constraint constraint                             = constraintGameObject.GetComponent<Constraint>();
+      constraint.ConnectedFrameNativeSyncEnabled        = true;
+      constraint.AttachmentPair.ReferenceObject         = result.Target;
+      constraint.AttachmentPair.ReferenceFrame.Position = result.Point;
+
+      constraint.AttachmentPair.ConnectedObject         = null;
+      constraint.AttachmentPair.ConnectedFrame.Position = result.Point;
+
+      constraint.AttachmentPair.Synchronized            = false;
+
+      return constraintGameObject;
+    }
+
   }
 }

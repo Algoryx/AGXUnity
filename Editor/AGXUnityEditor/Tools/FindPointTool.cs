@@ -9,9 +9,9 @@ namespace AGXUnityEditor.Tools
   {
     public class Result
     {
-      public GameObject Target            = null;
-      public Raycast.TriangleHit Triangle = Raycast.TriangleHit.Invalid;
-      public Quaternion Rotation          = Quaternion.identity;
+      public GameObject Target   = null;
+      public Utils.Raycast.Result RaycastResult;
+      public Quaternion Rotation = Quaternion.identity;
     }
 
     public Action<Result> OnPointFound = delegate { };
@@ -43,16 +43,16 @@ namespace AGXUnityEditor.Tools
           return;
         }
 
-        m_collectedData.Triangle = Raycast.Test( m_collectedData.Target, HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ) ).Triangle;
+        m_collectedData.RaycastResult = Utils.Raycast.Intersect( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), m_collectedData.Target );
 
         // Done (next state) when the user left click and we've a valid triangle.
-        m_collectedData.TriangleGiven = m_collectedData.Triangle.Valid && Manager.HijackLeftMouseClick();
+        m_collectedData.TriangleGiven = m_collectedData.RaycastResult && Manager.HijackLeftMouseClick();
       }
       else if ( !m_collectedData.RotationGiven ) {
         if ( GetChild<DirectionTool>() == null ) {
-          DirectionTool directionTool = new DirectionTool( m_collectedData.Triangle.Point,
-                                                           m_collectedData.Triangle.Normal,
-                                                           m_collectedData.Triangle.ClosestEdge.Direction );
+          DirectionTool directionTool = new DirectionTool( m_collectedData.RaycastResult.Point,
+                                                           m_collectedData.RaycastResult.Triangle.Normal,
+                                                           m_collectedData.RaycastResult.ClosestEdge.Direction );
 
           directionTool.OnSelect += ( position, rotation ) =>
           {
@@ -66,25 +66,25 @@ namespace AGXUnityEditor.Tools
       else {
         Result resultingData = new Result()
         {
-          Target   = m_collectedData.Target,
-          Triangle = m_collectedData.Triangle,
-          Rotation = m_collectedData.Rotation
+          Target        = m_collectedData.Target,
+          RaycastResult = m_collectedData.RaycastResult,
+          Rotation      = m_collectedData.Rotation
         };
 
         OnPointFound( resultingData );
         PerformRemoveFromParent();
       }
 
-      PointVisual.Visible = m_collectedData != null && m_collectedData.Triangle.Valid && !m_collectedData.TriangleGiven;
+      PointVisual.Visible = m_collectedData != null && m_collectedData.RaycastResult && !m_collectedData.TriangleGiven;
       if ( PointVisual.Visible )
-        PointVisual.SetTransform( m_collectedData.Triangle.Point, Quaternion.identity, 0.05f );
+        PointVisual.SetTransform( m_collectedData.RaycastResult.Point, Quaternion.identity, 0.05f );
     }
 
     private class CollectedData
     {
-      public GameObject Target            = null;
-      public Raycast.TriangleHit Triangle = Raycast.TriangleHit.Invalid;
-      public Quaternion Rotation          = Quaternion.identity;
+      public GameObject Target   = null;
+      public Utils.Raycast.Result RaycastResult;
+      public Quaternion Rotation = Quaternion.identity;
 
       public bool TriangleGiven = false;
       public bool RotationGiven = false;

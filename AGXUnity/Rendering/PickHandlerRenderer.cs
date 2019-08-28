@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity.Rendering
 {
@@ -9,7 +8,7 @@ namespace AGXUnity.Rendering
     public GameObject ConnectedSphere { get; private set; }
     public GameObject ConnectingCylinder { get; private set; }
 
-    public void ThisMethodIsntAllowedToBeNamedUpdateByUnity( Constraint constraint )
+    public void ThisMethodIsntAllowedToBeNamedUpdateByUnity( Constraint constraint, Camera camera )
     {
       if ( constraint == null || State != States.INITIALIZED )
         return;
@@ -17,31 +16,30 @@ namespace AGXUnity.Rendering
       if ( constraint.Type == ConstraintType.AngularLockJoint )
         return;
 
-      const float sphereRadius     = 0.05f;
-      const float cylinderRadius   = 0.5f * sphereRadius;
-      float distReferenceConnected = Vector3.Distance( constraint.AttachmentPair.ReferenceFrame.Position, constraint.AttachmentPair.ConnectedFrame.Position );
-
+      var sphereRadius           = 0.05f;
+      var cylinderRadius         = 0.5f * sphereRadius;
+      var distReferenceConnected = Vector3.Distance( constraint.AttachmentPair.ReferenceFrame.Position,
+                                                     constraint.AttachmentPair.ConnectedFrame.Position );
+      var cameraScale            = Spawner.Utils.FindConstantScreenSizeScale( constraint.AttachmentPair.ReferenceFrame.Position,
+                                                                              camera );
       ReferenceSphere.SetActive( true );
       ConnectedSphere.SetActive( true );
       ConnectingCylinder.SetActive( distReferenceConnected > 1.0E-4f );
 
-      Rendering.Spawner.Utils.SetSphereTransform( ReferenceSphere,
-                                                  constraint.AttachmentPair.ReferenceFrame.Position,
-                                                  Quaternion.identity,
-                                                  sphereRadius,
-                                                  true );
+      Spawner.Utils.SetSphereTransform( ReferenceSphere,
+                                        constraint.AttachmentPair.ReferenceFrame.Position,
+                                        Quaternion.identity,
+                                        cameraScale * sphereRadius );
 
-      Rendering.Spawner.Utils.SetSphereTransform( ConnectedSphere,
-                                                  constraint.AttachmentPair.ConnectedFrame.Position,
-                                                  Quaternion.identity,
-                                                  sphereRadius,
-                                                  true );
+      Spawner.Utils.SetSphereTransform( ConnectedSphere,
+                                        constraint.AttachmentPair.ConnectedFrame.Position,
+                                        Quaternion.identity,
+                                        cameraScale * sphereRadius );
 
-      Rendering.Spawner.Utils.SetCylinderTransform( ConnectingCylinder,
-                                                    constraint.AttachmentPair.ReferenceFrame.Position,
-                                                    constraint.AttachmentPair.ConnectedFrame.Position,
-                                                    cylinderRadius,
-                                                    true );
+      Spawner.Utils.SetCylinderTransform( ConnectingCylinder,
+                                          constraint.AttachmentPair.ReferenceFrame.Position,
+                                          constraint.AttachmentPair.ConnectedFrame.Position,
+                                          cameraScale * cylinderRadius );
     }
 
     protected override bool Initialize()
@@ -51,17 +49,17 @@ namespace AGXUnity.Rendering
       if ( GetComponent<Constraint>().Type == ConstraintType.AngularLockJoint )
         return true;
 
-      ReferenceSphere = Rendering.Spawner.Create( Rendering.Spawner.Primitive.Sphere, "PHR_ReferenceSphere", HideFlags.HideAndDontSave, shader );
-      ConnectedSphere = Rendering.Spawner.Create( Rendering.Spawner.Primitive.Sphere, "PHR_ConnectedSphere", HideFlags.HideAndDontSave, shader );
-      ConnectingCylinder = Rendering.Spawner.Create( Rendering.Spawner.Primitive.Cylinder, "PHR_ConnectingCylinder", HideFlags.HideAndDontSave, shader );
+      ReferenceSphere    = Spawner.Create( Spawner.Primitive.Sphere, "PHR_ReferenceSphere", HideFlags.HideAndDontSave, shader );
+      ConnectedSphere    = Spawner.Create( Spawner.Primitive.Sphere, "PHR_ConnectedSphere", HideFlags.HideAndDontSave, shader );
+      ConnectingCylinder = Spawner.Create( Spawner.Primitive.Cylinder, "PHR_ConnectingCylinder", HideFlags.HideAndDontSave, shader );
 
       ReferenceSphere.transform.SetParent( gameObject.transform );
       ConnectedSphere.transform.SetParent( gameObject.transform );
       ConnectingCylinder.transform.SetParent( gameObject.transform );
 
-      Rendering.Spawner.Utils.SetColor( ReferenceSphere, PickHandler.ReferenceSphereColor );
-      Rendering.Spawner.Utils.SetColor( ConnectedSphere, PickHandler.ConnectedSphereColor );
-      Rendering.Spawner.Utils.SetColor( ConnectingCylinder, PickHandler.ConnectingCylinderColor );
+      Spawner.Utils.SetColor( ReferenceSphere, PickHandler.ReferenceSphereColor );
+      Spawner.Utils.SetColor( ConnectedSphere, PickHandler.ConnectedSphereColor );
+      Spawner.Utils.SetColor( ConnectingCylinder, PickHandler.ConnectingCylinderColor );
 
       // We'll update this active state in the Update method.
       ReferenceSphere.SetActive( false );
@@ -73,9 +71,9 @@ namespace AGXUnity.Rendering
 
     protected override void OnDestroy()
     {
-      Rendering.Spawner.Destroy( ReferenceSphere );
-      Rendering.Spawner.Destroy( ConnectedSphere );
-      Rendering.Spawner.Destroy( ConnectingCylinder );
+      Spawner.Destroy( ReferenceSphere );
+      Spawner.Destroy( ConnectedSphere );
+      Spawner.Destroy( ConnectingCylinder );
 
       base.OnDestroy();
     }

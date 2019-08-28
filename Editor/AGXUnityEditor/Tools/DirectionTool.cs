@@ -61,7 +61,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    private void OnPrimitiveClick( Raycast.Hit hit, Utils.VisualPrimitive primitive )
+    private void OnPrimitiveClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       OnSelect( Position, GetRotation( Vector3.forward, GetDirection( primitive ) ) );
 
