@@ -127,13 +127,13 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Shape material of this wire. Default null.
+    /// Shape material of this cable. Default null.
     /// </summary>
     [SerializeField]
     private ShapeMaterial m_material = null;
 
     /// <summary>
-    /// Get or set shape material of this wire. Default null.
+    /// Get or set shape material of this cable. Default null.
     /// </summary>
     [AllowRecursiveEditing]
     public ShapeMaterial Material

@@ -10,6 +10,18 @@ namespace AGXUnityEditor.Tools
   {
     public Line Line { get; private set; }
 
+    public Color Color
+    {
+      get { return m_color; }
+      set
+      {
+        m_color = value;
+        LineVisual.Color = m_color;
+        StartVisual.Color = m_color;
+        EndVisual.Color = m_color;
+      }
+    }
+
     public LineTool( Line line )
     {
       Line = line;
@@ -17,10 +29,15 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
-      LineVisual.Visible = StartVisual.Visible = EndVisual.Visible = false;
+      LineVisual.Visible   =
+      StartVisual.Visible  =
+      EndVisual.Visible    = false;
       LineVisual.Pickable  = false;
       StartVisual.Pickable = true;
       EndVisual.Pickable   = true;
+
+      StartFrameToolEnable = true;
+      EndFrameToolEnable   = true;
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
@@ -45,6 +62,48 @@ namespace AGXUnityEditor.Tools
                               false );
     }
 
+    public void OnInspectorGUI()
+    {
+      if ( StartFrameToolEnable )
+        StartFrameTool.OnPreTargetMembersGUI();
+      if ( EndFrameToolEnable )
+        EndFrameTool.OnPreTargetMembersGUI();
+    }
+
+    private FrameTool StartFrameTool
+    {
+      get { return FindActive<FrameTool>( tool => tool.Frame == Line.Start ); }
+    }
+
+    private bool StartFrameToolEnable
+    {
+      get { return StartFrameTool != null; }
+      set
+      {
+        if ( value && !StartFrameToolEnable )
+          AddChild( new FrameTool( Line.Start ) );
+        else if ( !value )
+          RemoveChild( StartFrameTool );
+      }
+    }
+
+    private FrameTool EndFrameTool
+    {
+      get { return FindActive<FrameTool>( tool => tool.Frame == Line.End ); }
+    }
+
+    private bool EndFrameToolEnable
+    {
+      get { return EndFrameTool != null; }
+      set
+      {
+        if ( value && !EndFrameToolEnable )
+          AddChild( new FrameTool( Line.End ) );
+        else if ( !value )
+          RemoveChild( EndFrameTool );
+      }
+    }
+
     private Utils.VisualPrimitiveCylinder LineVisual
     {
       get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( "Line", "GUI/Text Shader" ); }
@@ -60,6 +119,6 @@ namespace AGXUnityEditor.Tools
       get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( "End", "GUI/Text Shader" ); }
     }
 
-    private Color m_color;
+    private Color m_color = Color.yellow;
   }
 }
