@@ -26,17 +26,27 @@ namespace AGXUnityEditor.Tools
                                            GUI.MakeLabel( "Shovels" ),
                                            InspectorEditor.Skin );
       if ( displayShovelList ) {
+        DeformableTerrainShovel shovelToRemove = null;
         using ( new GUI.Indent( 12 ) ) {
           foreach ( var shovel in DeformableTerrain.Shovels ) {
             GUI.Separator();
 
-            var displayShovel = GUI.Foldout( EditorData.Instance.GetData( DeformableTerrain,
-                                                                          shovel.GetInstanceID().ToString() ),
-                                             GUI.MakeLabel( "[" + GUI.AddColorTag( "Shovel", Color.Lerp( Color.red, Color.black, 0.25f ) ) + "] " + shovel.name ),
-                                             InspectorEditor.Skin );
+            var displayShovel = false;
+            using ( new GUILayout.HorizontalScope() ) {
+              displayShovel = GUI.Foldout( EditorData.Instance.GetData( DeformableTerrain,
+                                                                        shovel.GetInstanceID().ToString() ),
+                                           GUI.MakeLabel( "[" + GUI.AddColorTag( "Shovel", Color.Lerp( Color.red, Color.black, 0.25f ) ) + "] " + shovel.name ),
+                                           InspectorEditor.Skin );
+
+              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
+                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(), false, "Remove shovel from terrain." ),
+                     InspectorEditor.Skin.button,
+                     GUILayout.Width( 18 ),
+                     GUILayout.Height( 14 ) ) )
+                  shovelToRemove = shovel;
+            }
             if ( !displayShovel ) {
-              RemoveEditor( shovel );
-              EditorUtility.SetDirty( shovel );
+              HandleShovelEditorDisable( shovel );
               continue;
             }
             using ( new GUI.Indent( 12 ) ) {
@@ -81,12 +91,24 @@ namespace AGXUnityEditor.Tools
 
           GUI.Separator( 3 );
         }
+
+        if ( shovelToRemove != null ) {
+          DeformableTerrain.Remove( shovelToRemove );
+          HandleShovelEditorDisable( shovelToRemove );
+          shovelToRemove = null;
+        }
       }
       else {
-        foreach ( var shovel in DeformableTerrain.Shovels ) {
-          RemoveEditor( shovel );
-          EditorUtility.SetDirty( shovel );
-        }
+        foreach ( var shovel in DeformableTerrain.Shovels )
+          HandleShovelEditorDisable( shovel );
+      }
+    }
+
+    private void HandleShovelEditorDisable( DeformableTerrainShovel shovel )
+    {
+      if ( HasEditor( shovel ) ) {
+        RemoveEditor( shovel );
+        SceneView.RepaintAll();
       }
     }
   }

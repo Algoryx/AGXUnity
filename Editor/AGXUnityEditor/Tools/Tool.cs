@@ -255,6 +255,11 @@ namespace AGXUnityEditor.Tools
       return editor;
     }
 
+    public bool HasEditor( Object target )
+    {
+      return m_editors.ContainsKey( target );
+    }
+
     public void RemoveEditor( Object target )
     {
       Editor editor = null;

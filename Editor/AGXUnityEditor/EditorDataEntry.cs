@@ -143,7 +143,7 @@ namespace AGXUnityEditor
       // E.g., clicking expand/collapse on a foldout we'd like the GUI to instantly respond.
       UnityEngine.Object obj = EditorUtility.InstanceIDToObject( InstanceId );
       if ( obj != null )
-        EditorUtility.SetDirty( obj );
+        SceneView.RepaintAll();
     }
   }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity
@@ -104,14 +105,96 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      var maxDepth = 20.0f;
+
+      m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
+
+      var nativeHeightData = Utils.TerrainUtils.FindHeights( TerrainData );
+      var elementSize = TerrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
+
+      var tmp = new float[,] { { 0.0f } };
+      for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
+        var newHeight = nativeHeightData.Heights[ i ] += maxDepth;
+
+        var vertexX = i % nativeHeightData.ResolutionX;
+        var vertexY = i / nativeHeightData.ResolutionY;
+
+        tmp[ 0, 0 ] = (float)newHeight / TerrainData.heightmapScale.y;
+        TerrainData.SetHeightsDelayLOD( TerrainData.heightmapWidth - vertexX - 1,
+                                        TerrainData.heightmapHeight - vertexY - 1,
+                                        tmp );
+      }
+      TerrainData.SyncHeightmap();
+
+      transform.position = transform.position + maxDepth * Vector3.down;
+
+      Native = new agxTerrain.Terrain( (uint)nativeHeightData.ResolutionX,
+                                       (uint)nativeHeightData.ResolutionY,
+                                       elementSize,
+                                       nativeHeightData.Heights,
+                                       false,
+                                       0.0f );
+
+      Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
+      Native.loadLibraryMaterial( agxTerrain.Terrain.MaterialLibrary.GRAVEL_1 );
+
+      foreach ( var shovel in Shovels )
+        Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
+
+      GetSimulation().add( Native );
+
+      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+
       return true;
     }
 
     protected override void OnDestroy()
     {
+      var maxDepth = 20.0f;
+
+      TerrainData.SetHeights( 0, 0, m_initialHeights );
+      transform.position = transform.position + maxDepth * Vector3.up;
+
+      if ( GetSimulation() != null ) {
+        GetSimulation().remove( Native );
+        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+      }
+      Native = null;
+
       base.OnDestroy();
     }
 
+    private void OnPostStepForward()
+    {
+      if ( Native == null )
+        return;
+
+      UpdateHeights( Native.getModifiedVertices() );
+    }
+
+    private void UpdateHeights( agxTerrain.ModifiedVerticesVector modifiedVertices )
+    {
+      if ( modifiedVertices.Count == 0 )
+        return;
+
+      var scale  = TerrainData.heightmapScale.y;
+      var resX   = TerrainData.heightmapWidth;
+      var resY   = TerrainData.heightmapHeight;
+      var result = new float[,] { { 0.0f } };
+      foreach ( var index in modifiedVertices ) {
+        var i = (int)index.x;
+        var j = (int)index.y;
+        var h = (float)Native.getHeight( index );
+
+        result[ 0, 0 ] = h / scale;
+
+        TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
+      }
+
+      TerrainData.SyncHeightmap();
+    }
+
     private Terrain m_terrain = null;
+    private float[,] m_initialHeights = null;
   }
 }

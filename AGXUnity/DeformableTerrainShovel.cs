@@ -84,17 +84,28 @@ namespace AGXUnity
                                                    Vector3.down,
                                                    Vector3.down + Vector3.forward );
         if ( Native != null )
-          Native.setForwardVector( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3() );
+          Native.setCuttingDirection( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3() );
       }
     }
 
     protected override bool Initialize()
     {
+      var rb = RigidBody?.GetInitialized<RigidBody>()?.Native;
+      if ( rb == null )
+        return false;
+
+      Native = new agxTerrain.Shovel( rb,
+                                      TopEdge.ToNativeEdge( gameObject ),
+                                      CuttingEdge.ToNativeEdge( gameObject ),
+                                      CuttingDirection.CalculateLocalDirection( gameObject ).ToHandedVec3() );
+
       return true;
     }
 
     protected override void OnDestroy()
     {
+      Native = null;
+
       base.OnDestroy();
     }
 
