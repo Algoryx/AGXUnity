@@ -124,7 +124,11 @@ namespace AGXUnity
                                         TerrainData.heightmapHeight - vertexY - 1,
                                         tmp );
       }
+#if UNITY_2019_1_OR_NEWER
       TerrainData.SyncHeightmap();
+#else
+      Terrain.ApplyDelayedHeightmapModification();
+#endif
 
       transform.position = transform.position + maxDepth * Vector3.down;
 
@@ -191,7 +195,11 @@ namespace AGXUnity
         TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
       }
 
+#if UNITY_2019_1_OR_NEWER
       TerrainData.SyncHeightmap();
+#else
+      Terrain.ApplyDelayedHeightmapModification();
+#endif
     }
 
     private Terrain m_terrain = null;

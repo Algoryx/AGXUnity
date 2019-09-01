@@ -26,7 +26,7 @@ namespace AGXUnity
     {
       get
       {
-        if ( !m_topEdge.Valid )
+        if ( m_topEdge == null || !m_topEdge.Valid )
           m_topEdge = Line.Create( RigidBody.gameObject,
                                    Vector3.left + Vector3.up,
                                    Vector3.right + Vector3.up );
@@ -49,7 +49,7 @@ namespace AGXUnity
     {
       get
       {
-        if ( !m_cuttingEdge.Valid )
+        if ( m_cuttingEdge == null || !m_cuttingEdge.Valid )
           m_cuttingEdge = Line.Create( RigidBody.gameObject,
                                        Vector3.left + Vector3.down,
                                        Vector3.right + Vector3.down );
@@ -72,7 +72,7 @@ namespace AGXUnity
     {
       get
       {
-        if ( !m_cuttingDirection.Valid )
+        if ( m_cuttingDirection == null || !m_cuttingDirection.Valid )
           m_cuttingDirection = Line.Create( RigidBody.gameObject,
                                             Vector3.down,
                                             Vector3.down + Vector3.forward );
