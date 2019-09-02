@@ -68,6 +68,11 @@ namespace AGXUnity
     public bool OnlyInStatePlay = false;
   }
 
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorSeparatorAttribute : Attribute
+  {
+  }
+
   /// <summary>
   /// Attribute for public fields or properties to not receive values
   /// less than (or equal to) zero. It's possible to receive exact

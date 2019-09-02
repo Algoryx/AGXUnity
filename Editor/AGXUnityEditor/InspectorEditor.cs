@@ -134,6 +134,9 @@ namespace AGXUnityEditor
       if ( !drawerInfo.IsValid )
         return false;
 
+      if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
+        Utils.GUI.Separator();
+
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 
       var value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper, Skin } );
