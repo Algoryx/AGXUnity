@@ -18,6 +18,7 @@ namespace AGXUnityEditor
     private static BuiltInToolsTool m_builtInTools = new BuiltInToolsTool();
     private static Dictionary<Type, Type> m_cachedCustomToolTypeMap = new Dictionary<Type, Type>();
     private static HashSet<Type> m_cachedIgnoredTypes = new HashSet<Type>();
+    private static Dictionary<Object, Editor> m_recursiveEditors = new Dictionary<Object, Editor>();
 
     /// <summary>
     /// All current, active tools (parents).
@@ -201,6 +202,59 @@ namespace AGXUnityEditor
       tool.Remove();
 
       m_activeTools.Remove( tool );
+    }
+
+    /// <summary>
+    /// Handle caching of recursive editors and returns a previously
+    /// created editor of given target if it exists. This prevents
+    /// escalating creations of CustomTargetTool instances (and more).
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <returns>Cached editor or newly created one if it exists. Otherwise null.</returns>
+    public static Editor TryGetOrCreateRecursiveEditor( Object target )
+    {
+      if ( target == null )
+        return null;
+
+      Editor editor = null;
+      if ( m_recursiveEditors.TryGetValue( target, out editor ) ) {
+        // Old editor with destroyed target, e.g., when entering
+        // edit coming from play mode.
+        if ( editor.target == null ) {
+          ReleaseRecursiveEditor( target );
+          editor = null;
+        }
+        else
+          return editor;
+      }
+      editor = Editor.CreateEditor( target );
+      if ( editor != null )
+        m_recursiveEditors.Add( target, editor );
+      return editor;
+    }
+
+    /// <summary>
+    /// Removes created recursive editor if it exists for the given target.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    public static void ReleaseRecursiveEditor( Object target )
+    {
+      Editor editor = null;
+      if ( target != null && m_recursiveEditors.TryGetValue( target, out editor ) ) {
+        m_recursiveEditors.Remove( target );
+        Object.DestroyImmediate( editor );
+      }
+    }
+
+    /// <summary>
+    /// Releases all recursive editors created, e.g., when Selected.objects
+    /// is empty.
+    /// </summary>
+    public static void ReleaseAllRecursiveEditors()
+    {
+      foreach ( var editor in m_recursiveEditors.Values )
+        Object.DestroyImmediate( editor );
+      m_recursiveEditors.Clear();
     }
 
     /// <summary>

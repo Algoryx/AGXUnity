@@ -81,6 +81,7 @@ namespace AGXUnityEditor
 #else
       EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
 #endif
+
       Selection.selectionChanged += OnSelectionChanged;
 
       while ( VisualsParent != null && VisualsParent.transform.childCount > 0 )
@@ -489,6 +490,9 @@ namespace AGXUnityEditor
       }
 
       m_previousSelection = Selection.objects;
+
+      if ( Selection.objects.Length == 0 )
+        ToolManager.ReleaseAllRecursiveEditors();
     }
 
     private static void HandleWindowsGUI( SceneView sceneView )

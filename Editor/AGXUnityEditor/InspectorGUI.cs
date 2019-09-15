@@ -360,11 +360,22 @@ namespace AGXUnityEditor
         }
         GUILayout.EndHorizontal();
 
+        // Remove editor if object field is set to null or another object.
+        if ( valInField != ( result as Object ) ) {
+          ToolManager.ReleaseRecursiveEditor( valInField );
+          foldoutData.Bool = false;
+        }
+
         if ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
              Event.current.type == EventType.MouseDown &&
              Event.current.button == 0 ) {
           Event.current.Use();
           foldoutData.Bool = !foldoutData.Bool;
+
+          // Unfolding - remove editor.
+          if ( !foldoutData.Bool )
+            ToolManager.ReleaseRecursiveEditor( result as Object );
+
           GUIUtility.ExitGUI();
         }
 
@@ -379,7 +390,7 @@ namespace AGXUnityEditor
 
             GUILayout.Space( 6 );
 
-            Editor editor = Editor.CreateEditor( result as Object );
+            Editor editor = ToolManager.TryGetOrCreateRecursiveEditor( result as Object );
             if ( editor != null )
               editor.OnInspectorGUI();
 
