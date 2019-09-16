@@ -286,18 +286,15 @@ namespace AGXUnityEditor.Utils
       }
     }
 
-    public static void Separator( float height = 1.0f, float space = 2.0f )
+    public static void Separator( float height = 1.0f, float space = 1.0f )
     {
-      Texture2D lineTexture = EditorGUIUtility.isProSkin ?
-                                Texture2D.whiteTexture :
-                                Texture2D.blackTexture;
-
-      GUILayout.BeginVertical();
-      {
-        GUILayout.Space( space );
-        EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[] { GUILayout.ExpandWidth( true ), GUILayout.Height( height ) } ), lineTexture );
-      }
-      GUILayout.EndVertical();
+      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      EditorGUI.DrawRect( rect,
+                          EditorGUIUtility.isProSkin ?
+                            Color.Lerp( Color.black, Color.white, 0.7f ) :
+                            Color.Lerp( Color.white, Color.black, 0.7f ) );
     }
 
     public static void Separator3D( float space = 2.0f )
