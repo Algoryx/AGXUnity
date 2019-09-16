@@ -48,6 +48,7 @@ namespace AGXUnityEditor.Tools
     /// Default constructor.
     /// </summary>
     public EdgeDetectionTool()
+      : base( isSingleInstanceTool: true )
     {
       EdgeVisual.OnMouseClick += OnEdgeClick;
     }
@@ -70,9 +71,16 @@ namespace AGXUnityEditor.Tools
       }
       // 2. Select edge on target game object.
       else if ( !m_collectedData.SelectedEdge.Valid ) {
-        var ray                     = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
-        var result                  = Utils.Raycast.Intersect( ray,
-                                                               m_collectedData.Target );
+        // Similar behavior as FindPointTool - remove ourself if
+        // the users choice is World.
+        if ( m_collectedData.Target == null ) {
+          PerformRemoveFromParent();
+          return;
+        }
+        var ray    = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
+        var result = Utils.Raycast.Intersect( ray,
+                                              m_collectedData.Target );
+
         m_collectedData.CurrentEdge = FindClosestEdgeIncludingTargetPrincipalAxes( ray, result.ClosestEdge );
       }
       // 3. Find point on edge - hold ctrl for "no-snap" mode.
@@ -222,6 +230,9 @@ namespace AGXUnityEditor.Tools
     /// <returns>Edge (principal or triangle) closest to the given ray.</returns>
     private AGXUnity.Edge FindClosestEdgeIncludingTargetPrincipalAxes( Ray ray, AGXUnity.Edge triangleEdge, float principalEdgeExtension = 10.0f )
     {
+      if ( m_collectedData.Target == null )
+        return new AGXUnity.Edge();
+
       var edges      = new AGXUnity.Edge[ 4 ];
       var shape      = m_collectedData.Target.GetComponent<Shape>();
       var shapeUtils = shape?.GetUtils();

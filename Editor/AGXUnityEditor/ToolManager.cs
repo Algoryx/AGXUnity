@@ -97,14 +97,13 @@ namespace AGXUnityEditor
         if ( targetTool == root )
           continue;
 
-        foreach ( var targetToolChild in targetTool.GetChildren() ) {
-          // Ignoring any route node tools for now. This should disable
-          // any FrameTool that's active under the route node tool.
-          if ( targetToolChild is RouteNodeTool )
-            continue;
-
-          targetToolChild.PerformRemoveFromParent();
-        }
+        Traverse( targetTool, tool =>
+        {
+          if ( !tool.IsSingleInstanceTool )
+            return false;
+          tool.PerformRemoveFromParent();
+          return true;
+        } );
       }
     }
 
@@ -270,6 +269,23 @@ namespace AGXUnityEditor
 
       if ( tool is T )
         visitor( tool as T );
+
+      foreach ( var child in tool.GetChildren() )
+        Traverse( child, visitor );
+    }
+
+    /// <summary>
+    /// Depth-first visit with optional break.
+    /// </summary>
+    /// <param name="tool">Tool to traverse.</param>
+    /// <param name="visitor">Visitor function - return true to break, false to continue.</param>
+    private static void Traverse( Tool tool, Func<Tool, bool> visitor )
+    {
+      if ( tool == null || visitor == null )
+        return;
+
+      if ( visitor( tool ) )
+        return;
 
       foreach ( var child in tool.GetChildren() )
         Traverse( child, visitor );

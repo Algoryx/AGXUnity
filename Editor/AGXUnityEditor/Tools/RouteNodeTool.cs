@@ -39,6 +39,7 @@ namespace AGXUnityEditor.Tools
                           Predicate<RouteNode> hasNode,
                           Func<float> radius,
                           Func<RouteNode, Color> color )
+      : base( isSingleInstanceTool: false )
     {
       Node = node;
       Parent = parent;

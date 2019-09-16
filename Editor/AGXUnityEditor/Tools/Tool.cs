@@ -181,6 +181,15 @@ namespace AGXUnityEditor.Tools
       return null;
     }
 
+    /// <summary>
+    /// True if this tool only supports living on its own, meaning
+    /// no other single instance tools can be enabled with this tool.
+    /// 
+    /// False if this tool supports having multiple instances or other
+    /// types of tools active at once, e.g., CustomTargetTool.
+    /// </summary>
+    public bool IsSingleInstanceTool { get; set; } = true;
+
     private List<Tool> m_children = new List<Tool>();
     private Tool m_parent         = null;
 
@@ -188,8 +197,20 @@ namespace AGXUnityEditor.Tools
     private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
     private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
 
-    protected Tool()
+    /// <summary>
+    /// Construct given the implemented tool supports multiple
+    /// instances of the same tool enabled at the same time. E.g.,
+    /// a tool that catches key and/or mouse events in the scene view
+    /// is single instance and tools with multiple child tools and
+    /// Inspector GUI is not single instance (CustomTargetTool etc.).
+    /// 
+    /// Tools that are single instance will be removed by the ToolManager
+    /// when another single instance tool is enabled.
+    /// </summary>
+    /// <param name="isSingleInstanceTool"></param>
+    protected Tool( bool isSingleInstanceTool )
     {
+      IsSingleInstanceTool = isSingleInstanceTool;
     }
 
     public virtual void OnSceneViewGUI( SceneView sceneView ) { }

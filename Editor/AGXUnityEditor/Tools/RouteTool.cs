@@ -36,6 +36,7 @@ namespace AGXUnityEditor.Tools
         if ( m_selected != null ) {
           GetFoldoutData( m_selected ).Bool = false;
           SelectedTool.FrameTool.TransformHandleActive = false;
+          SelectedTool.FrameTool.InactivateTemporaryChildren();
           // Not selected anymore - enable picking (OnMouseClick callback).
           SelectedTool.Visual.Pickable = true;
         }

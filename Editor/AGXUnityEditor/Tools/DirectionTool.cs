@@ -17,6 +17,7 @@ namespace AGXUnityEditor.Tools
     public Action<Vector3, Quaternion> OnSelect = delegate { };
 
     public DirectionTool( Vector3 position, Vector3 mainDirection, Vector3 upVector )
+      : base( isSingleInstanceTool: true )
     {
       Position      = position;
       MainDirection = mainDirection;

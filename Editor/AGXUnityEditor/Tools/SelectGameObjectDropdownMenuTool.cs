@@ -55,6 +55,11 @@ namespace AGXUnityEditor.Tools
     public bool RemoveOnCameraControl = true;
     public bool RemoveOnClickMiss     = true;
 
+    public SelectGameObjectDropdownMenuTool()
+      : base( isSingleInstanceTool: true )
+    {
+    }
+
     public void SetTarget( GameObject target, Predicate<GameObject> pred = null )
     {
       m_target = target;

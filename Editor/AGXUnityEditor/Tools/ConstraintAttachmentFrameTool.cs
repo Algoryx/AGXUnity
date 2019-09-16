@@ -18,6 +18,7 @@ namespace AGXUnityEditor.Tools
 
     public ConstraintAttachmentFrameTool( AttachmentPair[] attachmentPairs,
                                           Object onChangeDirtyTarget = null )
+      : base( isSingleInstanceTool: false )
     {
       AttachmentPairs = attachmentPairs;
       OnChangeDirtyTarget = onChangeDirtyTarget;
@@ -30,13 +31,15 @@ namespace AGXUnityEditor.Tools
       ReferenceFrameTool = new FrameTool( AttachmentPairs[ 0 ].ReferenceFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
-        UndoRedoRecordObject = AttachmentPairs[ 0 ]
+        UndoRedoRecordObject = AttachmentPairs[ 0 ],
+        IsSingleInstanceTool = false
       };
       ConnectedFrameTool = new FrameTool( AttachmentPairs[ 0 ].ConnectedFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
         UndoRedoRecordObject = AttachmentPairs[ 0 ],
-        TransformHandleActive = !AttachmentPairs[ 0 ].Synchronized
+        TransformHandleActive = !AttachmentPairs[ 0 ].Synchronized,
+        IsSingleInstanceTool = false
       };
 
       AddChild( ReferenceFrameTool );
