@@ -145,12 +145,23 @@ namespace AGXUnityEditor.Tools
     /// <param name="size">Size of position/rotation handle in scene view.</param>
     /// <param name="alpha">Transparency alpha.</param>
     public FrameTool( IFrame frame, float size = 0.6f, float alpha = 1.0f )
+      : base( isSingleInstanceTool: true )
     {
       Frame = frame;
       Size  = size;
       Alpha = alpha;
       TransformHandleActive = true;
       ForceDisableTransformHandle = false;
+    }
+
+    /// <summary>
+    /// Removes any active children which has been activated
+    /// by user interaction.
+    /// </summary>
+    public void InactivateTemporaryChildren()
+    {
+      foreach ( var child in GetChildren() )
+        child.PerformRemoveFromParent();
     }
 
     public override void OnAdd()

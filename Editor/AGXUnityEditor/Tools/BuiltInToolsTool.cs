@@ -78,6 +78,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public BuiltInToolsTool()
+      : base( isSingleInstanceTool: false )
     {
       AddKeyHandler( "SelectObject", SelectGameObjectKeyHandler );
       AddKeyHandler( "SelectRigidBody", SelectRigidBodyKeyHandler );

@@ -18,6 +18,7 @@ namespace AGXUnityEditor
     private static BuiltInToolsTool m_builtInTools = new BuiltInToolsTool();
     private static Dictionary<Type, Type> m_cachedCustomToolTypeMap = new Dictionary<Type, Type>();
     private static HashSet<Type> m_cachedIgnoredTypes = new HashSet<Type>();
+    private static Dictionary<Object, Editor> m_recursiveEditors = new Dictionary<Object, Editor>();
 
     /// <summary>
     /// All current, active tools (parents).
@@ -96,14 +97,13 @@ namespace AGXUnityEditor
         if ( targetTool == root )
           continue;
 
-        foreach ( var targetToolChild in targetTool.GetChildren() ) {
-          // Ignoring any route node tools for now. This should disable
-          // any FrameTool that's active under the route node tool.
-          if ( targetToolChild is RouteNodeTool )
-            continue;
-
-          targetToolChild.PerformRemoveFromParent();
-        }
+        Traverse( targetTool, tool =>
+        {
+          if ( !tool.IsSingleInstanceTool )
+            return false;
+          tool.PerformRemoveFromParent();
+          return true;
+        } );
       }
     }
 
@@ -204,6 +204,59 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Handle caching of recursive editors and returns a previously
+    /// created editor of given target if it exists. This prevents
+    /// escalating creations of CustomTargetTool instances (and more).
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <returns>Cached editor or newly created one if it exists. Otherwise null.</returns>
+    public static Editor TryGetOrCreateRecursiveEditor( Object target )
+    {
+      if ( target == null )
+        return null;
+
+      Editor editor = null;
+      if ( m_recursiveEditors.TryGetValue( target, out editor ) ) {
+        // Old editor with destroyed target, e.g., when entering
+        // edit coming from play mode.
+        if ( editor.target == null ) {
+          ReleaseRecursiveEditor( target );
+          editor = null;
+        }
+        else
+          return editor;
+      }
+      editor = Editor.CreateEditor( target );
+      if ( editor != null )
+        m_recursiveEditors.Add( target, editor );
+      return editor;
+    }
+
+    /// <summary>
+    /// Removes created recursive editor if it exists for the given target.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    public static void ReleaseRecursiveEditor( Object target )
+    {
+      Editor editor = null;
+      if ( target != null && m_recursiveEditors.TryGetValue( target, out editor ) ) {
+        m_recursiveEditors.Remove( target );
+        Object.DestroyImmediate( editor );
+      }
+    }
+
+    /// <summary>
+    /// Releases all recursive editors created, e.g., when Selected.objects
+    /// is empty.
+    /// </summary>
+    public static void ReleaseAllRecursiveEditors()
+    {
+      foreach ( var editor in m_recursiveEditors.Values )
+        Object.DestroyImmediate( editor );
+      m_recursiveEditors.Clear();
+    }
+
+    /// <summary>
     /// Recursive depth-first visit of tool and its children.
     /// </summary>
     /// <param name="tool">Current parent tool.</param>
@@ -216,6 +269,23 @@ namespace AGXUnityEditor
 
       if ( tool is T )
         visitor( tool as T );
+
+      foreach ( var child in tool.GetChildren() )
+        Traverse( child, visitor );
+    }
+
+    /// <summary>
+    /// Depth-first visit with optional break.
+    /// </summary>
+    /// <param name="tool">Tool to traverse.</param>
+    /// <param name="visitor">Visitor function - return true to break, false to continue.</param>
+    private static void Traverse( Tool tool, Func<Tool, bool> visitor )
+    {
+      if ( tool == null || visitor == null )
+        return;
+
+      if ( visitor( tool ) )
+        return;
 
       foreach ( var child in tool.GetChildren() )
         Traverse( child, visitor );

@@ -13,6 +13,7 @@ namespace AGXUnityEditor.Tools
     public Action<GameObject> OnSelect = delegate { };
 
     public SelectGameObjectTool()
+      : base( isSingleInstanceTool: true )
     {
       SelectGameObjectDropdownMenuTool menuTool = new SelectGameObjectDropdownMenuTool();
       menuTool.RemoveOnClickMiss = false;

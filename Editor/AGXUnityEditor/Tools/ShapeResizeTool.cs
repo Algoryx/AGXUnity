@@ -46,6 +46,7 @@ namespace AGXUnityEditor.Tools
     public Shape Shape { get; private set; }
 
     public ShapeResizeTool( Shape shape )
+      : base( isSingleInstanceTool: true )
     {
       AddKeyHandler( "Activate", new Utils.KeyHandler( KeyCode.LeftControl ) );
       AddKeyHandler( "Symmetric", new Utils.KeyHandler( KeyCode.LeftControl, KeyCode.LeftShift ) );

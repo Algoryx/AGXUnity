@@ -25,6 +25,7 @@ namespace AGXUnityEditor.Tools
     public RigidBody RigidBody { get; private set; }
 
     public RigidBodyVisualCreateTool( RigidBody rb )
+      : base( isSingleInstanceTool: true )
     {
       RigidBody = rb;
     }

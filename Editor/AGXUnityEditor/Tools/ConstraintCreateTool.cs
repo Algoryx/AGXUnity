@@ -23,6 +23,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public ConstraintCreateTool( GameObject parent, bool makeConstraintChildToParent )
+      : base( isSingleInstanceTool: true )
     {
       Parent = parent;
       MakeConstraintChildToParent = makeConstraintChildToParent;

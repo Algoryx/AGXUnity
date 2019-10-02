@@ -429,9 +429,17 @@ namespace AGXUnity.Utils
       return ret;
     }
 
+    private static Dictionary<Color, string> m_colorTagCache = new Dictionary<Color, string>();
     public static string ToHexStringRGBA( this Color color )
     {
-      return "#" + ( (int)( 255 * color.r ) ).ToString( "X2" ) + ( (int)( 255 * color.g ) ).ToString( "X2" ) + ( (int)( 255 * color.b ) ).ToString( "X2" ) + ( (int)( 255 * color.a ) ).ToString( "X2" );
+      string result;
+      if ( m_colorTagCache.TryGetValue( color, out result ) )
+        return result;
+
+      result = "#" + ( (int)( 255 * color.r ) ).ToString( "X2" ) + ( (int)( 255 * color.g ) ).ToString( "X2" ) + ( (int)( 255 * color.b ) ).ToString( "X2" ) + ( (int)( 255 * color.a ) ).ToString( "X2" );
+      m_colorTagCache.Add( color, result );
+
+      return result;
     }
 
     public static string ToHexStringRGB( this Color color )

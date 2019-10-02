@@ -36,6 +36,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public DisableCollisionsTool( GameObject mainObject )
+      : base( isSingleInstanceTool: true )
     {
       m_mainObject = mainObject;
     }

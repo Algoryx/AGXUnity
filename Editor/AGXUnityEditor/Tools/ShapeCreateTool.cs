@@ -72,6 +72,7 @@ namespace AGXUnityEditor.Tools
     public string VisualPrimitiveShader { get; set; }
 
     public ShapeCreateTool( GameObject parent )
+      : base( isSingleInstanceTool: true )
     {
       Parent = parent;
       VisualPrimitiveColor = Color.red;

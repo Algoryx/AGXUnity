@@ -52,6 +52,7 @@ namespace AGXUnityEditor.Tools
     public bool IsMultiSelect { get { return NumTargets > 1; } }
 
     protected CustomTargetTool( Object[] targets )
+      : base( isSingleInstanceTool: false )
     {
       Targets = targets;
     }

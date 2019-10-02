@@ -12,6 +12,7 @@ namespace AGXUnityEditor.Tools
     public PickHandler.DofTypes ConstrainedDofTypes { get; private set; }
 
     public PickHandlerTool( PickHandler.DofTypes constrainedDofTypes, Predicate<Event> removePredicate )
+      : base( isSingleInstanceTool: true )
     {
       if ( removePredicate == null )
         throw new ArgumentNullException( "removePredicate", "When to remove callback is null - undefined." );

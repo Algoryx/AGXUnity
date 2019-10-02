@@ -19,6 +19,7 @@ namespace AGXUnityEditor.Tools
     public Utils.VisualPrimitiveSphere PointVisual { get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( "point", "GUI/Text Shader" ); } }
 
     public FindPointTool()
+      : base( isSingleInstanceTool: true )
     {
       PointVisual.Pickable       = false;
       PointVisual.MouseOverColor = PointVisual.Color;
