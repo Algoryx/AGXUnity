@@ -140,7 +140,7 @@ namespace AGXUnity
                                        0.0f );
 
       Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
-      Native.loadLibraryMaterial( agxTerrain.Terrain.MaterialLibrary.GRAVEL_1 );
+      Native.loadLibraryMaterial( agxTerrain.TerrainMaterialLibrary.MaterialPreset.GRAVEL_1 );
 
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
