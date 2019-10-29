@@ -142,16 +142,7 @@ namespace AGXUnityEditor.IO
           return agxPath;
         }
 
-        // Registry path is to executables, e.g., <AGX_DIR>/bin/x64 or <AGX_DIR>/bin/x86
-        // to be compliant to AGX_DIR environment we remove bin/<build_arch>.
-        var registryPath = AGXUnity.IO.Utils.ReadAGXRegistryPath();
-        if ( registryPath != string.Empty ) {
-          registryPath = Path.GetFullPath( Path.Combine( registryPath, ".." +
-                                                                       Path.DirectorySeparatorChar +
-                                                                       ".." +
-                                                                       Path.DirectorySeparatorChar ) );
-        }
-        return registryPath;
+        return null;
       }
     }
   }

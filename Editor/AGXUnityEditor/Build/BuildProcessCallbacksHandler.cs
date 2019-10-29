@@ -15,7 +15,9 @@ namespace AGXUnityEditor.Build
   {
     private static List<string> m_additionalDependencies = new List<string>()
     {
-      "python35.dll"
+      "python35.dll",
+      "vcruntime140.dll",
+      "msvcp140.dll"
     };
 
     public static bool IsAdditionalDependency( string modulePath )
@@ -56,13 +58,13 @@ namespace AGXUnityEditor.Build
       }
 
       var agxDir = IO.Utils.AGXDynamicsDirectory;
-      if ( agxDir == string.Empty ) {
+      if ( string.IsNullOrEmpty( agxDir ) ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX Dynamics directory.", Color.red ) );
         return;
       }
 
-      var agxPluginsDir = AGXUnity.IO.Utils.GetEnvironmentVariable( "AGX_PLUGIN_PATH" );
-      if ( agxPluginsDir == null || agxPluginsDir == string.Empty ) {
+      var agxPluginDir = AGXUnity.IO.Utils.GetEnvironmentVariable( "AGX_PLUGIN_PATH" );
+      if ( string.IsNullOrEmpty( agxPluginDir ) ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX_PLUGIN_PATH.", Color.red ) );
         return;
       }
@@ -79,6 +81,9 @@ namespace AGXUnityEditor.Build
           loadedAgxModulesPaths.Add( module.FileName );
       }
 
+      // TODO: Add wildcard to additional dependencies and search for them
+      //       in AGX Dynamics installed directory if not loaded.
+
       if ( loadedAgxModulesPaths.Count == 0 ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - no binaries found in current process.", Color.red ) );
         return;
@@ -90,26 +95,33 @@ namespace AGXUnityEditor.Build
         return;
       }
 
-      var dataDir = targetExecutableFileInfo.Directory.FullName + Path.DirectorySeparatorChar + PlayerSettings.productName + "_Data";
-      var dataPluginsDir = dataDir + Path.DirectorySeparatorChar + "Plugins";
-      Debug.Log( Utils.GUI.AddColorTag( "Everything seems alright.", Color.green ) );
-      Debug.Log( Utils.GUI.AddColorTag( "Directory:         ", Color.green ) + targetExecutableFileInfo.Directory.FullName );
-      Debug.Log( Utils.GUI.AddColorTag( "Data Directory:    ", Color.green ) + dataDir );
-      Debug.Log( Utils.GUI.AddColorTag( "Plugins Directory: ", Color.green ) + dataPluginsDir );
-      Debug.Log( "Dependent plugins to copy:" );
-      foreach ( var modulePath in loadedAgxModulesPaths )
-        Debug.Log( "    " + modulePath );
+      // targetPluginsDir: ./<productName>_Data/agx
+      // dllTargetDir:     ./
+      var agxDataDir   = AGXUnity.IO.Utils.GetRuntimeAGXDataDirectory( targetExecutableFileInfo.Directory.FullName );
+      var dllTargetDir = targetExecutableFileInfo.Directory.FullName;
 
-      if ( !Directory.Exists( dataPluginsDir ) )
-        Directory.CreateDirectory( dataPluginsDir );
+      if ( !Directory.Exists( agxDataDir ) )
+        Directory.CreateDirectory( agxDataDir );
+
+      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxDataDir + @"\Components", Color.green ) );
+      CopyDirectory( new DirectoryInfo( agxPluginDir + Path.DirectorySeparatorChar + "Components" ),
+                     new DirectoryInfo( agxDataDir + Path.DirectorySeparatorChar + "Components" ) );
 
       foreach ( var modulePath in loadedAgxModulesPaths ) {
         var moduleFileInfo = new FileInfo( modulePath );
-        moduleFileInfo.CopyTo( dataPluginsDir + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
+        try {
+          moduleFileInfo.CopyTo( dllTargetDir + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
+          Debug.Log( "Successfully copied: " +
+                     Utils.GUI.AddColorTag( dllTargetDir + Path.DirectorySeparatorChar, Color.green ) +
+                     Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.Lerp( Color.blue, Color.white, 0.75f ) ) );
+        }
+        catch ( Exception e ) {
+          Debug.Log( "Failed copying: " +
+                     Utils.GUI.AddColorTag( dllTargetDir + Path.DirectorySeparatorChar, Color.red ) +
+                     Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.red ) +
+                     ": " + e.Message );
+        }
       }
-
-      CopyDirectory( new DirectoryInfo( agxPluginsDir + Path.DirectorySeparatorChar + "Components" ),
-                     new DirectoryInfo( dataPluginsDir + Path.DirectorySeparatorChar + "Components" ) );
     }
   }
 }

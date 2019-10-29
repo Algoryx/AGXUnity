@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.IO;
-using Microsoft.Win32;
+using UnityEngine;
 
 namespace AGXUnity.IO
 {
@@ -17,13 +17,6 @@ namespace AGXUnity.IO
       foreach ( var p in pathVariables ) {
         var fullPath = p + @"\" + filename;
         fileInfo = new FileInfo( fullPath );
-        if ( fileInfo.Exists )
-          return fileInfo;
-      }
-
-      var installedPath = ReadAGXRegistryPath();
-      if ( installedPath.Length > 0 ) {
-        fileInfo = new FileInfo( installedPath + @"\" + filename );
         if ( fileInfo.Exists )
           return fileInfo;
       }
@@ -49,22 +42,30 @@ namespace AGXUnity.IO
       return GetEnvironmentVariable( variable, target ) != null;
     }
 
-    public static bool IsFileInEnvironmentPath( string filename )
+    /// <summary>
+    /// Built runtime data directory, by default, relative to executable.
+    /// The directory name is productName_Data where productName is the
+    /// name stated in Player Settings - default the Unity project name.
+    /// </summary>
+    /// <param name="sourceDirectory">Source directory of executable ("." for relative path).</param>
+    /// <returns>Runtime data directory.</returns>
+    public static string GetRuntimeDataDirectory( string sourceDirectory = "." )
     {
-      return GetFileInEnvironmentPath( filename ) != null;
+      return sourceDirectory + Path.DirectorySeparatorChar + Application.productName + "_Data";
     }
 
-    public static void AddEnvironmentPath( string path )
+    /// <summary>
+    /// Built runtime AGX specific data directory where, e.g., Components
+    /// should be located. This directory should be added to agxIO.Environment.Type.RUNTIME_PATH
+    /// and is added by default by NativeHandler during setup of AGX Dynamics.
+    /// The relative path will be productName_Data/agx where productName is
+    /// the name stated in Player Settings - default the Unity project name.
+    /// </summary>
+    /// <param name="sourceDirectory">Source directory of executable ("." for relative path).</param>
+    /// <returns></returns>
+    public static string GetRuntimeAGXDataDirectory( string sourceDirectory = "." )
     {
-      string currentPath = Environment.GetEnvironmentVariable( "PATH", EnvironmentVariableTarget.Process );
-      Environment.SetEnvironmentVariable( "PATH", currentPath + Path.PathSeparator + path, EnvironmentVariableTarget.Process );
-    }
-
-    public static string ReadAGXRegistryPath()
-    {
-      return (string)Registry.GetValue( "HKEY_LOCAL_MACHINE\\Software\\Wow6432Node\\Algoryx Simulation AB\\Algoryx\\AgX",
-                                        "runtime",
-                                        "" );
+      return GetRuntimeDataDirectory( sourceDirectory ) + Path.DirectorySeparatorChar + "agx";
     }
   }
 }

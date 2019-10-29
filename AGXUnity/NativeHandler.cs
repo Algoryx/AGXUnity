@@ -34,16 +34,6 @@ namespace AGXUnity
       m_ai = null;
     }
 
-    /// <summary>
-    /// Binary path, when this module is part of a build, should be "." and
-    /// therefore plugins in "./plugins", data in "./data" and license and
-    /// other configuration files in "./cfg".
-    /// </summary>
-    //public static string FindBinaryPath()
-    //{
-    //  return ".";
-    //}
-
     private void Configure()
     {
       // Running from within the editor. Assuming AGX Dynamics environment.
@@ -58,65 +48,26 @@ namespace AGXUnity
       }
       // Running build without environment, assuming all binaries are
       // present in this process. Setup RUNTIME_PATH to Components in
-      // the data plugins directory. RESOURCE_PATH is where the license
+      // the data agx directory. RESOURCE_PATH is where the license
       // file is assumed to be located.
       else {
-        var dataDir = "./" + Application.productName + "_Data";
-        var dataPluginsDir = dataDir + "/Plugins";
-        Debug.LogWarning( "AGXUnity data dir: " + dataDir );
-        Debug.LogWarning( "AGXUnity data plugins dir: " + dataPluginsDir );
+        var dataDir = IO.Utils.GetRuntimeDataDirectory();
+        var dataPluginsDir = IO.Utils.GetRuntimeAGXDataDirectory();
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataDir );
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsDir );
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataPluginsDir );
+        if ( string.IsNullOrEmpty( agxIO.Environment.instance().findComponent( "Referenced.agxEntity" ) ) )
+          throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
       }
 
       agx.agxSWIG.setEntityCreationThreadSafe( true );
 
       m_ai = new agx.AutoInit();
+
       agx.agxSWIG.setNumThreads( 4 );
+
       Initialized = true;
-
-      //string binaryPath = FindBinaryPath();
-
-      //// Check if agxDotNet.dll is in path.
-      //if ( !IO.Utils.IsFileInEnvironmentPath( "agxDotNet.dll" ) ) {
-      //  // If it is not in path, lets look in the registry
-      //  binaryPath = IO.Utils.ReadAGXRegistryPath();
-
-      //  // If no luck, then we need to bail out
-      //  if ( binaryPath.Length == 0 )
-      //    throw new AGXUnity.Exception( "Unable to find agxDotNet.dll - part of the AGX Dynamics installation." );
-      //  else
-      //    IO.Utils.AddEnvironmentPath( binaryPath );
-      //}
-
-      //string pluginPath = binaryPath + @"\plugins";
-      //string dataPath = binaryPath + @"\data";
-      //string cfgPath = dataPath + @"\cfg";
-
-      //try {
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( binaryPath );
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( pluginPath );
-
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( binaryPath );
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( pluginPath );
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPath );
-      //  agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cfgPath );
-
-      //  // Components are initialized in parallel and destroy is executed
-      //  // from other worker threads. Enable local entity storages.
-      //  agx.agxSWIG.setEntityCreationThreadSafe( true );
-
-      //  m_ai = new agx.AutoInit();
-
-      //  agx.agxSWIG.setNumThreads( 4 );
-
-      //  Initialized = true;
-      //}
-      //catch ( System.Exception e ) {
-      //  throw new AGXUnity.Exception( "Unable to instantiate first AGX Dynamics object. Some dependencies seems missing: " + e.ToString() );
-      //}
     }
   }
 
