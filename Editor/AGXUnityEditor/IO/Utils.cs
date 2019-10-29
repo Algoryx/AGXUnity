@@ -128,5 +128,31 @@ namespace AGXUnityEditor.IO
       Uri relUri = rootUri.MakeRelativeUri( completeUri );
       return Uri.UnescapeDataString( relUri.ToString() );
     }
+
+    public static string AGXDynamicsDirectory
+    {
+      get
+      {
+        // When setup_env has been used.
+        var agxPath = Environment.GetEnvironmentVariable( "AGX_DIR", EnvironmentVariableTarget.Process );
+        if ( agxPath != string.Empty ) {
+          // Installed AGX Dynamics will add an extra \ to AGX_DIR.
+          if ( agxPath.Last() == '\\' || agxPath.Last() == '/' )
+            agxPath.Remove( agxPath.Length - 1 );
+          return agxPath;
+        }
+
+        // Registry path is to executables, e.g., <AGX_DIR>/bin/x64 or <AGX_DIR>/bin/x86
+        // to be compliant to AGX_DIR environment we remove bin/<build_arch>.
+        var registryPath = AGXUnity.IO.Utils.ReadAGXRegistryPath();
+        if ( registryPath != string.Empty ) {
+          registryPath = Path.GetFullPath( Path.Combine( registryPath, ".." +
+                                                                       Path.DirectorySeparatorChar +
+                                                                       ".." +
+                                                                       Path.DirectorySeparatorChar ) );
+        }
+        return registryPath;
+      }
+    }
   }
 }

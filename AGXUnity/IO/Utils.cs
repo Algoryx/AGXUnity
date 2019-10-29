@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using Microsoft.Win32;
 
@@ -12,8 +13,8 @@ namespace AGXUnity.IO
       if ( fileInfo.Exists )
         return fileInfo;
 
-      var path = Environment.GetEnvironmentVariable( "PATH", EnvironmentVariableTarget.Process );
-      foreach ( var p in path.Split( ';' ) ) {
+      var pathVariables = GetEnvironmentVariableEx( "PATH" );
+      foreach ( var p in pathVariables ) {
         var fullPath = p + @"\" + filename;
         fileInfo = new FileInfo( fullPath );
         if ( fileInfo.Exists )
@@ -28,6 +29,24 @@ namespace AGXUnity.IO
       }
 
       return null;
+    }
+
+    public static string[] GetEnvironmentVariableEx( string variable, EnvironmentVariableTarget target = EnvironmentVariableTarget.Process )
+    {
+      var result = Environment.GetEnvironmentVariable( variable, target );
+      if ( result == null )
+        return new string[] { };
+      return result.Split( Path.PathSeparator );
+    }
+
+    public static string GetEnvironmentVariable( string variable, EnvironmentVariableTarget target = EnvironmentVariableTarget.Process )
+    {
+      return GetEnvironmentVariableEx( variable, target ).FirstOrDefault();
+    }
+
+    public static bool HasEnvironmentVariable( string variable, EnvironmentVariableTarget target = EnvironmentVariableTarget.Process )
+    {
+      return GetEnvironmentVariable( variable, target ) != null;
     }
 
     public static bool IsFileInEnvironmentPath( string filename )
