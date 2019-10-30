@@ -128,22 +128,5 @@ namespace AGXUnityEditor.IO
       Uri relUri = rootUri.MakeRelativeUri( completeUri );
       return Uri.UnescapeDataString( relUri.ToString() );
     }
-
-    public static string AGXDynamicsDirectory
-    {
-      get
-      {
-        // When setup_env has been used.
-        var agxPath = Environment.GetEnvironmentVariable( "AGX_DIR", EnvironmentVariableTarget.Process );
-        if ( agxPath != string.Empty ) {
-          // Installed AGX Dynamics will add an extra \ to AGX_DIR.
-          if ( agxPath.Last() == '\\' || agxPath.Last() == '/' )
-            agxPath.Remove( agxPath.Length - 1 );
-          return agxPath;
-        }
-
-        return null;
-      }
-    }
   }
 }

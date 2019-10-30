@@ -38,13 +38,13 @@ namespace AGXUnity
     {
       // Running from within the editor. Assuming AGX Dynamics environment.
       if ( Application.isEditor ) {
-        if ( !IO.Utils.HasEnvironmentVariable( "AGX_DIR" ) )
+        if ( !IO.Environment.IsSet( IO.Environment.Variable.AGX_DIR ) )
           throw new AGXUnity.Exception( "Environment variable AGX_DIR not found. Make sure Unity is started in an AGX Dynamics environment (setup_env)." );
       }
       // Running build with environment set. Use default environment setup.
       // This can be useful to debug an application, being able to attach
       // to a process with AGX Dynamics + AGXUnity.
-      else if ( IO.Utils.HasEnvironmentVariable( "AGX_DIR" ) ) {
+      else if ( IO.Environment.IsSet( IO.Environment.Variable.AGX_DIR ) ) {
       }
       // Running build without environment, assuming all binaries are
       // present in this process. Setup RUNTIME_PATH to Components in
@@ -52,8 +52,8 @@ namespace AGXUnity
       // file is assumed to be located.
       else {
         var dataPath           = Application.dataPath;
-        var dataPluginsPath    = IO.Utils.GetPlayerPluginPath( dataPath );
-        var dataAGXRuntimePath = IO.Utils.GetPlayerAGXRuntimePath( dataPath );
+        var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
+        var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
         var envInstance        = agxIO.Environment.instance();
 
         // In case of installed AGX Dynamics, agxIO.Environment.instance() will
