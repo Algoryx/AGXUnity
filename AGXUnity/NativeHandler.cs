@@ -51,13 +51,25 @@ namespace AGXUnity
       // the data agx directory. RESOURCE_PATH is where the license
       // file is assumed to be located.
       else {
-        var dataDir = IO.Utils.GetRuntimeDataDirectory();
-        var dataPluginsDir = IO.Utils.GetRuntimeAGXDataDirectory();
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataDir );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsDir );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataPluginsDir );
-        if ( string.IsNullOrEmpty( agxIO.Environment.instance().findComponent( "Referenced.agxEntity" ) ) )
+        var dataPath           = Application.dataPath;
+        var dataPluginsPath    = IO.Utils.GetPlayerPluginPath( dataPath );
+        var dataAGXRuntimePath = IO.Utils.GetPlayerAGXRuntimePath( dataPath );
+        var envInstance        = agxIO.Environment.instance();
+
+        // In case of installed AGX Dynamics, agxIO.Environment.instance() will
+        // read data from the registry and add runtime and resource paths to
+        // the installed version. Clear all, from registry, added paths since
+        // we assume all data needed is present in this runtime.
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsPath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
+
+        if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
       }
 

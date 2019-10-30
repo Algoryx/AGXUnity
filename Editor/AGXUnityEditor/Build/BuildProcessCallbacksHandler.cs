@@ -63,8 +63,8 @@ namespace AGXUnityEditor.Build
         return;
       }
 
-      var agxPluginDir = AGXUnity.IO.Utils.GetEnvironmentVariable( "AGX_PLUGIN_PATH" );
-      if ( string.IsNullOrEmpty( agxPluginDir ) ) {
+      var agxPluginPath = AGXUnity.IO.Utils.GetEnvironmentVariable( "AGX_PLUGIN_PATH" );
+      if ( string.IsNullOrEmpty( agxPluginPath ) ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX_PLUGIN_PATH.", Color.red ) );
         return;
       }
@@ -95,29 +95,41 @@ namespace AGXUnityEditor.Build
         return;
       }
 
-      // targetPluginsDir: ./<productName>_Data/agx
-      // dllTargetDir:     ./
-      var agxDataDir   = AGXUnity.IO.Utils.GetRuntimeAGXDataDirectory( targetExecutableFileInfo.Directory.FullName );
-      var dllTargetDir = targetExecutableFileInfo.Directory.FullName;
 
-      if ( !Directory.Exists( agxDataDir ) )
-        Directory.CreateDirectory( agxDataDir );
+      // Application.dataPath is 'Assets' folder here in Editor but
+      // Application.dataPath is '<name>_Data' in the Player. We're
+      // explicitly constructing '<name>_Data' here.
+      var dataPath = targetExecutableFileInfo.Directory.FullName +
+                     Path.DirectorySeparatorChar +
+                     Path.GetFileNameWithoutExtension( targetExecutableFileInfo.Name ) +
+                     "_Data";
 
-      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxDataDir + @"\Components", Color.green ) );
-      CopyDirectory( new DirectoryInfo( agxPluginDir + Path.DirectorySeparatorChar + "Components" ),
-                     new DirectoryInfo( agxDataDir + Path.DirectorySeparatorChar + "Components" ) );
+      // dllTargetPath:      ./<name>_Data/Plugins
+      // agxRuntimeDataPath: ./<name>_Data/Plugins/agx
+      var dllTargetPath      = AGXUnity.IO.Utils.GetPlayerPluginPath( dataPath );
+      var agxRuntimeDataPath = AGXUnity.IO.Utils.GetPlayerAGXRuntimePath( dataPath );
+
+      if ( !Directory.Exists( agxRuntimeDataPath ) )
+        Directory.CreateDirectory( agxRuntimeDataPath );
+
+      if ( !Directory.Exists( dllTargetPath ) )
+        Directory.CreateDirectory( dllTargetPath );
+
+      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxRuntimeDataPath + @"\Components", Color.green ) );
+      CopyDirectory( new DirectoryInfo( agxPluginPath + Path.DirectorySeparatorChar + "Components" ),
+                     new DirectoryInfo( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components" ) );
 
       foreach ( var modulePath in loadedAgxModulesPaths ) {
         var moduleFileInfo = new FileInfo( modulePath );
         try {
-          moduleFileInfo.CopyTo( dllTargetDir + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
+          moduleFileInfo.CopyTo( dllTargetPath + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
           Debug.Log( "Successfully copied: " +
-                     Utils.GUI.AddColorTag( dllTargetDir + Path.DirectorySeparatorChar, Color.green ) +
+                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.green ) +
                      Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.Lerp( Color.blue, Color.white, 0.75f ) ) );
         }
         catch ( Exception e ) {
           Debug.Log( "Failed copying: " +
-                     Utils.GUI.AddColorTag( dllTargetDir + Path.DirectorySeparatorChar, Color.red ) +
+                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.red ) +
                      Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.red ) +
                      ": " + e.Message );
         }

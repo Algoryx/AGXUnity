@@ -42,30 +42,14 @@ namespace AGXUnity.IO
       return GetEnvironmentVariable( variable, target ) != null;
     }
 
-    /// <summary>
-    /// Built runtime data directory, by default, relative to executable.
-    /// The directory name is productName_Data where productName is the
-    /// name stated in Player Settings - default the Unity project name.
-    /// </summary>
-    /// <param name="sourceDirectory">Source directory of executable ("." for relative path).</param>
-    /// <returns>Runtime data directory.</returns>
-    public static string GetRuntimeDataDirectory( string sourceDirectory = "." )
+    public static string GetPlayerPluginPath( string dataPath )
     {
-      return sourceDirectory + Path.DirectorySeparatorChar + Application.productName + "_Data";
+      return dataPath + Path.DirectorySeparatorChar + "Plugins";
     }
 
-    /// <summary>
-    /// Built runtime AGX specific data directory where, e.g., Components
-    /// should be located. This directory should be added to agxIO.Environment.Type.RUNTIME_PATH
-    /// and is added by default by NativeHandler during setup of AGX Dynamics.
-    /// The relative path will be productName_Data/agx where productName is
-    /// the name stated in Player Settings - default the Unity project name.
-    /// </summary>
-    /// <param name="sourceDirectory">Source directory of executable ("." for relative path).</param>
-    /// <returns></returns>
-    public static string GetRuntimeAGXDataDirectory( string sourceDirectory = "." )
+    public static string GetPlayerAGXRuntimePath( string dataPath )
     {
-      return GetRuntimeDataDirectory( sourceDirectory ) + Path.DirectorySeparatorChar + "agx";
+      return GetPlayerPluginPath( dataPath ) + Path.DirectorySeparatorChar + "agx";
     }
   }
 }
