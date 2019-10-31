@@ -14,7 +14,7 @@ namespace AGXUnity
   /// If this object has been destroyed, Instance will return null!
   /// </summary>
   /// <typeparam name="T">Type of subclass.</typeparam>
-  public class UniqueGameObject<T> : ScriptComponent where T : MonoBehaviour
+  public class UniqueGameObject<T> : ScriptComponent where T : ScriptComponent
   {
     protected static T m_instance     = null;
     protected static bool m_destroyed = false;
