@@ -44,7 +44,7 @@ namespace AGXUnity
       // Running build with environment set. Use default environment setup.
       // This can be useful to debug an application, being able to attach
       // to a process with AGX Dynamics + AGXUnity.
-      else if ( IO.Environment.IsSet( IO.Environment.Variable.AGX_DIR ) ) {
+      else if ( IO.Environment.IsSet( IO.Environment.Variable.AGX_DEPENDENCIES_DIR ) ) {
       }
       // Running build without environment, assuming all binaries are
       // present in this process. Setup RUNTIME_PATH to Components in
