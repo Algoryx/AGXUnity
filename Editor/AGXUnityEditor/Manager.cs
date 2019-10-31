@@ -529,7 +529,7 @@ namespace AGXUnityEditor
     {
       string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
       FileInfo currDll        = new FileInfo( localDllFilename );
-      FileInfo installedDll   = AGXUnity.IO.Utils.GetFileInEnvironmentPath( "agxDotNet.dll" );
+      FileInfo installedDll   = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
 
       // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
