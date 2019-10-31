@@ -158,7 +158,8 @@ namespace AGXUnityEditor.Build
       //     https://forum.unity.com/threads/dll-not-found-with-standalone-app-but-works-fine-in-editor.389392/page-2
       // Works with 2019.2.4, so for earlier version we copy the dlls to the
       // root folder of the executable.
-#if !UNITY_2019_2_4_OR_NEWER
+#if UNITY_2019_2_OR_NEWER
+#else
       dllTargetPath = targetExecutableFileInfo.Directory.FullName;
 #endif
 
