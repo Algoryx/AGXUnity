@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.IO;
 using UnityEngine;
 
 namespace AGXUnity
@@ -34,62 +34,52 @@ namespace AGXUnity
       m_ai = null;
     }
 
-    /// <summary>
-    /// Binary path, when this module is part of a build, should be "." and
-    /// therefore plugins in "./plugins", data in "./data" and license and
-    /// other configuration files in "./cfg".
-    /// </summary>
-    public static string FindBinaryPath()
-    {
-      return ".";
-    }
-
-    private void InitPath()
-    {
-    }
-
     private void Configure()
     {
-      string binaryPath = FindBinaryPath();
+      // Running from within the editor. Assuming AGX Dynamics environment.
+      if ( Application.isEditor ) {
+        if ( !IO.Environment.IsSet( IO.Environment.Variable.AGX_DIR ) )
+          throw new AGXUnity.Exception( "Environment variable AGX_DIR not found. Make sure Unity is started in an AGX Dynamics environment (setup_env)." );
+      }
+      // Running build with environment set. Use default environment setup.
+      // This can be useful to debug an application, being able to attach
+      // to a process with AGX Dynamics + AGXUnity.
+      else if ( IO.Environment.IsSet( IO.Environment.Variable.AGX_DEPENDENCIES_DIR ) ) {
+      }
+      // Running build without environment, assuming all binaries are
+      // present in this process. Setup RUNTIME_PATH to Components in
+      // the data agx directory. RESOURCE_PATH is where the license
+      // file is assumed to be located.
+      else {
+        var dataPath           = Application.dataPath;
+        var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
+        var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
+        var envInstance        = agxIO.Environment.instance();
 
-      // Check if agxDotNet.dll is in path.
-      if ( !IO.Utils.IsFileInEnvironmentPath( "agxDotNet.dll" ) ) {
-        // If it is not in path, lets look in the registry
-        binaryPath = IO.Utils.ReadAGXRegistryPath();
+        // In case of installed AGX Dynamics, agxIO.Environment.instance() will
+        // read data from the registry and add runtime and resource paths to
+        // the installed version. Clear all, from registry, added paths since
+        // we assume all data needed is present in this runtime.
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
 
-        // If no luck, then we need to bail out
-        if ( binaryPath.Length == 0 )
-          throw new AGXUnity.Exception( "Unable to find agxDotNet.dll - part of the AGX Dynamics installation." );
-        else
-          IO.Utils.AddEnvironmentPath( binaryPath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsPath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
+
+        if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
+          throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
       }
 
-      string pluginPath = binaryPath + @"\plugins";
-      string dataPath = binaryPath + @"\data";
-      string cfgPath = dataPath + @"\cfg";
+      agx.agxSWIG.setEntityCreationThreadSafe( true );
 
-      try {
-        // Components are initialized in parallel and destroy is executed
-        // from other worker threads. Enable local entity storages.
-        agx.agxSWIG.setEntityCreationThreadSafe( true );
+      m_ai = new agx.AutoInit();
 
-        m_ai = new agx.AutoInit();
+      agx.agxSWIG.setNumThreads( 4 );
 
-        agx.agxSWIG.setNumThreads( 4 );
-
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( binaryPath );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( pluginPath );
-
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( binaryPath );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( pluginPath );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPath );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cfgPath );
-
-        Initialized = true;
-      }
-      catch ( System.Exception e ) {
-        throw new AGXUnity.Exception( "Unable to instantiate first AGX Dynamics object. Some dependencies seems missing: " + e.ToString() );
-      }
+      Initialized = true;
     }
   }
 

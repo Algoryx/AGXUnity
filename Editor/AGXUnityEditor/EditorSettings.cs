@@ -22,6 +22,8 @@ namespace AGXUnityEditor
     public Utils.KeyHandler BuiltInToolsTool_PickHandlerKeyHandler = new Utils.KeyHandler( KeyCode.A );
     #endregion BuiltInToolsTool settings
 
+    public bool BuildPlayer_CopyBinaries = true;
+
     #region Rendering GUI
     public void OnInspectorGUI( GUISkin skin )
     {
@@ -39,6 +41,15 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler, skin );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler, skin );
       }
+
+      GUI.Separator();
+
+      BuildPlayer_CopyBinaries = GUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
+                                                            false,
+                                                            "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
+                                             BuildPlayer_CopyBinaries,
+                                             skin.button,
+                                             skin.label );
 
       GUI.Separator();
 
