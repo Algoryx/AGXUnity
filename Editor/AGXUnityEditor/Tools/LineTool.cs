@@ -23,6 +23,7 @@ namespace AGXUnityEditor.Tools
     }
 
     public LineTool( Line line )
+      : base( isSingleInstanceTool: true )
     {
       Line = line;
     }
