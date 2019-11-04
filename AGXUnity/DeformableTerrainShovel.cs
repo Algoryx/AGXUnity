@@ -88,6 +88,19 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private DeformableTerrainShovelSettings m_settings = null;
+
+    [AllowRecursiveEditing]
+    public DeformableTerrainShovelSettings Settings
+    {
+      get { return m_settings; }
+      set
+      {
+        m_settings = value;
+      }
+    }
+
     protected override bool Initialize()
     {
       var rb = RigidBody?.GetInitialized<RigidBody>()?.Native;
@@ -99,6 +112,13 @@ namespace AGXUnity
                                       CuttingEdge.ToNativeEdge( gameObject ),
                                       CuttingDirection.CalculateLocalDirection( gameObject ).ToHandedVec3() );
 
+      if ( Settings == null ) {
+        Settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
+        Settings.name = "[Temporary]Shovel Settings";
+      }
+
+      Settings += this;
+
       return true;
     }
 
@@ -107,6 +127,18 @@ namespace AGXUnity
       Native = null;
 
       base.OnDestroy();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Native != null )
+        Native.setEnable( true );
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null )
+        Native.setEnable( false );
     }
 
     private RigidBody m_rb = null;
