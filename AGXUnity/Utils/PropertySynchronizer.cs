@@ -50,12 +50,15 @@ namespace AGXUnity.Utils
       /// Invoke property set method given current value of the field.
       /// </summary>
       /// <param name="obj">Object with field and property.</param>
-      public void Invoke( object obj )
+      public void Invoke( object obj, bool propertyGetToSet )
       {
         if ( !IsValid )
           return;
 
-        m_property.SetValue( obj, m_field.GetValue( obj ) );
+        if ( propertyGetToSet )
+          m_property.SetValue( obj, m_property.GetValue( obj ) );
+        else
+          m_property.SetValue( obj, m_field.GetValue( obj ) );
       }
     }
 
@@ -87,7 +90,35 @@ namespace AGXUnity.Utils
     /// </summary>
     public static void Synchronize( object obj )
     {
-      Synchronize( obj, GetOrCreateSynchronizedProperties( obj.GetType() ) );
+      Synchronize( obj, GetOrCreateSynchronizedProperties( obj.GetType() ), false );
+    }
+
+    /// <summary>
+    /// Synchronizes using MyProperty = MyProperty, i.e.,
+    /// get-method result of the property is used as value
+    /// for set-method. This can be used when the property
+    /// get method has side-effects, e.g., when resetting/
+    /// reading values from a temporary object.
+    /// <example>
+    /// private float m_radius = 1.0f;
+    /// public float Radius
+    /// {
+    ///   get { return m_tempNative != null ? m_tempNative.getRadius() : m_radius; }
+    ///   set
+    ///   {
+    ///     m_radius = value;
+    ///   }
+    /// }
+    /// 
+    /// m_tempNative = new agxCollide.Sphere();
+    /// m_tempNative.setRadius( 0.123 );
+    /// PropertySynchronizer.SynchronizeGetToSet( this );
+    /// Debug.Log( m_radius ); // Prints: 0.123
+    /// </example>
+    /// </summary>
+    public static void SynchronizeGetToSet( object obj )
+    {
+      Synchronize( obj, GetOrCreateSynchronizedProperties( obj.GetType() ), true );
     }
 
     /// <summary>
@@ -116,10 +147,12 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="obj">Object with field and properties to synchronize.</param>
     /// <param name="synchronizedProperties">List of fields and properties.</param>
-    private static void Synchronize( object obj, List<FieldPropertyPair> synchronizedProperties )
+    private static void Synchronize( object obj,
+                                     List<FieldPropertyPair> synchronizedProperties,
+                                     bool propertyGetToSet )
     {
       foreach ( var fieldPropertyPair in synchronizedProperties )
-        fieldPropertyPair.Invoke( obj );
+        fieldPropertyPair.Invoke( obj, propertyGetToSet );
     }
 
     /// <summary>
@@ -129,7 +162,9 @@ namespace AGXUnity.Utils
     /// <param name="fieldPropertyPairs">List of field and property pairs.</param>
     private static void CollectFieldPropertyPairs( Type type, List<FieldPropertyPair> fieldPropertyPairs )
     {
-      FieldInfo[] fields = type.GetFields( BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly );
+      FieldInfo[] fields = type.GetFields( BindingFlags.Instance |
+                                           BindingFlags.NonPublic |
+                                           BindingFlags.DeclaredOnly );
       foreach ( FieldInfo field in fields ) {
         // Note: Only serialized field.
         if ( field.IsNotSerialized )
