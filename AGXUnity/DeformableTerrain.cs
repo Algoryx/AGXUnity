@@ -84,6 +84,28 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private DeformableTerrainProperties m_properties = null;
+
+    /// <summary>
+    /// Terrain properties associated to this terrain.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public DeformableTerrainProperties Properties
+    {
+      get { return m_properties; }
+      set
+      {
+        if ( Native != null && m_properties != null )
+          m_properties.Unregister( this );
+
+        m_properties = value;
+
+        if ( Native != null && m_properties != null )
+          m_properties.Register( this );
+      }
+    }
+
     /// <summary>
     /// Associate shovel instance to this terrain.
     /// </summary>
@@ -183,6 +205,9 @@ namespace AGXUnity
 
       TerrainData.SetHeights( 0, 0, m_initialHeights );
       transform.position = transform.position + maxDepth * Vector3.up;
+
+      if ( Properties != null )
+        Properties.Unregister( this );
 
       if ( GetSimulation() != null ) {
         GetSimulation().remove( Native );

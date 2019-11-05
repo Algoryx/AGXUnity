@@ -280,19 +280,21 @@ namespace AGXUnity
       }
     }
 
-    public static DeformableTerrainProperties operator+( DeformableTerrainProperties self,
-                                                         DeformableTerrain terrain )
+    public void Register( DeformableTerrain terrain )
     {
-      if ( !self.m_terrains.Contains( terrain ) )
-        self.m_terrains.Add( terrain );
-      return self;
+      if ( !m_terrains.Contains( terrain ) ) {
+        m_terrains.Add( terrain );
+
+        // Synchronizing properties for all shovels. Could be
+        // avoided by adding a state so that Propagate only
+        // shows current added terrain.
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
     }
 
-    public static DeformableTerrainProperties operator-( DeformableTerrainProperties self,
-                                                         DeformableTerrain terrain )
+    public void Unregister( DeformableTerrain terrain )
     {
-      self.m_terrains.Remove( terrain );
-      return self;
+      m_terrains.Remove( terrain );
     }
 
     public override void Destroy()
