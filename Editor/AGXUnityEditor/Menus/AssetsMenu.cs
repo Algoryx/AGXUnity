@@ -55,10 +55,22 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<SolverSettings>( "solver settings" );
     }
 
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Properties" )]
+    public static UnityEngine.Object CrateDeformableTerrainProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainProperties>( "deformable terrain properties" );
+    }
+
     [MenuItem( "Assets/AGXUnity/Deformable Terrain Material" )]
     public static UnityEngine.Object CrateDeformableTerrainMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainMaterial>( "deformable terrain material" );
+    }
+
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Shovel Settings" )]
+    public static UnityEngine.Object CrateDeformableTerrainShovelSettings()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainShovelSettings>( "deformable terrain shovel settings" );
     }
 
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
