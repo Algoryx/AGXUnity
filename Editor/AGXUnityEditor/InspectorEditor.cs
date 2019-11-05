@@ -62,12 +62,19 @@ namespace AGXUnityEditor
 
       var hasChanges = false;
       InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
+      var group = InspectorGroupHandler.Create();
       foreach ( InvokeWrapper wrapper in fieldsAndProperties ) {
         if ( !ShouldBeShownInInspector( wrapper.Member ) )
           continue;
 
+        group.Update( wrapper, objects[ 0 ] );
+
+        if ( group.IsHidden )
+          continue;
+
         hasChanges = HandleType( wrapper, objects ) || hasChanges;
       }
+      group.Dispose();
 
       if ( hasChanges ) {
         foreach ( var obj in targets )

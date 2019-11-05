@@ -68,8 +68,23 @@ namespace AGXUnity
     public bool OnlyInStatePlay = false;
   }
 
+  /// <summary>
+  /// Adds separator line in the inspector before the field/property
+  /// that carries this attribute.
+  /// </summary>
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
   public class InspectorSeparatorAttribute : Attribute
+  {
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorGroupBeginAttribute : Attribute
+  {
+    public string Name;
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorGroupEndAttribute : Attribute
   {
   }
 
