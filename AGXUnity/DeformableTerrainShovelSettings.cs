@@ -150,34 +150,39 @@ namespace AGXUnity
       }
     }
 
-    public static DeformableTerrainShovelSettings operator+( DeformableTerrainShovelSettings self,
-                                                             DeformableTerrainShovel shovel )
+    /// <summary>
+    /// Register as listener of these settings. Current settings will
+    /// be applied to the shovel instance directly when added.
+    /// </summary>
+    /// <param name="shovel">Deformable shovel instance to which these settings should apply.</param>
+    public void Register( DeformableTerrainShovel shovel )
     {
-      self.m_shovelListener += shovel;
+      if ( !m_shovels.Contains( shovel ) ) {
+        m_shovels.Add( shovel );
 
-      // Currently synchronizing all current listeners. Could
-      // be solved using 'context' state in m_shovelListener
-      // if this is an issue.
-      Utils.PropertySynchronizer.Synchronize( self );
-
-      return self;
+        // Synchronizing settings for all shovels. Could be
+        // avoided by adding a state so that Propagate only
+        // shows current added shovel.
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
     }
 
-    public static DeformableTerrainShovelSettings operator-( DeformableTerrainShovelSettings self,
-                                                             DeformableTerrainShovel shovel )
+    /// <summary>
+    /// Unregister as listener of these settings.
+    /// </summary>
+    /// <param name="shovel"></param>
+    public void Unregister( DeformableTerrainShovel shovel )
     {
-      self.m_shovelListener -= shovel;
-      return self;
+      m_shovels.Remove( shovel );
     }
 
     public override void Destroy()
     {
-      m_shovelListener.OnDestroy();
+      m_shovels.Clear();
     }
 
     protected override void Construct()
     {
-      m_shovelListener = new ShovelListener();
     }
 
     protected override bool Initialize()
@@ -187,49 +192,14 @@ namespace AGXUnity
 
     private void Propagate( Action<agxTerrain.Shovel> action )
     {
-      if ( action == null || m_shovelListener == null )
+      if ( action == null )
         return;
 
-      m_shovelListener.Enumerate( action );
+      foreach ( var shovel in m_shovels )
+        if ( shovel.Native != null )
+          action( shovel.Native );
     }
 
-    private ShovelListener m_shovelListener = null;
-
-    private class ShovelListener
-    {
-      public IEnumerable<agxTerrain.Shovel> Natives
-      {
-        get
-        {
-          foreach ( var shovel in m_shovels )
-            if ( shovel.Native != null )
-              yield return shovel.Native;
-        }
-      }
-
-      public void Enumerate( Action<agxTerrain.Shovel> action )
-      {
-        foreach ( var native in Natives )
-          action( native );
-      }
-
-      public void OnDestroy()
-      {
-        m_shovels.Clear();
-      }
-
-      private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
-      public static ShovelListener operator+( ShovelListener self, DeformableTerrainShovel shovel )
-      {
-        if ( !self.m_shovels.Contains( shovel ) )
-          self.m_shovels.Add( shovel );
-        return self;
-      }
-      public static ShovelListener operator-( ShovelListener self, DeformableTerrainShovel shovel )
-      {
-        self.m_shovels.Remove( shovel );
-        return self;
-      }
-    }
+    private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
   }
 }

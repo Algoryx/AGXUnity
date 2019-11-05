@@ -64,6 +64,9 @@ namespace AGXUnity
     [SerializeField]
     private DeformableTerrainMaterial m_terrainMaterial = null;
 
+    /// <summary>
+    /// Terrain material associated to this terrain.
+    /// </summary>
     [AllowRecursiveEditing]
     public DeformableTerrainMaterial TerrainMaterial
     {
@@ -71,6 +74,13 @@ namespace AGXUnity
       set
       {
         m_terrainMaterial = value;
+
+        if ( Native != null ) {
+          if ( m_terrainMaterial != null )
+            Native.setTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
+          else
+            Native.loadLibraryMaterial( agxTerrain.TerrainMaterialLibrary.MaterialPreset.DIRT_1 );
+        }
       }
     }
 
@@ -156,11 +166,6 @@ namespace AGXUnity
                                        0.0f );
 
       Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
-
-      if ( TerrainMaterial != null )
-        Native.setTerrainMaterial( TerrainMaterial.GetInitialized<DeformableTerrainMaterial>()?.Native );
-      else
-        Native.loadLibraryMaterial( agxTerrain.TerrainMaterialLibrary.MaterialPreset.GRAVEL_1 );
 
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );

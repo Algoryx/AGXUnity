@@ -97,7 +97,13 @@ namespace AGXUnity
       get { return m_settings; }
       set
       {
+        if ( Native != null && m_settings != null && m_settings != value )
+          m_settings.Unregister( this );
+
         m_settings = value;
+
+        if ( Native != null && m_settings != null )
+          m_settings.Register( this );
       }
     }
 
@@ -117,13 +123,14 @@ namespace AGXUnity
         Settings.name = "[Temporary]Shovel Settings";
       }
 
-      Settings += this;
-
       return true;
     }
 
     protected override void OnDestroy()
     {
+      if ( Settings != null )
+        Settings.Unregister( this );
+
       Native = null;
 
       base.OnDestroy();
