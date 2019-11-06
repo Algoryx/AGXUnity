@@ -150,6 +150,111 @@ namespace AGXUnity
       }
     }
 
+    [Serializable]
+    public struct ExcavationSettings
+    {
+      public bool Enabled;
+      public bool CreateDynamicMassEnabled;
+      public bool ForceFeedbackEnabled;
+
+      public void SetEnabled( bool enabled )
+      {
+        Enabled = enabled;
+      }
+
+      public void SetCreateDynamicMassEnabled( bool enabled )
+      {
+        CreateDynamicMassEnabled = enabled;
+      }
+
+      public void SetForceFeedbackEnabled( bool enabled )
+      {
+        ForceFeedbackEnabled = enabled;
+      }
+
+      public agxTerrain.Shovel.ExcavationSettings ToNative()
+      {
+        var native = new agxTerrain.Shovel.ExcavationSettings();
+        native.setEnable( Enabled );
+        native.setEnableCreateDynamicMass( CreateDynamicMassEnabled );
+        native.setEnableForceFeedback( ForceFeedbackEnabled );
+        return native;
+      }
+    }
+
+    [SerializeField]
+    private ExcavationSettings m_primaryExcavationSettings = new ExcavationSettings()
+    {
+      Enabled = true,
+      CreateDynamicMassEnabled = true,
+      ForceFeedbackEnabled = true
+    };
+
+    [InspectorSeparator]
+    public ExcavationSettings PrimaryExcavationSettings
+    {
+      get { return m_primaryExcavationSettings; }
+      set
+      {
+        m_primaryExcavationSettings = value;
+        Propagate( shovel => shovel.setExcavationSettings( agxTerrain.Shovel.ExcavationMode.PRIMARY, m_primaryExcavationSettings.ToNative() ) );
+      }
+    }
+
+    [SerializeField]
+    private ExcavationSettings m_deformBackExcavationSettings = new ExcavationSettings()
+    {
+      Enabled = true,
+      CreateDynamicMassEnabled = true,
+      ForceFeedbackEnabled = true
+    };
+
+    public ExcavationSettings DeformBackExcavationSettings
+    {
+      get { return m_deformBackExcavationSettings; }
+      set
+      {
+        m_deformBackExcavationSettings = value;
+        Propagate( shovel => shovel.setExcavationSettings( agxTerrain.Shovel.ExcavationMode.DEFORM_BACK, m_deformBackExcavationSettings.ToNative() ) );
+      }
+    }
+
+    [SerializeField]
+    private ExcavationSettings m_deformRightExcavationSettings = new ExcavationSettings()
+    {
+      Enabled = true,
+      CreateDynamicMassEnabled = true,
+      ForceFeedbackEnabled = true
+    };
+
+    public ExcavationSettings DeformRightExcavationSettings
+    {
+      get { return m_deformRightExcavationSettings; }
+      set
+      {
+        m_deformRightExcavationSettings = value;
+        Propagate( shovel => shovel.setExcavationSettings( agxTerrain.Shovel.ExcavationMode.DEFORM_RIGHT, m_deformRightExcavationSettings.ToNative() ) );
+      }
+    }
+
+    [SerializeField]
+    private ExcavationSettings m_deformLeftExcavationSettings = new ExcavationSettings()
+    {
+      Enabled = true,
+      CreateDynamicMassEnabled = true,
+      ForceFeedbackEnabled = true
+    };
+
+    public ExcavationSettings DeformLeftExcavationSettings
+    {
+      get { return m_deformLeftExcavationSettings; }
+      set
+      {
+        m_deformLeftExcavationSettings = value;
+        Propagate( shovel => shovel.setExcavationSettings( agxTerrain.Shovel.ExcavationMode.DEFORM_LEFT, m_deformLeftExcavationSettings.ToNative() ) );
+      }
+    }
+
     /// <summary>
     /// Register as listener of these settings. Current settings will
     /// be applied to the shovel instance directly when added.

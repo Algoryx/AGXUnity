@@ -45,22 +45,28 @@ namespace AGXUnityEditor.Tools
     {
       var lineVisualRadius   = 0.015f;
       var sphereVisualRadius = 1.5f * lineVisualRadius;
+      var renderOnSceneView  = !EditorApplication.isPlaying ||
+                               EditorApplication.isPaused;
 
-      LineVisual.Visible = true;
+      LineVisual.Visible = renderOnSceneView;
       LineVisual.SetTransform( Line.Start.Position + lineVisualRadius * Line.Direction,
                                Line.End.Position - lineVisualRadius * Line.Direction,
                                lineVisualRadius,
                                false );
-      StartVisual.Visible = true;
+      StartVisual.Visible = renderOnSceneView;
       StartVisual.SetTransform( Line.Start.Position,
                                 Quaternion.identity,
                                 sphereVisualRadius,
                                 false );
-      EndVisual.Visible = true;
+      EndVisual.Visible = renderOnSceneView;
       EndVisual.SetTransform( Line.End.Position,
                               Quaternion.identity,
                               sphereVisualRadius,
                               false );
+      if ( StartFrameToolEnable )
+        StartFrameTool.TransformHandleActive = renderOnSceneView;
+      if ( EndFrameToolEnable )
+        EndFrameTool.TransformHandleActive = renderOnSceneView;
     }
 
     public void OnInspectorGUI()

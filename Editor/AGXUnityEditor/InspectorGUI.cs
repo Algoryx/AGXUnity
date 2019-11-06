@@ -189,6 +189,65 @@ namespace AGXUnityEditor
       return value;
     }
 
+    private struct ExcavationSettingsResult
+    {
+      public DeformableTerrainShovelSettings.ExcavationSettings Value;
+      public bool EnabledChanged;
+      public bool CreateDynamicMassEnabledChanged;
+      public bool ForceFeedbackEnabledChanged;
+      public bool ContainsChanges { get { return EnabledChanged || CreateDynamicMassEnabledChanged || ForceFeedbackEnabledChanged; } }
+    }
+
+    [InspectorDrawer( typeof( DeformableTerrainShovelSettings.ExcavationSettings ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
+    public static object DeformableTerrainShovelExcavationSettingsDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    {
+      var data = new ExcavationSettingsResult()
+      {
+        Value = wrapper.Get<DeformableTerrainShovelSettings.ExcavationSettings>( obj )
+      };
+      if ( GUI.Foldout( EditorData.Instance.GetData( obj as Object, wrapper.Member.Name ),
+                        MakeLabel( wrapper.Member ),
+                        skin ) ) {
+        using ( new GUI.Indent( 12 ) ) {
+          data.Value.Enabled                   = GUI.Toggle( GUI.MakeLabel( "Enabled" ),
+                                                             data.Value.Enabled,
+                                                             skin.button,
+                                                             skin.label );
+          data.EnabledChanged                  = UnityEngine.GUI.changed;
+          UnityEngine.GUI.changed              = false;
+          data.Value.CreateDynamicMassEnabled  = GUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
+                                                             data.Value.CreateDynamicMassEnabled,
+                                                             skin.button,
+                                                             skin.label );
+          data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
+          UnityEngine.GUI.changed              = false;
+          data.Value.ForceFeedbackEnabled      = GUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
+                                                             data.Value.ForceFeedbackEnabled,
+                                                             skin.button,
+                                                             skin.label );
+          data.ForceFeedbackEnabledChanged     = UnityEngine.GUI.changed;
+          UnityEngine.GUI.changed              = false;
+        }
+        UnityEngine.GUI.changed = data.ContainsChanges;
+      }
+      return data;
+    }
+
+    public static object DeformableTerrainShovelExcavationSettingsDrawerCopyOp( object data, object destination )
+    {
+      var result = (ExcavationSettingsResult)data;
+      var value  = (DeformableTerrainShovelSettings.ExcavationSettings)destination;
+      if ( result.EnabledChanged )
+        value.Enabled = result.Value.Enabled;
+      if ( result.CreateDynamicMassEnabledChanged )
+        value.CreateDynamicMassEnabled = result.Value.CreateDynamicMassEnabled;
+      if ( result.ForceFeedbackEnabledChanged )
+        value.ForceFeedbackEnabled = result.Value.ForceFeedbackEnabled;
+
+      return value;
+    }
+
     [InspectorDrawer( typeof( string ) )]
     public static object StringDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
     {
