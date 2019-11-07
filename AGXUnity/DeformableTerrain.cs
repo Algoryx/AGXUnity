@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -251,6 +252,56 @@ namespace AGXUnity
       Terrain.ApplyDelayedHeightmapModification();
 #endif
     }
+
+    //private void OnDrawGizmos()
+    //{
+    //  if ( Native == null )
+    //    return;
+
+    //  List<agxCollide.Geometry> activeZoneGeometries = new List<agxCollide.Geometry>();
+    //  foreach ( var shovel in m_shovels ) {
+    //    var collection = Native.getToolCollection( shovel.Native );
+    //    if ( collection == null )
+    //      continue;
+
+    //    Gizmos.color = Color.red;
+    //    Gizmos.DrawSphere( collection.getParentFrame().getTranslate().ToHandedVector3(), 0.5f );
+
+    //    activeZoneGeometries.Add( collection.getActiveZone().getGeometry() );
+
+    //    var deformController = collection.getDeformController();
+    //    activeZoneGeometries.AddRange( deformController.getActiveZoneGeometries() );
+    //    Func<agx.Vec3, Vector3> transform = p =>
+    //     {
+    //       return collection.getParentFrame().transformPointToWorld( p ).ToHandedVector3();
+    //     };
+    //    for ( uint i = 0; i < 3; ++i ) {
+    //      var cuttingMid = 0.5f * ( transform( deformController.getDeformerCollection( i ).getCuttingEdge().p1 ) +
+    //                                transform( deformController.getDeformerCollection( i ).getCuttingEdge().p2 ) );
+    //      Gizmos.color = Color.red;
+    //      Gizmos.DrawLine( transform( deformController.getDeformerCollection( i ).getCuttingEdge().p1 ),
+    //                       transform( deformController.getDeformerCollection( i ).getCuttingEdge().p2 ) );
+    //      Gizmos.color = Color.green;
+    //      Gizmos.DrawLine( transform( deformController.getDeformerCollection( i ).getTopEdge().p1 ),
+    //                       transform( deformController.getDeformerCollection( i ).getTopEdge().p2 ) );
+    //      Gizmos.color = Color.yellow;
+    //      Gizmos.DrawLine( cuttingMid,
+    //                       cuttingMid + collection.getParentFrame().transformVectorToWorld( deformController.getDeformerCollection( i ).getForwardVector() ).ToHandedVector3() );
+
+    //      foreach ( var wedgeShape in deformController.getDeformerCollection( i ).getActiveZone().getWedgeShapes() ) {
+    //        Gizmos.DrawSphere( wedgeShape.getCenter().ToHandedVector3(), 0.2f );
+    //      }
+    //    }
+    //  }
+
+    //  for ( int i = 0; i < activeZoneGeometries.Count; ++i ) {
+    //    var azGeometry = activeZoneGeometries[ i ];
+    //    var bound = azGeometry.getBoundingVolume();
+    //    Gizmos.color = Color.green;
+    //    Gizmos.DrawWireCube( bound.mid().ToHandedVector3(), bound.size().ToVector3() );
+    //    Gizmos.DrawWireSphere( azGeometry.getShape().getTransform().getTranslate().ToHandedVector3(), 0.25f );
+    //  }
+    //}
 
     private Terrain m_terrain = null;
     private float[,] m_initialHeights = null;

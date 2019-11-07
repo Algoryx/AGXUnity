@@ -696,7 +696,7 @@ namespace AGXUnity
 
     protected override void Construct()
     {
-      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( agxTerrain.TerrainMaterialLibrary.MaterialPreset.GRAVEL_1 );
+      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( agxTerrain.TerrainMaterialLibrary.MaterialPreset.DIRT_1 );
       Utils.PropertySynchronizer.SynchronizeGetToSet( this );
       m_temporaryNative.Dispose();
       m_temporaryNative = null;
