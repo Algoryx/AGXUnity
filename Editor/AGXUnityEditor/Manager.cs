@@ -58,6 +58,8 @@ namespace AGXUnityEditor
     /// </summary>
     public static readonly string AGXUnityEditorAssemblyName = "Assembly-CSharp-Editor";
 
+    public static GUIWindowHandler SceneViewGUIWindowHandler { get; private set; } = new GUIWindowHandler();
+
     /// <summary>
     /// Constructor called when the Unity editor is initialized.
     /// </summary>
@@ -359,7 +361,7 @@ namespace AGXUnityEditor
         }
 
         // If the mouse is hovering a scene view window - MouseOverObject should be null.
-        if ( SceneViewWindow.GetMouseOverWindow( current.mousePosition ) != null )
+        if ( SceneViewGUIWindowHandler.GetMouseOverWindow( current.mousePosition ) != null )
           MouseOverObject = null;
         else
           MouseOverObject = RouteObject( HandleUtility.PickGameObject( current.mousePosition,
@@ -497,7 +499,8 @@ namespace AGXUnityEditor
 
     private static void HandleWindowsGUI( SceneView sceneView )
     {
-      SceneViewWindow.OnSceneView( sceneView );
+      if ( SceneViewGUIWindowHandler.RenderWindows( Event.current ) )
+        SceneView.RepaintAll();
     }
 
     private static bool Equals( byte[] a, byte[] b )
