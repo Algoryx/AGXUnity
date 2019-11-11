@@ -23,6 +23,11 @@ namespace AGXUnity
     /// Cached mass properties component.
     /// </summary>
     private MassProperties m_massPropertiesComponent = null;
+    
+    /// <summary>
+    /// Cached unity-transform.
+    /// </summary>
+    private Transform m_transform;
 
     #region Public Serialized Properties
     /// <summary>
@@ -302,6 +307,8 @@ namespace AGXUnity
     #region Protected Virtual Methods
     protected override bool Initialize()
     {
+      m_transform = transform;
+      
       VerifyConfiguration();
 
       m_rb = new agx.RigidBody();
@@ -341,6 +348,7 @@ namespace AGXUnity
       }
 
       m_rb = null;
+      m_transform = null;
 
       base.OnDestroy();
     }
@@ -383,8 +391,8 @@ namespace AGXUnity
       // Local or global here? If we have a parent that moves?
       // If the parent moves, its transform has to be synced
       // down, and that is hard.
-      transform.position = m_rb.getPosition().ToHandedVector3();
-      transform.rotation = m_rb.getRotation().ToHandedQuaternion();
+      m_transform.SetPositionAndRotation( m_rb.getPosition().ToHandedVector3(),
+                                          m_rb.getRotation().ToHandedQuaternion() );
     }
 
     private void SyncProperties()
