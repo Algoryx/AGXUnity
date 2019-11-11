@@ -44,7 +44,8 @@ namespace AGXUnity
 
     /// <summary>
     /// Maximum density (default unit: kg/m^3) of the bulk material.
-    /// This is the upper limit for the soil compaction. Default: Infinity.
+    /// This is the upper limit for the soil compaction.
+    /// Default: Infinity.
     /// </summary>
     [ClampAboveZeroInInspector]
     public float MaximumDensity
@@ -685,6 +686,145 @@ namespace AGXUnity
         m_particleTerrainCohesion = value;
         if ( Native != null )
           Native.getParticleProperties().setParticleTerrainCohesion( m_particleTerrainCohesion );
+      }
+    }
+    #endregion
+
+    #region Excavation Contact Properties
+    [SerializeField]
+    private float m_maximumContactDepth = 1.0f;
+
+    /// <summary>
+    /// Set the maximum depth (m) of a soil aggregate <-> terrain contact.
+    /// This increases when the separation direction of the excavation
+    /// intersects the contact plane, causing virtual soil compression
+    /// between soil aggregates and the terrain.
+    /// Default: 1.0
+    /// </summary>
+    [InspectorGroupBegin( Name = "Excavation Contact Properties" )]
+    [ClampAboveZeroInInspector( true )]
+    public float MaximumContactDepth
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumDepth() ) :
+                 m_maximumContactDepth;
+      }
+      set
+      {
+        m_maximumContactDepth = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setMaximumContactDepth( m_maximumContactDepth );
+      }
+    }
+
+    [SerializeField]
+    private float m_depthDecayFactor = 2.0f;
+
+    /// <summary>
+    /// Set the depth decay factor of a soil aggregate <-> terrain contact.
+    /// This determines how rapidly the stored depth in a terrain <-> aggregate
+    /// contact will decay during separation when the active zone moves away
+    /// from the soil aggregate <-> terrain contact plane.
+    /// Default: 2.0
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float DepthDecayFactor
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getDepthDecayFactor() ) :
+                 m_depthDecayFactor;
+      }
+      set
+      {
+        m_depthDecayFactor = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setDepthDecayFactor( m_depthDecayFactor );
+      }
+    }
+
+    [SerializeField]
+    private float m_depthIncreaseFactor = 1.0f;
+
+    /// <summary>
+    /// Set the depth increase factor of a soil aggregate <-> terrain contact.
+    /// This governs how fast the depth should increase when the separation
+    /// direction of the excavation intersects the contact plane, causing
+    /// virtual soil compression between soil aggregates and the terrain.
+    /// Default: 1.0
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float DepthIncreaseFactor
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getDepthIncreaseFactor() ) :
+                 m_depthIncreaseFactor;
+      }
+      set
+      {
+        m_depthIncreaseFactor = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setDepthIncreaseFactor( m_depthIncreaseFactor );
+      }
+    }
+
+    [SerializeField]
+    private float m_maximumAggregateNormalForce = float.PositiveInfinity;
+
+    /// <summary>
+    /// Set the maximum force that the soil aggregate<-> terrain contacts
+    /// are allowed to have. Default maximum values are determined by the
+    /// soil mechanics properties of the terrain.
+    /// Default: Infinity
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float MaximumAggregateNormalForce
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumAggregateNormalForce() ) :
+                 m_maximumAggregateNormalForce;
+      }
+      set
+      {
+        m_maximumAggregateNormalForce = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setMaximumAggregateNormalForce( m_maximumAggregateNormalForce );
+      }
+    }
+
+    [SerializeField]
+    private float m_aggregateStiffnessMultiplier = 2.0f;
+
+    /// <summary>
+    /// Internal Method
+    /// 
+    /// The contact stiffness multiplier for the generated contacts between
+    /// the soil aggregates <-> terrain for excavation and deformation. The
+    /// final Young's modulus value that will be used in the contact material
+    /// thus becomes:
+    ///   bulkYoungsModulus * stiffnessMultiplier
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float AggregateStiffnessMultiplier
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getAggregateStiffnessMultiplier() ) :
+                 m_aggregateStiffnessMultiplier;
+      }
+      set
+      {
+        m_aggregateStiffnessMultiplier = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setAggregateStiffnessMultiplier( m_aggregateStiffnessMultiplier );
       }
     }
     #endregion

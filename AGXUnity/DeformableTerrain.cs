@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain" )]
@@ -181,6 +183,8 @@ namespace AGXUnity
 
       transform.position = transform.position + maxDepth * Vector3.down;
 
+      Debug.Log( "Resolution:   " + nativeHeightData.ResolutionX + ", " + nativeHeightData.ResolutionY );
+      Debug.Log( "Element size: " + elementSize );
       Native = new agxTerrain.Terrain( (uint)nativeHeightData.ResolutionX,
                                        (uint)nativeHeightData.ResolutionY,
                                        elementSize,
@@ -196,6 +200,14 @@ namespace AGXUnity
       GetSimulation().add( Native );
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+
+      //if ( Shovels.Length > 0 ) {
+      //  var windowSize = new Vector2( 750, 125 );
+      //  GUIWindow.Instance.Show( ShowForces,
+      //                           windowSize,
+      //                           new Vector2( Screen.width - windowSize.x - 20, 20 ),
+      //                           "Shovel forces" );
+      //}
 
       return true;
     }
@@ -215,6 +227,9 @@ namespace AGXUnity
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }
       Native = null;
+
+      //if ( GUIWindow.HasInstance )
+      //  GUIWindow.Instance.Close( ShowForces );
 
       base.OnDestroy();
     }
@@ -252,6 +267,50 @@ namespace AGXUnity
       Terrain.ApplyDelayedHeightmapModification();
 #endif
     }
+
+    //private GUIStyle m_textLabelStyle = null;
+    //private void ShowForces( EventType eventType )
+    //{
+    //  if ( m_textLabelStyle == null ) {
+    //    m_textLabelStyle = new GUIStyle( GUI.Skin.label );
+    //    m_textLabelStyle.alignment = TextAnchor.MiddleLeft;
+
+    //    var fonts = Font.GetOSInstalledFontNames();
+    //    foreach ( var font in fonts ) {
+    //      if ( font == "Consolas" ) {
+    //        m_textLabelStyle.font = Font.CreateDynamicFontFromOSFont( font, 24 );
+    //        break;
+    //      }
+    //    }
+    //  }
+
+    //  var textColor = Color.Lerp( Color.black, Color.white, 1.0f );
+    //  var valueColor = Color.Lerp( Color.green, Color.white, 0.45f );
+    //  Func<string, agx.Vec3, GUIContent> Vec3Content = ( name, v ) =>
+    //  {
+    //    return GUI.MakeLabel( string.Format( "{0} [{1}, {2}, {3}] kN",
+    //                                         GUI.AddColorTag( name, textColor ),
+    //                                         GUI.AddColorTag( v.x.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
+    //                                         GUI.AddColorTag( v.y.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
+    //                                         GUI.AddColorTag( v.z.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ) ) );
+    //  };
+
+    //  var shovel = m_shovels[ 0 ].Native;
+    //  var penetrationForce = new agx.Vec3();
+    //  var penetrationTorque = new agx.Vec3();
+    //  Native.getPenetrationForce( shovel, ref penetrationForce, ref penetrationTorque );
+    //  var separationForce = -Native.getSeparationContactForce( shovel );
+    //  var deformerForce = -Native.getDeformationContactForce( shovel );
+    //  var contactForce = -Native.getContactForce( shovel );
+
+    //  GUILayout.Label( Vec3Content( "Penetration force:", 1.0E-3 * penetrationForce ), m_textLabelStyle );
+    //  GUILayout.Space( 4 );
+    //  GUILayout.Label( Vec3Content( "Separation force: ", 1.0E-3 * separationForce ), m_textLabelStyle );
+    //  GUILayout.Space( 4 );
+    //  GUILayout.Label( Vec3Content( "Deformer force:   ", 1.0E-3 * deformerForce ), m_textLabelStyle );
+    //  GUILayout.Space( 4 );
+    //  GUILayout.Label( Vec3Content( "Contact force:    ", 1.0E-3 * contactForce ), m_textLabelStyle );
+    //}
 
     //private void OnDrawGizmos()
     //{

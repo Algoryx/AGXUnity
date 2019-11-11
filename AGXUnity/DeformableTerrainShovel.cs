@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Shovel" )]
