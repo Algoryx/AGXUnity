@@ -477,7 +477,7 @@ namespace AGXUnityEditor.Tools
       OnRemove();
 
       // Remove all windows that hasn't been closed.
-      SceneViewWindow.CloseAllWindows( this );
+      Manager.SceneViewGUIWindowHandler.CloseAllWindows( this );
 
       // Clear visualized selections for this tool.
       ClearVisualizedSelection();

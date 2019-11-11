@@ -32,7 +32,9 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      if ( ( !MenuTool.WindowIsActive || MenuTool.Target != Manager.MouseOverObject ) && Manager.HijackLeftMouseClick() && SceneViewWindow.GetMouseOverWindow( Event.current.mousePosition ) == null ) {
+      if ( ( !MenuTool.WindowIsActive || MenuTool.Target != Manager.MouseOverObject ) &&
+           Manager.HijackLeftMouseClick() &&
+           Manager.SceneViewGUIWindowHandler.GetMouseOverWindow( Event.current.mousePosition ) == null ) {
         // We know that we're hovering 'mouse over object' but we should check if we have a
         // good hit on some if it's children as well. Since:
         //   - We're using unity's internal 'pick object' functionality and it's not always

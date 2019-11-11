@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
-namespace AGXUnityEditor
+namespace AGXUnity.Utils
 {
   /// <summary>
-  /// Scene view window handled given a GUI callback method in any class.
+  /// Scene or game view window handled given a GUI callback method in any class.
   /// </summary>
   /// <example>
   /// public class MyEditorClass
@@ -15,7 +14,7 @@ namespace AGXUnityEditor
   ///   public void ShowWindow()
   ///   {
   ///     // Create window given RenderWindow method.
-  ///     var data = SceneViewWindow.Show( RenderWindow, new Vector2( 300, 70 ), new Vector2( 300, 300 ), "My window" );
+  ///     var data = GUIWindowHandler.Show( RenderWindow, new Vector2( 300, 70 ), new Vector2( 300, 300 ), "My window" );
   ///     // Assign/change data for the window, e.g., if the user may drag the window.
   ///     data.Movable = true;
   ///   }
@@ -23,18 +22,17 @@ namespace AGXUnityEditor
   ///   public void CloseWindow()
   ///   {
   ///     // Close the window (if open), given our RenderWindow method.
-  ///     SceneViewWindow.Close( RenderWindow );
+  ///     GUIWindowHandler.Close( RenderWindow );
   ///   }
   ///   
   ///   private void RenderWindow( EventType eventType )
   ///   {
-  ///     GUILayout.Label( GUIHelper.MakeRTLabel( "This text is red.", Color.red ), GUIHelper.EditorSkin.label );
-  ///     GUILayout.Label( GUIHelper.MakeRTLabel( "This test is blue.", Color.blue ), GUIHelper.EditorSkin.label );
-  ///     GUILayout.Label( GUIHelper.MakeRTLabel( "Event type: " + eventType, Color.white ), GUIHelper.EditorSkin.label );
+  ///     GUILayout.Label( "Hello world" );
   ///   }
   /// }
   /// </example>
-  public class SceneViewWindow
+  [DoNotGenerateCustomEditor]
+  public class GUIWindowHandler
   {
     /// <summary>
     /// Window data object, holding callback, size, position etc. of the window.
@@ -148,7 +146,26 @@ namespace AGXUnityEditor
       }
     }
 
-    private static Dictionary<Action<EventType>, Data> m_activeWindows = new Dictionary<Action<EventType>, Data>();
+    private static GUIWindowHandler s_instance = null;
+
+    public static GUIWindowHandler Instance
+    {
+      get
+      {
+        if ( !Application.isPlaying )
+          throw new NotSupportedException( "GUIWindowHandler may not be instantiated in edit mode. Use Instance between Awake and Destroy." );
+        if ( s_instance == null ) {
+          s_instance = new GUIWindowHandler();
+          var go = new GameObject( "AGXUnity.GUIWindowHandler" );
+          var component = go.AddComponent<OnGUICallbackComponent>();
+          component.OnGUICallback += s_instance.OnGUI;
+          component.OnDestroyCallback += s_instance.OnDestroy;
+        }
+        return s_instance;
+      }
+    }
+
+    public static bool HasInstance { get { return s_instance != null && Application.isPlaying; } }
 
     /// <summary>
     /// Show a new window in scene view given callback (to render GUI), size, position and title.
@@ -159,7 +176,7 @@ namespace AGXUnityEditor
     /// <param name="title">Title of the window.</param>
     /// <param name="requestFocus">Request focus to the window.</param>
     /// <returns>Window data.</returns>
-    public static Data Show( Action<EventType> guiCallback, Vector2 size, Vector2 position, string title, bool requestFocus = false )
+    public Data Show( Action<EventType> guiCallback, Vector2 size, Vector2 position, string title, bool requestFocus = false )
     {
       if ( guiCallback == null )
         throw new ArgumentNullException( "guiCallback" );
@@ -182,7 +199,7 @@ namespace AGXUnityEditor
     /// Close window given the GUI callback.
     /// </summary>
     /// <param name="guiCallback">GUI callback associated to the window.</param>
-    public static void Close( Action<EventType> guiCallback )
+    public void Close( Action<EventType> guiCallback )
     {
       m_activeWindows.Remove( guiCallback );
     }
@@ -191,7 +208,7 @@ namespace AGXUnityEditor
     /// Close all windows with callbacks associated to <paramref name="obj"/>.
     /// </summary>
     /// <param name="obj">Object with GUI callbacks.</param>
-    public static void CloseAllWindows( object obj )
+    public void CloseAllWindows( object obj )
     {
       if ( obj == null )
         return;
@@ -205,7 +222,7 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="guiCallback">GUI callback associated to the window.</param>
     /// <returns>Window data.</returns>
-    public static Data GetWindowData( Action<EventType> guiCallback )
+    public Data GetWindowData( Action<EventType> guiCallback )
     {
       Data data = null;
       m_activeWindows.TryGetValue( guiCallback, out data );
@@ -217,7 +234,7 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="mousePosition">Current scene view mouse position.</param>
     /// <returns>Window data of window the mouse pointer is over - otherwise null.</returns>
-    public static Data GetMouseOverWindow( Vector2 mousePosition )
+    public Data GetMouseOverWindow( Vector2 mousePosition )
     {
       foreach ( var data in m_activeWindows.Values )
         if ( data.Contains( mousePosition ) )
@@ -225,7 +242,7 @@ namespace AGXUnityEditor
       return null;
     }
 
-    public static void OnSceneView( SceneView sceneView )
+    public bool RenderWindows( Event current )
     {
       List<Data> windowsToClose = new List<Data>();
       foreach ( Data data in m_activeWindows.Values ) {
@@ -234,7 +251,7 @@ namespace AGXUnityEditor
                                       id =>
                                       {
                                         // Call to the user method.
-                                        EventType windowEventType = Event.current.GetTypeForControl( id );
+                                        EventType windowEventType = current.GetTypeForControl( id );
                                         data.Callback( windowEventType );
 
                                         // Handle movable window.
@@ -246,34 +263,29 @@ namespace AGXUnityEditor
                                                           ( data.IsMoving || windowEventType == EventType.MouseDown );
 
                                           if ( data.IsMoving )
-                                            GUI.DragWindow();
+                                            UnityEngine.GUI.DragWindow();
                                         }
 
                                         EatMouseEvents( data );
-
-                                        // Explicit repaint when the mouse is moved so that the window
-                                        // seems active.
-                                        if ( windowEventType == EventType.MouseMove )
-                                          SceneView.RepaintAll();
                                       },
                                       data.Title,
-                                      Utils.GUI.Skin.window,
+                                      GUI.Skin.window,
                                       new GUILayoutOption[] { GUILayout.Width( data.Size.x ) } );
 
         data.Size     = rect.size;
         data.Position = rect.position;
 
         if ( data.RequestFocus ) {
-          GUI.FocusWindow( data.Id );
+          UnityEngine.GUI.FocusWindow( data.Id );
           data.RequestFocus = false;
         }
 
         bool hasListener = data.CloseEventListener.GetInvocationList().Length > 1;
         if ( hasListener ) {
           Data.CloseEventType currentCloseEvent = Data.CloseEventType.None;
-          if ( Manager.KeyEscapeDown )
+          if ( IsKeyEscapeDown( current ) )
             currentCloseEvent = Data.CloseEventType.KeyEscape;
-          else if ( Manager.LeftMouseClick && !data.Contains( Event.current.mousePosition ) )
+          else if ( IsLeftMouseClick( current ) && !data.Contains( current.mousePosition ) )
             currentCloseEvent = Data.CloseEventType.ClickAndMiss;
 
           if ( currentCloseEvent != Data.CloseEventType.None && data.CloseEventListener( currentCloseEvent ) )
@@ -283,6 +295,10 @@ namespace AGXUnityEditor
 
       foreach ( Data data in windowsToClose )
         Close( data.Callback );
+
+      // Explicit repaint when the mouse is moved so that the window
+      // seems active.
+      return m_activeWindows.Count > 0 && current.type == EventType.MouseMove;
     }
 
     /// <summary>
@@ -290,7 +306,7 @@ namespace AGXUnityEditor
     /// http://answers.unity3d.com/questions/801834/guilayout-window-consume-mouse-events.html
     /// </summary>
     /// <param name="data">Window data.</param>
-    private static void EatMouseEvents( Data data )
+    public static void EatMouseEvents( Data data )
     {
       int controlID = GUIUtility.GetControlID( data.Id, FocusType.Passive, data.GetRect() );
 
@@ -320,5 +336,54 @@ namespace AGXUnityEditor
           break;
       }
     }
+
+    public static bool IsKeyEscapeDown( Event current )
+    {
+      return current != null &&
+             current.isKey &&
+             current.keyCode == KeyCode.Escape &&
+             current.type == EventType.KeyUp;
+    }
+
+    public static bool IsLeftMouseClick( Event current )
+    {
+      return !current.control &&
+             !current.shift &&
+             !current.alt &&
+              current.type == EventType.MouseDown &&
+              current.button == 0;
+    }
+
+    private void OnGUI()
+    {
+      RenderWindows( Event.current );
+    }
+
+    private void OnDestroy()
+    {
+      m_activeWindows.Clear();
+      s_instance = null;
+    }
+
+    private class OnGUICallbackComponent : MonoBehaviour
+    {
+      public delegate void VoidCallbackDef();
+      public VoidCallbackDef OnGUICallback;
+      public VoidCallbackDef OnDestroyCallback;
+      private void OnGUI()
+      {
+        if ( OnGUICallback != null )
+          OnGUICallback.Invoke();
+      }
+      private void OnDestroy()
+      {
+        if ( OnDestroyCallback != null )
+          OnDestroyCallback.Invoke();
+        OnGUICallback = null;
+        OnDestroyCallback = null;
+      }
+    }
+
+    private Dictionary<Action<EventType>, Data> m_activeWindows = new Dictionary<Action<EventType>, Data>();
   }
 }

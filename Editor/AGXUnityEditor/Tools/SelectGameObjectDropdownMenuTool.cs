@@ -47,7 +47,7 @@ namespace AGXUnityEditor.Tools
       set { SetTarget( value ); }
     }
 
-    public bool WindowIsActive { get { return SceneViewWindow.GetWindowData( OnWindowGUI ) != null; } }
+    public bool WindowIsActive { get { return Manager.SceneViewGUIWindowHandler.GetWindowData( OnWindowGUI ) != null; } }
 
     public Action<GameObject> OnSelect = delegate { };
 
@@ -73,14 +73,17 @@ namespace AGXUnityEditor.Tools
 
     public void Show( Vector2 position )
     {
-      SceneViewWindow.Show( OnWindowGUI, new Vector2( m_windowWidth, 0 ), position + new Vector2( -0.5f * m_windowWidth, -10 ), WindowTitle.text );
+      Manager.SceneViewGUIWindowHandler.Show( OnWindowGUI,
+                                              new Vector2( m_windowWidth, 0 ),
+                                              position + new Vector2( -0.5f * m_windowWidth, -10 ),
+                                              WindowTitle.text );
     }
 
     public override void OnRemove()
     {
       m_selected = null;
 
-      SceneViewWindow.Close( OnWindowGUI );
+      Manager.SceneViewGUIWindowHandler.Close( OnWindowGUI );
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
@@ -88,7 +91,10 @@ namespace AGXUnityEditor.Tools
       bool remove = (
                       ( RemoveOnKeyEscape && Manager.KeyEscapeDown ) ||
                       ( RemoveOnCameraControl && Manager.IsCameraControl ) ||
-                      ( RemoveOnClickMiss && WindowIsActive && Manager.LeftMouseClick && !SceneViewWindow.GetWindowData( OnWindowGUI ).Contains( Event.current.mousePosition ) )
+                      ( RemoveOnClickMiss &&
+                        WindowIsActive &&
+                        Manager.LeftMouseClick &&
+                       !Manager.SceneViewGUIWindowHandler.GetWindowData( OnWindowGUI ).Contains( Event.current.mousePosition ) )
                     );
 
       if ( remove )
