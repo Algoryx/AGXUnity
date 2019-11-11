@@ -31,6 +31,7 @@ namespace AGXUnity.Utils
   ///   }
   /// }
   /// </example>
+  [DoNotGenerateCustomEditor]
   public class GUIWindowHandler
   {
     /// <summary>
