@@ -364,6 +364,8 @@ namespace AGXUnity.Collide
         m_geometry.Dispose();
       m_geometry = null;
 
+      m_transform = null;
+
       base.OnDestroy();
     }
 
@@ -397,7 +399,8 @@ namespace AGXUnity.Collide
     {
       // Automatic synchronization if we have a parent.
       if ( m_geometry != null && m_geometry.getRigidBody() == null )
-        m_geometry.setLocalTransform( new agx.AffineMatrix4x4( m_transform.rotation.ToHandedQuat(), m_transform.position.ToHandedVec3() ) );
+        m_geometry.setLocalTransform( new agx.AffineMatrix4x4( m_transform.rotation.ToHandedQuat(),
+                                                               m_transform.position.ToHandedVec3() ) );
     }
 
     /// <summary>
@@ -406,9 +409,9 @@ namespace AGXUnity.Collide
     /// </summary>
     protected virtual void SyncUnityTransform()
     {
-      if ( transform.parent == null && m_geometry != null ) {
-        m_transform.SetPositionAndRotation(m_geometry.getPosition().ToHandedVector3(),
-          m_geometry.getRotation().ToHandedQuaternion());
+      if ( m_geometry != null && m_transform.parent == null ) {
+        m_transform.SetPositionAndRotation( m_geometry.getPosition().ToHandedVector3(),
+                                            m_geometry.getRotation().ToHandedQuaternion() );
       }
     }
   }

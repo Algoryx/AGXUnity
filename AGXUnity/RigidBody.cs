@@ -348,6 +348,7 @@ namespace AGXUnity
       }
 
       m_rb = null;
+      m_transform = null;
 
       base.OnDestroy();
     }
@@ -390,7 +391,8 @@ namespace AGXUnity
       // Local or global here? If we have a parent that moves?
       // If the parent moves, its transform has to be synced
       // down, and that is hard.
-      m_transform.SetPositionAndRotation(m_rb.getPosition().ToHandedVector3(), m_rb.getRotation().ToHandedQuaternion()); 
+      m_transform.SetPositionAndRotation( m_rb.getPosition().ToHandedVector3(),
+                                          m_rb.getRotation().ToHandedQuaternion() );
     }
 
     private void SyncProperties()
@@ -408,15 +410,15 @@ namespace AGXUnity
       if ( nativeRb == null )
         return;
 
-      nativeRb.setPosition( m_transform.position.ToHandedVec3() );
-      nativeRb.setRotation( m_transform.rotation.ToHandedQuat() );
+      nativeRb.setPosition( transform.position.ToHandedVec3() );
+      nativeRb.setRotation( transform.rotation.ToHandedQuat() );
     }
 
     private void VerifyConfiguration()
     {
       // Verification:
       // - No parent may be a body.
-      var parent = m_transform.parent;
+      var parent = transform.parent;
       while ( parent != null ) {
         bool hasBody = parent.GetComponent<RigidBody>() != null;
         if ( hasBody )
