@@ -201,13 +201,13 @@ namespace AGXUnity
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
-      //if ( Shovels.Length > 0 ) {
-      //  var windowSize = new Vector2( 750, 125 );
-      //  GUIWindow.Instance.Show( ShowForces,
-      //                           windowSize,
-      //                           new Vector2( Screen.width - windowSize.x - 20, 20 ),
-      //                           "Shovel forces" );
-      //}
+      if ( Shovels.Length > 0 ) {
+        var windowSize = new Vector2( 750, 125 );
+        GUIWindowHandler.Instance.Show( ShowForces,
+                                        windowSize,
+                                        new Vector2( Screen.width - windowSize.x - 20, 20 ),
+                                        "Shovel forces" );
+      }
 
       return true;
     }
@@ -228,8 +228,8 @@ namespace AGXUnity
       }
       Native = null;
 
-      //if ( GUIWindow.HasInstance )
-      //  GUIWindow.Instance.Close( ShowForces );
+      if ( GUIWindowHandler.HasInstance )
+        GUIWindowHandler.Instance.Close( ShowForces );
 
       base.OnDestroy();
     }
@@ -268,99 +268,49 @@ namespace AGXUnity
 #endif
     }
 
-    //private GUIStyle m_textLabelStyle = null;
-    //private void ShowForces( EventType eventType )
-    //{
-    //  if ( m_textLabelStyle == null ) {
-    //    m_textLabelStyle = new GUIStyle( GUI.Skin.label );
-    //    m_textLabelStyle.alignment = TextAnchor.MiddleLeft;
+    private GUIStyle m_textLabelStyle = null;
+    private void ShowForces( EventType eventType )
+    {
+      if ( m_textLabelStyle == null ) {
+        m_textLabelStyle = new GUIStyle( GUI.Skin.label );
+        m_textLabelStyle.alignment = TextAnchor.MiddleLeft;
 
-    //    var fonts = Font.GetOSInstalledFontNames();
-    //    foreach ( var font in fonts ) {
-    //      if ( font == "Consolas" ) {
-    //        m_textLabelStyle.font = Font.CreateDynamicFontFromOSFont( font, 24 );
-    //        break;
-    //      }
-    //    }
-    //  }
+        var fonts = Font.GetOSInstalledFontNames();
+        foreach ( var font in fonts ) {
+          if ( font == "Consolas" ) {
+            m_textLabelStyle.font = Font.CreateDynamicFontFromOSFont( font, 24 );
+            break;
+          }
+        }
+      }
 
-    //  var textColor = Color.Lerp( Color.black, Color.white, 1.0f );
-    //  var valueColor = Color.Lerp( Color.green, Color.white, 0.45f );
-    //  Func<string, agx.Vec3, GUIContent> Vec3Content = ( name, v ) =>
-    //  {
-    //    return GUI.MakeLabel( string.Format( "{0} [{1}, {2}, {3}] kN",
-    //                                         GUI.AddColorTag( name, textColor ),
-    //                                         GUI.AddColorTag( v.x.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
-    //                                         GUI.AddColorTag( v.y.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
-    //                                         GUI.AddColorTag( v.z.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ) ) );
-    //  };
+      var textColor = Color.Lerp( Color.black, Color.white, 1.0f );
+      var valueColor = Color.Lerp( Color.green, Color.white, 0.45f );
+      Func<string, agx.Vec3, GUIContent> Vec3Content = ( name, v ) =>
+      {
+        return GUI.MakeLabel( string.Format( "{0} [{1}, {2}, {3}] kN",
+                                             GUI.AddColorTag( name, textColor ),
+                                             GUI.AddColorTag( v.x.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
+                                             GUI.AddColorTag( v.y.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
+                                             GUI.AddColorTag( v.z.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ) ) );
+      };
 
-    //  var shovel = m_shovels[ 0 ].Native;
-    //  var penetrationForce = new agx.Vec3();
-    //  var penetrationTorque = new agx.Vec3();
-    //  Native.getPenetrationForce( shovel, ref penetrationForce, ref penetrationTorque );
-    //  var separationForce = -Native.getSeparationContactForce( shovel );
-    //  var deformerForce = -Native.getDeformationContactForce( shovel );
-    //  var contactForce = -Native.getContactForce( shovel );
+      var shovel = m_shovels[ 0 ].Native;
+      var penetrationForce = new agx.Vec3();
+      var penetrationTorque = new agx.Vec3();
+      Native.getPenetrationForce( shovel, ref penetrationForce, ref penetrationTorque );
+      var separationForce = -Native.getSeparationContactForce( shovel );
+      var deformerForce = -Native.getDeformationContactForce( shovel );
+      var contactForce = -Native.getContactForce( shovel );
 
-    //  GUILayout.Label( Vec3Content( "Penetration force:", 1.0E-3 * penetrationForce ), m_textLabelStyle );
-    //  GUILayout.Space( 4 );
-    //  GUILayout.Label( Vec3Content( "Separation force: ", 1.0E-3 * separationForce ), m_textLabelStyle );
-    //  GUILayout.Space( 4 );
-    //  GUILayout.Label( Vec3Content( "Deformer force:   ", 1.0E-3 * deformerForce ), m_textLabelStyle );
-    //  GUILayout.Space( 4 );
-    //  GUILayout.Label( Vec3Content( "Contact force:    ", 1.0E-3 * contactForce ), m_textLabelStyle );
-    //}
-
-    //private void OnDrawGizmos()
-    //{
-    //  if ( Native == null )
-    //    return;
-
-    //  List<agxCollide.Geometry> activeZoneGeometries = new List<agxCollide.Geometry>();
-    //  foreach ( var shovel in m_shovels ) {
-    //    var collection = Native.getToolCollection( shovel.Native );
-    //    if ( collection == null )
-    //      continue;
-
-    //    Gizmos.color = Color.red;
-    //    Gizmos.DrawSphere( collection.getParentFrame().getTranslate().ToHandedVector3(), 0.5f );
-
-    //    activeZoneGeometries.Add( collection.getActiveZone().getGeometry() );
-
-    //    var deformController = collection.getDeformController();
-    //    activeZoneGeometries.AddRange( deformController.getActiveZoneGeometries() );
-    //    Func<agx.Vec3, Vector3> transform = p =>
-    //     {
-    //       return collection.getParentFrame().transformPointToWorld( p ).ToHandedVector3();
-    //     };
-    //    for ( uint i = 0; i < 3; ++i ) {
-    //      var cuttingMid = 0.5f * ( transform( deformController.getDeformerCollection( i ).getCuttingEdge().p1 ) +
-    //                                transform( deformController.getDeformerCollection( i ).getCuttingEdge().p2 ) );
-    //      Gizmos.color = Color.red;
-    //      Gizmos.DrawLine( transform( deformController.getDeformerCollection( i ).getCuttingEdge().p1 ),
-    //                       transform( deformController.getDeformerCollection( i ).getCuttingEdge().p2 ) );
-    //      Gizmos.color = Color.green;
-    //      Gizmos.DrawLine( transform( deformController.getDeformerCollection( i ).getTopEdge().p1 ),
-    //                       transform( deformController.getDeformerCollection( i ).getTopEdge().p2 ) );
-    //      Gizmos.color = Color.yellow;
-    //      Gizmos.DrawLine( cuttingMid,
-    //                       cuttingMid + collection.getParentFrame().transformVectorToWorld( deformController.getDeformerCollection( i ).getForwardVector() ).ToHandedVector3() );
-
-    //      foreach ( var wedgeShape in deformController.getDeformerCollection( i ).getActiveZone().getWedgeShapes() ) {
-    //        Gizmos.DrawSphere( wedgeShape.getCenter().ToHandedVector3(), 0.2f );
-    //      }
-    //    }
-    //  }
-
-    //  for ( int i = 0; i < activeZoneGeometries.Count; ++i ) {
-    //    var azGeometry = activeZoneGeometries[ i ];
-    //    var bound = azGeometry.getBoundingVolume();
-    //    Gizmos.color = Color.green;
-    //    Gizmos.DrawWireCube( bound.mid().ToHandedVector3(), bound.size().ToVector3() );
-    //    Gizmos.DrawWireSphere( azGeometry.getShape().getTransform().getTranslate().ToHandedVector3(), 0.25f );
-    //  }
-    //}
+      GUILayout.Label( Vec3Content( "Penetration force:", 1.0E-3 * penetrationForce ), m_textLabelStyle );
+      GUILayout.Space( 4 );
+      GUILayout.Label( Vec3Content( "Separation force: ", 1.0E-3 * separationForce ), m_textLabelStyle );
+      GUILayout.Space( 4 );
+      GUILayout.Label( Vec3Content( "Deformer force:   ", 1.0E-3 * deformerForce ), m_textLabelStyle );
+      GUILayout.Space( 4 );
+      GUILayout.Label( Vec3Content( "Contact force:    ", 1.0E-3 * contactForce ), m_textLabelStyle );
+    }
 
     private Terrain m_terrain = null;
     private float[,] m_initialHeights = null;
