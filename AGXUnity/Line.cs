@@ -55,6 +55,14 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Center position in world coordinate frame of this line.
+    /// </summary>
+    public Vector3 Center
+    {
+      get { return 0.5f * ( Start.Position + End.Position ); }
+    }
+
+    /// <summary>
     /// Length of this line.
     /// </summary>
     public float Length

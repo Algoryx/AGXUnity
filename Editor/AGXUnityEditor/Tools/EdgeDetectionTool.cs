@@ -38,11 +38,22 @@ namespace AGXUnityEditor.Tools
       /// </summary>
       public Quaternion Rotation = Quaternion.identity;
     }
+
+    public struct EdgeSelectResult
+    {
+      public GameObject Target;
+      public AGXUnity.Edge Edge;
+    }
     
     /// <summary>
     /// Callback when all data has been collected.
     /// </summary>
     public Action<Result> OnEdgeFound = delegate { };
+
+    /// <summary>
+    /// Callback when the user selects an edge.
+    /// </summary>
+    public Action<EdgeSelectResult> OnEdgeSelect = delegate { };
 
     /// <summary>
     /// Default constructor.
@@ -211,6 +222,14 @@ namespace AGXUnityEditor.Tools
       m_collectedData.SelectedEdge = m_collectedData.CurrentEdge;
       EdgeVisual.Pickable          = false;
       NodeVisual.Pickable          = false;
+
+      if ( OnEdgeSelect != null && m_collectedData.SelectedEdge.Valid ) {
+        OnEdgeSelect( new EdgeSelectResult()
+        {
+          Target = m_collectedData.Target,
+          Edge = m_collectedData.SelectedEdge
+        } );
+      }
     }
 
     /// <summary>

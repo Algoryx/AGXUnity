@@ -30,15 +30,16 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
-      LineVisual.Visible   =
-      StartVisual.Visible  =
-      EndVisual.Visible    = false;
+      LineVisual.Visible  = false;
+      StartVisual.Visible = false;
+      EndVisual.Visible   = false;
+
       LineVisual.Pickable  = false;
       StartVisual.Pickable = true;
       EndVisual.Pickable   = true;
 
-      StartFrameToolEnable = true;
-      EndFrameToolEnable   = true;
+      StartFrameToolEnable = false;
+      EndFrameToolEnable   = false;
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
@@ -71,10 +72,59 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI()
     {
+      bool toggleCreateEdge = false;
+      using ( new GUILayout.HorizontalScope() ) {
+        GUI.ToolsLabel( InspectorEditor.Skin );
+
+        using ( GUI.ToolButtonData.ColorBlock ) {
+          toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
+                                             EdgeDetectionToolEnable,
+                                             "Disable collisions against other objects",
+                                             InspectorEditor.Skin );
+        }
+      }
+
+      if ( toggleCreateEdge )
+        EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
+
       if ( StartFrameToolEnable )
         StartFrameTool.OnPreTargetMembersGUI();
       if ( EndFrameToolEnable )
         EndFrameTool.OnPreTargetMembersGUI();
+    }
+
+    private EdgeDetectionTool EdgeDetectionTool
+    {
+      get { return GetChild<EdgeDetectionTool>(); }
+    }
+
+    private bool EdgeDetectionToolEnable
+    {
+      get { return EdgeDetectionTool != null; }
+      set
+      {
+        if ( value && !EdgeDetectionToolEnable )
+          AddChild( new EdgeDetectionTool()
+          {
+            OnEdgeSelect = OnEdgeSelect
+          } );
+        else if ( !value )
+          RemoveChild( EdgeDetectionTool );
+      }
+    }
+
+    private void OnEdgeSelect( EdgeDetectionTool.EdgeSelectResult result )
+    {
+      Line.Start.SetParent( result.Target );
+      Line.Start.Position = result.Edge.Start;
+
+      Line.End.SetParent( result.Target );
+      Line.End.Position = result.Edge.End;
+
+      StartFrameToolEnable = true;
+      EndFrameToolEnable = true;
+
+      EdgeDetectionToolEnable = false;
     }
 
     private FrameTool StartFrameTool
