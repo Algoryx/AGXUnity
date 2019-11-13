@@ -31,7 +31,7 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private IFrame m_start = null;
+    private IFrame m_start = new IFrame();
 
     /// <summary>
     /// Start frame of this line.
@@ -43,7 +43,7 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private IFrame m_end = null;
+    private IFrame m_end = new IFrame();
 
     /// <summary>
     /// End frame of this line.

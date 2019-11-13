@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 
@@ -9,6 +10,10 @@ namespace AGXUnityEditor.Tools
   public class LineTool : Tool
   {
     public Line Line { get; private set; }
+
+    public string Name { get; set; } = "Line";
+
+    public UnityEngine.Object UndoRedoRecordObject { get; set; }
 
     public Color Color
     {
@@ -38,36 +43,49 @@ namespace AGXUnityEditor.Tools
       StartVisual.Pickable = true;
       EndVisual.Pickable   = true;
 
-      StartFrameToolEnable = false;
-      EndFrameToolEnable   = false;
+      StartFrameToolEnable = Line.Valid;
+      EndFrameToolEnable   = Line.Valid;
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
       var lineVisualRadius   = 0.015f;
       var sphereVisualRadius = 1.5f * lineVisualRadius;
-      var renderOnSceneView  = !EditorApplication.isPlaying ||
-                               EditorApplication.isPaused;
+      var renderOnSceneView  = !ConfigurationToolActive() &&
+                                Line.Valid && ( 
+                               !EditorApplication.isPlaying ||
+                                EditorApplication.isPaused );
+      var startEnabled = renderOnSceneView && GetFrameToggleEnable( StartFrameNameId );
+      var endEnabled   = renderOnSceneView && GetFrameToggleEnable( EndFrameNameId );
 
       LineVisual.Visible = renderOnSceneView;
-      LineVisual.SetTransform( Line.Start.Position + lineVisualRadius * Line.Direction,
-                               Line.End.Position - lineVisualRadius * Line.Direction,
-                               lineVisualRadius,
-                               false );
-      StartVisual.Visible = renderOnSceneView;
-      StartVisual.SetTransform( Line.Start.Position,
+      if ( LineVisual.Visible ) {
+        LineVisual.SetTransform( Line.Start.Position + lineVisualRadius * Line.Direction,
+                                 Line.End.Position - lineVisualRadius * Line.Direction,
+                                 lineVisualRadius,
+                                 false );
+      }
+
+      StartVisual.Visible = startEnabled;
+      if ( StartVisual.Visible ) {
+        StartVisual.SetTransform( Line.Start.Position,
+                                  Quaternion.identity,
+                                  sphereVisualRadius,
+                                  false );
+      }
+
+      EndVisual.Visible = endEnabled;
+      if ( EndVisual.Visible ) {
+        EndVisual.SetTransform( Line.End.Position,
                                 Quaternion.identity,
                                 sphereVisualRadius,
                                 false );
-      EndVisual.Visible = renderOnSceneView;
-      EndVisual.SetTransform( Line.End.Position,
-                              Quaternion.identity,
-                              sphereVisualRadius,
-                              false );
-      if ( StartFrameToolEnable )
-        StartFrameTool.TransformHandleActive = renderOnSceneView;
-      if ( EndFrameToolEnable )
-        EndFrameTool.TransformHandleActive = renderOnSceneView;
+      }
+
+      if ( StartFrameTool != null )
+        StartFrameTool.TransformHandleActive = startEnabled;
+      if ( EndFrameTool != null )
+        EndFrameTool.TransformHandleActive = endEnabled;
     }
 
     public void OnInspectorGUI()
@@ -79,18 +97,40 @@ namespace AGXUnityEditor.Tools
         using ( GUI.ToolButtonData.ColorBlock ) {
           toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
                                              EdgeDetectionToolEnable,
-                                             "Disable collisions against other objects",
+                                             "Find line given edge.",
                                              InspectorEditor.Skin );
         }
       }
 
+      GUI.Separator();
+
       if ( toggleCreateEdge )
         EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
 
-      if ( StartFrameToolEnable )
-        StartFrameTool.OnPreTargetMembersGUI();
-      if ( EndFrameToolEnable )
-        EndFrameTool.OnPreTargetMembersGUI();
+      if ( !Line.Valid )
+        GUI.WarningLabel( Name + " isn't created - use Tools to configure.", InspectorEditor.Skin );
+
+      if ( StartFrameToolEnable ) {
+        if ( GUI.Foldout( GetFrameToggleData( StartFrameNameId ),
+                          GUI.MakeLabel( StartFrameNameId, true ),
+                          InspectorEditor.Skin ) ) {
+          using ( new GUI.Indent( 12 ) )
+            StartFrameTool.OnPreTargetMembersGUI();
+        }
+      }
+      if ( EndFrameToolEnable ) {
+        if ( GUI.Foldout( GetFrameToggleData( EndFrameNameId ),
+                          GUI.MakeLabel( EndFrameNameId, true ),
+                          InspectorEditor.Skin ) ) {
+          using ( new GUI.Indent( 12 ) )
+            EndFrameTool.OnPreTargetMembersGUI();
+        }
+      }
+    }
+
+    private bool ConfigurationToolActive()
+    {
+      return EdgeDetectionToolEnable;
     }
 
     private EdgeDetectionTool EdgeDetectionTool
@@ -117,12 +157,14 @@ namespace AGXUnityEditor.Tools
     {
       Line.Start.SetParent( result.Target );
       Line.Start.Position = result.Edge.Start;
+      Line.Start.Rotation = CalculateRotation( result.Edge, AGXUnity.Utils.ShapeUtils.Direction.Positive_Z );
 
       Line.End.SetParent( result.Target );
       Line.End.Position = result.Edge.End;
+      Line.End.Rotation = CalculateRotation( result.Edge, AGXUnity.Utils.ShapeUtils.Direction.Negative_Z );
 
       StartFrameToolEnable = true;
-      EndFrameToolEnable = true;
+      EndFrameToolEnable   = true;
 
       EdgeDetectionToolEnable = false;
     }
@@ -138,7 +180,11 @@ namespace AGXUnityEditor.Tools
       set
       {
         if ( value && !StartFrameToolEnable )
-          AddChild( new FrameTool( Line.Start ) );
+          AddChild( new FrameTool( Line.Start )
+          {
+            IsSingleInstanceTool = IsSingleInstanceTool,
+            UndoRedoRecordObject = UndoRedoRecordObject
+          } );
         else if ( !value )
           RemoveChild( StartFrameTool );
       }
@@ -155,7 +201,11 @@ namespace AGXUnityEditor.Tools
       set
       {
         if ( value && !EndFrameToolEnable )
-          AddChild( new FrameTool( Line.End ) );
+          AddChild( new FrameTool( Line.End )
+          {
+            IsSingleInstanceTool = IsSingleInstanceTool,
+            UndoRedoRecordObject = UndoRedoRecordObject
+          } );
         else if ( !value )
           RemoveChild( EndFrameTool );
       }
@@ -176,6 +226,24 @@ namespace AGXUnityEditor.Tools
       get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( "End", "GUI/Text Shader" ); }
     }
 
+    private Quaternion CalculateRotation( Edge edge, AGXUnity.Utils.ShapeUtils.Direction direction )
+    {
+      return Quaternion.LookRotation( edge.Normal, edge.Direction ) *
+             Quaternion.FromToRotation( Vector3.up, AGXUnity.Utils.ShapeUtils.GetLocalFaceDirection( direction ) );
+    }
+
+    private EditorDataEntry GetFrameToggleData( string name )
+    {
+      return EditorData.Instance.GetData( UndoRedoRecordObject, Name + '_' + name );
+    }
+
+    private bool GetFrameToggleEnable( string name )
+    {
+      return GetFrameToggleData( name ).Bool;
+    }
+
     private Color m_color = Color.yellow;
+    private static readonly string StartFrameNameId = "Start frame";
+    private static readonly string EndFrameNameId = "End frame";
   }
 }

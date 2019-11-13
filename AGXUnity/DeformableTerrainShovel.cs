@@ -22,70 +22,46 @@ namespace AGXUnity
     public RigidBody RigidBody { get { return m_rb ?? ( m_rb = GetComponent<RigidBody>() ); } }
 
     [SerializeField]
-    private Line m_topEdge = null;
+    private Line m_topEdge = new Line();
 
+    [HideInInspector]
     public Line TopEdge
     {
-      get
-      {
-        if ( m_topEdge == null || !m_topEdge.Valid )
-          m_topEdge = Line.Create( RigidBody.gameObject,
-                                   Vector3.left + Vector3.up,
-                                   Vector3.right + Vector3.up );
-        return m_topEdge;
-      }
+      get { return m_topEdge; }
       set
       {
-        m_topEdge = value ?? Line.Create( RigidBody.gameObject,
-                                          Vector3.left + Vector3.up,
-                                          Vector3.right + Vector3.up );
-        if ( Native != null )
+        m_topEdge = value ?? new Line();
+        if ( m_topEdge.Valid && Native != null )
           Native.setTopEdge( m_topEdge.ToNativeEdge( RigidBody.gameObject ) );
       }
     }
 
     [SerializeField]
-    private Line m_cuttingEdge = null;
+    private Line m_cuttingEdge = new Line();
 
+    [HideInInspector]
     public Line CuttingEdge
     {
-      get
-      {
-        if ( m_cuttingEdge == null || !m_cuttingEdge.Valid )
-          m_cuttingEdge = Line.Create( RigidBody.gameObject,
-                                       Vector3.left + Vector3.down,
-                                       Vector3.right + Vector3.down );
-        return m_cuttingEdge;
-      }
+      get { return m_cuttingEdge; }
       set
       {
-        m_cuttingEdge = value ?? Line.Create( RigidBody.gameObject,
-                                              Vector3.left + Vector3.down,
-                                              Vector3.right + Vector3.down );
-        if ( Native != null )
+        m_cuttingEdge = value ?? new Line();
+        if ( m_cuttingEdge.Valid && Native != null )
           Native.setCuttingEdge( m_cuttingEdge.ToNativeEdge( RigidBody.gameObject ) );
       }
     }
 
     [SerializeField]
-    private Line m_cuttingDirection = null;
+    private Line m_cuttingDirection = new Line();
 
+    [HideInInspector]
     public Line CuttingDirection
     {
-      get
-      {
-        if ( m_cuttingDirection == null || !m_cuttingDirection.Valid )
-          m_cuttingDirection = Line.Create( RigidBody.gameObject,
-                                            Vector3.down,
-                                            Vector3.down + Vector3.forward );
-        return m_cuttingDirection;
-      }
+      get { return m_cuttingDirection; }
       set
       {
-        m_cuttingDirection = value ?? Line.Create( RigidBody.gameObject,
-                                                   Vector3.down,
-                                                   Vector3.down + Vector3.forward );
-        if ( Native != null )
+        m_cuttingDirection = value ?? new Line();
+        if ( m_cuttingDirection.Valid && Native != null )
           Native.setCuttingDirection( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3() );
       }
     }
@@ -109,10 +85,31 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Checks if top, cutting edges and cutting direction is valid.
+    /// </summary>
+    /// <returns>True if all edges are valid - otherwise false.</returns>
+    public bool HasValidateEdges()
+    {
+      return TopEdge.Valid &&
+             CuttingEdge.Valid &&
+             CuttingDirection.Valid;
+    }
+
     protected override bool Initialize()
     {
       var rb = RigidBody?.GetInitialized<RigidBody>()?.Native;
       if ( rb == null )
+        return false;
+
+      if ( !TopEdge.Valid )
+        Debug.LogWarning( "Unable to create shovel - invalid Top Edge.", this );
+      if ( !CuttingEdge.Valid )
+        Debug.LogWarning( "Unable to create shovel - invalid Cutting Edge.", this );
+      if ( !CuttingDirection.Valid )
+        Debug.LogWarning( "Unable to create shovel - invalid Cutting Direction.", this );
+
+      if ( !HasValidateEdges() )
         return false;
 
       Native = new agxTerrain.Shovel( rb,
