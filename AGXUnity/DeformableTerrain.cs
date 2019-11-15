@@ -109,6 +109,32 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private bool m_tempDisplayShovelForces = false;
+    public bool TempDisplayShovelForces
+    {
+      get { return m_tempDisplayShovelForces; }
+      set
+      {
+        m_tempDisplayShovelForces = value;
+
+        if ( !Application.isPlaying )
+          return;
+
+        if ( m_tempDisplayShovelForces &&
+             Shovels.Length > 0 &&
+             GUIWindowHandler.Instance.GetWindowData( ShowForces ) == null ) {
+          var windowSize = new Vector2( 750, 125 );
+          GUIWindowHandler.Instance.Show( ShowForces,
+                                          windowSize,
+                                          new Vector2( Screen.width - windowSize.x - 20, 20 ),
+                                          "Shovel forces" );
+        }
+        else if ( !m_tempDisplayShovelForces && GUIWindowHandler.HasInstance )
+          GUIWindowHandler.Instance.Close( ShowForces );
+      }
+    }
+
     /// <summary>
     /// Associate shovel instance to this terrain.
     /// </summary>
@@ -154,8 +180,19 @@ namespace AGXUnity
       return shovel != null && m_shovels.Contains( shovel );
     }
 
+    /// <summary>
+    /// Verifies so that all added shovels still exists. Shovels that
+    /// has been deleted are removed.
+    /// </summary>
+    public void RemoveInvalidShovels()
+    {
+      m_shovels.RemoveAll( shovel => shovel == null );
+    }
+
     protected override bool Initialize()
     {
+      RemoveInvalidShovels();
+
       var maxDepth = 20.0f;
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
@@ -200,14 +237,6 @@ namespace AGXUnity
       GetSimulation().add( Native );
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
-
-      if ( Shovels.Length > 0 ) {
-        var windowSize = new Vector2( 750, 125 );
-        GUIWindowHandler.Instance.Show( ShowForces,
-                                        windowSize,
-                                        new Vector2( Screen.width - windowSize.x - 20, 20 ),
-                                        "Shovel forces" );
-      }
 
       return true;
     }

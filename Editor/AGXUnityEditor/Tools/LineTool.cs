@@ -49,7 +49,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
-      var lineVisualRadius   = 0.015f;
+      var lineVisualRadius   = 0.005f;
       var sphereVisualRadius = 1.5f * lineVisualRadius;
       var renderOnSceneView  = !ConfigurationToolActive() &&
                                 Line.Valid && ( 
@@ -90,6 +90,9 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI()
     {
+      StartFrameToolEnable = Line.Valid;
+      EndFrameToolEnable = Line.Valid;
+
       bool toggleCreateEdge = false;
       using ( new GUILayout.HorizontalScope() ) {
         GUI.ToolsLabel( InspectorEditor.Skin );
@@ -155,6 +158,9 @@ namespace AGXUnityEditor.Tools
 
     private void OnEdgeSelect( EdgeDetectionTool.EdgeSelectResult result )
     {
+      if ( UndoRedoRecordObject != null )
+        Undo.RecordObject( UndoRedoRecordObject, "Line Tool Edge Detect Result" );
+
       Line.Start.SetParent( result.Target );
       Line.Start.Position = result.Edge.Start;
       Line.Start.Rotation = CalculateRotation( result.Edge, AGXUnity.Utils.ShapeUtils.Direction.Positive_Z );

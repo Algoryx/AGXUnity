@@ -17,8 +17,15 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    public override void OnPreTargetMembersGUI()
+    {
+      DeformableTerrain.RemoveInvalidShovels();
+    }
+
     public override void OnPostTargetMembersGUI()
     {
+      Undo.RecordObject( DeformableTerrain, "Shovel add/remove." );
+
       GUI.Separator();
 
       var displayShovelList = GUI.Foldout( EditorData.Instance.GetData( DeformableTerrain,
