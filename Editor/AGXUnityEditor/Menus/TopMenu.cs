@@ -55,6 +55,27 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = CreateShape<Cylinder>( command );
     }
 
+    [MenuItem( "AGXUnity/Collide/HollowCylinder" )]
+    [MenuItem( "GameObject/AGX Unity/Collide/HollowCylinder" )]
+    public static GameObject CreateHollowCylinder( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateShape<HollowCylinder>( command );
+    }
+
+    [MenuItem("AGXUnity/Collide/Cone")]
+    [MenuItem("GameObject/AGX Unity/Collide/Cone")]
+    public static GameObject CreateCone(MenuCommand command)
+    {
+      return Selection.activeGameObject = CreateShape<Cone>(command);
+    }
+
+    [MenuItem("AGXUnity/Collide/HollowCone")]
+    [MenuItem("GameObject/AGX Unity/Collide/HollowCone")]
+    public static GameObject CreateHollowCone(MenuCommand command)
+    {
+      return Selection.activeGameObject = CreateShape<HollowCone>(command);
+    }
+
     [MenuItem( "AGXUnity/Collide/Plane" )]
     [MenuItem( "GameObject/AGX Unity/Collide/Plane" )]
     public static GameObject CreatePlane( MenuCommand command )
@@ -142,6 +163,27 @@ namespace AGXUnityEditor
     public static GameObject CreateRigidBodyCylinder( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Cylinder>( command );
+    }
+
+    [MenuItem( "AGXUnity/Rigid body/Hollow Cylinder" )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Hollow Cylinder" )]
+    public static GameObject CreateRigidBodyHollowCylinder( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateRigidBody<HollowCylinder>( command );
+    }
+
+    [MenuItem("AGXUnity/Rigid body/Cone")]
+    [MenuItem("GameObject/AGX Unity/Rigid body/Cone")]
+    public static GameObject CreateRigidBodyCone(MenuCommand command)
+    {
+      return Selection.activeGameObject = CreateRigidBody<Cone>(command);
+    }
+
+    [MenuItem("AGXUnity/Rigid body/Hollow Cone")]
+    [MenuItem("GameObject/AGX Unity/Rigid body/Hollow Cone")]
+    public static GameObject CreateRigidBodyHollowCone(MenuCommand command)
+    {
+      return Selection.activeGameObject = CreateRigidBody<HollowCone>(command);
     }
 
     [MenuItem( "AGXUnity/Rigid body/Mesh" )]

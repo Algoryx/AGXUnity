@@ -81,6 +81,9 @@ namespace AGXUnity.Rendering
                shape is Collide.Box ||
                shape is Collide.Sphere ||
                shape is Collide.Cylinder ||
+               shape is Collide.HollowCylinder ||
+               shape is Collide.Cone ||
+               shape is Collide.HollowCone ||
                shape is Collide.Capsule ||
                shape is Collide.Plane ||
                shape is Collide.Mesh
@@ -385,7 +388,7 @@ namespace AGXUnity.Rendering
     {
       GameObject go = null;
       try {
-        go = isRenderData || shape is Collide.Mesh ?
+        go = isRenderData || shape is Collide.Mesh || shape is Collide.HollowCylinder || shape is Collide.Cone || shape is Collide.HollowCone ?
                new GameObject( "" ) :
                PrefabLoader.Instantiate<GameObject>( @"Debug/" + shape.GetType().Name + "Renderer" );
 
@@ -440,6 +443,12 @@ namespace AGXUnity.Rendering
         instance = go.AddComponent<ShapeVisualSphere>();
       else if ( shape is Collide.Cylinder )
         instance = go.AddComponent<ShapeVisualCylinder>();
+      else if ( shape is Collide.HollowCylinder )
+        instance = go.AddComponent<ShapeVisualHollowCylinder>();
+      else if (shape is Collide.Cone)
+        instance = go.AddComponent<ShapeVisualCone>();
+      else if (shape is Collide.HollowCone)
+        instance = go.AddComponent<ShapeVisualHollowCone>();
       else if ( shape is Collide.Capsule )
         instance = go.AddComponent<ShapeVisualCapsule>();
       else if ( shape is Collide.Plane )

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,7 +18,10 @@ namespace AGXUnityEditor.Tools
       Cylinder,
       Capsule,
       Sphere,
-      Mesh
+      Mesh,
+      HollowCylinder,
+      Cone,
+      HollowCone
     }
 
     public static GameObject CreateShape<T>( ShapeInitializationData data, bool shapeAsParent, Action<T> initializeAction ) where T : Shape
@@ -171,6 +174,39 @@ namespace AGXUnityEditor.Tools
 
             shapeInitData.SetPositionRotation( cylinder.gameObject, axisData.Direction );
           } );
+        }
+        else if ( m_buttons.Selected.State.ShapeType == ShapeType.HollowCylinder ) {
+          CreateShape<HollowCylinder>( shapeInitData, m_buttons.Selected.State.ShapeAsParent, hollowCylinder =>
+          {
+            hollowCylinder.Thickness = axisData.Radius / 10f; // Arbitrary base thickness
+            hollowCylinder.Radius = axisData.Radius;
+            hollowCylinder.Height = axisData.Height;
+
+            shapeInitData.SetPositionRotation( hollowCylinder.gameObject, axisData.Direction );
+          } );
+        }
+        else if (m_buttons.Selected.State.ShapeType == ShapeType.Cone)
+        {
+          CreateShape<Cone>(shapeInitData, m_buttons.Selected.State.ShapeAsParent, cone =>
+          {
+            cone.TopRadius = axisData.Radius;
+            cone.BottomRadius = axisData.Radius;
+            cone.Height = axisData.Height;
+
+            shapeInitData.SetPositionRotation(cone.gameObject, axisData.Direction);
+          });
+        }
+        else if (m_buttons.Selected.State.ShapeType == ShapeType.HollowCone)
+        {
+          CreateShape<HollowCone>(shapeInitData, m_buttons.Selected.State.ShapeAsParent, hollowCone =>
+          {
+            hollowCone.Thickness = axisData.Radius / 10f; // Arbitrary base thickness
+            hollowCone.TopRadius = axisData.Radius / 2f; // Arbitrary base top radius
+            hollowCone.BottomRadius = axisData.Radius;
+            hollowCone.Height = axisData.Height;
+
+            shapeInitData.SetPositionRotation(hollowCone.gameObject, axisData.Direction);
+          });
         }
         else if ( m_buttons.Selected.State.ShapeType == ShapeType.Capsule ) {
           CreateShape<Capsule>( shapeInitData, m_buttons.Selected.State.ShapeAsParent, capsule =>

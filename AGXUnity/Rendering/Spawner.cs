@@ -11,7 +11,10 @@ namespace AGXUnity.Rendering
       Cylinder,
       Plane,
       Sphere,
-      Constraint
+      Constraint,
+      HollowCylinder,
+      Cone,
+      HollowCone
     }
 
     public static GameObject Create( Primitive type, string name = "", HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "Diffuse" )
