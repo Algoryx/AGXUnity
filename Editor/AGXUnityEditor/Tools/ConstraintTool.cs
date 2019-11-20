@@ -237,7 +237,8 @@ namespace AGXUnityEditor.Tools
                                 in constraints
                                 from controller
                                 in constraint.GetElementaryConstraintControllers()
-                                where controller.GetType() == refController.GetType()
+                                where controller.GetType() == refController.GetType() &&
+                                      controller.GetControllerType() == refController.GetControllerType()
                                 select controller ).ToArray();
             using ( new GUI.Indent( 12 ) ) {
               InspectorEditor.DrawMembersGUI( controllers );
