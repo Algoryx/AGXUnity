@@ -132,6 +132,10 @@ namespace AGXUnityEditor
     private void OnDestroy()
     {
       // Remove required components in case they are not rendered in the inspector
+
+      if (m_gameObject == null)
+        return;
+
       // Massproperties
       MassProperties mp = m_gameObject.GetComponent<AGXUnity.MassProperties>();
       RigidBody rb =      m_gameObject.GetComponent<AGXUnity.RigidBody>();
