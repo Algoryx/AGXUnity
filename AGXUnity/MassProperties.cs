@@ -46,7 +46,7 @@ namespace AGXUnity
       {
         m_mass = value;
 
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null ) {
           native.getMassProperties().setMass( m_mass.Value );
           native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
@@ -71,9 +71,24 @@ namespace AGXUnity
       set
       {
         m_inertiaDiagonal = value;
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
+      }
+    }
+
+    [SerializeField]
+    private DefaultAndUserValueVector3 m_centerOfMassOffset = new DefaultAndUserValueVector3( Vector3.zero, Vector3.zero );
+
+    public DefaultAndUserValueVector3 CenterOfMassOffset
+    {
+      get { return m_centerOfMassOffset; }
+      set
+      {
+        m_centerOfMassOffset = value;
+        var native = GetNative();
+        if ( native != null )
+          native.getCmFrame().setLocalTranslate( m_centerOfMassOffset.Value.ToHandedVec3() );
       }
     }
 
@@ -86,7 +101,7 @@ namespace AGXUnity
       set
       {
         m_massCoefficients = value;
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setMassCoefficients( m_massCoefficients.ToVec3() );
       }
@@ -101,7 +116,7 @@ namespace AGXUnity
       set
       {
         m_inertiaCoefficients = value;
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setInertiaTensorCoefficients( m_inertiaCoefficients.ToVec3() );
       }
@@ -111,14 +126,18 @@ namespace AGXUnity
     {
       // When the user clicks "Update" in the editor we receive
       // a callback to update mass of the body.
-      Mass.OnForcedUpdate            += OnForcedMassInertiaUpdate;
-      InertiaDiagonal.OnForcedUpdate += OnForcedMassInertiaUpdate;
+      Mass.OnForcedUpdate               += OnForcedMassInertiaUpdate;
+      InertiaDiagonal.OnForcedUpdate    += OnForcedMassInertiaUpdate;
+      CenterOfMassOffset.OnForcedUpdate += OnForcedMassInertiaUpdate;
 
       Mass.OnNewUserValue     += OnUserMassUpdated;
       Mass.OnUseDefaultToggle += OnUseDefaultMassUpdated;
 
       InertiaDiagonal.OnNewUserValue     += OnUserInertiaUpdated;
       InertiaDiagonal.OnUseDefaultToggle += OnUseDefaultInertiaUpdated;
+
+      CenterOfMassOffset.OnNewUserValue     += OnUserCenterOfMassUpdated;
+      CenterOfMassOffset.OnUseDefaultToggle += OnUseDefaultCenterOfMassUpdated;
     }
 
     /// <summary>
@@ -131,6 +150,7 @@ namespace AGXUnity
         return;
 
       Mass.DefaultValue = Convert.ToSingle( nativeRb.getMassProperties().getMass() );
+      CenterOfMassOffset.DefaultValue = nativeRb.getCmFrame().getLocalTranslate().ToHandedVector3();
 
       float inertiaScale = 1.0f;
       if ( !Mass.UseDefault )
@@ -161,6 +181,7 @@ namespace AGXUnity
     {
       m_mass.CopyFrom( source.m_mass );
       m_inertiaDiagonal.CopyFrom( source.m_inertiaDiagonal );
+      m_centerOfMassOffset.CopyFrom( source.m_centerOfMassOffset );
 
       m_massCoefficients    = source.m_massCoefficients;
       m_inertiaCoefficients = source.m_inertiaCoefficients;
@@ -170,13 +191,15 @@ namespace AGXUnity
     /// Reads values from native instance.
     /// </summary>
     /// <param name="native">Source native instance.</param>
-    public void RestoreLocalDataFrom( agx.MassProperties native )
+    public void RestoreLocalDataFrom( agx.RigidBody native )
     {
-      Mass.UserValue = Convert.ToSingle( native.getMass() );
-      InertiaDiagonal.UserValue = native.getPrincipalInertiae().ToVector3();
+      Mass.UserValue = Convert.ToSingle( native.getMassProperties().getMass() );
+      InertiaDiagonal.UserValue = native.getMassProperties().getPrincipalInertiae().ToVector3();
+      CenterOfMassOffset.UserValue = native.getCmFrame().getLocalTranslate().ToHandedVector3();
 
       Mass.UseDefault = false;
       InertiaDiagonal.UseDefault = false;
+      CenterOfMassOffset.UseDefault = false;
     }
 
     protected override bool Initialize()
@@ -224,6 +247,12 @@ namespace AGXUnity
         GetNative().getMassProperties().setInertiaTensor( newValue.ToVec3() );
     }
 
+    private void OnUserCenterOfMassUpdated( Vector3 newCenterOfMass )
+    {
+      if ( !CenterOfMassOffset.UseDefault && GetNative() != null )
+        GetNative().getCmFrame().setLocalTranslate( newCenterOfMass.ToHandedVec3() );
+    }
+
     /// <summary>
     /// Called when the user toggles "UseDefault".
     /// </summary>
@@ -248,6 +277,17 @@ namespace AGXUnity
         OnUserInertiaUpdated( InertiaDiagonal.DefaultValue );
       else
         OnUserInertiaUpdated( InertiaDiagonal.UserValue );
+    }
+
+    private void OnUseDefaultCenterOfMassUpdated( bool newUseDefault )
+    {
+      if ( newUseDefault == CenterOfMassOffset.UseDefault )
+        return;
+
+      if ( newUseDefault )
+        OnUserCenterOfMassUpdated( CenterOfMassOffset.DefaultValue );
+      else
+        OnUserCenterOfMassUpdated( CenterOfMassOffset.UserValue );
     }
   }
 }

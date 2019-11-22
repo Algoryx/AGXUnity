@@ -152,13 +152,46 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
+      foreach ( var rb in GetTargets<RigidBody>() )
+        rb.MassProperties.OnForcedMassInertiaUpdate();
+    }
+
+    public override void OnSceneViewGUI( SceneView sceneView )
+    {
+      int rbIndex = 0;
       foreach ( var rb in GetTargets<RigidBody>() ) {
-        var forceUpdateMassProperties = ( rb.MassProperties.Mass.UseDefault &&
-                                          rb.MassProperties.Mass.Value == 1.0f ) ||
-                                        ( rb.MassProperties.InertiaDiagonal.UseDefault &&
-                                          rb.MassProperties.InertiaDiagonal.Value == Vector3.one );
-        if ( forceUpdateMassProperties )
-          rb.MassProperties.OnForcedMassInertiaUpdate();
+        var cmPosition = rb.transform.TransformPoint( rb.MassProperties.CenterOfMassOffset.Value );
+        var cmTransformToolVisible = !rb.MassProperties.CenterOfMassOffset.UseDefault;
+        if ( cmTransformToolVisible ) {
+          var newPosition = PositionTool( cmPosition, rb.transform.rotation, 0.6f, 1.0f );
+          if ( Vector3.SqrMagnitude( cmPosition - newPosition ) > 1.0E-6 ) {
+            cmPosition = newPosition;
+            rb.MassProperties.CenterOfMassOffset.UserValue = rb.transform.InverseTransformPoint( newPosition );
+          }
+        }
+
+        var rbId       = "rb_vis_" + (rbIndex++).ToString();
+        var vp         = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( rbId, "GUI/Text Shader" );
+        vp.Color       = new Color( 0, 0, 1, 0.25f );
+        vp.Visible     = true;
+        vp.Pickable    = false;
+        vp.SetTransform( cmPosition,
+                         rb.transform.rotation,
+                         0.05f,
+                         true,
+                         0.0f,
+                         0.25f );
+        var shapes = rb.GetComponentsInChildren<Shape>();
+        if ( shapes.Length < 2 )
+          continue;
+        int shapeIndex = 0;
+        foreach ( var shape in shapes ) {
+          var shapeLine = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( rbId + "_shape_" + (shapeIndex++).ToString(), "GUI/Text Shader" );
+          shapeLine.Color = new Color( 0, 1, 0, 0.05f );
+          shapeLine.Visible = true;
+          shapeLine.Pickable = false;
+          shapeLine.SetTransform( cmPosition, shape.transform.position, 0.015f );
+        }
       }
     }
 

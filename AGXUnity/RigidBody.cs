@@ -203,8 +203,11 @@ namespace AGXUnity
     {
       PeekTemporaryNativeOrGetNative( ( rb, isTemp ) =>
       {
-        if ( !isTemp )
+        if ( !isTemp ) {
+          rb.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
           rb.updateMassProperties();
+          rb.getMassProperties().setAutoGenerateMask( 0u );
+        }
 
         MassProperties.SetDefaultCalculated( rb );
       } );
@@ -289,7 +292,7 @@ namespace AGXUnity
       if ( native == null )
         throw new ArgumentNullException( "native", "Native object is null." );
 
-      MassProperties.RestoreLocalDataFrom( native.getMassProperties() );
+      MassProperties.RestoreLocalDataFrom( native );
 
       enabled                = native.getEnable();
       // Should the body be enabled?
@@ -314,6 +317,7 @@ namespace AGXUnity
       m_rb = new agx.RigidBody();
       m_rb.setName( name );
       m_rb.setEnable( IsEnabled );
+      m_rb.getMassProperties().setAutoGenerateMask( 0u );
 
       SyncNativeTransform( m_rb );
 
@@ -325,7 +329,7 @@ namespace AGXUnity
 
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
 
-      return base.Initialize();
+      return true;
     }
 
     protected override void OnEnable()
