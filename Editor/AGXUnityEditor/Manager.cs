@@ -308,6 +308,24 @@ namespace AGXUnityEditor
         SceneView.RepaintAll();
     }
 
+    /// <summary>
+    /// Callback from InspectorEditor when in OnDisable and target == null,
+    /// meaning the target has been deleted.
+    /// </summary>
+    public static void OnEditorTargetsDeleted()
+    {
+      // Deleted RigidBody component leaves dangling MassProperties
+      // so we've to delete them explicitly.
+      var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
+      var undoGroupId = Undo.GetCurrentGroup();
+      foreach ( var mp in mps ) {
+        if ( mp.RigidBody == null ) {
+          Undo.DestroyObjectImmediate( mp );
+        }
+      }
+      Undo.CollapseUndoOperations( undoGroupId );
+    }
+
     private static void OnSceneView( SceneView sceneView )
     {
       if ( m_requestSceneViewFocus ) {
