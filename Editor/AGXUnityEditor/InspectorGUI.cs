@@ -42,7 +42,7 @@ namespace AGXUnityEditor
       var valInField = wrapper.Get<Vector3>( obj );
       GUILayout.BeginHorizontal();
       {
-        GUILayout.Label( GUI.MakeLabel( wrapper.Member.Name ) );
+        GUILayout.Label( MakeLabel( wrapper.Member ) );
         valInField = EditorGUILayout.Vector3Field( "", valInField );
       }
       GUILayout.EndHorizontal();
