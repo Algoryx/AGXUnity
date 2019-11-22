@@ -92,8 +92,6 @@ namespace AGXUnityEditor
       return show;
     }
 
-    private GameObject m_gameObject = null;
-
     public sealed override void OnInspectorGUI()
     {
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
@@ -115,8 +113,6 @@ namespace AGXUnityEditor
       if ( this.target == null )
         return;
 
-      m_gameObject = (target as MonoBehaviour).gameObject;
-
       // Entire class/component marked as hidden - enable "hide in inspector".
       if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
         this.target.hideFlags |= HideFlags.HideInInspector;
@@ -126,21 +122,10 @@ namespace AGXUnityEditor
 
     private void OnDisable()
     {
+      if ( this.target == null )
+        Manager.OnEditorTargetsDeleted();
+
       ToolManager.OnTargetEditorDisable( this.targets );
-    }
-
-    private void OnDestroy()
-    {
-      // Remove required components in case they are not rendered in the inspector
-
-      if (m_gameObject == null)
-        return;
-
-      // Massproperties
-      MassProperties mp = m_gameObject.GetComponent<AGXUnity.MassProperties>();
-      RigidBody rb =      m_gameObject.GetComponent<AGXUnity.RigidBody>();
-      if (mp && !rb)
-        DestroyImmediate(mp);
     }
 
     public static bool HandleType( InvokeWrapper wrapper, object[] objects )
