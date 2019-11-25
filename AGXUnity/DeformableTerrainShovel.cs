@@ -6,7 +6,7 @@ using GUI = AGXUnity.Utils.GUI;
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Shovel" )]
-  [RequireComponent( typeof( RigidBody ) )]
+  [DisallowMultipleComponent]
   public class DeformableTerrainShovel : ScriptComponent
   {
     /// <summary>
@@ -99,8 +99,10 @@ namespace AGXUnity
     protected override bool Initialize()
     {
       var rb = RigidBody?.GetInitialized<RigidBody>()?.Native;
-      if ( rb == null )
+      if ( rb == null ) {
+        Debug.LogWarning( "Unable to find RigidBody component for DeformableTerrainShovel - shovel instance ignored.", this );
         return false;
+      }
 
       if ( !TopEdge.Valid )
         Debug.LogWarning( "Unable to create shovel - invalid Top Edge.", this );
@@ -145,6 +147,12 @@ namespace AGXUnity
     {
       if ( Native != null )
         Native.setEnable( false );
+    }
+
+    private void Reset()
+    {
+      if ( GetComponent<RigidBody>() == null )
+        Debug.LogError( "Component: DeformableTerrainShovel requires RigidBody component." );
     }
 
     private RigidBody m_rb = null;
