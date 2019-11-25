@@ -15,6 +15,8 @@ namespace AGXUnityEditor.Tools
 
     public UnityEngine.Object UndoRedoRecordObject { get; set; }
 
+    public Func<EdgeDetectionTool.EdgeSelectResult, EdgeDetectionTool.EdgeSelectResult> TransformResult = null;
+
     public Color Color
     {
       get { return m_color; }
@@ -60,10 +62,13 @@ namespace AGXUnityEditor.Tools
 
       LineVisual.Visible = renderOnSceneView;
       if ( LineVisual.Visible ) {
-        LineVisual.SetTransform( Line.Start.Position + lineVisualRadius * Line.Direction,
-                                 Line.End.Position - lineVisualRadius * Line.Direction,
+        LineVisual.SetTransform( Line.Start.Position,
+                                 Line.End.Position,
                                  lineVisualRadius,
                                  false );
+        //LineVisual.SetTransform( Line.Start.Position,
+        //                         Quaternion.FromToRotation( Vector3.up, Line.Direction ),
+        //                         new Vector3( 1, 1, 1 ) );
       }
 
       StartVisual.Visible = startEnabled;
@@ -160,6 +165,9 @@ namespace AGXUnityEditor.Tools
     {
       if ( UndoRedoRecordObject != null )
         Undo.RecordObject( UndoRedoRecordObject, "Line Tool Edge Detect Result" );
+
+      if ( TransformResult != null )
+        result = TransformResult( result );
 
       Line.Start.SetParent( result.Target );
       Line.Start.Position = result.Edge.Start;

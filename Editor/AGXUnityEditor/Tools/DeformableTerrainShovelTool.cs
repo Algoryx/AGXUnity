@@ -25,21 +25,24 @@ namespace AGXUnityEditor.Tools
         Color                = Color.yellow,
         Name                 = "Top Edge",
         IsSingleInstanceTool = false,
-        UndoRedoRecordObject = Shovel
+        UndoRedoRecordObject = Shovel,
+        TransformResult      = OnEdgeResult
       } );
       AddChild( new LineTool( Shovel.CuttingEdge )
       {
         Color                = Color.red,
         Name                 = "Cutting Edge",
         IsSingleInstanceTool = false,
-        UndoRedoRecordObject = Shovel
+        UndoRedoRecordObject = Shovel,
+        TransformResult      = OnEdgeResult
       } );
       AddChild( new LineTool( Shovel.CuttingDirection )
       {
         Color                = Color.green,
         Name                 = "Cutting Direction",
         IsSingleInstanceTool = false,
-        UndoRedoRecordObject = Shovel
+        UndoRedoRecordObject = Shovel,
+        TransformResult      = OnCuttingDirectionResult
       } );
     }
 
@@ -100,6 +103,40 @@ namespace AGXUnityEditor.Tools
     private EditorDataEntry GetLineToggleData( string name )
     {
       return EditorData.Instance.GetData( Shovel, name );
+    }
+
+    private Camera FindDirectionReferenceCamera()
+    {
+      return SceneView.lastActiveSceneView != null ?
+               SceneView.lastActiveSceneView.camera :
+               null;
+    }
+
+    private EdgeDetectionTool.EdgeSelectResult OnEdgeResult( EdgeDetectionTool.EdgeSelectResult result )
+    {
+      var refCamera = FindDirectionReferenceCamera();
+      if ( refCamera == null )
+        return result;
+
+      // Assuming the user is viewing "into" the bucket, i.e.,
+      // the camera is located in front of the bucket. The
+      // edge should go from left to right on screen.
+      var startX = refCamera.WorldToViewportPoint( result.Edge.Start ).x;
+      var endX = refCamera.WorldToViewportPoint( result.Edge.End ).x;
+      if ( startX > endX )
+        AGXUnity.Utils.Math.Swap( ref result.Edge.Start, ref result.Edge.End );
+      return result;
+    }
+
+    private EdgeDetectionTool.EdgeSelectResult OnCuttingDirectionResult( EdgeDetectionTool.EdgeSelectResult result )
+    {
+      var refCamera = FindDirectionReferenceCamera();
+      if ( refCamera == null )
+        return result;
+      if ( Vector3.Dot( result.Edge.Direction, refCamera.transform.forward ) > 0.0 )
+        AGXUnity.Utils.Math.Swap( ref result.Edge.Start, ref result.Edge.End );
+      result.Edge.End = result.Edge.Start + 0.5f * result.Edge.Direction;
+      return result;
     }
   }
 }

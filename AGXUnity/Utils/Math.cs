@@ -41,5 +41,13 @@ namespace AGXUnity.Utils
     {
       return Mathf.Rad2Deg * Mathf.Atan2( Vector3.Dot( to, refAxis ), Vector3.Dot( from, to ) );
     }
+
+    public static void Swap<T>( ref T lhs, ref T rhs )
+      where T : struct
+    {
+      T tmp = lhs;
+      lhs = rhs;
+      rhs = tmp;
+    }
   }
 }
