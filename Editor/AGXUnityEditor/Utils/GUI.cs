@@ -15,6 +15,8 @@ namespace AGXUnityEditor.Utils
       public const char ToggleEnabled           = '\u2714';
       public const char ToggleDisabled          = ' ';
 
+      public const char ArrowRight              = '\u21D2';
+
       public const char ShapeResizeTool         = '\u21C4';
       public const char ShapeCreateTool         = '\u210C';
       public const char ShapeVisualCreateTool   = '\u274D';

@@ -64,6 +64,11 @@ namespace AGXUnityEditor.Tools
       EdgeVisual.OnMouseClick += OnEdgeClick;
     }
 
+    public override void OnRemove()
+    {
+      s_selected = null;
+    }
+
     public override void OnSceneViewGUI( SceneView sceneView )
     {
       if ( EdgeVisual.Visible && EdgeVisual.MouseOver )
@@ -184,6 +189,8 @@ namespace AGXUnityEditor.Tools
         if ( Manager.HijackLeftMouseClick() )
           OnPointClick( new Utils.Raycast.Result() { Hit = false }, NodeVisual );
       }
+
+      s_selected = m_collectedData != null ? m_collectedData.Target : null;
     }
 
     /// <summary>
@@ -334,6 +341,34 @@ namespace AGXUnityEditor.Tools
       var edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
       yield return utils.GetWorldFace( edgeDirections[ 0 ] );
       yield return utils.GetWorldFace( edgeDirections[ 1 ] );
+    }
+
+    private static GameObject s_selected = null;
+    private static Utils.ObjectsGizmoColorHandler s_visualizeSelectedHandler = new Utils.ObjectsGizmoColorHandler();
+
+    [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected)]
+    private static void OnDrawGizmo( Transform target, GizmoType gizmoType )
+    {
+      using ( s_visualizeSelectedHandler.BeginEndScope() ) {
+        if ( s_selected == null || target != s_selected.transform )
+          return;
+
+        var rbs = UnityEngine.Object.FindObjectsOfType<AGXUnity.RigidBody>();
+        foreach ( var rb in rbs )
+          s_visualizeSelectedHandler.GetOrCreateColor( rb );
+
+        var filters = s_selected.GetComponentsInChildren<MeshFilter>();
+        foreach ( var filter in filters )
+          s_visualizeSelectedHandler.Highlight( filter, Utils.ObjectsGizmoColorHandler.SelectionType.ConstantColor );
+
+        foreach ( var filterColorPair in s_visualizeSelectedHandler.ColoredMeshFilters ) {
+          Gizmos.color = filterColorPair.Value;
+          Gizmos.matrix = filterColorPair.Key.transform.localToWorldMatrix;
+          Gizmos.DrawWireMesh( filterColorPair.Key.sharedMesh );
+        }
+
+        Gizmos.matrix = Matrix4x4.identity;
+      }
     }
   }
 }

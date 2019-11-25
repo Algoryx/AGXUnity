@@ -42,8 +42,15 @@ namespace AGXUnityEditor.Tools
         Name                 = "Cutting Direction",
         IsSingleInstanceTool = false,
         UndoRedoRecordObject = Shovel,
-        TransformResult      = OnCuttingDirectionResult
+        TransformResult      = OnCuttingDirectionResult,
+        Mode                 = LineTool.ToolMode.Direction,
+        DirectionArrowLength = 0.5f
       } );
+    }
+
+    public override void OnRemove()
+    {
+      SceneView.RepaintAll();
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )

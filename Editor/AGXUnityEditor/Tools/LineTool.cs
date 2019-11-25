@@ -9,7 +9,17 @@ namespace AGXUnityEditor.Tools
 {
   public class LineTool : Tool
   {
+    public enum ToolMode
+    {
+      Line,
+      Direction
+    }
+
     public Line Line { get; private set; }
+
+    public ToolMode Mode { get; set; } = ToolMode.Line;
+
+    public float DirectionArrowLength = 1.0f;
 
     public string Name { get; set; } = "Line";
 
@@ -24,6 +34,7 @@ namespace AGXUnityEditor.Tools
       {
         m_color = value;
         LineVisual.Color = m_color;
+        ArrowVisual.Color = m_color;
         StartVisual.Color = m_color;
         EndVisual.Color = m_color;
       }
@@ -38,10 +49,12 @@ namespace AGXUnityEditor.Tools
     public override void OnAdd()
     {
       LineVisual.Visible  = false;
+      ArrowVisual.Visible = false;
       StartVisual.Visible = false;
       EndVisual.Visible   = false;
 
       LineVisual.Pickable  = false;
+      ArrowVisual.Pickable = false;
       StartVisual.Pickable = true;
       EndVisual.Pickable   = true;
 
@@ -60,15 +73,19 @@ namespace AGXUnityEditor.Tools
       var startEnabled = renderOnSceneView && GetFrameToggleEnable( StartFrameNameId );
       var endEnabled   = renderOnSceneView && GetFrameToggleEnable( EndFrameNameId );
 
-      LineVisual.Visible = renderOnSceneView;
+      LineVisual.Visible = renderOnSceneView && Mode == ToolMode.Line;
       if ( LineVisual.Visible ) {
-        LineVisual.SetTransform( Line.Start.Position,
-                                 Line.End.Position,
-                                 lineVisualRadius,
-                                 false );
-        //LineVisual.SetTransform( Line.Start.Position,
-        //                         Quaternion.FromToRotation( Vector3.up, Line.Direction ),
-        //                         new Vector3( 1, 1, 1 ) );
+        LineVisual.SetTransformEx( Line.Start.Position,
+                                   Line.End.Position,
+                                   lineVisualRadius,
+                                   RenderAsArrow );
+      }
+
+      ArrowVisual.Visible = renderOnSceneView && Mode == ToolMode.Direction;
+      if ( ArrowVisual.Visible ) {
+        ArrowVisual.SetTransform( Line.Start.Position,
+                                  Line.End.Position - Mathf.Min( Line.Length, DirectionArrowLength ) * Line.Direction,
+                                  lineVisualRadius );
       }
 
       StartVisual.Visible = startEnabled;
@@ -91,22 +108,44 @@ namespace AGXUnityEditor.Tools
         StartFrameTool.TransformHandleActive = startEnabled;
       if ( EndFrameTool != null )
         EndFrameTool.TransformHandleActive = endEnabled;
+
+      Synchronize();
     }
 
     public void OnInspectorGUI()
     {
+      if ( Mode == ToolMode.Direction )
+        StartFrameNameId = "Frame";
+
       StartFrameToolEnable = Line.Valid;
-      EndFrameToolEnable = Line.Valid;
+      EndFrameToolEnable   = Line.Valid;
 
-      bool toggleCreateEdge = false;
-      using ( new GUILayout.HorizontalScope() ) {
-        GUI.ToolsLabel( InspectorEditor.Skin );
+      bool toggleCreateEdge    = false;
+      bool toggleFlipDirection = false;
+      bool toggleRenderAsArrow = false;
+      bool showTools           = !EditorApplication.isPlaying;
+      if ( showTools ) {
+        using ( new GUILayout.HorizontalScope() ) {
+          GUI.ToolsLabel( InspectorEditor.Skin );
 
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
-                                             EdgeDetectionToolEnable,
-                                             "Find line given edge.",
-                                             InspectorEditor.Skin );
+          using ( GUI.ToolButtonData.ColorBlock ) {
+            toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
+                                               EdgeDetectionToolEnable,
+                                               "Find line given edge.",
+                                               InspectorEditor.Skin );
+            if ( Mode != ToolMode.Direction ) {
+              toggleRenderAsArrow = GUI.ToolButton( GUI.Symbols.ArrowRight,
+                                                    RenderAsArrow,
+                                                    "Visualize line direction.",
+                                                    InspectorEditor.Skin );
+            }
+            using ( new Utils.GUI.EnabledBlock( Line.Valid ) ) {
+              toggleFlipDirection = GUI.ToolButton( GUI.Symbols.ShapeResizeTool,
+                                                    false,
+                                                    "Flip direction.",
+                                                    InspectorEditor.Skin );
+            }
+          }
         }
       }
 
@@ -114,26 +153,53 @@ namespace AGXUnityEditor.Tools
 
       if ( toggleCreateEdge )
         EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
+      if ( toggleFlipDirection && EditorUtility.DisplayDialog( "Line direction",
+                                                               "Flip direction of <b>" + Name + "</b>?",
+                                                               "Yes",
+                                                               "No" ) ) {
+        StartFrameToolEnable = false;
+        var tmp = Line.Start;
+        Line.Start = Line.End;
+        Line.End = tmp;
+      }
+      if ( toggleRenderAsArrow )
+        RenderAsArrow = !RenderAsArrow;
 
       if ( !Line.Valid )
         GUI.WarningLabel( Name + " isn't created - use Tools to configure.", InspectorEditor.Skin );
 
       if ( StartFrameToolEnable ) {
-        if ( GUI.Foldout( GetFrameToggleData( StartFrameNameId ),
+        if ( GUI.Foldout( GetToggleData( StartFrameNameId ),
                           GUI.MakeLabel( StartFrameNameId, true ),
                           InspectorEditor.Skin ) ) {
-          using ( new GUI.Indent( 12 ) )
-            StartFrameTool.OnPreTargetMembersGUI();
+          StartFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
+          using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
+            GUI.HandleFrame( StartFrameTool.Frame, 12.0f );
         }
       }
       if ( EndFrameToolEnable ) {
-        if ( GUI.Foldout( GetFrameToggleData( EndFrameNameId ),
+        if ( GUI.Foldout( GetToggleData( EndFrameNameId ),
                           GUI.MakeLabel( EndFrameNameId, true ),
                           InspectorEditor.Skin ) ) {
-          using ( new GUI.Indent( 12 ) )
-            EndFrameTool.OnPreTargetMembersGUI();
+          EndFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
+          using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
+            GUI.HandleFrame( EndFrameTool.Frame, 12.0f );
         }
       }
+
+      Synchronize();
+    }
+
+    /// <summary>
+    /// Synchronize end frame given current transform of start frame
+    /// when in direction mode.
+    /// </summary>
+    private void Synchronize()
+    {
+      if ( Mode != ToolMode.Direction || !Line.Valid )
+        return;
+
+      Line.End.Position = Line.Start.Position + Line.Start.Rotation * Vector3.back;
     }
 
     private bool ConfigurationToolActive()
@@ -214,6 +280,11 @@ namespace AGXUnityEditor.Tools
       get { return EndFrameTool != null; }
       set
       {
+        // Direction tool doesn't have an end frame -
+        // the direction is controlled with the start frame.
+        if ( Mode == ToolMode.Direction )
+          return;
+
         if ( value && !EndFrameToolEnable )
           AddChild( new FrameTool( Line.End )
           {
@@ -225,9 +296,14 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    private Utils.VisualPrimitiveCylinder LineVisual
+    private Utils.VisualPrimitiveArrow LineVisual
     {
-      get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( "Line", "GUI/Text Shader" ); }
+      get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveArrow>( "Line", "GUI/Text Shader" ); }
+    }
+
+    private Utils.VisualPrimitiveArrow ArrowVisual
+    {
+      get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveArrow>( "Arrow", "GUI/Text Shader" ); }
     }
 
     private Utils.VisualPrimitiveSphere StartVisual
@@ -240,24 +316,33 @@ namespace AGXUnityEditor.Tools
       get { return GetOrCreateVisualPrimitive<Utils.VisualPrimitiveSphere>( "End", "GUI/Text Shader" ); }
     }
 
+    private bool RenderAsArrow
+    {
+      get { return GetToggleData( "AsArrow" ).Bool; }
+      set
+      {
+        GetToggleData( "AsArrow" ).Bool = value;
+      }
+    }
+
     private Quaternion CalculateRotation( Edge edge, AGXUnity.Utils.ShapeUtils.Direction direction )
     {
       return Quaternion.LookRotation( edge.Normal, edge.Direction ) *
              Quaternion.FromToRotation( Vector3.up, AGXUnity.Utils.ShapeUtils.GetLocalFaceDirection( direction ) );
     }
 
-    private EditorDataEntry GetFrameToggleData( string name )
+    private EditorDataEntry GetToggleData( string name )
     {
       return EditorData.Instance.GetData( UndoRedoRecordObject, Name + '_' + name );
     }
 
     private bool GetFrameToggleEnable( string name )
     {
-      return GetFrameToggleData( name ).Bool;
+      return GetToggleData( name ).Bool;
     }
 
     private Color m_color = Color.yellow;
-    private static readonly string StartFrameNameId = "Start frame";
-    private static readonly string EndFrameNameId = "End frame";
+    private string StartFrameNameId = "Start frame";
+    private string EndFrameNameId = "End frame";
   }
 }

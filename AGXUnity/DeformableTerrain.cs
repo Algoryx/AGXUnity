@@ -197,7 +197,7 @@ namespace AGXUnity
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
 
-      var nativeHeightData = Utils.TerrainUtils.FindHeights( TerrainData );
+      var nativeHeightData = TerrainUtils.FindHeights( TerrainData );
       var elementSize = TerrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
 
       var tmp = new float[,] { { 0.0f } };
