@@ -240,8 +240,10 @@ namespace AGXUnityEditor.Tools
         Array.Copy( shapeUtils.GetPrincipalEdgesWorld( principalEdgeExtension ), edges, 3 );
       else {
         var mesh = shape is AGXUnity.Collide.Mesh ?
-                     ( shape as AGXUnity.Collide.Mesh ).SourceObjects.FirstOrDefault() :
-                     m_collectedData.Target.GetComponent<MeshFilter>()?.sharedMesh;
+                     (shape as AGXUnity.Collide.Mesh).SourceObjects.FirstOrDefault() :
+                     m_collectedData.Target.GetComponent<MeshFilter>() != null ?
+                       m_collectedData.Target.GetComponent<MeshFilter>().sharedMesh :
+                       null;
         var halfExtents = 0.5f * Vector3.zero;
         if ( mesh != null )
           halfExtents = mesh.bounds.extents;
