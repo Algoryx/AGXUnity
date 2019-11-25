@@ -122,6 +122,9 @@ namespace AGXUnityEditor
 
     private void OnDisable()
     {
+      if ( this.target == null )
+        Manager.OnEditorTargetsDeleted();
+
       ToolManager.OnTargetEditorDisable( this.targets );
     }
 
