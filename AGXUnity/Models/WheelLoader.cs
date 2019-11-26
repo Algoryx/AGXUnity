@@ -14,10 +14,10 @@ namespace AGXUnity.Models
 
     public enum WheelLocation
     {
-      LeftFront,
-      RightFront,
+      RightRear,
       LeftRear,
-      RightRear
+      RightFront,
+      LeftFront
     }
 
     [SerializeField]
@@ -417,6 +417,21 @@ namespace AGXUnity.Models
                                   f2 );
       GetSimulation().add( BrakeHinge );
 
+      try {
+        foreach ( WheelLocation location in System.Enum.GetValues( typeof( WheelLocation ) ) ) {
+          var wheelBody = GetOrFindWheel( location );
+          var rimBody   = FindChild<RigidBody>( location.ToString() + "Rim" );
+          if ( wheelBody == null )
+            throw new System.Exception( "Unable to find wheel body at location: " + location.ToString() );
+          if ( rimBody == null )
+            throw new System.Exception( "Unable to find rim body at location: " + location.ToString() );
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogWarning( "Unable to initialize tire models: " + e.Message );
+      }
+      //m_tireModels[ (int)WheelLocation.RightRear ] = new agxModel.TwoBodyTire()
+
       return true;
     }
 
@@ -464,6 +479,7 @@ namespace AGXUnity.Models
     }
 
     private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
+    private agxModel.TwoBodyTire[] m_tireModels = new agxModel.TwoBodyTire[] { null, null, null, null };
 
     private RigidBody[] m_wheelBodies = new RigidBody[] { null, null, null, null };
     private Constraint[] m_wheelHinges = new Constraint[] { null, null, null, null };
