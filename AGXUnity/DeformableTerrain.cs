@@ -222,6 +222,7 @@ namespace AGXUnity
 
       Debug.Log( "Resolution:   " + nativeHeightData.ResolutionX + ", " + nativeHeightData.ResolutionY );
       Debug.Log( "Element size: " + elementSize );
+
       Native = new agxTerrain.Terrain( (uint)nativeHeightData.ResolutionX,
                                        (uint)nativeHeightData.ResolutionY,
                                        elementSize,

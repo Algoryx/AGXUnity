@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -46,6 +46,8 @@ namespace AGXUnityEditor.Tools
         Mode                 = LineTool.ToolMode.Direction,
         DirectionArrowLength = 0.5f
       } );
+
+      m_requestEdgeValidate = true;
     }
 
     public override void OnRemove()
@@ -55,10 +57,46 @@ namespace AGXUnityEditor.Tools
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
+      var shouldValidateEdges = m_requestEdgeValidate &&
+                                TopEdgeLineTool.Line.Valid &&
+                                CuttingEdgeLineTool.Line.Valid &&
+                                CuttingDirectionLineTool.Line.Valid;
+      if ( shouldValidateEdges ) {
+        m_edgeIssues.Clear();
+
+        var cuttingDir   = CuttingEdgeLineTool.Line.Direction;
+        var cuttingToTop = Vector3.Normalize( TopEdgeLineTool.Line.Start.Position - CuttingEdgeLineTool.Line.Start.Position );
+        var rayCenter    = 0.5f * ( CuttingEdgeLineTool.Line.Center + TopEdgeLineTool.Line.Center );
+        var rayDir       = Vector3.Cross( cuttingDir, cuttingToTop ).normalized;
+
+        if ( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ) < 0.95f )
+          m_edgeIssues.Add( "\u2022 " +
+                            GUI.AddColorTag( "Top", Color.yellow ) +
+                            " and " +
+                            GUI.AddColorTag( "Cutting", Color.red ) +
+                            " edge direction expected to be approximately parallel with dot product > 0.95, currently: " +
+                            GUI.AddColorTag( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ).ToString(), Color.red ) );
+        if ( !Utils.Raycast.Intersect( new Ray( rayCenter, rayDir ), Shovel.GetComponentsInChildren<MeshFilter>() ).Hit )
+          m_edgeIssues.Add( "\u2022 " +
+                            GUI.AddColorTag( "Top", Color.yellow ) +
+                            " and " +
+                            GUI.AddColorTag( "Cutting", Color.red ) +
+                            " edges appears to be directed in the wrong way - raycast from center bucket plane into the bucket didn't hit the bucket." );
+        //m_edgeConfigurationValid = Utils.Raycast.Intersect( new Ray( rayCenter, rayDir ), Shovel.GetComponentsInChildren<MeshFilter>() ).Hit &&
+        //                            Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ) > 0.8f &&
+        //                            Vector3.Dot( rayDir, CuttingDirectionLineTool.Line.Direction ) < -0.5f;
+
+        m_requestEdgeValidate = false;
+      }
     }
 
     public override void OnPreTargetMembersGUI()
     {
+      if ( m_edgeIssues.Count > 0 ) {
+        foreach ( var issue in m_edgeIssues )
+          GUI.WarningLabel( issue, InspectorEditor.Skin );
+      }
+
       GUI.Separator();
 
       HandleLineToolInspectorGUI( TopEdgeLineTool, "Top Edge" );
@@ -69,6 +107,8 @@ namespace AGXUnityEditor.Tools
 
       HandleLineToolInspectorGUI( CuttingDirectionLineTool, "Cutting Direction" );
       GUI.Separator();
+
+      m_requestEdgeValidate = true;
     }
 
     private void HandleLineToolInspectorGUI( LineTool lineTool, string name )
@@ -145,5 +185,8 @@ namespace AGXUnityEditor.Tools
       result.Edge.End = result.Edge.Start + 0.5f * result.Edge.Direction;
       return result;
     }
+
+    private bool m_requestEdgeValidate = false;
+    private List<string> m_edgeIssues = new List<string>();
   }
 }

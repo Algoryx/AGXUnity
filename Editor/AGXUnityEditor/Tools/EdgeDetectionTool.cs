@@ -331,7 +331,10 @@ namespace AGXUnityEditor.Tools
       yield return edge.Center;
       yield return edge.End;
 
-      if ( edge.Type == AGXUnity.Edge.EdgeType.Triangle || m_collectedData == null || m_collectedData.Target == null || m_collectedData.Target.GetComponent<Shape>() == null )
+      if ( edge.Type == AGXUnity.Edge.EdgeType.Triangle ||
+           m_collectedData == null ||
+           m_collectedData.Target == null ||
+           m_collectedData.Target.GetComponent<Shape>() == null )
         yield break;
 
       var utils = m_collectedData.Target.GetComponent<Shape>().GetUtils();
@@ -354,12 +357,14 @@ namespace AGXUnityEditor.Tools
           return;
 
         var rbs = UnityEngine.Object.FindObjectsOfType<AGXUnity.RigidBody>();
+        Array.Sort( rbs, ( rb1, rb2 ) => { return rb1.GetInstanceID() > rb2.GetInstanceID() ? -1 : 1; } );
+
         foreach ( var rb in rbs )
           s_visualizeSelectedHandler.GetOrCreateColor( rb );
 
         var filters = s_selected.GetComponentsInChildren<MeshFilter>();
         foreach ( var filter in filters )
-          s_visualizeSelectedHandler.Highlight( filter, Utils.ObjectsGizmoColorHandler.SelectionType.ConstantColor );
+          s_visualizeSelectedHandler.Highlight( filter, Utils.ObjectsGizmoColorHandler.SelectionType.VaryingIntensity );
 
         foreach ( var filterColorPair in s_visualizeSelectedHandler.ColoredMeshFilters ) {
           Gizmos.color = filterColorPair.Value;

@@ -311,6 +311,8 @@ namespace AGXUnityEditor
       foreach ( var keyHandler in tool.KeyHandlers )
         keyHandler.Update( Event.current );
 
+      Tool.ClearTemporaries( tool );
+
       tool.OnSceneViewGUI( sceneView );
 
       // Depth first traverse of children.

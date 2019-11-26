@@ -190,12 +190,76 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     public bool IsSingleInstanceTool { get; set; } = true;
 
+    /// <summary>
+    /// Debug render cylinder or arrow.
+    /// </summary>
+    /// <remarks>
+    /// This method is only valid to use during OnSceneViewGUI.
+    /// </remarks>
+    /// <param name="start">Cylinder/arrow start position.</param>
+    /// <param name="end">Cylinder/arrow end position.</param>
+    /// <param name="radius">Size of the cylinder/arrow.</param>
+    /// <param name="color">Color of the cylinder/arrow.</param>
+    /// <param name="arrow">True to render as arrow, false to render as cylinder.</param>
+    public void DebugRender( Vector3 start, Vector3 end, float radius, Color color, bool arrow = false )
+    {
+      CreateDefaultDebugRenderable<Utils.VisualPrimitiveArrow>( color ).SetTransformEx( start,
+                                                                                        end,
+                                                                                        radius,
+                                                                                        arrow );
+    }
+
+    /// <summary>
+    /// Debug render sphere.
+    /// </summary>
+    /// <remarks>
+    /// This method is only valid to use during OnSceneViewGUI.
+    /// </remarks>
+    /// <param name="center">Center of sphere.</param>
+    /// <param name="radius">Radius of sphere.</param>
+    /// <param name="color">Color of sphere.</param>
+    public void DebugRender( Vector3 center, float radius, Color color )
+    {
+      CreateDefaultDebugRenderable<Utils.VisualPrimitiveSphere>( color ).SetTransform( center,
+                                                                                       Quaternion.identity,
+                                                                                       radius,
+                                                                                       false );
+    }
+
+    private T CreateDefaultDebugRenderable<T>( Color color )
+      where T : Utils.VisualPrimitive
+    {
+      var primitive = GetOrCreateVisualPrimitive<T>( s_debugRenderVisualPrefix + m_visualPrimitives.Count.ToString(),
+                                                     "GUI/Text Shader" );
+      primitive.Color = primitive.MouseOverColor = color;
+      primitive.Pickable = false;
+      primitive.Visible = true;
+      return primitive;
+    }
+
+    /// <summary>
+    /// Clears temporary data. This method is called before OnSceneViewGUI.
+    /// </summary>
+    /// <param name="tool">Tool to clear temporary data for.</param>
+    public static void ClearTemporaries( Tool tool )
+    {
+      List<string> debugRenderablesToRemove = new List<string>();
+      foreach ( var name in tool.m_visualPrimitives.Keys ) {
+        if ( name.StartsWith( s_debugRenderVisualPrefix ) )
+          debugRenderablesToRemove.Add( name );
+      }
+      foreach ( var name in debugRenderablesToRemove )
+        tool.RemoveVisualPrimitive( name );
+    }
+
     private List<Tool> m_children = new List<Tool>();
     private Tool m_parent         = null;
 
     private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
     private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
     private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
+
+    private static readonly string s_debugRenderVisualPrefix = "dr_prim_";
 
     /// <summary>
     /// Construct given the implemented tool supports multiple
