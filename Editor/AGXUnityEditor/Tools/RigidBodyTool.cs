@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using AGXUnity;
 using AGXUnity.Collide;
 using GUI = AGXUnityEditor.Utils.GUI;
@@ -142,7 +143,9 @@ namespace AGXUnityEditor.Tools
     public RigidBodyTool( Object[] targets )
       : base( targets )
     {
-      var allConstraints = GameObject.FindObjectsOfType<Constraint>();
+      var allConstraints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
+                             StageUtility.GetCurrentStageHandle().FindComponentsOfType<Constraint>() :
+                             Object.FindObjectsOfType<Constraint>();
       foreach ( var constraint in allConstraints ) {
         foreach ( var rb in GetTargets<RigidBody>() )
           if ( constraint.AttachmentPair.Contains( rb ) )

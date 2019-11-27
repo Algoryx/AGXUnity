@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
@@ -148,6 +147,25 @@ namespace AGXUnity
       return rb != null &&
              ( ( ReferenceFrame.Parent != null && ReferenceFrame.Parent.GetComponentInParent<RigidBody>() == rb ) ||
                ( ConnectedFrame.Parent != null && ConnectedFrame.Parent.GetComponentInParent<RigidBody>() == rb ) );
+    }
+
+    /// <summary>
+    /// Finds other rigid body or null if attached in world. Throws
+    /// exception if <paramref name="rb"/> isn't part of this attachment.
+    /// </summary>
+    /// <param name="rb">Rigid body instance part of this attachment.</param>
+    /// <returns>Other rigid body or null if attached in world.</returns>
+    public RigidBody Other( RigidBody rb )
+    {
+      var rbRef = ReferenceFrame.Parent != null ?
+                    ReferenceFrame.Parent.GetComponentInParent<RigidBody>() :
+                    null;
+      var rbCon = ConnectedFrame.Parent != null ?
+                    ConnectedFrame.Parent.GetComponentInParent<RigidBody>() :
+                    null;
+      if ( rb == null || ( rb != rbRef && rb != rbCon ) )
+        throw new Exception( "AttachmentPair.Other: Subject rigid body isn't part of this attachment pair." );
+      return rbRef == rb ? rbCon : rbRef;
     }
 
     /// <summary>

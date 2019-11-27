@@ -57,7 +57,8 @@ namespace AGXUnityEditor.Tools
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
-      var shouldValidateEdges = m_requestEdgeValidate &&
+      var shouldValidateEdges = !EditorApplication.isPlaying &&
+                                m_requestEdgeValidate &&
                                 TopEdgeLineTool.Line.Valid &&
                                 CuttingEdgeLineTool.Line.Valid &&
                                 CuttingDirectionLineTool.Line.Valid;
@@ -82,9 +83,10 @@ namespace AGXUnityEditor.Tools
                             " and " +
                             GUI.AddColorTag( "Cutting", Color.red ) +
                             " edges appears to be directed in the wrong way - raycast from center bucket plane into the bucket didn't hit the bucket." );
-        //m_edgeConfigurationValid = Utils.Raycast.Intersect( new Ray( rayCenter, rayDir ), Shovel.GetComponentsInChildren<MeshFilter>() ).Hit &&
-        //                            Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ) > 0.8f &&
-        //                            Vector3.Dot( rayDir, CuttingDirectionLineTool.Line.Direction ) < -0.5f;
+        if ( Vector3.Dot( rayDir, CuttingDirectionLineTool.Line.Direction ) > -0.5f )
+          m_edgeIssues.Add( "\u2022 " +
+                            GUI.AddColorTag( "Cutting direction", Color.blue ) +
+                            " appears to be directed towards the bucket - it should be in the bucket separation plate plane, directed out from the bucket." );
 
         m_requestEdgeValidate = false;
       }
