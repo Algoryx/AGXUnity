@@ -46,7 +46,7 @@ namespace AGXUnityEditor
     [MenuItem("Assets/AGXUnity/Two Body Tire Properties")]
     public static UnityEngine.Object CreateTwoBodyTireProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TwoBodyTireProperties>("two body tire properties");
     }
 
     [MenuItem( "Assets/AGXUnity/Solver Settings" )]

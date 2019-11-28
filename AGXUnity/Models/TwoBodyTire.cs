@@ -199,13 +199,26 @@ namespace AGXUnity.Models
       }
 
       var worldRotationAxis = FindRotationAxisWorld();
-      var rotationAxisTransform = new agx.AffineMatrix4x4();
+      var rotationAxisTransform = agx.AffineMatrix4x4.identity();
       if ( worldRotationAxis == Vector3.zero ) {
         Debug.LogWarning( "TwoBodyTire failed to identify rotation axis - assuming Tire local z axis." );
         rotationAxisTransform.setRotate( agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ) );
       }
       else {
-        //rotationAxisTransform.setRotate(  )
+        rotationAxisTransform.setRotate( agx.Quat.rotate( nativeTireRigidBody.getFrame().transformVectorToLocal( worldRotationAxis.ToHandedVec3() ),
+                                                          agx.Vec3.Y_AXIS() ) );
+      }
+
+      Native = new agxModel.TwoBodyTire( nativeTireRigidBody,
+                                         TireRadius,
+                                         nativeRimRigidBody,
+                                         RimRadius,
+                                         rotationAxisTransform );
+      GetSimulation().add( Native );
+
+      if ( TireRimConstraint != null && TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
+        m_tireRimConstraintInitialState = TireRimConstraint.enabled;
+        TireRimConstraint.enabled = false;
       }
 
       return true;
@@ -215,6 +228,10 @@ namespace AGXUnity.Models
     {
       if ( GetSimulation() != null && Native != null )
         GetSimulation().remove( Native );
+
+      if ( TireRimConstraint != null )
+        TireRimConstraint.enabled = m_tireRimConstraintInitialState;
+
       Native = null;
     }
 
@@ -291,6 +308,26 @@ namespace AGXUnity.Models
 
       return result;
     }
+
+    private void DrawGizmos( Color color )
+    {
+      Gizmos.color = color;
+      Native.getHinge().getAttachmentPair().transform();
+      var position = Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.ANCHOR_POS ).ToHandedVector3();
+      Gizmos.DrawMesh( Constraint.GetOrCreateGizmosMesh(),
+                       position,
+                       Quaternion.FromToRotation( Vector3.up,
+                                                  Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.N ).ToHandedVector3() ),
+                       0.85f * Rendering.Spawner.Utils.FindConstantScreenSizeScale( position, Camera.current ) * Vector3.one );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+      if ( Native != null )
+        DrawGizmos( Color.Lerp( Color.yellow, Color.green, 0.25f ) );
+    }
+
+    private bool m_tireRimConstraintInitialState = true;
   }
 
   ///// <summary>

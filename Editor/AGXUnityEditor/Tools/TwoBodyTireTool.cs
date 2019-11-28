@@ -21,13 +21,19 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
+      GUILayout.Label( GUI.MakeLabel( FindHeaderName(),
+                                      14,
+                                      true ),
+                       GUI.Align( InspectorEditor.Skin.label, TextAnchor.MiddleCenter ) );
+
+      GUI.Separator();
+
       // '\u25CB' circle
       // '\u274D' 3D circle
       bool toggleSelectTireAndRim = false;
       bool toggleSelectTire = false;
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        GUI.Separator();
         using ( new GUILayout.HorizontalScope() ) {
           GUI.ToolsLabel( InspectorEditor.Skin );
           using ( GUI.ToolButtonData.ColorBlock ) {
@@ -175,6 +181,24 @@ namespace AGXUnityEditor.Tools
         Debug.LogError( $"Select {name}: Assigning {name} {rb.name} failed." );
 
       EditorUtility.SetDirty( Tire );
+    }
+
+    private string FindHeaderName()
+    {
+      if ( NumTargets > 1 )
+        return "Two Body Tires";
+
+      string result = "";
+      if ( Tire.TireRigidBody != null )
+        result += Tire.TireRigidBody.name;
+      else
+        result += "null";
+      result += " \u274D ";
+      if ( Tire.RimRigidBody != null )
+        result += Tire.RimRigidBody.name;
+      else
+        result += "null";
+      return result;
     }
   }
 }
