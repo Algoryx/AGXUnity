@@ -314,15 +314,17 @@ namespace AGXUnityEditor
     /// </summary>
     public static void OnEditorTargetsDeleted()
     {
+      var undoGroupId = Undo.GetCurrentGroup();
+
       // Deleted RigidBody component leaves dangling MassProperties
       // so we've to delete them explicitly.
       var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
-      var undoGroupId = Undo.GetCurrentGroup();
       foreach ( var mp in mps ) {
         if ( mp.RigidBody == null ) {
           Undo.DestroyObjectImmediate( mp );
         }
       }
+
       Undo.CollapseUndoOperations( undoGroupId );
     }
 

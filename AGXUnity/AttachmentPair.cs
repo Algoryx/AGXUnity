@@ -150,6 +150,18 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// True if <paramref name="rb1"/> and <paramref name="rb2"/> are part
+    /// of this attachment pair - otherwise false.
+    /// </summary>
+    /// <param name="rb1">First rigid body.</param>
+    /// <param name="rb2">Second rigid body.</param>
+    /// <returns>True if both rigid bodies are part of this attachment pair.</returns>
+    public bool Match( RigidBody rb1, RigidBody rb2 )
+    {
+      return Contains( rb1 ) && Contains( rb2 );
+    }
+
+    /// <summary>
     /// Finds other rigid body or null if attached in world. Throws
     /// exception if <paramref name="rb"/> isn't part of this attachment.
     /// </summary>

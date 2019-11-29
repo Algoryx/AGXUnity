@@ -212,8 +212,7 @@ namespace AGXUnityEditor.IO
           node.GameObject.transform.position = nativeRb.getPosition().ToHandedVector3();
           node.GameObject.transform.rotation = nativeRb.getRotation().ToHandedQuaternion();
 
-          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );
-          
+          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );          
 
           break;
         case Node.NodeType.Geometry:

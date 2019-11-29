@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity.Models
 {
+  [DisallowMultipleComponent]
   public class WheelLoader : ScriptComponent
   {
     public enum DifferentialLocation
@@ -242,13 +245,13 @@ namespace AGXUnity.Models
 
     [InspectorGroupBegin( Name = "Wheels" )]
     [AllowRecursiveEditing]
-    public RigidBody LeftFrontWheel { get { return GetOrFindWheel( WheelLocation.LeftFront ); } }
-    [AllowRecursiveEditing]
-    public RigidBody RightFrontWheel { get { return GetOrFindWheel( WheelLocation.RightFront ); } }
+    public RigidBody RightRearWheel { get { return GetOrFindWheel( WheelLocation.RightRear ); } }
     [AllowRecursiveEditing]
     public RigidBody LeftRearWheel { get { return GetOrFindWheel( WheelLocation.LeftRear ); } }
     [AllowRecursiveEditing]
-    public RigidBody RightRearWheel { get { return GetOrFindWheel( WheelLocation.RightRear ); } }
+    public RigidBody RightFrontWheel { get { return GetOrFindWheel( WheelLocation.RightFront ); } }
+    [AllowRecursiveEditing]
+    public RigidBody LeftFrontWheel { get { return GetOrFindWheel( WheelLocation.LeftFront ); } }
 
     [InspectorGroupBegin( Name = "Wheel Hinges" )]
     [AllowRecursiveEditing]
@@ -260,6 +263,43 @@ namespace AGXUnity.Models
     [AllowRecursiveEditing]
     public Constraint LeftFrontHinge { get { return GetOrFindConstraint( WheelLocation.LeftFront, "Hinge", m_wheelHinges ); } }
 
+    [InspectorGroupBegin( Name = "Tire Models" )]
+    [AllowRecursiveEditing]
+    public TwoBodyTire RightRearTireModel
+    {
+      get
+      {
+        return GetOrCreateTireModel( WheelLocation.RightRear );
+      }
+    }
+
+    [AllowRecursiveEditing]
+    public TwoBodyTire LeftRearTireModel
+    {
+      get
+      {
+        return GetOrCreateTireModel( WheelLocation.LeftRear );
+      }
+    }
+
+    [AllowRecursiveEditing]
+    public TwoBodyTire RightFrontTireModel
+    {
+      get
+      {
+        return GetOrCreateTireModel( WheelLocation.RightFront );
+      }
+    }
+
+    [AllowRecursiveEditing]
+    public TwoBodyTire LeftFrontTireModel
+    {
+      get
+      {
+        return GetOrCreateTireModel( WheelLocation.LeftFront );
+      }
+    }
+
     [InspectorGroupBegin( Name = "Controlled Constraints")]
     [AllowRecursiveEditing]
     public Constraint SteeringHinge
@@ -267,7 +307,7 @@ namespace AGXUnity.Models
       get
       {
         if ( m_steeringHinge == null )
-          m_steeringHinge = transform.Find( "WaistHinge" ).GetComponent<Constraint>();
+          m_steeringHinge = FindChild<Constraint>( "WaistHinge" );
         return m_steeringHinge;
       }
     }
@@ -418,19 +458,15 @@ namespace AGXUnity.Models
       GetSimulation().add( BrakeHinge );
 
       try {
-        foreach ( WheelLocation location in System.Enum.GetValues( typeof( WheelLocation ) ) ) {
-          var wheelBody = GetOrFindWheel( location );
-          var rimBody   = FindChild<RigidBody>( location.ToString() + "Rim" );
-          if ( wheelBody == null )
-            throw new System.Exception( "Unable to find wheel body at location: " + location.ToString() );
-          if ( rimBody == null )
-            throw new System.Exception( "Unable to find rim body at location: " + location.ToString() );
+        foreach ( WheelLocation location in Enum.GetValues( typeof( WheelLocation ) ) ) {
+          var tireModel = GetOrCreateTireModel( location );
+          if ( tireModel != null )
+            tireModel.GetInitialized<TwoBodyTire>();
         }
       }
       catch ( Exception e ) {
         Debug.LogWarning( "Unable to initialize tire models: " + e.Message );
       }
-      //m_tireModels[ (int)WheelLocation.RightRear ] = new agxModel.TwoBodyTire()
 
       return true;
     }
@@ -478,11 +514,60 @@ namespace AGXUnity.Models
       return cache[ (int)location ];
     }
 
-    private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
-    private agxModel.TwoBodyTire[] m_tireModels = new agxModel.TwoBodyTire[] { null, null, null, null };
+    private TwoBodyTire GetOrCreateTireModel( WheelLocation location )
+    {
+      if ( m_tireModels == null || m_tireModels.Length == 0 ) {
+        m_tireModels = new TwoBodyTire[4] { null, null, null, null };
+        var tireModels = GetComponents<TwoBodyTire>();
+        if ( tireModels.Length == 4 ) {
+          foreach ( WheelLocation wl in Enum.GetValues( typeof( WheelLocation ) ) ) {
+            var trb = GetOrFindWheel( wl );
+            var rrb = FindChild<RigidBody>( wl.ToString() + "Rim" );
+            m_tireModels[ (int)wl ] = tireModels.FirstOrDefault( tireModel => tireModel.TireRigidBody == trb &&
+                                                                              tireModel.RimRigidBody == rrb);
+          }
+        }
+        else if ( tireModels.Length != 0 )
+          Debug.LogWarning( "Tire models mismatch: Got " + tireModels.Length + ", expecting 0 or 4.", this );
+      }
 
+      var iLocation = (int)location;
+      if ( m_tireModels[ iLocation ] != null )
+        return m_tireModels[ iLocation ];
+
+      var tireRigidBody = GetOrFindWheel( location );
+      var rimRigidBody  = FindChild<RigidBody>( location.ToString() + "Rim" );
+      if ( tireRigidBody == null || rimRigidBody == null )
+        return null;
+
+      var locks = ( from constraint in GetComponentsInChildren<Constraint>()
+                    where constraint.Type == ConstraintType.LockJoint
+                    select constraint ).ToArray();
+      var tireLock = locks.FirstOrDefault( constraint => constraint.AttachmentPair.Match( tireRigidBody, rimRigidBody ) );
+      TwoBodyTire tire = gameObject.AddComponent<TwoBodyTire>();
+      tire.hideFlags = HideFlags.HideInInspector;
+      bool valid = false;
+      if ( tireLock != null )
+        valid = tire.Configure( tireLock, tireRigidBody );
+      else {
+        valid = tire.SetTire( tireRigidBody );
+        valid = valid && tire.SetRim( rimRigidBody );
+      }
+      if ( !valid ) {
+        DestroyImmediate( tire );
+        return null;
+      }
+
+      m_tireModels[ iLocation ] = tire;
+
+      return tire;
+    }
+
+    private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
+ 
     private RigidBody[] m_wheelBodies = new RigidBody[] { null, null, null, null };
     private Constraint[] m_wheelHinges = new Constraint[] { null, null, null, null };
+    private TwoBodyTire[] m_tireModels = null;
     private Constraint m_steeringHinge = null;
 
     private Constraint[] m_elevatePrismatics = new Constraint[] { null, null };

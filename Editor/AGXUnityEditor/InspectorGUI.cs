@@ -374,7 +374,7 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( ScriptAsset ), AssignableFrom = true )]
-    [InspectorDrawer( typeof( ScriptComponent ), IsBaseType = true )]
+    [InspectorDrawer( typeof( ScriptComponent ), AssignableFrom = true )]
     [InspectorDrawer( typeof( Object ), IsBaseType = true )]
     [InspectorDrawerResult( IsNullable = true )]
     public static object ScriptDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
