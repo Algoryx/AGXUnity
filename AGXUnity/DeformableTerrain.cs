@@ -110,7 +110,32 @@ namespace AGXUnity
     }
 
     [SerializeField]
+    private float m_maximumDepth = 20.0f;
+
+    /// <summary>
+    /// Maximum depth, it's not possible to dig deeper than this value.
+    /// This game object will be moved down MaximumDepth and MaximumDepth
+    /// will be added to the heights.
+    /// </summary>
+    [IgnoreSynchronization]
+    [ClampAboveZeroInInspector( true )]
+    public float MaximumDepth
+    {
+      get { return m_maximumDepth; }
+      set
+      {
+        if ( Native != null ) {
+          Debug.LogWarning( "DeformableTerrain MaximumDepth: Value is used during initialization" +
+                            " and cannot be changed when the terrain has been initialized.", this );
+          return;
+        }
+        m_maximumDepth = value;
+      }
+    }
+
+    [SerializeField]
     private bool m_tempDisplayShovelForces = false;
+    [IgnoreSynchronization]
     public bool TempDisplayShovelForces
     {
       get { return m_tempDisplayShovelForces; }
@@ -120,6 +145,8 @@ namespace AGXUnity
 
         if ( !Application.isPlaying )
           return;
+
+        ResetHeights();
 
         if ( m_tempDisplayShovelForces &&
              Shovels.Length > 0 &&
@@ -189,20 +216,63 @@ namespace AGXUnity
       m_shovels.RemoveAll( shovel => shovel == null );
     }
 
+    /// <summary>
+    /// Resets heights of the Unity terrain and recreate native instance.
+    /// </summary>
+    public void ResetHeights()
+    {
+      if ( Native != null && GetSimulation() != null ) {
+        GetSimulation().remove( Native );
+        Native = null;
+      }
+
+      ResetTerrainDataHeightsAndTransform();
+
+      InitializeNative();
+
+      PropertySynchronizer.Synchronize( this );
+    }
+
     protected override bool Initialize()
     {
       RemoveInvalidShovels();
 
-      var maxDepth = 20.0f;
-
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
 
+      InitializeNative();
+
+      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+
+      return true;
+    }
+
+    protected override void OnDestroy()
+    {
+      ResetTerrainDataHeightsAndTransform();
+
+      if ( Properties != null )
+        Properties.Unregister( this );
+
+      if ( GetSimulation() != null ) {
+        GetSimulation().remove( Native );
+        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+      }
+      Native = null;
+
+      if ( GUIWindowHandler.HasInstance )
+        GUIWindowHandler.Instance.Close( ShowForces );
+
+      base.OnDestroy();
+    }
+
+    private void InitializeNative()
+    {
       var nativeHeightData = TerrainUtils.FindHeights( TerrainData );
       var elementSize = TerrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
 
       var tmp = new float[,] { { 0.0f } };
       for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
-        var newHeight = nativeHeightData.Heights[ i ] += maxDepth;
+        var newHeight = nativeHeightData.Heights[ i ] += MaximumDepth;
 
         var vertexX = i % nativeHeightData.ResolutionX;
         var vertexY = i / nativeHeightData.ResolutionY;
@@ -218,10 +288,7 @@ namespace AGXUnity
       Terrain.ApplyDelayedHeightmapModification();
 #endif
 
-      transform.position = transform.position + maxDepth * Vector3.down;
-
-      Debug.Log( "Resolution:   " + nativeHeightData.ResolutionX + ", " + nativeHeightData.ResolutionY );
-      Debug.Log( "Element size: " + elementSize );
+      transform.position = transform.position + MaximumDepth * Vector3.down;
 
       Native = new agxTerrain.Terrain( (uint)nativeHeightData.ResolutionX,
                                        (uint)nativeHeightData.ResolutionY,
@@ -236,32 +303,12 @@ namespace AGXUnity
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
       GetSimulation().add( Native );
-
-      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
-
-      return true;
     }
 
-    protected override void OnDestroy()
+    private void ResetTerrainDataHeightsAndTransform()
     {
-      var maxDepth = 20.0f;
-
       TerrainData.SetHeights( 0, 0, m_initialHeights );
-      transform.position = transform.position + maxDepth * Vector3.up;
-
-      if ( Properties != null )
-        Properties.Unregister( this );
-
-      if ( GetSimulation() != null ) {
-        GetSimulation().remove( Native );
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
-      }
-      Native = null;
-
-      if ( GUIWindowHandler.HasInstance )
-        GUIWindowHandler.Instance.Close( ShowForces );
-
-      base.OnDestroy();
+      transform.position = transform.position + MaximumDepth * Vector3.up;
     }
 
     private void OnPostStepForward()
