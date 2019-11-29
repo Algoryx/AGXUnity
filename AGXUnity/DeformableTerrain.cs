@@ -135,7 +135,7 @@ namespace AGXUnity
 
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
-    [IgnoreSynchronization]
+
     public bool TempDisplayShovelForces
     {
       get { return m_tempDisplayShovelForces; }
@@ -145,8 +145,6 @@ namespace AGXUnity
 
         if ( !Application.isPlaying )
           return;
-
-        ResetHeights();
 
         if ( m_tempDisplayShovelForces &&
              Shovels.Length > 0 &&
