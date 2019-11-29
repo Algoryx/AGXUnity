@@ -154,15 +154,15 @@ namespace AGXUnityEditor.Tools
 
     private void OnTireSelected( GameObject selected )
     {
-      AssignTireOrRimGivenSelected( selected, "Tire", Tire.SetTire );
+      AssignTireOrRimGivenSelected( selected, Tire, "Tire", Tire.SetTire );
     }
 
     private void OnRimSelected( GameObject selected )
     {
-      AssignTireOrRimGivenSelected( selected, "Rim", Tire.SetRim );
+      AssignTireOrRimGivenSelected( selected, Tire, "Rim", Tire.SetRim );
     }
 
-    private void AssignTireOrRimGivenSelected( GameObject selected, string name, System.Func<RigidBody, bool> assignFunc )
+    public static void AssignTireOrRimGivenSelected( GameObject selected, Tire tire, string name, System.Func<RigidBody, bool> assignFunc )
     {
       if ( selected == null ) {
         Debug.LogError( $"Select {name}: Null/World is invalid selection for {name}." );
@@ -175,12 +175,12 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      Undo.RecordObject( Tire, $"TwoBodyTire.Set{name}" );
+      Undo.RecordObject( tire, $"Tire.Set{name}" );
 
       if ( !assignFunc( rb ) )
         Debug.LogError( $"Select {name}: Assigning {name} {rb.name} failed." );
 
-      EditorUtility.SetDirty( Tire );
+      EditorUtility.SetDirty( tire );
     }
 
     private string FindHeaderName()

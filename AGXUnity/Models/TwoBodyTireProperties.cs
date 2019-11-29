@@ -3,9 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity.Models
-{  
+{
   /// <summary>
   /// Properties of a TwoBodyTire.
+  /// 
+  /// Radial stiffness/damping affects translation orthogonal to tire rotation axis.
+  /// Lateral stiffness/damping affects translation in axis of rotation.
+  /// Bending stiffness/damping affects rotation orthogonal to axis of rotation.
+  /// Torsional stiffness/damping affects rotation in axis of rotation.
+  /// 
+  /// The unit for translational stiffness is force/displacement (if using SI: N/m)
+  /// The unit for rotational stiffness is torque/angular displacement(if using SI: Nm/rad)
+  /// The unit for the translational damping coefficient is force* time/displacement(if using SI: Ns/m)
+  /// The unit for the rotational damping coefficient is torque* time/angular displacement(if using SI: Nms/rad)
   /// </summary>
   public class TwoBodyTireProperties : ScriptAsset
   {
@@ -15,6 +25,10 @@ namespace AGXUnity.Models
     [SerializeField]
     private float[] m_dampingCoefficients = new float[ 4 ] { 1.67E4f, 1.67E6f, 8.33E3f, 8.33E3f };
 
+    /// <summary>
+    /// Radial stiffness. Affects translation orthogonal to tire rotation axis.
+    /// Default: 5.0E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float RadialStiffness
     {
@@ -27,6 +41,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Radial damping coefficient. Affects translation orthogonal to tire rotation axis.
+    /// Default: 1.67E4
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float RadialDampingCoefficient
     {
@@ -39,6 +57,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Lateral stiffness. Affects translation in axis of rotation.
+    /// Default: 5.0E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float LateralStiffness
     {
@@ -51,6 +73,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Lateral damping coefficient. Affects translation in axis of rotation.
+    /// Default: 1.67E6
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float LateralDampingCoefficient
     {
@@ -63,6 +89,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Bending stiffness. Affects rotation orthogonal to axis of rotation.
+    /// Default: 2.5E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float BendingStiffness
     {
@@ -75,6 +105,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Bending damping coefficient. Affects rotation orthogonal to axis of rotation.
+    /// Default: 8.33E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float BendingDampingCoefficient
     {
@@ -87,6 +121,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Torsional stiffness. Affects rotation in axis of rotation.
+    /// Default: 2.5E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float TorsionalStiffness
     {
@@ -99,6 +137,10 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Torsional damping coefficient. Affects rotation in axis of rotation.
+    /// Default: 8.33E3
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float TorsionalDampingCoefficient
     {
@@ -111,6 +153,12 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Internal.
+    /// 
+    /// Register tire instance to adopt these tire properties.
+    /// </summary>
+    /// <param name="tire"></param>
     public void Register( TwoBodyTire tire )
     {
       if ( !m_tires.Contains( tire ) ) {
@@ -123,6 +171,12 @@ namespace AGXUnity.Models
       }
     }
 
+    /// <summary>
+    /// Internal.
+    /// 
+    /// Unregister tire instance from these properties.
+    /// </summary>
+    /// <param name="tire"></param>
     public void Unregister( TwoBodyTire tire )
     {
       m_tires.Remove( tire );

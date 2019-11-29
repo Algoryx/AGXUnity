@@ -233,6 +233,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) || !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) )
+        Debug.LogError( "DeformableTerrain requires a valid license for the AGX Dynamics modules: AgX-Terrain and AgX-Granular", this );
+
       RemoveInvalidShovels();
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
