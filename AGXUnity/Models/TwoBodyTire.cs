@@ -117,6 +117,29 @@ namespace AGXUnity.Models
       }
     }
 
+    [SerializeField]
+    private TwoBodyTireProperties m_properties = null;
+
+    /// <summary>
+    /// Radial, lateral, bend and torsional properties of the tire.
+    /// </summary>
+    [IgnoreSynchronization]
+    [AllowRecursiveEditing]
+    public TwoBodyTireProperties Properties
+    {
+      get { return m_properties; }
+      set
+      {
+        if ( m_properties != null )
+          m_properties.Unregister( this );
+
+        m_properties = value;
+
+        if ( m_properties != null )
+          m_properties.Register( this );
+      }
+    }
+
     /// <summary>
     /// Configure this two body tire given constraint between the
     /// tire and rim rigid bodies.
@@ -221,6 +244,9 @@ namespace AGXUnity.Models
         TireRimConstraint.enabled = false;
       }
 
+      if ( Properties != null )
+        Properties.Register( this );
+
       return true;
     }
 
@@ -231,6 +257,9 @@ namespace AGXUnity.Models
 
       if ( TireRimConstraint != null )
         TireRimConstraint.enabled = m_tireRimConstraintInitialState;
+
+      if ( Properties != null )
+        Properties.Unregister( this );
 
       Native = null;
     }
