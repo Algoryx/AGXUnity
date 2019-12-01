@@ -173,6 +173,7 @@ namespace AGXUnityEditor.Tools
       var mouseOverSceneView = EditorWindow.mouseOverWindow == sceneView;
       var mouseOverHierarchy = !mouseOverSceneView &&
                                EditorWindow.mouseOverWindow != null &&
+                               EditorWindow.mouseOverWindow.GetType() != null &&
                                EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
       var dragDropSceneViewActive = ( mouseOverSceneView || mouseOverHierarchy ) &&
                                     ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated );

@@ -131,10 +131,14 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+#if UNITY_2019_1_OR_NEWER
       // StageUtility is used when a prefab is open in "Open Prefab" tab.
       var allConstraints = StageUtility.GetCurrentStageHandle().Contains( rb.gameObject ) ?
                              StageUtility.GetCurrentStageHandle().FindComponentsOfType<Constraint>() :
                              Object.FindObjectsOfType<Constraint>();
+#else
+      var allConstraints = Object.FindObjectsOfType<Constraint>();
+#endif
       var tireConstraints = ( from constraint
                               in allConstraints
                               where constraint.AttachmentPair.Contains( rb )

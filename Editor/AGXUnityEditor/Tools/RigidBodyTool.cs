@@ -143,9 +143,13 @@ namespace AGXUnityEditor.Tools
     public RigidBodyTool( Object[] targets )
       : base( targets )
     {
+#if UNITY_2019_1_OR_NEWER
       var allConstraints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
                              StageUtility.GetCurrentStageHandle().FindComponentsOfType<Constraint>() :
                              Object.FindObjectsOfType<Constraint>();
+#else
+      var allConstraints = Object.FindObjectsOfType<Constraint>();
+#endif
       foreach ( var constraint in allConstraints ) {
         foreach ( var rb in GetTargets<RigidBody>() )
           if ( constraint.AttachmentPair.Contains( rb ) )
