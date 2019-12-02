@@ -403,18 +403,23 @@ namespace AGXUnityEditor
                                // If foldout were enabled but valInField has changed to null - foldout will become disabled.
                                valInField != null && foldoutData.Bool;
           UnityEngine.GUI.enabled = true;
-          result = EditorGUILayout.ObjectField( objFieldLabel,
-                                                valInField,
-                                                type,
-                                                allowSceneObject,
-                                                new GUILayoutOption[] { } );
-
-          if ( typeof( ScriptAsset ).IsAssignableFrom( type ) ) {
-            GUILayout.Space( 4 );
-            using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-              createNewAssetButton = GUILayout.Button( GUI.MakeLabel( "New", false, "Create new asset" ),
-                                                       GUILayout.Width( 42 ),
-                                                       GUILayout.Height( buttonSize ) );
+          if ( wrapper.CanWrite() ) {
+            result = EditorGUILayout.ObjectField( objFieldLabel,
+                                                  valInField,
+                                                  type,
+                                                  allowSceneObject,
+                                                  new GUILayoutOption[] { } );
+            if ( typeof( ScriptAsset ).IsAssignableFrom( type ) ) {
+              GUILayout.Space( 4 );
+              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
+                createNewAssetButton = GUILayout.Button( GUI.MakeLabel( "New", false, "Create new asset" ),
+                                                         GUILayout.Width( 42 ),
+                                                         GUILayout.Height( buttonSize ) );
+            }
+          }
+          else {
+            GUILayout.Label( objFieldLabel, skin.label );
+            result = valInField;
           }
         }
         GUILayout.EndHorizontal();

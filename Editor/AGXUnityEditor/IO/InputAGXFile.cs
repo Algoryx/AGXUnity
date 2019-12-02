@@ -271,7 +271,8 @@ namespace AGXUnityEditor.IO
           if ( nativeFrictionModel != null ) {
             var frictionModelAsset        = ScriptAsset.Create<FrictionModel>().RestoreLocalDataFrom( nativeFrictionModel );
             frictionModelAsset.name       = "FrictionModel_" + contactMaterial.name;
-            contactMaterial.FrictionModel = frictionModelAsset = FileInfo.AddOrUpdateExistingAsset( frictionModelAsset,  AGXUnity.IO.AssetType.FrictionModel );
+            contactMaterial.FrictionModel = frictionModelAsset = FileInfo.AddOrUpdateExistingAsset( frictionModelAsset,
+                                                                                                    AGXUnity.IO.AssetType.FrictionModel );
           }
 
           node.Asset = contactMaterial = FileInfo.AddOrUpdateExistingAsset( contactMaterial, AGXUnity.IO.AssetType.ContactMaterial );
@@ -306,6 +307,17 @@ namespace AGXUnityEditor.IO
 
           if ( !CreateCable( node ) )
             GameObject.DestroyImmediate( node.GameObject );
+
+          break;
+        case Node.NodeType.ObserverFrame:
+          var nativeObserverFrame = m_tree.GetObserverFrame( node.Uuid );
+
+          node.GameObject      = GetOrCreateGameObject( node );
+          node.GameObject.name = FindName( nativeObserverFrame.getName(), "AGXUnity.ObserverFrame" );
+
+          var rbNode = node.GetReferences( Node.NodeType.RigidBody ).FirstOrDefault();
+          node.GameObject.GetOrCreateComponent<ObserverFrame>().RestoreLocalDataFrom( nativeObserverFrame,
+                                                                                      rbNode != null ? rbNode.GameObject : null );
 
           break;
       }

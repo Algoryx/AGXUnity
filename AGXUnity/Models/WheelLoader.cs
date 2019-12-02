@@ -144,7 +144,7 @@ namespace AGXUnity.Models
     }
 
     [SerializeField]
-    private Vector2 m_gearRatios = new Vector2( -5.0f, 5.0f );
+    private Vector2 m_gearRatios = new Vector2( -10.0f, 10.0f );
 
     [InspectorGroupBegin(Name = "Gear Box")]
     public Vector2 GearRatios
@@ -245,31 +245,50 @@ namespace AGXUnity.Models
 
     [InspectorGroupBegin( Name = "Wheels" )]
     [AllowRecursiveEditing]
-    public RigidBody RightRearWheel { get { return GetOrFindWheel( WheelLocation.RightRear ); } }
-    [AllowRecursiveEditing]
     public RigidBody LeftRearWheel { get { return GetOrFindWheel( WheelLocation.LeftRear ); } }
     [AllowRecursiveEditing]
-    public RigidBody RightFrontWheel { get { return GetOrFindWheel( WheelLocation.RightFront ); } }
+    public RigidBody RightRearWheel { get { return GetOrFindWheel( WheelLocation.RightRear ); } }
     [AllowRecursiveEditing]
     public RigidBody LeftFrontWheel { get { return GetOrFindWheel( WheelLocation.LeftFront ); } }
+    [AllowRecursiveEditing]
+    public RigidBody RightFrontWheel { get { return GetOrFindWheel( WheelLocation.RightFront ); } }
 
     [InspectorGroupBegin( Name = "Wheel Hinges" )]
     [AllowRecursiveEditing]
-    public Constraint RightRearHinge { get { return GetOrFindConstraint( WheelLocation.RightRear, "Hinge", m_wheelHinges ); } }
-    [AllowRecursiveEditing]
     public Constraint LeftRearHinge { get { return GetOrFindConstraint( WheelLocation.LeftRear, "Hinge", m_wheelHinges ); } }
     [AllowRecursiveEditing]
-    public Constraint RightFrontHinge { get { return GetOrFindConstraint( WheelLocation.RightFront, "Hinge", m_wheelHinges ); } }
+    public Constraint RightRearHinge { get { return GetOrFindConstraint( WheelLocation.RightRear, "Hinge", m_wheelHinges ); } }
     [AllowRecursiveEditing]
     public Constraint LeftFrontHinge { get { return GetOrFindConstraint( WheelLocation.LeftFront, "Hinge", m_wheelHinges ); } }
+    [AllowRecursiveEditing]
+    public Constraint RightFrontHinge { get { return GetOrFindConstraint( WheelLocation.RightFront, "Hinge", m_wheelHinges ); } }
+
+    [SerializeField]
+    private TwoBodyTireProperties m_tireProperties = null;
 
     [InspectorGroupBegin( Name = "Tire Models" )]
     [AllowRecursiveEditing]
-    public TwoBodyTire RightRearTireModel
+    public TwoBodyTireProperties TireProperties
     {
       get
       {
-        return GetOrCreateTireModel( WheelLocation.RightRear );
+        if ( m_tireProperties == null ) {
+          m_tireProperties = ScriptAsset.Create<TwoBodyTireProperties>();
+          m_tireProperties.RadialStiffness             = 2.0E6f;
+          m_tireProperties.RadialDampingCoefficient    = 9.0E4f;
+          m_tireProperties.LateralStiffness            = 4.0E6f;
+          m_tireProperties.LateralDampingCoefficient   = 9.0E4f;
+          m_tireProperties.BendingStiffness            = 1.0E6f;
+          m_tireProperties.BendingDampingCoefficient   = 9.0E4f;
+          m_tireProperties.TorsionalStiffness          = 1.0E6f;
+          m_tireProperties.TorsionalDampingCoefficient = 9.0E4f;
+
+          LeftRearTireModel.Properties   = m_tireProperties;
+          RightRearTireModel.Properties  = m_tireProperties;
+          LeftFrontTireModel.Properties  = m_tireProperties;
+          RightFrontTireModel.Properties = m_tireProperties;
+        }
+        return m_tireProperties;
       }
     }
 
@@ -283,11 +302,11 @@ namespace AGXUnity.Models
     }
 
     [AllowRecursiveEditing]
-    public TwoBodyTire RightFrontTireModel
+    public TwoBodyTire RightRearTireModel
     {
       get
       {
-        return GetOrCreateTireModel( WheelLocation.RightFront );
+        return GetOrCreateTireModel( WheelLocation.RightRear );
       }
     }
 
@@ -297,6 +316,15 @@ namespace AGXUnity.Models
       get
       {
         return GetOrCreateTireModel( WheelLocation.LeftFront );
+      }
+    }
+
+    [AllowRecursiveEditing]
+    public TwoBodyTire RightFrontTireModel
+    {
+      get
+      {
+        return GetOrCreateTireModel( WheelLocation.RightFront );
       }
     }
 
@@ -334,6 +362,17 @@ namespace AGXUnity.Models
       }
     }
 
+    [HideInInspector]
+    public Constraint[] ElevatePrismatics
+    {
+      get
+      {
+        if ( m_elevatePrismatics[ 0 ] == null || m_elevatePrismatics[ 1 ] == null )
+          return new Constraint[] { LeftElevatePrismatic, RightElevatePrismatic };
+        return m_elevatePrismatics;
+      }
+    }
+
     [AllowRecursiveEditing]
     public Constraint TiltPrismatic
     {
@@ -353,6 +392,19 @@ namespace AGXUnity.Models
     public agxDriveTrain.GearBox GearBox { get; private set; } = null;
     public agxDriveTrain.Differential[] Differentials { get; private set; } = new agxDriveTrain.Differential[] { null, null, null };
     public agxDriveTrain.TorqueConverter TorqueConverter { get; private set; } = null;
+
+    [HideInInspector]
+    public float Speed
+    {
+      get
+      {
+        if ( m_frontBody == null )
+          m_frontBody = FindChild<RigidBody>( "FrontBody" );
+        if ( m_frontBodyObserver == null )
+          m_frontBodyObserver = m_frontBody.GetComponentInChildren<ObserverFrame>();
+        return Vector3.Dot( m_frontBodyObserver.transform.TransformDirection( Vector3.forward ), m_frontBody.LinearVelocity );
+      }
+    }
 
     public IEnumerable<Constraint> WheelHinges
     {
@@ -566,6 +618,8 @@ namespace AGXUnity.Models
     private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
  
     private RigidBody[] m_wheelBodies = new RigidBody[] { null, null, null, null };
+    private ObserverFrame m_frontBodyObserver = null;
+    private RigidBody m_frontBody = null;
     private Constraint[] m_wheelHinges = new Constraint[] { null, null, null, null };
     private TwoBodyTire[] m_tireModels = null;
     private Constraint m_steeringHinge = null;

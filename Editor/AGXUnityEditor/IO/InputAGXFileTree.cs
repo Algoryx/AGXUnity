@@ -132,6 +132,14 @@ namespace AGXUnityEditor.IO
       return null;
     }
 
+    public agx.ObserverFrame GetObserverFrame( agx.Uuid uuid )
+    {
+      agx.ObserverFrame observerFrame;
+      if ( m_observerFrames.TryGetValue( uuid, out observerFrame ) )
+        return observerFrame;
+      return null;
+    }
+
     public void Parse( agxSDK.Simulation simulation, AGXFileInfo fileInfo )
     {
       if ( simulation == null )
@@ -257,6 +265,7 @@ namespace AGXUnityEditor.IO
         var rbNode = GetNode( observerFrame.getRigidBody().getUuid() );
         if ( rbNode == null )
           continue;
+
         var observerFrameNode = GetOrCreateObserverFrame( observerFrame.get() );
         observerFrameNode.AddReference( rbNode );
       }
