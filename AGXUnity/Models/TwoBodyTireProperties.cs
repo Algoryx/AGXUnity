@@ -20,10 +20,7 @@ namespace AGXUnity.Models
   public class TwoBodyTireProperties : ScriptAsset
   {
     [SerializeField]
-    private float[] m_stiffness = new float[ 4 ] { 5.0E3f, 5.0E3f, 2.5E3f, 2.5E3f };
-
-    [SerializeField]
-    private float[] m_dampingCoefficients = new float[ 4 ] { 1.67E4f, 1.67E6f, 8.33E3f, 8.33E3f };
+    private float m_radialStiffness = 5.0E3f;
 
     /// <summary>
     /// Radial stiffness. Affects translation orthogonal to tire rotation axis.
@@ -32,14 +29,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float RadialStiffness
     {
-      get { return m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ]; }
+      get { return m_radialStiffness; }
       set
       {
-        m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ] = value;
-        Propagate( native => native.setStiffness( m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ],
+        m_radialStiffness = value;
+        Propagate( native => native.setStiffness( m_radialStiffness,
                                                   agxModel.TwoBodyTire.DeformationMode.RADIAL ) );
       }
     }
+
+    [SerializeField]
+    private float m_radialDampingCoefficient = 1.67E4f;
 
     /// <summary>
     /// Radial damping coefficient. Affects translation orthogonal to tire rotation axis.
@@ -48,14 +48,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float RadialDampingCoefficient
     {
-      get { return m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ]; }
+      get { return m_radialDampingCoefficient; }
       set
       {
-        m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ] = value;
-        Propagate( native => native.setDampingCoefficient( m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.RADIAL ],
+        m_radialDampingCoefficient = value;
+        Propagate( native => native.setDampingCoefficient( m_radialDampingCoefficient,
                                                            agxModel.TwoBodyTire.DeformationMode.RADIAL ) );
       }
     }
+
+    [SerializeField]
+    private float m_lateralStiffness = 5.0E3f;
 
     /// <summary>
     /// Lateral stiffness. Affects translation in axis of rotation.
@@ -64,14 +67,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float LateralStiffness
     {
-      get { return m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ]; }
+      get { return m_lateralStiffness; }
       set
       {
-        m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ] = value;
-        Propagate( native => native.setStiffness( m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ],
+        m_lateralStiffness = value;
+        Propagate( native => native.setStiffness( m_lateralStiffness,
                                                   agxModel.TwoBodyTire.DeformationMode.LATERAL ) );
       }
     }
+
+    [SerializeField]
+    private float m_lateralDampingCoefficient = 1.67E6f;
 
     /// <summary>
     /// Lateral damping coefficient. Affects translation in axis of rotation.
@@ -80,14 +86,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float LateralDampingCoefficient
     {
-      get { return m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ]; }
+      get { return m_lateralDampingCoefficient; }
       set
       {
-        m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ] = value;
-        Propagate( native => native.setDampingCoefficient( m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.LATERAL ],
+        m_lateralDampingCoefficient = value;
+        Propagate( native => native.setDampingCoefficient( m_lateralDampingCoefficient,
                                                            agxModel.TwoBodyTire.DeformationMode.LATERAL ) );
       }
     }
+
+    [SerializeField]
+    private float m_bendingStiffness = 2.5E3f;
 
     /// <summary>
     /// Bending stiffness. Affects rotation orthogonal to axis of rotation.
@@ -96,14 +105,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float BendingStiffness
     {
-      get { return m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ]; }
+      get { return m_bendingStiffness; }
       set
       {
-        m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ] = value;
-        Propagate( native => native.setStiffness( m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ],
+        m_bendingStiffness = value;
+        Propagate( native => native.setStiffness( m_bendingStiffness,
                                                   agxModel.TwoBodyTire.DeformationMode.BENDING ) );
       }
     }
+
+    [SerializeField]
+    private float m_bendingDampingCoefficient = 8.33E3f;
 
     /// <summary>
     /// Bending damping coefficient. Affects rotation orthogonal to axis of rotation.
@@ -112,14 +124,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float BendingDampingCoefficient
     {
-      get { return m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ]; }
+      get { return m_bendingDampingCoefficient; }
       set
       {
-        m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ] = value;
-        Propagate( native => native.setDampingCoefficient( m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.BENDING ],
+        m_bendingDampingCoefficient = value;
+        Propagate( native => native.setDampingCoefficient( m_bendingDampingCoefficient,
                                                            agxModel.TwoBodyTire.DeformationMode.BENDING ) );
       }
     }
+
+    [SerializeField]
+    private float m_torsionalStiffness = 2.5E3f;
 
     /// <summary>
     /// Torsional stiffness. Affects rotation in axis of rotation.
@@ -128,14 +143,17 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float TorsionalStiffness
     {
-      get { return m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ]; }
+      get { return m_torsionalStiffness; }
       set
       {
-        m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ] = value;
-        Propagate( native => native.setStiffness( m_stiffness[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ],
+        m_torsionalStiffness = value;
+        Propagate( native => native.setStiffness( m_torsionalStiffness,
                                                   agxModel.TwoBodyTire.DeformationMode.TORSIONAL ) );
       }
     }
+
+    [SerializeField]
+    private float m_torsionalDampingCoefficient = 8.33E3f;
 
     /// <summary>
     /// Torsional damping coefficient. Affects rotation in axis of rotation.
@@ -144,11 +162,11 @@ namespace AGXUnity.Models
     [ClampAboveZeroInInspector]
     public float TorsionalDampingCoefficient
     {
-      get { return m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ]; }
+      get { return m_torsionalDampingCoefficient; }
       set
       {
-        m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ] = value;
-        Propagate( native => native.setDampingCoefficient( m_dampingCoefficients[ (int)agxModel.TwoBodyTire.DeformationMode.TORSIONAL ],
+        m_torsionalDampingCoefficient = value;
+        Propagate( native => native.setDampingCoefficient( m_torsionalDampingCoefficient,
                                                            agxModel.TwoBodyTire.DeformationMode.TORSIONAL ) );
       }
     }
