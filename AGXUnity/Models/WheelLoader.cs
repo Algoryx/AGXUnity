@@ -272,23 +272,7 @@ namespace AGXUnity.Models
     {
       get
       {
-        if ( m_tireProperties == null ) {
-          m_tireProperties = ScriptAsset.Create<TwoBodyTireProperties>();
-          m_tireProperties.RadialStiffness             = 2.0E6f;
-          m_tireProperties.RadialDampingCoefficient    = 9.0E4f;
-          m_tireProperties.LateralStiffness            = 4.0E6f;
-          m_tireProperties.LateralDampingCoefficient   = 9.0E4f;
-          m_tireProperties.BendingStiffness            = 1.0E6f;
-          m_tireProperties.BendingDampingCoefficient   = 9.0E4f;
-          m_tireProperties.TorsionalStiffness          = 1.0E6f;
-          m_tireProperties.TorsionalDampingCoefficient = 9.0E4f;
-
-          LeftRearTireModel.Properties   = m_tireProperties;
-          RightRearTireModel.Properties  = m_tireProperties;
-          LeftFrontTireModel.Properties  = m_tireProperties;
-          RightFrontTireModel.Properties = m_tireProperties;
-        }
-        return m_tireProperties;
+        return GetOrCreateTireModelProperties();
       }
     }
 
@@ -510,6 +494,7 @@ namespace AGXUnity.Models
       GetSimulation().add( BrakeHinge );
 
       try {
+        GetOrCreateTireModelProperties();
         foreach ( WheelLocation location in Enum.GetValues( typeof( WheelLocation ) ) ) {
           var tireModel = GetOrCreateTireModel( location );
           if ( tireModel != null )
@@ -544,6 +529,16 @@ namespace AGXUnity.Models
       m_actuators[ (int)WheelLocation.LeftFront ]  = null;
 
       base.OnDestroy();
+    }
+
+    private void Reset()
+    {
+      try {
+        GetOrCreateTireModelProperties();
+      }
+      catch ( Exception e ) {
+        Debug.LogError( "Unable to initialize tire models: " + e.Message );
+      }
     }
 
     private T FindChild<T>( string name )
@@ -613,6 +608,29 @@ namespace AGXUnity.Models
       m_tireModels[ iLocation ] = tire;
 
       return tire;
+    }
+
+    private TwoBodyTireProperties GetOrCreateTireModelProperties()
+    {
+      if ( m_tireProperties != null )
+        return m_tireProperties;
+
+      m_tireProperties = ScriptAsset.Create<TwoBodyTireProperties>();
+      m_tireProperties.RadialStiffness             = 2.0E6f;
+      m_tireProperties.RadialDampingCoefficient    = 9.0E4f;
+      m_tireProperties.LateralStiffness            = 4.0E6f;
+      m_tireProperties.LateralDampingCoefficient   = 9.0E4f;
+      m_tireProperties.BendingStiffness            = 1.0E6f;
+      m_tireProperties.BendingDampingCoefficient   = 9.0E4f;
+      m_tireProperties.TorsionalStiffness          = 1.0E6f;
+      m_tireProperties.TorsionalDampingCoefficient = 9.0E4f;
+
+      LeftRearTireModel.Properties   = m_tireProperties;
+      RightRearTireModel.Properties  = m_tireProperties;
+      LeftFrontTireModel.Properties  = m_tireProperties;
+      RightFrontTireModel.Properties = m_tireProperties;
+
+      return m_tireProperties;
     }
 
     private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
