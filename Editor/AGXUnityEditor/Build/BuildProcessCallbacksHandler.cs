@@ -68,7 +68,8 @@ namespace AGXUnityEditor.Build
     {
       "tbb.dll",
       "Half.dll",
-      "openvdb.dll"
+      "openvdb.dll",
+      "vdbgrid.DLL"
     };
 #endif
 
