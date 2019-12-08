@@ -268,6 +268,7 @@ namespace AGXUnity.Models
 
     [InspectorGroupBegin( Name = "Tire Models" )]
     [AllowRecursiveEditing]
+    [InspectorSeparator]
     public TwoBodyTireProperties TireProperties
     {
       get
@@ -276,6 +277,7 @@ namespace AGXUnity.Models
       }
     }
 
+    [InspectorSeparator]
     [AllowRecursiveEditing]
     public TwoBodyTire LeftRearTireModel
     {

@@ -152,7 +152,7 @@ namespace AGXUnity
     private void Reset()
     {
       if ( GetComponent<RigidBody>() == null )
-        Debug.LogError( "Component: DeformableTerrainShovel requires RigidBody component." );
+        Debug.LogError( "Component: DeformableTerrainShovel requires RigidBody component.", this );
     }
 
     private RigidBody m_rb = null;
