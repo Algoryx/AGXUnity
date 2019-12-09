@@ -60,9 +60,7 @@ namespace AGXUnityEditor.Tools
 
     private void OnTireSelected( GameObject selected )
     {
-#if AGX_DYNAMICS_2_28_OR_LATER
       TwoBodyTireTool.AssignTireOrRimGivenSelected( selected, Tire, "Tire", Tire.SetRigidBody );
-#endif
     }
   }
 }

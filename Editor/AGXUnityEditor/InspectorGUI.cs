@@ -488,6 +488,112 @@ namespace AGXUnityEditor
       return result;
     }
 
+    public static void ToolArrayGUI<T>( Tools.CustomTargetTool tool,
+                                        T[] items,
+                                        string identifier,
+                                        Color itemColorIdeintifier,
+                                        Action<T> onAdd,
+                                        Action<T> onRemove )
+      where T : Object
+    {
+      var displayItemsList = GUI.Foldout( EditorData.Instance.GetData( tool.Targets[ 0 ],
+                                                                       identifier ),
+                                          GUI.MakeLabel( identifier ),
+                                          InspectorEditor.Skin );
+      var itemTypename = typeof( T ).Name;
+      var itemTypenameSplit = itemTypename.SplitCamelCase();
+      var targetTypename = tool.Targets[ 0 ].GetType().Name;
+      if ( displayItemsList ) {
+        T itemToRemove = null;
+        using ( new GUI.Indent( 12 ) ) {
+          foreach ( var item in items ) {
+            GUI.Separator();
+
+            var displayItem = false;
+            using ( new GUILayout.HorizontalScope() ) {
+              displayItem = GUI.Foldout( EditorData.Instance.GetData( tool.Targets[ 0 ],
+                                                                      item.GetInstanceID().ToString() ),
+                                         GUI.MakeLabel( "[" + GUI.AddColorTag( itemTypename,
+                                                                               itemColorIdeintifier ) + "] " + item.name ),
+                                         InspectorEditor.Skin );
+
+              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
+                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
+                                                      false,
+                                                      $"Remove {item.name} from {targetTypename}." ),
+                     InspectorEditor.Skin.button,
+                     GUILayout.Width( 18 ),
+                     GUILayout.Height( 14 ) ) )
+                  itemToRemove = item;
+            }
+            if ( !displayItem ) {
+              HandleItemEditorDisable( tool, item );
+              continue;
+            }
+            using ( new GUI.Indent( 12 ) ) {
+              var editor = tool.GetOrCreateEditor( item );
+              editor.OnInspectorGUI();
+            }
+          }
+
+          GUI.Separator( 3 );
+
+          T itemToAdd = null;
+          var addButtonPressed = false;
+          using ( new GUILayout.VerticalScope( GUI.FadeNormalBackground( InspectorEditor.Skin.label, 0.1f ) ) ) {
+            using ( GUI.AlignBlock.Center )
+              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.label );
+            using ( new GUILayout.HorizontalScope() ) {
+              itemToAdd = EditorGUILayout.ObjectField( "", null, typeof( T ), true ) as T;
+              addButtonPressed = GUILayout.Button( GUI.MakeLabel( "+" ), InspectorEditor.Skin.button, GUILayout.Width( 24 ), GUILayout.Height( 14 ) );
+            }
+          }
+
+          if ( addButtonPressed ) {
+            var sceneItems = Object.FindObjectsOfType<T>();
+            GenericMenu addItemMenu = new GenericMenu();
+            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in scene" ) );
+            addItemMenu.AddSeparator( string.Empty );
+            foreach ( var sceneItem in sceneItems ) {
+              if ( System.Array.IndexOf( items, sceneItem ) >= 0 )
+                continue;
+              addItemMenu.AddItem( GUI.MakeLabel( sceneItem.name ),
+                                   false,
+                                   () =>
+                                   {
+                                     onAdd( sceneItem );
+                                   } );
+            }
+            addItemMenu.ShowAsContext();
+          }
+
+          if ( itemToAdd != null )
+            onAdd( itemToAdd );
+
+          GUI.Separator( 3 );
+        }
+
+        if ( itemToRemove != null ) {
+          onRemove( itemToRemove );
+          HandleItemEditorDisable( tool, itemToRemove );
+          itemToRemove = null;
+        }
+      }
+      else {
+        foreach ( var item in items )
+          HandleItemEditorDisable( tool, item );
+      }
+    }
+
+    private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )
+      where T : Object
+    {
+      if ( tool.HasEditor( item ) ) {
+        tool.RemoveEditor( item );
+        SceneView.RepaintAll();
+      }
+    }
+
     public struct DrawerInfo
     {
       public MethodInfo Drawer;

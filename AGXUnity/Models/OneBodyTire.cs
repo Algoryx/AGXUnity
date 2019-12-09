@@ -9,7 +9,6 @@ namespace AGXUnity.Models
   /// </summary>
   public class OneBodyTire : Tire
   {
-#if AGX_DYNAMICS_2_28_OR_LATER
     /// <summary>
     /// Native instance agxModel.OneBodyTire created in Start/Initialize.
     /// </summary>
@@ -107,6 +106,5 @@ namespace AGXUnity.Models
       Native = null;
       base.OnDestroy();
     }
-#endif
   }
 }

@@ -2,6 +2,8 @@
 using UnityEditor;
 using AGXUnity.Models;
 
+using GUI = AGXUnityEditor.Utils.GUI;
+
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof( TrackWheel ) )]
@@ -14,8 +16,37 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    public override void OnAdd()
+    {
+      TrackWheelFrameToolEnable = true;
+    }
+
+    public override void OnRemove()
+    {
+    }
+
     public override void OnPreTargetMembersGUI()
     {
+    }
+
+    private FrameTool TrackWheelFrameTool
+    {
+      get { return FindActive<FrameTool>( tool => tool.Frame == TrackWheel.Frame ); }
+    }
+
+    private bool TrackWheelFrameToolEnable
+    {
+      get { return TrackWheelFrameTool != null; }
+      set
+      {
+        if ( value && !TrackWheelFrameToolEnable )
+          AddChild( new FrameTool( TrackWheel.Frame )
+          {
+            UndoRedoRecordObject = TrackWheel
+          } );
+        else if ( !value )
+          RemoveChild( TrackWheelFrameTool );
+      }
     }
   }
 }

@@ -77,10 +77,18 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Default constructor with world (null) as parent.
+    /// </summary>
+    public IFrame()
+      : this( null )
+    {
+    }
+
+    /// <summary>
     /// Construct given a parent.
     /// </summary>
     /// <param name="parent">Parent object.</param>
-    public IFrame( GameObject parent = null )
+    public IFrame( GameObject parent )
       : base()
     {
       m_parent = parent;

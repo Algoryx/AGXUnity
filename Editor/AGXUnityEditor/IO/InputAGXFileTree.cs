@@ -258,7 +258,6 @@ namespace AGXUnityEditor.IO
         }
       }
 
-#if AGX_DYNAMICS_2_28_OR_LATER
       foreach ( var observerFrame in simulation.getObserverFrames() ) {
         if ( observerFrame.getRigidBody() == null )
           continue;
@@ -269,7 +268,6 @@ namespace AGXUnityEditor.IO
         var observerFrameNode = GetOrCreateObserverFrame( observerFrame.get() );
         observerFrameNode.AddReference( rbNode );
       }
-#endif
 
       // Generating wires, cables and constraints last when all bodies has been generated.
       m_roots.Add( m_wireRoot );
