@@ -496,8 +496,7 @@ namespace AGXUnityEditor
                                         Action<T> onRemove )
       where T : Object
     {
-      var displayItemsList = GUI.Foldout( EditorData.Instance.GetData( tool.Targets[ 0 ],
-                                                                       identifier ),
+      var displayItemsList = GUI.Foldout( GetTargetToolArrayGUIData( tool.Targets[ 0 ], identifier ),
                                           GUI.MakeLabel( identifier ),
                                           InspectorEditor.Skin );
       var itemTypename = typeof( T ).Name;
@@ -511,8 +510,7 @@ namespace AGXUnityEditor
 
             var displayItem = false;
             using ( new GUILayout.HorizontalScope() ) {
-              displayItem = GUI.Foldout( EditorData.Instance.GetData( tool.Targets[ 0 ],
-                                                                      item.GetInstanceID().ToString() ),
+              displayItem = GUI.Foldout( GetItemToolArrayGUIData( tool.Targets[ 0 ], identifier, item ),
                                          GUI.MakeLabel( "[" + GUI.AddColorTag( itemTypename,
                                                                                itemColorIdeintifier ) + "] " + item.name ),
                                          InspectorEditor.Skin );
@@ -583,6 +581,16 @@ namespace AGXUnityEditor
         foreach ( var item in items )
           HandleItemEditorDisable( tool, item );
       }
+    }
+
+    public static EditorDataEntry GetTargetToolArrayGUIData( Object target, string identifier )
+    {
+      return EditorData.Instance.GetData( target, identifier );
+    }
+
+    public static EditorDataEntry GetItemToolArrayGUIData( Object target, string identifier, Object item )
+    {
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString() );
     }
 
     private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )

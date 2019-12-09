@@ -52,8 +52,8 @@ namespace AGXUnity.Models
     {
       float maxRadius = 0.0f;
       foreach ( var filter in filters ) {
-        var localBound = filter.sharedMesh.bounds;
-        maxRadius = Mathf.Max( maxRadius, localBound.extents.x, localBound.extents.y, localBound.extents.z );
+        var localExtents = Vector3.Scale( filter.sharedMesh.bounds.extents, filter.transform.localScale );
+        maxRadius = Mathf.Max( maxRadius, localExtents.x, localExtents.y, localExtents.z );
       }
       return maxRadius;
     }

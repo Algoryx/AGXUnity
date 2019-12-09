@@ -112,6 +112,8 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+      InspectorGUI.GetItemToolArrayGUIData( Track, "Wheels", rb.GetComponent<TrackWheel>() ).Bool = true;
+
       EditorUtility.SetDirty( Track );
     }
   }

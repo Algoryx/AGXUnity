@@ -33,6 +33,16 @@ namespace AGXUnity.Models
   {
     public agxVehicle.TrackWheel Native { get; private set; } = null;
 
+    /// <summary>
+    /// Converts TrackWheelModel to agxVehicle.TrackWheel.Model.
+    /// </summary>
+    /// <param name="model">TrackWheelModel type.</param>
+    /// <returns>agxVehicle.TrackWheel.Model of TrackWheelModel.</returns>
+    public static agxVehicle.TrackWheel.Model ToNative( TrackWheelModel model )
+    {
+      return (agxVehicle.TrackWheel.Model)(int)model;
+    }
+
     [SerializeField]
     private TrackWheelModel m_model = TrackWheelModel.Roller;
 
@@ -114,6 +124,11 @@ namespace AGXUnity.Models
       if ( rb.GetInitialized<RigidBody>() == null )
         return false;
 
+      Native = new agxVehicle.TrackWheel( ToNative( Model ),
+                                          Radius,
+                                          RigidBody.Native,
+                                          Frame.NativeMatrix );
+
       return true;
     }
 
@@ -128,16 +143,16 @@ namespace AGXUnity.Models
         Debug.LogError( "Component: TrackWheel requires RigidBody component.", this );
       }
       else {
-        Radius  = Tire.FindRadius( RigidBody );
-        m_frame = IFrame.Create<IFrame>( RigidBody.gameObject );
+        Radius = Tire.FindRadius( RigidBody );
+        m_frame.SetParent( RigidBody.gameObject );
 
-        // Up is z (labeled forward).
+        // Up is z.
         var upVector = RigidBody.transform.parent != null ?
-                         RigidBody.transform.parent.TransformDirection( Vector3.forward ) :
-                         Vector3.forward;
+                         RigidBody.transform.parent.TransformDirection( Vector3.up ) :
+                         Vector3.up;
         var rotationAxis = Tire.FindRotationAxisWorld( RigidBody );
-        m_frame.Rotation = Quaternion.LookRotation( rotationAxis,
-                                                    upVector ) * Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+        m_frame.Rotation = Quaternion.FromToRotation( Vector3.up, rotationAxis );
+        m_frame.Rotation *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
         // This should be rotation axis anchor point.
         m_frame.LocalPosition = Vector3.zero;
       }

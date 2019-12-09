@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -73,6 +74,18 @@ namespace AGXUnity
       set
       {
         LocalRotation = CalculateLocalRotation( Parent, value );
+      }
+    }
+
+    /// <summary>
+    /// Native matrix representation of this frame.
+    /// </summary>
+    public agx.AffineMatrix4x4 NativeMatrix
+    {
+      get
+      {
+        return new agx.AffineMatrix4x4( Rotation.ToHandedQuat(),
+                                        Position.ToHandedVec3() );
       }
     }
 
