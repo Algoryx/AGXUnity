@@ -260,7 +260,10 @@ namespace AGXUnityEditor
       if ( !wrapper.GetContainingType().IsVisible )
         return null;
 
-      return EditorGUILayout.EnumPopup( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
+      if ( wrapper.GetContainingType().GetCustomAttribute<FlagsAttribute>() != null )
+        return EditorGUILayout.EnumFlagsField( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
+      else
+        return EditorGUILayout.EnumPopup( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
     }
 
     [InspectorDrawer( typeof( float ) )]

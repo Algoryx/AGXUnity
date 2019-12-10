@@ -156,8 +156,6 @@ namespace AGXUnity.Models
                                      Width,
                                      Thickness,
                                      InitialTensionDistance );
-      Native.setTransform( new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
-                                                    transform.position.ToHandedVec3() ) );
 
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
@@ -175,5 +173,50 @@ namespace AGXUnity.Models
 
       base.OnDestroy();
     }
+
+    private static Mesh m_gizmosMesh = null;
+
+    private static Mesh GetOrCreateGizmosMesh()
+    {
+      if ( m_gizmosMesh != null )
+        return m_gizmosMesh;
+
+      var tmp = Resources.Load<GameObject>( @"Debug/BoxRenderer" );
+      var filter = tmp.GetComponentInChildren<MeshFilter>();
+      if ( filter == null )
+        return null;
+      m_gizmosMesh = filter.sharedMesh;
+      return m_gizmosMesh;
+    }
+
+    //private void OnDrawGizmos()
+    //{
+    //  if ( Wheels.Length == 0 )
+    //    return;
+
+    //  var boxMesh = GetOrCreateGizmosMesh();
+    //  if ( boxMesh == null )
+    //    return;
+
+    //  var wheels = new agxVehicle.TrackWheelDescVector();
+    //  foreach ( var wheel in Wheels ) {
+    //    wheels.Add( new agxVehicle.TrackWheelDesc( TrackWheel.ToNative( wheel.Model ),
+    //                                               wheel.Radius,
+    //                                               new agx.AffineMatrix4x4( wheel.RigidBody.transform.rotation.ToHandedQuat(),
+    //                                                                        wheel.RigidBody.transform.position.ToHandedVec3() ),
+    //                                               wheel.Frame.NativeLocalMatrix ) );
+    //  }
+    //  var nodes = agxVehicle.agxVehicleSWIG.findTrackNodeConfiguration( new agxVehicle.TrackDesc( (ulong)NumberOfNodes,
+    //                                                                                              Width,
+    //                                                                                              Thickness,
+    //                                                                                              InitialTensionDistance ),
+    //                                                                    wheels );
+    //  foreach ( var node in nodes ) {
+    //    Gizmos.DrawWireMesh( boxMesh,
+    //                     node.transform.getTranslate().ToHandedVector3() + node.transform.transform3x3( new agx.Vec3( 0, 0, node.halfExtents.z ) ).ToHandedVector3(),
+    //                     node.transform.getRotate().ToHandedQuaternion(),
+    //                     2.0f * node.halfExtents.ToVector3() );
+    //  }
+    //}
   }
 }

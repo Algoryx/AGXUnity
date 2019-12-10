@@ -25,6 +25,10 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    public override void OnSceneViewGUI( SceneView sceneView )
+    {
+    }
+
     public override void OnPreTargetMembersGUI()
     {
     }

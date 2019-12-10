@@ -90,6 +90,18 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Local native matrix representation of this frame.
+    /// </summary>
+    public agx.AffineMatrix4x4 NativeLocalMatrix
+    {
+      get
+      {
+        return new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(),
+                                        LocalPosition.ToHandedVec3() );
+      }
+    }
+
+    /// <summary>
     /// Default constructor with world (null) as parent.
     /// </summary>
     public IFrame()

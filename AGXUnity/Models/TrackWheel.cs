@@ -1,12 +1,5 @@
-﻿using UnityEngine;
-
-namespace AGXUnity.Model
-{
-  public class Foo
-  {
-
-  }
-}
+﻿using System;
+using UnityEngine;
 
 namespace AGXUnity.Models
 {
@@ -27,6 +20,16 @@ namespace AGXUnity.Models
     /// Track return or road wheel.
     /// </summary>
     Roller
+  }
+
+  [Flags]
+  public enum TrackWheelProperty
+  {
+    None = 0,
+    MergeNodes = agxVehicle.TrackWheel.Property.MERGE_NODES,
+    SplitSegments = agxVehicle.TrackWheel.Property.SPLIT_SEGMENTS,
+    MoveNodesToRotationPlane = agxVehicle.TrackWheel.Property.MOVE_NODES_TO_ROTATION_PLANE,
+    MoveNodesToWheel = agxVehicle.TrackWheel.Property.MOVE_NODES_TO_WHEEL
   }
 
   public class TrackWheel : ScriptComponent
@@ -63,7 +66,37 @@ namespace AGXUnity.Models
           return;
         }
 
+        // Unsure about changing properties here if the user has specified
+        // something different but MergeNodes is important.
+        if ( m_model != value ) {
+          if ( value == TrackWheelModel.Sprocket || value == TrackWheelModel.Idler )
+            Properties = TrackWheelProperty.MergeNodes;
+          else
+            Properties = TrackWheelProperty.None;
+        }
+
         m_model = value;
+      }
+    }
+
+    [SerializeField]
+    private TrackWheelProperty m_properties = TrackWheelProperty.None;
+
+    /// <summary>
+    /// Track wheel properties. Sprockets and idlers has MergeNodes and
+    /// rollers None. These properties will be overridden when changing
+    /// model.
+    /// </summary>
+    public TrackWheelProperty Properties
+    {
+      get { return m_properties; }
+      set
+      {
+        m_properties = value;
+        if ( Native != null ) {
+          foreach ( agxVehicle.TrackWheel.Property eValue in typeof( agxVehicle.TrackWheel.Property ).GetEnumValues() )
+            Native.setEnableProperty( eValue, ((int)m_properties & (int)eValue) != 0 );
+        }
       }
     }
 
@@ -127,7 +160,7 @@ namespace AGXUnity.Models
       Native = new agxVehicle.TrackWheel( ToNative( Model ),
                                           Radius,
                                           RigidBody.Native,
-                                          Frame.NativeMatrix );
+                                          Frame.NativeLocalMatrix );
 
       return true;
     }
