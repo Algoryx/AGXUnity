@@ -182,7 +182,7 @@ namespace AGXUnity.Utils
           // If the property exists and has a "set" defined - execute it.
           if ( property != null &&
                property.GetSetMethod() != null &&
-               property.GetCustomAttributes( typeof( IgnoreSynchronization ), false ).Length == 0 )
+               property.GetCustomAttribute<IgnoreSynchronizationAttribute>() == null )
             fieldPropertyPairs.Add( new FieldPropertyPair( field, property ) );
         }
       }

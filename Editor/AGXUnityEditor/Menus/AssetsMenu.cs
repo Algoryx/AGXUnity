@@ -73,6 +73,18 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainShovelSettings>( "deformable terrain shovel settings" );
     }
 
+    [MenuItem( "Assets/AGXUnity/Track Properties" )]
+    public static UnityEngine.Object CreateTrackProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TrackProperties>( "track properties" );
+    }
+
+    [MenuItem( "Assets/AGXUnity/Track Internal Merge Properties" )]
+    public static UnityEngine.Object CreateTrackInternalMergeProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TrackInternalMergeProperties>( "track internal merge properties" );
+    }
+
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
     public static bool IsAGXFileSelected()
     {

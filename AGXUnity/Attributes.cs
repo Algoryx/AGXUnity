@@ -25,12 +25,12 @@ namespace AGXUnity
   }
 
   /// <summary>
-  /// Ignore synchronization of properties during initialize of a ScriptComponent/Asset.
+  /// Ignore synchronization of properties during initialize
+  /// of a ScriptComponent/Asset.
   /// </summary>
   [AttributeUsage( AttributeTargets.Property )]
-  public class IgnoreSynchronization : Attribute
+  public class IgnoreSynchronizationAttribute : Attribute
   {
-    public IgnoreSynchronization() { }
   }
 
   /// <summary>

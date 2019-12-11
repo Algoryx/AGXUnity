@@ -285,7 +285,7 @@ namespace AGXUnity
       if ( !m_terrains.Contains( terrain ) ) {
         m_terrains.Add( terrain );
 
-        // Synchronizing properties for all shovels. Could be
+        // Synchronizing properties for all terrains. Could be
         // avoided by adding a state so that Propagate only
         // shows current added terrain.
         Utils.PropertySynchronizer.Synchronize( this );

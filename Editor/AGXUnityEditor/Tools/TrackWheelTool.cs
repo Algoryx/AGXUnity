@@ -47,6 +47,7 @@ namespace AGXUnityEditor.Tools
           AddChild( new FrameTool( TrackWheel.Frame )
           {
             UndoRedoRecordObject = TrackWheel,
+            OnChangeDirtyTarget = TrackWheel,
             IsSingleInstanceTool = false
           } );
         else if ( !value )

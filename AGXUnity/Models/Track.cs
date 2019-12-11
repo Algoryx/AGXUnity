@@ -6,11 +6,19 @@ namespace AGXUnity.Models
 {
   public class Track : ScriptComponent
   {
+    /// <summary>
+    /// Native instance, created in Start/Initialize.
+    /// </summary>
     public agxVehicle.Track Native { get; private set; } = null;
 
     [SerializeField]
     private int m_numberOfNodes = 64;
 
+    /// <summary>
+    /// Approximate number of nodes in the track. The final value
+    /// may differ depending on the configuration of the wheels.
+    /// Default: 64
+    /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
     public int NumberOfNodes
@@ -29,6 +37,10 @@ namespace AGXUnity.Models
     [SerializeField]
     private float m_thickness = 0.05f;
 
+    /// <summary>
+    /// Thickness of this track.
+    /// Default: 0.05
+    /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
     public float Thickness
@@ -47,6 +59,10 @@ namespace AGXUnity.Models
     [SerializeField]
     private float m_width = 0.35f;
 
+    /// <summary>
+    /// Width of this track.
+    /// Default: 0.35
+    /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
     public float Width
@@ -65,6 +81,14 @@ namespace AGXUnity.Models
     [SerializeField]
     private float m_initialTensionDistance = 1.0E-3f;
 
+    /// <summary>
+    /// Value (distance) of how much shorter each node should be which causes tension in the
+    /// system of tracks and wheels. Ideal case
+    ///     track_tension = initialDistanceTension * track_constraint_compliance.
+    /// Since contacts and other factors are included it's not possible to know
+    /// the exact tension after the system has been created.
+    /// Default: 1.0E-3
+    /// </summary>
     [IgnoreSynchronization]
     public float InitialTensionDistance
     {
@@ -76,6 +100,49 @@ namespace AGXUnity.Models
           return;
         }
         m_initialTensionDistance = value;
+      }
+    }
+
+    [SerializeField]
+    private TrackProperties m_properties = null;
+
+    /// <summary>
+    /// Properties collection of this track.
+    /// </summary>
+    [IgnoreSynchronization]
+    [AllowRecursiveEditing]
+    public TrackProperties Properties
+    {
+      get { return m_properties; }
+      set
+      {
+        m_properties = value;
+        if ( Native != null )
+          Native.setProperties( m_properties != null ?
+                                  m_properties.GetInitialized<TrackProperties>().Native :
+                                  null );
+      }
+    }
+
+    [SerializeField]
+    private TrackInternalMergeProperties m_internalMergeProperties = null;
+
+    /// <summary>
+    /// Node to node merge properties of this track.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public TrackInternalMergeProperties InternalMergeProperties
+    {
+      get { return m_internalMergeProperties; }
+      set
+      {
+        if ( Native != null && m_internalMergeProperties != null )
+          m_internalMergeProperties.Unregister( this );
+
+        m_internalMergeProperties = value;
+
+        if ( Native != null && m_internalMergeProperties != null )
+          m_internalMergeProperties.Register( this );
       }
     }
 
@@ -157,6 +224,9 @@ namespace AGXUnity.Models
                                      Thickness,
                                      InitialTensionDistance );
 
+      if ( Properties != null )
+        Native.setProperties( Properties.GetInitialized<TrackProperties>().Native );
+
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
 
@@ -169,6 +239,10 @@ namespace AGXUnity.Models
     {
       if ( GetSimulation() != null && Native != null )
         GetSimulation().remove( Native );
+
+      if ( InternalMergeProperties != null )
+        InternalMergeProperties.Unregister( this );
+
       Native = null;
 
       base.OnDestroy();
@@ -188,35 +262,5 @@ namespace AGXUnity.Models
       m_gizmosMesh = filter.sharedMesh;
       return m_gizmosMesh;
     }
-
-    //private void OnDrawGizmos()
-    //{
-    //  if ( Wheels.Length == 0 )
-    //    return;
-
-    //  var boxMesh = GetOrCreateGizmosMesh();
-    //  if ( boxMesh == null )
-    //    return;
-
-    //  var wheels = new agxVehicle.TrackWheelDescVector();
-    //  foreach ( var wheel in Wheels ) {
-    //    wheels.Add( new agxVehicle.TrackWheelDesc( TrackWheel.ToNative( wheel.Model ),
-    //                                               wheel.Radius,
-    //                                               new agx.AffineMatrix4x4( wheel.RigidBody.transform.rotation.ToHandedQuat(),
-    //                                                                        wheel.RigidBody.transform.position.ToHandedVec3() ),
-    //                                               wheel.Frame.NativeLocalMatrix ) );
-    //  }
-    //  var nodes = agxVehicle.agxVehicleSWIG.findTrackNodeConfiguration( new agxVehicle.TrackDesc( (ulong)NumberOfNodes,
-    //                                                                                              Width,
-    //                                                                                              Thickness,
-    //                                                                                              InitialTensionDistance ),
-    //                                                                    wheels );
-    //  foreach ( var node in nodes ) {
-    //    Gizmos.DrawWireMesh( boxMesh,
-    //                     node.transform.getTranslate().ToHandedVector3() + node.transform.transform3x3( new agx.Vec3( 0, 0, node.halfExtents.z ) ).ToHandedVector3(),
-    //                     node.transform.getRotate().ToHandedQuaternion(),
-    //                     2.0f * node.halfExtents.ToVector3() );
-    //  }
-    //}
   }
 }
