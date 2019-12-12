@@ -556,7 +556,7 @@ namespace AGXUnityEditor
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in scene" ) );
             addItemMenu.AddSeparator( string.Empty );
             foreach ( var sceneItem in sceneItems ) {
-              if ( System.Array.IndexOf( items, sceneItem ) >= 0 )
+              if ( Array.IndexOf( items, sceneItem ) >= 0 )
                 continue;
               addItemMenu.AddItem( GUI.MakeLabel( sceneItem.name ),
                                    false,

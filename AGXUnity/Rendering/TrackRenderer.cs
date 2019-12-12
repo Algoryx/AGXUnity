@@ -1,21 +1,50 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
   [ExecuteInEditMode]
+  [DisallowMultipleComponent]
   public class TrackRenderer : ScriptComponent
   {
     [HideInInspector]
-    public Models.Track Track
+    public Models.Track[] Tracks
     {
       get
       {
-        if ( m_track == null )
-          m_track = GetComponent<Models.Track>();
-        return m_track;
+        if ( m_tracks.Length == 0 )
+          m_tracks = GetComponents<Models.Track>();
+        return m_tracks;
       }
+    }
+
+    [SerializeField]
+    private GameObject m_resource = null;
+
+    [IgnoreSynchronization]
+    public GameObject Resource
+    {
+      get
+      {
+        if ( m_resource == null )
+          m_resource = Resources.Load<GameObject>( @"Debug/BoxRenderer" );
+        return m_resource;
+      }
+      set
+      {
+        m_resource = value;
+        if ( m_root != null ) {
+          DestroyImmediate( m_root );
+          m_root = null;
+        }
+      }
+    }
+
+    public void OnTrackReset()
+    {
+      m_tracks = GetComponents<Models.Track>();
     }
 
     protected override bool Initialize()
@@ -32,79 +61,87 @@ namespace AGXUnity.Rendering
 
     private void Update()
     {
-      if ( Track == null )
+      OnTrackReset();
+
+      if ( Tracks.Length == 0 ) {
+        m_uninitializedTrackData.Clear();
         return;
+      }
 
       if ( m_root == null )
         m_root = RuntimeObjects.GetOrCreateRoot( this );
 
-      if ( Track.Native == null ) {
-        m_uninitializedTrackData.Update( Track );
+      var containsNullEntries = m_uninitializedTrackData.FirstOrDefault( pair => pair.Key == null ).Value != null;
+      if ( containsNullEntries )
+        m_uninitializedTrackData = m_uninitializedTrackData.Where( pair => pair.Key != null ).ToDictionary( pair => pair.Key,
+                                                                                                            pair => pair.Value );
 
-        if ( m_uninitializedTrackData.TrackNodes.Length > m_root.transform.childCount ) {
-          var numToAdd = m_uninitializedTrackData.TrackNodes.Length - m_root.transform.childCount;
-          for ( int i = 0; i < numToAdd; ++i ) {
-            var instance = PrefabLoader.Instantiate<GameObject>( @"Debug/BoxRenderer" );
-            Configure( instance );
-            m_root.AddChild( instance );
-          }
-        }
-        else if ( m_uninitializedTrackData.TrackNodes.Length < m_root.transform.childCount ) {
-          var numToRemove = m_root.transform.childCount - m_uninitializedTrackData.TrackNodes.Length;
-          for ( int i = 0; i < numToRemove; ++i )
-            DestroyImmediate( m_root.transform.GetChild( m_root.transform.childCount - 1 ).gameObject );
-        }
-
-        int nodeCounter = 0;
-        var nodes = m_uninitializedTrackData.TrackNodes;
-        foreach ( Transform child in m_root.transform ) {
-          child.rotation   = nodes[ nodeCounter ].Rotation;
-          child.position   = nodes[ nodeCounter ].Position + child.TransformDirection( nodes[ nodeCounter ].HalfExtents.z * Vector3.forward );
-          child.localScale = 2.0f * nodes[ nodeCounter ].HalfExtents;
-          ++nodeCounter;
+      var numNodes = 0;
+      foreach ( var track in Tracks ) {
+        if ( track.Native != null )
+          numNodes += (int)track.Native.getNumNodes();
+        else {
+          if ( !m_uninitializedTrackData.ContainsKey( track ) )
+            m_uninitializedTrackData.Add( track, new UninitializedTrackData() );
+          var trackData = m_uninitializedTrackData[ track ];
+          trackData.Update( track );
+          numNodes += trackData.TrackNodes.Length;
         }
       }
-      else {
-        int numNodes = (int)Track.Native.getNumNodes();
-        int numChildren = m_root.transform.childCount;
-        if ( numNodes > numChildren ) {
-          var numToAdd = numNodes - numChildren;
-          for ( int i = 0; i < numToAdd; ++i ) {
-            var instance = PrefabLoader.Instantiate<GameObject>( @"Debug/BoxRenderer" );
-            Configure( instance );
-            instance.hideFlags = HideFlags.DontSaveInEditor;
-            m_root.AddChild( instance );
-          }
-          numChildren = numNodes;
-        }
-        else if ( numNodes < numChildren ) {
-          var numToRemove = numChildren - numNodes;
-          for ( int i = 0; i < numToRemove; ++i )
-            DestroyImmediate( m_root.transform.GetChild( m_root.transform.childCount - 1 ).gameObject );
-          numChildren = numNodes;
-        }
 
-        foreach ( var node in Track.Native.nodes() ) {
-          var child = m_root.transform.GetChild( (int)node.getIndex() );
-          child.rotation = node.getRigidBody().getRotation().ToHandedQuaternion();
-          child.position = node.getBeginPosition().ToHandedVector3() + child.TransformDirection( 0.5f * (float)node.getLength() * Vector3.forward );
-          child.localScale = 2.0f * node.getHalfExtents().ToVector3();
+      if ( numNodes > m_root.transform.childCount ) {
+        var numToAdd = numNodes - m_root.transform.childCount;
+        // If we're rendering several tracks it doesn't matter (I think)
+        // which of them that receives the OnSelectionProxy.
+        var refTrack = Tracks[ 0 ];
+        for ( int i = 0; i < numToAdd; ++i ) {
+          var instance = Instantiate( Resource );
+          Configure( refTrack, instance );
+          m_root.AddChild( instance );
+        }
+      }
+      else if ( numNodes < m_root.transform.childCount ) {
+        var numToRemove = m_root.transform.childCount - numNodes;
+        for ( int i = 0; i < numToRemove; ++i )
+          DestroyImmediate( m_root.transform.GetChild( m_root.transform.childCount - 1 ).gameObject );
+      }
+
+      var nodeCounter = 0;
+      foreach ( var track in Tracks ) {
+        if ( track.Native != null ) {
+          foreach ( var node in track.Native.nodes() ) {
+            var renderInstance = m_root.transform.GetChild( nodeCounter++ );
+            renderInstance.rotation = node.getRigidBody().getRotation().ToHandedQuaternion();
+            renderInstance.position = node.getBeginPosition().ToHandedVector3() +
+                                      renderInstance.TransformDirection( 0.5f * (float)node.getLength() * Vector3.forward );
+            renderInstance.localScale = 2.0f * node.getHalfExtents().ToVector3();
+          }
+        }
+        else {
+          var nodes = m_uninitializedTrackData[ track ].TrackNodes;
+          foreach ( var node in nodes ) {
+            var renderInstance = m_root.transform.GetChild( nodeCounter++ );
+            renderInstance.rotation = node.Rotation;
+            renderInstance.position = node.Position +
+                                      renderInstance.TransformDirection( node.HalfExtents.z * Vector3.forward );
+            renderInstance.localScale = 2.0f * node.HalfExtents;
+          }
         }
       }
     }
 
     private void Reset()
     {
-      if ( Track == null )
+      if ( Tracks.Length == 0 )
         Debug.LogError( "TrackRenderer requires Track component.", this );
     }
 
-    private void Configure( GameObject instance )
+    private void Configure( Models.Track track, GameObject instance )
     {
       instance.hideFlags = HideFlags.DontSaveInEditor;
-      instance.GetOrCreateComponent<OnSelectionProxy>().Component = Track;
+      instance.GetOrCreateComponent<OnSelectionProxy>().Component = track;
       foreach ( Transform child in instance.transform )
-        child.gameObject.GetOrCreateComponent<OnSelectionProxy>().Component = Track;
+        child.gameObject.GetOrCreateComponent<OnSelectionProxy>().Component = track;
     }
 
     struct TrackDesc
@@ -210,8 +247,8 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private Models.Track m_track = null;
+    private Models.Track[] m_tracks = new Models.Track[] { };
     private GameObject m_root = null;
-    private UninitializedTrackData m_uninitializedTrackData = new UninitializedTrackData();
+    private Dictionary<Models.Track, UninitializedTrackData> m_uninitializedTrackData = new Dictionary<Models.Track, UninitializedTrackData>();
   }
 }

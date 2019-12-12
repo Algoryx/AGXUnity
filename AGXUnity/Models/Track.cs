@@ -4,6 +4,9 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Models
 {
+  /// <summary>
+  /// Assembly object representing a continuous track with a given number of shoes (nodes).
+  /// </summary>
   public class Track : ScriptComponent
   {
     /// <summary>
@@ -246,6 +249,12 @@ namespace AGXUnity.Models
       Native = null;
 
       base.OnDestroy();
+    }
+
+    private void Reset()
+    {
+      if ( GetComponent<Rendering.TrackRenderer>() != null )
+        GetComponent<Rendering.TrackRenderer>().OnTrackReset();
     }
 
     private static Mesh m_gizmosMesh = null;

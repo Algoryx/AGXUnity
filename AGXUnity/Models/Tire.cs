@@ -12,11 +12,18 @@ namespace AGXUnity.Models
     /// body. The maximum radius found is returned - 0 if nothing was found.
     /// </summary>
     /// <param name="rb">Tire/rim rigid body.</param>
+    /// <param name="ignoreMeshFilterWhenShapeHasRadius">
+    /// False to always include mesh filter bounds even when shapes has radius,
+    /// true to exclude mesh filters when shapes have radius.
+    /// </param>
     /// <returns>Radius > 0 if radius was found, otherwise 0.</returns>
-    public static float FindRadius( RigidBody rb )
+    public static float FindRadius( RigidBody rb, bool ignoreMeshFilterWhenShapeHasRadius = false )
     {
       var radiusShapes = FindRadius( rb.GetComponentsInChildren<Collide.Shape>() );
-      var radiusMeshes = FindRadius( rb.GetComponentsInChildren<MeshFilter>() );
+      if ( radiusShapes > 0.0f && ignoreMeshFilterWhenShapeHasRadius )
+        return radiusShapes;
+
+      var radiusMeshes = FindRadius( rb.GetComponentsInChildren<MeshFilter>(), FindRotationAxisWorld( rb ) );
       // Unsure how reliable shape radius is and it seems that
       // the maximum of the two gives most accurate result. E.g.,
       // the tire has a primitive cylinder encapsulating the whole
@@ -44,16 +51,23 @@ namespace AGXUnity.Models
     }
 
     /// <summary>
-    /// Finds radius given mesh bounds. Maximum value of bounds extents are returned.
+    /// Finds radius of cylinder-like shapes, given mesh bounds and a rotation axis.
     /// </summary>
-    /// <param name="filters"></param>
-    /// <returns></returns>
-    public static float FindRadius( MeshFilter[] filters )
+    /// <param name="filters">Mesh filters.</param>
+    /// <param name="rotationAxisWorld">Rotation axis given in world frame.</param>
+    /// <returns>Maximum value of extents orthogonal to the given rotation axis.</returns>
+    public static float FindRadius( MeshFilter[] filters, Vector3 rotationAxisWorld )
     {
       float maxRadius = 0.0f;
       foreach ( var filter in filters ) {
-        var localExtents = Vector3.Scale( filter.sharedMesh.bounds.extents, filter.transform.localScale );
-        maxRadius = Mathf.Max( maxRadius, localExtents.x, localExtents.y, localExtents.z );
+        var localRotationAxis = filter.transform.InverseTransformDirection( rotationAxisWorld );
+        var localExtents      = Vector3.Scale( filter.sharedMesh.bounds.extents, filter.transform.localScale );
+        // We're interested in where the rotation axis isn't pointing,
+        // i.e., minimum values since we're assuming cylinder-like shape.
+        var rotationAxisMaxDirIndex = localRotationAxis.MaxIndex();
+        maxRadius = Mathf.Max( maxRadius,
+                               localExtents[ (rotationAxisMaxDirIndex + 1) % 3 ],
+                               localExtents[ (rotationAxisMaxDirIndex + 2) % 3 ] );
       }
       return maxRadius;
     }

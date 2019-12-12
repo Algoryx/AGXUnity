@@ -32,6 +32,7 @@ namespace AGXUnity.Models
     MoveNodesToWheel = agxVehicle.TrackWheel.Property.MOVE_NODES_TO_WHEEL
   }
 
+  [DisallowMultipleComponent]
   public class TrackWheel : ScriptComponent
   {
     public agxVehicle.TrackWheel Native { get; private set; } = null;
@@ -176,7 +177,7 @@ namespace AGXUnity.Models
         Debug.LogError( "Component: TrackWheel requires RigidBody component.", this );
       }
       else {
-        Radius = Tire.FindRadius( RigidBody );
+        Radius = Tire.FindRadius( RigidBody, true );
         m_frame.SetParent( RigidBody.gameObject );
 
         // Up is z.
@@ -188,6 +189,13 @@ namespace AGXUnity.Models
         m_frame.Rotation *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
         // This should be rotation axis anchor point.
         m_frame.LocalPosition = Vector3.zero;
+
+        if ( name.ToLower().Contains( "sprocket" ) )
+          Model = TrackWheelModel.Sprocket;
+        else if ( name.ToLower().Contains( "idler" ) )
+          Model = TrackWheelModel.Idler;
+        else
+          Model = TrackWheelModel.Roller;
       }
     }
 
