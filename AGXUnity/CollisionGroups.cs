@@ -87,17 +87,21 @@ namespace AGXUnity
 
     private void AddGroup( CollisionGroupEntry entry, Find.LeafData data )
     {
-      foreach ( Collide.Shape shape in data.Shapes )
+      foreach ( var shape in data.Shapes )
         if ( shape.GetInitialized<Collide.Shape>() != null )
           entry.AddTo( shape.NativeGeometry );
 
-      foreach ( Wire wire in data.Wires )
+      foreach ( var wire in data.Wires )
         if ( wire.GetInitialized<Wire>() != null )
           entry.AddTo( wire.Native );
 
-      foreach ( Cable cable in data.Cables )
+      foreach ( var cable in data.Cables )
         if ( cable.GetInitialized<Cable>() != null )
-          cable.GetInitialized<Cable>().Native.addGroup( entry.Tag.To32BitFnv1aHash() );
+          entry.AddTo( cable.Native );
+
+      foreach ( var track in data.Tracks )
+        if ( track.GetInitialized<Models.Track>() != null )
+          entry.AddTo( track.Native );
     }
 
     private void RemoveGroup( CollisionGroupEntry entry, Find.LeafData data )

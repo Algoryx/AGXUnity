@@ -150,6 +150,26 @@ namespace AGXUnity.Models
     }
 
     [SerializeField]
+    private ShapeMaterial m_material = null;
+
+    /// <summary>
+    /// Shape material of this track.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public ShapeMaterial Material
+    {
+      get { return m_material; }
+      set
+      {
+        m_material = value;
+        if ( Native != null )
+          Native.setMaterial( m_material != null ?
+                                m_material.GetInitialized<ShapeMaterial>().Native :
+                                null );
+      }
+    }
+
+    [SerializeField]
     private List<TrackWheel> m_wheels = new List<TrackWheel>();
 
     /// <summary>

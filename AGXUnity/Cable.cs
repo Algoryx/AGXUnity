@@ -201,6 +201,7 @@ namespace AGXUnity
     /// <summary>
     /// Get route to initialize this cable.
     /// </summary>
+    [HideInInspector]
     public CableRoute Route
     {
       get

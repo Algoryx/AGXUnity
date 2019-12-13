@@ -141,7 +141,7 @@ namespace AGXUnity.Rendering
       instance.hideFlags = HideFlags.DontSaveInEditor;
       instance.GetOrCreateComponent<OnSelectionProxy>().Component = track;
       foreach ( Transform child in instance.transform )
-        child.gameObject.GetOrCreateComponent<OnSelectionProxy>().Component = track;
+        Configure( track, child.gameObject );
     }
 
     struct TrackDesc
