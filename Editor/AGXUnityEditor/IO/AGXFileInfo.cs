@@ -267,21 +267,7 @@ namespace AGXUnityEditor.IO
     public T[] GetAssets<T>()
       where T : UnityEngine.Object
     {
-      // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
-      // if we have 17 ContactMaterial assets in a group FindAsset will return an array
-      // of 17 where all entries are identical.
-      var type = typeof( T );
-      var typeName = string.Empty;
-      if ( type.Namespace != null && type.Namespace.StartsWith( "UnityEngine" ) )
-        typeName = type.Name;
-      else
-        typeName = type.FullName;
-      var guids = AssetDatabase.FindAssets( "t:" + typeName, new string[] { DataDirectory } ).Distinct();
-      return ( from guid
-               in guids
-               from obj
-               in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
-               select obj as T ).ToArray();
+      return Utils.FindAssetsOfType<T>();
     }
 
     /// <summary>

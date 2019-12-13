@@ -201,6 +201,7 @@ namespace AGXUnityEditor.Tools
           AGXUnity.Collide.Shape[] shapes = go.GetComponentsInChildren<AGXUnity.Collide.Shape>();
           AGXUnity.Wire[] wires           = go.GetComponentsInChildren<AGXUnity.Wire>();
           AGXUnity.Cable[] cables         = go.GetComponentsInChildren<AGXUnity.Cable>();
+          AGXUnity.Model.Track[] tracks   = go.GetComponentsInChildren<AGXUnity.Model.Track>();
           Action assignAll                = () =>
           {
             Undo.SetCurrentGroupName( "Assigning shape materials." );
@@ -217,15 +218,19 @@ namespace AGXUnityEditor.Tools
               Undo.RecordObject( cable, "New shape material" );
               cable.Material = DroppedShapeMaterial;
             }
+            foreach ( var track in tracks ) {
+              Undo.RecordObject( track, "New shape material" );
+              track.Material = DroppedShapeMaterial;
+            }
             Undo.CollapseUndoOperations( undoGroup );
           };
 
-          var sumSupported = shapes.Length + wires.Length + cables.Length;
+          var sumSupported = shapes.Length + wires.Length + cables.Length + tracks.Length;
           if ( sumSupported == 0 )
-            Debug.LogWarning( "Object selected doesn't have shapes, wires or cables.", go );
+            Debug.LogWarning( "Object selected doesn't have shapes, wires, cables or tracks.", go );
           else if ( sumSupported == 1 || EditorUtility.DisplayDialog( "Assign shape materials",
-                                                                      string.Format( "Assign materials to:\n  - #shapes: {0}\n  - #wires: {1}\n  - #cables: {2}",
-                                                                                     shapes.Length, wires.Length, cables.Length ), "Assign", "Ignore all" ) )
+                                                                      string.Format( "Assign materials to:\n  - #shapes: {0}\n  - #wires: {1}\n  - #cables: {2}\n  - #tracks: {3}",
+                                                                                     shapes.Length, wires.Length, cables.Length, tracks.Length ), "Assign", "Ignore all" ) )
             assignAll();
 
           DroppedShapeMaterial = null;

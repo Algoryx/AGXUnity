@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using AGXUnity;
 using UnityEngine;
 
 namespace AGXUnity
@@ -10,10 +8,14 @@ namespace AGXUnity
   /// <summary>
   /// Contact material list data.
   /// </summary>
-  [System.Serializable]
+  [Serializable]
   public class ContactMaterialEntry
   {
     public ContactMaterial ContactMaterial = null;
+    // Continue on this. Hook on ToolArrayGUI with pre/post
+    // item GUI.
+    //public bool IsOriented = false;
+    //public GameObject ReferenceObject = null;
   }
 
   /// <summary>
@@ -33,7 +35,9 @@ namespace AGXUnity
     {
       get
       {
-        return ( from entry in m_contactMaterials where entry.ContactMaterial != null select entry.ContactMaterial ).ToArray();
+        return ( from entry in m_contactMaterials
+                 where entry.ContactMaterial != null
+                 select entry.ContactMaterial ).ToArray();
       }
     }
 

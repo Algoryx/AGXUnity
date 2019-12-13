@@ -39,21 +39,13 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( Vector3 ) )]
     public static object Vector3Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
     {
-      var valInField = wrapper.Get<Vector3>( obj );
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( MakeLabel( wrapper.Member ) );
-        valInField = EditorGUILayout.Vector3Field( "", valInField );
-      }
-      GUILayout.EndHorizontal();
-
-      return valInField;
+      return EditorGUILayout.Vector3Field( MakeLabel( wrapper.Member ), wrapper.Get<Vector3>( obj ) );
     }
 
     [InspectorDrawer( typeof( Vector2 ) )]
     public static object Vector2Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
     {
-      return EditorGUILayout.Vector2Field( MakeLabel( wrapper.Member ).text, wrapper.Get<Vector2>( obj ) );
+      return EditorGUILayout.Vector2Field( MakeLabel( wrapper.Member ), wrapper.Get<Vector2>( obj ) );
     }
 
     [InspectorDrawer( typeof( int ) )]
@@ -500,11 +492,12 @@ namespace AGXUnityEditor
       where T : Object
     {
       var displayItemsList = GUI.Foldout( GetTargetToolArrayGUIData( tool.Targets[ 0 ], identifier ),
-                                          GUI.MakeLabel( identifier ),
+                                          GUI.MakeLabel( identifier + $" [{items.Length}]" ),
                                           InspectorEditor.Skin );
-      var itemTypename = typeof( T ).Name;
+      var itemTypename      = typeof( T ).Name;
+      var isAsset           = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
       var itemTypenameSplit = itemTypename.SplitCamelCase();
-      var targetTypename = tool.Targets[ 0 ].GetType().Name;
+      var targetTypename    = tool.Targets[ 0 ].GetType().Name;
       if ( displayItemsList ) {
         T itemToRemove = null;
         using ( new GUI.Indent( 12 ) ) {
@@ -551,9 +544,11 @@ namespace AGXUnityEditor
           }
 
           if ( addButtonPressed ) {
-            var sceneItems = Object.FindObjectsOfType<T>();
+            var sceneItems = isAsset ?
+                               IO.Utils.FindAssetsOfType<T>() :
+                               Object.FindObjectsOfType<T>();
             GenericMenu addItemMenu = new GenericMenu();
-            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in scene" ) );
+            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );
             addItemMenu.AddSeparator( string.Empty );
             foreach ( var sceneItem in sceneItems ) {
               if ( Array.IndexOf( items, sceneItem ) >= 0 )
@@ -586,14 +581,19 @@ namespace AGXUnityEditor
       }
     }
 
-    public static EditorDataEntry GetTargetToolArrayGUIData( Object target, string identifier )
+    public static EditorDataEntry GetTargetToolArrayGUIData( Object target,
+                                                             string identifier,
+                                                             Action<EditorDataEntry> onCreate = null )
     {
-      return EditorData.Instance.GetData( target, identifier );
+      return EditorData.Instance.GetData( target, identifier, onCreate );
     }
 
-    public static EditorDataEntry GetItemToolArrayGUIData( Object target, string identifier, Object item )
+    public static EditorDataEntry GetItemToolArrayGUIData( Object target,
+                                                           string identifier,
+                                                           Object item,
+                                                           Action<EditorDataEntry> onCreate = null )
     {
-      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString() );
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString(), onCreate );
     }
 
     private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )

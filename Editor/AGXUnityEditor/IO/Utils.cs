@@ -5,6 +5,8 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 
+using Object = UnityEngine.Object;
+
 namespace AGXUnityEditor.IO
 {
   public static partial class Utils
@@ -127,6 +129,26 @@ namespace AGXUnityEditor.IO
       Uri rootUri = new Uri( root );
       Uri relUri = rootUri.MakeRelativeUri( completeUri );
       return Uri.UnescapeDataString( relUri.ToString() );
+    }
+
+    public static T[] FindAssetsOfType<T>()
+      where T : Object
+    {
+      // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
+      // if we have 17 ContactMaterial assets in a group FindAsset will return an array
+      // of 17 where all entries are identical.
+      var type = typeof( T );
+      var typeName = string.Empty;
+      if ( type.Namespace != null && type.Namespace.StartsWith( "UnityEngine" ) )
+        typeName = type.Name;
+      else
+        typeName = type.FullName;
+      var guids = AssetDatabase.FindAssets( "t:" + typeName ).Distinct();
+      return ( from guid
+               in guids
+               from obj
+               in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
+               select obj as T ).ToArray();
     }
   }
 }
