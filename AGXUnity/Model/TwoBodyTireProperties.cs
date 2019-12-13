@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   /// <summary>
   /// Properties of a TwoBodyTire.

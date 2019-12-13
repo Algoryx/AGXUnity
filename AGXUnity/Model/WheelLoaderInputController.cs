@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   public class WheelLoaderInputController : ScriptComponent
   {
@@ -44,7 +44,7 @@ namespace AGXUnity.Models
     protected override bool Initialize()
     {
       if ( WheelLoader == null ) {
-        Debug.LogError( "Unable to initialize: AGXUnity.Models.WheelLoader component not found.", this );
+        Debug.LogError( "Unable to initialize: AGXUnity.Model.WheelLoader component not found.", this );
         return false;
       }
 

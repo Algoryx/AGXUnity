@@ -11,7 +11,7 @@ namespace AGXUnity.Utils
       public Collide.Shape[] Shapes = new Collide.Shape[] { };
       public Wire[] Wires = new Wire[] { };
       public Cable[] Cables = new Cable[] { };
-      public Models.Track[] Tracks = new Models.Track[] { };
+      public Model.Track[] Tracks = new Model.Track[] { };
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ namespace AGXUnity.Utils
       // Possible to have multiple tracks per game object.
       var tracks = rb != null || shape != null || wire != null || cable != null ?
                      null :
-                     parent.GetComponents<Models.Track>();
+                     parent.GetComponents<Model.Track>();
 
       bool allPredefinedAreNull = rb == null &&
                                   shape == null &&
@@ -53,7 +53,7 @@ namespace AGXUnity.Utils
         data.Shapes = parent.GetComponentsInChildren<Collide.Shape>();
         data.Wires  = parent.GetComponentsInChildren<Wire>();
         data.Cables = parent.GetComponentsInChildren<Cable>();
-        data.Tracks = parent.GetComponentsInChildren<Models.Track>();
+        data.Tracks = parent.GetComponentsInChildren<Model.Track>();
       }
       // A wire is by definition independent of PropagateToChildren, since
       // it's not defined to add children to a wire game object.
@@ -67,7 +67,7 @@ namespace AGXUnity.Utils
       else if ( tracks != null ) {
         data.Shapes = CollectShapes( parent, rb, shape, searchChildren );
         data.Tracks = searchChildren ?
-                        parent.GetComponentsInChildren<Models.Track>() :
+                        parent.GetComponentsInChildren<Model.Track>() :
                         tracks;
       }
       // Bodies have shapes so if 'rb' != null we should collect all shape children

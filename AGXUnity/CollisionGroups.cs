@@ -100,7 +100,7 @@ namespace AGXUnity
           entry.AddTo( cable.Native );
 
       foreach ( var track in data.Tracks )
-        if ( track.GetInitialized<Models.Track>() != null )
+        if ( track.GetInitialized<Model.Track>() != null )
           entry.AddTo( track.Native );
     }
 

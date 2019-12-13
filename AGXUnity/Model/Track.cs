@@ -2,7 +2,7 @@
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   /// <summary>
   /// Assembly object representing a continuous track with a given number of shoes (nodes).

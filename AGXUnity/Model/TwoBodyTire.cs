@@ -2,7 +2,7 @@
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   /// <summary>
   /// Two body tire model where the rubber tire and solid rim are separate

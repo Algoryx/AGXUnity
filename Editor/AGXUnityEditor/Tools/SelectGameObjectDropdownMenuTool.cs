@@ -16,7 +16,7 @@ namespace AGXUnityEditor.Tools
       bool hasShape     = !isNull && gameObject.GetComponent<AGXUnity.Collide.Shape>() != null;
       bool hasWire      = !isNull && gameObject.GetComponent<Wire>() != null;
       bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
-      bool hasTrack = !isNull && gameObject.GetComponent<AGXUnity.Models.Track>() != null;
+      bool hasTrack = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
 
       string nullTag      = isNull       ? Utils.GUI.AddColorTag( "[null]", Color.red ) : "";
       string visualTag    = hasVisual    ? Utils.GUI.AddColorTag( "[Visual]", Color.yellow ) : "";

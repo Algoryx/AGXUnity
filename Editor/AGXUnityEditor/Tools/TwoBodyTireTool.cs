@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using AGXUnity;
-using AGXUnity.Models;
+using AGXUnity.Model;
 
 using GUI = AGXUnityEditor.Utils.GUI;
 

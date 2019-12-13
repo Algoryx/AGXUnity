@@ -46,7 +46,7 @@ namespace AGXUnityEditor
     [MenuItem("Assets/AGXUnity/Two Body Tire Properties")]
     public static UnityEngine.Object CreateTwoBodyTireProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TwoBodyTireProperties>("two body tire properties");
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TwoBodyTireProperties>("two body tire properties");
     }
 
     [MenuItem( "Assets/AGXUnity/Solver Settings" )]
@@ -76,13 +76,13 @@ namespace AGXUnityEditor
     [MenuItem( "Assets/AGXUnity/Track Properties" )]
     public static UnityEngine.Object CreateTrackProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TrackProperties>( "track properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackProperties>( "track properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Track Internal Merge Properties" )]
     public static UnityEngine.Object CreateTrackInternalMergeProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Models.TrackInternalMergeProperties>( "track internal merge properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackInternalMergeProperties>( "track internal merge properties" );
     }
 
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]

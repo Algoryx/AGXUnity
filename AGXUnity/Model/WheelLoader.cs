@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   [DisallowMultipleComponent]
   public class WheelLoader : ScriptComponent

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
-using AGXUnity.Models;
+using AGXUnity.Model;
 
 using GUI = AGXUnityEditor.Utils.GUI;
 

@@ -2,7 +2,7 @@
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
-using AGXUnity.Models;
+using AGXUnity.Model;
 
 using GUI = AGXUnityEditor.Utils.GUI;
 

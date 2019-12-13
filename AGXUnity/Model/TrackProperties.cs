@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   public class TrackProperties : ScriptAsset
   {

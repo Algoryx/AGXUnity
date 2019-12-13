@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   public class WheelLoaderBucketTiltController : ScriptComponent
   {
@@ -119,7 +119,7 @@ namespace AGXUnity.Models
     protected override bool Initialize()
     {
       if ( WheelLoader == null ) {
-        Debug.LogError( "Unable to initialize: AGXUnity.Models.WheelLoader component not found.", this );
+        Debug.LogError( "Unable to initialize: AGXUnity.Model.WheelLoader component not found.", this );
         return false;
       }
 
@@ -180,7 +180,7 @@ namespace AGXUnity.Models
     private void Reset()
     {
       if ( GetComponent<WheelLoader>() == null )
-        Debug.LogError( "AGXUnity.Models.WheelLoader component is required." );
+        Debug.LogError( "AGXUnity.Model.WheelLoader component is required." );
     }
 
     private WheelLoader m_wheelLoader = null;

@@ -10,12 +10,12 @@ namespace AGXUnity.Rendering
   public class TrackRenderer : ScriptComponent
   {
     [HideInInspector]
-    public Models.Track[] Tracks
+    public Model.Track[] Tracks
     {
       get
       {
         if ( m_tracks.Length == 0 )
-          m_tracks = GetComponents<Models.Track>();
+          m_tracks = GetComponents<Model.Track>();
         return m_tracks;
       }
     }
@@ -44,7 +44,7 @@ namespace AGXUnity.Rendering
 
     public void OnTrackReset()
     {
-      m_tracks = GetComponents<Models.Track>();
+      m_tracks = GetComponents<Model.Track>();
     }
 
     protected override bool Initialize()
@@ -136,7 +136,7 @@ namespace AGXUnity.Rendering
         Debug.LogError( "TrackRenderer requires Track component.", this );
     }
 
-    private void Configure( Models.Track track, GameObject instance )
+    private void Configure( Model.Track track, GameObject instance )
     {
       instance.hideFlags = HideFlags.DontSaveInEditor;
       instance.GetOrCreateComponent<OnSelectionProxy>().Component = track;
@@ -154,7 +154,7 @@ namespace AGXUnity.Rendering
 
     struct TrackWheelDesc
     {
-      public Models.TrackWheelModel Model;
+      public Model.TrackWheelModel WheelModel;
       public float Radius;
       public Vector3 Position;
       public Quaternion Rotation;
@@ -165,7 +165,7 @@ namespace AGXUnity.Rendering
       {
         get
         {
-          return new agxVehicle.TrackWheelDesc( Models.TrackWheel.ToNative( Model ),
+          return new agxVehicle.TrackWheelDesc( Model.TrackWheel.ToNative( WheelModel ),
                                                 Radius,
                                                 new agx.AffineMatrix4x4( Rotation.ToHandedQuat(),
                                                                          Position.ToHandedVec3() ),
@@ -198,7 +198,7 @@ namespace AGXUnity.Rendering
       public TrackWheelDesc[] TrackWheels = new TrackWheelDesc[] { };
       public TrackNodeDesc[] TrackNodes = new TrackNodeDesc[] { };
 
-      public void Update( Models.Track track )
+      public void Update( Model.Track track )
       {
         var reqUpdate = TrackWheels.Length != track.Wheels.Length ||
                         Track.NumberOfNodes != track.NumberOfNodes ||
@@ -209,7 +209,7 @@ namespace AGXUnity.Rendering
           for ( int i = 0; !reqUpdate && i < TrackWheels.Length; ++i ) {
             var trackWheelDef = TrackWheels[ i ];
             var trackWheel    = track.Wheels[ i ];
-            reqUpdate         = trackWheelDef.Model != trackWheel.Model ||
+            reqUpdate         = trackWheelDef.WheelModel != trackWheel.Model ||
                                !Mathf.Approximately( trackWheelDef.Radius, trackWheel.Radius ) ||
                                 Vector3.SqrMagnitude( trackWheelDef.Position - trackWheel.transform.position ) > 1.0E-5f ||
                                 Vector3.SqrMagnitude( trackWheelDef.LocalPosition - trackWheel.Frame.LocalPosition ) > 1.0E-5f ||
@@ -230,7 +230,7 @@ namespace AGXUnity.Rendering
         };
         TrackWheels = new TrackWheelDesc[ track.Wheels.Length ];
         for ( int i = 0; i < TrackWheels.Length; ++i ) {
-          TrackWheels[ i ].Model         = track.Wheels[ i ].Model;
+          TrackWheels[ i ].WheelModel    = track.Wheels[ i ].Model;
           TrackWheels[ i ].Radius        = track.Wheels[ i ].Radius;
           TrackWheels[ i ].Position      = track.Wheels[ i ].transform.position;
           TrackWheels[ i ].Rotation      = track.Wheels[ i ].transform.rotation;
@@ -247,8 +247,8 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private Models.Track[] m_tracks = new Models.Track[] { };
+    private Model.Track[] m_tracks = new Model.Track[] { };
     private GameObject m_root = null;
-    private Dictionary<Models.Track, UninitializedTrackData> m_uninitializedTrackData = new Dictionary<Models.Track, UninitializedTrackData>();
+    private Dictionary<Model.Track, UninitializedTrackData> m_uninitializedTrackData = new Dictionary<Model.Track, UninitializedTrackData>();
   }
 }

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   /// <summary>
   /// One body tire model which enables effective contact reduction

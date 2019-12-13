@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace AGXUnity.Models
+namespace AGXUnity.Model
 {
   /// <summary>
   /// Track wheel model types.
