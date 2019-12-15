@@ -12,10 +12,9 @@ namespace AGXUnity
   public class ContactMaterialEntry
   {
     public ContactMaterial ContactMaterial = null;
-    // Continue on this. Hook on ToolArrayGUI with pre/post
-    // item GUI.
-    //public bool IsOriented = false;
-    //public GameObject ReferenceObject = null;
+    public bool IsOriented = false;
+    public GameObject ReferenceObject = null;
+    public FrictionModel.PrimaryDirection PrimaryDirection = FrictionModel.PrimaryDirection.X;
   }
 
   /// <summary>
@@ -71,12 +70,21 @@ namespace AGXUnity
     {
       RemoveNullEntries();
 
-      foreach ( var entry in m_contactMaterials ) {
-        ContactMaterial contactMaterial = entry.ContactMaterial.GetInitialized<ContactMaterial>();
-        if ( contactMaterial != null && contactMaterial.Native != null )
-          GetSimulation().getMaterialManager().add( contactMaterial.Native );
-      }
-      return base.Initialize();
+      foreach ( var entry in m_contactMaterials )
+        Initialize( entry );
+
+      return true;
+    }
+
+    private void Initialize( ContactMaterialEntry entry )
+    {
+      var contactMaterial = entry.ContactMaterial.GetInitialized<ContactMaterial>();
+      if ( contactMaterial == null )
+        return;
+
+      contactMaterial.InitializeOrientedFriction( entry.IsOriented, entry.ReferenceObject, entry.PrimaryDirection );
+
+      GetSimulation().getMaterialManager().add( contactMaterial.Native );
     }
   }
 }

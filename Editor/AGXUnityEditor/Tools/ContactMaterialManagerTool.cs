@@ -1,7 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+
+using GUI    = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -43,7 +46,35 @@ namespace AGXUnityEditor.Tools
                                  Identifier,
                                  Color.yellow,
                                  cm => Manager.Add( cm ),
-                                 cm => Manager.Remove( cm ) );
+                                 cm => Manager.Remove( cm ),
+                                 PreContactMaterialEditor( Manager.ContactMaterialEntries ) );
+    }
+
+    private Action<ContactMaterial, int> PreContactMaterialEditor( ContactMaterialEntry[] entries )
+    {
+      return ( cm, index ) =>
+      {
+        entries[ index ].IsOriented = GUI.Toggle( GUI.MakeLabel( "Is Oriented",
+                                                                  false,
+                                                                  "Enable/disable oriented friction models." ),
+                                                  entries[ index ].IsOriented,
+                                                  InspectorEditor.Skin.button,
+                                                  InspectorEditor.Skin.label );
+        if ( entries[ index ].IsOriented ) {
+          using ( new GUI.Indent( 28 ) ) {
+            entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
+                                                                                        entries[ index ].ReferenceObject,
+                                                                                        typeof( GameObject ),
+                                                                                        true );
+            entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
+                                                                                                                          false,
+                                                                                                                          "Primary direction in object local frame." ),
+                                                                                                           entries[ index ].PrimaryDirection,
+                                                                                                           InspectorEditor.Skin.button );
+          }
+        }
+        GUI.Separator();
+      };
     }
   }
 }

@@ -488,7 +488,9 @@ namespace AGXUnityEditor
                                         string identifier,
                                         Color itemColorIdeintifier,
                                         Action<T> onAdd,
-                                        Action<T> onRemove )
+                                        Action<T> onRemove,
+                                        Action<T, int> preItemEditor = null,
+                                        Action<T, int> postItemEditor = null )
       where T : Object
     {
       var displayItemsList = GUI.Foldout( GetTargetToolArrayGUIData( tool.Targets[ 0 ], identifier ),
@@ -501,7 +503,9 @@ namespace AGXUnityEditor
       if ( displayItemsList ) {
         T itemToRemove = null;
         using ( new GUI.Indent( 12 ) ) {
-          foreach ( var item in items ) {
+          for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
+            var item = items[ itemIndex ];
+
             GUI.Separator();
 
             var displayItem = false;
@@ -526,7 +530,9 @@ namespace AGXUnityEditor
             }
             using ( new GUI.Indent( 12 ) ) {
               var editor = tool.GetOrCreateEditor( item );
+              preItemEditor?.Invoke( item, itemIndex );
               editor.OnInspectorGUI();
+              postItemEditor?.Invoke( item, itemIndex );
             }
           }
 
