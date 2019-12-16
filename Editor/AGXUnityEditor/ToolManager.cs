@@ -141,7 +141,8 @@ namespace AGXUnityEditor
       try {
         tool = (CustomTargetTool)Activator.CreateInstance( toolType, new object[] { targets } );
       }
-      catch ( Exception ) {
+      catch ( Exception e ) {
+        Debug.LogException( e );
         return;
       }
 

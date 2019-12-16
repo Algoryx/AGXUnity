@@ -20,7 +20,8 @@ namespace AGXUnity
     {
       IterativeProjectedFriction = 0,
       ScaleBoxFriction,
-      BoxFriction
+      BoxFriction,
+      ConstantNormalForceBoxFriction
     }
 
     public enum PrimaryDirection
@@ -84,10 +85,16 @@ namespace AGXUnity
     {
       if ( native == null || native.asIterativeProjectedConeFriction() != null )
         return EType.IterativeProjectedFriction;
+      else if ( native.asScaleBoxFrictionModel() != null )
+        return EType.ScaleBoxFriction;
+      else if ( native.asConstantNormalForceOrientedBoxFrictionModel() != null )
+        return EType.ConstantNormalForceBoxFriction;
       else if ( native.asBoxFrictionModel() != null )
         return EType.BoxFriction;
 
-      return EType.ScaleBoxFriction;
+      Debug.LogWarning( "Unknown native friction model type - returning default." );
+
+      return EType.IterativeProjectedFriction;
     }
 
     /// <summary>
@@ -156,13 +163,68 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// This field is specific for agx.ConstantNormalForceOrientedBoxFrictionModel and
+    /// only used when type is EType.ConstantNormalForceBoxFriction.
+    /// </summary>
+    [SerializeField]
+    private float m_normalForceMagnitude = 100.0f;
+
+    /// <summary>
+    /// Normal force magnitude used in ConstantNormalForceBoxFriction.
+    /// </summary>
+    [HideInInspector]
+    [ClampAboveZeroInInspector( true )]
+    public float NormalForceMagnitude
+    {
+      get { return m_normalForceMagnitude; }
+      set
+      {
+        m_normalForceMagnitude = value;
+        if ( Native != null ) {
+          var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
+          if ( native != null )
+            native.setNormalForceMagnitude( m_normalForceMagnitude );
+        }
+      }
+    }
+
+    /// <summary>
+    /// This field is specific for agx.ConstantNormalForceOrientedBoxFrictionModel and
+    /// only used when type is EType.ConstantNormalForceBoxFriction.
+    /// </summary>
+    [SerializeField]
+    private bool m_scaleNormalForceWithDepth = false;
+
+    /// <summary>
+    /// Enable/disable scale of the given normal force with the contact
+    /// point depth resulting in a maximum friction force:
+    ///   depth * primary_friction_coefficient * given_normal_force
+    ///   depth * secondary_friction_coefficient * given_normal_force
+    /// Default: false.
+    /// </summary>
+    [HideInInspector]
+    public bool ScaleNormalForceWithDepth
+    {
+      get { return m_scaleNormalForceWithDepth; }
+      set
+      {
+        m_scaleNormalForceWithDepth = value;
+        if ( Native != null ) {
+          var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
+          if ( native != null )
+            native.setEnableScaleWithDepth( m_scaleNormalForceWithDepth );
+        }
+      }
+    }
+
+    /// <summary>
     /// Create native friction model given solve type and friction model type.
     /// </summary>
     /// <param name="type">Friction model type.</param>
     /// <param name="solveType">Solve type.</param>
     /// <returns>New native instance.</returns>
     public agx.FrictionModel CreateNative( EType type,
-                                                  ESolveType solveType )
+                                           ESolveType solveType )
     {
       agx.Frame referenceFrame = null;
       if ( m_orientedFrictionReferenceObject != null ) {
@@ -177,21 +239,28 @@ namespace AGXUnity
       if ( type == EType.IterativeProjectedFriction )
         frictionModel = referenceFrame != null ?
                           new agx.OrientedIterativeProjectedConeFrictionModel( referenceFrame,
-                                                                               Convert( m_orientedFrctionPrimaryDirection ).ToHandedVec3(),
+                                                                               Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
                                                                                Convert( solveType ) ) :
                           new agx.IterativeProjectedConeFriction( Convert( solveType ) );
       else if ( type == EType.ScaleBoxFriction )
         frictionModel = referenceFrame != null ?
                           new agx.OrientedScaleBoxFrictionModel( referenceFrame,
-                                                                 Convert( m_orientedFrctionPrimaryDirection ).ToHandedVec3(),
+                                                                 Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
                                                                  Convert( solveType ) ) :
                           new agx.ScaleBoxFrictionModel( Convert( solveType ) );
       else if ( type == EType.BoxFriction )
         frictionModel = referenceFrame != null ?
                           new agx.OrientedBoxFrictionModel( referenceFrame,
-                                                            Convert( m_orientedFrctionPrimaryDirection ).ToHandedVec3(),
+                                                            Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
                                                             Convert( solveType ) ) :
                           new agx.BoxFrictionModel( Convert( solveType ) );
+      else if ( type == EType.ConstantNormalForceBoxFriction ) {
+        frictionModel = new agx.ConstantNormalForceOrientedBoxFrictionModel( NormalForceMagnitude,
+                                                                             referenceFrame,
+                                                                             Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
+                                                                             Convert( solveType ),
+                                                                             ScaleNormalForceWithDepth );
+      }
 
       return frictionModel;
     }
@@ -207,8 +276,9 @@ namespace AGXUnity
     public void InitializeOriented( ScriptComponent referenceComponent, PrimaryDirection primaryDirection )
     {
       m_orientedFrictionReferenceObject = referenceComponent;
-      m_orientedFrctionPrimaryDirection = primaryDirection;
+      m_orientedFrictionPrimaryDirection = primaryDirection;
       Native = CreateNative( Type, SolveType );
+      OnNativeInstanceChanged( Native );
     }
 
     protected override void Construct()
@@ -233,6 +303,6 @@ namespace AGXUnity
     }
 
     private ScriptComponent m_orientedFrictionReferenceObject = null;
-    private PrimaryDirection m_orientedFrctionPrimaryDirection = PrimaryDirection.X;
+    private PrimaryDirection m_orientedFrictionPrimaryDirection = PrimaryDirection.X;
   }
 }

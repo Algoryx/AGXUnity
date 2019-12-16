@@ -56,9 +56,9 @@ namespace AGXUnity
   /// Attribute for method to be executed from a button in the editor.
   /// </summary>
   [AttributeUsage( AttributeTargets.Method, AllowMultiple = false )]
-  public class InvokableInInspector : Attribute
+  public class InvokableInInspectorAttribute : Attribute
   {
-    public InvokableInInspector( string label = "", bool onlyInStatePlay = false )
+    public InvokableInInspectorAttribute( string label = "", bool onlyInStatePlay = false )
     {
       Label = label;
       OnlyInStatePlay = onlyInStatePlay;
