@@ -131,7 +131,7 @@ namespace AGXUnityEditor.IO
       return Uri.UnescapeDataString( relUri.ToString() );
     }
 
-    public static T[] FindAssetsOfType<T>()
+    public static T[] FindAssetsOfType<T>( string directory = "" )
       where T : Object
     {
       // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
@@ -143,7 +143,9 @@ namespace AGXUnityEditor.IO
         typeName = type.Name;
       else
         typeName = type.FullName;
-      var guids = AssetDatabase.FindAssets( "t:" + typeName ).Distinct();
+      var guids = string.IsNullOrEmpty( directory ) ?
+                    AssetDatabase.FindAssets( "t:" + typeName ).Distinct() :
+                    AssetDatabase.FindAssets( "t:" + typeName, new string[] { directory } ).Distinct();
       return ( from guid
                in guids
                from obj

@@ -267,7 +267,7 @@ namespace AGXUnityEditor.IO
     public T[] GetAssets<T>()
       where T : UnityEngine.Object
     {
-      return Utils.FindAssetsOfType<T>();
+      return Utils.FindAssetsOfType<T>( DataDirectory );
     }
 
     /// <summary>

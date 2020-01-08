@@ -253,9 +253,22 @@ namespace AGXUnity.Model
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
 
-      GetSimulation().add( Native );
+      if ( isActiveAndEnabled )
+        GetSimulation().add( Native );
 
       return true;
+    }
+
+    protected override void OnEnable()
+    {
+      if ( GetSimulation() != null && Native != null )
+        GetSimulation().add( Native );
+    }
+
+    protected override void OnDisable()
+    {
+      if ( GetSimulation() != null && Native != null )
+        GetSimulation().remove( Native );
     }
 
     protected override void OnDestroy()

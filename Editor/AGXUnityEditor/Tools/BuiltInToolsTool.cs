@@ -198,10 +198,11 @@ namespace AGXUnityEditor.Tools
         var menuTool = new SelectGameObjectDropdownMenuTool() { Target = Manager.MouseOverObject };
         menuTool.OnSelect = go =>
         {
-          AGXUnity.Collide.Shape[] shapes = go.GetComponentsInChildren<AGXUnity.Collide.Shape>();
-          AGXUnity.Wire[] wires           = go.GetComponentsInChildren<AGXUnity.Wire>();
-          AGXUnity.Cable[] cables         = go.GetComponentsInChildren<AGXUnity.Cable>();
-          AGXUnity.Model.Track[] tracks   = go.GetComponentsInChildren<AGXUnity.Model.Track>();
+          var shapes   = go.GetComponentsInChildren<AGXUnity.Collide.Shape>();
+          var wires    = go.GetComponentsInChildren<AGXUnity.Wire>();
+          var cables   = go.GetComponentsInChildren<AGXUnity.Cable>();
+          var tracks   = go.GetComponentsInChildren<AGXUnity.Model.Track>();
+          var terrains = go.GetComponentsInChildren<AGXUnity.DeformableTerrain>();
           Action assignAll                = () =>
           {
             Undo.SetCurrentGroupName( "Assigning shape materials." );
@@ -222,10 +223,14 @@ namespace AGXUnityEditor.Tools
               Undo.RecordObject( track, "New shape material" );
               track.Material = DroppedShapeMaterial;
             }
+            foreach ( var terrain in terrains ) {
+              Undo.RecordObject( terrain, "New shape material" );
+              terrain.Material = DroppedShapeMaterial;
+            }
             Undo.CollapseUndoOperations( undoGroup );
           };
 
-          var sumSupported = shapes.Length + wires.Length + cables.Length + tracks.Length;
+          var sumSupported = shapes.Length + wires.Length + cables.Length + tracks.Length + terrains.Length;
           if ( sumSupported == 0 )
             Debug.LogWarning( "Object selected doesn't have shapes, wires, cables or tracks.", go );
           else if ( sumSupported == 1 || EditorUtility.DisplayDialog( "Assign shape materials",
@@ -248,7 +253,9 @@ namespace AGXUnityEditor.Tools
       return gameObject.GetComponentsInChildren<AGXUnity.Collide.Shape>().Length > 0 ||
              gameObject.GetComponentsInParent<AGXUnity.Collide.Shape>().Length > 0 ||
              gameObject.GetComponentsInChildren<AGXUnity.Wire>().Length > 0 ||
-             gameObject.GetComponentsInChildren<AGXUnity.Cable>().Length > 0;
+             gameObject.GetComponentsInChildren<AGXUnity.Cable>().Length > 0 ||
+             gameObject.GetComponentsInChildren<AGXUnity.Model.Track>().Length > 0 ||
+             gameObject.GetComponentsInChildren<AGXUnity.DeformableTerrain>().Length > 0;
     }
   }
 }

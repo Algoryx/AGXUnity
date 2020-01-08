@@ -78,6 +78,9 @@ namespace AGXUnity.Rendering
 
       var numNodes = 0;
       foreach ( var track in Tracks ) {
+        if ( !track.isActiveAndEnabled )
+          continue;
+
         if ( track.Native != null )
           numNodes += (int)track.Native.getNumNodes();
         else {
@@ -108,6 +111,9 @@ namespace AGXUnity.Rendering
 
       var nodeCounter = 0;
       foreach ( var track in Tracks ) {
+        if ( !track.isActiveAndEnabled )
+          continue;
+
         if ( track.Native != null ) {
           foreach ( var node in track.Native.nodes() ) {
             var renderInstance = m_root.transform.GetChild( nodeCounter++ );

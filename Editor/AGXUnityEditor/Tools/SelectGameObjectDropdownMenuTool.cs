@@ -16,7 +16,8 @@ namespace AGXUnityEditor.Tools
       bool hasShape     = !isNull && gameObject.GetComponent<AGXUnity.Collide.Shape>() != null;
       bool hasWire      = !isNull && gameObject.GetComponent<Wire>() != null;
       bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
-      bool hasTrack = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
+      bool hasTrack     = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
+      bool hasTerrain   = !isNull && gameObject.GetComponent<DeformableTerrain>() != null;
 
       string nullTag      = isNull       ? Utils.GUI.AddColorTag( "[null]", Color.red ) : "";
       string visualTag    = hasVisual    ? Utils.GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
@@ -25,10 +26,11 @@ namespace AGXUnityEditor.Tools
       string wireTag      = hasWire      ? Utils.GUI.AddColorTag( "[Wire]", Color.Lerp( Color.cyan, Color.black, 0.35f ) ) : "";
       string cableTag     = hasCable     ? Utils.GUI.AddColorTag( "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
       string trackTag     = hasTrack     ? Utils.GUI.AddColorTag( "[Track]", Color.Lerp( Color.yellow, Color.red, 0.45f ) ) : "";
+      string terrainTag   = hasTerrain   ? Utils.GUI.AddColorTag( "[Terrain]", Color.Lerp( Color.green, Color.yellow, 0.25f ) ) : "";
 
       string name = isNull ? "World" : gameObject.name;
 
-      return Utils.GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag + trackTag );
+      return Utils.GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag + trackTag + terrainTag );
     }
 
     public class ObjectData
