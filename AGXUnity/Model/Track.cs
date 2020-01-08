@@ -7,6 +7,7 @@ namespace AGXUnity.Model
   /// <summary>
   /// Assembly object representing a continuous track with a given number of shoes (nodes).
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Model/Track" )]
   public class Track : ScriptComponent
   {
     /// <summary>

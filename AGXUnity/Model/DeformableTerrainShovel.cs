@@ -3,7 +3,7 @@ using AGXUnity.Utils;
 
 using GUI = AGXUnity.Utils.GUI;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Shovel" )]
   [DisallowMultipleComponent]

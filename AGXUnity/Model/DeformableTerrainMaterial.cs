@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
   public class DeformableTerrainMaterial : ScriptAsset
   {

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using AGXUnity.Utils;
+using AGXUnity.Model;
 
 namespace AGXUnity.Rendering
 {

@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Model
 {
@@ -7,6 +6,7 @@ namespace AGXUnity.Model
   /// One body tire model which enables effective contact reduction
   /// and the friction directions are updated given the tire frame.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Model/One Body Tire" )]
   public class OneBodyTire : Tire
   {
     /// <summary>

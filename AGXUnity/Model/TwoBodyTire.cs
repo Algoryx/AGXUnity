@@ -21,6 +21,7 @@ namespace AGXUnity.Model
   /// 
   /// Note: This feature requires specific license in AGX Dynamics.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Model/Two Body Tire" )]
   public class TwoBodyTire : Tire
   {
     /// <summary>

@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEditor;
 using AGXUnity;
+using AGXUnity.Model;
 
 namespace AGXUnityEditor
 {

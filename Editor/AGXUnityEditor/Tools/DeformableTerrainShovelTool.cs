@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using AGXUnity.Model;
 
 using GUI = AGXUnityEditor.Utils.GUI;
 using Object = UnityEngine.Object;

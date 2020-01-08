@@ -202,7 +202,7 @@ namespace AGXUnityEditor.Tools
           var wires    = go.GetComponentsInChildren<AGXUnity.Wire>();
           var cables   = go.GetComponentsInChildren<AGXUnity.Cable>();
           var tracks   = go.GetComponentsInChildren<AGXUnity.Model.Track>();
-          var terrains = go.GetComponentsInChildren<AGXUnity.DeformableTerrain>();
+          var terrains = go.GetComponentsInChildren<AGXUnity.Model.DeformableTerrain>();
           Action assignAll                = () =>
           {
             Undo.SetCurrentGroupName( "Assigning shape materials." );
@@ -255,7 +255,7 @@ namespace AGXUnityEditor.Tools
              gameObject.GetComponentsInChildren<AGXUnity.Wire>().Length > 0 ||
              gameObject.GetComponentsInChildren<AGXUnity.Cable>().Length > 0 ||
              gameObject.GetComponentsInChildren<AGXUnity.Model.Track>().Length > 0 ||
-             gameObject.GetComponentsInChildren<AGXUnity.DeformableTerrain>().Length > 0;
+             gameObject.GetComponentsInChildren<AGXUnity.Model.DeformableTerrain>().Length > 0;
     }
   }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
   public class DeformableTerrainProperties : ScriptAsset
   {

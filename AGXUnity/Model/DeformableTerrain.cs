@@ -5,9 +5,9 @@ using AGXUnity.Utils;
 
 using GUI = AGXUnity.Utils.GUI;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
-  [AddComponentMenu( "AGXUnity/Deformable Terrain" )]
+  [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent(typeof( Terrain ))]
   [DisallowMultipleComponent]
   public class DeformableTerrain : ScriptComponent
