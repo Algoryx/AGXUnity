@@ -19,57 +19,97 @@ namespace AGXUnityEditor.IO
     /// Absolute Unity project directory without trailing /, i.e., add '/Assets/Foo' for
     /// directory Foo in the project default assets folder.
     /// </summary>
-    public static string ProjectDirectory { get { return Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ), "/Assets".Length ); } }                                                         
-    
+    public static string ProjectDirectory
+    {
+      get
+      {
+        return Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ),
+                                            "/Assets".Length );
+      }
+    }
+
     /// <summary>
     /// Directory of AGXUnity source code, i.e, package directory + /AGXUnity.
     /// </summary>
-    public static string AGXUnitySourceDirectory { get { return AGXUnityPackageDirectory + "/AGXUnity"; } }
+    public static string AGXUnitySourceDirectory
+    {
+      get
+      {
+        return AGXUnityPackageDirectory + "/AGXUnity";
+      }
+    }
 
     /// <summary>
     /// Absolute directory of AGXUnity source code, i.e, full package directory + /AGXUnity.
     /// </summary>
-    public static string AGXUnitySourceDirectoryFull { get { return ProjectDirectory + '/' + AGXUnitySourceDirectory; } }
+    public static string AGXUnitySourceDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnitySourceDirectory; }
+    }
 
     /// <summary>
     /// AGXUnity resources directory, i.e, package directory + /Resources.
     /// </summary>
-    public static string AGXUnityResourceDirectory { get { return AGXUnityPackageDirectory + "/Resources"; } }
+    public static string AGXUnityResourceDirectory
+    {
+      get { return AGXUnityPackageDirectory + "/Resources"; }
+    }
 
     /// <summary>
     /// Absolute directory of AGXUnity resources, i.e., package directory full + /Resources.
     /// </summary>
-    public static string AGXUnityResourceDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityResourceDirectory; } }
+    public static string AGXUnityResourceDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnityResourceDirectory; }
+    }
 
     /// <summary>
     /// Native plugin directory, i.e., package directory + /Plugins/x86_64.
     /// </summary>
-    public static string AGXUnityPluginDirectory { get { return AGXUnityPackageDirectory + "/Plugins/x86_64"; } }
+    public static string AGXUnityPluginDirectory
+    {
+      get { return AGXUnityPackageDirectory + "/Plugins/x86_64"; }
+    }
 
     /// <summary>
     /// Native plugin directory, i.e., package directory full + /Plugins/x86_64.
     /// </summary>
-    public static string AGXUnityPluginDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityPluginDirectory; } }
+    public static string AGXUnityPluginDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnityPluginDirectory; }
+    }
 
     /// <summary>
     /// AGXUnity package editor directory, i.e., package directory + /Editor.
     /// </summary>
-    public static string AGXUnityEditorDirectory { get { return AGXUnityPackageDirectory + "/Editor"; } }
+    public static string AGXUnityEditorDirectory
+    {
+      get { return AGXUnityPackageDirectory + "/Editor"; }
+    }
 
     /// <summary>
     /// Absolute directory of AGXUnity editor, i.e. package directory full + /Editor.
     /// </summary>
-    public static string AGXUnityEditorDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityEditorDirectory; } }
+    public static string AGXUnityEditorDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnityEditorDirectory; }
+    }
 
     /// <summary>
     /// Directory of AGXUnityEditor source code, i.e, package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectory { get { return AGXUnityPackageDirectory + "/Editor/AGXUnityEditor"; } }
+    public static string AGXUnityEditorSourceDirectory
+    {
+      get { return AGXUnityPackageDirectory + "/Editor/AGXUnityEditor"; }
+    }
 
     /// <summary>
     /// Absolute directory of AGXUnityEditor source code, i.e, full package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectoryFull  { get { return ProjectDirectory + '/' + AGXUnityEditorSourceDirectory; } }
+    public static string AGXUnityEditorSourceDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnityEditorSourceDirectory; }
+    }
 
     /// <summary>
     /// AGXUnity package directory relative Unity project, e.g., Assets/Foo if AGXUnity source
@@ -100,8 +140,38 @@ namespace AGXUnityEditor.IO
     /// <summary>
     /// Full path to the AGXUnity install directory.
     /// </summary>
-    public static string AGXUnityPackageDirectoryFull { get { return ProjectDirectory + '/' + AGXUnityPackageDirectory; } }
+    public static string AGXUnityPackageDirectoryFull
+    {
+      get { return ProjectDirectory + '/' + AGXUnityPackageDirectory; }
+    }
 
+    /// <summary>
+    /// True if AGX Dynamics is assumed to be installed in the project,
+    /// i.e., Unity hasn't been started with AGX Dynamics in path.
+    /// </summary>
+    public static bool AGXDynamicsInstalledInProject
+    {
+      get
+      {
+        var di = new DirectoryInfo( AGXUnityPluginDirectoryFull );
+        if ( !di.Exists )
+          throw new AGXUnity.Exception( "Unable to find AGXUnity plugins directory: " + di.FullName );
+
+        var dllsToFind = new string[] { "agxCore.dll", "agxPhysics.dll", "agxSabre.dll" };
+        int numFound = 0;
+        foreach ( var file in di.EnumerateFiles( "*.dll" ) )
+          if ( Array.FindIndex( dllsToFind, name => name == file.Name ) >= 0 )
+            ++numFound;
+        return numFound == dllsToFind.Length;
+      }
+    }
+
+    /// <summary>
+    /// Verifies so that each property (returning a directory path) above
+    /// with property name containing AGXUnity and Directory is returning
+    /// a path to a valid folder.  If the folder doesn't exist, a warning
+    /// is issued.
+    /// </summary>
     public static void VerifyDirectories()
     {
       Predicate<string> isRelDirectory = name => name.Contains( "AGXUnity" ) &&

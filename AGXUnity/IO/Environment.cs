@@ -51,6 +51,21 @@ namespace AGXUnity.IO
     }
 
     /// <summary>
+    /// Set AGX environment variable for current process.
+    /// Note that the this method doesn't check whether the variable
+    /// is set (or appends to it), this method will set the environment
+    /// variable regardless of previous value.
+    /// </summary>
+    /// <param name="variable">Variable to set.</param>
+    /// <param name="value">Value for variable.</param>
+    public static void Set( Variable variable, string value )
+    {
+      System.Environment.SetEnvironmentVariable( variable.ToString(),
+                                                 value,
+                                                 System.EnvironmentVariableTarget.Process );
+    }
+
+    /// <summary>
     /// Finds path to installed AGX Dynamics. Fails if Unity isn't
     /// started in an AGX Dynamics environment.
     /// </summary>

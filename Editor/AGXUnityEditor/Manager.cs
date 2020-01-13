@@ -67,6 +67,9 @@ namespace AGXUnityEditor
     {
       IO.Utils.VerifyDirectories();
 
+      if ( !ConfigureEnvironment() )
+        return;
+
       // If compatibility issues, this method will try to fix them and this manager
       // will probably be loaded again after the fix.
       if ( !VerifyCompatibility() )
@@ -521,6 +524,36 @@ namespace AGXUnityEditor
     {
       if ( SceneViewGUIWindowHandler.RenderWindows( Event.current ) )
         SceneView.RepaintAll();
+    }
+
+    private static bool ConfigureEnvironment()
+    {
+      // Running from within the editor - two options:
+      //   1. Unity has been started from an AGX environment => do nothing.
+      //   2. AGX Dynamics dll's are present in the plugins directory => setup
+      //      environment file paths.
+      if ( !IO.Utils.AGXDynamicsInstalledInProject )
+        return true; // More checks?
+
+      var agxDir = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_DIR );
+      if ( string.IsNullOrEmpty( agxDir ) )
+        AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
+                                     IO.Utils.AGXUnityPluginDirectoryFull );
+
+      var envInstance = agxIO.Environment.instance();
+      for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+        envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
+      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull + @"\agx" );
+      envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull + @"\agx" );
+
+      // This validate is only for "license status" window so
+      // the user will be noticed when something is wrong.
+      AGXUnity.NativeHandler.Instance.ValidateLicense();
+
+      return true;
     }
 
     private static bool Equals( byte[] a, byte[] b )
