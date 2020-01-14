@@ -308,6 +308,9 @@ namespace AGXUnity.Model
 
     private void ResetTerrainDataHeightsAndTransform()
     {
+      if ( m_initialHeights == null )
+        return;
+
       TerrainData.SetHeights( 0, 0, m_initialHeights );
       transform.position = transform.position + MaximumDepth * Vector3.up;
     }

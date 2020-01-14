@@ -158,6 +158,61 @@ namespace AGXUnityEditor.Build
         return;
       }
 
+      var targetExecutableFileInfo = new FileInfo( targetPathFilename );
+      if ( !targetExecutableFileInfo.Exists ) {
+        Debug.LogWarning( Utils.GUI.AddColorTag( "Target executable doesn't exist: ", Color.red ) + targetPathFilename );
+        return;
+      }
+
+      // Application.dataPath is 'Assets' folder here in Editor but
+      // Application.dataPath is '<name>_Data' in the Player. We're
+      // explicitly constructing '<name>_Data' here.
+      var targetDataPath = targetExecutableFileInfo.Directory.FullName +
+                           Path.DirectorySeparatorChar +
+                           Path.GetFileNameWithoutExtension( targetExecutableFileInfo.Name ) +
+                           "_Data";
+
+
+      if ( IO.Utils.AGXDynamicsInstalledInProject )
+        PostBuildInternal( agxDynamicsPath,
+                           agxPluginPath,
+                           targetExecutableFileInfo,
+                           targetDataPath );
+      else
+        PostBuildExternal( agxDynamicsPath,
+                           agxPluginPath,
+                           targetExecutableFileInfo,
+                           targetDataPath );
+    }
+
+    private static void PostBuildInternal( string agxDynamicsPath,
+                                           string agxPluginPath,
+                                           FileInfo targetExecutableFileInfo,
+                                           string targetDataPath )
+    {
+      // Assuming all dlls are present in the plugins directory and that
+      // "Components" are in a folder named "agx" in the plugins directory.
+      // Unity will copy the dlls.
+      var sourceDirectory      = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
+      var destinationDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerAGXRuntimePath( targetDataPath ) );
+      Debug.Log( Utils.GUI.AddColorTag( "Copying AGX runtime data from: " +
+                                        IO.Utils.AGXUnityPluginDirectory +
+                                        Path.DirectorySeparatorChar +
+                                        "agx" +
+                                        " to " +
+                                        destinationDirectory.FullName, Color.green ) );
+      CopyDirectory( sourceDirectory, destinationDirectory );
+
+      // Deleting all .meta-files that are present in our "agx" folder.
+      foreach ( var fi in destinationDirectory.EnumerateFiles( "*.meta", SearchOption.AllDirectories ) )
+        fi.Delete();
+    }
+
+    private static void PostBuildExternal( string agxDynamicsPath,
+                                           string agxPluginPath,
+                                           FileInfo targetExecutableFileInfo,
+                                           string targetDataPath )
+    {
       // Finding loaded modules/binaries in current process located
       // in current environment AGX Dynamics directory. Additional
       // modules/binaries that are optional, i.e., possibly located
@@ -193,32 +248,17 @@ namespace AGXUnityEditor.Build
         return;
       }
 
-      var targetExecutableFileInfo = new FileInfo( targetPathFilename );
-      if ( !targetExecutableFileInfo.Exists ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Target executable doesn't exist: ", Color.red ) + targetPathFilename );
-        return;
-      }
-
-
-      // Application.dataPath is 'Assets' folder here in Editor but
-      // Application.dataPath is '<name>_Data' in the Player. We're
-      // explicitly constructing '<name>_Data' here.
-      var dataPath = targetExecutableFileInfo.Directory.FullName +
-                     Path.DirectorySeparatorChar +
-                     Path.GetFileNameWithoutExtension( targetExecutableFileInfo.Name ) +
-                     "_Data";
-
       // dllTargetPath: ./<name>_Data/Plugins
-      var dllTargetPath = AGXUnity.IO.Environment.GetPlayerPluginPath( dataPath );
+      var dllTargetPath = AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath );
       if ( !Directory.Exists( dllTargetPath ) )
         Directory.CreateDirectory( dllTargetPath );
 
       // agxRuntimeDataPath: ./<name>_Data/Plugins/agx
-      var agxRuntimeDataPath = AGXUnity.IO.Environment.GetPlayerAGXRuntimePath( dataPath );
+      var agxRuntimeDataPath = AGXUnity.IO.Environment.GetPlayerAGXRuntimePath( targetDataPath );
       if ( !Directory.Exists( agxRuntimeDataPath ) )
         Directory.CreateDirectory( agxRuntimeDataPath );
 
-      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxRuntimeDataPath + @"\Components", Color.green ) );
+      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components", Color.green ) );
       CopyDirectory( new DirectoryInfo( agxPluginPath + Path.DirectorySeparatorChar + "Components" ),
                      new DirectoryInfo( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components" ) );
 
@@ -227,7 +267,7 @@ namespace AGXUnityEditor.Build
         try {
           bool isSupportedPlugin = IsPluginsPathSupported( moduleFileInfo.Name );
           if ( isSupportedPlugin )
-            dllTargetPath = AGXUnity.IO.Environment.GetPlayerPluginPath( dataPath );
+            dllTargetPath = AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath );
           else
             dllTargetPath = targetExecutableFileInfo.Directory.FullName;
 

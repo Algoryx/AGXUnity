@@ -66,6 +66,19 @@ namespace AGXUnity.IO
     }
 
     /// <summary>
+    /// Add <paramref name="dir"/> to PATH for current process.
+    /// </summary>
+    /// <param name="dir">Directory to add to PATH.</param>
+    public static void AddToPath( string dir )
+    {
+      var path = System.Environment.GetEnvironmentVariable( "PATH" );
+      if ( !path.Contains( dir ) )
+        System.Environment.SetEnvironmentVariable( "PATH",
+                                                   path + Path.PathSeparator + dir,
+                                                   System.EnvironmentVariableTarget.Process );
+    }
+
+    /// <summary>
     /// Finds path to installed AGX Dynamics. Fails if Unity isn't
     /// started in an AGX Dynamics environment.
     /// </summary>

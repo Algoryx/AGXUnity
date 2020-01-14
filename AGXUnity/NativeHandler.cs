@@ -67,6 +67,8 @@ namespace AGXUnity
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
 
+        IO.Environment.AddToPath( dataPluginsPath );
+
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
       }

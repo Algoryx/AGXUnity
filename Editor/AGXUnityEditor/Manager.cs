@@ -532,22 +532,27 @@ namespace AGXUnityEditor
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
       //      environment file paths.
-      if ( !IO.Utils.AGXDynamicsInstalledInProject )
-        return true; // More checks?
+      if ( IO.Utils.AGXDynamicsInstalledInProject ) {
+        if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
+          AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
+                                       IO.Utils.AGXUnityPluginDirectoryFull );
 
-      var agxDir = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_DIR );
-      if ( string.IsNullOrEmpty( agxDir ) )
-        AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
-                                     IO.Utils.AGXUnityPluginDirectoryFull );
+        if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) )
+          AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH,
+                                       IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
 
-      var envInstance = agxIO.Environment.instance();
-      for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
-        envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+        // This is necessary when e.g., terrain dynamically loads dll's.
+        AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
 
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull + @"\agx" );
-      envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull + @"\agx" );
+        var envInstance = agxIO.Environment.instance();
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+      }
 
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
