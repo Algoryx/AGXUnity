@@ -1,0 +1,16 @@
+{
+    "name": "AGXUnityEditor",
+    "references": [
+        "GUID:d5acb60c7b83ed24894b00d550fbf2d3"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

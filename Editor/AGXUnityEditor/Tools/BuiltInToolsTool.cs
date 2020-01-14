@@ -171,10 +171,21 @@ namespace AGXUnityEditor.Tools
     private void HandleDragDrop( Event current, SceneView sceneView )
     {
       var mouseOverSceneView = EditorWindow.mouseOverWindow == sceneView;
-      var mouseOverHierarchy = !mouseOverSceneView &&
-                               EditorWindow.mouseOverWindow != null &&
-                               EditorWindow.mouseOverWindow.GetType() != null &&
-                               EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
+      var mouseOverHierarchy = false;
+      try {
+        mouseOverHierarchy = !mouseOverSceneView &&
+                             EditorWindow.mouseOverWindow != null &&
+                             EditorWindow.mouseOverWindow.GetType() != null &&
+                             EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
+      }
+      catch ( NullReferenceException e ) {
+        Debug.Log( Utils.GUI.AddColorTag( "CAUGHT: " + e.Message, Color.red ) );
+        Debug.Log( "    mouseOverSceneView: " + mouseOverSceneView.ToString() );
+        Debug.Log( "    EditorWindow.mouseOverWindow: " + EditorWindow.mouseOverWindow );
+        Debug.Log( "    EditorWindow.mouseOverWindow.GetType(): " + EditorWindow.mouseOverWindow.GetType() );
+        return;
+      }
+
       var dragDropSceneViewActive = ( mouseOverSceneView || mouseOverHierarchy ) &&
                                     ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated );
       if ( !dragDropSceneViewActive )

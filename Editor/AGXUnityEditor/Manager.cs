@@ -51,12 +51,12 @@ namespace AGXUnityEditor
     /// <summary>
     /// Name of assembly AGXUnity is built in to.
     /// </summary>
-    public static readonly string AGXUnityAssemblyName = "Assembly-CSharp";
+    public static readonly string AGXUnityAssemblyName = "AGXUnity";
 
     /// <summary>
     /// Name of assembly AGXUnityEditor is built in to.
     /// </summary>
-    public static readonly string AGXUnityEditorAssemblyName = "Assembly-CSharp-Editor";
+    public static readonly string AGXUnityEditorAssemblyName = "AGXUnityEditor";
 
     public static GUIWindowHandler SceneViewGUIWindowHandler { get; private set; } = new GUIWindowHandler();
 
