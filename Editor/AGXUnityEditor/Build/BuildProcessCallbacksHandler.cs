@@ -59,21 +59,6 @@ namespace AGXUnityEditor.Build
     };
 
     /// <summary>
-    /// Dynamically loaded dependencies are for some reason not possible
-    /// to load from name_Data/Plugins folder. These has to be copied to
-    /// where the executable is located.
-    /// </summary>
-#if UNITY_2019_2_OR_NEWER
-    private static List<string> m_unsupportedPluginPathDependencies = new List<string>()
-    {
-      "tbb.dll",
-      "Half.dll",
-      "openvdb.dll",
-      "vdbgrid.DLL"
-    };
-#endif
-
-    /// <summary>
     /// Finds if <paramref name="modulePath"/> matches out-of-install
     /// filename and/or regex wildcard.
     /// </summary>
@@ -88,30 +73,6 @@ namespace AGXUnityEditor.Build
         }
       }
       return false;
-    }
-
-    /// <summary>
-    /// Finds if module is supported to be located in name_Data/Plugins
-    /// folder. This could be Unity version dependent or module (e.g.,
-    /// dynamically loaded dlls) dependent.
-    /// </summary>
-    /// <param name="moduleName">Name of the module.</param>
-    /// <returns>True when the module can be copied to name_Data/Plugins directory.
-    ///          False when the module must be copied to the directory where the executable is located.</returns>
-    public static bool IsPluginsPathSupported( string moduleName )
-    {
-#if UNITY_2019_2_OR_NEWER
-      return string.IsNullOrEmpty( m_unsupportedPluginPathDependencies.Find( unsupportedName =>
-                                                                               System.Text.RegularExpressions.Regex.IsMatch( moduleName,
-                                                                                                                             unsupportedName ) ) );
-#else
-      // Unclear when or if the bug of having native dlls in the data plugins
-      // folder has been solved:
-      //     https://forum.unity.com/threads/dll-not-found-with-standalone-app-but-works-fine-in-editor.389392/page-2
-      // Works with 2019.2.4, so for earlier version we copy the dlls to the
-      // root folder of the executable.
-      return false;
-#endif
     }
 
     public static void CopyDirectory( DirectoryInfo source, DirectoryInfo destination )
@@ -265,20 +226,12 @@ namespace AGXUnityEditor.Build
       foreach ( var modulePath in loadedAgxModulesPaths ) {
         var moduleFileInfo = new FileInfo( modulePath );
         try {
-          bool isSupportedPlugin = IsPluginsPathSupported( moduleFileInfo.Name );
-          if ( isSupportedPlugin )
-            dllTargetPath = AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath );
-          else
-            dllTargetPath = targetExecutableFileInfo.Directory.FullName;
-
           moduleFileInfo.CopyTo( dllTargetPath + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
           string additionalInfo = "";
           if ( IsOutOfInstallDependency( modulePath ) )
             additionalInfo = Utils.GUI.AddColorTag( $" ({modulePath})", Color.yellow );
           Debug.Log( "Successfully copied: " +
-                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, isSupportedPlugin ?
-                                                                                           Color.green :
-                                                                                           Color.Lerp( Color.blue, Color.white, 0.45f ) ) +
+                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.green ) +
                      Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.Lerp( Color.blue, Color.white, 0.75f ) ) +
                      additionalInfo );
         }
