@@ -533,6 +533,11 @@ namespace AGXUnityEditor
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
       //      environment file paths.
       if ( IO.Utils.AGXDynamicsInstalledInProject ) {
+        // This is necessary when e.g., terrain dynamically loads dll's.
+        AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
+
+        AGXUnity.NativeHandler.Instance.Register( null );
+
         if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
           AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
                                        IO.Utils.AGXUnityPluginDirectoryFull );
@@ -540,9 +545,6 @@ namespace AGXUnityEditor
         if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) )
           AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH,
                                        IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
-
-        // This is necessary when e.g., terrain dynamically loads dll's.
-        AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
 
         var envInstance = agxIO.Environment.instance();
         for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )

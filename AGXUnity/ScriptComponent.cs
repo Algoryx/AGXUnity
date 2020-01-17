@@ -33,8 +33,6 @@ namespace AGXUnity
     protected ScriptComponent()
     {
       IsSynchronizingProperties = false;
-
-      NativeHandler.Instance.Register( this );
     }
 
     /// <summary>
