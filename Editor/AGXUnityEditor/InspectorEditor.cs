@@ -44,7 +44,9 @@ namespace AGXUnityEditor
     /// <param name="targets">Target UnityEngine.Object instances (used for Undo and SetDirty).</param>
     /// <param name="getChildCallback">Null and targets will be rendered, otherwise the returned
     ///                                instance from this callback.</param>
-    public static void DrawMembersGUI( Object[] targets, Func<Object, object> getChildCallback = null )
+    public static void DrawMembersGUI( Object[] targets,
+                                       Func<Object, object> getChildCallback = null,
+                                       SerializedObject fallback = null )
     {
       targets = targets.Where( obj => obj != null ).ToArray();
 
@@ -72,7 +74,7 @@ namespace AGXUnityEditor
         if ( group.IsHidden )
           continue;
 
-        hasChanges = HandleType( wrapper, objects ) || hasChanges;
+        hasChanges = HandleType( wrapper, objects, fallback ) || hasChanges;
       }
       group.Dispose();
 
@@ -108,7 +110,7 @@ namespace AGXUnityEditor
 
       ToolManager.OnPreTargetMembers( this.targets );
 
-      DrawMembersGUI( this.targets );
+      DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
 
@@ -135,23 +137,41 @@ namespace AGXUnityEditor
       ToolManager.OnTargetEditorDisable( this.targets );
     }
 
-    public static bool HandleType( InvokeWrapper wrapper, object[] objects )
+    private static bool HandleType( InvokeWrapper wrapper,
+                                    object[] objects,
+                                    SerializedObject fallback )
     {
       if ( !wrapper.CanRead() )
         return false;
 
       var drawerInfo = InspectorGUI.GetDrawerMethod( wrapper.GetContainingType() );
-      if ( !drawerInfo.IsValid )
-        return false;
 
       if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
         Utils.GUI.Separator();
 
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 
-      var value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper, Skin } );
-      var changed = UnityEngine.GUI.changed &&
-                    ( drawerInfo.IsNullable || value != null );
+      object value = null;
+      bool changed = false;
+      if ( drawerInfo.IsValid ) {
+        value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper, Skin } );
+        changed = UnityEngine.GUI.changed &&
+                  ( drawerInfo.IsNullable || value != null );
+      }
+      else if ( fallback != null ) {
+        var serializedProperty = fallback.FindProperty( wrapper.Member.Name );
+        if ( serializedProperty == null && wrapper.Member.Name.Length > 2 ) {
+          var fieldName = "m_" + char.ToLower( wrapper.Member.Name[ 0 ] ) + wrapper.Member.Name.Substring( 1 );
+          var fieldSerializedProperty = fallback.FindProperty( fieldName );
+          // Unsure about synchronization if the serialized
+          // field is found, i.e., if wrapper 'set' should be
+          // invoked with changes.
+          if ( fieldSerializedProperty != null && wrapper.GetContainingType().Name == fieldSerializedProperty.type )
+            EditorGUILayout.PropertyField( fieldSerializedProperty );
+        }
+        if ( serializedProperty != null )
+          EditorGUILayout.PropertyField( serializedProperty );
+      }
 
       // Reset changed state so that non-edited values
       // are propagated to other properties.
@@ -164,7 +184,7 @@ namespace AGXUnityEditor
 
       foreach ( var obj in objects ) {
         object newValue = value;
-        if ( drawerInfo.CopyOp != null ) {
+        if ( drawerInfo.IsValid && drawerInfo.CopyOp != null ) {
           newValue = wrapper.GetValue( obj );
           // CopyOp returns the new value for value types.
           var ret = drawerInfo.CopyOp.Invoke( null, new object[] { value, newValue } );
