@@ -289,13 +289,35 @@ namespace AGXUnityEditor
     /// </summary>
     private static void UndoRedoPerformedCallback()
     {
-      // TODO: Should we perform full synchronize when the editor is
-      //       playing to synchronize native instances?
-
       // Trigger repaint of inspector GUI for our targets.
       var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       foreach ( var target in targets )
         EditorUtility.SetDirty( target );
+
+      // Collecting scripts that may require synchronize of
+      // data post undo/redo where the private serialized
+      // field has been changed but the public property with
+      // native synchronizations isn't touched.
+      if ( EditorApplication.isPlaying ) {
+        List<Object> objectsToSynchronize = new List<Object>();
+        Action<Object> addUnique = obj =>
+        {
+          if ( !objectsToSynchronize.Contains( obj ) )
+            objectsToSynchronize.Add( obj );
+        };
+        foreach ( var obj in Selection.objects ) {
+          if ( obj is AGXUnity.ScriptAsset )
+            addUnique( obj );
+          else if ( obj is GameObject ) {
+            var scripts = ( obj as GameObject ).GetComponents<AGXUnity.ScriptComponent>();
+            foreach ( var script in scripts )
+              addUnique( script );
+          }
+        }
+
+        foreach ( var obj in objectsToSynchronize )
+          PropertySynchronizer.Synchronize( obj );
+      }
 
       // Synchronizing all shape sizes with visuals - it's not possible
       // to determine affected shapes from tools targets or selection
