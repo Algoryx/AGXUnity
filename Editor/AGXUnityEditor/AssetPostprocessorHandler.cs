@@ -36,7 +36,11 @@ namespace AGXUnityEditor
                                        PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
 #else
             var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
+#if UNITY_2018_1_OR_NEWER
                                        PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
+#else
+                                       PrefabUtility.GetPrefabParent( restoredFileInstance.gameObject ) == prefab;
+#endif
 #endif
             if ( !isReadPrefabInstance )
               continue;
