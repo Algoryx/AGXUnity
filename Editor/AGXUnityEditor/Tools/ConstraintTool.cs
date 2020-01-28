@@ -213,12 +213,14 @@ namespace AGXUnityEditor.Tools
         GUI.Separator();
       } // For Translational, Rotational.
 
-      if ( GUI.Foldout( selected( "controllers" ),
+      var ecControllers = refConstraint.GetElementaryConstraintControllers();
+      if ( ecControllers.Length > 0 &&
+           GUI.Foldout( selected( "controllers" ),
                         GUI.MakeLabel( "Controllers", true ),
                         skin ) ) {
         GUI.Separator();
         using ( new GUI.Indent( 12 ) ) {
-          foreach ( var refController in refConstraint.GetElementaryConstraintControllers() ) {
+          foreach ( var refController in ecControllers ) {
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
             var controllerName    = ConstraintUtils.FindName( refController );
