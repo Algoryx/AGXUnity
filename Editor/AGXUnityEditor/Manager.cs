@@ -550,6 +550,18 @@ namespace AGXUnityEditor
 
     private static bool ConfigureEnvironment()
     {
+      // WARNING INFO:
+      //     Unity 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                 in players with API compatibility @ .NET Standard 2.0.
+      //     Unity 2018: AGX Dynamics for Unity won't compile it's not possible
+      //                 to issue this warning at install.
+      //     Unity 2017: Unknown TODO
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        Debug.LogWarning( Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
+                          "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
+                          "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
+      }
+
       // Running from within the editor - two options:
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
