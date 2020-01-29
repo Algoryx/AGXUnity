@@ -355,6 +355,9 @@ namespace AGXUnityEditor
 
     private static void OnSceneView( SceneView sceneView )
     {
+      InspectorEditor.RequestConstantRepaint = EditorWindow.mouseOverWindow != null &&
+                                               EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.InspectorWindow";
+
       if ( m_requestSceneViewFocus ) {
         sceneView.Focus();
         m_requestSceneViewFocus = false;

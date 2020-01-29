@@ -143,7 +143,7 @@ namespace AGXUnity.Utils
       get
       {
         if ( m_editorGUISkin == null )
-          m_editorGUISkin = Resources.Load<GUISkin>( "AGXEditorGUISkin" );
+          m_editorGUISkin = Resources.Load<GUISkin>( "AGXUnitySceneViewGUISkin" );
         return m_editorGUISkin ?? UnityEngine.GUI.skin;
       }
     }

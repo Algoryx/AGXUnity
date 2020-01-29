@@ -20,7 +20,11 @@ namespace AGXUnityEditor
       get
       {
         if ( m_skin == null ) {
-          m_skin                    = EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector );
+          m_skin                    = (GUISkin)EditorGUIUtility.Load( IO.Utils.AGXUnityEditorDirectory +
+                                                                      System.IO.Path.DirectorySeparatorChar +
+                                                                      "Resources" +
+                                                                      System.IO.Path.DirectorySeparatorChar +
+                                                                      "AGXUnityInspectorGUISkin.guiskin" );
           m_skin.label.richText     = true;
           m_skin.toggle.richText    = true;
           m_skin.button.richText    = true;
@@ -33,6 +37,11 @@ namespace AGXUnityEditor
         return m_skin;
       }
     }
+
+    /// <summary>
+    /// True to force repaint of all InspectorEditor editors.
+    /// </summary>
+    public static bool RequestConstantRepaint = false;
 
     /// <summary>
     /// Draw supported member GUI for given targets. This method supports
@@ -114,7 +123,12 @@ namespace AGXUnityEditor
 
       ToolManager.OnPostTargetMembers( this.targets );
 
-      GUILayout.EndHorizontal();
+      GUILayout.EndVertical();
+    }
+
+    public override bool RequiresConstantRepaint()
+    {
+      return base.RequiresConstantRepaint() || RequestConstantRepaint;
     }
 
     private void OnEnable()

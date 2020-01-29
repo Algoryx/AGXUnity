@@ -239,7 +239,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
-      using ( new GUI.Indent( 12 ) )
+      using ( new GUI.Indent( 4 ) )
         InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
 
       GUI.Separator();
