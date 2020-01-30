@@ -98,7 +98,9 @@ namespace AGXUnityEditor.Tools
         if ( value && !ConstraintCreateTool ) {
           RemoveAllChildren();
 
-          var constraintCreateTool = new ConstraintCreateTool( RigidBody.gameObject, false );
+          var constraintCreateTool = new ConstraintCreateTool( RigidBody.gameObject,
+                                                               false,
+                                                               newConstraint => m_constraints.Add( newConstraint ) );
           AddChild( constraintCreateTool );
         }
         else if ( !value )
@@ -182,34 +184,33 @@ namespace AGXUnityEditor.Tools
 
       if ( !IsMultiSelect && ToolsActive ) {
         using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel( skin );
+          GUI.ToolsLabel();
           using ( GUI.ToolButtonData.ColorBlock ) {
             toggleFindTransformGivenPoint = GUI.ToolButton( GUI.Symbols.SelectPointTool,
                                                             FindTransformGivenPointTool,
                                                             "Find rigid body transform given point on object.",
-                                                            skin );
+                                                            InspectorGUISkin.ButtonType.Left );
             toggleFindTransformGivenEdge  = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
                                                             FindTransformGivenEdgeTool,
                                                             "Find rigid body transform given edge on object.",
-                                                            skin );
+                                                            InspectorGUISkin.ButtonType.Middle );
             toggleShapeCreate             = GUI.ToolButton( GUI.Symbols.ShapeCreateTool,
                                                             ShapeCreateTool,
                                                             "Create shape from visual objects",
-                                                            skin );
+                                                            InspectorGUISkin.ButtonType.Middle );
             toggleConstraintCreate        = GUI.ToolButton( GUI.Symbols.ConstraintCreateTool,
                                                             ConstraintCreateTool,
                                                             "Create constraint to this rigid body",
-                                                            skin );
+                                                            InspectorGUISkin.ButtonType.Middle );
             toggleDisableCollisions       = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
                                                             DisableCollisionsTool,
                                                             "Disable collisions against other objects",
-                                                            skin );
+                                                            InspectorGUISkin.ButtonType.Middle );
             using ( new EditorGUI.DisabledGroupScope( !Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) )
               toggleRigidBodyVisualCreate = GUI.ToolButton( GUI.Symbols.ShapeVisualCreateTool,
                                                             RigidBodyVisualCreateTool,
                                                             "Create visual representation of each physical shape in this body",
-                                                            skin,
-                                                            14 );
+                                                            InspectorGUISkin.ButtonType.Right );
 
           }
         }
@@ -238,7 +239,7 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
+      GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.Label );
       using ( new GUI.Indent( 4 ) )
         InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
 
@@ -264,35 +265,6 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      GUIStyle dragDropFieldStyle = new GUIStyle( skin.textArea );
-      dragDropFieldStyle.alignment = TextAnchor.MiddleCenter;
-      dragDropFieldStyle.richText = true;
-
-      Rect dropArea = new Rect();
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Assign Shape Material [" + GUI.AddColorTag( "drop area", Color.Lerp( Color.green, Color.black, 0.4f ) ) + "]",
-                                        false,
-                                        "Assigns dropped shape material to all shapes in this rigid body." ),
-                         dragDropFieldStyle,
-                         GUILayout.Height( 22 ) );
-        dropArea = GUILayoutUtility.GetLastRect();
-
-        bool resetMaterials = GUILayout.Button( GUI.MakeLabel( "Reset",
-                                              false,
-                                              "Reset shapes material to null." ),
-                               skin.button,
-                               GUILayout.Width( 42 ) ) &&
-                               EditorUtility.DisplayDialog( "Reset shape materials", "Reset all shapes material to default [null]?", "OK", "Cancel" );
-        if ( resetMaterials )
-          AssignShapeMaterialToAllShapes( null );
-      }
-      GUILayout.EndHorizontal();
-
-      GUI.HandleDragDrop<ShapeMaterial>( dropArea, Event.current, ( shapeMaterial ) => { AssignShapeMaterialToAllShapes( shapeMaterial ); } );
-
-      GUI.Separator();
-
       OnShapeListGUI( RigidBody.GetComponentsInChildren<Shape>(), this );
 
       GUI.Separator();
@@ -304,14 +276,15 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Shapes" ), GUI.MakeLabel( "Shapes", true ), skin ) ) {
+      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Shapes" ),
+                         GUI.MakeLabel( "Shapes", true ) ) ) {
         context.RemoveEditors( shapes );
         return;
       }
 
       if ( shapes.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
         return;
       }
 
@@ -320,8 +293,12 @@ namespace AGXUnityEditor.Tools
           GUI.Separator();
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                           shape.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( shape.GetType().Name, Color.Lerp( Color.green, Color.black, 0.4f ) ) + "] " + shape.name ),
-                             skin ) ) {
+                             GUI.MakeLabel( "[" +
+                                            GUI.AddColorTag( shape.GetType().Name,
+                                                             Color.Lerp( Color.green,
+                                                                         Color.black,
+                                                                         0.4f ) ) +
+                                            "] " + shape.name ) ) ) {
             context.RemoveEditor( shape );
             continue;
           }
@@ -341,14 +318,14 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
 
       if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Constraints" ),
-                         GUI.MakeLabel( "Constraints", true ), skin ) ) {
+                         GUI.MakeLabel( "Constraints", true ) ) ) {
         context.RemoveEditors( constraints );
         return;
       }
 
       if ( constraints.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
         return;
       }
 
@@ -356,8 +333,12 @@ namespace AGXUnityEditor.Tools
         foreach ( var constraint in constraints ) {
           GUI.Separator();
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], constraint.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( constraint.Type.ToString(), Color.Lerp( Color.magenta, Color.black, 0.4f ) ) + "] " + constraint.name ),
-                             skin ) ) {
+                             GUI.MakeLabel( "[" +
+                                            GUI.AddColorTag( constraint.Type.ToString(),
+                                                             Color.Lerp( Color.magenta,
+                                                                         Color.black,
+                                                                         0.4f ) ) +
+                                            "] " + constraint.name ) ) ) {
             context.RemoveEditor( constraint );
             continue;
           }
@@ -376,14 +357,14 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
 
       if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Rigid Bodies" ),
-                         GUI.MakeLabel( "Rigid Bodies", true ), skin ) ) {
+                         GUI.MakeLabel( "Rigid Bodies", true ) ) ) {
         context.RemoveEditors( rigidBodies );
         return;
       }
 
       if ( rigidBodies.Length == 0 ) {
         using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
         return;
       }
 
@@ -392,8 +373,12 @@ namespace AGXUnityEditor.Tools
           GUI.Separator();
 
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], rb.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( "RigidBody", Color.Lerp( Color.blue, Color.white, 0.35f ) ) + "] " + rb.name ),
-                             skin ) ) {
+                             GUI.MakeLabel( "[" +
+                                            GUI.AddColorTag( "RigidBody",
+                                                             Color.Lerp( Color.blue,
+                                                                         Color.white,
+                                                                         0.35f ) ) +
+                                            "] " + rb.name ) ) ) {
             context.RemoveEditor( rb );
             continue;
           }

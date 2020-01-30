@@ -37,7 +37,7 @@ namespace AGXUnityEditor.Tools
       Manager.RemoveNullEntries();
 
       GUILayout.Label( GUI.MakeLabel( "Contact Material Manager", 18, true ),
-                       new GUIStyle( InspectorEditor.Skin.label ) { alignment = TextAnchor.MiddleCenter } );
+                       new GUIStyle( InspectorEditor.Skin.Label ) { alignment = TextAnchor.MiddleCenter } );
 
       GUI.Separator();
 
@@ -57,9 +57,7 @@ namespace AGXUnityEditor.Tools
         entries[ index ].IsOriented = GUI.Toggle( GUI.MakeLabel( "Is Oriented",
                                                                   false,
                                                                   "Enable/disable oriented friction models." ),
-                                                  entries[ index ].IsOriented,
-                                                  InspectorEditor.Skin.button,
-                                                  InspectorEditor.Skin.label );
+                                                  entries[ index ].IsOriented );
         if ( entries[ index ].IsOriented ) {
           using ( new GUI.Indent( 28 ) ) {
             entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
@@ -70,7 +68,7 @@ namespace AGXUnityEditor.Tools
                                                                                                                           false,
                                                                                                                           "Primary direction in object local frame." ),
                                                                                                            entries[ index ].PrimaryDirection,
-                                                                                                           InspectorEditor.Skin.button );
+                                                                                                           InspectorEditor.Skin.Popup );
           }
         }
         GUI.Separator();

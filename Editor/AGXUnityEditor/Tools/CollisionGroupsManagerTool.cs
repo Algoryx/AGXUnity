@@ -36,33 +36,47 @@ namespace AGXUnityEditor.Tools
       bool addPressed                   = false;
       CollisionGroupEntryPair erasePair = null;
 
-      GUILayout.Label( GUI.MakeLabel( "Collision Groups Manager", 18, true ), new GUIStyle( skin.label ) { alignment = TextAnchor.MiddleCenter } );
+      GUILayout.Label( GUI.MakeLabel( "Collision Groups Manager",
+                                      18,
+                                      true ),
+                       skin.LabelMiddleCenter );
 
       GUI.Separator3D();
 
-      GUILayout.Label( GUI.MakeLabel( "Add pair", true ), new GUIStyle( skin.label ) { alignment = TextAnchor.MiddleCenter } );
+      GUILayout.Label( GUI.MakeLabel( "Add pair",
+                                      true ),
+                       skin.LabelMiddleCenter );
 
-      GUILayout.BeginVertical( skin.textArea );
+      GUILayout.BeginVertical( skin.TextArea );
       {
-        HandleCollisionGroupEntryPair( m_groupEntryPairToAdd, skin );
+        HandleCollisionGroupEntryPair( m_groupEntryPairToAdd );
 
         GUILayout.BeginHorizontal();
         {
           GUILayout.FlexibleSpace();
 
-          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 || m_groupEntryPairToAdd.Second.Tag.Length > 0;
+          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 ||
+                                    m_groupEntryPairToAdd.Second.Tag.Length > 0;
           GUILayout.BeginVertical();
           {
             GUILayout.Space( 8 );
             using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-              clearPressed = GUILayout.Button( GUI.MakeLabel( "Clear" ), skin.button, GUILayout.Width( 64 ), GUILayout.Height( 16 ) );
+              clearPressed = GUILayout.Button( GUI.MakeLabel( "Clear" ),
+                                               skin.Button,
+                                               GUILayout.Width( 64 ),
+                                               GUILayout.Height( 16 ) );
           }
           GUILayout.EndVertical();
 
-          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 && m_groupEntryPairToAdd.Second.Tag.Length > 0;
+          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 &&
+                                    m_groupEntryPairToAdd.Second.Tag.Length > 0;
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-            addPressed = GUILayout.Button( GUI.MakeLabel( "Add", false, "Add pair to disabled pairs." ), skin.button, GUILayout.Width( 64 ), GUILayout.Height( 22 ) );
-
+            addPressed = GUILayout.Button( GUI.MakeLabel( "Add",
+                                                          false,
+                                                          "Add pair to disabled pairs." ),
+                                           skin.Button,
+                                           GUILayout.Width( 64 ),
+                                           GUILayout.Height( 22 ) );
           UnityEngine.GUI.enabled = true;
         }
         GUILayout.EndHorizontal();
@@ -71,19 +85,22 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator3D();
 
-      if ( GUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ), skin ) ) {
+      if ( GUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ) ) ) {
         using ( new GUI.Indent( 12 ) ) {
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
               GUI.Separator( 1, 10 );
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ), skin.button, GUILayout.Width( 18 ), GUILayout.Height( 14 ) ) )
+                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
+                                       skin.Button,
+                                       GUILayout.Width( 18 ),
+                                       GUILayout.Height( 14 ) ) )
                   erasePair = disabledPair;
             }
             GUILayout.EndHorizontal();
 
-            HandleCollisionGroupEntryPair( disabledPair, skin );
+            HandleCollisionGroupEntryPair( disabledPair );
           }
         }
       }
@@ -98,41 +115,47 @@ namespace AGXUnityEditor.Tools
         FoldoutDataEntry.Bool = true;
       }
       if ( erasePair != null ) {
-        if ( EditorUtility.DisplayDialog( "Remove pair", "Erase disabled pair: " + erasePair.First.Tag + " and " + erasePair.Second.Tag + "?", "Yes", "No" ) )
+        if ( EditorUtility.DisplayDialog( "Remove pair",
+                                          "Erase disabled pair: " + erasePair.First.Tag + " and " + erasePair.Second.Tag + "?",
+                                          "Yes",
+                                          "No" ) )
           Manager.SetEnablePair( erasePair.First.Tag, erasePair.Second.Tag, true );
       }
     }
 
     private EditorDataEntry FoldoutDataEntry { get { return EditorData.Instance.GetData( Manager, "CollisionGroups" ); } }
 
-    private void HandleCollisionGroupEntryPair( CollisionGroupEntryPair entryPair, GUISkin skin )
+    private void HandleCollisionGroupEntryPair( CollisionGroupEntryPair entryPair )
     {
       GUILayout.BeginHorizontal();
       {
         GUILayout.BeginVertical( GUILayout.Width( 12 ) );
         {
           GUILayout.Space( 4 );
-          GUILayout.Label( GUI.MakeLabel( "[", 22 ), skin.label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
+          GUILayout.Label( GUI.MakeLabel( "[", 22 ), InspectorEditor.Skin.Label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
         }
         GUILayout.EndVertical();
 
         GUILayout.BeginVertical();
         {
-          HandleCollisionGroupEntry( entryPair.First, skin );
-          HandleCollisionGroupEntry( entryPair.Second, skin );
+          HandleCollisionGroupEntry( entryPair.First );
+          HandleCollisionGroupEntry( entryPair.Second );
         }
         GUILayout.EndVertical();
       }
       GUILayout.EndHorizontal();
     }
 
-    private void HandleCollisionGroupEntry( CollisionGroupEntry entry, GUISkin skin )
+    private void HandleCollisionGroupEntry( CollisionGroupEntry entry )
     {
       bool buttonPressed = false;
       GUILayout.BeginHorizontal();
       {
-        entry.Tag = GUILayout.TextField( entry.Tag, skin.textField );
-        buttonPressed = GUILayout.Button( GUI.MakeLabel( "+" ), skin.button, GUILayout.Width( 18 ), GUILayout.Height( 14 ) );
+        entry.Tag = GUILayout.TextField( entry.Tag, InspectorEditor.Skin.TextField );
+        buttonPressed = GUILayout.Button( GUI.MakeLabel( "+" ),
+                                          InspectorEditor.Skin.Button,
+                                          GUILayout.Width( 18 ),
+                                          GUILayout.Height( 14 ) );
       }
       GUILayout.EndHorizontal();
 

@@ -52,7 +52,7 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.Space( 4 );
       using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.Label );
 
       GUILayout.Space( 2 );
       GUI.Separator();
@@ -63,11 +63,11 @@ namespace AGXUnityEditor.Tools
           continue;
 
         using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.Label );
         tool.OnInspectorGUI( true );
       }
 
-      var createCancelState = GUI.CreateCancelButtons( true, skin, "Create shape visual for shapes that hasn't already got one." );
+      var createCancelState = GUI.CreateCancelButtons( true, "Create shape visual for shapes that hasn't already got one." );
       if ( createCancelState == GUI.CreateCancelState.Create ) {
         foreach ( var tool in GetChildren<ShapeVisualCreateTool>() )
           if ( !ShapeVisual.HasShapeVisual( tool.Shape ) )

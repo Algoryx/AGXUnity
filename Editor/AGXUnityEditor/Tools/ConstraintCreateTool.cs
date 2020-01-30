@@ -22,11 +22,14 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public ConstraintCreateTool( GameObject parent, bool makeConstraintChildToParent )
+    public ConstraintCreateTool( GameObject parent,
+                                 bool makeConstraintChildToParent,
+                                 Action<Constraint> onCreate = null )
       : base( isSingleInstanceTool: true )
     {
       Parent = parent;
       MakeConstraintChildToParent = makeConstraintChildToParent;
+      m_onCreate = onCreate;
     }
 
     public override void OnAdd()
@@ -60,17 +63,17 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.Indent( 16 ) ) {
         GUILayout.BeginHorizontal();
         {
-          GUILayout.Label( GUI.MakeLabel( "Name", true ), skin.label, GUILayout.Width( 64 ) );
-          m_createConstraintData.Name = GUILayout.TextField( m_createConstraintData.Name, skin.textField, GUILayout.ExpandWidth( true ) );
+          GUILayout.Label( GUI.MakeLabel( "Name", true ), skin.Label, GUILayout.Width( 64 ) );
+          m_createConstraintData.Name = GUILayout.TextField( m_createConstraintData.Name, skin.TextField, GUILayout.ExpandWidth( true ) );
         }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         {
-          GUILayout.Label( GUI.MakeLabel( "Type", true ), skin.label, GUILayout.Width( 64 ) );
+          GUILayout.Label( GUI.MakeLabel( "Type", true ), skin.Label, GUILayout.Width( 64 ) );
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
             m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
-                                                                                               skin.button,
+                                                                                               skin.Button,
                                                                                                GUILayout.ExpandWidth( true ),
                                                                                                GUILayout.Height( 18 ) );
         }
@@ -82,14 +85,13 @@ namespace AGXUnityEditor.Tools
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
 
-      m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState, skin );
-      m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType, skin );
+      m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState );
+      m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType );
 
       GUI.Separator3D();
 
       var createCancelState = GUI.CreateCancelButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
                                                        m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
-                                                       skin,
                                                        "Create the constraint" );
 
       GUI.Separator3D();
@@ -105,6 +107,8 @@ namespace AGXUnityEditor.Tools
           constraintGameObject.transform.SetParent( Parent.transform );
 
         Undo.RegisterCreatedObjectUndo( constraintGameObject, "New constraint '" + constraintGameObject.name + "' created" );
+
+        m_onCreate?.Invoke( constraint );
 
         m_createConstraintData.Reset();
       }
@@ -161,5 +165,6 @@ namespace AGXUnityEditor.Tools
     }
 
     private CreateConstraintData m_createConstraintData = new CreateConstraintData();
+    private Action<Constraint> m_onCreate = null;
   }
 }

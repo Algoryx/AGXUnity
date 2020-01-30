@@ -55,7 +55,7 @@ namespace AGXUnityEditor.Tools
                                         refConstraint.Type.ToString() + ( IsMultiSelect ? "s" : string.Empty ) ),
                                       24,
                                       true ),
-                       GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
+                       skin.LabelMiddleCenter );
 
       GUI.Separator();
 
@@ -67,7 +67,7 @@ namespace AGXUnityEditor.Tools
       UnityEngine.GUI.changed = false;
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
-      var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState, skin );
+      var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -77,7 +77,7 @@ namespace AGXUnityEditor.Tools
       }
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.SolveType != constraint.SolveType );
-      var solveType = ConstraintSolveTypeGUI( refConstraint.SolveType, skin );
+      var solveType = ConstraintSolveTypeGUI( refConstraint.SolveType );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -89,7 +89,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled );
-      var frameNativeSync = ConstraintConnectedFrameSyncGUI( refConstraint.ConnectedFrameNativeSyncEnabled, skin );
+      var frameNativeSync = ConstraintConnectedFrameSyncGUI( refConstraint.ConnectedFrameNativeSyncEnabled );
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
@@ -99,7 +99,7 @@ namespace AGXUnityEditor.Tools
       }
 
       if ( differentTypes ) {
-        GUI.WarningLabel( "Constraints are of different types.\nRow data editing not supported.", skin );
+        GUI.WarningLabel( "Constraints are of different types.\nRow data editing not supported." );
         return;
       }
 
@@ -118,8 +118,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
         if ( !GUI.Foldout( selected( "ec_" + rowType.ToString() ),
-                           GUI.MakeLabel( rowType.ToString() + " properties", true ),
-                           skin ) ) {
+                           GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
           GUI.Separator();
           continue;
         }
@@ -130,8 +129,7 @@ namespace AGXUnityEditor.Tools
             if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
               continue;
             using ( new GUILayout.HorizontalScope() ) {
-              GUILayout.Label( InspectorGUI.MakeLabel( wrapper.Member ), skin.label );
-              GUILayout.FlexibleSpace();
+              EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
               using ( new GUILayout.VerticalScope() ) {
                 for ( int i = 0; i < 3; ++i ) {
                   var rowDataInstances = ( from constraintParser
@@ -157,7 +155,12 @@ namespace AGXUnityEditor.Tools
 
                   using ( new GUILayout.HorizontalScope() )
                   using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
-                    RowLabel( i, skin );
+                    // Half the width of the U, V, N label.
+                    GUILayout.Space( -6 );
+
+                    GUILayout.Label( GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ),
+                                     skin.Label,
+                                     GUILayout.Width( 12 ) );
 
                     // Handling type float, e.g., compliance and damping.
                     if ( wrapper.IsType<float>() ) {
@@ -177,14 +180,14 @@ namespace AGXUnityEditor.Tools
                       EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
                                                                                            wrapper.Get<RangeReal>( rowData ).Min ) );
                       var forceRangeMin = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
-                                                                      GUILayout.MaxWidth( 128 ) );
+                                                                      GUILayout.MaxWidth( 140 ) );
                       var forceRangeMinChanged = UnityEngine.GUI.changed;
                       EditorGUI.showMixedValue = false;
                       UnityEngine.GUI.changed  = false;
                       EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
                                                                                            wrapper.Get<RangeReal>( rowData ).Max ) );
                       var forceRangeMax = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
-                                                                      GUILayout.MaxWidth( 128 ) );
+                                                                      GUILayout.MaxWidth( 140 ) );
                       if ( forceRangeMinChanged || UnityEngine.GUI.changed ) {
                         foreach ( var constraintParser in constraintsParser ) {
                           var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
@@ -216,21 +219,21 @@ namespace AGXUnityEditor.Tools
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
       if ( ecControllers.Length > 0 &&
            GUI.Foldout( selected( "controllers" ),
-                        GUI.MakeLabel( "Controllers", true ),
-                        skin ) ) {
+                        GUI.MakeLabel( "Controllers", true ) ) ) {
         GUI.Separator();
         using ( new GUI.Indent( 12 ) ) {
           foreach ( var refController in ecControllers ) {
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
             var controllerName    = ConstraintUtils.FindName( refController );
-            string dimString      = "[" + GUI.AddColorTag( controllerTypeTag,
+            string dimString      = "[" + GUI.AddColorTag( controllerType == Constraint.ControllerType.Rotational ?
+                                                             GUI.Symbols.CircleArrowAcw.ToString() :
+                                                             GUI.Symbols.ArrowLeftRight.ToString(),
                                                            controllerType == Constraint.ControllerType.Rotational ?
                                                              Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) :
                                                              Color.Lerp( UnityEngine.GUI.color, Color.green, 0.75f ) ) + "] ";
             if ( !GUI.Foldout( selected( controllerTypeTag + controllerName ),
-                              GUI.MakeLabel( dimString + controllerName, true ),
-                              skin ) ) {
+                              GUI.MakeLabel( dimString + controllerName, true ) ) ) {
               GUI.Separator();
               continue;
             }
@@ -254,29 +257,25 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state,
-                                                                            GUISkin skin )
+    public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state )
     {
-      bool guiWasEnabled = UnityEngine.GUI.enabled;
+      var skin          = InspectorEditor.Skin;
+      var guiWasEnabled = UnityEngine.GUI.enabled;
 
       using ( new GUI.Indent( 12 ) ) {
         GUILayout.BeginHorizontal();
         {
-          GUILayout.Label( GUI.MakeLabel( "Disable collisions: ",
-                                          true ),
-                           GUI.Align( skin.label,
-                                      TextAnchor.MiddleLeft ),
-                           new GUILayoutOption[] { GUILayout.Width( 140 ),
-                                                   GUILayout.Height( 25 ) } );
+          EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
+                                       InspectorEditor.Skin.LabelMiddleLeft );
 
           UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
           if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb",
                                                 false,
                                                 "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                 GUI.ConditionalCreateSelectedStyle( !EditorGUI.showMixedValue &&
-                                                                       state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
-                                                                     skin.button ),
-                                 new GUILayoutOption[] { GUILayout.Width( 76 ), GUILayout.Height( 25 ) } ) )
+                                 skin.GetButton( !EditorGUI.showMixedValue &&
+                                                   state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
+                                                 InspectorGUISkin.ButtonType.Left ),
+                                 GUILayout.Width( 76 ) ) )
             state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
@@ -284,11 +283,10 @@ namespace AGXUnityEditor.Tools
           if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con",
                                                 false,
                                                 "Disable Reference object vs. Connected object." ),
-                                 GUI.ConditionalCreateSelectedStyle( !EditorGUI.showMixedValue &&
-                                                                       state == Constraint.ECollisionsState.DisableReferenceVsConnected,
-                                                                     skin.button ),
-                                 new GUILayoutOption[] { GUILayout.Width( 76 ),
-                                                         GUILayout.Height( 25 ) } ) )
+                                 skin.GetButton( !EditorGUI.showMixedValue &&
+                                                   state == Constraint.ECollisionsState.DisableReferenceVsConnected,
+                                                 InspectorGUISkin.ButtonType.Right ),
+                                 new GUILayoutOption[] { GUILayout.Width( 76 ) } ) )
             state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableReferenceVsConnected;
@@ -300,26 +298,26 @@ namespace AGXUnityEditor.Tools
       return state;
     }
 
-    public static Constraint.ESolveType ConstraintSolveTypeGUI( Constraint.ESolveType solveType, GUISkin skin )
+    public static Constraint.ESolveType ConstraintSolveTypeGUI( Constraint.ESolveType solveType )
     {
       GUILayout.BeginHorizontal();
       {
         GUILayout.Space( 12 );
-        GUILayout.Label( GUI.MakeLabel( "Solve Type", true ), skin.label, GUILayout.Width( 140 ) );
-        solveType = (Constraint.ESolveType)EditorGUILayout.EnumPopup( solveType, skin.button, GUILayout.ExpandWidth( true ), GUILayout.Height( 18 ), GUILayout.Width( 2 * 76 + 4 ) );
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Solve Type", true ) );
+        solveType = (Constraint.ESolveType)EditorGUILayout.EnumPopup( solveType,
+                                                                      InspectorEditor.Skin.Popup,
+                                                                      GUILayout.Width( 2 * 76 + 4 ) );
       }
       GUILayout.EndHorizontal();
 
       return solveType;
     }
 
-    public static bool ConstraintConnectedFrameSyncGUI( bool enabled, GUISkin skin )
+    public static bool ConstraintConnectedFrameSyncGUI( bool enabled )
     {
       using ( new GUI.Indent( 12 ) ) {
         enabled = GUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
-                              !EditorGUI.showMixedValue && enabled,
-                              skin.button,
-                              skin.label );
+                              !EditorGUI.showMixedValue && enabled );
       }
 
       return enabled;
@@ -332,12 +330,5 @@ namespace AGXUnityEditor.Tools
       Color.Lerp( Color.green, Color.white, 0.55f ),
       Color.Lerp( Color.blue, Color.white, 0.55f )
     };
-
-    private static void RowLabel( int i, GUISkin skin )
-    {
-      GUILayout.Label( GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ),
-                       skin.label,
-                       GUILayout.Width( 12 ) );
-    }
   }
 }

@@ -16,6 +16,7 @@ namespace AGXUnityEditor.Utils
       public const char ToggleDisabled          = ' ';
 
       public const char ArrowRight              = '\u21D2';
+      public const char ArrowLeftRight          = '\u2194';
 
       public const char ShapeResizeTool         = '\u21C4';
       public const char ShapeCreateTool         = '\u210C';
@@ -35,41 +36,19 @@ namespace AGXUnityEditor.Utils
       public const char ListEraseElement        = 'x';
 
       public const char Synchronized            = '\u2194';
+
+      public const char CircleArrowAcw          = '\u21ba';
     }
 
-    public static Vector3 Vector3Field( GUIContent content, Vector3 value, GUIStyle style = null )
+    public static bool Toggle( GUIContent content,
+                               bool value )
     {
-      GUILayout.BeginHorizontal();
-      GUILayout.Label( content, style ?? Skin.label );
-      value = EditorGUILayout.Vector3Field( "", value );
-      GUILayout.EndHorizontal();
-
-      return value;
+      return EditorGUILayout.Toggle( content, value );
     }
 
-    public static GUILayoutOption[] DefaultToggleButtonOptions { get { return new GUILayoutOption[] { GUILayout.Width( 20 ), GUILayout.Height( 14 ) }; } }
-    public static GUILayoutOption[] DefaultToggleLabelOptions { get { return new GUILayoutOption[] { }; } }
-
-    public static bool Toggle( GUIContent content, bool value, GUIStyle buttonStyle, GUIStyle labelStyle, GUILayoutOption[] buttonOptions = null, GUILayoutOption[] labelOptions = null )
-    {
-      if ( buttonOptions == null )
-        buttonOptions = DefaultToggleButtonOptions;
-      if ( labelOptions == null )
-        labelOptions = DefaultToggleLabelOptions;
-
-      bool buttonDown = false;
-      GUILayout.BeginHorizontal();
-      {
-        string buttonText = value ? Symbols.ToggleEnabled.ToString() : Symbols.ToggleDisabled.ToString();
-        buttonDown = GUILayout.Button( MakeLabel( buttonText, false, content.tooltip ), ConditionalCreateSelectedStyle( value, buttonStyle ), buttonOptions );
-        GUILayout.Label( content, labelStyle, labelOptions );
-      }
-      GUILayout.EndHorizontal();
-      
-      return buttonDown ? !value : value;
-    }
-
-    public static ValueT HandleDefaultAndUserValue<ValueT>( string name, DefaultAndUserValue<ValueT> valInField, GUISkin skin ) where ValueT : struct
+    public static ValueT HandleDefaultAndUserValue<ValueT>( string name,
+                                                            DefaultAndUserValue<ValueT> valInField )
+      where ValueT : struct
     {
       bool guiWasEnabled       = UnityEngine.GUI.enabled;
       ValueT newValue          = default( ValueT );
@@ -88,17 +67,19 @@ namespace AGXUnityEditor.Utils
       GUILayout.BeginHorizontal();
       {
         // Note that we're checking if the value has changed!
-        useDefaultToggled = Toggle( MakeLabel( name.SplitCamelCase(), false, "If checked - value will be default. Uncheck to manually enter value." ),
-                                    valInField.UseDefault,
-                                    skin.button,
-                                    Align( skin.label, TextAnchor.MiddleLeft ),
-                                    new GUILayoutOption[] { GUILayout.Width( 22 ) },
-                                    new GUILayoutOption[] { GUILayout.MaxWidth( 120 ) } ) != valInField.UseDefault;
+        useDefaultToggled = Toggle( MakeLabel( name.SplitCamelCase(),
+                                               false,
+                                               "If checked - value will be default. Uncheck to manually enter value." ),
+                                    valInField.UseDefault ) != valInField.UseDefault;
         UnityEngine.GUI.enabled = !valInField.UseDefault;
         GUILayout.FlexibleSpace();
         newValue = (ValueT)method.Invoke( null, new object[] { "", valInField.Value, new GUILayoutOption[] { } } );
         UnityEngine.GUI.enabled = valInField.UseDefault;
-        updateDefaultValue = GUILayout.Button( MakeLabel( "Update", false, "Update default value" ), skin.button, GUILayout.Width( 52 ) );
+        updateDefaultValue = GUILayout.Button( MakeLabel( "Update",
+                                                          false,
+                                                          "Update default value" ),
+                                               InspectorEditor.Skin.Button,
+                                               GUILayout.Width( 52 ) );
         UnityEngine.GUI.enabled = guiWasEnabled;
       }
       GUILayout.EndHorizontal();
@@ -123,28 +104,26 @@ namespace AGXUnityEditor.Utils
     {
       public static GUILayoutOption Width { get { return GUILayout.Width( 25f ); } }
       public static GUILayoutOption Height { get { return GUILayout.Height( 25f ); } }
-      public static GUIStyle Style( GUISkin skin, int fontSize = 18 )
-      {
-        GUIStyle style = new GUIStyle( skin.button );
-        style.fontSize = fontSize;
-        return style;
-      }
       public static ColorBlock ColorBlock { get { return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ); } }
     }
 
     public static ColorBlock NodeListButtonColor { get { return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ); } }
 
-    public static void ToolsLabel( GUISkin skin )
+    public static void ToolsLabel()
     {
       GUILayout.Label( GUI.MakeLabel( "Tools:", true ),
-                       Align( skin.label, TextAnchor.MiddleLeft ),
-                       new GUILayoutOption[] { GUILayout.Width( 64 ), GUILayout.Height( 25 ) } );
+                       InspectorEditor.Skin.LabelMiddleLeft,
+                       GUILayout.Width( 64 ),
+                       GUILayout.Height( 25 ) );
     }
 
-    public static bool ToolButton( char symbol, bool active, string toolTip, GUISkin skin, int fontSize = 18 )
+    public static bool ToolButton( char symbol,
+                                   bool active,
+                                   string toolTip,
+                                   InspectorGUISkin.ButtonType buttonType = InspectorGUISkin.ButtonType.Normal )
     {
       return GUILayout.Button( MakeLabel( symbol.ToString(), false, toolTip ),
-                               ConditionalCreateSelectedStyle( active, ToolButtonData.Style( skin, fontSize ) ),
+                               InspectorEditor.Skin.GetButton( active, buttonType ),
                                ToolButtonData.Width,
                                ToolButtonData.Height );
     }
@@ -187,7 +166,7 @@ namespace AGXUnityEditor.Utils
         UnityEngine.GUI.changed = false;
 
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalPosition, frame.LocalPosition ) );
-        var localPosition = Vector3Field( MakeLabel( "Local position" ), refFrame.LocalPosition, skin.label );
+        var localPosition = EditorGUILayout.Vector3Field( MakeLabel( "Local position" ), refFrame.LocalPosition );
         if ( UnityEngine.GUI.changed ) {
           foreach ( var frame in frames )
             frame.LocalPosition = localPosition;
@@ -199,7 +178,7 @@ namespace AGXUnityEditor.Utils
         // changed before updating local rotation to not mess up the undo stack.
         Vector3 inputEuler = refFrame.LocalRotation.eulerAngles;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalRotation, frame.LocalRotation ) );
-        Vector3 outputEuler = Vector3Field( MakeLabel( "Local rotation" ), inputEuler, skin.label );
+        Vector3 outputEuler = EditorGUILayout.Vector3Field( MakeLabel( "Local rotation" ), inputEuler );
         if ( !Equals( inputEuler, outputEuler ) ) {
           foreach ( var frame in frames )
             frame.LocalRotation = Quaternion.Euler( outputEuler );
@@ -218,43 +197,12 @@ namespace AGXUnityEditor.Utils
       }
     }
 
-    public static bool Foldout( EditorDataEntry state, GUIContent label, GUISkin skin, Action<bool> onStateChanged = null )
+    public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
     {
-      return FoldoutEx( state, skin.button, label, skin.label, onStateChanged );
-    }
-
-    public static bool FoldoutEx( EditorDataEntry state, GUIStyle buttonStyle, GUIContent label, GUIStyle labelStyle, Action<bool> onStateChanged = null )
-    {
-      GUILayout.BeginHorizontal();
-      {
-        var buttonSize = labelStyle.CalcHeight( label, Screen.width );
-        bool expandPressed = GUILayout.Button( MakeLabel( state.Bool ? "-" : "+" ),
-                                               buttonStyle,
-                                               GUILayout.Width( 20.0f ),
-                                               GUILayout.Height( buttonSize ) );
-        GUILayout.Label( label, labelStyle, GUILayout.ExpandWidth( true ) );
-        bool labelPressed = ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
-                              Event.current.type == EventType.MouseDown &&
-                              Event.current.button == 0 );
-        if ( expandPressed || labelPressed ) {
-          state.Bool = !state.Bool;
-
-          // Clicked label - flag used event for the GUI to respond. When
-          // the user presses the button it seems like the button implementation
-          // handles the event.
-          if ( labelPressed )
-            Event.current.Use();
-
-          if ( onStateChanged != null )
-            onStateChanged.Invoke( state.Bool );
-
-          if ( !expandPressed )
-            GUIUtility.ExitGUI();
-        }
-      }
-      GUILayout.EndHorizontal();
-
-      return state.Bool;
+      var newState = EditorGUILayout.Foldout( state.Bool, content, true );
+      if ( onStateChanged != null && newState != state.Bool )
+        onStateChanged.Invoke( newState );
+      return state.Bool = newState;
     }
 
     /// <summary>
@@ -270,7 +218,8 @@ namespace AGXUnityEditor.Utils
     /// <param name="dropArea">Drop rect.</param>
     /// <param name="current">Current event.</param>
     /// <param name="onDrop">Callback when an object has been dropped.</param>
-    public static void HandleDragDrop<T>( Rect dropArea, Event current, Action<T> onDrop ) where T : UnityEngine.Object
+    public static void HandleDragDrop<T>( Rect dropArea, Event current, Action<T> onDrop )
+      where T : UnityEngine.Object
     {
       bool isDragDropEventInDropArea = ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated ) && dropArea.Contains( current.mousePosition );
       if ( !isDragDropEventInDropArea )
@@ -302,17 +251,33 @@ namespace AGXUnityEditor.Utils
     public static void Separator3D( float space = 2.0f )
     {
       GUILayout.Space( space );
-      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[] { GUILayout.ExpandWidth( true ), GUILayout.Height( 1f ) } ), Texture2D.whiteTexture );
-      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[] { GUILayout.ExpandWidth( true ), GUILayout.Height( 1f ) } ), Texture2D.blackTexture );
+      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[]
+                                                                    {
+                                                                      GUILayout.ExpandWidth( true ),
+                                                                      GUILayout.Height( 1f )
+                                                                    } ),
+                                    Texture2D.whiteTexture );
+      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[]
+                                                                    {
+                                                                      GUILayout.ExpandWidth( true ),
+                                                                      GUILayout.Height( 1f )
+                                                                    } ),
+                                    Texture2D.blackTexture );
       GUILayout.Space( space );
     }
 
-    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick, Predicate<EnumT> filter = null, GUIStyle style = null, GUILayoutOption[] options = null )
+    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick,
+                                              Predicate<EnumT> filter = null,
+                                              GUIStyle style = null,
+                                              GUILayoutOption[] options = null )
     {
       return EnumButtonList( onClick, filter, e => { return style ?? Skin.button; }, options );
     }
 
-    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick, Predicate<EnumT> filter = null, Func<EnumT, GUIStyle> styleCallback = null, GUILayoutOption[] options = null )
+    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick,
+                                              Predicate<EnumT> filter = null,
+                                              Func<EnumT, GUIStyle> styleCallback = null,
+                                              GUILayoutOption[] options = null )
     {
       if ( styleCallback == null )
         styleCallback = e => { return Skin.button; };
@@ -321,7 +286,9 @@ namespace AGXUnityEditor.Utils
         bool filterPass = filter == null ||
                           filter( (EnumT)eVal );
         // Execute onClick if eVal passed the filter and the button is pressed.
-        if ( filterPass && GUILayout.Button( MakeLabel( eVal.ToString().SplitCamelCase() ), styleCallback( (EnumT)eVal ), options ) ) {
+        if ( filterPass && GUILayout.Button( MakeLabel( eVal.ToString().SplitCamelCase() ),
+                                             styleCallback( (EnumT)eVal ),
+                                             options ) ) {
           onClick( (EnumT)eVal );
           return true;
         }
@@ -343,31 +310,26 @@ namespace AGXUnityEditor.Utils
       return fadedStyle;
     }
 
-    public static GUIStyle ConditionalCreateSelectedStyle( bool selected, GUIStyle orgStyle )
-    {
-      return selected ? CreateSelectedStyle( orgStyle ) : orgStyle;
-    }
-
     private static Editor m_cachedMaterialEditor = null;
     public static void MaterialEditor( GUIContent objFieldLabel,
-                                       float objFieldLabelWidth,
                                        Material material,
-                                       GUISkin skin,
                                        Action<Material> onMaterialChanged,
                                        bool forceEnableEditing = false )
     {
-      Material newMaterial = null;
+      var skin                     = InspectorEditor.Skin;
+      Material newMaterial         = null;
       bool createNewMaterialButton = false;
+
       GUILayout.BeginHorizontal();
       {
-        var buttonSize = skin.label.CalcHeight( objFieldLabel, Screen.width );
-        GUILayout.Label( objFieldLabel, skin.label, GUILayout.Width( objFieldLabelWidth ) );
-        newMaterial = EditorGUILayout.ObjectField( material, typeof( Material ), false ) as Material;
+        newMaterial = EditorGUILayout.ObjectField( objFieldLabel,
+                                                   material,
+                                                   typeof( Material ),
+                                                   false ) as Material;
         GUILayout.Space( 4 );
         using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
           createNewMaterialButton = GUILayout.Button( MakeLabel( "New", false, "Create new material" ),
-                                                      GUILayout.Width( 42 ),
-                                                      GUILayout.Height( buttonSize ) );
+                                                      GUILayout.Width( 42 ) );
       }
       GUILayout.EndHorizontal();
 
@@ -414,7 +376,7 @@ namespace AGXUnityEditor.Utils
       Cancel
     }
 
-    public static CreateCancelState CreateCancelButtons( bool validToPressCreate, GUISkin skin, string tooltip = "" )
+    public static CreateCancelState CreateCancelButtons( bool validToPressCreate, string tooltip = "" )
     {
       bool createPressed = false;
       bool cancelPressed = false;
@@ -426,13 +388,19 @@ namespace AGXUnityEditor.Utils
         {
           GUILayout.Space( 13 );
           using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-            cancelPressed = GUILayout.Button( MakeLabel( "Cancel", false ), skin.button, GUILayout.Width( 96 ), GUILayout.Height( 16 ) );
+            cancelPressed = GUILayout.Button( MakeLabel( "Cancel", false ),
+                                              InspectorEditor.Skin.Button,
+                                              GUILayout.Width( 96 ),
+                                              GUILayout.Height( 16 ) );
           GUILayout.EndVertical();
         }
 
         using ( new EditorGUI.DisabledGroupScope( !validToPressCreate ) )
         using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-          createPressed = GUILayout.Button( MakeLabel( "Create", true, tooltip ), skin.button, GUILayout.Width( 120 ), GUILayout.Height( 26 ) );
+          createPressed = GUILayout.Button( MakeLabel( "Create", true, tooltip ),
+                                            InspectorEditor.Skin.Button,
+                                            GUILayout.Width( 120 ),
+                                            GUILayout.Height( 26 ) );
         UnityEngine.GUI.enabled = true;
       }
       GUILayout.EndHorizontal();
@@ -442,17 +410,23 @@ namespace AGXUnityEditor.Utils
                              CreateCancelState.Nothing;
     }
 
-    public static Mesh ShapeMeshSourceGUI( Mesh currentSource, GUISkin skin )
+    public static Mesh ShapeMeshSourceGUI( Mesh currentSource )
     {
-      Mesh newSource = null;
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( MakeLabel( "Source:" ), skin.label, GUILayout.Width( 76 ) );
-        newSource = EditorGUILayout.ObjectField( currentSource, typeof( Mesh ), false ) as Mesh;
-      }
-      GUILayout.EndHorizontal();
-
+      var newSource = EditorGUILayout.ObjectField( MakeLabel( "Source:" ),
+                                                   currentSource,
+                                                   typeof( Mesh ),
+                                                   false ) as Mesh;
       return newSource != currentSource ? newSource : null;
+    }
+    public static void WarningLabel( string warning )
+    {
+      var prevBgc = UnityEngine.GUI.backgroundColor;
+      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
+      GUILayout.Label( MakeLabel( warning,
+                                  Color.Lerp( Color.red, Color.white, 0.25f ),
+                                  true ),
+                       InspectorEditor.Skin.TextAreaMiddleCenter );
+      UnityEngine.GUI.backgroundColor = prevBgc;
     }
   }
 }

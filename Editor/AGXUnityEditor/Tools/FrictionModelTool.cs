@@ -35,9 +35,7 @@ namespace AGXUnityEditor.Tools
       EditorGUI.showMixedValue = ShowMixed( ( fm1, fm2 ) => fm1.ScaleNormalForceWithDepth != fm2.ScaleNormalForceWithDepth );
 
       var scaleNormalForceWithDepth = GUI.Toggle( GUI.MakeLabel( "Scale Normal Force With Depth" ),
-                                                  FrictionModel.ScaleNormalForceWithDepth,
-                                                  InspectorEditor.Skin.button,
-                                                  InspectorEditor.Skin.label );
+                                                  FrictionModel.ScaleNormalForceWithDepth );
       if ( UnityEngine.GUI.changed )
         foreach ( var fm in GetTargets<FrictionModel>() )
           fm.ScaleNormalForceWithDepth = scaleNormalForceWithDepth;

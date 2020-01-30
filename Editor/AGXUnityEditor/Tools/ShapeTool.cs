@@ -116,31 +116,29 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.BeginHorizontal();
       {
-        GUI.ToolsLabel( skin );
+        GUI.ToolsLabel();
 
         using ( GUI.ToolButtonData.ColorBlock ) {
           using ( new EditorGUI.DisabledGroupScope( !Tools.ShapeResizeTool.SupportsShape( Shape ) ) )
             toggleShapeResizeTool = GUI.ToolButton( GUI.Symbols.ShapeResizeTool,
                                                     ShapeResizeTool,
                                                     "Shape resize tool",
-                                                    skin,
-                                                    24 );
+                                                    InspectorGUISkin.ButtonType.Left );
 
           toggleShapeCreate       = GUI.ToolButton( GUI.Symbols.ShapeCreateTool,
                                                     ShapeCreateTool,
                                                     "Create shape from visual objects",
-                                                    skin );
+                                                    InspectorGUISkin.ButtonType.Middle );
           toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
                                                     DisableCollisionsTool,
                                                     "Disable collisions against other objects",
-                                                    skin );
+                                                    InspectorGUISkin.ButtonType.Middle );
 
           using ( new EditorGUI.DisabledGroupScope( !Tools.ShapeVisualCreateTool.CanCreateVisual( Shape ) ) )
             toggleShapeVisualCreate = GUI.ToolButton( GUI.Symbols.ShapeVisualCreateTool,
                                                       ShapeVisualCreateTool,
                                                       "Create visual representation of the physical shape",
-                                                      skin,
-                                                      14 );
+                                                      InspectorGUISkin.ButtonType.Right );
         }
       }
       GUILayout.EndHorizontal();
@@ -182,12 +180,10 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
 
       GUI.Separator();
-      if ( !GUI.FoldoutEx( EditorData.Instance.GetData( Shape,
-                                                        "Visual",
-                                                        entry => entry.Bool = true ),
-                                                        skin.button,
-                                                        GUI.MakeLabel( "Shape Visual", 12, true ),
-                                                        new GUIStyle( skin.label ) { alignment = TextAnchor.UpperCenter } ) )
+      if ( !GUI.Foldout( EditorData.Instance.GetData( Shape,
+                                                      "Visual",
+                                                      entry => entry.Bool = true ),
+                                                      GUI.MakeLabel( "Shape Visual", 12, true ) ) )
         return;
 
       GUI.Separator();
@@ -201,12 +197,11 @@ namespace AGXUnityEditor.Tools
         var distinctMaterials = materials.Distinct().ToArray();
         using ( GUI.AlignBlock.Center ) {
           GUILayout.Label( GUI.MakeLabel( "Displays material if all materials are the same <b>(otherwise None)</b> and/or assign new material to all objects in this shape." ),
-                                          new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter }, GUILayout.Width( Screen.width - 60 ) );
+                           skin.TextAreaMiddleCenter,
+                           GUILayout.Width( Screen.width - 60 ) );
         }
         GUI.MaterialEditor( GUI.MakeLabel( "Common material:", true ),
-                            128,
                             distinctMaterials.Length == 1 ? distinctMaterials.First() : null,
-                            skin,
                             newMaterial => shapeVisual.SetMaterial( newMaterial ) );
 
         GUILayout.Space( 6 );
@@ -214,7 +209,7 @@ namespace AGXUnityEditor.Tools
         GUI.Separator();
 
         using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Material list", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Material list", true ), skin.Label );
 
         GUI.Separator();
       }
@@ -224,12 +219,10 @@ namespace AGXUnityEditor.Tools
         var showMaterialEditor = materials.Length == 1 ||
                                  GUI.Foldout( EditorData.Instance.GetData( Shape,
                                                                            "VisualMaterial" + i ),
-                                              GUI.MakeLabel( material.name ), skin );
+                                              GUI.MakeLabel( material.name ) );
         if ( showMaterialEditor )
           GUI.MaterialEditor( GUI.MakeLabel( "Material:", true ),
-                              64,
                               material,
-                              skin,
                               newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
         GUI.Separator();
       }

@@ -159,24 +159,5 @@ namespace AGXUnity.Utils
 
       return texture;
     }
-
-    public static GUIStyle CreateSelectedStyle( GUIStyle orgStyle )
-    {
-      GUIStyle selectedStyle = new GUIStyle( orgStyle );
-      selectedStyle.normal = orgStyle.onActive;
-
-      return selectedStyle;
-    }
-
-    public static void WarningLabel( string warning, GUISkin skin )
-    {
-      var prevBgc = UnityEngine.GUI.backgroundColor;
-      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
-      GUILayout.Label( MakeLabel( warning,
-                                  Color.Lerp( Color.red, Color.white, 0.25f ),
-                                  true ),
-                       new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
-      UnityEngine.GUI.backgroundColor = prevBgc;
-    }
   }
 }

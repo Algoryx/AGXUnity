@@ -24,7 +24,7 @@ namespace AGXUnityEditor.Tools
       GUILayout.Label( GUI.MakeLabel( FindHeaderName(),
                                       14,
                                       true ),
-                       GUI.Align( InspectorEditor.Skin.label, TextAnchor.MiddleCenter ) );
+                       InspectorEditor.Skin.LabelMiddleCenter );
 
       GUI.Separator();
 
@@ -35,22 +35,20 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
         using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel( InspectorEditor.Skin );
+          GUI.ToolsLabel();
           using ( GUI.ToolButtonData.ColorBlock ) {
             toggleSelectTireAndRim = GUI.ToolButton( '\u274D',
                                                      SelectTireAndRimToolEnable,
                                                      "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
-                                                     InspectorEditor.Skin );
+                                                     InspectorGUISkin.ButtonType.Left );
             toggleSelectTire       = GUI.ToolButton( '\uFFEE',
                                                      SelectTireToolEnable,
                                                      "Find Tire by selecting Tire in scene view.",
-                                                     InspectorEditor.Skin,
-                                                     38 );
+                                                     InspectorGUISkin.ButtonType.Middle );
             toggleSelectRim        = GUI.ToolButton( '\u25CB',
                                                      SelectRimToolEnable,
                                                      "Find Rim by selecting Rim in scene view.",
-                                                     InspectorEditor.Skin,
-                                                     16 );
+                                                     InspectorGUISkin.ButtonType.Right );
           }
         }
         GUI.Separator();

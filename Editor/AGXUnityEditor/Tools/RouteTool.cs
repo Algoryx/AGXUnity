@@ -138,13 +138,12 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.BeginHorizontal();
       {
-        GUI.ToolsLabel( skin );
+        GUI.ToolsLabel();
 
         using ( GUI.ToolButtonData.ColorBlock ) {
           toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
                                                     DisableCollisionsTool,
-                                                    "Disable collisions against other objects",
-                                                    skin );
+                                                    "Disable collisions against other objects" );
         }
       }
       GUILayout.EndHorizontal();
@@ -164,8 +163,8 @@ namespace AGXUnityEditor.Tools
 
     protected virtual string GetNodeTypeString( RouteNode node ) { return string.Empty; }
     protected virtual Color GetNodeColor( RouteNode node ) { return Color.yellow; }
-    protected virtual void OnPreFrameGUI( NodeT node, GUISkin skin ) { }
-    protected virtual void OnPostFrameGUI( NodeT node, GUISkin skin ) { }
+    protected virtual void OnPreFrameGUI( NodeT node ) { }
+    protected virtual void OnPostFrameGUI( NodeT node ) { }
     protected virtual void OnNodeCreate( NodeT newNode, NodeT refNode, bool addPressed ) { }
 
     protected RouteNodeTool GetRouteNodeTool( NodeT node )
@@ -176,8 +175,10 @@ namespace AGXUnityEditor.Tools
     private void RouteGUI()
     {
       var skin                           = InspectorEditor.Skin;
-      GUIStyle invalidNodeStyle          = new GUIStyle( skin.label );
-      invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
+      GUIStyle invalidNodeStyle          = new GUIStyle( skin.Label );
+      invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 1,
+                                                                     1,
+                                                                     Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
 
       bool addNewPressed        = false;
       bool insertBeforePressed  = false;
@@ -189,7 +190,10 @@ namespace AGXUnityEditor.Tools
 
       GUI.Separator();
 
-      if ( GUI.Foldout( EditorData.Instance.GetData( Parent, "Route", ( entry ) => { entry.Bool = true; } ), GUI.MakeLabel( "Route", true ), skin ) ) {
+      if ( GUI.Foldout( EditorData.Instance.GetData( Parent,
+                                                     "Route",
+                                                     entry => { entry.Bool = true; } ),
+                        GUI.MakeLabel( "Route", true ) ) ) {
         GUI.Separator();
 
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
@@ -205,18 +209,17 @@ namespace AGXUnityEditor.Tools
                               GUI.MakeLabel( GetNodeTypeString( node ) + " | " + SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                              !validatedNode.Valid,
                                              validatedNode.ErrorString ),
-                              skin,
                               newState =>
                               {
                                 Selected = newState ? node : null;
                                 EditorUtility.SetDirty( Parent );
                               } ) ) {
 
-              OnPreFrameGUI( node, skin );
+              OnPreFrameGUI( node );
 
               GUI.HandleFrame( node, 12 );
 
-              OnPostFrameGUI( node, skin );
+              OnPostFrameGUI( node );
 
               GUILayout.BeginHorizontal();
               {
@@ -227,14 +230,14 @@ namespace AGXUnityEditor.Tools
                                                                          16,
                                                                          false,
                                                                          "Insert a new node before this node" ),
-                                                          skin.button,
+                                                          skin.ButtonLeft,
                                                           GUILayout.Width( 20 ),
                                                           GUILayout.Height( 16 ) ) || insertBeforePressed;
                   insertAfterPressed  = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
                                                                          16,
                                                                          false,
                                                                          "Insert a new node after this node" ),
-                                                          skin.button,
+                                                          skin.ButtonMiddle,
                                                           GUILayout.Width( 20 ),
                                                           GUILayout.Height( 16 ) ) || insertAfterPressed;
                 }
@@ -243,7 +246,7 @@ namespace AGXUnityEditor.Tools
                                                                          16,
                                                                          false,
                                                                          "Erase this node" ),
-                                                          skin.button,
+                                                          skin.ButtonRight,
                                                           GUILayout.Width( 20 ),
                                                           GUILayout.Height( 16 ) ) || erasePressed;
 
@@ -274,7 +277,7 @@ namespace AGXUnityEditor.Tools
                                                              16,
                                                              false,
                                                              "Add new node to route" ),
-                                              skin.button,
+                                              skin.Button,
                                               GUILayout.Width( 20 ),
                                               GUILayout.Height( 16 ) );
           if ( listOpNode == null && addNewPressed )

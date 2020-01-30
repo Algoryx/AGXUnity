@@ -126,24 +126,24 @@ namespace AGXUnityEditor.Tools
       bool showTools           = !EditorApplication.isPlaying;
       if ( showTools ) {
         using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel( InspectorEditor.Skin );
+          GUI.ToolsLabel();
 
           using ( GUI.ToolButtonData.ColorBlock ) {
             toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
                                                EdgeDetectionToolEnable,
                                                "Find line given edge.",
-                                               InspectorEditor.Skin );
+                                               InspectorGUISkin.ButtonType.Left );
             if ( Mode != ToolMode.Direction ) {
               toggleRenderAsArrow = GUI.ToolButton( GUI.Symbols.ArrowRight,
                                                     RenderAsArrow,
                                                     "Visualize line direction.",
-                                                    InspectorEditor.Skin );
+                                                    InspectorGUISkin.ButtonType.Middle );
             }
             using ( new Utils.GUI.EnabledBlock( Line.Valid ) ) {
               toggleFlipDirection = GUI.ToolButton( GUI.Symbols.ShapeResizeTool,
                                                     false,
                                                     "Flip direction.",
-                                                    InspectorEditor.Skin );
+                                                    InspectorGUISkin.ButtonType.Right );
             }
           }
         }
@@ -166,12 +166,11 @@ namespace AGXUnityEditor.Tools
         RenderAsArrow = !RenderAsArrow;
 
       if ( !Line.Valid )
-        GUI.WarningLabel( Name + " isn't created - use Tools to configure.", InspectorEditor.Skin );
+        GUI.WarningLabel( Name + " isn't created - use Tools to configure." );
 
       if ( StartFrameToolEnable ) {
         if ( GUI.Foldout( GetToggleData( StartFrameNameId ),
-                          GUI.MakeLabel( StartFrameNameId, true ),
-                          InspectorEditor.Skin ) ) {
+                          GUI.MakeLabel( StartFrameNameId, true ) ) ) {
           StartFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
             GUI.HandleFrame( StartFrameTool.Frame, 12.0f );
@@ -179,8 +178,7 @@ namespace AGXUnityEditor.Tools
       }
       if ( EndFrameToolEnable ) {
         if ( GUI.Foldout( GetToggleData( EndFrameNameId ),
-                          GUI.MakeLabel( EndFrameNameId, true ),
-                          InspectorEditor.Skin ) ) {
+                          GUI.MakeLabel( EndFrameNameId, true ) ) ) {
           EndFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
             GUI.HandleFrame( EndFrameTool.Frame, 12.0f );

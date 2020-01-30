@@ -32,49 +32,54 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( Vector4 ) )]
-    public static object Vector4Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object Vector4Drawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector4Field( MakeLabel( wrapper.Member ).text, wrapper.Get<Vector4>( obj ) );
+      return EditorGUILayout.Vector4Field( MakeLabel( wrapper.Member ).text,
+                                           wrapper.Get<Vector4>( obj ) );
     }
 
     [InspectorDrawer( typeof( Vector3 ) )]
-    public static object Vector3Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object Vector3Drawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector3Field( MakeLabel( wrapper.Member ), wrapper.Get<Vector3>( obj ) );
+      return EditorGUILayout.Vector3Field( MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector3>( obj ) );
     }
 
     [InspectorDrawer( typeof( Vector2 ) )]
-    public static object Vector2Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object Vector2Drawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector2Field( MakeLabel( wrapper.Member ), wrapper.Get<Vector2>( obj ) );
+      return EditorGUILayout.Vector2Field( MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector2>( obj ) );
     }
 
     [InspectorDrawer( typeof( int ) )]
-    public static object IntDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object IntDrawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( MakeLabel( wrapper.Member ).text, wrapper.Get<int>( obj ), skin.textField );
+      return EditorGUILayout.IntField( MakeLabel( wrapper.Member ).text,
+                                       wrapper.Get<int>( obj ) );
     }
 
     [InspectorDrawer( typeof( bool ) )]
-    public static object BoolDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object BoolDrawer( object obj, InvokeWrapper wrapper )
     {
-      return GUI.Toggle( MakeLabel( wrapper.Member ), wrapper.Get<bool>( obj ), skin.button, skin.label );
+      return GUI.Toggle( MakeLabel( wrapper.Member ),
+                         wrapper.Get<bool>( obj ) );
     }
 
     [InspectorDrawer( typeof( Color ) )]
-    public static object ColorDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object ColorDrawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.ColorField( MakeLabel( wrapper.Member ), wrapper.Get<Color>( obj ) );
+      return EditorGUILayout.ColorField( MakeLabel( wrapper.Member ),
+                                         wrapper.Get<Color>( obj ) );
     }
 
     [InspectorDrawer( typeof( DefaultAndUserValueFloat ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
-    public static object DefaultAndUserValueFloatDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object DefaultAndUserValueFloatDrawer( object obj, InvokeWrapper wrapper )
     {
       var dauvf = wrapper.Get<DefaultAndUserValueFloat>( obj );
       var value = GUI.HandleDefaultAndUserValue( wrapper.Member.Name,
-                                                 dauvf,
-                                                 skin );
+                                                 dauvf );
 
       if ( wrapper.IsValid( value ) ) {
         if ( !dauvf.UseDefault )
@@ -97,12 +102,11 @@ namespace AGXUnityEditor
 
     [InspectorDrawer( typeof( DefaultAndUserValueVector3 ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
-    public static object DefaultAndUserValueVector3Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object DefaultAndUserValueVector3Drawer( object obj, InvokeWrapper wrapper )
     {
       var dauvv = wrapper.Get<DefaultAndUserValueVector3>( obj );
       var value = GUI.HandleDefaultAndUserValue( wrapper.Member.Name,
-                                                 dauvv,
-                                                 skin );
+                                                 dauvv );
 
       if ( wrapper.IsValid( value ) ) {
         if ( !dauvv.UseDefault )
@@ -123,7 +127,6 @@ namespace AGXUnityEditor
       d.CopyFrom( s );
     }
 
-    private static GUIStyle m_rangeRealInvalidStyle = null;
     private struct RangeRealResult
     {
       public float Min;
@@ -135,17 +138,10 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( RangeReal ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
     [Obsolete( "Needs patch to not propagate unchanged values." )]
-    public static object RangeRealDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object RangeRealDrawer( object obj, InvokeWrapper wrapper )
     {
       var value = wrapper.Get<RangeReal>( obj );
-      GUIStyle labelStyle = skin.label;
-      if ( value.Min > value.Max ) {
-        if ( m_rangeRealInvalidStyle == null ) {
-          m_rangeRealInvalidStyle = new GUIStyle( skin.label );
-          m_rangeRealInvalidStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
-        }
-        labelStyle = m_rangeRealInvalidStyle;
-      }
+      var invalidRange = value.Min > value.Max;
 
       RangeRealResult result = new RangeRealResult()
       {
@@ -154,18 +150,19 @@ namespace AGXUnityEditor
         Max = value.Max,
         MaxChanged = false
       };
-      using ( new GUILayout.HorizontalScope( labelStyle ) ) {
-        GUILayout.Label( MakeLabel( wrapper.Member ), skin.label );
-        result.Min              = EditorGUILayout.FloatField( "", value.Min, skin.textField, GUILayout.MaxWidth( 64 ) );
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( MakeLabel( wrapper.Member ) );
+
+        result.Min              = EditorGUILayout.FloatField( "", value.Min, EditorStyles.numberField, GUILayout.MaxWidth( 140 ) );
         result.MinChanged       = UnityEngine.GUI.changed;
         UnityEngine.GUI.changed = false;
-        result.Max              = EditorGUILayout.FloatField( "", value.Max, skin.textField, GUILayout.MaxWidth( 64 ) );
+        result.Max              = EditorGUILayout.FloatField( "", value.Max, EditorStyles.numberField, GUILayout.MaxWidth( 140 ) );
         result.MaxChanged       = UnityEngine.GUI.changed;
         UnityEngine.GUI.changed = result.MinChanged || result.MaxChanged;
       }
 
-      if ( labelStyle == m_rangeRealInvalidStyle )
-        GUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")", skin );
+      if ( invalidRange )
+        GUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
 
       return result;
     }
@@ -193,32 +190,25 @@ namespace AGXUnityEditor
 
     [InspectorDrawer( typeof( DeformableTerrainShovelSettings.ExcavationSettings ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
-    public static object DeformableTerrainShovelExcavationSettingsDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object DeformableTerrainShovelExcavationSettingsDrawer( object obj, InvokeWrapper wrapper )
     {
       var data = new ExcavationSettingsResult()
       {
         Value = wrapper.Get<DeformableTerrainShovelSettings.ExcavationSettings>( obj )
       };
       if ( GUI.Foldout( EditorData.Instance.GetData( obj as Object, wrapper.Member.Name ),
-                        MakeLabel( wrapper.Member ),
-                        skin ) ) {
+                        MakeLabel( wrapper.Member ) ) ) {
         using ( new GUI.Indent( 12 ) ) {
           data.Value.Enabled                   = GUI.Toggle( GUI.MakeLabel( "Enabled" ),
-                                                             data.Value.Enabled,
-                                                             skin.button,
-                                                             skin.label );
+                                                             data.Value.Enabled );
           data.EnabledChanged                  = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
           data.Value.CreateDynamicMassEnabled  = GUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
-                                                             data.Value.CreateDynamicMassEnabled,
-                                                             skin.button,
-                                                             skin.label );
+                                                             data.Value.CreateDynamicMassEnabled );
           data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
           data.Value.ForceFeedbackEnabled      = GUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
-                                                             data.Value.ForceFeedbackEnabled,
-                                                             skin.button,
-                                                             skin.label );
+                                                             data.Value.ForceFeedbackEnabled );
           data.ForceFeedbackEnabledChanged     = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
         }
@@ -242,49 +232,59 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( string ) )]
-    public static object StringDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object StringDrawer( object obj, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.TextField( MakeLabel( wrapper.Member ), wrapper.Get<string>( obj ), skin.textField );
+      return EditorGUILayout.TextField( MakeLabel( wrapper.Member ),
+                                        wrapper.Get<string>( obj ),
+                                        InspectorEditor.Skin.TextField );
     }
 
     [InspectorDrawer( typeof( Enum ), IsBaseType = true )]
-    public static object EnumDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object EnumDrawer( object obj, InvokeWrapper wrapper )
     {
       if ( !wrapper.GetContainingType().IsVisible )
         return null;
 
       if ( wrapper.GetContainingType().GetCustomAttribute<FlagsAttribute>() != null )
-        return EditorGUILayout.EnumFlagsField( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
+        return EditorGUILayout.EnumFlagsField( MakeLabel( wrapper.Member ),
+                                               wrapper.Get<Enum>( obj ),
+                                               InspectorEditor.Skin.Popup );
       else
-        return EditorGUILayout.EnumPopup( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
+        return EditorGUILayout.EnumPopup( MakeLabel( wrapper.Member ),
+                                          wrapper.Get<Enum>( obj ),
+                                          InspectorEditor.Skin.Popup );
     }
 
     [InspectorDrawer( typeof( float ) )]
     [InspectorDrawer( typeof( double ) )]
-    public static object DecimalDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object DecimalDrawer( object obj, InvokeWrapper wrapper )
     {
       float value = wrapper.GetContainingType() == typeof( double ) ?
                       Convert.ToSingle( wrapper.Get<double>( obj ) ) :
                       wrapper.Get<float>( obj );
       FloatSliderInInspector slider = wrapper.GetAttribute<FloatSliderInInspector>();
       if ( slider != null )
-        return EditorGUILayout.Slider( MakeLabel( wrapper.Member ), value, slider.Min, slider.Max );
+        return EditorGUILayout.Slider( MakeLabel( wrapper.Member ),
+                                       value,
+                                       slider.Min,
+                                       slider.Max );
       else
-        return EditorGUILayout.FloatField( MakeLabel( wrapper.Member ), value, skin.textField );
+        return EditorGUILayout.FloatField( MakeLabel( wrapper.Member ),
+                                           value );
     }
 
     [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
-    public static object GenericListDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object GenericListDrawer( object obj, InvokeWrapper wrapper )
     {
       System.Collections.IList list = wrapper.Get<System.Collections.IList>( obj );
       var target = obj as Object;
 
       if ( GUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
-                        MakeLabel( wrapper.Member ),
-                        skin ) ) {
+                        MakeLabel( wrapper.Member ) ) ) {
         object insertElementBefore = null;
-        object insertElementAfter = null;
-        object eraseElement = null;
+        object insertElementAfter  = null;
+        object eraseElement        = null;
+        var skin                   = InspectorEditor.Skin;
         var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
         using ( new GUI.Indent( 12 ) ) {
           foreach ( var listObject in list ) {
@@ -303,19 +303,19 @@ namespace AGXUnityEditor
                   if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
                                                         false,
                                                         "Insert new element before this" ),
-                                         skin.button,
+                                         skin.ButtonLeft,
                                          buttonLayout ) )
                     insertElementBefore = listObject;
                   if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
                                                         false,
                                                         "Insert new element after this" ),
-                                         skin.button,
+                                         skin.ButtonMiddle,
                                          buttonLayout ) )
                     insertElementAfter = listObject;
                   if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
                                                         false,
                                                         "Erase this element" ),
-                                         skin.button,
+                                         skin.ButtonRight,
                                          buttonLayout ) )
                     eraseElement = listObject;
                 }
@@ -325,7 +325,7 @@ namespace AGXUnityEditor
           }
 
           if ( list.Count == 0 )
-            GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
+            GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
           else
             GUI.Separator();
         }
@@ -338,7 +338,7 @@ namespace AGXUnityEditor
             addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
                                                                 false,
                                                                 "Add new element to list" ),
-                                                 skin.button,
+                                                 skin.Button,
                                                  buttonLayout );
         }
         GUILayout.EndHorizontal();
@@ -373,7 +373,7 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( ScriptComponent ), AssignableFrom = true )]
     [InspectorDrawer( typeof( Object ), IsBaseType = true )]
     [InspectorDrawerResult( IsNullable = true )]
-    public static object ScriptDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static object ScriptDrawer( object obj, InvokeWrapper wrapper )
     {
       object result             = null;
       var type                  = wrapper.GetContainingType();
@@ -382,39 +382,35 @@ namespace AGXUnityEditor
       Object valInField         = wrapper.Get<Object>( obj );
       bool recursiveEditing     = wrapper.HasAttribute<AllowRecursiveEditing>();
       bool createNewAssetButton = false;
+      var skin                  = InspectorEditor.Skin;
 
+      // TODO GUI: Use foldout and stuff.
+      //           Clean code.
       if ( recursiveEditing ) {
         var foldoutData = EditorData.Instance.GetData( obj as Object, wrapper.Member.Name );
 
         GUILayout.BeginHorizontal();
         {
           var objFieldLabel = MakeLabel( wrapper.Member );
-          var buttonSize = skin.label.CalcHeight( objFieldLabel, Screen.width );
-          UnityEngine.GUI.enabled = valInField != null;
-          foldoutData.Bool = GUILayout.Button( GUI.MakeLabel( foldoutData.Bool ? "-" : "+" ),
-                                               skin.button,
-                                               new GUILayoutOption[] { GUILayout.Width( 20.0f ), GUILayout.Height( buttonSize ) } ) ?
-                               // Button clicked - toggle current value.
-                               !foldoutData.Bool :
-                               // If foldout were enabled but valInField has changed to null - foldout will become disabled.
-                               valInField != null && foldoutData.Bool;
-          UnityEngine.GUI.enabled = true;
+
+          using ( new GUI.EnabledBlock( valInField != null ) ) {
+            GUI.Foldout( foldoutData, objFieldLabel );
+          }
+
           if ( wrapper.CanWrite() ) {
-            result = EditorGUILayout.ObjectField( objFieldLabel,
+            result = EditorGUILayout.ObjectField( GUI.MakeLabel( "" ),
                                                   valInField,
                                                   type,
-                                                  allowSceneObject,
-                                                  new GUILayoutOption[] { } );
+                                                  allowSceneObject );
             if ( typeof( ScriptAsset ).IsAssignableFrom( type ) ) {
               GUILayout.Space( 4 );
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
                 createNewAssetButton = GUILayout.Button( GUI.MakeLabel( "New", false, "Create new asset" ),
-                                                         GUILayout.Width( 42 ),
-                                                         GUILayout.Height( buttonSize ) );
+                                                         skin.Button,
+                                                         GUILayout.Width( 42 ) );
             }
           }
           else {
-            GUILayout.Label( objFieldLabel, skin.label );
             result = valInField;
           }
         }
@@ -445,8 +441,7 @@ namespace AGXUnityEditor
 
             GUILayout.Space( 6 );
 
-            AGXUnity.Utils.GUI.WarningLabel( "Changes made to this object will affect all objects referencing this asset.",
-                                             skin );
+            GUI.WarningLabel( "Changes made to this object will affect all objects referencing this asset." );
 
             GUILayout.Space( 6 );
 
@@ -495,8 +490,7 @@ namespace AGXUnityEditor
       where T : Object
     {
       var displayItemsList = GUI.Foldout( GetTargetToolArrayGUIData( tool.Targets[ 0 ], identifier ),
-                                          GUI.MakeLabel( identifier + $" [{items.Length}]" ),
-                                          InspectorEditor.Skin );
+                                          GUI.MakeLabel( identifier + $" [{items.Length}]" ) );
       var itemTypename      = typeof( T ).Name;
       var isAsset           = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
       var itemTypenameSplit = itemTypename.SplitCamelCase();
@@ -513,14 +507,13 @@ namespace AGXUnityEditor
             using ( new GUILayout.HorizontalScope() ) {
               displayItem = GUI.Foldout( GetItemToolArrayGUIData( tool.Targets[ 0 ], identifier, item ),
                                          GUI.MakeLabel( "[" + GUI.AddColorTag( itemTypename,
-                                                                               itemColorIdeintifier ) + "] " + item.name ),
-                                         InspectorEditor.Skin );
+                                                                               itemColorIdeintifier ) + "] " + item.name ) );
 
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
                                                       false,
                                                       $"Remove {item.name} from {targetTypename}." ),
-                     InspectorEditor.Skin.button,
+                     InspectorEditor.Skin.Button,
                      GUILayout.Width( 18 ),
                      GUILayout.Height( 14 ) ) )
                   itemToRemove = item;
@@ -541,12 +534,12 @@ namespace AGXUnityEditor
 
           T itemToAdd = null;
           var addButtonPressed = false;
-          using ( new GUILayout.VerticalScope( GUI.FadeNormalBackground( InspectorEditor.Skin.label, 0.1f ) ) ) {
+          using ( new GUILayout.VerticalScope( GUI.FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
             using ( GUI.AlignBlock.Center )
-              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.label );
+              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
             using ( new GUILayout.HorizontalScope() ) {
               itemToAdd = EditorGUILayout.ObjectField( "", null, typeof( T ), true ) as T;
-              addButtonPressed = GUILayout.Button( GUI.MakeLabel( "+" ), InspectorEditor.Skin.button, GUILayout.Width( 24 ), GUILayout.Height( 14 ) );
+              addButtonPressed = GUILayout.Button( GUI.MakeLabel( "+" ), InspectorEditor.Skin.Button, GUILayout.Width( 24 ), GUILayout.Height( 14 ) );
             }
           }
 

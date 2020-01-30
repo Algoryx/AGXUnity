@@ -44,10 +44,10 @@ namespace AGXUnityEditor.Tools
 
       if ( beginWinches.Count() > 0 ) {
         GUI.Separator();
-        GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.Label );
         using ( new GUI.Indent( 12 ) ) {
           if ( beginWinches.Count() != NumTargets )
-            AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has a begin winch.", skin );
+            GUI.WarningLabel( "Not all selected wires has a begin winch." );
           InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
         }
         GUI.Separator();
@@ -56,20 +56,22 @@ namespace AGXUnityEditor.Tools
         if ( beginWinches.Count() == 0 )
           GUI.Separator();
 
-        GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.Label );
         using ( new GUI.Indent( 12 ) ) {
           if ( endWinches.Count() != NumTargets )
-            AGXUnity.Utils.GUI.WarningLabel( "Not all selected wires has an end winch.", skin );
+            GUI.WarningLabel( "Not all selected wires has an end winch." );
           InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
         }
         GUI.Separator();
       }
     }
 
-    protected override void OnPreFrameGUI( WireRouteNode node, GUISkin skin )
+    protected override void OnPreFrameGUI( WireRouteNode node )
     {
       using ( new GUI.Indent( 12 ) ) {
-        node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ), node.Type, skin.button );
+        node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                                              node.Type,
+                                                              InspectorEditor.Skin.Popup );
 
         GUI.Separator();
       }

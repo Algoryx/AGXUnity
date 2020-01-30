@@ -31,7 +31,9 @@ namespace AGXUnityEditor.Tools
       var directoryValid = directory.Length > 0 && AssetDatabase.IsValidFolder( directory );
 
       using ( new GUILayout.HorizontalScope() ) {
-        GUILayout.Label( GUI.MakeLabel( "Data directory" ), skin.label, GUILayout.Width( 160 ) );
+        GUILayout.Label( GUI.MakeLabel( "Data directory" ),
+                         skin.Label,
+                         GUILayout.Width( 160 ) );
 
         var statusColor = directoryValid ?
                             Color.Lerp( Color.white, Color.green, 0.2f ) :
@@ -39,10 +41,10 @@ namespace AGXUnityEditor.Tools
         var prevColor   = UnityEngine.GUI.backgroundColor;
 
         UnityEngine.GUI.backgroundColor = statusColor;
-        GUILayout.TextField( directory, skin.textField );
+        GUILayout.TextField( directory, skin.TextField );
         UnityEngine.GUI.backgroundColor = prevColor;
         if ( GUILayout.Button( GUI.MakeLabel( "...", false, "Open file panel" ),
-                                skin.button,
+                                skin.Button,
                                 GUILayout.Width( 28 ) ) ) {
           var newDirectory = EditorUtility.OpenFolderPanel( "Prefab data directory", "Assets", "" );
           if ( newDirectory.Length > 0 ) {

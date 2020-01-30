@@ -189,22 +189,21 @@ namespace AGXUnityEditor.Tools
         bool shapeButtonPressed      = false;
         bool constraintButtonPressed = false;
 
-        GUI.ToolsLabel( skin );
+        GUI.ToolsLabel();
         GUILayout.BeginHorizontal();
         {
           GUILayout.Space( 12 );
           using ( GUI.ToolButtonData.ColorBlock ) {
             rbButtonPressed         = GUILayout.Button( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.RigidBody,
-                                                                                            skin.button ),
+                                                        skin.GetButton( m_mode == Mode.RigidBody, InspectorGUISkin.ButtonType.Left ),
                                                         GUILayout.Width( 30f ),
                                                         GUI.ToolButtonData.Height );
             shapeButtonPressed      = GUILayout.Button( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Shape, skin.button ),
+                                                        skin.GetButton( m_mode == Mode.Shape, InspectorGUISkin.ButtonType.Middle ),
                                                         GUILayout.Width( 54f ),
                                                         GUI.ToolButtonData.Height );
             constraintButtonPressed = GUILayout.Button( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Constraint, skin.button ),
+                                                        skin.GetButton( m_mode == Mode.Constraint, InspectorGUISkin.ButtonType.Right ),
                                                         GUILayout.Width( 80f ),
                                                         GUI.ToolButtonData.Height );
           }
@@ -222,7 +221,7 @@ namespace AGXUnityEditor.Tools
       }
       else {
         GUILayout.Label( GUI.MakeLabel( "Assemblies", 24, true ),
-                         GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
+                         skin.LabelMiddleCenter );
       }
 
       GUI.Separator();
@@ -264,9 +263,9 @@ namespace AGXUnityEditor.Tools
 
       using ( GUI.AlignBlock.Center ) {
         if ( m_subMode == SubMode.SelectRigidBody )
-          GUILayout.Label( GUI.MakeLabel( "Select rigid body object in scene view.", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Select rigid body object in scene view.", true ), skin.Label );
         else
-          GUILayout.Label( GUI.MakeLabel( "Select object(s) in scene view.", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Select object(s) in scene view.", true ), skin.Label );
       }
 
       GUI.Separator();
@@ -281,11 +280,23 @@ namespace AGXUnityEditor.Tools
         GUILayout.BeginVertical();
         {
           UnityEngine.GUI.enabled = m_selection.Count == 0 || !selectionHasRigidBody;
-          createNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Create new" + ( m_selection.Count == 0 ? " (empty)" : "" ), false, "Create new rigid body with selected objects" ), skin.button, GUILayout.Width( 128 ) );
+          createNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Create new" + ( m_selection.Count == 0 ? " (empty)" : "" ),
+                                                                       false,
+                                                                       "Create new rigid body with selected objects" ),
+                                                        skin.Button,
+                                                        GUILayout.Width( 128 ) );
           UnityEngine.GUI.enabled = m_selection.Count > 0 && Assembly.GetComponentInChildren<RigidBody>() != null;
-          addToExistingRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Add to existing", false, "Add selected objects to existing rigid body" ), GUI.ConditionalCreateSelectedStyle( m_subMode == SubMode.SelectRigidBody, skin.button ), GUILayout.Width( 100 ) );
+          addToExistingRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Add to existing",
+                                                                           false,
+                                                                           "Add selected objects to existing rigid body" ),
+                                                            skin.GetButton( m_subMode == SubMode.SelectRigidBody ),
+                                                            GUILayout.Width( 100 ) );
           UnityEngine.GUI.enabled = selectionHasRigidBody;
-          moveToNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Move to new", false, "Move objects that already contains a rigid body to a new rigid body" ), skin.button, GUILayout.Width( 85 ) );
+          moveToNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Move to new",
+                                                                       false,
+                                                                       "Move objects that already contains a rigid body to a new rigid body" ),
+                                                        skin.Button,
+                                                        GUILayout.Width( 85 ) );
           UnityEngine.GUI.enabled = true;
         }
         GUILayout.EndVertical();

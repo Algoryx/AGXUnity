@@ -70,7 +70,7 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.Indent( 12 ) ) {
         var connectedFrameSynchronized = AttachmentPairs.All( ap => ap.Synchronized );
 
-        GUILayout.Label( GUI.MakeLabel( "Reference frame", true ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( "Reference frame", true ), skin.Label );
         GUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 4 + 12 );
 
         using ( new GUILayout.HorizontalScope() ) {
@@ -78,7 +78,7 @@ namespace AGXUnityEditor.Tools
           if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(),
                                                 false,
                                                 "Synchronized with reference frame" ),
-                                 GUI.ConditionalCreateSelectedStyle( connectedFrameSynchronized, skin.button ),
+                                 skin.GetButton( connectedFrameSynchronized ),
                                  new GUILayoutOption[] { GUILayout.Width( 24 ), GUILayout.Height( 14 ) } ) ) {
             foreach ( var ap in AttachmentPairs )
               ap.Synchronized = !connectedFrameSynchronized;
@@ -86,7 +86,7 @@ namespace AGXUnityEditor.Tools
             if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
               ConnectedFrameTool.TransformHandleActive = false;
           }
-          GUILayout.Label( GUI.MakeLabel( "Connected frame", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Connected frame", true ), skin.Label );
         }
 
         UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;

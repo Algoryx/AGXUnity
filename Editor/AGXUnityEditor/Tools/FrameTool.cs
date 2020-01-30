@@ -226,16 +226,28 @@ namespace AGXUnityEditor.Tools
       GUILayout.BeginHorizontal();
       {
         UnityEngine.GUI.enabled = true;
-        GUI.ToolsLabel( skin );
+        GUI.ToolsLabel();
 
         using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleSelectParent      = GUI.ToolButton( GUI.Symbols.SelectInSceneViewTool, SelectParent, "Select parent object by selecting object in scene view", skin );
+          toggleSelectParent      = GUI.ToolButton( GUI.Symbols.SelectInSceneViewTool,
+                                                    SelectParent,
+                                                    "Select parent object by selecting object in scene view",
+                                                    InspectorGUISkin.ButtonType.Left );
 
           UnityEngine.GUI.enabled = guiWasEnabled;
 
-          toggleFindGivenPoint    = GUI.ToolButton( GUI.Symbols.SelectPointTool, FindTransformGivenPointOnSurface, "Find position and rotation given point and direction on an objects surface", skin );
-          toggleSelectEdge        = GUI.ToolButton( GUI.Symbols.SelectEdgeTool, FindTransformGivenEdge, "Find position and rotation given a triangle or principal edge", skin );
-          togglePositionHandle    = GUI.ToolButton( GUI.Symbols.PositionHandleTool, TransformHandleActive, "Position/rotation handle", skin );
+          toggleFindGivenPoint    = GUI.ToolButton( GUI.Symbols.SelectPointTool,
+                                                    FindTransformGivenPointOnSurface,
+                                                    "Find position and rotation given point and direction on an objects surface",
+                                                    InspectorGUISkin.ButtonType.Middle );
+          toggleSelectEdge        = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
+                                                    FindTransformGivenEdge,
+                                                    "Find position and rotation given a triangle or principal edge",
+                                                    InspectorGUISkin.ButtonType.Middle );
+          togglePositionHandle    = GUI.ToolButton( GUI.Symbols.PositionHandleTool,
+                                                    TransformHandleActive,
+                                                    "Position/rotation handle",
+                                                    InspectorGUISkin.ButtonType.Right );
         }              
       }
       GUILayout.EndHorizontal();

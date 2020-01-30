@@ -44,7 +44,7 @@ namespace AGXUnityEditor.Tools
       else
         Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
 
-      var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource, InspectorEditor.Skin );
+      var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource );
       if ( newSingleSource != null ) {
         if ( IsMultiSelect ) {
           foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )

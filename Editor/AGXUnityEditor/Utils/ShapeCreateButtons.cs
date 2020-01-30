@@ -44,12 +44,16 @@ namespace AGXUnityEditor.Utils
       State.CreatePressed   = false;
     }
 
-    public bool Update( Event current, GUISkin skin )
+    public bool Update( Event current )
     {
       bool toggleDropdown = GUILayout.Button( GUI.MakeLabel( State.ShapeType.ToString().Substring( 0, 3 ),
                                                              true,
                                                              "Create new " + State.ShapeType.ToString().ToLower() + "as parent of the selected object(s)." ),
-                                              GUI.ConditionalCreateSelectedStyle( State.DropdownEnabled, skin.button ),
+                                              InspectorEditor.Skin.GetButton( State.DropdownEnabled, State.ShapeType == Tools.ShapeCreateTool.ShapeType.Box ?
+                                                                                                       InspectorGUISkin.ButtonType.Left :
+                                                                                                     State.ShapeType == Tools.ShapeCreateTool.ShapeType.Mesh ?
+                                                                                                       InspectorGUISkin.ButtonType.Right :
+                                                                                                       InspectorGUISkin.ButtonType.Middle ),
                                               GUILayout.Width( 36 ),
                                               GUI.ToolButtonData.Height );
       if ( current.type == EventType.Repaint )
@@ -61,7 +65,7 @@ namespace AGXUnityEditor.Utils
       return toggleDropdown;
     }
 
-    public StateData UpdateDropdown( Event current, GUISkin skin )
+    public StateData UpdateDropdown( Event current )
     {
       if ( current.type == EventType.Repaint )
         State.Axis = ShapeInitializationData.Axes.None;
@@ -69,14 +73,15 @@ namespace AGXUnityEditor.Utils
       if ( !State.DropdownEnabled )
         return State;
 
+      var skin                        = InspectorEditor.Skin;
       bool hasRadius                  = State.ShapeType == Tools.ShapeCreateTool.ShapeType.Cylinder ||
                                         State.ShapeType == Tools.ShapeCreateTool.ShapeType.Capsule ||
                                         State.ShapeType == Tools.ShapeCreateTool.ShapeType.Sphere;
       float guiStartOffset            = m_buttonRect.position.x - 14;
-      GUIStyle mouseOverStyle         = new GUIStyle( skin.button );
+      GUIStyle mouseOverStyle         = new GUIStyle( skin.Button );
       mouseOverStyle.hover.background = mouseOverStyle.onActive.background;
 
-      OnShapeConfigGUI( guiStartOffset, hasRadius, skin );
+      OnShapeConfigGUI( guiStartOffset, hasRadius );
 
       if ( hasRadius ) {
         GUILayout.BeginHorizontal();
@@ -97,22 +102,19 @@ namespace AGXUnityEditor.Utils
       return State;
     }
 
-    private void OnShapeConfigGUI( float guiStartOffset, bool hasRadius, GUISkin skin )
+    private void OnShapeConfigGUI( float guiStartOffset, bool hasRadius )
     {
-      GUIStyle smallLabel = new GUIStyle( skin.label );
+      var skin             = InspectorEditor.Skin;
+      var smallLabel       = new GUIStyle( skin.Label );
       smallLabel.alignment = TextAnchor.MiddleLeft;
-      smallLabel.fontSize = 11;
+      smallLabel.fontSize  = 11;
 
       // TODO: Choice to add have the graphics or shape as parent.
       GUILayout.BeginHorizontal();
       {
         GUILayout.Space( guiStartOffset );
         State.ShapeAsParent = GUI.Toggle( GUI.MakeLabel( "Shape as parent to graphical object" ),
-                                          State.ShapeAsParent,
-                                          skin.button,
-                                          smallLabel,
-                                          new GUILayoutOption[] { GUILayout.Width( 16 ), GUILayout.Height( 16 ) },
-                                          new GUILayoutOption[] { GUILayout.Height( 16 ) } );
+                                          State.ShapeAsParent );
       }
       GUILayout.EndHorizontal();
 
@@ -121,11 +123,7 @@ namespace AGXUnityEditor.Utils
         {
           GUILayout.Space( guiStartOffset );
           State.ExpandRadius = GUI.Toggle( GUI.MakeLabel( "Expand radius" ),
-                                           State.ExpandRadius,
-                                           skin.button,
-                                           smallLabel,
-                                           new GUILayoutOption[] { GUILayout.Width( 16 ), GUILayout.Height( 16 ) },
-                                           new GUILayoutOption[] { GUILayout.Height( 16 ) } );
+                                           State.ExpandRadius );
         }
         GUILayout.EndHorizontal();
       }
@@ -178,14 +176,14 @@ namespace AGXUnityEditor.Utils
         button.Reset();
     }
 
-    public void OnGUI( Event current, GUISkin skin, int indentPixels )
+    public void OnGUI( Event current, int indentPixels )
     {
       GUILayout.BeginHorizontal();
       {
         GUILayout.Space( indentPixels );
         using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
           foreach ( var button in m_buttons ) {
-            bool pressed = button.Update( Event.current, skin );
+            bool pressed = button.Update( Event.current );
             if ( pressed )
               Selected = button.State.DropdownEnabled ? button : null;
           }
@@ -193,7 +191,7 @@ namespace AGXUnityEditor.Utils
       GUILayout.EndHorizontal();
 
       foreach ( var button in m_buttons )
-        button.UpdateDropdown( current, skin );
+        button.UpdateDropdown( current );
     }
   }
 }

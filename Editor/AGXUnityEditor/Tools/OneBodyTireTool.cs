@@ -23,13 +23,12 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectTire = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
         using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel( InspectorEditor.Skin );
+          GUI.ToolsLabel();
           using ( GUI.ToolButtonData.ColorBlock ) {
             toggleSelectTire = GUI.ToolButton( '\uFFEE',
                                                SelectTireToolEnable,
                                                "Find Tire by selecting Tire in scene view.",
-                                               InspectorEditor.Skin,
-                                               38 );
+                                               InspectorGUISkin.ButtonType.Normal );
           }
         }
         GUI.Separator();

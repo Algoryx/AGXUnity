@@ -53,27 +53,32 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.BeginHorizontal();
       {
-        GUILayout.Label( GUI.MakeLabel( "Disable: ", true ), skin.label );
-        GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_mainObject ), skin.textField );
+        GUILayout.Label( GUI.MakeLabel( "Disable: ", true ), skin.Label );
+        GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_mainObject ), skin.TextField );
       }
       GUILayout.EndHorizontal();
 
       GUILayout.BeginHorizontal();
       {
         GUILayout.FlexibleSpace();
-        GUILayout.Label( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString() ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString() ), skin.Label );
         GUILayout.BeginVertical();
         {
           if ( m_selected.Count == 0 )
-            GUILayout.Label( GUI.MakeLabel( "None", true ), skin.label, GUILayout.Width( 180 ) );
+            GUILayout.Label( GUI.MakeLabel( "None", true ), skin.Label, GUILayout.Width( 180 ) );
           else {
             int removeIndex = -1;
             for ( int i = 0; i < m_selected.Count; ++i ) {
               GUILayout.BeginHorizontal();
               {
-                GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ), GUI.Align( skin.textField, TextAnchor.MiddleLeft ), GUILayout.Height( 20 ) );
+                GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ),
+                                 skin.TextFieldMiddleLeft,
+                                 GUILayout.Height( 20 ) );
                 using ( GUI.NodeListButtonColor )
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ), skin.button, GUILayout.Width( 18 ), GUILayout.Height( 18 ) ) )
+                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
+                                         skin.Button,
+                                         GUILayout.Width( 18 ),
+                                         GUILayout.Height( 18 ) ) )
                     removeIndex = i;
               }
               GUILayout.EndHorizontal();
@@ -96,13 +101,19 @@ namespace AGXUnityEditor.Tools
         GUILayout.FlexibleSpace();
 
         UnityEngine.GUI.enabled = m_selected.Count > 0;
-        applyPressed = GUILayout.Button( GUI.MakeLabel( "Apply", true, "Apply current configuration" ), skin.button, GUILayout.Width( 86 ), GUILayout.Height( 26 ) );
+        applyPressed = GUILayout.Button( GUI.MakeLabel( "Apply", true, "Apply current configuration" ),
+                                         skin.Button,
+                                         GUILayout.Width( 86 ),
+                                         GUILayout.Height( 26 ) );
         UnityEngine.GUI.enabled = true;
 
         GUILayout.BeginVertical();
         {
           GUILayout.Space( 11 );
-          cancelPressed = GUILayout.Button( GUI.MakeLabel( "Cancel", false, "Cancel/reset" ), skin.button, GUILayout.Width( 64 ), GUILayout.Height( 18 ) );
+          cancelPressed = GUILayout.Button( GUI.MakeLabel( "Cancel", false, "Cancel/reset" ),
+                                            skin.Button,
+                                            GUILayout.Width( 64 ),
+                                            GUILayout.Height( 18 ) );
         }
         GUILayout.EndVertical();
       }

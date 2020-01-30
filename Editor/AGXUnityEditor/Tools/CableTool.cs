@@ -37,10 +37,12 @@ namespace AGXUnityEditor.Tools
       return GetColor( node as CableRouteNode );
     }
 
-    protected override void OnPreFrameGUI( CableRouteNode node, GUISkin skin )
+    protected override void OnPreFrameGUI( CableRouteNode node )
     {
       using ( new GUI.Indent( 12 ) ) {
-        node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ), node.Type, skin.button );
+        node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                                               node.Type,
+                                                               InspectorEditor.Skin.Popup );
 
         GUI.Separator();
       }
@@ -79,14 +81,14 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
       using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.label );
+        GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.Label );
 
       GUI.Separator();
 
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       using ( new GUI.Indent( 12 ) ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {
-          var tmp = OnPropertyGUI( dir, selected.First(), skin );
+          var tmp = OnPropertyGUI( dir, selected.First() );
           if ( tmp != null )
             changed = tmp;
           GUI.Separator();
@@ -102,12 +104,11 @@ namespace AGXUnityEditor.Tools
     }
 
     private Tuple<PropertyWrapper, CableProperties.Direction, object> OnPropertyGUI( CableProperties.Direction dir,
-                                                                                     CableProperties properties,
-                                                                                     GUISkin skin )
+                                                                                     CableProperties properties )
     {
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       var data = EditorData.Instance.GetData( properties, "CableProperty" + dir.ToString() );
-      if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ), skin ) ) {
+      if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ) ) ) {
         using ( new GUI.Indent( 12 ) ) {
           GUI.Separator();
 

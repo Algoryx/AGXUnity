@@ -58,6 +58,9 @@ namespace AGXUnityEditor
     /// </summary>
     public static readonly string AGXUnityEditorAssemblyName = "AGXUnityEditor";
 
+    /// <summary>
+    /// Scene view window handler, i.e., GUI windows rendered in Scene View.
+    /// </summary>
     public static GUIWindowHandler SceneViewGUIWindowHandler { get; private set; } = new GUIWindowHandler();
 
     /// <summary>
@@ -105,6 +108,57 @@ namespace AGXUnityEditor
       CreateDefaultAssets();
 
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
+    }
+
+    public enum EditorWindowType
+    {
+      InspectorWindow,
+      SceneHierarchyWindow,
+      SceneView,
+      GameView
+    }
+
+    /// <summary>
+    /// Finds which window the mouse is currently hovering given type name
+    /// of the window class (including name space). E.g., "UnityEngine.InspectorWindow".
+    /// </summary>
+    /// <param name="windowClassName">Window class name, including name space.</param>
+    /// <returns>True if the mouse is hovering given window type name, otherwise false.</returns>
+    public static bool IsMouseOverWindow( string windowClassName )
+    {
+      try {
+        var mouseOverWindow = EditorWindow.mouseOverWindow;
+        return mouseOverWindow != null && mouseOverWindow.GetType().FullName == windowClassName;
+      }
+      catch ( Exception ) {
+        // EditorWindow.mouseOverWindow can throw null pointer exceptions at random.
+        return false;
+      }
+    }
+
+    /// <summary>
+    /// Finds if mouse is hovering given editor window type.
+    /// </summary>
+    /// <param name="windowType">Editor window type.</param>
+    /// <returns>True if the mouse is hovering given window type, otherwise false.</returns>
+    public static bool IsMouseOverWindow( EditorWindowType windowType )
+    {
+      return IsMouseOverWindow( "UnityEditor." + windowType.ToString() );
+    }
+
+    /// <summary>
+    /// Finds if mouse is hovering given editor window instance.
+    /// </summary>
+    /// <param name="editorWindow">Editor window instance.</param>
+    /// <returns>True if the mouse is hovering given editor window instance, otherwise false.</returns>
+    public static bool IsMouseOverWindow( EditorWindow editorWindow )
+    {
+      try {
+        return editorWindow != null && EditorWindow.mouseOverWindow == editorWindow;
+      }
+      catch ( Exception ) {
+        return false;
+      }
     }
 
     /// <summary>
@@ -355,8 +409,7 @@ namespace AGXUnityEditor
 
     private static void OnSceneView( SceneView sceneView )
     {
-      InspectorEditor.RequestConstantRepaint = EditorWindow.mouseOverWindow != null &&
-                                               EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.InspectorWindow";
+      InspectorEditor.RequestConstantRepaint = IsMouseOverWindow( EditorWindowType.InspectorWindow );
 
       if ( m_requestSceneViewFocus ) {
         sceneView.Focus();

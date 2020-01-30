@@ -13,28 +13,11 @@ namespace AGXUnityEditor
 {
   public class InspectorEditor : Editor
   {
-    private static GUISkin m_skin = null;
-
-    public static GUISkin Skin
+    public static InspectorGUISkin Skin
     {
       get
       {
-        if ( m_skin == null ) {
-          m_skin                    = (GUISkin)EditorGUIUtility.Load( IO.Utils.AGXUnityEditorDirectory +
-                                                                      System.IO.Path.DirectorySeparatorChar +
-                                                                      "Resources" +
-                                                                      System.IO.Path.DirectorySeparatorChar +
-                                                                      "AGXUnityInspectorGUISkin.guiskin" );
-          m_skin.label.richText     = true;
-          m_skin.toggle.richText    = true;
-          m_skin.button.richText    = true;
-          m_skin.textArea.richText  = true;
-          m_skin.textField.richText = true;
-
-          if ( EditorGUIUtility.isProSkin )
-            m_skin.label.normal.textColor = 204.0f / 255.0f * Color.white;
-        }
-        return m_skin;
+        return InspectorGUISkin.Instance;
       }
     }
 
@@ -168,7 +151,7 @@ namespace AGXUnityEditor
       object value = null;
       bool changed = false;
       if ( drawerInfo.IsValid ) {
-        value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper, Skin } );
+        value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper } );
         changed = UnityEngine.GUI.changed &&
                   ( drawerInfo.IsNullable || value != null );
       }
