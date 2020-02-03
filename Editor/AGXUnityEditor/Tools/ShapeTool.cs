@@ -173,7 +173,7 @@ namespace AGXUnityEditor.Tools
       if ( !GUI.Foldout( EditorData.Instance.GetData( Shape,
                                                       "Visual",
                                                       entry => entry.Bool = true ),
-                                                      GUI.MakeLabel( "Shape Visual", 12 ) ) )
+                                                      GUI.MakeLabel( "Shape Visual" ) ) )
         return;
 
       GUI.Separator();

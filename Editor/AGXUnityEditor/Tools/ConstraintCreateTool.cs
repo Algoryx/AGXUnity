@@ -61,21 +61,18 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
 
       using ( GUI.IndentScope.Create() ) {
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Label( GUI.MakeLabel( "Name", true ), skin.Label, GUILayout.Width( 64 ) );
-          m_createConstraintData.Name = GUILayout.TextField( m_createConstraintData.Name, skin.TextField, GUILayout.ExpandWidth( true ) );
-        }
-        GUILayout.EndHorizontal();
+        m_createConstraintData.Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name", true ),
+                                                                 m_createConstraintData.Name,
+                                                                 skin.TextField );
 
         GUILayout.BeginHorizontal();
         {
-          GUILayout.Label( GUI.MakeLabel( "Type", true ), skin.Label, GUILayout.Width( 64 ) );
+          EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Type", true ), skin.Label );
+          // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
+          GUILayout.Space( -GUI.IndentScope.PixelLevel );
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
             m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
-                                                                                               skin.Button,
-                                                                                               GUILayout.ExpandWidth( true ),
-                                                                                               GUILayout.Height( 18 ) );
+                                                                                               skin.Button );
         }
         GUILayout.EndHorizontal();
       }

@@ -89,26 +89,21 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
-      var skin = InspectorEditor.Skin;
-
       if ( !onlyNameAndMaterial ) {
         GUILayout.Space( 4 );
         using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.Label );
+          GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), InspectorEditor.Skin.Label );
 
         GUILayout.Space( 2 );
         GUI.Separator();
         GUILayout.Space( 4 );
       }
 
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Name:", true ), skin.Label, GUILayout.Width( 64 ) );
-        Name = GUILayout.TextField( Name, skin.TextField, GUILayout.ExpandWidth( true ) );
-      }
-      GUILayout.EndHorizontal();
+      Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name" ),
+                                        Name,
+                                        InspectorEditor.Skin.TextField );
 
-      InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material:", true ),
+      InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material" ),
                                   Material,
                                   newMaterial => Material = newMaterial );
 

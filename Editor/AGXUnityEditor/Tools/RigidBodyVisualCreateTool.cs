@@ -62,9 +62,11 @@ namespace AGXUnityEditor.Tools
         if ( ShapeVisual.HasShapeVisual( tool.Shape ) )
           continue;
 
-        using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.Label );
-        tool.OnInspectorGUI( true );
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( tool.Shape.name,
+                                                    true ),
+                                     skin.Label );
+        using ( GUI.IndentScope.Create() )
+          tool.OnInspectorGUI( true );
       }
 
       var createCancelState = GUI.CreateCancelButtons( true, "Create shape visual for shapes that hasn't already got one." );

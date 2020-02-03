@@ -67,7 +67,7 @@ namespace AGXUnityEditor
         foldoutData.Bool = EditorGUI.Foldout( position,
                                               foldoutData.Bool,
                                               content,
-                                              true );
+                                              true ) && instance != null;
       position.xMax    = oldWidth;
 
       // Entry may change, render object field and create-new-button if

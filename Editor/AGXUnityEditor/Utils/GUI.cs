@@ -386,30 +386,41 @@ namespace AGXUnityEditor.Utils
     {
       bool createPressed = false;
       bool cancelPressed = false;
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.FlexibleSpace();
 
-        GUILayout.BeginVertical();
-        {
-          GUILayout.Space( 13 );
-          using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-            cancelPressed = GUILayout.Button( MakeLabel( "Cancel", false ),
-                                              InspectorEditor.Skin.Button,
-                                              GUILayout.Width( 96 ),
-                                              GUILayout.Height( 16 ) );
-          GUILayout.EndVertical();
-        }
+      var cancelButtonWidth = 96.0f;
+      var createButtonWidth = 120.0f;
+      var buttonsMaxHeight  = 16.0f;
 
-        using ( new EditorGUI.DisabledGroupScope( !validToPressCreate ) )
-        using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-          createPressed = GUILayout.Button( MakeLabel( "Create", true, tooltip ),
-                                            InspectorEditor.Skin.Button,
-                                            GUILayout.Width( 120 ),
-                                            GUILayout.Height( 26 ) );
-        UnityEngine.GUI.enabled = true;
-      }
-      GUILayout.EndHorizontal();
+      var position = EditorGUILayout.GetControlRect( GUILayout.Height( buttonsMaxHeight ) );
+
+      var cancelWidth = 0.0f;
+      var tmp = 0.0f;
+      InspectorEditor.Skin.ButtonLeft.CalcMinMaxWidth( MakeLabel( "Cancel" ), out cancelWidth, out tmp );
+
+      // TODO GUI: What are these magic numbers?
+      var extra = -IndentScope.Level * IndentScope.Level * 2.0f;
+      if ( IndentScope.Level == 0 )
+        extra = 24.0f;
+      var cancelRect = new Rect( position.xMax - cancelButtonWidth - createButtonWidth - cancelWidth + IndentScope.PixelLevel + extra,
+                                 position.y,
+                                 createButtonWidth,
+                                 buttonsMaxHeight );
+      using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
+        cancelPressed = UnityEngine.GUI.Button( cancelRect,
+                                                MakeLabel( "Cancel" ),
+                                                InspectorEditor.Skin.ButtonLeft );
+
+      var createRect = new Rect( position.xMax - createButtonWidth,
+                           position.y,
+                           createButtonWidth,
+                           buttonsMaxHeight );
+      using ( new EditorGUI.DisabledGroupScope( !validToPressCreate ) )
+      using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
+        createPressed = UnityEngine.GUI.Button( createRect,
+                                                MakeLabel( "Create",
+                                                           true,
+                                                           tooltip ),
+                                                InspectorEditor.Skin.ButtonRight );
 
       return createPressed ? CreateCancelState.Create :
              cancelPressed ? CreateCancelState.Cancel :

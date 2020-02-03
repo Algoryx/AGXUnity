@@ -167,7 +167,7 @@ namespace AGXUnityEditor
     }
 
     private static ValueT HandleDefaultAndUserValue<ValueT>( string name,
-                                                            DefaultAndUserValue<ValueT> valInField )
+                                                             DefaultAndUserValue<ValueT> valInField )
       where ValueT : struct
     {
       bool guiWasEnabled       = UnityEngine.GUI.enabled;
@@ -190,7 +190,7 @@ namespace AGXUnityEditor
         useDefaultToggled = GUI.Toggle( GUI.MakeLabel( name.SplitCamelCase(),
                                                        false,
                                                        "If checked - value will be default. Uncheck to manually enter value." ),
-                                    valInField.UseDefault ) != valInField.UseDefault;
+                                        valInField.UseDefault ) != valInField.UseDefault;
         UnityEngine.GUI.enabled = !valInField.UseDefault;
         GUILayout.FlexibleSpace();
         newValue = (ValueT)method.Invoke( null, new object[] { "", valInField.Value, new GUILayoutOption[] { } } );
