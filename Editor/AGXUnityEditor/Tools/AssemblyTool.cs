@@ -189,26 +189,15 @@ namespace AGXUnityEditor.Tools
         bool shapeButtonPressed      = false;
         bool constraintButtonPressed = false;
 
-        GUI.ToolsLabel();
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Space( 12 );
-          using ( GUI.ToolButtonData.ColorBlock ) {
-            rbButtonPressed         = GUILayout.Button( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
-                                                        skin.GetButton( m_mode == Mode.RigidBody, InspectorGUISkin.ButtonType.Left ),
-                                                        GUILayout.Width( 30f ),
-                                                        GUI.ToolButtonData.Height );
-            shapeButtonPressed      = GUILayout.Button( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
-                                                        skin.GetButton( m_mode == Mode.Shape, InspectorGUISkin.ButtonType.Middle ),
-                                                        GUILayout.Width( 54f ),
-                                                        GUI.ToolButtonData.Height );
-            constraintButtonPressed = GUILayout.Button( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
-                                                        skin.GetButton( m_mode == Mode.Constraint, InspectorGUISkin.ButtonType.Right ),
-                                                        GUILayout.Width( 80f ),
-                                                        GUI.ToolButtonData.Height );
-          }
-        }
-        GUILayout.EndHorizontal();
+        GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
+                                                    m_mode == Mode.RigidBody,
+                                                    () => rbButtonPressed = true ),
+                         GUI.ToolButtonData.Create( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
+                                                    m_mode == Mode.Shape,
+                                                    () => shapeButtonPressed = true ),
+                         GUI.ToolButtonData.Create( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
+                                                    m_mode == Mode.Constraint,
+                                                    () => constraintButtonPressed = true ) );
 
         HandleModeGUI();
 

@@ -223,34 +223,25 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectEdge     = false;
       bool togglePositionHandle = false;
 
-      GUILayout.BeginHorizontal();
-      {
-        UnityEngine.GUI.enabled = true;
-        GUI.ToolsLabel();
-
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleSelectParent      = GUI.ToolButton( GUI.Symbols.SelectInSceneViewTool,
-                                                    SelectParent,
-                                                    "Select parent object by selecting object in scene view",
-                                                    InspectorGUISkin.ButtonType.Left );
-
-          UnityEngine.GUI.enabled = guiWasEnabled;
-
-          toggleFindGivenPoint    = GUI.ToolButton( GUI.Symbols.SelectPointTool,
-                                                    FindTransformGivenPointOnSurface,
-                                                    "Find position and rotation given point and direction on an objects surface",
-                                                    InspectorGUISkin.ButtonType.Middle );
-          toggleSelectEdge        = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
-                                                    FindTransformGivenEdge,
-                                                    "Find position and rotation given a triangle or principal edge",
-                                                    InspectorGUISkin.ButtonType.Middle );
-          togglePositionHandle    = GUI.ToolButton( GUI.Symbols.PositionHandleTool,
-                                                    TransformHandleActive,
-                                                    "Position/rotation handle",
-                                                    InspectorGUISkin.ButtonType.Right );
-        }              
-      }
-      GUILayout.EndHorizontal();
+      UnityEngine.GUI.enabled = true;
+      GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.Symbols.SelectInSceneViewTool,
+                                                  SelectParent,
+                                                  "Select parent object by selecting object in scene view",
+                                                  () => toggleSelectParent = true,
+                                                  true,
+                                                  () => UnityEngine.GUI.enabled = guiWasEnabled ),
+                        GUI.ToolButtonData.Create( GUI.Symbols.SelectPointTool,
+                                                  FindTransformGivenPointOnSurface,
+                                                  "Find position and rotation given point and direction on an objects surface",
+                                                  () => toggleFindGivenPoint = true ),
+                        GUI.ToolButtonData.Create( GUI.Symbols.SelectEdgeTool,
+                                                  FindTransformGivenEdge,
+                                                  "Find position and rotation given a triangle or principal edge",
+                                                  () => toggleSelectEdge = true ),
+                        GUI.ToolButtonData.Create( GUI.Symbols.PositionHandleTool,
+                                                  TransformHandleActive,
+                                                  "Position/rotation handle",
+                                                  () => togglePositionHandle = true ) );
 
       if ( toggleSelectParent )
         SelectParent = !SelectParent;

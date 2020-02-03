@@ -67,14 +67,15 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      using ( new GUI.Indent( 12 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         var connectedFrameSynchronized = AttachmentPairs.All( ap => ap.Synchronized );
 
-        GUILayout.Label( GUI.MakeLabel( "Reference frame", true ), skin.Label );
-        GUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 4 + 12 );
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Reference frame", true ), skin.Label );
+        GUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 1 );
 
         using ( new GUILayout.HorizontalScope() ) {
-          GUILayout.Space( 12 );
+          // TODO GUI: Fix this special button. Why 6 pixels extra?
+          GUILayout.Space( GUI.IndentScope.PixelLevel + 6 );
           if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(),
                                                 false,
                                                 "Synchronized with reference frame" ),
@@ -90,7 +91,7 @@ namespace AGXUnityEditor.Tools
         }
 
         UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;
-        GUI.HandleFrames( AttachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 4 + 12 );
+        GUI.HandleFrames( AttachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 1 );
         UnityEngine.GUI.enabled = guiWasEnabled;
       }
     }

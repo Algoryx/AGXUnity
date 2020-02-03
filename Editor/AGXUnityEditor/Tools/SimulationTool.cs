@@ -100,7 +100,7 @@ namespace AGXUnityEditor.Tools
 
       Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
-        using ( new GUI.Indent( 12 ) )
+        using ( GUI.IndentScope.Create() )
           Simulation.DisplayMemoryAllocations = GUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
 

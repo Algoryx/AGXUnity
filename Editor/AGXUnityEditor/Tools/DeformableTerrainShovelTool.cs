@@ -128,7 +128,7 @@ namespace AGXUnityEditor.Tools
                            GUI.MakeLabel( name, true ) ) )
           return;
         GUI.Separator();
-        using ( new GUI.Indent( 24 ) )
+        using ( GUI.IndentScope.Create( 2 ) )
           lineTool.OnInspectorGUI();
       }
     }

@@ -39,7 +39,7 @@ namespace AGXUnityEditor.Tools
 
     protected override void OnPreFrameGUI( CableRouteNode node )
     {
-      using ( new GUI.Indent( 12 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
                                                                node.Type,
                                                                InspectorEditor.Skin.Popup );
@@ -86,7 +86,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator();
 
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
-      using ( new GUI.Indent( 12 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {
           var tmp = OnPropertyGUI( dir, selected.First() );
           if ( tmp != null )
@@ -109,7 +109,7 @@ namespace AGXUnityEditor.Tools
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       var data = EditorData.Instance.GetData( properties, "CableProperty" + dir.ToString() );
       if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ) ) ) {
-        using ( new GUI.Indent( 12 ) ) {
+        using ( GUI.IndentScope.Create() ) {
           GUI.Separator();
 
           var wrappers = PropertyWrapper.FindProperties<CableProperty>( System.Reflection.BindingFlags.Instance |

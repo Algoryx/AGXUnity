@@ -60,7 +60,7 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      using ( new GUI.Indent( 16 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         GUILayout.BeginHorizontal();
         {
           GUILayout.Label( GUI.MakeLabel( "Name", true ), skin.Label, GUILayout.Width( 64 ) );

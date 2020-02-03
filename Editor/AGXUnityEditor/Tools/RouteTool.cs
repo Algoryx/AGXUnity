@@ -136,17 +136,10 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
 
-      GUILayout.BeginHorizontal();
-      {
-        GUI.ToolsLabel();
-
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
-                                                    DisableCollisionsTool,
-                                                    "Disable collisions against other objects" );
-        }
-      }
-      GUILayout.EndHorizontal();
+      GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
+                                                  DisableCollisionsTool,
+                                                  "Disable collisions against other objects",
+                                                  () => toggleDisableCollisions = true ) );
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
@@ -199,7 +192,7 @@ namespace AGXUnityEditor.Tools
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
-          using ( new GUI.Indent( 12 ) ) {
+          using ( GUI.IndentScope.Create() ) {
             if ( validatedNode.Valid )
               GUILayout.BeginVertical();
             else
@@ -217,7 +210,7 @@ namespace AGXUnityEditor.Tools
 
               OnPreFrameGUI( node );
 
-              GUI.HandleFrame( node, 12 );
+              GUI.HandleFrame( node, 1 );
 
               OnPostFrameGUI( node );
 

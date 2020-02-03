@@ -55,7 +55,7 @@ namespace AGXUnityEditor.Utils
                                                                                                        InspectorGUISkin.ButtonType.Right :
                                                                                                        InspectorGUISkin.ButtonType.Middle ),
                                               GUILayout.Width( 36 ),
-                                              GUI.ToolButtonData.Height );
+                                              GUILayout.Height( 25 ) );
       if ( current.type == EventType.Repaint )
         m_buttonRect = GUILayoutUtility.GetLastRect();
 
@@ -95,7 +95,7 @@ namespace AGXUnityEditor.Utils
         GUILayout.EndHorizontal();
       }
       else {
-        using ( new GUI.Indent( guiStartOffset ) )
+        using ( GUI.IndentScope.Create() )
           State.CreatePressed = OnButtonGUI( "Create", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Default; } );
       }
 
@@ -132,7 +132,7 @@ namespace AGXUnityEditor.Utils
     /// <returns>True when button is pressed.</returns>
     private bool OnButtonGUI( string name, GUIStyle buttonStyle, Event current, Action onMouseOver )
     {
-      bool down = GUILayout.Button( GUI.MakeLabel( name ), buttonStyle, GUILayout.Width( 52 ), GUI.ToolButtonData.Height );
+      bool down = GUILayout.Button( GUI.MakeLabel( name ), buttonStyle, GUILayout.Width( 52 ), GUILayout.Width( 25 ) );
       if ( current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains( current.mousePosition ) )
         onMouseOver();
 

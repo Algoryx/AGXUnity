@@ -5,31 +5,6 @@ namespace AGXUnity.Utils
 {
   public class GUI
   {
-    /// <summary>
-    /// Indent block.
-    /// </summary>
-    /// <example>
-    /// using ( new GUI.Indent( 16.0f ) ) {
-    ///   GUILayout.Label( "This label is indented 16 pixels." );
-    /// }
-    /// GUILayout.Label( "This label isn't indented." );
-    /// </example>
-    public class Indent : IDisposable
-    {
-      public Indent( float numPixels )
-      {
-        GUILayout.BeginHorizontal();
-        GUILayout.Space( numPixels );
-        GUILayout.BeginVertical();
-      }
-
-      public void Dispose()
-      {
-        GUILayout.EndVertical();
-        GUILayout.EndHorizontal();
-      }
-    }
-
     public class AlignBlock : IDisposable
     {
       public enum Alignment { Left, Center, Right };
@@ -98,35 +73,35 @@ namespace AGXUnity.Utils
 
     public static GUIContent MakeLabel( string text, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = new GUIContent();
-      string boldBegin = bold ? "<b>" : "";
-      string boldEnd   = bold ? "</b>" : "";
-      label.text       = boldBegin + text + boldEnd;
+      var content   = new GUIContent();
+      var boldBegin = bold ? "<b>" : "";
+      var boldEnd   = bold ? "</b>" : "";
+      content.text  = boldBegin + text + boldEnd;
 
       if ( toolTip != string.Empty )
-        label.tooltip = toolTip;
+        content.tooltip = toolTip;
 
-      return label;
+      return content;
     }
 
     public static GUIContent MakeLabel( string text, int size, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, bold, toolTip );
-      label.text       = @"<size=" + size + @">" + label.text + @"</size>";
+      var label  = MakeLabel( text, bold, toolTip );
+      label.text = @"<size=" + size + @">" + label.text + @"</size>";
       return label;
     }
 
     public static GUIContent MakeLabel( string text, Color color, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, bold, toolTip );
-      label.text       = AddColorTag( text, color );
+      var label  = MakeLabel( text, bold, toolTip );
+      label.text = AddColorTag( text, color );
       return label;
     }
 
     public static GUIContent MakeLabel( string text, Color color, int size, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, size, bold, toolTip );
-      label.text       = AddColorTag( label.text, color );
+      var label  = MakeLabel( text, size, bold, toolTip );
+      label.text = AddColorTag( label.text, color );
       return label;
     }
 

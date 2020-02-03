@@ -108,9 +108,9 @@ namespace AGXUnityEditor.Tools
       }
       GUILayout.EndHorizontal();
 
-      GUI.MaterialEditor( GUI.MakeLabel( "Material:", true ),
-                          Material,
-                          newMaterial => Material = newMaterial );
+      InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material:", true ),
+                                  Material,
+                                  newMaterial => Material = newMaterial );
 
       GUI.Separator();
 

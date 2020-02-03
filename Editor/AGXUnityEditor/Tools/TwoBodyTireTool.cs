@@ -34,24 +34,18 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectTire = false;
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel();
-          using ( GUI.ToolButtonData.ColorBlock ) {
-            toggleSelectTireAndRim = GUI.ToolButton( '\u274D',
+        GUI.ToolButtons( GUI.ToolButtonData.Create( '\u274D',
                                                      SelectTireAndRimToolEnable,
                                                      "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
-                                                     InspectorGUISkin.ButtonType.Left );
-            toggleSelectTire       = GUI.ToolButton( '\uFFEE',
+                                                     () => toggleSelectTireAndRim = true ),
+                         GUI.ToolButtonData.Create( '\uFFEE',
                                                      SelectTireToolEnable,
                                                      "Find Tire by selecting Tire in scene view.",
-                                                     InspectorGUISkin.ButtonType.Middle );
-            toggleSelectRim        = GUI.ToolButton( '\u25CB',
+                                                     () => toggleSelectTire = true ),
+                         GUI.ToolButtonData.Create( '\u25CB',
                                                      SelectRimToolEnable,
                                                      "Find Rim by selecting Rim in scene view.",
-                                                     InspectorGUISkin.ButtonType.Right );
-          }
-        }
-        GUI.Separator();
+                                                     () => toggleSelectRim = true ) );
       }
 
       if ( toggleSelectTireAndRim )

@@ -52,7 +52,10 @@ namespace AGXUnity
         var dataPath           = Application.dataPath;
         var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
         var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
-        var envInstance        = agxIO.Environment.instance();
+
+        IO.Environment.AddToPath( dataPluginsPath );
+
+        var envInstance = agxIO.Environment.instance();
 
         // In case of installed AGX Dynamics, agxIO.Environment.instance() will
         // read data from the registry and add runtime and resource paths to
@@ -66,8 +69,6 @@ namespace AGXUnity
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsPath );
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
-
-        IO.Environment.AddToPath( dataPluginsPath );
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );

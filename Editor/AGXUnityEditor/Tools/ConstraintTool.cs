@@ -123,7 +123,7 @@ namespace AGXUnityEditor.Tools
           continue;
         }
 
-        using ( new GUI.Indent( 12 ) ) {
+        using ( GUI.IndentScope.Create() ) {
           var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
           foreach ( var wrapper in ecRowDataWrappers ) {
             if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
@@ -156,12 +156,13 @@ namespace AGXUnityEditor.Tools
                   using ( new GUILayout.HorizontalScope() )
                   using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
                     // Half the width of the U, V, N label.
-                    GUILayout.Space( -6 );
+                    //GUILayout.Space( -6 );
 
                     GUILayout.Label( GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ),
                                      skin.Label,
                                      GUILayout.Width( 12 ) );
 
+                    GUILayout.Space( -16 );
                     // Handling type float, e.g., compliance and damping.
                     if ( wrapper.IsType<float>() ) {
                       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
@@ -183,6 +184,10 @@ namespace AGXUnityEditor.Tools
                                                                       GUILayout.MaxWidth( 140 ) );
                       var forceRangeMinChanged = UnityEngine.GUI.changed;
                       EditorGUI.showMixedValue = false;
+
+                      // TODO GUI: Patch indent method
+                      GUILayout.Space( -18 );
+
                       UnityEngine.GUI.changed  = false;
                       EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
                                                                                            wrapper.Get<RangeReal>( rowData ).Max ) );
@@ -221,7 +226,7 @@ namespace AGXUnityEditor.Tools
            GUI.Foldout( selected( "controllers" ),
                         GUI.MakeLabel( "Controllers", true ) ) ) {
         GUI.Separator();
-        using ( new GUI.Indent( 12 ) ) {
+        using ( GUI.IndentScope.Create() ) {
           foreach ( var refController in ecControllers ) {
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
@@ -245,7 +250,7 @@ namespace AGXUnityEditor.Tools
                                 where controller.GetType() == refController.GetType() &&
                                       controller.GetControllerType() == refController.GetControllerType()
                                 select controller ).ToArray();
-            using ( new GUI.Indent( 12 ) ) {
+            using ( GUI.IndentScope.Create() ) {
               InspectorEditor.DrawMembersGUI( controllers );
               GUI.Separator();
               InspectorEditor.DrawMembersGUI( controllers, controller => (controller as ElementaryConstraint).RowData[ 0 ] );
@@ -262,7 +267,7 @@ namespace AGXUnityEditor.Tools
       var skin          = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      using ( new GUI.Indent( 12 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         GUILayout.BeginHorizontal();
         {
           EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
@@ -300,22 +305,23 @@ namespace AGXUnityEditor.Tools
 
     public static Constraint.ESolveType ConstraintSolveTypeGUI( Constraint.ESolveType solveType )
     {
-      GUILayout.BeginHorizontal();
+      using ( new GUILayout.HorizontalScope() )
+      using ( GUI.IndentScope.Create() )
       {
-        GUILayout.Space( 12 );
         EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Solve Type", true ) );
+        // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
+        GUILayout.Space( -GUI.IndentScope.PixelLevel );
         solveType = (Constraint.ESolveType)EditorGUILayout.EnumPopup( solveType,
                                                                       InspectorEditor.Skin.Popup,
-                                                                      GUILayout.Width( 2 * 76 + 4 ) );
+                                                                      GUILayout.Width( 2 * 76 + GUI.IndentScope.PixelLevel ) );
       }
-      GUILayout.EndHorizontal();
 
       return solveType;
     }
 
     public static bool ConstraintConnectedFrameSyncGUI( bool enabled )
     {
-      using ( new GUI.Indent( 12 ) ) {
+      using ( GUI.IndentScope.Create() ) {
         enabled = GUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
                               !EditorGUI.showMixedValue && enabled );
       }

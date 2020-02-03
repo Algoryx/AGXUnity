@@ -86,7 +86,7 @@ namespace AGXUnityEditor.Tools
       GUI.Separator3D();
 
       if ( GUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ) ) ) {
-        using ( new GUI.Indent( 12 ) ) {
+        using ( GUI.IndentScope.Create() ) {
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {

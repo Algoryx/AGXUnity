@@ -59,7 +59,7 @@ namespace AGXUnityEditor.Tools
                                                                   "Enable/disable oriented friction models." ),
                                                   entries[ index ].IsOriented );
         if ( entries[ index ].IsOriented ) {
-          using ( new GUI.Indent( 28 ) ) {
+          using ( GUI.IndentScope.Create( 2 ) ) {
             entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
                                                                                         entries[ index ].ReferenceObject,
                                                                                         typeof( GameObject ),

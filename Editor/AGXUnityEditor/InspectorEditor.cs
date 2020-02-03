@@ -141,7 +141,7 @@ namespace AGXUnityEditor
       if ( !wrapper.CanRead() )
         return false;
 
-      var drawerInfo = InspectorGUI.GetDrawerMethod( wrapper.GetContainingType() );
+      var drawerInfo = InvokeWrapperInspectorDrawer.GetDrawerMethod( wrapper.GetContainingType() );
 
       if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
         Utils.GUI.Separator();

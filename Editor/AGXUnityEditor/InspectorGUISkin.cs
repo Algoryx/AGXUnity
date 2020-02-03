@@ -49,6 +49,10 @@ namespace AGXUnityEditor
 
     public GUIStyle Popup { get; private set; } = null;
 
+    public static Color BrandColor { get; private set; } = new Color( 243.0f / 255.0f,
+                                                                      139.0f / 255.0f,
+                                                                      0.0f );
+
     public GUIStyle GetButton( bool active, ButtonType type = ButtonType.Normal )
     {
       return active ?

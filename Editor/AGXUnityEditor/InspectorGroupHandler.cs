@@ -18,12 +18,12 @@ namespace AGXUnityEditor
 
     public bool IsHidden { get; private set; }
 
-    public void Begin( bool isHidden, float indentNumPixels = 12.0f )
+    public void Begin( bool isHidden, int indentLevel = 1 )
     {
       End();
       IsHidden = isHidden;
       if ( !isHidden )
-        m_indent = new Utils.GUI.Indent( indentNumPixels );
+        m_indent = new Utils.GUI.IndentScope( indentLevel );
     }
 
     public void End()
@@ -54,6 +54,6 @@ namespace AGXUnityEditor
       End();
     }
 
-    private Utils.GUI.Indent m_indent;
+    private Utils.GUI.IndentScope m_indent;
   }
 }

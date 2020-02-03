@@ -40,115 +40,180 @@ namespace AGXUnityEditor.Utils
       public const char CircleArrowAcw          = '\u21ba';
     }
 
+    public class IndentScope : IDisposable
+    {
+      public static IndentScope Create( int numLevels = 1 )
+      {
+        return new IndentScope( numLevels );
+      }
+
+      public static IndentScope NoIndent
+      {
+        get { return new IndentScope( -Level ); }
+      }
+
+      public static float PixelLevel
+      {
+        get
+        {
+          return Level * m_pixelsPerLevel;
+        }
+      }
+
+      public static int Level
+      {
+        get
+        {
+          return EditorGUI.indentLevel;
+        }
+        private set
+        {
+          EditorGUI.indentLevel = value;
+        }
+      }
+
+      public int NumLevels { get; private set; } = 0;
+
+      public IndentScope( int numLevels = 1 )
+      {
+        if ( Level + numLevels < 0 )
+          throw new AGXUnity.Exception( "Trying to reach negative indent level: current_level + num_levels < 0" );
+
+        NumLevels = numLevels;
+        Level    += numLevels;
+      }
+
+      public void Dispose()
+      {
+        Level -= NumLevels;
+      }
+
+      private static int m_pixelsPerLevel = 15;
+    }
+
     public static bool Toggle( GUIContent content,
                                bool value )
     {
       return EditorGUILayout.Toggle( content, value );
     }
 
-    public static ValueT HandleDefaultAndUserValue<ValueT>( string name,
-                                                            DefaultAndUserValue<ValueT> valInField )
-      where ValueT : struct
+   public static ColorBlock NodeListButtonColor
     {
-      bool guiWasEnabled       = UnityEngine.GUI.enabled;
-      ValueT newValue          = default( ValueT );
-      MethodInfo floatMethod   = typeof( EditorGUILayout ).GetMethod( "FloatField", new[] { typeof( string ), typeof( float ), typeof( GUILayoutOption[] ) } );
-      MethodInfo vector3Method = typeof( EditorGUILayout ).GetMethod( "Vector3Field", new[] { typeof( string ), typeof( Vector3 ), typeof( GUILayoutOption[] ) } );
-      MethodInfo method        = typeof( ValueT ) == typeof( float ) ?
-                                   floatMethod :
-                                 typeof( ValueT ) == typeof( Vector3 ) ?
-                                   vector3Method :
-                                   null;
-      if ( method == null )
-        throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
-
-      bool useDefaultToggled = false;
-      bool updateDefaultValue = false;
-      GUILayout.BeginHorizontal();
+      get
       {
-        // Note that we're checking if the value has changed!
-        useDefaultToggled = Toggle( MakeLabel( name.SplitCamelCase(),
-                                               false,
-                                               "If checked - value will be default. Uncheck to manually enter value." ),
-                                    valInField.UseDefault ) != valInField.UseDefault;
-        UnityEngine.GUI.enabled = !valInField.UseDefault;
-        GUILayout.FlexibleSpace();
-        newValue = (ValueT)method.Invoke( null, new object[] { "", valInField.Value, new GUILayoutOption[] { } } );
-        UnityEngine.GUI.enabled = valInField.UseDefault;
-        updateDefaultValue = GUILayout.Button( MakeLabel( "Update",
-                                                          false,
-                                                          "Update default value" ),
-                                               InspectorEditor.Skin.Button,
-                                               GUILayout.Width( 52 ) );
-        UnityEngine.GUI.enabled = guiWasEnabled;
+        return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) );
       }
-      GUILayout.EndHorizontal();
+    }
 
-      if ( useDefaultToggled ) {
-        valInField.UseDefault = !valInField.UseDefault;
-        updateDefaultValue    = valInField.UseDefault;
-
-        // We don't want the default value to be written to
-        // the user specified.
-        if ( !valInField.UseDefault )
-          newValue = valInField.UserValue;
+    public struct ToolButtonData
+    {
+      public static ColorBlock ColorBlock
+      {
+        get
+        {
+          return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) );
+        }
       }
 
-      if ( updateDefaultValue )
-        valInField.OnForcedUpdate();
+      public static ToolButtonData Create( char symbol,
+                                           bool isActive,
+                                           string toolTip,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           Action postRender = null )
+      {
+        return Create( MakeLabel( symbol.ToString(),
+                                  false,
+                                  toolTip ),
+                        isActive,
+                        onClick,
+                        enabled );
+      }
 
-      return newValue;
+      public static ToolButtonData Create( GUIContent content,
+                                           bool isActive,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           Action postRender = null )
+      {
+        return new ToolButtonData()
+        {
+          GUIContent = content,
+          IsActive   = isActive,
+          Enabled    = enabled,
+          OnClick    = onClick,
+          PostRender = postRender
+        };
+      }
+
+      public GUIContent GUIContent;
+      public bool IsActive;
+      public bool Enabled;
+      public Action OnClick;
+      public Action PostRender;
     }
 
-    public class ToolButtonData
+    public static void ToolButtons( params ToolButtonData[] data )
     {
-      public static GUILayoutOption Width { get { return GUILayout.Width( 25f ); } }
-      public static GUILayoutOption Height { get { return GUILayout.Height( 25f ); } }
-      public static ColorBlock ColorBlock { get { return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ); } }
-    }
+      if ( data.Length == 0 )
+        return;
 
-    public static ColorBlock NodeListButtonColor { get { return new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ); } }
+      float buttonWidth  = 25.0f;
+      float buttonHeight = 25.0f;
+      float buttonOffset = 12.0f;
 
-    public static void ToolsLabel()
-    {
-      GUILayout.Label( GUI.MakeLabel( "Tools:", true ),
-                       InspectorEditor.Skin.LabelMiddleLeft,
-                       GUILayout.Width( 64 ),
-                       GUILayout.Height( 25 ) );
-    }
+      using ( ToolButtonData.ColorBlock ) {
+        var position   = EditorGUILayout.GetControlRect( false, buttonHeight );
+        var toolsLabel = MakeLabel( "<b>Tools:</b>" );
+        EditorGUI.LabelField( position,
+                              toolsLabel,
+                              InspectorEditor.Skin.LabelMiddleLeft );
 
-    public static bool ToolButton( char symbol,
-                                   bool active,
-                                   string toolTip,
-                                   InspectorGUISkin.ButtonType buttonType = InspectorGUISkin.ButtonType.Normal )
-    {
-      return GUILayout.Button( MakeLabel( symbol.ToString(), false, toolTip ),
-                               InspectorEditor.Skin.GetButton( active, buttonType ),
-                               ToolButtonData.Width,
-                               ToolButtonData.Height );
+        position.x += InspectorGUI.GetWidthIncludingIndent( toolsLabel,
+                                                            InspectorEditor.Skin.LabelMiddleLeft ) +
+                      buttonOffset;
+        position.width = buttonWidth;
+
+        for ( int i = 0; i < data.Length; ++i ) {
+          using ( new EditorGUI.DisabledGroupScope( !data[ i ].Enabled ) ) {
+            var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
+                             data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
+                                                                       InspectorGUISkin.ButtonType.Middle;
+            var pressed = UnityEngine.GUI.Button( position,
+                                                  data[ i ].GUIContent,
+                                                  InspectorEditor.Skin.GetButton( data[ i ].IsActive, buttonType ) );
+            position.x += buttonWidth;
+
+            data[ i ].PostRender?.Invoke();
+
+            if ( pressed )
+              data[ i ].OnClick?.Invoke();
+          }
+        }
+      }
     }
 
     public static void HandleFrame( IFrame frame,
-                                    float numPixelsIndentation = 0.0f,
+                                    int indentLevelInc = 0,
                                     bool includeFrameToolIfPresent = true )
     {
       if ( frame == null )
         return;
 
       HandleFrames( new IFrame[] { frame },
-                    numPixelsIndentation,
+                    indentLevelInc,
                     includeFrameToolIfPresent );
     }
 
     public static void HandleFrames( IFrame[] frames,
-                                     float numPixelsIndentation = 0.0f,
+                                     int indentLevelInc = 0,
                                      bool includeFrameToolIfPresent = true )
     {
       var skin           = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
       var refFrame       = frames[ 0 ];
 
-      using ( new Indent( numPixelsIndentation ) ) {
+      using ( IndentScope.Create( indentLevelInc ) ) {
         UnityEngine.GUI.enabled = true;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
         GameObject newParent = (GameObject)EditorGUILayout.ObjectField( MakeLabel( "Parent" ),
@@ -192,7 +257,7 @@ namespace AGXUnityEditor.Utils
                                       Tools.FrameTool.FindActive( refFrame ) :
                                       null;
         if ( frameTool != null )
-          using ( new Indent( 12 ) )
+          using ( IndentScope.Create() )
             frameTool.OnPreTargetMembersGUI();
       }
     }
@@ -239,13 +304,13 @@ namespace AGXUnityEditor.Utils
 
     public static void Separator( float height = 1.0f, float space = 1.0f )
     {
-      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
-      rect.height = height;
-      rect.y += space / 2.0f;
-      EditorGUI.DrawRect( rect,
-                          EditorGUIUtility.isProSkin ?
-                            Color.Lerp( Color.black, Color.white, 0.7f ) :
-                            Color.Lerp( Color.white, Color.black, 0.7f ) );
+      //var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      //rect.height = height;
+      //rect.y += space / 2.0f;
+      //EditorGUI.DrawRect( rect,
+      //                    EditorGUIUtility.isProSkin ?
+      //                      Color.Lerp( Color.black, Color.white, 0.7f ) :
+      //                      Color.Lerp( Color.white, Color.black, 0.7f ) );
     }
 
     public static void Separator3D( float space = 2.0f )
@@ -310,65 +375,6 @@ namespace AGXUnityEditor.Utils
       return fadedStyle;
     }
 
-    private static Editor m_cachedMaterialEditor = null;
-    public static void MaterialEditor( GUIContent objFieldLabel,
-                                       Material material,
-                                       Action<Material> onMaterialChanged,
-                                       bool forceEnableEditing = false )
-    {
-      var skin                     = InspectorEditor.Skin;
-      Material newMaterial         = null;
-      bool createNewMaterialButton = false;
-
-      GUILayout.BeginHorizontal();
-      {
-        newMaterial = EditorGUILayout.ObjectField( objFieldLabel,
-                                                   material,
-                                                   typeof( Material ),
-                                                   false ) as Material;
-        GUILayout.Space( 4 );
-        using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-          createNewMaterialButton = GUILayout.Button( MakeLabel( "New", false, "Create new material" ),
-                                                      GUILayout.Width( 42 ) );
-      }
-      GUILayout.EndHorizontal();
-
-      bool isBuiltInMaterial = material == null ||
-                               !AssetDatabase.GetAssetPath( material ).StartsWith( "Assets" ) ||
-                               material == Manager.GetOrCreateShapeVisualDefaultMaterial();
-
-      if ( m_cachedMaterialEditor == null )
-        m_cachedMaterialEditor = Editor.CreateEditor( material, typeof( MaterialEditor ) );
-      else
-        Editor.CreateCachedEditor( material, typeof( MaterialEditor ), ref m_cachedMaterialEditor );
-
-      using ( new EditorGUI.DisabledGroupScope( !forceEnableEditing && isBuiltInMaterial ) ) {
-        if ( m_cachedMaterialEditor != null ) {
-          m_cachedMaterialEditor.DrawHeader();
-          m_cachedMaterialEditor.OnInspectorGUI();
-        }
-      }
-
-      if ( createNewMaterialButton ) {
-        string result = EditorUtility.SaveFilePanel( "Create new material", "Assets", "new material.mat", "mat" );
-        if ( result != string.Empty ) {
-          System.IO.FileInfo info = new System.IO.FileInfo( result );
-          var relativePath = IO.Utils.MakeRelative( result, Application.dataPath );
-
-          newMaterial = new Material( material ?? Manager.GetOrCreateShapeVisualDefaultMaterial() );
-          newMaterial.name = info.Name;
-          AssetDatabase.CreateAsset( newMaterial, relativePath + ( info.Extension == ".mat" ? "" : ".mat" ) );
-          AssetDatabase.SaveAssets();
-          AssetDatabase.Refresh();
-        }
-      }
-
-      //Editor.DestroyImmediate( materialEditor );
-
-      if ( newMaterial != null && newMaterial != material && onMaterialChanged != null )
-        onMaterialChanged.Invoke( newMaterial );
-    }
-
     public enum CreateCancelState
     {
       Nothing,
@@ -418,11 +424,12 @@ namespace AGXUnityEditor.Utils
                                                    false ) as Mesh;
       return newSource != currentSource ? newSource : null;
     }
+
     public static void WarningLabel( string warning )
     {
       var prevBgc = UnityEngine.GUI.backgroundColor;
       UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
-      GUILayout.Label( MakeLabel( warning,
+      EditorGUILayout.LabelField( MakeLabel( warning,
                                   Color.Lerp( Color.red, Color.white, 0.25f ),
                                   true ),
                        InspectorEditor.Skin.TextAreaMiddleCenter );

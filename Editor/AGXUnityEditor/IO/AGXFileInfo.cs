@@ -35,15 +35,15 @@ namespace AGXUnityEditor.IO
     ///   - CubeMap:   ".cubemap"
     ///   - Animation: ".anim"
     /// </summary>
-    /// <param name="asset">Asset instance.</param>
+    /// <param name="assetType">Asset instance type.</param>
     /// <returns>File extension including period.</returns>
-    public static string FindAssetExtension( UnityEngine.Object asset )
+    public static string FindAssetExtension( Type assetType )
     {
-      return asset is Material ?
+      return assetType == typeof( Material ) ?
                ".mat" :
-             asset is Cubemap ?
+             assetType == typeof( Cubemap ) ?
                ".cubemap" :
-             asset is Animation ?
+             assetType == typeof( Animation ) ?
                ".anim" :
                ".asset";
     }
@@ -215,7 +215,7 @@ namespace AGXUnityEditor.IO
       // We cannot have \\ in the name
       asset.name = asset.name.Replace("\\", "_");
       return DataDirectory + "/" +
-             ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset );
+             ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset.GetType() );
     }
 
     /// <summary>

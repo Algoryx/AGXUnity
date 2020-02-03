@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -125,28 +126,22 @@ namespace AGXUnityEditor.Tools
       bool toggleRenderAsArrow = false;
       bool showTools           = !EditorApplication.isPlaying;
       if ( showTools ) {
-        using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel();
-
-          using ( GUI.ToolButtonData.ColorBlock ) {
-            toggleCreateEdge = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
-                                               EdgeDetectionToolEnable,
-                                               "Find line given edge.",
-                                               InspectorGUISkin.ButtonType.Left );
-            if ( Mode != ToolMode.Direction ) {
-              toggleRenderAsArrow = GUI.ToolButton( GUI.Symbols.ArrowRight,
-                                                    RenderAsArrow,
-                                                    "Visualize line direction.",
-                                                    InspectorGUISkin.ButtonType.Middle );
-            }
-            using ( new Utils.GUI.EnabledBlock( Line.Valid ) ) {
-              toggleFlipDirection = GUI.ToolButton( GUI.Symbols.ShapeResizeTool,
-                                                    false,
-                                                    "Flip direction.",
-                                                    InspectorGUISkin.ButtonType.Right );
-            }
-          }
-        }
+        List<GUI.ToolButtonData> toolButtonData = new List<GUI.ToolButtonData>();
+        toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.SelectEdgeTool,
+                                                       EdgeDetectionToolEnable,
+                                                       "Find line given edge.",
+                                                       () => toggleCreateEdge = true ) );
+        if ( Mode != ToolMode.Direction )
+          toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.ArrowRight,
+                                                         RenderAsArrow,
+                                                         "Visualize line direction.",
+                                                         () => toggleRenderAsArrow = true ) );
+        toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
+                                                       false,
+                                                       "Flip direction.",
+                                                       () => toggleFlipDirection = true,
+                                                       Line.Valid ) );
+        GUI.ToolButtons( toolButtonData.ToArray() );
       }
 
       GUI.Separator();
@@ -173,7 +168,7 @@ namespace AGXUnityEditor.Tools
                           GUI.MakeLabel( StartFrameNameId, true ) ) ) {
           StartFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
-            GUI.HandleFrame( StartFrameTool.Frame, 12.0f );
+            GUI.HandleFrame( StartFrameTool.Frame, 1 );
         }
       }
       if ( EndFrameToolEnable ) {
@@ -181,7 +176,7 @@ namespace AGXUnityEditor.Tools
                           GUI.MakeLabel( EndFrameNameId, true ) ) ) {
           EndFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
-            GUI.HandleFrame( EndFrameTool.Frame, 12.0f );
+            GUI.HandleFrame( EndFrameTool.Frame, 1 );
         }
       }
 

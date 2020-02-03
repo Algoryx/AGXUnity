@@ -35,10 +35,9 @@ namespace AGXUnityEditor.Tools
         Manager.RenderShapes = newRenderState;
         EditorUtility.SetDirty( Manager );
       }
-      GUI.MaterialEditor( GUI.MakeLabel( "Shape material" ),
-                          Manager.ShapeRenderMaterial,
-                          newMaterial => Manager.ShapeRenderMaterial = newMaterial,
-                          true );
+      InspectorGUI.UnityMaterial( GUI.MakeLabel( "Shape material" ),
+                                  Manager.ShapeRenderMaterial,
+                                  newMaterial => Manager.ShapeRenderMaterial = newMaterial );
 
       GUI.Separator();
 
