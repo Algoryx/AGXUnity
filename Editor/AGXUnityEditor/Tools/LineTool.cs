@@ -144,8 +144,6 @@ namespace AGXUnityEditor.Tools
         GUI.ToolButtons( toolButtonData.ToArray() );
       }
 
-      GUI.Separator();
-
       if ( toggleCreateEdge )
         EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
       if ( toggleFlipDirection && EditorUtility.DisplayDialog( "Line direction",

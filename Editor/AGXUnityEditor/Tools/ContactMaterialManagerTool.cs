@@ -39,8 +39,6 @@ namespace AGXUnityEditor.Tools
       GUILayout.Label( GUI.MakeLabel( "Contact Material Manager", 18, true ),
                        new GUIStyle( InspectorEditor.Skin.Label ) { alignment = TextAnchor.MiddleCenter } );
 
-      GUI.Separator();
-
       InspectorGUI.ToolArrayGUI( this,
                                  Manager.ContactMaterials,
                                  Identifier,
@@ -71,7 +69,6 @@ namespace AGXUnityEditor.Tools
                                                                                                            InspectorEditor.Skin.Popup );
           }
         }
-        GUI.Separator();
       };
     }
   }

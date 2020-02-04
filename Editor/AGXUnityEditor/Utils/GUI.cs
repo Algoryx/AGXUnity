@@ -251,8 +251,6 @@ namespace AGXUnityEditor.Utils
         }
         EditorGUI.showMixedValue = false;
 
-        Separator();
-
         Tools.FrameTool frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
                                       Tools.FrameTool.FindActive( refFrame ) :
                                       null;
@@ -300,17 +298,6 @@ namespace AGXUnityEditor.Utils
 
         onDrop( DragAndDrop.objectReferences[ 0 ] as T );
       }
-    }
-
-    public static void Separator( float height = 1.0f, float space = 1.0f )
-    {
-      //var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
-      //rect.height = height;
-      //rect.y += space / 2.0f;
-      //EditorGUI.DrawRect( rect,
-      //                    EditorGUIUtility.isProSkin ?
-      //                      Color.Lerp( Color.black, Color.white, 0.7f ) :
-      //                      Color.Lerp( Color.white, Color.black, 0.7f ) );
     }
 
     public static void SeparatorSimple( float height = 1.0f, float space = 1.0f )

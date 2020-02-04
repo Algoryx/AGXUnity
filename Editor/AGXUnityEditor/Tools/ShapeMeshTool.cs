@@ -54,8 +54,6 @@ namespace AGXUnityEditor.Tools
         else
           Mesh.SetSourceObject( newSingleSource );
       }
-
-      GUI.Separator();
     }
   }
 }

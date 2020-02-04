@@ -211,33 +211,21 @@ namespace AGXUnityEditor.Tools
       }
 
       if ( ShapeCreateTool ) {
-        GUI.Separator();
-
         GetChild<ShapeCreateTool>().OnInspectorGUI();
       }
       if ( ConstraintCreateTool ) {
-        GUI.Separator();
-
         GetChild<ConstraintCreateTool>().OnInspectorGUI();
       }
       if ( DisableCollisionsTool ) {
-        GUI.Separator();
-
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
       }
       if ( RigidBodyVisualCreateTool ) {
-        GUI.Separator();
-
         GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
       }
-
-      GUI.Separator();
 
       EditorGUILayout.LabelField( GUI.MakeLabel( "Mass properties", true ), skin.Label );
       using ( GUI.IndentScope.Create() )
         InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
-
-      GUI.Separator();
 
       if ( toggleFindTransformGivenPoint )
         FindTransformGivenPointTool = !FindTransformGivenPointTool;
@@ -257,11 +245,7 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator();
-
       OnShapeListGUI( RigidBody.GetComponentsInChildren<Shape>(), this );
-
-      GUI.Separator();
 
       OnConstraintListGUI( m_constraints.ToArray(), this );
     }
@@ -284,7 +268,6 @@ namespace AGXUnityEditor.Tools
 
       using ( GUI.IndentScope.Create() ) {
         foreach ( var shape in shapes ) {
-          GUI.Separator();
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                           shape.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" +
@@ -297,7 +280,6 @@ namespace AGXUnityEditor.Tools
             continue;
           }
 
-          GUI.Separator();
           using ( GUI.IndentScope.Create() ) {
             var editor = context.GetOrCreateEditor( shape );
             using ( new GUILayout.VerticalScope() )
@@ -325,7 +307,6 @@ namespace AGXUnityEditor.Tools
 
       using ( GUI.IndentScope.Create() ) {
         foreach ( var constraint in constraints ) {
-          GUI.Separator();
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], constraint.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" +
                                             GUI.AddColorTag( constraint.Type.ToString(),
@@ -337,7 +318,6 @@ namespace AGXUnityEditor.Tools
             continue;
           }
 
-          GUI.Separator();
           using ( GUI.IndentScope.Create() ) {
             var editor = context.GetOrCreateEditor( constraint );
             editor.OnInspectorGUI();
@@ -364,8 +344,6 @@ namespace AGXUnityEditor.Tools
 
       using ( GUI.IndentScope.Create() ) {
         foreach ( var rb in rigidBodies ) {
-          GUI.Separator();
-
           if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], rb.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" +
                                             GUI.AddColorTag( "RigidBody",
@@ -376,8 +354,6 @@ namespace AGXUnityEditor.Tools
             context.RemoveEditor( rb );
             continue;
           }
-
-          GUI.Separator();
 
           using ( GUI.IndentScope.Create() ) {
             var editor = context.GetOrCreateEditor( rb );

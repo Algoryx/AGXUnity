@@ -31,9 +31,8 @@ namespace AGXUnityEditor.Tools
       var directoryValid = directory.Length > 0 && AssetDatabase.IsValidFolder( directory );
 
       using ( new GUILayout.HorizontalScope() ) {
-        GUILayout.Label( GUI.MakeLabel( "Data directory" ),
-                         skin.Label,
-                         GUILayout.Width( 160 ) );
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Data directory" ),
+                                     skin.Label );
 
         var statusColor = directoryValid ?
                             Color.Lerp( Color.white, Color.green, 0.2f ) :
@@ -56,8 +55,6 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
-
-      GUI.Separator();
 
       AssemblyTool.OnObjectListsGUI( this );
     }

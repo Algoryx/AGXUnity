@@ -28,8 +28,6 @@ namespace AGXUnityEditor.Tools
       GUILayout.Label( GUI.MakeLabel( "Debug render manager", 16, true ),
                        skin.LabelMiddleCenter );
 
-      GUI.Separator();
-
       var newRenderState = GUI.Toggle( GUI.MakeLabel( "Debug render shapes" ), Manager.RenderShapes );
       if ( newRenderState != Manager.RenderShapes ) {
         Manager.RenderShapes = newRenderState;
@@ -39,16 +37,12 @@ namespace AGXUnityEditor.Tools
                                   Manager.ShapeRenderMaterial,
                                   newMaterial => Manager.ShapeRenderMaterial = newMaterial );
 
-      GUI.Separator();
-
       using ( new GUILayout.HorizontalScope() ) {
         Manager.RenderContacts = GUI.Toggle( GUI.MakeLabel( "Render contacts" ), Manager.RenderContacts );
         Manager.ContactColor = EditorGUILayout.ColorField( Manager.ContactColor );
       }
 
       Manager.ContactScale = EditorGUILayout.Slider( GUI.MakeLabel( "Scale" ), Manager.ContactScale, 0.0f, 1.0f );
-
-      GUI.Separator();
 
       Manager.ColorizeBodies = GUI.Toggle( GUI.MakeLabel( "Colorize bodies",
                                                           false,

@@ -94,8 +94,6 @@ namespace AGXUnityEditor.Tools
         using ( GUI.AlignBlock.Center )
           GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), InspectorEditor.Skin.Label );
 
-        GUILayout.Space( 2 );
-        GUI.Separator();
         GUILayout.Space( 4 );
       }
 
@@ -106,8 +104,6 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material" ),
                                   Material,
                                   newMaterial => Material = newMaterial );
-
-      GUI.Separator();
 
       if ( !onlyNameAndMaterial ) {
         var createCancelState = GUI.CreateCancelButtons( Preview != null, "Create new shape visual" );

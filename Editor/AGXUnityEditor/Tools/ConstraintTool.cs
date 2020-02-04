@@ -57,8 +57,6 @@ namespace AGXUnityEditor.Tools
                                       true ),
                        skin.LabelMiddleCenter );
 
-      GUI.Separator();
-
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
@@ -85,8 +83,6 @@ namespace AGXUnityEditor.Tools
           constraint.SolveType = solveType;
         UnityEngine.GUI.changed = false;
       }
-
-      GUI.Separator();
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled );
       var frameNativeSync = ConstraintConnectedFrameSyncGUI( refConstraint.ConnectedFrameNativeSyncEnabled );
@@ -115,11 +111,9 @@ namespace AGXUnityEditor.Tools
       Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
-      GUI.Separator();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
         if ( !GUI.Foldout( selected( "ec_" + rowType.ToString() ),
                            GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
-          GUI.Separator();
           continue;
         }
 
@@ -215,17 +209,14 @@ namespace AGXUnityEditor.Tools
                 } // For U, V, N.
               } // Right align vertical scope.
             } // Horizontal with flexible space for alignment.
-            GUI.Separator();
           } // For type wrappers.
         } // Indentation.
-        GUI.Separator();
       } // For Translational, Rotational.
 
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
       if ( ecControllers.Length > 0 &&
            GUI.Foldout( selected( "controllers" ),
                         GUI.MakeLabel( "Controllers", true ) ) ) {
-        GUI.Separator();
         using ( GUI.IndentScope.Create() ) {
           foreach ( var refController in ecControllers ) {
             var controllerType    = refController.GetControllerType();
@@ -239,7 +230,6 @@ namespace AGXUnityEditor.Tools
                                                              Color.Lerp( UnityEngine.GUI.color, Color.green, 0.75f ) ) + "] ";
             if ( !GUI.Foldout( selected( controllerTypeTag + controllerName ),
                               GUI.MakeLabel( dimString + controllerName, true ) ) ) {
-              GUI.Separator();
               continue;
             }
 
@@ -252,11 +242,8 @@ namespace AGXUnityEditor.Tools
                                 select controller ).ToArray();
             using ( GUI.IndentScope.Create() ) {
               InspectorEditor.DrawMembersGUI( controllers );
-              GUI.Separator();
               InspectorEditor.DrawMembersGUI( controllers, controller => (controller as ElementaryConstraint).RowData[ 0 ] );
             }
-
-            GUI.Separator();
           }
         }
       }

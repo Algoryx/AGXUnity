@@ -43,8 +43,6 @@ namespace AGXUnityEditor.Tools
         node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
                                                                node.Type,
                                                                InspectorEditor.Skin.Popup );
-
-        GUI.Separator();
       }
     }
 
@@ -83,15 +81,12 @@ namespace AGXUnityEditor.Tools
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.Label );
 
-      GUI.Separator();
-
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       using ( GUI.IndentScope.Create() ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {
           var tmp = OnPropertyGUI( dir, selected.First() );
           if ( tmp != null )
             changed = tmp;
-          GUI.Separator();
         }
       }
 
@@ -110,8 +105,6 @@ namespace AGXUnityEditor.Tools
       var data = EditorData.Instance.GetData( properties, "CableProperty" + dir.ToString() );
       if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ) ) ) {
         using ( GUI.IndentScope.Create() ) {
-          GUI.Separator();
-
           var wrappers = PropertyWrapper.FindProperties<CableProperty>( System.Reflection.BindingFlags.Instance |
                                                                         System.Reflection.BindingFlags.Public );
           foreach ( var wrapper in wrappers ) {

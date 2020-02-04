@@ -213,8 +213,6 @@ namespace AGXUnityEditor.Tools
                          skin.LabelMiddleCenter );
       }
 
-      GUI.Separator();
-
       OnObjectListsGUI( this );
     }
 
@@ -225,13 +223,15 @@ namespace AGXUnityEditor.Tools
 
       RigidBodyTool.OnRigidBodyListGUI( context.CollectComponentsInChildred<RigidBody>().ToArray(), context );
 
-      GUI.Separator();
+      GUI.SeparatorSimple();
 
       RigidBodyTool.OnConstraintListGUI( context.CollectComponentsInChildred<Constraint>().ToArray(), context );
 
-      GUI.Separator();
+      GUI.SeparatorSimple();
 
       RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<Shape>().ToArray(), context );
+
+      GUI.SeparatorSimple();
     }
 
     private void HandleModeGUI()
@@ -256,8 +256,6 @@ namespace AGXUnityEditor.Tools
         else
           GUILayout.Label( GUI.MakeLabel( "Select object(s) in scene view.", true ), skin.Label );
       }
-
-      GUI.Separator();
 
       bool selectionHasRigidBody         = m_selection.Find( entry => entry.Object.GetComponentInParent<RigidBody>() != null ) != null;
       bool createNewRigidBodyPressed     = false;

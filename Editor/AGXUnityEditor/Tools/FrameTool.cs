@@ -251,8 +251,6 @@ namespace AGXUnityEditor.Tools
         FindTransformGivenEdge = !FindTransformGivenEdge;
       if ( togglePositionHandle )
         TransformHandleActive = !TransformHandleActive;
-
-      GUI.Separator();
     }
 
     /// <summary>

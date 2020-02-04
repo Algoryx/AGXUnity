@@ -43,26 +43,20 @@ namespace AGXUnityEditor.Tools
       var endWinches   = GetTargets<Wire, WireWinch>( wire => wire.EndWinch ).Where( winch => winch != null );
 
       if ( beginWinches.Count() > 0 ) {
-        GUI.Separator();
         GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.Label );
         using ( GUI.IndentScope.Create() ) {
           if ( beginWinches.Count() != NumTargets )
             GUI.WarningLabel( "Not all selected wires has a begin winch." );
           InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
         }
-        GUI.Separator();
       }
       if ( endWinches.Count() > 0 ) {
-        if ( beginWinches.Count() == 0 )
-          GUI.Separator();
-
         GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.Label );
         using ( GUI.IndentScope.Create() ) {
           if ( endWinches.Count() != NumTargets )
             GUI.WarningLabel( "Not all selected wires has an end winch." );
           InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
         }
-        GUI.Separator();
       }
     }
 
@@ -72,8 +66,6 @@ namespace AGXUnityEditor.Tools
         node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
                                                               node.Type,
                                                               InspectorEditor.Skin.Popup );
-
-        GUI.Separator();
       }
     }
 

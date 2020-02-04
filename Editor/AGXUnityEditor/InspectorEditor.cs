@@ -144,7 +144,7 @@ namespace AGXUnityEditor
       var drawerInfo = InvokeWrapperInspectorDrawer.GetDrawerMethod( wrapper.GetContainingType() );
 
       if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
-        Utils.GUI.Separator();
+        Utils.GUI.SeparatorSimple();
 
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 

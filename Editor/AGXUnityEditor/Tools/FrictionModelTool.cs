@@ -21,8 +21,6 @@ namespace AGXUnityEditor.Tools
       if ( FrictionModel.Type != FrictionModel.EType.ConstantNormalForceBoxFriction )
         return;
 
-      GUI.Separator();
-
       EditorGUI.showMixedValue = ShowMixed( ( fm1, fm2 ) => !Mathf.Approximately( fm1.NormalForceMagnitude, fm2.NormalForceMagnitude ) );
       var normalForce = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Normal Force Magnitude" ),
                                                                FrictionModel.NormalForceMagnitude ),

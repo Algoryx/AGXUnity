@@ -104,7 +104,6 @@ namespace AGXUnityEditor.Tools
     public override void OnPreTargetMembersGUI()
     {
       if ( IsMultiSelect ) {
-        GUI.Separator();
         return;
       }
 
@@ -133,22 +132,14 @@ namespace AGXUnityEditor.Tools
                                                   () => toggleShapeVisualCreate = true,
                                                   Tools.ShapeVisualCreateTool.CanCreateVisual( Shape ) ) );
 
-      GUI.Separator();
-
       if ( ShapeCreateTool ) {
         GetChild<ShapeCreateTool>().OnInspectorGUI();
-
-        GUI.Separator();
       }
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
-
-        GUI.Separator();
       }
       if ( ShapeVisualCreateTool ) {
         GetChild<ShapeVisualCreateTool>().OnInspectorGUI();
-
-        GUI.Separator();
       }
 
       if ( toggleShapeResizeTool )
@@ -169,14 +160,11 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator();
       if ( !GUI.Foldout( EditorData.Instance.GetData( Shape,
                                                       "Visual",
                                                       entry => entry.Bool = true ),
                                                       GUI.MakeLabel( "Shape Visual" ) ) )
         return;
-
-      GUI.Separator();
 
       using ( GUI.IndentScope.Create() ) {
         GUILayout.Space( 6 );
@@ -197,12 +185,8 @@ namespace AGXUnityEditor.Tools
 
           GUILayout.Space( 6 );
 
-          GUI.Separator();
-
           using ( GUI.AlignBlock.Center )
             GUILayout.Label( GUI.MakeLabel( "Material list", true ), skin.Label );
-
-          GUI.Separator();
         }
 
         for ( int i = 0; i < materials.Length; ++i ) {
@@ -215,7 +199,6 @@ namespace AGXUnityEditor.Tools
             InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material:" ),
                                         material,
                                         newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
-          GUI.Separator();
         }
       }
     }

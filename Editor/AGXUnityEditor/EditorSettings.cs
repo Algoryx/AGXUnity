@@ -44,14 +44,10 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
 
-      GUI.Separator();
-
       BuildPlayer_CopyBinaries = GUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
                                                             false,
                                                             "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
                                              BuildPlayer_CopyBinaries );
-
-      GUI.Separator();
 
       if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.Button ) )
         Utils.CustomEditorGenerator.Synchronize( true );

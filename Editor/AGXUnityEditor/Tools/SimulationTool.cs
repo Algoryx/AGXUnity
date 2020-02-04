@@ -88,23 +88,17 @@ namespace AGXUnityEditor.Tools
                                                                                                "call when Update is called > 60 Hz. Default: 0.9." ),
                                                                                 Simulation.UpdateRealTimeCorrectionFactor,
                                                                                 skin.TextField );
-
-      GUI.Separator();
     }
 
     public override void OnPostTargetMembersGUI()
     {
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator();
-
       Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
         using ( GUI.IndentScope.Create() )
           Simulation.DisplayMemoryAllocations = GUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
-
-      GUI.Separator();
 
       using ( new GUILayout.HorizontalScope() ) {
         EditorGUI.BeginDisabledGroup( !Application.isPlaying );
@@ -130,8 +124,6 @@ namespace AGXUnityEditor.Tools
         }
         EditorGUI.EndDisabledGroup();
       }
-
-      GUI.Separator();
 
       Simulation.SavePreFirstStep = GUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
                                                                 Simulation.SavePreFirstStep );

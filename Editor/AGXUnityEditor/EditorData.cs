@@ -116,13 +116,11 @@ namespace AGXUnityEditor
       }
       GUILayout.EndHorizontal();
 
-      GUI.Separator();
       using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.25f ) ) )
       using ( GUI.AlignBlock.Center ) {
         if ( GUILayout.Button( GUI.MakeLabel( "Collect garbage" ), skin.Button, GUILayout.Width( 110 ) ) )
           editorData.GC();
       }
-      GUI.Separator();
 
       EditorUtility.SetDirty( target );
     }

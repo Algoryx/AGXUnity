@@ -26,8 +26,6 @@ namespace AGXUnityEditor.Tools
                                       true ),
                        InspectorEditor.Skin.LabelMiddleCenter );
 
-      GUI.Separator();
-
       // '\u25CB' circle
       // '\u274D' 3D circle
       bool toggleSelectTireAndRim = false;

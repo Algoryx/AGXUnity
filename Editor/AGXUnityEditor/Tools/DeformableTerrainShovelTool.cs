@@ -99,16 +99,11 @@ namespace AGXUnityEditor.Tools
           GUI.WarningLabel( issue );
       }
 
-      GUI.Separator();
-
       HandleLineToolInspectorGUI( TopEdgeLineTool, "Top Edge" );
-      GUI.Separator();
 
       HandleLineToolInspectorGUI( CuttingEdgeLineTool, "Cutting Edge" );
-      GUI.Separator();
 
       HandleLineToolInspectorGUI( CuttingDirectionLineTool, "Cutting Direction" );
-      GUI.Separator();
 
       m_requestEdgeValidate = true;
     }
@@ -127,7 +122,6 @@ namespace AGXUnityEditor.Tools
         if ( !GUI.Foldout( GetLineToggleData( name ),
                            GUI.MakeLabel( name, true ) ) )
           return;
-        GUI.Separator();
         using ( GUI.IndentScope.Create( 2 ) )
           lineTool.OnInspectorGUI();
       }

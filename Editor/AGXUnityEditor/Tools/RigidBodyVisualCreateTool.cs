@@ -54,8 +54,6 @@ namespace AGXUnityEditor.Tools
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.Label );
 
-      GUILayout.Space( 2 );
-      GUI.Separator();
       GUILayout.Space( 4 );
 
       foreach ( var tool in GetChildren<ShapeVisualCreateTool>() ) {

@@ -143,8 +143,6 @@ namespace AGXUnityEditor.Tools
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
-
-        GUI.Separator();
       }
 
       if ( !EditorApplication.isPlaying )
@@ -181,14 +179,10 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( Route, "Route changed" );
 
-      GUI.Separator();
-
       if ( GUI.Foldout( EditorData.Instance.GetData( Parent,
                                                      "Route",
                                                      entry => { entry.Bool = true; } ),
                         GUI.MakeLabel( "Route", true ) ) ) {
-        GUI.Separator();
-
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
@@ -250,8 +244,6 @@ namespace AGXUnityEditor.Tools
             }
 
             GUILayout.EndVertical();
-
-            GUI.Separator();
           }
 
           if ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
@@ -278,8 +270,6 @@ namespace AGXUnityEditor.Tools
         }
         GUILayout.EndHorizontal();
       }
-
-      GUI.Separator();
 
       if ( addNewPressed || insertBeforePressed || insertAfterPressed ) {
         NodeT newRouteNode = null;

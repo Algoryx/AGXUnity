@@ -28,8 +28,6 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( DeformableTerrain, "Shovel add/remove." );
 
-      GUI.Separator();
-
       InspectorGUI.ToolArrayGUI( this,
                                  DeformableTerrain.Shovels,
                                  "Shovels",

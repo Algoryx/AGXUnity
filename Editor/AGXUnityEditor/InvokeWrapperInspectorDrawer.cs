@@ -388,7 +388,6 @@ namespace AGXUnityEditor
         var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
         using ( GUI.IndentScope.Create() ) {
           foreach ( var listObject in list ) {
-            GUI.Separator();
             using ( GUI.IndentScope.Create() ) {
               GUILayout.BeginHorizontal();
               {
@@ -426,8 +425,6 @@ namespace AGXUnityEditor
 
           if ( list.Count == 0 )
             GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
-          else
-            GUI.Separator();
         }
 
         bool addElementToList = false;
@@ -475,17 +472,13 @@ namespace AGXUnityEditor
     [InspectorDrawerResult( IsNullable = true )]
     public static object ScriptDrawer( object obj, InvokeWrapper wrapper )
     {
-      object result             = null;
-      var type                  = wrapper.GetContainingType();
-      bool allowSceneObject     = type == typeof( GameObject ) ||
-                                  typeof( ScriptComponent ).IsAssignableFrom( type );
-      Object valInField         = wrapper.Get<Object>( obj );
-      bool recursiveEditing     = wrapper.HasAttribute<AllowRecursiveEditing>();
-      //bool createNewAssetButton = false;
-      //var skin                  = InspectorEditor.Skin;
+      object result         = null;
+      var type              = wrapper.GetContainingType();
+      bool allowSceneObject = type == typeof( GameObject ) ||
+                              typeof( ScriptComponent ).IsAssignableFrom( type );
+      Object valInField     = wrapper.Get<Object>( obj );
+      bool recursiveEditing = wrapper.HasAttribute<AllowRecursiveEditing>();
 
-      // TODO GUI: Use foldout and stuff.
-      //           Clean code.
       if ( recursiveEditing ) {
         result = InspectorGUI.FoldoutObjectField( InspectorGUI.MakeLabel( wrapper.Member ),
                                                   valInField,
@@ -493,76 +486,12 @@ namespace AGXUnityEditor
                                                   EditorData.Instance.GetData( obj as Object,
                                                                                wrapper.Member.Name ),
                                                   !wrapper.CanWrite() );
-        //var foldoutData   = EditorData.Instance.GetData( obj as Object, wrapper.Member.Name );
-        //var objFieldLabel = InspectorGUI.MakeLabel( wrapper.Member );
-
-        //var position     = EditorGUILayout.GetControlRect();
-        //foldoutData.Bool = EditorGUI.Foldout( position,
-        //                                      foldoutData.Bool,
-        //                                      objFieldLabel,
-        //                                      true );
-        //if ( wrapper.CanWrite() ) {
-        //  var supportsCreateAsset = typeof( ScriptAsset ).IsAssignableFrom( type );
-
-        //  position.x    += EditorGUIUtility.labelWidth - GUI.IndentScope.PixelLevel;
-        //  position.xMax -= EditorGUIUtility.labelWidth + Convert.ToInt32( supportsCreateAsset ) * 42 - GUI.IndentScope.PixelLevel;
-        //  result         = EditorGUI.ObjectField( position, valInField, type, allowSceneObject );
-        //  if ( supportsCreateAsset ) {
-        //    var buttonRect = new Rect( position.xMax + 4, position.y, 42, 16 );
-        //    buttonRect.xMax = buttonRect.x + 42 - 2;
-
-        //    createNewAssetButton = UnityEngine.GUI.Button( buttonRect,
-        //                                                   GUI.MakeLabel( "New", false, "Create new asset" ) );
-        //  }
-        //}
-        //else
-        //  result = valInField;
-
-        //// Remove editor if object field is set to null or another object.
-        //if ( valInField != ( result as Object ) ) {
-        //  ToolManager.ReleaseRecursiveEditor( valInField );
-        //  foldoutData.Bool = false;
-        //}
-
-        //if ( foldoutData.Bool ) {
-        //  using ( GUI.IndentScope.Create() ) {
-        //    GUI.Separator();
-
-        //    GUILayout.Space( 6 );
-
-        //    GUI.WarningLabel( "Changes made to this object will affect all objects referencing this asset." );
-
-        //    GUILayout.Space( 6 );
-
-        //    Editor editor = ToolManager.TryGetOrCreateRecursiveEditor( result as Object );
-        //    if ( editor != null )
-        //      editor.OnInspectorGUI();
-
-        //    GUI.Separator();
-        //  }
-        //}
       }
       else
         result = EditorGUILayout.ObjectField( InspectorGUI.MakeLabel( wrapper.Member ),
                                               valInField,
                                               type,
                                               allowSceneObject );
-
-      //if ( createNewAssetButton ) {
-      //  var assetName = type.Name.SplitCamelCase().ToLower();
-      //  var path = EditorUtility.SaveFilePanel( "Create new " + assetName, "Assets", "new " + assetName + ".asset", "asset" );
-      //  if ( path != string.Empty ) {
-      //    var info         = new System.IO.FileInfo( path );
-      //    var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
-      //    var newInstance  = ScriptAsset.Create( type );
-      //    newInstance.name = info.Name;
-      //    AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension == ".asset" ? "" : ".asset" ) );
-      //    AssetDatabase.SaveAssets();
-      //    AssetDatabase.Refresh();
-
-      //    result = newInstance;
-      //  }
-      //}
 
       return result;
     }

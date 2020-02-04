@@ -40,6 +40,26 @@ namespace AGXUnityEditor
       return GetWidth( content, style ) + GUI.IndentScope.PixelLevel;
     }
 
+    public class VerticalIndentLine : IDisposable
+    {
+      public VerticalIndentLine()
+      {
+        m_begin = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 1.0f ) );
+      }
+
+      public void Dispose()
+      {
+        var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 1.0f ) );
+        var oldColor = Handles.color;
+        Handles.color = InspectorGUISkin.BrandColor;
+        Handles.DrawLine( new Vector3( 3, m_begin.position.y, 0 ), new Vector3( 3, end.position.y, 0 ) );
+        Handles.DrawLine( new Vector3( 4, m_begin.position.y, 0 ), new Vector3( 4, end.position.y, 0 ) );
+        Handles.color = oldColor;
+      }
+
+      private Rect m_begin;
+    }
+
     public static Object FoldoutObjectField( GUIContent content,
                                              Object instance,
                                              Type instanceType,
@@ -101,8 +121,9 @@ namespace AGXUnityEditor
       }
 
       // Recursive editor rendered indented with respect to foldout.
-      if ( foldoutData.Bool )
+      if ( foldoutData.Bool ) {
         HandleEditorGUI( ToolManager.TryGetOrCreateRecursiveEditor( result ) );
+      }
 
       if ( createNewPressed ) {
         var assetName      = instanceType.Name.SplitCamelCase().ToLower();
@@ -192,8 +213,6 @@ namespace AGXUnityEditor
           for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
             var item = items[ itemIndex ];
 
-            GUI.Separator();
-
             var displayItem = false;
             using ( new GUILayout.HorizontalScope() ) {
               displayItem = GUI.Foldout( GetItemToolArrayGUIData( tool.Targets[ 0 ], identifier, item ),
@@ -220,8 +239,6 @@ namespace AGXUnityEditor
               postItemEditor?.Invoke( item, itemIndex );
             }
           }
-
-          GUI.Separator( 3 );
 
           T itemToAdd = null;
           var addButtonPressed = false;
@@ -256,8 +273,6 @@ namespace AGXUnityEditor
 
           if ( itemToAdd != null )
             onAdd( itemToAdd );
-
-          GUI.Separator( 3 );
         }
 
         if ( itemToRemove != null ) {
