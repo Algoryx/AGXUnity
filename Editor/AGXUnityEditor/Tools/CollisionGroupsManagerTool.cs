@@ -51,35 +51,13 @@ namespace AGXUnityEditor.Tools
       {
         HandleCollisionGroupEntryPair( m_groupEntryPairToAdd );
 
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.FlexibleSpace();
-
-          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 ||
-                                    m_groupEntryPairToAdd.Second.Tag.Length > 0;
-          GUILayout.BeginVertical();
-          {
-            GUILayout.Space( 8 );
-            using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-              clearPressed = GUILayout.Button( GUI.MakeLabel( "Clear" ),
-                                               skin.Button,
-                                               GUILayout.Width( 64 ),
-                                               GUILayout.Height( 16 ) );
-          }
-          GUILayout.EndVertical();
-
-          UnityEngine.GUI.enabled = m_groupEntryPairToAdd.First.Tag.Length > 0 &&
-                                    m_groupEntryPairToAdd.Second.Tag.Length > 0;
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-            addPressed = GUILayout.Button( GUI.MakeLabel( "Add",
-                                                          false,
-                                                          "Add pair to disabled pairs." ),
-                                           skin.Button,
-                                           GUILayout.Width( 64 ),
-                                           GUILayout.Height( 22 ) );
-          UnityEngine.GUI.enabled = true;
-        }
-        GUILayout.EndHorizontal();
+        var buttonState = GUI.CreateCancelButtons( m_groupEntryPairToAdd.First.Tag.Length > 0 ||
+                                                   m_groupEntryPairToAdd.Second.Tag.Length > 0,
+                                                   "Add pair to disabled pairs.",
+                                                   "Add",
+                                                   "Clear" );
+        addPressed   = buttonState == GUI.CreateCancelState.Create;
+        clearPressed = buttonState == GUI.CreateCancelState.Cancel;
       }
       GUILayout.EndVertical();
 
@@ -90,7 +68,7 @@ namespace AGXUnityEditor.Tools
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
-              GUI.Separator( 1, 10 );
+              GUI.SeparatorSimple( 1, 10 );
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
                                        skin.Button,

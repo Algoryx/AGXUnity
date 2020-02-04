@@ -313,22 +313,32 @@ namespace AGXUnityEditor.Utils
       //                      Color.Lerp( Color.white, Color.black, 0.7f ) );
     }
 
+    public static void SeparatorSimple( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+    }
+
     public static void Separator3D( float space = 2.0f )
     {
       GUILayout.Space( space );
-      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[]
-                                                                    {
-                                                                      GUILayout.ExpandWidth( true ),
-                                                                      GUILayout.Height( 1f )
-                                                                    } ),
-                                    Texture2D.whiteTexture );
-      EditorGUI.DrawPreviewTexture( EditorGUILayout.GetControlRect( new GUILayoutOption[]
-                                                                    {
-                                                                      GUILayout.ExpandWidth( true ),
-                                                                      GUILayout.Height( 1f )
-                                                                    } ),
-                                    Texture2D.blackTexture );
-      GUILayout.Space( space );
+
+      var r1 = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.ExpandWidth( true ),
+                                                                       GUILayout.Height( 1f ) ) );
+      EditorGUI.DrawRect( r1, InspectorGUISkin.BrandColor );
+
+      var r2 = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.ExpandWidth( true ),
+                                                                       GUILayout.Height( 1f ) ) );
+      r2.x    += 1.0f;
+      r2.xMax -= 1.0f;
+      r2.y    -= 2.0f;
+      EditorGUI.DrawRect( r2, Color.black );
+
+      // Moving up 3 pixels since "shadow" rect is 1 pixel wide and moved
+      // up 2 pixels. We basically want this to active like one control rect.
+      GUILayout.Space( space - 3.0f );
     }
 
     public static bool EnumButtonList<EnumT>( Action<EnumT> onClick,
@@ -382,42 +392,37 @@ namespace AGXUnityEditor.Utils
       Cancel
     }
 
-    public static CreateCancelState CreateCancelButtons( bool validToPressCreate, string tooltip = "" )
+    public static CreateCancelState CreateCancelButtons( bool validToPressCreate,
+                                                         string tooltip = "",
+                                                         string createName = "Create",
+                                                         string cancelName = "Cancel" )
     {
       bool createPressed = false;
       bool cancelPressed = false;
 
-      var cancelButtonWidth = 96.0f;
-      var createButtonWidth = 120.0f;
+      var cancelButtonWidth = 80.0f;
+      var createButtonWidth = 80.0f;
       var buttonsMaxHeight  = 16.0f;
 
-      var position = EditorGUILayout.GetControlRect( GUILayout.Height( buttonsMaxHeight ) );
+      var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.Height( buttonsMaxHeight ) ) );
 
-      var cancelWidth = 0.0f;
-      var tmp = 0.0f;
-      InspectorEditor.Skin.ButtonLeft.CalcMinMaxWidth( MakeLabel( "Cancel" ), out cancelWidth, out tmp );
-
-      // TODO GUI: What are these magic numbers?
-      var extra = -IndentScope.Level * IndentScope.Level * 2.0f;
-      if ( IndentScope.Level == 0 )
-        extra = 24.0f;
-      var cancelRect = new Rect( position.xMax - cancelButtonWidth - createButtonWidth - cancelWidth + IndentScope.PixelLevel + extra,
+      var cancelRect = new Rect( position.xMax - createButtonWidth - cancelButtonWidth,
                                  position.y,
-                                 createButtonWidth,
+                                 cancelButtonWidth,
                                  buttonsMaxHeight );
       using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
         cancelPressed = UnityEngine.GUI.Button( cancelRect,
-                                                MakeLabel( "Cancel" ),
+                                                MakeLabel( cancelName ),
                                                 InspectorEditor.Skin.ButtonLeft );
 
       var createRect = new Rect( position.xMax - createButtonWidth,
-                           position.y,
-                           createButtonWidth,
-                           buttonsMaxHeight );
+                                 position.y,
+                                 createButtonWidth,
+                                 buttonsMaxHeight );
       using ( new EditorGUI.DisabledGroupScope( !validToPressCreate ) )
       using ( new ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
         createPressed = UnityEngine.GUI.Button( createRect,
-                                                MakeLabel( "Create",
+                                                MakeLabel( createName,
                                                            true,
                                                            tooltip ),
                                                 InspectorEditor.Skin.ButtonRight );

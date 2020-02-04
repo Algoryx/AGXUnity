@@ -45,81 +45,82 @@ namespace AGXUnityEditor.Tools
     {
       if ( !SelectGameObjectTool )
         SelectGameObjectTool = true;
+
+      InspectorEditor.RequestConstantRepaint = true;
+    }
+
+    private string m_dots = "";
+
+    private double m_lastTime = -1.0;
+    private int m_numCalls = 0;
+
+    private void CallEvery( float time, System.Action<int> callback )
+    {
+      if ( m_lastTime < 0.0 ) {
+        m_lastTime = EditorApplication.timeSinceStartup;
+        return;
+      }
+
+      if ( ( EditorApplication.timeSinceStartup - m_lastTime ) >= time ) {
+        callback( ++m_numCalls );
+        m_lastTime = EditorApplication.timeSinceStartup;
+      }
     }
 
     public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
+      var emptyContent = GUI.MakeLabel( " " );
 
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Disable: ", true ), skin.Label );
-        GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_mainObject ), skin.TextField );
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Disable: ", true ),
+                                  SelectGameObjectDropdownMenuTool.GetGUIContent( m_mainObject ),
+                                  skin.TextArea );
+
+
+      EditorGUILayout.LabelField( emptyContent,
+                                  GUI.MakeLabel( GUI.Symbols.Synchronized.ToString() ) );
+
+      if ( m_selected.Count == 0 ) {
+        EditorGUILayout.LabelField( emptyContent,
+                                    GUI.MakeLabel( "Select object(s) in scene view" + m_dots ),
+                                    skin.TextArea );
       }
-      GUILayout.EndHorizontal();
-
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.FlexibleSpace();
-        GUILayout.Label( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString() ), skin.Label );
-        GUILayout.BeginVertical();
-        {
-          if ( m_selected.Count == 0 )
-            GUILayout.Label( GUI.MakeLabel( "None", true ), skin.Label, GUILayout.Width( 180 ) );
-          else {
-            int removeIndex = -1;
-            for ( int i = 0; i < m_selected.Count; ++i ) {
-              GUILayout.BeginHorizontal();
-              {
-                GUILayout.Label( SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ),
-                                 skin.TextFieldMiddleLeft,
-                                 GUILayout.Height( 20 ) );
-                using ( GUI.NodeListButtonColor )
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
-                                         skin.Button,
-                                         GUILayout.Width( 18 ),
-                                         GUILayout.Height( 18 ) ) )
-                    removeIndex = i;
-              }
-              GUILayout.EndHorizontal();
-            }
-
-            if ( removeIndex >= 0 )
-              m_selected.RemoveAt( removeIndex );
+      else {
+        int removeIndex = -1;
+        for ( int i = 0; i < m_selected.Count; ++i ) {
+          GUILayout.BeginHorizontal();
+          {
+            EditorGUILayout.LabelField( emptyContent,
+                                        SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ),
+                                        skin.TextArea );
+            using ( GUI.NodeListButtonColor )
+              if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
+                                     skin.Button,
+                                     GUILayout.Width( 14 ),
+                                     GUILayout.Height( 14 ) ) )
+                removeIndex = i;
           }
+          GUILayout.EndHorizontal();
         }
-        GUILayout.EndVertical();
+
+        if ( removeIndex >= 0 )
+          m_selected.RemoveAt( removeIndex );
       }
-      GUILayout.EndHorizontal();
 
-      GUILayout.Space( 12 );
-
-      bool applyPressed = false;
-      bool cancelPressed = false;
-      GUILayout.BeginHorizontal();
+      CallEvery( 0.35f, numCalls =>
       {
-        GUILayout.FlexibleSpace();
+        m_dots = new string( '.', numCalls % 4 );
+      } );
 
-        UnityEngine.GUI.enabled = m_selected.Count > 0;
-        applyPressed = GUILayout.Button( GUI.MakeLabel( "Apply", true, "Apply current configuration" ),
-                                         skin.Button,
-                                         GUILayout.Width( 86 ),
-                                         GUILayout.Height( 26 ) );
-        UnityEngine.GUI.enabled = true;
+      GUI.Separator3D();
 
-        GUILayout.BeginVertical();
-        {
-          GUILayout.Space( 11 );
-          cancelPressed = GUILayout.Button( GUI.MakeLabel( "Cancel", false, "Cancel/reset" ),
-                                            skin.Button,
-                                            GUILayout.Width( 64 ),
-                                            GUILayout.Height( 18 ) );
-        }
-        GUILayout.EndVertical();
-      }
-      GUILayout.EndHorizontal();
+      var applyCancelState = GUI.CreateCancelButtons( m_selected.Count > 0,
+                                                      "Apply current configuration.",
+                                                      "Apply" );
 
-      if ( applyPressed ) {
+      GUI.Separator3D();
+
+      if ( applyCancelState == GUI.CreateCancelState.Create ) {
         string selectedGroupName = m_mainObject.GetInstanceID().ToString();
         string mainObjectGroupName = "";
         for ( int i = 0; i < m_selected.Count; ++i )
@@ -133,7 +134,7 @@ namespace AGXUnityEditor.Tools
 
         PerformRemoveFromParent();
       }
-      else if ( cancelPressed )
+      else if ( applyCancelState == GUI.CreateCancelState.Cancel )
         PerformRemoveFromParent();
     }
 
