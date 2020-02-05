@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Reflection;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
 
 using Object = UnityEngine.Object;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
@@ -93,15 +93,43 @@ namespace AGXUnityEditor
       return show;
     }
 
+    /// <summary>
+    /// True if this editor is main in Inspector, i.e., not rendered
+    /// inside another editor.
+    /// </summary>
+    public bool IsMainEditor
+    {
+      get
+      {
+        foreach ( var tool in ToolManager.ActiveTools )
+          if ( tool.HasEditor( this.target ) )
+            return false;
+        return true;
+      }
+    }
+
+    private static Texture2D m_icon = null;
+
     public sealed override void OnInspectorGUI()
     {
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
+      if ( IsMainEditor ) {
+        var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
+        if ( m_icon == null )
+          m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
+        var rect = new Rect( controlRect.x + 2, controlRect.y - 17, 16, 16 );
+        // Draw solid color over previous icon.
+        UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.ProBackgroundColor ) );
+        // Draw our transparent icon.
+        UnityEngine.GUI.DrawTexture( rect, m_icon );
+      }
+
+
       GUILayout.BeginVertical();
 
-      //var foo = ToolManager.ActiveTools.Length > 0 &&
-      //          ToolManager.ActiveTools[ 0 ].Targets[ 0 ] == target ? new InspectorGUI.VerticalBrandLine() : null;
+      var brandLine = IsMainEditor ? new InspectorGUI.VerticalBrandLine() : null;
 
       ToolManager.OnPreTargetMembers( this.targets );
 
@@ -109,7 +137,7 @@ namespace AGXUnityEditor
 
       ToolManager.OnPostTargetMembers( this.targets );
 
-      //foo?.Dispose();
+      brandLine?.Dispose();
 
       GUILayout.EndVertical();
     }

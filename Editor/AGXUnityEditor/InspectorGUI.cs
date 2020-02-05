@@ -53,7 +53,7 @@ namespace AGXUnityEditor
         var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 1.0f ) );
         var oldColor = Handles.color;
         Handles.color = InspectorGUISkin.BrandColor;
-        Handles.DrawLine( new Vector3( 1, m_begin.position.y, 0 ), new Vector3( 1, end.position.y, 0 ) );
+        //Handles.DrawLine( new Vector3( 1, m_begin.position.y, 0 ), new Vector3( 1, end.position.y, 0 ) );
         Handles.DrawLine( new Vector3( 2, m_begin.position.y, 0 ), new Vector3( 2, end.position.y, 0 ) );
         Handles.color = oldColor;
       }
@@ -315,6 +315,22 @@ namespace AGXUnityEditor
                        enabled );
       }
 
+      public static ToolButtonData Create( string icon,
+                                           bool isActive,
+                                           string toolTip,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           Action postRender = null )
+      {
+        var content     = new GUIContent();
+        content.image   = Resources.Load<Texture2D>( icon );
+        content.tooltip = toolTip;
+        return Create( content,
+                       isActive,
+                       onClick,
+                       enabled );
+      }
+
       public static ToolButtonData Create( GUIContent content,
                                            bool isActive,
                                            Action onClick,
@@ -364,9 +380,16 @@ namespace AGXUnityEditor
             var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
                              data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
                                                                        InspectorGUISkin.ButtonType.Middle;
+            var content = data[ i ].GUIContent.image != null ? GUIContent.none : data[ i ].GUIContent;
             var pressed = UnityEngine.GUI.Button( position,
-                                                  data[ i ].GUIContent,
+                                                  content,
                                                   InspectorEditor.Skin.GetButton( data[ i ].IsActive, buttonType ) );
+            if ( content == GUIContent.none ) {
+              var scale = 0.6f;
+              var iconSize = new Vector2( scale * buttonWidth, scale * buttonHeight );
+              using ( new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, ProBackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) )
+                UnityEngine.GUI.DrawTexture( new Rect( position.position + ( 1.0f - scale ) * iconSize, iconSize ), data[ i ].GUIContent.image );
+            }
             position.x += buttonWidth;
 
             data[ i ].PostRender?.Invoke();
