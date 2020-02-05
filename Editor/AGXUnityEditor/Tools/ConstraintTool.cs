@@ -95,7 +95,7 @@ namespace AGXUnityEditor.Tools
       }
 
       if ( differentTypes ) {
-        GUI.WarningLabel( "Constraints are of different types.\nRow data editing not supported." );
+        InspectorGUI.WarningLabel( "Constraints are of different types.\nRow data editing not supported." );
         return;
       }
 
@@ -112,12 +112,12 @@ namespace AGXUnityEditor.Tools
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
-        if ( !GUI.Foldout( selected( "ec_" + rowType.ToString() ),
-                           GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
+        if ( !InspectorGUI.Foldout( selected( "ec_" + rowType.ToString() ),
+                                    GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
           continue;
         }
 
-        using ( GUI.IndentScope.Create() ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
           foreach ( var wrapper in ecRowDataWrappers ) {
             if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
@@ -215,9 +215,9 @@ namespace AGXUnityEditor.Tools
 
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
       if ( ecControllers.Length > 0 &&
-           GUI.Foldout( selected( "controllers" ),
-                        GUI.MakeLabel( "Controllers", true ) ) ) {
-        using ( GUI.IndentScope.Create() ) {
+           InspectorGUI.Foldout( selected( "controllers" ),
+                                 GUI.MakeLabel( "Controllers", true ) ) ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           foreach ( var refController in ecControllers ) {
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
@@ -228,8 +228,8 @@ namespace AGXUnityEditor.Tools
                                                            controllerType == Constraint.ControllerType.Rotational ?
                                                              Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) :
                                                              Color.Lerp( UnityEngine.GUI.color, Color.green, 0.75f ) ) + "] ";
-            if ( !GUI.Foldout( selected( controllerTypeTag + controllerName ),
-                              GUI.MakeLabel( dimString + controllerName, true ) ) ) {
+            if ( !InspectorGUI.Foldout( selected( controllerTypeTag + controllerName ),
+                                        GUI.MakeLabel( dimString + controllerName, true ) ) ) {
               continue;
             }
 
@@ -240,7 +240,7 @@ namespace AGXUnityEditor.Tools
                                 where controller.GetType() == refController.GetType() &&
                                       controller.GetControllerType() == refController.GetControllerType()
                                 select controller ).ToArray();
-            using ( GUI.IndentScope.Create() ) {
+            using ( InspectorGUI.IndentScope.Single ) {
               InspectorEditor.DrawMembersGUI( controllers );
               InspectorEditor.DrawMembersGUI( controllers, controller => (controller as ElementaryConstraint).RowData[ 0 ] );
             }
@@ -254,7 +254,7 @@ namespace AGXUnityEditor.Tools
       var skin          = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      using ( GUI.IndentScope.Create() ) {
+      using ( InspectorGUI.IndentScope.Single ) {
         GUILayout.BeginHorizontal();
         {
           EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
@@ -293,14 +293,14 @@ namespace AGXUnityEditor.Tools
     public static Constraint.ESolveType ConstraintSolveTypeGUI( Constraint.ESolveType solveType )
     {
       using ( new GUILayout.HorizontalScope() )
-      using ( GUI.IndentScope.Create() )
+      using ( InspectorGUI.IndentScope.Single )
       {
         EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Solve Type", true ) );
         // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
-        GUILayout.Space( -GUI.IndentScope.PixelLevel );
+        GUILayout.Space( -InspectorGUI.IndentScope.PixelLevel );
         solveType = (Constraint.ESolveType)EditorGUILayout.EnumPopup( solveType,
                                                                       InspectorEditor.Skin.Popup,
-                                                                      GUILayout.Width( 2 * 76 + GUI.IndentScope.PixelLevel ) );
+                                                                      GUILayout.Width( 2 * 76 + InspectorGUI.IndentScope.PixelLevel ) );
       }
 
       return solveType;
@@ -308,9 +308,9 @@ namespace AGXUnityEditor.Tools
 
     public static bool ConstraintConnectedFrameSyncGUI( bool enabled )
     {
-      using ( GUI.IndentScope.Create() ) {
-        enabled = GUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
-                              !EditorGUI.showMixedValue && enabled );
+      using ( InspectorGUI.IndentScope.Single ) {
+        enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
+                                       !EditorGUI.showMixedValue && enabled );
       }
 
       return enabled;

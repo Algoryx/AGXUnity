@@ -60,7 +60,7 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      using ( GUI.IndentScope.Create() ) {
+      using ( InspectorGUI.IndentScope.Single ) {
         m_createConstraintData.Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name", true ),
                                                                  m_createConstraintData.Name,
                                                                  skin.TextField );
@@ -69,7 +69,7 @@ namespace AGXUnityEditor.Tools
         {
           EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Type", true ), skin.Label );
           // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
-          GUILayout.Space( -GUI.IndentScope.PixelLevel );
+          GUILayout.Space( -InspectorGUI.IndentScope.PixelLevel );
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
             m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
                                                                                                skin.Button );
@@ -77,7 +77,7 @@ namespace AGXUnityEditor.Tools
         GUILayout.EndHorizontal();
       }
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
@@ -85,15 +85,17 @@ namespace AGXUnityEditor.Tools
       m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState );
       m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
-      var createCancelState = GUI.CreateCancelButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
-                                                       m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
-                                                       "Create the constraint" );
+      var createCancelState = InspectorGUI.PositiveNegativeButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
+                                                                    m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
+                                                                    "Create",
+                                                                    "Create the constraint",
+                                                                    "Cancel" );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
-      if ( createCancelState == GUI.CreateCancelState.Create ) {
+      if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         GameObject constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,
                                                           m_createConstraintData.AttachmentPair );
         Constraint constraint           = constraintGameObject.GetComponent<Constraint>();
@@ -110,7 +112,7 @@ namespace AGXUnityEditor.Tools
         m_createConstraintData.Reset();
       }
 
-      if ( createCancelState != GUI.CreateCancelState.Nothing )
+      if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
     }
 

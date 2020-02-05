@@ -23,7 +23,7 @@ namespace AGXUnityEditor
       End();
       IsHidden = isHidden;
       if ( !isHidden )
-        m_indent = new Utils.GUI.IndentScope( indentLevel );
+        m_indent = new InspectorGUI.IndentScope( indentLevel );
     }
 
     public void End()
@@ -44,9 +44,9 @@ namespace AGXUnityEditor
 
       var groupIdentifier = ( targetInstance != null ? targetInstance.GetType().FullName : "null" ) +
                             "_" + foldoutBeginAttribute.Name;
-      Begin( !Utils.GUI.Foldout( EditorData.Instance.GetData( targetInstance as Object,
-                                                              groupIdentifier ),
-                                 Utils.GUI.MakeLabel( foldoutBeginAttribute.Name, true ) ) );
+      Begin( !InspectorGUI.Foldout( EditorData.Instance.GetData( targetInstance as Object,
+                                                                 groupIdentifier ),
+                                    Utils.GUI.MakeLabel( foldoutBeginAttribute.Name, true ) ) );
     }
 
     public void Dispose()
@@ -54,6 +54,6 @@ namespace AGXUnityEditor
       End();
     }
 
-    private Utils.GUI.IndentScope m_indent;
+    private InspectorGUI.IndentScope m_indent;
   }
 }

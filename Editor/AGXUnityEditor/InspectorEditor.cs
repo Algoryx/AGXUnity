@@ -100,11 +100,16 @@ namespace AGXUnityEditor
 
       GUILayout.BeginVertical();
 
+      //var foo = ToolManager.ActiveTools.Length > 0 &&
+      //          ToolManager.ActiveTools[ 0 ].Targets[ 0 ] == target ? new InspectorGUI.VerticalBrandLine() : null;
+
       ToolManager.OnPreTargetMembers( this.targets );
 
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
+
+      //foo?.Dispose();
 
       GUILayout.EndVertical();
     }
@@ -144,7 +149,7 @@ namespace AGXUnityEditor
       var drawerInfo = InvokeWrapperInspectorDrawer.GetDrawerMethod( wrapper.GetContainingType() );
 
       if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
-        Utils.GUI.SeparatorSimple();
+        InspectorGUI.SeparatorSimple();
 
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 

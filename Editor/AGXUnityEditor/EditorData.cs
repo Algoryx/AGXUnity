@@ -90,7 +90,7 @@ namespace AGXUnityEditor
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "Editor data", 18, true ), skin.Label );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       const float firstLabelWidth = 190;
 

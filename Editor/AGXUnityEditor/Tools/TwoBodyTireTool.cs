@@ -32,18 +32,18 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectTire = false;
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        GUI.ToolButtons( GUI.ToolButtonData.Create( '\u274D',
-                                                     SelectTireAndRimToolEnable,
-                                                     "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
-                                                     () => toggleSelectTireAndRim = true ),
-                         GUI.ToolButtonData.Create( '\uFFEE',
-                                                     SelectTireToolEnable,
-                                                     "Find Tire by selecting Tire in scene view.",
-                                                     () => toggleSelectTire = true ),
-                         GUI.ToolButtonData.Create( '\u25CB',
-                                                     SelectRimToolEnable,
-                                                     "Find Rim by selecting Rim in scene view.",
-                                                     () => toggleSelectRim = true ) );
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( '\u274D',
+                                                                      SelectTireAndRimToolEnable,
+                                                                      "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
+                                                                      () => toggleSelectTireAndRim = true ),
+                                  InspectorGUI.ToolButtonData.Create( '\uFFEE',
+                                                                      SelectTireToolEnable,
+                                                                      "Find Tire by selecting Tire in scene view.",
+                                                                      () => toggleSelectTire = true ),
+                                  InspectorGUI.ToolButtonData.Create( '\u25CB',
+                                                                      SelectRimToolEnable,
+                                                                      "Find Rim by selecting Rim in scene view.",
+                                                                      () => toggleSelectRim = true ) );
       }
 
       if ( toggleSelectTireAndRim )

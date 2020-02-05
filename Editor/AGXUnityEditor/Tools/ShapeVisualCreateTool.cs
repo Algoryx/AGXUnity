@@ -106,11 +106,14 @@ namespace AGXUnityEditor.Tools
                                   newMaterial => Material = newMaterial );
 
       if ( !onlyNameAndMaterial ) {
-        var createCancelState = GUI.CreateCancelButtons( Preview != null, "Create new shape visual" );
-        if ( createCancelState == GUI.CreateCancelState.Create ) {
+        var createCancelState = InspectorGUI.PositiveNegativeButtons( Preview != null,
+                                                                      "Create",
+                                                                      "Create new shape visual.",
+                                                                      "Cancel" );
+        if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
           CreateShapeVisual();
         }
-        if ( createCancelState != GUI.CreateCancelState.Nothing ) {
+        if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral ) {
           PerformRemoveFromParent();
           return;
         }

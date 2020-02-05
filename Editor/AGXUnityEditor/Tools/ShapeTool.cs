@@ -113,24 +113,24 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions = false;
       bool toggleShapeVisualCreate = false;
 
-      GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
-                                                  ShapeResizeTool,
-                                                  "Shape resize tool",
-                                                  () => toggleShapeResizeTool = true,
-                                                  Tools.ShapeResizeTool.SupportsShape( Shape ) ),
-                       GUI.ToolButtonData.Create( GUI.Symbols.ShapeCreateTool,
-                                                  ShapeCreateTool,
-                                                  "Create shape from visual objects",
-                                                  () => toggleShapeCreate = true ),
-                       GUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
-                                                  DisableCollisionsTool,
-                                                  "Disable collisions against other objects",
-                                                  () => toggleDisableCollisions = true ),
-                       GUI.ToolButtonData.Create( GUI.Symbols.ShapeVisualCreateTool,
-                                                  ShapeVisualCreateTool,
-                                                  "Create visual representation of the physical shape",
-                                                  () => toggleShapeVisualCreate = true,
-                                                  Tools.ShapeVisualCreateTool.CanCreateVisual( Shape ) ) );
+      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
+                                                                    ShapeResizeTool,
+                                                                    "Shape resize tool",
+                                                                    () => toggleShapeResizeTool = true,
+                                                                    Tools.ShapeResizeTool.SupportsShape( Shape ) ),
+                                InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeCreateTool,
+                                                                    ShapeCreateTool,
+                                                                    "Create shape from visual objects",
+                                                                    () => toggleShapeCreate = true ),
+                                InspectorGUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
+                                                                    DisableCollisionsTool,
+                                                                    "Disable collisions against other objects",
+                                                                    () => toggleDisableCollisions = true ),
+                                InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeVisualCreateTool,
+                                                                    ShapeVisualCreateTool,
+                                                                    "Create visual representation of the physical shape",
+                                                                    () => toggleShapeVisualCreate = true,
+                                                                    Tools.ShapeVisualCreateTool.CanCreateVisual( Shape ) ) );
 
       if ( ShapeCreateTool ) {
         GetChild<ShapeCreateTool>().OnInspectorGUI();
@@ -160,13 +160,13 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      if ( !GUI.Foldout( EditorData.Instance.GetData( Shape,
-                                                      "Visual",
-                                                      entry => entry.Bool = true ),
-                                                      GUI.MakeLabel( "Shape Visual" ) ) )
+      if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( Shape,
+                                                               "Visual",
+                                                               entry => entry.Bool = true ),
+                                                               GUI.MakeLabel( "Shape Visual" ) ) )
         return;
 
-      using ( GUI.IndentScope.Create() ) {
+      using ( InspectorGUI.IndentScope.Single ) {
         GUILayout.Space( 6 );
 
         Undo.RecordObjects( shapeVisual.GetComponentsInChildren<MeshRenderer>(), "Shape visual material" );
@@ -192,9 +192,9 @@ namespace AGXUnityEditor.Tools
         for ( int i = 0; i < materials.Length; ++i ) {
           var material = materials[ i ];
           var showMaterialEditor = materials.Length == 1 ||
-                                   GUI.Foldout( EditorData.Instance.GetData( Shape,
-                                                                             "VisualMaterial" + i ),
-                                                GUI.MakeLabel( material.name ) );
+                                   InspectorGUI.Foldout( EditorData.Instance.GetData( Shape,
+                                                                                      "VisualMaterial" + i ),
+                                                         GUI.MakeLabel( material.name ) );
           if ( showMaterialEditor )
             InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material:" ),
                                         material,

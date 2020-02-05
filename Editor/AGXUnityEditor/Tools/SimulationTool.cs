@@ -94,10 +94,10 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
+      Simulation.DisplayStatistics = InspectorGUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
-        using ( GUI.IndentScope.Create() )
-          Simulation.DisplayMemoryAllocations = GUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
+        using ( InspectorGUI.IndentScope.Single )
+          Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
 
       using ( new GUILayout.HorizontalScope() ) {
@@ -125,8 +125,8 @@ namespace AGXUnityEditor.Tools
         EditorGUI.EndDisabledGroup();
       }
 
-      Simulation.SavePreFirstStep = GUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
-                                                                Simulation.SavePreFirstStep );
+      Simulation.SavePreFirstStep = InspectorGUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
+                                                                        Simulation.SavePreFirstStep );
       EditorGUI.BeginDisabledGroup( !Simulation.SavePreFirstStep );
       {
         using ( new GUILayout.HorizontalScope() ) {

@@ -189,15 +189,15 @@ namespace AGXUnityEditor.Tools
         bool shapeButtonPressed      = false;
         bool constraintButtonPressed = false;
 
-        GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
-                                                    m_mode == Mode.RigidBody,
-                                                    () => rbButtonPressed = true ),
-                         GUI.ToolButtonData.Create( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
-                                                    m_mode == Mode.Shape,
-                                                    () => shapeButtonPressed = true ),
-                         GUI.ToolButtonData.Create( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
-                                                    m_mode == Mode.Constraint,
-                                                    () => constraintButtonPressed = true ) );
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
+                                                                      m_mode == Mode.RigidBody,
+                                                                      () => rbButtonPressed = true ),
+                                   InspectorGUI.ToolButtonData.Create( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
+                                                                       m_mode == Mode.Shape,
+                                                                       () => shapeButtonPressed = true ),
+                                   InspectorGUI.ToolButtonData.Create( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
+                                                                       m_mode == Mode.Constraint,
+                                                                       () => constraintButtonPressed = true ) );
 
         HandleModeGUI();
 
@@ -223,15 +223,15 @@ namespace AGXUnityEditor.Tools
 
       RigidBodyTool.OnRigidBodyListGUI( context.CollectComponentsInChildred<RigidBody>().ToArray(), context );
 
-      GUI.SeparatorSimple();
+      InspectorGUI.SeparatorSimple();
 
       RigidBodyTool.OnConstraintListGUI( context.CollectComponentsInChildred<Constraint>().ToArray(), context );
 
-      GUI.SeparatorSimple();
+      InspectorGUI.SeparatorSimple();
 
       RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<Shape>().ToArray(), context );
 
-      GUI.SeparatorSimple();
+      InspectorGUI.SeparatorSimple();
     }
 
     private void HandleModeGUI()
@@ -248,7 +248,7 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       using ( GUI.AlignBlock.Center ) {
         if ( m_subMode == SubMode.SelectRigidBody )
@@ -290,7 +290,7 @@ namespace AGXUnityEditor.Tools
       }
       GUILayout.EndHorizontal();
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       // Creates new rigid body and move selected objects to it (as children).
       if ( createNewRigidBodyPressed || moveToNewRigidBodyPressed ) {
@@ -318,7 +318,7 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       ShapeCreateTool.OnInspectorGUI();
     }
@@ -330,7 +330,7 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       ConstraintCreateTool.OnInspectorGUI();
     }

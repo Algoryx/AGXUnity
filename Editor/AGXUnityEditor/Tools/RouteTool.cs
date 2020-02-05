@@ -136,10 +136,10 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
 
-      GUI.ToolButtons( GUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
-                                                  DisableCollisionsTool,
-                                                  "Disable collisions against other objects",
-                                                  () => toggleDisableCollisions = true ) );
+      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
+                                                                    DisableCollisionsTool,
+                                                                    "Disable collisions against other objects",
+                                                                    () => toggleDisableCollisions = true ) );
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
@@ -169,7 +169,9 @@ namespace AGXUnityEditor.Tools
       GUIStyle invalidNodeStyle          = new GUIStyle( skin.Label );
       invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 1,
                                                                      1,
-                                                                     Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
+                                                                     Color.Lerp( UnityEngine.GUI.color,
+                                                                                 Color.red,
+                                                                                 0.75f ) );
 
       bool addNewPressed        = false;
       bool insertBeforePressed  = false;
@@ -179,32 +181,33 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( Route, "Route changed" );
 
-      if ( GUI.Foldout( EditorData.Instance.GetData( Parent,
-                                                     "Route",
-                                                     entry => { entry.Bool = true; } ),
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( Parent,
+                                                              "Route",
+                                                              entry => { entry.Bool = true; } ),
                         GUI.MakeLabel( "Route", true ) ) ) {
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
-          using ( GUI.IndentScope.Create() ) {
+          using ( InspectorGUI.IndentScope.Single ) {
             if ( validatedNode.Valid )
               GUILayout.BeginVertical();
             else
               GUILayout.BeginVertical( invalidNodeStyle );
 
-            if ( GUI.Foldout( GetFoldoutData( node ),
-                              GUI.MakeLabel( GetNodeTypeString( node ) + " | " + SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
-                                             !validatedNode.Valid,
-                                             validatedNode.ErrorString ),
-                              newState =>
-                              {
-                                Selected = newState ? node : null;
-                                EditorUtility.SetDirty( Parent );
-                              } ) ) {
+            if ( InspectorGUI.Foldout( GetFoldoutData( node ),
+                                       GUI.MakeLabel( GetNodeTypeString( node ) + " | " +
+                                                      SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
+                                                      !validatedNode.Valid,
+                                                      validatedNode.ErrorString ),
+                                       newState =>
+                                       {
+                                         Selected = newState ? node : null;
+                                         EditorUtility.SetDirty( Parent );
+                                       } ) ) {
 
               OnPreFrameGUI( node );
 
-              GUI.HandleFrame( node, 1 );
+              InspectorGUI.HandleFrame( node, 1 );
 
               OnPostFrameGUI( node );
 

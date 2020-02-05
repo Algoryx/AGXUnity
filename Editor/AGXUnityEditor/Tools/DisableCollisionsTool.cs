@@ -93,7 +93,7 @@ namespace AGXUnityEditor.Tools
             EditorGUILayout.LabelField( emptyContent,
                                         SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ),
                                         skin.TextArea );
-            using ( GUI.NodeListButtonColor )
+            using ( InspectorGUI.NodeListButtonColor )
               if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
                                      skin.Button,
                                      GUILayout.Width( 14 ),
@@ -112,15 +112,16 @@ namespace AGXUnityEditor.Tools
         m_dots = new string( '.', numCalls % 4 );
       } );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
-      var applyCancelState = GUI.CreateCancelButtons( m_selected.Count > 0,
-                                                      "Apply current configuration.",
-                                                      "Apply" );
+      var applyCancelState = InspectorGUI.PositiveNegativeButtons( m_selected.Count > 0,
+                                                                   "Apply",
+                                                                   "Apply current configuration.",
+                                                                   "Cancel" );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
-      if ( applyCancelState == GUI.CreateCancelState.Create ) {
+      if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         string selectedGroupName = m_mainObject.GetInstanceID().ToString();
         string mainObjectGroupName = "";
         for ( int i = 0; i < m_selected.Count; ++i )
@@ -134,7 +135,7 @@ namespace AGXUnityEditor.Tools
 
         PerformRemoveFromParent();
       }
-      else if ( applyCancelState == GUI.CreateCancelState.Cancel )
+      else if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Negative )
         PerformRemoveFromParent();
     }
 

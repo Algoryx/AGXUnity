@@ -63,17 +63,20 @@ namespace AGXUnityEditor.Tools
         EditorGUILayout.PrefixLabel( GUI.MakeLabel( tool.Shape.name,
                                                     true ),
                                      skin.Label );
-        using ( GUI.IndentScope.Create() )
+        using ( InspectorGUI.IndentScope.Single )
           tool.OnInspectorGUI( true );
       }
 
-      var createCancelState = GUI.CreateCancelButtons( true, "Create shape visual for shapes that hasn't already got one." );
-      if ( createCancelState == GUI.CreateCancelState.Create ) {
+      var createCancelState = InspectorGUI.PositiveNegativeButtons( true,
+                                                                    "Create",
+                                                                    "Create shape visual for shapes that hasn't already got one.",
+                                                                    "Cancel" );
+      if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         foreach ( var tool in GetChildren<ShapeVisualCreateTool>() )
           if ( !ShapeVisual.HasShapeVisual( tool.Shape ) )
             tool.CreateShapeVisual();
       }
-      if ( createCancelState != GUI.CreateCancelState.Nothing )
+      if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
     }
   }

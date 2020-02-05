@@ -96,7 +96,7 @@ namespace AGXUnityEditor.Tools
     {
       if ( m_edgeIssues.Count > 0 ) {
         foreach ( var issue in m_edgeIssues )
-          GUI.WarningLabel( issue );
+          InspectorGUI.WarningLabel( issue );
       }
 
       HandleLineToolInspectorGUI( TopEdgeLineTool, "Top Edge" );
@@ -114,15 +114,15 @@ namespace AGXUnityEditor.Tools
       backgroundStyle.normal.background = GUI.CreateColoredTexture( 1,
                                                                     1,
                                                                     Color.Lerp( EditorGUIUtility.isProSkin ?
-                                                                                  GUI.ProBackgroundColor :
-                                                                                  GUI.IndieBackgroundColor,
+                                                                                  InspectorGUI.ProBackgroundColor :
+                                                                                  InspectorGUI.IndieBackgroundColor,
                                                                                 lineTool.Color,
                                                                                 0.15f ) );
       using ( new GUILayout.VerticalScope( backgroundStyle ) ) {
-        if ( !GUI.Foldout( GetLineToggleData( name ),
+        if ( !InspectorGUI.Foldout( GetLineToggleData( name ),
                            GUI.MakeLabel( name, true ) ) )
           return;
-        using ( GUI.IndentScope.Create( 2 ) )
+        using ( InspectorGUI.IndentScope.Create( 2 ) )
           lineTool.OnInspectorGUI();
       }
     }

@@ -41,7 +41,7 @@ namespace AGXUnityEditor.Tools
                                       true ),
                        skin.LabelMiddleCenter );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       GUILayout.Label( GUI.MakeLabel( "Add pair",
                                       true ),
@@ -51,24 +51,24 @@ namespace AGXUnityEditor.Tools
       {
         HandleCollisionGroupEntryPair( m_groupEntryPairToAdd );
 
-        var buttonState = GUI.CreateCancelButtons( m_groupEntryPairToAdd.First.Tag.Length > 0 ||
-                                                   m_groupEntryPairToAdd.Second.Tag.Length > 0,
-                                                   "Add pair to disabled pairs.",
-                                                   "Add",
-                                                   "Clear" );
-        addPressed   = buttonState == GUI.CreateCancelState.Create;
-        clearPressed = buttonState == GUI.CreateCancelState.Cancel;
+        var buttonState = InspectorGUI.PositiveNegativeButtons( m_groupEntryPairToAdd.First.Tag.Length > 0 ||
+                                                                m_groupEntryPairToAdd.Second.Tag.Length > 0,
+                                                                "Add",
+                                                                "Add pair to disabled pairs.",
+                                                                "Clear" );
+        addPressed   = buttonState == InspectorGUI.PositiveNegativeResult.Positive;
+        clearPressed = buttonState == InspectorGUI.PositiveNegativeResult.Negative;
       }
       GUILayout.EndVertical();
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
-      if ( GUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ) ) ) {
-        using ( GUI.IndentScope.Create() ) {
+      if ( InspectorGUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ) ) ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
-              GUI.SeparatorSimple( 1, 10 );
+              InspectorGUI.SeparatorSimple( 1, 10 );
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
                                        skin.Button,
@@ -83,7 +83,7 @@ namespace AGXUnityEditor.Tools
         }
       }
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       if ( clearPressed )
         m_groupEntryPairToAdd.First.Tag = m_groupEntryPairToAdd.Second.Tag = string.Empty;

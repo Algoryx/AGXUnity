@@ -126,22 +126,22 @@ namespace AGXUnityEditor.Tools
       bool toggleRenderAsArrow = false;
       bool showTools           = !EditorApplication.isPlaying;
       if ( showTools ) {
-        List<GUI.ToolButtonData> toolButtonData = new List<GUI.ToolButtonData>();
-        toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.SelectEdgeTool,
-                                                       EdgeDetectionToolEnable,
-                                                       "Find line given edge.",
-                                                       () => toggleCreateEdge = true ) );
+        List<InspectorGUI.ToolButtonData> toolButtonData = new List<InspectorGUI.ToolButtonData>();
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.SelectEdgeTool,
+                                                                EdgeDetectionToolEnable,
+                                                                "Find line given edge.",
+                                                                () => toggleCreateEdge = true ) );
         if ( Mode != ToolMode.Direction )
-          toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.ArrowRight,
-                                                         RenderAsArrow,
-                                                         "Visualize line direction.",
-                                                         () => toggleRenderAsArrow = true ) );
-        toolButtonData.Add( GUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
-                                                       false,
-                                                       "Flip direction.",
-                                                       () => toggleFlipDirection = true,
-                                                       Line.Valid ) );
-        GUI.ToolButtons( toolButtonData.ToArray() );
+          toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.ArrowRight,
+                                                                  RenderAsArrow,
+                                                                  "Visualize line direction.",
+                                                                  () => toggleRenderAsArrow = true ) );
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
+                                                                false,
+                                                                "Flip direction.",
+                                                                () => toggleFlipDirection = true,
+                                                                Line.Valid ) );
+        InspectorGUI.ToolButtons( toolButtonData.ToArray() );
       }
 
       if ( toggleCreateEdge )
@@ -159,22 +159,22 @@ namespace AGXUnityEditor.Tools
         RenderAsArrow = !RenderAsArrow;
 
       if ( !Line.Valid )
-        GUI.WarningLabel( Name + " isn't created - use Tools to configure." );
+        InspectorGUI.WarningLabel( Name + " isn't created - use Tools to configure." );
 
       if ( StartFrameToolEnable ) {
-        if ( GUI.Foldout( GetToggleData( StartFrameNameId ),
+        if ( InspectorGUI.Foldout( GetToggleData( StartFrameNameId ),
                           GUI.MakeLabel( StartFrameNameId, true ) ) ) {
           StartFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
-            GUI.HandleFrame( StartFrameTool.Frame, 1 );
+            InspectorGUI.HandleFrame( StartFrameTool.Frame, 1 );
         }
       }
       if ( EndFrameToolEnable ) {
-        if ( GUI.Foldout( GetToggleData( EndFrameNameId ),
+        if ( InspectorGUI.Foldout( GetToggleData( EndFrameNameId ),
                           GUI.MakeLabel( EndFrameNameId, true ) ) ) {
           EndFrameTool.ForceDisableTransformHandle = EditorApplication.isPlaying;
           using ( new GUI.EnabledBlock( !EditorApplication.isPlaying ) )
-            GUI.HandleFrame( EndFrameTool.Frame, 1 );
+            InspectorGUI.HandleFrame( EndFrameTool.Frame, 1 );
         }
       }
 

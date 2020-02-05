@@ -101,8 +101,8 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( bool ) )]
     public static object BoolDrawer( object obj, InvokeWrapper wrapper )
     {
-      return GUI.Toggle( InspectorGUI.MakeLabel( wrapper.Member ),
-                         wrapper.Get<bool>( obj ) );
+      return InspectorGUI.Toggle( InspectorGUI.MakeLabel( wrapper.Member ),
+                                  wrapper.Get<bool>( obj ) );
     }
 
     [InspectorDrawer( typeof( Color ) )]
@@ -187,9 +187,9 @@ namespace AGXUnityEditor
       GUILayout.BeginHorizontal();
       {
         // Note that we're checking if the value has changed!
-        useDefaultToggled = GUI.Toggle( GUI.MakeLabel( name.SplitCamelCase(),
-                                                       false,
-                                                       "If checked - value will be default. Uncheck to manually enter value." ),
+        useDefaultToggled = InspectorGUI.Toggle( GUI.MakeLabel( name.SplitCamelCase(),
+                                                                false,
+                                                                "If checked - value will be default. Uncheck to manually enter value." ),
                                         valInField.UseDefault ) != valInField.UseDefault;
         UnityEngine.GUI.enabled = !valInField.UseDefault;
         GUILayout.FlexibleSpace();
@@ -262,7 +262,7 @@ namespace AGXUnityEditor
       }
 
       if ( invalidRange )
-        GUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
+        InspectorGUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
 
       return result;
     }
@@ -296,19 +296,19 @@ namespace AGXUnityEditor
       {
         Value = wrapper.Get<DeformableTerrainShovelSettings.ExcavationSettings>( obj )
       };
-      if ( GUI.Foldout( EditorData.Instance.GetData( obj as Object, wrapper.Member.Name ),
-                        InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
-        using ( GUI.IndentScope.Create() ) {
-          data.Value.Enabled                   = GUI.Toggle( GUI.MakeLabel( "Enabled" ),
-                                                             data.Value.Enabled );
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( obj as Object, wrapper.Member.Name ),
+                                 InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+        using ( InspectorGUI.IndentScope.Single ) {
+          data.Value.Enabled                   = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
+                                                                      data.Value.Enabled );
           data.EnabledChanged                  = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
-          data.Value.CreateDynamicMassEnabled  = GUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
-                                                             data.Value.CreateDynamicMassEnabled );
+          data.Value.CreateDynamicMassEnabled  = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
+                                                                      data.Value.CreateDynamicMassEnabled );
           data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
-          data.Value.ForceFeedbackEnabled      = GUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
-                                                             data.Value.ForceFeedbackEnabled );
+          data.Value.ForceFeedbackEnabled      = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
+                                                                      data.Value.ForceFeedbackEnabled );
           data.ForceFeedbackEnabledChanged     = UnityEngine.GUI.changed;
           UnityEngine.GUI.changed              = false;
         }
@@ -379,16 +379,16 @@ namespace AGXUnityEditor
       System.Collections.IList list = wrapper.Get<System.Collections.IList>( obj );
       var target = obj as Object;
 
-      if ( GUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
-                        InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+                                 InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         object insertElementBefore = null;
         object insertElementAfter  = null;
         object eraseElement        = null;
         var skin                   = InspectorEditor.Skin;
         var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
-        using ( GUI.IndentScope.Create() ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           foreach ( var listObject in list ) {
-            using ( GUI.IndentScope.Create() ) {
+            using ( InspectorGUI.IndentScope.Single ) {
               GUILayout.BeginHorizontal();
               {
                 GUILayout.BeginVertical();
@@ -398,7 +398,7 @@ namespace AGXUnityEditor
                 }
                 GUILayout.EndVertical();
 
-                using ( GUI.NodeListButtonColor ) {
+                using ( InspectorGUI.NodeListButtonColor ) {
                   if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
                                                         false,
                                                         "Insert new element before this" ),
@@ -431,7 +431,7 @@ namespace AGXUnityEditor
         GUILayout.BeginHorizontal();
         {
           GUILayout.FlexibleSpace();
-          using ( GUI.NodeListButtonColor )
+          using ( InspectorGUI.NodeListButtonColor )
             addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
                                                                 false,
                                                                 "Add new element to list" ),

@@ -32,7 +32,7 @@ namespace AGXUnityEditor
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
 
       // BuiltInToolsTool settings GUI.
       {
@@ -44,15 +44,15 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
 
-      BuildPlayer_CopyBinaries = GUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
-                                                            false,
-                                                            "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
-                                             BuildPlayer_CopyBinaries );
+      BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
+                                                                     false,
+                                                                     "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
+                                                      BuildPlayer_CopyBinaries );
 
       if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.Button ) )
         Utils.CustomEditorGenerator.Synchronize( true );
 
-      GUI.Separator3D();
+      InspectorGUI.Separator3D();
     }
 
     private bool m_showDropDown = false;
@@ -63,7 +63,7 @@ namespace AGXUnityEditor
 
       GUILayout.BeginHorizontal();
       {
-        keyHandler.Enable = GUI.Toggle( name, keyHandler.Enable );
+        keyHandler.Enable = InspectorGUI.Toggle( name, keyHandler.Enable );
         GUILayout.FlexibleSpace();
 
         UnityEngine.GUI.enabled = keyHandler.Enable;

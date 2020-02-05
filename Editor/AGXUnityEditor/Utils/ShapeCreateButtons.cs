@@ -95,7 +95,7 @@ namespace AGXUnityEditor.Utils
         GUILayout.EndHorizontal();
       }
       else {
-        using ( GUI.IndentScope.Create() )
+        using ( InspectorGUI.IndentScope.Single )
           State.CreatePressed = OnButtonGUI( "Create", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Default; } );
       }
 
@@ -113,8 +113,8 @@ namespace AGXUnityEditor.Utils
       GUILayout.BeginHorizontal();
       {
         GUILayout.Space( guiStartOffset );
-        State.ShapeAsParent = GUI.Toggle( GUI.MakeLabel( "Shape as parent to graphical object" ),
-                                          State.ShapeAsParent );
+        State.ShapeAsParent = InspectorGUI.Toggle( GUI.MakeLabel( "Shape as parent to graphical object" ),
+                                                   State.ShapeAsParent );
       }
       GUILayout.EndHorizontal();
 
@@ -122,8 +122,8 @@ namespace AGXUnityEditor.Utils
         GUILayout.BeginHorizontal();
         {
           GUILayout.Space( guiStartOffset );
-          State.ExpandRadius = GUI.Toggle( GUI.MakeLabel( "Expand radius" ),
-                                           State.ExpandRadius );
+          State.ExpandRadius = InspectorGUI.Toggle( GUI.MakeLabel( "Expand radius" ),
+                                                    State.ExpandRadius );
         }
         GUILayout.EndHorizontal();
       }

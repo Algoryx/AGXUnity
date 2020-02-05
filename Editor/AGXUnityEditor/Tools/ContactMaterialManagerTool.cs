@@ -52,12 +52,12 @@ namespace AGXUnityEditor.Tools
     {
       return ( cm, index ) =>
       {
-        entries[ index ].IsOriented = GUI.Toggle( GUI.MakeLabel( "Is Oriented",
-                                                                  false,
-                                                                  "Enable/disable oriented friction models." ),
-                                                  entries[ index ].IsOriented );
+        entries[ index ].IsOriented = InspectorGUI.Toggle( GUI.MakeLabel( "Is Oriented",
+                                                                          false,
+                                                                          "Enable/disable oriented friction models." ),
+                                                           entries[ index ].IsOriented );
         if ( entries[ index ].IsOriented ) {
-          using ( GUI.IndentScope.Create( 2 ) ) {
+          using ( InspectorGUI.IndentScope.Create( 2 ) ) {
             entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
                                                                                         entries[ index ].ReferenceObject,
                                                                                         typeof( GameObject ),

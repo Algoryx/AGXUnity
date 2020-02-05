@@ -44,17 +44,17 @@ namespace AGXUnityEditor.Tools
 
       if ( beginWinches.Count() > 0 ) {
         GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.Label );
-        using ( GUI.IndentScope.Create() ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           if ( beginWinches.Count() != NumTargets )
-            GUI.WarningLabel( "Not all selected wires has a begin winch." );
+            InspectorGUI.WarningLabel( "Not all selected wires has a begin winch." );
           InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
         }
       }
       if ( endWinches.Count() > 0 ) {
         GUILayout.Label( GUI.MakeLabel( "End winch", true ), skin.Label );
-        using ( GUI.IndentScope.Create() ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           if ( endWinches.Count() != NumTargets )
-            GUI.WarningLabel( "Not all selected wires has an end winch." );
+            InspectorGUI.WarningLabel( "Not all selected wires has an end winch." );
           InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
         }
       }
@@ -62,7 +62,7 @@ namespace AGXUnityEditor.Tools
 
     protected override void OnPreFrameGUI( WireRouteNode node )
     {
-      using ( GUI.IndentScope.Create() ) {
+      using ( InspectorGUI.IndentScope.Single ) {
         node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
                                                               node.Type,
                                                               InspectorEditor.Skin.Popup );
