@@ -126,7 +126,6 @@ namespace AGXUnityEditor
         UnityEngine.GUI.DrawTexture( rect, m_icon );
       }
 
-
       GUILayout.BeginVertical();
 
       var brandLine = IsMainEditor ? new InspectorGUI.VerticalBrandLine() : null;

@@ -323,7 +323,7 @@ namespace AGXUnityEditor
                                            Action postRender = null )
       {
         var content     = new GUIContent();
-        content.image   = Resources.Load<Texture2D>( icon );
+        content.image   = IconManager.GetIcon( icon );
         content.tooltip = toolTip;
         return Create( content,
                        isActive,
@@ -385,10 +385,8 @@ namespace AGXUnityEditor
                                                   content,
                                                   InspectorEditor.Skin.GetButton( data[ i ].IsActive, buttonType ) );
             if ( content == GUIContent.none ) {
-              var scale = 0.6f;
-              var iconSize = new Vector2( scale * buttonWidth, scale * buttonHeight );
-              using ( new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, ProBackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) )
-                UnityEngine.GUI.DrawTexture( new Rect( position.position + ( 1.0f - scale ) * iconSize, iconSize ), data[ i ].GUIContent.image );
+              //using ( new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, ProBackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) )
+                UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), data[ i ].GUIContent.image );
             }
             position.x += buttonWidth;
 
