@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity.Utils;
@@ -44,18 +45,20 @@ namespace AGXUnityEditor.Utils
       State.CreatePressed   = false;
     }
 
-    public bool Update( Event current )
+    public bool Update( Event current, Rect rect, bool isFirst, bool isLast )
     {
-      bool toggleDropdown = GUILayout.Button( GUI.MakeLabel( State.ShapeType.ToString().Substring( 0, 3 ),
-                                                             true,
-                                                             "Create new " + State.ShapeType.ToString().ToLower() + "as parent of the selected object(s)." ),
-                                              InspectorEditor.Skin.GetButton( State.DropdownEnabled, State.ShapeType == Tools.ShapeCreateTool.ShapeType.Box ?
-                                                                                                       InspectorGUISkin.ButtonType.Left :
-                                                                                                     State.ShapeType == Tools.ShapeCreateTool.ShapeType.Mesh ?
-                                                                                                       InspectorGUISkin.ButtonType.Right :
-                                                                                                       InspectorGUISkin.ButtonType.Middle ),
-                                              GUILayout.Width( 36 ),
-                                              GUILayout.Height( 25 ) );
+      var buttonType = isFirst && isFirst == isLast ? InspectorGUISkin.ButtonType.Normal :
+                       isFirst                      ? InspectorGUISkin.ButtonType.Left :
+                       isLast                       ? InspectorGUISkin.ButtonType.Right :
+                                                      InspectorGUISkin.ButtonType.Middle;
+      var buttonContent = GUI.MakeLabel( State.ShapeType.ToString().Substring( 0, 3 ),
+                                       true,
+                                       "Create new " +
+                                       State.ShapeType.ToString().ToLower() +
+                                       "as parent of the selected object(s)." );
+      var toggleDropdown = UnityEngine.GUI.Button( rect,
+                                                   buttonContent,
+                                                   InspectorEditor.Skin.GetButton( State.DropdownEnabled, buttonType ) );
       if ( current.type == EventType.Repaint )
         m_buttonRect = GUILayoutUtility.GetLastRect();
 
@@ -73,70 +76,88 @@ namespace AGXUnityEditor.Utils
       if ( !State.DropdownEnabled )
         return State;
 
-      var skin                        = InspectorEditor.Skin;
-      bool hasRadius                  = State.ShapeType == Tools.ShapeCreateTool.ShapeType.Cylinder ||
-                                        State.ShapeType == Tools.ShapeCreateTool.ShapeType.Capsule ||
-                                        State.ShapeType == Tools.ShapeCreateTool.ShapeType.Sphere;
-      float guiStartOffset            = m_buttonRect.position.x - 14;
-      GUIStyle mouseOverStyle         = new GUIStyle( skin.Button );
-      mouseOverStyle.hover.background = mouseOverStyle.onActive.background;
+      bool hasRadius = State.ShapeType == Tools.ShapeCreateTool.ShapeType.Cylinder ||
+                       State.ShapeType == Tools.ShapeCreateTool.ShapeType.Capsule ||
+                       State.ShapeType == Tools.ShapeCreateTool.ShapeType.Sphere;
 
-      OnShapeConfigGUI( guiStartOffset, hasRadius );
+      OnShapeConfigGUI( hasRadius );
 
-      if ( hasRadius ) {
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Space( guiStartOffset );
+      using ( InspectorGUI.IndentScope.Create( 2 ) ) {
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 25.0f ) );
+        rect.width = 45.0f;
 
-          State.CreatePressed = OnButtonGUI( "Axis 1", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Axis_1; } );
-          State.CreatePressed = OnButtonGUI( "Axis 2", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Axis_2; } ) || State.CreatePressed;
-          State.CreatePressed = OnButtonGUI( "Axis 3", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Axis_3; } ) || State.CreatePressed;
+        if ( hasRadius ) {
+          State.CreatePressed = OnButtonGUI( rect,
+                                             "Axis 1",
+                                             InspectorGUISkin.ButtonType.Left,
+                                             current,
+                                             () =>
+                                             {
+                                               State.Axis = ShapeInitializationData.Axes.Axis_1;
+                                             } );
+          rect.x += rect.width;
+          State.CreatePressed = OnButtonGUI( rect,
+                                             "Axis 2",
+                                             InspectorGUISkin.ButtonType.Middle,
+                                             current,
+                                             () =>
+                                             {
+                                               State.Axis = ShapeInitializationData.Axes.Axis_2;
+                                             } ) || State.CreatePressed;
+          rect.x += rect.width;
+          State.CreatePressed = OnButtonGUI( rect,
+                                             "Axis 3",
+                                             InspectorGUISkin.ButtonType.Right,
+                                             current,
+                                             () =>
+                                             {
+                                               State.Axis = ShapeInitializationData.Axes.Axis_3;
+                                             } ) || State.CreatePressed;
         }
-        GUILayout.EndHorizontal();
-      }
-      else {
-        using ( InspectorGUI.IndentScope.Single )
-          State.CreatePressed = OnButtonGUI( "Create", mouseOverStyle, current, () => { State.Axis = ShapeInitializationData.Axes.Default; } );
+        else {
+          State.CreatePressed = OnButtonGUI( rect,
+                                             "Create",
+                                             InspectorGUISkin.ButtonType.Normal,
+                                             current,
+                                             () =>
+                                             {
+                                               State.Axis = ShapeInitializationData.Axes.Default;
+                                             } );
+        }
       }
 
       return State;
     }
 
-    private void OnShapeConfigGUI( float guiStartOffset, bool hasRadius )
+    private void OnShapeConfigGUI( bool hasRadius )
     {
-      var skin             = InspectorEditor.Skin;
-      var smallLabel       = new GUIStyle( skin.Label );
-      smallLabel.alignment = TextAnchor.MiddleLeft;
-      smallLabel.fontSize  = 11;
-
-      // TODO: Choice to add have the graphics or shape as parent.
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Space( guiStartOffset );
-        State.ShapeAsParent = InspectorGUI.Toggle( GUI.MakeLabel( "Shape as parent to graphical object" ),
+      using ( InspectorGUI.IndentScope.Create( 2 ) ) {
+        State.ShapeAsParent = InspectorGUI.Toggle( GUI.MakeLabel( "Shape as parent" ),
                                                    State.ShapeAsParent );
-      }
-      GUILayout.EndHorizontal();
-
-      if ( hasRadius ) {
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Space( guiStartOffset );
+        if ( hasRadius ) {
           State.ExpandRadius = InspectorGUI.Toggle( GUI.MakeLabel( "Expand radius" ),
                                                     State.ExpandRadius );
         }
-        GUILayout.EndHorizontal();
       }
     }
 
     /// <returns>True when button is pressed.</returns>
-    private bool OnButtonGUI( string name, GUIStyle buttonStyle, Event current, Action onMouseOver )
+    private bool OnButtonGUI( Rect rect,
+                              string name,
+                              InspectorGUISkin.ButtonType buttonType,
+                              Event current,
+                              Action onMouseOver )
     {
-      bool down = GUILayout.Button( GUI.MakeLabel( name ), buttonStyle, GUILayout.Width( 52 ), GUILayout.Width( 25 ) );
-      if ( current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains( current.mousePosition ) )
-        onMouseOver();
+      using ( InspectorGUI.IndentScope.Create( 2 ) ) {
+        var down = UnityEngine.GUI.Button( rect,
+                                           GUI.MakeLabel( name ),
+                                           InspectorEditor.Skin.GetButton( true, buttonType ) );
+        if ( current.type == EventType.Repaint &&
+             rect.Contains( current.mousePosition ) )
+          onMouseOver();
 
-      return down;
+        return down;
+      }
     }
   }
 
@@ -176,19 +197,27 @@ namespace AGXUnityEditor.Utils
         button.Reset();
     }
 
-    public void OnGUI( Event current, int indentPixels )
+    public void OnGUI( Event current )
     {
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Space( indentPixels );
-        using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-          foreach ( var button in m_buttons ) {
-            bool pressed = button.Update( Event.current );
-            if ( pressed )
-              Selected = button.State.DropdownEnabled ? button : null;
-          }
+      using ( new GUILayout.HorizontalScope() )
+      using ( InspectorGUI.IndentScope.Single )
+      using ( new GUI.ColorBlock( Color.Lerp( Color.white,
+                                              InspectorGUISkin.BrandColor,
+                                              0.2f ) ) ) {
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 25.0f ) );
+        rect.width = 36.0f;
+        foreach ( var button in m_buttons ) {
+          rect.xMin = rect.x;
+          rect.xMax = rect.x + rect.width;
+          bool pressed = button.Update( Event.current,
+                                        rect,
+                                        button == m_buttons.First(),
+                                        button == m_buttons.Last() );
+          if ( pressed )
+            Selected = button.State.DropdownEnabled ? button : null;
+          rect.x += rect.width;
+        }
       }
-      GUILayout.EndHorizontal();
 
       foreach ( var button in m_buttons )
         button.UpdateDropdown( current );

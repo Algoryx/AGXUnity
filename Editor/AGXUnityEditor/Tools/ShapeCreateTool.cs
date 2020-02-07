@@ -132,7 +132,7 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
 
       UnityEngine.GUI.enabled = m_selection.Count > 0;
-      m_buttons.OnGUI( Event.current, 12 );
+      m_buttons.OnGUI( Event.current );
       UnityEngine.GUI.enabled = true;
 
       EditorUtility.SetDirty( Parent );

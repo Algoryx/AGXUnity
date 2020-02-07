@@ -21,6 +21,8 @@ namespace AGXUnityEditor
       }
     }
 
+    public static bool BrandLineEnabled { get; set; } = false;
+
     /// <summary>
     /// True to force repaint of all InspectorEditor editors.
     /// </summary>
@@ -121,14 +123,14 @@ namespace AGXUnityEditor
           m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
         var rect = new Rect( controlRect.x + 2, controlRect.y - 17, 16, 16 );
         // Draw solid color over previous icon.
-        UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.ProBackgroundColor ) );
+        UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
         // Draw our transparent icon.
         UnityEngine.GUI.DrawTexture( rect, m_icon );
       }
 
       GUILayout.BeginVertical();
 
-      var brandLine = IsMainEditor ? new InspectorGUI.VerticalBrandLine() : null;
+      var brandLine = BrandLineEnabled && IsMainEditor ? new InspectorGUI.VerticalBrandLine() : null;
 
       ToolManager.OnPreTargetMembers( this.targets );
 

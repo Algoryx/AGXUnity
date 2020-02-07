@@ -32,6 +32,10 @@ namespace AGXUnityEditor
     private ScriptableObject m_scriptableObject = null;
     [SerializeField]
     private UnityEngine.Object m_asset = null;
+    [SerializeField]
+    private Vector2 m_vector2;
+    [SerializeField]
+    private Vector3 m_vector3;
 
     public bool Bool
     {
@@ -106,6 +110,34 @@ namespace AGXUnityEditor
       set
       {
         m_asset = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector2 Vector2
+    {
+      get { return m_vector2; }
+      set
+      {
+        if ( m_vector2 == value )
+          return;
+
+        m_vector2 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector3 Vector3
+    {
+      get { return m_vector3; }
+      set
+      {
+        if ( m_vector3 == value )
+          return;
+
+        m_vector3 = value;
 
         OnValueChanged();
       }

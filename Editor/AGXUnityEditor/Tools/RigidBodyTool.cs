@@ -191,21 +191,21 @@ namespace AGXUnityEditor.Tools
                                                                       FindTransformGivenEdgeTool,
                                                                       "Find rigid body transform given edge on object.",
                                                                       () => toggleFindTransformGivenEdge = true ),
-                                  InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeCreateTool,
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_represent shape 1",
                                                                       ShapeCreateTool,
-                                                                      "Create shape from visual objects",
+                                                                      "Create shape from child visual object.",
                                                                       () => toggleShapeCreate = true ),
-                                  InspectorGUI.ToolButtonData.Create( GUI.Symbols.ConstraintCreateTool,
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_hinge 2",
                                                                       ConstraintCreateTool,
-                                                                      "Create constraint to this rigid body",
+                                                                      "Create new constraint to this rigid body.",
                                                                       () => toggleConstraintCreate = true ),
-                                  InspectorGUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_disable collision 1",
                                                                       DisableCollisionsTool,
-                                                                      "Disable collisions against other objects",
+                                                                      "Disable collisions against other objects.",
                                                                       () => toggleDisableCollisions = true ),
-                                  InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeVisualCreateTool,
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_represent shape 3",
                                                                       RigidBodyVisualCreateTool,
-                                                                      "Create visual representation of each physical shape in this body",
+                                                                      "Create visual representation of each physical shape in this body.",
                                                                       () => toggleRigidBodyVisualCreate = true,
                                                                       Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) );
       }
@@ -272,9 +272,9 @@ namespace AGXUnityEditor.Tools
                                                                    shape.GetInstanceID().ToString() ),
                              GUI.MakeLabel( "[" +
                                             GUI.AddColorTag( shape.GetType().Name,
-                                                             Color.Lerp( Color.green,
-                                                                         Color.black,
-                                                                         0.4f ) ) +
+                                                             Color.Lerp( InspectorGUI.BackgroundColor,
+                                                                         InspectorGUISkin.BrandColor,
+                                                                         0.6f ) ) +
                                             "] " + shape.name ) ) ) {
             context.RemoveEditor( shape );
             continue;

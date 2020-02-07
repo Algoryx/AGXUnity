@@ -283,10 +283,10 @@ namespace AGXUnityEditor
                               (editor.target as Material) == Manager.GetOrCreateShapeVisualDefaultMaterial();
       using ( new EditorGUI.DisabledGroupScope( isBuiltInMaterial ) )
       using ( IndentScope.NoIndent ) {
-        InspectorGUI.Separator3D();
+        SeparatorSimple();
         editor.DrawHeader();
         editor.OnInspectorGUI();
-        InspectorGUI.Separator3D();
+        SeparatorSimple();
       }
     }
 
@@ -296,7 +296,9 @@ namespace AGXUnityEditor
       {
         get
         {
-          return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) );
+          return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color,
+                                                 EditorGUIUtility.isProSkin ? InspectorGUISkin.BrandColor : ProBackgroundColor,
+                                                 0.1f ) );
         }
       }
 
@@ -359,20 +361,11 @@ namespace AGXUnityEditor
       if ( data.Length == 0 )
         return;
 
-      float buttonWidth  = 25.0f;
-      float buttonHeight = 25.0f;
-      float buttonOffset = 12.0f;
-
+      float buttonWidth  = IconManager.IconButtonSize.x;
+      float buttonHeight = IconManager.IconButtonSize.y;
       using ( ToolButtonData.ColorBlock ) {
-        var position   = EditorGUILayout.GetControlRect( false, buttonHeight );
-        var toolsLabel = GUI.MakeLabel( "<b>Tools:</b>" );
-        EditorGUI.LabelField( position,
-                              toolsLabel,
-                              InspectorEditor.Skin.LabelMiddleLeft );
-
-        position.x += InspectorGUI.GetWidthIncludingIndent( toolsLabel,
-                                                            InspectorEditor.Skin.LabelMiddleLeft ) +
-                      buttonOffset;
+        Separator3D();
+        var position   = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
         position.width = buttonWidth;
 
         for ( int i = 0; i < data.Length; ++i ) {
@@ -384,9 +377,12 @@ namespace AGXUnityEditor
             var pressed = UnityEngine.GUI.Button( position,
                                                   content,
                                                   InspectorEditor.Skin.GetButton( data[ i ].IsActive, buttonType ) );
-            if ( content == GUIContent.none ) {
-              //using ( new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, ProBackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) )
-                UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), data[ i ].GUIContent.image );
+            if ( content == GUIContent.none && data[ i ].GUIContent.image != null ) {
+              var color = IconManager.IsWhite ?
+                            new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, BackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) :
+                            new GUI.ColorBlock( Color.Lerp( Color.white, BackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) );
+              UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), data[ i ].GUIContent.image );
+              color.Dispose();
             }
             position.x += buttonWidth;
 
@@ -601,6 +597,14 @@ namespace AGXUnityEditor
 
     public static Color ProBackgroundColor = new Color32( 56, 56, 56, 255 );
     public static Color IndieBackgroundColor = new Color32( 194, 194, 194, 255 );
+
+    public static Color BackgroundColor
+    {
+      get
+      {
+        return EditorGUIUtility.isProSkin ? ProBackgroundColor : IndieBackgroundColor;
+      }
+    }
 
     public static GUI.ColorBlock NodeListButtonColor
     {

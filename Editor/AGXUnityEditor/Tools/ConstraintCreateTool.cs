@@ -77,23 +77,17 @@ namespace AGXUnityEditor.Tools
         GUILayout.EndHorizontal();
       }
 
-      InspectorGUI.Separator3D();
-
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
 
       m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState );
       m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType );
 
-      InspectorGUI.Separator3D();
-
       var createCancelState = InspectorGUI.PositiveNegativeButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
                                                                     m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
                                                                     "Create",
                                                                     "Create the constraint",
                                                                     "Cancel" );
-
-      InspectorGUI.Separator3D();
 
       if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         GameObject constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,

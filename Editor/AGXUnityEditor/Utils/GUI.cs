@@ -8,6 +8,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnityEditor.Utils
 {
+  // TODO GUI: Remove this file.
   public partial class GUI : AGXUnity.Utils.GUI
   {
     public static class Symbols
