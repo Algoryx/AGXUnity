@@ -395,22 +395,62 @@ namespace AGXUnityEditor
       }
     }
 
-    public static void ToolArrayGUI<T>( Tools.CustomTargetTool tool,
+    public static void ToolArrayGUI<T>( Tools.CustomTargetTool context,
                                         T[] items,
-                                        string identifier,
-                                        Color itemColorIdeintifier,
-                                        Action<T> onAdd,
-                                        Action<T> onRemove,
-                                        Action<T, int> preItemEditor = null,
-                                        Action<T, int> postItemEditor = null )
+                                        string name )
       where T : Object
     {
-      var displayItemsList = Foldout( GetTargetToolArrayGUIData( tool.Targets[ 0 ], identifier ),
+      if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], name ),
+                                  GUI.MakeLabel( name, true ) ) ) {
+        context.RemoveEditors( items );
+        return;
+      }
+
+      if ( items.Length == 0 ) {
+        using ( InspectorGUI.IndentScope.Single )
+          EditorGUILayout.LabelField( GUI.MakeLabel( "Empty", true ), InspectorEditor.Skin.Label );
+        return;
+      }
+
+      using ( InspectorGUI.IndentScope.Single ) {
+        foreach ( var item in items ) {
+          if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
+                                                                   item.GetInstanceID().ToString() ),
+                             GUI.MakeLabel( "[" +
+                                            GUI.AddColorTag( item.GetType().Name,
+                                                             Color.Lerp( InspectorGUI.BackgroundColor,
+                                                                         InspectorGUISkin.BrandColor,
+                                                                         0.6f ) ) +
+                                            "] " + item.name ) ) ) {
+            context.RemoveEditor( item );
+            continue;
+          }
+
+          using ( InspectorGUI.IndentScope.Single ) {
+            var editor = context.GetOrCreateEditor( item );
+            using ( new GUILayout.VerticalScope() )
+              editor.OnInspectorGUI();
+          }
+        }
+      }
+    }
+
+    public static void ToolListGUI<T>( Tools.CustomTargetTool context,
+                                       T[] items,
+                                       string identifier,
+                                       Color itemColorIdeintifier,
+                                       Action<T> onAdd,
+                                       Action<T> onRemove,
+                                       Action<T, int> preItemEditor = null,
+                                       Action<T, int> postItemEditor = null )
+      where T : Object
+    {
+      var displayItemsList = Foldout( GetTargetToolArrayGUIData( context.Targets[ 0 ], identifier ),
                                       GUI.MakeLabel( identifier + $" [{items.Length}]" ) );
       var itemTypename      = typeof( T ).Name;
       var isAsset           = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
       var itemTypenameSplit = itemTypename.SplitCamelCase();
-      var targetTypename    = tool.Targets[ 0 ].GetType().Name;
+      var targetTypename    = context.Targets[ 0 ].GetType().Name;
       if ( displayItemsList ) {
         T itemToRemove = null;
         using ( IndentScope.Single ) {
@@ -419,7 +459,7 @@ namespace AGXUnityEditor
 
             var displayItem = false;
             using ( new GUILayout.HorizontalScope() ) {
-              displayItem = Foldout( GetItemToolArrayGUIData( tool.Targets[ 0 ], identifier, item ),
+              displayItem = Foldout( GetItemToolArrayGUIData( context.Targets[ 0 ], identifier, item ),
                                      GUI.MakeLabel( "[" + GUI.AddColorTag( itemTypename,
                                                                            itemColorIdeintifier ) + "] " + item.name ) );
 
@@ -433,11 +473,11 @@ namespace AGXUnityEditor
                   itemToRemove = item;
             }
             if ( !displayItem ) {
-              HandleItemEditorDisable( tool, item );
+              HandleItemEditorDisable( context, item );
               continue;
             }
             using ( IndentScope.Single ) {
-              var editor = tool.GetOrCreateEditor( item );
+              var editor = context.GetOrCreateEditor( item );
               preItemEditor?.Invoke( item, itemIndex );
               editor.OnInspectorGUI();
               postItemEditor?.Invoke( item, itemIndex );
@@ -481,13 +521,13 @@ namespace AGXUnityEditor
 
         if ( itemToRemove != null ) {
           onRemove( itemToRemove );
-          HandleItemEditorDisable( tool, itemToRemove );
+          HandleItemEditorDisable( context, itemToRemove );
           itemToRemove = null;
         }
       }
       else {
         foreach ( var item in items )
-          HandleItemEditorDisable( tool, item );
+          HandleItemEditorDisable( context, item );
       }
     }
 

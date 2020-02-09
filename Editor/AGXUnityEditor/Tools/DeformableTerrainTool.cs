@@ -28,7 +28,7 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( DeformableTerrain, "Shovel add/remove." );
 
-      InspectorGUI.ToolArrayGUI( this,
+      InspectorGUI.ToolListGUI( this,
                                  DeformableTerrain.Shovels,
                                  "Shovels",
                                  Color.Lerp( Color.red, Color.black, 0.25f ),

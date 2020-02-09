@@ -221,17 +221,17 @@ namespace AGXUnityEditor.Tools
       if ( context == null )
         return;
 
-      RigidBodyTool.OnRigidBodyListGUI( context.CollectComponentsInChildred<RigidBody>().ToArray(), context );
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<RigidBody>().ToArray(),
+                                 "Rigid Bodies" );
 
-      InspectorGUI.SeparatorSimple();
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<Constraint>().ToArray(),
+                                 "Constraints" );
 
-      RigidBodyTool.OnConstraintListGUI( context.CollectComponentsInChildred<Constraint>().ToArray(), context );
-
-      InspectorGUI.SeparatorSimple();
-
-      RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<Shape>().ToArray(), context );
-
-      InspectorGUI.SeparatorSimple();
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<Shape>().ToArray(),
+                                 "Shapes" );
     }
 
     private void HandleModeGUI()

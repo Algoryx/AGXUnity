@@ -51,7 +51,7 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( Track, "Track wheel add/remove." );
 
-      InspectorGUI.ToolArrayGUI( this,
+      InspectorGUI.ToolListGUI( this,
                                  Track.Wheels,
                                  "Wheels",
                                  Color.Lerp( Color.yellow, Color.white, 0.25f ),

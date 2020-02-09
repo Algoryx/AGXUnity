@@ -117,6 +117,8 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
+      // TODO GUI: IsMainEditor has to be recursive. WheelLoader.Wheels
+      //           is showing the icon.
       if ( IsMainEditor ) {
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )

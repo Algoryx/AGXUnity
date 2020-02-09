@@ -226,6 +226,9 @@ namespace AGXUnityEditor.Tools
               Undo.RecordObject( terrain, "New shape material" );
               terrain.Material = DroppedShapeMaterial;
             }
+
+            // TODO GUI: Call RigidBody.UpdateMassProperties for affected bodies.
+
             Undo.CollapseUndoOperations( undoGroup );
           };
 
