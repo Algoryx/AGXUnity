@@ -183,7 +183,7 @@ namespace AGXUnityEditor.Tools
       bool toggleRigidBodyVisualCreate   = false;
 
       if ( !IsMultiSelect && ToolsActive ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_given point 1",
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_given point 2",
                                                                       FindTransformGivenPointTool,
                                                                       "Find rigid body transform given point on object.",
                                                                       () => toggleFindTransformGivenPoint = true ),

@@ -9,6 +9,9 @@ namespace AGXUnityEditor
 {
   public static class IconManager
   {
+    /// <summary>
+    /// Main editor icons directory.
+    /// </summary>
     public static string Directory
     {
       get
@@ -16,7 +19,9 @@ namespace AGXUnityEditor
         if ( string.IsNullOrEmpty( m_directory ) )
           m_directory = IO.Utils.AGXUnityEditorDirectory +
                         Path.DirectorySeparatorChar +
-                        "Icons";
+                        "Icons" +
+                        Path.DirectorySeparatorChar +
+                        "White";
         return m_directory;
       }
       set
@@ -27,19 +32,28 @@ namespace AGXUnityEditor
       }
     }
 
+    /// <summary>
+    /// Icon scale relative IconButtonSize.
+    /// </summary>
     public static float Scale { get; set; } = 0.9f;
 
-    public static Vector2 IconButtonSize { get; set; } = new Vector2( 25.0f, 25.0f );
-
+    /// <summary>
+    /// True if the icons are white, otherwise false.
+    /// </summary>
     public static bool IsWhite
     {
       get { return m_directory.EndsWith( "White" ); }
     }
 
+    /// <summary>
+    /// Finds icon relative to Directory and caches the result.
+    /// </summary>
+    /// <param name="name">Name of icon, including path relative to Directory.</param>
+    /// <returns>Icon if found, otherwise null.</returns>
     public static Texture2D GetIcon( string name )
     {
       var iconIdentifier = Directory + Path.DirectorySeparatorChar + name;
-      if ( m_icons.TryGetValue( iconIdentifier, out Texture2D icon ) )
+      if ( m_icons.TryGetValue( iconIdentifier, out var icon ) )
         return icon;
 
       icon = EditorGUIUtility.Load( iconIdentifier + ".png" ) as Texture2D;
@@ -49,6 +63,12 @@ namespace AGXUnityEditor
       return icon;
     }
 
+    /// <summary>
+    /// Finds scaled icon rect given button rect. The icon rect is scaled
+    /// given Scale.
+    /// </summary>
+    /// <param name="buttonRect"></param>
+    /// <returns></returns>
     public static Rect GetIconRect( Rect buttonRect )
     {
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
@@ -116,7 +136,7 @@ namespace AGXUnityEditor
                                               editorData.Vector2.y,
                                               6.0f,
                                               75.0f );
-      IconManager.IconButtonSize = editorData.Vector2 = new Vector2( newWidth, newHeight );
+      InspectorGUISkin.ToolButtonSize = editorData.Vector2 = new Vector2( newWidth, newHeight );
 
       InspectorGUI.Separator3D();
       RenderButtons( editorData.Vector2, true, false );
@@ -151,22 +171,17 @@ namespace AGXUnityEditor
         rect.width = buttonSize.x;
 
         for ( int i = 0; currIconIndex < m_iconNames.Count && i < numIconsPerRow; ++currIconIndex, ++i ) {
-          UnityEngine.GUI.Button( rect,
-                                  new GUIContent( "", m_iconNames[ currIconIndex ] ),
-                                  InspectorGUISkin.Instance.GetButton( buttonsActive,
-                                                                       i == 0 && m_iconNames.Count - currIconIndex - 1 == 0              ? InspectorGUISkin.ButtonType.Normal :
-                                                                       i == 0                                                            ? InspectorGUISkin.ButtonType.Left :
-                                                                       i == numIconsPerRow - 1 || currIconIndex == m_iconNames.Count - 1 ? InspectorGUISkin.ButtonType.Right :
-                                                                                                                                           InspectorGUISkin.ButtonType.Middle ) );
-          var icon = IconManager.GetIcon( m_iconNames[ currIconIndex ] );
-          if ( icon != null ) {
-            var color = IconManager.IsWhite ?
-                          new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, InspectorGUI.BackgroundColor, buttonsEnabled ? 0.0f : 0.6f ) ) :
-                          new GUI.ColorBlock( Color.Lerp( Color.white, InspectorGUI.BackgroundColor, buttonsEnabled ? 0.0f : 0.6f ) );
-            UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), icon );
-            color.Dispose();
-          }
-
+          var buttonType = i == 0 && m_iconNames.Count - currIconIndex - 1 == 0              ? InspectorGUISkin.ButtonType.Normal :
+                           i == 0                                                            ? InspectorGUISkin.ButtonType.Left :
+                           i == numIconsPerRow - 1 || currIconIndex == m_iconNames.Count - 1 ? InspectorGUISkin.ButtonType.Right :
+                                                                                               InspectorGUISkin.ButtonType.Middle;
+          var content = new GUIContent( IconManager.GetIcon( m_iconNames[ currIconIndex ] ),
+                                        m_iconNames[ currIconIndex ] + $" | active: {buttonsActive}, enabled: {buttonsEnabled}" );
+          InspectorGUI.ToolButton( rect,
+                                   content,
+                                   buttonType,
+                                   buttonsActive,
+                                   buttonsEnabled );
           rect.x += rect.width;
         }
       }
@@ -178,7 +193,7 @@ namespace AGXUnityEditor
       {
         entry.Float = 0.75f;
         entry.String = IconManager.Directory;
-        entry.Vector2 = new Vector2( 25.0f, 25.0f );
+        entry.Vector2 = new Vector2( 24.0f, 24.0f );
       } );
     }
 

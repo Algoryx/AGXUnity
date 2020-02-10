@@ -110,21 +110,19 @@ namespace AGXUnityEditor.Tools
 
     private void HandleLineToolInspectorGUI( LineTool lineTool, string name )
     {
-      var backgroundStyle = new GUIStyle( InspectorEditor.Skin.Label );
-      backgroundStyle.normal.background = GUI.CreateColoredTexture( 1,
-                                                                    1,
-                                                                    Color.Lerp( EditorGUIUtility.isProSkin ?
-                                                                                  InspectorGUI.ProBackgroundColor :
-                                                                                  InspectorGUI.IndieBackgroundColor,
-                                                                                lineTool.Color,
-                                                                                0.15f ) );
-      using ( new GUILayout.VerticalScope( backgroundStyle ) ) {
+      // If visible, the vertical maker starts under the foldout, otherwise
+      // render the marker through the fouldout label.
+      var isVisible = GetLineToggleData( name ).Bool;
+      var color     = Color.Lerp( lineTool.Color, InspectorGUI.BackgroundColor, 0.25f );
+      using ( new InspectorGUI.VerticalScopeMarker( isVisible ?
+                                                      InspectorGUI.BackgroundColor :
+                                                      color ) )
         if ( !InspectorGUI.Foldout( GetLineToggleData( name ),
-                           GUI.MakeLabel( name, true ) ) )
+                                    GUI.MakeLabel( name, true ) ) )
           return;
-        using ( InspectorGUI.IndentScope.Create( 2 ) )
-          lineTool.OnInspectorGUI();
-      }
+      using ( new InspectorGUI.VerticalScopeMarker( color ) )
+      using ( InspectorGUI.IndentScope.Single )
+        lineTool.OnInspectorGUI();
     }
 
     private LineTool TopEdgeLineTool

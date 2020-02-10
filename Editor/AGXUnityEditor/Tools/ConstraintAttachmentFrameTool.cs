@@ -73,22 +73,22 @@ namespace AGXUnityEditor.Tools
         EditorGUILayout.LabelField( GUI.MakeLabel( "Reference frame", true ), skin.Label );
         InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 1 );
 
-        using ( new GUILayout.HorizontalScope() ) {
-          // TODO GUI: Fix this special button. Why 6 pixels extra?
-          GUILayout.Space( InspectorGUI.IndentScope.PixelLevel + 6 );
-          if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(),
-                                                false,
-                                                "Synchronized with reference frame" ),
-                                 skin.GetButton( connectedFrameSynchronized ),
-                                 new GUILayoutOption[] { GUILayout.Width( 24 ), GUILayout.Height( 14 ) } ) ) {
-            foreach ( var ap in AttachmentPairs )
-              ap.Synchronized = !connectedFrameSynchronized;
+        var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight ) );
+        position.width = 24.0f;
+        if ( UnityEngine.GUI.Button( position,
+                                     GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(), false, "Synchronized with reference frame." ),
+                                     skin.GetButton( connectedFrameSynchronized ) ) ) {
+          foreach ( var ap in AttachmentPairs )
+            ap.Synchronized = !connectedFrameSynchronized;
 
-            if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
-              ConnectedFrameTool.TransformHandleActive = false;
-          }
-          GUILayout.Label( GUI.MakeLabel( "Connected frame", true ), skin.Label );
+          if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
+            ConnectedFrameTool.TransformHandleActive = false;
         }
+
+        var connectedFrameContent = GUI.MakeLabel( "Connected frame", true );
+        position.x += 26.0f;
+        position.width = InspectorGUI.GetWidth( connectedFrameContent, skin.Label );
+        UnityEngine.GUI.Label( position, connectedFrameContent, skin.Label );
 
         UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;
         InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 1 );

@@ -36,16 +36,15 @@ namespace AGXUnityEditor.Tools
     {
       Manager.RemoveNullEntries();
 
-      GUILayout.Label( GUI.MakeLabel( "Contact Material Manager", 18, true ),
-                       new GUIStyle( InspectorEditor.Skin.Label ) { alignment = TextAnchor.MiddleCenter } );
+      InspectorGUI.Separator3D();
 
       InspectorGUI.ToolListGUI( this,
-                                 Manager.ContactMaterials,
-                                 Identifier,
-                                 Color.yellow,
-                                 cm => Manager.Add( cm ),
-                                 cm => Manager.Remove( cm ),
-                                 PreContactMaterialEditor( Manager.ContactMaterialEntries ) );
+                                Manager.ContactMaterials,
+                                Identifier,
+                                Color.yellow,
+                                cm => Manager.Add( cm ),
+                                cm => Manager.Remove( cm ),
+                                PreContactMaterialEditor( Manager.ContactMaterialEntries ) );
     }
 
     private Action<ContactMaterial, int> PreContactMaterialEditor( ContactMaterialEntry[] entries )

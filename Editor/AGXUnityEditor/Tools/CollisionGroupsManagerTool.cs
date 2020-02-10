@@ -36,11 +36,6 @@ namespace AGXUnityEditor.Tools
       bool addPressed                   = false;
       CollisionGroupEntryPair erasePair = null;
 
-      GUILayout.Label( GUI.MakeLabel( "Collision Groups Manager",
-                                      18,
-                                      true ),
-                       skin.LabelMiddleCenter );
-
       InspectorGUI.Separator3D();
 
       GUILayout.Label( GUI.MakeLabel( "Add pair",

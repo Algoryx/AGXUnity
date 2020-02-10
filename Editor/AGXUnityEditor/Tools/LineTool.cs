@@ -126,17 +126,17 @@ namespace AGXUnityEditor.Tools
       bool toggleRenderAsArrow = false;
       bool showTools           = !EditorApplication.isPlaying;
       if ( showTools ) {
-        List<InspectorGUI.ToolButtonData> toolButtonData = new List<InspectorGUI.ToolButtonData>();
-        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.SelectEdgeTool,
+        var toolButtonData = new List<InspectorGUI.ToolButtonData>();
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( "agx_unity_given edge 1",
                                                                 EdgeDetectionToolEnable,
                                                                 "Find line given edge.",
                                                                 () => toggleCreateEdge = true ) );
         if ( Mode != ToolMode.Direction )
-          toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.ArrowRight,
+          toolButtonData.Add( InspectorGUI.ToolButtonData.Create( "agx_unity_line diection 1",
                                                                   RenderAsArrow,
                                                                   "Visualize line direction.",
                                                                   () => toggleRenderAsArrow = true ) );
-        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( GUI.Symbols.ShapeResizeTool,
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( "agx_unity_flip direction 1",
                                                                 false,
                                                                 "Flip direction.",
                                                                 () => toggleFlipDirection = true,

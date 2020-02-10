@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnityEditor
 {
   public class InspectorGUISkin
@@ -53,6 +55,17 @@ namespace AGXUnityEditor
                                                                       139.0f / 255.0f,
                                                                       0.0f );
 
+    /// <summary>
+    /// Size of toolbar buttons.
+    /// </summary>
+    public static Vector2 ToolButtonSize { get; set; } = new Vector2( 24.0f, 24.0f );
+
+    /// <summary>
+    /// Button style given active state and button type.
+    /// </summary>
+    /// <param name="active">True if the button is active, i.e., pressed (e.g., when a tool is active).</param>
+    /// <param name="type">Button type; left, middle, right or normal.</param>
+    /// <returns>Button style to use.</returns>
     public GUIStyle GetButton( bool active, ButtonType type = ButtonType.Normal )
     {
       return active ?
@@ -69,9 +82,9 @@ namespace AGXUnityEditor
     {
       // Foldout and Toggle are used explicitly when calling
       // EditorGUILayout.Foldout and EditorGUILayout.Toggle.
-      EditorStyles.foldout.richText     = true;
-      EditorStyles.toggle.richText      = true;
-      EditorStyles.label.richText       = true; // Used in object field.
+      EditorStyles.foldout.richText = true;
+      EditorStyles.toggle.richText  = true;
+      EditorStyles.label.richText   = true; // Used in object field.
 
       NumberField = new GUIStyle( EditorStyles.numberField );
 

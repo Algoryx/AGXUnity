@@ -216,18 +216,15 @@ namespace AGXUnityEditor
       if ( target == null )
         return null;
 
-      Editor editor = null;
-      if ( m_recursiveEditors.TryGetValue( target, out editor ) ) {
+      if ( m_recursiveEditors.TryGetValue( target, out var editor ) ) {
         // Old editor with destroyed target, e.g., when entering
         // edit coming from play mode.
-        if ( editor.target == null ) {
+        if ( editor.target == null )
           ReleaseRecursiveEditor( target );
-          editor = null;
-        }
         else
           return editor;
       }
-      editor = Editor.CreateEditor( target );
+      editor = InspectorEditor.CreateRecursive( target );
       if ( editor != null )
         m_recursiveEditors.Add( target, editor );
       return editor;
@@ -239,8 +236,7 @@ namespace AGXUnityEditor
     /// <param name="target">Target object.</param>
     public static void ReleaseRecursiveEditor( Object target )
     {
-      Editor editor = null;
-      if ( target != null && m_recursiveEditors.TryGetValue( target, out editor ) ) {
+      if ( target != null && m_recursiveEditors.TryGetValue( target, out var editor ) ) {
         m_recursiveEditors.Remove( target );
         Object.DestroyImmediate( editor );
       }

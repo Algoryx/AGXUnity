@@ -21,7 +21,19 @@ namespace AGXUnityEditor
       }
     }
 
-    public static bool BrandLineEnabled { get; set; } = false;
+    /// <summary>
+    /// Create editor to be rendered form within another editor, e.g.,
+    /// dropdown showing content with tools of another object.
+    /// </summary>
+    /// <param name="target">Target object.</param>
+    /// <returns>Editor instance.</returns>
+    public static Editor CreateRecursive( Object target )
+    {
+      var editor = CreateEditor( target );
+      if ( editor is InspectorEditor )
+        ( editor as InspectorEditor ).IsMainEditor = false;
+      return editor;
+    }
 
     /// <summary>
     /// True to force repaint of all InspectorEditor editors.
@@ -99,16 +111,7 @@ namespace AGXUnityEditor
     /// True if this editor is main in Inspector, i.e., not rendered
     /// inside another editor.
     /// </summary>
-    public bool IsMainEditor
-    {
-      get
-      {
-        foreach ( var tool in ToolManager.ActiveTools )
-          if ( tool.HasEditor( this.target ) )
-            return false;
-        return true;
-      }
-    }
+    public bool IsMainEditor { get; private set; } = true;
 
     private static Texture2D m_icon = null;
 
@@ -117,8 +120,6 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
-      // TODO GUI: IsMainEditor has to be recursive. WheelLoader.Wheels
-      //           is showing the icon.
       if ( IsMainEditor ) {
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
@@ -132,15 +133,11 @@ namespace AGXUnityEditor
 
       GUILayout.BeginVertical();
 
-      var brandLine = BrandLineEnabled && IsMainEditor ? new InspectorGUI.VerticalBrandLine() : null;
-
       ToolManager.OnPreTargetMembers( this.targets );
 
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
-
-      brandLine?.Dispose();
 
       GUILayout.EndVertical();
     }

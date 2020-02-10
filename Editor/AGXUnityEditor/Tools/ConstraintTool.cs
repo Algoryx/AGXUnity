@@ -50,12 +50,11 @@ namespace AGXUnityEditor.Tools
       for ( int i = 1; i < constraints.Length; ++i )
         differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
-      GUILayout.Label( GUI.MakeLabel( ( differentTypes ?
-                                        "Constraints" :
-                                        refConstraint.Type.ToString() + ( IsMultiSelect ? "s" : string.Empty ) ),
-                                      24,
-                                      true ),
-                       skin.LabelMiddleCenter );
+      // TODO GUI: Cleanup.
+      //EditorGUILayout.PrefixLabel( GUI.MakeLabel( ( differentTypes ?
+      //                                  "Constraints" :
+      //                                  refConstraint.Type.ToString() + ( IsMultiSelect ? "s" : string.Empty ) ) ),
+      //                             skin.Label );
 
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();

@@ -228,6 +228,9 @@ namespace AGXUnityEditor
       public bool MaxChanged;
     }
 
+    private static float[] s_rangeRealValues = new float[] { 0.0f, 0.0f };
+    private static GUIContent[] s_rangeRealContent = new GUIContent[] { new GUIContent( "L" ), new GUIContent( "U" ) };
+
     [InspectorDrawer( typeof( RangeReal ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
     [Obsolete( "Needs patch to not propagate unchanged values." )]
@@ -236,29 +239,31 @@ namespace AGXUnityEditor
       var value = wrapper.Get<RangeReal>( obj );
       var invalidRange = value.Min > value.Max;
 
-      RangeRealResult result = new RangeRealResult()
+      var result = new RangeRealResult()
       {
         Min = value.Min,
         MinChanged = false,
         Max = value.Max,
         MaxChanged = false
       };
-      using ( new GUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
 
-        // TODO GUI: Patch indent method
-        GUILayout.Space( -30 );
+      var position = EditorGUILayout.GetControlRect( false );
+      s_rangeRealValues[ 0 ] = value.Min;
+      s_rangeRealValues[ 1 ] = value.Max;
 
-        result.Min              = EditorGUILayout.FloatField( "", value.Min, EditorStyles.numberField, GUILayout.MaxWidth( 140 ) );
-        result.MinChanged       = UnityEngine.GUI.changed;
-        UnityEngine.GUI.changed = false;
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiFloatField( position,
+                                 InspectorGUI.MakeLabel( wrapper.Member ),
+                                 s_rangeRealContent,
+                                 s_rangeRealValues );
+      if ( EditorGUI.EndChangeCheck() ) {
+        result.Min = s_rangeRealValues[ 0 ];
+        result.MinChanged = s_rangeRealValues[ 0 ] != value.Min;
 
-        // TODO GUI: Patch indent method
-        GUILayout.Space( -34 );
+        result.Max = s_rangeRealValues[ 1 ];
+        result.MaxChanged = s_rangeRealValues[ 1 ] != value.Max;
 
-        result.Max              = EditorGUILayout.FloatField( "", value.Max, EditorStyles.numberField, GUILayout.MaxWidth( 140 ) );
-        result.MaxChanged       = UnityEngine.GUI.changed;
-        UnityEngine.GUI.changed = result.MinChanged || result.MaxChanged;
+        UnityEngine.GUI.changed = true;
       }
 
       if ( invalidRange )

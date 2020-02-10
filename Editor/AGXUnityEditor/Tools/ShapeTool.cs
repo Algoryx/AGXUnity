@@ -167,8 +167,6 @@ namespace AGXUnityEditor.Tools
         return;
 
       using ( InspectorGUI.IndentScope.Single ) {
-        GUILayout.Space( 6 );
-
         Undo.RecordObjects( shapeVisual.GetComponentsInChildren<MeshRenderer>(), "Shape visual material" );
 
         var materials = shapeVisual.GetMaterials();

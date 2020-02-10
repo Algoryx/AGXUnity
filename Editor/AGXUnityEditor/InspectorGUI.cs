@@ -41,24 +41,30 @@ namespace AGXUnityEditor
       return GetWidth( content, style ) + IndentScope.PixelLevel;
     }
 
-    public class VerticalBrandLine : IDisposable
+    public class VerticalScopeMarker : IDisposable
     {
-      public VerticalBrandLine()
+      public VerticalScopeMarker( Color color )
       {
-        m_begin = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 1.0f ) );
+        m_begin = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 0.0f ) );
+        m_color = color;
       }
 
       public void Dispose()
       {
-        var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 1.0f ) );
+        var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 0.0f ) );
         var oldColor = Handles.color;
-        Handles.color = InspectorGUISkin.BrandColor;
-        //Handles.DrawLine( new Vector3( 1, m_begin.position.y, 0 ), new Vector3( 1, end.position.y, 0 ) );
-        Handles.DrawLine( new Vector3( 2, m_begin.position.y, 0 ), new Vector3( 2, end.position.y, 0 ) );
+        Handles.color = m_color;
+        Handles.DrawLine( new Vector3( m_begin.position.x,
+                                       m_begin.position.y + 1.0f,
+                                       0 ),
+                          new Vector3( end.position.x,
+                                       end.position.y - 1.0f,
+                                       0 ) );
         Handles.color = oldColor;
       }
 
       private Rect m_begin;
+      private Color m_color;
     }
 
     public class IndentScope : IDisposable
@@ -127,22 +133,20 @@ namespace AGXUnityEditor
 
     public static void Separator3D( float space = 2.0f )
     {
-      GUILayout.Space( space );
+      // Lines are two pixels and space before and after.
+      var wholeRect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 2.0f + 2.0f * space ) );
 
-      var r1 = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.ExpandWidth( true ),
-                                                                       GUILayout.Height( 1f ) ) );
-      EditorGUI.DrawRect( r1, InspectorGUISkin.BrandColor );
+      var rectBrand    = new Rect( wholeRect );
+      rectBrand.y     += space;
+      rectBrand.height = 1.0f;
 
-      var r2 = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.ExpandWidth( true ),
-                                                                       GUILayout.Height( 1f ) ) );
-      r2.x += 1.0f;
-      r2.xMax -= 1.0f;
-      r2.y -= 2.0f;
-      EditorGUI.DrawRect( r2, Color.black );
+      var rectOutline    = new Rect( rectBrand );
+      rectOutline.height = 2.0f;
+      rectOutline.x     += 1.0f;
 
-      // Moving up 3 pixels since "shadow" rect is 1 pixel wide and moved
-      // up 2 pixels. We basically want this to active like one control rect.
-      GUILayout.Space( space - 3.0f );
+      var outlineColor = EditorGUIUtility.isProSkin ? Color.black : Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.45f );
+      EditorGUI.DrawRect( rectOutline, outlineColor );
+      EditorGUI.DrawRect( rectBrand, InspectorGUISkin.BrandColor );
     }
 
     public static bool Toggle( GUIContent content,
@@ -167,9 +171,8 @@ namespace AGXUnityEditor
     {
       var createNewButtonWidth = 35.0f;
       var createNewPressed     = false;
-      Object result            = null;
       var allowSceneObject     = instanceType == typeof( GameObject ) ||
-                                 typeof( ScriptComponent ).IsAssignableFrom( instanceType );
+                                 typeof( MonoBehaviour ).IsAssignableFrom( instanceType );
 
       // We're in control of the whole inspector entry.
       var position = EditorGUILayout.GetControlRect();
@@ -191,6 +194,7 @@ namespace AGXUnityEditor
 
       // Entry may change, render object field and create-new-button if
       // the instance type supports it.
+      Object result;
       if ( !isReadOnly ) {
         var supportsCreateAsset = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ||
                                   instanceType == typeof( Material );
@@ -199,15 +203,15 @@ namespace AGXUnityEditor
         position.xMax -= EditorGUIUtility.labelWidth +
                          Convert.ToInt32( supportsCreateAsset ) * createNewButtonWidth -
                          IndentScope.PixelLevel;
-        result         = EditorGUI.ObjectField( position, instance, instanceType, true );
+        result         = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
         if ( supportsCreateAsset ) {
-          var buttonRect = new Rect( position.xMax + 4, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
+          var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
           buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
           using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, InspectorGUISkin.BrandColor, 0.25f ) ) )
             createNewPressed = UnityEngine.GUI.Button( buttonRect,
                                                        GUI.MakeLabel( "New", false, "Create new asset" ),
-                                                       InspectorEditor.Skin.Button );
+                                                       InspectorEditor.Skin.ButtonMiddle );
         }
       }
       else
@@ -314,7 +318,8 @@ namespace AGXUnityEditor
                                       toolTip ),
                        isActive,
                        onClick,
-                       enabled );
+                       enabled,
+                       postRender );
       }
 
       public static ToolButtonData Create( string icon,
@@ -330,7 +335,8 @@ namespace AGXUnityEditor
         return Create( content,
                        isActive,
                        onClick,
-                       enabled );
+                       enabled,
+                       postRender );
       }
 
       public static ToolButtonData Create( GUIContent content,
@@ -361,38 +367,69 @@ namespace AGXUnityEditor
       if ( data.Length == 0 )
         return;
 
-      float buttonWidth  = IconManager.IconButtonSize.x;
-      float buttonHeight = IconManager.IconButtonSize.y;
+      float buttonWidth  = InspectorGUISkin.ToolButtonSize.x;
+      float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
       using ( ToolButtonData.ColorBlock ) {
         Separator3D();
         var position   = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
         position.width = buttonWidth;
 
         for ( int i = 0; i < data.Length; ++i ) {
-          using ( new EditorGUI.DisabledGroupScope( !data[ i ].Enabled ) ) {
-            var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
-                             data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
-                                                                       InspectorGUISkin.ButtonType.Middle;
-            var content = data[ i ].GUIContent.image != null ? GUIContent.none : data[ i ].GUIContent;
-            var pressed = UnityEngine.GUI.Button( position,
-                                                  content,
-                                                  InspectorEditor.Skin.GetButton( data[ i ].IsActive, buttonType ) );
-            if ( content == GUIContent.none && data[ i ].GUIContent.image != null ) {
-              var color = IconManager.IsWhite ?
-                            new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor, BackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) ) :
-                            new GUI.ColorBlock( Color.Lerp( Color.white, BackgroundColor, data[ i ].Enabled ? 0.0f : 0.6f ) );
-              UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), data[ i ].GUIContent.image );
-              color.Dispose();
-            }
-            position.x += buttonWidth;
-
-            data[ i ].PostRender?.Invoke();
-
-            if ( pressed )
-              data[ i ].OnClick?.Invoke();
-          }
+          var buttonType = data.Length > 1 && i == 0 ? InspectorGUISkin.ButtonType.Left :
+                           data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
+                                                                     InspectorGUISkin.ButtonType.Middle;
+          var pressed = ToolButton( position,
+                                    data[ i ].GUIContent,
+                                    buttonType,
+                                    data[ i ].IsActive,
+                                    data[ i ].Enabled );
+          position.x += buttonWidth;
+          data[ i ].PostRender?.Invoke();
+          if ( pressed )
+            data[ i ].OnClick?.Invoke();
         }
       }
+    }
+
+    private static GUIContent s_tooltipContent = new GUIContent( "", "" );
+
+    private static GUIContent ToolButtonTooltip( GUIContent originalContent )
+    {
+      s_tooltipContent.tooltip = originalContent.tooltip;
+      return s_tooltipContent;
+    }
+
+    public static bool ToolButton( Rect rect,
+                                   GUIContent content,
+                                   InspectorGUISkin.ButtonType buttonType,
+                                   bool active,
+                                   bool enabled )
+    {
+      var disabledScope = new EditorGUI.DisabledScope( !enabled );
+
+      var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
+      var pressed = UnityEngine.GUI.Button( rect,
+                                            buttonContent,
+                                            InspectorEditor.Skin.GetButton( active, buttonType ) );
+      if ( buttonContent == s_tooltipContent && content.image != null ) {
+        var color = IconManager.IsWhite ?
+                      new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor,
+                                                      BackgroundColor,
+                                                      enabled ?
+                                                        0.0f :
+                                                        0.6f ) ) :
+                      new GUI.ColorBlock( Color.Lerp( Color.white,
+                                                      BackgroundColor,
+                                                      enabled ?
+                                                        0.0f :
+                                                        0.6f ) );
+        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
+        color.Dispose();
+      }
+
+      disabledScope.Dispose();
+
+      return pressed;
     }
 
     public static void ToolArrayGUI<T>( Tools.CustomTargetTool context,
@@ -400,37 +437,39 @@ namespace AGXUnityEditor
                                         string name )
       where T : Object
     {
-      if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], name ),
-                                  GUI.MakeLabel( name, true ) ) ) {
+      if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], name ),
+                     GUI.MakeLabel( name, true ) ) ) {
         context.RemoveEditors( items );
         return;
       }
 
       if ( items.Length == 0 ) {
-        using ( InspectorGUI.IndentScope.Single )
+        using ( IndentScope.Single )
           EditorGUILayout.LabelField( GUI.MakeLabel( "Empty", true ), InspectorEditor.Skin.Label );
         return;
       }
 
-      using ( InspectorGUI.IndentScope.Single ) {
+      Func<Object, string> getConstraintTypename = obj => ( obj as Constraint ).Type.ToString();
+      Func<Object, string> getDefaultTypename    = obj => obj.GetType().Name;
+      var getTypename                            = items[ 0 ] is Constraint ?
+                                                     getConstraintTypename :
+                                                     getDefaultTypename;
+      using ( IndentScope.Single ) {
         foreach ( var item in items ) {
-          if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
-                                                                   item.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" +
-                                            GUI.AddColorTag( item.GetType().Name,
-                                                             Color.Lerp( InspectorGUI.BackgroundColor,
-                                                                         InspectorGUISkin.BrandColor,
-                                                                         0.6f ) ) +
-                                            "] " + item.name ) ) ) {
+          if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
+                                                      item.GetInstanceID().ToString() ),
+                         GUI.MakeLabel( "[" +
+                                        GUI.AddColorTag( getTypename( item ),
+                                                         Color.Lerp( BackgroundColor,
+                                                                     InspectorGUISkin.BrandColor,
+                                                                     0.6f ) ) +
+                                        "] " + item.name ) ) ) {
             context.RemoveEditor( item );
             continue;
           }
 
-          using ( InspectorGUI.IndentScope.Single ) {
-            var editor = context.GetOrCreateEditor( item );
-            using ( new GUILayout.VerticalScope() )
-              editor.OnInspectorGUI();
-          }
+          var editor = context.GetOrCreateEditor( item );
+          HandleEditorGUI( editor );
         }
       }
     }
@@ -467,21 +506,21 @@ namespace AGXUnityEditor
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
                                                       false,
                                                       $"Remove {item.name} from {targetTypename}." ),
-                     InspectorEditor.Skin.Button,
+                     InspectorEditor.Skin.ButtonMiddle,
                      GUILayout.Width( 18 ),
                      GUILayout.Height( 14 ) ) )
                   itemToRemove = item;
             }
+
             if ( !displayItem ) {
               HandleItemEditorDisable( context, item );
               continue;
             }
-            using ( IndentScope.Single ) {
-              var editor = context.GetOrCreateEditor( item );
-              preItemEditor?.Invoke( item, itemIndex );
-              editor.OnInspectorGUI();
-              postItemEditor?.Invoke( item, itemIndex );
-            }
+
+            var editor = context.GetOrCreateEditor( item );
+            preItemEditor?.Invoke( item, itemIndex );
+            HandleEditorGUI( editor );
+            postItemEditor?.Invoke( item, itemIndex );
           }
 
           T itemToAdd = null;
@@ -728,12 +767,18 @@ namespace AGXUnityEditor
       var refFrame       = frames[ 0 ];
 
       using ( IndentScope.Create( indentLevelInc ) ) {
+        var frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
+                  Tools.FrameTool.FindActive( refFrame ) :
+                  null;
+        if ( frameTool != null )
+          frameTool.OnPreTargetMembersGUI();
+
         UnityEngine.GUI.enabled = true;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
-        GameObject newParent = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Parent" ),
-                                                                        refFrame.Parent,
-                                                                        typeof( GameObject ),
-                                                                        true );
+        var newParent = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Parent" ),
+                                                                 refFrame.Parent,
+                                                                 typeof( GameObject ),
+                                                                 true );
         EditorGUI.showMixedValue = false;
         UnityEngine.GUI.enabled = guiWasEnabled;
 
@@ -755,22 +800,15 @@ namespace AGXUnityEditor
 
         // Converting from quaternions to Euler - make sure the actual Euler values has
         // changed before updating local rotation to not mess up the undo stack.
-        Vector3 inputEuler = refFrame.LocalRotation.eulerAngles;
+        var inputEuler = refFrame.LocalRotation.eulerAngles;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalRotation, frame.LocalRotation ) );
-        Vector3 outputEuler = EditorGUILayout.Vector3Field( GUI.MakeLabel( "Local rotation" ), inputEuler );
+        var outputEuler = EditorGUILayout.Vector3Field( GUI.MakeLabel( "Local rotation" ), inputEuler );
         if ( !Equals( inputEuler, outputEuler ) ) {
           foreach ( var frame in frames )
             frame.LocalRotation = Quaternion.Euler( outputEuler );
           UnityEngine.GUI.changed = false;
         }
         EditorGUI.showMixedValue = false;
-
-        Tools.FrameTool frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
-                                      Tools.FrameTool.FindActive( refFrame ) :
-                                      null;
-        if ( frameTool != null )
-          using ( IndentScope.Single )
-            frameTool.OnPreTargetMembersGUI();
       }
     }
   }
