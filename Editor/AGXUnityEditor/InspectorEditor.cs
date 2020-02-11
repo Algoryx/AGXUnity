@@ -129,6 +129,8 @@ namespace AGXUnityEditor
         UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
         // Draw our transparent icon.
         UnityEngine.GUI.DrawTexture( rect, m_icon );
+
+        InspectorGUI.BrandSeparator();
       }
 
       GUILayout.BeginVertical();
@@ -177,7 +179,7 @@ namespace AGXUnityEditor
       var drawerInfo = InvokeWrapperInspectorDrawer.GetDrawerMethod( wrapper.GetContainingType() );
 
       if ( wrapper.HasAttribute<InspectorSeparatorAttribute>() )
-        InspectorGUI.SeparatorSimple();
+        InspectorGUI.BrandSeparator();
 
       EditorGUI.showMixedValue = !wrapper.AreValuesEqual( objects );
 

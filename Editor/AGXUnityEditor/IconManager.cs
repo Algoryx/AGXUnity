@@ -112,7 +112,6 @@ namespace AGXUnityEditor
       var selectIconDir = false;
       var editorData = GetEditorData();
 
-      InspectorGUI.Separator3D();
       using ( new EditorGUILayout.HorizontalScope() ) {
         EditorGUILayout.LabelField( GUI.MakeLabel( "Icons directory" ),
                                     GUI.MakeLabel( IconManager.Directory.Replace( '\\', '/' ) ),
@@ -138,13 +137,13 @@ namespace AGXUnityEditor
                                               75.0f );
       InspectorGUISkin.ToolButtonSize = editorData.Vector2 = new Vector2( newWidth, newHeight );
 
-      InspectorGUI.Separator3D();
+      InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, true, false );
-      InspectorGUI.Separator3D();
+      InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, false, false );
-      InspectorGUI.Separator3D();
+      InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, true, true);
-      InspectorGUI.Separator3D();
+      InspectorGUI.BrandSeparator( 1, 6 );
 
       if ( selectIconDir ) {
         var result = EditorUtility.OpenFolderPanel( "Icons directory",

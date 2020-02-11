@@ -248,8 +248,6 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.Separator3D();
-
       using ( GUI.AlignBlock.Center ) {
         if ( m_subMode == SubMode.SelectRigidBody )
           GUILayout.Label( GUI.MakeLabel( "Select rigid body object in scene view.", true ), skin.Label );
@@ -290,8 +288,6 @@ namespace AGXUnityEditor.Tools
       }
       GUILayout.EndHorizontal();
 
-      InspectorGUI.Separator3D();
-
       // Creates new rigid body and move selected objects to it (as children).
       if ( createNewRigidBodyPressed || moveToNewRigidBodyPressed ) {
         CreateOrMoveToRigidBodyFromSelectionEntries( m_selection );
@@ -318,8 +314,6 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      InspectorGUI.Separator3D();
-
       ShapeCreateTool.OnInspectorGUI();
     }
 
@@ -329,8 +323,6 @@ namespace AGXUnityEditor.Tools
         ChangeMode( Mode.None );
         return;
       }
-
-      InspectorGUI.Separator3D();
 
       ConstraintCreateTool.OnInspectorGUI();
     }

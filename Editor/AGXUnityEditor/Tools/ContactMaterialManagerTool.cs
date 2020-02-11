@@ -36,8 +36,6 @@ namespace AGXUnityEditor.Tools
     {
       Manager.RemoveNullEntries();
 
-      InspectorGUI.Separator3D();
-
       InspectorGUI.ToolListGUI( this,
                                 Manager.ContactMaterials,
                                 Identifier,

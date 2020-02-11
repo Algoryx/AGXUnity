@@ -46,7 +46,7 @@ namespace AGXUnityEditor.Tools
       {
         if ( value && GetChild<SelectGameObjectTool>() == null ) {
           RemoveAllChildren();
-          SelectGameObjectTool selectGameObjectTool = new SelectGameObjectTool();
+          var selectGameObjectTool = new SelectGameObjectTool();
           selectGameObjectTool.OnSelect += parent =>
           {
             Frame.SetParent( parent );
@@ -215,36 +215,41 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      var skin           = InspectorEditor.Skin;
+      ToolsGUI( false );
+    }
+
+    public void ToolsGUI( bool isMultiSelect )
+    {
+      var skin = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
 
-      bool toggleSelectParent   = false;
+      bool toggleSelectParent = false;
       bool toggleFindGivenPoint = false;
-      bool toggleSelectEdge     = false;
+      bool toggleSelectEdge = false;
       bool togglePositionHandle = false;
 
-      UnityEngine.GUI.enabled = true;
+      UnityEngine.GUI.enabled = !isMultiSelect;
       InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_parent 5",
                                                                     SelectParent,
                                                                     "Select parent object by selecting object in scene view",
                                                                     () => toggleSelectParent = true,
-                                                                    true,
-                                                                    () => UnityEngine.GUI.enabled = guiWasEnabled ),
+                                                                    !isMultiSelect,
+                                                                    () => UnityEngine.GUI.enabled = !isMultiSelect && guiWasEnabled ),
                                 InspectorGUI.ToolButtonData.Create( "agx_unity_given point 2",
                                                                     FindTransformGivenPointOnSurface,
                                                                     "Find position and rotation given point and direction on an objects surface",
                                                                     () => toggleFindGivenPoint = true,
-                                                                    guiWasEnabled ),
+                                                                    !isMultiSelect && guiWasEnabled ),
                                 InspectorGUI.ToolButtonData.Create( "agx_unity_given edge 1",
                                                                     FindTransformGivenEdge,
                                                                     "Find position and rotation given a triangle or principal edge",
                                                                     () => toggleSelectEdge = true,
-                                                                    guiWasEnabled ),
+                                                                    !isMultiSelect && guiWasEnabled ),
                                 InspectorGUI.ToolButtonData.Create( "agx_unity_position 1",
                                                                     TransformHandleActive,
                                                                     "Position/rotation handle",
                                                                     () => togglePositionHandle = true,
-                                                                    guiWasEnabled ) );
+                                                                    !isMultiSelect && guiWasEnabled ) );
 
       if ( toggleSelectParent )
         SelectParent = !SelectParent;
@@ -254,6 +259,8 @@ namespace AGXUnityEditor.Tools
         FindTransformGivenEdge = !FindTransformGivenEdge;
       if ( togglePositionHandle )
         TransformHandleActive = !TransformHandleActive;
+
+      UnityEngine.GUI.enabled = guiWasEnabled;
     }
 
     /// <summary>

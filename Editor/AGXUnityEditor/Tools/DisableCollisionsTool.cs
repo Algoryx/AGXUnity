@@ -112,14 +112,10 @@ namespace AGXUnityEditor.Tools
         m_dots = new string( '.', numCalls % 4 );
       } );
 
-      InspectorGUI.Separator3D();
-
       var applyCancelState = InspectorGUI.PositiveNegativeButtons( m_selected.Count > 0,
                                                                    "Apply",
                                                                    "Apply current configuration.",
                                                                    "Cancel" );
-
-      InspectorGUI.Separator3D();
 
       if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         string selectedGroupName = m_mainObject.GetInstanceID().ToString();

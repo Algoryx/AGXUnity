@@ -67,33 +67,37 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      using ( InspectorGUI.IndentScope.Single ) {
-        var connectedFrameSynchronized = AttachmentPairs.All( ap => ap.Synchronized );
+      var connectedFrameSynchronized = AttachmentPairs.All( ap => ap.Synchronized );
 
-        EditorGUILayout.LabelField( GUI.MakeLabel( "Reference frame", true ), skin.Label );
-        InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 1 );
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Reference frame", true ), skin.Label );
+      InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 1 );
 
-        var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight ) );
-        position.width = 24.0f;
-        if ( UnityEngine.GUI.Button( position,
-                                     GUI.MakeLabel( GUI.Symbols.Synchronized.ToString(), false, "Synchronized with reference frame." ),
-                                     skin.GetButton( connectedFrameSynchronized ) ) ) {
-          foreach ( var ap in AttachmentPairs )
-            ap.Synchronized = !connectedFrameSynchronized;
+      var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 24.0f ) );
+      position.width = 24.0f;
+      var toggleSynchronized = UnityEngine.GUI.Button( position,
+                                                       GUI.MakeLabel( "",
+                                                                      false,
+                                                                      "Synchronized with reference frame." ),
+                                                       skin.GetButton( connectedFrameSynchronized ) );
+      var iconName = connectedFrameSynchronized ? "agx_unity_hinge 7" : "agx_unity_hinge 6";
+      using ( new GUI.ColorBlock( InspectorGUISkin.BrandColor ) )
+        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), IconManager.GetIcon( iconName ) );
+      if ( toggleSynchronized ) {
+        foreach ( var ap in AttachmentPairs )
+          ap.Synchronized = !connectedFrameSynchronized;
 
-          if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
-            ConnectedFrameTool.TransformHandleActive = false;
-        }
-
-        var connectedFrameContent = GUI.MakeLabel( "Connected frame", true );
-        position.x += 26.0f;
-        position.width = InspectorGUI.GetWidth( connectedFrameContent, skin.Label );
-        UnityEngine.GUI.Label( position, connectedFrameContent, skin.Label );
-
-        UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;
-        InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 1 );
-        UnityEngine.GUI.enabled = guiWasEnabled;
+        if ( !isMultiSelect && AttachmentPairs[ 0 ].Synchronized )
+          ConnectedFrameTool.TransformHandleActive = false;
       }
+
+      var connectedFrameContent = GUI.MakeLabel( $"<b>Connected frame:</b> {(connectedFrameSynchronized ? "Synchronized" : "Free")}" );
+      position.x += 26.0f;
+      position.width = InspectorGUI.GetWidth( connectedFrameContent, skin.Label );
+      UnityEngine.GUI.Label( position, connectedFrameContent, skin.LabelMiddleLeft );
+
+      UnityEngine.GUI.enabled = !connectedFrameSynchronized && !isMultiSelect;
+      InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ConnectedFrame ).ToArray(), 1 );
+      UnityEngine.GUI.enabled = guiWasEnabled;
     }
   }
 }

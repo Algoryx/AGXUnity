@@ -220,61 +220,21 @@ namespace AGXUnityEditor
       return newValue;
     }
 
-    private struct RangeRealResult
-    {
-      public float Min;
-      public bool MinChanged;
-      public float Max;
-      public bool MaxChanged;
-    }
-
-    private static float[] s_rangeRealValues = new float[] { 0.0f, 0.0f };
-    private static GUIContent[] s_rangeRealContent = new GUIContent[] { new GUIContent( "L" ), new GUIContent( "U" ) };
-
     [InspectorDrawer( typeof( RangeReal ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
-    [Obsolete( "Needs patch to not propagate unchanged values." )]
     public static object RangeRealDrawer( object obj, InvokeWrapper wrapper )
     {
-      var value = wrapper.Get<RangeReal>( obj );
-      var invalidRange = value.Min > value.Max;
-
-      var result = new RangeRealResult()
-      {
-        Min = value.Min,
-        MinChanged = false,
-        Max = value.Max,
-        MaxChanged = false
-      };
-
-      var position = EditorGUILayout.GetControlRect( false );
-      s_rangeRealValues[ 0 ] = value.Min;
-      s_rangeRealValues[ 1 ] = value.Max;
-
-      EditorGUI.BeginChangeCheck();
-      EditorGUI.MultiFloatField( position,
-                                 InspectorGUI.MakeLabel( wrapper.Member ),
-                                 s_rangeRealContent,
-                                 s_rangeRealValues );
-      if ( EditorGUI.EndChangeCheck() ) {
-        result.Min = s_rangeRealValues[ 0 ];
-        result.MinChanged = s_rangeRealValues[ 0 ] != value.Min;
-
-        result.Max = s_rangeRealValues[ 1 ];
-        result.MaxChanged = s_rangeRealValues[ 1 ] != value.Max;
-
-        UnityEngine.GUI.changed = true;
-      }
-
-      if ( invalidRange )
-        InspectorGUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
-
-      return result;
+      return InspectorGUI.RangeRealField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                          wrapper.Get<RangeReal>( obj ) );
     }
 
     public static object RangeRealDrawerCopyOp( object data, object destination )
     {
-      var result = (RangeRealResult)data;
+      // We have this copy operation to handle the case when the
+      // user is changing either min or max, i.e., we shouldn't
+      // propagate the unchanged value to other instances during
+      // multi-select.
+      var result = (InspectorGUI.RangeRealResult)data;
       var value  = (RangeReal)destination;
       if ( result.MinChanged )
         value.Min = result.Min;

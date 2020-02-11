@@ -56,8 +56,6 @@ namespace AGXUnityEditor.Tools
         }
       }
 
-      InspectorGUI.SeparatorSimple();
-
       AssemblyTool.OnObjectListsGUI( this );
     }
   }

@@ -409,7 +409,7 @@ namespace AGXUnityEditor
 
     private static void OnSceneView( SceneView sceneView )
     {
-      InspectorEditor.RequestConstantRepaint = IsMouseOverWindow( EditorWindowType.InspectorWindow );
+      //InspectorEditor.RequestConstantRepaint = IsMouseOverWindow( EditorWindowType.InspectorWindow );
 
       if ( m_requestSceneViewFocus ) {
         sceneView.Focus();

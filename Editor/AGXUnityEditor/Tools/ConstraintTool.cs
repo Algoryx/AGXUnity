@@ -50,12 +50,6 @@ namespace AGXUnityEditor.Tools
       for ( int i = 1; i < constraints.Length; ++i )
         differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
-      // TODO GUI: Cleanup.
-      //EditorGUILayout.PrefixLabel( GUI.MakeLabel( ( differentTypes ?
-      //                                  "Constraints" :
-      //                                  refConstraint.Type.ToString() + ( IsMultiSelect ? "s" : string.Empty ) ) ),
-      //                             skin.Label );
-
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
@@ -121,93 +115,55 @@ namespace AGXUnityEditor.Tools
           foreach ( var wrapper in ecRowDataWrappers ) {
             if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
               continue;
-            using ( new GUILayout.HorizontalScope() ) {
-              EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
-              using ( new GUILayout.VerticalScope() ) {
-                for ( int i = 0; i < 3; ++i ) {
-                  var rowDataInstances = ( from constraintParser
-                                           in constraintsParser
-                                           where constraintParser[ rowType ][ i ] != null
-                                           select constraintParser[ rowType ][ i ].RowData ).ToArray();
-                  // TODO: This could probably be replaced by using InspectorEditor.HandleType
-                  //       with a tweak. We use wrapper.Get<type>( foo.RowData ) while our
-                  //       drawers uses wrapper.Get<type>().
-                  // UPDATE: Probably not worth it because we have to override all labels
-                  //         written by our default drawers.
-                  // ****************************************************************************
-                  //var objects = ( from constraintParser
-                  //                in constraintsParser
-                  //                where constraintParser[ rowType ][ i ] != null
-                  //                select constraintParser[ rowType ][ i ].RowData ).ToArray();
-                  //using ( new GUILayout.HorizontalScope() )
-                  //using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
-                  //  RowLabel( i, skin );
-                  //  InspectorEditor.HandleType( wrapper, objects );
-                  //}
-                  // ****************************************************************************
 
-                  using ( new GUILayout.HorizontalScope() )
-                  using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
-                    // Half the width of the U, V, N label.
-                    //GUILayout.Space( -6 );
+            for ( int i = 0; i < 3; ++i ) {
+              var rowDataInstances = ( from constraintParser
+                                       in constraintsParser
+                                       where constraintParser[ rowType ][ i ] != null
+                                       select constraintParser[ rowType ][ i ].RowData ).ToArray();
 
-                    GUILayout.Label( GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ),
-                                     skin.Label,
-                                     GUILayout.Width( 12 ) );
+              using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
+                var labelContent = i == 0 ? InspectorGUI.MakeLabel( wrapper.Member ) : new GUIContent( " " );
+                var fieldContent = GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] );
+                if ( wrapper.IsType<float>() ) {
+                  EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
+                  var value = InspectorGUI.CustomFloatField( labelContent,
+                                                             fieldContent,
+                                                             wrapper.Get<float>( refTransOrRotRowData[ i ]?.RowData ) );
+                  if ( UnityEngine.GUI.changed ) {
+                    foreach ( var constraintParser in constraintsParser )
+                      wrapper.ConditionalSet( constraintParser[ rowType ][ i ]?.RowData, value );
+                  }
+                }
+                else if ( wrapper.IsType<RangeReal>() ) {
+                  EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
+                                                                                       wrapper.Get<RangeReal>( rowData ).Min ) ) ||
+                                             rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
+                                                                                       wrapper.Get<RangeReal>( rowData ).Max ) );
+                  var rangeChangeData = InspectorGUI.RangeRealField( labelContent,
+                                                                     wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ),
+                                                                     GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ) );
+                  if ( rangeChangeData.MinChanged || rangeChangeData.MaxChanged ) {
+                    foreach ( var constraintParser in constraintsParser ) {
+                      var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
+                      if ( rangeChangeData.MinChanged )
+                        range.Min = rangeChangeData.Min;
+                      if ( rangeChangeData.MaxChanged )
+                        range.Max = rangeChangeData.Max;
 
-                    GUILayout.Space( -16 );
-                    // Handling type float, e.g., compliance and damping.
-                    if ( wrapper.IsType<float>() ) {
-                      EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
-                      var value = EditorGUILayout.FloatField( wrapper.Get<float>( refTransOrRotRowData[ i ]?.RowData ) );
-                      if ( UnityEngine.GUI.changed ) {
-                        foreach ( var constraintParser in constraintsParser )
-                          wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, value );
-                        UnityEngine.GUI.changed = false;
-                      }
-                      EditorGUI.showMixedValue = false;
+                      // Validation of Min > Max has to go somewhere else because if e.g.,
+                      // Min = 50 and the user wants to type Max = 200 we're receiving
+                      // Max = 2 as the user types.
+
+                      wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, range );
                     }
-                    // Handling type RangeReal, e.g., force range.
-                    // Note: During multi-selection we don't want to write, e.g., Min from
-                    //       reference row data when value for Max is changed.
-                    else if ( wrapper.IsType<RangeReal>() ) {
-                      EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
-                                                                                           wrapper.Get<RangeReal>( rowData ).Min ) );
-                      var forceRangeMin = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
-                                                                      GUILayout.MaxWidth( 140 ) );
-                      var forceRangeMinChanged = UnityEngine.GUI.changed;
-                      EditorGUI.showMixedValue = false;
+                  }
+                }
+              }
 
-                      // TODO GUI: Patch indent method
-                      GUILayout.Space( -18 );
-
-                      UnityEngine.GUI.changed  = false;
-                      EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
-                                                                                           wrapper.Get<RangeReal>( rowData ).Max ) );
-                      var forceRangeMax = EditorGUILayout.FloatField( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
-                                                                      GUILayout.MaxWidth( 140 ) );
-                      if ( forceRangeMinChanged || UnityEngine.GUI.changed ) {
-                        foreach ( var constraintParser in constraintsParser ) {
-                          var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
-                          if ( forceRangeMinChanged )
-                            range.Min = forceRangeMin;
-                          if ( UnityEngine.GUI.changed )
-                            range.Max = forceRangeMax;
-
-                          // Validation of Min > Max has to go somewhere else because if e.g.,
-                          // Min = 50 and the user wants to type Max = 200 we're receiving
-                          // Max = 2 as the user types.
-
-                          wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, range );
-                        }
-                        UnityEngine.GUI.changed = false;
-                        EditorGUI.showMixedValue = false;
-                      }
-                    } // IsType RangeReal.
-                  } // Horizontal and GUI Enabled blocks.
-                } // For U, V, N.
-              } // Right align vertical scope.
-            } // Horizontal with flexible space for alignment.
+              UnityEngine.GUI.changed = false;
+              EditorGUI.showMixedValue = false;
+            }
           } // For type wrappers.
         } // Indentation.
       } // For Translational, Rotational.
@@ -253,65 +209,56 @@ namespace AGXUnityEditor.Tools
       var skin          = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      using ( InspectorGUI.IndentScope.Single ) {
-        GUILayout.BeginHorizontal();
-        {
-          EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
-                                       InspectorEditor.Skin.LabelMiddleLeft );
+      GUILayout.BeginHorizontal();
+      {
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
+                                      InspectorEditor.Skin.LabelMiddleLeft );
 
-          UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
-          if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb",
-                                                false,
-                                                "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                 skin.GetButton( !EditorGUI.showMixedValue &&
-                                                   state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
-                                                 InspectorGUISkin.ButtonType.Left ),
-                                 GUILayout.Width( 76 ) ) )
-            state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
-                      Constraint.ECollisionsState.KeepExternalState :
-                      Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+        UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
+        if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb",
+                                              false,
+                                              "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
+                                skin.GetButton( !EditorGUI.showMixedValue &&
+                                                  state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
+                                                InspectorGUISkin.ButtonType.Left ),
+                                GUILayout.Width( 76 ) ) )
+          state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
+                    Constraint.ECollisionsState.KeepExternalState :
+                    Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
-          if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con",
-                                                false,
-                                                "Disable Reference object vs. Connected object." ),
-                                 skin.GetButton( !EditorGUI.showMixedValue &&
-                                                   state == Constraint.ECollisionsState.DisableReferenceVsConnected,
-                                                 InspectorGUISkin.ButtonType.Right ),
-                                 new GUILayoutOption[] { GUILayout.Width( 76 ) } ) )
-            state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
-                      Constraint.ECollisionsState.KeepExternalState :
-                      Constraint.ECollisionsState.DisableReferenceVsConnected;
-          UnityEngine.GUI.enabled = guiWasEnabled;
-        }
-        GUILayout.EndHorizontal();
+        if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con",
+                                              false,
+                                              "Disable Reference object vs. Connected object." ),
+                                skin.GetButton( !EditorGUI.showMixedValue &&
+                                                  state == Constraint.ECollisionsState.DisableReferenceVsConnected,
+                                                InspectorGUISkin.ButtonType.Right ),
+                                new GUILayoutOption[] { GUILayout.Width( 76 ) } ) )
+          state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
+                    Constraint.ECollisionsState.KeepExternalState :
+                    Constraint.ECollisionsState.DisableReferenceVsConnected;
+        UnityEngine.GUI.enabled = guiWasEnabled;
       }
+      GUILayout.EndHorizontal();
 
       return state;
     }
 
     public static Constraint.ESolveType ConstraintSolveTypeGUI( Constraint.ESolveType solveType )
     {
-      using ( new GUILayout.HorizontalScope() )
-      using ( InspectorGUI.IndentScope.Single )
-      {
-        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Solve Type", true ) );
-        // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
-        GUILayout.Space( -InspectorGUI.IndentScope.PixelLevel );
-        solveType = (Constraint.ESolveType)EditorGUILayout.EnumPopup( solveType,
-                                                                      InspectorEditor.Skin.Popup,
-                                                                      GUILayout.Width( 2 * 76 + InspectorGUI.IndentScope.PixelLevel ) );
-      }
-
+      // Matching with disable buttons above where each button is 76.
+      var position = EditorGUILayout.GetControlRect( GUILayout.Width( EditorGUIUtility.labelWidth +
+                                                                      2.0f * 76.0f ) );
+      solveType = (Constraint.ESolveType)EditorGUI.EnumPopup( position,
+                                                              GUI.MakeLabel( "Solve Type", true ),
+                                                              solveType,
+                                                              InspectorEditor.Skin.Popup );
       return solveType;
     }
 
     public static bool ConstraintConnectedFrameSyncGUI( bool enabled )
     {
-      using ( InspectorGUI.IndentScope.Single ) {
-        enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
-                                       !EditorGUI.showMixedValue && enabled );
-      }
-
+      enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
+                                     !EditorGUI.showMixedValue && enabled );
       return enabled;
     }
 

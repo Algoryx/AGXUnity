@@ -32,8 +32,6 @@ namespace AGXUnityEditor
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
-      InspectorGUI.Separator3D();
-
       // BuiltInToolsTool settings GUI.
       {
         using ( GUI.AlignBlock.Center )
@@ -51,8 +49,6 @@ namespace AGXUnityEditor
 
       if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.Button ) )
         Utils.CustomEditorGenerator.Synchronize( true );
-
-      InspectorGUI.Separator3D();
     }
 
     private bool m_showDropDown = false;

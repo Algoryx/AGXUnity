@@ -21,8 +21,8 @@ namespace AGXUnityEditor
   {
     public static GUIContent MakeLabel( MemberInfo field )
     {
-      var content     = new GUIContent();
-      content.text    = field.Name.SplitCamelCase();
+      var content = new GUIContent();
+      content.text = field.Name.SplitCamelCase();
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
 
       return content;
@@ -30,7 +30,7 @@ namespace AGXUnityEditor
 
     public static float GetWidth( GUIContent content, GUIStyle style )
     {
-      var width    = 0.0f;
+      var width = 0.0f;
       var maxWidth = 0.0f;
       style.CalcMinMaxWidth( content, out width, out maxWidth );
       return width;
@@ -112,7 +112,7 @@ namespace AGXUnityEditor
           throw new AGXUnity.Exception( "Trying to reach negative indent level: current_level + num_levels < 0" );
 
         NumLevels = numLevels;
-        Level    += numLevels;
+        Level += numLevels;
       }
 
       public void Dispose()
@@ -123,30 +123,12 @@ namespace AGXUnityEditor
       private static int m_pixelsPerLevel = 15;
     }
 
-    public static void SeparatorSimple( float height = 1.0f, float space = 1.0f )
+    public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
       var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
       rect.height = height;
       rect.y += space / 2.0f;
       EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
-    }
-
-    public static void Separator3D( float space = 2.0f )
-    {
-      // Lines are two pixels and space before and after.
-      var wholeRect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 2.0f + 2.0f * space ) );
-
-      var rectBrand    = new Rect( wholeRect );
-      rectBrand.y     += space;
-      rectBrand.height = 1.0f;
-
-      var rectOutline    = new Rect( rectBrand );
-      rectOutline.height = 2.0f;
-      rectOutline.x     += 1.0f;
-
-      var outlineColor = EditorGUIUtility.isProSkin ? Color.black : Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.45f );
-      EditorGUI.DrawRect( rectOutline, outlineColor );
-      EditorGUI.DrawRect( rectBrand, InspectorGUISkin.BrandColor );
     }
 
     public static bool Toggle( GUIContent content,
@@ -158,8 +140,10 @@ namespace AGXUnityEditor
     public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
     {
       var newState = EditorGUILayout.Foldout( state.Bool, content, true );
+
       if ( onStateChanged != null && newState != state.Bool )
         onStateChanged.Invoke( newState );
+
       return state.Bool = newState;
     }
 
@@ -170,8 +154,8 @@ namespace AGXUnityEditor
                                              bool isReadOnly )
     {
       var createNewButtonWidth = 35.0f;
-      var createNewPressed     = false;
-      var allowSceneObject     = instanceType == typeof( GameObject ) ||
+      var createNewPressed = false;
+      var allowSceneObject = instanceType == typeof( GameObject ) ||
                                  typeof( MonoBehaviour ).IsAssignableFrom( instanceType );
 
       // We're in control of the whole inspector entry.
@@ -190,7 +174,7 @@ namespace AGXUnityEditor
                                               foldoutData.Bool,
                                               content,
                                               true ) && instance != null;
-      position.xMax    = oldWidth;
+      position.xMax = oldWidth;
 
       // Entry may change, render object field and create-new-button if
       // the instance type supports it.
@@ -199,11 +183,11 @@ namespace AGXUnityEditor
         var supportsCreateAsset = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ||
                                   instanceType == typeof( Material );
 
-        position.x    += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
+        position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
         position.xMax -= EditorGUIUtility.labelWidth +
                          Convert.ToInt32( supportsCreateAsset ) * createNewButtonWidth -
                          IndentScope.PixelLevel;
-        result         = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
+        result = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
         if ( supportsCreateAsset ) {
           var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
           buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
@@ -229,16 +213,16 @@ namespace AGXUnityEditor
       }
 
       if ( createNewPressed ) {
-        var assetName      = instanceType.Name.SplitCamelCase().ToLower();
+        var assetName = instanceType.Name.SplitCamelCase().ToLower();
         var assetExtension = IO.AGXFileInfo.FindAssetExtension( instanceType );
-        var path           = EditorUtility.SaveFilePanel( "Create new " + assetName,
+        var path = EditorUtility.SaveFilePanel( "Create new " + assetName,
                                                           "Assets",
                                                           "new " + assetName + assetExtension,
                                                           assetExtension.TrimStart( '.' ) );
         if ( path != string.Empty ) {
-          var info         = new System.IO.FileInfo( path );
+          var info = new System.IO.FileInfo( path );
           var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
-          var newInstance  = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
+          var newInstance = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
                                ScriptAsset.Create( instanceType ) as Object :
                                new Material( Shader.Find( "Standard" ) );
           newInstance.name = info.Name;
@@ -284,13 +268,11 @@ namespace AGXUnityEditor
     {
       var isBuiltInMaterial = editor.target == null ||
                               !AssetDatabase.GetAssetPath( editor.target ).StartsWith( "Assets" ) ||
-                              (editor.target as Material) == Manager.GetOrCreateShapeVisualDefaultMaterial();
+                              ( editor.target as Material ) == Manager.GetOrCreateShapeVisualDefaultMaterial();
       using ( new EditorGUI.DisabledGroupScope( isBuiltInMaterial ) )
       using ( IndentScope.NoIndent ) {
-        SeparatorSimple();
         editor.DrawHeader();
         editor.OnInspectorGUI();
-        SeparatorSimple();
       }
     }
 
@@ -329,8 +311,8 @@ namespace AGXUnityEditor
                                            bool enabled = true,
                                            Action postRender = null )
       {
-        var content     = new GUIContent();
-        content.image   = IconManager.GetIcon( icon );
+        var content = new GUIContent();
+        content.image = IconManager.GetIcon( icon );
         content.tooltip = toolTip;
         return Create( content,
                        isActive,
@@ -348,9 +330,9 @@ namespace AGXUnityEditor
         return new ToolButtonData()
         {
           GUIContent = content,
-          IsActive   = isActive,
-          Enabled    = enabled,
-          OnClick    = onClick,
+          IsActive = isActive,
+          Enabled = enabled,
+          OnClick = onClick,
           PostRender = postRender
         };
       }
@@ -367,13 +349,12 @@ namespace AGXUnityEditor
       if ( data.Length == 0 )
         return;
 
-      float buttonWidth  = InspectorGUISkin.ToolButtonSize.x;
+      float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
       using ( ToolButtonData.ColorBlock ) {
-        Separator3D();
-        var position   = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
-        position.width = buttonWidth;
+        var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
 
+        position.width = buttonWidth;
         for ( int i = 0; i < data.Length; ++i ) {
           var buttonType = data.Length > 1 && i == 0 ? InspectorGUISkin.ButtonType.Left :
                            data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
@@ -450,8 +431,8 @@ namespace AGXUnityEditor
       }
 
       Func<Object, string> getConstraintTypename = obj => ( obj as Constraint ).Type.ToString();
-      Func<Object, string> getDefaultTypename    = obj => obj.GetType().Name;
-      var getTypename                            = items[ 0 ] is Constraint ?
+      Func<Object, string> getDefaultTypename = obj => obj.GetType().Name;
+      var getTypename = items[ 0 ] is Constraint ?
                                                      getConstraintTypename :
                                                      getDefaultTypename;
       using ( IndentScope.Single ) {
@@ -486,10 +467,10 @@ namespace AGXUnityEditor
     {
       var displayItemsList = Foldout( GetTargetToolArrayGUIData( context.Targets[ 0 ], identifier ),
                                       GUI.MakeLabel( identifier + $" [{items.Length}]" ) );
-      var itemTypename      = typeof( T ).Name;
-      var isAsset           = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
+      var itemTypename = typeof( T ).Name;
+      var isAsset = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
       var itemTypenameSplit = itemTypename.SplitCamelCase();
-      var targetTypename    = context.Targets[ 0 ].GetType().Name;
+      var targetTypename = context.Targets[ 0 ].GetType().Name;
       if ( displayItemsList ) {
         T itemToRemove = null;
         using ( IndentScope.Single ) {
@@ -609,7 +590,7 @@ namespace AGXUnityEditor
     {
       var negativeButtonWidth = 80.0f;
       var positiveButtonWidth = 80.0f;
-      var buttonsHeight       = 16.0f;
+      var buttonsHeight = 16.0f;
 
       bool positivePressed = false;
       bool negativePressed = false;
@@ -670,7 +651,7 @@ namespace AGXUnityEditor
           return true;
         }
       }
-        
+
       return false;
     }
 
@@ -695,8 +676,8 @@ namespace AGXUnityEditor
 
     public static GUIStyle FadeNormalBackground( GUIStyle style, float t )
     {
-      GUIStyle fadedStyle = new GUIStyle( style );
-      Texture2D background = EditorGUIUtility.isProSkin ?
+      var fadedStyle = new GUIStyle( style );
+      var background = EditorGUIUtility.isProSkin ?
                                GUI.CreateColoredTexture( 1, 1, Color.Lerp( ProBackgroundColor, Color.white, t ) ) :
                                GUI.CreateColoredTexture( 1, 1, Color.Lerp( IndieBackgroundColor, Color.black, t ) );
       fadedStyle.normal.background = background;
@@ -762,16 +743,17 @@ namespace AGXUnityEditor
                                      int indentLevelInc = 0,
                                      bool includeFrameToolIfPresent = true )
     {
-      var skin           = InspectorEditor.Skin;
-      bool guiWasEnabled = UnityEngine.GUI.enabled;
-      var refFrame       = frames[ 0 ];
+      var skin = InspectorEditor.Skin;
+      var guiWasEnabled = UnityEngine.GUI.enabled;
+      var refFrame = frames[ 0 ];
+      var isMultiSelect = frames.Length > 1;
 
       using ( IndentScope.Create( indentLevelInc ) ) {
-        var frameTool = frames.Length == 1 && includeFrameToolIfPresent ?
-                  Tools.FrameTool.FindActive( refFrame ) :
-                  null;
+        var frameTool = includeFrameToolIfPresent ?
+                          Tools.FrameTool.FindActive( refFrame ) :
+                          null;
         if ( frameTool != null )
-          frameTool.OnPreTargetMembersGUI();
+          frameTool.ToolsGUI( isMultiSelect );
 
         UnityEngine.GUI.enabled = true;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
@@ -810,6 +792,110 @@ namespace AGXUnityEditor
         }
         EditorGUI.showMixedValue = false;
       }
+    }
+
+    public struct RangeRealResult
+    {
+      public float Min;
+      public bool MinChanged;
+      public float Max;
+      public bool MaxChanged;
+    }
+
+    private static float[] s_rangeRealValues = new float[]
+    {
+      0.0f,
+      0.0f
+    };
+    private static GUIContent[] s_rangeRealContent = new GUIContent[]
+    {
+      GUIContent.none,
+      GUIContent.none
+    };
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      return RangeRealField( content,
+                             value,
+                             GUIContent.none,
+                             GUIContent.none,
+                             displayInvalidRangeWarning );
+    }
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  GUIContent minContent,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      return RangeRealField( content,
+                             value,
+                             minContent,
+                             GUIContent.none,
+                             displayInvalidRangeWarning );
+    }
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  GUIContent minContent,
+                                                  GUIContent maxContent,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      var invalidRange = displayInvalidRangeWarning && value.Min > value.Max;
+
+      var result = new RangeRealResult()
+      {
+        Min = value.Min,
+        MinChanged = false,
+        Max = value.Max,
+        MaxChanged = false
+      };
+
+      var position = EditorGUILayout.GetControlRect();
+      s_rangeRealContent[ 0 ] = minContent;
+      s_rangeRealContent[ 1 ] = maxContent;
+      s_rangeRealValues[ 0 ]  = value.Min;
+      s_rangeRealValues[ 1 ]  = value.Max;
+
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiFloatField( position,
+                                 content,
+                                 s_rangeRealContent,
+                                 s_rangeRealValues );
+      if ( EditorGUI.EndChangeCheck() ) {
+        result.Min = s_rangeRealValues[ 0 ];
+        result.MinChanged = s_rangeRealValues[ 0 ] != value.Min;
+
+        result.Max = s_rangeRealValues[ 1 ];
+        result.MaxChanged = s_rangeRealValues[ 1 ] != value.Max;
+      }
+
+      if ( invalidRange )
+        WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
+
+      return result;
+    }
+
+    private static GUIContent s_customFloatFieldEmptyContent = new GUIContent( " " );
+    private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };
+    private static float[] s_customFloatFieldData = new float[] { 0.0f };
+
+    public static float CustomFloatField( GUIContent labelContent, GUIContent fieldContent, float value )
+    {
+      var content                             = labelContent ?? s_customFloatFieldEmptyContent;
+      var position                            = EditorGUILayout.GetControlRect();
+      s_customFloatFieldSubLabelContents[ 0 ] = fieldContent;
+      s_customFloatFieldData[ 0 ]             = value;
+
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiFloatField( position,
+                                 content,
+                                 s_customFloatFieldSubLabelContents,
+                                 s_customFloatFieldData );
+      if ( EditorGUI.EndChangeCheck() )
+        return s_customFloatFieldData[ 0 ];
+      return value;
     }
   }
 }

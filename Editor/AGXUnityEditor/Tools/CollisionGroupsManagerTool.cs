@@ -36,8 +36,6 @@ namespace AGXUnityEditor.Tools
       bool addPressed                   = false;
       CollisionGroupEntryPair erasePair = null;
 
-      InspectorGUI.Separator3D();
-
       GUILayout.Label( GUI.MakeLabel( "Add pair",
                                       true ),
                        skin.LabelMiddleCenter );
@@ -56,14 +54,12 @@ namespace AGXUnityEditor.Tools
       }
       GUILayout.EndVertical();
 
-      InspectorGUI.Separator3D();
-
       if ( InspectorGUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Disabled Pairs [" + disabledPairs.Length + "]" ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
-              InspectorGUI.SeparatorSimple( 1, 10 );
+              InspectorGUI.BrandSeparator( 1, 10 );
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
                                        skin.Button,
@@ -77,8 +73,6 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
-
-      InspectorGUI.Separator3D();
 
       if ( clearPressed )
         m_groupEntryPairToAdd.First.Tag = m_groupEntryPairToAdd.Second.Tag = string.Empty;
