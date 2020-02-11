@@ -393,17 +393,7 @@ namespace AGXUnityEditor
                                             buttonContent,
                                             InspectorEditor.Skin.GetButton( active, buttonType ) );
       if ( buttonContent == s_tooltipContent && content.image != null ) {
-        var color = IconManager.IsWhite ?
-                      new GUI.ColorBlock( Color.Lerp( InspectorGUISkin.BrandColor,
-                                                      BackgroundColor,
-                                                      enabled ?
-                                                        0.0f :
-                                                        0.6f ) ) :
-                      new GUI.ColorBlock( Color.Lerp( Color.white,
-                                                      BackgroundColor,
-                                                      enabled ?
-                                                        0.0f :
-                                                        0.6f ) );
+        var color = new GUI.ColorBlock( IconManager.GetForegroundColor( active, enabled ) );
         UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
         color.Dispose();
       }

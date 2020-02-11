@@ -38,14 +38,6 @@ namespace AGXUnityEditor
     public static float Scale { get; set; } = 0.9f;
 
     /// <summary>
-    /// True if the icons are white, otherwise false.
-    /// </summary>
-    public static bool IsWhite
-    {
-      get { return m_directory.EndsWith( "White" ); }
-    }
-
-    /// <summary>
     /// Finds icon relative to Directory and caches the result.
     /// </summary>
     /// <param name="name">Name of icon, including path relative to Directory.</param>
@@ -61,6 +53,22 @@ namespace AGXUnityEditor
         m_icons.Add( iconIdentifier, icon );
 
       return icon;
+    }
+
+    /// <summary>
+    /// Foreground color to be used with current state of the button.
+    /// </summary>
+    /// <param name="active">True if button is active.</param>
+    /// <param name="enabled">True if buttin is enabled.</param>
+    /// <returns>Icon foreground color.</returns>
+    public static Color GetForegroundColor( bool active, bool enabled )
+    {
+      var color = InspectorGUISkin.BrandColor;
+      if ( !enabled )
+        color = Color.Lerp( color, InspectorGUI.BackgroundColor, 0.6f );
+      if ( active )
+        color = Color.Lerp( color, Color.white, 0.4f );
+      return color;
     }
 
     /// <summary>
