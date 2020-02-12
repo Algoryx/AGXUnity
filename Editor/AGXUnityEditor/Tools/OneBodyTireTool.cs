@@ -22,7 +22,7 @@ namespace AGXUnityEditor.Tools
     {
       bool toggleSelectTire = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( '\uFFEE',
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 5",
                                                                       SelectTireToolEnable,
                                                                       "Find Tire by selecting Tire in scene view.",
                                                                       () => toggleSelectTire = true ) );

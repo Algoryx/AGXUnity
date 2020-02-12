@@ -36,6 +36,10 @@ namespace AGXUnityEditor
     private Vector2 m_vector2;
     [SerializeField]
     private Vector3 m_vector3;
+    [SerializeField]
+    private Vector4 m_vector4;
+    [SerializeField]
+    private Color m_color;
 
     public bool Bool
     {
@@ -138,6 +142,34 @@ namespace AGXUnityEditor
           return;
 
         m_vector3 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector4 Vector4
+    {
+      get { return m_vector4; }
+      set
+      {
+        if ( m_vector4 == value )
+          return;
+
+        m_vector4 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Color Color
+    {
+      get { return m_color; }
+      set
+      {
+        if ( m_color == value )
+          return;
+
+        m_color = value;
 
         OnValueChanged();
       }

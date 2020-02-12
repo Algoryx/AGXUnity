@@ -80,8 +80,11 @@ namespace AGXUnityEditor.Tools
                                                                       "Synchronized with reference frame." ),
                                                        skin.GetButton( connectedFrameSynchronized ) );
       var iconName = connectedFrameSynchronized ? "agx_unity_hinge 7" : "agx_unity_hinge 6";
-      using ( new GUI.ColorBlock( InspectorGUISkin.BrandColor ) )
-        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), IconManager.GetIcon( iconName ) );
+      using ( new GUI.ColorBlock( InspectorGUISkin.BrandColor ) ) {
+        var icon = IconManager.GetIcon( iconName );
+        if ( icon != null )
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( position ), icon );
+      }
       if ( toggleSynchronized ) {
         foreach ( var ap in AttachmentPairs )
           ap.Synchronized = !connectedFrameSynchronized;

@@ -34,7 +34,7 @@ namespace AGXUnityEditor.Tools
 
       bool toggleSelectWheel = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( '\u274D',
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 5",
                                                                       SelectWheelToolEnable,
                                                                       "Select track wheel to add in scene view.",
                                                                       () => toggleSelectWheel = true ) );

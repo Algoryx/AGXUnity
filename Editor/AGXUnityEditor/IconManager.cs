@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
@@ -37,6 +38,24 @@ namespace AGXUnityEditor
     /// </summary>
     public static float Scale { get; set; } = 0.9f;
 
+    public static Color ActiveColorDark { get; set; }    = InspectorGUISkin.BrandColor;
+
+    public static Color NormalColorDark { get; set; }    = InspectorGUISkin.BrandColor;
+
+    public static Color DisabledColorDark { get; set; }  = InspectorGUISkin.BrandColor;
+
+    public static Color ActiveColorLight { get; set; }   = InspectorGUISkin.BrandColor;
+
+    public static Color NormalColorLight { get; set; }   = InspectorGUISkin.BrandColor;
+
+    public static Color DisabledColorLight { get; set; } = InspectorGUISkin.BrandColor;
+
+    public static Color ActiveColor { get { return EditorGUIUtility.isProSkin ? ActiveColorDark : ActiveColorLight; } }
+
+    public static Color NormalColor { get { return EditorGUIUtility.isProSkin ? NormalColorDark : NormalColorLight; } }
+
+    public static Color DisabledColor { get { return EditorGUIUtility.isProSkin ? DisabledColorDark : DisabledColorLight; } }
+
     /// <summary>
     /// Finds icon relative to Directory and caches the result.
     /// </summary>
@@ -63,12 +82,7 @@ namespace AGXUnityEditor
     /// <returns>Icon foreground color.</returns>
     public static Color GetForegroundColor( bool active, bool enabled )
     {
-      var color = InspectorGUISkin.BrandColor;
-      if ( !enabled )
-        color = Color.Lerp( color, InspectorGUI.BackgroundColor, 0.6f );
-      if ( active )
-        color = Color.Lerp( color, Color.white, 0.4f );
-      return color;
+      return active && enabled ? ActiveColor : enabled ? NormalColor : DisabledColor;
     }
 
     /// <summary>
@@ -106,9 +120,17 @@ namespace AGXUnityEditor
         return;
       }
 
-      foreach ( var fi in di.GetFiles() )
+      foreach ( var fi in di.GetFiles().OrderBy( fi => fi.Name ) )
         if ( fi.Extension.ToLower() == ".png" )
           m_iconNames.Add( Path.GetFileNameWithoutExtension( fi.Name ) );
+
+      GetEditorData( "NormalColorDark",   entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "ActiveColorDark",   entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "DisabledColorDark", entry => entry.Color = InspectorGUISkin.BrandColor );
+
+      GetEditorData( "NormalColorLight",   entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "ActiveColorLight",   entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "DisabledColorLight", entry => entry.Color = InspectorGUISkin.BrandColor );
     }
 
     private void OnDestroy()
@@ -117,6 +139,8 @@ namespace AGXUnityEditor
 
     private void OnGUI()
     {
+      Undo.RecordObject( EditorData.Instance, "IconManager" );
+
       var selectIconDir = false;
       var editorData = GetEditorData();
 
@@ -148,9 +172,42 @@ namespace AGXUnityEditor
       InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, true, false );
       InspectorGUI.BrandSeparator( 1, 6 );
+      RenderButtons( editorData.Vector2, true, true);
+      InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, false, false );
       InspectorGUI.BrandSeparator( 1, 6 );
-      RenderButtons( editorData.Vector2, true, true);
+
+      IconManager.NormalColorDark   = GetEditorData( "NormalColorDark" ).Color   = EditorGUILayout.ColorField( GUI.MakeLabel( "Normal Dark" ),
+                                                                                                               GetEditorData( "NormalColorDark" ).Color );
+      IconManager.ActiveColorDark   = GetEditorData( "ActiveColorDark" ).Color   = EditorGUILayout.ColorField( GUI.MakeLabel( "Active Dark" ),
+                                                                                                               GetEditorData( "ActiveColorDark" ).Color );
+      IconManager.DisabledColorDark = GetEditorData( "DisabledColorDark" ).Color = EditorGUILayout.ColorField( GUI.MakeLabel( "Disabled Dark" ),
+                                                                                                               GetEditorData( "DisabledColorDark" ).Color );
+
+      IconManager.NormalColorLight   = GetEditorData( "NormalColorLight" ).Color   = EditorGUILayout.ColorField( GUI.MakeLabel( "Normal Light" ),
+                                                                                                                 GetEditorData( "NormalColorLight" ).Color );
+      IconManager.ActiveColorLight   = GetEditorData( "ActiveColorLight" ).Color   = EditorGUILayout.ColorField( GUI.MakeLabel( "Active Light" ),
+                                                                                                                 GetEditorData( "ActiveColorLight" ).Color );
+      IconManager.DisabledColorLight = GetEditorData( "DisabledColorLight" ).Color = EditorGUILayout.ColorField( GUI.MakeLabel( "Disabled Light" ),
+                                                                                                                 GetEditorData( "DisabledColorLight" ).Color );
+
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Brand color" ),
+                                  new GUIContent( GUI.CreateColoredTexture( (int)EditorGUIUtility.currentViewWidth,
+                                                                            (int)EditorGUIUtility.singleLineHeight,
+                                                                            InspectorGUISkin.BrandColor ) ) );
+
+      var numLines = 6;
+      var rect = EditorGUILayout.GetControlRect( false, numLines * EditorGUIUtility.singleLineHeight );
+      EditorGUI.SelectableLabel( rect, GetColorsString(), InspectorEditor.Skin.TextFieldMiddleLeft );
+
+      InspectorGUI.BrandSeparator( 1, 6 );
+
+      RenderIcons( IconManager.Scale * 24.0f * Vector2.one );
+
+      InspectorGUI.BrandSeparator( 1, 6 );
+
+      RenderIcons();
+
       InspectorGUI.BrandSeparator( 1, 6 );
 
       if ( selectIconDir ) {
@@ -194,6 +251,74 @@ namespace AGXUnityEditor
       }
     }
 
+    private void RenderIcons( Vector2 size )
+    {
+      var numIconsPerRow = (int)( position.width / size.x );
+      var currIconIndex  = 0;
+      while ( currIconIndex < m_iconNames.Count ) {
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, size.y ) );
+        rect.width = size.x;
+
+        for ( int i = 0; currIconIndex < m_iconNames.Count && i < numIconsPerRow; ++currIconIndex, ++i ) {
+          using ( new GUI.ColorBlock( IconManager.ActiveColor ) )
+            UnityEngine.GUI.DrawTexture( rect, IconManager.GetIcon( m_iconNames[ currIconIndex ] ) );
+          rect.x += rect.width + 4.0f;
+        }
+      }
+    }
+
+    private void RenderIcons()
+    {
+      var currIconIndex = 0;
+      while ( currIconIndex < m_iconNames.Count ) {
+        var numIconsOnRow = 0;
+        var currWidth = 0.0f;
+        var maxHeight = 0.0f;
+        for ( numIconsOnRow = 0; currIconIndex + numIconsOnRow < m_iconNames.Count; ) {
+          var icon   = IconManager.GetIcon( m_iconNames[ numIconsOnRow + currIconIndex ] );
+          maxHeight  = Mathf.Max( icon.height, maxHeight );
+          if ( currWidth + icon.width < EditorGUIUtility.currentViewWidth ) {
+            currWidth += icon.width;
+            ++numIconsOnRow;
+          }
+          else
+            break;
+        }
+
+        if ( numIconsOnRow == 0 )
+          break;
+
+        var rect = EditorGUILayout.GetControlRect( false, maxHeight );
+        for ( int i = 0; i < numIconsOnRow && currIconIndex < m_iconNames.Count; ++i, ++currIconIndex ) {
+          var icon = IconManager.GetIcon( m_iconNames[ currIconIndex ] );
+          rect.width = icon.width;
+          rect.height = icon.height;
+          using ( new GUI.ColorBlock( IconManager.ActiveColor ) )
+            UnityEngine.GUI.DrawTexture( rect, icon );
+          rect.x    += icon.width;
+        }
+
+        if ( currIconIndex < m_iconNames.Count )
+          InspectorGUI.DashedBrandSeparator( 1, 6 );
+      }
+    }
+
+    private string GetColorString( string name )
+    {
+      var color = GetEditorData( name ).Color;
+      return $"{name} = new Color( {color.r:F6}, {color.g:F6}, {color.b:F6}, {color.a:F6} );";
+    }
+
+    private string GetColorsString()
+    {
+      return GetColorString( "NormalColorDark" ) + '\n' +
+             GetColorString( "ActiveColorDark" ) + '\n' +
+             GetColorString( "DisabledColorDark" ) + '\n' +
+             GetColorString( "NormalColorLight" ) + '\n' +
+             GetColorString( "ActiveColorLight" ) + '\n' +
+             GetColorString( "DisabledColorLight" );
+    }
+
     private EditorDataEntry GetEditorData()
     {
       return EditorData.Instance.GetStaticData( "IconManager", entry =>
@@ -202,6 +327,11 @@ namespace AGXUnityEditor
         entry.String = IconManager.Directory;
         entry.Vector2 = new Vector2( 24.0f, 24.0f );
       } );
+    }
+
+    private EditorDataEntry GetEditorData( string id, System.Action<EditorDataEntry> onCreate = null )
+    {
+      return EditorData.Instance.GetStaticData( "IconManager_" + id, onCreate );
     }
 
     private List<string> m_iconNames = new List<string>();

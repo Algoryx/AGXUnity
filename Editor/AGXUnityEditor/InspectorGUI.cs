@@ -131,6 +131,20 @@ namespace AGXUnityEditor
       EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
     }
 
+    public static void DashedBrandSeparator( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( false, space + height );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      var width = EditorGUIUtility.currentViewWidth;
+      var dw = 6.0f;
+      rect.width = dw;
+      while ( rect.x < width ) {
+        EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+        rect.x += 2.0f * dw;
+      }
+    }
+
     public static bool Toggle( GUIContent content,
                                bool value )
     {
@@ -351,7 +365,7 @@ namespace AGXUnityEditor
 
       float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
-      using ( ToolButtonData.ColorBlock ) {
+      using ( null ) {
         var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
 
         position.width = buttonWidth;

@@ -21,26 +21,19 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      GUILayout.Label( GUI.MakeLabel( FindHeaderName(),
-                                      14,
-                                      true ),
-                       InspectorEditor.Skin.LabelMiddleCenter );
-
-      // '\u25CB' circle
-      // '\u274D' 3D circle
       bool toggleSelectTireAndRim = false;
       bool toggleSelectTire = false;
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( '\u274D',
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 5",
                                                                       SelectTireAndRimToolEnable,
                                                                       "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
                                                                       () => toggleSelectTireAndRim = true ),
-                                  InspectorGUI.ToolButtonData.Create( '\uFFEE',
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 2",
                                                                       SelectTireToolEnable,
                                                                       "Find Tire by selecting Tire in scene view.",
                                                                       () => toggleSelectTire = true ),
-                                  InspectorGUI.ToolButtonData.Create( '\u25CB',
+                                  InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 6",
                                                                       SelectRimToolEnable,
                                                                       "Find Rim by selecting Rim in scene view.",
                                                                       () => toggleSelectRim = true ) );
@@ -175,24 +168,6 @@ namespace AGXUnityEditor.Tools
         Debug.LogError( $"Select {name}: Assigning {name} {rb.name} failed." );
 
       EditorUtility.SetDirty( tire );
-    }
-
-    private string FindHeaderName()
-    {
-      if ( NumTargets > 1 )
-        return "Two Body Tires";
-
-      string result = "";
-      if ( Tire.TireRigidBody != null )
-        result += Tire.TireRigidBody.name;
-      else
-        result += "null";
-      result += " \u274D ";
-      if ( Tire.RimRigidBody != null )
-        result += Tire.RimRigidBody.name;
-      else
-        result += "null";
-      return result;
     }
   }
 }
