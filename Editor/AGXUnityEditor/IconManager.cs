@@ -8,6 +8,16 @@ using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
+  public enum ToolIcon
+  {
+    FindTransformGivenPoint,
+    FindTransformGivenEdge,
+    CreateShapeGivenVisual,
+    CreateConstraint,
+    DisableCollisions,
+    CreateVisual
+  }
+
   public static class IconManager
   {
     /// <summary>
@@ -63,6 +73,9 @@ namespace AGXUnityEditor
     /// <returns>Icon if found, otherwise null.</returns>
     public static Texture2D GetIcon( string name )
     {
+      if ( name.Length > 3 && name.Substring( name.Length - 4 ).ToLower().EndsWith( ".png" ) )
+        name = name.Remove( name.Length - 4 );
+
       var iconIdentifier = Directory + Path.DirectorySeparatorChar + name;
       if ( m_icons.TryGetValue( iconIdentifier, out var icon ) )
         return icon;
@@ -75,10 +88,23 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Tool icon texture given tool icon type.
+    /// </summary>
+    /// <param name="toolIcon">Tool icon type.</param>
+    /// <returns>Tool icon texture for given type.</returns>
+    public static Texture2D GetIcon( ToolIcon toolIcon )
+    {
+      if ( m_toolIcons == null )
+        LoadToolIconContent();
+
+      return m_toolIcons[ (int)toolIcon ];
+    }
+
+    /// <summary>
     /// Foreground color to be used with current state of the button.
     /// </summary>
     /// <param name="active">True if button is active.</param>
-    /// <param name="enabled">True if buttin is enabled.</param>
+    /// <param name="enabled">True if button is enabled.</param>
     /// <returns>Icon foreground color.</returns>
     public static Color GetForegroundColor( bool active, bool enabled )
     {
@@ -98,8 +124,40 @@ namespace AGXUnityEditor
       return new Rect( buttonRect.position + 0.5f * ( buttonSize - iconSize ), iconSize );
     }
 
+    private static void LoadToolIconContent()
+    {
+      var enumValues      = System.Enum.GetValues( typeof( ToolIcon ) );
+      m_toolIconFilenames = new string[ enumValues.Length ];
+      m_toolIcons         = new Texture2D[ enumValues.Length ];
+
+      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "agx_unity_given point 2";
+      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "agx_unity_given edge 1";
+      m_toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "agx_unity_represent shape 1";
+      m_toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "agx_unity_hinge 2";
+      m_toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "agx_unity_disable collision 1";
+      m_toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "agx_unity_represent shape 3";
+
+      foreach ( int index in enumValues ) {
+        if ( string.IsNullOrEmpty( m_toolIconFilenames[ index ] ) ) {
+          Debug.LogWarning( "Filename for tool icon "
+                            + (ToolIcon)index +
+                            " not given - ignoring icon." );
+          continue;
+        }
+
+        m_toolIcons[ index ] = GetIcon( m_toolIconFilenames[ index ] );
+        if ( m_toolIcons[ index ] == null )
+          Debug.LogWarning( "Unable to load tool icon " +
+                            (ToolIcon)index +
+                            " at: " +
+                            Directory + '/' + m_toolIconFilenames[ index ] );
+      }
+    }
+
     private static Dictionary<string, Texture2D> m_icons = new Dictionary<string, Texture2D>();
-    private static string m_directory = string.Empty;
+    private static Texture2D[] m_toolIcons               = null;
+    private static string[] m_toolIconFilenames          = null;
+    private static string m_directory                    = string.Empty;
   }
 
   public class IconViewerWindow : EditorWindow
