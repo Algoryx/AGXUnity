@@ -296,63 +296,34 @@ namespace AGXUnityEditor
       {
         get
         {
-          return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color,
-                                                 EditorGUIUtility.isProSkin ? InspectorGUISkin.BrandColor : ProBackgroundColor,
-                                                 0.1f ) );
+          return null;
+          //return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color,
+          //                                       EditorGUIUtility.isProSkin ? InspectorGUISkin.BrandColor : ProBackgroundColor,
+          //                                       0.1f ) );
         }
       }
 
-      public static ToolButtonData Create( char symbol,
+      public static ToolButtonData Create( ToolIcon icon,
                                            bool isActive,
                                            string toolTip,
-                                           Action onClick,
-                                           bool enabled = true,
-                                           Action postRender = null )
-      {
-        return Create( GUI.MakeLabel( symbol.ToString(),
-                                      false,
-                                      toolTip ),
-                       isActive,
-                       onClick,
-                       enabled,
-                       postRender );
-      }
-
-      public static ToolButtonData Create( string icon,
-                                           bool isActive,
-                                           string toolTip,
-                                           Action onClick,
-                                           bool enabled = true,
-                                           Action postRender = null )
-      {
-        var content = new GUIContent();
-        content.image = IconManager.GetIcon( icon );
-        content.tooltip = toolTip;
-        return Create( content,
-                       isActive,
-                       onClick,
-                       enabled,
-                       postRender );
-      }
-
-      public static ToolButtonData Create( GUIContent content,
-                                           bool isActive,
                                            Action onClick,
                                            bool enabled = true,
                                            Action postRender = null )
       {
         return new ToolButtonData()
         {
-          GUIContent = content,
-          IsActive = isActive,
-          Enabled = enabled,
-          OnClick = onClick,
+          Icon       = icon,
+          IsActive   = isActive,
+          Tooltip    = toolTip,
+          Enabled    = enabled,
+          OnClick    = onClick,
           PostRender = postRender
         };
       }
 
-      public GUIContent GUIContent;
+      public ToolIcon Icon;
       public bool IsActive;
+      public string Tooltip;
       public bool Enabled;
       public Action OnClick;
       public Action PostRender;
@@ -365,54 +336,44 @@ namespace AGXUnityEditor
 
       float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
-      using ( null ) {
-        var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
+      using ( ToolButtonData.ColorBlock ) {
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
 
-        position.width = buttonWidth;
+        rect.width = buttonWidth;
         for ( int i = 0; i < data.Length; ++i ) {
-          var buttonType = data.Length > 1 && i == 0 ? InspectorGUISkin.ButtonType.Left :
+          var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
                            data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
                                                                      InspectorGUISkin.ButtonType.Middle;
-          var pressed = ToolButton( position,
-                                    data[ i ].GUIContent,
-                                    buttonType,
-                                    data[ i ].IsActive,
-                                    data[ i ].Enabled );
-          position.x += buttonWidth;
-          data[ i ].PostRender?.Invoke();
-          if ( pressed )
-            data[ i ].OnClick?.Invoke();
+          ToolButton( rect, data[ i ], buttonType );
+          rect.x += rect.width;
         }
       }
     }
 
     private static GUIContent s_tooltipContent = new GUIContent( "", "" );
 
-    private static GUIContent ToolButtonTooltip( GUIContent originalContent )
+    private static GUIContent ToolButtonTooltip( string tooltip )
     {
-      s_tooltipContent.tooltip = originalContent.tooltip;
+      s_tooltipContent.tooltip = tooltip;
       return s_tooltipContent;
     }
 
     public static bool ToolButton( Rect rect,
-                                   GUIContent content,
-                                   InspectorGUISkin.ButtonType buttonType,
-                                   bool active,
-                                   bool enabled )
+                                   ToolButtonData data,
+                                   InspectorGUISkin.ButtonType buttonType )
     {
-      var disabledScope = new EditorGUI.DisabledScope( !enabled );
-
-      var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
+      var texture = IconManager.GetIcon( data.Icon );
       var pressed = UnityEngine.GUI.Button( rect,
-                                            buttonContent,
-                                            InspectorEditor.Skin.GetButton( active, buttonType ) );
-      if ( buttonContent == s_tooltipContent && content.image != null ) {
-        var color = new GUI.ColorBlock( IconManager.GetForegroundColor( active, enabled ) );
-        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
-        color.Dispose();
+                                            ToolButtonTooltip( data.Tooltip ),
+                                            InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
+      if ( texture != null ) {
+        using ( new GUI.ColorBlock( IconManager.GetForegroundColor( data.IsActive, data.Enabled ) ) )
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
       }
 
-      disabledScope.Dispose();
+      data.PostRender?.Invoke();
+      if ( pressed )
+        data.OnClick?.Invoke();
 
       return pressed;
     }
@@ -752,13 +713,13 @@ namespace AGXUnityEditor
       var refFrame = frames[ 0 ];
       var isMultiSelect = frames.Length > 1;
 
-      using ( IndentScope.Create( indentLevelInc ) ) {
         var frameTool = includeFrameToolIfPresent ?
                           Tools.FrameTool.FindActive( refFrame ) :
                           null;
         if ( frameTool != null )
           frameTool.ToolsGUI( isMultiSelect );
 
+      using ( IndentScope.Create( indentLevelInc ) ) {
         UnityEngine.GUI.enabled = true;
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
         var newParent = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Parent" ),

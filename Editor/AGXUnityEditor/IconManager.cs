@@ -15,7 +15,17 @@ namespace AGXUnityEditor
     CreateShapeGivenVisual,
     CreateConstraint,
     DisableCollisions,
-    CreateVisual
+    CreateVisual,
+    ShapeResize,
+    SelectParent,
+    TransformHandle,
+    VisualizeLineDirection,
+    FlipDirection,
+    FindTireRim,
+    FindTire,
+    FindRim,
+    FindTrackWheel,
+    None
   }
 
   public static class IconManager
@@ -130,18 +140,32 @@ namespace AGXUnityEditor
       m_toolIconFilenames = new string[ enumValues.Length ];
       m_toolIcons         = new Texture2D[ enumValues.Length ];
 
-      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "agx_unity_given point 2";
-      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "agx_unity_given edge 1";
-      m_toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "agx_unity_represent shape 1";
-      m_toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "agx_unity_hinge 2";
-      m_toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "agx_unity_disable collision 1";
-      m_toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "agx_unity_represent shape 3";
+      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "flat_given_point_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "flat_given_edge_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_2_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "joint_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "view_line_direction_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "line_direction_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_one_filled_2_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_stripe_2_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_dot_2_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.FindTrackWheel ]          = "wheel_one_filled_2_200x200";
+      m_toolIconFilenames[ (int)ToolIcon.None ]                    = string.Empty;
 
       foreach ( int index in enumValues ) {
         if ( string.IsNullOrEmpty( m_toolIconFilenames[ index ] ) ) {
-          Debug.LogWarning( "Filename for tool icon "
-                            + (ToolIcon)index +
-                            " not given - ignoring icon." );
+          if ( index != (int)ToolIcon.None )
+            Debug.LogWarning( "Filename for tool icon "
+                              + (ToolIcon)index +
+                              " not given - ignoring icon." );
+          else
+            m_toolIcons[ index ] = null;
+
           continue;
         }
 
@@ -166,6 +190,29 @@ namespace AGXUnityEditor
     public static void Create()
     {
       EditorWindow.GetWindow<IconViewerWindow>( false, "Icon Management" );
+    }
+
+    public static bool ToolButton( Rect rect,
+                                   GUIContent content,
+                                   InspectorGUISkin.ButtonType buttonType,
+                                   bool active,
+                                   bool enabled )
+    {
+      var disabledScope = new EditorGUI.DisabledScope( !enabled );
+
+      var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
+      var pressed = UnityEngine.GUI.Button( rect,
+                                            buttonContent,
+                                            InspectorEditor.Skin.GetButton( active, buttonType ) );
+      if ( buttonContent == s_tooltipContent && content.image != null ) {
+        var color = new GUI.ColorBlock( IconManager.GetForegroundColor( active, enabled ) );
+        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
+        color.Dispose();
+      }
+
+      disabledScope.Dispose();
+
+      return pressed;
     }
 
     private void OnEnable()
@@ -195,12 +242,15 @@ namespace AGXUnityEditor
     {
     }
 
+    private Vector2 m_scroll;
     private void OnGUI()
     {
       Undo.RecordObject( EditorData.Instance, "IconManager" );
 
       var selectIconDir = false;
       var editorData = GetEditorData();
+
+      m_scroll = EditorGUILayout.BeginScrollView( m_scroll );
 
       using ( new EditorGUILayout.HorizontalScope() ) {
         EditorGUILayout.LabelField( GUI.MakeLabel( "Icons directory" ),
@@ -268,6 +318,8 @@ namespace AGXUnityEditor
 
       InspectorGUI.BrandSeparator( 1, 6 );
 
+      EditorGUILayout.EndScrollView();
+
       if ( selectIconDir ) {
         var result = EditorUtility.OpenFolderPanel( "Icons directory",
                                                     new DirectoryInfo( IconManager.Directory ).Parent.FullName,
@@ -299,11 +351,13 @@ namespace AGXUnityEditor
                                                                                                InspectorGUISkin.ButtonType.Middle;
           var content = new GUIContent( IconManager.GetIcon( m_iconNames[ currIconIndex ] ),
                                         m_iconNames[ currIconIndex ] + $" | active: {buttonsActive}, enabled: {buttonsEnabled}" );
-          InspectorGUI.ToolButton( rect,
-                                   content,
-                                   buttonType,
-                                   buttonsActive,
-                                   buttonsEnabled );
+          var pressed = ToolButton( rect,
+                                    content,
+                                    buttonType,
+                                    buttonsActive,
+                                    buttonsEnabled );
+          if ( pressed )
+            EditorGUIUtility.systemCopyBuffer = m_iconNames[ currIconIndex ];
           rect.x += rect.width;
         }
       }
@@ -392,6 +446,13 @@ namespace AGXUnityEditor
       return EditorData.Instance.GetStaticData( "IconManager_" + id, onCreate );
     }
 
+    private static GUIContent ToolButtonTooltip( GUIContent originalContent )
+    {
+      s_tooltipContent.tooltip = originalContent.tooltip;
+      return s_tooltipContent;
+    }
+
+    private static GUIContent s_tooltipContent = new GUIContent( "", "" );
     private List<string> m_iconNames = new List<string>();
   }
 }

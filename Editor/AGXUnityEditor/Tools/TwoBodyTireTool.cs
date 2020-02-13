@@ -25,15 +25,15 @@ namespace AGXUnityEditor.Tools
       bool toggleSelectTire = false;
       bool toggleSelectRim = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 5",
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTireRim,
                                                                       SelectTireAndRimToolEnable,
                                                                       "Find Tire, Rim and Tire <-> Rim constraint by selecting Tire in scene view.",
                                                                       () => toggleSelectTireAndRim = true ),
-                                  InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 2",
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.FindTire,
                                                                       SelectTireToolEnable,
                                                                       "Find Tire by selecting Tire in scene view.",
                                                                       () => toggleSelectTire = true ),
-                                  InspectorGUI.ToolButtonData.Create( "agx_unity_wheel 6",
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.FindRim,
                                                                       SelectRimToolEnable,
                                                                       "Find Rim by selecting Rim in scene view.",
                                                                       () => toggleSelectRim = true ) );

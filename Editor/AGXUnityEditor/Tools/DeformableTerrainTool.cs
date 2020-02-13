@@ -23,6 +23,12 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
+      //var patchTerrainData = GUILayout.Button( GUI.MakeLabel( "Patch terrain data" ), InspectorEditor.Skin.Button );
+      //if ( patchTerrainData ) {
+      //  foreach ( var terrain in GetTargets<DeformableTerrain>() )
+      //    terrain.PatchTerrainData();
+      //}
+
       if ( NumTargets > 1 )
         return;
 

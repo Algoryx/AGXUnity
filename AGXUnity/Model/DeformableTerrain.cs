@@ -21,7 +21,15 @@ namespace AGXUnity.Model
     /// <summary>
     /// Unity Terrain component.
     /// </summary>
-    public Terrain Terrain { get { return m_terrain ?? ( m_terrain = GetComponent<Terrain>() ); } }
+    public Terrain Terrain
+    {
+      get
+      {
+        return m_terrain == null ?
+                 m_terrain = GetComponent<Terrain>() :
+                 m_terrain;
+      }
+    }
 
     /// <summary>
     /// Unity Terrain data.
@@ -133,6 +141,14 @@ namespace AGXUnity.Model
       }
     }
 
+    public float ElementSize
+    {
+      get
+      {
+        return TerrainData.size.x / ( TerrainData.heightmapWidth - 1 );
+      }
+    }
+
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
 
@@ -231,6 +247,17 @@ namespace AGXUnity.Model
       PropertySynchronizer.Synchronize( this );
     }
 
+    /// <summary>
+    /// If, e.g., OnDestroy wasn't called to reset the heights of the
+    /// terrain this method can recover some data of the previous terrain
+    /// height data. This method will subtract MaximumDepth from each
+    /// entry in terrain data.
+    /// </summary>
+    public void PatchTerrainData()
+    {
+      WriteTerrainDataOffset( Terrain, -MaximumDepth );
+    }
+
     protected override bool Initialize()
     {
       if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) || !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) )
@@ -268,32 +295,13 @@ namespace AGXUnity.Model
 
     private void InitializeNative()
     {
-      var nativeHeightData = TerrainUtils.FindHeights( TerrainData );
-      var elementSize = TerrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
-
-      var tmp = new float[,] { { 0.0f } };
-      for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
-        var newHeight = nativeHeightData.Heights[ i ] += MaximumDepth;
-
-        var vertexX = i % nativeHeightData.ResolutionX;
-        var vertexY = i / nativeHeightData.ResolutionY;
-
-        tmp[ 0, 0 ] = (float)newHeight / TerrainData.heightmapScale.y;
-        TerrainData.SetHeightsDelayLOD( TerrainData.heightmapWidth - vertexX - 1,
-                                        TerrainData.heightmapHeight - vertexY - 1,
-                                        tmp );
-      }
-#if UNITY_2019_1_OR_NEWER
-      TerrainData.SyncHeightmap();
-#else
-      Terrain.ApplyDelayedHeightmapModification();
-#endif
+      var nativeHeightData = WriteTerrainDataOffset( Terrain, MaximumDepth );
 
       transform.position = transform.position + MaximumDepth * Vector3.down;
 
       Native = new agxTerrain.Terrain( (uint)nativeHeightData.ResolutionX,
                                        (uint)nativeHeightData.ResolutionY,
-                                       elementSize,
+                                       ElementSize,
                                        nativeHeightData.Heights,
                                        false,
                                        0.0f );
@@ -304,6 +312,38 @@ namespace AGXUnity.Model
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
       GetSimulation().add( Native );
+    }
+
+    /// <summary>
+    /// Writes <paramref name="offset"/> to <paramref name="terrain"/> height data.
+    /// </summary>
+    /// <param name="terrainData">Terrain to modify.</param>
+    /// <param name="offset">Height offset.</param>
+    private static TerrainUtils.NativeHeights WriteTerrainDataOffset( Terrain terrain, float offset )
+    {
+      var terrainData = terrain.terrainData;
+      var nativeHeightData = TerrainUtils.FindHeights( terrainData );
+      var elementSize = terrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
+
+      var tmp = new float[,] { { 0.0f } };
+      for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
+        var newHeight = nativeHeightData.Heights[ i ] += offset;
+
+        var vertexX = i % nativeHeightData.ResolutionX;
+        var vertexY = i / nativeHeightData.ResolutionY;
+
+        tmp[ 0, 0 ] = (float)newHeight / terrainData.heightmapScale.y;
+        terrainData.SetHeightsDelayLOD( terrainData.heightmapWidth - vertexX - 1,
+                                        terrainData.heightmapHeight - vertexY - 1,
+                                        tmp );
+      }
+#if UNITY_2019_1_OR_NEWER
+      terrainData.SyncHeightmap();
+#else
+      terrain.ApplyDelayedHeightmapModification();
+#endif
+
+      return nativeHeightData;
     }
 
     private void ResetTerrainDataHeightsAndTransform()

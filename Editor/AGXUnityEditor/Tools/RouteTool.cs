@@ -136,7 +136,7 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( GUI.Symbols.DisableCollisionsTool,
+      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
                                                                     DisableCollisionsTool,
                                                                     "Disable collisions against other objects",
                                                                     () => toggleDisableCollisions = true ) );
