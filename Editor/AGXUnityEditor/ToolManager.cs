@@ -89,22 +89,32 @@ namespace AGXUnityEditor
       if ( child == null )
         return;
 
-      var root = child.GetRoot() as CustomTargetTool;
-      if ( root == null )
-        return;
-
-      foreach ( var targetTool in ActiveTools ) {
-        if ( targetTool == root )
-          continue;
-
-        Traverse( targetTool, tool =>
-        {
-          if ( !tool.IsSingleInstanceTool )
-            return false;
-          tool.PerformRemoveFromParent();
+      var singleInstanceTools = new List<Tool>();
+      Func<Tool, bool> visitor = tool =>
+      {
+        // We don't want to remove children to our tool that's being added.
+        // I.e., return true to not visit 'child' children.
+        if ( tool == child )
           return true;
-        } );
-      }
+
+        if ( tool.HasChild( child ) )
+          return false;
+
+        if ( !tool.IsSingleInstanceTool )
+          return false;
+
+        if ( tool is CustomTargetTool )
+          return false;
+
+        singleInstanceTools.Add( tool );
+
+        return true;
+      };
+      foreach ( var activeTool in ActiveTools )
+        Traverse( activeTool, visitor );
+
+      foreach ( var toolToRemove in singleInstanceTools )
+        toolToRemove.PerformRemoveFromParent();
     }
 
     /// <summary>

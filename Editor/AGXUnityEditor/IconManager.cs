@@ -338,6 +338,14 @@ namespace AGXUnityEditor
                                 bool buttonsEnabled,
                                 bool buttonsActive )
     {
+      GUILayout.Label( GUI.MakeLabel( buttonsEnabled && buttonsActive ?
+                                        "Enabled and active" :
+                                      buttonsEnabled == buttonsActive ?
+                                        "Disabled and inactive" :
+                                      buttonsEnabled ?
+                                       "Enabled and inactive" :
+                                       "Disabled and active??????????" ),
+                       InspectorGUISkin.Instance.LabelMiddleCenter );
       var numIconsPerRow = (int)( position.width / buttonSize.x );
       var currIconIndex = 0;
       while ( currIconIndex < m_iconNames.Count ) {

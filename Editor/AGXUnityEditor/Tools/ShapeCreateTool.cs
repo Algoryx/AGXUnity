@@ -121,6 +121,7 @@ namespace AGXUnityEditor.Tools
       else
         m_buttons.Reset();
 
+      // TODO GUI: Why? Force inspector update instead?
       EditorUtility.SetDirty( Parent );
     }
 
@@ -131,9 +132,13 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
+      InspectorGUI.OnDropdownToolBegin();
+
       UnityEngine.GUI.enabled = m_selection.Count > 0;
       m_buttons.OnGUI( Event.current );
       UnityEngine.GUI.enabled = true;
+
+      InspectorGUI.OnDropdownToolEnd();
 
       EditorUtility.SetDirty( Parent );
 

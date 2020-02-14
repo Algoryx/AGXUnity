@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
+
 using GUI = AGXUnityEditor.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
@@ -103,9 +106,8 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      if ( IsMultiSelect ) {
+      if ( IsMultiSelect )
         return;
-      }
 
       var skin                     = InspectorEditor.Skin;
       bool toggleShapeResizeTool   = false;
@@ -154,51 +156,56 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
+      if ( IsMultiSelect )
+        return;
+
       var shapeVisual = ShapeVisual.Find( Shape );
       if ( shapeVisual == null )
         return;
 
-      var skin = InspectorEditor.Skin;
+      var materials = shapeVisual.GetMaterials();
+      if ( materials.Length > 1 ) {
+        var names = ( from renderer in shapeVisual.GetComponentsInChildren<MeshRenderer>()
+                      from material in renderer.sharedMaterials
+                      select renderer.name ).ToArray();
 
-      if ( !InspectorGUI.Foldout( EditorData.Instance.GetData( Shape,
-                                                               "Visual",
-                                                               entry => entry.Bool = true ),
-                                                               GUI.MakeLabel( "Shape Visual" ) ) )
-        return;
+        var distinctMaterials = materials.Distinct().ToArray();
+        var isExtended = false;
+        if ( distinctMaterials.Length == 1 )
+          isExtended = ShapeVisualMaterialGUI( "Common Render Material",
+                                               distinctMaterials[ 0 ],
+                                               newMaterial => shapeVisual.SetMaterial( newMaterial ) );
+        else
+          isExtended = InspectorGUI.Foldout( EditorData.Instance.GetData( Shape, "Render Materials" ),
+                                             GUI.MakeLabel( "Render Materials" ) );
 
-      using ( InspectorGUI.IndentScope.Single ) {
-        Undo.RecordObjects( shapeVisual.GetComponentsInChildren<MeshRenderer>(), "Shape visual material" );
-
-        var materials = shapeVisual.GetMaterials();
-        if ( materials.Length > 1 ) {
-          var distinctMaterials = materials.Distinct().ToArray();
-          using ( GUI.AlignBlock.Center ) {
-            GUILayout.Label( GUI.MakeLabel( "Displays material if all materials are the same <b>(otherwise None)</b> and/or assign new material to all objects in this shape." ),
-                             skin.TextAreaMiddleCenter,
-                             GUILayout.Width( Screen.width - 60 ) );
-          }
-          InspectorGUI.UnityMaterial( GUI.MakeLabel( "Common material:", true ),
-                                      distinctMaterials.Length == 1 ? distinctMaterials.First() : null,
-                                      newMaterial => shapeVisual.SetMaterial( newMaterial ) );
-
-          GUILayout.Space( 6 );
-
-          using ( GUI.AlignBlock.Center )
-            GUILayout.Label( GUI.MakeLabel( "Material list", true ), skin.Label );
-        }
-
-        for ( int i = 0; i < materials.Length; ++i ) {
-          var material = materials[ i ];
-          var showMaterialEditor = materials.Length == 1 ||
-                                   InspectorGUI.Foldout( EditorData.Instance.GetData( Shape,
-                                                                                      "VisualMaterial" + i ),
-                                                         GUI.MakeLabel( material.name ) );
-          if ( showMaterialEditor )
-            InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material:" ),
-                                        material,
-                                        newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
-        }
+        if ( isExtended )
+          using ( InspectorGUI.IndentScope.Single )
+            for ( int i = 0; i < materials.Length; ++i ) {
+              ShapeVisualMaterialGUI( names[ i ],
+                                      materials[ i ],
+                                      newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
+            }
       }
+      else {
+        ShapeVisualMaterialGUI( "Render Material",
+                                materials[ 0 ],
+                                newMaterial => shapeVisual.ReplaceMaterial( 0, newMaterial ) );
+      }
+    }
+
+    private bool ShapeVisualMaterialGUI( string name, Material material, Action<Material> onNewMaterial )
+    {
+      var editorData = EditorData.Instance.GetData( Shape, "Visual_" + name );
+      var result = InspectorGUI.FoldoutObjectField( GUI.MakeLabel( name ),
+                                                    material,
+                                                    typeof( Material ),
+                                                    editorData,
+                                                    false ) as Material;
+      if ( result != material )
+        onNewMaterial?.Invoke( result );
+
+      return editorData.Bool;
     }
   }
 }

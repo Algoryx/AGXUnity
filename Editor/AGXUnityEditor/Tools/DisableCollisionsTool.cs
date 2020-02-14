@@ -69,6 +69,8 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI()
     {
+      InspectorGUI.OnDropdownToolBegin();
+
       var skin = InspectorEditor.Skin;
       var emptyContent = GUI.MakeLabel( " " );
 
@@ -133,6 +135,8 @@ namespace AGXUnityEditor.Tools
       }
       else if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Negative )
         PerformRemoveFromParent();
+
+      InspectorGUI.OnDropdownToolEnd();
     }
 
     private void HandleSelectedObject( GameObject selected )

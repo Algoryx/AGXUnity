@@ -155,6 +155,9 @@ namespace AGXUnityEditor
     {
       var newState = EditorGUILayout.Foldout( state.Bool, content, true );
 
+      if ( newState != state.Bool )
+        UnityEngine.GUI.changed = false;
+
       if ( onStateChanged != null && newState != state.Bool )
         onStateChanged.Invoke( newState );
 
@@ -183,11 +186,16 @@ namespace AGXUnityEditor
       if ( !isReadOnly )
         position.xMax = EditorGUIUtility.labelWidth;
 
-      using ( new EditorGUI.DisabledScope( instance == null ) )
-        foldoutData.Bool = EditorGUI.Foldout( position,
-                                              foldoutData.Bool,
-                                              content,
-                                              true ) && instance != null;
+      using ( new EditorGUI.DisabledScope( instance == null ) ) {
+        var newState = EditorGUI.Foldout( position,
+                                          foldoutData.Bool,
+                                          content,
+                                          true ) && instance != null;
+        if ( newState != foldoutData.Bool ) {
+          foldoutData.Bool = newState;
+          UnityEngine.GUI.changed = false;
+        }
+      }
       position.xMax = oldWidth;
 
       // Entry may change, render object field and create-new-button if
@@ -338,7 +346,6 @@ namespace AGXUnityEditor
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
       using ( ToolButtonData.ColorBlock ) {
         var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
-
         rect.width = buttonWidth;
         for ( int i = 0; i < data.Length; ++i ) {
           var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
@@ -560,10 +567,12 @@ namespace AGXUnityEditor
       bool positivePressed = false;
       bool negativePressed = false;
 
-      var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( GUILayout.Height( buttonsHeight ) ) );
+      var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false,
+                                                                             buttonsHeight +
+                                                                             EditorGUIUtility.standardVerticalSpacing ) );
 
       var negativeRect = new Rect( position.xMax - positiveButtonWidth - negativeButtonWidth,
-                                   position.y,
+                                   position.y + EditorGUIUtility.standardVerticalSpacing,
                                    negativeButtonWidth,
                                    buttonsHeight );
       using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
@@ -572,7 +581,7 @@ namespace AGXUnityEditor
                                                   InspectorEditor.Skin.ButtonLeft );
 
       var positiveRect = new Rect( position.xMax - positiveButtonWidth,
-                                   position.y,
+                                   position.y + EditorGUIUtility.standardVerticalSpacing,
                                    positiveButtonWidth,
                                    buttonsHeight );
       using ( new EditorGUI.DisabledGroupScope( !positiveButtonActive ) )
@@ -861,6 +870,31 @@ namespace AGXUnityEditor
       if ( EditorGUI.EndChangeCheck() )
         return s_customFloatFieldData[ 0 ];
       return value;
+    }
+
+    private static GUIStyle s_dropdownToolStyle = null;
+
+    public static Rect OnDropdownToolBegin()
+    {
+      if ( s_dropdownToolStyle == null ) {
+        s_dropdownToolStyle = new GUIStyle( InspectorEditor.Skin.Label )
+        {
+          padding = new RectOffset( 16, 6, 6, 6 )
+        };
+      }
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( s_dropdownToolStyle ) );
+      UnityEngine.GUI.Label( rect, "", InspectorEditor.Skin.TextArea );
+
+      EditorGUIUtility.labelWidth -= s_dropdownToolStyle.padding.left;
+
+      return rect;
+    }
+
+    public static void OnDropdownToolEnd()
+    {
+      EditorGUIUtility.labelWidth += s_dropdownToolStyle.padding.left;
+
+      EditorGUILayout.EndVertical();
     }
   }
 }

@@ -54,7 +54,7 @@ namespace AGXUnityEditor.Tools
     public GameObject Preview { get; private set; }
 
     public ShapeVisualCreateTool( Shape shape, bool isGloballyUnique = true )
-      : base( isSingleInstanceTool: true )
+      : base( isSingleInstanceTool: isGloballyUnique )
     {
       Shape = shape;
       Preview = ShapeVisual.Create( shape );
@@ -89,13 +89,8 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
-      if ( !onlyNameAndMaterial ) {
-        GUILayout.Space( 4 );
-        using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), InspectorEditor.Skin.Label );
-
-        GUILayout.Space( 4 );
-      }
+      if ( !onlyNameAndMaterial )
+        InspectorGUI.OnDropdownToolBegin();
 
       Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name" ),
                                         Name,
@@ -110,12 +105,14 @@ namespace AGXUnityEditor.Tools
                                                                       "Create",
                                                                       "Create new shape visual.",
                                                                       "Cancel" );
+
+        InspectorGUI.OnDropdownToolEnd();
+
         if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
           CreateShapeVisual();
         }
         if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral ) {
           PerformRemoveFromParent();
-          return;
         }
       }
     }

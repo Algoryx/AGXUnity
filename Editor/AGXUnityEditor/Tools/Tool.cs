@@ -294,10 +294,31 @@ namespace AGXUnityEditor.Tools
 
     public Tool GetRoot()
     {
-      Tool root = GetParent();
+      var root = GetParent();
       while ( root != null && root.GetParent() != null )
         root = root.GetParent();
       return root;
+    }
+
+    public bool HasParent( Tool parent )
+    {
+      var currParent = GetParent();
+      while ( currParent != null && currParent != parent )
+        currParent = currParent.GetParent();
+      return currParent != null;
+    }
+
+    public bool HasChild( Tool tool )
+    {
+      if ( this == tool )
+        return true;
+
+      foreach ( var child in m_children ) {
+        if ( child.HasChild( tool ) )
+          return true;
+      }
+
+      return false;
     }
 
     public T GetChild<T>() where T : Tool

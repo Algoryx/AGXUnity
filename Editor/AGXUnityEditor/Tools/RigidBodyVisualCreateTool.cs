@@ -50,11 +50,7 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      GUILayout.Space( 4 );
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.Label );
-
-      GUILayout.Space( 4 );
+      InspectorGUI.OnDropdownToolBegin();
 
       foreach ( var tool in GetChildren<ShapeVisualCreateTool>() ) {
         if ( ShapeVisual.HasShapeVisual( tool.Shape ) )
@@ -76,6 +72,9 @@ namespace AGXUnityEditor.Tools
           if ( !ShapeVisual.HasShapeVisual( tool.Shape ) )
             tool.CreateShapeVisual();
       }
+
+      InspectorGUI.OnDropdownToolEnd();
+
       if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
     }

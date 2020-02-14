@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -152,6 +153,7 @@ namespace AGXUnityEditor
       {
         richText = true
       };
+
     }
 
     private GUIStyle InvertStyle( GUIStyle org )

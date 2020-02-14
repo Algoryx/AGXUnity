@@ -243,7 +243,8 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
-      var skin = InspectorEditor.Skin;
+      if ( IsMultiSelect )
+        return;
 
       InspectorGUI.ToolArrayGUI( this, RigidBody.GetComponentsInChildren<Shape>(), "Shapes" );
 

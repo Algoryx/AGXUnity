@@ -58,24 +58,18 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+      InspectorGUI.OnDropdownToolBegin();
+
       var skin = InspectorEditor.Skin;
 
-      using ( InspectorGUI.IndentScope.Single ) {
-        m_createConstraintData.Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name", true ),
-                                                                 m_createConstraintData.Name,
-                                                                 skin.TextField );
+      m_createConstraintData.Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name", true ),
+                                                                m_createConstraintData.Name,
+                                                                skin.TextField );
 
-        GUILayout.BeginHorizontal();
-        {
-          EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Type", true ), skin.Label );
-          // TODO GUI: Indented wrong. Add InspectorGUI method for EnumPopup.
-          GUILayout.Space( -InspectorGUI.IndentScope.PixelLevel );
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
-            m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
-                                                                                               skin.Button );
-        }
-        GUILayout.EndHorizontal();
-      }
+
+      m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
+                                                                                         m_createConstraintData.ConstraintType,
+                                                                                         skin.Popup );
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
@@ -108,6 +102,8 @@ namespace AGXUnityEditor.Tools
 
       if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
+
+      InspectorGUI.OnDropdownToolEnd();
     }
 
     private class CreateConstraintData
