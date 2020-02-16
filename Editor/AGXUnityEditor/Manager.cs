@@ -353,7 +353,7 @@ namespace AGXUnityEditor
       // field has been changed but the public property with
       // native synchronizations isn't touched.
       if ( EditorApplication.isPlaying ) {
-        List<Object> objectsToSynchronize = new List<Object>();
+        var objectsToSynchronize = new List<Object>();
         Action<Object> addUnique = obj =>
         {
           if ( !objectsToSynchronize.Contains( obj ) )

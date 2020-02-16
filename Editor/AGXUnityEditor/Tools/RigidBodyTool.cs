@@ -175,27 +175,13 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      bool toggleFindTransformGivenPoint = false;
-      bool toggleFindTransformGivenEdge  = false;
       bool toggleShapeCreate             = false;
       bool toggleConstraintCreate        = false;
       bool toggleDisableCollisions       = false;
       bool toggleRigidBodyVisualCreate   = false;
 
       if ( !IsMultiSelect && ToolsActive ) {
-        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenPoint,
-                                                                      FindTransformGivenPointTool,
-                                                                      "Find rigid body transform given point on object.",
-                                                                      () => toggleFindTransformGivenPoint = true ),
-                                  InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenEdge,
-                                                                      FindTransformGivenEdgeTool,
-                                                                      "Find rigid body transform given edge on object.",
-                                                                      () => toggleFindTransformGivenEdge = true ),
-                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
-                                                                      ShapeCreateTool,
-                                                                      "Create shape from child visual object.",
-                                                                      () => toggleShapeCreate = true ),
-                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
                                                                       ConstraintCreateTool,
                                                                       "Create new constraint to this rigid body.",
                                                                       () => toggleConstraintCreate = true ),
@@ -203,6 +189,10 @@ namespace AGXUnityEditor.Tools
                                                                       DisableCollisionsTool,
                                                                       "Disable collisions against other objects.",
                                                                       () => toggleDisableCollisions = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      ShapeCreateTool,
+                                                                      "Create shape from child visual object.",
+                                                                      () => toggleShapeCreate = true ),
                                   InspectorGUI.ToolButtonData.Create( ToolIcon.CreateVisual,
                                                                       RigidBodyVisualCreateTool,
                                                                       "Create visual representation of each physical shape in this body.",
@@ -210,14 +200,14 @@ namespace AGXUnityEditor.Tools
                                                                       Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) );
       }
 
-      if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI();
-      }
       if ( ConstraintCreateTool ) {
         GetChild<ConstraintCreateTool>().OnInspectorGUI();
       }
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
+      }
+      if ( ShapeCreateTool ) {
+        GetChild<ShapeCreateTool>().OnInspectorGUI();
       }
       if ( RigidBodyVisualCreateTool ) {
         GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
@@ -227,16 +217,12 @@ namespace AGXUnityEditor.Tools
       using ( InspectorGUI.IndentScope.Single )
         InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
 
-      if ( toggleFindTransformGivenPoint )
-        FindTransformGivenPointTool = !FindTransformGivenPointTool;
-      if ( toggleFindTransformGivenEdge )
-        FindTransformGivenEdgeTool = !FindTransformGivenEdgeTool;
-      if ( toggleShapeCreate )
-        ShapeCreateTool = !ShapeCreateTool;
       if ( toggleConstraintCreate )
         ConstraintCreateTool = !ConstraintCreateTool;
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
+      if ( toggleShapeCreate )
+        ShapeCreateTool = !ShapeCreateTool;
       if ( toggleRigidBodyVisualCreate )
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
     }

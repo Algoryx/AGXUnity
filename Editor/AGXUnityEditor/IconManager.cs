@@ -42,13 +42,16 @@ namespace AGXUnityEditor
                         Path.DirectorySeparatorChar +
                         "Icons" +
                         Path.DirectorySeparatorChar +
-                        "White";
+                        "New";
         return m_directory;
       }
       set
       {
-        if ( m_directory != value )
+        if ( m_directory != value ) {
           m_icons.Clear();
+          m_toolIcons = null;
+          m_toolIconFilenames = null;
+        }
         m_directory = value;
       }
     }

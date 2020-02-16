@@ -234,6 +234,7 @@ namespace AGXUnityEditor
         else
           return editor;
       }
+
       editor = InspectorEditor.CreateRecursive( target );
       if ( editor != null )
         m_recursiveEditors.Add( target, editor );

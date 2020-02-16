@@ -230,9 +230,8 @@ namespace AGXUnityEditor
       }
 
       // Recursive editor rendered indented with respect to foldout.
-      if ( foldoutData.Bool ) {
+      if ( foldoutData.Bool )
         HandleEditorGUI( ToolManager.TryGetOrCreateRecursiveEditor( result ) );
-      }
 
       if ( createNewPressed ) {
         var assetName = instanceType.Name.SplitCamelCase().ToLower();
@@ -370,9 +369,11 @@ namespace AGXUnityEditor
                                    InspectorGUISkin.ButtonType buttonType )
     {
       var texture = IconManager.GetIcon( data.Icon );
-      var pressed = UnityEngine.GUI.Button( rect,
-                                            ToolButtonTooltip( data.Tooltip ),
-                                            InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
+      var pressed = false;
+      using ( new GUI.EnabledBlock( data.Enabled ) )
+        pressed = UnityEngine.GUI.Button( rect,
+                                          ToolButtonTooltip( data.Tooltip ),
+                                          InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
       if ( texture != null ) {
         using ( new GUI.ColorBlock( IconManager.GetForegroundColor( data.IsActive, data.Enabled ) ) )
           UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
