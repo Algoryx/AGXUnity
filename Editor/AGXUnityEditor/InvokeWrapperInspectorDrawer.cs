@@ -166,43 +166,89 @@ namespace AGXUnityEditor
       d.CopyFrom( s );
     }
 
+    private static MethodInfo s_floatFieldMethod = null;
+    private static MethodInfo s_vector3FieldMethod = null;
+    private static object[] s_fieldMethodArgs = new object[] { null, "", null };
+
     private static ValueT HandleDefaultAndUserValue<ValueT>( string name,
                                                              DefaultAndUserValue<ValueT> valInField )
       where ValueT : struct
     {
-      bool guiWasEnabled       = UnityEngine.GUI.enabled;
-      ValueT newValue          = default( ValueT );
-      MethodInfo floatMethod   = typeof( EditorGUILayout ).GetMethod( "FloatField", new[] { typeof( string ), typeof( float ), typeof( GUILayoutOption[] ) } );
-      MethodInfo vector3Method = typeof( EditorGUILayout ).GetMethod( "Vector3Field", new[] { typeof( string ), typeof( Vector3 ), typeof( GUILayoutOption[] ) } );
-      MethodInfo method        = typeof( ValueT ) == typeof( float ) ?
-                                   floatMethod :
-                                 typeof( ValueT ) == typeof( Vector3 ) ?
-                                   vector3Method :
-                                   null;
+      if ( s_floatFieldMethod == null )
+        s_floatFieldMethod = typeof( EditorGUI ).GetMethod( "FloatField",
+                                                            new[]
+                                                            {
+                                                              typeof( Rect ),
+                                                              typeof( string ),
+                                                              typeof( float )
+                                                            } );
+      if ( s_vector3FieldMethod == null )
+        s_vector3FieldMethod = typeof( EditorGUI ).GetMethod( "Vector3Field",
+                                                              new[]
+                                                              {
+                                                                typeof( Rect ),
+                                                                typeof( string ),
+                                                                typeof( Vector3 )
+                                                              } );
+
+      var guiWasEnabled = UnityEngine.GUI.enabled;
+      var method        = typeof( ValueT ) == typeof( float ) ?
+                            s_floatFieldMethod :
+                          typeof( ValueT ) == typeof( Vector3 ) ?
+                            s_vector3FieldMethod :
+                            null;
       if ( method == null )
         throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
 
-      bool useDefaultToggled = false;
-      bool updateDefaultValue = false;
-      GUILayout.BeginHorizontal();
-      {
-        // Note that we're checking if the value has changed!
-        useDefaultToggled = InspectorGUI.Toggle( GUI.MakeLabel( name.SplitCamelCase(),
-                                                                false,
-                                                                "If checked - value will be default. Uncheck to manually enter value." ),
-                                        valInField.UseDefault ) != valInField.UseDefault;
-        UnityEngine.GUI.enabled = !valInField.UseDefault;
-        GUILayout.FlexibleSpace();
-        newValue = (ValueT)method.Invoke( null, new object[] { "", valInField.Value, new GUILayoutOption[] { } } );
-        UnityEngine.GUI.enabled = valInField.UseDefault;
-        updateDefaultValue = GUILayout.Button( GUI.MakeLabel( "Update",
-                                                              false,
-                                                              "Update default value" ),
-                                               InspectorEditor.Skin.Button,
-                                               GUILayout.Width( 52 ) );
-        UnityEngine.GUI.enabled = guiWasEnabled;
+      var updateButtonWidth = 18.0f;
+      var rect              = EditorGUILayout.GetControlRect();
+      
+      // Now we know the total width if the Inspector. Remove
+      // width of button and right most spacing.
+      rect.xMax -= updateButtonWidth + 2;
+      
+      // We don't want the tooltip of the toggle to show when
+      // hovering the update button or float field(s) so use
+      // xMax as label width minus some magic number so that
+      // e.g., Mass float field slider appears and works.
+      var widthUntilButton  = rect.xMax;
+      rect.xMax             = EditorGUIUtility.labelWidth - 28;
+      var useDefaultToggled = EditorGUI.ToggleLeft( rect,
+                                                    GUI.MakeLabel( name.SplitCamelCase(),
+                                                                   false,
+                                                                   "If checked - value will be default. Uncheck to manually enter value." ),
+                                                    valInField.UseDefault ) != valInField.UseDefault;
+      // Restore width and calculate new start of the float
+      // field(s). Start is label width but we have to remove
+      // the current indent level since label width is independent
+      // of the indent level. Unsure why we have to add 14 pixels...
+      // could be float field(s) default minimum label size.
+      rect.xMax   = widthUntilButton;
+      rect.x      = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + 14;
+      rect.xMax += -rect.x + 14;
+
+      s_fieldMethodArgs[ 0 ] = rect;
+      s_fieldMethodArgs[ 2 ] = valInField.Value;
+      ValueT newValue        = default;
+      using ( new GUI.EnabledBlock( !valInField.UseDefault ) )
+        newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
+
+      rect.x                 = rect.xMax + 2;
+      rect.width             = updateButtonWidth;
+      rect.height            = EditorGUIUtility.singleLineHeight -
+                               EditorGUIUtility.standardVerticalSpacing;
+      var updateDefaultValue = false;
+      using ( new GUI.EnabledBlock( valInField.UseDefault ) ) {
+        updateDefaultValue = UnityEngine.GUI.Button( rect,
+                                                     GUI.MakeLabel( "",
+                                                                    false,
+                                                                    "Force update of default value." ),
+                                                     InspectorEditor.Skin.GetButton( false,
+                                                                                     InspectorGUISkin.ButtonType.Middle ) );
+        using ( IconManager.ForegroundColorBlock( false, UnityEngine.GUI.enabled ) )
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 1.25f ),
+                                       IconManager.GetIcon( MiscIcon.Update ) );
       }
-      GUILayout.EndHorizontal();
 
       if ( useDefaultToggled ) {
         valInField.UseDefault = !valInField.UseDefault;

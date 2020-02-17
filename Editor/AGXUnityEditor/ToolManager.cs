@@ -100,6 +100,10 @@ namespace AGXUnityEditor
         if ( tool.HasChild( child ) )
           return false;
 
+        // Route node tool is managing its children.
+        if ( tool.HasParent<RouteNodeTool>() )
+          return false;
+
         if ( !tool.IsSingleInstanceTool )
           return false;
 

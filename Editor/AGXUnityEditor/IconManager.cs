@@ -28,6 +28,17 @@ namespace AGXUnityEditor
     None
   }
 
+  public enum MiscIcon
+  {
+    CreateAsset,
+    EntryInsertBefore,
+    EntryInsertAfter,
+    EntryRemove,
+    SynchEnabled,
+    SynchDisabled,
+    Update
+  }
+
   public static class IconManager
   {
     /// <summary>
@@ -48,9 +59,9 @@ namespace AGXUnityEditor
       set
       {
         if ( m_directory != value ) {
-          m_icons.Clear();
+          m_iconCache.Clear();
           m_toolIcons = null;
-          m_toolIconFilenames = null;
+          m_miscIcons = null;
         }
         m_directory = value;
       }
@@ -90,12 +101,12 @@ namespace AGXUnityEditor
         name = name.Remove( name.Length - 4 );
 
       var iconIdentifier = Directory + Path.DirectorySeparatorChar + name;
-      if ( m_icons.TryGetValue( iconIdentifier, out var icon ) )
+      if ( m_iconCache.TryGetValue( iconIdentifier, out var icon ) )
         return icon;
 
       icon = EditorGUIUtility.Load( iconIdentifier + ".png" ) as Texture2D;
       if ( icon != null )
-        m_icons.Add( iconIdentifier, icon );
+        m_iconCache.Add( iconIdentifier, icon );
 
       return icon;
     }
@@ -113,6 +124,14 @@ namespace AGXUnityEditor
       return m_toolIcons[ (int)toolIcon ];
     }
 
+    public static Texture2D GetIcon( MiscIcon miscIcon )
+    {
+      if ( m_miscIcons == null )
+        LoadMiscIconContent();
+
+      return m_miscIcons[ (int)miscIcon ];
+    }
+
     /// <summary>
     /// Foreground color to be used with current state of the button.
     /// </summary>
@@ -125,66 +144,118 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Disposable scope foreground color block.
+    /// </summary>
+    /// <param name="active">True if button is active.</param>
+    /// <param name="enabled">True if button is enabled.</param>
+    /// <returns>Icon foreground color block.</returns>
+    public static GUI.ColorBlock ForegroundColorBlock( bool active, bool enabled )
+    {
+      return new GUI.ColorBlock( GetForegroundColor( active, enabled ) );
+    }
+
+    /// <summary>
     /// Finds scaled icon rect given button rect. The icon rect is scaled
     /// given Scale.
     /// </summary>
-    /// <param name="buttonRect"></param>
-    /// <returns></returns>
+    /// <param name="buttonRect">Button rect.</param>
+    /// <returns>Icon rect.</returns>
     public static Rect GetIconRect( Rect buttonRect )
     {
+      return GetIconRect( buttonRect, Scale );
+    }
+
+    /// <summary>
+    /// Finds scaled icon rect given button rect and scale.
+    /// </summary>
+    /// <param name="buttonRect">Button rect.</param>
+    /// <param name="scale">Scale relative button.</param>
+    /// <returns>Icon rect.</returns>
+    public static Rect GetIconRect( Rect buttonRect, float scale )
+    {
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
-      var iconSize   = Scale * buttonSize;
+      var iconSize   = scale * buttonSize;
       return new Rect( buttonRect.position + 0.5f * ( buttonSize - iconSize ), iconSize );
     }
 
     private static void LoadToolIconContent()
     {
-      var enumValues      = System.Enum.GetValues( typeof( ToolIcon ) );
-      m_toolIconFilenames = new string[ enumValues.Length ];
-      m_toolIcons         = new Texture2D[ enumValues.Length ];
+      var toolIconFilenames = CreateNameArray<ToolIcon>();
 
-      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "flat_given_point_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "flat_given_edge_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_2_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "joint_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "view_line_direction_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "line_direction_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_one_filled_2_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_stripe_2_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_dot_2_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.FindTrackWheel ]          = "wheel_one_filled_2_200x200";
-      m_toolIconFilenames[ (int)ToolIcon.None ]                    = string.Empty;
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "flat_given_point_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "flat_given_edge_200x200";
+      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_2_200x200";
+      toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "joint_200x200";
+      toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_shadow_5_200x200";//"disable_collision-shadow-white_200x200"; //"disable_collision-3px-shadow-orange_200x200"; //"disable_collision-3px_200x200"; //"disable_collision_200x200";
+      toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_200x200";
+      toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_200x200";
+      toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent-shadow_5_200x200"; //"parent -shadow-white_200x200"; //"parent_200x200";
+      toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_200x200";
+      toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "view_line_direction_200x200";
+      toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "flip_direction_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_one_filled_2_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_stripe_2_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_dot_2_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindTrackWheel ]          = "wheel_one_filled_2_200x200";
+      toolIconFilenames[ (int)ToolIcon.None ]                    = string.Empty;
 
+      m_toolIcons = LoadIconContent<ToolIcon>( toolIconFilenames );
+    }
+
+    private static void LoadMiscIconContent()
+    {
+      var miscIconFilenames = CreateNameArray<MiscIcon>();
+
+      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "shape_from_2_200x200";
+      miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "shape_from_2_200x200";
+      miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "shape_from_2_200x200";
+      miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "shape_from_2_200x200";
+      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "sync_200x200";
+      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "un_sync_200x200";
+      miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_200x200";
+
+      m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
+    }
+
+    private static string[] CreateNameArray<T>()
+      where T : System.Enum
+    {
+      return new string[ System.Enum.GetValues( typeof( T ) ).Length ];
+    }
+
+    private static Texture2D[] LoadIconContent<T>( string[] iconFilenames )
+      where T : System.Enum
+    {
+      var enumValues = System.Enum.GetValues( typeof( T ) );
+      var enumNames  = System.Enum.GetNames( typeof( T ) );
+      var icons      = new Texture2D[ enumValues.Length ];
       foreach ( int index in enumValues ) {
-        if ( string.IsNullOrEmpty( m_toolIconFilenames[ index ] ) ) {
-          if ( index != (int)ToolIcon.None )
+        if ( string.IsNullOrEmpty( iconFilenames[ index ] ) ) {
+          if ( enumNames[ index ] != "None" )
             Debug.LogWarning( "Filename for tool icon "
                               + (ToolIcon)index +
                               " not given - ignoring icon." );
           else
-            m_toolIcons[ index ] = null;
+            icons[ index ] = null;
 
           continue;
         }
 
-        m_toolIcons[ index ] = GetIcon( m_toolIconFilenames[ index ] );
-        if ( m_toolIcons[ index ] == null )
+        icons[ index ] = GetIcon( iconFilenames[ index ] );
+        if ( icons[ index ] == null )
           Debug.LogWarning( "Unable to load tool icon " +
                             (ToolIcon)index +
                             " at: " +
-                            Directory + '/' + m_toolIconFilenames[ index ] );
+                            Directory + '/' + iconFilenames[ index ] );
       }
+
+      return icons;
     }
 
-    private static Dictionary<string, Texture2D> m_icons = new Dictionary<string, Texture2D>();
-    private static Texture2D[] m_toolIcons               = null;
-    private static string[] m_toolIconFilenames          = null;
-    private static string m_directory                    = string.Empty;
+    private static Dictionary<string, Texture2D> m_iconCache = new Dictionary<string, Texture2D>();
+    private static Texture2D[] m_toolIcons                   = null;
+    private static Texture2D[] m_miscIcons                   = null;
+    private static string m_directory                        = string.Empty;
   }
 
   public class IconViewerWindow : EditorWindow
@@ -208,9 +279,8 @@ namespace AGXUnityEditor
                                             buttonContent,
                                             InspectorEditor.Skin.GetButton( active, buttonType ) );
       if ( buttonContent == s_tooltipContent && content.image != null ) {
-        var color = new GUI.ColorBlock( IconManager.GetForegroundColor( active, enabled ) );
-        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
-        color.Dispose();
+        using ( IconManager.ForegroundColorBlock( active, enabled ) )
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );
       }
 
       disabledScope.Dispose();
@@ -248,6 +318,15 @@ namespace AGXUnityEditor
     private Vector2 m_scroll;
     private void OnGUI()
     {
+      var iconDirectoryInfo = new DirectoryInfo( IconManager.Directory );
+      if ( !iconDirectoryInfo.Exists )
+        return;
+
+      if ( iconDirectoryInfo.GetFiles( "*.png.meta" ).Length != m_iconNames.Count ) {
+        Debug.LogWarning( "Icon count changed - reloading icons..." );
+        OnEnable();
+      }
+
       Undo.RecordObject( EditorData.Instance, "IconManager" );
 
       var selectIconDir = false;

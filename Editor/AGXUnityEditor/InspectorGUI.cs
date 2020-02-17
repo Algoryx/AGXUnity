@@ -170,7 +170,6 @@ namespace AGXUnityEditor
                                              EditorDataEntry foldoutData,
                                              bool isReadOnly )
     {
-      var createNewButtonWidth = 35.0f;
       var createNewPressed = false;
       var allowSceneObject = instanceType == typeof( GameObject ) ||
                                  typeof( MonoBehaviour ).IsAssignableFrom( instanceType );
@@ -202,8 +201,9 @@ namespace AGXUnityEditor
       // the instance type supports it.
       Object result;
       if ( !isReadOnly ) {
-        var supportsCreateAsset = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ||
-                                  instanceType == typeof( Material );
+        var createNewButtonWidth = 18.0f;
+        var supportsCreateAsset  = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ||
+                                   instanceType == typeof( Material );
 
         position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
         position.xMax -= EditorGUIUtility.labelWidth +
@@ -214,10 +214,12 @@ namespace AGXUnityEditor
           var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
           buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, InspectorGUISkin.BrandColor, 0.25f ) ) )
-            createNewPressed = UnityEngine.GUI.Button( buttonRect,
-                                                       GUI.MakeLabel( "New", false, "Create new asset" ),
-                                                       InspectorEditor.Skin.ButtonMiddle );
+          createNewPressed = UnityEngine.GUI.Button( buttonRect,
+                                                      GUI.MakeLabel( "", false, "Create new asset" ),
+                                                      InspectorEditor.Skin.ButtonMiddle );
+          using ( IconManager.ForegroundColorBlock( false, true ) )
+            UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.75f ),
+                                         IconManager.GetIcon( MiscIcon.CreateAsset ) );
         }
       }
       else
@@ -375,7 +377,7 @@ namespace AGXUnityEditor
                                           ToolButtonTooltip( data.Tooltip ),
                                           InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
       if ( texture != null ) {
-        using ( new GUI.ColorBlock( IconManager.GetForegroundColor( data.IsActive, data.Enabled ) ) )
+        using ( IconManager.ForegroundColorBlock( data.IsActive, data.Enabled ) )
           UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
       }
 

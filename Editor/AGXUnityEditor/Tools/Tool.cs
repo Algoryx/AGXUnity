@@ -308,6 +308,15 @@ namespace AGXUnityEditor.Tools
       return currParent != null;
     }
 
+    public bool HasParent<T>()
+      where T : Tool
+    {
+      var currParent = GetParent();
+      while ( currParent != null && !( currParent is T ) )
+        currParent = currParent.GetParent();
+      return currParent != null;
+    }
+
     public bool HasChild( Tool tool )
     {
       if ( this == tool )

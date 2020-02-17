@@ -87,11 +87,10 @@ namespace AGXUnityEditor.Tools
                                                                       false,
                                                                       "Synchronized with reference frame." ),
                                                        skin.GetButton( connectedFrameSynchronized ) );
-      var iconName = connectedFrameSynchronized ? "sync_200x200" : "un_sync_200x200";
-      using ( new GUI.ColorBlock( IconManager.GetForegroundColor( !connectedFrameSynchronized, true ) ) ) {
-        var icon = IconManager.GetIcon( iconName );
+      using ( IconManager.ForegroundColorBlock( !connectedFrameSynchronized, true ) ) {
+        var icon = IconManager.GetIcon( connectedFrameSynchronized ? MiscIcon.SynchEnabled : MiscIcon.SynchDisabled );
         if ( icon != null )
-          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), icon );
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 0.75f ), icon );
       }
       if ( toggleSynchronized ) {
         foreach ( var ap in AttachmentPairs )
