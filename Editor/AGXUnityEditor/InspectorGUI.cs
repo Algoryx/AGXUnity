@@ -217,9 +217,12 @@ namespace AGXUnityEditor
           createNewPressed = UnityEngine.GUI.Button( buttonRect,
                                                       GUI.MakeLabel( "", false, "Create new asset" ),
                                                       InspectorEditor.Skin.ButtonMiddle );
-          using ( IconManager.ForegroundColorBlock( false, true ) )
-            UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.75f ),
-                                         IconManager.GetIcon( MiscIcon.CreateAsset ) );
+          using ( IconManager.ForegroundColorBlock( false, true ) ) {
+            var createAssetIcon = IconManager.GetIcon( MiscIcon.CreateAsset );
+            if ( createAssetIcon != null )
+              UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.95f ),
+                                           createAssetIcon );
+          }
         }
       }
       else
@@ -414,12 +417,9 @@ namespace AGXUnityEditor
         foreach ( var item in items ) {
           if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                       item.GetInstanceID().ToString() ),
-                         GUI.MakeLabel( "[" +
-                                        GUI.AddColorTag( getTypename( item ),
-                                                         Color.Lerp( BackgroundColor,
-                                                                     InspectorGUISkin.BrandColor,
-                                                                     0.6f ) ) +
-                                        "] " + item.name ) ) ) {
+                         GUI.MakeLabel( InspectorEditor.Skin.TagTypename( getTypename( item ) ) +
+                                        ' ' +
+                                        item.name ) ) ) {
             context.RemoveEditor( item );
             continue;
           }
@@ -433,7 +433,6 @@ namespace AGXUnityEditor
     public static void ToolListGUI<T>( Tools.CustomTargetTool context,
                                        T[] items,
                                        string identifier,
-                                       Color itemColorIdeintifier,
                                        Action<T> onAdd,
                                        Action<T> onRemove,
                                        Action<T, int> preItemEditor = null,
@@ -455,8 +454,9 @@ namespace AGXUnityEditor
             var displayItem = false;
             using ( new GUILayout.HorizontalScope() ) {
               displayItem = Foldout( GetItemToolArrayGUIData( context.Targets[ 0 ], identifier, item ),
-                                     GUI.MakeLabel( "[" + GUI.AddColorTag( itemTypename,
-                                                                           itemColorIdeintifier ) + "] " + item.name ) );
+                                     GUI.MakeLabel( InspectorEditor.Skin.TagTypename( itemTypename ) +
+                                                    ' ' +
+                                                    item.name ) );
 
               using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
                 if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
@@ -494,7 +494,7 @@ namespace AGXUnityEditor
             var sceneItems = isAsset ?
                                IO.Utils.FindAssetsOfType<T>() :
                                Object.FindObjectsOfType<T>();
-            GenericMenu addItemMenu = new GenericMenu();
+            var addItemMenu = new GenericMenu();
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );
             addItemMenu.AddSeparator( string.Empty );
             foreach ( var sceneItem in sceneItems ) {

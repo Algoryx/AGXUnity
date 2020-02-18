@@ -200,12 +200,12 @@ namespace AGXUnityEditor
       if ( method == null )
         throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
 
-      var updateButtonWidth = 18.0f;
+      var updateButtonWidth = 20.0f;
       var rect              = EditorGUILayout.GetControlRect();
       
       // Now we know the total width if the Inspector. Remove
       // width of button and right most spacing.
-      rect.xMax -= updateButtonWidth + 2;
+      rect.xMax -= updateButtonWidth;
       
       // We don't want the tooltip of the toggle to show when
       // hovering the update button or float field(s) so use
@@ -233,7 +233,7 @@ namespace AGXUnityEditor
       using ( new GUI.EnabledBlock( !valInField.UseDefault ) )
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
 
-      rect.x                 = rect.xMax + 2;
+      rect.x                 = rect.xMax;
       rect.width             = updateButtonWidth;
       rect.height            = EditorGUIUtility.singleLineHeight -
                                EditorGUIUtility.standardVerticalSpacing;
@@ -244,9 +244,9 @@ namespace AGXUnityEditor
                                                                     false,
                                                                     "Force update of default value." ),
                                                      InspectorEditor.Skin.GetButton( false,
-                                                                                     InspectorGUISkin.ButtonType.Middle ) );
+                                                                                     InspectorGUISkin.ButtonType.Right ) );
         using ( IconManager.ForegroundColorBlock( false, UnityEngine.GUI.enabled ) )
-          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 1.25f ),
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 1.30f ),
                                        IconManager.GetIcon( MiscIcon.Update ) );
       }
 
@@ -387,7 +387,7 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
     public static object GenericListDrawer( object obj, InvokeWrapper wrapper )
     {
-      System.Collections.IList list = wrapper.Get<System.Collections.IList>( obj );
+      var list = wrapper.Get<System.Collections.IList>( obj );
       var target = obj as Object;
 
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
@@ -396,58 +396,63 @@ namespace AGXUnityEditor
         object insertElementAfter  = null;
         object eraseElement        = null;
         var skin                   = InspectorEditor.Skin;
-        var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
-        using ( InspectorGUI.IndentScope.Single ) {
-          foreach ( var listObject in list ) {
-            using ( InspectorGUI.IndentScope.Single ) {
-              GUILayout.BeginHorizontal();
+        var buttonLayout = new GUILayoutOption[]
+        {
+          GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
+          GUILayout.Height( 0.75f * EditorGUIUtility.singleLineHeight )
+        };
+        foreach ( var listObject in list ) {
+          using ( InspectorGUI.IndentScope.Single ) {
+            GUILayout.BeginHorizontal();
+            {
+              GUILayout.BeginVertical();
               {
-                GUILayout.BeginVertical();
-                {
-                  // Using target to render listObject since it normally (CollisionGroupEntry) isn't an Object.
-                  InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
-                }
-                GUILayout.EndVertical();
-
-                using ( InspectorGUI.NodeListButtonColor ) {
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
-                                                        false,
-                                                        "Insert new element before this" ),
-                                         skin.ButtonLeft,
-                                         buttonLayout ) )
-                    insertElementBefore = listObject;
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                        false,
-                                                        "Insert new element after this" ),
-                                         skin.ButtonMiddle,
-                                         buttonLayout ) )
-                    insertElementAfter = listObject;
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                        false,
-                                                        "Erase this element" ),
-                                         skin.ButtonRight,
-                                         buttonLayout ) )
-                    eraseElement = listObject;
-                }
+                // Using target to render listObject since it normally (CollisionGroupEntry) isn't an Object.
+                InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
               }
-              GUILayout.EndHorizontal();
+              GUILayout.EndVertical();
+
+              if ( GUILayout.Button( GUI.MakeLabel( GUI.AddColorTag( GUI.Symbols.ListInsertElementBefore.ToString(),
+                                                                     InspectorGUISkin.BrandColor ),
+                                                    false,
+                                                    "Insert new element before this" ),
+                                      skin.ButtonMiddle,
+                                      buttonLayout ) )
+                insertElementBefore = listObject;
+              if ( GUILayout.Button( GUI.MakeLabel( GUI.AddColorTag( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                                     InspectorGUISkin.BrandColor ),
+                                                    false,
+                                                    "Insert new element after this" ),
+                                      skin.ButtonMiddle,
+                                      buttonLayout ) )
+                insertElementAfter = listObject;
+              if ( GUILayout.Button( GUI.MakeLabel( GUI.AddColorTag( GUI.Symbols.ListEraseElement.ToString(),
+                                                                     InspectorGUISkin.BrandColor ),
+                                                    false,
+                                                    "Erase this element" ),
+                                      skin.ButtonMiddle,
+                                      buttonLayout ) )
+                eraseElement = listObject;
             }
+            GUILayout.EndHorizontal();
           }
 
-          if ( list.Count == 0 )
-            GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
+          GUILayout.Space( 4.0f );
         }
+
+        if ( list.Count == 0 )
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
 
         bool addElementToList = false;
         GUILayout.BeginHorizontal();
         {
           GUILayout.FlexibleSpace();
-          using ( InspectorGUI.NodeListButtonColor )
-            addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                                false,
-                                                                "Add new element to list" ),
-                                                 skin.Button,
-                                                 buttonLayout );
+          addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.AddColorTag( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                                               InspectorGUISkin.BrandColor ),
+                                                              false,
+                                                              "Add new element to list" ),
+                                                skin.ButtonMiddle,
+                                                buttonLayout );
         }
         GUILayout.EndHorizontal();
 

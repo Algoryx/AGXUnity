@@ -27,7 +27,8 @@ namespace AGXUnityEditor.Tools
     protected override string GetNodeTypeString( RouteNode node )
     {
       var wireNode = node as WireRouteNode;
-      return GUI.AddColorTag( wireNode.Type.ToString().SplitCamelCase(), GetColor( wireNode ) );
+      //return GUI.AddColorTag( wireNode.Type.ToString().SplitCamelCase(), GetColor( wireNode ) );
+      return InspectorEditor.Skin.TagTypename( wireNode.Type.ToString() );
     }
 
     protected override Color GetNodeColor( RouteNode node )
@@ -62,11 +63,9 @@ namespace AGXUnityEditor.Tools
 
     protected override void OnPreFrameGUI( WireRouteNode node )
     {
-      using ( InspectorGUI.IndentScope.Single ) {
-        node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
-                                                              node.Type,
-                                                              InspectorEditor.Skin.Popup );
-      }
+      node.Type = (Wire.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                                            node.Type,
+                                                            InspectorEditor.Skin.Popup );
     }
 
     protected override void OnNodeCreate( WireRouteNode newNode, WireRouteNode refNode, bool addPressed )

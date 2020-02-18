@@ -127,20 +127,20 @@ namespace AGXUnityEditor.Tools
       bool showTools           = !EditorApplication.isPlaying;
       if ( showTools ) {
         var toolButtonData = new List<InspectorGUI.ToolButtonData>();
-        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenEdge,
-                                                                EdgeDetectionToolEnable,
-                                                                "Find line given edge.",
-                                                                () => toggleCreateEdge = true ) );
-        if ( Mode != ToolMode.Direction )
-          toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.VisualizeLineDirection,
-                                                                  RenderAsArrow,
-                                                                  "Visualize line direction.",
-                                                                  () => toggleRenderAsArrow = true ) );
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.VisualizeLineDirection,
+                                                                RenderAsArrow,
+                                                                "Visualize line direction.",
+                                                                () => toggleRenderAsArrow = true,
+                                                                Mode != ToolMode.Direction ) );
         toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.FlipDirection,
                                                                 false,
                                                                 "Flip direction.",
                                                                 () => toggleFlipDirection = true,
                                                                 Line.Valid ) );
+        toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenEdge,
+                                                                EdgeDetectionToolEnable,
+                                                                "Find line given edge.",
+                                                                () => toggleCreateEdge = true ) );
         InspectorGUI.ToolButtons( toolButtonData.ToArray() );
       }
 

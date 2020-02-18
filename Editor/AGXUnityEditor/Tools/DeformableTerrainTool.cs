@@ -37,7 +37,6 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.ToolListGUI( this,
                                 DeformableTerrain.Shovels,
                                 "Shovels",
-                                Color.Lerp( Color.red, Color.black, 0.25f ),
                                 shovel => DeformableTerrain.Add( shovel ),
                                 shovel => DeformableTerrain.Remove( shovel ) );
     }

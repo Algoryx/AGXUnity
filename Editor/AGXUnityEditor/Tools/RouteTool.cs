@@ -166,12 +166,18 @@ namespace AGXUnityEditor.Tools
     private void RouteGUI()
     {
       var skin                           = InspectorEditor.Skin;
-      GUIStyle invalidNodeStyle          = new GUIStyle( skin.Label );
+      var invalidNodeStyle               = new GUIStyle( skin.Label );
       invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 1,
                                                                      1,
                                                                      Color.Lerp( UnityEngine.GUI.color,
                                                                                  Color.red,
                                                                                  0.75f ) );
+
+      var listButtonsStyle = new GUILayoutOption[]
+      {
+        GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
+        GUILayout.Height( 0.75f * EditorGUIUtility.singleLineHeight )
+      };
 
       bool addNewPressed        = false;
       bool insertBeforePressed  = false;
@@ -184,7 +190,7 @@ namespace AGXUnityEditor.Tools
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( Parent,
                                                               "Route",
                                                               entry => { entry.Bool = true; } ),
-                        GUI.MakeLabel( "Route", true ) ) ) {
+                                 GUI.MakeLabel( "Route", true ) ) ) {
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
@@ -195,7 +201,7 @@ namespace AGXUnityEditor.Tools
               GUILayout.BeginVertical( invalidNodeStyle );
 
             if ( InspectorGUI.Foldout( GetFoldoutData( node ),
-                                       GUI.MakeLabel( GetNodeTypeString( node ) + " | " +
+                                       GUI.MakeLabel( GetNodeTypeString( node ) + ' ' +
                                                       SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                                       !validatedNode.Valid,
                                                       validatedNode.ErrorString ),
@@ -215,30 +221,24 @@ namespace AGXUnityEditor.Tools
               {
                 GUILayout.FlexibleSpace();
 
-                using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) ) {
-                  insertBeforePressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Insert a new node before this node" ),
-                                                          skin.ButtonLeft,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || insertBeforePressed;
-                  insertAfterPressed  = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Insert a new node after this node" ),
-                                                          skin.ButtonMiddle,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || insertAfterPressed;
-                }
-                using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-                  erasePressed        = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Erase this node" ),
-                                                          skin.ButtonRight,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || erasePressed;
+                insertBeforePressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
+                                                                        14,
+                                                                        false,
+                                                                        "Insert a new node before this node" ),
+                                                        skin.ButtonMiddle,
+                                                        listButtonsStyle ) || insertBeforePressed;
+                insertAfterPressed  = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                                        14,
+                                                                        false,
+                                                                        "Insert a new node after this node" ),
+                                                        skin.ButtonMiddle,
+                                                        listButtonsStyle ) || insertAfterPressed;
+                erasePressed        = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
+                                                                        14,
+                                                                        false,
+                                                                        "Erase this node" ),
+                                                        skin.ButtonMiddle,
+                                                        listButtonsStyle ) || erasePressed;
 
                 if ( listOpNode == null && ( insertBeforePressed || insertAfterPressed || erasePressed ) )
                   listOpNode = node;
@@ -260,14 +260,12 @@ namespace AGXUnityEditor.Tools
         {
           GUILayout.FlexibleSpace();
 
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-            addNewPressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                             16,
-                                                             false,
-                                                             "Add new node to route" ),
-                                              skin.Button,
-                                              GUILayout.Width( 20 ),
-                                              GUILayout.Height( 16 ) );
+          addNewPressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
+                                                            14,
+                                                            false,
+                                                            "Add new node to route" ),
+                                            skin.ButtonMiddle,
+                                            listButtonsStyle );
           if ( listOpNode == null && addNewPressed )
             listOpNode = Route.LastOrDefault();
         }

@@ -39,7 +39,6 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.ToolListGUI( this,
                                 Manager.ContactMaterials,
                                 Identifier,
-                                Color.yellow,
                                 cm => Manager.Add( cm ),
                                 cm => Manager.Remove( cm ),
                                 PreContactMaterialEditor( Manager.ContactMaterialEntries ) );

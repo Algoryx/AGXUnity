@@ -182,17 +182,17 @@ namespace AGXUnityEditor
     {
       var toolIconFilenames = CreateNameArray<ToolIcon>();
 
-      toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "flat_given_point_200x200";
-      toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "flat_given_edge_200x200";
-      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_2_200x200";
-      toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "joint_200x200";
-      toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_shadow_5_200x200";//"disable_collision-shadow-white_200x200"; //"disable_collision-3px-shadow-orange_200x200"; //"disable_collision-3px_200x200"; //"disable_collision_200x200";
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "find_point_icon";
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "find_edge_icon";
+      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_icon";
+      toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "hinge_icon";
+      toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_icon";//"disable_collision-shadow-white_200x200"; //"disable_collision-3px-shadow-orange_200x200"; //"disable_collision-3px_200x200"; //"disable_collision_200x200";
       toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_200x200";
       toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_200x200";
-      toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent-shadow_5_200x200"; //"parent -shadow-white_200x200"; //"parent_200x200";
-      toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_200x200";
-      toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "view_line_direction_200x200";
-      toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "flip_direction_200x200";
+      toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent_icon"; //"parent -shadow-white_200x200"; //"parent_200x200";
+      toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_icon";
+      toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "visulize_line_2_icon";
+      toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "flip_direction_icon";
       toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_one_filled_2_200x200";
       toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_stripe_2_200x200";
       toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_dot_2_200x200";
@@ -206,13 +206,13 @@ namespace AGXUnityEditor
     {
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
-      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "shape_from_2_200x200";
+      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "small_add_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "shape_from_2_200x200";
       miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "shape_from_2_200x200";
-      miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "shape_from_2_200x200";
-      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "sync_200x200";
-      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "un_sync_200x200";
-      miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_200x200";
+      miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "small_delete_icon";
+      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "sync_icon";
+      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "unsync_icon";
+      miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_icon";
 
       m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
     }

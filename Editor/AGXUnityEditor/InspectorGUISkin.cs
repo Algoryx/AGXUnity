@@ -75,6 +75,16 @@ namespace AGXUnityEditor
                m_buttonStyles[ (int)type ];
     }
 
+    public string TagTypename( string typename )
+    {
+      return '[' +
+             GUI.AddColorTag( typename,
+                              Color.Lerp( InspectorGUI.BackgroundColor,
+                                          BrandColor,
+                                          0.6f ) ) +
+             ']';
+    }
+
     private InspectorGUISkin()
     {
       Initialize();
