@@ -177,14 +177,13 @@ namespace AGXUnityEditor.Tools
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
             var controllerName    = ConstraintUtils.FindName( refController );
-            string dimString      = "[" + GUI.AddColorTag( controllerType == Constraint.ControllerType.Rotational ?
-                                                             GUI.Symbols.CircleArrowAcw.ToString() :
-                                                             GUI.Symbols.ArrowLeftRight.ToString(),
-                                                           controllerType == Constraint.ControllerType.Rotational ?
-                                                             Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) :
-                                                             Color.Lerp( UnityEngine.GUI.color, Color.green, 0.75f ) ) + "] ";
+            var icon              = controllerType == Constraint.ControllerType.Rotational ?
+                                      IconManager.GetIcon( MiscIcon.Update ) :
+                                      IconManager.GetIcon( MiscIcon.ArrowRight );
+            var controllerLabel   = GUI.MakeLabel( controllerName, true );
+            controllerLabel.image = icon;
             if ( !InspectorGUI.Foldout( selected( controllerTypeTag + controllerName ),
-                                        GUI.MakeLabel( dimString + controllerName, true ) ) ) {
+                                        controllerLabel ) ) {
               continue;
             }
 
@@ -215,7 +214,7 @@ namespace AGXUnityEditor.Tools
                                       InspectorEditor.Skin.LabelMiddleLeft );
 
         UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
-        if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.Synchronized.ToString() + " Rb",
+        if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
                                               false,
                                               "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
                                 skin.GetButton( !EditorGUI.showMixedValue &&
@@ -226,7 +225,7 @@ namespace AGXUnityEditor.Tools
                     Constraint.ECollisionsState.KeepExternalState :
                     Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
-        if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.Synchronized.ToString() + " Con",
+        if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
                                               false,
                                               "Disable Reference object vs. Connected object." ),
                                 skin.GetButton( !EditorGUI.showMixedValue &&

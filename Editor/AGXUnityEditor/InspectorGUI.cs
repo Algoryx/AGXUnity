@@ -145,6 +145,101 @@ namespace AGXUnityEditor
       }
     }
 
+    private static GUIContent s_miscIconButtonContent = new GUIContent();
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               params GUILayoutOption[] options )
+    {
+
+      return Button( icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     1.0f,
+                     options );
+    }
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               float buttonScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+
+      return Button( icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     buttonScale,
+                     options );
+    }
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var pressed = GUILayout.Button( s_miscIconButtonContent,
+                                      buttonStyle,
+                                      options );
+      ButtonIcon( GUILayoutUtility.GetLastRect(), icon, enabled, iconScale );
+
+      return pressed;
+    }
+
+    public static bool Button( Rect rect,
+                               MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      return Button( rect,
+                     icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     iconScale );
+    }
+
+    public static bool Button( Rect rect,
+                               MiscIcon icon,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var pressed = false;
+      using ( new GUI.EnabledBlock( enabled ) )
+        pressed = UnityEngine.GUI.Button( rect,
+                                          s_miscIconButtonContent,
+                                          buttonStyle );
+      ButtonIcon( rect, icon, enabled, iconScale );
+
+      return pressed;
+    }
+
+    public static void ButtonIcon( Rect buttonRect, MiscIcon iconType, bool enabled, float scale )
+    {
+      var icon = IconManager.GetIcon( iconType );
+      if ( icon == null )
+        return;
+
+      var diff = buttonRect.width - buttonRect.height;
+      if ( diff != 0.0f ) {
+        buttonRect.width = buttonRect.height;
+        buttonRect.x += 0.5f * diff;
+      }
+
+      using ( IconManager.ForegroundColorBlock( false, enabled ) )
+        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, scale ), icon );
+    }
+
     public static bool Toggle( GUIContent content,
                                bool value )
     {
@@ -214,15 +309,19 @@ namespace AGXUnityEditor
           var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
           buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
-          createNewPressed = UnityEngine.GUI.Button( buttonRect,
-                                                      GUI.MakeLabel( "", false, "Create new asset" ),
-                                                      InspectorEditor.Skin.ButtonMiddle );
-          using ( IconManager.ForegroundColorBlock( false, true ) ) {
-            var createAssetIcon = IconManager.GetIcon( MiscIcon.CreateAsset );
-            if ( createAssetIcon != null )
-              UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.95f ),
-                                           createAssetIcon );
-          }
+          createNewPressed = Button( buttonRect,
+                                     MiscIcon.CreateAsset,
+                                     true,
+                                     "Create new asset." );
+          //createNewPressed = UnityEngine.GUI.Button( buttonRect,
+          //                                           GUI.MakeLabel( "", false, "Create new asset" ),
+          //                                           InspectorEditor.Skin.ButtonMiddle );
+          //using ( IconManager.ForegroundColorBlock( false, true ) ) {
+          //  var createAssetIcon = IconManager.GetIcon( MiscIcon.CreateAsset );
+          //  if ( createAssetIcon != null )
+          //    UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.95f ),
+          //                                 createAssetIcon );
+          //}
         }
       }
       else
@@ -458,14 +557,11 @@ namespace AGXUnityEditor
                                                     ' ' +
                                                     item.name ) );
 
-              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                      false,
-                                                      $"Remove {item.name} from {targetTypename}." ),
-                     InspectorEditor.Skin.ButtonMiddle,
-                     GUILayout.Width( 18 ),
-                     GUILayout.Height( 14 ) ) )
-                  itemToRemove = item;
+              if ( Button( MiscIcon.EntryRemove,
+                           true,
+                           $"Remove {item.name} from {targetTypename}.",
+                           GUILayout.Width( 18 ) ) )
+                itemToRemove = item;
             }
 
             if ( !displayItem ) {

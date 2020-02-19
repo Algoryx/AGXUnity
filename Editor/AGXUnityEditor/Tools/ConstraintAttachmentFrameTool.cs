@@ -80,18 +80,16 @@ namespace AGXUnityEditor.Tools
 
       // TODO GUI: What is this extra 13?
       rect.x = Mathf.Max( rect.width + InspectorGUI.IndentScope.PixelLevel + 4.0f,
-                          EditorGUIUtility.labelWidth ) + 13;
+                          EditorGUIUtility.labelWidth ) + 14;
       rect.width = 20.0f;
-      var toggleSynchronized = UnityEngine.GUI.Button( rect,
-                                                       GUI.MakeLabel( "",
-                                                                      false,
-                                                                      "Synchronized with reference frame." ),
-                                                       skin.GetButton( connectedFrameSynchronized ) );
-      using ( IconManager.ForegroundColorBlock( !connectedFrameSynchronized, true ) ) {
-        var icon = IconManager.GetIcon( connectedFrameSynchronized ? MiscIcon.SynchEnabled : MiscIcon.SynchDisabled );
-        if ( icon != null )
-          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 0.75f ), icon );
-      }
+      var toggleSynchronized = InspectorGUI.Button( rect,
+                                                    connectedFrameSynchronized ?
+                                                      MiscIcon.SynchEnabled :
+                                                      MiscIcon.SynchDisabled,
+                                                    true,
+                                                    "Toggle synchronized with reference frame.",
+                                                    0.85f );
+
       if ( toggleSynchronized ) {
         foreach ( var ap in AttachmentPairs )
           ap.Synchronized = !connectedFrameSynchronized;

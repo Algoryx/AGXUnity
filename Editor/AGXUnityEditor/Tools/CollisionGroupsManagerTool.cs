@@ -59,13 +59,13 @@ namespace AGXUnityEditor.Tools
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
+              // TODO GUI: Use some other separator here.
               InspectorGUI.BrandSeparator( 1, 10 );
-              using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-                if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
-                                       skin.Button,
-                                       GUILayout.Width( 18 ),
-                                       GUILayout.Height( 14 ) ) )
-                  erasePair = disabledPair;
+              if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                        true,
+                                        "Remove pair from list.",
+                                        GUILayout.Width( 18 ) ) )
+                erasePair = disabledPair;
             }
             GUILayout.EndHorizontal();
 
@@ -99,7 +99,7 @@ namespace AGXUnityEditor.Tools
         GUILayout.BeginVertical( GUILayout.Width( 12 ) );
         {
           GUILayout.Space( 4 );
-          GUILayout.Label( GUI.MakeLabel( "[", 22 ), InspectorEditor.Skin.Label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
+          GUILayout.Label( GUI.MakeLabel( "[", 20 ), InspectorEditor.Skin.Label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
         }
         GUILayout.EndVertical();
 
@@ -119,10 +119,11 @@ namespace AGXUnityEditor.Tools
       GUILayout.BeginHorizontal();
       {
         entry.Tag = GUILayout.TextField( entry.Tag, InspectorEditor.Skin.TextField );
-        buttonPressed = GUILayout.Button( GUI.MakeLabel( "+" ),
-                                          InspectorEditor.Skin.Button,
-                                          GUILayout.Width( 18 ),
-                                          GUILayout.Height( 14 ) );
+        buttonPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
+                                             true,
+                                             "Add collision group.",
+                                             1.05f,
+                                             GUILayout.Width( 18 ) );
       }
       GUILayout.EndHorizontal();
 

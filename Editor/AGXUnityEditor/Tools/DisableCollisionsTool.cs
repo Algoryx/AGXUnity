@@ -80,7 +80,7 @@ namespace AGXUnityEditor.Tools
 
 
       EditorGUILayout.LabelField( emptyContent,
-                                  GUI.MakeLabel( GUI.Symbols.Synchronized.ToString() ) );
+                                  GUI.MakeLabel( GUI.Symbols.ArrowLeftRight.ToString() ) );
 
       if ( m_selected.Count == 0 ) {
         EditorGUILayout.LabelField( emptyContent,
