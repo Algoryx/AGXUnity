@@ -15,8 +15,8 @@ namespace AGXUnityEditor.Tools
           SelectGameObject.PerformRemoveFromParent();
 
         if ( value != null ) {
-          value.MenuTool.RemoveOnClickMiss = true;
           AddChild( value );
+          value.MenuTool.RemoveOnClickMiss = true;
         }
       }
     }
