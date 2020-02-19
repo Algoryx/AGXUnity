@@ -10,10 +10,6 @@ namespace AGXUnity.Utils
       public const char ArrowRight = '\u21D2';
       public const char ArrowLeftRight = '\u2194';
 
-      public const char ListInsertElementBefore = '\u21B0';
-      public const char ListInsertElementAfter = '\u21B2';
-      public const char ListEraseElement = 'x';
-
       public const char CircleArrowAcw = '\u21ba';
     }
 

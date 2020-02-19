@@ -95,12 +95,11 @@ namespace AGXUnityEditor.Tools
             EditorGUILayout.LabelField( emptyContent,
                                         SelectGameObjectDropdownMenuTool.GetGUIContent( m_selected[ i ] ),
                                         skin.TextArea );
-            using ( InspectorGUI.NodeListButtonColor )
-              if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString() ),
-                                     skin.Button,
-                                     GUILayout.Width( 14 ),
-                                     GUILayout.Height( 14 ) ) )
-                removeIndex = i;
+            if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                      true,
+                                      "Remove pair.",
+                                      GUILayout.Width( 14 ) ) )
+              removeIndex = i;
           }
           GUILayout.EndHorizontal();
         }

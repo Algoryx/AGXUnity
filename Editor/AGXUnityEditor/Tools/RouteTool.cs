@@ -173,7 +173,7 @@ namespace AGXUnityEditor.Tools
                                                                                  Color.red,
                                                                                  0.75f ) );
 
-      var listButtonsStyle = new GUILayoutOption[]
+      var listButtonsOptions = new GUILayoutOption[]
       {
         GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
         GUILayout.Height( 0.75f * EditorGUIUtility.singleLineHeight )
@@ -221,24 +221,19 @@ namespace AGXUnityEditor.Tools
               {
                 GUILayout.FlexibleSpace();
 
-                insertBeforePressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
-                                                                        14,
-                                                                        false,
-                                                                        "Insert a new node before this node" ),
-                                                        skin.ButtonMiddle,
-                                                        listButtonsStyle ) || insertBeforePressed;
-                insertAfterPressed  = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                                        14,
-                                                                        false,
-                                                                        "Insert a new node after this node" ),
-                                                        skin.ButtonMiddle,
-                                                        listButtonsStyle ) || insertAfterPressed;
-                erasePressed        = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                                        14,
-                                                                        false,
-                                                                        "Erase this node" ),
-                                                        skin.ButtonMiddle,
-                                                        listButtonsStyle ) || erasePressed;
+                insertBeforePressed = InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+                                                           true,
+                                                           "Insert a new node before this node.",
+                                                           listButtonsOptions ) || insertBeforePressed;
+                insertAfterPressed = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                                          true,
+                                                          "Insert a new node after this node.",
+                                                          listButtonsOptions ) || insertAfterPressed;
+                erasePressed = InspectorGUI.Button( MiscIcon.EntryRemove,
+                                                    true,
+                                                    "Remove this node from the route.",
+                                                    1.05f,
+                                                    listButtonsOptions ) || erasePressed;
 
                 if ( listOpNode == null && ( insertBeforePressed || insertAfterPressed || erasePressed ) )
                   listOpNode = node;
@@ -260,12 +255,11 @@ namespace AGXUnityEditor.Tools
         {
           GUILayout.FlexibleSpace();
 
-          addNewPressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                            14,
-                                                            false,
-                                                            "Add new node to route" ),
-                                            skin.ButtonMiddle,
-                                            listButtonsStyle );
+          addNewPressed = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                               true,
+                                               "Add new node to the route.",
+                                               listButtonsOptions );
+
           if ( listOpNode == null && addNewPressed )
             listOpNode = Route.LastOrDefault();
         }
