@@ -4,7 +4,7 @@ using AGXUnity;
 using AGXUnity.Utils;
 using AGXUnity.Model;
 
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {

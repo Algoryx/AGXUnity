@@ -7,7 +7,7 @@ using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 using Assembly = AGXUnity.Assembly;
 using Object = UnityEngine.Object;
 

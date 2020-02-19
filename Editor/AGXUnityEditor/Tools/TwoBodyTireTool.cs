@@ -5,7 +5,7 @@ using UnityEditor.SceneManagement;
 using AGXUnity;
 using AGXUnity.Model;
 
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {

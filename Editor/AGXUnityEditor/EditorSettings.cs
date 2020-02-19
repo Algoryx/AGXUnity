@@ -2,7 +2,7 @@
 using System.IO;
 using UnityEngine;
 using UnityEditor;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {

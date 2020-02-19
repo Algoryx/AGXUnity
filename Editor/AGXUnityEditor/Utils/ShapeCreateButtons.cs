@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnityEditor.Utils
 {
   public class ShapeCreateButton

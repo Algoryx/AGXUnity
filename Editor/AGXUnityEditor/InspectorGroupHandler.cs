@@ -2,6 +2,8 @@
 using AGXUnity;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnityEditor
 {
   /// <summary>
@@ -46,7 +48,7 @@ namespace AGXUnityEditor
                             "_" + foldoutBeginAttribute.Name;
       Begin( !InspectorGUI.Foldout( EditorData.Instance.GetData( targetInstance as Object,
                                                                  groupIdentifier ),
-                                    Utils.GUI.MakeLabel( foldoutBeginAttribute.Name, true ) ) );
+                                    GUI.MakeLabel( foldoutBeginAttribute.Name, true ) ) );
     }
 
     public void Dispose()

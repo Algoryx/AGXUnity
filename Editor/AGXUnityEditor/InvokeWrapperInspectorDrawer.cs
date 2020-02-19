@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
-using System.ComponentModel;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 
-using GUI    = AGXUnityEditor.Utils.GUI;
+using GUI    = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor

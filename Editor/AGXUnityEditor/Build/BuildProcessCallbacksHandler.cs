@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
+using GUI   = AGXUnity.Utils.GUI;
 using Debug = UnityEngine.Debug;
 
 namespace AGXUnityEditor.Build
@@ -94,34 +94,39 @@ namespace AGXUnityEditor.Build
         return;
 
       if ( target != BuildTarget.StandaloneWindows64 && target != BuildTarget.StandaloneWindows ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unsupported build target: ",
-                                                 Color.red ) +
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unsupported build target: ",
+                                           Color.red ) +
                           target.ToString() );
         return;
       }
 
       var nativeIsX64 = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
       if ( (target == BuildTarget.StandaloneWindows64) != nativeIsX64 ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - x86/x64 architecture mismatch: ", Color.red ) +
-                          "Build target = " + target.ToString() + ", AGX Dynamics build: " + ( nativeIsX64 ? "x64" : "x86" ) );
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - x86/x64 architecture mismatch: ",
+                                           Color.red ) +
+                          "Build target = " +
+                          target.ToString() +
+                          ", AGX Dynamics build: " +
+                          ( nativeIsX64 ? "x64" : "x86" ) );
         return;
       }
 
       var agxDynamicsPath = AGXUnity.IO.Environment.AGXDynamicsPath;
       if ( string.IsNullOrEmpty( agxDynamicsPath ) ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX Dynamics directory.", Color.red ) );
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX Dynamics directory.",
+                                           Color.red ) );
         return;
       }
 
       var agxPluginPath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
       if ( string.IsNullOrEmpty( agxPluginPath ) ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX_PLUGIN_PATH.", Color.red ) );
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX_PLUGIN_PATH.", Color.red ) );
         return;
       }
 
       var targetExecutableFileInfo = new FileInfo( targetPathFilename );
       if ( !targetExecutableFileInfo.Exists ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Target executable doesn't exist: ", Color.red ) + targetPathFilename );
+        Debug.LogWarning( GUI.AddColorTag( "Target executable doesn't exist: ", Color.red ) + targetPathFilename );
         return;
       }
 
@@ -156,12 +161,12 @@ namespace AGXUnityEditor.Build
       // Unity will copy the dlls.
       var sourceDirectory      = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
       var destinationDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerAGXRuntimePath( targetDataPath ) );
-      Debug.Log( Utils.GUI.AddColorTag( "Copying AGX runtime data from: " +
-                                        IO.Utils.AGXUnityPluginDirectory +
-                                        Path.DirectorySeparatorChar +
-                                        "agx" +
-                                        " to " +
-                                        destinationDirectory.FullName, Color.green ) );
+      Debug.Log( GUI.AddColorTag( "Copying AGX runtime data from: " +
+                                  IO.Utils.AGXUnityPluginDirectory +
+                                  Path.DirectorySeparatorChar +
+                                  "agx" +
+                                  " to " +
+                                  destinationDirectory.FullName, Color.green ) );
       CopyDirectory( sourceDirectory, destinationDirectory );
 
       // Deleting all .meta-files that are present in our "agx" folder.
@@ -205,7 +210,7 @@ namespace AGXUnityEditor.Build
       }
 
       if ( loadedAgxModulesPaths.Count == 0 ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "Copy AGX Dynamics binaries - no binaries found in current process.", Color.red ) );
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - no binaries found in current process.", Color.red ) );
         return;
       }
 
@@ -219,7 +224,7 @@ namespace AGXUnityEditor.Build
       if ( !Directory.Exists( agxRuntimeDataPath ) )
         Directory.CreateDirectory( agxRuntimeDataPath );
 
-      Debug.Log( "Copying Components to: " + Utils.GUI.AddColorTag( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components", Color.green ) );
+      Debug.Log( "Copying Components to: " + GUI.AddColorTag( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components", Color.green ) );
       CopyDirectory( new DirectoryInfo( agxPluginPath + Path.DirectorySeparatorChar + "Components" ),
                      new DirectoryInfo( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components" ) );
 
@@ -229,16 +234,16 @@ namespace AGXUnityEditor.Build
           moduleFileInfo.CopyTo( dllTargetPath + Path.DirectorySeparatorChar + moduleFileInfo.Name, true );
           string additionalInfo = "";
           if ( IsOutOfInstallDependency( modulePath ) )
-            additionalInfo = Utils.GUI.AddColorTag( $" ({modulePath})", Color.yellow );
+            additionalInfo = GUI.AddColorTag( $" ({modulePath})", Color.yellow );
           Debug.Log( "Successfully copied: " +
-                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.green ) +
-                     Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.Lerp( Color.blue, Color.white, 0.75f ) ) +
+                     GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.green ) +
+                     GUI.AddColorTag( moduleFileInfo.Name, Color.Lerp( Color.blue, Color.white, 0.75f ) ) +
                      additionalInfo );
         }
         catch ( Exception e ) {
           Debug.Log( "Failed copying: " +
-                     Utils.GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.red ) +
-                     Utils.GUI.AddColorTag( moduleFileInfo.Name, Color.red ) +
+                     GUI.AddColorTag( dllTargetPath + Path.DirectorySeparatorChar, Color.red ) +
+                     GUI.AddColorTag( moduleFileInfo.Name, Color.red ) +
                      ": " + e.Message );
         }
       }

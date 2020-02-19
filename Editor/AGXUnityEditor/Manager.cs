@@ -611,7 +611,7 @@ namespace AGXUnityEditor
       //                       in players with API compatibility @ .NET Standard 2.0.
       //     Unity 2017: AGX Dynamics for Unity won't compile due to 
       if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
+        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
                           "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
                           "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
       }
