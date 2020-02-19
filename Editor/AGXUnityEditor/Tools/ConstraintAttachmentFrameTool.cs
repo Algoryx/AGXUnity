@@ -72,23 +72,33 @@ namespace AGXUnityEditor.Tools
       EditorGUILayout.LabelField( GUI.MakeLabel( "Reference frame", true ), skin.Label );
       InspectorGUI.HandleFrames( AttachmentPairs.Select( ap => ap.ReferenceFrame ).ToArray(), 1 );
 
-      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 20.0f ) );
-      var connectedFrameContent = GUI.MakeLabel( $"<b>Connected frame:</b> {(connectedFrameSynchronized ? "Synchronized" : "Free")}" );
-      //rect.x += rect.width + 4.0f;
-      rect.width = InspectorGUI.GetWidth( connectedFrameContent, skin.Label );
-      UnityEngine.GUI.Label( rect, connectedFrameContent, skin.LabelMiddleLeft );
+      GUILayout.Space( 4 );
 
-      // TODO GUI: What is this extra 13?
-      rect.x = Mathf.Max( rect.width + InspectorGUI.IndentScope.PixelLevel + 4.0f,
-                          EditorGUIUtility.labelWidth ) + 14;
-      rect.width = 20.0f;
+      var rect = EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight );
+      var orgWidth = rect.xMax;
+      UnityEngine.GUI.Label( EditorGUI.IndentedRect( rect ),
+                             GUI.MakeLabel( "Connected frame", true ),
+                             InspectorEditor.Skin.Label );
+
+      var buttonWidth        = EditorGUIUtility.singleLineHeight;
+      var buttonHeightOffset = 0.0f;
+      rect.x                 = EditorGUIUtility.labelWidth + 14.0f;
+      rect.y                -= buttonHeightOffset;
+      rect.width             = EditorGUIUtility.singleLineHeight;
       var toggleSynchronized = InspectorGUI.Button( rect,
                                                     connectedFrameSynchronized ?
                                                       MiscIcon.SynchEnabled :
                                                       MiscIcon.SynchDisabled,
                                                     true,
                                                     "Toggle synchronized with reference frame.",
-                                                    0.85f );
+                                                    1.0f );
+      rect.x    += rect.width + 2.0f;
+      rect.width = orgWidth - rect.x;
+      rect.y    += buttonHeightOffset;
+
+      UnityEngine.GUI.Label( rect,
+                             GUI.MakeLabel( $"{( connectedFrameSynchronized ? "Synchronized" : "Free" )}" ),
+                             InspectorEditor.Skin.Label );
 
       if ( toggleSynchronized ) {
         foreach ( var ap in AttachmentPairs )

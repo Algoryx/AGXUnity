@@ -153,7 +153,7 @@ namespace AGXUnityEditor
       return instance;
     }
 
-    [ MenuItem( "AGXUnity/Settings..." ) ]
+    [MenuItem( "AGXUnity/Settings..." )]
     private static void Init()
     {
       EditorSettings instance = GetOrCreateInstance();
