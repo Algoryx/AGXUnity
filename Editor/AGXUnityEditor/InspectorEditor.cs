@@ -113,7 +113,8 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsMainEditor { get; private set; } = true;
 
-#if UNITY_2019_2_OR_EARLIER
+#if UNITY_2019_3_OR_NEWER
+#else
     private static Texture2D m_icon = null;
 #endif
 
@@ -123,7 +124,8 @@ namespace AGXUnityEditor
         return;
 
       if ( IsMainEditor ) {
-#if UNITY_2019_2_OR_EARLIER
+#if UNITY_2019_3_OR_NEWER
+#else
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
           m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
