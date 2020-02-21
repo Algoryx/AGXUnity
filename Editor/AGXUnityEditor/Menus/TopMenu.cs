@@ -2,6 +2,7 @@
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnityEditor;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
@@ -10,6 +11,9 @@ namespace AGXUnityEditor
 {
   public static class TopMenu
   {
+    public static string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
+    public static string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
+
     #region Shapes
     private static GameObject CreateShape<T>( MenuCommand command )
       where T : Shape
@@ -327,5 +331,88 @@ namespace AGXUnityEditor
       return obj;
     }
     #endregion
+
+    #region Documentation
+    //[MenuItem("AGXUnity/AGXUnity Manual", true, priority = 2000)]
+    //public static void AGXUnityManual()
+    //{
+    //}
+
+    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2001)]
+    public static void AGXManual()
+    {
+      Application.OpenURL(AGXUserManualURL);
+    }
+
+    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2002)]
+    public static void AGXAPI()
+    {
+      Application.OpenURL(AGXAPIReferenceURL);
+    }
+
+    // Separator through priority
+
+    [MenuItem("AGXUnity/About AGXUnity", priority = 3000)]
+    public static void Documentation()
+    {
+      DocumentationWindow.Init();
+    }
+    #endregion
   }
 }
+
+
+public class DocumentationWindow : EditorWindow
+{
+
+  private static Texture2D m_logo;
+
+  // Add menu named "My Window" to the Window menu
+  public static void Init()
+  {
+    m_logo = AssetDatabase.LoadAssetAtPath("Assets/Algoryx_Logotyp_White_Orange_RGB_72ppi.png", typeof(Texture2D)) as Texture2D;
+
+    // Get existing open window or if none, make a new one:
+    DocumentationWindow window = EditorWindow.GetWindowWithRect<DocumentationWindow>(new Rect(100, 100, 400, 360), true, "AGX Dynamics for Unity");
+    window.Show();
+  }
+
+  void OnGUI()
+  {
+    GUILayout.BeginHorizontal(GUILayout.Width(570));
+    GUILayout.Box(m_logo, AGXUnity.Utils.GUI.Skin.customStyles[3], GUILayout.Width(400), GUILayout.Height(100));
+    GUILayout.EndHorizontal();
+
+    EditorGUILayout.SelectableLabel("© " + System.DateTime.Now.Year + " Algoryx Simulations AB", AGXUnity.Utils.GUI.Skin.customStyles[2]);
+
+    InspectorGUI.BrandSeparator();
+    GUILayout.Space(10);
+
+    EditorGUILayout.SelectableLabel("Thank you for using AGX Dynamics for Unity!\n\nAGX version: 2.27.1.0", GUILayout.Height(45));
+
+    GUILayout.Space(10);
+    InspectorGUI.BrandSeparator();
+    GUILayout.Space(10);
+
+    GUILayout.Label("Online Documentation", EditorStyles.boldLabel);
+    GUILayout.BeginHorizontal(GUILayout.Width(200));
+    if (GUILayout.Button("  AGX Dynamics user manual", AGXUnity.Utils.GUI.Skin.customStyles[1]))
+    {
+      Application.OpenURL(TopMenu.AGXUserManualURL);
+    }
+    GUILayout.Label(" - ");
+    if (GUILayout.Button("AGX Dynamics API Reference", AGXUnity.Utils.GUI.Skin.customStyles[1]))
+    {
+      Application.OpenURL(TopMenu.AGXAPIReferenceURL);
+    }
+    GUILayout.EndHorizontal();
+
+    GUILayout.Space(10);
+    InspectorGUI.BrandSeparator();
+    GUILayout.Space(10);
+
+    GUILayout.Label("Support", EditorStyles.boldLabel);
+    EditorGUILayout.SelectableLabel("Please refer to the information received when purchasing your \n license for support contact information.");
+  }
+}
+
