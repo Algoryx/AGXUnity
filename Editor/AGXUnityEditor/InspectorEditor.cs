@@ -122,8 +122,8 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
-#if UNITY_2019_2_OR_EARLIER
       if ( IsMainEditor ) {
+#if UNITY_2019_2_OR_EARLIER
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
           m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
@@ -133,10 +133,10 @@ namespace AGXUnityEditor
         UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
         // Draw our transparent icon.
         UnityEngine.GUI.DrawTexture( rect, m_icon );
+#endif
 
         InspectorGUI.BrandSeparator();
       }
-#endif
 
       GUILayout.BeginVertical();
 
