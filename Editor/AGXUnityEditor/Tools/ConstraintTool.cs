@@ -177,6 +177,8 @@ namespace AGXUnityEditor.Tools
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
             var controllerName    = ConstraintUtils.FindName( refController );
+            if ( controllerName.EndsWith( " Controller" ) )
+              controllerName = controllerName.Remove( controllerName.LastIndexOf( " Controller" ) );
             var icon              = controllerType == Constraint.ControllerType.Rotational ?
                                       IconManager.GetIcon( MiscIcon.Update ) :
                                       IconManager.GetIcon( MiscIcon.ArrowRight );

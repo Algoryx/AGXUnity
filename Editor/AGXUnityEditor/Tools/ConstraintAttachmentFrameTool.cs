@@ -82,7 +82,7 @@ namespace AGXUnityEditor.Tools
 
       var buttonWidth        = EditorGUIUtility.singleLineHeight;
       var buttonHeightOffset = 0.0f;
-      rect.x                 = EditorGUIUtility.labelWidth + 14.0f;
+      rect.x                 = EditorGUIUtility.labelWidth + InspectorGUI.LayoutMagicNumber;
       rect.y                -= buttonHeightOffset;
       rect.width             = EditorGUIUtility.singleLineHeight;
       var toggleSynchronized = InspectorGUI.Button( rect,

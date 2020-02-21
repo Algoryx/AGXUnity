@@ -220,11 +220,11 @@ namespace AGXUnityEditor
       // Restore width and calculate new start of the float
       // field(s). Start is label width but we have to remove
       // the current indent level since label width is independent
-      // of the indent level. Unsure why we have to add 14 pixels...
+      // of the indent level. Unsure why we have to add LayoutMagicNumber pixels...
       // could be float field(s) default minimum label size.
       rect.xMax   = widthUntilButton;
-      rect.x      = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + 14;
-      rect.xMax += -rect.x + 14;
+      rect.x      = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + InspectorGUI.LayoutMagicNumber;
+      rect.xMax += -rect.x + InspectorGUI.LayoutMagicNumber;
 
       s_fieldMethodArgs[ 0 ] = rect;
       s_fieldMethodArgs[ 2 ] = valInField.Value;

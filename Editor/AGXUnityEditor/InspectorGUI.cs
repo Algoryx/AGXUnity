@@ -41,6 +41,18 @@ namespace AGXUnityEditor
       return GetWidth( content, style ) + IndentScope.PixelLevel;
     }
 
+    public static float LayoutMagicNumber
+    {
+      get
+      {
+#if UNITY_2019_3_OR_NEWER
+        return 22.0f;
+#else
+        return 14.0f;
+#endif
+      }
+    }
+
     public class VerticalScopeMarker : IDisposable
     {
       public VerticalScopeMarker( Color color )
@@ -230,12 +242,6 @@ namespace AGXUnityEditor
       if ( icon == null )
         return;
 
-      var diff = buttonRect.width - buttonRect.height;
-      if ( diff != 0.0f ) {
-        buttonRect.width = buttonRect.height;
-        buttonRect.x += 0.5f * diff;
-      }
-
       using ( IconManager.ForegroundColorBlock( false, enabled ) )
         UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, scale ), icon );
     }
@@ -313,15 +319,6 @@ namespace AGXUnityEditor
                                      MiscIcon.CreateAsset,
                                      true,
                                      "Create new asset." );
-          //createNewPressed = UnityEngine.GUI.Button( buttonRect,
-          //                                           GUI.MakeLabel( "", false, "Create new asset" ),
-          //                                           InspectorEditor.Skin.ButtonMiddle );
-          //using ( IconManager.ForegroundColorBlock( false, true ) ) {
-          //  var createAssetIcon = IconManager.GetIcon( MiscIcon.CreateAsset );
-          //  if ( createAssetIcon != null )
-          //    UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, 0.95f ),
-          //                                 createAssetIcon );
-          //}
         }
       }
       else
@@ -403,17 +400,6 @@ namespace AGXUnityEditor
 
     public struct ToolButtonData
     {
-      public static GUI.ColorBlock ColorBlock
-      {
-        get
-        {
-          return null;
-          //return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color,
-          //                                       EditorGUIUtility.isProSkin ? InspectorGUISkin.BrandColor : ProBackgroundColor,
-          //                                       0.1f ) );
-        }
-      }
-
       public static ToolButtonData Create( ToolIcon icon,
                                            bool isActive,
                                            string toolTip,
@@ -447,16 +433,18 @@ namespace AGXUnityEditor
 
       float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
-      using ( ToolButtonData.ColorBlock ) {
-        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonHeight ) );
-        rect.width = buttonWidth;
-        for ( int i = 0; i < data.Length; ++i ) {
-          var buttonType = data.Length > 1 && i == 0               ? InspectorGUISkin.ButtonType.Left :
-                           data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
-                                                                     InspectorGUISkin.ButtonType.Middle;
-          ToolButton( rect, data[ i ], buttonType );
-          rect.x += rect.width;
-        }
+#if UNITY_2019_3_OR_NEWER
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( true, EditorGUIUtility.singleLineHeight ) );
+#else
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( true, buttonHeight ) );
+#endif
+      rect.width = buttonWidth;
+      for ( int i = 0; i < data.Length; ++i ) {
+        var buttonType = data.Length > 1 && i == 0                ? InspectorGUISkin.ButtonType.Left :
+                          data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
+                                                                    InspectorGUISkin.ButtonType.Middle;
+        ToolButton( rect, data[ i ], buttonType );
+        rect.x += rect.width;
       }
     }
 

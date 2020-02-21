@@ -173,6 +173,12 @@ namespace AGXUnityEditor
     /// <returns>Icon rect.</returns>
     public static Rect GetIconRect( Rect buttonRect, float scale )
     {
+      var diff = buttonRect.width - buttonRect.height;
+      if ( diff != 0.0f ) {
+        buttonRect.width = buttonRect.height;
+        buttonRect.x += 0.5f * diff;
+      }
+
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
       var iconSize   = scale * buttonSize;
       return new Rect( buttonRect.position + 0.5f * ( buttonSize - iconSize ), iconSize );
@@ -275,7 +281,6 @@ namespace AGXUnityEditor
                                    bool enabled )
     {
       var disabledScope = new EditorGUI.DisabledScope( !enabled );
-
       var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
       var pressed = UnityEngine.GUI.Button( rect,
                                             buttonContent,
@@ -434,7 +439,11 @@ namespace AGXUnityEditor
       var numIconsPerRow = (int)( position.width / buttonSize.x );
       var currIconIndex = 0;
       while ( currIconIndex < m_iconNames.Count ) {
+#if UNITY_2019_3_OR_NEWER
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight ) );
+#else
         var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonSize.y ) );
+#endif
         rect.width = buttonSize.x;
 
         for ( int i = 0; currIconIndex < m_iconNames.Count && i < numIconsPerRow; ++currIconIndex, ++i ) {
