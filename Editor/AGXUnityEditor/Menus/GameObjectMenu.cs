@@ -10,7 +10,7 @@ namespace AGXUnityEditor.Menus
 {
   public static class GameObjectMenu
   {
-    [MenuItem( "GameObject/AGX Unity/Create Shape Visual in children", validate = false, priority = 0 )]
+    [MenuItem( "GameObject/AGX Unity/Create Shape Visual in children", validate = false, priority = 2011 )]
     public static void CreateVisual()
     {
       // Multi-selection and we're receiving one call per selected object

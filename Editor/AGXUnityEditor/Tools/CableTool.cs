@@ -29,7 +29,7 @@ namespace AGXUnityEditor.Tools
     protected override string GetNodeTypeString( RouteNode node )
     {
       var cableNode = node as CableRouteNode;
-      return GUI.AddColorTag( cableNode.Type.ToString().SplitCamelCase(), GetColor( cableNode ) );
+      return InspectorEditor.Skin.TagTypename( cableNode.Type.ToString() );
     }
 
     protected override Color GetNodeColor( RouteNode node )
@@ -78,9 +78,6 @@ namespace AGXUnityEditor.Tools
       Undo.RecordObjects( selected.ToArray(), "Cable properties" );
 
       var skin = InspectorEditor.Skin;
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.Label );
-
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       using ( InspectorGUI.IndentScope.Single ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {

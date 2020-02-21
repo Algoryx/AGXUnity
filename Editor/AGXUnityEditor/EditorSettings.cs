@@ -153,17 +153,6 @@ namespace AGXUnityEditor
       return instance;
     }
 
-    [MenuItem( "AGXUnity/Settings..." )]
-    private static void Init()
-    {
-      EditorSettings instance = GetOrCreateInstance();
-      if ( instance == null )
-        return;
-
-      EditorUtility.FocusProjectWindow();
-      Selection.activeObject = instance;
-    }
-
     private static EditorSettings GetOrCreateInstance()
     {
       if ( m_instance != null )

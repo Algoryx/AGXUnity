@@ -27,7 +27,6 @@ namespace AGXUnityEditor.Tools
     protected override string GetNodeTypeString( RouteNode node )
     {
       var wireNode = node as WireRouteNode;
-      //return GUI.AddColorTag( wireNode.Type.ToString().SplitCamelCase(), GetColor( wireNode ) );
       return InspectorEditor.Skin.TagTypename( wireNode.Type.ToString() );
     }
 

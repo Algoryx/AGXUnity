@@ -262,10 +262,10 @@ namespace AGXUnityEditor
 
   public class IconViewerWindow : EditorWindow
   {
-    [MenuItem( "AGXUnity/Dev/Icon management" )]
+    [MenuItem( "Window/AGXUnity/Icon management" )]
     public static void Create()
     {
-      EditorWindow.GetWindow<IconViewerWindow>( false, "Icon Management" );
+      GetWindow<IconViewerWindow>( false, "Icon Management" );
     }
 
     public static bool ToolButton( Rect rect,

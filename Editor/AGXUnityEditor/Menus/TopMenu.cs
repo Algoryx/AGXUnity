@@ -2,7 +2,6 @@
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
-using AGXUnityEditor;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
@@ -31,43 +30,43 @@ namespace AGXUnityEditor
       return go;
     }
 
-    [MenuItem( "AGXUnity/Collide/Box" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Box" )]
+    [MenuItem( "AGXUnity/Collide/Box", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Box", priority = 2000 )]
     public static GameObject CreateBox( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Box>( command );
     }
 
-    [MenuItem( "AGXUnity/Collide/Sphere" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Sphere" )]
+    [MenuItem( "AGXUnity/Collide/Sphere", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Sphere", priority = 2000 )]
     public static GameObject CreateSphere( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Sphere>( command );
     }
 
-    [MenuItem( "AGXUnity/Collide/Capsule" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Capsule" )]
+    [MenuItem( "AGXUnity/Collide/Capsule", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Capsule", priority = 2000 )]
     public static GameObject CreateCapsule( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Capsule>( command );
     }
 
-    [MenuItem( "AGXUnity/Collide/Cylinder" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Cylinder" )]
+    [MenuItem( "AGXUnity/Collide/Cylinder", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Cylinder", priority = 2000 )]
     public static GameObject CreateCylinder( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Cylinder>( command );
     }
 
-    [MenuItem( "AGXUnity/Collide/Plane" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Plane" )]
+    [MenuItem( "AGXUnity/Collide/Plane", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Plane", priority = 2000 )]
     public static GameObject CreatePlane( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Plane>( command );
     }
 
-    [MenuItem( "AGXUnity/Collide/Mesh" )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Mesh" )]
+    [MenuItem( "AGXUnity/Collide/Mesh", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Collide/Mesh", priority = 2000 )]
     public static GameObject CreateMesh( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Mesh>( command );
@@ -113,51 +112,51 @@ namespace AGXUnityEditor
       return CreateRigidBody( command, Factory.Create<T>() );
     }
 
-    [MenuItem( "AGXUnity/Rigid body/Empty" ) ]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Empty" )]
-    public static GameObject CreateRigidBodyEmpty( MenuCommand command )
-    {
-      return Selection.activeGameObject = CreateRigidBody( command );
-    }
-
-    [MenuItem( "AGXUnity/Rigid body/Box" )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Box" )]
+    [MenuItem( "AGXUnity/Rigid body/Box", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Box", priority = 2000 )]
     public static GameObject CreateRigidBodyBox( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Box>( command );
     }
 
-    [MenuItem( "AGXUnity/Rigid body/Sphere" )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Sphere" )]
+    [MenuItem( "AGXUnity/Rigid body/Sphere", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Sphere", priority = 2000 )]
     public static GameObject CreateRigidBodySphere( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Sphere>( command );
     }
 
-    [MenuItem( "AGXUnity/Rigid body/Capsule" )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Capsule" )]
+    [MenuItem( "AGXUnity/Rigid body/Capsule", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Capsule", priority = 2000 )]
     public static GameObject CreateRigidBodyCapsule( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Capsule>( command );
     }
 
-    [MenuItem( "AGXUnity/Rigid body/Cylinder" )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Cylinder" )]
+    [MenuItem( "AGXUnity/Rigid body/Cylinder", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Cylinder", priority = 2000 )]
     public static GameObject CreateRigidBodyCylinder( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Cylinder>( command );
     }
 
-    [MenuItem( "AGXUnity/Rigid body/Mesh" )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Mesh" )]
+    [MenuItem( "AGXUnity/Rigid body/Mesh", priority = 20 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Mesh", priority = 2000 )]
     public static GameObject CreateRigidBodyMesh( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Mesh>( command );
     }
+
+    [MenuItem( "AGXUnity/Rigid body/Empty", priority = 31 )]
+    [MenuItem( "GameObject/AGX Unity/Rigid body/Empty", priority = 2000 )]
+    public static GameObject CreateRigidBodyEmpty( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateRigidBody( command );
+    }
     #endregion
 
     #region Constraint
-    [MenuItem( "AGXUnity/Constraints/Hinge" )]
+    [MenuItem( "AGXUnity/Constraints/Hinge", priority = 20 )]
     public static GameObject ConstraintHinge()
     {
       GameObject go = Factory.Create( ConstraintType.Hinge );
@@ -166,7 +165,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Prismatic" )]
+    [MenuItem( "AGXUnity/Constraints/Prismatic", priority = 20 )]
     public static GameObject ConstraintPrismatic()
     {
       GameObject go = Factory.Create( ConstraintType.Prismatic );
@@ -175,7 +174,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Lock Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Lock Joint", priority = 20 )]
     public static GameObject ConstraintLockJoint()
     {
       GameObject go = Factory.Create( ConstraintType.LockJoint );
@@ -184,7 +183,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Cylindrical Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Cylindrical Joint", priority = 20 )]
     public static GameObject ConstraintCylindricalJoint()
     {
       GameObject go = Factory.Create( ConstraintType.CylindricalJoint );
@@ -193,7 +192,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Ball Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Ball Joint", priority = 20 )]
     public static GameObject ConstraintBallJoint()
     {
       GameObject go = Factory.Create( ConstraintType.BallJoint );
@@ -202,7 +201,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Distance Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Distance Joint", priority = 20 )]
     public static GameObject ConstraintDistanceJoint()
     {
       GameObject go = Factory.Create( ConstraintType.DistanceJoint );
@@ -211,7 +210,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Angular Lock Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Angular Lock Joint", priority = 20 )]
     public static GameObject ConstraintAngularLockJoint()
     {
       GameObject go = Factory.Create( ConstraintType.AngularLockJoint );
@@ -220,7 +219,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Constraints/Plane Joint" )]
+    [MenuItem( "AGXUnity/Constraints/Plane Joint", priority = 20 )]
     public static GameObject ConstraintPlaneJoint()
     {
       GameObject go = Factory.Create( ConstraintType.PlaneJoint );
@@ -230,61 +229,97 @@ namespace AGXUnityEditor
     }
     #endregion
 
-    #region Wire
-    [MenuItem( "AGXUnity/Wire/New" )]
+    #region Model
+    [MenuItem( "AGXUnity/Model/Wire", priority = 50 )]
     public static GameObject WireEmpty()
     {
       GameObject go = Factory.Create<Wire>();
       if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "wire" );
+        Undo.RegisterCreatedObjectUndo( go, "New Wire" );
       return Selection.activeGameObject = go;
     }
-    #endregion
 
-    #region Cable
-    [MenuItem( "AGXUnity/Cable/New" )]
+    [MenuItem( "AGXUnity/Model/Cable", priority = 50 )]
     public static GameObject CableEmpty()
     {
       GameObject go = Factory.Create<Cable>();
       if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "cable" );
+        Undo.RegisterCreatedObjectUndo( go, "New Cable" );
 
       return Selection.activeGameObject = go;
     }
+
+    [MenuItem( "AGXUnity/Model/Track", priority = 50 )]
+    public static GameObject CreateTrack()
+    {
+      var go = Factory.Create<AGXUnity.Model.Track>();
+      if ( go != null )
+        Undo.RegisterCreatedObjectUndo( go, "New Track" );
+      return Selection.activeGameObject = go;
+    }
+
+    [MenuItem( "AGXUnity/Model/Deformable Terrain", priority = 50 )]
+    public static GameObject CreateDeformableTerrain()
+    {
+      var terrainData = new TerrainData()
+      {
+        size = new Vector3( 60 / 8.0f, 25, 60 / 8.0f ),
+        heightmapResolution = 257
+      };
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
+
+      var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
+      AssetDatabase.CreateAsset( terrainData, terrainDataName );
+
+      var go = Terrain.CreateTerrainGameObject( terrainData );
+      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrain>();
+      if ( go == null ) {
+        AssetDatabase.DeleteAsset( terrainDataName );
+        return null;
+      }
+
+      go.transform.position = new Vector3( -30, 0, -30 );
+      go.AddComponent<AGXUnity.Model.DeformableTerrain>();
+
+      Undo.RegisterCreatedObjectUndo( go, "New Deformable Terrain" );
+
+      return Selection.activeGameObject = go;
+    }
+
     #endregion
 
     #region Managers
-    [ MenuItem( "AGXUnity/Debug Render Manager" ) ]
+    [MenuItem( "AGXUnity/Managers/Debug Render Manager" ) ]
     public static GameObject DebugRenderer()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<AGXUnity.Rendering.DebugRenderManager>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Simulation" )]
+    [MenuItem( "AGXUnity/Simulation", priority = 66 )]
     public static GameObject Simulation()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Collision Groups Manager" )]
+    [MenuItem( "AGXUnity/Managers/Collision Groups Manager", priority = 65 )]
     public static GameObject CollisionGroupsManager()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<CollisionGroupsManager>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Contact Material Manager" )]
+    [MenuItem( "AGXUnity/Managers/Contact Material Manager", priority = 65 )]
     public static GameObject ContactMaterialManager()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<ContactMaterialManager>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Wind and Water Manager" )]
+    [MenuItem( "AGXUnity/Managers/Wind and Water Manager", priority = 65 )]
     public static GameObject WindAndWaterManager()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<WindAndWaterManager>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Pick Handler (Game View)" )]
+    [MenuItem( "AGXUnity/Managers/Pick Handler (Game View)", priority = 65 )]
     public static GameObject PickHandler()
     {
       var ph = GetOrCreateUniqueGameObject<PickHandler>();
@@ -310,11 +345,22 @@ namespace AGXUnityEditor
     }
     #endregion
 
-    #region Utils
-    [MenuItem( "AGXUnity/Utils/Generate Custom Editors" )]
+    #region Utils Settings
+    [MenuItem( "AGXUnity/Utils/Generate Custom Editors", priority = 80 )]
     public static void GenerateEditors()
     {
       Utils.CustomEditorGenerator.Generate();
+    }
+
+    [MenuItem( "AGXUnity/Settings...", priority = 81 )]
+    public static void FocusSettings()
+    {
+      var instance = EditorSettings.Instance;
+      if ( instance == null )
+        return;
+
+      EditorUtility.FocusProjectWindow();
+      Selection.activeObject = instance;
     }
 
     public static T GetOrCreateUniqueGameObject<T>()
@@ -333,11 +379,6 @@ namespace AGXUnityEditor
     #endregion
 
     #region Documentation
-    //[MenuItem("AGXUnity/AGXUnity Manual", true, priority = 2000)]
-    //public static void AGXUnityManual()
-    //{
-    //}
-
     [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2001)]
     public static void AGXManual()
     {
@@ -352,67 +393,63 @@ namespace AGXUnityEditor
 
     // Separator through priority
 
-    [MenuItem("AGXUnity/About AGXUnity", priority = 3000)]
+    [MenuItem("AGXUnity/About AGXUnity", priority = 2020)]
     public static void Documentation()
     {
       DocumentationWindow.Init();
     }
     #endregion
   }
-}
 
-
-public class DocumentationWindow : EditorWindow
-{
-
-  private static Texture2D m_logo;
-
-  // Add menu named "My Window" to the Window menu
-  public static void Init()
+  public class DocumentationWindow : EditorWindow
   {
-    m_logo = AssetDatabase.LoadAssetAtPath("Assets/Algoryx_Logotyp_White_Orange_RGB_72ppi.png", typeof(Texture2D)) as Texture2D;
+    private static Texture2D m_logo;
 
-    // Get existing open window or if none, make a new one:
-    DocumentationWindow window = EditorWindow.GetWindowWithRect<DocumentationWindow>(new Rect(100, 100, 400, 360), true, "AGX Dynamics for Unity");
-    window.Show();
-  }
-
-  void OnGUI()
-  {
-    GUILayout.BeginHorizontal(GUILayout.Width(570));
-    GUILayout.Box(m_logo, AGXUnity.Utils.GUI.Skin.customStyles[3], GUILayout.Width(400), GUILayout.Height(100));
-    GUILayout.EndHorizontal();
-
-    EditorGUILayout.SelectableLabel("© " + System.DateTime.Now.Year + " Algoryx Simulations AB", AGXUnity.Utils.GUI.Skin.customStyles[2]);
-
-    InspectorGUI.BrandSeparator();
-    GUILayout.Space(10);
-
-    EditorGUILayout.SelectableLabel("Thank you for using AGX Dynamics for Unity!\n\nAGX version: 2.27.1.0", GUILayout.Height(45));
-
-    GUILayout.Space(10);
-    InspectorGUI.BrandSeparator();
-    GUILayout.Space(10);
-
-    GUILayout.Label("Online Documentation", EditorStyles.boldLabel);
-    GUILayout.BeginHorizontal(GUILayout.Width(200));
-    if (GUILayout.Button("  AGX Dynamics user manual", AGXUnity.Utils.GUI.Skin.customStyles[1]))
+    // Add menu named "My Window" to the Window menu
+    public static void Init()
     {
-      Application.OpenURL(TopMenu.AGXUserManualURL);
+      m_logo = AssetDatabase.LoadAssetAtPath( "Assets/Algoryx_Logotyp_White_Orange_RGB_72ppi.png", typeof( Texture2D ) ) as Texture2D;
+
+      // Get existing open window or if none, make a new one:
+      DocumentationWindow window = EditorWindow.GetWindowWithRect<DocumentationWindow>( new Rect( 100, 100, 400, 360 ), true, "AGX Dynamics for Unity" );
+      window.Show();
     }
-    GUILayout.Label(" - ");
-    if (GUILayout.Button("AGX Dynamics API Reference", AGXUnity.Utils.GUI.Skin.customStyles[1]))
+
+    void OnGUI()
     {
-      Application.OpenURL(TopMenu.AGXAPIReferenceURL);
+      GUILayout.BeginHorizontal( GUILayout.Width( 570 ) );
+      GUILayout.Box( m_logo, AGXUnity.Utils.GUI.Skin.customStyles[ 3 ], GUILayout.Width( 400 ), GUILayout.Height( 100 ) );
+      GUILayout.EndHorizontal();
+
+      EditorGUILayout.SelectableLabel( "© " + System.DateTime.Now.Year + " Algoryx Simulations AB", AGXUnity.Utils.GUI.Skin.customStyles[ 2 ] );
+
+      InspectorGUI.BrandSeparator();
+      GUILayout.Space( 10 );
+
+      EditorGUILayout.SelectableLabel( "Thank you for using AGX Dynamics for Unity!\n\nAGX version: 2.27.1.0", GUILayout.Height( 45 ) );
+
+      GUILayout.Space( 10 );
+      InspectorGUI.BrandSeparator();
+      GUILayout.Space( 10 );
+
+      GUILayout.Label( "Online Documentation", EditorStyles.boldLabel );
+      GUILayout.BeginHorizontal( GUILayout.Width( 200 ) );
+      if ( GUILayout.Button( "  AGX Dynamics user manual", AGXUnity.Utils.GUI.Skin.customStyles[ 1 ] ) ) {
+        Application.OpenURL( TopMenu.AGXUserManualURL );
+      }
+      GUILayout.Label( " - " );
+      if ( GUILayout.Button( "AGX Dynamics API Reference", AGXUnity.Utils.GUI.Skin.customStyles[ 1 ] ) ) {
+        Application.OpenURL( TopMenu.AGXAPIReferenceURL );
+      }
+      GUILayout.EndHorizontal();
+
+      GUILayout.Space( 10 );
+      InspectorGUI.BrandSeparator();
+      GUILayout.Space( 10 );
+
+      GUILayout.Label( "Support", EditorStyles.boldLabel );
+      EditorGUILayout.SelectableLabel( "Please refer to the information received when purchasing your \n license for support contact information." );
     }
-    GUILayout.EndHorizontal();
-
-    GUILayout.Space(10);
-    InspectorGUI.BrandSeparator();
-    GUILayout.Space(10);
-
-    GUILayout.Label("Support", EditorStyles.boldLabel);
-    EditorGUILayout.SelectableLabel("Please refer to the information received when purchasing your \n license for support contact information.");
   }
 }
 
