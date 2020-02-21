@@ -113,17 +113,21 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsMainEditor { get; private set; } = true;
 
+#if UNITY_2019_2_OR_EARLIER
     private static Texture2D m_icon = null;
+#endif
 
     public sealed override void OnInspectorGUI()
     {
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
+#if UNITY_2019_2_OR_EARLIER
       if ( IsMainEditor ) {
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
           m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
+
         var rect = new Rect( controlRect.x + 2, controlRect.y - 17, 16, 16 );
         // Draw solid color over previous icon.
         UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
@@ -132,6 +136,7 @@ namespace AGXUnityEditor
 
         InspectorGUI.BrandSeparator();
       }
+#endif
 
       GUILayout.BeginVertical();
 
