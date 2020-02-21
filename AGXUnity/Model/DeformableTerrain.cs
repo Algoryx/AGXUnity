@@ -37,6 +37,9 @@ namespace AGXUnity.Model
     [HideInInspector]
     public TerrainData TerrainData { get { return Terrain?.terrainData; } }
 
+    [HideInInspector]
+    public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution( TerrainData ); } }
+
     [SerializeField]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
 
@@ -145,7 +148,7 @@ namespace AGXUnity.Model
     {
       get
       {
-        return TerrainData.size.x / ( TerrainData.heightmapWidth - 1 );
+        return TerrainData.size.x / ( TerrainDataResolution - 1 );
       }
     }
 
@@ -265,7 +268,7 @@ namespace AGXUnity.Model
 
       RemoveInvalidShovels();
 
-      m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainData.heightmapWidth, TerrainData.heightmapHeight );
+      m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
 
       InitializeNative();
 
@@ -333,8 +336,8 @@ namespace AGXUnity.Model
         var vertexY = i / nativeHeightData.ResolutionY;
 
         tmp[ 0, 0 ] = (float)newHeight / terrainData.heightmapScale.y;
-        terrainData.SetHeightsDelayLOD( terrainData.heightmapWidth - vertexX - 1,
-                                        terrainData.heightmapHeight - vertexY - 1,
+        terrainData.SetHeightsDelayLOD( TerrainUtils.TerrainDataResolution( terrainData ) - vertexX - 1,
+                                        TerrainUtils.TerrainDataResolution( terrainData ) - vertexY - 1,
                                         tmp );
       }
 #if UNITY_2019_1_OR_NEWER
@@ -369,8 +372,8 @@ namespace AGXUnity.Model
         return;
 
       var scale  = TerrainData.heightmapScale.y;
-      var resX   = TerrainData.heightmapWidth;
-      var resY   = TerrainData.heightmapHeight;
+      var resX   = TerrainDataResolution;
+      var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
       foreach ( var index in modifiedVertices ) {
         var i = (int)index.x;

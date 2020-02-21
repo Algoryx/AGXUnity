@@ -28,9 +28,10 @@ namespace AGXUnity.Utils
 
       var result = new NativeHeights()
       {
-        ResolutionX = data.heightmapWidth,
-        ResolutionY = data.heightmapHeight,
-        Heights = new agx.RealVector( data.heightmapWidth * data.heightmapHeight )
+        ResolutionX = TerrainDataResolution( data ),
+        ResolutionY = TerrainDataResolution( data ),
+        Heights     = new agx.RealVector( TerrainDataResolution( data ) *
+                                          TerrainDataResolution( data ) )
       };
       Vector3 scale = data.heightmapScale;
       float[,] heights = data.GetHeights( 0, 0, result.ResolutionX, result.ResolutionY );
@@ -60,6 +61,15 @@ namespace AGXUnity.Utils
                                             new Vector3( 0.5f * data.size.x,
                                                          0,
                                                          0.5f * data.size.z ).ToHandedVec3() );
+    }
+
+    public static int TerrainDataResolution( TerrainData terrainData )
+    {
+#if UNITY_2019_3_OR_NEWER
+      return terrainData.heightmapResolution;
+#else
+      return terrainData.heightmapWidth;
+#endif
     }
   }
 }
