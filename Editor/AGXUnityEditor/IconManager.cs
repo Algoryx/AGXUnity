@@ -359,10 +359,10 @@ namespace AGXUnityEditor
       EditorGUILayout.LabelField( GUI.MakeLabel( "Number of icons" ), 
                                   GUI.MakeLabel( m_iconNames.Count.ToString() ),
                                   InspectorGUISkin.Instance.Label );
-      IconManager.Scale = editorData.Float = EditorGUILayout.Slider( GUI.MakeLabel( "Scale" ),
-                                                                     editorData.Float,
-                                                                     0.0f,
-                                                                     2.0f );
+      IconManager.Scale = editorData.Float = Mathf.Clamp( EditorGUILayout.Slider( GUI.MakeLabel( "Scale" ),
+                                                                                  editorData.Float,
+                                                                                  0.0f,
+                                                                                  2.0f ), 1.0E-3f, 2.0f );
       var newWidth  = EditorGUILayout.Slider( GUI.MakeLabel( "Button width" ),
                                               editorData.Vector2.x,
                                               6.0f,
@@ -544,7 +544,6 @@ namespace AGXUnityEditor
         entry.Float = IconManager.Scale;
         entry.String = IconManager.Directory;
         entry.Vector2 = InspectorGUISkin.ToolButtonSize;
-        Debug.Log( entry.Vector2 );
       } );
     }
 
