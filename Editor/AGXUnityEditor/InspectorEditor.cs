@@ -113,10 +113,8 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsMainEditor { get; private set; } = true;
 
-#if UNITY_2019_3_OR_NEWER
-#else
     private static Texture2D m_icon = null;
-#endif
+    private static Texture2D m_hideTexture = null;
 
     public sealed override void OnInspectorGUI()
     {
@@ -124,20 +122,46 @@ namespace AGXUnityEditor
         return;
 
       if ( IsMainEditor ) {
-#if UNITY_2019_3_OR_NEWER
-#else
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
           m_icon = IconManager.GetIcon( "algoryx_white_shadow_icon" );
 
         if ( m_icon != null ) {
-          var hideRect = new Rect( controlRect.x + 2, controlRect.y - 16, 15, 14 );
-          UnityEngine.GUI.DrawTexture( hideRect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
+          if ( m_hideTexture == null ) {
+#if UNITY_2019_3_OR_NEWER
+            var hideColor = Color.Lerp( InspectorGUI.BackgroundColor, Color.white, 0.03f );
+#else
+            var hideColor = InspectorGUI.BackgroundColor;
+#endif
+
+            m_hideTexture = GUI.CreateColoredTexture( 1, 1, hideColor );
+          }
+
+          var hideRect = new Rect( controlRect.x,
+#if UNITY_2019_3_OR_NEWER
+                                   controlRect.y - 1.25f * EditorGUIUtility.singleLineHeight - 2,
+#else
+                                   controlRect.y - 1.00f * EditorGUIUtility.singleLineHeight - 1,
+#endif
+                                   18,
+                                   EditorGUIUtility.singleLineHeight + 2 );
+          UnityEngine.GUI.DrawTexture( hideRect, m_hideTexture );
+
+          var fooRect = new Rect( new Vector2( 0, hideRect.y ), new Vector3( Screen.width, EditorGUIUtility.singleLineHeight ) );
+          if ( fooRect.Contains( Event.current.mousePosition ) )
+            Debug.Log( "OVER " + Event.current.type.ToString() );
 
           var iconRect = new Rect( hideRect );
-          UnityEngine.GUI.DrawTexture( hideRect, m_icon );
-        }
+          iconRect.height = 14.0f;
+          iconRect.width = 14.0f;
+#if UNITY_2019_3_OR_NEWER
+          iconRect.y += 2.5f;
+#else
+          iconRect.y += 1.5f;
 #endif
+          iconRect.x += 3.0f;
+          UnityEngine.GUI.DrawTexture( iconRect, m_icon );
+        }
 
         InspectorGUI.BrandSeparator();
       }
