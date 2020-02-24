@@ -114,15 +114,14 @@ namespace AGXUnityEditor.Tools
       // render the marker through the fouldout label.
       var isVisible = GetLineToggleData( name ).Bool;
       var color     = Color.Lerp( lineTool.Color, InspectorGUI.BackgroundColor, 0.25f );
-      using ( new InspectorGUI.VerticalScopeMarker( isVisible ?
-                                                      InspectorGUI.BackgroundColor :
-                                                      color ) )
+      using ( new InspectorGUI.VerticalScopeMarker( color ) ) {
         if ( !InspectorGUI.Foldout( GetLineToggleData( name ),
                                     GUI.MakeLabel( name, true ) ) )
           return;
-      using ( new InspectorGUI.VerticalScopeMarker( color ) )
-      using ( InspectorGUI.IndentScope.Single )
-        lineTool.OnInspectorGUI();
+        //using ( new InspectorGUI.VerticalScopeMarker( color ) )
+        using ( InspectorGUI.IndentScope.Single )
+          lineTool.OnInspectorGUI();
+      }
     }
 
     private LineTool TopEdgeLineTool

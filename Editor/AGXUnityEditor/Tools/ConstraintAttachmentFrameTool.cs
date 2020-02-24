@@ -80,18 +80,18 @@ namespace AGXUnityEditor.Tools
                              GUI.MakeLabel( "Connected frame", true ),
                              InspectorEditor.Skin.Label );
 
-      var buttonWidth        = EditorGUIUtility.singleLineHeight;
-      var buttonHeightOffset = 0.0f;
+      var buttonWidth        = 1.2f * EditorGUIUtility.singleLineHeight;
+      var buttonHeightOffset = 1.0f;
       rect.x                 = EditorGUIUtility.labelWidth + InspectorGUI.LayoutMagicNumber;
       rect.y                -= buttonHeightOffset;
-      rect.width             = EditorGUIUtility.singleLineHeight;
+      rect.width             = buttonWidth;
       var toggleSynchronized = InspectorGUI.Button( rect,
                                                     connectedFrameSynchronized ?
                                                       MiscIcon.SynchEnabled :
                                                       MiscIcon.SynchDisabled,
                                                     true,
                                                     "Toggle synchronized with reference frame.",
-                                                    1.266f );
+                                                    1.17f );
       rect.x    += rect.width + 2.0f;
       rect.width = orgWidth - rect.x;
       rect.y    += buttonHeightOffset;

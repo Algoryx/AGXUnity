@@ -31,6 +31,7 @@ namespace AGXUnityEditor
   public enum MiscIcon
   {
     CreateAsset,
+    ContextDropdown,
     EntryAdd,
     EntryInsertBefore,
     EntryInsertAfter,
@@ -217,6 +218,7 @@ namespace AGXUnityEditor
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
       miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "shape_from_icon";
+      miscIconFilenames[ (int)MiscIcon.ContextDropdown ]   = "small_add_dots_icon";
       miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "small_fat_add_left_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "small_insert_before_2_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "small_insert_after_2_icon";

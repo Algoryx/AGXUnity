@@ -66,10 +66,16 @@ namespace AGXUnityEditor
         var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 0.0f ) );
         var oldColor = Handles.color;
         Handles.color = m_color;
-        Handles.DrawLine( new Vector3( m_begin.position.x,
+        Handles.DrawLine( new Vector3( m_begin.xMax + 1,
                                        m_begin.position.y + 1.0f,
                                        0 ),
-                          new Vector3( end.position.x,
+                          new Vector3( end.xMax + 1,
+                                       end.position.y - 1.0f,
+                                       0 ) );
+        Handles.DrawLine( new Vector3( m_begin.xMax + 1 / EditorGUIUtility.pixelsPerPoint,
+                                       m_begin.position.y + 1.0f,
+                                       0 ),
+                          new Vector3( end.xMax + 1 / EditorGUIUtility.pixelsPerPoint,
                                        end.position.y - 1.0f,
                                        0 ) );
         Handles.color = oldColor;
@@ -531,7 +537,7 @@ namespace AGXUnityEditor
       var targetTypename = context.Targets[ 0 ].GetType().Name;
       if ( displayItemsList ) {
         T itemToRemove = null;
-        using ( null ) {
+        using ( IndentScope.Single ) {
           for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
             var item = items[ itemIndex ];
 
@@ -562,6 +568,7 @@ namespace AGXUnityEditor
 
           T itemToAdd = null;
           var addButtonPressed = false;
+          GUILayout.Space( 2.0f * EditorGUIUtility.standardVerticalSpacing );
           using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
             using ( GUI.AlignBlock.Center )
               GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );

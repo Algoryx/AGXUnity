@@ -128,12 +128,14 @@ namespace AGXUnityEditor
 #else
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
-          m_icon = IconManager.GetIcon( "A-03-flat" );
+          m_icon = IconManager.GetIcon( "algoryx_white_shadow_icon" );
 
         if ( m_icon != null ) {
-          var rect = new Rect( controlRect.x + 2, controlRect.y - 16, 15, 14 );
-          // Draw our transparent icon.
-          UnityEngine.GUI.DrawTexture( rect, m_icon );
+          var hideRect = new Rect( controlRect.x + 2, controlRect.y - 16, 15, 14 );
+          UnityEngine.GUI.DrawTexture( hideRect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
+
+          var iconRect = new Rect( hideRect );
+          UnityEngine.GUI.DrawTexture( hideRect, m_icon );
         }
 #endif
 

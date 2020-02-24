@@ -119,10 +119,10 @@ namespace AGXUnityEditor.Tools
       GUILayout.BeginHorizontal();
       {
         entry.Tag = GUILayout.TextField( entry.Tag, InspectorEditor.Skin.TextField );
-        buttonPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
+        buttonPressed = InspectorGUI.Button( MiscIcon.ContextDropdown,
                                              true,
                                              "Add collision group.",
-                                             1.266f,
+                                             1.1f,
                                              GUILayout.Width( 18 ) );
       }
       GUILayout.EndHorizontal();
