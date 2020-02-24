@@ -70,7 +70,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Icon scale relative IconButtonSize.
     /// </summary>
-    public static float Scale { get; set; } = 1.1f;
+    public static float Scale { get; set; } = 1.0f;
 
     public static Color NormalColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.733333f );
 
@@ -178,6 +178,10 @@ namespace AGXUnityEditor
         buttonRect.width = buttonRect.height;
         buttonRect.x += 0.5f * diff;
       }
+
+#if UNITY_2019_3_OR_NEWER
+      //buttonRect.y += 1.0f;
+#endif
 
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
       var iconSize   = scale * buttonSize;
@@ -309,13 +313,13 @@ namespace AGXUnityEditor
         if ( fi.Extension.ToLower() == ".png" )
           m_iconNames.Add( Path.GetFileNameWithoutExtension( fi.Name ) );
 
-      GetEditorData( "NormalColorDark",   entry => entry.Color = InspectorGUISkin.BrandColor );
-      GetEditorData( "ActiveColorDark",   entry => entry.Color = InspectorGUISkin.BrandColor );
-      GetEditorData( "DisabledColorDark", entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "NormalColorDark",   entry => entry.Color = IconManager.NormalColorDark );
+      GetEditorData( "ActiveColorDark",   entry => entry.Color = IconManager.ActiveColorDark );
+      GetEditorData( "DisabledColorDark", entry => entry.Color = IconManager.DisabledColorDark );
 
-      GetEditorData( "NormalColorLight",   entry => entry.Color = InspectorGUISkin.BrandColor );
-      GetEditorData( "ActiveColorLight",   entry => entry.Color = InspectorGUISkin.BrandColor );
-      GetEditorData( "DisabledColorLight", entry => entry.Color = InspectorGUISkin.BrandColor );
+      GetEditorData( "NormalColorLight",   entry => entry.Color = IconManager.NormalColorLight );
+      GetEditorData( "ActiveColorLight",   entry => entry.Color = IconManager.ActiveColorLight );
+      GetEditorData( "DisabledColorLight", entry => entry.Color = IconManager.DisabledColorLight );
     }
 
     private void OnDestroy()
@@ -535,9 +539,10 @@ namespace AGXUnityEditor
     {
       return EditorData.Instance.GetStaticData( "IconManager", entry =>
       {
-        entry.Float = 0.75f;
+        entry.Float = IconManager.Scale;
         entry.String = IconManager.Directory;
-        entry.Vector2 = new Vector2( 24.0f, 24.0f );
+        entry.Vector2 = InspectorGUISkin.ToolButtonSize;
+        Debug.Log( entry.Vector2 );
       } );
     }
 

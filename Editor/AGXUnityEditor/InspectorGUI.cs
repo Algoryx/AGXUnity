@@ -531,7 +531,7 @@ namespace AGXUnityEditor
       var targetTypename = context.Targets[ 0 ].GetType().Name;
       if ( displayItemsList ) {
         T itemToRemove = null;
-        using ( IndentScope.Single ) {
+        using ( null ) {
           for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
             var item = items[ itemIndex ];
 

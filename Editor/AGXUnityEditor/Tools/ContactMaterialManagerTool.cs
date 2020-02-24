@@ -48,21 +48,23 @@ namespace AGXUnityEditor.Tools
     {
       return ( cm, index ) =>
       {
-        entries[ index ].IsOriented = InspectorGUI.Toggle( GUI.MakeLabel( "Is Oriented",
-                                                                          false,
-                                                                          "Enable/disable oriented friction models." ),
-                                                           entries[ index ].IsOriented );
-        if ( entries[ index ].IsOriented ) {
-          using ( InspectorGUI.IndentScope.Create( 2 ) ) {
-            entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
-                                                                                        entries[ index ].ReferenceObject,
-                                                                                        typeof( GameObject ),
-                                                                                        true );
-            entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
-                                                                                                                          false,
-                                                                                                                          "Primary direction in object local frame." ),
-                                                                                                           entries[ index ].PrimaryDirection,
-                                                                                                           InspectorEditor.Skin.Popup );
+        using ( InspectorGUI.IndentScope.Single ) {
+          entries[ index ].IsOriented = InspectorGUI.Toggle( GUI.MakeLabel( "Is Oriented",
+                                                                            false,
+                                                                            "Enable/disable oriented friction models." ),
+                                                             entries[ index ].IsOriented );
+          if ( entries[ index ].IsOriented ) {
+            using ( InspectorGUI.IndentScope.Single ) {
+              entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
+                                                                                          entries[ index ].ReferenceObject,
+                                                                                          typeof( GameObject ),
+                                                                                          true );
+              entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
+                                                                                                                            false,
+                                                                                                                            "Primary direction in object local frame." ),
+                                                                                                             entries[ index ].PrimaryDirection,
+                                                                                                             InspectorEditor.Skin.Popup );
+            }
           }
         }
       };
