@@ -47,5 +47,3 @@ Plugins/x86_64/agx
 Plugins/x86_64/agx.meta
 Editor/Data/Data.asset*
 Editor/Data/Settings.asset*
-# Editor/CustomEditors/
-# Editor/CustomEditors.*
