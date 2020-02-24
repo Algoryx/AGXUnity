@@ -147,10 +147,6 @@ namespace AGXUnityEditor
                                    EditorGUIUtility.singleLineHeight + 2 );
           UnityEngine.GUI.DrawTexture( hideRect, m_hideTexture );
 
-          var fooRect = new Rect( new Vector2( 0, hideRect.y ), new Vector3( Screen.width, EditorGUIUtility.singleLineHeight ) );
-          if ( fooRect.Contains( Event.current.mousePosition ) )
-            Debug.Log( "OVER " + Event.current.type.ToString() );
-
           var iconRect = new Rect( hideRect );
           iconRect.height = 14.0f;
           iconRect.width = 14.0f;
