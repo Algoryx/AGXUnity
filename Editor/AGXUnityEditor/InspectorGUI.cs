@@ -572,10 +572,15 @@ namespace AGXUnityEditor
           using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
             using ( GUI.AlignBlock.Center )
               GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
-            using ( new GUILayout.HorizontalScope() ) {
-              itemToAdd = EditorGUILayout.ObjectField( "", null, typeof( T ), true ) as T;
-              addButtonPressed = GUILayout.Button( GUI.MakeLabel( "+" ), InspectorEditor.Skin.Button, GUILayout.Width( 24 ), GUILayout.Height( 14 ) );
-            }
+            var buttonWidth = 16.0f;
+            var rect = EditorGUILayout.GetControlRect();
+            var xMax = rect.xMax;
+            rect.xMax = rect.xMax - buttonWidth - EditorGUIUtility.standardVerticalSpacing;
+            itemToAdd = EditorGUI.ObjectField( rect, (Object)null, typeof( T ), true ) as T;
+            rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
+            rect.xMax = xMax;
+            rect.width = buttonWidth;
+            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, true );
           }
 
           if ( addButtonPressed ) {

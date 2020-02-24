@@ -80,7 +80,7 @@ namespace AGXUnityEditor.Tools
                              GUI.MakeLabel( "Connected frame", true ),
                              InspectorEditor.Skin.Label );
 
-      var buttonWidth        = 1.2f * EditorGUIUtility.singleLineHeight;
+      var buttonWidth        = 1.1f * EditorGUIUtility.singleLineHeight;
       var buttonHeightOffset = 1.0f;
       rect.x                 = EditorGUIUtility.labelWidth + InspectorGUI.LayoutMagicNumber;
       rect.y                -= buttonHeightOffset;

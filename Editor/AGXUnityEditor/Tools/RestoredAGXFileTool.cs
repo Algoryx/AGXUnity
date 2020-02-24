@@ -35,12 +35,14 @@ namespace AGXUnityEditor.Tools
                                      skin.Label );
 
         var statusColor = directoryValid ?
-                            Color.Lerp( Color.white, Color.green, 0.2f ) :
-                            Color.Lerp( Color.white, Color.red, 0.2f );
+                            Color.Lerp( InspectorGUI.BackgroundColor, Color.green, EditorGUIUtility.isProSkin ? 0.8f : 0.2f ) :
+                            Color.Lerp( Color.white, Color.red, EditorGUIUtility.isProSkin ? 0.8f : 0.2f );
         var prevColor   = UnityEngine.GUI.backgroundColor;
 
         UnityEngine.GUI.backgroundColor = statusColor;
-        GUILayout.TextField( directory, skin.TextField );
+        EditorGUILayout.SelectableLabel( directory,
+                                         skin.TextField,
+                                         GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
         UnityEngine.GUI.backgroundColor = prevColor;
         if ( GUILayout.Button( GUI.MakeLabel( "...", false, "Open file panel" ),
                                 skin.Button,
