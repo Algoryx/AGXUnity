@@ -64,7 +64,7 @@ namespace AGXUnityEditor
 #if UNITY_2019_3_OR_NEWER
                                                                       18.0f );
 #else
-                                                                      16.0f )
+                                                                      16.0f );
 #endif
 
     /// <summary>
