@@ -19,7 +19,6 @@ namespace AGXUnity.IO
     }
   }
 
-  [DoNotGenerateCustomEditor]
   [DisallowMultipleComponent]
   public class Uuid : ScriptComponent
   {

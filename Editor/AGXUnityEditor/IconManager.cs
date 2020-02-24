@@ -70,19 +70,19 @@ namespace AGXUnityEditor
     /// <summary>
     /// Icon scale relative IconButtonSize.
     /// </summary>
-    public static float Scale { get; set; } = 0.9f;
+    public static float Scale { get; set; } = 1.1f;
 
-    public static Color ActiveColorDark { get; set; }    = InspectorGUISkin.BrandColor;
+    public static Color NormalColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.733333f );
 
-    public static Color NormalColorDark { get; set; }    = InspectorGUISkin.BrandColor;
+    public static Color ActiveColorDark { get; set; } = new Color( 1.000000f, 0.625469f, 0.119000f, 0.886275f );
 
-    public static Color DisabledColorDark { get; set; }  = InspectorGUISkin.BrandColor;
+    public static Color DisabledColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.372549f );
 
-    public static Color ActiveColorLight { get; set; }   = InspectorGUISkin.BrandColor;
+    public static Color NormalColorLight { get; set; } = new Color( 0.920000f, 0.526326f, 0.000000f, 0.847059f );
 
-    public static Color NormalColorLight { get; set; }   = InspectorGUISkin.BrandColor;
+    public static Color ActiveColorLight { get; set; } = new Color( 1.000000f, 0.773440f, 0.469000f, 1.000000f );
 
-    public static Color DisabledColorLight { get; set; } = InspectorGUISkin.BrandColor;
+    public static Color DisabledColorLight { get; set; } = new Color( 0.921569f, 0.525490f, 0.000000f, 0.552941f );
 
     public static Color ActiveColor { get { return EditorGUIUtility.isProSkin ? ActiveColorDark : ActiveColorLight; } }
 
@@ -213,12 +213,12 @@ namespace AGXUnityEditor
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
       miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "shape_from_icon";
-      miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "add_fat_icon";
+      miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "small_fat_add_left_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "small_insert_before_2_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "small_insert_after_2_icon";
       miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "delete_fat_icon";
-      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "sync_icon";
-      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "unsync_icon";
+      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "small_sync_icon";
+      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "small_un_sync_icon";
       miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_icon";
       miscIconFilenames[ (int)MiscIcon.ArrowRight ]        = "line_direction_icon";
 
@@ -356,16 +356,18 @@ namespace AGXUnityEditor
       IconManager.Scale = editorData.Float = EditorGUILayout.Slider( GUI.MakeLabel( "Scale" ),
                                                                      editorData.Float,
                                                                      0.0f,
-                                                                     1.0f );
+                                                                     2.0f );
       var newWidth  = EditorGUILayout.Slider( GUI.MakeLabel( "Button width" ),
                                               editorData.Vector2.x,
                                               6.0f,
                                               75.0f );
-      var newHeight = EditorGUILayout.Slider( GUI.MakeLabel( "Button height" ),
-                                              editorData.Vector2.y,
-                                              6.0f,
-                                              75.0f );
-      InspectorGUISkin.ToolButtonSize = editorData.Vector2 = new Vector2( newWidth, newHeight );
+      using ( new GUI.EnabledBlock( false ) ) {
+        var newHeight = EditorGUILayout.Slider( GUI.MakeLabel( "Button height" ),
+                                                editorData.Vector2.y,
+                                                6.0f,
+                                                75.0f );
+        InspectorGUISkin.ToolButtonSize = editorData.Vector2 = new Vector2( newWidth, newHeight );
+      }
 
       InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, true, false );
@@ -439,11 +441,7 @@ namespace AGXUnityEditor
       var numIconsPerRow = (int)( position.width / buttonSize.x );
       var currIconIndex = 0;
       while ( currIconIndex < m_iconNames.Count ) {
-#if UNITY_2019_3_OR_NEWER
-        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight ) );
-#else
         var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, buttonSize.y ) );
-#endif
         rect.width = buttonSize.x;
 
         for ( int i = 0; currIconIndex < m_iconNames.Count && i < numIconsPerRow; ++currIconIndex, ++i ) {
@@ -520,7 +518,7 @@ namespace AGXUnityEditor
     private string GetColorString( string name )
     {
       var color = GetEditorData( name ).Color;
-      return $"{name} = new Color( {color.r:F6}, {color.g:F6}, {color.b:F6}, {color.a:F6} );";
+      return $"public static Color {name} {{ get; set; }} = new Color( {color.r:F6}f, {color.g:F6}f, {color.b:F6}f, {color.a:F6}f );";
     }
 
     private string GetColorsString()

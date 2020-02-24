@@ -122,7 +122,7 @@ namespace AGXUnityEditor.Tools
         buttonPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
                                              true,
                                              "Add collision group.",
-                                             1.05f,
+                                             1.266f,
                                              GUILayout.Width( 18 ) );
       }
       GUILayout.EndHorizontal();

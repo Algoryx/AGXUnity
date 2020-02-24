@@ -128,13 +128,13 @@ namespace AGXUnityEditor
 #else
         var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
         if ( m_icon == null )
-          m_icon = Resources.Load<Texture2D>( "agx_icon_small" );
+          m_icon = IconManager.GetIcon( "A-03-flat" );
 
-        var rect = new Rect( controlRect.x + 2, controlRect.y - 17, 16, 16 );
-        // Draw solid color over previous icon.
-        UnityEngine.GUI.DrawTexture( rect, GUI.CreateColoredTexture( 1, 1, InspectorGUI.BackgroundColor ) );
-        // Draw our transparent icon.
-        UnityEngine.GUI.DrawTexture( rect, m_icon );
+        if ( m_icon != null ) {
+          var rect = new Rect( controlRect.x + 2, controlRect.y - 16, 15, 14 );
+          // Draw our transparent icon.
+          UnityEngine.GUI.DrawTexture( rect, m_icon );
+        }
 #endif
 
         InspectorGUI.BrandSeparator();

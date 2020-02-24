@@ -60,7 +60,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Size of toolbar buttons.
     /// </summary>
-    public static Vector2 ToolButtonSize { get; set; } = new Vector2( 24.0f, 24.0f );
+    public static Vector2 ToolButtonSize { get; set; } = new Vector2( 24.0f, 16.0f );
 
     /// <summary>
     /// Button style given active state and button type.
@@ -79,7 +79,7 @@ namespace AGXUnityEditor
     {
       return '[' +
              GUI.AddColorTag( typename,
-                              Color.Lerp( InspectorGUI.BackgroundColor,
+                              Color.Lerp( InspectorGUI.ProBackgroundColor,
                                           BrandColor,
                                           0.6f ) ) +
              ']';

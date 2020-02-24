@@ -241,7 +241,7 @@ namespace AGXUnityEditor
                                                     valInField.UseDefault,
                                                     InspectorEditor.Skin.ButtonRight,
                                                     "Force update of default value.",
-                                                    1.25f );
+                                                    1.2f );
       if ( useDefaultToggled ) {
         valInField.UseDefault = !valInField.UseDefault;
         updateDefaultValue    = valInField.UseDefault;

@@ -433,11 +433,8 @@ namespace AGXUnityEditor
 
       float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
       float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
-#if UNITY_2019_3_OR_NEWER
-      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( true, EditorGUIUtility.singleLineHeight ) );
-#else
+
       var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( true, buttonHeight ) );
-#endif
       rect.width = buttonWidth;
       for ( int i = 0; i < data.Length; ++i ) {
         var buttonType = data.Length > 1 && i == 0                ? InspectorGUISkin.ButtonType.Left :
