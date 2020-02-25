@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace AGXUnity.Model
 {
@@ -24,21 +27,68 @@ namespace AGXUnity.Model
       }
     }
 
+#if ENABLE_INPUT_SYSTEM
+    [SerializeField]
+    private InputActionAsset m_inputAsset = null;
+
+    public InputActionAsset InputAsset
+    {
+      get
+      {
+        return m_inputAsset;
+      }
+      set
+      {
+        m_inputAsset = value;
+        InputMap = m_inputAsset?.FindActionMap( "WheelLoader" );
+
+        if ( InputMap != null && IsSynchronizingProperties ) {
+          m_hasValidInputActionMap = true;
+          foreach ( var actionName in System.Enum.GetNames( typeof( ActionType ) ) ) {
+            if ( InputMap.FindAction( actionName ) == null ) {
+              Debug.LogWarning( $"Unable to find Input Action: WheelLoader.{actionName}" );
+              m_hasValidInputActionMap = false;
+            }
+          }
+
+          if ( m_hasValidInputActionMap )
+            InputMap.Enable();
+          else
+            Debug.LogWarning( "WheelLoader input disabled due to missing action(s) in the action map." );
+        }
+
+        if ( m_inputAsset != null && InputMap == null )
+          Debug.LogWarning( "InputActionAsset doesn't contain an ActionMap named \"WheelLoader\"." );
+      }
+    }
+
+    public InputActionMap InputMap = null;
+#endif
+
+    [HideInInspector]
     public float Steer { get { return GetValue( ActionType.Steer ); } }
 
+    [HideInInspector]
     public float Throttle { get { return GetValue( ActionType.Throttle ); } }
 
+    [HideInInspector]
     public float Brake { get { return GetValue( ActionType.Brake ); } }
 
+    [HideInInspector]
     public float Elevate { get { return GetValue( ActionType.Elevate ); } }
 
+    [HideInInspector]
     public float Tilt { get { return GetValue( ActionType.Tilt ); } }
 
     public float GetValue( ActionType action )
     {
+#if ENABLE_INPUT_SYSTEM
+      return m_hasValidInputActionMap ? InputMap[ action.ToString() ].ReadValue<float>() : 0.0f;
+#else
       var name = action.ToString();
       var jAction = Input.GetAxis( 'j' + name );
       return jAction != 0.0f ? jAction : Input.GetAxis( 'k' + name );
+#endif
     }
 
     protected override bool Initialize()
@@ -52,6 +102,13 @@ namespace AGXUnity.Model
       WheelLoader.SteeringHinge.GetController<LockController>().Enable = true;
 
       return true;
+    }
+
+    private void Reset()
+    {
+#if ENABLE_INPUT_SYSTEM
+      InputAsset = Resources.Load<InputActionAsset>( "Input/AGXUnityInputControls" );
+#endif
     }
 
     private void Update()
@@ -139,10 +196,13 @@ namespace AGXUnity.Model
     }
 
     private WheelLoader m_wheelLoader = null;
+#if ENABLE_INPUT_SYSTEM
+    private bool m_hasValidInputActionMap = false;
+#endif
   }
 }
 
-  #region InputManager.asset
+#region InputManager.asset
   /*
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
@@ -360,5 +420,5 @@ InputManager:
     axis: 0
     joyNum: 0
     */
-  #endregion
+#endregion
   

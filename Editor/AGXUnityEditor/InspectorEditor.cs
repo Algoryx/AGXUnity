@@ -223,15 +223,16 @@ namespace AGXUnityEditor
         var serializedProperty = fallback.FindProperty( wrapper.Member.Name );
         if ( serializedProperty == null && wrapper.Member.Name.Length > 2 ) {
           var fieldName = "m_" + char.ToLower( wrapper.Member.Name[ 0 ] ) + wrapper.Member.Name.Substring( 1 );
-          var fieldSerializedProperty = fallback.FindProperty( fieldName );
-          // Unsure about synchronization if the serialized
-          // field is found, i.e., if wrapper 'set' should be
-          // invoked with changes.
-          if ( fieldSerializedProperty != null && wrapper.GetContainingType().Name == fieldSerializedProperty.type )
-            EditorGUILayout.PropertyField( fieldSerializedProperty );
+          serializedProperty = fallback.FindProperty( fieldName );
         }
-        if ( serializedProperty != null )
+
+        if ( serializedProperty != null ) {
           EditorGUILayout.PropertyField( serializedProperty );
+          if ( UnityEngine.GUI.changed ) {
+            value = serializedProperty.objectReferenceValue;
+            changed = true;
+          }            
+        }
       }
 
       // Reset changed state so that non-edited values

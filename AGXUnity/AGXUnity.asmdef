@@ -1,6 +1,8 @@
 {
     "name": "AGXUnity",
-    "references": [],
+    "references": [
+        "GUID:75469ad4d38634e559750d17036d5f7c"
+    ],
     "includePlatforms": [
         "Editor",
         "WindowsStandalone64"
@@ -11,5 +13,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }
