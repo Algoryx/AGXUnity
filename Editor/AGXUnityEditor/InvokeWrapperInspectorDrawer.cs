@@ -228,7 +228,7 @@ namespace AGXUnityEditor
 
       s_fieldMethodArgs[ 0 ] = rect;
       s_fieldMethodArgs[ 2 ] = valInField.Value;
-      ValueT newValue        = default;
+      var newValue           = default( ValueT );
       using ( new GUI.EnabledBlock( !valInField.UseDefault ) )
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
 

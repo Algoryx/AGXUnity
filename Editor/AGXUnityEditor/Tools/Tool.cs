@@ -362,7 +362,8 @@ namespace AGXUnityEditor.Tools
 
     public Editor GetOrCreateEditor( Object target )
     {
-      if ( m_editors.TryGetValue( target, out var editor ) )
+      Editor editor = null;
+      if ( m_editors.TryGetValue( target, out editor ) )
         return editor;
       editor = InspectorEditor.CreateRecursive( target );
       m_editors.Add( target, editor );

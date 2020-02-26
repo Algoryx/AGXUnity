@@ -324,11 +324,9 @@ namespace AGXUnity.Model
     /// <param name="offset">Height offset.</param>
     private static TerrainUtils.NativeHeights WriteTerrainDataOffset( Terrain terrain, float offset )
     {
-      var terrainData = terrain.terrainData;
+      var terrainData      = terrain.terrainData;
       var nativeHeightData = TerrainUtils.FindHeights( terrainData );
-      var elementSize = terrainData.size.x / Convert.ToSingle( nativeHeightData.ResolutionX - 1 );
-
-      var tmp = new float[,] { { 0.0f } };
+      var tmp              = new float[,] { { 0.0f } };
       for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
         var newHeight = nativeHeightData.Heights[ i ] += offset;
 
