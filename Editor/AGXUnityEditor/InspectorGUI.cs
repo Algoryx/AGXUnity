@@ -970,25 +970,48 @@ namespace AGXUnityEditor
 
     private static GUIStyle s_dropdownToolStyle = null;
 
-    public static Rect OnDropdownToolBegin()
+    private static GUIStyle DropdownToolStyle
     {
-      if ( s_dropdownToolStyle == null ) {
-        s_dropdownToolStyle = new GUIStyle( InspectorEditor.Skin.Label )
-        {
-          padding = new RectOffset( 16, 6, 6, 6 )
-        };
+      get
+      {
+        if ( s_dropdownToolStyle == null ) {
+          s_dropdownToolStyle = new GUIStyle( InspectorEditor.Skin.Label )
+          {
+            padding = new RectOffset( 16, 6, 6, 6 )
+          };
+        }
+        return s_dropdownToolStyle;
       }
-      var rect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( s_dropdownToolStyle ) );
+    }
+
+    public static void ToolDescription( string desc )
+    {
+      if ( string.IsNullOrEmpty( desc ) )
+        return;
+
+      var descContent = new GUIContent( desc );
+      //descContent.image = EditorGUIUtility.IconContent( "console.infoicon" ).image;
+      var descRect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( DropdownToolStyle ) );
+      UnityEngine.GUI.Label( descRect, "", InspectorEditor.Skin.TextArea );
+      EditorGUILayout.LabelField( descContent, InspectorEditor.Skin.LabelWordWrap );
+      EditorGUILayout.EndVertical();
+    }
+
+    public static Rect OnDropdownToolBegin( string toolDescription = "" )
+    {
+      ToolDescription( toolDescription );
+
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( DropdownToolStyle ) );
       UnityEngine.GUI.Label( rect, "", InspectorEditor.Skin.TextArea );
 
-      EditorGUIUtility.labelWidth -= s_dropdownToolStyle.padding.left;
+      EditorGUIUtility.labelWidth -= DropdownToolStyle.padding.left;
 
       return rect;
     }
 
     public static void OnDropdownToolEnd()
     {
-      EditorGUIUtility.labelWidth += s_dropdownToolStyle.padding.left;
+      EditorGUIUtility.labelWidth += DropdownToolStyle.padding.left;
 
       EditorGUILayout.EndVertical();
     }

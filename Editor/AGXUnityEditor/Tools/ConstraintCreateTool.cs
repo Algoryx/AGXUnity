@@ -58,7 +58,8 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      InspectorGUI.OnDropdownToolBegin();
+      InspectorGUI.OnDropdownToolBegin( "Create constraint given type and use additional tools to " +
+                                        "configure the constraint frames." );
 
       var skin = InspectorEditor.Skin;
 
