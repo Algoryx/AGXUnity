@@ -102,7 +102,8 @@ namespace AGXUnityEditor
         name = name.Remove( name.Length - 4 );
 
       var iconIdentifier = Directory + Path.DirectorySeparatorChar + name;
-      if ( m_iconCache.TryGetValue( iconIdentifier, out var icon ) )
+      Texture2D icon = null;
+      if ( m_iconCache.TryGetValue( iconIdentifier, out icon ) )
         return icon;
 
       icon = EditorGUIUtility.Load( iconIdentifier + ".png" ) as Texture2D;

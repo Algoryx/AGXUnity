@@ -230,7 +230,8 @@ namespace AGXUnityEditor
       if ( target == null )
         return null;
 
-      if ( m_recursiveEditors.TryGetValue( target, out var editor ) ) {
+      Editor editor = null;
+      if ( m_recursiveEditors.TryGetValue( target, out editor ) ) {
         // Old editor with destroyed target, e.g., when entering
         // edit coming from play mode.
         if ( editor.target == null )
@@ -251,7 +252,8 @@ namespace AGXUnityEditor
     /// <param name="target">Target object.</param>
     public static void ReleaseRecursiveEditor( Object target )
     {
-      if ( target != null && m_recursiveEditors.TryGetValue( target, out var editor ) ) {
+      Editor editor = null;
+      if ( target != null && m_recursiveEditors.TryGetValue( target, out editor ) ) {
         m_recursiveEditors.Remove( target );
         Object.DestroyImmediate( editor );
       }

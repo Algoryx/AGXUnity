@@ -39,6 +39,8 @@ namespace AGXUnityEditor
 
     public GUIStyle Label { get; private set; } = null;
 
+    public GUIStyle LabelWordWrap { get; private set; } = null;
+
     public GUIStyle LabelMiddleCenter { get; private set; } = null;
 
     public GUIStyle LabelMiddleLeft { get; private set; } = null;
@@ -149,6 +151,7 @@ namespace AGXUnityEditor
       {
         richText = true
       };
+      LabelWordWrap     = new GUIStyle( Label ) { wordWrap = true };
       LabelMiddleCenter = AnchorStyle( Label, TextAnchor.MiddleCenter );
       LabelMiddleLeft   = AnchorStyle( Label, TextAnchor.MiddleLeft );
 
