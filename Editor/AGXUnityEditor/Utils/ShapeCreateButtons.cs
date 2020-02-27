@@ -30,8 +30,6 @@ namespace AGXUnityEditor.Utils
       public bool CreatePressed { get; set; }
     }
 
-    private Rect m_buttonRect;
-
     public StateData State { get; private set; }
 
     public ShapeCreateButton( Tools.ShapeCreateTool.ShapeType shapeType )
@@ -61,8 +59,6 @@ namespace AGXUnityEditor.Utils
       var toggleDropdown = UnityEngine.GUI.Button( rect,
                                                    buttonContent,
                                                    InspectorEditor.Skin.GetButton( State.DropdownEnabled, buttonType ) );
-      if ( current.type == EventType.Repaint )
-        m_buttonRect = GUILayoutUtility.GetLastRect();
 
       if ( toggleDropdown )
         State.DropdownEnabled = !State.DropdownEnabled;

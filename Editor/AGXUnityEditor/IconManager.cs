@@ -233,13 +233,13 @@ namespace AGXUnityEditor
     }
 
     private static string[] CreateNameArray<T>()
-      where T : System.Enum
+      where T : struct
     {
       return new string[ System.Enum.GetValues( typeof( T ) ).Length ];
     }
 
     private static Texture2D[] LoadIconContent<T>( string[] iconFilenames )
-      where T : System.Enum
+      where T : struct
     {
       var enumValues = System.Enum.GetValues( typeof( T ) );
       var enumNames  = System.Enum.GetNames( typeof( T ) );
