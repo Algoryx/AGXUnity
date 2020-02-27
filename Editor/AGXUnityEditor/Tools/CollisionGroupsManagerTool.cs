@@ -70,6 +70,9 @@ namespace AGXUnityEditor.Tools
             GUILayout.EndHorizontal();
 
             HandleCollisionGroupEntryPair( disabledPair );
+
+            // TODO GUI: Maybe unnecessary space with correct separator.
+            GUILayout.Space( 3.0f );
           }
         }
       }

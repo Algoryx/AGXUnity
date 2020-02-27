@@ -219,7 +219,8 @@ namespace AGXUnityEditor
         changed = UnityEngine.GUI.changed &&
                   ( drawerInfo.IsNullable || value != null );
       }
-      else if ( fallback != null ) {
+      // Fallback to Unity types rendered with property drawers.
+      else if ( fallback != null && !wrapper.GetContainingType().FullName.StartsWith( "AGXUnity." ) ) {
         var serializedProperty = fallback.FindProperty( wrapper.Member.Name );
         if ( serializedProperty == null && wrapper.Member.Name.Length > 2 ) {
           var fieldName = "m_" + char.ToLower( wrapper.Member.Name[ 0 ] ) + wrapper.Member.Name.Substring( 1 );
