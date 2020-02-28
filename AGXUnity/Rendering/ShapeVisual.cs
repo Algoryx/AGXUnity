@@ -8,6 +8,7 @@ namespace AGXUnity.Rendering
   /// <summary>
   /// Base class for visualization of shapes.
   /// </summary>
+  [AddComponentMenu( "" )]
   [ExecuteInEditMode]
   [DoNotGenerateCustomEditor]
   public class ShapeVisual : ScriptComponent

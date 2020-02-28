@@ -8,6 +8,7 @@ namespace AGXUnity
   /// frame the constraint will be created from. It's possible to detach the relation
   /// between the frames, setting Synchronized to false.
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class AttachmentPair : ScriptComponent
   {

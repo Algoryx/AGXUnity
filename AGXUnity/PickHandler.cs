@@ -4,6 +4,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "" )]
   public class PickHandler : UniqueGameObject<PickHandler>
   {
     [HideInInspector]

@@ -5,6 +5,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Model/Wheel Loader Bucket Tilt Controller" )]
   public class WheelLoaderBucketTiltController : ScriptComponent
   {
     [HideInInspector]

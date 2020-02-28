@@ -7,6 +7,7 @@ namespace AGXUnity
   /// Lock controller object, constraining the angle of the constraint to
   /// a given value.
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class LockController : ElementaryConstraintController
   {

@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Model/Wheel Loader Input Controller" )]
   public class WheelLoaderInputController : ScriptComponent
   {
     public enum ActionType

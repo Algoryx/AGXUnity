@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
+  [AddComponentMenu( "AGXUnity/Rendering/Cable Renderer" )]
   [ExecuteInEditMode]
   [RequireComponent( typeof( Cable ) )]
   public class CableRenderer : ScriptComponent

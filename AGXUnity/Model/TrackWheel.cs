@@ -32,6 +32,7 @@ namespace AGXUnity.Model
     MoveNodesToWheel = agxVehicle.TrackWheel.Property.MOVE_NODES_TO_WHEEL
   }
 
+  [AddComponentMenu( "AGXUnity/Model/Track Wheel" )]
   [DisallowMultipleComponent]
   public class TrackWheel : ScriptComponent
   {

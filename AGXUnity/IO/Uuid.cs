@@ -19,6 +19,7 @@ namespace AGXUnity.IO
     }
   }
 
+  [AddComponentMenu( "" )]
   [DisallowMultipleComponent]
   public class Uuid : ScriptComponent
   {

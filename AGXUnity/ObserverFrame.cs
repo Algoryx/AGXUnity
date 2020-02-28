@@ -8,6 +8,7 @@ namespace AGXUnity
   /// to communicate reference transforms. This object is often
   /// only created when reading .agx files.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Observer Frame" )]
   public class ObserverFrame : ScriptComponent
   {
     /// <summary>

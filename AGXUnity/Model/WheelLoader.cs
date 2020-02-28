@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Model/Wheel Loader" )]
   [DisallowMultipleComponent]
   public class WheelLoader : ScriptComponent
   {

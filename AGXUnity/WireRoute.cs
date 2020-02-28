@@ -19,7 +19,7 @@ namespace AGXUnity
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
   [HideInInspector]
-  [AddComponentMenu("")]
+  [AddComponentMenu( "" )]
   public class WireRoute : Route<WireRouteNode>
   {
     /// <summary>

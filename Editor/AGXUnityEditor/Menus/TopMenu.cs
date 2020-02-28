@@ -31,42 +31,42 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Collide/Box", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Box", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Box", validate = false, priority = 10 )]
     public static GameObject CreateBox( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Box>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Sphere", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Sphere", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Sphere", validate = false, priority = 10 )]
     public static GameObject CreateSphere( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Sphere>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Capsule", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Capsule", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Capsule", validate = false, priority = 10 )]
     public static GameObject CreateCapsule( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Capsule>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Cylinder", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Cylinder", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Cylinder", validate = false, priority = 10 )]
     public static GameObject CreateCylinder( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Cylinder>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Plane", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Plane", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Plane", validate = false, priority = 10 )]
     public static GameObject CreatePlane( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Plane>( command );
     }
 
     [MenuItem( "AGXUnity/Collide/Mesh", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Collide/Mesh", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Collide/Mesh", validate = false, priority = 10 )]
     public static GameObject CreateMesh( MenuCommand command )
     {
       return Selection.activeGameObject = CreateShape<Mesh>( command );
@@ -113,42 +113,42 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Rigid body/Box", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Box", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Box", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodyBox( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Box>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Sphere", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Sphere", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Sphere", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodySphere( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Sphere>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Capsule", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Capsule", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Capsule", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodyCapsule( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Capsule>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Cylinder", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Cylinder", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Cylinder", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodyCylinder( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Cylinder>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Mesh", priority = 20 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Mesh", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Mesh", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodyMesh( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody<Mesh>( command );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Empty", priority = 31 )]
-    [MenuItem( "GameObject/AGX Unity/Rigid body/Empty", priority = 2000 )]
+    [MenuItem( "GameObject/AGXUnity/Rigid body/Empty", validate = false, priority = 10 )]
     public static GameObject CreateRigidBodyEmpty( MenuCommand command )
     {
       return Selection.activeGameObject = CreateRigidBody( command );

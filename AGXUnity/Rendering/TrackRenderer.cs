@@ -5,6 +5,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
+  [AddComponentMenu( "AGXUnity/Rendering/Track Renderer" )]
   [ExecuteInEditMode]
   [DisallowMultipleComponent]
   public class TrackRenderer : ScriptComponent

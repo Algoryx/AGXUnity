@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
+﻿using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity.Rendering;
@@ -10,24 +8,24 @@ namespace AGXUnityEditor.Menus
 {
   public static class GameObjectMenu
   {
-    [MenuItem( "GameObject/AGX Unity/Create Shape Visual in children", validate = false, priority = 2011 )]
-    public static void CreateVisual()
+    [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", validate = true )]
+    public static bool CreateVisualValidation( MenuCommand command )
     {
-      // Multi-selection and we're receiving one call per selected object
-      // but it's not possible to process one object each call when
-      // Selection.active* aren't changed - so we're blocking calls for
-      // x seconds.
-      if ( EditorApplication.timeSinceStartup - m_lastCreateVisualCall < 0.5 )
-        return;
+      return command != null &&
+             command.context != null;
+    }
 
-      var objects = Selection.GetFiltered<GameObject>( SelectionMode.Editable | SelectionMode.TopLevel );
-      if ( objects.Length == 0 ) {
-        Debug.Log( "Unable to create visual: Selected objects not supported (not editable - such as prefabs)." );
+    [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", priority = 21 )]
+    public static void CreateVisual( MenuCommand command )
+    {
+      var go = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                  SelectionMode.Editable ).FirstOrDefault( selected => selected == command.context );
+      if ( go == null ) {
+        Debug.LogWarning( $"Ignoring visual for {command.context.name} - object isn't editable." );
         return;
       }
 
-      var validShapes            = from go in objects
-                                   from shape in go.GetComponentsInChildren<Shape>()
+      var validShapes            = from shape in go.GetComponentsInChildren<Shape>()
                                    where !ShapeVisual.HasShapeVisual( shape ) &&
                                           ShapeVisual.SupportsShapeVisual( shape )
                                    select shape;
@@ -62,10 +60,6 @@ namespace AGXUnityEditor.Menus
         Debug.Log( "Create visual ignored: All shapes already have visual data or doesn't support to be visualized.",
                    Selection.activeGameObject );
       }
-
-      m_lastCreateVisualCall = EditorApplication.timeSinceStartup;
     }
-
-    private static double m_lastCreateVisualCall = 0.0;
   }
 }

@@ -4,7 +4,7 @@ using AGXUnity.Utils;
 namespace AGXUnity.Model
 {
   [DoNotGenerateCustomEditor]
-  [AddComponentMenu("")]
+  [AddComponentMenu( "" )]
   public class Tire : ScriptComponent
   {
     /// <summary>
