@@ -266,7 +266,11 @@ namespace AGXUnityEditor
         size = new Vector3( 60 / 8.0f, 25, 60 / 8.0f ),
         heightmapResolution = 257
       };
+#if UNITY_2018_1_OR_NEWER
       terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
+#else
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolution );
+#endif
 
       var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
       AssetDatabase.CreateAsset( terrainData, terrainDataName );

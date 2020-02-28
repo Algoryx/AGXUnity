@@ -33,6 +33,14 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    public override void OnPostTargetMembersGUI()
+    {
+      if ( IsMultiSelect )
+        return;
+
+      InspectorGUI.HandleFrame( TrackWheel.Frame, 1 );
+    }
+
     private FrameTool TrackWheelFrameTool
     {
       get { return FindActive<FrameTool>( tool => tool.Frame == TrackWheel.Frame ); }
