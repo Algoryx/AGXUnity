@@ -58,7 +58,7 @@ namespace AGXUnityEditor.Tools
 
     public static Mesh ShapeMeshSourceGUI( Mesh currentSource )
     {
-      var newSource = EditorGUILayout.ObjectField( GUI.MakeLabel( "Source:" ),
+      var newSource = EditorGUILayout.ObjectField( GUI.MakeLabel( "Source" ),
                                                    currentSource,
                                                    typeof( Mesh ),
                                                    false ) as Mesh;

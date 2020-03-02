@@ -132,7 +132,7 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.OnDropdownToolBegin();
+      InspectorGUI.OnDropdownToolBegin( GetCurrentStateInfo() );
 
       UnityEngine.GUI.enabled = m_selection.Count > 0;
       m_buttons.OnGUI( Event.current );
@@ -207,6 +207,16 @@ namespace AGXUnityEditor.Tools
 
         Reset();
       }
+    }
+
+    private string GetCurrentStateInfo()
+    {
+      var info = "Create shapes by selecting visual objects in Scene View.\n\n";
+      if ( m_selection.Count == 0 )
+        info += "Select highlighted visual object in Scene View" + AwaitingUserActionDots();
+      else
+        info += "Choose shape properties or more objects in Scene View" + AwaitingUserActionDots();
+      return info;
     }
 
     private void Reset()

@@ -14,7 +14,7 @@ namespace AGXUnityEditor.Utils
   {
     private static ObjectsGizmoColorHandler m_colorHandler = new ObjectsGizmoColorHandler();
 
-    [DrawGizmo( GizmoType.Active | GizmoType.Selected)]
+    [DrawGizmo( GizmoType.Active | GizmoType.Selected )]
     public static void OnDrawGizmosCable( Cable cable, GizmoType gizmoType )
     {
       // Do not render initialized cables.

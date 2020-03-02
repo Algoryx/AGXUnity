@@ -457,6 +457,34 @@ namespace AGXUnityEditor.Tools
         RemoveVisualPrimitive( m_visualPrimitives.First( kvp => kvp.Value == primitive ).Key );
     }
 
+    private struct CallEveryData
+    {
+      public double LastTime;
+      public int NumCalls;
+    }
+
+    private CallEveryData m_callEveryData;
+    private string m_awaitingUserActionDots = "";
+
+    protected void CallEvery( float time, Action<int> callback )
+    {
+      if ( m_callEveryData.LastTime == 0.0 ) {
+        m_callEveryData.LastTime = EditorApplication.timeSinceStartup;
+        return;
+      }
+
+      if ( ( EditorApplication.timeSinceStartup - m_callEveryData.LastTime ) >= time ) {
+        callback( ++m_callEveryData.NumCalls );
+        m_callEveryData.LastTime = EditorApplication.timeSinceStartup;
+      }
+    }
+
+    protected string AwaitingUserActionDots()
+    {
+      CallEvery( 0.35f, numCalls => m_awaitingUserActionDots = new string( '.', numCalls % 4 ) );
+      return m_awaitingUserActionDots;
+    }
+
     protected void AddKeyHandler( string name, Utils.KeyHandler keyHandler )
     {
       if ( m_keyHandlers.ContainsKey( name ) ) {

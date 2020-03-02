@@ -90,7 +90,7 @@ namespace AGXUnityEditor.Tools
     public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
       if ( !onlyNameAndMaterial )
-        InspectorGUI.OnDropdownToolBegin();
+        InspectorGUI.OnDropdownToolBegin( "Create visual representation of this shape." );
 
       Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name" ),
                                         Name,

@@ -49,24 +49,6 @@ namespace AGXUnityEditor.Tools
       InspectorEditor.RequestConstantRepaint = true;
     }
 
-    private string m_dots = "";
-
-    private double m_lastTime = -1.0;
-    private int m_numCalls = 0;
-
-    private void CallEvery( float time, System.Action<int> callback )
-    {
-      if ( m_lastTime < 0.0 ) {
-        m_lastTime = EditorApplication.timeSinceStartup;
-        return;
-      }
-
-      if ( ( EditorApplication.timeSinceStartup - m_lastTime ) >= time ) {
-        callback( ++m_numCalls );
-        m_lastTime = EditorApplication.timeSinceStartup;
-      }
-    }
-
     public void OnInspectorGUI()
     {
       InspectorGUI.OnDropdownToolBegin();
@@ -84,7 +66,7 @@ namespace AGXUnityEditor.Tools
 
       if ( m_selected.Count == 0 ) {
         EditorGUILayout.LabelField( emptyContent,
-                                    GUI.MakeLabel( "Select object(s) in scene view" + m_dots ),
+                                    GUI.MakeLabel( "Select object(s) in scene view" + AwaitingUserActionDots() ),
                                     skin.TextArea );
       }
       else {
@@ -107,11 +89,6 @@ namespace AGXUnityEditor.Tools
         if ( removeIndex >= 0 )
           m_selected.RemoveAt( removeIndex );
       }
-
-      CallEvery( 0.35f, numCalls =>
-      {
-        m_dots = new string( '.', numCalls % 4 );
-      } );
 
       var applyCancelState = InspectorGUI.PositiveNegativeButtons( m_selected.Count > 0,
                                                                    "Apply",

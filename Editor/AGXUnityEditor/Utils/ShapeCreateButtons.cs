@@ -34,7 +34,14 @@ namespace AGXUnityEditor.Utils
 
     public ShapeCreateButton( Tools.ShapeCreateTool.ShapeType shapeType )
     {
-      State = new StateData() { ShapeType = shapeType, Axis = ShapeInitializationData.Axes.None, ExpandRadius = false, DropdownEnabled = false, CreatePressed = false };
+      State = new StateData()
+      {
+        ShapeType = shapeType,
+        Axis = ShapeInitializationData.Axes.None,
+        ExpandRadius = false,
+        DropdownEnabled = false,
+        CreatePressed = false
+      };
     }
 
     public void Reset()
@@ -45,20 +52,19 @@ namespace AGXUnityEditor.Utils
       State.CreatePressed   = false;
     }
 
-    public bool Update( Event current, Rect rect, bool isFirst, bool isLast )
+    public bool Update( Rect rect, bool isFirst, bool isLast )
     {
       var buttonType = isFirst && isFirst == isLast ? InspectorGUISkin.ButtonType.Normal :
                        isFirst                      ? InspectorGUISkin.ButtonType.Left :
                        isLast                       ? InspectorGUISkin.ButtonType.Right :
                                                       InspectorGUISkin.ButtonType.Middle;
-      var buttonContent = GUI.MakeLabel( State.ShapeType.ToString().Substring( 0, 3 ),
-                                       true,
-                                       "Create new " +
-                                       State.ShapeType.ToString().ToLower() +
-                                       "as parent of the selected object(s)." );
-      var toggleDropdown = UnityEngine.GUI.Button( rect,
-                                                   buttonContent,
-                                                   InspectorEditor.Skin.GetButton( State.DropdownEnabled, buttonType ) );
+      var toggleDropdown = InspectorGUI.Button( rect,
+                                                Icon,
+                                                UnityEngine.GUI.enabled,
+                                                InspectorEditor.Skin.GetButton( true, buttonType ),
+                                                "Create new " +
+                                                State.ShapeType.ToString().ToLower() +
+                                                "as parent of the selected object(s)." );
 
       if ( toggleDropdown )
         State.DropdownEnabled = !State.DropdownEnabled;
@@ -157,6 +163,24 @@ namespace AGXUnityEditor.Utils
         return down;
       }
     }
+
+    private static MiscIcon[] m_iconMap = null;
+    private MiscIcon Icon
+    {
+      get
+      {
+        if ( m_iconMap == null )
+          m_iconMap = new MiscIcon[]
+          {
+            MiscIcon.Box,
+            MiscIcon.Cylinder,
+            MiscIcon.Capsule,
+            MiscIcon.Sphere,
+            MiscIcon.Mesh
+          };
+        return m_iconMap[ (int)State.ShapeType ];
+      }
+    }
   }
 
   public class ShapeCreateButtons
@@ -197,18 +221,13 @@ namespace AGXUnityEditor.Utils
 
     public void OnGUI( Event current )
     {
-      using ( new GUILayout.HorizontalScope() )
-      using ( InspectorGUI.IndentScope.Single )
-      using ( new GUI.ColorBlock( Color.Lerp( Color.white,
-                                              InspectorGUISkin.BrandColor,
-                                              0.2f ) ) ) {
-        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 25.0f ) );
+      using ( null ) {
+        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false ) );
         rect.width = 36.0f;
         foreach ( var button in m_buttons ) {
           rect.xMin = rect.x;
           rect.xMax = rect.x + rect.width;
-          bool pressed = button.Update( Event.current,
-                                        rect,
+          bool pressed = button.Update( rect,
                                         button == m_buttons.First(),
                                         button == m_buttons.Last() );
           if ( pressed )

@@ -39,7 +39,12 @@ namespace AGXUnityEditor
     SynchEnabled,
     SynchDisabled,
     Update,
-    ArrowRight
+    ArrowRight,
+    Box,
+    Sphere,
+    Capsule,
+    Cylinder,
+    Mesh
   }
 
   public static class IconManager
@@ -218,7 +223,7 @@ namespace AGXUnityEditor
     {
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
-      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "shape_from_icon";
+      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "small_fat_add_left_icon";//"shape_from_icon";
       miscIconFilenames[ (int)MiscIcon.ContextDropdown ]   = "small_add_dots_icon";
       miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "small_fat_add_left_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "small_insert_before_2_icon";
@@ -228,6 +233,11 @@ namespace AGXUnityEditor
       miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "small_un_sync_icon";
       miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_icon";
       miscIconFilenames[ (int)MiscIcon.ArrowRight ]        = "line_direction_icon";
+      miscIconFilenames[ (int)MiscIcon.Box ]               = "cube_icon";
+      miscIconFilenames[ (int)MiscIcon.Sphere ]            = "sphere_icon";
+      miscIconFilenames[ (int)MiscIcon.Capsule ]           = "capsule_icon";
+      miscIconFilenames[ (int)MiscIcon.Cylinder ]          = "cylinder_icon";
+      miscIconFilenames[ (int)MiscIcon.Mesh ]              = "mesh_icon";
 
       m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
     }
