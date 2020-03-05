@@ -79,6 +79,8 @@ namespace AGXUnity
 
     [SerializeField]
     private Vector3 m_massCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
+
+    [HideInInspector]
     [ClampAboveZeroInInspector(true)]
     public Vector3 MassCoefficients
     {
@@ -94,6 +96,8 @@ namespace AGXUnity
 
     [SerializeField]
     private Vector3 m_inertiaCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
+
+    [HideInInspector]
     [ClampAboveZeroInInspector]
     public Vector3 InertiaCoefficients
     {
