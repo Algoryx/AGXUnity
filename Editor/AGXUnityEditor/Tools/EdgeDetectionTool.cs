@@ -66,7 +66,6 @@ namespace AGXUnityEditor.Tools
 
     public override void OnRemove()
     {
-      s_selected = null;
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
@@ -87,6 +86,8 @@ namespace AGXUnityEditor.Tools
       }
       // 2. Select edge on target game object.
       else if ( !m_collectedData.SelectedEdge.Valid ) {
+        HighlightObject = m_collectedData.Target;
+
         // Similar behavior as FindPointTool - remove ourself if
         // the users choice is World.
         if ( m_collectedData.Target == null ) {
@@ -189,8 +190,6 @@ namespace AGXUnityEditor.Tools
         if ( Manager.HijackLeftMouseClick() )
           OnPointClick( new Utils.Raycast.Result() { Hit = false }, NodeVisual );
       }
-
-      s_selected = m_collectedData != null ? m_collectedData.Target : null;
     }
 
     /// <summary>
@@ -267,8 +266,10 @@ namespace AGXUnityEditor.Tools
       else {
         var mesh = shape is AGXUnity.Collide.Mesh ?
                      ( shape as AGXUnity.Collide.Mesh ).SourceObjects.FirstOrDefault() :
-                     m_collectedData.Target.GetComponent<MeshFilter>()?.sharedMesh;
-        var halfExtents = 0.5f * Vector3.zero;
+                   m_collectedData.Target.GetComponent<MeshFilter>() != null ?
+                     m_collectedData.Target.GetComponent<MeshFilter>().sharedMesh :
+                     null;
+        var halfExtents = 0.5f * Vector3.one;
         if ( mesh != null )
           halfExtents = mesh.bounds.extents;
 
@@ -344,36 +345,6 @@ namespace AGXUnityEditor.Tools
       var edgeDirections = ShapeUtils.ToDirection( ShapeUtils.ToPrincipal( utils.FindDirectionGivenWorldEdge( edge ) ) );
       yield return utils.GetWorldFace( edgeDirections[ 0 ] );
       yield return utils.GetWorldFace( edgeDirections[ 1 ] );
-    }
-
-    private static GameObject s_selected = null;
-    private static Utils.ObjectsGizmoColorHandler s_visualizeSelectedHandler = new Utils.ObjectsGizmoColorHandler();
-
-    [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected)]
-    private static void OnDrawGizmo( Transform target, GizmoType gizmoType )
-    {
-      using ( s_visualizeSelectedHandler.BeginEndScope() ) {
-        if ( s_selected == null || target != s_selected.transform )
-          return;
-
-        var rbs = UnityEngine.Object.FindObjectsOfType<AGXUnity.RigidBody>();
-        Array.Sort( rbs, ( rb1, rb2 ) => { return rb1.GetInstanceID() > rb2.GetInstanceID() ? -1 : 1; } );
-
-        foreach ( var rb in rbs )
-          s_visualizeSelectedHandler.GetOrCreateColor( rb );
-
-        var filters = s_selected.GetComponentsInChildren<MeshFilter>();
-        foreach ( var filter in filters )
-          s_visualizeSelectedHandler.Highlight( filter, Utils.ObjectsGizmoColorHandler.SelectionType.VaryingIntensity );
-
-        foreach ( var filterColorPair in s_visualizeSelectedHandler.ColoredMeshFilters ) {
-          Gizmos.color = filterColorPair.Value;
-          Gizmos.matrix = filterColorPair.Key.transform.localToWorldMatrix;
-          Gizmos.DrawWireMesh( filterColorPair.Key.sharedMesh );
-        }
-
-        Gizmos.matrix = Matrix4x4.identity;
-      }
     }
   }
 }

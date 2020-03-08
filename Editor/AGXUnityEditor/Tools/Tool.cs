@@ -252,15 +252,6 @@ namespace AGXUnityEditor.Tools
         tool.RemoveVisualPrimitive( name );
     }
 
-    private List<Tool> m_children = new List<Tool>();
-    private Tool m_parent         = null;
-
-    private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
-    private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
-    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
-
-    private static readonly string s_debugRenderVisualPrefix = "dr_prim_";
-
     /// <summary>
     /// Construct given the implemented tool supports multiple
     /// instances of the same tool enabled at the same time. E.g.,
@@ -457,14 +448,25 @@ namespace AGXUnityEditor.Tools
         RemoveVisualPrimitive( m_visualPrimitives.First( kvp => kvp.Value == primitive ).Key );
     }
 
+    protected GameObject HighlightObject
+    {
+      get { return m_highlightedObject; }
+      set
+      {
+        if ( m_highlightedObject == value )
+          return;
+
+        SceneViewHighlight.Remove( m_highlightedObject );
+        m_highlightedObject = value;
+        SceneViewHighlight.Add( m_highlightedObject );
+      }
+    }
+
     private struct CallEveryData
     {
       public double LastTime;
       public int NumCalls;
     }
-
-    private CallEveryData m_callEveryData;
-    private string m_awaitingUserActionDots = "";
 
     protected void CallEvery( float time, Action<int> callback )
     {
@@ -571,28 +573,6 @@ namespace AGXUnityEditor.Tools
       m_hideDefaultState = new HideDefaultState();
     }
 
-    public class VisualizedSelectionData
-    {
-      public GameObject Object = null;
-    }
-
-    private List<VisualizedSelectionData> m_visualizedSelection = new List<VisualizedSelectionData>();
-
-    public VisualizedSelectionData VisualizedSelection { get { return m_visualizedSelection.FirstOrDefault(); } }
-
-    protected void SetVisualizedSelection( GameObject gameObject )
-    {
-      ClearVisualizedSelection();
-
-      if ( gameObject != null )
-        m_visualizedSelection.Add( new VisualizedSelectionData() { Object = gameObject } );
-    }
-
-    protected void ClearVisualizedSelection()
-    {
-      m_visualizedSelection.Clear();
-    }
-
     private void PerformRemove()
     {
       // OnRemove virtual callback.
@@ -601,8 +581,8 @@ namespace AGXUnityEditor.Tools
       // Remove all windows that hasn't been closed.
       Manager.SceneViewGUIWindowHandler.CloseAllWindows( this );
 
-      // Clear visualized selections for this tool.
-      ClearVisualizedSelection();
+      // Clear any highlighted objects.
+      HighlightObject = null;
 
       // Remove all key handlers that hasn't been removed.
       var keyHandlerNames = m_keyHandlers.Keys.ToArray();
@@ -632,5 +612,19 @@ namespace AGXUnityEditor.Tools
       if ( m_hideDefaultState != null )
         m_hideDefaultState.OnRemove();
     }
+
+    private List<Tool> m_children = new List<Tool>();
+    private Tool m_parent = null;
+
+    private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
+    private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
+    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
+
+    private CallEveryData m_callEveryData;
+    private string m_awaitingUserActionDots = "";
+
+    private GameObject m_highlightedObject = null;
+
+    private static readonly string s_debugRenderVisualPrefix = "dr_prim_";
   }
 }

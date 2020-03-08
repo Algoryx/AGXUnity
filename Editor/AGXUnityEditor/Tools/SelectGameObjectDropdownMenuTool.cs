@@ -162,8 +162,8 @@ namespace AGXUnityEditor.Tools
         }
       }
 
-      if ( eventType == EventType.Repaint )
-        SetVisualizedSelection( mouseOverObject );
+      if ( mouseOverObject != HighlightObject && eventType == EventType.Repaint )
+        HighlightObject = mouseOverObject;
     }
   }
 }

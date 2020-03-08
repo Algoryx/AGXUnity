@@ -116,7 +116,8 @@ namespace AGXUnityEditor.Tools
       ClearSelection();
       if ( selected != null ) {
         m_selection.Add( selected );
-        SetVisualizedSelection( selected );
+        // TODO HIGHLIGHT: Add multiple.
+        //SetVisualizedSelection( selected );
       }
       else
         m_buttons.Reset();
@@ -228,7 +229,8 @@ namespace AGXUnityEditor.Tools
     private void ClearSelection()
     {
       m_selection.Clear();
-      ClearVisualizedSelection();
+      // TODO HIGHLIGHT: Fix.
+      //ClearVisualizedSelection();
     }
 
     private bool HandleKeyEscape( bool isSceneViewUpdate )
