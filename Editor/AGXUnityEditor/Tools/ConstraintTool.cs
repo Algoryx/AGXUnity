@@ -212,15 +212,19 @@ namespace AGXUnityEditor.Tools
 
       GUILayout.BeginHorizontal();
       {
-        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable collisions", true ),
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable Collisions", true ),
                                       InspectorEditor.Skin.LabelMiddleLeft );
 
         UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
+        var rbVsRbActive = !EditorGUI.showMixedValue &&
+                           state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+        var refVsConActive = !EditorGUI.showMixedValue &&
+                             state == Constraint.ECollisionsState.DisableReferenceVsConnected;
+
         if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
-                                              false,
+                                              rbVsRbActive,
                                               "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                skin.GetButton( !EditorGUI.showMixedValue &&
-                                                  state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2,
+                                skin.GetButton( rbVsRbActive,
                                                 InspectorGUISkin.ButtonType.Left ),
                                 GUILayout.Width( 76 ) ) )
           state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
@@ -228,12 +232,11 @@ namespace AGXUnityEditor.Tools
                     Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
         if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
-                                              false,
+                                              refVsConActive,
                                               "Disable Reference object vs. Connected object." ),
-                                skin.GetButton( !EditorGUI.showMixedValue &&
-                                                  state == Constraint.ECollisionsState.DisableReferenceVsConnected,
+                                skin.GetButton( refVsConActive,
                                                 InspectorGUISkin.ButtonType.Right ),
-                                new GUILayoutOption[] { GUILayout.Width( 76 ) } ) )
+                                GUILayout.Width( 76 ) ) )
           state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
                     Constraint.ECollisionsState.KeepExternalState :
                     Constraint.ECollisionsState.DisableReferenceVsConnected;
@@ -258,7 +261,7 @@ namespace AGXUnityEditor.Tools
 
     public static bool ConstraintConnectedFrameSyncGUI( bool enabled )
     {
-      enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Connected frame animated", true ),
+      enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Connected Frame Animated", true ),
                                      !EditorGUI.showMixedValue && enabled );
       return enabled;
     }
