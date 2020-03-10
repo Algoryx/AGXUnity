@@ -115,62 +115,30 @@ namespace AGXUnityEditor
     [InspectorDrawerResult( HasCopyOp = true )]
     public static object DefaultAndUserValueFloatDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      //var dauvf = wrapper.Get<DefaultAndUserValueFloat>( objects[ 0 ] );
-      //var value = HandleDefaultAndUserValue( wrapper.Member.Name,
-      //                                       dauvf );
-
-      //if ( wrapper.IsValid( value ) ) {
-      //  if ( !dauvf.UseDefault )
-      //    dauvf.Value = value;
-      //  return dauvf;
-      //}
       var result = HandleDefaultAndUserValue<float>( objects, wrapper );
-      if ( result.ContainsChanges ) {
-        Debug.Log( "Changes!" );
-        return result;
-      }
-
-      return null;
+      return result.ContainsChanges ? (object)result : null;
     }
 
     public static void DefaultAndUserValueFloatDrawerCopyOp( object source, object destination )
     {
       var s = (DefaultAndUserValueResult)source;
       var d = destination as DefaultAndUserValueFloat;
-      if ( s.ContainsChanges ) {
-        Debug.Log( $"Changes in copy op: DefaultToggleChanged = {s.DefaultToggleChanged}, ValuesChanged: {s.ValuesChanged != null && s.ValuesChanged[ 0 ]}" );
-        if ( s.DefaultToggleChanged )
-          d.UseDefault = s.UseDefault;
-        if ( s.ValuesChanged != null && s.ValuesChanged[ 0 ] )
-          d.Value = s.Values[ 0 ];
-      }
+      s.PropagateChanges( d );
     }
 
     [InspectorDrawer( typeof( DefaultAndUserValueVector3 ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
     public static object DefaultAndUserValueVector3Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      var dauvv = wrapper.Get<DefaultAndUserValueVector3>( objects[ 0 ] );
-      var value = HandleDefaultAndUserValue( wrapper.Member.Name,
-                                             dauvv );
-
-      if ( wrapper.IsValid( value ) ) {
-        if ( !dauvv.UseDefault )
-          dauvv.Value = value;
-        return dauvv;
-      }
-
-      return null;
+      var result = HandleDefaultAndUserValue<Vector3>( objects, wrapper );
+      return result.ContainsChanges ? (object)result : null;
     }
 
     public static void DefaultAndUserValueVector3DrawerCopyOp( object source, object destination )
     {
-      var s = source as DefaultAndUserValueVector3;
+      var s = (DefaultAndUserValueResult)source;
       var d = destination as DefaultAndUserValueVector3;
-      if ( s == null || d == null )
-        return;
-
-      d.CopyFrom( s );
+      s.PropagateChanges( d );
     }
 
     private static MethodInfo s_floatFieldMethod = null;
@@ -181,6 +149,8 @@ namespace AGXUnityEditor
     {
       public bool DefaultToggleChanged;
       public bool UseDefault;
+
+      public bool UpdateDefaultClicked;
 
       public bool[] ValuesChanged;
       public float[] Values;
@@ -202,11 +172,47 @@ namespace AGXUnityEditor
         }
       }
 
+      public void PropagateChanges( DefaultAndUserValueFloat destination )
+      {
+        if ( !ContainsChanges )
+          return;
+
+        PropagateChangesT( destination );
+
+        if ( ValuesChanged != null && ValuesChanged[ 0 ] )
+          destination.Value = Values[ 0 ];
+      }
+
+      public void PropagateChanges( DefaultAndUserValueVector3 destination )
+      {
+        if ( !ContainsChanges )
+          return;
+
+        PropagateChangesT( destination );
+
+        if ( ValuesChanged != null && ValuesChanged.Contains( true ) ) {
+          var newValue = new Vector3();
+          for ( int i = 0; i < 3; ++i )
+            newValue[ i ] = ValuesChanged[ i ] ? Values[ i ] : destination.Value[ i ];
+          destination.Value = newValue;
+        }
+      }
+
+      private void PropagateChangesT<ValueT>( DefaultAndUserValue<ValueT> destination )
+        where ValueT : struct
+      {
+        if ( DefaultToggleChanged )
+          destination.UseDefault = UseDefault;
+        if ( UpdateDefaultClicked )
+          destination.OnForcedUpdate();
+      }
+
       public bool ContainsChanges
       {
         get
         {
           return DefaultToggleChanged ||
+                 UpdateDefaultClicked ||
                  ( ValuesChanged != null && ValuesChanged.Contains( true ) );
         }
       }
@@ -272,10 +278,10 @@ namespace AGXUnityEditor
       var instance = wrapper.Get<DefaultAndUserValue<ValueT>>( objects[ 0 ] );
 
       UnityEngine.GUI.changed = false;
-
-      EditorGUI.showMixedValue = !CompareMulti<ValueT>( objects,
-                                                        wrapper,
-                                                        other => other.UseDefault == instance.UseDefault );
+      var hasMixedUseDefault  = !CompareMulti<ValueT>( objects,
+                                                       wrapper,
+                                                       other => other.UseDefault == instance.UseDefault );
+      EditorGUI.showMixedValue = hasMixedUseDefault;
 
       // During showMixedValue - Toggle will always return true (enabled)
       // when the user clicks regardless of instance.UseDefault.
@@ -305,110 +311,25 @@ namespace AGXUnityEditor
       EditorGUI.showMixedValue = !CompareMulti<ValueT>( objects,
                                                         wrapper,
                                                         other => instance.Value.Equals( other.Value ) );
-      using ( new GUI.EnabledBlock( !instance.UseDefault ) ) {
+      using ( new GUI.EnabledBlock( !instance.UseDefault && !hasMixedUseDefault ) ) {
         EditorGUI.BeginChangeCheck();
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
         if ( EditorGUI.EndChangeCheck() )
           result.OnChange<ValueT>( instance.Value, newValue );
       }
 
+      rect.x                      = rect.xMax;
+      rect.width                  = updateButtonWidth;
+      rect.height                 = EditorGUIUtility.singleLineHeight -
+                                    EditorGUIUtility.standardVerticalSpacing;
+      result.UpdateDefaultClicked = InspectorGUI.Button( rect,
+                                                         MiscIcon.Update,
+                                                         instance.UseDefault,
+                                                         InspectorEditor.Skin.ButtonRight,
+                                                         "Force update of default value.",
+                                                         1.2f );
+
       return result;
-    }
-
-    private static ValueT HandleDefaultAndUserValue<ValueT>( string name,
-                                                             DefaultAndUserValue<ValueT> valInField )
-      where ValueT : struct
-    {
-      if ( s_floatFieldMethod == null )
-        s_floatFieldMethod = typeof( EditorGUI ).GetMethod( "FloatField",
-                                                            new[]
-                                                            {
-                                                              typeof( Rect ),
-                                                              typeof( string ),
-                                                              typeof( float )
-                                                            } );
-      if ( s_vector3FieldMethod == null )
-        s_vector3FieldMethod = typeof( EditorGUI ).GetMethod( "Vector3Field",
-                                                              new[]
-                                                              {
-                                                                typeof( Rect ),
-                                                                typeof( string ),
-                                                                typeof( Vector3 )
-                                                              } );
-
-      var guiWasEnabled = UnityEngine.GUI.enabled;
-      var method        = typeof( ValueT ) == typeof( float ) ?
-                            s_floatFieldMethod :
-                          typeof( ValueT ) == typeof( Vector3 ) ?
-                            s_vector3FieldMethod :
-                            null;
-      if ( method == null )
-        throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
-
-      var updateButtonWidth = 20.0f;
-      var rect              = EditorGUILayout.GetControlRect();
-      
-      // Now we know the total width if the Inspector. Remove
-      // width of button and right most spacing.
-      rect.xMax -= updateButtonWidth;
-      
-      // We don't want the tooltip of the toggle to show when
-      // hovering the update button or float field(s) so use
-      // xMax as label width minus some magic number so that
-      // e.g., Mass float field slider appears and works.
-      var widthUntilButton  = rect.xMax;
-      rect.xMax             = EditorGUIUtility.labelWidth - 28;
-
-      var wasMixed             = EditorGUI.showMixedValue;
-      EditorGUI.showMixedValue = false;
-      var toggleReturned       = EditorGUI.ToggleLeft( rect,
-                                                       GUI.MakeLabel( name.SplitCamelCase(),
-                                                                      false,
-                                                                      "If checked - value will be default. Uncheck to manually enter value." ),
-                                                       valInField.UseDefault );
-      EditorGUI.showMixedValue = wasMixed;
-
-      var useDefaultToggled = toggleReturned != valInField.UseDefault;
-
-      // Restore width and calculate new start of the float
-      // field(s). Start is label width but we have to remove
-      // the current indent level since label width is independent
-      // of the indent level. Unsure why we have to add LayoutMagicNumber pixels...
-      // could be float field(s) default minimum label size.
-      rect.xMax   = widthUntilButton;
-      rect.x      = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + InspectorGUI.LayoutMagicNumber;
-      rect.xMax += -rect.x + InspectorGUI.LayoutMagicNumber;
-
-      s_fieldMethodArgs[ 0 ] = rect;
-      s_fieldMethodArgs[ 2 ] = valInField.Value;
-      var newValue           = default( ValueT );
-      using ( new GUI.EnabledBlock( !valInField.UseDefault ) )
-        newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
-
-      rect.x                 = rect.xMax;
-      rect.width             = updateButtonWidth;
-      rect.height            = EditorGUIUtility.singleLineHeight -
-                               EditorGUIUtility.standardVerticalSpacing;
-      var updateDefaultValue = InspectorGUI.Button( rect,
-                                                    MiscIcon.Update,
-                                                    valInField.UseDefault,
-                                                    InspectorEditor.Skin.ButtonRight,
-                                                    "Force update of default value.",
-                                                    1.2f );
-      if ( useDefaultToggled ) {
-        valInField.UseDefault = !valInField.UseDefault;
-        updateDefaultValue    = valInField.UseDefault;
-
-        // We don't want the default value to be written to
-        // the user specified.
-        if ( !valInField.UseDefault )
-          newValue = valInField.UserValue;
-      }
-
-      if ( updateDefaultValue )
-        valInField.OnForcedUpdate();
-
-      return newValue;
     }
 
     [InspectorDrawer( typeof( RangeReal ) )]
