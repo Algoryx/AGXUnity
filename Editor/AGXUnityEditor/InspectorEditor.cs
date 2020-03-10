@@ -215,7 +215,7 @@ namespace AGXUnityEditor
       object value = null;
       bool changed = false;
       if ( drawerInfo.IsValid ) {
-        value   = drawerInfo.Drawer.Invoke( null, new object[] { objects[ 0 ], wrapper } );
+        value   = drawerInfo.Drawer.Invoke( null, new object[] { objects, wrapper } );
         changed = UnityEngine.GUI.changed &&
                   ( drawerInfo.IsNullable || value != null );
       }
