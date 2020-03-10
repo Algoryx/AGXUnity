@@ -64,7 +64,7 @@ namespace AGXUnityEditor.Tools
         Preview.transform.rotation = Shape.transform.rotation;
       }
 
-      Material = GetData( DataEntry.Material ).Asset as Material;
+      Material = GetData( DataEntry.Material ).Asset as Material ?? Manager.GetOrCreateShapeVisualDefaultMaterial();
       Name     = GetData( DataEntry.Name ).String;
       if ( Name == "" )
         Name = Shape.name + "_Visual";

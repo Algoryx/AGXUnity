@@ -50,7 +50,7 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.OnDropdownToolBegin();
+      InspectorGUI.OnDropdownToolBegin( "Create visual representation of this rigid body given all supported shapes." );
 
       foreach ( var tool in GetChildren<ShapeVisualCreateTool>() ) {
         if ( ShapeVisual.HasShapeVisual( tool.Shape ) )

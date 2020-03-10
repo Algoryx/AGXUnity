@@ -283,16 +283,19 @@ namespace AGXUnityEditor
                                                        other => other.UseDefault == instance.UseDefault );
       EditorGUI.showMixedValue = hasMixedUseDefault;
 
+      var toggleInput = hasMixedUseDefault ?
+                          false :
+                          instance.UseDefault;
       // During showMixedValue - Toggle will always return true (enabled)
       // when the user clicks regardless of instance.UseDefault.
-      var toggleReturned = EditorGUI.ToggleLeft( rect,
-                                                 GUI.MakeLabel( wrapper.Member.Name.SplitCamelCase(),
-                                                                false,
-                                                                "If checked - value will be default. Uncheck to manually enter value." ),
-                                                 instance.UseDefault );
-      if ( toggleReturned != instance.UseDefault ) {
+      var toggleOutput = EditorGUI.ToggleLeft( rect,
+                                               GUI.MakeLabel( wrapper.Member.Name.SplitCamelCase(),
+                                                              false,
+                                                              "If checked - value will be default. Uncheck to manually enter value." ),
+                                               toggleInput );
+      if ( toggleOutput != toggleInput ) {
         result.DefaultToggleChanged = true;
-        result.UseDefault = toggleReturned;
+        result.UseDefault = toggleOutput;
       }
 
       // Restore width and calculate new start of the float
