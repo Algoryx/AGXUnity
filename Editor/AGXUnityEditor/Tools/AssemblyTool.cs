@@ -189,25 +189,19 @@ namespace AGXUnityEditor.Tools
         bool shapeButtonPressed      = false;
         bool constraintButtonPressed = false;
 
-        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, InspectorGUISkin.ToolButtonSize.y ) );
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateRigidBody,
+                                                                      m_mode == Mode.RigidBody,
+                                                                      "Create/manage rigid bodies in this assembly.",
+                                                                      () => rbButtonPressed = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      m_mode == Mode.Shape,
+                                                                      "Create shapes given visual representations.",
+                                                                      () => shapeButtonPressed = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
+                                                                      m_mode == Mode.Constraint,
+                                                                      "Create new constraint.",
+                                                                      () => constraintButtonPressed = true ) );
 
-        rect.width = 32.0f;
-        rbButtonPressed = UnityEngine.GUI.Button( rect,
-                                                  GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
-                                                  InspectorEditor.Skin.GetButton( m_mode == Mode.RigidBody,
-                                                                                  InspectorGUISkin.ButtonType.Left ) );
-        rect.x += rect.width;
-        rect.width = 42.0f;
-        shapeButtonPressed = UnityEngine.GUI.Button( rect,
-                                                     GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
-                                                     InspectorEditor.Skin.GetButton( m_mode == Mode.Shape,
-                                                                                     InspectorGUISkin.ButtonType.Middle ) );
-        rect.x += rect.width;
-        rect.width = 68.0f;
-        constraintButtonPressed = UnityEngine.GUI.Button( rect,
-                                                          GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
-                                                          InspectorEditor.Skin.GetButton( m_mode == Mode.Constraint,
-                                                                                          InspectorGUISkin.ButtonType.Right ) );
         HandleModeGUI();
 
         if ( rbButtonPressed )

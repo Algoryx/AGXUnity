@@ -14,6 +14,7 @@ namespace AGXUnityEditor
     FindTransformGivenEdge,
     CreateShapeGivenVisual,
     CreateConstraint,
+    CreateRigidBody,
     DisableCollisions,
     CreateVisual,
     ShapeResize,
@@ -203,6 +204,7 @@ namespace AGXUnityEditor
       toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "find_edge_icon";
       toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_icon";
       toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "hinge_icon";
+      toolIconFilenames[ (int)ToolIcon.CreateRigidBody ]         = "add_fat_icon";
       toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_icon";
       toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_2_icon";
       toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_icon";
@@ -223,7 +225,7 @@ namespace AGXUnityEditor
     {
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
-      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "small_fat_add_left_icon";//"shape_from_icon";
+      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "small_fat_add_left_icon";
       miscIconFilenames[ (int)MiscIcon.ContextDropdown ]   = "small_add_dots_icon";
       miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "small_fat_add_left_icon";
       miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "small_insert_before_2_icon";

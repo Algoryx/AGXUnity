@@ -87,6 +87,8 @@ namespace AGXUnityEditor.Tools
 
       m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
                                                                                          m_createConstraintData.ConstraintType,
+                                                                                         val => (ConstraintType)val != ConstraintType.Unknown,
+                                                                                         false,
                                                                                          skin.Popup );
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
