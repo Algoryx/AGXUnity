@@ -474,12 +474,7 @@ namespace AGXUnityEditor
           using ( InspectorGUI.IndentScope.Single ) {
             GUILayout.BeginHorizontal();
             {
-              GUILayout.BeginVertical();
-              {
-                // Using target to render listObject since it normally (CollisionGroupEntry) isn't an Object.
-                InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
-              }
-              GUILayout.EndVertical();
+              InspectorGUI.Separator( 1.0f, EditorGUIUtility.singleLineHeight );
 
               if ( InspectorGUI.Button( MiscIcon.EntryInsertBefore,
                                         true,
@@ -498,10 +493,13 @@ namespace AGXUnityEditor
                 eraseElement = listObject;
             }
             GUILayout.EndHorizontal();
-          }
 
-          GUILayout.Space( 4.0f );
+            InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
+
+          }
         }
+
+        InspectorGUI.Separator( 1.0f, 0.5f * EditorGUIUtility.singleLineHeight );
 
         if ( list.Count == 0 )
           GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );

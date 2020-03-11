@@ -59,8 +59,8 @@ namespace AGXUnityEditor.Tools
           foreach ( var disabledPair in disabledPairs ) {
             GUILayout.BeginHorizontal();
             {
-              // TODO GUI: Use some other separator here.
-              InspectorGUI.BrandSeparator( 1, 10 );
+              InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
+
               if ( InspectorGUI.Button( MiscIcon.EntryRemove,
                                         true,
                                         "Remove pair from list.",
@@ -72,7 +72,7 @@ namespace AGXUnityEditor.Tools
             HandleCollisionGroupEntryPair( disabledPair );
 
             // TODO GUI: Maybe unnecessary space with correct separator.
-            GUILayout.Space( 3.0f );
+            GUILayout.Space( 6.0f );
           }
         }
       }

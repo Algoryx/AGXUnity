@@ -149,6 +149,14 @@ namespace AGXUnityEditor
       EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
     }
 
+    public static void Separator( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      EditorGUI.DrawRect( rect, Color.Lerp( BackgroundColor, Color.black, EditorGUIUtility.isProSkin ? 0.35f : 0.25f ) );
+    }
+
     public static void DashedBrandSeparator( float height = 1.0f, float space = 1.0f )
     {
       var rect = EditorGUILayout.GetControlRect( false, space + height );

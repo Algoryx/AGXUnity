@@ -9,7 +9,7 @@ namespace AGXUnity
   /// <summary>
   /// Component holding a list of name tags for collision groups.
   /// </summary>
-  [AddComponentMenu( "AGXUnity/Collisions/CollisionGroups" )]
+  [AddComponentMenu( "AGXUnity/Collisions/Collision Groups" )]
   public class CollisionGroups : ScriptComponent
   {
     /// <summary>

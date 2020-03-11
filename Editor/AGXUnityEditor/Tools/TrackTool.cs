@@ -33,15 +33,25 @@ namespace AGXUnityEditor.Tools
       Track.RemoveInvalidWheels();
 
       bool toggleSelectWheel = false;
+      bool toggleDisableCollisions = false;
       if ( !EditorApplication.isPlaying && NumTargets == 1 ) {
         InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTrackWheel,
                                                                       SelectWheelToolEnable,
                                                                       "Select track wheel to add in scene view.",
-                                                                      () => toggleSelectWheel = true ) );
+                                                                      () => toggleSelectWheel = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
+                                                                      DisableCollisionsTool,
+                                                                      "Disable collisions between this track and other objects.",
+                                                                      () => toggleDisableCollisions = true ) );
+
+        if ( DisableCollisionsTool )
+          GetChild<DisableCollisionsTool>().OnInspectorGUI();
       }
 
       if ( toggleSelectWheel )
         SelectWheelToolEnable = !SelectWheelToolEnable;
+      if ( toggleDisableCollisions )
+        DisableCollisionsTool = !DisableCollisionsTool;
     }
 
     public override void OnPostTargetMembersGUI()
@@ -76,6 +86,23 @@ namespace AGXUnityEditor.Tools
           RemoveChild( GetChild<SelectGameObjectTool>() );
       }
     }
+
+    public bool DisableCollisionsTool
+    {
+      get { return GetChild<DisableCollisionsTool>() != null; }
+      set
+      {
+        if ( value && !DisableCollisionsTool ) {
+          RemoveAllChildren();
+
+          var disableCollisionsTool = new DisableCollisionsTool( Track.gameObject );
+          AddChild( disableCollisionsTool );
+        }
+        else if ( !value )
+          RemoveChild( GetChild<DisableCollisionsTool>() );
+      }
+    }
+
 
     private void OnWheelSelect( GameObject selection )
     {

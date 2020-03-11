@@ -51,7 +51,7 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI()
     {
-      InspectorGUI.OnDropdownToolBegin();
+      InspectorGUI.OnDropdownToolBegin( $"Disable collisions between {m_mainObject.name} and other objects selected in Scene View." );
 
       var skin = InspectorEditor.Skin;
       var emptyContent = GUI.MakeLabel( " " );
@@ -99,13 +99,33 @@ namespace AGXUnityEditor.Tools
         string selectedGroupName = m_mainObject.GetInstanceID().ToString();
         string mainObjectGroupName = "";
         for ( int i = 0; i < m_selected.Count; ++i )
-          mainObjectGroupName += m_selected[ i ].GetInstanceID().ToString() + ( i != m_selected.Count - 1 ? "_" : "" );
+          mainObjectGroupName += m_selected[ i ].GetInstanceID().ToString() +
+                                 ( i != m_selected.Count - 1 ? "_" : "" );
 
-        m_mainObject.GetOrCreateComponent<CollisionGroups>().AddGroup( mainObjectGroupName, ShouldPropagateToChildren( m_mainObject ) );
-        foreach ( var selected in m_selected )
-          selected.GetOrCreateComponent<CollisionGroups>().AddGroup( selectedGroupName, ShouldPropagateToChildren( selected ) );
+        Undo.SetCurrentGroupName( "Disabling collisions" );
+        var undoGroupId = Undo.GetCurrentGroup();
+
+        if ( m_mainObject.GetComponent<CollisionGroups>() == null )
+          Undo.AddComponent<CollisionGroups>( m_mainObject );
+
+        Undo.RecordObject( m_mainObject.GetComponent<CollisionGroups>(), "Adding collision group" );
+        m_mainObject.GetComponent<CollisionGroups>().AddGroup( mainObjectGroupName,
+                                                               ShouldPropagateToChildren( m_mainObject ) );
+        foreach ( var selected in m_selected ) {
+          if ( selected.GetComponent<CollisionGroups>() == null )
+            Undo.AddComponent<CollisionGroups>( selected );
+          Undo.RecordObject( selected.GetComponent<CollisionGroups>(), "Adding collision group" );
+          selected.GetComponent<CollisionGroups>().AddGroup( selectedGroupName,
+                                                             ShouldPropagateToChildren( selected ) );
+        }
+
+        // TopMenu.GetOrCreate works with Undo.
+        Undo.RecordObject( TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>(),
+                           "Adding collision group to manager." );
 
         CollisionGroupsManager.Instance.SetEnablePair( mainObjectGroupName, selectedGroupName, false );
+
+        Undo.CollapseUndoOperations( undoGroupId );
 
         PerformRemoveFromParent();
       }
@@ -131,7 +151,9 @@ namespace AGXUnityEditor.Tools
       return go.GetComponent<RigidBody>() == null &&
              go.GetComponent<AGXUnity.Collide.Shape>() == null &&
              go.GetComponent<Wire>() == null &&
-             go.GetComponent<Cable>() == null;
+             go.GetComponent<Cable>() == null &&
+             go.GetComponent<AGXUnity.Model.Track>() == null &&
+             go.GetComponent<AGXUnity.Model.DeformableTerrain>() == null;
     }
   }
 }
