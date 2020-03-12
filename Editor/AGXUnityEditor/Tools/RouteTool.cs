@@ -81,7 +81,6 @@ namespace AGXUnityEditor.Tools
     public RouteTool( Object[] targets )
       : base( targets )
     {
-      // , Route<NodeT> route
       Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
                                                                    System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
 
@@ -176,7 +175,7 @@ namespace AGXUnityEditor.Tools
       var listButtonsOptions = new GUILayoutOption[]
       {
         GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
-        GUILayout.Height( 0.75f * EditorGUIUtility.singleLineHeight )
+        GUILayout.Height( 1.0f * EditorGUIUtility.singleLineHeight )
       };
 
       bool addNewPressed        = false;
@@ -190,7 +189,7 @@ namespace AGXUnityEditor.Tools
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( Parent,
                                                               "Route",
                                                               entry => { entry.Bool = true; } ),
-                                 GUI.MakeLabel( "Route", true ) ) ) {
+                                 GUI.MakeLabel( "Route" ) ) ) {
         Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
@@ -232,7 +231,6 @@ namespace AGXUnityEditor.Tools
                 erasePressed = InspectorGUI.Button( MiscIcon.EntryRemove,
                                                     true,
                                                     "Remove this node from the route.",
-                                                    1.05f,
                                                     listButtonsOptions ) || erasePressed;
 
                 if ( listOpNode == null && ( insertBeforePressed || insertAfterPressed || erasePressed ) )
@@ -265,6 +263,8 @@ namespace AGXUnityEditor.Tools
         }
         GUILayout.EndHorizontal();
       }
+
+      InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
 
       if ( addNewPressed || insertBeforePressed || insertAfterPressed ) {
         NodeT newRouteNode = null;
