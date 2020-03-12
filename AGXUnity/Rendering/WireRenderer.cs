@@ -6,7 +6,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
-  [AddComponentMenu( "AGXUnity/Rendering/Cable Renderer" )]
+  [AddComponentMenu( "AGXUnity/Rendering/Wire Renderer" )]
   [ExecuteInEditMode]
   [RequireComponent( typeof( Wire ) )]
   public class WireRenderer : ScriptComponent
