@@ -145,9 +145,6 @@ namespace AGXUnity.IO
 
     /// <summary>
     /// Plugins path where the AGX Dynamics native modules are located.
-    /// NOTE: Due to limitations in dll-loading in Unity version earlier
-    ///       than 2019.2.4, the dlls are copied to the root folder for
-    ///       2019.2.3 and earlier.
     /// </summary>
     /// <param name="dataPath">Path to player data folder - nameOfExecutable_Data.</param>
     /// <returns>Path to the plugins folder.</returns>
