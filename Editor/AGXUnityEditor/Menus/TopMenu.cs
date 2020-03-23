@@ -479,7 +479,12 @@ namespace AGXUnityEditor
 
     private bool Link( GUIContent content )
     {
-      content.text = GUI.AddColorTag( content.text, Color.Lerp( Color.blue, Color.white, 0.35f ) );
+      var brandColorBlue = new Color( 45.0f / 255,
+                                      204.0f / 255,
+                                      211.0f / 255 );
+      content.text = GUI.AddColorTag( content.text, EditorGUIUtility.isProSkin ?
+                                                      brandColorBlue :
+                                                      Color.Lerp( brandColorBlue, Color.black, 0.20f ) );
       var clicked = GUILayout.Button( content, InspectorEditor.Skin.Label );
       EditorGUIUtility.AddCursorRect( GUILayoutUtility.GetLastRect(), MouseCursor.Link );
       return clicked;
