@@ -57,6 +57,15 @@ namespace AGXUnityEditor.Tools
 
       UnityEngine.GUI.changed = false;
 
+      EditorGUI.showMixedValue = differentTypes;
+      using ( new GUI.EnabledBlock( false ) )
+        EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                   refConstraint.Type,
+                                   InspectorEditor.Skin.Popup,
+                                   GUILayout.Width( EditorGUIUtility.labelWidth +
+                                                    2.0f * 76.0f ) );
+      EditorGUI.showMixedValue = false;
+
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
       EditorGUI.showMixedValue = false;
