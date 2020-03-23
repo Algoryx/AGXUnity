@@ -493,8 +493,8 @@ namespace AGXUnityEditor
                                         "Data" +
                                         System.IO.Path.DirectorySeparatorChar +
                                         ( EditorGUIUtility.isProSkin ?
-                                            "algoryx_white.png" :
-                                            "algoryx_black.png" ) ) as Texture2D;
+                                            "agx_for_unity_logo_white.png" :
+                                            "agx_for_unity_logo_black.png" ) ) as Texture2D;
       return m_logo;
     }
   }
