@@ -7,7 +7,8 @@ namespace AGXUnity.Utils
   {
     public static class Symbols
     {
-      public const char ArrowRight = '\u21D2';
+      //public const char ArrowRight = '\u21D2';
+      public const char ArrowRight = '\u2192';
       public const char ArrowLeftRight = '\u2194';
 
       public const char CircleArrowAcw = '\u21ba';
