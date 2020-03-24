@@ -91,7 +91,7 @@ namespace AGXUnityEditor
     {
       var filters = transform.GetComponents<MeshFilter>();
       if ( filters.Length == 0 ) {
-        if ( transform.GetComponent<DebugRenderData>() != null )
+        if ( transform.GetComponent<DebugRenderData>() != null && transform.GetComponent<DebugRenderData>().Node != null )
           filters = transform.GetComponent<DebugRenderData>().Node.GetComponentsInChildren<MeshFilter>();
         else if ( transform.GetComponent<AGXUnity.Collide.Shape>() != null ) {
           var shape = transform.GetComponent<AGXUnity.Collide.Shape>();
