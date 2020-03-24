@@ -191,12 +191,15 @@ namespace AGXUnityEditor.Tools
       var verticalScope = !validatedNode.Valid ?
                             new EditorGUILayout.VerticalScope( s_invalidNodeStyle ) :
                             null;
-      using ( new EditorGUILayout.HorizontalScope() ) {
+      var horizontalScope = node == Selected ?
+                              new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.Label ) :
+                              new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.TextArea );
+      using ( horizontalScope ) {
         state.Foldout = InspectorGUI.Foldout( GetFoldoutData( node ),
                                               GUI.MakeLabel( GetNodeTypeString( node ) + ' ' +
                                                              SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                                              !validatedNode.Valid,
-                                                            validatedNode.ErrorString ),
+                                                             validatedNode.ErrorString ),
                                               newState =>
                                               {
                                                 Selected = newState ? node : null;
