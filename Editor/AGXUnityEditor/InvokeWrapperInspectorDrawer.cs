@@ -317,8 +317,13 @@ namespace AGXUnityEditor
       using ( new GUI.EnabledBlock( !instance.UseDefault && !hasMixedUseDefault ) ) {
         EditorGUI.BeginChangeCheck();
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
-        if ( EditorGUI.EndChangeCheck() )
-          result.OnChange<ValueT>( instance.Value, newValue );
+        if ( EditorGUI.EndChangeCheck() ) {
+          // Validate input here so that, e.g., 0 isn't propagated. It's
+          // not possible to check this in the CopyOp callback.
+          var clampAttribute = wrapper.GetAttribute<ClampAboveZeroInInspector>();
+          if ( clampAttribute == null || clampAttribute.IsValid( newValue ) )
+            result.OnChange<ValueT>( instance.Value, newValue );
+        }
       }
 
       rect.x                      = rect.xMax;
