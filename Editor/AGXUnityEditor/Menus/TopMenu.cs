@@ -431,7 +431,7 @@ namespace AGXUnityEditor
       GUILayout.Box( GetOrCreateLogo(), AGXUnity.Utils.GUI.Skin.customStyles[ 3 ], GUILayout.Width( 400 ), GUILayout.Height( 100 ) );
       GUILayout.EndHorizontal();
 
-      EditorGUILayout.SelectableLabel( "© " + System.DateTime.Now.Year + " Algoryx Simulations AB",
+      EditorGUILayout.SelectableLabel( "© " + System.DateTime.Now.Year + " Algoryx Simulation AB",
                                        InspectorEditor.Skin.LabelMiddleCenter );
 
       InspectorGUI.BrandSeparator();
