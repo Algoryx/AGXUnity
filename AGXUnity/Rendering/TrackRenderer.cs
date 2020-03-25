@@ -209,15 +209,15 @@ namespace AGXUnity.Rendering
       {
         var reqUpdate = TrackWheels.Length != track.Wheels.Length ||
                         Track.NumberOfNodes != track.NumberOfNodes ||
-                       !Mathf.Approximately( Track.Width, track.Width ) ||
-                       !Mathf.Approximately( Track.Thickness, track.Thickness ) ||
-                       !Mathf.Approximately( Track.InitialTensionDistance, track.InitialTensionDistance );
+                       !Math.Approximately( Track.Width, track.Width ) ||
+                       !Math.Approximately( Track.Thickness, track.Thickness ) ||
+                       !Math.Approximately( Track.InitialTensionDistance, track.InitialTensionDistance );
         if ( !reqUpdate ) {
           for ( int i = 0; !reqUpdate && i < TrackWheels.Length; ++i ) {
             var trackWheelDef = TrackWheels[ i ];
             var trackWheel    = track.Wheels[ i ];
             reqUpdate         = trackWheelDef.WheelModel != trackWheel.Model ||
-                               !Mathf.Approximately( trackWheelDef.Radius, trackWheel.Radius ) ||
+                               !Math.Approximately( trackWheelDef.Radius, trackWheel.Radius ) ||
                                 Vector3.SqrMagnitude( trackWheelDef.Position - trackWheel.transform.position ) > 1.0E-5f ||
                                 Vector3.SqrMagnitude( trackWheelDef.LocalPosition - trackWheel.Frame.LocalPosition ) > 1.0E-5f ||
                                 ( Quaternion.Inverse( trackWheelDef.Rotation ) * trackWheel.transform.rotation ).eulerAngles.sqrMagnitude > 1.0E-5f ||

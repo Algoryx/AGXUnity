@@ -5,6 +5,11 @@ namespace AGXUnity.Utils
 {
   public static class Math
   {
+    public static bool Approximately( float a, float b, float epsilon = 0.000001f )
+    {
+      return System.Math.Abs( a - b ) <= epsilon;
+    }
+
     public static Vector3 Clamp( Vector3 v, float minValue )
     {
       return new Vector3( Mathf.Max( v.x, minValue ), Mathf.Max( v.y, minValue ), Mathf.Max( v.z, minValue ) );

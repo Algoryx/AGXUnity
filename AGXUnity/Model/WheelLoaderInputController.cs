@@ -121,7 +121,7 @@ namespace AGXUnity.Model
       var brake    = Brake;
 
       var idleSpeed = 0.05f;
-      if ( Mathf.Approximately( throttle, 0.0f ) && Mathf.Approximately( brake, 0.0f ) ) {
+      if ( Utils.Math.EqualsZero( throttle ) && Utils.Math.EqualsZero( brake ) ) {
         SetThrottle( 0.0f );
         if ( Mathf.Abs( speed ) > idleSpeed )
           SetBrake( 0.1f );
@@ -186,7 +186,7 @@ namespace AGXUnity.Model
 
     private void SetSpeed( Constraint constraint, float speed )
     {
-      var motorEnable = !Mathf.Approximately( speed, 0.0f );
+      var motorEnable = !Utils.Math.EqualsZero( speed );
       var mc = constraint.GetController<TargetSpeedController>();
       var lc = constraint.GetController<LockController>();
       mc.Enable = motorEnable;

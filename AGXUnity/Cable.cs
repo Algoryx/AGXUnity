@@ -152,7 +152,7 @@ namespace AGXUnity
             var currMaterial = Native.getMaterial();
             var currIsDefault = currMaterial != null &&
                                 currMaterial.getName() == "DefaultCableMaterial";
-                                Mathf.Approximately( (float)currMaterial.getBulkMaterial().getDensity(), 700.0f );
+                                Utils.Math.Approximately( (float)currMaterial.getBulkMaterial().getDensity(), 700.0f );
             if ( currMaterial == null || !currIsDefault ) {
               var defaultMaterial = new agx.Material( "DefaultCableMaterial" );
               defaultMaterial.getBulkMaterial().setDensity( 700.0 );
@@ -268,7 +268,7 @@ namespace AGXUnity
       get
       {
         return m_routePointCurve != null &&
-               Mathf.Approximately( m_routePointResulutionPerUnitLength, ResolutionPerUnitLength ) &&
+               Utils.Math.Approximately( m_routePointResulutionPerUnitLength, ResolutionPerUnitLength ) &&
                Route.IsSynchronized( m_routePointCurve, 1.0E-4f );
       }
     }

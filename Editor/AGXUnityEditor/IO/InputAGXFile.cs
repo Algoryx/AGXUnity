@@ -609,7 +609,7 @@ namespace AGXUnityEditor.IO
       float fixedStepTime = Time.fixedDeltaTime;
       float readTimeStep  = Convert.ToSingle( Simulation.getTimeStep() );
       float timeStepRatio = fixedStepTime / readTimeStep;
-      if ( !Mathf.Approximately( timeStepRatio, 1.0f ) ) {
+      if ( !AGXUnity.Utils.Math.Approximately( timeStepRatio, 1.0f ) ) {
         foreach ( var ec in constraint.ElementaryConstraints ) {
           foreach ( var rowData in ec.RowData ) {
             if ( rowData.Compliance < -float.Epsilon ) {
