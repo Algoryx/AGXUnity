@@ -48,7 +48,7 @@ namespace AGXUnityEditor
                             "_" + foldoutBeginAttribute.Name;
       Begin( !InspectorGUI.Foldout( EditorData.Instance.GetData( targetInstance as Object,
                                                                  groupIdentifier ),
-                                    GUI.MakeLabel( foldoutBeginAttribute.Name, true ) ) );
+                                    GUI.MakeLabel( foldoutBeginAttribute.Name ) ) );
     }
 
     public void Dispose()

@@ -6,10 +6,43 @@ namespace AGXUnity.Model
   public class DeformableTerrainMaterial : ScriptAsset
   {
     /// <summary>
+    /// Deformable terrain material presets.
+    /// </summary>
+    public enum PresetLibrary
+    {
+      Gravel_1,
+      Sand_1,
+      Dirt_1
+    }
+
+    /// <summary>
     /// Native instance of the terrain material.
     /// </summary>
     [HideInInspector]
     public agxTerrain.TerrainMaterial Native { get; private set; }
+
+    [SerializeField]
+    private PresetLibrary m_preset = PresetLibrary.Dirt_1;
+
+    /// <summary>
+    /// Base preset used, the preset isn't changed when
+    /// the values has been changed so that it's possible
+    /// to reset to default.
+    /// </summary>
+    [HideInInspector]
+    public PresetLibrary Preset
+    {
+      get { return m_preset; }
+      set
+      {
+        if ( m_preset == value )
+          return;
+
+        m_preset = value;
+
+        ResetToPresetDefault();
+      }
+    }
 
     #region Bulk Properties
     [SerializeField]
@@ -829,6 +862,17 @@ namespace AGXUnity.Model
     }
     #endregion
 
+    /// <summary>
+    /// Reset values to default given current preset.
+    /// </summary>
+    public void ResetToPresetDefault()
+    {
+      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( ToNative( Preset ) );
+      Utils.PropertySynchronizer.SynchronizeGetToSet( this );
+      m_temporaryNative.Dispose();
+      m_temporaryNative = null;
+    }
+
     public override void Destroy()
     {
       Native = null;
@@ -836,16 +880,19 @@ namespace AGXUnity.Model
 
     protected override void Construct()
     {
-      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( agxTerrain.TerrainMaterialLibrary.MaterialPreset.DIRT_1 );
-      Utils.PropertySynchronizer.SynchronizeGetToSet( this );
-      m_temporaryNative.Dispose();
-      m_temporaryNative = null;
+      // Setting values given default preset.
+      ResetToPresetDefault();
     }
 
     protected override bool Initialize()
     {
       Native = new agxTerrain.TerrainMaterial( name );
       return true;
+    }
+
+    private agxTerrain.TerrainMaterialLibrary.MaterialPreset ToNative( PresetLibrary preset )
+    {
+      return (agxTerrain.TerrainMaterialLibrary.MaterialPreset)(int)preset;
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;
