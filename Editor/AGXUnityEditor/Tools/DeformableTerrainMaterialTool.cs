@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Model;
@@ -20,14 +21,20 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
+      var refMaterial = Material;
+      var mixedPreset = Targets.Any( target => (target as DeformableTerrainMaterial).Preset != refMaterial.Preset );
+
       using ( new InspectorGUI.IndentScope( ( InspectorGUI.IndentScope.Level > 0 ? -1 : 0 ) ) ) {
         var resetButtonWidth = EditorGUIUtility.singleLineHeight;
         var rect             = EditorGUILayout.GetControlRect();
         rect.width          -= resetButtonWidth;
-        var newPreset        = (DeformableTerrainMaterial.PresetLibrary)EditorGUI.EnumPopup( rect,
-                                                                                             GUI.MakeLabel( "Preset" ),
-                                                                                             Material.Preset,
-                                                                                             InspectorEditor.Skin.Popup );
+
+        EditorGUI.showMixedValue = mixedPreset;
+        var newPreset            = (DeformableTerrainMaterial.PresetLibrary)EditorGUI.EnumPopup( rect,
+                                                                                                 GUI.MakeLabel( "Preset" ),
+                                                                                                 Material.Preset,
+                                                                                                 InspectorEditor.Skin.Popup );
+        EditorGUI.showMixedValue = false;
 
         rect.x                += rect.width;
         rect.width             = resetButtonWidth;
@@ -42,14 +49,16 @@ namespace AGXUnityEditor.Tools
                                           $"Change preset from {Material.Preset} to {newPreset}?\n" +
                                           "All current values will be overwritten.",
                                           "Yes", "No" ) ) {
-          Material.Preset = newPreset;
+          foreach ( var material in GetTargets<DeformableTerrainMaterial>() )
+            material.Preset = newPreset;
         }
 
         if ( resetButtonPressed &&
              EditorUtility.DisplayDialog( "Reset values to default",
                                          $"Reset preset {Material.Preset} to default?",
                                           "Yes", "No" ) ) {
-          Material.ResetToPresetDefault();
+          foreach ( var material in GetTargets<DeformableTerrainMaterial>() )
+            material.ResetToPresetDefault();
         }
 
         InspectorGUI.Separator();
