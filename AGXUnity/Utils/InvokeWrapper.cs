@@ -414,7 +414,7 @@ namespace AGXUnity.Utils
     /// <returns>True if the value is set - otherwise false.</returns>
     public override bool ConditionalSet( object obj, object value )
     {
-      if ( !CanRead() || !IsValid( value ) || ( obj == null && !IsStatic() ) )
+      if ( !CanWrite() || !IsValid( value ) || ( obj == null && !IsStatic() ) )
         return false;
       Property.SetValue( obj, value, null );
       return true;

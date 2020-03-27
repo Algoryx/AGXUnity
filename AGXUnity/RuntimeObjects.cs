@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "" )]
   [ExecuteInEditMode]
   public class RuntimeObjects : UniqueGameObject<RuntimeObjects>
   {

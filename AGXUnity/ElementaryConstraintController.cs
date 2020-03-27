@@ -5,6 +5,7 @@ namespace AGXUnity
   /// <summary>
   /// Base class of controllers (such as motor, lock etc.).
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class ElementaryConstraintController : ElementaryConstraint
   {

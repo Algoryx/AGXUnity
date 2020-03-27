@@ -89,26 +89,41 @@ namespace AGXUnity
 
       public sealed override void preCollide( double time )
       {
-        if ( m_functions.SimulationPreCollide != null )
-          m_functions.SimulationPreCollide.Invoke();
+        Invoke( m_functions.SimulationPreCollide );
       }
 
       public sealed override void pre( double time )
       {
-        if ( m_functions.SimulationPre != null )
-          m_functions.SimulationPre.Invoke();
+        Invoke( m_functions.SimulationPre );
       }
 
       public sealed override void post( double time )
       {
-        if ( m_functions.SimulationPost != null )
-          m_functions.SimulationPost.Invoke();
+        Invoke( m_functions.SimulationPost );
       }
 
       public sealed override void last( double time )
       {
-        if ( m_functions.SimulationLast != null )
-          m_functions.SimulationLast.Invoke();
+        Invoke( m_functions.SimulationLast );
+      }
+
+      private void Invoke( StepCallbackDef callbacks )
+      {
+        if ( callbacks != null ) {
+          BeginManagedCallbacks();
+          callbacks.Invoke();
+          EndManagedCallbacks();
+        }
+      }
+
+      private void BeginManagedCallbacks()
+      {
+        agx.agxSWIG.setEntityCreationThreadSafe( true );
+      }
+
+      private void EndManagedCallbacks()
+      {
+        agx.agxSWIG.setEntityCreationThreadSafe( false );
       }
     }
   }

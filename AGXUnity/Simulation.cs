@@ -443,7 +443,11 @@ namespace AGXUnity
 
     private void InvokeStepForward()
     {
+      agx.agxSWIG.setEntityCreationThreadSafe( false );
+
       m_simulation.stepForward();
+
+      agx.agxSWIG.setEntityCreationThreadSafe( true );
     }
 
     private void PostStepForward()

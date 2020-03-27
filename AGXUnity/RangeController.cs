@@ -6,6 +6,7 @@ namespace AGXUnity
   /// Range controller object, constraining the angle of the constraint to be
   /// within a given range.
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class RangeController : ElementaryConstraintController
   {

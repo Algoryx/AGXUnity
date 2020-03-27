@@ -7,6 +7,7 @@ namespace AGXUnity
   /// Target speed controller object, constraining the angle of the constraint to
   /// be driven at a given speed.
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class TargetSpeedController : ElementaryConstraintController
   {

@@ -209,7 +209,6 @@ namespace AGXUnityEditor.Utils
       RigidBodyColorData colorData;
       if ( !m_rbColors.TryGetValue( rb, out colorData ) ) {
         Color color = new Color( UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value );
-        //Color color = UnityEngine.Random.ColorHSV( 0f, 1f, 0.5f, 1.0f, 0.5f, 0.85f );
 
         color.a = RigidBodyColorAlpha;
         colorData = new RigidBodyColorData() { Color = color };

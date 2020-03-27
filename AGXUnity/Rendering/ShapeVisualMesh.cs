@@ -7,6 +7,7 @@ namespace AGXUnity.Rendering
   /// <summary>
   /// Shape visual for shape type Mesh.
   /// </summary>
+  [AddComponentMenu( "" )]
   [DoNotGenerateCustomEditor]
   public class ShapeVisualMesh : ShapeVisual
   {

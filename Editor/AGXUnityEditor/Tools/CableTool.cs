@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
@@ -29,7 +29,7 @@ namespace AGXUnityEditor.Tools
     protected override string GetNodeTypeString( RouteNode node )
     {
       var cableNode = node as CableRouteNode;
-      return GUI.AddColorTag( cableNode.Type.ToString().SplitCamelCase(), GetColor( cableNode ) );
+      return InspectorEditor.Skin.TagTypename( cableNode.Type.ToString() );
     }
 
     protected override Color GetNodeColor( RouteNode node )
@@ -37,12 +37,12 @@ namespace AGXUnityEditor.Tools
       return GetColor( node as CableRouteNode );
     }
 
-    protected override void OnPreFrameGUI( CableRouteNode node, GUISkin skin )
+    protected override void OnPreFrameGUI( CableRouteNode node )
     {
-      using ( new GUI.Indent( 12 ) ) {
-        node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ), node.Type, skin.button );
-
-        GUI.Separator();
+      using ( InspectorGUI.IndentScope.Single ) {
+        node.Type = (Cable.NodeType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                                               node.Type,
+                                                               InspectorEditor.Skin.Popup );
       }
     }
 
@@ -78,18 +78,12 @@ namespace AGXUnityEditor.Tools
       Undo.RecordObjects( selected.ToArray(), "Cable properties" );
 
       var skin = InspectorEditor.Skin;
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Cable Properties", true ), skin.label );
-
-      GUI.Separator();
-
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
-      using ( new GUI.Indent( 12 ) ) {
+      using ( InspectorGUI.IndentScope.Single ) {
         foreach ( CableProperties.Direction dir in CableProperties.Directions ) {
-          var tmp = OnPropertyGUI( dir, selected.First(), skin );
+          var tmp = OnPropertyGUI( dir, selected.First() );
           if ( tmp != null )
             changed = tmp;
-          GUI.Separator();
         }
       }
 
@@ -102,15 +96,12 @@ namespace AGXUnityEditor.Tools
     }
 
     private Tuple<PropertyWrapper, CableProperties.Direction, object> OnPropertyGUI( CableProperties.Direction dir,
-                                                                                     CableProperties properties,
-                                                                                     GUISkin skin )
+                                                                                     CableProperties properties )
     {
       Tuple<PropertyWrapper, CableProperties.Direction, object> changed = null;
       var data = EditorData.Instance.GetData( properties, "CableProperty" + dir.ToString() );
-      if ( GUI.Foldout( data, GUI.MakeLabel( dir.ToString() ), skin ) ) {
-        using ( new GUI.Indent( 12 ) ) {
-          GUI.Separator();
-
+      if ( InspectorGUI.Foldout( data, GUI.MakeLabel( dir.ToString() ) ) ) {
+        using ( InspectorGUI.IndentScope.Single ) {
           var wrappers = PropertyWrapper.FindProperties<CableProperty>( System.Reflection.BindingFlags.Instance |
                                                                         System.Reflection.BindingFlags.Public );
           foreach ( var wrapper in wrappers ) {

@@ -35,6 +35,8 @@ namespace AGXUnity
         controllerType = agx.ScrewController.safeCast( tmpEc ).GetType();
       else if ( agx.ElectricMotorController.safeCast( tmpEc ) != null )
         controllerType = agx.ElectricMotorController.safeCast( tmpEc ).GetType();
+      else if ( agx.FrictionController.safeCast( tmpEc ) != null )
+        controllerType = agx.FrictionController.safeCast( tmpEc ).GetType();
 
       // This is a controller, instantiate the controller.
       if ( controllerType != null ) {

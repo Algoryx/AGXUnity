@@ -180,25 +180,29 @@ namespace AGXUnity.Rendering
         }
       }
 
-      if ( m_separateFirstObjectPrefabPath != string.Empty && m_firstSegmentInstance == null ) {
-        m_firstSegmentInstance = PrefabLoader.Instantiate<GameObject>( m_separateFirstObjectPrefabPath );
-        m_firstSegmentInstance.hideFlags = HideFlags.DontSaveInEditor;
-        setMaterialFunc( m_firstSegmentInstance, Material );
-        AddSelectionProxy( m_firstSegmentInstance );
-        Add( m_firstSegmentInstance );
-      }
-      else if ( m_segmentInstance == null ) {
-        m_segmentInstance = PrefabLoader.Instantiate<GameObject>( m_prefabObjectPath );
-        m_segmentInstance.hideFlags = HideFlags.DontSaveInEditor;
-        setMaterialFunc( m_segmentInstance, Material );
-        AddSelectionProxy( m_segmentInstance );
-        Add( m_segmentInstance );
+      if ( m_separateFirstObjectPrefabPath != string.Empty ) {
+        if ( m_firstSegmentInstance == null ) {
+          m_firstSegmentInstance = PrefabLoader.Instantiate<GameObject>( m_separateFirstObjectPrefabPath );
+          m_firstSegmentInstance.hideFlags = HideFlags.DontSaveInEditor;
+          setMaterialFunc( m_firstSegmentInstance, Material );
+          AddSelectionProxy( m_firstSegmentInstance );
+          Add( m_firstSegmentInstance );
+        }
       }
 
       // Push back new segment if there aren't enough segments already created.
       int currentChildCount = m_segments.transform.childCount;
-      if ( m_counter == currentChildCount )
-        Add( GameObject.Instantiate( m_segmentInstance ) );
+      if ( m_counter == currentChildCount ) {
+        if ( m_segmentInstance == null ) {
+          m_segmentInstance = PrefabLoader.Instantiate<GameObject>( m_prefabObjectPath );
+          m_segmentInstance.hideFlags = HideFlags.DontSaveInEditor;
+          setMaterialFunc( m_segmentInstance, Material );
+          AddSelectionProxy( m_segmentInstance );
+          Add( m_segmentInstance );
+        }
+        else
+          Add( GameObject.Instantiate( m_segmentInstance ) );
+      }
       else if ( m_counter > currentChildCount )
         throw new Exception( "Internal counter is not in sync. Counter = " + m_counter + ", #children = " + currentChildCount );
 

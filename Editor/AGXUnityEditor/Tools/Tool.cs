@@ -190,12 +190,67 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     public bool IsSingleInstanceTool { get; set; } = true;
 
-    private List<Tool> m_children = new List<Tool>();
-    private Tool m_parent         = null;
+    /// <summary>
+    /// Debug render cylinder or arrow.
+    /// </summary>
+    /// <remarks>
+    /// This method is only valid to use during OnSceneViewGUI.
+    /// </remarks>
+    /// <param name="start">Cylinder/arrow start position.</param>
+    /// <param name="end">Cylinder/arrow end position.</param>
+    /// <param name="radius">Size of the cylinder/arrow.</param>
+    /// <param name="color">Color of the cylinder/arrow.</param>
+    /// <param name="arrow">True to render as arrow, false to render as cylinder.</param>
+    public void DebugRender( Vector3 start, Vector3 end, float radius, Color color, bool arrow = false )
+    {
+      CreateDefaultDebugRenderable<Utils.VisualPrimitiveArrow>( color ).SetTransformEx( start,
+                                                                                        end,
+                                                                                        radius,
+                                                                                        arrow );
+    }
 
-    private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
-    private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
-    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
+    /// <summary>
+    /// Debug render sphere.
+    /// </summary>
+    /// <remarks>
+    /// This method is only valid to use during OnSceneViewGUI.
+    /// </remarks>
+    /// <param name="center">Center of sphere.</param>
+    /// <param name="radius">Radius of sphere.</param>
+    /// <param name="color">Color of sphere.</param>
+    public void DebugRender( Vector3 center, float radius, Color color )
+    {
+      CreateDefaultDebugRenderable<Utils.VisualPrimitiveSphere>( color ).SetTransform( center,
+                                                                                       Quaternion.identity,
+                                                                                       radius,
+                                                                                       false );
+    }
+
+    private T CreateDefaultDebugRenderable<T>( Color color )
+      where T : Utils.VisualPrimitive
+    {
+      var primitive = GetOrCreateVisualPrimitive<T>( s_debugRenderVisualPrefix + m_visualPrimitives.Count.ToString(),
+                                                     "GUI/Text Shader" );
+      primitive.Color = primitive.MouseOverColor = color;
+      primitive.Pickable = false;
+      primitive.Visible = true;
+      return primitive;
+    }
+
+    /// <summary>
+    /// Clears temporary data. This method is called before OnSceneViewGUI.
+    /// </summary>
+    /// <param name="tool">Tool to clear temporary data for.</param>
+    public static void ClearTemporaries( Tool tool )
+    {
+      List<string> debugRenderablesToRemove = new List<string>();
+      foreach ( var name in tool.m_visualPrimitives.Keys ) {
+        if ( name.StartsWith( s_debugRenderVisualPrefix ) )
+          debugRenderablesToRemove.Add( name );
+      }
+      foreach ( var name in debugRenderablesToRemove )
+        tool.RemoveVisualPrimitive( name );
+    }
 
     /// <summary>
     /// Construct given the implemented tool supports multiple
@@ -230,10 +285,40 @@ namespace AGXUnityEditor.Tools
 
     public Tool GetRoot()
     {
-      Tool root = GetParent();
+      var root = GetParent();
       while ( root != null && root.GetParent() != null )
         root = root.GetParent();
       return root;
+    }
+
+    public bool HasParent( Tool parent )
+    {
+      var currParent = GetParent();
+      while ( currParent != null && currParent != parent )
+        currParent = currParent.GetParent();
+      return currParent != null;
+    }
+
+    public bool HasParent<T>()
+      where T : Tool
+    {
+      var currParent = GetParent();
+      while ( currParent != null && !( currParent is T ) )
+        currParent = currParent.GetParent();
+      return currParent != null;
+    }
+
+    public bool HasChild( Tool tool )
+    {
+      if ( this == tool )
+        return true;
+
+      foreach ( var child in m_children ) {
+        if ( child.HasChild( tool ) )
+          return true;
+      }
+
+      return false;
     }
 
     public T GetChild<T>() where T : Tool
@@ -271,9 +356,14 @@ namespace AGXUnityEditor.Tools
       Editor editor = null;
       if ( m_editors.TryGetValue( target, out editor ) )
         return editor;
-      editor = Editor.CreateEditor( target );
+      editor = InspectorEditor.CreateRecursive( target );
       m_editors.Add( target, editor );
       return editor;
+    }
+
+    public bool HasEditor( Object target )
+    {
+      return m_editors.ContainsKey( target );
     }
 
     public void RemoveEditor( Object target )
@@ -356,6 +446,45 @@ namespace AGXUnityEditor.Tools
     {
       if ( m_visualPrimitives.ContainsValue( primitive ) )
         RemoveVisualPrimitive( m_visualPrimitives.First( kvp => kvp.Value == primitive ).Key );
+    }
+
+    protected GameObject HighlightObject
+    {
+      get { return m_highlightedObject; }
+      set
+      {
+        if ( m_highlightedObject == value )
+          return;
+
+        SceneViewHighlight.Remove( m_highlightedObject );
+        m_highlightedObject = value;
+        SceneViewHighlight.Add( m_highlightedObject );
+      }
+    }
+
+    private struct CallEveryData
+    {
+      public double LastTime;
+      public int NumCalls;
+    }
+
+    protected void CallEvery( float time, Action<int> callback )
+    {
+      if ( m_callEveryData.LastTime == 0.0 ) {
+        m_callEveryData.LastTime = EditorApplication.timeSinceStartup;
+        return;
+      }
+
+      if ( ( EditorApplication.timeSinceStartup - m_callEveryData.LastTime ) >= time ) {
+        callback( ++m_callEveryData.NumCalls );
+        m_callEveryData.LastTime = EditorApplication.timeSinceStartup;
+      }
+    }
+
+    protected string AwaitingUserActionDots()
+    {
+      CallEvery( 0.35f, numCalls => m_awaitingUserActionDots = new string( '.', numCalls % 4 ) );
+      return m_awaitingUserActionDots;
     }
 
     protected void AddKeyHandler( string name, Utils.KeyHandler keyHandler )
@@ -444,28 +573,6 @@ namespace AGXUnityEditor.Tools
       m_hideDefaultState = new HideDefaultState();
     }
 
-    public class VisualizedSelectionData
-    {
-      public GameObject Object = null;
-    }
-
-    private List<VisualizedSelectionData> m_visualizedSelection = new List<VisualizedSelectionData>();
-
-    public VisualizedSelectionData VisualizedSelection { get { return m_visualizedSelection.FirstOrDefault(); } }
-
-    protected void SetVisualizedSelection( GameObject gameObject )
-    {
-      ClearVisualizedSelection();
-
-      if ( gameObject != null )
-        m_visualizedSelection.Add( new VisualizedSelectionData() { Object = gameObject } );
-    }
-
-    protected void ClearVisualizedSelection()
-    {
-      m_visualizedSelection.Clear();
-    }
-
     private void PerformRemove()
     {
       // OnRemove virtual callback.
@@ -474,8 +581,8 @@ namespace AGXUnityEditor.Tools
       // Remove all windows that hasn't been closed.
       Manager.SceneViewGUIWindowHandler.CloseAllWindows( this );
 
-      // Clear visualized selections for this tool.
-      ClearVisualizedSelection();
+      // Clear any highlighted objects.
+      HighlightObject = null;
 
       // Remove all key handlers that hasn't been removed.
       var keyHandlerNames = m_keyHandlers.Keys.ToArray();
@@ -505,5 +612,19 @@ namespace AGXUnityEditor.Tools
       if ( m_hideDefaultState != null )
         m_hideDefaultState.OnRemove();
     }
+
+    private List<Tool> m_children = new List<Tool>();
+    private Tool m_parent = null;
+
+    private Dictionary<string, Utils.VisualPrimitive> m_visualPrimitives = new Dictionary<string, Utils.VisualPrimitive>();
+    private Dictionary<string, Utils.KeyHandler> m_keyHandlers = new Dictionary<string, Utils.KeyHandler>();
+    private Dictionary<Object, Editor> m_editors = new Dictionary<Object, Editor>();
+
+    private CallEveryData m_callEveryData;
+    private string m_awaitingUserActionDots = "";
+
+    private GameObject m_highlightedObject = null;
+
+    private static readonly string s_debugRenderVisualPrefix = "dr_prim_";
   }
 }

@@ -7,7 +7,7 @@ using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 using Assembly = AGXUnity.Assembly;
 using Object = UnityEngine.Object;
 
@@ -189,27 +189,18 @@ namespace AGXUnityEditor.Tools
         bool shapeButtonPressed      = false;
         bool constraintButtonPressed = false;
 
-        GUI.ToolsLabel( skin );
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Space( 12 );
-          using ( GUI.ToolButtonData.ColorBlock ) {
-            rbButtonPressed         = GUILayout.Button( GUI.MakeLabel( "RB", true, "Assembly rigid body tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.RigidBody,
-                                                                                            skin.button ),
-                                                        GUILayout.Width( 30f ),
-                                                        GUI.ToolButtonData.Height );
-            shapeButtonPressed      = GUILayout.Button( GUI.MakeLabel( "Shape", true, "Assembly shape tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Shape, skin.button ),
-                                                        GUILayout.Width( 54f ),
-                                                        GUI.ToolButtonData.Height );
-            constraintButtonPressed = GUILayout.Button( GUI.MakeLabel( "Constraint", true, "Assembly constraint tool" ),
-                                                        GUI.ConditionalCreateSelectedStyle( m_mode == Mode.Constraint, skin.button ),
-                                                        GUILayout.Width( 80f ),
-                                                        GUI.ToolButtonData.Height );
-          }
-        }
-        GUILayout.EndHorizontal();
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateRigidBody,
+                                                                      m_mode == Mode.RigidBody,
+                                                                      "Create/manage rigid bodies in this assembly.",
+                                                                      () => rbButtonPressed = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      m_mode == Mode.Shape,
+                                                                      "Create shapes given visual representations.",
+                                                                      () => shapeButtonPressed = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
+                                                                      m_mode == Mode.Constraint,
+                                                                      "Create new constraint.",
+                                                                      () => constraintButtonPressed = true ) );
 
         HandleModeGUI();
 
@@ -222,10 +213,8 @@ namespace AGXUnityEditor.Tools
       }
       else {
         GUILayout.Label( GUI.MakeLabel( "Assemblies", 24, true ),
-                         GUI.Align( skin.label, TextAnchor.MiddleCenter ) );
+                         skin.LabelMiddleCenter );
       }
-
-      GUI.Separator();
 
       OnObjectListsGUI( this );
     }
@@ -235,15 +224,17 @@ namespace AGXUnityEditor.Tools
       if ( context == null )
         return;
 
-      RigidBodyTool.OnRigidBodyListGUI( context.CollectComponentsInChildred<RigidBody>().ToArray(), context );
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<RigidBody>().ToArray(),
+                                 "Rigid Bodies" );
 
-      GUI.Separator();
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<Constraint>().ToArray(),
+                                 "Constraints" );
 
-      RigidBodyTool.OnConstraintListGUI( context.CollectComponentsInChildred<Constraint>().ToArray(), context );
-
-      GUI.Separator();
-
-      RigidBodyTool.OnShapeListGUI( context.CollectComponentsInChildred<Shape>().ToArray(), context );
+      InspectorGUI.ToolArrayGUI( context,
+                                 context.CollectComponentsInChildred<Shape>().ToArray(),
+                                 "Shapes" );
     }
 
     private void HandleModeGUI()
@@ -260,16 +251,12 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator3D();
-
       using ( GUI.AlignBlock.Center ) {
         if ( m_subMode == SubMode.SelectRigidBody )
-          GUILayout.Label( GUI.MakeLabel( "Select rigid body object in scene view.", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Select rigid body object in scene view.", true ), skin.Label );
         else
-          GUILayout.Label( GUI.MakeLabel( "Select object(s) in scene view.", true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Select object(s) in scene view.", true ), skin.Label );
       }
-
-      GUI.Separator();
 
       bool selectionHasRigidBody         = m_selection.Find( entry => entry.Object.GetComponentInParent<RigidBody>() != null ) != null;
       bool createNewRigidBodyPressed     = false;
@@ -281,18 +268,28 @@ namespace AGXUnityEditor.Tools
         GUILayout.BeginVertical();
         {
           UnityEngine.GUI.enabled = m_selection.Count == 0 || !selectionHasRigidBody;
-          createNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Create new" + ( m_selection.Count == 0 ? " (empty)" : "" ), false, "Create new rigid body with selected objects" ), skin.button, GUILayout.Width( 128 ) );
+          createNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Create new" + ( m_selection.Count == 0 ? " (empty)" : "" ),
+                                                                       false,
+                                                                       "Create new rigid body with selected objects" ),
+                                                        skin.Button,
+                                                        GUILayout.Width( 128 ) );
           UnityEngine.GUI.enabled = m_selection.Count > 0 && Assembly.GetComponentInChildren<RigidBody>() != null;
-          addToExistingRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Add to existing", false, "Add selected objects to existing rigid body" ), GUI.ConditionalCreateSelectedStyle( m_subMode == SubMode.SelectRigidBody, skin.button ), GUILayout.Width( 100 ) );
+          addToExistingRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Add to existing",
+                                                                           false,
+                                                                           "Add selected objects to existing rigid body" ),
+                                                            skin.GetButton( m_subMode == SubMode.SelectRigidBody ),
+                                                            GUILayout.Width( 100 ) );
           UnityEngine.GUI.enabled = selectionHasRigidBody;
-          moveToNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Move to new", false, "Move objects that already contains a rigid body to a new rigid body" ), skin.button, GUILayout.Width( 85 ) );
+          moveToNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Move to new",
+                                                                       false,
+                                                                       "Move objects that already contains a rigid body to a new rigid body" ),
+                                                        skin.Button,
+                                                        GUILayout.Width( 85 ) );
           UnityEngine.GUI.enabled = true;
         }
         GUILayout.EndVertical();
       }
       GUILayout.EndHorizontal();
-
-      GUI.Separator3D();
 
       // Creates new rigid body and move selected objects to it (as children).
       if ( createNewRigidBodyPressed || moveToNewRigidBodyPressed ) {
@@ -320,8 +317,6 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      GUI.Separator3D();
-
       ShapeCreateTool.OnInspectorGUI();
     }
 
@@ -331,8 +326,6 @@ namespace AGXUnityEditor.Tools
         ChangeMode( Mode.None );
         return;
       }
-
-      GUI.Separator3D();
 
       ConstraintCreateTool.OnInspectorGUI();
     }

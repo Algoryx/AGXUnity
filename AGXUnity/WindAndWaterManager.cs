@@ -11,14 +11,9 @@ namespace AGXUnity
   public class WindAndWaterManager : UniqueGameObject<WindAndWaterManager>
   {
     /// <summary>
-    /// Native instance.
-    /// </summary>
-    private agxModel.WindAndWaterController m_windAndWaterController = null;
-
-    /// <summary>
     /// Get native instance, if initialized.
     /// </summary>
-    public agxModel.WindAndWaterController Native { get { return m_windAndWaterController; } }
+    public agxModel.WindAndWaterController Native { get; private set; } = null;
 
     /// <summary>
     /// Water game object, paired with property Water.
@@ -36,9 +31,9 @@ namespace AGXUnity
       {
         m_water = value;
         if ( m_water != null ) {
-          Collide.Shape[] shapes = m_water.GetComponentsInChildren<Collide.Shape>();
+          var shapes = m_water.GetComponentsInChildren<Collide.Shape>();
           if ( Native != null ) {
-            foreach ( Collide.Shape shape in shapes ) {
+            foreach ( var shape in shapes ) {
               Native.addWater( shape.GetInitialized<Collide.Shape>().NativeGeometry );
               Native.addWaterFlowGenerator( shape.NativeGeometry, m_waterCurrentGenerator );
             }
@@ -93,22 +88,22 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      m_windAndWaterController = new agxModel.WindAndWaterController();
-      GetSimulation().add( m_windAndWaterController );
+      Native = new agxModel.WindAndWaterController();
+      GetSimulation().add( Native );
 
       m_waterCurrentGenerator = new agxModel.ConstantWaterFlowGenerator( WaterVelocity.ToHandedVec3() );
       m_windGenerator = new agxModel.ConstantWindGenerator( WindVelocity.ToHandedVec3() );
-      m_windAndWaterController.setWindGenerator( m_windGenerator );
+      Native.setWindGenerator( m_windGenerator );
     
-      return base.Initialize();
+      return true;
     }
 
     protected override void OnDestroy()
     {
       if ( GetSimulation() != null )
-        GetSimulation().remove( m_windAndWaterController );
+        GetSimulation().remove( Native );
 
-      m_windAndWaterController = null;
+      Native = null;
 
       base.OnDestroy();
     }

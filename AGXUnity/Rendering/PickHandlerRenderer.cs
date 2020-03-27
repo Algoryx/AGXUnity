@@ -2,6 +2,7 @@
 
 namespace AGXUnity.Rendering
 {
+  [AddComponentMenu( "" )]
   public class PickHandlerRenderer : ScriptComponent
   {
     public GameObject ReferenceSphere { get; private set; }

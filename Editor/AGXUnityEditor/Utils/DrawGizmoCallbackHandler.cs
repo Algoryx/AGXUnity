@@ -14,7 +14,7 @@ namespace AGXUnityEditor.Utils
   {
     private static ObjectsGizmoColorHandler m_colorHandler = new ObjectsGizmoColorHandler();
 
-    [DrawGizmo( GizmoType.Active | GizmoType.Selected)]
+    [DrawGizmo( GizmoType.Active | GizmoType.Selected )]
     public static void OnDrawGizmosCable( Cable cable, GizmoType gizmoType )
     {
       // Do not render initialized cables.
@@ -64,7 +64,9 @@ namespace AGXUnityEditor.Utils
     private static void HandleColorizedBodies( DebugRenderManager manager )
     {
       // List containing active tools decisions of what could be considered selected.
-      var toolsSelections = new List<Tool.VisualizedSelectionData>();
+      // TODO HIGHLIGHT: Fix.
+      //var toolsSelections = new List<Tool.VisualizedSelectionData>();
+
       // Active assembly tool has special rendering needs.
       Tools.AssemblyTool assemblyTool = null;
 
@@ -73,15 +75,15 @@ namespace AGXUnityEditor.Utils
         if ( assemblyTool == null && activeTool is Tools.AssemblyTool )
           assemblyTool = activeTool as Tools.AssemblyTool;
 
-        if ( activeTool.VisualizedSelection != null && !toolsSelections.Contains( activeTool.VisualizedSelection ) )
-          toolsSelections.Add( activeTool.VisualizedSelection );
+        // TODO HIGHLIGHT: Fix.
+        //if ( activeTool.VisualizedSelection != null && !toolsSelections.Contains( activeTool.VisualizedSelection ) )
+        //  toolsSelections.Add( activeTool.VisualizedSelection );
       } );
 
       bool highlightMouseOverObject = manager.HighlightMouseOverObject;
 
       // Find if we've any active selections.
       bool selectionActive = ( highlightMouseOverObject && Manager.MouseOverObject != null ) ||
-                             toolsSelections.Count > 0 ||
                              ( assemblyTool != null && assemblyTool.HasActiveSelections() ) ||
                              Array.Exists( Selection.gameObjects, go =>
                                                                   {
@@ -124,10 +126,10 @@ namespace AGXUnityEditor.Utils
           }
 
           // Handling objects selected in our tools.
-          {
-            foreach ( var toolSelection in toolsSelections )
-              HandleSelectedGameObject( toolSelection.Object, ObjectsGizmoColorHandler.SelectionType.VaryingIntensity );
-          }
+          //{
+          //  foreach ( var toolSelection in toolsSelections )
+          //    HandleSelectedGameObject( toolSelection.Object, ObjectsGizmoColorHandler.SelectionType.VaryingIntensity );
+          //}
 
           if ( highlightMouseOverObject )
             HandleSelectedGameObject( Manager.MouseOverObject, ObjectsGizmoColorHandler.SelectionType.VaryingIntensity );

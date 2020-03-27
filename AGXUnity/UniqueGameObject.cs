@@ -21,7 +21,7 @@ namespace AGXUnity
 
     /// <summary>
     /// Returns an instance of this object if it hasn't been destroyed
-    /// the the current context (Unity scene).
+    /// in the current context (Unity scene).
     /// </summary>
     /// <remarks>
     /// Note that this property may return null, and if it does, one

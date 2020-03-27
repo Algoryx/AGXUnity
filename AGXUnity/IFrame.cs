@@ -78,10 +78,42 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Native matrix representation of this frame.
+    /// </summary>
+    public agx.AffineMatrix4x4 NativeMatrix
+    {
+      get
+      {
+        return new agx.AffineMatrix4x4( Rotation.ToHandedQuat(),
+                                        Position.ToHandedVec3() );
+      }
+    }
+
+    /// <summary>
+    /// Local native matrix representation of this frame.
+    /// </summary>
+    public agx.AffineMatrix4x4 NativeLocalMatrix
+    {
+      get
+      {
+        return new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(),
+                                        LocalPosition.ToHandedVec3() );
+      }
+    }
+
+    /// <summary>
+    /// Default constructor with world (null) as parent.
+    /// </summary>
+    public IFrame()
+      : this( null )
+    {
+    }
+
+    /// <summary>
     /// Construct given a parent.
     /// </summary>
     /// <param name="parent">Parent object.</param>
-    public IFrame( GameObject parent = null )
+    public IFrame( GameObject parent )
       : base()
     {
       m_parent = parent;

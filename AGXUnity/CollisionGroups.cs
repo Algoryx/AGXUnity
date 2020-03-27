@@ -9,7 +9,7 @@ namespace AGXUnity
   /// <summary>
   /// Component holding a list of name tags for collision groups.
   /// </summary>
-  [AddComponentMenu( "AGXUnity/Collisions/CollisionGroups" )]
+  [AddComponentMenu( "AGXUnity/Collisions/Collision Groups" )]
   public class CollisionGroups : ScriptComponent
   {
     /// <summary>
@@ -87,33 +87,48 @@ namespace AGXUnity
 
     private void AddGroup( CollisionGroupEntry entry, Find.LeafData data )
     {
-      foreach ( Collide.Shape shape in data.Shapes )
+      foreach ( var shape in data.Shapes )
         if ( shape.GetInitialized<Collide.Shape>() != null )
           entry.AddTo( shape.NativeGeometry );
 
-      foreach ( Wire wire in data.Wires )
+      foreach ( var wire in data.Wires )
         if ( wire.GetInitialized<Wire>() != null )
           entry.AddTo( wire.Native );
 
-      foreach ( Cable cable in data.Cables )
+      foreach ( var cable in data.Cables )
         if ( cable.GetInitialized<Cable>() != null )
-          cable.GetInitialized<Cable>().Native.addGroup( entry.Tag.To32BitFnv1aHash() );
+          entry.AddTo( cable.Native );
+
+      foreach ( var track in data.Tracks )
+        if ( track.GetInitialized<Model.Track>() != null )
+          entry.AddTo( track.Native );
+
+      foreach ( var terrain in data.Terrains )
+        if ( terrain.GetInitialized<Model.DeformableTerrain>() != null )
+          entry.AddTo( terrain.Native.getGeometry() );
     }
 
     private void RemoveGroup( CollisionGroupEntry entry, Find.LeafData data )
     {
-      foreach ( Collide.Shape shape in data.Shapes )
+      foreach ( var shape in data.Shapes )
         if ( shape.GetInitialized<Collide.Shape>() != null )
           entry.RemoveFrom( shape.NativeGeometry );
 
-      foreach ( Wire wire in data.Wires )
+      foreach ( var wire in data.Wires )
         if ( wire.GetInitialized<Wire>() != null )
           entry.RemoveFrom( wire.Native );
 
-      foreach ( Cable cable in data.Cables ) {
+      foreach ( var cable in data.Cables )
         if ( cable.GetInitialized<Cable>() != null )
-          cable.GetInitialized<Cable>().Native.removeGroup( entry.Tag.To32BitFnv1aHash() );
-      }
+          entry.RemoveFrom( cable.Native );
+
+      foreach ( var track in data.Tracks )
+        if ( track.GetInitialized<Model.Track>() != null )
+          entry.RemoveFrom( track.Native );
+
+      foreach ( var terrain in data.Terrains )
+        if ( terrain.GetInitialized<Model.DeformableTerrain>() != null )
+          entry.RemoveFrom( terrain.Native.getGeometry() );
     }
   }
 }

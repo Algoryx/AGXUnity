@@ -3,7 +3,7 @@ using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -50,30 +50,32 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
-      GUILayout.Space( 4 );
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.label );
-
-      GUILayout.Space( 2 );
-      GUI.Separator();
-      GUILayout.Space( 4 );
+      InspectorGUI.OnDropdownToolBegin( "Create visual representation of this rigid body given all supported shapes." );
 
       foreach ( var tool in GetChildren<ShapeVisualCreateTool>() ) {
         if ( ShapeVisual.HasShapeVisual( tool.Shape ) )
           continue;
 
-        using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( tool.Shape.name, 16, true ), skin.label );
-        tool.OnInspectorGUI( true );
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( tool.Shape.name,
+                                                    true ),
+                                     skin.Label );
+        using ( InspectorGUI.IndentScope.Single )
+          tool.OnInspectorGUI( true );
       }
 
-      var createCancelState = GUI.CreateCancelButtons( true, skin, "Create shape visual for shapes that hasn't already got one." );
-      if ( createCancelState == GUI.CreateCancelState.Create ) {
+      var createCancelState = InspectorGUI.PositiveNegativeButtons( true,
+                                                                    "Create",
+                                                                    "Create shape visual for shapes that hasn't already got one.",
+                                                                    "Cancel" );
+      if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         foreach ( var tool in GetChildren<ShapeVisualCreateTool>() )
           if ( !ShapeVisual.HasShapeVisual( tool.Shape ) )
             tool.CreateShapeVisual();
       }
-      if ( createCancelState != GUI.CreateCancelState.Nothing )
+
+      InspectorGUI.OnDropdownToolEnd();
+
+      if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
     }
   }

@@ -193,6 +193,7 @@ namespace AGXUnity
     /// <summary>
     /// Get route to initialize this wire.
     /// </summary>
+    [HideInInspector]
     public WireRoute Route
     {
       get
