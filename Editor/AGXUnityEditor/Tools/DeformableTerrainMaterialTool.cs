@@ -20,7 +20,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      using ( new InspectorGUI.IndentScope( -1 ) ) {
+      using ( new InspectorGUI.IndentScope( ( InspectorGUI.IndentScope.Level > 0 ? -1 : 0 ) ) ) {
         var resetButtonWidth = EditorGUIUtility.singleLineHeight;
         var rect             = EditorGUILayout.GetControlRect();
         rect.width          -= resetButtonWidth;
