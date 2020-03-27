@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class ScrewController : ElementaryConstraintController
   {

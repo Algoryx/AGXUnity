@@ -119,11 +119,13 @@ namespace AGXUnityEditor.Tools
       ClearSelection();
       if ( selected != null ) {
         m_selection.Add( selected );
-        SetVisualizedSelection( selected );
+        // TODO HIGHLIGHT: Add multiple.
+        //SetVisualizedSelection( selected );
       }
       else
         m_buttons.Reset();
 
+      // TODO GUI: Why? Force inspector update instead?
       EditorUtility.SetDirty( Parent );
     }
 
@@ -134,9 +136,13 @@ namespace AGXUnityEditor.Tools
 
       var skin = InspectorEditor.Skin;
 
+      InspectorGUI.OnDropdownToolBegin( GetCurrentStateInfo() );
+
       UnityEngine.GUI.enabled = m_selection.Count > 0;
-      m_buttons.OnGUI( Event.current, skin, 12 );
+      m_buttons.OnGUI( Event.current );
       UnityEngine.GUI.enabled = true;
+
+      InspectorGUI.OnDropdownToolEnd();
 
       EditorUtility.SetDirty( Parent );
 
@@ -240,6 +246,16 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    private string GetCurrentStateInfo()
+    {
+      var info = "Create shapes by selecting visual objects in Scene View.\n\n";
+      if ( m_selection.Count == 0 )
+        info += "Select highlighted visual object in Scene View" + AwaitingUserActionDots();
+      else
+        info += "Choose shape properties or more objects in Scene View" + AwaitingUserActionDots();
+      return info;
+    }
+
     private void Reset()
     {
       m_buttons.Reset();
@@ -249,7 +265,8 @@ namespace AGXUnityEditor.Tools
     private void ClearSelection()
     {
       m_selection.Clear();
-      ClearVisualizedSelection();
+      // TODO HIGHLIGHT: Fix.
+      //ClearVisualizedSelection();
     }
 
     private bool HandleKeyEscape( bool isSceneViewUpdate )

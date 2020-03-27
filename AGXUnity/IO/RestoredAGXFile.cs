@@ -28,6 +28,7 @@ namespace AGXUnity.IO
     public string Second = string.Empty;
   }
 
+  [AddComponentMenu( "" )]
   public class RestoredAGXFile : ScriptComponent
   {
     [SerializeField]

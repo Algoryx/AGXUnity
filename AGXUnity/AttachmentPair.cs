@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
@@ -9,6 +8,7 @@ namespace AGXUnity
   /// frame the constraint will be created from. It's possible to detach the relation
   /// between the frames, setting Synchronized to false.
   /// </summary>
+  [AddComponentMenu( "" )]
   [HideInInspector]
   public class AttachmentPair : ScriptComponent
   {
@@ -148,6 +148,37 @@ namespace AGXUnity
       return rb != null &&
              ( ( ReferenceFrame.Parent != null && ReferenceFrame.Parent.GetComponentInParent<RigidBody>() == rb ) ||
                ( ConnectedFrame.Parent != null && ConnectedFrame.Parent.GetComponentInParent<RigidBody>() == rb ) );
+    }
+
+    /// <summary>
+    /// True if <paramref name="rb1"/> and <paramref name="rb2"/> are part
+    /// of this attachment pair - otherwise false.
+    /// </summary>
+    /// <param name="rb1">First rigid body.</param>
+    /// <param name="rb2">Second rigid body.</param>
+    /// <returns>True if both rigid bodies are part of this attachment pair.</returns>
+    public bool Match( RigidBody rb1, RigidBody rb2 )
+    {
+      return Contains( rb1 ) && Contains( rb2 );
+    }
+
+    /// <summary>
+    /// Finds other rigid body or null if attached in world. Throws
+    /// exception if <paramref name="rb"/> isn't part of this attachment.
+    /// </summary>
+    /// <param name="rb">Rigid body instance part of this attachment.</param>
+    /// <returns>Other rigid body or null if attached in world.</returns>
+    public RigidBody Other( RigidBody rb )
+    {
+      var rbRef = ReferenceFrame.Parent != null ?
+                    ReferenceFrame.Parent.GetComponentInParent<RigidBody>() :
+                    null;
+      var rbCon = ConnectedFrame.Parent != null ?
+                    ConnectedFrame.Parent.GetComponentInParent<RigidBody>() :
+                    null;
+      if ( rb == null || ( rb != rbRef && rb != rbCon ) )
+        throw new Exception( "AttachmentPair.Other: Subject rigid body isn't part of this attachment pair." );
+      return rbRef == rb ? rbCon : rbRef;
     }
 
     /// <summary>

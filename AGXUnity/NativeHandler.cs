@@ -36,10 +36,8 @@ namespace AGXUnity
 
     private void Configure()
     {
-      // Running from within the editor. Assuming AGX Dynamics environment.
       if ( Application.isEditor ) {
-        if ( !IO.Environment.IsSet( IO.Environment.Variable.AGX_DIR ) )
-          throw new AGXUnity.Exception( "Environment variable AGX_DIR not found. Make sure Unity is started in an AGX Dynamics environment (setup_env)." );
+        // This case is handled by AGXUnityEditor.Manager.
       }
       // Running build with environment set. Use default environment setup.
       // This can be useful to debug an application, being able to attach
@@ -54,7 +52,10 @@ namespace AGXUnity
         var dataPath           = Application.dataPath;
         var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
         var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
-        var envInstance        = agxIO.Environment.instance();
+
+        IO.Environment.AddToPath( dataPluginsPath );
+
+        var envInstance = agxIO.Environment.instance();
 
         // In case of installed AGX Dynamics, agxIO.Environment.instance() will
         // read data from the registry and add runtime and resource paths to
@@ -108,8 +109,13 @@ namespace AGXUnity
 
     NativeHandler()
     {
-      m_isAgx         = new InitShutdownAGXDynamics();
-      HasValidLicense = m_isAgx.Initialized && agx.Runtime.instance().isValid();
+      m_isAgx = new InitShutdownAGXDynamics();
+
+      // The environment probably hasn't been completely configured
+      // when inside the editor so it's up to Manager to call
+      // ValidateLicense post environment configuration.
+      if ( !Application.isEditor )
+        ValidateLicense();
     }
 
     ~NativeHandler()
@@ -127,6 +133,11 @@ namespace AGXUnity
 
     public void Unregister( ScriptComponent component )
     {
+    }
+
+    public void ValidateLicense()
+    {
+      HasValidLicense = m_isAgx.Initialized && agx.Runtime.instance().isValid();
     }
 
     public void MakeMainThread()

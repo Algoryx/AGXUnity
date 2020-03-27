@@ -1,13 +1,18 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+
+using GUI    = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
   [CustomTool( typeof ( ContactMaterialManager ) )]
   public class ContactMaterialManagerTool : CustomTargetTool
   {
+    public static readonly string Identifier = "Contact Materials";
+
     public ContactMaterialManager Manager
     {
       get
@@ -22,91 +27,47 @@ namespace AGXUnityEditor.Tools
       Manager.RemoveNullEntries();
     }
 
+    public override void OnAdd()
+    {
+      InspectorGUI.GetTargetToolArrayGUIData( Manager, Identifier, data => data.Bool = true );
+    }
+
     public override void OnPreTargetMembersGUI()
     {
       Manager.RemoveNullEntries();
 
-      OnContactMaterialsList();
+      InspectorGUI.ToolListGUI( this,
+                                Manager.ContactMaterials,
+                                Identifier,
+                                cm => Manager.Add( cm ),
+                                cm => Manager.Remove( cm ),
+                                PreContactMaterialEditor( Manager.ContactMaterialEntries ) );
     }
 
-    private EditorDataEntry FoldoutDataEntry { get { return EditorData.Instance.GetData( Manager, "ContactMaterials" ); } }
-
-    private void OnContactMaterialsList()
+    private Action<ContactMaterial, int> PreContactMaterialEditor( ContactMaterialEntry[] entries )
     {
-      var skin = InspectorEditor.Skin;
-      ContactMaterial contactMaterialToAdd = null;
-      ContactMaterial contactMaterialToRemove = null;
-
-      GUILayout.Label( GUI.MakeLabel( "Contact Material Manager", 18, true ), new GUIStyle( skin.label ) { alignment = TextAnchor.MiddleCenter } );
-      GUILayout.Space( 4 );
-      GUILayout.Label( GUI.MakeLabel( "Drag and drop contact materials into the list below to add/enable the contact material in the simulation." ),
-                       new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
-      GUILayout.Space( 4 );
-
-      GUI.Separator3D();
-
-      GUILayout.BeginVertical();
+      return ( cm, index ) =>
       {
-        if ( GUI.Foldout( FoldoutDataEntry, GUI.MakeLabel( "Contact Materials [" + Manager.ContactMaterialEntries.Length + "]" ), skin ) ) {
-          var contactMaterials = Manager.ContactMaterials;
-          using ( new GUI.Indent( 12 ) ) {
-            foreach ( var contactMaterial in contactMaterials ) {
-              GUI.Separator();
-
-              bool foldoutActive = false;
-
-              GUILayout.BeginHorizontal();
-              {
-                foldoutActive = GUI.Foldout( EditorData.Instance.GetData( Manager,
-                                                                          contactMaterial.name +
-                                                                          "_" +
-                                                                          contactMaterial.GetInstanceID().ToString() ),
-                                             GUI.MakeLabel( contactMaterial.name ),
-                                             skin );
-                using ( GUI.NodeListButtonColor )
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(), false, "Erase this element" ),
-                                         skin.button,
-                                         new GUILayoutOption[] { GUILayout.Width( 20 ), GUILayout.Height( 14 ) } ) )
-                    contactMaterialToRemove = contactMaterial;
-              }
-              GUILayout.EndHorizontal();
-
-              if ( foldoutActive ) {
-                using ( new GUI.Indent( 12 ) )
-                  InspectorEditor.DrawMembersGUI( new Object[] { contactMaterial } );
-              }
+        using ( InspectorGUI.IndentScope.Single ) {
+          entries[ index ].IsOriented = InspectorGUI.Toggle( GUI.MakeLabel( "Is Oriented",
+                                                                            false,
+                                                                            "Enable/disable oriented friction models." ),
+                                                             entries[ index ].IsOriented );
+          if ( entries[ index ].IsOriented ) {
+            using ( InspectorGUI.IndentScope.Single ) {
+              entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
+                                                                                          entries[ index ].ReferenceObject,
+                                                                                          typeof( GameObject ),
+                                                                                          true );
+              entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
+                                                                                                                            false,
+                                                                                                                            "Primary direction in object local frame." ),
+                                                                                                             entries[ index ].PrimaryDirection,
+                                                                                                             InspectorEditor.Skin.Popup );
             }
           }
         }
-      }
-      GUILayout.EndVertical();
-
-      // Note that GetLastRect is used here and it's expecting the begin/end vertical rect.
-      GUI.HandleDragDrop<ContactMaterial>( GUILayoutUtility.GetLastRect(),
-                                           Event.current,
-                                           ( contactMaterial ) =>
-                                           {
-                                             contactMaterialToAdd = contactMaterial;
-                                           } );
-
-      GUI.Separator();
-
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Add:" ), skin.label );
-        contactMaterialToAdd = EditorGUILayout.ObjectField( null, typeof( ContactMaterial ), false ) as ContactMaterial ?? contactMaterialToAdd;
-      }
-      GUILayout.EndHorizontal();
-
-      GUI.Separator3D();
-
-      if ( contactMaterialToAdd != null ) {
-        Manager.Add( contactMaterialToAdd );
-        FoldoutDataEntry.Bool = true;
-      }
-
-      if ( contactMaterialToRemove != null )
-        Manager.Remove( contactMaterialToRemove );
+      };
     }
   }
 }

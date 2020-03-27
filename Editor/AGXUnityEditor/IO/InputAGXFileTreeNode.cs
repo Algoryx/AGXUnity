@@ -20,7 +20,8 @@ namespace AGXUnityEditor.IO
       Cable,
       Material,
       ContactMaterial,
-      GroupId
+      GroupId,
+      ObserverFrame
     }
 
     public NodeType Type { get; set; }

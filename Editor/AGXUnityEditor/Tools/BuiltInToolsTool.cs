@@ -15,8 +15,8 @@ namespace AGXUnityEditor.Tools
           SelectGameObject.PerformRemoveFromParent();
 
         if ( value != null ) {
-          value.MenuTool.RemoveOnClickMiss = true;
           AddChild( value );
+          value.MenuTool.RemoveOnClickMiss = true;
         }
       }
     }
@@ -170,10 +170,10 @@ namespace AGXUnityEditor.Tools
 
     private void HandleDragDrop( Event current, SceneView sceneView )
     {
-      var mouseOverSceneView = EditorWindow.mouseOverWindow == sceneView;
+      var mouseOverSceneView = Manager.IsMouseOverWindow( sceneView );
       var mouseOverHierarchy = !mouseOverSceneView &&
-                               EditorWindow.mouseOverWindow != null &&
-                               EditorWindow.mouseOverWindow.GetType().FullName == "UnityEditor.SceneHierarchyWindow";
+                               Manager.IsMouseOverWindow( Manager.EditorWindowType.SceneHierarchyWindow );
+
       var dragDropSceneViewActive = ( mouseOverSceneView || mouseOverHierarchy ) &&
                                     ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated );
       if ( !dragDropSceneViewActive )
@@ -197,9 +197,11 @@ namespace AGXUnityEditor.Tools
         var menuTool = new SelectGameObjectDropdownMenuTool() { Target = Manager.MouseOverObject };
         menuTool.OnSelect = go =>
         {
-          AGXUnity.Collide.Shape[] shapes = go.GetComponentsInChildren<AGXUnity.Collide.Shape>();
-          AGXUnity.Wire[] wires           = go.GetComponentsInChildren<AGXUnity.Wire>();
-          AGXUnity.Cable[] cables         = go.GetComponentsInChildren<AGXUnity.Cable>();
+          var shapes   = go.GetComponentsInChildren<AGXUnity.Collide.Shape>();
+          var wires    = go.GetComponentsInChildren<AGXUnity.Wire>();
+          var cables   = go.GetComponentsInChildren<AGXUnity.Cable>();
+          var tracks   = go.GetComponentsInChildren<AGXUnity.Model.Track>();
+          var terrains = go.GetComponentsInChildren<AGXUnity.Model.DeformableTerrain>();
           Action assignAll                = () =>
           {
             Undo.SetCurrentGroupName( "Assigning shape materials." );
@@ -216,15 +218,26 @@ namespace AGXUnityEditor.Tools
               Undo.RecordObject( cable, "New shape material" );
               cable.Material = DroppedShapeMaterial;
             }
+            foreach ( var track in tracks ) {
+              Undo.RecordObject( track, "New shape material" );
+              track.Material = DroppedShapeMaterial;
+            }
+            foreach ( var terrain in terrains ) {
+              Undo.RecordObject( terrain, "New shape material" );
+              terrain.Material = DroppedShapeMaterial;
+            }
+
+            // TODO GUI: Call RigidBody.UpdateMassProperties for affected bodies.
+
             Undo.CollapseUndoOperations( undoGroup );
           };
 
-          var sumSupported = shapes.Length + wires.Length + cables.Length;
+          var sumSupported = shapes.Length + wires.Length + cables.Length + tracks.Length + terrains.Length;
           if ( sumSupported == 0 )
-            Debug.LogWarning( "Object selected doesn't have shapes, wires or cables.", go );
+            Debug.LogWarning( "Object selected doesn't have shapes, wires, cables or tracks.", go );
           else if ( sumSupported == 1 || EditorUtility.DisplayDialog( "Assign shape materials",
-                                                                      string.Format( "Assign materials to:\n  - #shapes: {0}\n  - #wires: {1}\n  - #cables: {2}",
-                                                                                     shapes.Length, wires.Length, cables.Length ), "Assign", "Ignore all" ) )
+                                                                      string.Format( "Assign materials to:\n  - #shapes: {0}\n  - #wires: {1}\n  - #cables: {2}\n  - #tracks: {3}",
+                                                                                     shapes.Length, wires.Length, cables.Length, tracks.Length ), "Assign", "Ignore all" ) )
             assignAll();
 
           DroppedShapeMaterial = null;
@@ -242,7 +255,9 @@ namespace AGXUnityEditor.Tools
       return gameObject.GetComponentsInChildren<AGXUnity.Collide.Shape>().Length > 0 ||
              gameObject.GetComponentsInParent<AGXUnity.Collide.Shape>().Length > 0 ||
              gameObject.GetComponentsInChildren<AGXUnity.Wire>().Length > 0 ||
-             gameObject.GetComponentsInChildren<AGXUnity.Cable>().Length > 0;
+             gameObject.GetComponentsInChildren<AGXUnity.Cable>().Length > 0 ||
+             gameObject.GetComponentsInChildren<AGXUnity.Model.Track>().Length > 0 ||
+             gameObject.GetComponentsInChildren<AGXUnity.Model.DeformableTerrain>().Length > 0;
     }
   }
 }

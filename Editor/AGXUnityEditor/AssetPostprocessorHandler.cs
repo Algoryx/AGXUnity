@@ -36,7 +36,11 @@ namespace AGXUnityEditor
                                        PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
 #else
             var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
+#if UNITY_2018_1_OR_NEWER
                                        PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
+#else
+                                       PrefabUtility.GetPrefabParent( restoredFileInstance.gameObject ) == prefab;
+#endif
 #endif
             if ( !isReadPrefabInstance )
               continue;
@@ -172,14 +176,19 @@ namespace AGXUnityEditor
       Undo.SetCurrentGroupName( "Adding: " + instance.name + " to scene." );
       var grouId = Undo.GetCurrentGroup();
 
+      var contactMaterialManager = TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>();
+      Undo.RecordObject( contactMaterialManager, "Adding contact materials" );
       foreach ( var cm in fileInfo.GetAssets<ContactMaterial>() )
-        TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>().Add( cm );
+        contactMaterialManager.Add( cm );
 
       var fileData = fileInfo.ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>();
+      var collisionGroupsManager = TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>();
+      Undo.RecordObject( collisionGroupsManager, "Adding disabled collision groups" );
       foreach ( var disabledPair in fileData.DisabledGroups )
-        TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>().SetEnablePair( disabledPair.First, disabledPair.Second, false );
+        collisionGroupsManager.SetEnablePair( disabledPair.First, disabledPair.Second, false );
 
       var renderDatas = instance.GetComponentsInChildren<AGXUnity.Rendering.ShapeVisual>();
+      Undo.RecordObjects( renderDatas, "Applying render data hide flags" );
       foreach ( var renderData in renderDatas ) {
         renderData.hideFlags |= HideFlags.NotEditable;
         renderData.transform.hideFlags |= HideFlags.NotEditable;

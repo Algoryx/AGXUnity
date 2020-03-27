@@ -332,8 +332,9 @@ namespace AGXUnity
     {
       return ( from ec
                in m_elementaryConstraints
-               where !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller.
-                     ec as ElementaryConstraintController == null
+               where ec as ElementaryConstraintController == null &&
+                    !ec.NativeName.StartsWith( "F" ) // Ignoring friction controller from versions
+                                                     // it wasn't implemented in.
                select ec ).ToArray();
     }
 

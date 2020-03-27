@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -22,17 +22,37 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public ConstraintCreateTool( GameObject parent, bool makeConstraintChildToParent )
+    public ConstraintCreateTool( GameObject parent,
+                                 bool makeConstraintChildToParent,
+                                 Action<Constraint> onCreate = null )
       : base( isSingleInstanceTool: true )
     {
       Parent = parent;
       MakeConstraintChildToParent = makeConstraintChildToParent;
+      m_onCreate = onCreate;
     }
 
     public override void OnAdd()
     {
       m_createConstraintData.CreateInitialState( Parent.name );
-      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[] { m_createConstraintData.AttachmentPair }, Parent );
+      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[]
+                                                               {
+                                                                 m_createConstraintData.AttachmentPair
+                                                               },
+                                                               Parent );
+      AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = false;
+      // Enabling reference frame transform handle when select tool
+      // is done. When connected frame tool parent is set (first) we
+      // still activate the reference frame transform handle since
+      // this is the default behavior.
+      AttachmentFrameTool.ReferenceFrameTool.OnToolDoneCallback = tool =>
+      {
+        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
+      };
+      AttachmentFrameTool.ConnectedFrameTool.OnToolDoneCallback = tool =>
+      {
+        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
+      };
     }
 
     public override void OnRemove()
@@ -55,46 +75,35 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
+      InspectorGUI.OnDropdownToolBegin( "Create constraint given type and use additional tools to " +
+                                        "configure the constraint frames." );
+
       var skin = InspectorEditor.Skin;
 
-      using ( new GUI.Indent( 16 ) ) {
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Label( GUI.MakeLabel( "Name", true ), skin.label, GUILayout.Width( 64 ) );
-          m_createConstraintData.Name = GUILayout.TextField( m_createConstraintData.Name, skin.textField, GUILayout.ExpandWidth( true ) );
-        }
-        GUILayout.EndHorizontal();
+      m_createConstraintData.Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name", true ),
+                                                                m_createConstraintData.Name,
+                                                                skin.TextField );
 
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.Label( GUI.MakeLabel( "Type", true ), skin.label, GUILayout.Width( 64 ) );
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.yellow, 0.1f ) ) )
-            m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( m_createConstraintData.ConstraintType,
-                                                                                               skin.button,
-                                                                                               GUILayout.ExpandWidth( true ),
-                                                                                               GUILayout.Height( 18 ) );
-        }
-        GUILayout.EndHorizontal();
-      }
 
-      GUI.Separator3D();
+      m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
+                                                                                         m_createConstraintData.ConstraintType,
+                                                                                         val => (ConstraintType)val != ConstraintType.Unknown,
+                                                                                         false,
+                                                                                         skin.Popup );
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
 
-      m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState, skin );
-      m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType, skin );
+      m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState );
+      m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType );
 
-      GUI.Separator3D();
+      var createCancelState = InspectorGUI.PositiveNegativeButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
+                                                                    m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
+                                                                    "Create",
+                                                                    "Create the constraint",
+                                                                    "Cancel" );
 
-      var createCancelState = GUI.CreateCancelButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
-                                                       m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
-                                                       skin,
-                                                       "Create the constraint" );
-
-      GUI.Separator3D();
-
-      if ( createCancelState == GUI.CreateCancelState.Create ) {
+      if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         GameObject constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,
                                                           m_createConstraintData.AttachmentPair );
         Constraint constraint           = constraintGameObject.GetComponent<Constraint>();
@@ -106,11 +115,15 @@ namespace AGXUnityEditor.Tools
 
         Undo.RegisterCreatedObjectUndo( constraintGameObject, "New constraint '" + constraintGameObject.name + "' created" );
 
+        m_onCreate?.Invoke( constraint );
+
         m_createConstraintData.Reset();
       }
 
-      if ( createCancelState != GUI.CreateCancelState.Nothing )
+      if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral )
         PerformRemoveFromParent();
+
+      InspectorGUI.OnDropdownToolEnd();
     }
 
     private class CreateConstraintData
@@ -161,5 +174,6 @@ namespace AGXUnityEditor.Tools
     }
 
     private CreateConstraintData m_createConstraintData = new CreateConstraintData();
+    private Action<Constraint> m_onCreate = null;
   }
 }

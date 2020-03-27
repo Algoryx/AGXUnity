@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.IO
 {
+  [AddComponentMenu( "" )]
   public class SavedPrefabLocalData : ScriptComponent
   {
     [SerializeField]

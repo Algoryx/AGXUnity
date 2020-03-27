@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 using System.ComponentModel;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
 
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI    = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -22,398 +21,348 @@ namespace AGXUnityEditor
   {
     public static GUIContent MakeLabel( MemberInfo field )
     {
-      GUIContent guiContent = new GUIContent();
+      var content = new GUIContent();
+      content.text = field.Name.SplitCamelCase();
+      content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
 
-      guiContent.text    = field.Name.SplitCamelCase();
-      guiContent.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
-
-      return guiContent;
+      return content;
     }
 
-    [InspectorDrawer( typeof( Vector4 ) )]
-    public static object Vector4Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static float GetWidth( GUIContent content, GUIStyle style )
     {
-      return EditorGUILayout.Vector4Field( MakeLabel( wrapper.Member ).text, wrapper.Get<Vector4>( obj ) );
+      var width = 0.0f;
+      var maxWidth = 0.0f;
+      style.CalcMinMaxWidth( content, out width, out maxWidth );
+      return width;
     }
 
-    [InspectorDrawer( typeof( Vector3 ) )]
-    public static object Vector3Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public static float GetWidthIncludingIndent( GUIContent content, GUIStyle style )
     {
-      var valInField = wrapper.Get<Vector3>( obj );
-      GUILayout.BeginHorizontal();
+      return GetWidth( content, style ) + IndentScope.PixelLevel;
+    }
+
+    public static float LayoutMagicNumber
+    {
+      get
       {
-        GUILayout.Label( MakeLabel( wrapper.Member ) );
-        valInField = EditorGUILayout.Vector3Field( "", valInField );
+#if UNITY_2019_3_OR_NEWER
+        return 22.0f;
+#else
+        return 14.0f;
+#endif
       }
-      GUILayout.EndHorizontal();
-
-      return valInField;
     }
 
-    [InspectorDrawer( typeof( Vector2 ) )]
-    public static object Vector2Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
+    public class VerticalScopeMarker : IDisposable
     {
-      return EditorGUILayout.Vector2Field( MakeLabel( wrapper.Member ).text, wrapper.Get<Vector2>( obj ) );
-    }
-
-    [InspectorDrawer( typeof( int ) )]
-    public static object IntDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      return EditorGUILayout.IntField( MakeLabel( wrapper.Member ).text, wrapper.Get<int>( obj ), skin.textField );
-    }
-
-    [InspectorDrawer( typeof( bool ) )]
-    public static object BoolDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      return GUI.Toggle( MakeLabel( wrapper.Member ), wrapper.Get<bool>( obj ), skin.button, skin.label );
-    }
-
-    [InspectorDrawer( typeof( Color ) )]
-    public static object ColorDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      return EditorGUILayout.ColorField( MakeLabel( wrapper.Member ), wrapper.Get<Color>( obj ) );
-    }
-
-    [InspectorDrawer( typeof( DefaultAndUserValueFloat ) )]
-    [InspectorDrawerResult( HasCopyOp = true )]
-    public static object DefaultAndUserValueFloatDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      var dauvf = wrapper.Get<DefaultAndUserValueFloat>( obj );
-      var value = GUI.HandleDefaultAndUserValue( wrapper.Member.Name,
-                                                 dauvf,
-                                                 skin );
-
-      if ( wrapper.IsValid( value ) ) {
-        if ( !dauvf.UseDefault )
-          dauvf.Value = value;
-        return obj;
+      public VerticalScopeMarker( Color color )
+      {
+        m_begin = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 0.0f ) );
+        m_color = color;
       }
 
-      return null;
-    }
-
-    public static void DefaultAndUserValueFloatDrawerCopyOp( object source, object destination )
-    {
-      var s = source as DefaultAndUserValueFloat;
-      var d = destination as DefaultAndUserValueFloat;
-      if ( s == null || d == null )
-        return;
-
-      d.CopyFrom( s );
-    }
-
-    [InspectorDrawer( typeof( DefaultAndUserValueVector3 ) )]
-    [InspectorDrawerResult( HasCopyOp = true )]
-    public static object DefaultAndUserValueVector3Drawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      var dauvv = wrapper.Get<DefaultAndUserValueVector3>( obj );
-      var value = GUI.HandleDefaultAndUserValue( wrapper.Member.Name,
-                                                 dauvv,
-                                                 skin );
-
-      if ( wrapper.IsValid( value ) ) {
-        if ( !dauvv.UseDefault )
-          dauvv.Value = value;
-        return obj;
+      public void Dispose()
+      {
+        var end = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 0.0f ) );
+        var oldColor = Handles.color;
+        Handles.color = m_color;
+        Handles.DrawLine( new Vector3( m_begin.xMax + 1,
+                                       m_begin.position.y + 1.0f,
+                                       0 ),
+                          new Vector3( end.xMax + 1,
+                                       end.position.y - 1.0f,
+                                       0 ) );
+        Handles.DrawLine( new Vector3( m_begin.xMax + 1 / EditorGUIUtility.pixelsPerPoint,
+                                       m_begin.position.y + 1.0f,
+                                       0 ),
+                          new Vector3( end.xMax + 1 / EditorGUIUtility.pixelsPerPoint,
+                                       end.position.y - 1.0f,
+                                       0 ) );
+        Handles.color = oldColor;
       }
 
-      return null;
+      private Rect m_begin;
+      private Color m_color;
     }
 
-    public static void DefaultAndUserValueVector3DrawerCopyOp( object source, object destination )
+    public class IndentScope : IDisposable
     {
-      var s = source as DefaultAndUserValueVector3;
-      var d = destination as DefaultAndUserValueVector3;
-      if ( s == null || d == null )
-        return;
+      public static IndentScope Create( int numLevels = 1 )
+      {
+        return new IndentScope( numLevels );
+      }
 
-      d.CopyFrom( s );
-    }
+      public static IndentScope NoIndent
+      {
+        get { return new IndentScope( -Level ); }
+      }
 
-    private static GUIStyle m_rangeRealInvalidStyle = null;
-    private struct RangeRealResult
-    {
-      public float Min;
-      public bool MinChanged;
-      public float Max;
-      public bool MaxChanged;
-    }
+      public static IndentScope Single
+      {
+        get { return Create(); }
+      }
 
-    [InspectorDrawer( typeof( RangeReal ) )]
-    [InspectorDrawerResult( HasCopyOp = true )]
-    [Obsolete( "Needs patch to not propagate unchanged values." )]
-    public static object RangeRealDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      var value = wrapper.Get<RangeReal>( obj );
-      GUIStyle labelStyle = skin.label;
-      if ( value.Min > value.Max ) {
-        if ( m_rangeRealInvalidStyle == null ) {
-          m_rangeRealInvalidStyle = new GUIStyle( skin.label );
-          m_rangeRealInvalidStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
+      public static float PixelLevel
+      {
+        get
+        {
+          return Level * m_pixelsPerLevel;
         }
-        labelStyle = m_rangeRealInvalidStyle;
       }
 
-      RangeRealResult result = new RangeRealResult()
+      public static int Level
       {
-        Min = value.Min,
-        MinChanged = false,
-        Max = value.Max,
-        MaxChanged = false
-      };
-      using ( new GUILayout.HorizontalScope( labelStyle ) ) {
-        GUILayout.Label( MakeLabel( wrapper.Member ), skin.label );
-        result.Min              = EditorGUILayout.FloatField( "", value.Min, skin.textField, GUILayout.MaxWidth( 64 ) );
-        result.MinChanged       = UnityEngine.GUI.changed;
+        get
+        {
+          return EditorGUI.indentLevel;
+        }
+        private set
+        {
+          EditorGUI.indentLevel = value;
+        }
+      }
+
+      public int NumLevels { get; private set; } = 0;
+
+      public IndentScope( int numLevels = 1 )
+      {
+        if ( Level + numLevels < 0 )
+          throw new AGXUnity.Exception( "Trying to reach negative indent level: current_level + num_levels < 0" );
+
+        NumLevels = numLevels;
+        Level += numLevels;
+      }
+
+      public void Dispose()
+      {
+        Level -= NumLevels;
+      }
+
+      private static int m_pixelsPerLevel = 15;
+    }
+
+    public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+    }
+
+    public static void Separator( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      EditorGUI.DrawRect( rect, Color.Lerp( BackgroundColor, Color.black, EditorGUIUtility.isProSkin ? 0.35f : 0.25f ) );
+    }
+
+    public static void DashedBrandSeparator( float height = 1.0f, float space = 1.0f )
+    {
+      var rect = EditorGUILayout.GetControlRect( false, space + height );
+      rect.height = height;
+      rect.y += space / 2.0f;
+      var width = EditorGUIUtility.currentViewWidth;
+      var dw = 6.0f;
+      rect.width = dw;
+      while ( rect.x < width ) {
+        EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+        rect.x += 2.0f * dw;
+      }
+    }
+
+    private static GUIContent s_miscIconButtonContent = new GUIContent();
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               params GUILayoutOption[] options )
+    {
+
+      return Button( icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     1.0f,
+                     options );
+    }
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               float buttonScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+
+      return Button( icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     buttonScale,
+                     options );
+    }
+
+    public static bool Button( MiscIcon icon,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var pressed = GUILayout.Button( s_miscIconButtonContent,
+                                      buttonStyle,
+                                      options );
+      ButtonIcon( GUILayoutUtility.GetLastRect(), icon, enabled, iconScale );
+
+      return pressed;
+    }
+
+    public static bool Button( Rect rect,
+                               MiscIcon icon,
+                               bool enabled,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      return Button( rect,
+                     icon,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     iconScale );
+    }
+
+    public static bool Button( Rect rect,
+                               MiscIcon icon,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var pressed = false;
+      using ( new GUI.EnabledBlock( enabled ) )
+        pressed = UnityEngine.GUI.Button( rect,
+                                          s_miscIconButtonContent,
+                                          buttonStyle );
+      ButtonIcon( rect, icon, enabled, iconScale );
+
+      return pressed;
+    }
+
+    public static void ButtonIcon( Rect buttonRect, MiscIcon iconType, bool enabled, float scale )
+    {
+      var icon = IconManager.GetIcon( iconType );
+      if ( icon == null )
+        return;
+
+      using ( IconManager.ForegroundColorBlock( false, enabled ) )
+        UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( buttonRect, scale ), icon );
+    }
+
+    public static bool Toggle( GUIContent content,
+                               bool value )
+    {
+      return EditorGUILayout.Toggle( content, value );
+    }
+
+    public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
+    {
+      var newState = EditorGUILayout.Foldout( state.Bool, content, true );
+
+      if ( newState != state.Bool )
         UnityEngine.GUI.changed = false;
-        result.Max              = EditorGUILayout.FloatField( "", value.Max, skin.textField, GUILayout.MaxWidth( 64 ) );
-        result.MaxChanged       = UnityEngine.GUI.changed;
-        UnityEngine.GUI.changed = result.MinChanged || result.MaxChanged;
+
+      if ( onStateChanged != null && newState != state.Bool )
+        onStateChanged.Invoke( newState );
+
+      return state.Bool = newState;
+    }
+
+    public static Object FoldoutObjectField( GUIContent content,
+                                             Object instance,
+                                             Type instanceType,
+                                             EditorDataEntry foldoutData,
+                                             bool isReadOnly )
+    {
+      var createNewPressed = false;
+      var allowSceneObject = instanceType == typeof( GameObject ) ||
+                                 typeof( MonoBehaviour ).IsAssignableFrom( instanceType );
+
+      // We're in control of the whole inspector entry.
+      var position = EditorGUILayout.GetControlRect();
+
+      // Foldout hijacks control meaning if we're rendering object field
+      // or button they won't react/work if the foldout is going all the way.
+      // The object field is starting at labelWidth so the foldout is
+      // defined from 0 to labelWidth if we're rendering additional stuff.
+      var oldWidth = position.xMax;
+      if ( !isReadOnly )
+        position.xMax = EditorGUIUtility.labelWidth;
+
+      using ( new EditorGUI.DisabledScope( instance == null ) ) {
+        var newState = EditorGUI.Foldout( position,
+                                          foldoutData.Bool,
+                                          content,
+                                          true ) && instance != null;
+        if ( newState != foldoutData.Bool ) {
+          foldoutData.Bool = newState;
+          UnityEngine.GUI.changed = false;
+        }
       }
+      position.xMax = oldWidth;
 
-      if ( labelStyle == m_rangeRealInvalidStyle )
-        GUI.WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")", skin );
+      // Entry may change, render object field and create-new-button if
+      // the instance type supports it.
+      Object result;
+      if ( !isReadOnly ) {
+        var createNewButtonWidth = 18.0f;
+        var supportsCreateAsset  = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ||
+                                   instanceType == typeof( Material );
 
-      return result;
-    }
+        position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
+        position.xMax -= EditorGUIUtility.labelWidth +
+                         Convert.ToInt32( supportsCreateAsset ) * createNewButtonWidth -
+                         IndentScope.PixelLevel;
+        result = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
+        if ( supportsCreateAsset ) {
+          var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
+          buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
-    public static object RangeRealDrawerCopyOp( object data, object destination )
-    {
-      var result = (RangeRealResult)data;
-      var value  = (RangeReal)destination;
-      if ( result.MinChanged )
-        value.Min = result.Min;
-      if ( result.MaxChanged )
-        value.Max = result.Max;
-
-      return value;
-    }
-
-    [InspectorDrawer( typeof( string ) )]
-    public static object StringDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      return EditorGUILayout.TextField( MakeLabel( wrapper.Member ), wrapper.Get<string>( obj ), skin.textField );
-    }
-
-    [InspectorDrawer( typeof( Enum ), IsBaseType = true )]
-    public static object EnumDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      if ( !wrapper.GetContainingType().IsVisible )
-        return null;
-
-      return EditorGUILayout.EnumPopup( MakeLabel( wrapper.Member ), wrapper.Get<Enum>( obj ), skin.button );
-    }
-
-    [InspectorDrawer( typeof( float ) )]
-    [InspectorDrawer( typeof( double ) )]
-    public static object DecimalDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      float value = wrapper.GetContainingType() == typeof( double ) ?
-                      Convert.ToSingle( wrapper.Get<double>( obj ) ) :
-                      wrapper.Get<float>( obj );
-      FloatSliderInInspector slider = wrapper.GetAttribute<FloatSliderInInspector>();
-      if ( slider != null )
-        return EditorGUILayout.Slider( MakeLabel( wrapper.Member ), value, slider.Min, slider.Max );
-      else
-        return EditorGUILayout.FloatField( MakeLabel( wrapper.Member ), value, skin.textField );
-    }
-
-    [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
-    public static object GenericListDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      System.Collections.IList list = wrapper.Get<System.Collections.IList>( obj );
-      var target = obj as Object;
-
-      if ( GUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
-                        MakeLabel( wrapper.Member ),
-                        skin ) ) {
-        object insertElementBefore = null;
-        object insertElementAfter = null;
-        object eraseElement = null;
-        var buttonLayout = new GUILayoutOption[] { GUILayout.Width( 26 ), GUILayout.Height( 18 ) };
-        using ( new GUI.Indent( 12 ) ) {
-          foreach ( var listObject in list ) {
-            GUI.Separator();
-            using ( new GUI.Indent( 12 ) ) {
-              GUILayout.BeginHorizontal();
-              {
-                GUILayout.BeginVertical();
-                {
-                  // Using target to render listObject since it normally (CollisionGroupEntry) isn't an Object.
-                  InspectorEditor.DrawMembersGUI( new Object[] { target }, ignored => listObject );
-                }
-                GUILayout.EndVertical();
-
-                using ( GUI.NodeListButtonColor ) {
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
-                                                        false,
-                                                        "Insert new element before this" ),
-                                         skin.button,
-                                         buttonLayout ) )
-                    insertElementBefore = listObject;
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                        false,
-                                                        "Insert new element after this" ),
-                                         skin.button,
-                                         buttonLayout ) )
-                    insertElementAfter = listObject;
-                  if ( GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                        false,
-                                                        "Erase this element" ),
-                                         skin.button,
-                                         buttonLayout ) )
-                    eraseElement = listObject;
-                }
-              }
-              GUILayout.EndHorizontal();
-            }
-          }
-
-          if ( list.Count == 0 )
-            GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
-          else
-            GUI.Separator();
-        }
-
-        bool addElementToList = false;
-        GUILayout.BeginHorizontal();
-        {
-          GUILayout.FlexibleSpace();
-          using ( GUI.NodeListButtonColor )
-            addElementToList = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                                false,
-                                                                "Add new element to list" ),
-                                                 skin.button,
-                                                 buttonLayout );
-        }
-        GUILayout.EndHorizontal();
-
-        object newObject = null;
-        if ( addElementToList || insertElementBefore != null || insertElementAfter != null )
-          newObject = Activator.CreateInstance( list.GetType().GetGenericArguments()[ 0 ], new object[] { } );
-
-        if ( eraseElement != null )
-          list.Remove( eraseElement );
-        else if ( newObject != null ) {
-          if ( addElementToList || ( list.Count > 0 && insertElementAfter != null && insertElementAfter == list[ list.Count - 1 ] ) )
-            list.Add( newObject );
-          else if ( insertElementAfter != null )
-            list.Insert( list.IndexOf( insertElementAfter ) + 1, newObject );
-          else if ( insertElementBefore != null )
-            list.Insert( list.IndexOf( insertElementBefore ), newObject );
-        }
-
-        if ( eraseElement != null || newObject != null )
-          EditorUtility.SetDirty( target );
-      }
-
-      // A bit of a hack until I figure out how to handle multi-selection
-      // of lists, if that should be possible at all. We're handling the
-      // list from inside this drawer and by returning null the return
-      // value isn't propagated to any targets.
-      return null;
-    }
-
-    [InspectorDrawer( typeof( ScriptAsset ), AssignableFrom = true )]
-    [InspectorDrawer( typeof( ScriptComponent ), IsBaseType = true )]
-    [InspectorDrawer( typeof( Object ), IsBaseType = true )]
-    [InspectorDrawerResult( IsNullable = true )]
-    public static object ScriptDrawer( object obj, InvokeWrapper wrapper, GUISkin skin )
-    {
-      object result             = null;
-      var type                  = wrapper.GetContainingType();
-      bool allowSceneObject     = type == typeof( GameObject ) ||
-                                  type.BaseType == typeof( ScriptComponent );
-      Object valInField         = wrapper.Get<Object>( obj );
-      bool recursiveEditing     = wrapper.HasAttribute<AllowRecursiveEditing>();
-      bool createNewAssetButton = false;
-
-      if ( recursiveEditing ) {
-        var foldoutData = EditorData.Instance.GetData( obj as Object, wrapper.Member.Name );
-
-        GUILayout.BeginHorizontal();
-        {
-          var objFieldLabel = MakeLabel( wrapper.Member );
-          var buttonSize = skin.label.CalcHeight( objFieldLabel, Screen.width );
-          UnityEngine.GUI.enabled = valInField != null;
-          foldoutData.Bool = GUILayout.Button( GUI.MakeLabel( foldoutData.Bool ? "-" : "+" ),
-                                               skin.button,
-                                               new GUILayoutOption[] { GUILayout.Width( 20.0f ), GUILayout.Height( buttonSize ) } ) ?
-                               // Button clicked - toggle current value.
-                               !foldoutData.Bool :
-                               // If foldout were enabled but valInField has changed to null - foldout will become disabled.
-                               valInField != null && foldoutData.Bool;
-          UnityEngine.GUI.enabled = true;
-          result = EditorGUILayout.ObjectField( objFieldLabel,
-                                                valInField,
-                                                type,
-                                                allowSceneObject,
-                                                new GUILayoutOption[] { } );
-
-          if ( typeof( ScriptAsset ).IsAssignableFrom( type ) ) {
-            GUILayout.Space( 4 );
-            using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-              createNewAssetButton = GUILayout.Button( GUI.MakeLabel( "New", false, "Create new asset" ),
-                                                       GUILayout.Width( 42 ),
-                                                       GUILayout.Height( buttonSize ) );
-          }
-        }
-        GUILayout.EndHorizontal();
-
-        // Remove editor if object field is set to null or another object.
-        if ( valInField != ( result as Object ) ) {
-          ToolManager.ReleaseRecursiveEditor( valInField );
-          foldoutData.Bool = false;
-        }
-
-        if ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
-             Event.current.type == EventType.MouseDown &&
-             Event.current.button == 0 ) {
-          Event.current.Use();
-          foldoutData.Bool = !foldoutData.Bool;
-
-          // Unfolding - remove editor.
-          if ( !foldoutData.Bool )
-            ToolManager.ReleaseRecursiveEditor( result as Object );
-
-          GUIUtility.ExitGUI();
-        }
-
-        if ( foldoutData.Bool ) {
-          using ( new GUI.Indent( 12 ) ) {
-            GUI.Separator();
-
-            GUILayout.Space( 6 );
-
-            AGXUnity.Utils.GUI.WarningLabel( "Changes made to this object will affect all objects referencing this asset.",
-                                             skin );
-
-            GUILayout.Space( 6 );
-
-            Editor editor = ToolManager.TryGetOrCreateRecursiveEditor( result as Object );
-            if ( editor != null )
-              editor.OnInspectorGUI();
-
-            GUI.Separator();
-          }
+          createNewPressed = Button( buttonRect,
+                                     MiscIcon.CreateAsset,
+                                     true,
+                                     "Create new asset." );
         }
       }
       else
-        result = EditorGUILayout.ObjectField( MakeLabel( wrapper.Member ),
-                                              valInField,
-                                              type,
-                                              allowSceneObject,
-                                              new GUILayoutOption[] { } );
+        result = instance;
 
-      if ( createNewAssetButton ) {
-        var assetName = type.Name.SplitCamelCase().ToLower();
-        var path = EditorUtility.SaveFilePanel( "Create new " + assetName, "Assets", "new " + assetName + ".asset", "asset" );
+      // Remove editor if object field is set to null or another object.
+      if ( instance != result ) {
+        ToolManager.ReleaseRecursiveEditor( instance );
+        foldoutData.Bool = false;
+      }
+
+      // Recursive editor rendered indented with respect to foldout.
+      if ( foldoutData.Bool )
+        HandleEditorGUI( ToolManager.TryGetOrCreateRecursiveEditor( result ) );
+
+      if ( createNewPressed ) {
+        var assetName = instanceType.Name.SplitCamelCase().ToLower();
+        var assetExtension = IO.AGXFileInfo.FindAssetExtension( instanceType );
+        var path = EditorUtility.SaveFilePanel( "Create new " + assetName,
+                                                          "Assets",
+                                                          "new " + assetName + assetExtension,
+                                                          assetExtension.TrimStart( '.' ) );
         if ( path != string.Empty ) {
-          var info         = new System.IO.FileInfo( path );
+          var info = new System.IO.FileInfo( path );
           var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
-          var newInstance  = ScriptAsset.Create( type );
+          var newInstance = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
+                               ScriptAsset.Create( instanceType ) as Object :
+                               new Material( Shader.Find( "Standard" ) );
           newInstance.name = info.Name;
-          AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension == ".asset" ? "" : ".asset" ) );
+          AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension != assetExtension ? assetExtension : "" ) );
           AssetDatabase.SaveAssets();
           AssetDatabase.Refresh();
 
@@ -424,53 +373,655 @@ namespace AGXUnityEditor
       return result;
     }
 
-    public struct DrawerInfo
+    public static void UnityMaterial( GUIContent objFieldLabel,
+                                      Material material,
+                                      Action<Material> onMaterialChanged )
     {
-      public MethodInfo Drawer;
-      public MethodInfo CopyOp;
-      public bool IsNullable;
-
-      public bool IsValid { get { return Drawer != null; } }
+      var newMaterial = FoldoutObjectField( objFieldLabel,
+                                            material,
+                                            typeof( Material ),
+                                            EditorData.Instance.GetData( material, objFieldLabel.text ),
+                                            false ) as Material;
+      if ( newMaterial != null && newMaterial != material && onMaterialChanged != null )
+        onMaterialChanged.Invoke( newMaterial );
     }
 
-    public static DrawerInfo GetDrawerMethod( Type type )
+    private static void HandleEditorGUI( Editor editor )
     {
-      DrawerInfo drawerInfo;
-      if ( !m_drawerMethodsCache.TryGetValue( type, out drawerInfo ) ) {
-        drawerInfo = new DrawerInfo() { Drawer = null, CopyOp = null, IsNullable = false };
-        foreach ( var drawerClass in m_drawerClasses ) {
-          var methods = drawerClass.GetMethods( BindingFlags.Public | BindingFlags.Static );
-          foreach ( var method in methods ) {
-            if ( method.GetCustomAttributes<InspectorDrawerAttribute>().FirstOrDefault( attribute => attribute.Match( type ) ) != null ) {
-              drawerInfo.Drawer = method;
-              FindDrawerResult( ref drawerInfo, drawerClass );
-              m_drawerMethodsCache.Add( type, drawerInfo );
-              break;
-            }
+      if ( editor == null )
+        return;
+
+      using ( IndentScope.Single ) {
+        if ( editor is MaterialEditor )
+          HandleMaterialEditorGUI( editor as MaterialEditor );
+        else {
+          editor.OnInspectorGUI();
+        }
+      }
+    }
+
+    private static void HandleMaterialEditorGUI( MaterialEditor editor )
+    {
+      var isBuiltInMaterial = editor.target == null ||
+                              !AssetDatabase.GetAssetPath( editor.target ).StartsWith( "Assets" ) ||
+                              ( editor.target as Material ) == Manager.GetOrCreateShapeVisualDefaultMaterial();
+      using ( new EditorGUI.DisabledGroupScope( isBuiltInMaterial ) )
+      using ( IndentScope.NoIndent ) {
+        editor.DrawHeader();
+        editor.OnInspectorGUI();
+      }
+    }
+
+    public struct ToolButtonData
+    {
+      public static ToolButtonData Create( ToolIcon icon,
+                                           bool isActive,
+                                           string toolTip,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           Action postRender = null )
+      {
+        return new ToolButtonData()
+        {
+          Icon       = icon,
+          IsActive   = isActive,
+          Tooltip    = toolTip,
+          Enabled    = enabled,
+          OnClick    = onClick,
+          PostRender = postRender
+        };
+      }
+
+      public ToolIcon Icon;
+      public bool IsActive;
+      public string Tooltip;
+      public bool Enabled;
+      public Action OnClick;
+      public Action PostRender;
+    }
+
+    public static void ToolButtons( params ToolButtonData[] data )
+    {
+      if ( data.Length == 0 )
+        return;
+
+      float buttonWidth = InspectorGUISkin.ToolButtonSize.x;
+      float buttonHeight = InspectorGUISkin.ToolButtonSize.y;
+
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( true, buttonHeight ) );
+      rect.width = buttonWidth;
+      for ( int i = 0; i < data.Length; ++i ) {
+        var buttonType = data.Length > 1 && i == 0                ? InspectorGUISkin.ButtonType.Left :
+                          data.Length > 1 && i == data.Length - 1 ? InspectorGUISkin.ButtonType.Right :
+                                                                    InspectorGUISkin.ButtonType.Middle;
+        ToolButton( rect, data[ i ], buttonType );
+        rect.x += rect.width;
+      }
+    }
+
+    private static GUIContent s_tooltipContent = new GUIContent( "", "" );
+
+    private static GUIContent ToolButtonTooltip( string tooltip )
+    {
+      s_tooltipContent.tooltip = tooltip;
+      return s_tooltipContent;
+    }
+
+    public static bool ToolButton( Rect rect,
+                                   ToolButtonData data,
+                                   InspectorGUISkin.ButtonType buttonType )
+    {
+      var texture = IconManager.GetIcon( data.Icon );
+      var pressed = false;
+      using ( new GUI.EnabledBlock( data.Enabled ) )
+        pressed = UnityEngine.GUI.Button( rect,
+                                          ToolButtonTooltip( data.Tooltip ),
+                                          InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
+      if ( texture != null ) {
+        using ( IconManager.ForegroundColorBlock( data.IsActive, data.Enabled ) )
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
+      }
+
+      data.PostRender?.Invoke();
+      if ( pressed )
+        data.OnClick?.Invoke();
+
+      return pressed;
+    }
+
+    public static void ToolArrayGUI<T>( Tools.CustomTargetTool context,
+                                        T[] items,
+                                        string name )
+      where T : Object
+    {
+      if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], name ),
+                     GUI.MakeLabel( name, true ) ) ) {
+        context.RemoveEditors( items );
+        return;
+      }
+
+      if ( items.Length == 0 ) {
+        using ( IndentScope.Single )
+          EditorGUILayout.LabelField( GUI.MakeLabel( "Empty", true ), InspectorEditor.Skin.Label );
+        return;
+      }
+
+      Func<Object, string> getConstraintTypename = obj => ( obj as Constraint ).Type.ToString();
+      Func<Object, string> getDefaultTypename = obj => obj.GetType().Name;
+      var getTypename = items[ 0 ] is Constraint ?
+                                                     getConstraintTypename :
+                                                     getDefaultTypename;
+      using ( IndentScope.Single ) {
+        foreach ( var item in items ) {
+          if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
+                                                      item.GetInstanceID().ToString() ),
+                         GUI.MakeLabel( InspectorEditor.Skin.TagTypename( getTypename( item ) ) +
+                                        ' ' +
+                                        item.name ) ) ) {
+            context.RemoveEditor( item );
+            continue;
           }
 
-          if ( drawerInfo.Drawer != null )
-            break;
+          var editor = context.GetOrCreateEditor( item );
+          HandleEditorGUI( editor );
+        }
+      }
+    }
+
+    public static void ToolListGUI<T>( Tools.CustomTargetTool context,
+                                       T[] items,
+                                       string identifier,
+                                       Action<T> onAdd,
+                                       Action<T> onRemove,
+                                       Action<T, int> preItemEditor = null,
+                                       Action<T, int> postItemEditor = null )
+      where T : Object
+    {
+      var displayItemsList = Foldout( GetTargetToolArrayGUIData( context.Targets[ 0 ], identifier ),
+                                      GUI.MakeLabel( identifier + $" [{items.Length}]" ) );
+      var itemTypename = typeof( T ).Name;
+      var isAsset = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
+      var itemTypenameSplit = itemTypename.SplitCamelCase();
+      var targetTypename = context.Targets[ 0 ].GetType().Name;
+      if ( displayItemsList ) {
+        T itemToRemove = null;
+        using ( IndentScope.Single ) {
+          for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
+            var item = items[ itemIndex ];
+
+            var displayItem = false;
+            using ( new GUILayout.HorizontalScope() ) {
+              displayItem = Foldout( GetItemToolArrayGUIData( context.Targets[ 0 ], identifier, item ),
+                                     GUI.MakeLabel( InspectorEditor.Skin.TagTypename( itemTypename ) +
+                                                    ' ' +
+                                                    item.name ) );
+
+              if ( Button( MiscIcon.EntryRemove,
+                           true,
+                           $"Remove {item.name} from {targetTypename}.",
+                           GUILayout.Width( 18 ) ) )
+                itemToRemove = item;
+            }
+
+            if ( !displayItem ) {
+              HandleItemEditorDisable( context, item );
+              continue;
+            }
+
+            var editor = context.GetOrCreateEditor( item );
+            preItemEditor?.Invoke( item, itemIndex );
+            HandleEditorGUI( editor );
+            postItemEditor?.Invoke( item, itemIndex );
+          }
+
+          T itemToAdd = null;
+          var addButtonPressed = false;
+          GUILayout.Space( 2.0f * EditorGUIUtility.standardVerticalSpacing );
+          using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
+            using ( GUI.AlignBlock.Center )
+              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
+            var buttonWidth = 16.0f;
+            var rect = EditorGUILayout.GetControlRect();
+            var xMax = rect.xMax;
+            rect.xMax = rect.xMax - buttonWidth - EditorGUIUtility.standardVerticalSpacing;
+            itemToAdd = EditorGUI.ObjectField( rect, (Object)null, typeof( T ), true ) as T;
+            rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
+            rect.xMax = xMax;
+            rect.width = buttonWidth;
+            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, true );
+          }
+
+          if ( addButtonPressed ) {
+            var sceneItems = isAsset ?
+                               IO.Utils.FindAssetsOfType<T>() :
+                               Object.FindObjectsOfType<T>();
+            var addItemMenu = new GenericMenu();
+            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );
+            addItemMenu.AddSeparator( string.Empty );
+            foreach ( var sceneItem in sceneItems ) {
+              if ( Array.IndexOf( items, sceneItem ) >= 0 )
+                continue;
+              addItemMenu.AddItem( GUI.MakeLabel( sceneItem.name ),
+                                   false,
+                                   () =>
+                                   {
+                                     onAdd( sceneItem );
+                                   } );
+            }
+            addItemMenu.ShowAsContext();
+          }
+
+          if ( itemToAdd != null )
+            onAdd( itemToAdd );
+        }
+
+        if ( itemToRemove != null ) {
+          onRemove( itemToRemove );
+          HandleItemEditorDisable( context, itemToRemove );
+          itemToRemove = null;
+        }
+      }
+      else {
+        foreach ( var item in items )
+          HandleItemEditorDisable( context, item );
+      }
+    }
+
+    public static EditorDataEntry GetTargetToolArrayGUIData( Object target,
+                                                             string identifier,
+                                                             Action<EditorDataEntry> onCreate = null )
+    {
+      return EditorData.Instance.GetData( target, identifier, onCreate );
+    }
+
+    public static EditorDataEntry GetItemToolArrayGUIData( Object target,
+                                                           string identifier,
+                                                           Object item,
+                                                           Action<EditorDataEntry> onCreate = null )
+    {
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString(), onCreate );
+    }
+
+    private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )
+      where T : Object
+    {
+      if ( tool.HasEditor( item ) ) {
+        tool.RemoveEditor( item );
+        SceneView.RepaintAll();
+      }
+    }
+
+    public enum PositiveNegativeResult
+    {
+      Neutral,
+      Positive,
+      Negative
+    }
+
+    public static PositiveNegativeResult PositiveNegativeButtons( bool positiveButtonActive,
+                                                                  string positiveButtonName,
+                                                                  string positiveButtonTooltip,
+                                                                  string negativeButtonName,
+                                                                  string negativeButtonTooltip = "" )
+    {
+      var negativeButtonWidth = 80.0f;
+      var positiveButtonWidth = 80.0f;
+      var buttonsHeight = 16.0f;
+
+      bool positivePressed = false;
+      bool negativePressed = false;
+
+      var position = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false,
+                                                                             buttonsHeight +
+                                                                             EditorGUIUtility.standardVerticalSpacing ) );
+
+      var negativeRect = new Rect( position.xMax - positiveButtonWidth - negativeButtonWidth,
+                                   position.y + EditorGUIUtility.standardVerticalSpacing,
+                                   negativeButtonWidth,
+                                   buttonsHeight );
+      using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
+        negativePressed = UnityEngine.GUI.Button( negativeRect,
+                                                  GUI.MakeLabel( negativeButtonName ),
+                                                  InspectorEditor.Skin.ButtonLeft );
+
+      var positiveRect = new Rect( position.xMax - positiveButtonWidth,
+                                   position.y + EditorGUIUtility.standardVerticalSpacing,
+                                   positiveButtonWidth,
+                                   buttonsHeight );
+      using ( new EditorGUI.DisabledGroupScope( !positiveButtonActive ) )
+      using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
+        positivePressed = UnityEngine.GUI.Button( positiveRect,
+                                                  GUI.MakeLabel( positiveButtonName,
+                                                                 true,
+                                                                 positiveButtonTooltip ),
+                                                  InspectorEditor.Skin.ButtonRight );
+
+      return positivePressed ? PositiveNegativeResult.Positive :
+             negativePressed ? PositiveNegativeResult.Negative :
+                               PositiveNegativeResult.Neutral;
+
+    }
+
+    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick,
+                                              Predicate<EnumT> filter = null,
+                                              GUIStyle style = null,
+                                              GUILayoutOption[] options = null )
+    {
+      return EnumButtonList( onClick, filter, e => { return style ?? InspectorEditor.Skin.Button; }, options );
+    }
+
+    public static bool EnumButtonList<EnumT>( Action<EnumT> onClick,
+                                              Predicate<EnumT> filter = null,
+                                              Func<EnumT, GUIStyle> styleCallback = null,
+                                              GUILayoutOption[] options = null )
+    {
+      if ( styleCallback == null )
+        styleCallback = e => { return InspectorEditor.Skin.Button; };
+
+      foreach ( var eVal in Enum.GetValues( typeof( EnumT ) ) ) {
+        bool filterPass = filter == null ||
+                          filter( (EnumT)eVal );
+        // Execute onClick if eVal passed the filter and the button is pressed.
+        if ( filterPass && GUILayout.Button( GUI.MakeLabel( eVal.ToString().SplitCamelCase() ),
+                                             styleCallback( (EnumT)eVal ),
+                                             options ) ) {
+          onClick( (EnumT)eVal );
+          return true;
         }
       }
 
-      return drawerInfo;
+      return false;
     }
 
-    public static void FindDrawerResult( ref DrawerInfo info, Type drawerClass )
+    public static Color ProBackgroundColor = new Color32( 56, 56, 56, 255 );
+    public static Color IndieBackgroundColor = new Color32( 194, 194, 194, 255 );
+
+    public static Color BackgroundColor
     {
-      if ( info.Drawer == null )
-        return;
-
-      var resultAttribute = info.Drawer.GetCustomAttribute<InspectorDrawerResultAttribute>();
-      if ( resultAttribute == null )
-        return;
-
-      info.IsNullable = resultAttribute.IsNullable;
-      info.CopyOp     = drawerClass.GetMethod( info.Drawer.Name + "CopyOp", BindingFlags.Public | BindingFlags.Static );
+      get
+      {
+        return EditorGUIUtility.isProSkin ? ProBackgroundColor : IndieBackgroundColor;
+      }
     }
 
-    private static Dictionary<Type, DrawerInfo> m_drawerMethodsCache = new Dictionary<Type, DrawerInfo>();
-    private static List<Type> m_drawerClasses = new List<Type>() { typeof( InspectorGUI ) };
+    public static GUI.ColorBlock NodeListButtonColor
+    {
+      get
+      {
+        return new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) );
+      }
+    }
+
+    public static GUIStyle FadeNormalBackground( GUIStyle style, float t )
+    {
+      var fadedStyle = new GUIStyle( style );
+      var background = EditorGUIUtility.isProSkin ?
+                               GUI.CreateColoredTexture( 1, 1, Color.Lerp( ProBackgroundColor, Color.white, t ) ) :
+                               GUI.CreateColoredTexture( 1, 1, Color.Lerp( IndieBackgroundColor, Color.black, t ) );
+      fadedStyle.normal.background = background;
+      return fadedStyle;
+    }
+
+    public static void WarningLabel( string warning )
+    {
+      var prevBgc = UnityEngine.GUI.backgroundColor;
+      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
+      EditorGUILayout.LabelField( GUI.MakeLabel( warning,
+                                                 Color.Lerp( Color.red, Color.white, 0.25f ),
+                                                 true ),
+                                  InspectorEditor.Skin.TextAreaMiddleCenter );
+      UnityEngine.GUI.backgroundColor = prevBgc;
+    }
+
+    /// <summary>
+    /// Handles drag and drop over given area.
+    /// </summary>
+    /// <example>
+    /// GUILayout.Label( "Drag and drop asset here to apply the stuff" );
+    /// Utils.GUI.HandleDragDrop&lt; MyAsset &gt;( GUILayoutUtility.GetLastRect(),
+    ///                                            Event.current,
+    ///                                            ( myAsset ) => { ApplyStuff( myAsset ); } );
+    /// </example>
+    /// <typeparam name="T">Expected dropped object type.</typeparam>
+    /// <param name="dropArea">Drop rect.</param>
+    /// <param name="current">Current event.</param>
+    /// <param name="onDrop">Callback when an object has been dropped.</param>
+    public static void HandleDragDrop<T>( Rect dropArea, Event current, Action<T> onDrop )
+      where T : Object
+    {
+      bool isDragDropEventInDropArea = ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated ) && dropArea.Contains( current.mousePosition );
+      if ( !isDragDropEventInDropArea )
+        return;
+
+      bool validObject = DragAndDrop.objectReferences.Length == 1 && DragAndDrop.objectReferences[ 0 ] is T;
+      DragAndDrop.visualMode = validObject ?
+                                  DragAndDropVisualMode.Copy :
+                                  DragAndDropVisualMode.Rejected;
+
+      if ( Event.current.type == EventType.DragPerform && validObject ) {
+        DragAndDrop.AcceptDrag();
+
+        onDrop( DragAndDrop.objectReferences[ 0 ] as T );
+      }
+    }
+
+    public static void HandleFrame( IFrame frame,
+                                    int indentLevelInc = 0,
+                                    bool includeFrameToolIfPresent = true )
+    {
+      if ( frame == null )
+        return;
+
+      HandleFrames( new IFrame[] { frame },
+                    indentLevelInc,
+                    includeFrameToolIfPresent );
+    }
+
+    public static void HandleFrames( IFrame[] frames,
+                                     int indentLevelInc = 0,
+                                     bool includeFrameToolIfPresent = true )
+    {
+      var skin = InspectorEditor.Skin;
+      var guiWasEnabled = UnityEngine.GUI.enabled;
+      var refFrame = frames[ 0 ];
+      var isMultiSelect = frames.Length > 1;
+
+        var frameTool = includeFrameToolIfPresent ?
+                          Tools.FrameTool.FindActive( refFrame ) :
+                          null;
+        if ( frameTool != null )
+          frameTool.ToolsGUI( isMultiSelect );
+
+      using ( IndentScope.Create( indentLevelInc ) ) {
+        UnityEngine.GUI.enabled = true;
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.Parent, frame.Parent ) );
+        var newParent = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Parent" ),
+                                                                 refFrame.Parent,
+                                                                 typeof( GameObject ),
+                                                                 true );
+        EditorGUI.showMixedValue = false;
+        UnityEngine.GUI.enabled = guiWasEnabled;
+
+        if ( newParent != refFrame.Parent ) {
+          foreach ( var frame in frames )
+            frame.SetParent( newParent );
+        }
+
+        UnityEngine.GUI.changed = false;
+
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalPosition, frame.LocalPosition ) );
+        var localPosition = EditorGUILayout.Vector3Field( GUI.MakeLabel( "Local position" ), refFrame.LocalPosition );
+        if ( UnityEngine.GUI.changed ) {
+          foreach ( var frame in frames )
+            frame.LocalPosition = localPosition;
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
+
+        // Converting from quaternions to Euler - make sure the actual Euler values has
+        // changed before updating local rotation to not mess up the undo stack.
+        var inputEuler = refFrame.LocalRotation.eulerAngles;
+        EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalRotation, frame.LocalRotation ) );
+        var outputEuler = EditorGUILayout.Vector3Field( GUI.MakeLabel( "Local rotation" ), inputEuler );
+        if ( !Equals( inputEuler, outputEuler ) ) {
+          foreach ( var frame in frames )
+            frame.LocalRotation = Quaternion.Euler( outputEuler );
+          UnityEngine.GUI.changed = false;
+        }
+        EditorGUI.showMixedValue = false;
+      }
+    }
+
+    public struct RangeRealResult
+    {
+      public float Min;
+      public bool MinChanged;
+      public float Max;
+      public bool MaxChanged;
+    }
+
+    private static float[] s_rangeRealValues = new float[]
+    {
+      0.0f,
+      0.0f
+    };
+    private static GUIContent[] s_rangeRealContent = new GUIContent[]
+    {
+      GUIContent.none,
+      GUIContent.none
+    };
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      return RangeRealField( content,
+                             value,
+                             GUIContent.none,
+                             GUIContent.none,
+                             displayInvalidRangeWarning );
+    }
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  GUIContent minContent,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      return RangeRealField( content,
+                             value,
+                             minContent,
+                             GUIContent.none,
+                             displayInvalidRangeWarning );
+    }
+
+    public static RangeRealResult RangeRealField( GUIContent content,
+                                                  RangeReal value,
+                                                  GUIContent minContent,
+                                                  GUIContent maxContent,
+                                                  bool displayInvalidRangeWarning = true )
+    {
+      var invalidRange = displayInvalidRangeWarning && value.Min > value.Max;
+
+      var result = new RangeRealResult()
+      {
+        Min = value.Min,
+        MinChanged = false,
+        Max = value.Max,
+        MaxChanged = false
+      };
+
+      var position = EditorGUILayout.GetControlRect();
+      s_rangeRealContent[ 0 ] = minContent;
+      s_rangeRealContent[ 1 ] = maxContent;
+      s_rangeRealValues[ 0 ]  = value.Min;
+      s_rangeRealValues[ 1 ]  = value.Max;
+
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiFloatField( position,
+                                 content,
+                                 s_rangeRealContent,
+                                 s_rangeRealValues );
+      if ( EditorGUI.EndChangeCheck() ) {
+        result.Min = s_rangeRealValues[ 0 ];
+        result.MinChanged = s_rangeRealValues[ 0 ] != value.Min;
+
+        result.Max = s_rangeRealValues[ 1 ];
+        result.MaxChanged = s_rangeRealValues[ 1 ] != value.Max;
+      }
+
+      if ( invalidRange )
+        WarningLabel( "Invalid range, Min > Max: (" + value.Min + " > " + value.Max + ")" );
+
+      return result;
+    }
+
+    private static GUIContent s_customFloatFieldEmptyContent = new GUIContent( " " );
+    private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };
+    private static float[] s_customFloatFieldData = new float[] { 0.0f };
+
+    public static float CustomFloatField( GUIContent labelContent, GUIContent fieldContent, float value )
+    {
+      var content                             = labelContent ?? s_customFloatFieldEmptyContent;
+      var position                            = EditorGUILayout.GetControlRect();
+      s_customFloatFieldSubLabelContents[ 0 ] = fieldContent;
+      s_customFloatFieldData[ 0 ]             = value;
+
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiFloatField( position,
+                                 content,
+                                 s_customFloatFieldSubLabelContents,
+                                 s_customFloatFieldData );
+      if ( EditorGUI.EndChangeCheck() )
+        return s_customFloatFieldData[ 0 ];
+      return value;
+    }
+
+    private static GUIStyle s_dropdownToolStyle = null;
+
+    private static GUIStyle DropdownToolStyle
+    {
+      get
+      {
+        if ( s_dropdownToolStyle == null ) {
+          s_dropdownToolStyle = new GUIStyle( InspectorEditor.Skin.Label )
+          {
+            padding = new RectOffset( 16, 6, 6, 6 )
+          };
+        }
+        return s_dropdownToolStyle;
+      }
+    }
+
+    public static void ToolDescription( string desc )
+    {
+      if ( string.IsNullOrEmpty( desc ) )
+        return;
+
+      var descContent = new GUIContent( desc );
+      //descContent.image = EditorGUIUtility.IconContent( "console.infoicon" ).image;
+      var descRect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( DropdownToolStyle ) );
+      UnityEngine.GUI.Label( descRect, "", InspectorEditor.Skin.TextArea );
+      EditorGUILayout.LabelField( descContent, InspectorEditor.Skin.LabelWordWrap );
+      EditorGUILayout.EndVertical();
+    }
+
+    public static Rect OnDropdownToolBegin( string toolDescription = "" )
+    {
+      ToolDescription( toolDescription );
+
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.BeginVertical( DropdownToolStyle ) );
+      UnityEngine.GUI.Label( rect, "", InspectorEditor.Skin.TextArea );
+
+      EditorGUIUtility.labelWidth -= DropdownToolStyle.padding.left;
+
+      return rect;
+    }
+
+    public static void OnDropdownToolEnd()
+    {
+      EditorGUIUtility.labelWidth += DropdownToolStyle.padding.left;
+
+      EditorGUILayout.EndVertical();
+    }
   }
 }

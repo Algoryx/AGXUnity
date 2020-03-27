@@ -2,7 +2,7 @@
 using System.IO;
 using UnityEngine;
 using UnityEditor;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
@@ -25,54 +25,41 @@ namespace AGXUnityEditor
     public bool BuildPlayer_CopyBinaries = true;
 
     #region Rendering GUI
-    public void OnInspectorGUI( GUISkin skin )
+    public void OnInspectorGUI()
     {
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.label );
+      var skin = InspectorEditor.Skin;
 
-      GUI.Separator3D();
+      using ( GUI.AlignBlock.Center )
+        GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
       // BuiltInToolsTool settings GUI.
       {
         using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Built in tools", 16, true ), skin.label );
+          GUILayout.Label( GUI.MakeLabel( "Built in tools", 16, true ), skin.Label );
 
-        HandleKeyHandlerGUI( GUI.MakeLabel( "Select game object" ), BuiltInToolsTool_SelectGameObjectKeyHandler, skin );
-        HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler, skin );
-        HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler, skin );
+        HandleKeyHandlerGUI( GUI.MakeLabel( "Select game object" ), BuiltInToolsTool_SelectGameObjectKeyHandler );
+        HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler );
+        HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
 
-      GUI.Separator();
+      BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
+                                                                     false,
+                                                                     "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
+                                                      BuildPlayer_CopyBinaries );
 
-      BuildPlayer_CopyBinaries = GUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
-                                                            false,
-                                                            "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
-                                             BuildPlayer_CopyBinaries,
-                                             skin.button,
-                                             skin.label );
-
-      GUI.Separator();
-
-      if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.button ) )
+      if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.Button ) )
         Utils.CustomEditorGenerator.Synchronize( true );
-
-      GUI.Separator3D();
     }
 
     private bool m_showDropDown = false;
 
-    private void HandleKeyHandlerGUI( GUIContent name, Utils.KeyHandler keyHandler, GUISkin skin )
+    private void HandleKeyHandlerGUI( GUIContent name, Utils.KeyHandler keyHandler )
     {
       const int keyButtonWidth = 90;
 
       GUILayout.BeginHorizontal();
       {
-        keyHandler.Enable = GUI.Toggle( name,
-                                        keyHandler.Enable,
-                                        skin.button,
-                                        GUI.Align( skin.label, TextAnchor.MiddleLeft ),
-                                        new GUILayoutOption[] { GUILayout.Width( ToggleButtonSize ), GUILayout.Height( ToggleButtonSize ) },
-                                        new GUILayoutOption[] { GUILayout.Height( ToggleButtonSize ) } );
+        keyHandler.Enable = InspectorGUI.Toggle( name, keyHandler.Enable );
         GUILayout.FlexibleSpace();
 
         UnityEngine.GUI.enabled = keyHandler.Enable;
@@ -82,7 +69,10 @@ namespace AGXUnityEditor
                                      GUI.MakeLabel( "Detecting..." ) :
                                      GUI.MakeLabel( keyHandler.Keys[ iKey ].ToString() );
 
-          bool toggleDetecting = GUILayout.Button( buttonLabel, skin.button, GUILayout.Width( keyButtonWidth ), GUILayout.Height( ToggleButtonSize ) );
+          bool toggleDetecting = GUILayout.Button( buttonLabel,
+                                                   InspectorEditor.Skin.Button,
+                                                   GUILayout.Width( keyButtonWidth ),
+                                                   GUILayout.Height( ToggleButtonSize ) );
           if ( toggleDetecting )
             keyHandler.DetectKey( this, !keyHandler.IsDetectingKey( iKey ), iKey );
         }
@@ -90,10 +80,13 @@ namespace AGXUnityEditor
         Rect dropDownButtonRect = new Rect();
         GUILayout.BeginVertical( GUILayout.Height( ToggleButtonSize ) );
         {
-          GUIStyle tmp = new GUIStyle( skin.button );
+          GUIStyle tmp = new GUIStyle( InspectorEditor.Skin.Button );
           tmp.fontSize = 6;
 
-          m_showDropDown = GUILayout.Button( GUI.MakeLabel( "v", true ), tmp, GUILayout.Width( 16 ), GUILayout.Height( 14 ) ) ?
+          m_showDropDown = GUILayout.Button( GUI.MakeLabel( "v", true ),
+                                             tmp,
+                                             GUILayout.Width( 16 ),
+                                             GUILayout.Height( 14 ) ) ?
                              !m_showDropDown :
                               m_showDropDown;
           dropDownButtonRect = GUILayoutUtility.GetLastRect();
@@ -160,17 +153,6 @@ namespace AGXUnityEditor
       return instance;
     }
 
-    [ MenuItem( "AGXUnity/Settings..." ) ]
-    private static void Init()
-    {
-      EditorSettings instance = GetOrCreateInstance();
-      if ( instance == null )
-        return;
-
-      EditorUtility.FocusProjectWindow();
-      Selection.activeObject = instance;
-    }
-
     private static EditorSettings GetOrCreateInstance()
     {
       if ( m_instance != null )
@@ -192,7 +174,7 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
-      EditorSettings.Instance.OnInspectorGUI( InspectorEditor.Skin );
+      EditorSettings.Instance.OnInspectorGUI();
     }
   }
 }

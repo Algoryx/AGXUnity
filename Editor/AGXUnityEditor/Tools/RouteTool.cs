@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
@@ -81,7 +81,6 @@ namespace AGXUnityEditor.Tools
     public RouteTool( Object[] targets )
       : base( targets )
     {
-      // , Route<NodeT> route
       Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
                                                                    System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
 
@@ -136,23 +135,13 @@ namespace AGXUnityEditor.Tools
       bool toggleDisableCollisions = false;
       var skin = InspectorEditor.Skin;
 
-      GUILayout.BeginHorizontal();
-      {
-        GUI.ToolsLabel( skin );
-
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleDisableCollisions = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
-                                                    DisableCollisionsTool,
-                                                    "Disable collisions against other objects",
-                                                    skin );
-        }
-      }
-      GUILayout.EndHorizontal();
+      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
+                                                                    DisableCollisionsTool,
+                                                                    "Disable collisions against other objects",
+                                                                    () => toggleDisableCollisions = true ) );
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
-
-        GUI.Separator();
       }
 
       if ( !EditorApplication.isPlaying )
@@ -164,8 +153,8 @@ namespace AGXUnityEditor.Tools
 
     protected virtual string GetNodeTypeString( RouteNode node ) { return string.Empty; }
     protected virtual Color GetNodeColor( RouteNode node ) { return Color.yellow; }
-    protected virtual void OnPreFrameGUI( NodeT node, GUISkin skin ) { }
-    protected virtual void OnPostFrameGUI( NodeT node, GUISkin skin ) { }
+    protected virtual void OnPreFrameGUI( NodeT node ) { }
+    protected virtual void OnPostFrameGUI( NodeT node ) { }
     protected virtual void OnNodeCreate( NodeT newNode, NodeT refNode, bool addPressed ) { }
 
     protected RouteNodeTool GetRouteNodeTool( NodeT node )
@@ -173,89 +162,102 @@ namespace AGXUnityEditor.Tools
       return FindActive<RouteNodeTool>( tool => tool.Node == node );
     }
 
+    private static GUIStyle s_invalidNodeStyle = null;
+
+    struct NodeFoldoutState
+    {
+      public bool Foldout;
+      public bool InsertAfter;
+      public bool InsertBefore;
+      public bool Erase;
+
+      public bool ButtonPressed { get { return InsertAfter || InsertBefore || Erase; } }
+    }
+
+    private NodeFoldoutState NodeFoldout( Route<NodeT>.ValidatedNode validatedNode )
+    {
+      if ( s_invalidNodeStyle == null ) {
+        s_invalidNodeStyle = new GUIStyle( InspectorEditor.Skin.Label );
+        s_invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 1,
+                                                                         1,
+                                                                         Color.Lerp( UnityEngine.GUI.color,
+                                                                                     Color.red,
+                                                                                     0.75f ) );
+      }
+
+      var state = new NodeFoldoutState();
+      var node  = validatedNode.Node;
+
+      var verticalScope = !validatedNode.Valid ?
+                            new EditorGUILayout.VerticalScope( s_invalidNodeStyle ) :
+                            null;
+      var horizontalScope = node == Selected ?
+                              new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.Label ) :
+                              new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.TextArea );
+      using ( horizontalScope ) {
+        state.Foldout = InspectorGUI.Foldout( GetFoldoutData( node ),
+                                              GUI.MakeLabel( GetNodeTypeString( node ) + ' ' +
+                                                             SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
+                                                             !validatedNode.Valid,
+                                                             validatedNode.ErrorString ),
+                                              newState =>
+                                              {
+                                                Selected = newState ? node : null;
+                                                EditorUtility.SetDirty( Parent );
+                                              } );
+
+        state.InsertBefore = InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+                                                  true,
+                                                  "Insert a new node before this node.",
+                                                  GUILayout.Width( 18 ) );
+        state.InsertAfter = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                                 true,
+                                                 "Insert a new node after this node.",
+                                                 GUILayout.Width( 18 ) );
+        state.Erase = InspectorGUI.Button( MiscIcon.EntryRemove,
+                                           true,
+                                           "Remove this node from the route.",
+                                           GUILayout.Width( 18 ) );
+      }
+      verticalScope?.Dispose();
+
+      return state;
+    }
+
     private void RouteGUI()
     {
-      var skin                           = InspectorEditor.Skin;
-      GUIStyle invalidNodeStyle          = new GUIStyle( skin.label );
-      invalidNodeStyle.normal.background = GUI.CreateColoredTexture( 4, 4, Color.Lerp( UnityEngine.GUI.color, Color.red, 0.75f ) );
+      var addNewPressed = false;
+      var insertBeforePressed = false;
+      var insertAfterPressed = false;
+      var erasePressed = false;
 
-      bool addNewPressed        = false;
-      bool insertBeforePressed  = false;
-      bool insertAfterPressed   = false;
-      bool erasePressed         = false;
-      NodeT listOpNode          = null;
+      NodeT listOpNode   = null;
 
       Undo.RecordObject( Route, "Route changed" );
 
-      GUI.Separator();
-
-      if ( GUI.Foldout( EditorData.Instance.GetData( Parent, "Route", ( entry ) => { entry.Bool = true; } ), GUI.MakeLabel( "Route", true ), skin ) ) {
-        GUI.Separator();
-
-        Route<NodeT>.ValidatedRoute validatedRoute = Route.GetValidated();
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( Parent,
+                                                              "Route",
+                                                              entry => { entry.Bool = true; } ),
+                                 GUI.MakeLabel( "Route" ) ) ) {
+        var validatedRoute = Route.GetValidated();
         foreach ( var validatedNode in validatedRoute ) {
           var node = validatedNode.Node;
-          using ( new GUI.Indent( 12 ) ) {
-            if ( validatedNode.Valid )
-              GUILayout.BeginVertical();
-            else
-              GUILayout.BeginVertical( invalidNodeStyle );
+          using ( InspectorGUI.IndentScope.Single ) {
+            var foldoutState = NodeFoldout( validatedNode );
+            if ( foldoutState.Foldout ) {
+              OnPreFrameGUI( node );
 
-            if ( GUI.Foldout( GetFoldoutData( node ),
-                              GUI.MakeLabel( GetNodeTypeString( node ) + " | " + SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
-                                             !validatedNode.Valid,
-                                             validatedNode.ErrorString ),
-                              skin,
-                              newState =>
-                              {
-                                Selected = newState ? node : null;
-                                EditorUtility.SetDirty( Parent );
-                              } ) ) {
+              InspectorGUI.HandleFrame( node, 1 );
 
-              OnPreFrameGUI( node, skin );
-
-              GUI.HandleFrame( node, 12 );
-
-              OnPostFrameGUI( node, skin );
-
-              GUILayout.BeginHorizontal();
-              {
-                GUILayout.FlexibleSpace();
-
-                using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) ) {
-                  insertBeforePressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementBefore.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Insert a new node before this node" ),
-                                                          skin.button,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || insertBeforePressed;
-                  insertAfterPressed  = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Insert a new node after this node" ),
-                                                          skin.button,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || insertAfterPressed;
-                }
-                using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.red, 0.1f ) ) )
-                  erasePressed        = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListEraseElement.ToString(),
-                                                                         16,
-                                                                         false,
-                                                                         "Erase this node" ),
-                                                          skin.button,
-                                                          GUILayout.Width( 20 ),
-                                                          GUILayout.Height( 16 ) ) || erasePressed;
-
-                if ( listOpNode == null && ( insertBeforePressed || insertAfterPressed || erasePressed ) )
-                  listOpNode = node;
-              }
-              GUILayout.EndHorizontal();
+              OnPostFrameGUI( node );
             }
 
-            GUILayout.EndVertical();
+            if ( listOpNode == null && foldoutState.ButtonPressed )
+              listOpNode = node;
 
-            GUI.Separator();
+            insertBeforePressed = insertBeforePressed || foldoutState.InsertBefore;
+            insertAfterPressed  = insertAfterPressed  || foldoutState.InsertAfter;
+            erasePressed        = erasePressed        || foldoutState.Erase;
           }
 
           if ( GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) &&
@@ -267,23 +269,20 @@ namespace AGXUnityEditor.Tools
 
         GUILayout.BeginHorizontal();
         {
-          GUILayout.FlexibleSpace();
+          InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
 
-          using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.1f ) ) )
-            addNewPressed = GUILayout.Button( GUI.MakeLabel( GUI.Symbols.ListInsertElementAfter.ToString(),
-                                                             16,
-                                                             false,
-                                                             "Add new node to route" ),
-                                              skin.button,
-                                              GUILayout.Width( 20 ),
-                                              GUILayout.Height( 16 ) );
+          addNewPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
+                                               true,
+                                               "Add new node to the route.",
+                                               GUILayout.Width( 18 ) );
+
           if ( listOpNode == null && addNewPressed )
             listOpNode = Route.LastOrDefault();
         }
         GUILayout.EndHorizontal();
       }
-
-      GUI.Separator();
+      else
+        InspectorGUI.Separator( 1, 3 );
 
       if ( addNewPressed || insertBeforePressed || insertAfterPressed ) {
         NodeT newRouteNode = null;

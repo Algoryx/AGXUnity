@@ -15,11 +15,10 @@ namespace AGXUnityEditor.Utils
     private bool m_visible = false;
     private AGXUnity.Rendering.Spawner.Primitive m_primitiveType = AGXUnity.Rendering.Spawner.Primitive.Cylinder;
     private bool m_isMesh = false;
-    private string m_shaderName = "";
 
     public GameObject Node { get; private set; }
 
-    public string ShaderName { get { return m_shaderName; } }
+    public string ShaderName { get; } = "";
 
     public bool Visible
     {
@@ -36,7 +35,7 @@ namespace AGXUnityEditor.Utils
         
         if ( Node != null ) {
           m_visible = newStateIsVisible;
-          Node.SetActive( m_visible );
+          PropagateActive( Node, m_visible );
         }
 
         if ( !newStateIsVisible )
@@ -113,13 +112,13 @@ namespace AGXUnityEditor.Utils
     protected VisualPrimitive( AGXUnity.Rendering.Spawner.Primitive primitiveType, string shader = "Unlit/Color" )
     {
       m_primitiveType = primitiveType;
-      m_shaderName = shader;
+      ShaderName = shader;
     }
 
     protected VisualPrimitive( bool dummy_IsMeshSetToTrue, string shader = "Unlit/Color" )
     {
       m_isMesh = true;
-      m_shaderName = shader;
+      ShaderName = shader;
     }
 
     protected void UpdateColor()
@@ -136,7 +135,18 @@ namespace AGXUnityEditor.Utils
       }
 
       string name = ( GetType().Namespace != null ? GetType().Namespace : "" ) + "." + GetType().Name;
-      return AGXUnity.Rendering.Spawner.Create( m_primitiveType, name, HideFlags.HideAndDontSave, m_shaderName );
+      return AGXUnity.Rendering.Spawner.Create( m_primitiveType, name, HideFlags.HideAndDontSave, ShaderName );
+    }
+
+    private void PropagateActive( GameObject node, bool active )
+    {
+      if ( node == null )
+        return;
+
+      node.SetActive( active );
+
+      foreach ( Transform child in node.transform )
+        PropagateActive( child.gameObject, active );
     }
   }
 
@@ -321,6 +331,38 @@ namespace AGXUnityEditor.Utils
       Node.transform.localScale = AGXUnity.Rendering.Spawner.Utils.ConditionalConstantScreenSize( constantScreenSize, scale, position );
       Node.transform.position   = position;
       Node.transform.rotation   = rotation;
+    }
+
+    public void SetTransform( Vector3 start, Vector3 end, float size )
+    {
+      SetTransformEx( start, end, size, true );
+    }
+
+    public void SetTransformEx( Vector3 start, Vector3 end, float size, bool visualizeCone )
+    {
+      if ( Node == null )
+        return;
+
+      var length = Vector3.Distance( start, end );
+      if ( length < 1.0E-6f )
+        return;
+
+      var dir = ( end - start ) / length;
+
+      var cone = Node.transform.GetChild( 0 );
+      var cylinder = Node.transform.GetChild( 1 );
+
+      var sizeScale = 10.0f;
+      var endOffset = visualizeCone ? size * sizeScale * dir : Vector3.zero;
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( cylinder.gameObject, start, end - endOffset, size );
+
+      cone.gameObject.SetActive( visualizeCone );
+      if ( !visualizeCone )
+        return;
+
+      cone.transform.position = end - 0.5f * endOffset;
+      cone.transform.rotation = Quaternion.FromToRotation( Vector3.up, dir );
+      cone.transform.localScale = new Vector3( 0.75f * sizeScale * size, sizeScale * size, 0.75f * sizeScale * size );
     }
 
     public VisualPrimitiveArrow( string shader = "Unlit/Color" )

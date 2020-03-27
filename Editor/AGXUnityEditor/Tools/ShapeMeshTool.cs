@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -44,7 +44,7 @@ namespace AGXUnityEditor.Tools
       else
         Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
 
-      var newSingleSource = GUI.ShapeMeshSourceGUI( singleSource, InspectorEditor.Skin );
+      var newSingleSource = ShapeMeshSourceGUI( singleSource );
       if ( newSingleSource != null ) {
         if ( IsMultiSelect ) {
           foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
@@ -54,8 +54,15 @@ namespace AGXUnityEditor.Tools
         else
           Mesh.SetSourceObject( newSingleSource );
       }
+    }
 
-      GUI.Separator();
+    public static Mesh ShapeMeshSourceGUI( Mesh currentSource )
+    {
+      var newSource = EditorGUILayout.ObjectField( GUI.MakeLabel( "Source" ),
+                                                   currentSource,
+                                                   typeof( Mesh ),
+                                                   false ) as Mesh;
+      return newSource != currentSource ? newSource : null;
     }
   }
 }

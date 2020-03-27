@@ -6,6 +6,7 @@ namespace AGXUnity.Rendering
   /// <summary>
   /// Shape visual with given mesh data and material.
   /// </summary>
+  [AddComponentMenu( "" )]
   [DoNotGenerateCustomEditor]
   public class ShapeVisualRenderData : ShapeVisual
   {

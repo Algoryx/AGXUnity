@@ -35,15 +35,15 @@ namespace AGXUnityEditor.IO
     ///   - CubeMap:   ".cubemap"
     ///   - Animation: ".anim"
     /// </summary>
-    /// <param name="asset">Asset instance.</param>
+    /// <param name="assetType">Asset instance type.</param>
     /// <returns>File extension including period.</returns>
-    public static string FindAssetExtension( UnityEngine.Object asset )
+    public static string FindAssetExtension( Type assetType )
     {
-      return asset is Material ?
+      return assetType == typeof( Material ) ?
                ".mat" :
-             asset is Cubemap ?
+             assetType == typeof( Cubemap ) ?
                ".cubemap" :
-             asset is Animation ?
+             assetType == typeof( Animation ) ?
                ".anim" :
                ".asset";
     }
@@ -215,7 +215,7 @@ namespace AGXUnityEditor.IO
       // We cannot have \\ in the name
       asset.name = asset.name.Replace("\\", "_");
       return DataDirectory + "/" +
-             ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset );
+             ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset.GetType() );
     }
 
     /// <summary>
@@ -267,21 +267,7 @@ namespace AGXUnityEditor.IO
     public T[] GetAssets<T>()
       where T : UnityEngine.Object
     {
-      // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
-      // if we have 17 ContactMaterial assets in a group FindAsset will return an array
-      // of 17 where all entries are identical.
-      var type = typeof( T );
-      var typeName = string.Empty;
-      if ( type.Namespace != null && type.Namespace.StartsWith( "UnityEngine" ) )
-        typeName = type.Name;
-      else
-        typeName = type.FullName;
-      var guids = AssetDatabase.FindAssets( "t:" + typeName, new string[] { DataDirectory } ).Distinct();
-      return ( from guid
-               in guids
-               from obj
-               in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
-               select obj as T ).ToArray();
+      return Utils.FindAssetsOfType<T>( DataDirectory );
     }
 
     /// <summary>

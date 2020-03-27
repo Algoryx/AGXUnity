@@ -6,7 +6,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
-  [AddComponentMenu("")]
+  [AddComponentMenu( "" )]
   [DoNotGenerateCustomEditor]
   public abstract class WindAndWaterParameters<T> : ScriptComponent
     where T : agxModel.WindAndWaterParameters
