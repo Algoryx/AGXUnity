@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Diagnostics;
 using AGXUnity.Utils;
@@ -260,11 +261,27 @@ namespace AGXUnity
     public bool SaveToNativeFile( string filename )
     {
       if ( m_simulation == null ) { 
-        Debug.LogWarning( "Simulation isn't active - ignoring save scene to file: " + filename );
+        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: Simulation isn't active.",
+                                                 Color.yellow ),
+                          this );
         return false;
       }
 
-      uint numObjects = m_simulation.write( filename );
+      FileInfo file = new FileInfo( filename );
+      if ( !file.Directory.Exists ) {
+        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: Directory doesn't exist.",
+                                                 Color.yellow ) );
+        return false;
+      }
+
+      if ( file.Extension.ToUpper() != ".AGX" && file.Extension.ToUpper() != ".AAGX" ) {
+        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: File extension {file.Extension} is unknown. " ,
+                                                 Color.yellow ) +
+                          "Valid extensions are .agx and .aagx." );
+        return false;
+      }
+
+      uint numObjects = m_simulation.write( file.FullName );
       return numObjects > 0;
     }
 
@@ -397,7 +414,8 @@ namespace AGXUnity
       if ( savePreFirstTimeStep ) {
         var saveSuccess = SaveToNativeFile( SavePreFirstStepPath );
         if ( saveSuccess )
-          Debug.Log( "Successfully wrote initial state to: " + SavePreFirstStepPath );
+          Debug.Log( Utils.GUI.AddColorTag( "Successfully wrote initial state to: ", Color.green ) +
+                     new FileInfo( SavePreFirstStepPath ).FullName );
       }
 
       agx.Timer timer = null;

@@ -113,7 +113,7 @@ namespace AGXUnityEditor.Tools
           if ( result != string.Empty ) {
             var success = Simulation.SaveToNativeFile( result );
             if ( success )
-              Debug.Log( "Successfully wrote simulation to file: " + result );
+              Debug.Log( GUI.AddColorTag( "Successfully wrote simulation to file: ", Color.green ) + result );
           }
         }
 
