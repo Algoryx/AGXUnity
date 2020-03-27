@@ -187,6 +187,45 @@ namespace AGXUnityEditor.Utils
     }
   }
 
+  public class VisualPrimitiveHollowCylinder : VisualPrimitive
+  {
+    public void SetTransform( Vector3 start, Vector3 end, float radius, bool constantScreenSize = true )
+    {
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
+    }
+
+    public VisualPrimitiveHollowCylinder( string shader = "Unlit/Color" )
+      : base( AGXUnity.Rendering.Spawner.Primitive.HollowCylinder, shader )
+    {
+    }
+  }
+
+  public class VisualPrimitiveCone : VisualPrimitive
+  {
+    public void SetTransform(Vector3 start, Vector3 end, float radius, bool constantScreenSize = true)
+    {
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform(Node, start, end, radius, constantScreenSize);
+    }
+
+    public VisualPrimitiveCone(string shader = "Unlit/Color")
+      : base(AGXUnity.Rendering.Spawner.Primitive.Cone, shader)
+    {
+    }
+  }
+
+  public class VisualPrimitiveHollowCone : VisualPrimitive
+  {
+    public void SetTransform(Vector3 start, Vector3 end, float radius, bool constantScreenSize = true)
+    {
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform(Node, start, end, radius, constantScreenSize);
+    }
+
+    public VisualPrimitiveHollowCone(string shader = "Unlit/Color")
+      : base(AGXUnity.Rendering.Spawner.Primitive.HollowCone, shader)
+    {
+    }
+  }
+
   public class VisualPrimitiveCapsule : VisualPrimitive
   {
     public void SetSize( float radius, float height )
