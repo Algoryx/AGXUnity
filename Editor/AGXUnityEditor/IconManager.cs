@@ -133,12 +133,34 @@ namespace AGXUnityEditor
       return m_toolIcons[ (int)toolIcon ];
     }
 
+    /// <summary>
+    /// Icon texture given misc icon type.
+    /// </summary>
+    /// <param name="miscIcon">Misc icon type.</param>
+    /// <returns>Misc icon texture.</returns>
     public static Texture2D GetIcon( MiscIcon miscIcon )
     {
       if ( m_miscIcons == null )
         LoadMiscIconContent();
 
       return m_miscIcons[ (int)miscIcon ];
+    }
+
+    /// <summary>
+    /// AGX Dynamics for Unity (AGXUnity) current official logo.
+    /// </summary>
+    /// <returns>AGXUnity logo texture.</returns>
+    public static Texture2D GetAGXUnityLogo()
+    {
+      if ( m_logo == null )
+        m_logo = EditorGUIUtility.Load( IO.Utils.AGXUnityEditorDirectory +
+                                        Path.DirectorySeparatorChar +
+                                        "Data" +
+                                        Path.DirectorySeparatorChar +
+                                        ( EditorGUIUtility.isProSkin ?
+                                            "agx_for_unity_logo_white.png" :
+                                            "agx_for_unity_logo_black.png" ) ) as Texture2D;
+      return m_logo;
     }
 
     /// <summary>
@@ -285,6 +307,7 @@ namespace AGXUnityEditor
     private static Texture2D[] m_toolIcons                   = null;
     private static Texture2D[] m_miscIcons                   = null;
     private static string m_directory                        = string.Empty;
+    private static Texture2D m_logo                          = null;
   }
 
   public class IconViewerWindow : EditorWindow

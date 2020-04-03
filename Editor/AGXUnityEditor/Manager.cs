@@ -70,12 +70,15 @@ namespace AGXUnityEditor
     {
       IO.Utils.VerifyDirectories();
 
-      if ( !ConfigureEnvironment() )
+      GetRequestScriptReloadData().Float = -1;
+
+      m_environmentState = ConfigureEnvironment();
+      if ( m_environmentState == EnvironmentState.Updating )
         return;
 
       // If compatibility issues, this method will try to fix them and this manager
       // will probably be loaded again after the fix.
-      if ( !VerifyCompatibility() )
+      if ( m_environmentState == EnvironmentState.Initialized && !VerifyCompatibility() )
         return;
 
 #if UNITY_2019_1_OR_NEWER
@@ -323,6 +326,8 @@ namespace AGXUnityEditor
     private static GameObject m_visualsParent = null;
     private static HashSet<Utils.VisualPrimitive> m_visualPrimitives = new HashSet<Utils.VisualPrimitive>();
 
+    private static EnvironmentState m_environmentState = EnvironmentState.Unknown;
+
     public static GameObject VisualsParent
     {
       get
@@ -409,7 +414,15 @@ namespace AGXUnityEditor
 
     private static void OnSceneView( SceneView sceneView )
     {
-      //InspectorEditor.RequestConstantRepaint = IsMouseOverWindow( EditorWindowType.InspectorWindow );
+      if ( m_environmentState != EnvironmentState.Initialized ) {
+        var prev = m_environmentState;
+        m_environmentState = ConfigureEnvironment();
+        if ( prev != m_environmentState ) {
+          Debug.LogWarning( $"Environment state changed from {prev} to {m_environmentState}." );
+        }
+        if ( m_environmentState != EnvironmentState.Initialized )
+          return;
+      }
 
       if ( m_requestSceneViewFocus ) {
         sceneView.Focus();
@@ -604,8 +617,20 @@ namespace AGXUnityEditor
         SceneView.RepaintAll();
     }
 
-    private static bool ConfigureEnvironment()
+    private enum EnvironmentState
     {
+      Unknown,
+      Updating,
+      Uninitialized,
+      Initialized
+    }
+
+    private static EnvironmentState ConfigureEnvironment()
+    {
+#if AGXUNITY_UPDATING
+      Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );
+      return EnvironmentState.Updating;
+#else
       // WARNING INFO:
       //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
       //                       in players with API compatibility @ .NET Standard 2.0.
@@ -620,11 +645,28 @@ namespace AGXUnityEditor
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
       //      environment file paths.
-      if ( IO.Utils.AGXDynamicsInstalledInProject ) {
+      var binariesInProject = IO.Utils.AGXDynamicsInstalledInProject;
+      if ( binariesInProject ) {
         // This is necessary when e.g., terrain dynamically loads dll's.
         AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
 
-        AGXUnity.NativeHandler.Instance.Register( null );
+        try {
+          AGXUnity.NativeHandler.Instance.Register( null );
+        }
+        catch ( TypeInitializationException ) {
+          var lastRequestData = GetRequestScriptReloadData();
+          if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+            lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
+            EditorUtility.RequestScriptReload();
+          }
+
+          return EnvironmentState.Uninitialized;
+        }
+        catch ( Exception e ) {
+          Debug.LogException( e );
+          return EnvironmentState.Uninitialized;
+        }
 
         if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
           AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
@@ -646,9 +688,20 @@ namespace AGXUnityEditor
 
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
-      AGXUnity.NativeHandler.Instance.ValidateLicense();
+      try {
+        AGXUnity.NativeHandler.Instance.ValidateLicense();
+      }
+      catch ( Exception ) {
+        return EnvironmentState.Uninitialized;
+      }
 
-      return true;
+      return EnvironmentState.Initialized;
+#endif
+    }
+
+    private static EditorDataEntry GetRequestScriptReloadData()
+    {
+      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -1.0f );
     }
 
     private static bool Equals( byte[] a, byte[] b )

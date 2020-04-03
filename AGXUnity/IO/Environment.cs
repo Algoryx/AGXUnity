@@ -72,10 +72,15 @@ namespace AGXUnity.IO
     public static void AddToPath( string dir )
     {
       var path = System.Environment.GetEnvironmentVariable( "PATH" );
-      if ( !path.Contains( dir ) )
+      if ( !path.Split( Path.PathSeparator ).Any( p => p == dir ) )
         System.Environment.SetEnvironmentVariable( "PATH",
                                                    path + Path.PathSeparator + dir,
                                                    System.EnvironmentVariableTarget.Process );
+    }
+
+    public static bool IsInPath( string dir )
+    {
+      return System.Environment.GetEnvironmentVariable( "PATH" ).Split( Path.PathSeparator ).Any( p => p == dir );
     }
 
     /// <summary>
