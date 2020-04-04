@@ -81,6 +81,16 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.Separator( 1, 4 );
 
+      var isUpToDate = m_currentVersion.IsValid &&
+                       m_serverVersion.IsValid &&
+                       m_currentVersion >= m_serverVersion;
+      if ( isUpToDate ) {
+        EditorGUILayout.LabelField( GUI.MakeLabel( "The version of AGX Dynamics for Unity is up to date.",
+                                                   Color.Lerp( Color.green, Color.black, 0.35f ) ),
+                                    InspectorEditor.Skin.TextAreaMiddleCenter );
+        return;
+      }
+
       if ( m_status == Status.Passive ) {
         if ( Web.HttpRequestHandler.Create( @"https://us.download.algoryx.se/AGXUnity/latest.php",
                                             OnPackageNameRequest ) )
