@@ -159,6 +159,30 @@ namespace AGXUnity
       return vi1.CompareTo( vi2 ) > 0;
     }
 
+    public static bool operator ==( VersionInfo vi1, VersionInfo vi2 )
+    {
+      return vi1.CompareTo( vi2 ) == 0;
+    }
+
+    public static bool operator !=( VersionInfo vi1, VersionInfo vi2 )
+    {
+      return !( vi1 == vi2 );
+    }
+
+    public static bool operator >= ( VersionInfo vi1, VersionInfo vi2 )
+    {
+      return vi1 > vi2 || vi1 == vi2;
+    }
+
+    public static bool operator <= ( VersionInfo vi1, VersionInfo vi2 )
+    {
+      return vi1 < vi2 || vi1 == vi2;
+    }
+
+    public override bool Equals( object obj ) => base.Equals( obj );
+
+    public override int GetHashCode() => base.GetHashCode();
+
     private static void IssueWarning( string orgStr )
     {
       Debug.LogWarning( $"Unable to parse version string: {orgStr}" );
