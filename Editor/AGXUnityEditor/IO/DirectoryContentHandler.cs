@@ -83,9 +83,9 @@ namespace AGXUnityEditor.IO
 
       Debug.Log( "    - Ignoring delete of files:" );
       foreach ( var file in m_ignoredFiles )
-        Debug.Log( $"       {file.FullName}" );
+        Debug.Log( $"        {file.FullName}" );
 
-      Debug.Log( $"   - Deleting {m_files.Count} files..." );
+      Debug.Log( $"    - Deleting {m_files.Count} files..." );
       foreach ( var file in m_files ) {
         try {
           file.Delete();

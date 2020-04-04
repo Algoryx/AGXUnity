@@ -121,6 +121,7 @@ namespace AGXUnityEditor
 
         Debug.Log( "Removing all non-user specific content..." );
         IO.DirectoryContentHandler.DeleteContent();
+        EditorUtility.RequestScriptReload();
 
         // TODO: Remove all files to handle rename/remove of scripts and content.
         //       1. Create a new empty scene (save dialog handled pre-restart)
