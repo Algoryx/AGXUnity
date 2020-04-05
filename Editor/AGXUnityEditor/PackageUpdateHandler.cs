@@ -28,9 +28,9 @@ namespace AGXUnityEditor
       }
 
       if ( !EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
-                                         $"AGX Dynamics for Unit is about to be updated, make sure all\n" +
-                                         $"File Explorer and/or terminals in {IO.Utils.AGXUnityPackageDirectory}\n" +
-                                         $"are closed during this process. Are all explorers and terminals\n" +
+                                         $"AGX Dynamics for Unit is about to be updated, make sure all" +
+                                         $"File Explorer and/or terminals in {IO.Utils.AGXUnityPackageDirectory}" +
+                                         $"are closed during this process.\n\nAre all explorers and terminals" +
                                          $"closed and ready for install?",
                                          "Yes",
                                          "No" ) )
@@ -121,13 +121,15 @@ namespace AGXUnityEditor
 
         Debug.Log( "Removing all non-user specific content..." );
         IO.DirectoryContentHandler.DeleteContent();
-        EditorUtility.RequestScriptReload();
 
-        // TODO: Remove all files to handle rename/remove of scripts and content.
-        //       1. Create a new empty scene (save dialog handled pre-restart)
-        //  UnityEditor.SceneManagement.EditorSceneManager.NewScene( UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
-        //                                                           UnityEditor.SceneManagement.NewSceneMode.Single );
-        //       2. Remove all files/folders in the AGXUnity folder.
+        // This will generate compile errors from scripts using AGXUnity and
+        // we don't know how to hide these until we're done, mainly because
+        // we have no idea when we're done with the update.
+        // 
+        // If this isn't performed, the compiler will throw exception due
+        // to missing references and Unity will crash the first time we
+        // use AGX Dynamics.
+        AssetDatabase.Refresh();
 
         Debug.Log( $"Starting import of package: {packageName}" );
         AssetDatabase.ImportPackage( packageName, false );
