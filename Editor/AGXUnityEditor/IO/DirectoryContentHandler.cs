@@ -98,12 +98,13 @@ namespace AGXUnityEditor.IO
       var directories = Directories;
       Debug.Log( $"    - Deleting {directories.Length} directories..." );
       foreach ( var directory in directories ) {
-        if ( MayDelete( directory ) ) {
+        if ( directory.Exists && MayDelete( directory ) ) {
           try {
-            directory.Delete();
+            directory.Delete( true );
           }
-          catch ( System.Exception ) {
-            Debug.LogError( $"        Unable to remove directory: {directory.FullName}\nIs it open in File Explorer or cmd?" );
+          catch ( System.Exception e ) {
+            Debug.LogError( $"        Unable to remove directory: {directory.FullName}\nIs it open in File Explorer or cmd?\n\n" +
+                            $"        {e.Message}" );
           }
         }
       }
