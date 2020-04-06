@@ -14,7 +14,7 @@ namespace AGXUnity
       GitHash = string.Empty
     };
 
-    public static VersionInfo Parse( string str )
+    public static VersionInfo Parse( string str, bool silent = true )
     {
       var packageName = "AGXDynamicsForUnity-";
       var unityPackageExtension = ".unitypackage";
@@ -26,7 +26,8 @@ namespace AGXUnity
                           startIndex -
                           ( str.EndsWith( unityPackageExtension ) ? unityPackageExtension.Length : 0 );
       if ( numCharacters < "0.0.0".Length ) {
-        IssueWarning( str );
+        if ( !silent )
+          IssueWarning( str );
         return Invalid;
       }
 

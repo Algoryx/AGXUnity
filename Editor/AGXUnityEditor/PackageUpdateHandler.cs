@@ -15,6 +15,18 @@ namespace AGXUnityEditor
 {
   public static class PackageUpdateHandler
   {
+    public static AGXUnity.VersionInfo FindCurrentVersion()
+    {
+      var packageJsonFile = IO.Utils.AGXUnityPackageDirectory +
+                            Path.DirectorySeparatorChar +
+                            "package.json";
+      var data = new PackageData();
+      if ( File.Exists( packageJsonFile ) )
+        EditorJsonUtility.FromJsonOverwrite( File.ReadAllText( packageJsonFile ),
+                                             data );
+      return AGXUnity.VersionInfo.Parse( data.version );
+    }
+
     public static void Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {
@@ -175,78 +187,10 @@ namespace AGXUnityEditor
     }
 
     private static readonly string s_packageIdentifier = "package_name:";
-  }
 
-  public class PackageContentHandler
-  {
-    [MenuItem( "Test/Collect Files" )]
-    private static void DoIt()
+    private class PackageData
     {
-      ( new PackageContentHandler() ).CollectData();
+      public string version = string.Empty;
     }
-
-    public void CollectData()
-    {
-      CollectData( new DirectoryInfo( IO.Utils.AGXUnityPackageDirectory ) );
-
-      Debug.Log( $"Files collected: {m_files.Count}, Directory collected: {m_directories.Count}" );
-      foreach ( var ignoredDirectory in m_ignoreDirectories )
-        Debug.Log( $"Won't delete directory: {ignoredDirectory.FullName}" );
-
-      Debug.Log( m_ignoreDirectories.Contains( new DirectoryInfo( @"D:\Unity\AGXDynamicsForUnity_2019.3\Assets\AGXUnity\Editor\Data" ) ) );
-    }
-
-    public void CollectData( DirectoryInfo currentDirectory )
-    {
-      try {
-        var files = currentDirectory.GetFiles( "*.*" );
-        foreach ( var file in files ) {
-          if ( MayDelete( file ) )
-            m_files.Add( file );
-          else {
-            m_ignoredFiles.Add( file );
-            m_ignoreDirectories.Add( file.Directory );
-          }
-        }
-
-        foreach ( var directory in currentDirectory.GetDirectories() ) {
-          m_directories.Add( directory );
-          CollectData( directory );
-        }
-      }
-      catch ( System.UnauthorizedAccessException ) {
-      }
-      catch ( DirectoryNotFoundException ) {
-      }
-      catch ( System.Exception e ) {
-        Debug.LogException( e );
-      }
-    }
-
-    private bool MayDelete( FileInfo fi )
-    {
-      var ignoreFile = fi.Name.Contains( "agx.lic" ) ||
-                       ( fi.Name.Contains( "Data.asset" ) && fi.Directory.Name == "Data" ) ||
-                       ( fi.Name.Contains( "Settings.asset" ) && fi.Directory.Name == "Data" );
-      return !ignoreFile;
-    }
-
-    class DistinctFileSystemInfoComparer : IEqualityComparer<FileSystemInfo>
-    {
-      public bool Equals( FileSystemInfo x, FileSystemInfo y )
-      {
-        return x.FullName == y.FullName;
-      }
-
-      public int GetHashCode( FileSystemInfo obj )
-      {
-        return obj.FullName.GetHashCode();
-      }
-    }
-
-    private List<FileInfo> m_files = new List<FileInfo>();
-    private HashSet<FileInfo> m_ignoredFiles = new HashSet<FileInfo>( new DistinctFileSystemInfoComparer() );
-    private List<DirectoryInfo> m_directories = new List<DirectoryInfo>();
-    private HashSet<DirectoryInfo> m_ignoreDirectories = new HashSet<DirectoryInfo>( new DistinctFileSystemInfoComparer() );
   }
 }

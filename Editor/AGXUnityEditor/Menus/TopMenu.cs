@@ -450,6 +450,12 @@ namespace AGXUnityEditor
       Windows.AboutWindow.Open();
     }
 
+    [MenuItem( "AGXUnity/Check for Updates...", priority = 2040, validate = true )]
+    public static bool CheckForUpdatesWindowValidater()
+    {
+      return PackageUpdateHandler.FindCurrentVersion().IsValid;
+    }
+
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2040 )]
     public static void CheckForUpdatesWindow()
     {

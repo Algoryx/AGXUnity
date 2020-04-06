@@ -33,18 +33,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnEnable()
     {
-      var packageJsonFile = IO.Utils.AGXUnityPackageDirectory +
-                            Path.DirectorySeparatorChar +
-                            "package.json";
-      if ( File.Exists( packageJsonFile ) ) {
-        var data = new PackageData();
-        EditorJsonUtility.FromJsonOverwrite( File.ReadAllText( packageJsonFile ),
-                                             data );
-        m_currentVersion = VersionInfo.Parse( data.version );
-      }
-      else
-        m_currentVersion = VersionInfo.Invalid;
-
+      m_currentVersion = PackageUpdateHandler.FindCurrentVersion();
       m_downloadDirectory = Path.GetTempPath();
     }
 
