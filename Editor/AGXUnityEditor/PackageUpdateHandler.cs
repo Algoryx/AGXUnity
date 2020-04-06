@@ -74,11 +74,13 @@ namespace AGXUnityEditor
       EditorSceneManager.NewScene( UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
                                    UnityEditor.SceneManagement.NewSceneMode.Single );
 
+#if UNITY_2019_1_OR_NEWER
       Debug.Log( "Preparing native plugins before restart..." );
       foreach ( var nativePlugin in NativePlugins ) {
         nativePlugin.isPreloaded = false;
         nativePlugin.SaveAndReimport();
       }
+#endif
 
       Debug.Log( "Preparing AGX Dynamics for Unity before restart..." );
       Build.DefineSymbols.Add( Build.DefineSymbols.ON_AGXUNITY_UPDATE );
