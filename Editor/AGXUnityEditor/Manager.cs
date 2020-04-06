@@ -657,8 +657,12 @@ namespace AGXUnityEditor
           var lastRequestData = GetRequestScriptReloadData();
           if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
             lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+#if UNITY_2019_3_OR_NEWER
             Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
             EditorUtility.RequestScriptReload();
+#else
+            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
+#endif
           }
 
           return EnvironmentState.Uninitialized;
