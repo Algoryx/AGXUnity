@@ -74,10 +74,26 @@ namespace AGXUnityEditor
       EditorSceneManager.NewScene( UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
                                    UnityEditor.SceneManagement.NewSceneMode.Single );
 
-#if UNITY_2019_1_OR_NEWER
       Debug.Log( "Preparing native plugins before restart..." );
+#if UNITY_2019_1_OR_NEWER
       foreach ( var nativePlugin in NativePlugins ) {
         nativePlugin.isPreloaded = false;
+        nativePlugin.SaveAndReimport();
+      }
+#else
+      Debug.Log( $"Removing {IO.Utils.AGXUnityPluginDirectoryFull} from PATH ..." );
+      var notInPathOrRemovedFromPath = !AGXUnity.IO.Environment.IsInPath( IO.Utils.AGXUnityPluginDirectoryFull ) ||
+                                       AGXUnity.IO.Environment.RemoveFromPath( IO.Utils.AGXUnityPluginDirectoryFull );
+      if ( notInPathOrRemovedFromPath )
+        Debug.Log( "    ... success." );
+      else {
+        Debug.LogWarning( "    ...failed. This could cause plugins to be loaded post reload - leading to errors." );
+        return;
+      }
+
+      foreach ( var nativePlugin in NativePlugins ) {
+        nativePlugin.SetCompatibleWithEditor( false );
+        nativePlugin.SetCompatibleWithAnyPlatform( false );
         nativePlugin.SaveAndReimport();
       }
 #endif
@@ -101,10 +117,10 @@ namespace AGXUnityEditor
         {
           var processModules  = Process.GetCurrentProcess().Modules;
           var nativePlugins   = NativePlugins.ToArray();
-          var nativePluginsId = IO.Utils.AGXUnityPluginDirectory;
+          var nativePluginsId = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectory );
           foreach ( ProcessModule processModule in processModules ) {
-            if ( processModule.FileName.Contains( nativePluginsId ) )
-              throw new System.Exception( $"Module {processModule.FileName} is loaded. Unable to install new version of package." );
+            if ( processModule.FileName.Contains( nativePluginsId.FullName ) )
+              throw new System.Exception( $"AGX Dynamics module {processModule.ModuleName} is loaded. Unable to install new version of package." );
           }
         }
 
@@ -129,9 +145,8 @@ namespace AGXUnityEditor
               fiMeta.Delete();
           }
           catch ( System.Exception e ) {
-            Debug.LogException( e );
             Debug.LogError( "Fatal update error: Close Unity and remove AGX Dynamics for Unity directory and install the latest version." );
-            return;
+            throw;
           }
         }
 

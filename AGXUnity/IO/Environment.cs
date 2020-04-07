@@ -78,9 +78,29 @@ namespace AGXUnity.IO
                                                    System.EnvironmentVariableTarget.Process );
     }
 
+    /// <summary>
+    /// Checks if <paramref name="dir"/> is in PATH.
+    /// </summary>
+    /// <param name="dir">Directory to check.</param>
+    /// <returns>True if <paramref name="dir"/> is in PATH, otherwise false.</returns>
     public static bool IsInPath( string dir )
     {
       return System.Environment.GetEnvironmentVariable( "PATH" ).Split( Path.PathSeparator ).Any( p => p == dir );
+    }
+
+    /// <summary>
+    /// Remove given <paramref name="dir"/> from PATH.
+    /// </summary>
+    /// <param name="dir">Directory to remove from PATH.</param>
+    /// <returns>True if <paramref name="dir"/> was successfully removed from PATH, otherwise false.</returns>
+    public static bool RemoveFromPath( string dir )
+    {
+      var pathList = System.Environment.GetEnvironmentVariable( "PATH" ).Split( ';' ).ToList();
+      if ( !pathList.Remove( dir ) )
+        return false;
+      System.Environment.SetEnvironmentVariable( "PATH",
+                                                 string.Join( ";", pathList ) );
+      return true;
     }
 
     /// <summary>
