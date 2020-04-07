@@ -146,8 +146,10 @@ namespace AGXUnityEditor
       T instance = AssetDatabase.LoadAssetAtPath<T>( settingsPathAndName );
       if ( instance == null ) {
         instance = CreateInstance<T>();
+#if !AGXUNITY_BUILD_PACKAGE
         AssetDatabase.CreateAsset( instance, settingsPathAndName );
         AssetDatabase.SaveAssets();
+#endif
       }
 
       return instance;
