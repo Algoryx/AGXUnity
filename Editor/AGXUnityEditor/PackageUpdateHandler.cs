@@ -144,7 +144,7 @@ namespace AGXUnityEditor
             if ( fiMeta.Exists )
               fiMeta.Delete();
           }
-          catch ( System.Exception e ) {
+          catch ( System.Exception ) {
             Debug.LogError( "Fatal update error: Close Unity and remove AGX Dynamics for Unity directory and install the latest version." );
             throw;
           }
