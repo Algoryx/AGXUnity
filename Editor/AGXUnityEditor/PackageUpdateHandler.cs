@@ -116,7 +116,6 @@ namespace AGXUnityEditor
         Debug.Log( "Verifying native libraries aren't loaded..." );
         {
           var processModules  = Process.GetCurrentProcess().Modules;
-          var nativePlugins   = NativePlugins.ToArray();
           var nativePluginsId = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectory );
           foreach ( ProcessModule processModule in processModules ) {
             if ( processModule.FileName.Contains( nativePluginsId.FullName ) )

@@ -221,19 +221,17 @@ namespace AGXUnityEditor.Utils
 
     public void OnGUI( Event current )
     {
-      using ( null ) {
-        var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false ) );
-        rect.width = 36.0f;
-        foreach ( var button in m_buttons ) {
-          rect.xMin = rect.x;
-          rect.xMax = rect.x + rect.width;
-          bool pressed = button.Update( rect,
-                                        button == m_buttons.First(),
-                                        button == m_buttons.Last() );
-          if ( pressed )
-            Selected = button.State.DropdownEnabled ? button : null;
-          rect.x += rect.width;
-        }
+      var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false ) );
+      rect.width = 36.0f;
+      foreach ( var button in m_buttons ) {
+        rect.xMin = rect.x;
+        rect.xMax = rect.x + rect.width;
+        bool pressed = button.Update( rect,
+                                      button == m_buttons.First(),
+                                      button == m_buttons.Last() );
+        if ( pressed )
+          Selected = button.State.DropdownEnabled ? button : null;
+        rect.x += rect.width;
       }
 
       foreach ( var button in m_buttons )
