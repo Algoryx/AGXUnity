@@ -41,7 +41,7 @@ namespace AGXUnityEditor
 
       if ( !EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
                                          $"AGX Dynamics for Unity is about to be updated, make sure all" +
-                                         $"File Explorer and/or terminals in {IO.Utils.AGXUnityPackageDirectory}" +
+                                         $"File Explorer and/or terminals in {IO.Utils.AGXUnityPackageDirectory} " +
                                          $"are closed during this process.\n\nAny new files or file modifications " +
                                          $"made prior to this update in the {IO.Utils.AGXUnityPackageDirectory} " +
                                          $"will be deleted in this process.\n\nAre all files/directories in {IO.Utils.AGXUnityPackageDirectory} " +
