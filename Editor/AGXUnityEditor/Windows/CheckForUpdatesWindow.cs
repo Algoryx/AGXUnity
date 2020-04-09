@@ -39,8 +39,8 @@ namespace AGXUnityEditor.Windows
 
     private void OnDisable()
     {
-      Web.HttpRequestHandler.Abort( OnPackageNameRequest );
-      Web.DownloadHandler.Abort( OnDownloadComplete );
+      Web.RequestHandler.Abort( OnPackageNameRequest );
+      Web.RequestHandler.Abort( OnDownloadComplete );
     }
 
     private void OnGUI()
@@ -81,8 +81,8 @@ namespace AGXUnityEditor.Windows
       }
 
       if ( m_status == Status.Passive ) {
-        if ( Web.HttpRequestHandler.Create( @"https://us.download.algoryx.se/AGXUnity/latest.php",
-                                            OnPackageNameRequest ) )
+        if ( Web.RequestHandler.Get( @"https://us.download.algoryx.se/AGXUnity/latest.php",
+                                     OnPackageNameRequest ) )
           m_status = Status.CheckingForUpdate;
       }
       else if ( m_status == Status.CheckingForUpdate ) {
@@ -134,10 +134,10 @@ namespace AGXUnityEditor.Windows
           if ( File.Exists( Target ) )
             File.Delete( Target );
 
-          Web.DownloadHandler.Create( $"https://us.download.algoryx.se/AGXUnity/packages/{m_sourceFilename}",
-                                      Target,
-                                      OnDownloadComplete,
-                                      OnDownloadProgress );
+          Web.RequestHandler.Get( $"https://us.download.algoryx.se/AGXUnity/packages/{m_sourceFilename}",
+                                  new FileInfo( Target ).Directory,
+                                  OnDownloadComplete,
+                                  OnDownloadProgress );
           m_status = Status.Downloading;
         }
         else if ( m_status == Status.AwaitInstall ) {
@@ -155,9 +155,9 @@ namespace AGXUnityEditor.Windows
       }
     }
 
-    private void OnPackageNameRequest( string packageName, Web.HttpRequestHandler.RequestStatus status )
+    private void OnPackageNameRequest( string packageName, Web.RequestHandler.Status status )
     {
-      if ( status == Web.HttpRequestHandler.RequestStatus.Error )
+      if ( status == Web.RequestHandler.Status.Error )
         m_serverVersion = VersionInfo.Invalid;
       else {
         m_serverVersion = VersionInfo.Parse( packageName );
@@ -167,11 +167,10 @@ namespace AGXUnityEditor.Windows
       m_status = Status.AwaitDownload;
     }
 
-    private void OnDownloadComplete( object sender,
-                                     System.ComponentModel.AsyncCompletedEventArgs e )
+    private void OnDownloadComplete( FileInfo file,
+                                     Web.RequestHandler.Status status )
     {
-      if ( sender != null && e.Error != null ) {
-        Debug.LogException( e.Error );
+      if ( status == Web.RequestHandler.Status.Error ) {
         m_status = Status.AwaitDownload;
         return;
       }
@@ -179,10 +178,9 @@ namespace AGXUnityEditor.Windows
       m_status = Status.AwaitInstall;
     }
 
-    private void OnDownloadProgress( object sender,
-                                     System.ComponentModel.ProgressChangedEventArgs e )
+    private void OnDownloadProgress( float progress )
     {
-      m_downloadProgress = (float)e.ProgressPercentage / 100.0f;
+      m_downloadProgress = progress;
     }
 
     private enum Status
