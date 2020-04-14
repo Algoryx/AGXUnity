@@ -52,15 +52,22 @@ namespace AGXUnityEditor.Windows
       GUILayout.Space( 10 );
 
       GUILayout.Label( GUI.MakeLabel( "Online Documentation", true ), InspectorEditor.Skin.Label );
-      if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics for Unity" ) ) )
-        Application.OpenURL( TopMenu.AGXDynamicsForUnityManualURL );
-      GUILayout.BeginHorizontal( GUILayout.Width( 200 ) );
-      if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics user manual" ) ) )
-        Application.OpenURL( TopMenu.AGXUserManualURL );
-      GUILayout.Label( " - ", InspectorEditor.Skin.Label );
-      if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics API Reference" ) ) )
-        Application.OpenURL( TopMenu.AGXAPIReferenceURL );
-      GUILayout.EndHorizontal();
+
+      using ( new EditorGUILayout.HorizontalScope( GUILayout.Width( 200 ) ) ) {
+        if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics for Unity" ) ) )
+          Application.OpenURL( TopMenu.AGXDynamicsForUnityManualURL );
+        GUILayout.Label( " - ", InspectorEditor.Skin.Label );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Examples" ) ) )
+          Application.OpenURL( TopMenu.AGXDynamicsForUnityExamplesURL );
+      }
+
+      using ( new EditorGUILayout.HorizontalScope( GUILayout.Width( 200 ) ) ) {
+        if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics user manual" ) ) )
+          Application.OpenURL( TopMenu.AGXUserManualURL );
+        GUILayout.Label( " - ", InspectorEditor.Skin.Label );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "AGX Dynamics API Reference" ) ) )
+          Application.OpenURL( TopMenu.AGXAPIReferenceURL );
+      }
 
       GUILayout.Space( 10 );
       InspectorGUI.BrandSeparator();

@@ -10,9 +10,10 @@ namespace AGXUnityEditor
 {
   public static class TopMenu
   {
-    public static string AGXDynamicsForUnityManualURL = "https://www.algoryx.se/documentation/complete/AGXUnity/current/";
-    public static string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
-    public static string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
+    public static readonly string AGXDynamicsForUnityManualURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/";
+    public static readonly string AGXDynamicsForUnityExamplesURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/examples.html";
+    public static readonly string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
+    public static readonly string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
 
     #region Shapes
     private static GameObject CreateShape<T>( MenuCommand command )
@@ -432,31 +433,37 @@ namespace AGXUnityEditor
       Application.OpenURL( AGXDynamicsForUnityManualURL );
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2002)]
+    [MenuItem( "AGXUnity/AGX Dynamics for Unity Examples", priority = 2002 )]
+    public static void AGXDynamicsForUnityExamples()
+    {
+      Application.OpenURL( AGXDynamicsForUnityExamplesURL );
+    }
+
+    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2020)]
     public static void AGXManual()
     {
       Application.OpenURL(AGXUserManualURL);
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2003)]
+    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2021)]
     public static void AGXAPI()
     {
       Application.OpenURL(AGXAPIReferenceURL);
     }
 
-    [MenuItem("AGXUnity/About AGXUnity", priority = 2020)]
+    [MenuItem("AGXUnity/About AGX Dynamics for Unity", priority = 2040)]
     public static void AboutWindow()
     {
       Windows.AboutWindow.Open();
     }
 
-    [MenuItem( "AGXUnity/Check for Updates...", priority = 2040, validate = true )]
+    [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]
     public static bool CheckForUpdatesWindowValidater()
     {
       return PackageUpdateHandler.FindCurrentVersion().IsValid;
     }
 
-    [MenuItem( "AGXUnity/Check for Updates...", priority = 2040 )]
+    [MenuItem( "AGXUnity/Check for Updates...", priority = 2060 )]
     public static void CheckForUpdatesWindow()
     {
       Windows.CheckForUpdatesWindow.Open();
