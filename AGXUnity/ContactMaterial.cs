@@ -421,7 +421,7 @@ namespace AGXUnity
 
     public override void Destroy()
     {
-      if ( GetSimulation() != null )
+      if ( Simulation.HasInstance )
         GetSimulation().getMaterialManager().remove( m_contactMaterial );
       m_contactMaterial = null;
     }

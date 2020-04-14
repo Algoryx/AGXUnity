@@ -795,7 +795,7 @@ namespace AGXUnity
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= OnPreStepForwardUpdate;
         GetSimulation().remove( Native );
       }
@@ -811,7 +811,6 @@ namespace AGXUnity
         return;
 
       SynchronizeNativeFramesWithAttachmentPair();
-
 
       if (m_isAnimated) {
         var controllers = GetElementaryConstraintControllers();

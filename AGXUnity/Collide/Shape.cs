@@ -350,10 +350,10 @@ namespace AGXUnity.Collide
     /// </summary>
     protected override void OnDestroy()
     {
-      if ( m_geometry != null && GetSimulation() != null )
+      if ( m_geometry != null && Simulation.HasInstance )
         GetSimulation().remove( m_geometry );
 
-      if ( Simulation.Instance != null )
+      if ( Simulation.HasInstance )
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
 
       if ( m_shape != null )
@@ -377,17 +377,10 @@ namespace AGXUnity.Collide
     {
       SyncUnityTransform();
 
-      // If DebugRenderManager is disabled, we should NOT try to update anything.
-      // the m_geometry.getRigidBody will allocate memory for a RigidBodyInstance, so we
-      // want to avoid that.
-      bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
-      bool enabled = false;
-
-      if ( isInstanced )
-        enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
-
+      bool debugRenderingEnabled = Rendering.DebugRenderManager.IsActiveForSynchronize &&
+                                   Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
       // If we have a body the debug rendering synchronization is made from that body.
-      if ( enabled && m_geometry != null && m_geometry.getRigidBody() == null )
+      if ( debugRenderingEnabled && m_geometry != null && m_geometry.getRigidBody() == null )
         Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
 

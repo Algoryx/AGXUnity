@@ -262,19 +262,19 @@ namespace AGXUnity.Model
 
     protected override void OnEnable()
     {
-      if ( GetSimulation() != null && Native != null )
+      if ( Simulation.HasInstance && Native != null )
         GetSimulation().add( Native );
     }
 
     protected override void OnDisable()
     {
-      if ( GetSimulation() != null && Native != null )
+      if ( Simulation.HasInstance && Native != null )
         GetSimulation().remove( Native );
     }
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null && Native != null )
+      if ( Simulation.HasInstance && Native != null )
         GetSimulation().remove( Native );
 
       if ( InternalMergeProperties != null )

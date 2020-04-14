@@ -238,7 +238,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void ResetHeights()
     {
-      if ( Native != null && GetSimulation() != null ) {
+      if ( Native != null && Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Native = null;
       }
@@ -284,7 +284,7 @@ namespace AGXUnity.Model
       if ( Properties != null )
         Properties.Unregister( this );
 
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }

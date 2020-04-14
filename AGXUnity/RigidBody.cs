@@ -323,34 +323,56 @@ namespace AGXUnity
 
       UpdateMassProperties();
 
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+      if ( IsEnabled )
+        HandleUpdateCallbacks( true );
 
       return base.Initialize();
     }
 
     protected override void OnEnable()
     {
-      if ( Native != null && !Native.getEnable() )
-        Native.setEnable( true );
+      HandleEnableDisable( true );
     }
 
     protected override void OnDisable()
     {
-      if ( Native != null && Native.getEnable() )
-        Native.setEnable( false );
+      HandleEnableDisable( false );
     }
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null ) {
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+      if ( Simulation.HasInstance )
         GetSimulation().remove( m_rb );
-      }
 
       m_rb = null;
       m_transform = null;
 
       base.OnDestroy();
+    }
+    #endregion
+
+    private void HandleEnableDisable( bool enable )
+    {
+      if ( Native == null )
+        return;
+
+      if ( Native.getEnable() == enable )
+        return;
+
+      Native.setEnable( enable );
+
+      if ( !Simulation.HasInstance )
+        return;
+
+      HandleUpdateCallbacks( enable );
+    }
+
+    private void HandleUpdateCallbacks( bool enable )
+    {
+      if ( enable )
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+      else
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
     }
 
     private void OnPostSynchronizeTransformsCallback()
@@ -358,16 +380,11 @@ namespace AGXUnity
       SyncUnityTransform();
       SyncProperties();
 
-      bool isInstanced = Rendering.DebugRenderManager.IsActiveForSynchronize;
-      bool enabled = false;
-
-      if (isInstanced)
-        enabled = Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
-
-      if (enabled)
+      bool debugRenderingEnabled = Rendering.DebugRenderManager.IsActiveForSynchronize &&
+                                   Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
+      if ( debugRenderingEnabled )
         Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
     }
-    #endregion
 
     private void SyncShapes()
     {

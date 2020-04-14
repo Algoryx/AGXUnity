@@ -513,7 +513,7 @@ namespace AGXUnity.Model
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         GetSimulation().remove( PowerLine );
         GetSimulation().remove( BrakeHinge );
       }
