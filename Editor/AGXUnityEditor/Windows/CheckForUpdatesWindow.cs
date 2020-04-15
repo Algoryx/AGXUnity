@@ -138,7 +138,8 @@ namespace AGXUnityEditor.Windows
                                                  "to version " +
                                                  VersionInfo.Parse( manualTargetFileInfo.Name ).VersionString +
                                                  ".\n\nDo you want to continue with the update/downgrade?",
-                                                 "Continue" ) ) {
+                                                 "Continue",
+                                                 "Cancel" ) ) {
             Target = manualTargetFileInfo.FullName;
             m_status = Status.AwaitInstall;
             InstallTarget();
