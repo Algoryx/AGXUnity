@@ -102,7 +102,7 @@ namespace AGXUnityEditor.Windows
       EditorGUILayout.LabelField( GUI.MakeLabel( "Thank you for using AGX Dynamics for Unity!", true ),
                                   InspectorEditor.Skin.LabelMiddleCenter );
 
-      EditorGUILayout.Space( 3 );
+      GUILayout.Space( 6 );
 
       var fieldColor = EditorGUIUtility.isProSkin ?
                          Color.white :
