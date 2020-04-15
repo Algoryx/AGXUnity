@@ -47,7 +47,8 @@ namespace AGXUnity
       var betaVersion = -1;
       if ( betaIndex > 0 ) {
         if ( !int.TryParse( versionStr.Substring( betaIndex + betaId.Length ), out betaVersion ) ) {
-          IssueWarning( str );
+          if ( !silent )
+            IssueWarning( str );
           return Invalid;
         }
         versionStr = versionStr.Substring( 0, betaIndex );
@@ -55,14 +56,16 @@ namespace AGXUnity
 
       var majorMinorPatchStrings = versionStr.Split( '.' );
       if ( majorMinorPatchStrings.Length != 3 ) {
-        IssueWarning( str );
+        if ( !silent )
+          IssueWarning( str );
         return Invalid;
       }
 
       var majorMinorPatch = new int[] { -1, -1, -1 };
       for ( int i = 0; i < 3; ++i ) {
         if ( !int.TryParse( majorMinorPatchStrings[ i ], out majorMinorPatch[ i ] ) ) {
-          IssueWarning( str );
+          if ( !silent )
+            IssueWarning( str );
           return Invalid;
         }
       }
