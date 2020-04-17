@@ -17,14 +17,9 @@ namespace AGXUnityEditor
   {
     public static AGXUnity.VersionInfo FindCurrentVersion()
     {
-      var packageJsonFile = IO.Utils.AGXUnityPackageDirectory +
-                            Path.DirectorySeparatorChar +
-                            "package.json";
-      var data = new PackageData();
-      if ( File.Exists( packageJsonFile ) )
-        EditorJsonUtility.FromJsonOverwrite( File.ReadAllText( packageJsonFile ),
-                                             data );
-      return AGXUnity.VersionInfo.Parse( data.version );
+      return AGXUnity.VersionInfo.FromFile( IO.Utils.AGXUnityPackageDirectory +
+                                            Path.DirectorySeparatorChar +
+                                            "package.json" );
     }
 
     public static void Install( FileInfo packageFileInfo )
@@ -203,10 +198,5 @@ namespace AGXUnityEditor
     }
 
     private static readonly string s_packageIdentifier = "package_name:";
-
-    private class PackageData
-    {
-      public string version = string.Empty;
-    }
   }
 }
