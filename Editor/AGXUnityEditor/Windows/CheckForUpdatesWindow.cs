@@ -254,11 +254,6 @@ namespace AGXUnityEditor.Windows
       Installing
     }
 
-    private class PackageData
-    {
-      public string version = string.Empty;
-    }
-
     private Status m_status = Status.Passive;
     private VersionInfo m_currentVersion = VersionInfo.Invalid;
     private VersionInfo m_serverVersion = VersionInfo.Invalid;
