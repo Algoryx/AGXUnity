@@ -194,31 +194,30 @@ namespace AGXUnityEditor.Tools
       var horizontalScope = node == Selected ?
                               new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.Label ) :
                               new EditorGUILayout.HorizontalScope( InspectorEditor.Skin.TextArea );
-      using ( horizontalScope ) {
-        state.Foldout = InspectorGUI.Foldout( GetFoldoutData( node ),
-                                              GUI.MakeLabel( GetNodeTypeString( node ) + ' ' +
-                                                             SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
-                                                             !validatedNode.Valid,
-                                                             validatedNode.ErrorString ),
-                                              newState =>
-                                              {
-                                                Selected = newState ? node : null;
-                                                EditorUtility.SetDirty( Parent );
-                                              } );
+      state.Foldout = InspectorGUI.Foldout( GetFoldoutData( node ),
+                                            GUI.MakeLabel( GetNodeTypeString( node ) + ' ' +
+                                                            SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
+                                                            !validatedNode.Valid,
+                                                            validatedNode.ErrorString ),
+                                            newState =>
+                                            {
+                                              Selected = newState ? node : null;
+                                              EditorUtility.SetDirty( Parent );
+                                            } );
 
-        state.InsertBefore = InspectorGUI.Button( MiscIcon.EntryInsertBefore,
-                                                  true,
-                                                  "Insert a new node before this node.",
-                                                  GUILayout.Width( 18 ) );
-        state.InsertAfter = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
-                                                 true,
-                                                 "Insert a new node after this node.",
-                                                 GUILayout.Width( 18 ) );
-        state.Erase = InspectorGUI.Button( MiscIcon.EntryRemove,
-                                           true,
-                                           "Remove this node from the route.",
-                                           GUILayout.Width( 18 ) );
-      }
+      state.InsertBefore = InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+                                                true,
+                                                "Insert a new node before this node.",
+                                                GUILayout.Width( 18 ) );
+      state.InsertAfter = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                               true,
+                                               "Insert a new node after this node.",
+                                               GUILayout.Width( 18 ) );
+      state.Erase = InspectorGUI.Button( MiscIcon.EntryRemove,
+                                         true,
+                                         "Remove this node from the route.",
+                                         GUILayout.Width( 18 ) );
+      horizontalScope?.Dispose();
       verticalScope?.Dispose();
 
       return state;
