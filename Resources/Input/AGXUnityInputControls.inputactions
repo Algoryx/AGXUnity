@@ -527,14 +527,6 @@
                     "interactions": ""
                 },
                 {
-                    "name": "RotateBase",
-                    "type": "Button",
-                    "id": "a6004d7c-e1bc-4c9d-a680-d44d1426de0e",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": ""
-                },
-                {
                     "name": "RotateWristRight",
                     "type": "Button",
                     "id": "52788b92-0083-4144-9f84-9fb45a00e62c",
@@ -605,6 +597,17 @@
                 },
                 {
                     "name": "",
+                    "id": "6640c08e-4320-4adb-924f-e2b354a7a8ad",
+                    "path": "<Keyboard>/z",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Close",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "9a5c488f-4294-4cfb-890b-4e25cd080bf4",
                     "path": "<XInputController>/buttonEast",
                     "interactions": "",
@@ -616,12 +619,12 @@
                 },
                 {
                     "name": "",
-                    "id": "304c5910-8a1c-4d67-92dc-3bcfca628a5c",
-                    "path": "<Gamepad>/leftStick/x",
+                    "id": "c724bebb-827f-45fe-8583-9b59b4c337dc",
+                    "path": "<Keyboard>/c",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "RotateBase",
+                    "action": "Open",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -629,6 +632,17 @@
                     "name": "",
                     "id": "d51b0b7c-1ee8-4534-ab23-2b67ddac8907",
                     "path": "<XInputController>/rightShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RotateWristRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "921b2781-fac1-4c22-951f-78d0e9e9bd7d",
+                    "path": "<Keyboard>/q",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -649,6 +663,17 @@
                 },
                 {
                     "name": "",
+                    "id": "c535d1d9-3980-4b2f-ad32-cead12e71da7",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RotateWristLeft",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "c03ecb84-8ff7-41d0-ad69-4e303a9e3881",
                     "path": "<Gamepad>/rightStick/y",
                     "interactions": "",
@@ -660,8 +685,52 @@
                 },
                 {
                     "name": "",
+                    "id": "85e57f22-be5b-4ca6-9126-3306839d8d1f",
+                    "path": "<Keyboard>/pageUp",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UpDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "062934a3-da4d-4476-ab61-5599e0301d2d",
+                    "path": "<Keyboard>/pageDown",
+                    "interactions": "",
+                    "processors": "Invert",
+                    "groups": "",
+                    "action": "UpDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "0198db15-db11-495e-822d-27d85cf492a4",
                     "path": "<XInputController>/leftStick/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LeftRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f5c1cc25-0ac9-4fd5-be7e-3c92b55aba35",
+                    "path": "<Keyboard>/leftArrow",
+                    "interactions": "",
+                    "processors": "Invert",
+                    "groups": "",
+                    "action": "LeftRight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4cf02677-bd87-4a8c-ac51-9c1d094d9394",
+                    "path": "<Keyboard>/rightArrow",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -682,6 +751,28 @@
                 },
                 {
                     "name": "",
+                    "id": "3db37c07-f1c5-4870-b715-dd6dce6443ff",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "Invert",
+                    "groups": "",
+                    "action": "ForwardBackward",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3530a071-2deb-4d39-8da2-d517703d5569",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ForwardBackward",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "27a6f2f1-14d9-4b11-ba3a-8469306cbc4e",
                     "path": "<XInputController>/dpad/y",
                     "interactions": "",
@@ -693,8 +784,52 @@
                 },
                 {
                     "name": "",
+                    "id": "8499d3bc-f0c0-4a69-a418-b86874ced197",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "Invert",
+                    "groups": "",
+                    "action": "Hinge2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9f2ef0b7-c7af-4c14-9a87-8d438aa5262f",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hinge2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "717b8c05-31c2-4e56-9ca2-3be3e8646b89",
                     "path": "<XInputController>/dpad/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Hinge3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "829843ae-6a66-4fb4-9ac1-78d48aa4aff1",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "Invert",
+                    "groups": "",
+                    "action": "Hinge3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c46dffac-aabd-4868-b98f-20a14156ca45",
+                    "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
