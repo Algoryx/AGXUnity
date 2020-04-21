@@ -587,7 +587,7 @@
                 {
                     "name": "",
                     "id": "8e8de88a-58cf-41e2-92c4-7941424b482a",
-                    "path": "<XInputController>/buttonSouth",
+                    "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -609,7 +609,7 @@
                 {
                     "name": "",
                     "id": "9a5c488f-4294-4cfb-890b-4e25cd080bf4",
-                    "path": "<XInputController>/buttonEast",
+                    "path": "<Gamepad>/buttonEast",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -631,7 +631,7 @@
                 {
                     "name": "",
                     "id": "d51b0b7c-1ee8-4534-ab23-2b67ddac8907",
-                    "path": "<XInputController>/rightShoulder",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -653,7 +653,7 @@
                 {
                     "name": "",
                     "id": "1c9eeafa-a9cf-4faf-ae9e-2f25dcdecb99",
-                    "path": "<XInputController>/leftShoulder",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -708,7 +708,7 @@
                 {
                     "name": "",
                     "id": "0198db15-db11-495e-822d-27d85cf492a4",
-                    "path": "<XInputController>/leftStick/x",
+                    "path": "<Gamepad>/leftStick/x",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -774,7 +774,7 @@
                 {
                     "name": "",
                     "id": "27a6f2f1-14d9-4b11-ba3a-8469306cbc4e",
-                    "path": "<XInputController>/dpad/y",
+                    "path": "<Gamepad>/dpad/y",
                     "interactions": "",
                     "processors": "Invert",
                     "groups": "",
@@ -807,7 +807,7 @@
                 {
                     "name": "",
                     "id": "717b8c05-31c2-4e56-9ca2-3be3e8646b89",
-                    "path": "<XInputController>/dpad/x",
+                    "path": "<Gamepad>/dpad/x",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
