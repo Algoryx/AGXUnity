@@ -222,16 +222,28 @@ namespace AGXUnityEditor
       // Fallback to Unity types rendered with property drawers.
       else if ( fallback != null && !wrapper.GetContainingType().FullName.StartsWith( "AGXUnity." ) ) {
         var serializedProperty = fallback.FindProperty( wrapper.Member.Name );
+
+        // This is currently only tested on:
+        //     private InputActionAssert m_inputAsset = null;
+        //     public InputActionAsset InputAsset { get ... set ... }
+        //     public InputActionMap InputMap = null;
+        // And serializedProperty.objectReferenceValue prints error:
+        //     type is not a supported pptr value
+        // for 'InputMap' when changed (not assigned, just manipulated).
+        // When we catch the 'm_inputAsset' we may do objectReferenceValue and
+        // can propagate the value to the C# property.
+        var assignSupported = false;
         if ( serializedProperty == null && wrapper.Member.Name.Length > 2 ) {
           var fieldName = "m_" + char.ToLower( wrapper.Member.Name[ 0 ] ) + wrapper.Member.Name.Substring( 1 );
           serializedProperty = fallback.FindProperty( fieldName );
+          assignSupported = serializedProperty != null;
         }
 
         if ( serializedProperty != null ) {
           EditorGUILayout.PropertyField( serializedProperty );
-          if ( UnityEngine.GUI.changed ) {
-            value = serializedProperty.objectReferenceValue;
+          if ( UnityEngine.GUI.changed && assignSupported ) {
             changed = true;
+            value = serializedProperty.objectReferenceValue;
           }            
         }
       }
