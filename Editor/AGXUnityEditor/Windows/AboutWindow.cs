@@ -11,7 +11,7 @@ namespace AGXUnityEditor.Windows
     public static AboutWindow Open()
     {
       // Get existing open window or if none, make a new one:
-      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 330 ),
+      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 350 ),
                                                    true,
                                                    "AGX Dynamics for Unity" );
       return window;
@@ -116,6 +116,11 @@ namespace AGXUnityEditor.Windows
       var fieldWarningColor = Color.Lerp( Color.yellow,
                                           Color.black,
                                           0.45f );
+
+      var versionInfo = PackageUpdateHandler.FindCurrentVersion();
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Version" ),
+                                  GUI.MakeLabel( versionInfo.IsValid ? versionInfo.VersionString : "git checkout", fieldColor ),
+                                  InspectorEditor.Skin.Label );
 
       string agxDynamicsVersion = s_agxInfo.Version;
       if ( string.IsNullOrEmpty( agxDynamicsVersion ) )
