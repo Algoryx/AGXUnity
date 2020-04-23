@@ -147,7 +147,10 @@ namespace AGXUnityEditor.Tools
       if ( toggleCreateEdge )
         EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
 
-      if ( toggleFlipDirection ) {
+      if ( toggleFlipDirection && EditorUtility.DisplayDialog( "Line direction",
+                                                               "Flip direction of " + Name + "?",
+                                                               "Yes",
+                                                               "No" ) ) {
         StartFrameToolEnable = false;
 
         if ( Mode == ToolMode.Direction ) {
