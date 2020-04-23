@@ -155,6 +155,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
 
+    [HideInInspector]
     public bool TempDisplayShovelForces
     {
       get { return m_tempDisplayShovelForces; }
@@ -263,8 +264,10 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) || !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) )
+      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) ||
+           !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) ) {
         Debug.LogError( "DeformableTerrain requires a valid license for the AGX Dynamics modules: AgX-Terrain and AgX-Granular", this );
+      }
 
       RemoveInvalidShovels();
 
