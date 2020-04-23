@@ -307,7 +307,7 @@ namespace AGXUnityEditor
     {
       var terrainData = new TerrainData()
       {
-        size = new Vector3( 60 / 8.0f, 25, 60 / 8.0f ),
+        size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
         heightmapResolution = 257
       };
 #if UNITY_2018_1_OR_NEWER
