@@ -80,19 +80,30 @@ namespace AGXUnity.Rendering
         return;
 
       var soilSimulation = DeformableTerrain.Native.getSoilSimulationInterface();
-      var granulars = soilSimulation.getSoilParticles();
-      var numGranulars = (int)granulars.size();
+      var granulars      = soilSimulation.getSoilParticles();
+      var numGranulars   = (int)granulars.size();
+
+      // More granular instances comparing to last time, create
+      // more instances to match numGranulars.
       if ( numGranulars > transform.childCount )
         Create( numGranulars - transform.childCount );
+      // Less granular instances comparing to last time, destroy.
       else if ( transform.childCount > numGranulars )
         Destroy( transform.childCount - numGranulars );
 
+      Debug.Assert( transform.childCount == numGranulars );
+
       for ( int i = 0; i < numGranulars; ++i ) {
-        var granule = granulars.at( (uint)i );
+        var granule  = granulars.at( (uint)i );
         var instance = transform.GetChild( i );
         instance.position = granule.position().ToHandedVector3();
         instance.rotation = granule.rotation().ToHandedQuaternion();
+
+        // Assuming unit size of the instance, scale to diameter
+        // of the granule.
         instance.localScale = Vector3.one * 2.0f * (float)granule.getRadius();
+
+        // Return the proxy class to the pool to avoid garbage.
         granule.ReturnToPool();
       }
     }
