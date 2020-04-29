@@ -212,11 +212,20 @@ namespace AGXUnity
         return 1;
 
       // Major, Minor and Patch are identical.
+
+      // One is official and the other is not.
+      if ( Release.Official && !other.Release.Official )
+        return 1;
+      else if ( !Release.Official && other.Release.Official )
+        return -1;
+
+      // Comparing pre-release values.
       if ( PreReleaseValue < other.PreReleaseValue )
         return -1;
       else if ( PreReleaseValue > other.PreReleaseValue )
         return 1;
 
+      // Versions are identical.
       return 0;
     }
 
