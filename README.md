@@ -29,9 +29,12 @@ vcvarsall.bat used:
 
 Using Python interpreter C:\Program Files\Python35\python.exe
 
-C:\>"Program Files\Unity\Editor\Unity.exe"
+C:\>"Program Files\Unity\Editor\Unity.exe" -projectPath MyUnityProject
 ```
 ---
+
+Note that `-projectPath` has to be given when you have Unity Hub installed,
+[since Unity Hub doesn't forward the environment variables to the Unity process](https://issuetracker.unity3d.com/issues/environment-variables-dropped-when-using-unity-hub-2-dot-0-0).
 
 Without the AGX environment, Unity could crash or output error: `DllNotFoundException: agxDotNetRuntime.dll`
 
