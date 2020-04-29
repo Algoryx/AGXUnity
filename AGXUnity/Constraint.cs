@@ -677,7 +677,7 @@ namespace AGXUnity
     protected override bool Initialize()
     {
       if ( AttachmentPair.ReferenceObject == null ) {
-        Debug.LogError( "Unable to initialize constraint. Reference object must be valid and contain a rigid body component.", this );
+        Debug.LogError( "Unable to initialize constraint - reference object must be valid and contain a rigid body component.", this );
         return false;
       }
 
@@ -691,7 +691,7 @@ namespace AGXUnity
       //       E.g., rb.AwaitInitialize += ThisConstraintInitialize.
       RigidBody rb1 = AttachmentPair.ReferenceObject.GetInitializedComponentInParent<RigidBody>();
       if ( rb1 == null ) {
-        Debug.LogError( "Unable to initialize constraint. Reference object must contain a rigid body component.", AttachmentPair.ReferenceObject );
+        Debug.LogError( "Unable to initialize constraint - reference object must contain a rigid body component.", AttachmentPair.ReferenceObject );
         return false;
       }
 
@@ -705,6 +705,11 @@ namespace AGXUnity
       f1.setLocalRotate( AttachmentPair.ReferenceFrame.CalculateLocalRotation( rb1.gameObject ).ToHandedQuat() );
 
       RigidBody rb2 = AttachmentPair.ConnectedObject != null ? AttachmentPair.ConnectedObject.GetInitializedComponentInParent<RigidBody>() : null;
+      if ( rb1 == rb2 ) {
+        Debug.LogError( "Unable to initialize constraint - reference and connected rigid body is the same instance.", this );
+        return false;
+      }
+
       if ( rb2 != null ) {
         // Note that the native constraint want 'f2' given in rigid body frame, and that
         // 'ReferenceFrame' may be relative to any object in the children of the body.
@@ -790,7 +795,7 @@ namespace AGXUnity
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= OnPreStepForwardUpdate;
         GetSimulation().remove( Native );
       }
@@ -806,7 +811,6 @@ namespace AGXUnity
         return;
 
       SynchronizeNativeFramesWithAttachmentPair();
-
 
       if (m_isAnimated) {
         var controllers = GetElementaryConstraintControllers();

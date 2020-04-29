@@ -1,8 +1,9 @@
 {
     "name": "AGXUnity",
     "references": [
-        "GUID:75469ad4d38634e559750d17036d5f7c"
+        "Unity.InputSystem"
     ],
+    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor",
         "WindowsStandalone64"
@@ -12,7 +13,5 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "defineConstraints": []
 }

@@ -12,6 +12,8 @@ namespace AGXUnityEditor
     [HideInInspector]
     public static EditorSettings Instance { get { return GetOrCreateInstance(); } }
 
+    public static string EditorDataDirectory { get { return IO.Utils.AGXUnityEditorDirectory + "/Data"; } }
+
     [HideInInspector]
     public static readonly int ToggleButtonSize = 18;
     #endregion Static properties
@@ -142,12 +144,18 @@ namespace AGXUnityEditor
       if ( !PrepareEditorDataFolder() )
         return null;
 
-      string settingsPathAndName = IO.Utils.AGXUnityEditorDirectory + "/Data" + @name;
+      string settingsPathAndName = EditorDataDirectory + @name;
       T instance = AssetDatabase.LoadAssetAtPath<T>( settingsPathAndName );
       if ( instance == null ) {
         instance = CreateInstance<T>();
+
+        // Don't create Data.asset or Settings.asset during builds.
+        // These files are not removed during update of the package
+        // and must not be included in the package.
+#if !AGXUNITY_BUILD_PACKAGE
         AssetDatabase.CreateAsset( instance, settingsPathAndName );
         AssetDatabase.SaveAssets();
+#endif
       }
 
       return instance;
@@ -164,6 +172,34 @@ namespace AGXUnityEditor
     [NonSerialized]
     private static EditorSettings m_instance = null;
     #endregion Static singleton initialization methods
+
+    /// <summary>
+    /// Call from CI when the package is built, avoiding Data.asset
+    /// and Settings.asset to be created and included in the package.
+    /// </summary>
+    private static void OnBuildPackage()
+    {
+      var dataFilesToExclude = new string[]
+      {
+        EditorDataDirectory + "/Data.asset",
+        EditorDataDirectory + "/Settings.asset"
+      };
+
+      Debug.Log( "Applying package build settings..." );
+      foreach ( var excludedFile in dataFilesToExclude ) {
+        var fi = new FileInfo( excludedFile );
+        var fiMeta = new FileInfo( excludedFile + ".meta" );
+        Debug.Log( $"    - Deleting {fi.FullName}, exist = {fi.Exists}." );
+        if ( fi.Exists ) {
+          fi.Delete();
+          if ( fiMeta.Exists )
+            fiMeta.Delete();
+        }
+      }
+
+      Debug.Log( "    - Adding define symbol AGXUNITY_BUILD_PACKAGE." );
+      Build.DefineSymbols.Add( "AGXUNITY_BUILD_PACKAGE" );
+    }
   }
 
   [CustomEditor( typeof( EditorSettings ) )]

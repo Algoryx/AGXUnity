@@ -5,15 +5,15 @@ using AGXUnity.Collide;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
-using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
   public static class TopMenu
   {
-    public static string AGXDynamicsForUnityManualURL = "https://www.algoryx.se/documentation/complete/AGXUnity/current/";
-    public static string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
-    public static string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
+    public static readonly string AGXDynamicsForUnityManualURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/";
+    public static readonly string AGXDynamicsForUnityExamplesURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/examples.html";
+    public static readonly string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
+    public static readonly string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
 
     #region Shapes
     private static GameObject CreateShape<T>( MenuCommand command )
@@ -307,7 +307,7 @@ namespace AGXUnityEditor
     {
       var terrainData = new TerrainData()
       {
-        size = new Vector3( 60 / 8.0f, 25, 60 / 8.0f ),
+        size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
         heightmapResolution = 257
       };
 #if UNITY_2018_1_OR_NEWER
@@ -426,124 +426,49 @@ namespace AGXUnityEditor
     }
     #endregion
 
-    #region Documentation
+    #region Documentation, About and Update
     [MenuItem( "AGXUnity/AGX Dynamics for Unity Manual", priority = 2001 )]
     public static void AGXDynamicsForUnityManual()
     {
       Application.OpenURL( AGXDynamicsForUnityManualURL );
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2002)]
+    [MenuItem( "AGXUnity/AGX Dynamics for Unity Examples", priority = 2002 )]
+    public static void AGXDynamicsForUnityExamples()
+    {
+      Application.OpenURL( AGXDynamicsForUnityExamplesURL );
+    }
+
+    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2020)]
     public static void AGXManual()
     {
       Application.OpenURL(AGXUserManualURL);
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2003)]
+    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2021)]
     public static void AGXAPI()
     {
       Application.OpenURL(AGXAPIReferenceURL);
     }
 
-    // Separator through priority
-
-    [MenuItem("AGXUnity/About AGXUnity", priority = 2020)]
-    public static void Documentation()
+    [MenuItem("AGXUnity/About AGX Dynamics for Unity", priority = 2040)]
+    public static void AboutWindow()
     {
-      DocumentationWindow.Init();
+      Windows.AboutWindow.Open();
+    }
+
+    [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]
+    public static bool CheckForUpdatesWindowValidater()
+    {
+      return PackageUpdateHandler.FindCurrentVersion().IsValid;
+    }
+
+    [MenuItem( "AGXUnity/Check for Updates...", priority = 2060 )]
+    public static void CheckForUpdatesWindow()
+    {
+      Windows.CheckForUpdatesWindow.Open();
     }
     #endregion
-  }
-
-  public class DocumentationWindow : EditorWindow
-  {
-    private static Texture2D m_logo;
-
-    // Add menu named "My Window" to the Window menu
-    public static void Init()
-    {
-      // Get existing open window or if none, make a new one:
-      var window = GetWindowWithRect<DocumentationWindow>( new Rect( 100, 100, 400, 360 ), true, "AGX Dynamics for Unity" );
-      window.Show();
-    }
-
-    private void OnGUI()
-    {
-      GUILayout.BeginHorizontal( GUILayout.Width( 570 ) );
-      GUILayout.Box( GetOrCreateLogo(), AGXUnity.Utils.GUI.Skin.customStyles[ 3 ], GUILayout.Width( 400 ), GUILayout.Height( 100 ) );
-      GUILayout.EndHorizontal();
-
-      EditorGUILayout.SelectableLabel( "© " + System.DateTime.Now.Year + " Algoryx Simulation AB",
-                                       InspectorEditor.Skin.LabelMiddleCenter );
-
-      InspectorGUI.BrandSeparator();
-      GUILayout.Space( 10 );
-
-      string agxDynamicsVersion = string.Empty;
-      try {
-        agxDynamicsVersion = agx.agxSWIG.agxGetVersion( false );
-        if ( agxDynamicsVersion.ToLower().StartsWith( "agx-" ) )
-          agxDynamicsVersion = agxDynamicsVersion.Remove( 0, 4 );
-        agxDynamicsVersion = GUI.AddColorTag( agxDynamicsVersion,
-                                              EditorGUIUtility.isProSkin ?
-                                                Color.white :
-                                                Color.black );
-      }
-      catch ( Exception ) {
-      }
-      EditorGUILayout.SelectableLabel( "Thank you for using AGX Dynamics for Unity!\n\nAGX Dynamics version: " +
-                                       agxDynamicsVersion,
-                                       GUILayout.Height( 45 ) );
-
-      GUILayout.Space( 10 );
-      InspectorGUI.BrandSeparator();
-      GUILayout.Space( 10 );
-
-      GUILayout.Label( GUI.MakeLabel( "Online Documentation", true ), InspectorEditor.Skin.Label );
-      if ( Link( GUI.MakeLabel( "AGX Dynamics for Unity" ) ) )
-        Application.OpenURL( TopMenu.AGXDynamicsForUnityManualURL );
-      GUILayout.BeginHorizontal( GUILayout.Width( 200 ) );
-      if ( Link( GUI.MakeLabel( "AGX Dynamics user manual" ) ) )
-        Application.OpenURL( TopMenu.AGXUserManualURL );
-      GUILayout.Label( " - ", InspectorEditor.Skin.Label );
-      if ( Link( GUI.MakeLabel( "AGX Dynamics API Reference" ) ) )
-        Application.OpenURL( TopMenu.AGXAPIReferenceURL );
-      GUILayout.EndHorizontal();
-
-      GUILayout.Space( 10 );
-      InspectorGUI.BrandSeparator();
-      GUILayout.Space( 10 );
-
-      GUILayout.Label( "Support", EditorStyles.boldLabel );
-      EditorGUILayout.SelectableLabel( "Please refer to the information received when purchasing your license for support contact information.",
-                                       InspectorEditor.Skin.LabelWordWrap );
-    }
-
-    private bool Link( GUIContent content )
-    {
-      var brandColorBlue = new Color( 45.0f / 255,
-                                      204.0f / 255,
-                                      211.0f / 255 );
-      content.text = GUI.AddColorTag( content.text, EditorGUIUtility.isProSkin ?
-                                                      brandColorBlue :
-                                                      Color.Lerp( brandColorBlue, Color.black, 0.20f ) );
-      var clicked = GUILayout.Button( content, InspectorEditor.Skin.Label );
-      EditorGUIUtility.AddCursorRect( GUILayoutUtility.GetLastRect(), MouseCursor.Link );
-      return clicked;
-    }
-
-    private Texture2D GetOrCreateLogo()
-    {
-      if ( m_logo == null )
-        m_logo = EditorGUIUtility.Load( IO.Utils.AGXUnityEditorDirectory +
-                                        System.IO.Path.DirectorySeparatorChar +
-                                        "Data" +
-                                        System.IO.Path.DirectorySeparatorChar +
-                                        ( EditorGUIUtility.isProSkin ?
-                                            "agx_for_unity_logo_white.png" :
-                                            "agx_for_unity_logo_black.png" ) ) as Texture2D;
-      return m_logo;
-    }
   }
 }
 

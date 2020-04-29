@@ -146,14 +146,23 @@ namespace AGXUnityEditor.Tools
 
       if ( toggleCreateEdge )
         EdgeDetectionToolEnable = !EdgeDetectionToolEnable;
+
       if ( toggleFlipDirection && EditorUtility.DisplayDialog( "Line direction",
                                                                "Flip direction of " + Name + "?",
                                                                "Yes",
                                                                "No" ) ) {
         StartFrameToolEnable = false;
-        var tmp = Line.Start;
-        Line.Start = Line.End;
-        Line.End = tmp;
+
+        if ( Mode == ToolMode.Direction ) {
+          Line.End.Position   = Line.End.Position - 2.0f * Line.Length * Line.Direction;
+          Line.Start.Rotation = Quaternion.Euler( -Line.Start.Rotation.eulerAngles );
+          Line.End.Rotation   = Quaternion.Euler( -Line.End.Rotation.eulerAngles );
+        }
+        else {
+          var tmp    = Line.Start;
+          Line.Start = Line.End;
+          Line.End   = tmp;
+        }
       }
       if ( toggleRenderAsArrow )
         RenderAsArrow = !RenderAsArrow;

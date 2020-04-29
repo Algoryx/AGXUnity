@@ -100,7 +100,7 @@ namespace AGXUnity
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null )
+      if ( Simulation.HasInstance )
         GetSimulation().remove( Native );
 
       Native = null;

@@ -59,6 +59,10 @@ namespace AGXUnityEditor
                                                                       139.0f / 255.0f,
                                                                       0.0f );
 
+    public static Color BrandColorBlue { get; private set; } = new Color( 45.0f / 255.0f,
+                                                                          204.0f / 255.0f,
+                                                                          211.0f / 255.0f );
+
     /// <summary>
     /// Size of toolbar buttons.
     /// </summary>

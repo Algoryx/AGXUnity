@@ -155,6 +155,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
 
+    [HideInInspector]
     public bool TempDisplayShovelForces
     {
       get { return m_tempDisplayShovelForces; }
@@ -238,7 +239,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void ResetHeights()
     {
-      if ( Native != null && GetSimulation() != null ) {
+      if ( Native != null && Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Native = null;
       }
@@ -263,8 +264,10 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) || !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) )
+      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) ||
+           !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) ) {
         Debug.LogError( "DeformableTerrain requires a valid license for the AGX Dynamics modules: AgX-Terrain and AgX-Granular", this );
+      }
 
       RemoveInvalidShovels();
 
@@ -284,7 +287,7 @@ namespace AGXUnity.Model
       if ( Properties != null )
         Properties.Unregister( this );
 
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }

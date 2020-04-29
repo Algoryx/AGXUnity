@@ -79,7 +79,12 @@ namespace AGXUnity
         throw new Exception( "Initialize call when object is being initialized. Implement wait until initialized?" );
 
       if ( State == States.AWAKE ) {
-        NativeHandler.Instance.MakeMainThread();
+        try {
+          NativeHandler.Instance.MakeMainThread();
+        }
+        catch ( System.Exception ) {
+          return null;
+        }
 
         State = States.INITIALIZING;
         bool success = Initialize();

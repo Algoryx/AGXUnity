@@ -145,6 +145,18 @@ namespace AGXUnityEditor.IO
         }
         subProgress.Tack();
       }
+
+      // If this is a re-import, remove any game object that hasn't been
+      // referenced, i.e., UuidObjectDb.GetOrCreateGameObject hasn't been
+      // called with the UUID of this game object. This doesn't affect game
+      // objects created in the prefab editor since these objects doesn't
+      // have an UUID component, still, other components added to this game
+      // object will be removed as well.
+      var unreferencedGameObjects = FileInfo.ObjectDb.GetUnreferencedGameObjects();
+      foreach ( var unreferencedGameObject in unreferencedGameObjects ) {
+        UnityEngine.Object.DestroyImmediate( unreferencedGameObject, true );
+        EditorUtility.SetDirty( FileInfo.PrefabInstance );
+      }
     }
 
     /// <summary>
@@ -328,11 +340,12 @@ namespace AGXUnityEditor.IO
 
     private GameObject GetOrCreateGameObject( Node node )
     {
-      if ( node.GameObject != null )
+      if ( node.GameObject != null ) {
+        FileInfo.ObjectDb.Ref( node.Uuid );
         return node.GameObject;
+      }
 
-      node.GameObject = FileInfo.ObjectDb.GetGameObject( node.Uuid ) ?? new GameObject();
-      node.GameObject.GetOrCreateComponent<AGXUnity.IO.Uuid>().Native = node.Uuid;
+      node.GameObject = FileInfo.ObjectDb.GetOrCreateGameObject( node.Uuid );
 
       // Is it safe to exit if the node has a parent?
       // I.e., the node has been read from an existing prefab.

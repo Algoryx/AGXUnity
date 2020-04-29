@@ -264,7 +264,7 @@ namespace AGXUnity.Model
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null && Native != null )
+      if ( Simulation.HasInstance && Native != null )
         GetSimulation().remove( Native );
 
       if ( TireRimConstraint != null )

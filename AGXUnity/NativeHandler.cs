@@ -1,5 +1,4 @@
-﻿using System.IO;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
@@ -36,6 +35,10 @@ namespace AGXUnity
 
     private void Configure()
     {
+#if AGXUNITY_UPDATING
+      throw new AGXUnity.Exception( "AGX Dynamics for Unity is updating and AGX Dynamics " +
+                                    "binaries shouldn't be loaded into the process." );
+#else
       if ( Application.isEditor ) {
         // This case is handled by AGXUnityEditor.Manager.
       }
@@ -81,6 +84,7 @@ namespace AGXUnity
       agx.agxSWIG.setNumThreads( 4 );
 
       Initialized = true;
+#endif
     }
   }
 
@@ -92,7 +96,7 @@ namespace AGXUnity
   /// </summary>
   public class NativeHandler
   {
-    #region Singleton Stuff
+#region Singleton Stuff
     private static NativeHandler m_instance = null;
     public static NativeHandler Instance
     {
@@ -103,7 +107,7 @@ namespace AGXUnity
         return m_instance;
       }
     }
-    #endregion
+#endregion
 
     private InitShutdownAGXDynamics m_isAgx = null;
 

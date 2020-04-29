@@ -72,20 +72,20 @@ namespace AGXUnityEditor.Tools
 
         if ( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ) < 0.95f )
           m_edgeIssues.Add( "\u2022 " +
-                            GUI.AddColorTag( "Top", Color.yellow ) +
+                            GUI.AddColorTag( "Top", Color.Lerp( Color.yellow, Color.white, 0.35f ) ) +
                             " and " +
-                            GUI.AddColorTag( "Cutting", Color.red ) +
+                            GUI.AddColorTag( "Cutting", Color.Lerp( Color.red, Color.white, 0.35f ) ) +
                             " edge direction expected to be approximately parallel with dot product > 0.95, currently: " +
                             GUI.AddColorTag( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ).ToString(), Color.red ) );
         if ( !Utils.Raycast.Intersect( new Ray( rayCenter, rayDir ), Shovel.GetComponentsInChildren<MeshFilter>() ).Hit )
           m_edgeIssues.Add( "\u2022 " +
-                            GUI.AddColorTag( "Top", Color.yellow ) +
+                            GUI.AddColorTag( "Top", Color.Lerp( Color.yellow, Color.white, 0.35f ) ) +
                             " and " +
-                            GUI.AddColorTag( "Cutting", Color.red ) +
+                            GUI.AddColorTag( "Cutting", Color.Lerp( Color.red, Color.white, 0.35f ) ) +
                             " edges appears to be directed in the wrong way - raycast from center bucket plane into the bucket didn't hit the bucket." );
         if ( Vector3.Dot( rayDir, CuttingDirectionLineTool.Line.Direction ) > -0.5f )
           m_edgeIssues.Add( "\u2022 " +
-                            GUI.AddColorTag( "Cutting direction", Color.blue ) +
+                            GUI.AddColorTag( "Cutting direction", Color.Lerp( Color.green, Color.white, 0.35f ) ) +
                             " appears to be directed towards the bucket - it should be in the bucket separation plate plane, directed out from the bucket." );
 
         m_requestEdgeValidate = false;

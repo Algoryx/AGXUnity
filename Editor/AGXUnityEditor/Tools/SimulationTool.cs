@@ -100,12 +100,31 @@ namespace AGXUnityEditor.Tools
           Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
 
-      using ( new GUILayout.HorizontalScope() ) {
-        EditorGUI.BeginDisabledGroup( !Application.isPlaying );
+      InspectorGUI.Separator( 1, 4 );
+
+      using ( new GUI.EnabledBlock( Application.isPlaying ) ) {
+#if AGXUNITY_DEV_BUILD
         if ( GUILayout.Button( GUI.MakeLabel( "Save current step as (.agx)...",
                                               false,
                                               "Save scene in native file format when the editor is in play mode." ),
                                skin.Button ) ) {
+          saveCurrentState();
+        }
+
+        if ( GUILayout.Button( GUI.MakeLabel( "Open in AGX native viewer",
+                                              false,
+                                              "Creates Lua file, saves current scene to an .agx file and executes luaagx.exe." ), skin.Button ) ) {
+          Simulation.OpenInNativeViewer();
+        }
+#endif
+
+        var rect = EditorGUILayout.GetControlRect();
+        var orgWidth = rect.width;
+        rect.width = EditorGUIUtility.labelWidth;
+        EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Save current step as (.agx)" ), skin.Label );
+        rect.x += EditorGUIUtility.labelWidth;
+        rect.width = orgWidth - EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Output file..." ), skin.Button ) ) {
           string result = EditorUtility.SaveFilePanel( "Save scene as .agx",
                                                        "Assets",
                                                        UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
@@ -116,41 +135,60 @@ namespace AGXUnityEditor.Tools
               Debug.Log( GUI.AddColorTag( "Successfully wrote simulation to file: ", Color.green ) + result );
           }
         }
-
-        if ( GUILayout.Button( GUI.MakeLabel( "Open in AGX native viewer",
-                                              false,
-                                              "Creates Lua file, saves current scene to an .agx file and executes luaagx.exe." ), skin.Button ) ) {
-          Simulation.OpenInNativeViewer();
-        }
-        EditorGUI.EndDisabledGroup();
       }
 
-      Simulation.SavePreFirstStep = InspectorGUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
-                                                                        Simulation.SavePreFirstStep );
-      EditorGUI.BeginDisabledGroup( !Simulation.SavePreFirstStep );
-      {
-        using ( new GUILayout.HorizontalScope() ) {
-          GUILayout.Space( 26 );
-          Simulation.SavePreFirstStepPath = GUILayout.TextField( Simulation.SavePreFirstStepPath, skin.TextField );
-          if ( GUILayout.Button( GUI.MakeLabel( "...", false, "Open file panel" ),
-                                 skin.Button,
-                                 GUILayout.Width( 28 ) ) ) {
-            string result = EditorUtility.SaveFilePanel( "Path to initial dump (including file name and extension)",
-                                                         SaveInitialPath,
-                                                         UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
-                                                         "agx" );
-            if ( result != string.Empty ) {
-              SaveInitialPath = result;
-              var fileInfo = new System.IO.FileInfo( SaveInitialPath );
-              if ( fileInfo.Extension == ".agx" || fileInfo.Extension == ".aagx" )
-                Simulation.SavePreFirstStepPath = SaveInitialPath;
-              else
-                Debug.Log( "Unknown file extension: " + fileInfo.Extension );
-            }
+      var saveInitialToggleWidth = 18.0f;
+      var saveInitialSaveFilePanelButtonWith = 28.0f;
+
+      var saveInitialRect = EditorGUILayout.GetControlRect();
+      var saveInitialOrgWidth = saveInitialRect.width;
+      saveInitialRect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( saveInitialRect, GUI.MakeLabel( "Dump initial (.agx)" ) );
+
+      saveInitialRect.x += EditorGUIUtility.labelWidth;
+      saveInitialRect.width = saveInitialToggleWidth;
+      Simulation.SavePreFirstStep = EditorGUI.Toggle( saveInitialRect,
+                                                      Simulation.SavePreFirstStep );
+      using ( new GUI.EnabledBlock( Simulation.SavePreFirstStep ) ) {
+        saveInitialRect.x += saveInitialToggleWidth;
+        saveInitialRect.width = saveInitialOrgWidth -
+                                EditorGUIUtility.labelWidth -
+                                saveInitialToggleWidth -
+                                saveInitialSaveFilePanelButtonWith;
+        Simulation.SavePreFirstStepPath = EditorGUI.TextField( saveInitialRect,
+                                                               Simulation.SavePreFirstStepPath,
+                                                               skin.TextField );
+        saveInitialRect.x += saveInitialRect.width;
+        saveInitialRect.width = saveInitialSaveFilePanelButtonWith;
+        if ( UnityEngine.GUI.Button( saveInitialRect,
+                                     GUI.MakeLabel( "..." ),
+                                     skin.ButtonMiddle ) ) {
+          string result = EditorUtility.SaveFilePanel( "Path to initial dump (including file name and extension)",
+                                                        SaveInitialPath,
+                                                        UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
+                                                        "agx" );
+          if ( result != string.Empty ) {
+            SaveInitialPath = result;
+            var fileInfo = new System.IO.FileInfo( SaveInitialPath );
+            if ( fileInfo.Extension == ".agx" || fileInfo.Extension == ".aagx" )
+              Simulation.SavePreFirstStepPath = SaveInitialPath;
+            else
+              Debug.Log( "Unknown file extension: " + fileInfo.Extension );
           }
         }
       }
-      EditorGUI.EndDisabledGroup();
+
+#if AGXUNITY_DEV_ENV
+      using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
+        var rect    = EditorGUILayout.GetControlRect();
+        rect.x     += EditorGUIUtility.labelWidth;
+        rect.width -= EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Open in native viewer..." ), skin.Button ) )
+          ;
+
+      }
+#endif
     }
 
     private EditorDataEntry GetSaveInitialPathEditorData( string name )
