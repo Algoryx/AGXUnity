@@ -100,21 +100,9 @@ namespace AGXUnityEditor.Tools
           Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
 
-      Action saveCurrentState = () =>
-      {
-        string result = EditorUtility.SaveFilePanel( "Save scene as .agx",
-                                                      "Assets",
-                                                      UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
-                                                      "agx" );
-        if ( result != string.Empty ) {
-          var success = Simulation.SaveToNativeFile( result );
-          if ( success )
-            Debug.Log( GUI.AddColorTag( "Successfully wrote simulation to file: ", Color.green ) + result );
-        }
-      };
+      InspectorGUI.Separator( 1, 4 );
 
-      using ( new GUI.EnabledBlock( Application.isPlaying ) )
-      using ( new EditorGUILayout.HorizontalScope() ) {
+      using ( new GUI.EnabledBlock( Application.isPlaying ) ) {
 #if AGXUNITY_DEV_BUILD
         if ( GUILayout.Button( GUI.MakeLabel( "Save current step as (.agx)...",
                                               false,
@@ -128,16 +116,25 @@ namespace AGXUnityEditor.Tools
                                               "Creates Lua file, saves current scene to an .agx file and executes luaagx.exe." ), skin.Button ) ) {
           Simulation.OpenInNativeViewer();
         }
-#else
+#endif
+
         var rect = EditorGUILayout.GetControlRect();
         var orgWidth = rect.width;
         rect.width = EditorGUIUtility.labelWidth;
         EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Save current step as (.agx)" ), skin.Label );
         rect.x += EditorGUIUtility.labelWidth;
         rect.width = orgWidth - EditorGUIUtility.labelWidth;
-        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Output file..." ), skin.Button ) )
-          saveCurrentState();
-#endif
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Output file..." ), skin.Button ) ) {
+          string result = EditorUtility.SaveFilePanel( "Save scene as .agx",
+                                                       "Assets",
+                                                       UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
+                                                       "agx" );
+          if ( result != string.Empty ) {
+            var success = Simulation.SaveToNativeFile( result );
+            if ( success )
+              Debug.Log( GUI.AddColorTag( "Successfully wrote simulation to file: ", Color.green ) + result );
+          }
+        }
       }
 
       var saveInitialToggleWidth = 18.0f;
@@ -181,6 +178,17 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
+
+#if AGXUNITY_DEV_ENV
+      using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
+        var rect    = EditorGUILayout.GetControlRect();
+        rect.x     += EditorGUIUtility.labelWidth;
+        rect.width -= EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Open in native viewer..." ), skin.Button ) )
+          ;
+
+      }
+#endif
     }
 
     private EditorDataEntry GetSaveInitialPathEditorData( string name )
