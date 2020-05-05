@@ -14,9 +14,9 @@ AGX Dynamics is a professional multi-purpose physics engine for simulators, Virt
 
 Please check [AGX Dynamics for Unity product page](https://www.algoryx.se/agx-unity/) for more information.
 
-## Installation - AGX Dynamics installed separately
+## Installation - with AGX Dynamics installed separately
 
-Unity has to be started with AGX environment variables. For example (command prompt):
+If you don't want to use **AGX Dynamics for Unity (with AGX Dynamics included)**, the AGXUnity plugin can be installed separately following these instructions and alternatives. Unity has to be started with AGX Dynamics environment variables - for example (command prompt):
 
 ---
 ```
