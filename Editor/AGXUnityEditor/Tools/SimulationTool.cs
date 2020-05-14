@@ -137,47 +137,14 @@ namespace AGXUnityEditor.Tools
         }
       }
 
-      var saveInitialToggleWidth = 18.0f;
-      var saveInitialSaveFilePanelButtonWith = 28.0f;
-
-      var saveInitialRect = EditorGUILayout.GetControlRect();
-      var saveInitialOrgWidth = saveInitialRect.width;
-      saveInitialRect.width = EditorGUIUtility.labelWidth;
-
-      EditorGUI.PrefixLabel( saveInitialRect, GUI.MakeLabel( "Dump initial (.agx)" ) );
-
-      saveInitialRect.x += EditorGUIUtility.labelWidth;
-      saveInitialRect.width = saveInitialToggleWidth;
-      Simulation.SavePreFirstStep = EditorGUI.Toggle( saveInitialRect,
-                                                      Simulation.SavePreFirstStep );
-      using ( new GUI.EnabledBlock( Simulation.SavePreFirstStep ) ) {
-        saveInitialRect.x += saveInitialToggleWidth;
-        saveInitialRect.width = saveInitialOrgWidth -
-                                EditorGUIUtility.labelWidth -
-                                saveInitialToggleWidth -
-                                saveInitialSaveFilePanelButtonWith;
-        Simulation.SavePreFirstStepPath = EditorGUI.TextField( saveInitialRect,
-                                                               Simulation.SavePreFirstStepPath,
-                                                               skin.TextField );
-        saveInitialRect.x += saveInitialRect.width;
-        saveInitialRect.width = saveInitialSaveFilePanelButtonWith;
-        if ( UnityEngine.GUI.Button( saveInitialRect,
-                                     GUI.MakeLabel( "..." ),
-                                     skin.ButtonMiddle ) ) {
-          string result = EditorUtility.SaveFilePanel( "Path to initial dump (including file name and extension)",
-                                                        SaveInitialPath,
-                                                        UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
-                                                        "agx" );
-          if ( result != string.Empty ) {
-            SaveInitialPath = result;
-            var fileInfo = new System.IO.FileInfo( SaveInitialPath );
-            if ( fileInfo.Extension == ".agx" || fileInfo.Extension == ".aagx" )
-              Simulation.SavePreFirstStepPath = SaveInitialPath;
-            else
-              Debug.Log( "Unknown file extension: " + fileInfo.Extension );
-          }
-        }
-      }
+      Simulation.SavePreFirstStepPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "Dump initial (.agx)" ),
+                                                                     Simulation.SavePreFirstStep,
+                                                                     enabled => Simulation.SavePreFirstStep = enabled,
+                                                                     Simulation.SavePreFirstStepPath,
+                                                                     UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
+                                                                     "agx",
+                                                                     "Path to initial dump (including file name and extension)",
+                                                                     fileExtension => fileExtension == ".agx" || fileExtension == ".aagx" );
 
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {

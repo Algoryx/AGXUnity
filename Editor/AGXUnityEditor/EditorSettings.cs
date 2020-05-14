@@ -8,7 +8,6 @@ namespace AGXUnityEditor
 {
   public class EditorSettings : ScriptableObject
   {
-    #region Static properties
     [HideInInspector]
     public static EditorSettings Instance { get { return GetOrCreateInstance(); } }
 
@@ -16,17 +15,16 @@ namespace AGXUnityEditor
 
     [HideInInspector]
     public static readonly int ToggleButtonSize = 18;
-    #endregion Static properties
 
-    #region BuiltInToolsTool settings
-    public Utils.KeyHandler BuiltInToolsTool_SelectGameObjectKeyHandler = new Utils.KeyHandler( KeyCode.S );
+    public Utils.KeyHandler BuiltInToolsTool_SelectGameObjectKeyHandler = new Utils.KeyHandler( KeyCode.S ) { Enable = false };
     public Utils.KeyHandler BuiltInToolsTool_SelectRigidBodyKeyHandler = new Utils.KeyHandler( KeyCode.B );
     public Utils.KeyHandler BuiltInToolsTool_PickHandlerKeyHandler = new Utils.KeyHandler( KeyCode.A );
-    #endregion BuiltInToolsTool settings
 
     public bool BuildPlayer_CopyBinaries = true;
 
-    #region Rendering GUI
+    public bool AGXDynamics_LogEnabled = false;
+    public string AGXDynamics_LogPath  = "";
+
     public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
@@ -34,30 +32,33 @@ namespace AGXUnityEditor
       using ( GUI.AlignBlock.Center )
         GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
+      BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build:</b> Copy AGX Dynamics binaries",
+                                                                     false,
+                                                                     "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
+                                                      BuildPlayer_CopyBinaries );
+      AGXDynamics_LogPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "AGX Dynamics log" ),
+                                                         AGXDynamics_LogEnabled,
+                                                         enable => AGXDynamics_LogEnabled = enable,
+                                                         AGXDynamics_LogPath,
+                                                         "AGXDynamicsLog",
+                                                         "txt",
+                                                         "AGX Dynamics log filename",
+                                                         extension => true );
+
+      InspectorGUI.Separator( 1, 4 );
+
       // BuiltInToolsTool settings GUI.
       {
-        using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Built in tools", 16, true ), skin.Label );
-
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select game object" ), BuiltInToolsTool_SelectGameObjectKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
-
-      BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build Player:</b> Copy AGX Dynamics binaries",
-                                                                     false,
-                                                                     "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
-                                                      BuildPlayer_CopyBinaries );
-
-      if ( GUILayout.Button( GUI.MakeLabel( "Regenerate custom editors" ), skin.Button ) )
-        Utils.CustomEditorGenerator.Synchronize( true );
     }
-
-    private bool m_showDropDown = false;
 
     private void HandleKeyHandlerGUI( GUIContent name, Utils.KeyHandler keyHandler )
     {
       const int keyButtonWidth = 90;
+      var showDropdownPressed = false;
 
       GUILayout.BeginHorizontal();
       {
@@ -72,33 +73,29 @@ namespace AGXUnityEditor
                                      GUI.MakeLabel( keyHandler.Keys[ iKey ].ToString() );
 
           bool toggleDetecting = GUILayout.Button( buttonLabel,
-                                                   InspectorEditor.Skin.Button,
+                                                   InspectorEditor.Skin.ButtonMiddle,
                                                    GUILayout.Width( keyButtonWidth ),
                                                    GUILayout.Height( ToggleButtonSize ) );
           if ( toggleDetecting )
             keyHandler.DetectKey( this, !keyHandler.IsDetectingKey( iKey ), iKey );
         }
 
-        Rect dropDownButtonRect = new Rect();
         GUILayout.BeginVertical( GUILayout.Height( ToggleButtonSize ) );
         {
           GUIStyle tmp = new GUIStyle( InspectorEditor.Skin.Button );
           tmp.fontSize = 6;
 
-          m_showDropDown = GUILayout.Button( GUI.MakeLabel( "v", true ),
-                                             tmp,
-                                             GUILayout.Width( 16 ),
-                                             GUILayout.Height( 14 ) ) ?
-                             !m_showDropDown :
-                              m_showDropDown;
-          dropDownButtonRect = GUILayoutUtility.GetLastRect();
+          showDropdownPressed = InspectorGUI.Button( MiscIcon.ContextDropdown,
+                                                         true,
+                                                         "Add or remove key or reset key to default.",
+                                                         GUILayout.Width( 16 ) );
           GUILayout.FlexibleSpace();
         }
         GUILayout.EndVertical();
 
         UnityEngine.GUI.enabled = true;
 
-        if ( m_showDropDown && dropDownButtonRect.Contains( Event.current.mousePosition ) ) {
+        if ( showDropdownPressed ) {
           GenericMenu menu = new GenericMenu();
           menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () =>
           {
@@ -126,9 +123,7 @@ namespace AGXUnityEditor
       if ( UnityEngine.GUI.changed )
         EditorUtility.SetDirty( this );
     }
-    #endregion Rendering GUI
 
-    #region Static singleton initialization methods
     public static bool PrepareEditorDataFolder()
     {
       if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityEditorDirectory + "/Data" ) ) {
@@ -171,7 +166,6 @@ namespace AGXUnityEditor
 
     [NonSerialized]
     private static EditorSettings m_instance = null;
-    #endregion Static singleton initialization methods
 
     /// <summary>
     /// Call from CI when the package is built, avoiding Data.asset

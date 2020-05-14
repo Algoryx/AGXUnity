@@ -694,6 +694,11 @@ namespace AGXUnityEditor
       // the user will be noticed when something is wrong.
       try {
         AGXUnity.NativeHandler.Instance.ValidateLicense();
+        if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
+             !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
+          agx.Logger.instance().openLogfile( EditorSettings.Instance.AGXDynamics_LogPath.Trim(),
+                                             true,
+                                             true );
       }
       catch ( Exception ) {
         return EnvironmentState.Uninitialized;
@@ -735,9 +740,14 @@ namespace AGXUnityEditor
 
     private static bool VerifyCompatibility()
     {
+      // Ignore this if the editor is going into Play. We're not
+      // coming here when the editor is stopped.
+      if ( EditorApplication.isPlayingOrWillChangePlaymode )
+        return true;
+
       string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
-      FileInfo currDll        = new FileInfo( localDllFilename );
-      FileInfo installedDll   = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
+      var currDll             = new FileInfo( localDllFilename );
+      var installedDll        = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
 
       // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
