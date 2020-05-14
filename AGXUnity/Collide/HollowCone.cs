@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity.Collide
 {
@@ -40,7 +39,7 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = AGXUnity.Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
 
         if (Native != null)
           Native.setThickness(m_thickness);
@@ -58,10 +57,10 @@ namespace AGXUnity.Collide
       get { return m_topRadius; }
       set
       {
-        m_topRadius = AGXUnity.Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
+        m_topRadius = Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
 
         if ( Native != null )
-          Native.setTopRadius( m_topRadius );
+          Native.setTopOuterRadius( m_topRadius );
 
         SizeUpdated();
       }
@@ -76,10 +75,10 @@ namespace AGXUnity.Collide
       get { return m_bottomRadius; }
       set
       {
-        m_bottomRadius = AGXUnity.Utils.Math.ClampAbove( Mathf.Max(value, m_topRadius + MinimumLength), MinimumLength );
+        m_bottomRadius = Utils.Math.ClampAbove( Mathf.Max(value, m_topRadius + MinimumLength), MinimumLength );
 
         if ( Native != null )
-          Native.setBottomRadius( m_bottomRadius );
+          Native.setBottomOuterRadius( m_bottomRadius );
 
         SizeUpdated();
       }
@@ -94,7 +93,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = Utils.Math.ClampAbove( value, MinimumLength );
 
         if ( Native != null )
           Native.setHeight( m_height );

@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity.Collide
 {
@@ -35,7 +34,7 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = AGXUnity.Utils.Math.ClampAbove( Mathf.Min(m_radius- MinimumLength, value), MinimumLength );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_radius- MinimumLength, value), MinimumLength );
 
         if ( Native != null )
           Native.setThickness( m_thickness );
@@ -53,10 +52,10 @@ namespace AGXUnity.Collide
       get { return m_radius; }
       set
       {
-        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_radius = Utils.Math.ClampAbove( value, MinimumLength );
 
         if ( Native != null )
-          Native.setRadius( m_radius );
+          Native.setOuterRadius( m_radius );
 
         SizeUpdated();
       }
@@ -71,7 +70,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = Utils.Math.ClampAbove( value, MinimumLength );
 
         if ( Native != null )
           Native.setHeight( m_height );

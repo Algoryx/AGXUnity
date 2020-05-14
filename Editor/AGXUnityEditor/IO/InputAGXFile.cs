@@ -384,7 +384,7 @@ namespace AGXUnityEditor.IO
       else if ( nativeShapeType == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
         var hollowCylinder    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCylinder>();
         hollowCylinder.Thickness = Convert.ToSingle( nativeShape.asHollowCylinder().getThickness() );
-        hollowCylinder.Radius = Convert.ToSingle( nativeShape.asHollowCylinder().getRadius() );
+        hollowCylinder.Radius = Convert.ToSingle( nativeShape.asHollowCylinder().getOuterRadius() );
         hollowCylinder.Height = Convert.ToSingle( nativeShape.asHollowCylinder().getHeight() );
       }
       else if (nativeShapeType == agxCollide.Shape.Type.CONE)
@@ -398,8 +398,8 @@ namespace AGXUnityEditor.IO
       {
         var hollowCone = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCone>();
         hollowCone.Thickness = Convert.ToSingle(nativeShape.asHollowCone().getThickness());
-        hollowCone.BottomRadius = Convert.ToSingle(nativeShape.asHollowCone().getBottomRadius());
-        hollowCone.TopRadius = Convert.ToSingle(nativeShape.asHollowCone().getTopRadius());
+        hollowCone.BottomRadius = Convert.ToSingle(nativeShape.asHollowCone().getBottomOuterRadius());
+        hollowCone.TopRadius = Convert.ToSingle(nativeShape.asHollowCone().getTopOuterRadius());
         hollowCone.Height = Convert.ToSingle(nativeShape.asHollowCone().getHeight());
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CAPSULE ) {
