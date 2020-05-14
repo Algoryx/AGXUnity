@@ -435,27 +435,24 @@ namespace AGXUnity.Model
 
       PowerLine.setSource( Engine );
 
-      var INPUT  = agxPowerLine.UnitSide.UNIT_INPUT;
-      var OUTPUT = agxPowerLine.UnitSide.UNIT_OUTPUT;
-
-      Engine.connect( OUTPUT, INPUT, engineTorqueConverterShaft );
+      Engine.connect( engineTorqueConverterShaft );
       engineTorqueConverterShaft.connect( TorqueConverter );
-      TorqueConverter.connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, torqueConverterGearBoxShaft );
+      TorqueConverter.connect( torqueConverterGearBoxShaft );
       torqueConverterGearBoxShaft.connect( GearBox );
-      GearBox.connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, gearBoxCenterDiffShaft );
+      GearBox.connect( gearBoxCenterDiffShaft );
       gearBoxCenterDiffShaft.connect( Differentials[ (int)DifferentialLocation.Center ] );
 
-      Differentials[ (int)DifferentialLocation.Center ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, centerDiffFrontDiffShaft );
+      Differentials[ (int)DifferentialLocation.Center ].connect( centerDiffFrontDiffShaft );
       centerDiffFrontDiffShaft.connect( Differentials[ (int)DifferentialLocation.Front ] );
-      Differentials[ (int)DifferentialLocation.Front ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, frontDiffFrontLeftWheelShaft );
-      Differentials[ (int)DifferentialLocation.Front ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, frontDiffFrontRightWheelShaft );
+      Differentials[ (int)DifferentialLocation.Front ].connect( frontDiffFrontLeftWheelShaft );
+      Differentials[ (int)DifferentialLocation.Front ].connect( frontDiffFrontRightWheelShaft );
       frontDiffFrontLeftWheelShaft.connect( m_actuators[ (int)WheelLocation.LeftFront ] );
       frontDiffFrontRightWheelShaft.connect( m_actuators[ (int)WheelLocation.RightFront ] );
 
-      Differentials[ (int)DifferentialLocation.Center ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, centerDiffRearDiffShaft );
+      Differentials[ (int)DifferentialLocation.Center ].connect( centerDiffRearDiffShaft );
       centerDiffRearDiffShaft.connect( Differentials[ (int)DifferentialLocation.Rear ] );
-      Differentials[ (int)DifferentialLocation.Rear ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, rearDiffRearLeftWheelShaft );
-      Differentials[ (int)DifferentialLocation.Rear ].connect( (agxPowerLine.ConnectorSide)OUTPUT, INPUT, rearDiffRearRightWheelShaft );
+      Differentials[ (int)DifferentialLocation.Rear ].connect( rearDiffRearLeftWheelShaft );
+      Differentials[ (int)DifferentialLocation.Rear ].connect( rearDiffRearRightWheelShaft );
       rearDiffRearLeftWheelShaft.connect( m_actuators[ (int)WheelLocation.LeftRear ] );
       rearDiffRearRightWheelShaft.connect( m_actuators[ (int)WheelLocation.RightRear ] );
 
