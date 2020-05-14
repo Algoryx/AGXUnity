@@ -89,6 +89,12 @@ namespace AGXUnity
         State = States.INITIALIZING;
         bool success = Initialize();
         State = success ? States.INITIALIZED : States.AWAKE;
+
+        if ( success ) {
+          IsSynchronizingProperties = true;
+          Utils.PropertySynchronizer.Synchronize( this );
+          IsSynchronizingProperties = false;
+        }
       }
 
       return State == States.INITIALIZED ? this : null;
@@ -116,10 +122,6 @@ namespace AGXUnity
     protected void Start()
     {
       InitializeCallback();
-
-      IsSynchronizingProperties = true;
-      Utils.PropertySynchronizer.Synchronize( this );
-      IsSynchronizingProperties = false;
     }
 
     protected virtual void OnAwake() { }
