@@ -385,11 +385,30 @@ namespace AGXUnity.Model
     {
       get
       {
+        return Vector3.Dot( FrontBodyObserver.transform.TransformDirection( Vector3.forward ),
+                            FrontBody.LinearVelocity );
+      }
+    }
+
+    [HideInInspector]
+    public RigidBody FrontBody
+    {
+      get
+      {
         if ( m_frontBody == null )
           m_frontBody = FindChild<RigidBody>( "FrontBody" );
+        return m_frontBody;
+      }
+    }
+
+    [HideInInspector]
+    public ObserverFrame FrontBodyObserver
+    {
+      get
+      {
         if ( m_frontBodyObserver == null )
-          m_frontBodyObserver = m_frontBody.GetComponentInChildren<ObserverFrame>();
-        return Vector3.Dot( m_frontBodyObserver.transform.TransformDirection( Vector3.forward ), m_frontBody.LinearVelocity );
+          m_frontBodyObserver = FrontBody.GetComponentInChildren<ObserverFrame>();
+        return m_frontBodyObserver;
       }
     }
 

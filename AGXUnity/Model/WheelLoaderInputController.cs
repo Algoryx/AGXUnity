@@ -17,6 +17,21 @@ namespace AGXUnity.Model
       Tilt
     }
 
+    public enum ActionMode
+    {
+      Devices,
+      Manual
+    }
+
+    [SerializeField]
+    private ActionMode m_inputMode = ActionMode.Devices;
+
+    public ActionMode InputMode
+    {
+      get { return m_inputMode; }
+      set { m_inputMode = value; }
+    }
+
     [HideInInspector]
     public WheelLoader WheelLoader
     {
@@ -67,22 +82,45 @@ namespace AGXUnity.Model
 #endif
 
     [HideInInspector]
-    public float Steer { get { return GetValue( ActionType.Steer ); } }
+    public float Steer
+    {
+      get { return GetValue( ActionType.Steer ); }
+      set { SetValue( ActionType.Steer, value ); }
+    }
 
     [HideInInspector]
-    public float Throttle { get { return GetValue( ActionType.Throttle ); } }
+    public float Throttle
+    {
+      get { return GetValue( ActionType.Throttle ); }
+      set { SetValue( ActionType.Throttle, value ); }
+    }
 
     [HideInInspector]
-    public float Brake { get { return GetValue( ActionType.Brake ); } }
+    public float Brake
+    {
+      get { return GetValue( ActionType.Brake ); }
+      set { SetValue( ActionType.Brake, value ); }
+    }
 
     [HideInInspector]
-    public float Elevate { get { return GetValue( ActionType.Elevate ); } }
+    public float Elevate
+    {
+      get { return GetValue( ActionType.Elevate ); }
+      set { SetValue( ActionType.Elevate, value ); }
+    }
 
     [HideInInspector]
-    public float Tilt { get { return GetValue( ActionType.Tilt ); } }
+    public float Tilt
+    {
+      get { return GetValue( ActionType.Tilt ); }
+      set { SetValue( ActionType.Tilt, value ); }
+    }
 
     public float GetValue( ActionType action )
     {
+      if ( InputMode == ActionMode.Manual )
+        return m_manualInputs[ (int)action ];
+
 #if ENABLE_INPUT_SYSTEM
       return m_hasValidInputActionMap ? InputMap[ action.ToString() ].ReadValue<float>() : 0.0f;
 #else
@@ -90,6 +128,11 @@ namespace AGXUnity.Model
       var jAction = Input.GetAxis( 'j' + name );
       return jAction != 0.0f ? jAction : Input.GetAxis( 'k' + name );
 #endif
+    }
+
+    public void SetValue( ActionType action, float value )
+    {
+      m_manualInputs[ (int)action ] = Utils.Math.Clamp( value, -1.0f, 1.0f );
     }
 
     protected override bool Initialize()
@@ -200,6 +243,7 @@ namespace AGXUnity.Model
 #if ENABLE_INPUT_SYSTEM
     private bool m_hasValidInputActionMap = false;
 #endif
+    private float[] m_manualInputs = new float[ System.Enum.GetValues( typeof( ActionType ) ).Length ];
   }
 }
 
