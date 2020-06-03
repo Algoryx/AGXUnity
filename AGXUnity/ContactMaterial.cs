@@ -369,13 +369,22 @@ namespace AGXUnity
       if ( FrictionModel.GetInitialized<FrictionModel>() == null )
         return;
 
-      var rb    = referenceObject.GetComponent<RigidBody>();
-      var shape = rb == null ? referenceObject.GetComponent<Collide.Shape>() : null;
+      var rb       = referenceObject.GetComponent<RigidBody>();
+      var shape    = rb == null ?
+                       referenceObject.GetComponent<Collide.Shape>() :
+                       null;
+      var observer = rb == null && shape == null ?
+                       referenceObject.GetComponent<ObserverFrame>() :
+                       null;
+
       agx.Frame referenceFrame = null;
       if ( rb != null && rb.GetInitialized<RigidBody>() != null )
         referenceFrame = rb.Native.getFrame();
       else if ( shape != null && shape.GetInitialized<Collide.Shape>() != null )
         referenceFrame = shape.NativeGeometry.getFrame();
+      else if ( observer != null && observer.GetInitialized<ObserverFrame>() != null )
+        referenceFrame = observer.Native.getFrame();
+
       if ( referenceFrame == null ) {
         Debug.LogWarning( $"Oriented friction: Unable to find reference frame from {referenceObject.name}.", referenceObject );
         return;
