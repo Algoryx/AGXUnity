@@ -227,12 +227,25 @@ namespace AGXUnityEditor.Tools
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
     }
 
+    private bool ShapeIncludedInBody(Shape shape)
+    {
+      bool flag = true;
+
+      flag = (shape.RigidBody != null && !shape.RigidBody.RelativeTransform) || shape.RigidBody == RigidBody;
+
+      return flag;
+    }
+
     public override void OnPostTargetMembersGUI()
     {
       if ( IsMultiSelect )
         return;
 
-      InspectorGUI.ToolArrayGUI( this, RigidBody.GetComponentsInChildren<Shape>(), "Shapes" );
+      // Only select shapes that should belong to this body
+      var shapes = RigidBody.GetComponentsInChildren<Shape>();
+      Shape[] selectedShapes = shapes.Where(x => ShapeIncludedInBody(x)).ToArray();
+
+      InspectorGUI.ToolArrayGUI( this, selectedShapes, "Shapes" );
 
       InspectorGUI.ToolArrayGUI( this, m_constraints.ToArray(), "Constraints" );
     }

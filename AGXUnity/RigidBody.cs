@@ -2,6 +2,7 @@
 using AGXUnity.Utils;
 using AGXUnity.Collide;
 using UnityEngine;
+using System.Linq;
 
 namespace AGXUnity
 {
@@ -62,12 +63,21 @@ namespace AGXUnity
       }
     }
 
+
     /// <summary>
     /// Toggle if the rigid body should be handled as particle or not.
     /// Paired with property HandleAsParticle.
     /// </summary>
     [SerializeField]
     private bool m_handleAsParticle = false;
+
+    /// <summary>
+    /// Toggle if the rigid body is part of an articulated structure.
+    /// By default, a RigidBody cannot exist as a sub-GameObject to another RigidBody
+    /// If this flag is set to true, the transformation of the RigidBody will be relative to the parent GameObject.
+    /// </summary>
+    [SerializeField]
+    public bool RelativeTransform = false;
 
     /// <summary>
     /// Toggle if the rigid body should be handled as particle or not.
@@ -234,7 +244,7 @@ namespace AGXUnity
       if ( m_rb != null )
         callback( m_rb, false );
       else {
-        Shape[] shapes = GetComponentsInChildren<Shape>();
+        Shape[] shapes = GetShapesInChild();
 
         using ( agx.RigidBody rb = new agx.RigidBody() ) {
           foreach ( Shape shape in shapes ) {
@@ -388,16 +398,55 @@ namespace AGXUnity
 
     private void SyncShapes()
     {
-      Shape[] shapes = GetComponentsInChildren<Shape>();
-      foreach ( Shape shape in shapes ) {
-        try {
-          shape.GetInitialized<Shape>().SetRigidBody( this );
+      Shape[] shapes = GetShapesInChild();
+      foreach (Shape shape in shapes)
+      {
+        try
+        {
+          shape.GetInitialized<Shape>().SetRigidBody(this);
         }
-        catch ( System.Exception e ) {
-          Debug.LogWarning( "Shape with name: " + shape.name + " failed to initialize. Ignored.", this );
-          Debug.LogException( e, shape );
+        catch (System.Exception e)
+        {
+          Debug.LogWarning("Shape with name: " + shape.name + " failed to initialize. Ignored.", this);
+          Debug.LogException(e, shape);
         }
       }
+    }
+
+    /// <summary>
+    /// Return true if the shape should be included in this RigidBody or not
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    private bool ShapeIncludedInBody(Shape shape)
+    {
+      bool flag = true;
+
+      flag = (shape.RigidBody != null && !shape.RigidBody.RelativeTransform) || shape.RigidBody == this;
+
+      return flag;
+    }
+
+    /// <summary>
+    /// Return the shapes of this RigidBody
+    /// </summary>
+    /// <returns></returns>
+    private Shape[] GetShapesInChild()
+    {
+      var shapes = GetComponentsInChildren<Shape>();
+
+      // Only return shapes that is direct child of this rigidbody OR (if deeper down, does not belong to another rigidbody which is marked for RelativeTransform)
+      Shape[] b = shapes.Where(x => ShapeIncludedInBody(x)).ToArray();
+      return b;
+    }
+
+    public void SyncUnityTransform(Vector3 pos, Quaternion rot)
+    {
+      if (m_rb == null)
+        return;
+
+      m_transform.localPosition = pos;
+      m_transform.localRotation = rot;
     }
 
     private void SyncUnityTransform()
@@ -405,10 +454,13 @@ namespace AGXUnity
       if ( m_rb == null )
         return;
 
-      // Local or global here? If we have a parent that moves?
-      // If the parent moves, its transform has to be synced
-      // down, and that is hard.
-      m_transform.SetPositionAndRotation( m_rb.getPosition().ToHandedVector3(),
+      // 
+      // If the body is not being child of another RigidBody, we will update the transform here.
+      // If on the other hand the body IS a child of another rigidBody, then the update will be 
+      // Handled by another class (ArticulatedRigidBodyBase). This is to ensure consistent order of update
+      // in the RigidBodt hierarchy 
+      if (!RelativeTransform)
+        m_transform.SetPositionAndRotation( m_rb.getPosition().ToHandedVector3(),
                                           m_rb.getRotation().ToHandedQuaternion() );
     }
 
@@ -434,14 +486,24 @@ namespace AGXUnity
     private void VerifyConfiguration()
     {
       // Verification:
-      // - No parent may be a body.
+      // If this body has RelativeTransform flag set, it can be a child of other RigidBodies
+      // But only if there is an ArticulatedRigidBodyBase at the root.
+      bool hasArBase = false;
+
       var parent = transform.parent;
       while ( parent != null ) {
         bool hasBody = parent.GetComponent<RigidBody>() != null;
-        if ( hasBody )
+        var arBase = parent.GetComponent<AGXUnity.ArticulatedRigidBodyBase>();
+
+        hasArBase = hasArBase || (arBase != null && arBase.enabled);
+
+        if ( !RelativeTransform && hasBody)
           throw new Exception( "An AGXUnity.RigidBody may not have an other AGXUnity.RigidBody as parent." );
         parent = parent.parent;
       }
+
+      if (RelativeTransform && !hasArBase)
+        throw new Exception(string.Format("An AGXUnity.RigidBody with RelativeTransform == true must have a parent with ArticulatedRigidBodyBase component: {0}", gameObject.name));
     }
   }
 }
