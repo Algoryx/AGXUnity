@@ -87,7 +87,8 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <typeparam name="T">Component type.</typeparam>
     /// <returns>Initialized component of type T. Null if not present or not possible to initialize.</returns>
-    public static T GetInitializedComponent<T>( this GameObject gameObject ) where T : ScriptComponent
+    public static T GetInitializedComponent<T>( this GameObject gameObject )
+      where T : ScriptComponent
     {
       T component = gameObject.GetComponent<T>();
       if ( component == null )
@@ -107,7 +108,8 @@ namespace AGXUnity.Utils
     /// Initialized components of type T. Empty set of none present and throws an exception
     /// if one component fails to initialize.
     /// </returns>
-    public static T[] GetInitializedComponents<T>( this GameObject gameObject ) where T : ScriptComponent
+    public static T[] GetInitializedComponents<T>( this GameObject gameObject )
+      where T : ScriptComponent
     {
       T[] components = gameObject.GetComponents<T>();
       foreach ( T component in components )
@@ -122,7 +124,8 @@ namespace AGXUnity.Utils
     /// <typeparam name="T">Component type.</typeparam>
     /// <param name="includeInactive">True to include inactive components, default false.</param>
     /// <returns>Initialized child component of type T. Null if not present or not possible to initialize.</returns>
-    public static T GetInitializedComponentInChildren<T>( this GameObject gameObject, bool includeInactive = false ) where T : ScriptComponent
+    public static T GetInitializedComponentInChildren<T>( this GameObject gameObject, bool includeInactive = false )
+      where T : ScriptComponent
     {
       T component = gameObject.GetComponentInChildren<T>( includeInactive );
       if ( component == null )
@@ -135,7 +138,8 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <typeparam name="T">Component type.</typeparam>
     /// <returns>Initialized parent component of type T. Null if not present or not possible to initialize.</returns>
-    public static T GetInitializedComponentInParent<T>( this GameObject gameObject ) where T : ScriptComponent
+    public static T GetInitializedComponentInParent<T>( this GameObject gameObject )
+      where T : ScriptComponent
     {
       T component = gameObject.GetComponentInParent<T>();
       if ( component == null )
@@ -162,7 +166,9 @@ namespace AGXUnity.Utils
     /// Fetch component if already present or creates new.
     /// </summary>
     /// <typeparam name="T">Component type.</typeparam>
-    public static T GetOrCreateComponent<T>( this GameObject gameObject ) where T : Component
+    /// <returns>Already existing or new component.</returns>
+    public static T GetOrCreateComponent<T>( this GameObject gameObject )
+      where T : Component
     {
       return gameObject.GetComponent<T>() ?? gameObject.AddComponent<T>();
     }

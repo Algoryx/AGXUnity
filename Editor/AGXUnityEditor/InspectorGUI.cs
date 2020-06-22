@@ -662,7 +662,7 @@ namespace AGXUnityEditor
 
           if ( addButtonPressed ) {
             var sceneItems = isAsset ?
-                               IO.Utils.FindAssetsOfType<T>() :
+                               IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                Object.FindObjectsOfType<T>();
             var addItemMenu = new GenericMenu();
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );

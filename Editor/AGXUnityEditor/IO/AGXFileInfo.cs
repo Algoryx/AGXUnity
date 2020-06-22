@@ -145,7 +145,7 @@ namespace AGXUnityEditor.IO
     /// <summary>
     /// Object database with UUID -> game object and assets.
     /// </summary>
-    public UuidObjectDb ObjectDb { get { return m_uuidObjectDb; } }
+    public ObjectDb ObjectDb { get; private set; } = null;
 
     /// <summary>
     /// Construct given path to file.
@@ -182,12 +182,14 @@ namespace AGXUnityEditor.IO
     /// <returns>this.PrefabInstance</returns>
     public GameObject CreateInstance()
     {
+      GetOrCreateDataDirectory();
+
       if ( ExistingPrefab != null )
         PrefabInstance = GameObject.Instantiate<GameObject>( ExistingPrefab );
       else
         PrefabInstance = new GameObject( Name );
 
-      m_uuidObjectDb = new UuidObjectDb( this );
+      ObjectDb = new ObjectDb( this );
 
       return PrefabInstance;
     }
@@ -212,6 +214,8 @@ namespace AGXUnityEditor.IO
     /// <returns>Path (relative) including .asset extension.</returns>
     public string GetAssetPath( UnityEngine.Object asset )
     {
+      // TODO: Remove this.
+
       // We cannot have \\ in the name
       asset.name = asset.name.Replace("\\", "_");
       return DataDirectory + "/" +
@@ -232,6 +236,8 @@ namespace AGXUnityEditor.IO
     public T AddOrUpdateExistingAsset<T>( T asset, AGXUnity.IO.AssetType type )
       where T : UnityEngine.Object
     {
+      // TODO: Remove this.
+
       if ( asset == null ) {
         Debug.LogWarning( "Trying to add null asset to file: " + NameWithExtension );
         return null;
@@ -246,7 +252,14 @@ namespace AGXUnityEditor.IO
       T[] assets = GetAssets<T>();
       foreach ( var existing in assets ) {
         if ( existing.name == asset.name ) {
+          // CopySerialized doesn't work on mesh out of the box
+          // for some reason, clearing 'existing' (destination)
+          // before, will update 'existing' correctly.
+          if ( existing is Mesh )
+            ( existing as Mesh ).Clear();
+
           EditorUtility.CopySerialized( asset, existing );
+
           return existing;
         }
       }
@@ -254,7 +267,7 @@ namespace AGXUnityEditor.IO
       if ( assets.Length == 0 )
         AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
       else
-        AssetDatabase.AddObjectToAsset( asset, AssetDatabase.GetAssetPath( assets[ 0 ] ) );
+        AssetDatabase.AddObjectToAsset( asset, assets[ 0 ] );
 
       return asset;
     }
@@ -338,13 +351,12 @@ namespace AGXUnityEditor.IO
         DataDirectory = RootDirectory + "/" + Name + "_Data";
 
       ExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( PrefabPath );
-      if ( ExistingPrefab && updateExistingPrefabWithDirectoryId ) {
+      if ( ExistingPrefab != null && updateExistingPrefabWithDirectoryId ) {
         ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>().DataDirectoryId = PrefabInstance.GetComponent<AGXUnity.IO.RestoredAGXFile>().DataDirectoryId;
         Save();
       }
     }
 
-    private FileInfo m_fileInfo         = null;
-    private UuidObjectDb m_uuidObjectDb = null;
+    private FileInfo m_fileInfo = null;
   }
 }

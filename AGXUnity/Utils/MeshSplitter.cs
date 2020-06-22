@@ -58,7 +58,10 @@ namespace AGXUnity.Utils
       }
     }
 
-    public static MeshSplitter Split( agx.Vec3Vector vertices, agx.UInt32Vector indices, Func<agx.Vec3, Vector3> transformer, int maxNumVertices = Int16.MaxValue )
+    public static MeshSplitter Split( agx.Vec3Vector vertices,
+                                      agx.UInt32Vector indices,
+                                      Func<agx.Vec3, Vector3> transformer,
+                                      int maxNumVertices = Int16.MaxValue )
     {
       var splitter = new MeshSplitter();
       splitter.m_vertices = new List<Vector3>( vertices.Count );
