@@ -246,12 +246,23 @@ namespace AGXUnityEditor.IO
                                new Object[] { };
         if ( existingAssets.Length == 0 )
           AssetDatabase.CreateAsset( root, GetAssetPath( root ) );
-        else {
-          // TODO: Move the existing assets to root?
-          AssetDatabase.AddObjectToAsset( root, existingAssets[ 0 ] );
-          AssetDatabase.SetMainObject( root, GetAssetPath( root ) );
-        }
+        else
+          AssetDatabase.AddObjectToAsset( root,
+                                          System.Array.Find( existingAssets,
+                                                             asset => AssetDatabase.IsMainAsset( asset ) ) ??
+                                          existingAssets[ 0 ] );
       }
+
+      //if ( !AssetDatabase.IsMainAsset( root ) ) {
+      //  var foo = Utils.FindAssetsOfType( m_dataDirectory, RestoredAssetsRoot.GetType( assetType ) );
+      //  var mainAsset = System.Array.Find( foo, a => AssetDatabase.IsMainAsset( a ) );
+      //  if ( mainAsset != null ) {
+      //    AssetDatabase.SetMainObject( root, AssetDatabase.GetAssetPath( mainAsset ) );
+      //    Debug.Log( $"Renaming to: {root.name}" );
+      //    AssetDatabase.RenameAsset( AssetDatabase.GetAssetPath( root ), root.name );
+      //    EditorUtility.SetDirty( root );
+      //  }
+      //}
 
       return m_assetRoots[ (int)assetType ] = root;
     }
