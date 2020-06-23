@@ -519,7 +519,7 @@ namespace AGXUnityEditor.IO
         if ( matching ) {
           currentMeshes = new Mesh[ meshes.Length ];
           for ( int i = 0; i < meshes.Length; ++i ) {
-            shapeMesh.SourceObjects[ i ].SetUVs( 0, meshes[ i ].uv );
+            shapeMesh.SourceObjects[ i ].SetUVs( 0, meshes[ i ].uv.ToList() );
             currentMeshes[ i ] = meshes[ i ] = shapeMesh.SourceObjects[ i ];
           }
         }
