@@ -16,6 +16,24 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// Default path to official terrain materials library released
+    /// with AGX Dynamics.
+    /// </summary>
+    [HideInInspector]
+    public static string DefaultTerrainMaterialsPath { get { return "data/TerrainMaterials"; } }
+
+    public static agxTerrain.TerrainMaterial CreateNative( PresetLibrary preset )
+    {
+      var terrainMaterial = new agxTerrain.TerrainMaterial();
+      if ( !agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( preset.ToString(),
+                                                                   terrainMaterial,
+                                                                   DefaultTerrainMaterialsPath ) ) {
+        Debug.LogWarning( $"Unable to load preset {preset}: {terrainMaterial.getLastError()}" );
+      }
+      return terrainMaterial;
+    }
+
+    /// <summary>
     /// Native instance of the terrain material.
     /// </summary>
     [HideInInspector]
@@ -867,8 +885,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void ResetToPresetDefault()
     {
-      m_temporaryNative = new agxTerrain.TerrainMaterial();
-      agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( ToNative( Preset ), m_temporaryNative );
+      m_temporaryNative = CreateNative( Preset );
       Utils.PropertySynchronizer.SynchronizeGetToSet( this );
       m_temporaryNative.Dispose();
       m_temporaryNative = null;
@@ -889,11 +906,6 @@ namespace AGXUnity.Model
     {
       Native = new agxTerrain.TerrainMaterial( name );
       return true;
-    }
-
-    private string ToNative( PresetLibrary preset )
-    {
-      return preset.ToString();
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;

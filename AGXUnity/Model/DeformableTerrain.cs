@@ -93,7 +93,7 @@ namespace AGXUnity.Model
           if ( m_terrainMaterial != null )
             Native.setTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
           else
-            Native.loadLibraryMaterial( DeformableTerrainMaterial.PresetLibrary.Dirt_1.ToString() );
+            Native.setTerrainMaterial( DeformableTerrainMaterial.CreateNative( DeformableTerrainMaterial.PresetLibrary.Dirt_1 ) );
         }
       }
     }
