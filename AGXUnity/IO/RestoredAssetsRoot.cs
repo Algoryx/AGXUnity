@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace AGXUnity.IO
 {
-  [DoNotGenerateCustomEditor]
   public class RestoredAssetsRoot : ScriptableObject
   {
     public enum ContainingType
@@ -21,9 +20,14 @@ namespace AGXUnity.IO
     {
       var instance = ScriptableObject.CreateInstance<RestoredAssetsRoot>();
       instance.Type = type;
-      instance.name = $"{prefixName}_{type}";
+      instance.name = FindName( prefixName, type );
 
       return instance;
+    }
+
+    public static string FindName( string prefixName, ContainingType type )
+    {
+      return $"{prefixName}_{type}";
     }
 
     public static ContainingType FindAssetType( System.Type type )
@@ -56,9 +60,10 @@ namespace AGXUnity.IO
       return s_fileAssetTypeToTypeMap[ (int)type ];
     }
 
-    [ SerializeField]
+    [SerializeField]
     private ContainingType m_type = ContainingType.Unknown;
 
+    [HideInInspector]
     public ContainingType Type
     {
       get { return m_type; }

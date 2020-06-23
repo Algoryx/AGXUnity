@@ -186,8 +186,6 @@ namespace AGXUnityEditor.IO
       if ( node == null )
         return;
 
-      // TODO: Skip if node.GameObject != null means "use Unity configuration".
-
       switch ( node.Type ) {
         case Node.NodeType.Assembly:
           agx.Frame frame      = m_tree.GetAssembly( node.Uuid );
@@ -497,8 +495,9 @@ namespace AGXUnityEditor.IO
       var nativeGeometry = m_tree.GetGeometry( node.Parent.Uuid );
       var toWorld        = nativeGeometry.getTransform();
       var toLocal        = shape.transform.worldToLocalMatrix;
-      var meshes         = MeshSplitter.Split( nativeRenderData.getVertexArray(),
+      Mesh[] meshes      = MeshSplitter.Split( nativeRenderData.getVertexArray(),
                                                nativeRenderData.getIndexArray(),
+                                               nativeRenderData.getTexCoordArray(),
                                                v => toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) ).Meshes;
 
       // Initial import with currentMeshes.Length == 0 and shape mesh source
@@ -519,8 +518,10 @@ namespace AGXUnityEditor.IO
         }
         if ( matching ) {
           currentMeshes = new Mesh[ meshes.Length ];
-          for ( int i = 0; i < meshes.Length; ++i )
+          for ( int i = 0; i < meshes.Length; ++i ) {
+            shapeMesh.SourceObjects[ i ].SetUVs( 0, meshes[ i ].uv );
             currentMeshes[ i ] = meshes[ i ] = shapeMesh.SourceObjects[ i ];
+          }
         }
       }
 
@@ -541,6 +542,7 @@ namespace AGXUnityEditor.IO
           RestoreRenderMaterial( currentMaterials[ i ],
                                  $"{shape.name}_Visual_Material",
                                  nativeRenderData.getRenderMaterial() );
+          EditorUtility.SetDirty( shapeVisual );
         }
       }
       else {
@@ -565,98 +567,6 @@ namespace AGXUnityEditor.IO
 
         ShapeVisual.CreateRenderData( shape, meshes, material );
       }
-
-      //if ( renderData == null || !renderData.getShouldRender() )
-      //  return false;
-
-      //var nativeGeometry = m_tree.GetGeometry( node.Parent.Uuid );
-      //var shape = node.GameObject.GetComponent<AGXUnity.Collide.Shape>();
-
-      //var toWorld = nativeGeometry.getTransform();
-      //var toLocal = shape.transform.worldToLocalMatrix;
-
-      //var meshes = new Mesh[] { };
-      //if ( renderData.getVertexArray().Count > UInt16.MaxValue ) {
-      //  Debug.LogWarning( $"{shape.name}: Render data contains {renderData.getVertexArray().Count} vertices. Splitting it into smaller meshes." );
-
-      //  var splitter = MeshSplitter.Split( renderData.getVertexArray(),
-      //                                     renderData.getIndexArray(),
-      //                                     v => toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) );
-      //  meshes = splitter.Meshes;
-      //  for ( int i = 0; i < meshes.Length; ++i )
-      //    meshes[ i ].name = shape.name + "_Visual_Mesh_" + i.ToString();
-      //}
-      //else {
-      //  var mesh = new Mesh();
-      //  mesh.name = shape.name + "_Visual_Mesh";
-
-      //  // Assigning and converting vertices.
-      //  // Note: RenderData vertices assumed to be given in geometry coordinates.
-      //  mesh.SetVertices( ( from v
-      //                      in renderData.getVertexArray()
-      //                      select toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) ).ToList() );
-
-      //  // Assigning and converting colors.
-      //  mesh.SetColors( ( from c
-      //                    in renderData.getColorArray()
-      //                    select c.ToColor() ).ToList() );
-
-      //  // Unsure about this one.
-      //  mesh.SetUVs( 0,
-      //                ( from uv
-      //                  in renderData.getTexCoordArray()
-      //                  select uv.ToVector2() ).ToList() );
-
-      //  // Converting counter clockwise -> clockwise.
-      //  var triangles = new List<int>();
-      //  var indexArray = renderData.getIndexArray();
-      //  for ( int i = 0; i < indexArray.Count; i += 3 ) {
-      //    triangles.Add( Convert.ToInt32( indexArray[ i + 0 ] ) );
-      //    triangles.Add( Convert.ToInt32( indexArray[ i + 2 ] ) );
-      //    triangles.Add( Convert.ToInt32( indexArray[ i + 1 ] ) );
-      //  }
-      //  mesh.SetTriangles( triangles, 0, false );
-
-      //  mesh.RecalculateBounds();
-      //  mesh.RecalculateNormals();
-      //  mesh.RecalculateTangents();
-
-      //  meshes = new Mesh[] { mesh };
-      //}
-
-      //var shader = Shader.Find( "Standard" ) ?? Shader.Find( "Diffuse" );
-      //if ( shader == null )
-      //  Debug.LogError( "Unable to find standard shaders." );
-
-      //var renderMaterial = renderData.getRenderMaterial();
-      //var material = new Material( shader );
-      //material.name = shape.name + "_Visual_Material";
-
-      //if ( renderMaterial.hasDiffuseColor() ) {
-      //  var color = renderMaterial.getDiffuseColor().ToColor();
-      //  color.a = 1.0f - renderMaterial.getTransparency();
-
-      //  material.SetVector( "_Color", color );
-      //}
-      //if ( renderMaterial.hasEmissiveColor() )
-      //  material.SetVector( "_EmissionColor", renderMaterial.getEmissiveColor().ToColor() );
-
-      //material.SetFloat( "_Metallic", 0.3f );
-      //material.SetFloat( "_Glossiness", 0.8f );
-
-      //if ( renderMaterial.getTransparency() > 0.0f )
-      //  material.SetBlendMode( BlendMode.Transparent );
-
-      //material = FileInfo.AddOrUpdateExistingAsset( material, AGXUnity.IO.AssetType.Material );
-      //for ( int i = 0; i < meshes.Length; ++i )
-      //  meshes[ i ] = FileInfo.AddOrUpdateExistingAsset( meshes[ i ], AGXUnity.IO.AssetType.RenderMesh );
-
-      //var shapeVisual = ShapeVisual.Find( shape );
-      //if ( shapeVisual != null ) {
-      //  // Verify so that the meshes matches the current configuration?
-      //}
-      //else
-      //  ShapeVisual.CreateRenderData( shape, meshes, material );
 
       return true;
     }

@@ -406,12 +406,18 @@ namespace AGXUnityEditor
       if ( editor == null )
         return;
 
+      // Mesh inspector with interactive preview.
+      if ( editor.GetType().FullName == "UnityEditor.ModelInspector" ) {
+        editor.DrawPreview( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false,
+                                                                                    120.0f ) ) );
+        return;
+      }
+
       using ( IndentScope.Single ) {
         if ( editor is MaterialEditor )
           HandleMaterialEditorGUI( editor as MaterialEditor );
-        else {
+        else
           editor.OnInspectorGUI();
-        }
       }
     }
 

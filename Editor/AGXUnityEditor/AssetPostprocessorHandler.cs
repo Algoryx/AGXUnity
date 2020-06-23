@@ -123,7 +123,7 @@ namespace AGXUnityEditor
 
       var contactMaterialManager = TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>();
       Undo.RecordObject( contactMaterialManager, "Adding contact materials" );
-      foreach ( var cm in fileInfo.GetAssets<ContactMaterial>() )
+      foreach ( var cm in IO.Utils.FindAssetsOfType<ContactMaterial>( fileInfo.DataDirectory ) )
         contactMaterialManager.Add( cm );
 
       var fileData = fileInfo.ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>();

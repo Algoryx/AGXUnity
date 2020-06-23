@@ -459,6 +459,11 @@ namespace AGXUnity.Utils
   /// </summary>
   public static partial class Extensions
   {
+    public static string Color( this string str, Color color )
+    {
+      return GUI.AddColorTag( str, color );
+    }
+
     public static System.UInt32 To32BitFnv1aHash( this string str )
     {
       IEnumerable<byte> bytes = str.ToCharArray().Select( Convert.ToByte );

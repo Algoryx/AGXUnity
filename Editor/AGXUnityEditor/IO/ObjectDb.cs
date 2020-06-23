@@ -15,6 +15,7 @@ namespace AGXUnityEditor.IO
       public int NumRemovedGameObjects;
       public int NumAddedAssets;
       public int NumRemovedAssets;
+      public bool RootsAddedToExistingAssets;
 
       public bool HasAddedOrRemoved
       {
@@ -28,13 +29,31 @@ namespace AGXUnityEditor.IO
       }
     }
 
+    public static Object[] GetAssets( string dataDirectory, RestoredAssetsRoot.ContainingType assetType )
+    {
+      var root = Utils.FindAssetsOfType<RestoredAssetsRoot>( dataDirectory ).FirstOrDefault( assetRoot => assetRoot.Type == assetType );
+      var assets = new List<Object>();
+      if ( root != null )
+        assets.Add( root );
+      if ( assetType == RestoredAssetsRoot.ContainingType.Unknown ) {
+        assets.AddRange( from type in s_unknownTypes
+                         from asset in Utils.FindAssetsOfType( dataDirectory, type )
+                         select asset );
+      }
+      else
+        assets.AddRange( from asset in Utils.FindAssetsOfType( dataDirectory, RestoredAssetsRoot.GetType( assetType ) )
+                         where asset.GetType() == RestoredAssetsRoot.GetType( assetType )
+                         select asset );
+      return assets.ToArray();
+    }
+
     public ObjectDb( AGXFileInfo fileInfo )
     {
       m_dataDirectory = fileInfo.DataDirectory;
       m_filename      = fileInfo.Name;
 
       if ( fileInfo.PrefabInstance != null ) {
-        var uuidGameObjects = fileInfo.PrefabInstance.GetComponentsInChildren<Uuid>();
+        var uuidGameObjects = fileInfo.PrefabInstance.GetComponentsInChildren<Uuid>( true );
         foreach ( var uuidComponent in uuidGameObjects )
           if ( !m_gameObjects.ContainsKey( uuidComponent.Native ) )
             m_gameObjects.Add( uuidComponent.Native,
@@ -70,10 +89,7 @@ namespace AGXUnityEditor.IO
         Debug.Log( $"{m_filename}: {GUI.AddColorTag( "Removing asset:", Color.red )} {asset.name}" );
         AssetDatabase.RemoveObjectFromAsset( asset );
       }
-      //if ( unreferencedAssets.Length > 0 ) {
-      //  AssetDatabase.SaveAssets();
-      //  AssetDatabase.Refresh();
-      //}
+
       return m_statistics;
     }
 
@@ -179,9 +195,8 @@ namespace AGXUnityEditor.IO
     public Object[] GetUnreferencedAssets()
     {
       return ( from fileAssetType in RestoredAssetsRoot.Types
-               where RestoredAssetsRoot.GetType( fileAssetType ) != null
-               from asset in Utils.FindAssetsOfType( m_dataDirectory, RestoredAssetsRoot.GetType( fileAssetType ) )
-               where asset.GetType() == RestoredAssetsRoot.GetType( fileAssetType ) && GetRefCount( asset ) < 1
+               from asset in GetAssets( fileAssetType )
+               where !( asset is RestoredAssetsRoot ) && GetRefCount( asset ) < 1
                select asset ).ToArray();
     }
 
@@ -200,18 +215,17 @@ namespace AGXUnityEditor.IO
       return -1;
     }
 
+    private Object[] GetAssets( RestoredAssetsRoot.ContainingType assetType )
+    {
+      return GetAssets( m_dataDirectory, assetType );
+    }
+
     private void Initialize( RestoredAssetsRoot.ContainingType assetType )
     {
       var dict = m_assets[ (int)assetType ] = new Dictionary<int, AssetDbData>();
       GetOrCreateRoot( assetType );
 
-      if ( assetType == RestoredAssetsRoot.ContainingType.Unknown ) {
-        // TODO: Collect unknown assets.
-        m_assets[ (int)assetType ] = new Dictionary<int, AssetDbData>();
-        return;
-      }
-
-      var assets = Utils.FindAssetsOfType( m_dataDirectory, RestoredAssetsRoot.GetType( assetType ) );
+      var assets = GetAssets( assetType );
       foreach ( var asset in assets ) {
         if ( asset is RestoredAssetsRoot )
           continue;
@@ -241,28 +255,17 @@ namespace AGXUnityEditor.IO
 
         // Re-import of previous version without root if there are assets
         // of the given type. Add root and set it as main object.
-        var existingAssets = RestoredAssetsRoot.GetType( assetType ) != null ?
-                               Utils.FindAssetsOfType( m_dataDirectory, RestoredAssetsRoot.GetType( assetType ) ) :
-                               new Object[] { };
+        var existingAssets = GetAssets( assetType );
         if ( existingAssets.Length == 0 )
           AssetDatabase.CreateAsset( root, GetAssetPath( root ) );
-        else
+        else {
           AssetDatabase.AddObjectToAsset( root,
                                           System.Array.Find( existingAssets,
                                                              asset => AssetDatabase.IsMainAsset( asset ) ) ??
                                           existingAssets[ 0 ] );
+          m_statistics.RootsAddedToExistingAssets = true;
+        }
       }
-
-      //if ( !AssetDatabase.IsMainAsset( root ) ) {
-      //  var foo = Utils.FindAssetsOfType( m_dataDirectory, RestoredAssetsRoot.GetType( assetType ) );
-      //  var mainAsset = System.Array.Find( foo, a => AssetDatabase.IsMainAsset( a ) );
-      //  if ( mainAsset != null ) {
-      //    AssetDatabase.SetMainObject( root, AssetDatabase.GetAssetPath( mainAsset ) );
-      //    Debug.Log( $"Renaming to: {root.name}" );
-      //    AssetDatabase.RenameAsset( AssetDatabase.GetAssetPath( root ), root.name );
-      //    EditorUtility.SetDirty( root );
-      //  }
-      //}
 
       return m_assetRoots[ (int)assetType ] = root;
     }
@@ -277,8 +280,7 @@ namespace AGXUnityEditor.IO
         throw new System.ArgumentNullException( "factory" );
 
       var isNewInstance = current == null;
-      // TODO: Remove extra check when we collect Unknown assets.
-      if ( current == null || !m_assets[ RestoredAssetsRoot.FindAssetTypeIndex<T>() ].ContainsKey( current.GetHashCode() ) ) {
+      if ( current == null ) {
         if ( current == null )
           current = factory();
         else
@@ -347,5 +349,6 @@ namespace AGXUnityEditor.IO
     private Dictionary<agx.Uuid, DbData> m_gameObjects = new Dictionary<agx.Uuid, DbData>( new UuidComparer() );
     private Dictionary<int, AssetDbData>[] m_assets = new Dictionary<int, AssetDbData>[ (int)RestoredAssetsRoot.ContainingType.Unknown + 1 ];
     private RestoredAssetsRoot[] m_assetRoots = new RestoredAssetsRoot[ (int)RestoredAssetsRoot.ContainingType.Unknown + 1 ];
+    private static System.Type[] s_unknownTypes = new System.Type[] { typeof( AGXUnity.SolverSettings ) };
   }
 }

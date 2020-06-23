@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using AGXUnity.Utils;
 
 namespace AGXUnityEditor.IO
 {
@@ -31,6 +32,8 @@ namespace AGXUnityEditor.IO
     public static GameObject Import( string file )
     {
       GameObject prefab = null;
+      bool renameRoots = false;
+      var dataDirectory = string.Empty;
       try {
         int iteration = 0;
         while ( ++iteration < 4 ) {
@@ -39,7 +42,10 @@ namespace AGXUnityEditor.IO
             inputFile.TryLoad();
             inputFile.TryParse();
             var statistics = inputFile.TryGenerate();
+            renameRoots = renameRoots || ( iteration == 1 && statistics.RootsAddedToExistingAssets );
             prefab = inputFile.TryCreatePrefab();
+            dataDirectory = fileInfo.DataDirectory;
+
             if ( !statistics.HasAddedOrRemoved )
               break;
           }
@@ -51,6 +57,29 @@ namespace AGXUnityEditor.IO
       }
 
       PropagateChanges( prefab );
+
+      if ( prefab != null && renameRoots && !string.IsNullOrEmpty( dataDirectory) ) {
+        Debug.Log( $"{prefab.name.Color( Color.green )}: Updating main assets and names in " +
+                   dataDirectory.Color( Color.gray ) + "." );
+        var roots = Utils.FindAssetsOfType<AGXUnity.IO.RestoredAssetsRoot>( dataDirectory );
+        foreach ( var root in roots ) {
+          var assets = ObjectDb.GetAssets( dataDirectory, root.Type );
+          var mainAsset = System.Array.Find( assets,
+                                             asset => AssetDatabase.IsMainAsset( asset ) );
+          if ( mainAsset == null )
+            continue;
+          else if ( !( mainAsset is AGXUnity.IO.RestoredAssetsRoot ) ) {
+            AssetDatabase.SetMainObject( root, AssetDatabase.GetAssetPath( mainAsset ) );
+            mainAsset = root;
+          }
+
+          AssetDatabase.RenameAsset( AssetDatabase.GetAssetPath( root ),
+                                     AGXUnity.IO.RestoredAssetsRoot.FindName( prefab.name, root.Type ) );
+        }
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
 
       return prefab;
     }
