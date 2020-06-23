@@ -148,10 +148,6 @@ namespace AGXUnityEditor.IO
       if ( m_roots.Count > 0 )
         throw new AGXUnity.Exception( "Calling InputAGXFileTree::Parse multiple times is not supported." );
 
-      // Generating assets first.
-      m_roots.Add( m_materialRoot );
-      m_roots.Add( m_contactMaterialRoot );
-
       // RigidBody nodes.
       foreach ( var nativeRb in simulation.getRigidBodies() ) {
         if ( !IsValid( nativeRb.get() ) )
@@ -233,7 +229,7 @@ namespace AGXUnityEditor.IO
         foreach ( var id in groupsCollection.getIds() )
           cableNode.AddReference( new Node() { Type = NodeType.GroupId, Object = id.ToString() } );
 
-        agxCable.CableIterator it = cable.getSegments().begin();
+        var it = cable.getSegments().begin();
         while ( !it.EqualWith( cable.getSegments().end() ) ) {
           var constraint = it.getConstraint();
           if ( constraint != null && GetConstraint( constraint.getUuid() ) != null )
@@ -274,6 +270,11 @@ namespace AGXUnityEditor.IO
       m_roots.Add( m_cableRoot );
       m_roots.Add( m_constraintRoot );
       m_roots.Add( m_observerFrameRoot );
+      // Generating assets last since we have to know the references.
+      // Materials aren't parsed, they are generated on the fly when
+      // objects references them.
+      m_roots.Add( m_materialRoot );
+      m_roots.Add( m_contactMaterialRoot );
     }
 
     private void Parse( agxCollide.Geometry geometry, Node parent )

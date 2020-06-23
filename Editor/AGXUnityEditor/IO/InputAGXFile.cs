@@ -10,14 +10,10 @@ using AGXUnity.Rendering;
 using Tree = AGXUnityEditor.IO.InputAGXFileTree;
 using Node = AGXUnityEditor.IO.InputAGXFileTreeNode;
 
-// TODO:   RestoredAGXFile tool.
-//         Constraint animation.
-//       v HeightField (partial, converts to mesh)
-
 namespace AGXUnityEditor.IO
 {
   /// <summary>
-  /// Load .agx/.aagx file to an prefab with the same name in the same directory.
+  /// Load .agx/.aagx file to a prefab with the same name in the same directory.
   /// 1. TryLoad - loading file into native simulation (restoring file)
   /// 2. TryParse - parsing simulation creating the simulation tree
   /// 3. TryGenerate - generates game objects and assets given simulation tree
@@ -47,8 +43,8 @@ namespace AGXUnityEditor.IO
     /// <param name="info">AGX file info.</param>
     public InputAGXFile( AGXFileInfo info )
     {
-      if (info == null)
-        throw new ArgumentNullException("info", "File info object is null.");
+      if ( info == null )
+        throw new ArgumentNullException( "info", "File info object is null." );
       else
         FileInfo = info;
 
@@ -94,7 +90,7 @@ namespace AGXUnityEditor.IO
     /// Trying to generate the objects given the simulation tree.
     /// Throws if something goes wrong.
     /// </summary>
-    public void TryGenerate()
+    public ObjectDb.Statistics TryGenerate()
     {
       FileInfo.GetOrCreateDataDirectory();
 
@@ -106,13 +102,12 @@ namespace AGXUnityEditor.IO
         var fileData = FileInfo.PrefabInstance.GetOrCreateComponent<AGXUnity.IO.RestoredAGXFile>();
 
         fileData.DataDirectoryId = FileInfo.DataDirectoryId;
-
-        fileData.SolverSettings = ScriptAsset.Create<SolverSettings>().RestoreLocalDataFrom( Simulation );
-        fileData.SolverSettings.name = FindName( "SolverSettings_" + FileInfo.Name, "SolverSettings" );
-        fileData.SolverSettings = FileInfo.AddOrUpdateExistingAsset( fileData.SolverSettings, AGXUnity.IO.AssetType.Unknown );
+        fileData.SolverSettings  = FileInfo.ObjectDb.GetOrCreateAsset( fileData.SolverSettings,
+                                                                       FindName( "SolverSettings_" + FileInfo.Name, "SolverSettings" ),
+                                                                       ss => ss.RestoreLocalDataFrom( Simulation ) );
 
         foreach ( var root in m_tree.Roots ) {
-          subProgress.Tick( root.Name == string.Empty ? root.Type.ToString() : root.Name );
+          subProgress.Tick( $"Generating: {(string.IsNullOrEmpty( root.Name ) ? root.Type.ToString().SplitCamelCase() : root.Name)}" );
           Generate( root );
           subProgress.Tack();
         }
@@ -146,17 +141,7 @@ namespace AGXUnityEditor.IO
         subProgress.Tack();
       }
 
-      // If this is a re-import, remove any game object that hasn't been
-      // referenced, i.e., UuidObjectDb.GetOrCreateGameObject hasn't been
-      // called with the UUID of this game object. This doesn't affect game
-      // objects created in the prefab editor since these objects doesn't
-      // have an UUID component, still, other components added to this game
-      // object will be removed as well.
-      var unreferencedGameObjects = FileInfo.ObjectDb.GetUnreferencedGameObjects();
-      foreach ( var unreferencedGameObject in unreferencedGameObjects ) {
-        UnityEngine.Object.DestroyImmediate( unreferencedGameObject, true );
-        EditorUtility.SetDirty( FileInfo.PrefabInstance );
-      }
+      return FileInfo.ObjectDb.RemoveUnreferencedObjects( FileInfo.PrefabInstance );
     }
 
     /// <summary>
@@ -164,7 +149,7 @@ namespace AGXUnityEditor.IO
     /// Throws if something goes wrong.
     /// </summary>
     /// <returns>Prefab parent.</returns>
-    public UnityEngine.Object TryCreatePrefab()
+    public GameObject TryCreatePrefab()
     {
       using ( m_progressBar.Progress( "Creating prefab and saving assets.", 1 ) ) {
         var prefab = FileInfo.SavePrefab();
@@ -200,8 +185,6 @@ namespace AGXUnityEditor.IO
     {
       if ( node == null )
         return;
-
-      // TODO: Skip if node.GameObject != null means "use Unity configuration".
 
       switch ( node.Type ) {
         case Node.NodeType.Assembly:
@@ -250,44 +233,56 @@ namespace AGXUnityEditor.IO
 
           break;
         case Node.NodeType.Material:
-          var nativeMaterial = m_tree.GetMaterial( node.Uuid );
-          node.Asset         = ScriptAsset.Create<ShapeMaterial>().RestoreLocalDataFrom( nativeMaterial );
-          node.Asset.name    = FindName( nativeMaterial.getName(), node.Type.ToString() );
-
-          node.Asset = FileInfo.AddOrUpdateExistingAsset( node.Asset as ShapeMaterial, AGXUnity.IO.AssetType.ShapeMaterial );
-
+          // Ignoring materials - the referenced materials should have been restored
+          // by now using RestoreShapeMaterial.
           break;
         case Node.NodeType.ContactMaterial:
+          var materialNodes = node.GetReferences( Node.NodeType.Material );
+          Func<string> contactMaterialMaterialNames = () =>
+          {
+            return m_tree.GetMaterial( materialNodes[ 0 ].Uuid ).getName() + " <-> " +
+                   m_tree.GetMaterial( materialNodes[ 1 ].Uuid ).getName();
+          };
+          if ( materialNodes.Length == 0 ) {
+            Debug.LogWarning( "No materials referenced to ContactMaterial node - ignoring contact material." );
+            break;
+          }
+          else if ( materialNodes.Length > 2 ) {
+            Debug.LogWarning( "More than two materials referenced to contact material - first two will be used: " +
+                              contactMaterialMaterialNames() );
+          }
+
+          var materials = new ShapeMaterial[ 2 ]
+          {
+            materialNodes[ 0 ].Asset as ShapeMaterial,
+            materialNodes.Length > 1 ?
+              materialNodes[ 1 ].Asset as ShapeMaterial :
+              materialNodes[ 0 ].Asset as ShapeMaterial
+          };
+
           var nativeContactMaterial = m_tree.GetContactMaterial( node.Uuid );
-          var nativeFrictionModel   = nativeContactMaterial.getFrictionModel();
-
-          var contactMaterial  = ScriptAsset.Create<ContactMaterial>().RestoreLocalDataFrom( nativeContactMaterial );
-          contactMaterial.name = FindName( "ContactMaterial_" +
-                                           nativeContactMaterial.getMaterial1().getName() +
-                                           "_" +
-                                           nativeContactMaterial.getMaterial2().getName(),
-                                           node.Type.ToString() );
-
-          var materials = node.GetReferences( Node.NodeType.Material );
-          if ( materials.Length == 0 )
-            Debug.LogWarning( "No materials referenced to ContactMaterial node." );
-          else if ( materials.Length == 1 )
-            contactMaterial.Material1 = contactMaterial.Material2 = materials[ 0 ].Asset as ShapeMaterial;
-          else if ( materials.Length > 1 ) {
-            contactMaterial.Material1 = materials[ 0 ].Asset as ShapeMaterial;
-            contactMaterial.Material2 = materials[ 1 ].Asset as ShapeMaterial;
-            if ( materials.Length > 2 )
-              Debug.LogWarning( "More than two materials referenced to ContactMaterial (" + node.Asset.name + "). First two are used." );
+          var nativeFrictionModel = nativeContactMaterial.getFrictionModel();
+          if ( materials[ 0 ] == null || materials[ 1 ] == null ) {
+            Debug.LogWarning( $"Unreferenced ShapeMaterial(s) in ContactMaterial: {contactMaterialMaterialNames()} - ignoring contact material." );
+            break;
           }
+          Predicate<ContactMaterial> materialsMatcher = cm => ( cm.Material1 == materials[ 0 ] && cm.Material2 == materials[ 1 ] ) ||
+                                                              ( cm.Material2 == materials[ 0 ] && cm.Material1 == materials[ 1 ] );
+          var contactMaterial = FileInfo.ObjectDb.GetOrCreateAsset( materialsMatcher,
+                                                                    FindName( $"ContactMaterial_{materials[ 0 ].name}_{materials[ 1 ].name}",
+                                                                              node.Type.ToString() ),
+                                                                    cm =>
+                                                                    {
+                                                                      cm.Material1 = materials[ 0 ];
+                                                                      cm.Material2 = materials[ 1 ];
+                                                                      cm.RestoreLocalDataFrom( nativeContactMaterial );
+                                                                    } );
+          if ( nativeFrictionModel != null )
+            contactMaterial.FrictionModel = FileInfo.ObjectDb.GetOrCreateAsset( contactMaterial.FrictionModel,
+                                                                                $"FrictionModel_{contactMaterial.name}",
+                                                                                fm => fm.RestoreLocalDataFrom( nativeFrictionModel ) );
 
-          if ( nativeFrictionModel != null ) {
-            var frictionModelAsset        = ScriptAsset.Create<FrictionModel>().RestoreLocalDataFrom( nativeFrictionModel );
-            frictionModelAsset.name       = "FrictionModel_" + contactMaterial.name;
-            contactMaterial.FrictionModel = frictionModelAsset = FileInfo.AddOrUpdateExistingAsset( frictionModelAsset,
-                                                                                                    AGXUnity.IO.AssetType.FrictionModel );
-          }
-
-          node.Asset = contactMaterial = FileInfo.AddOrUpdateExistingAsset( contactMaterial, AGXUnity.IO.AssetType.ContactMaterial );
+          node.Asset = contactMaterial;
 
           break;
         case Node.NodeType.Constraint:
@@ -382,25 +377,25 @@ namespace AGXUnityEditor.IO
         cylinder.Height = Convert.ToSingle( nativeShape.asCylinder().getHeight() );
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
-        var hollowCylinder    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCylinder>();
+        var hollowCylinder       = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCylinder>();
         hollowCylinder.Thickness = Convert.ToSingle( nativeShape.asHollowCylinder().getThickness() );
-        hollowCylinder.Radius = Convert.ToSingle( nativeShape.asHollowCylinder().getOuterRadius() );
-        hollowCylinder.Height = Convert.ToSingle( nativeShape.asHollowCylinder().getHeight() );
+        hollowCylinder.Radius    = Convert.ToSingle( nativeShape.asHollowCylinder().getOuterRadius() );
+        hollowCylinder.Height    = Convert.ToSingle( nativeShape.asHollowCylinder().getHeight() );
       }
       else if (nativeShapeType == agxCollide.Shape.Type.CONE)
       {
-        var cone = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Cone>();
+        var cone          = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Cone>();
         cone.BottomRadius = Convert.ToSingle(nativeShape.asCone().getBottomRadius());
-        cone.TopRadius = Convert.ToSingle(nativeShape.asCone().getTopRadius());
-        cone.Height = Convert.ToSingle(nativeShape.asCone().getHeight());
+        cone.TopRadius    = Convert.ToSingle(nativeShape.asCone().getTopRadius());
+        cone.Height       = Convert.ToSingle(nativeShape.asCone().getHeight());
       }
       else if (nativeShapeType == agxCollide.Shape.Type.HOLLOW_CONE)
       {
-        var hollowCone = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCone>();
-        hollowCone.Thickness = Convert.ToSingle(nativeShape.asHollowCone().getThickness());
+        var hollowCone          = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCone>();
+        hollowCone.Thickness    = Convert.ToSingle(nativeShape.asHollowCone().getThickness());
         hollowCone.BottomRadius = Convert.ToSingle(nativeShape.asHollowCone().getBottomOuterRadius());
-        hollowCone.TopRadius = Convert.ToSingle(nativeShape.asHollowCone().getTopOuterRadius());
-        hollowCone.Height = Convert.ToSingle(nativeShape.asHollowCone().getHeight());
+        hollowCone.TopRadius    = Convert.ToSingle(nativeShape.asHollowCone().getTopOuterRadius());
+        hollowCone.Height       = Convert.ToSingle(nativeShape.asHollowCone().getHeight());
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CAPSULE ) {
         var capsule    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Capsule>();
@@ -419,45 +414,23 @@ namespace AGXUnityEditor.IO
         var nativeToWorld = nativeShape.getTransform();
         var meshToLocal   = mesh.transform.worldToLocalMatrix;
 
-        if ( collisionData.getVertices().Count > UInt16.MaxValue ) {
-          var nativeVertices = collisionData.getVertices();
-          var nativeIndicies = collisionData.getIndices();
-          var splitter       = MeshSplitter.Split( nativeVertices,
-                                                   nativeIndicies,
-                                                   v =>
-                                                     meshToLocal.MultiplyPoint3x4( nativeToWorld.preMult( v ).ToHandedVector3() ) );
-          var subMeshes      = splitter.Meshes;
-          for ( int i = 0; i < subMeshes.Length; ++i ) {
-            subMeshes[ i ].name = "Mesh_" + mesh.name + ( i == 0 ? "" : "_Sub_" + i.ToString() );
-            mesh.AddSourceObject( FileInfo.AddOrUpdateExistingAsset( subMeshes[ i ], AGXUnity.IO.AssetType.CollisionMesh ) );
-          }
-        }
-        else {
-          var source = new Mesh();
-          source.name = "Mesh_" + mesh.name;
+        var sourceObjects = mesh.SourceObjects;
+        var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+                                                collisionData.getIndices(),
+                                                v => meshToLocal.MultiplyPoint3x4( nativeToWorld.preMult( v ).ToHandedVector3() ),
+                                                UInt16.MaxValue ).Meshes;
 
-          source.SetVertices( ( from v
-                                in collisionData.getVertices()
-                                select meshToLocal.MultiplyPoint3x4( nativeToWorld.preMult( v ).ToHandedVector3() ) ).ToList() );
-
-          // Converting counter clockwise -> clockwise.
-          var triangles      = new List<int>();
-          var indexArray     = collisionData.getIndices();
-          triangles.Capacity = indexArray.Count;
-          for ( int i = 0; i < indexArray.Count; i += 3 ) {
-            triangles.Add( Convert.ToInt32( indexArray[ i + 0 ] ) );
-            triangles.Add( Convert.ToInt32( indexArray[ i + 2 ] ) );
-            triangles.Add( Convert.ToInt32( indexArray[ i + 1 ] ) );
-          }
-          source.SetTriangles( triangles, 0, false );
-
-          source.RecalculateBounds();
-          source.RecalculateNormals();
-          source.RecalculateTangents();
-
-          source = FileInfo.AddOrUpdateExistingAsset( source, AGXUnity.IO.AssetType.CollisionMesh );
-
-          mesh.SetSourceObject( source );
+        // Clearing previous sources.
+        mesh.SetSourceObject( null );
+        for ( int i = 0; i < meshes.Length; ++i ) {
+          var source = FileInfo.ObjectDb.GetOrCreateAsset( i < sourceObjects.Length ? sourceObjects[ i ] : null,
+                                                           $"Mesh_{mesh.name}{(meshes.Length > 1 ? $"_{i}" : "")}",
+                                                           m =>
+                                                           {
+                                                             m.Clear();
+                                                             EditorUtility.CopySerialized( meshes[ i ], m );
+                                                           } );
+          mesh.AddSourceObject( source );
         }
       }
       else {
@@ -470,12 +443,7 @@ namespace AGXUnityEditor.IO
       shape.gameObject.SetActive( nativeGeometry.isEnabled() );
       shape.IsSensor = nativeGeometry.isSensor();
 
-      if ( nativeGeometry.getMaterial() != null ) {
-        var shapeMaterial = m_tree.GetNode( nativeGeometry.getMaterial().getUuid() ).Asset as ShapeMaterial;
-        if ( shapeMaterial == null )
-          Debug.LogWarning( "Shape material from geometry: " + nativeGeometry.getName() + " isn't found in UUID database." );
-        shape.Material = shapeMaterial;
-      }
+      shape.Material = RestoreShapeMaterial( shape.Material, nativeGeometry.getMaterial() );
 
       shape.CollisionsEnabled = nativeGeometry.getEnableCollisions();
 
@@ -488,108 +456,117 @@ namespace AGXUnityEditor.IO
             groupsComponent.AddGroup( group.Object as string, false );
       }
 
-      CreateRenderData( node );
+      CreateRenderData( node, shape );
 
       return true;
     }
 
-    private bool CreateRenderData( Node node )
+    private bool CreateRenderData( Node node, AGXUnity.Collide.Shape shape )
     {
-      var nativeShape = m_tree.GetShape( node.Uuid );
-      var renderData  = nativeShape.getRenderData();
-      if ( renderData == null || !renderData.getShouldRender() )
+      if ( shape == null )
         return false;
 
+      var nativeShape      = m_tree.GetShape( node.Uuid );
+      var nativeRenderData = nativeShape.getRenderData();
+      var shapeVisual      = ShapeVisual.Find( shape );
+      if ( nativeRenderData == null || !nativeRenderData.getShouldRender() ) {
+        if ( shapeVisual != null ) {
+          UnityEngine.Object.DestroyImmediate( shapeVisual.gameObject );
+          EditorUtility.SetDirty( FileInfo.PrefabInstance );
+        }
+        return false;
+      }
+
+      var currentMeshes = shapeVisual == null ?
+                            new Mesh[] {} :
+                            ( from proxy in shapeVisual.GetComponentsInChildren<OnSelectionProxy>()
+                              where proxy.Component == shape &&
+                                    proxy.GetComponent<MeshFilter>() != null &&
+                                    proxy.GetComponent<MeshFilter>().sharedMesh != null
+                              select proxy.GetComponent<MeshFilter>().sharedMesh ).ToArray();
+      var currentMaterials = shapeVisual == null ?
+                               new Material[] { } :
+                               ( from proxy in shapeVisual.GetComponentsInChildren<OnSelectionProxy>()
+                                 where proxy.Component == shape &&
+                                       proxy.GetComponent<MeshRenderer>() != null &&
+                                       proxy.GetComponent<MeshRenderer>().sharedMaterial != null
+                                 select proxy.GetComponent<MeshRenderer>().sharedMaterial ).ToArray();
+
       var nativeGeometry = m_tree.GetGeometry( node.Parent.Uuid );
-      var shape          = node.GameObject.GetComponent<AGXUnity.Collide.Shape>();
+      var toWorld        = nativeGeometry.getTransform();
+      var toLocal        = shape.transform.worldToLocalMatrix;
+      Mesh[] meshes      = MeshSplitter.Split( nativeRenderData.getVertexArray(),
+                                               nativeRenderData.getIndexArray(),
+                                               nativeRenderData.getTexCoordArray(),
+                                               v => toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) ).Meshes;
 
-      var toWorld  = nativeGeometry.getTransform();
-      var toLocal  = shape.transform.worldToLocalMatrix;
+      // Initial import with currentMeshes.Length == 0 and shape mesh source
+      // matches render data - use shape mesh sources instead.
+      if ( shape is AGXUnity.Collide.Mesh &&
+           currentMeshes.Length == 0 &&
+           meshes.Length == ( shape as AGXUnity.Collide.Mesh ).SourceObjects.Length ) {
+        var shapeMesh = shape as AGXUnity.Collide.Mesh;
+        var matching = true;
+        for ( int i = 0; matching && i < meshes.Length; ++i ) {
+          matching = meshes[ i ].vertexCount == shapeMesh.SourceObjects[ i ].vertexCount;
+          if ( !matching )
+            continue;
+          var v1 = meshes[ i ].vertices;
+          var v2 = shapeMesh.SourceObjects[ i ].vertices;
+          for ( int j = 0; matching && j < v1.Length; ++j )
+            matching = AGXUnity.Utils.Math.Approximately( v1[ j ], v2[ j ], 1.0E-5f );
+        }
+        if ( matching ) {
+          currentMeshes = new Mesh[ meshes.Length ];
+          for ( int i = 0; i < meshes.Length; ++i ) {
+            shapeMesh.SourceObjects[ i ].SetUVs( 0, meshes[ i ].uv );
+            currentMeshes[ i ] = meshes[ i ] = shapeMesh.SourceObjects[ i ];
+          }
+        }
+      }
 
-      var meshes = new Mesh[] { };
-      if ( renderData.getVertexArray().Count > UInt16.MaxValue ) {
-        Debug.LogWarning( "Render data contains more than " +
-                          UInt16.MaxValue +
-                          " vertices. Splitting it into smaller meshes." );
-
-        var splitter = MeshSplitter.Split( renderData.getVertexArray(),
-                                           renderData.getIndexArray(),
-                                           v => toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) );
-        meshes = splitter.Meshes;
-        for ( int i = 0; i < meshes.Length; ++i )
-          meshes[ i ].name = shape.name + "_Visual_Mesh_" + i.ToString();
+      // No structural changes from previous read visuals.
+      if ( shapeVisual != null &&
+           currentMeshes.Length == meshes.Length &&
+           currentMaterials.Length == meshes.Length ) {
+        for ( int i = 0; i < meshes.Length; ++i ) {
+          // Meshes and materials are already referenced so we don't have to
+          // assign them again to the ShapeVisuals.
+          FileInfo.ObjectDb.GetOrCreateAsset( currentMeshes[ i ],
+                                              $"{shape.name}_Visual_Mesh_{i}",
+                                              m =>
+                                              {
+                                                m.Clear();
+                                                EditorUtility.CopySerialized( meshes[ i ], m );
+                                              } );
+          RestoreRenderMaterial( currentMaterials[ i ],
+                                 $"{shape.name}_Visual_Material",
+                                 nativeRenderData.getRenderMaterial() );
+          EditorUtility.SetDirty( shapeVisual );
+        }
       }
       else {
-        var mesh     = new Mesh();
-        mesh.name    = shape.name + "_Visual_Mesh";
-
-        // Assigning and converting vertices.
-        // Note: RenderData vertices assumed to be given in geometry coordinates.
-        mesh.SetVertices( ( from v
-                            in renderData.getVertexArray()
-                            select toLocal.MultiplyPoint3x4( toWorld.preMult( v ).ToHandedVector3() ) ).ToList() );
-
-        // Assigning and converting colors.
-        mesh.SetColors( ( from c
-                          in renderData.getColorArray()
-                          select c.ToColor() ).ToList() );
-
-        // Unsure about this one.
-        mesh.SetUVs( 0,
-                      ( from uv
-                        in renderData.getTexCoordArray()
-                        select uv.ToVector2() ).ToList() );
-
-        // Converting counter clockwise -> clockwise.
-        var triangles = new List<int>();
-        var indexArray = renderData.getIndexArray();
-        for ( int i = 0; i < indexArray.Count; i += 3 ) {
-          triangles.Add( Convert.ToInt32( indexArray[ i + 0 ] ) );
-          triangles.Add( Convert.ToInt32( indexArray[ i + 2 ] ) );
-          triangles.Add( Convert.ToInt32( indexArray[ i + 1 ] ) );
+        if ( shapeVisual != null ) {
+          UnityEngine.Object.DestroyImmediate( shapeVisual.gameObject, true );
+          EditorUtility.SetDirty( FileInfo.PrefabInstance );
+          shapeVisual = null;
         }
-        mesh.SetTriangles( triangles, 0, false );
 
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
+        var material = RestoreRenderMaterial( currentMaterials.Length > 0 ? currentMaterials[ 0 ] : null,
+                                              $"{shape.name}_Visual_Material",
+                                              nativeRenderData.getRenderMaterial() );
+        for ( int i = 0; i < meshes.Length; ++i ) {
+          meshes[ i ] = FileInfo.ObjectDb.GetOrCreateAsset( i < currentMeshes.Length ? currentMeshes[ i ] : null,
+                                                            $"{shape.name}_Visual_Mesh_{i}",
+                                                            m =>
+                                                            {
+                                                              m.Clear();
+                                                              EditorUtility.CopySerialized( meshes[ i ], m );
+                                                            } );
+        }
 
-        meshes = new Mesh[] { mesh };
-      }
-
-      var shader = Shader.Find( "Standard" ) ?? Shader.Find( "Diffuse" );
-      if ( shader == null )
-        Debug.LogError( "Unable to find standard shaders." );
-
-      var renderMaterial = renderData.getRenderMaterial();
-      var material       = new Material( shader );
-      material.name      = shape.name + "_Visual_Material";
-
-      if ( renderMaterial.hasDiffuseColor() ) {
-        var color = renderMaterial.getDiffuseColor().ToColor();
-        color.a = 1.0f - renderMaterial.getTransparency();
-
-        material.SetVector( "_Color", color );
-      }
-      if ( renderMaterial.hasEmissiveColor() )
-        material.SetVector( "_EmissionColor", renderMaterial.getEmissiveColor().ToColor() );
-
-      material.SetFloat( "_Metallic", 0.3f );
-      material.SetFloat( "_Glossiness", 0.8f );
-
-      if ( renderMaterial.getTransparency() > 0.0f )
-        material.SetBlendMode( BlendMode.Transparent );
-
-      material = FileInfo.AddOrUpdateExistingAsset( material, AGXUnity.IO.AssetType.Material );
-      foreach ( var mesh in meshes )
-        FileInfo.AddOrUpdateExistingAsset( mesh, AGXUnity.IO.AssetType.RenderMesh );
-
-      var shapeVisual = ShapeVisual.Find( shape );
-      if ( shapeVisual != null ) {
-        // Verify so that the meshes matches the current configuration?
-      }
-      else
         ShapeVisual.CreateRenderData( shape, meshes, material );
+      }
 
       return true;
     }
@@ -769,9 +746,7 @@ namespace AGXUnityEditor.IO
       else if ( nativeIt.prev().get().getNodeType() != agxWire.WireNode.Type.CONNECTING && nativeWire.getLastNode().getNodeType() == agxWire.WireNode.Type.BODY_FIXED )
         route.Add( nativeWire.getLastNode(), findRigidBody( nativeWire.getLastNode().getRigidBody() ) );
 
-      var materials = node.GetReferences( Node.NodeType.Material );
-      if ( materials.Length > 0 )
-        wire.Material = materials[ 0 ].Asset as ShapeMaterial;
+      wire.Material = RestoreShapeMaterial( wire.Material, nativeWire.getMaterial() );
 
       wire.GetComponent<WireRenderer>().InitializeRenderer();
       // Reset to assign default material.
@@ -807,10 +782,10 @@ namespace AGXUnityEditor.IO
       cable.RestoreLocalDataFrom( nativeCable );
       cable.RouteAlgorithm = Cable.RouteType.Identity;
 
-      var properties = CableProperties.Create<CableProperties>().RestoreLocalDataFrom( nativeCable.getCableProperties(),
-                                                                                       nativeCable.getCablePlasticity() );
-      properties.name  = cable.name + "_properties";
-      cable.Properties = properties = FileInfo.AddOrUpdateExistingAsset( properties, AGXUnity.IO.AssetType.CableProperties );
+      cable.Properties = FileInfo.ObjectDb.GetOrCreateAsset( cable.Properties,
+                                                             $"{cable.name}_properties",
+                                                             p => p.RestoreLocalDataFrom( nativeCable.getCableProperties(),
+                                                                                          nativeCable.getCablePlasticity() ) );
 
       for ( var it = nativeCable.getSegments().begin(); !it.EqualWith( nativeCable.getSegments().end() ); it.inc() ) {
         var segment = it.get();
@@ -827,9 +802,7 @@ namespace AGXUnityEditor.IO
                             } );
       }
 
-      var materials = node.GetReferences( Node.NodeType.Material );
-      if ( materials.Length > 0 )
-        cable.Material = materials[ 0 ].Asset as ShapeMaterial;
+      cable.Material = RestoreShapeMaterial( cable.Material, nativeCable.getMaterial() );
 
       cable.GetComponent<CableRenderer>().InitializeRenderer();
       cable.GetComponent<CableRenderer>().Material = null;
@@ -845,6 +818,60 @@ namespace AGXUnityEditor.IO
           collisionGroups.AddGroup( group.Object as string, false );
 
       return true;
+    }
+
+    private ShapeMaterial RestoreShapeMaterial( ShapeMaterial currentShapeMaterial, agx.Material material )
+    {
+      if ( material == null )
+        return null;
+
+      var materialNode = m_tree.GetNode( material.getUuid() );
+      // If another shape material has been assigned to the object it's
+      // possible to detect that here, e.g.;
+      //     materialNode.Asset != null &&
+      //     currentShapeMaterial != null &&
+      //     materialNode.Assset != currentShapeMaterial
+      // For now we're taking the node's asset because the material UUID
+      // references the object we're currently processing.
+      var refMaterial = materialNode.Asset != null ?
+                          materialNode.Asset as ShapeMaterial :
+                          currentShapeMaterial;
+      return FileInfo.ObjectDb.GetOrCreateAsset( refMaterial,
+                                                 FindName( material.getName(),
+                                                           materialNode.Type.ToString() ),
+                                                           m =>
+                                                           {
+                                                             m.RestoreLocalDataFrom( material );
+                                                             materialNode.Asset = m;
+                                                           } );
+    }
+
+    private static void RestoreLocalDataFrom( Material thisMaterial, agxCollide.RenderMaterial nativeMaterial )
+    {
+      if ( nativeMaterial.hasDiffuseColor() ) {
+        var color = nativeMaterial.getDiffuseColor().ToColor();
+        color.a = 1.0f - nativeMaterial.getTransparency();
+
+        thisMaterial.SetVector( "_Color", color );
+      }
+      if ( nativeMaterial.hasEmissiveColor() )
+        thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
+
+      thisMaterial.SetFloat( "_Metallic", 0.3f );
+      thisMaterial.SetFloat( "_Glossiness", 0.8f );
+
+      if ( nativeMaterial.getTransparency() > 0.0f )
+        thisMaterial.SetBlendMode( BlendMode.Transparent );
+    }
+
+    private Material RestoreRenderMaterial( Material material,
+                                            string name,
+                                            agxCollide.RenderMaterial nativeMaterial )
+    {
+      return FileInfo.ObjectDb.GetOrCreateAsset( material,
+                                                 Shader.Find( "Standard" ) ?? Shader.Find( "Diffuse" ),
+                                                 name,
+                                                 m => RestoreLocalDataFrom( m, nativeMaterial ) );
     }
 
     private string FindName( string name, string typeName )
