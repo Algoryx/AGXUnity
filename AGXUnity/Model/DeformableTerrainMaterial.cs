@@ -867,7 +867,8 @@ namespace AGXUnity.Model
     /// </summary>
     public void ResetToPresetDefault()
     {
-      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( ToNative( Preset ) );
+      m_temporaryNative = new agxTerrain.TerrainMaterial();
+      agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( ToNative( Preset ), m_temporaryNative );
       Utils.PropertySynchronizer.SynchronizeGetToSet( this );
       m_temporaryNative.Dispose();
       m_temporaryNative = null;
@@ -890,9 +891,9 @@ namespace AGXUnity.Model
       return true;
     }
 
-    private agxTerrain.TerrainMaterialLibrary.MaterialPreset ToNative( PresetLibrary preset )
+    private string ToNative( PresetLibrary preset )
     {
-      return (agxTerrain.TerrainMaterialLibrary.MaterialPreset)(int)preset;
+      return preset.ToString();
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;
