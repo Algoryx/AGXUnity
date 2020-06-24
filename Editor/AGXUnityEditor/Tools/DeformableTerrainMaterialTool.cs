@@ -27,7 +27,7 @@ namespace AGXUnityEditor.Tools
       using ( new InspectorGUI.IndentScope( ( InspectorGUI.IndentScope.Level > 0 ? -1 : 0 ) ) ) {
         var resetButtonWidth = EditorGUIUtility.singleLineHeight;
         var rect             = EditorGUILayout.GetControlRect();
-        rect.width          -= resetButtonWidth;
+        var totalRectWidth   = rect.width;
 
         var availablePresets = DeformableTerrainMaterial.GetAvailablePresets().ToArray();
         var presetIndex      = FindPresetIndex( availablePresets,
@@ -36,6 +36,12 @@ namespace AGXUnityEditor.Tools
         EditorGUI.showMixedValue = mixedPreset || invalidPreset;
         if ( invalidPreset )
           InspectorGUI.WarningLabel( $"Material preset name {refMaterial.PresetName} doesn't exist in the material presets library." );
+
+        rect.width = EditorGUIUtility.labelWidth;
+        EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Preset" ), InspectorEditor.Skin.Label );
+
+        rect.x    += rect.width;
+        rect.width = totalRectWidth - EditorGUIUtility.labelWidth - resetButtonWidth;
         EditorGUI.BeginChangeCheck();
         var newPresetIndex = EditorGUI.Popup( rect, Mathf.Max( presetIndex, 0 ), availablePresets, InspectorEditor.Skin.Popup );
         if ( EditorGUI.EndChangeCheck() && invalidPreset )
