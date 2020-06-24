@@ -69,14 +69,22 @@ namespace AGXUnityEditor.Windows
                                                    m_currentVersion.VersionStringShort :
                                                    "git checkout",
                                                  Color.white ) );
-      EditorGUILayout.LabelField( GUI.MakeLabel( "Latest version" ),
-                                  GUI.MakeLabel( m_serverVersion.IsValid ?
-                                                   m_serverVersion.VersionStringShort :
-                                                   "...",
-                                                 m_serverVersion.IsValid && m_serverVersion > m_currentVersion ?
-                                                   Color.Lerp( Color.green, Color.black, 0.35f ) :
-                                                   Color.white ),
-                                  InspectorEditor.Skin.Label );
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        var newVersionAvailable = m_serverVersion.IsValid && m_serverVersion > m_currentVersion;
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Latest version" ),
+                                    GUI.MakeLabel( m_serverVersion.IsValid ?
+                                                     m_serverVersion.VersionStringShort :
+                                                     "...",
+                                                   newVersionAvailable ?
+                                                     Color.Lerp( Color.green, Color.black, 0.35f ) :
+                                                     Color.white ),
+                                    InspectorEditor.Skin.Label );
+        GUILayout.FlexibleSpace();
+        if ( newVersionAvailable && InspectorGUI.Link( GUI.MakeLabel( "Changelog" ) ) )
+          Application.OpenURL( TopMenu.AGXUnityChangelogURL );
+        else if ( !newVersionAvailable )
+          GUILayout.Label( "", InspectorEditor.Skin.Label );
+      }
 
       InspectorGUI.Separator( 1, 4 );
 
