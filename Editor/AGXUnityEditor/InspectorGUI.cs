@@ -406,12 +406,18 @@ namespace AGXUnityEditor
       if ( editor == null )
         return;
 
+      // Mesh inspector with interactive preview.
+      if ( editor.GetType().FullName == "UnityEditor.ModelInspector" ) {
+        editor.DrawPreview( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false,
+                                                                                    120.0f ) ) );
+        return;
+      }
+
       using ( IndentScope.Single ) {
         if ( editor is MaterialEditor )
           HandleMaterialEditorGUI( editor as MaterialEditor );
-        else {
+        else
           editor.OnInspectorGUI();
-        }
       }
     }
 
@@ -425,6 +431,60 @@ namespace AGXUnityEditor
         editor.DrawHeader();
         editor.OnInspectorGUI();
       }
+    }
+
+    public static string ToggleSaveFile( GUIContent label,
+                                         bool enabled,
+                                         Action<bool> enabledResult,
+                                         string currentEntry,
+                                         string defaultFilename,
+                                         string fileExtensionWithoutDot,
+                                         string saveFilePanelTitle,
+                                         Predicate<string> fileExtensionValidator )
+    {
+      var saveInitialToggleWidth             = 18.0f;
+      var saveInitialSaveFilePanelButtonWith = 28.0f;
+
+      var saveInitialRect     = EditorGUILayout.GetControlRect();
+      var saveInitialOrgWidth = saveInitialRect.width;
+      saveInitialRect.width   = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( saveInitialRect, label );
+
+      saveInitialRect.x    += EditorGUIUtility.labelWidth;
+      saveInitialRect.width = saveInitialToggleWidth;
+      enabled               = EditorGUI.Toggle( saveInitialRect,
+                                                enabled );
+      enabledResult( enabled );
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        saveInitialRect.x    += saveInitialToggleWidth;
+        saveInitialRect.width = saveInitialOrgWidth -
+                                EditorGUIUtility.labelWidth -
+                                saveInitialToggleWidth -
+                                saveInitialSaveFilePanelButtonWith;
+        currentEntry = EditorGUI.TextField( saveInitialRect,
+                                            currentEntry,
+                                            InspectorEditor.Skin.TextField );
+        saveInitialRect.x    += saveInitialRect.width;
+        saveInitialRect.width = saveInitialSaveFilePanelButtonWith;
+        if ( UnityEngine.GUI.Button( saveInitialRect,
+                                     GUI.MakeLabel( "..." ),
+                                     InspectorEditor.Skin.ButtonMiddle ) ) {
+          string result = EditorUtility.SaveFilePanel( saveFilePanelTitle,
+                                                       currentEntry,
+                                                       defaultFilename,
+                                                       fileExtensionWithoutDot );
+          if ( result != string.Empty ) {
+            var fileInfo = new System.IO.FileInfo( result );
+            if ( fileExtensionValidator( fileInfo.Extension ) )
+              currentEntry = result;
+            else
+              Debug.Log( "Unknown file extension: " + fileInfo.Extension );
+          }
+        }
+      }
+
+      return currentEntry;
     }
 
     public struct ToolButtonData
@@ -608,7 +668,7 @@ namespace AGXUnityEditor
 
           if ( addButtonPressed ) {
             var sceneItems = isAsset ?
-                               IO.Utils.FindAssetsOfType<T>() :
+                               IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                Object.FindObjectsOfType<T>();
             var addItemMenu = new GenericMenu();
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );

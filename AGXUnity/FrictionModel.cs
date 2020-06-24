@@ -270,6 +270,12 @@ namespace AGXUnity
       SolveType = Convert( native.getSolveType() );
       Type      = FindType( native );
 
+      // TODO: How do we handle oriented when restoring from file?
+      if ( Type == EType.ConstantNormalForceBoxFriction ) {
+        NormalForceMagnitude = System.Convert.ToSingle( native.asConstantNormalForceOrientedBoxFrictionModel().getNormalForceMagnitude() );
+        ScaleNormalForceWithDepth = native.asConstantNormalForceOrientedBoxFrictionModel().getEnableScaleWithDepth();
+      }
+
       return this;
     }
 

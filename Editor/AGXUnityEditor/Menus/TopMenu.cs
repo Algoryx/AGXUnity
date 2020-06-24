@@ -14,6 +14,7 @@ namespace AGXUnityEditor
     public static readonly string AGXDynamicsForUnityExamplesURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/examples.html";
     public static readonly string AGXUserManualURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/UserManual/source/";
     public static readonly string AGXAPIReferenceURL = "https://www.algoryx.se/documentation/complete/agx/tags/latest/";
+    public static readonly string AGXUnityChangelogURL = "https://us.download.algoryx.se/AGXUnity/documentation/current/changelog.html";
 
     #region Shapes
     private static GameObject CreateShape<T>( MenuCommand command )

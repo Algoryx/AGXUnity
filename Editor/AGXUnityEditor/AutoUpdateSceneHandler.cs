@@ -21,6 +21,7 @@ namespace AGXUnityEditor
       VerifyShapeVisualsMaterial( scene );
       VerifySimulationInstance( scene );
       VerifyCableWireRendering( scene );
+      VerifyTerrainMaterials();
     }
 
     /// <summary>
@@ -267,6 +268,42 @@ namespace AGXUnityEditor
         GameObject.DestroyImmediate( obj, true );
 
       return true;
+    }
+
+    private enum LegacyDeformableTerrainMaterialPreset
+    {
+      gravel_1,
+      sand_1,
+      dirt_1
+    }
+
+    /// <summary>
+    /// Updating from MaterialPreset enum to named + MaterialsLibrary directory.
+    /// </summary>
+    private static void VerifyTerrainMaterials()
+    {
+      if ( EditorData.Instance.GetStaticData( "DeformableTerrainMaterial_PresetName_Update" ).Bool )
+        return;
+
+      var terrainMaterials = IO.Utils.FindAssetsOfType<AGXUnity.Model.DeformableTerrainMaterial>( "Assets" );
+      var terrainMaterialUpdated = false;
+      foreach ( var terrainMaterial in terrainMaterials ) {
+        var asset = IO.Utils.ParseAsset( AssetDatabase.GetAssetPath( terrainMaterial ) );
+        int presetValue = -1;
+        if ( asset.Fields.ContainsKey( "m_preset" ) && asset.Fields[ "m_preset" ].TryGet( out presetValue ) ) {
+          var presetName = ( (LegacyDeformableTerrainMaterialPreset)presetValue ).ToString();
+          Debug.Log( $"{"DeformableTerrainMaterial".Color( Color.green )}: Updating {terrainMaterial.name} to use preset name \"{presetName}\"" );
+          terrainMaterial.SetPresetName( presetName );
+          EditorUtility.SetDirty( terrainMaterial );
+          terrainMaterialUpdated = true;
+        }
+      }
+      if ( terrainMaterialUpdated ) {
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
+
+      EditorData.Instance.GetStaticData( "DeformableTerrainMaterial_PresetName_Update" ).Bool = true;
     }
   }
 }

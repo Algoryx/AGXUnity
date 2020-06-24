@@ -22,40 +22,53 @@ namespace AGXUnityEditor.Tools
     public override void OnPreTargetMembersGUI()
     {
       var refMaterial = Material;
-      var mixedPreset = Targets.Any( target => (target as DeformableTerrainMaterial).Preset != refMaterial.Preset );
+      var mixedPreset = Targets.Any( target => (target as DeformableTerrainMaterial).PresetName != refMaterial.PresetName );
 
       using ( new InspectorGUI.IndentScope( ( InspectorGUI.IndentScope.Level > 0 ? -1 : 0 ) ) ) {
         var resetButtonWidth = EditorGUIUtility.singleLineHeight;
         var rect             = EditorGUILayout.GetControlRect();
-        rect.width          -= resetButtonWidth;
+        var totalRectWidth   = rect.width;
 
-        EditorGUI.showMixedValue = mixedPreset;
-        var newPreset            = (DeformableTerrainMaterial.PresetLibrary)EditorGUI.EnumPopup( rect,
-                                                                                                 GUI.MakeLabel( "Preset" ),
-                                                                                                 Material.Preset,
-                                                                                                 InspectorEditor.Skin.Popup );
+        var availablePresets = DeformableTerrainMaterial.GetAvailablePresets().ToArray();
+        var presetIndex      = FindPresetIndex( availablePresets,
+                                                refMaterial.PresetName );
+        var invalidPreset = presetIndex < 0;
+        EditorGUI.showMixedValue = mixedPreset || invalidPreset;
+        if ( invalidPreset )
+          InspectorGUI.WarningLabel( $"Material preset name {refMaterial.PresetName} doesn't exist in the material presets library." );
+
+        rect.width = EditorGUIUtility.labelWidth;
+        EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Preset" ), InspectorEditor.Skin.Label );
+
+        rect.x    += rect.width;
+        rect.width = totalRectWidth - EditorGUIUtility.labelWidth - resetButtonWidth;
+        EditorGUI.BeginChangeCheck();
+        var newPresetIndex = EditorGUI.Popup( rect, Mathf.Max( presetIndex, 0 ), availablePresets, InspectorEditor.Skin.Popup );
+        if ( EditorGUI.EndChangeCheck() && invalidPreset )
+          invalidPreset = false;
         EditorGUI.showMixedValue = false;
 
-        rect.x                += rect.width;
-        rect.width             = resetButtonWidth;
+        rect.x    += rect.width;
+        rect.width = resetButtonWidth;
         var resetButtonPressed = InspectorGUI.Button( rect,
                                                       MiscIcon.ResetDefault,
-                                                      true,
-                                                      $"Reset values to default for preset: {Material.Preset}",
+                                                      !invalidPreset,
+                                                      $"Reset values to default for preset: {refMaterial.PresetName}",
                                                       0.9f );
 
-        if ( newPreset != Material.Preset &&
-             EditorUtility.DisplayDialog( "Library preset -> " + newPreset.ToString(),
-                                          $"Change preset from {Material.Preset} to {newPreset}?\n" +
+        if ( !invalidPreset &&
+             newPresetIndex != presetIndex &&
+             EditorUtility.DisplayDialog( "Library preset -> " + availablePresets[ newPresetIndex ],
+                                          $"Change preset from {refMaterial.PresetName} to {availablePresets[ newPresetIndex ]}?\n" +
                                           "All current values will be overwritten.",
                                           "Yes", "No" ) ) {
           foreach ( var material in GetTargets<DeformableTerrainMaterial>() )
-            material.Preset = newPreset;
+            material.SetPresetNameAndUpdateValues( availablePresets[ newPresetIndex ] );
         }
 
         if ( resetButtonPressed &&
              EditorUtility.DisplayDialog( "Reset values to default",
-                                         $"Reset preset {Material.Preset} to default?",
+                                         $"Reset preset {refMaterial.PresetName} to default?",
                                           "Yes", "No" ) ) {
           foreach ( var material in GetTargets<DeformableTerrainMaterial>() )
             material.ResetToPresetDefault();
@@ -63,6 +76,14 @@ namespace AGXUnityEditor.Tools
 
         InspectorGUI.Separator();
       }
+    }
+
+    private static int FindPresetIndex( string[] presets, string presetName )
+    {
+      for ( int i = 0; i < presets.Length; ++i )
+        if ( presets[ i ].ToLower() == presetName.ToLower() )
+          return i;
+      return -1;
     }
   }
 }

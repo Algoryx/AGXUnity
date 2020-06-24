@@ -102,6 +102,13 @@ namespace AGXUnity.Utils
 
   public abstract class ShapeUtils
   {
+    public struct ShortestDistancePointSegmentResult
+    {
+      public float ShortestDistance;
+      public Vector3 PointOnSegment;
+      public float Time;
+    }
+
     /// <summary>
     /// Calculates shortest distance between a point and a line segment.
     /// </summary>
@@ -109,17 +116,26 @@ namespace AGXUnity.Utils
     /// <param name="segmentStart">Segment start.</param>
     /// <param name="segmentEnd">Segment end.</param>
     /// <returns>Shortest distance between the given point and the line segment.</returns>
-    public static float ShortestDistancePointSegment( Vector3 point, Vector3 segmentStart, Vector3 segmentEnd )
+    public static ShortestDistancePointSegmentResult ShortestDistancePointSegment( Vector3 point,
+                                                                                   Vector3 segmentStart,
+                                                                                   Vector3 segmentEnd )
     {
-      Vector3 segmentDir = segmentEnd - segmentStart;
+      var segmentDir = segmentEnd - segmentStart;
       float divisor = segmentDir.sqrMagnitude;
       if ( divisor < 1.0E-6f )
-        return Vector3.Distance( point, segmentStart );
+        return new ShortestDistancePointSegmentResult()
+        {
+          ShortestDistance = Vector3.Distance( point, segmentStart ),
+          PointOnSegment   = segmentStart,
+          Time             = 0.0f
+        };
 
-      float t = Mathf.Clamp01( Vector3.Dot( ( point - segmentStart ), segmentDir ) / divisor );
-      Vector3 segmentPoint = ( 1.0f - t ) * segmentStart + t * segmentEnd;
+      var result              = new ShortestDistancePointSegmentResult();
+      result.Time             = Mathf.Clamp01( Vector3.Dot( ( point - segmentStart ), segmentDir ) / divisor );
+      result.PointOnSegment   = ( 1.0f - result.Time ) * segmentStart + result.Time * segmentEnd;
+      result.ShortestDistance = Vector3.Distance( point, result.PointOnSegment );
 
-      return Vector3.Distance( point, segmentPoint );
+      return result;
     }
 
     public struct ShortestDistanceSegmentSegmentResult

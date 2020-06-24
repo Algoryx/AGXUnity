@@ -208,5 +208,26 @@ namespace AGXUnityEditor.IO
 
       return objects.ToArray();
     }
+
+    public static YamlObject ParseAsset( string path )
+    {
+      if ( string.IsNullOrEmpty( path ) )
+        return null;
+
+      YamlObject @object = null;
+      try {
+        var file = new FileInfo( path );
+        var scope = new YamlScope();
+        using ( var input = file.OpenText() ) {
+          if ( scope.Parse( input ) )
+            @object = new YamlObject( scope );
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+      }
+
+      return @object;
+    }
   }
 }
