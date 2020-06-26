@@ -142,6 +142,7 @@ namespace AGXUnityEditor.IO
       var ignoreFile = file.Name.Contains( "agx.lic" ) ||
                        ( file.Name.Contains( "Data.asset" ) && file.Directory.Name == "Data" ) ||
                        ( file.Name.Contains( "Settings.asset" ) && file.Directory.Name == "Data" ) ||
+                       ( file.Name.Contains( "AGXInitData.asset" ) && file.Directory.Name == "Data" ) ||
                        ( file.Extension == ".dll" || file.Name.EndsWith( ".dll.meta" ) );
       return !ignoreFile;
     }

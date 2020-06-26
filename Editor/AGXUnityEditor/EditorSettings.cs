@@ -45,6 +45,51 @@ namespace AGXUnityEditor
                                                          "AGX Dynamics log filename",
                                                          extension => true );
 
+      if ( ExternalAGXInitializer.IsApplied ) {
+        DirectoryInfo newAgxDir = null;
+        if ( InspectorGUI.SelectFolder( GUI.MakeLabel( "AGX Dynamics directory" ),
+                                        ExternalAGXInitializer.Instance.AGX_DIR,
+                                        "AGX Dynamics directory",
+                                        newFolder => newAgxDir = new DirectoryInfo( newFolder ) ) ) {
+          if ( ExternalAGXInitializer.FindType( newAgxDir ) == ExternalAGXInitializer.AGXDirectoryType.Unknown )
+            Debug.LogError( $"ERROR: {newAgxDir.FullName} doesn't seems to be an AGX Dynamics root folder." );
+          else if ( EditorUtility.DisplayDialog( "Change AGX Dynamics directory",
+                                                 $"Change from {ExternalAGXInitializer.Instance.AGX_DIR} to {newAgxDir.FullName}?\n\n" +
+                                                 "Unity will restart during the change.",
+                                                 "Yes",
+                                                 "Cancel" ) ) {
+            ExternalAGXInitializer.ChangeRootDirectory( newAgxDir );
+          }
+        }
+      }
+      else if ( !IO.Utils.AGXDynamicsInstalledInProject && ExternalAGXInitializer.UserSaidNo ) {
+        var rect     = EditorGUILayout.GetControlRect();
+        var orgWidth = rect.width;
+        rect.width   = EditorGUIUtility.labelWidth;
+        EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Select AGX Dynamics root folder" ), skin.Label );
+        rect.x    += rect.width;
+        rect.width = orgWidth - EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "AGX Dynamics root directory..." ) ) ) {
+          var agxDir = EditorUtility.OpenFolderPanel( "AGX Dynamics root directory",
+                                                      "Assets",
+                                                      "" );
+          if ( !string.IsNullOrEmpty( agxDir ) ) {
+            var agxDirInfo = new DirectoryInfo( agxDir );
+            var type = ExternalAGXInitializer.FindType( agxDirInfo );
+            if ( type == ExternalAGXInitializer.AGXDirectoryType.Unknown )
+              Debug.LogWarning( $"{agxDir} isn't recognized as an AGX Dynamics root directory." );
+            else if ( EditorUtility.DisplayDialog( "Add AGX Dynamics directory",
+                                                   $"Set AGX Dynamics root directory to {agxDir}?\n\n" +
+                                                   "Unity will restart during the process.",
+                                                   "Yes",
+                                                   "Cancel" ) ) {
+              ExternalAGXInitializer.UserSaidNo = false;
+              ExternalAGXInitializer.ChangeRootDirectory( agxDirInfo );
+            }
+          }
+        }
+      }
+
       InspectorGUI.Separator( 1, 4 );
 
       // BuiltInToolsTool settings GUI.
@@ -134,7 +179,8 @@ namespace AGXUnityEditor
       return true;
     }
 
-    public static T GetOrCreateEditorDataFolderFileInstance<T>( string name ) where T : ScriptableObject
+    public static T GetOrCreateEditorDataFolderFileInstance<T>( string name,
+                                                                Action onCreate = null ) where T : ScriptableObject
     {
       if ( !PrepareEditorDataFolder() )
         return null;
@@ -150,6 +196,8 @@ namespace AGXUnityEditor
 #if !AGXUNITY_BUILD_PACKAGE
         AssetDatabase.CreateAsset( instance, settingsPathAndName );
         AssetDatabase.SaveAssets();
+
+        onCreate?.Invoke();
 #endif
       }
 

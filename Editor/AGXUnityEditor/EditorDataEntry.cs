@@ -29,8 +29,6 @@ namespace AGXUnityEditor
     [SerializeField]
     private string m_string = string.Empty;
     [SerializeField]
-    private ScriptableObject m_scriptableObject = null;
-    [SerializeField]
     private UnityEngine.Object m_asset = null;
     [SerializeField]
     private Vector2 m_vector2;
@@ -92,17 +90,6 @@ namespace AGXUnityEditor
           return;
 
         m_string = value;
-
-        OnValueChanged();
-      }
-    }
-
-    public ScriptableObject ScriptableObject
-    {
-      get { return m_scriptableObject; }
-      set
-      {
-        m_scriptableObject = value;
 
         OnValueChanged();
       }

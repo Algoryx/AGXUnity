@@ -433,6 +433,43 @@ namespace AGXUnityEditor
       }
     }
 
+    public static bool SelectFolder( GUIContent label,
+                                     string currentFolder,
+                                     string openFolderTitle,
+                                     Action<string> onNewFolder )
+    {
+      var selectNewFolderButtonWidth = 28.0f;
+
+      var rect     = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+      rect.width   = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      rect.x    += EditorGUIUtility.labelWidth;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth -
+                   selectNewFolderButtonWidth;
+      EditorGUI.TextField( rect,
+                           currentFolder,
+                           InspectorEditor.Skin.TextField );
+      rect.x    += rect.width;
+      rect.width = selectNewFolderButtonWidth;
+      if ( UnityEngine.GUI.Button( rect,
+                                   GUI.MakeLabel( "..." ),
+                                   InspectorEditor.Skin.ButtonMiddle ) ) {
+        string result = EditorUtility.OpenFolderPanel( openFolderTitle,
+                                                       currentFolder,
+                                                       "" );
+        if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
+          onNewFolder( result );
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     public static string ToggleSaveFile( GUIContent label,
                                          bool enabled,
                                          Action<bool> enabledResult,
@@ -442,8 +479,8 @@ namespace AGXUnityEditor
                                          string saveFilePanelTitle,
                                          Predicate<string> fileExtensionValidator )
     {
-      var saveInitialToggleWidth             = 18.0f;
-      var saveInitialSaveFilePanelButtonWith = 28.0f;
+      var saveInitialToggleWidth              = 18.0f;
+      var saveInitialSaveFilePanelButtonWidth = 28.0f;
 
       var saveInitialRect     = EditorGUILayout.GetControlRect();
       var saveInitialOrgWidth = saveInitialRect.width;
@@ -461,12 +498,12 @@ namespace AGXUnityEditor
         saveInitialRect.width = saveInitialOrgWidth -
                                 EditorGUIUtility.labelWidth -
                                 saveInitialToggleWidth -
-                                saveInitialSaveFilePanelButtonWith;
+                                saveInitialSaveFilePanelButtonWidth;
         currentEntry = EditorGUI.TextField( saveInitialRect,
                                             currentEntry,
                                             InspectorEditor.Skin.TextField );
         saveInitialRect.x    += saveInitialRect.width;
-        saveInitialRect.width = saveInitialSaveFilePanelButtonWith;
+        saveInitialRect.width = saveInitialSaveFilePanelButtonWidth;
         if ( UnityEngine.GUI.Button( saveInitialRect,
                                      GUI.MakeLabel( "..." ),
                                      InspectorEditor.Skin.ButtonMiddle ) ) {

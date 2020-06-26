@@ -689,6 +689,9 @@ namespace AGXUnityEditor
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
       }
+      else {
+        ExternalAGXInitializer.Initialize();
+      }
 
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
