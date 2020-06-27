@@ -406,12 +406,18 @@ namespace AGXUnityEditor
       if ( editor == null )
         return;
 
+      // Mesh inspector with interactive preview.
+      if ( editor.GetType().FullName == "UnityEditor.ModelInspector" ) {
+        editor.DrawPreview( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false,
+                                                                                    120.0f ) ) );
+        return;
+      }
+
       using ( IndentScope.Single ) {
         if ( editor is MaterialEditor )
           HandleMaterialEditorGUI( editor as MaterialEditor );
-        else {
+        else
           editor.OnInspectorGUI();
-        }
       }
     }
 
@@ -662,7 +668,7 @@ namespace AGXUnityEditor
 
           if ( addButtonPressed ) {
             var sceneItems = isAsset ?
-                               IO.Utils.FindAssetsOfType<T>() :
+                               IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                Object.FindObjectsOfType<T>();
             var addItemMenu = new GenericMenu();
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );

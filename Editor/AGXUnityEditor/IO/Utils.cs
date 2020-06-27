@@ -201,13 +201,19 @@ namespace AGXUnityEditor.IO
       return Uri.UnescapeDataString( relUri.ToString() );
     }
 
-    public static T[] FindAssetsOfType<T>( string directory = "" )
+    public static T[] FindAssetsOfType<T>( string directory )
       where T : Object
+    {
+      return ( from obj in FindAssetsOfType( directory, typeof( T ) )
+               where obj is T
+               select obj as T ).ToArray();
+    }
+
+    public static Object[] FindAssetsOfType( string directory, Type type )
     {
       // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
       // if we have 17 ContactMaterial assets in a group FindAsset will return an array
       // of 17 where all entries are identical.
-      var type = typeof( T );
       var typeName = string.Empty;
       if ( type.Namespace != null && type.Namespace.StartsWith( "UnityEngine" ) )
         typeName = type.Name;
@@ -220,7 +226,7 @@ namespace AGXUnityEditor.IO
                in guids
                from obj
                in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
-               select obj as T ).ToArray();
+               select obj ).ToArray();
     }
   }
 }

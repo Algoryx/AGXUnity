@@ -104,13 +104,7 @@ namespace AGXUnityEditor
     [MenuItem( "Assets/Import AGX file as prefab" )]
     public static void GenerateAGXFileAsPrefab()
     {
-      foreach ( var obj in Selection.objects ) {
-        var info = new IO.AGXFileInfo( AssetDatabase.GetAssetPath( obj ) );
-        if ( info.Type != IO.AGXFileInfo.FileType.AGXBinary && info.Type != IO.AGXFileInfo.FileType.AGXAscii )
-          continue;
-
-        AssetPostprocessorHandler.ReadAGXFile( info );
-      }
+      IO.AGXFileImporter.Import( Selection.objects );
     }
 
     [MenuItem( "Assets/AGXUnity/Utils/Patch AGXUnity asset(s)" )]

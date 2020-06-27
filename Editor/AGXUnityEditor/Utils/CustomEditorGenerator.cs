@@ -129,7 +129,7 @@ namespace AGXUnityEditor.Utils
              type.Namespace != null &&
              type.Namespace.Contains( "AGXUnity" ) &&
             ( type.IsSubclassOf( typeof( ScriptComponent ) ) ||
-              type.IsSubclassOf( typeof( ScriptAsset ) ) ) &&
+              typeof( ScriptableObject ).IsAssignableFrom( type ) ) &&
               type.GetCustomAttributes( typeof( DoNotGenerateCustomEditor ), false ).Length == 0;
     }
 

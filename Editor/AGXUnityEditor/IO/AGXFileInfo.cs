@@ -145,7 +145,7 @@ namespace AGXUnityEditor.IO
     /// <summary>
     /// Object database with UUID -> game object and assets.
     /// </summary>
-    public UuidObjectDb ObjectDb { get { return m_uuidObjectDb; } }
+    public ObjectDb ObjectDb { get; private set; } = null;
 
     /// <summary>
     /// Construct given path to file.
@@ -182,12 +182,14 @@ namespace AGXUnityEditor.IO
     /// <returns>this.PrefabInstance</returns>
     public GameObject CreateInstance()
     {
+      GetOrCreateDataDirectory();
+
       if ( ExistingPrefab != null )
         PrefabInstance = GameObject.Instantiate<GameObject>( ExistingPrefab );
       else
         PrefabInstance = new GameObject( Name );
 
-      m_uuidObjectDb = new UuidObjectDb( this );
+      ObjectDb = new ObjectDb( this );
 
       return PrefabInstance;
     }
@@ -202,72 +204,6 @@ namespace AGXUnityEditor.IO
         AssetDatabase.CreateFolder( RootDirectory, Name + "_Data" );
 
       return new DirectoryInfo( DataDirectory );
-    }
-
-    /// <summary>
-    /// Find asset path (in the data directory) given asset name.
-    /// If asset.name contains '\\', it will be replaced with '_'
-    /// </summary>
-    /// <param name="asset">Asset.</param>
-    /// <returns>Path (relative) including .asset extension.</returns>
-    public string GetAssetPath( UnityEngine.Object asset )
-    {
-      // We cannot have \\ in the name
-      asset.name = asset.name.Replace("\\", "_");
-      return DataDirectory + "/" +
-             ( asset != null ? asset.name : "null" ) + FindAssetExtension( asset.GetType() );
-    }
-
-    /// <summary>
-    /// Add an asset to the data directory or updates an existing asset
-    /// of same type and name with the current values of <paramref name="asset"/>.
-    /// Known assets types will be grouped together and AGXFileInfo.GetAssets
-    /// has to be used to find them.
-    /// 
-    /// Type AssetType.Unknown will always create a new asset.
-    /// </summary>
-    /// <param name="asset">Asset to add.</param>
-    /// <param name="type">Asset type.</param>
-    /// <returns><paramref name="asset"/> if previous version doesn't exist - otherwise the already existing asset.</returns>
-    public T AddOrUpdateExistingAsset<T>( T asset, AGXUnity.IO.AssetType type )
-      where T : UnityEngine.Object
-    {
-      if ( asset == null ) {
-        Debug.LogWarning( "Trying to add null asset to file: " + NameWithExtension );
-        return null;
-      }
-
-      // Grouping assets given known types - unknown types are written directly to the data folder.
-      if ( type == AGXUnity.IO.AssetType.Unknown ) {
-        AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
-        return asset;
-      }
-
-      T[] assets = GetAssets<T>();
-      foreach ( var existing in assets ) {
-        if ( existing.name == asset.name ) {
-          EditorUtility.CopySerialized( asset, existing );
-          return existing;
-        }
-      }
-
-      if ( assets.Length == 0 )
-        AssetDatabase.CreateAsset( asset, GetAssetPath( asset ) );
-      else
-        AssetDatabase.AddObjectToAsset( asset, AssetDatabase.GetAssetPath( assets[ 0 ] ) );
-
-      return asset;
-    }
-
-    /// <summary>
-    /// Finds assets of given type in the data directory.
-    /// </summary>
-    /// <typeparam name="T">Asset type.</typeparam>
-    /// <returns>Array of assets of given type in the data directory.</returns>
-    public T[] GetAssets<T>()
-      where T : UnityEngine.Object
-    {
-      return Utils.FindAssetsOfType<T>( DataDirectory );
     }
 
     /// <summary>
@@ -338,13 +274,12 @@ namespace AGXUnityEditor.IO
         DataDirectory = RootDirectory + "/" + Name + "_Data";
 
       ExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>( PrefabPath );
-      if ( ExistingPrefab && updateExistingPrefabWithDirectoryId ) {
+      if ( ExistingPrefab != null && updateExistingPrefabWithDirectoryId ) {
         ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>().DataDirectoryId = PrefabInstance.GetComponent<AGXUnity.IO.RestoredAGXFile>().DataDirectoryId;
         Save();
       }
     }
 
-    private FileInfo m_fileInfo         = null;
-    private UuidObjectDb m_uuidObjectDb = null;
+    private FileInfo m_fileInfo = null;
   }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -6,13 +7,40 @@ namespace AGXUnity.Model
   public class DeformableTerrainMaterial : ScriptAsset
   {
     /// <summary>
-    /// Deformable terrain material presets.
+    /// Default path to official terrain materials library released
+    /// with AGX Dynamics.
     /// </summary>
-    public enum PresetLibrary
+    [HideInInspector]
+    public static string DefaultTerrainMaterialsPath { get { return "data/TerrainMaterials"; } }
+
+    /// <summary>
+    /// Finds available material presets in the current material directory.
+    /// </summary>
+    /// <returns>Array of material preset names.</returns>
+    public static string[] GetAvailablePresets()
     {
-      Gravel_1,
-      Sand_1,
-      Dirt_1
+      return agxTerrain.TerrainMaterialLibrary.getAvailableLibraryMaterials( DefaultTerrainMaterialsPath ).ToArray();
+    }
+
+    /// <summary>
+    /// Create native instance given preset name.
+    /// </summary>
+    /// <param name="presetName">Name of the material located in the TerrainMaterials directory.</param>
+    /// <returns>Terrain material instance, valid if string.IsNullOrEmpty( instance.getLastError() ).</returns>
+    public static agxTerrain.TerrainMaterial CreateNative( string presetName )
+    {
+      var terrainMaterial = new agxTerrain.TerrainMaterial();
+      if ( !agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( presetName,
+                                                                   terrainMaterial,
+                                                                   DefaultTerrainMaterialsPath ) ) {
+        var errorMessage = string.Empty;
+        if ( Array.IndexOf( GetAvailablePresets(), presetName ) < 0 )
+          errorMessage = $"Unable to find material name {presetName} in the library.";
+        else
+          errorMessage = terrainMaterial.getLastError();
+        Debug.LogWarning( $"Unable to load preset {presetName}: {errorMessage}" );
+      }
+      return terrainMaterial;
     }
 
     /// <summary>
@@ -21,26 +49,21 @@ namespace AGXUnity.Model
     [HideInInspector]
     public agxTerrain.TerrainMaterial Native { get; private set; }
 
+    /// <summary>
+    /// Name of material preset in the TerrainMaterials directory.
+    /// </summary>
     [SerializeField]
-    private PresetLibrary m_preset = PresetLibrary.Dirt_1;
+    private string m_presetName = "dirt_1";
 
     /// <summary>
-    /// Base preset used, the preset isn't changed when
-    /// the values has been changed so that it's possible
-    /// to reset to default.
+    /// Preset name to be found in the terrain materials directory.
     /// </summary>
     [HideInInspector]
-    public PresetLibrary Preset
+    public string PresetName
     {
-      get { return m_preset; }
-      set
+      get
       {
-        if ( m_preset == value )
-          return;
-
-        m_preset = value;
-
-        ResetToPresetDefault();
+        return m_presetName;
       }
     }
 
@@ -863,11 +886,30 @@ namespace AGXUnity.Model
     #endregion
 
     /// <summary>
+    /// Assign new preset name without updating any values.
+    /// </summary>
+    /// <param name="presetName">New material preset name.</param>
+    public void SetPresetName( string presetName )
+    {
+      m_presetName = presetName;
+    }
+
+    /// <summary>
+    /// Set preset name and update all values given <paramref name="presetName"/>.
+    /// </summary>
+    /// <param name="presetName">New preset name.</param>
+    public void SetPresetNameAndUpdateValues( string presetName )
+    {
+      SetPresetName( presetName );
+      ResetToPresetDefault();
+    }
+    
+    /// <summary>
     /// Reset values to default given current preset.
     /// </summary>
     public void ResetToPresetDefault()
     {
-      m_temporaryNative = agxTerrain.TerrainMaterialLibrary.loadMaterialProfile( ToNative( Preset ) );
+      m_temporaryNative = CreateNative( m_presetName );
       Utils.PropertySynchronizer.SynchronizeGetToSet( this );
       m_temporaryNative.Dispose();
       m_temporaryNative = null;
@@ -888,11 +930,6 @@ namespace AGXUnity.Model
     {
       Native = new agxTerrain.TerrainMaterial( name );
       return true;
-    }
-
-    private agxTerrain.TerrainMaterialLibrary.MaterialPreset ToNative( PresetLibrary preset )
-    {
-      return (agxTerrain.TerrainMaterialLibrary.MaterialPreset)(int)preset;
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;

@@ -10,6 +10,13 @@ namespace AGXUnity.Utils
       return System.Math.Abs( a - b ) <= epsilon;
     }
 
+    public static bool Approximately( Vector3 v1, Vector3 v2, float epsilon = 0.000001f )
+    {
+      return System.Math.Abs( v1.x - v2.x ) <= epsilon &&
+             System.Math.Abs( v1.y - v2.y ) <= epsilon &&
+             System.Math.Abs( v1.z - v2.z ) <= epsilon;
+    }
+
     public static Vector3 Clamp( Vector3 v, float minValue )
     {
       return new Vector3( Mathf.Max( v.x, minValue ), Mathf.Max( v.y, minValue ), Mathf.Max( v.z, minValue ) );
