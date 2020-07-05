@@ -246,7 +246,8 @@ namespace AGXUnity.Utils
     {
       List<Data> windowsToClose = new List<Data>();
       foreach ( Data data in m_activeWindows.Values ) {
-        Rect rect = GUILayout.Window( data.Id,
+        // TODO Data: This should be GUILayout.Window.
+        Rect rect = UnityEngine.GUI.Window( data.Id,
                                       data.GetRect(),
                                       id =>
                                       {
@@ -268,9 +269,8 @@ namespace AGXUnity.Utils
 
                                         EatMouseEvents( data );
                                       },
-                                      data.Title,
-                                      GUI.Skin.window,
-                                      new GUILayoutOption[] { GUILayout.Width( data.Size.x ) } );
+                                      GUI.MakeLabel( data.Title ),
+                                      GUI.Skin.window );
 
         data.Size     = rect.size;
         data.Position = rect.position;

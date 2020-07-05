@@ -765,14 +765,40 @@ namespace AGXUnity
         // controllers if we have an animator.
         m_isAnimated = GetComponent<Animator>() != null;
 
+        if ( Type == ConstraintType.Hinge ) {
+          m_plot = new Data.Plot2D( "Hinge angle", new Vector2( 400, 300 ), new Vector2( 60, 60 ) );
+          m_curves[ 0 ] = m_plot.Add( "x rot" );
+          m_curves[ 1 ] = m_plot.Add( "y rot" );
+          m_curves[ 2 ] = m_plot.Add( "z rot" );
+          m_curves[ 0 ].Color = Color.red;
+          m_curves[ 1 ].Color = Color.green;
+          m_curves[ 2 ].Color = Color.blue;
+          Simulation.Instance.StepCallbacks.PostStepForward += PlotIt;
+        }
+
         return valid;
       }
       catch ( System.Exception e ) {
         Debug.LogException( e, gameObject );
         return false;
       }
+    }
 
+    // TODO Data: Remove this.
+    private Data.Plot2D m_plot = null;
+    private Data.Curve[] m_curves = new Data.Curve[ 3 ];
 
+    private void PlotIt()
+    {
+      if ( m_curves[ 0 ] != null ) {
+        var foo = AttachmentPair.ReferenceFrame.Rotation.eulerAngles;
+        m_curves[ 0 ].Add( System.Convert.ToSingle( GetSimulation().getTimeStamp() ),
+                           foo[ 0 ] );
+        m_curves[ 1 ].Add( System.Convert.ToSingle( GetSimulation().getTimeStamp() ),
+                           foo[ 1 ] );
+        m_curves[ 2 ].Add( System.Convert.ToSingle( GetSimulation().getTimeStamp() ),
+                           foo[ 2 ] );
+      }
     }
 
     protected override void OnEnable()
@@ -798,9 +824,16 @@ namespace AGXUnity
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= OnPreStepForwardUpdate;
         GetSimulation().remove( Native );
+        if ( m_plot != null )
+          Simulation.Instance.StepCallbacks.PostStepForward -= PlotIt;
       }
 
       Native = null;
+
+      if ( m_plot != null )
+        m_plot.Dispose();
+      m_plot = null;
+      m_curves = null;
 
       base.OnDestroy();
     }
