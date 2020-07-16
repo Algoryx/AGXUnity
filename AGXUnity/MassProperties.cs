@@ -46,10 +46,13 @@ namespace AGXUnity
       {
         m_mass = value;
 
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null ) {
           native.getMassProperties().setMass( m_mass.Value );
-          native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
+          // Explicit inertia tensor and setMass above will rescale
+          // the inertia given new mass - assign "back" the user value.
+          if ( !m_inertiaDiagonal.UseDefault )
+            native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
         }
       }
     }
@@ -71,7 +74,16 @@ namespace AGXUnity
       set
       {
         m_inertiaDiagonal = value;
-        agx.RigidBody native = GetNative();
+
+        // If we have UseDefault, the inertia tensor has been
+        // calculated for the native instance during native.updateMassProperties.
+        // To not overwrite the off-diagonal elements we're not
+        // writing anything back.
+        // NOTE: This has to be revised when we use "update mask" 0.
+        if ( m_inertiaDiagonal.UseDefault )
+          return;
+
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
       }
@@ -88,7 +100,7 @@ namespace AGXUnity
       set
       {
         m_massCoefficients = value;
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setMassCoefficients( m_massCoefficients.ToVec3() );
       }
@@ -105,7 +117,7 @@ namespace AGXUnity
       set
       {
         m_inertiaCoefficients = value;
-        agx.RigidBody native = GetNative();
+        var native = GetNative();
         if ( native != null )
           native.getMassProperties().setInertiaTensorCoefficients( m_inertiaCoefficients.ToVec3() );
       }
