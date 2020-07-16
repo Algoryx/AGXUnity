@@ -766,7 +766,7 @@ namespace AGXUnity
         m_isAnimated = GetComponent<Animator>() != null;
 
         if ( Type == ConstraintType.Hinge ) {
-          m_plot = new Data.Plot2D( "Hinge angle", new Vector2( 400, 300 ), new Vector2( 60, 60 ) );
+          m_plot = new Data.Plot2D( "Hinge angle", new Vector2( 500, 400 ), new Vector2( 160, 160 ) );
           m_curves[ 0 ] = m_plot.Add( "x rot" );
           m_curves[ 1 ] = m_plot.Add( "y rot" );
           m_curves[ 2 ] = m_plot.Add( "z rot" );

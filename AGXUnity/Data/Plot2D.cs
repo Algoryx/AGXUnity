@@ -20,7 +20,7 @@ namespace AGXUnity.Data
         const float windowTitleHeight = 16.0f;
         const float windowBorderSize  = 2.0f;
 
-        var rect     = m_windowData.GetRect();
+        var rect     = m_windowData.Rect;
         rect.x       = 0;
         rect.width  -= 2.0f * windowBorderSize;
         rect.x      += windowBorderSize;
@@ -32,8 +32,12 @@ namespace AGXUnity.Data
 
     public Plot2D( string title, Vector2 size, Vector2 position )
     {
-      m_windowData = GUIWindowHandler.Instance.Show( OnGUI, size, position, title );
-      m_windowData.Movable = true;
+      m_windowData = GUIWindowHandler.Instance.Show( OnGUI,
+                                                     size,
+                                                     position,
+                                                     title );
+      m_windowData.Movable    = true;
+      m_windowData.ExpandSize = false;
 
       m_material = new Material( Shader.Find( "Lines/Foo" ) );
     }
@@ -102,7 +106,7 @@ namespace AGXUnity.Data
           }
         }
       }
-
+      
       if ( eventType == EventType.Repaint ) {
         GL.PushMatrix();
 
@@ -166,11 +170,15 @@ namespace AGXUnity.Data
     {
       GL.Begin( GL.LINES );
       GL.Color( new Color( 0.5f, 0.5f, 0.5f, 0.8f ) );
-      var yScale = 0.1f;
-      while ( yScale < 0.95f ) {
-        GL.Vertex3( rect.xMin, rect.yMin + yScale * rect.height, 0 );
-        GL.Vertex3( rect.xMax, rect.yMin + yScale * rect.height, 0 );
-        yScale += 0.1f;
+      var scale = 0.1f;
+      while ( scale < 1.05f ) {
+        GL.Vertex3( rect.xMin, rect.yMin + scale * rect.height, 0 );
+        GL.Vertex3( rect.xMax, rect.yMin + scale * rect.height, 0 );
+
+        GL.Vertex3( rect.xMin + scale * rect.width, rect.yMin, 0 );
+        GL.Vertex3( rect.xMin + scale * rect.width, rect.yMax, 0 );
+
+        scale += 0.1f;
       }
       GL.End();
     }

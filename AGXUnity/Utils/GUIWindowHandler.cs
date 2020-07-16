@@ -42,7 +42,17 @@ namespace AGXUnity.Utils
       private Rect m_rect = new Rect();
 
       /// <returns>Rect of the window.</returns>
-      public Rect GetRect() { return m_rect; }
+      public Rect Rect
+      {
+        get
+        {
+          return m_rect;
+        }
+        set
+        {
+          m_rect = value;
+        }
+      }
 
       /// <summary>
       /// Hack to compensate for Unity "window title" offset. Off by 20 pixels.
@@ -51,7 +61,7 @@ namespace AGXUnity.Utils
       /// <returns></returns>
       public bool Contains( Vector2 position )
       {
-        Rect rect = new Rect( m_rect );
+        var rect       = Rect;
         rect.position += new Vector2( 0, -20 );
         return rect.Contains( position );
       }
@@ -69,7 +79,7 @@ namespace AGXUnity.Utils
       {
         get
         {
-          return m_rect.size;
+          return Rect.size;
         }
         set
         {
@@ -84,7 +94,7 @@ namespace AGXUnity.Utils
       {
         get
         {
-          return m_rect.position;
+          return Rect.position;
         }
         set
         {
@@ -109,6 +119,12 @@ namespace AGXUnity.Utils
       /// Request focus to this window. Default false.
       /// </summary>
       public bool RequestFocus { get; set; }
+
+      /// <summary>
+      /// Expand size with GUI content. If true, UnityEngine.GUILayout.Window
+      /// is used, false UnityEngine.GUI.Window.
+      /// </summary>
+      public bool ExpandSize { get; set; } = true;
 
       public enum CloseEventType
       {
@@ -175,8 +191,15 @@ namespace AGXUnity.Utils
     /// <param name="position">Position of the window.</param>
     /// <param name="title">Title of the window.</param>
     /// <param name="requestFocus">Request focus to the window.</param>
+    /// <param name="expandSize">True if the window should expand with its content, false to
+    ///                          instead use UnityEngine.GUI.Window (i.e., not GUILayout).</param>
     /// <returns>Window data.</returns>
-    public Data Show( Action<EventType> guiCallback, Vector2 size, Vector2 position, string title, bool requestFocus = false )
+    public Data Show( Action<EventType> guiCallback,
+                      Vector2 size,
+                      Vector2 position,
+                      string title,
+                      bool requestFocus = false,
+                      bool expandSize = true )
     {
       if ( guiCallback == null )
         throw new ArgumentNullException( "guiCallback" );
@@ -244,33 +267,40 @@ namespace AGXUnity.Utils
 
     public bool RenderWindows( Event current )
     {
-      List<Data> windowsToClose = new List<Data>();
-      foreach ( Data data in m_activeWindows.Values ) {
-        // TODO Data: This should be GUILayout.Window.
-        Rect rect = UnityEngine.GUI.Window( data.Id,
-                                      data.GetRect(),
-                                      id =>
-                                      {
-                                        // Call to the user method.
-                                        EventType windowEventType = current.GetTypeForControl( id );
-                                        data.Callback( windowEventType );
+      var windowsToClose = new List<Data>();
+      foreach ( var data in m_activeWindows.Values ) {
+        UnityEngine.GUI.WindowFunction onWindowCallback = id =>
+        {
+          // Call to the user method.
+          var windowEventType = current.GetTypeForControl( id );
+          data.Callback( windowEventType );
 
-                                        // Handle movable window.
-                                        if ( data.Movable ) {
-                                          // We'll have Repaint, Layout etc. events here as well and
-                                          // GUI.DragWindow has to be called for all these other events.
-                                          // Call DragWindow from mouse down to mouse up.
-                                          data.IsMoving = windowEventType != EventType.MouseUp &&
-                                                          ( data.IsMoving || windowEventType == EventType.MouseDown );
+          // Handle movable window.
+          if ( data.Movable ) {
+            // We'll have Repaint, Layout etc. events here as well and
+            // GUI.DragWindow has to be called for all these other events.
+            // Call DragWindow from mouse down to mouse up.
+            data.IsMoving = windowEventType != EventType.MouseUp &&
+                            ( data.IsMoving || windowEventType == EventType.MouseDown );
 
-                                          if ( data.IsMoving )
-                                            UnityEngine.GUI.DragWindow();
-                                        }
+            if ( data.IsMoving )
+              UnityEngine.GUI.DragWindow();
+          }
 
-                                        EatMouseEvents( data );
-                                      },
-                                      GUI.MakeLabel( data.Title ),
-                                      GUI.Skin.window );
+          EatMouseEvents( data );
+        };
+
+        var rect = data.ExpandSize ?
+                     GUILayout.Window( data.Id,
+                                       data.Rect,
+                                       onWindowCallback,
+                                       GUI.MakeLabel( data.Title ),
+                                       GUI.Skin.window ) :
+                     UnityEngine.GUI.Window( data.Id,
+                                             data.Rect,
+                                             onWindowCallback,
+                                             GUI.MakeLabel( data.Title ),
+                                             GUI.Skin.window );
 
         data.Size     = rect.size;
         data.Position = rect.position;
@@ -308,11 +338,11 @@ namespace AGXUnity.Utils
     /// <param name="data">Window data.</param>
     public static void EatMouseEvents( Data data )
     {
-      int controlID = GUIUtility.GetControlID( data.Id, FocusType.Passive, data.GetRect() );
+      int controlID = GUIUtility.GetControlID( data.Id, FocusType.Passive, data.Rect );
 
       switch ( Event.current.GetTypeForControl( controlID ) ) {
         case EventType.MouseDown:
-          if ( data.GetRect().Contains( Event.current.mousePosition ) ) {
+          if ( data.Rect.Contains( Event.current.mousePosition ) ) {
             GUIUtility.hotControl = controlID;
             Event.current.Use();
           }
@@ -331,7 +361,7 @@ namespace AGXUnity.Utils
           break;
 
         case EventType.ScrollWheel:
-          if ( data.GetRect().Contains( Event.current.mousePosition ) )
+          if ( data.Rect.Contains( Event.current.mousePosition ) )
             Event.current.Use();
           break;
       }
