@@ -368,6 +368,12 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<WindAndWaterManager>().gameObject;
     }
 
+    [MenuItem( "AGXUnity/Managers/Script Asset Manager", priority = 65 )]
+    public static GameObject ScriptAssetManager()
+    {
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ScriptAssetManager>().gameObject;
+    }
+
     [MenuItem( "AGXUnity/Managers/Pick Handler (Game View)", priority = 65 )]
     public static GameObject PickHandler()
     {
