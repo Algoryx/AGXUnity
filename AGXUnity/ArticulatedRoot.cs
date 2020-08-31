@@ -1,11 +1,25 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
+  /// <summary>
+  /// Hierarchal root component of articulated models, such as robots.
+  /// This component enables one or more rigid body instances in the
+  /// hierarchy tree, i.e, one or more rigid bodies as children to
+  /// another rigid body.
+  /// 
+  /// Normally, if a rigid body instance finds another rigid body as
+  /// its parent, the rigid body throws an exception because it's
+  /// unknown when the transforms are written. This component handles
+  /// these transform updates, assuring each parent transform has been
+  /// written before its children.
+  /// </summary>
   public class ArticulatedRoot : ScriptComponent
   {
+    /// <summary>
+    /// All (child) rigid body instances belonging to this articulated root.
+    /// This array of bodies is cached during runtime.
+    /// </summary>
     [AllowRecursiveEditing]
     public RigidBody[] RigidBodies
     {
@@ -21,6 +35,11 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Finds all child rigid bodies using GetComponentsInChildren.
+    /// </summary>
+    /// <returns>Array of child rigid bodies.</returns>
+    /// <seealso cref="RigidBodies"/>
     public RigidBody[] GetRigidBodies()
     {
       return GetComponentsInChildren<RigidBody>();
