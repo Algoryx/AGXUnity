@@ -296,16 +296,18 @@ namespace AGXUnityEditor.Utils
       if ( target == null )
         return Result.Invalid;
 
-      var hasShape = target.GetComponent<Shape>() != null;
+      var rb = target.GetComponent<RigidBody>();
+      var hasShape = rb != null && rb.Shapes.Length > 0;
       if ( includeChildren ) {
         return hasShape ?
-                 Intersect( ray, target.GetComponentsInChildren<Shape>() ) :
+                 Intersect( ray, rb.Shapes ) :
                  Intersect( ray, target.GetComponentsInChildren<MeshFilter>() );
       }
       else {
         var filter = target.GetComponent<MeshFilter>();
-        return hasShape ?
-                 Intersect( ray, target.GetComponent<Shape>() ) :
+        var shape = target.GetComponent<Shape>();
+        return shape != null ?
+                 Intersect( ray, shape ) :
                filter != null ?
                  Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix, filter.gameObject ) :
                  Result.Invalid;
