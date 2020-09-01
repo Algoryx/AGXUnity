@@ -169,13 +169,17 @@ namespace AGXUnityEditor.Tools
     {
       int rbIndex = 0;
       foreach ( var rb in GetTargets<RigidBody>() ) {
-        var cmPosition = rb.transform.TransformPoint( rb.MassProperties.CenterOfMassOffset.Value );
+        var cmPosition = rb.transform.position +
+                         rb.transform.TransformDirection( rb.MassProperties.CenterOfMassOffset.Value );
         var cmTransformToolVisible = !rb.MassProperties.CenterOfMassOffset.UseDefault;
         if ( cmTransformToolVisible ) {
           var newPosition = PositionTool( cmPosition, rb.transform.rotation, 0.6f, 1.0f );
           if ( Vector3.SqrMagnitude( cmPosition - newPosition ) > 1.0E-6 ) {
+            Undo.RecordObject( rb.MassProperties, "Center of mass changed" );
             cmPosition = newPosition;
-            rb.MassProperties.CenterOfMassOffset.UserValue = rb.transform.InverseTransformPoint( newPosition );
+            rb.MassProperties.CenterOfMassOffset.UserValue = rb.transform.InverseTransformDirection( newPosition -
+                                                                                                     rb.transform.position );
+            EditorUtility.SetDirty( rb );
           }
         }
 
@@ -190,12 +194,13 @@ namespace AGXUnityEditor.Tools
                          true,
                          0.0f,
                          0.25f );
-        var shapes = rb.GetComponentsInChildren<Shape>();
+        var shapes = rb.Shapes;
         if ( shapes.Length < 2 )
           continue;
         int shapeIndex = 0;
         foreach ( var shape in shapes ) {
-          var shapeLine = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( rbId + "_shape_" + (shapeIndex++).ToString(), "GUI/Text Shader" );
+          var shapeLine = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( rbId + "_shape_" + (shapeIndex++).ToString(),
+                                                                                     "GUI/Text Shader" );
           shapeLine.Color = new Color( 0, 1, 0, 0.05f );
           shapeLine.Visible = true;
           shapeLine.Pickable = false;
