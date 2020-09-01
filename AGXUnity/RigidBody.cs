@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using AGXUnity.Utils;
 using AGXUnity.Collide;
 using UnityEngine;
@@ -193,9 +194,67 @@ namespace AGXUnity
     /// </summary>
     [HideInInspector]
     public bool IsEnabled { get { return gameObject.activeInHierarchy && enabled; } }
+
+    /// <summary>
+    /// Array of shapes belonging to this rigid body instance.
+    /// </summary>
+    [HideInInspector]
+    public Shape[] Shapes
+    {
+      get
+      {
+        return State == States.CONSTRUCTED || State == States.DESTROYED ?
+                 GetShapes() :
+                 m_shapesCache;
+      }
+      private set
+      {
+        m_shapesCache = value ?? new Shape[] { };
+      }
+    }
+
+    /// <summary>
+    /// True if this rigid body has an articulated root parent.
+    /// </summary>
+    [HideInInspector]
+    public bool HasArticulatedRoot
+    {
+      get
+      {
+        return ((State == States.CONSTRUCTED || State == States.DESTROYED) && GetArticulatedRoot() != null) ||
+               m_hasArticulatedRoot;
+      }
+      private set
+      {
+        m_hasArticulatedRoot = value;
+      }
+    }
+
+    private Shape[] m_shapesCache = new Shape[] { };
+    private bool m_hasArticulatedRoot = false;
     #endregion
 
     #region Public Methods
+    /// <summary>
+    /// Finds all shapes belonging to this rigid body instance.
+    /// </summary>
+    /// <returns>Array of shapes belonging to this rigid body.</returns>
+    public Shape[] GetShapes()
+    {
+      return ( from shape in GetComponentsInChildren<Shape>()
+               where shape.GetComponentInParent<RigidBody>() == this
+               select shape ).ToArray();
+    }
+
+    /// <summary>
+    /// Finds articulated root instance in parents.
+    /// </summary>
+    /// <returns>Articulated root instance if present, otherwise null.</returns>
+    public ArticulatedRoot GetArticulatedRoot()
+    {
+      return GetComponentInParent<ArticulatedRoot>();
+    }
+
     /// <summary>
     /// Updates mass properties script asset with current mass, inertia etc.
     /// </summary>
@@ -237,13 +296,11 @@ namespace AGXUnity
       if ( m_rb != null )
         callback( m_rb, false );
       else {
-        Shape[] shapes = GetComponentsInChildren<Shape>();
-
-        using ( agx.RigidBody rb = new agx.RigidBody() ) {
-          foreach ( Shape shape in shapes ) {
-            agxCollide.Shape nativeShape = shape.CreateTemporaryNative();
+        using ( var rb = new agx.RigidBody() ) {
+          foreach ( var shape in Shapes ) {
+            var nativeShape = shape.CreateTemporaryNative();
             if ( nativeShape != null ) {
-              agxCollide.Geometry geometry = new agxCollide.Geometry( nativeShape );
+              var geometry = new agxCollide.Geometry( nativeShape );
 
               geometry.setEnable( shape.IsEnabled );
 
@@ -262,7 +319,7 @@ namespace AGXUnity
           // Hitting "Update" (mass or inertia in the Inspector) several times
           // will crash agx if we don't remove the geometries and shapes.
           while ( rb.getGeometries().Count > 0 ) {
-            agxCollide.Geometry geometry = rb.getGeometries()[ 0 ].get();
+            var geometry = rb.getGeometries()[ 0 ].get();
             if ( geometry.getShapes().Count > 0 )
               geometry.remove( geometry.getShapes()[ 0 ].get() );
             rb.remove( geometry );
@@ -294,11 +351,10 @@ namespace AGXUnity
 
       MassProperties.RestoreLocalDataFrom( native );
 
-      enabled                = native.getEnable();
-      // Should the body be enabled?
-      gameObject.SetActive(native.isEnabled());
+      enabled = native.getEnable();
+      gameObject.SetActive( enabled );
 
-      MotionControl = native.getMotionControl();
+      MotionControl          = native.getMotionControl();
       HandleAsParticle       = native.getHandleAsParticle();
       LinearVelocity         = native.getVelocity().ToHandedVector3();
       LinearVelocityDamping  = native.getLinearVelocityDamping().ToHandedVector3();
@@ -310,7 +366,10 @@ namespace AGXUnity
     #region Protected Virtual Methods
     protected override bool Initialize()
     {
-      m_transform = transform;
+      m_transform        = transform;
+      Shapes             = GetShapes();
+      HasArticulatedRoot = GetArticulatedRoot() != null &&
+                           GetArticulatedRoot().enabled;
       
       VerifyConfiguration();
 
@@ -348,8 +407,10 @@ namespace AGXUnity
       if ( Simulation.HasInstance )
         GetSimulation().remove( m_rb );
 
-      m_rb = null;
-      m_transform = null;
+      m_rb               = null;
+      m_transform        = null;
+      Shapes             = null;
+      HasArticulatedRoot = false;
 
       base.OnDestroy();
     }
@@ -373,13 +434,18 @@ namespace AGXUnity
 
     private void HandleUpdateCallbacks( bool enable )
     {
+      // The articulated root component is in charge of the
+      // transform synchronization.
+      if ( HasArticulatedRoot )
+        return;
+
       if ( enable )
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
       else
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
     }
 
-    private void OnPostSynchronizeTransformsCallback()
+    internal void OnPostSynchronizeTransformsCallback()
     {
       SyncUnityTransform();
       SyncProperties();
@@ -392,8 +458,7 @@ namespace AGXUnity
 
     private void SyncShapes()
     {
-      Shape[] shapes = GetComponentsInChildren<Shape>();
-      foreach ( Shape shape in shapes ) {
+      foreach ( var shape in Shapes ) {
         try {
           shape.GetInitialized<Shape>().SetRigidBody( this );
         }
@@ -437,8 +502,16 @@ namespace AGXUnity
 
     private void VerifyConfiguration()
     {
-      // Verification:
-      // - No parent may be a body.
+      // If we have an articulated root that controls the
+      // transform synchronization we support other rigid
+      // bodies in the hierarchy.
+      if ( HasArticulatedRoot )
+        return;
+
+      // If there's no articulated root we have to verify
+      // so that this rigid body instance doesn't have another
+      // rigid body as parent - because it's UB when we don't
+      // know the execution order of transform synchronization.
       var parent = transform.parent;
       while ( parent != null ) {
         bool hasBody = parent.GetComponent<RigidBody>() != null;

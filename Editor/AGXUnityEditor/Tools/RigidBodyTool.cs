@@ -265,18 +265,9 @@ namespace AGXUnityEditor.Tools
       if ( IsMultiSelect )
         return;
 
-      InspectorGUI.ToolArrayGUI( this, RigidBody.GetComponentsInChildren<Shape>(), "Shapes" );
+      InspectorGUI.ToolArrayGUI( this, RigidBody.Shapes, "Shapes" );
 
       InspectorGUI.ToolArrayGUI( this, m_constraints.ToArray(), "Constraints" );
-    }
-
-    private void AssignShapeMaterialToAllShapes( ShapeMaterial shapeMaterial )
-    {
-      Shape[] shapes = RigidBody.GetComponentsInChildren<Shape>();
-      foreach ( var shape in shapes )
-        shape.Material = shapeMaterial;
-
-      RigidBody.UpdateMassProperties();
     }
   }
 }
