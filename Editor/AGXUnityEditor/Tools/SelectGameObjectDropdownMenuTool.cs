@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnityEditor.Tools
 {
   public class SelectGameObjectDropdownMenuTool : Tool
@@ -16,17 +18,21 @@ namespace AGXUnityEditor.Tools
       bool hasShape     = !isNull && gameObject.GetComponent<AGXUnity.Collide.Shape>() != null;
       bool hasWire      = !isNull && gameObject.GetComponent<Wire>() != null;
       bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
+      bool hasTrack     = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
+      bool hasTerrain   = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null;
 
-      string nullTag      = isNull       ? Utils.GUI.AddColorTag( "[null]", Color.red ) : "";
-      string visualTag    = hasVisual    ? Utils.GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
-      string rigidBodyTag = hasRigidBody ? Utils.GUI.AddColorTag( "[RigidBody]", Color.Lerp( Color.blue, Color.white, 0.35f ) ) : "";
-      string shapeTag     = hasShape     ? Utils.GUI.AddColorTag( "[" + gameObject.GetComponent<AGXUnity.Collide.Shape>().GetType().Name + "]", Color.Lerp( Color.green, Color.black, 0.4f ) ) : "";
-      string wireTag      = hasWire      ? Utils.GUI.AddColorTag( "[Wire]", Color.Lerp( Color.cyan, Color.black, 0.35f ) ) : "";
-      string cableTag     = hasCable     ? Utils.GUI.AddColorTag( "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
+      string nullTag      = isNull       ? GUI.AddColorTag( "[null]", Color.red ) : "";
+      string visualTag    = hasVisual    ? GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
+      string rigidBodyTag = hasRigidBody ? GUI.AddColorTag( "[RigidBody]", Color.Lerp( Color.blue, Color.white, 0.35f ) ) : "";
+      string shapeTag     = hasShape     ? GUI.AddColorTag( "[" + gameObject.GetComponent<AGXUnity.Collide.Shape>().GetType().Name + "]", Color.Lerp( Color.green, Color.black, 0.4f ) ) : "";
+      string wireTag      = hasWire      ? GUI.AddColorTag( "[Wire]", Color.Lerp( Color.cyan, Color.black, 0.35f ) ) : "";
+      string cableTag     = hasCable     ? GUI.AddColorTag( "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
+      string trackTag     = hasTrack     ? GUI.AddColorTag( "[Track]", Color.Lerp( Color.yellow, Color.red, 0.45f ) ) : "";
+      string terrainTag   = hasTerrain   ? GUI.AddColorTag( "[Terrain]", Color.Lerp( Color.green, Color.yellow, 0.25f ) ) : "";
 
       string name = isNull ? "World" : gameObject.name;
 
-      return Utils.GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag );
+      return GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag + trackTag + terrainTag );
     }
 
     public class ObjectData
@@ -105,7 +111,7 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    private GUIContent WindowTitle { get { return Utils.GUI.MakeLabel( Title ); } }
+    private GUIContent WindowTitle { get { return GUI.MakeLabel( Title ); } }
 
     private float m_windowWidth = 0f;
 
@@ -119,7 +125,7 @@ namespace AGXUnityEditor.Tools
 
       m_gameObjectList.Clear();
 
-      m_windowWidth = Mathf.Max( 1.5f * Utils.GUI.Skin.label.CalcSize( WindowTitle ).x, Utils.GUI.Skin.button.CalcSize( GetGUIContent( Target ) ).x );
+      m_windowWidth = Mathf.Max( 1.5f * GUI.Skin.label.CalcSize( WindowTitle ).x, GUI.Skin.button.CalcSize( GetGUIContent( Target ) ).x );
 
       if ( Target != null ) {
         if ( pred( Target ) )
@@ -127,7 +133,7 @@ namespace AGXUnityEditor.Tools
 
         Transform parent = Target.transform.parent;
         while ( parent != null ) {
-          m_windowWidth = Mathf.Max( m_windowWidth, Utils.GUI.Skin.button.CalcSize( GetGUIContent( parent.gameObject ) ).x );
+          m_windowWidth = Mathf.Max( m_windowWidth, GUI.Skin.button.CalcSize( GetGUIContent( parent.gameObject ) ).x );
 
           if ( pred( parent.gameObject ) )
             m_gameObjectList.Add( new ObjectData() { GameObject = parent.gameObject, MouseOver = false } );
@@ -147,7 +153,7 @@ namespace AGXUnityEditor.Tools
         if ( eventType == EventType.Repaint )
           data.MouseOver = false;
 
-        if ( GUILayout.Button( GetGUIContent( data.GameObject ), Utils.GUI.Skin.button ) )
+        if ( GUILayout.Button( GetGUIContent( data.GameObject ), GUI.Skin.button ) )
           m_selected = new SelectedObject() { Object = data.GameObject };
 
         if ( eventType == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains( Event.current.mousePosition ) ) {
@@ -156,8 +162,8 @@ namespace AGXUnityEditor.Tools
         }
       }
 
-      if ( eventType == EventType.Repaint )
-        SetVisualizedSelection( mouseOverObject );
+      if ( mouseOverObject != HighlightObject && eventType == EventType.Repaint )
+        HighlightObject = mouseOverObject;
     }
   }
 }

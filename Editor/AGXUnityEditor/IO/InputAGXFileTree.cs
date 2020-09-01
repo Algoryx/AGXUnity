@@ -132,6 +132,14 @@ namespace AGXUnityEditor.IO
       return null;
     }
 
+    public agx.ObserverFrame GetObserverFrame( agx.Uuid uuid )
+    {
+      agx.ObserverFrame observerFrame;
+      if ( m_observerFrames.TryGetValue( uuid, out observerFrame ) )
+        return observerFrame;
+      return null;
+    }
+
     public void Parse( agxSDK.Simulation simulation, AGXFileInfo fileInfo )
     {
       if ( simulation == null )
@@ -139,10 +147,6 @@ namespace AGXUnityEditor.IO
 
       if ( m_roots.Count > 0 )
         throw new AGXUnity.Exception( "Calling InputAGXFileTree::Parse multiple times is not supported." );
-
-      // Generating assets first.
-      m_roots.Add( m_materialRoot );
-      m_roots.Add( m_contactMaterialRoot );
 
       // RigidBody nodes.
       foreach ( var nativeRb in simulation.getRigidBodies() ) {
@@ -225,7 +229,7 @@ namespace AGXUnityEditor.IO
         foreach ( var id in groupsCollection.getIds() )
           cableNode.AddReference( new Node() { Type = NodeType.GroupId, Object = id.ToString() } );
 
-        agxCable.CableIterator it = cable.getSegments().begin();
+        var it = cable.getSegments().begin();
         while ( !it.EqualWith( cable.getSegments().end() ) ) {
           var constraint = it.getConstraint();
           if ( constraint != null && GetConstraint( constraint.getUuid() ) != null )
@@ -250,10 +254,27 @@ namespace AGXUnityEditor.IO
         }
       }
 
+      foreach ( var observerFrame in simulation.getObserverFrames() ) {
+        if ( observerFrame.getRigidBody() == null )
+          continue;
+        var rbNode = GetNode( observerFrame.getRigidBody().getUuid() );
+        if ( rbNode == null )
+          continue;
+
+        var observerFrameNode = GetOrCreateObserverFrame( observerFrame.get() );
+        observerFrameNode.AddReference( rbNode );
+      }
+
       // Generating wires, cables and constraints last when all bodies has been generated.
       m_roots.Add( m_wireRoot );
       m_roots.Add( m_cableRoot );
       m_roots.Add( m_constraintRoot );
+      m_roots.Add( m_observerFrameRoot );
+      // Generating assets last since we have to know the references.
+      // Materials aren't parsed, they are generated on the fly when
+      // objects references them.
+      m_roots.Add( m_materialRoot );
+      m_roots.Add( m_contactMaterialRoot );
     }
 
     private void Parse( agxCollide.Geometry geometry, Node parent )
@@ -361,6 +382,14 @@ namespace AGXUnityEditor.IO
                               () => m_contactMaterials.Add( contactMaterial.getUuid(), contactMaterial ) );
     }
 
+    private Node GetOrCreateObserverFrame( agx.ObserverFrame observerFrame )
+    {
+      return GetOrCreateNode( NodeType.ObserverFrame,
+                              observerFrame.getUuid(),
+                              true,
+                              () => m_observerFrames.Add( observerFrame.getUuid(), observerFrame ) );
+    }
+
     private Node GetOrCreateNode( NodeType type, agx.Uuid uuid, bool isRoot, Action onCreate )
     {
       if ( m_nodeCache.ContainsKey( uuid ) )
@@ -390,6 +419,8 @@ namespace AGXUnityEditor.IO
           m_wireRoot.AddChild( node );
         else if ( type == NodeType.Cable )
           m_cableRoot.AddChild( node );
+        else if ( type == NodeType.ObserverFrame )
+          m_observerFrameRoot.AddChild( node );
         else if ( m_roots.FindIndex( n => n.Uuid == uuid ) >= 0 )
           Debug.LogError( "Node already present as root." );
         else
@@ -411,6 +442,7 @@ namespace AGXUnityEditor.IO
     private Dictionary<agx.Uuid, agxCable.Cable>      m_cables           = new Dictionary<agx.Uuid, agxCable.Cable>( new AGXUnity.IO.UuidComparer() );
     private Dictionary<agx.Uuid, agx.Material>        m_materials        = new Dictionary<agx.Uuid, agx.Material>( new AGXUnity.IO.UuidComparer() );
     private Dictionary<agx.Uuid, agx.ContactMaterial> m_contactMaterials = new Dictionary<agx.Uuid, agx.ContactMaterial>( new AGXUnity.IO.UuidComparer() );
+    private Dictionary<agx.Uuid, agx.ObserverFrame>   m_observerFrames   = new Dictionary<agx.Uuid, agx.ObserverFrame>( new AGXUnity.IO.UuidComparer() );
 
     private List<Node> m_roots         = new List<Node>();
     private Node m_constraintRoot      = new Node() { Type = NodeType.Placeholder, Name = "Constraints" };
@@ -418,5 +450,6 @@ namespace AGXUnityEditor.IO
     private Node m_cableRoot           = new Node() { Type = NodeType.Placeholder, Name = "Cables" };
     private Node m_materialRoot        = new Node() { Type = NodeType.Placeholder, Name = "Shape materials" };
     private Node m_contactMaterialRoot = new Node() { Type = NodeType.Placeholder, Name = "Contact materials" };
+    private Node m_observerFrameRoot   = new Node() { Type = NodeType.Placeholder, Name = "Observer frames" };
   }
 }

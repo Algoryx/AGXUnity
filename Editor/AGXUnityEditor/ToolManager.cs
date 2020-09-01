@@ -89,22 +89,36 @@ namespace AGXUnityEditor
       if ( child == null )
         return;
 
-      var root = child.GetRoot() as CustomTargetTool;
-      if ( root == null )
-        return;
-
-      foreach ( var targetTool in ActiveTools ) {
-        if ( targetTool == root )
-          continue;
-
-        Traverse( targetTool, tool =>
-        {
-          if ( !tool.IsSingleInstanceTool )
-            return false;
-          tool.PerformRemoveFromParent();
+      var singleInstanceTools = new List<Tool>();
+      Func<Tool, bool> visitor = tool =>
+      {
+        // We don't want to remove children to our tool that's being added.
+        // I.e., return true to not visit 'child' children.
+        if ( tool == child )
           return true;
-        } );
-      }
+
+        if ( tool.HasChild( child ) )
+          return false;
+
+        // Route node tool is managing its children.
+        if ( tool.HasParent<RouteNodeTool>() )
+          return false;
+
+        if ( !tool.IsSingleInstanceTool )
+          return false;
+
+        if ( tool is CustomTargetTool )
+          return false;
+
+        singleInstanceTools.Add( tool );
+
+        return true;
+      };
+      foreach ( var activeTool in ActiveTools )
+        Traverse( activeTool, visitor );
+
+      foreach ( var toolToRemove in singleInstanceTools )
+        toolToRemove.PerformRemoveFromParent();
     }
 
     /// <summary>
@@ -141,7 +155,8 @@ namespace AGXUnityEditor
       try {
         tool = (CustomTargetTool)Activator.CreateInstance( toolType, new object[] { targets } );
       }
-      catch ( Exception ) {
+      catch ( Exception e ) {
+        Debug.LogException( e );
         return;
       }
 
@@ -219,14 +234,13 @@ namespace AGXUnityEditor
       if ( m_recursiveEditors.TryGetValue( target, out editor ) ) {
         // Old editor with destroyed target, e.g., when entering
         // edit coming from play mode.
-        if ( editor.target == null ) {
+        if ( editor.target == null )
           ReleaseRecursiveEditor( target );
-          editor = null;
-        }
         else
           return editor;
       }
-      editor = Editor.CreateEditor( target );
+
+      editor = InspectorEditor.CreateRecursive( target );
       if ( editor != null )
         m_recursiveEditors.Add( target, editor );
       return editor;
@@ -310,6 +324,8 @@ namespace AGXUnityEditor
       // Update 'tool' key handlers, so they're up to date when OnSceneView is called.
       foreach ( var keyHandler in tool.KeyHandlers )
         keyHandler.Update( Event.current );
+
+      Tool.ClearTemporaries( tool );
 
       tool.OnSceneViewGUI( sceneView );
 

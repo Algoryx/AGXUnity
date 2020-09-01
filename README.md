@@ -1,14 +1,22 @@
-[Algoryx Simulation AB](https://www.algoryx.se)
+[![agx-dynamics-for-unity](https://github.com/Algoryx/AGXUnity/blob/master/Editor/Data/agx_for_unity_logo_black.png)](https://www.algoryx.se/agx-unity/)
 
-# AGXUnity - AGX Dynamics Unity 3D plugin
+# AGX Dynamics for Unity - AGXUnity
 
-*Unity 3D bindings for [AGX Dynamics](https://www.algoryx.se/products/agx-dynamics/)* from [Algoryx Simulation AB](https://www.algoryx.se)
+*Unity bindings for [AGX Dynamics](https://www.algoryx.se/agx-dynamics/)* from [Algoryx Simulation AB](https://www.algoryx.se).
 
-AGX Dynamics is a professional multi-purpose physics engine for simulators, Virtual Reality (VR), engineering, large scale granular simulations and more. AGX is being utilized in hundreds of training simulators and helps engineers design and evaluate new mechanical systems in *[Algoryx Momentum](https://www.algoryx.se/products/algoryx-momentum/)*.
+AGX Dynamics is a professional multi-purpose physics engine for simulators, Virtual Reality (VR), engineering, large scale granular simulations and more. AGX is being utilized in hundreds of training simulators and helps engineers design and evaluate new mechanical systems in *[Algoryx Momentum](https://www.algoryx.se/momentum/)* and *[Algoryx Momentum Granular](https://www.algoryx.se/momentum-granular/)*.
 
-## Installation
+## Official package
 
-Unity has to be started with AGX environment variables. For example (command prompt):
+  - Contains a clone of the source from this repository but also AGX Dynamics (64-bit Windows) binaries as [native plugins](https://docs.unity3d.com/Manual/NativePlugins.html).
+  - Doesn't require AGX Dynamics environment variables inside Unity nor in builds, so any project with **AGX Dynamics for Unity** supports Unity Hub.
+  - Supports `Check for updates...` and update of the installed package when a new official release is available.
+
+Please check [AGX Dynamics for Unity product page](https://www.algoryx.se/agx-unity/) for more information.
+
+## Installation - with AGX Dynamics installed separately
+
+If you don't want to use **AGX Dynamics for Unity (with AGX Dynamics included)**, the AGXUnity plugin can be installed separately following these instructions and alternatives. Unity has to be started with AGX Dynamics environment variables - for example (command prompt):
 
 ---
 ```
@@ -29,9 +37,12 @@ vcvarsall.bat used:
 
 Using Python interpreter C:\Program Files\Python35\python.exe
 
-C:\>"Program Files\Unity\Editor\Unity.exe"
+C:\>"Program Files\Unity\Editor\Unity.exe" -projectPath MyUnityProject
 ```
 ---
+
+Note that `-projectPath` has to be given when you have Unity Hub installed,
+[since Unity Hub doesn't forward the environment variables to the Unity process](https://issuetracker.unity3d.com/issues/environment-variables-dropped-when-using-unity-hub-2-dot-0-0).
 
 Without the AGX environment, Unity could crash or output error: `DllNotFoundException: agxDotNetRuntime.dll`
 
@@ -50,7 +61,7 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 ### Requirements
 
-+ AGX Dynamics 2.24.1.0 (64-bit) or later.
++ AGX Dynamics 2.29.0.0 (64-bit) or later (2.28.1.0 in rc/2.0).
 + Unity 3D 2017.4.10 (64-bit) or later. Could work in earlier version but hasn't been tested.
 + Unity Script Runtime Version .NET 4.x Equivalent (Experimental in 2017.x).
 + Valid AGX Dynamics license. [Contact us for more information.](https://www.algoryx.se/contact/)

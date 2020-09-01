@@ -2,7 +2,7 @@
 using AGXUnity;
 using UnityEngine;
 using UnityEditor;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
@@ -47,7 +47,7 @@ namespace AGXUnityEditor.Tools
                                                                                                             "Update: Called from MonoBehaviour.Update with arbitrary time step size.\n" +
                                                                                                             "Disabled: User has to manually invoke Simulation.Instance.DoStep()."),
                                                                                              Simulation.AutoSteppingMode,
-                                                                                             skin.button );
+                                                                                             skin.Popup );
 
       if ( prevMode != Simulation.AutoSteppingMode ) {
         if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate )
@@ -66,7 +66,7 @@ namespace AGXUnityEditor.Tools
                                                                    Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate ?
                                                                      Simulation.TimeStep :
                                                                      Time.fixedDeltaTime,
-                                                                   skin.textField ),
+                                                                   skin.TextField ),
                                        0.0f );
       UnityEngine.GUI.enabled = true;
 
@@ -79,7 +79,7 @@ namespace AGXUnityEditor.Tools
                                                                                           "resulting in slow motion looking simulations but (relatively) high camera FPS in " +
                                                                                           "performance heavy simulations." ),
                                                                            Simulation.FixedUpdateRealTimeFactor,
-                                                                           skin.textField );
+                                                                           skin.TextField );
       else if ( prevMode == Simulation.AutoSteppingModes.Update )
         Simulation.UpdateRealTimeCorrectionFactor = EditorGUILayout.FloatField( GUI.MakeLabel( "Real Time Correction Factor",
                                                                                                false,
@@ -87,75 +87,75 @@ namespace AGXUnityEditor.Tools
                                                                                                "This value scales the time since last frame so that we don't lose a stepForward " +
                                                                                                "call when Update is called > 60 Hz. Default: 0.9." ),
                                                                                 Simulation.UpdateRealTimeCorrectionFactor,
-                                                                                skin.textField );
-
-      GUI.Separator();
+                                                                                skin.TextField );
     }
 
     public override void OnPostTargetMembersGUI()
     {
       var skin = InspectorEditor.Skin;
 
-      GUI.Separator();
-
-      Simulation.DisplayStatistics = GUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics, skin.button, skin.label );
+      Simulation.DisplayStatistics = InspectorGUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
-        using ( new GUI.Indent( 12 ) )
-          Simulation.DisplayMemoryAllocations = GUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations, skin.button, skin.label );
+        using ( InspectorGUI.IndentScope.Single )
+          Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
       }
 
-      GUI.Separator();
+      InspectorGUI.Separator( 1, 4 );
 
-      using ( new GUILayout.HorizontalScope() ) {
-        EditorGUI.BeginDisabledGroup( !Application.isPlaying );
+      using ( new GUI.EnabledBlock( Application.isPlaying ) ) {
+#if AGXUNITY_DEV_BUILD
         if ( GUILayout.Button( GUI.MakeLabel( "Save current step as (.agx)...",
                                               false,
-                                              "Save scene in native file format when the editor is in play mode." ), skin.button ) ) {
-          string result = EditorUtility.SaveFilePanel( "Save scene as .agx", "Assets", UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name, "agx" );
-          if ( result != string.Empty ) {
-            var success = Simulation.SaveToNativeFile( result );
-            if ( success )
-              Debug.Log( "Successfully wrote simulation to file: " + result );
-          }
+                                              "Save scene in native file format when the editor is in play mode." ),
+                               skin.Button ) ) {
+          saveCurrentState();
         }
 
         if ( GUILayout.Button( GUI.MakeLabel( "Open in AGX native viewer",
                                               false,
-                                              "Creates Lua file, saves current scene to an .agx file and executes luaagx.exe." ), skin.button ) ) {
+                                              "Creates Lua file, saves current scene to an .agx file and executes luaagx.exe." ), skin.Button ) ) {
           Simulation.OpenInNativeViewer();
         }
-        EditorGUI.EndDisabledGroup();
-      }
+#endif
 
-      GUI.Separator();
-
-      Simulation.SavePreFirstStep = GUI.Toggle( GUI.MakeLabel( "Dump initial (.agx):" ),
-                                                                Simulation.SavePreFirstStep,
-                                                                skin.button,
-                                                                skin.label );
-      EditorGUI.BeginDisabledGroup( !Simulation.SavePreFirstStep );
-      {
-        using ( new GUILayout.HorizontalScope() ) {
-          GUILayout.Space( 26 );
-          Simulation.SavePreFirstStepPath = GUILayout.TextField( Simulation.SavePreFirstStepPath, skin.textField );
-          if ( GUILayout.Button( GUI.MakeLabel( "...", false, "Open file panel" ),
-                                 skin.button,
-                                 GUILayout.Width( 28 ) ) ) {
-            string result = EditorUtility.SaveFilePanel( "Path to initial dump (including file name and extension)",
-                                                         SaveInitialPath,
-                                                         UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name, "agx" );
-            if ( result != string.Empty ) {
-              SaveInitialPath = result;
-              var fileInfo = new System.IO.FileInfo( SaveInitialPath );
-              if ( fileInfo.Extension == ".agx" || fileInfo.Extension == ".aagx" )
-                Simulation.SavePreFirstStepPath = SaveInitialPath;
-              else
-                Debug.Log( "Unknown file extension: " + fileInfo.Extension );
-            }
+        var rect = EditorGUILayout.GetControlRect();
+        var orgWidth = rect.width;
+        rect.width = EditorGUIUtility.labelWidth;
+        EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Save current step as (.agx)" ), skin.Label );
+        rect.x += EditorGUIUtility.labelWidth;
+        rect.width = orgWidth - EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Output file..." ), skin.Button ) ) {
+          string result = EditorUtility.SaveFilePanel( "Save scene as .agx",
+                                                       "Assets",
+                                                       UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
+                                                       "agx" );
+          if ( result != string.Empty ) {
+            var success = Simulation.SaveToNativeFile( result );
+            if ( success )
+              Debug.Log( GUI.AddColorTag( "Successfully wrote simulation to file: ", Color.green ) + result );
           }
         }
       }
-      EditorGUI.EndDisabledGroup();
+
+      Simulation.SavePreFirstStepPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "Dump initial (.agx)" ),
+                                                                     Simulation.SavePreFirstStep,
+                                                                     enabled => Simulation.SavePreFirstStep = enabled,
+                                                                     Simulation.SavePreFirstStepPath,
+                                                                     UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().name,
+                                                                     "agx",
+                                                                     "Path to initial dump (including file name and extension)",
+                                                                     fileExtension => fileExtension == ".agx" || fileExtension == ".aagx" );
+
+#if AGXUNITY_DEV_ENV
+      using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
+        var rect    = EditorGUILayout.GetControlRect();
+        rect.x     += EditorGUIUtility.labelWidth;
+        rect.width -= EditorGUIUtility.labelWidth;
+        if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "Open in native viewer..." ), skin.Button ) )
+          ;
+
+      }
+#endif
     }
 
     private EditorDataEntry GetSaveInitialPathEditorData( string name )

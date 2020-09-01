@@ -120,7 +120,7 @@ namespace AGXUnity
       var other = obj as DefaultAndUserValueFloat;
       return other != null &&
              other.UseDefault == UseDefault &&
-             Mathf.Approximately( other.Value, Value );
+             Utils.Math.Approximately( other.Value, Value );
     }
 
     public override int GetHashCode() => base.GetHashCode();
@@ -149,9 +149,9 @@ namespace AGXUnity
       var other = obj as DefaultAndUserValueVector3;
       return other != null &&
              other.UseDefault == UseDefault &&
-             Mathf.Approximately( other.Value.x, Value.x ) &&
-             Mathf.Approximately( other.Value.y, Value.y ) &&
-             Mathf.Approximately( other.Value.z, Value.z );
+             Utils.Math.Approximately( other.Value.x, Value.x ) &&
+             Utils.Math.Approximately( other.Value.y, Value.y ) &&
+             Utils.Math.Approximately( other.Value.z, Value.z );
     }
 
     public override int GetHashCode() => base.GetHashCode();

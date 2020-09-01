@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Merge Split Properties" )]
   public class MergeSplitProperties : ScriptComponent
   {
     [SerializeField]

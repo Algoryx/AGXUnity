@@ -11,6 +11,7 @@ namespace AGXUnity.Utils
     {
       private Dictionary<Vector3, int> m_vertexToIndexTable = new Dictionary<Vector3, int>();
       private List<Vector3> m_vertices = new List<Vector3>();
+      private List<Vector2> m_uvs = null;
       private List<int> m_indices = new List<int>();
       private Mesh m_mesh = null;
 
@@ -18,10 +19,12 @@ namespace AGXUnity.Utils
       public int NumIndices { get { return m_indices.Count; } }
       public Mesh Mesh { get { return m_mesh; } }
 
-      public SubMeshData( int capacity = Int16.MaxValue )
+      public SubMeshData( bool hasUvs, int capacity = Int16.MaxValue )
       {
         m_vertices.Capacity = capacity;
         m_indices.Capacity = capacity;
+        if ( hasUvs )
+          m_uvs = new List<Vector2>( capacity );
       }
 
       public void Add( Vector3 v1, Vector3 v2, Vector3 v3 )
@@ -29,6 +32,35 @@ namespace AGXUnity.Utils
         Add( v1 );
         Add( v2 );
         Add( v3 );
+      }
+
+      public void Add( Vector3 v1,
+                       Vector3 v2,
+                       Vector3 v3,
+                       Vector2 uv1,
+                       Vector2 uv2,
+                       Vector2 uv3 )
+      {
+        Add( v1, uv1 );
+        Add( v2, uv2 );
+        Add( v3, uv3 );
+      }
+
+      public void CreateMesh( agx.Vec3Vector vertices,
+                              agx.UInt32Vector indices,
+                              agx.Vec2Vector uvs,
+                              Func<agx.Vec3, Vector3> vertexTransformer )
+      {
+        m_vertices.AddRange( from v in vertices select vertexTransformer( v ) );
+        if ( uvs != null )
+          m_uvs.AddRange( from uv in uvs select uv.ToVector2() );
+        for ( int i = 0; i < indices.Count; i += 3 ) {
+          m_indices.Add( Convert.ToInt32( indices[ i + 0 ] ) );
+          m_indices.Add( Convert.ToInt32( indices[ i + 2 ] ) );
+          m_indices.Add( Convert.ToInt32( indices[ i + 1 ] ) );
+        }
+
+        CreateMesh();
       }
 
       public void CreateMesh()
@@ -40,12 +72,15 @@ namespace AGXUnity.Utils
         m_mesh.SetVertices( m_vertices );
         m_mesh.SetTriangles( m_indices, 0, false );
 
+        if ( m_uvs != null )
+          m_mesh.SetUVs( 0, m_uvs );
+
         m_mesh.RecalculateBounds();
         m_mesh.RecalculateNormals();
         m_mesh.RecalculateTangents();
       }
 
-      private void Add( Vector3 v )
+      private int Add( Vector3 v )
       {
         int index;
         if ( !m_vertexToIndexTable.TryGetValue( v, out index ) ) {
@@ -55,23 +90,68 @@ namespace AGXUnity.Utils
         }
 
         m_indices.Add( index );
+
+        return index;
+      }
+
+      private void Add( Vector3 v, Vector2 uv )
+      {
+        var index = Add( v );
+        if ( index >= m_uvs.Count ) {
+          Debug.Assert( index == m_uvs.Count,
+                        $"Vertex index = {index}, UV count = {m_uvs.Count}" );
+          m_uvs.Add( uv );
+        }
       }
     }
 
-    public static MeshSplitter Split( agx.Vec3Vector vertices, agx.UInt32Vector indices, Func<agx.Vec3, Vector3> transformer, int maxNumVertices = Int16.MaxValue )
+    public static MeshSplitter Split( agx.Vec3Vector vertices,
+                                      agx.UInt32Vector indices,
+                                      Func<agx.Vec3, Vector3> transformer,
+                                      int maxNumVertices = Int16.MaxValue )
+    {
+      return Split( vertices, indices, null, transformer, maxNumVertices );
+    }
+
+    public static MeshSplitter Split( agx.Vec3Vector vertices,
+                                      agx.UInt32Vector indices,
+                                      agx.Vec2Vector uvs,
+                                      Func<agx.Vec3, Vector3> vertexTransformer,
+                                      int maxNumVertices = Int16.MaxValue )
     {
       var splitter = new MeshSplitter();
+
+      if ( vertices.Count < maxNumVertices ) {
+        splitter.m_subMeshData.Add( new SubMeshData( uvs != null, vertices.Count ) );
+        splitter.m_subMeshData.Last().CreateMesh( vertices, indices, uvs, vertexTransformer );
+        return splitter;
+      }
+
+      // This works but isn't correct. It's not possible to recover
+      // the triangles list for a mesh with #vertices < MaxValue.
       splitter.m_vertices = new List<Vector3>( vertices.Count );
       for ( int i = 0; i < vertices.Count; ++i )
-        splitter.m_vertices.Add( transformer( vertices[ i ] ) );
+        splitter.m_vertices.Add( vertexTransformer( vertices[ i ] ) );
 
+      var hasUvs = uvs != null && uvs.Count == vertices.Count;
       for ( int i = 0; i < indices.Count; i += 3 ) {
         if ( i == 0 || splitter.m_subMeshData.Last().NumVertices >= maxNumVertices )
-          splitter.m_subMeshData.Add( new SubMeshData( maxNumVertices ) );
+          splitter.m_subMeshData.Add( new SubMeshData( hasUvs,
+                                                       maxNumVertices ) );
 
-        splitter.m_subMeshData.Last().Add( splitter.m_vertices[ Convert.ToInt32( indices[ i + 0 ] ) ],
-                                           splitter.m_vertices[ Convert.ToInt32( indices[ i + 2 ] ) ],
-                                           splitter.m_vertices[ Convert.ToInt32( indices[ i + 1 ] ) ] );
+        if ( hasUvs ) {
+          splitter.m_subMeshData.Last().Add( splitter.m_vertices[ Convert.ToInt32( indices[ i + 0 ] ) ],
+                                             splitter.m_vertices[ Convert.ToInt32( indices[ i + 2 ] ) ],
+                                             splitter.m_vertices[ Convert.ToInt32( indices[ i + 1 ] ) ],
+                                             uvs[ Convert.ToInt32( indices[ i + 0 ] ) ].ToVector2(),
+                                             uvs[ Convert.ToInt32( indices[ i + 2 ] ) ].ToVector2(),
+                                             uvs[ Convert.ToInt32( indices[ i + 1 ] ) ].ToVector2() );
+        }
+        else {
+          splitter.m_subMeshData.Last().Add( splitter.m_vertices[ Convert.ToInt32( indices[ i + 0 ] ) ],
+                                             splitter.m_vertices[ Convert.ToInt32( indices[ i + 2 ] ) ],
+                                             splitter.m_vertices[ Convert.ToInt32( indices[ i + 1 ] ) ] );
+        }
       }
 
       foreach ( var data in splitter.m_subMeshData )

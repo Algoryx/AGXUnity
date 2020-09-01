@@ -6,6 +6,7 @@ namespace AGXUnity.Rendering
   /// <summary>
   /// Shape visual for shape type Capsule.
   /// </summary>
+  [AddComponentMenu( "" )]
   [DoNotGenerateCustomEditor]
   public class ShapeVisualCapsule : ShapeVisual
   {

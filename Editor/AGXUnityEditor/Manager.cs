@@ -51,13 +51,16 @@ namespace AGXUnityEditor
     /// <summary>
     /// Name of assembly AGXUnity is built in to.
     /// </summary>
-    public static readonly string AGXUnityAssemblyName = "Assembly-CSharp";
+    public static readonly string AGXUnityAssemblyName = "AGXUnity";
 
     /// <summary>
     /// Name of assembly AGXUnityEditor is built in to.
     /// </summary>
-    public static readonly string AGXUnityEditorAssemblyName = "Assembly-CSharp-Editor";
+    public static readonly string AGXUnityEditorAssemblyName = "AGXUnityEditor";
 
+    /// <summary>
+    /// Scene view window handler, i.e., GUI windows rendered in Scene View.
+    /// </summary>
     public static GUIWindowHandler SceneViewGUIWindowHandler { get; private set; } = new GUIWindowHandler();
 
     /// <summary>
@@ -67,9 +70,15 @@ namespace AGXUnityEditor
     {
       IO.Utils.VerifyDirectories();
 
+      GetRequestScriptReloadData().Float = -1;
+
+      m_environmentState = ConfigureEnvironment();
+      if ( m_environmentState == EnvironmentState.Updating )
+        return;
+
       // If compatibility issues, this method will try to fix them and this manager
       // will probably be loaded again after the fix.
-      if ( !VerifyCompatibility() )
+      if ( m_environmentState == EnvironmentState.Initialized && !VerifyCompatibility() )
         return;
 
 #if UNITY_2019_1_OR_NEWER
@@ -102,6 +111,57 @@ namespace AGXUnityEditor
       CreateDefaultAssets();
 
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
+    }
+
+    public enum EditorWindowType
+    {
+      InspectorWindow,
+      SceneHierarchyWindow,
+      SceneView,
+      GameView
+    }
+
+    /// <summary>
+    /// Finds which window the mouse is currently hovering given type name
+    /// of the window class (including name space). E.g., "UnityEngine.InspectorWindow".
+    /// </summary>
+    /// <param name="windowClassName">Window class name, including name space.</param>
+    /// <returns>True if the mouse is hovering given window type name, otherwise false.</returns>
+    public static bool IsMouseOverWindow( string windowClassName )
+    {
+      try {
+        var mouseOverWindow = EditorWindow.mouseOverWindow;
+        return mouseOverWindow != null && mouseOverWindow.GetType().FullName == windowClassName;
+      }
+      catch ( Exception ) {
+        // EditorWindow.mouseOverWindow can throw null pointer exceptions at random.
+        return false;
+      }
+    }
+
+    /// <summary>
+    /// Finds if mouse is hovering given editor window type.
+    /// </summary>
+    /// <param name="windowType">Editor window type.</param>
+    /// <returns>True if the mouse is hovering given window type, otherwise false.</returns>
+    public static bool IsMouseOverWindow( EditorWindowType windowType )
+    {
+      return IsMouseOverWindow( "UnityEditor." + windowType.ToString() );
+    }
+
+    /// <summary>
+    /// Finds if mouse is hovering given editor window instance.
+    /// </summary>
+    /// <param name="editorWindow">Editor window instance.</param>
+    /// <returns>True if the mouse is hovering given editor window instance, otherwise false.</returns>
+    public static bool IsMouseOverWindow( EditorWindow editorWindow )
+    {
+      try {
+        return editorWindow != null && EditorWindow.mouseOverWindow == editorWindow;
+      }
+      catch ( Exception ) {
+        return false;
+      }
     }
 
     /// <summary>
@@ -266,6 +326,8 @@ namespace AGXUnityEditor
     private static GameObject m_visualsParent = null;
     private static HashSet<Utils.VisualPrimitive> m_visualPrimitives = new HashSet<Utils.VisualPrimitive>();
 
+    private static EnvironmentState m_environmentState = EnvironmentState.Unknown;
+
     public static GameObject VisualsParent
     {
       get
@@ -286,13 +348,35 @@ namespace AGXUnityEditor
     /// </summary>
     private static void UndoRedoPerformedCallback()
     {
-      // TODO: Should we perform full synchronize when the editor is
-      //       playing to synchronize native instances?
-
       // Trigger repaint of inspector GUI for our targets.
       var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       foreach ( var target in targets )
         EditorUtility.SetDirty( target );
+
+      // Collecting scripts that may require synchronize of
+      // data post undo/redo where the private serialized
+      // field has been changed but the public property with
+      // native synchronizations isn't touched.
+      if ( EditorApplication.isPlaying ) {
+        var objectsToSynchronize = new List<Object>();
+        Action<Object> addUnique = obj =>
+        {
+          if ( !objectsToSynchronize.Contains( obj ) )
+            objectsToSynchronize.Add( obj );
+        };
+        foreach ( var obj in Selection.objects ) {
+          if ( obj is AGXUnity.ScriptAsset )
+            addUnique( obj );
+          else if ( obj is GameObject ) {
+            var scripts = ( obj as GameObject ).GetComponents<AGXUnity.ScriptComponent>();
+            foreach ( var script in scripts )
+              addUnique( script );
+          }
+        }
+
+        foreach ( var obj in objectsToSynchronize )
+          PropertySynchronizer.Synchronize( obj );
+      }
 
       // Synchronizing all shape sizes with visuals - it's not possible
       // to determine affected shapes from tools targets or selection
@@ -308,8 +392,38 @@ namespace AGXUnityEditor
         SceneView.RepaintAll();
     }
 
+    /// <summary>
+    /// Callback from InspectorEditor when in OnDisable and target == null,
+    /// meaning the target has been deleted.
+    /// </summary>
+    public static void OnEditorTargetsDeleted()
+    {
+      var undoGroupId = Undo.GetCurrentGroup();
+
+      // Deleted RigidBody component leaves dangling MassProperties
+      // so we've to delete them explicitly.
+      var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
+      foreach ( var mp in mps ) {
+        if ( mp.RigidBody == null ) {
+          Undo.DestroyObjectImmediate( mp );
+        }
+      }
+
+      Undo.CollapseUndoOperations( undoGroupId );
+    }
+
     private static void OnSceneView( SceneView sceneView )
     {
+      if ( m_environmentState != EnvironmentState.Initialized ) {
+        var prev = m_environmentState;
+        m_environmentState = ConfigureEnvironment();
+        if ( prev != m_environmentState ) {
+          Debug.LogWarning( $"Environment state changed from {prev} to {m_environmentState}." );
+        }
+        if ( m_environmentState != EnvironmentState.Initialized )
+          return;
+      }
+
       if ( m_requestSceneViewFocus ) {
         sceneView.Focus();
         m_requestSceneViewFocus = false;
@@ -503,6 +617,105 @@ namespace AGXUnityEditor
         SceneView.RepaintAll();
     }
 
+    private enum EnvironmentState
+    {
+      Unknown,
+      Updating,
+      Uninitialized,
+      Initialized
+    }
+
+    private static EnvironmentState ConfigureEnvironment()
+    {
+#if AGXUNITY_UPDATING
+      Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );
+      return EnvironmentState.Updating;
+#else
+      // WARNING INFO:
+      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                       in players with API compatibility @ .NET Standard 2.0.
+      //     Unity 2017: AGX Dynamics for Unity won't compile due to 
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
+                          "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
+                          "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
+      }
+
+      // Running from within the editor - two options:
+      //   1. Unity has been started from an AGX environment => do nothing.
+      //   2. AGX Dynamics dll's are present in the plugins directory => setup
+      //      environment file paths.
+      var binariesInProject = IO.Utils.AGXDynamicsInstalledInProject;
+      if ( binariesInProject ) {
+        // This is necessary when e.g., terrain dynamically loads dll's.
+        AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
+
+        try {
+          AGXUnity.NativeHandler.Instance.Register( null );
+        }
+        catch ( TypeInitializationException ) {
+          var lastRequestData = GetRequestScriptReloadData();
+          if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+            lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+#if UNITY_2019_3_OR_NEWER
+            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
+            EditorUtility.RequestScriptReload();
+#else
+            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
+#endif
+          }
+
+          return EnvironmentState.Uninitialized;
+        }
+        catch ( Exception e ) {
+          Debug.LogException( e );
+          return EnvironmentState.Uninitialized;
+        }
+
+        if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
+          AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
+                                       IO.Utils.AGXUnityPluginDirectoryFull );
+
+        if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) )
+          AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH,
+                                       IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
+
+        var envInstance = agxIO.Environment.instance();
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+      }
+      else {
+        ExternalAGXInitializer.Initialize();
+      }
+
+      // This validate is only for "license status" window so
+      // the user will be noticed when something is wrong.
+      try {
+        AGXUnity.NativeHandler.Instance.ValidateLicense();
+        if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
+             !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
+          agx.Logger.instance().openLogfile( EditorSettings.Instance.AGXDynamics_LogPath.Trim(),
+                                             true,
+                                             true );
+      }
+      catch ( Exception ) {
+        return EnvironmentState.Uninitialized;
+      }
+
+      return EnvironmentState.Initialized;
+#endif
+    }
+
+    private static EditorDataEntry GetRequestScriptReloadData()
+    {
+      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -1.0f );
+    }
+
     private static bool Equals( byte[] a, byte[] b )
     {
       if ( a.Length != b.Length )
@@ -530,9 +743,14 @@ namespace AGXUnityEditor
 
     private static bool VerifyCompatibility()
     {
+      // Ignore this if the editor is going into Play. We're not
+      // coming here when the editor is stopped.
+      if ( EditorApplication.isPlayingOrWillChangePlaymode )
+        return true;
+
       string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
-      FileInfo currDll        = new FileInfo( localDllFilename );
-      FileInfo installedDll   = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
+      var currDll             = new FileInfo( localDllFilename );
+      var installedDll        = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
 
       // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )

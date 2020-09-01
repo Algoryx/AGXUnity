@@ -228,7 +228,7 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Assignes default values to a native simulation instace.
+    /// Assigns default values to a native simulation instance.
     /// </summary>
     /// <param name="simulation">Native simulation instance.</param>
     public static void AssignDefault( agxSDK.Simulation simulation )

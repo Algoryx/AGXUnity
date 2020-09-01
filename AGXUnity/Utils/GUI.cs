@@ -5,29 +5,13 @@ namespace AGXUnity.Utils
 {
   public class GUI
   {
-    /// <summary>
-    /// Indent block.
-    /// </summary>
-    /// <example>
-    /// using ( new GUI.Indent( 16.0f ) ) {
-    ///   GUILayout.Label( "This label is indented 16 pixels." );
-    /// }
-    /// GUILayout.Label( "This label isn't indented." );
-    /// </example>
-    public class Indent : IDisposable
+    public static class Symbols
     {
-      public Indent( float numPixels )
-      {
-        GUILayout.BeginHorizontal();
-        GUILayout.Space( numPixels );
-        GUILayout.BeginVertical();
-      }
+      //public const char ArrowRight = '\u21D2';
+      public const char ArrowRight = '\u2192';
+      public const char ArrowLeftRight = '\u2194';
 
-      public void Dispose()
-      {
-        GUILayout.EndVertical();
-        GUILayout.EndHorizontal();
-      }
+      public const char CircleArrowAcw = '\u21ba';
     }
 
     public class AlignBlock : IDisposable
@@ -98,35 +82,35 @@ namespace AGXUnity.Utils
 
     public static GUIContent MakeLabel( string text, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = new GUIContent();
-      string boldBegin = bold ? "<b>" : "";
-      string boldEnd   = bold ? "</b>" : "";
-      label.text       = boldBegin + text + boldEnd;
+      var content   = new GUIContent();
+      var boldBegin = bold ? "<b>" : "";
+      var boldEnd   = bold ? "</b>" : "";
+      content.text  = boldBegin + text + boldEnd;
 
       if ( toolTip != string.Empty )
-        label.tooltip = toolTip;
+        content.tooltip = toolTip;
 
-      return label;
+      return content;
     }
 
     public static GUIContent MakeLabel( string text, int size, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, bold, toolTip );
-      label.text       = @"<size=" + size + @">" + label.text + @"</size>";
+      var label  = MakeLabel( text, bold, toolTip );
+      label.text = @"<size=" + size + @">" + label.text + @"</size>";
       return label;
     }
 
     public static GUIContent MakeLabel( string text, Color color, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, bold, toolTip );
-      label.text       = AddColorTag( text, color );
+      var label  = MakeLabel( text, bold, toolTip );
+      label.text = AddColorTag( text, color );
       return label;
     }
 
     public static GUIContent MakeLabel( string text, Color color, int size, bool bold = false, string toolTip = "" )
     {
-      GUIContent label = MakeLabel( text, size, bold, toolTip );
-      label.text       = AddColorTag( label.text, color );
+      var label  = MakeLabel( text, size, bold, toolTip );
+      label.text = AddColorTag( label.text, color );
       return label;
     }
 
@@ -143,7 +127,7 @@ namespace AGXUnity.Utils
       get
       {
         if ( m_editorGUISkin == null )
-          m_editorGUISkin = Resources.Load<GUISkin>( "AGXEditorGUISkin" );
+          m_editorGUISkin = Resources.Load<GUISkin>( "AGXUnitySceneViewGUISkin" );
         return m_editorGUISkin ?? UnityEngine.GUI.skin;
       }
     }
@@ -158,25 +142,6 @@ namespace AGXUnity.Utils
       texture.Apply();
 
       return texture;
-    }
-
-    public static GUIStyle CreateSelectedStyle( GUIStyle orgStyle )
-    {
-      GUIStyle selectedStyle = new GUIStyle( orgStyle );
-      selectedStyle.normal = orgStyle.onActive;
-
-      return selectedStyle;
-    }
-
-    public static void WarningLabel( string warning, GUISkin skin )
-    {
-      var prevBgc = UnityEngine.GUI.backgroundColor;
-      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
-      GUILayout.Label( MakeLabel( warning,
-                                  Color.Lerp( Color.red, Color.white, 0.25f ),
-                                  true ),
-                       new GUIStyle( skin.textArea ) { alignment = TextAnchor.MiddleCenter } );
-      UnityEngine.GUI.backgroundColor = prevBgc;
     }
   }
 }

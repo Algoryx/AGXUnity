@@ -193,6 +193,7 @@ namespace AGXUnity
     /// <summary>
     /// Get route to initialize this wire.
     /// </summary>
+    [HideInInspector]
     public WireRoute Route
     {
       get
@@ -304,7 +305,7 @@ namespace AGXUnity
 
     protected override void OnDestroy()
     {
-      if ( GetSimulation() != null ) {
+      if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }

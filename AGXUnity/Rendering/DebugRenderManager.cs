@@ -373,7 +373,7 @@ namespace AGXUnity.Rendering
 
     private void SynchronizeScaleIfNodeExist( Collide.Shape shape )
     {
-      var data = shape.gameObject.GetComponent<ShapeDebugRenderData>();
+      var data = shape.GetComponent<ShapeDebugRenderData>();
       if ( data != null )
         data.SynchronizeScale( shape );
     }

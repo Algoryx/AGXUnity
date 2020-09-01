@@ -44,6 +44,8 @@ namespace AGXUnityEditor.Tools
           return;
         }
 
+        HighlightObject = m_collectedData.Target;
+
         m_collectedData.RaycastResult = Utils.Raycast.Intersect( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), m_collectedData.Target );
 
         // Done (next state) when the user left click and we've a valid triangle.

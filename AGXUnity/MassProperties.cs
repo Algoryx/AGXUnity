@@ -49,7 +49,10 @@ namespace AGXUnity
         var native = GetNative();
         if ( native != null ) {
           native.getMassProperties().setMass( m_mass.Value );
-          native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
+          // Explicit inertia tensor and setMass above will rescale
+          // the inertia given new mass - assign "back" the user value.
+          if ( !m_inertiaDiagonal.UseDefault )
+            native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
         }
       }
     }
@@ -71,6 +74,15 @@ namespace AGXUnity
       set
       {
         m_inertiaDiagonal = value;
+
+        // If we have UseDefault, the inertia tensor has been
+        // calculated for the native instance during native.updateMassProperties.
+        // To not overwrite the off-diagonal elements we're not
+        // writing anything back.
+        // NOTE: This has to be revised when we use "update mask" 0.
+        if ( m_inertiaDiagonal.UseDefault )
+          return;
+
         var native = GetNative();
         if ( native != null )
           native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
@@ -94,6 +106,8 @@ namespace AGXUnity
 
     [SerializeField]
     private Vector3 m_massCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
+
+    [HideInInspector]
     [ClampAboveZeroInInspector(true)]
     public Vector3 MassCoefficients
     {
@@ -109,6 +123,8 @@ namespace AGXUnity
 
     [SerializeField]
     private Vector3 m_inertiaCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
+
+    [HideInInspector]
     [ClampAboveZeroInInspector]
     public Vector3 InertiaCoefficients
     {

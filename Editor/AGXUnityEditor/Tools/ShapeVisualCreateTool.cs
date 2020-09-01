@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -54,7 +54,7 @@ namespace AGXUnityEditor.Tools
     public GameObject Preview { get; private set; }
 
     public ShapeVisualCreateTool( Shape shape, bool isGloballyUnique = true )
-      : base( isSingleInstanceTool: true )
+      : base( isSingleInstanceTool: isGloballyUnique )
     {
       Shape = shape;
       Preview = ShapeVisual.Create( shape );
@@ -64,7 +64,7 @@ namespace AGXUnityEditor.Tools
         Preview.transform.rotation = Shape.transform.rotation;
       }
 
-      Material = GetData( DataEntry.Material ).Asset as Material;
+      Material = GetData( DataEntry.Material ).Asset as Material ?? Manager.GetOrCreateShapeVisualDefaultMaterial();
       Name     = GetData( DataEntry.Name ).String;
       if ( Name == "" )
         Name = Shape.name + "_Visual";
@@ -89,41 +89,30 @@ namespace AGXUnityEditor.Tools
 
     public void OnInspectorGUI( bool onlyNameAndMaterial = false )
     {
-      var skin = InspectorEditor.Skin;
+      if ( !onlyNameAndMaterial )
+        InspectorGUI.OnDropdownToolBegin( "Create visual representation of this shape." );
+
+      Name = EditorGUILayout.TextField( GUI.MakeLabel( "Name" ),
+                                        Name,
+                                        InspectorEditor.Skin.TextField );
+
+      InspectorGUI.UnityMaterial( GUI.MakeLabel( "Material" ),
+                                  Material,
+                                  newMaterial => Material = newMaterial );
 
       if ( !onlyNameAndMaterial ) {
-        GUILayout.Space( 4 );
-        using ( GUI.AlignBlock.Center )
-          GUILayout.Label( GUI.MakeLabel( "Create visual tool", 16, true ), skin.label );
+        var createCancelState = InspectorGUI.PositiveNegativeButtons( Preview != null,
+                                                                      "Create",
+                                                                      "Create new shape visual.",
+                                                                      "Cancel" );
 
-        GUILayout.Space( 2 );
-        GUI.Separator();
-        GUILayout.Space( 4 );
-      }
+        InspectorGUI.OnDropdownToolEnd();
 
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Name:", true ), skin.label, GUILayout.Width( 64 ) );
-        Name = GUILayout.TextField( Name, skin.textField, GUILayout.ExpandWidth( true ) );
-      }
-      GUILayout.EndHorizontal();
-
-      GUI.MaterialEditor( GUI.MakeLabel( "Material:", true ),
-                          64,
-                          Material,
-                          skin,
-                          newMaterial => Material = newMaterial );
-
-      GUI.Separator();
-
-      if ( !onlyNameAndMaterial ) {
-        var createCancelState = GUI.CreateCancelButtons( Preview != null, skin, "Create new shape visual" );
-        if ( createCancelState == GUI.CreateCancelState.Create ) {
+        if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
           CreateShapeVisual();
         }
-        if ( createCancelState != GUI.CreateCancelState.Nothing ) {
+        if ( createCancelState != InspectorGUI.PositiveNegativeResult.Neutral ) {
           PerformRemoveFromParent();
-          return;
         }
       }
     }

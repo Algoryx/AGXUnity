@@ -13,6 +13,7 @@ namespace AGXUnityEditor.Tools
     private Predicate<RouteNode> m_hasNode = null;
     private Func<float> m_radius = null;
     private Func<RouteNode, Color> m_color = null;
+    private ScriptComponent m_undoRecordObject = null;
 
     public ScriptComponent Parent { get; private set; }
 
@@ -43,12 +44,7 @@ namespace AGXUnityEditor.Tools
     {
       Node = node;
       Parent = parent;
-      AddChild( new FrameTool( node )
-                {
-                  OnChangeDirtyTarget = Parent,
-                  TransformHandleActive = false,
-                  UndoRedoRecordObject = undoRedoRecordObject
-                } );
+      m_undoRecordObject = undoRedoRecordObject;
 
       m_getSelected = getSelected;
       m_setSelected = setSelected;
@@ -59,6 +55,16 @@ namespace AGXUnityEditor.Tools
       Visual.Color = m_color( Node );
       Visual.MouseOverColor = new Color( 0.1f, 0.96f, 0.15f, 1.0f );
       Visual.OnMouseClick += OnClick;
+    }
+
+    public override void OnAdd()
+    {
+      AddChild( new FrameTool( Node )
+      {
+        OnChangeDirtyTarget = Parent,
+        TransformHandleActive = false,
+        UndoRedoRecordObject = m_undoRecordObject
+      } );
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )

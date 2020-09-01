@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+
 namespace AGXUnityEditor.Wizards
 {
   /// <summary>
@@ -127,7 +129,7 @@ namespace AGXUnityEditor.Wizards
                             windowMethod.Invoke( this, new object[] { windowEventType } );
                           },
                           Enum.GetName( m_enumType, CurrentWindow ).ToString().SplitCamelCase(),
-                          Utils.GUI.Skin.window,
+                          GUI.Skin.window,
                           new GUILayoutOption[] { GUILayout.Width( WindowSize.x ) } );
       }
       else
@@ -164,11 +166,11 @@ namespace AGXUnityEditor.Wizards
         // Disable button "Previous" if we're in the first window.
         EditorGUI.BeginDisabledGroup( CurrentWindow == 0 );
         {
-          buttonPrevPressed = GUILayout.Button( Utils.GUI.MakeLabel( "Previous" ), Utils.GUI.Skin.button );
+          buttonPrevPressed = GUILayout.Button( GUI.MakeLabel( "Previous" ), GUI.Skin.button );
         }
         EditorGUI.EndDisabledGroup();
 
-        buttonNextPressed = GUILayout.Button( Utils.GUI.MakeLabel( "Next" ), Utils.GUI.Skin.button );
+        buttonNextPressed = GUILayout.Button( GUI.MakeLabel( "Next" ), GUI.Skin.button );
       }
       GUILayout.EndHorizontal();
 

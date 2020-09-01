@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -46,7 +46,7 @@ namespace AGXUnityEditor.Tools
       {
         if ( value && GetChild<SelectGameObjectTool>() == null ) {
           RemoveAllChildren();
-          SelectGameObjectTool selectGameObjectTool = new SelectGameObjectTool();
+          var selectGameObjectTool = new SelectGameObjectTool();
           selectGameObjectTool.OnSelect += parent =>
           {
             Frame.SetParent( parent );
@@ -215,30 +215,41 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      var skin           = InspectorEditor.Skin;
+      ToolsGUI( false );
+    }
+
+    public void ToolsGUI( bool isMultiSelect )
+    {
+      var skin = InspectorEditor.Skin;
       bool guiWasEnabled = UnityEngine.GUI.enabled;
 
-      bool toggleSelectParent   = false;
+      bool toggleSelectParent = false;
       bool toggleFindGivenPoint = false;
-      bool toggleSelectEdge     = false;
+      bool toggleSelectEdge = false;
       bool togglePositionHandle = false;
 
-      GUILayout.BeginHorizontal();
-      {
-        UnityEngine.GUI.enabled = true;
-        GUI.ToolsLabel( skin );
-
-        using ( GUI.ToolButtonData.ColorBlock ) {
-          toggleSelectParent      = GUI.ToolButton( GUI.Symbols.SelectInSceneViewTool, SelectParent, "Select parent object by selecting object in scene view", skin );
-
-          UnityEngine.GUI.enabled = guiWasEnabled;
-
-          toggleFindGivenPoint    = GUI.ToolButton( GUI.Symbols.SelectPointTool, FindTransformGivenPointOnSurface, "Find position and rotation given point and direction on an objects surface", skin );
-          toggleSelectEdge        = GUI.ToolButton( GUI.Symbols.SelectEdgeTool, FindTransformGivenEdge, "Find position and rotation given a triangle or principal edge", skin );
-          togglePositionHandle    = GUI.ToolButton( GUI.Symbols.PositionHandleTool, TransformHandleActive, "Position/rotation handle", skin );
-        }              
-      }
-      GUILayout.EndHorizontal();
+      UnityEngine.GUI.enabled = !isMultiSelect;
+      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.SelectParent,
+                                                                    SelectParent,
+                                                                    "Select parent object by selecting object in scene view",
+                                                                    () => toggleSelectParent = true,
+                                                                    !isMultiSelect,
+                                                                    () => UnityEngine.GUI.enabled = !isMultiSelect && guiWasEnabled ),
+                                InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenPoint,
+                                                                    FindTransformGivenPointOnSurface,
+                                                                    "Find position and rotation given point and direction on an objects surface",
+                                                                    () => toggleFindGivenPoint = true,
+                                                                    !isMultiSelect && guiWasEnabled ),
+                                InspectorGUI.ToolButtonData.Create( ToolIcon.FindTransformGivenEdge,
+                                                                    FindTransformGivenEdge,
+                                                                    "Find position and rotation given a triangle or principal edge",
+                                                                    () => toggleSelectEdge = true,
+                                                                    !isMultiSelect && guiWasEnabled ),
+                                InspectorGUI.ToolButtonData.Create( ToolIcon.TransformHandle,
+                                                                    TransformHandleActive,
+                                                                    "Position/rotation handle",
+                                                                    () => togglePositionHandle = true,
+                                                                    !isMultiSelect && guiWasEnabled ) );
 
       if ( toggleSelectParent )
         SelectParent = !SelectParent;
@@ -249,7 +260,7 @@ namespace AGXUnityEditor.Tools
       if ( togglePositionHandle )
         TransformHandleActive = !TransformHandleActive;
 
-      GUI.Separator();
+      UnityEngine.GUI.enabled = guiWasEnabled;
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "" )]
   public class PickHandler : UniqueGameObject<PickHandler>
   {
     [HideInInspector]
@@ -182,7 +183,7 @@ namespace AGXUnity
       if ( MainCamera != null )
         m_camera = MainCamera.GetComponent<Camera>();
 
-      m_lineShape = new agxCollide.Line( new agx.Vec3(), new agx.Vec3() );
+      m_lineShape = new agxCollide.Line( new agx.Vec3(), new agx.Vec3( 0, 0, 1 ) );
       m_lineGeometry = new agxCollide.Geometry( m_lineShape );
       m_lineGeometry.setEnable( false );
       m_lineGeometry.setSensor( true );

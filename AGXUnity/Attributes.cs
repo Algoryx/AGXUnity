@@ -25,12 +25,12 @@ namespace AGXUnity
   }
 
   /// <summary>
-  /// Ignore synchronization of properties during initialize of a ScriptComponent/Asset.
+  /// Ignore synchronization of properties during initialize
+  /// of a ScriptComponent/Asset.
   /// </summary>
   [AttributeUsage( AttributeTargets.Property )]
-  public class IgnoreSynchronization : Attribute
+  public class IgnoreSynchronizationAttribute : Attribute
   {
-    public IgnoreSynchronization() { }
   }
 
   /// <summary>
@@ -56,9 +56,9 @@ namespace AGXUnity
   /// Attribute for method to be executed from a button in the editor.
   /// </summary>
   [AttributeUsage( AttributeTargets.Method, AllowMultiple = false )]
-  public class InvokableInInspector : Attribute
+  public class InvokableInInspectorAttribute : Attribute
   {
-    public InvokableInInspector( string label = "", bool onlyInStatePlay = false )
+    public InvokableInInspectorAttribute( string label = "", bool onlyInStatePlay = false )
     {
       Label = label;
       OnlyInStatePlay = onlyInStatePlay;
@@ -66,6 +66,26 @@ namespace AGXUnity
 
     public string Label = string.Empty;
     public bool OnlyInStatePlay = false;
+  }
+
+  /// <summary>
+  /// Adds separator line in the inspector before the field/property
+  /// that carries this attribute.
+  /// </summary>
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorSeparatorAttribute : Attribute
+  {
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorGroupBeginAttribute : Attribute
+  {
+    public string Name;
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class InspectorGroupEndAttribute : Attribute
+  {
   }
 
   /// <summary>

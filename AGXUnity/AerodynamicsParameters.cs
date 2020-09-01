@@ -2,6 +2,7 @@
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Aerodynamics Parameters" )]
   public class AerodynamicsParameters : WindAndWaterParameters<agxModel.AerodynamicsParameters>
   {
     [SerializeField]

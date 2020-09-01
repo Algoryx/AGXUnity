@@ -29,9 +29,15 @@ namespace AGXUnityEditor
     [SerializeField]
     private string m_string = string.Empty;
     [SerializeField]
-    private ScriptableObject m_scriptableObject = null;
-    [SerializeField]
     private UnityEngine.Object m_asset = null;
+    [SerializeField]
+    private Vector2 m_vector2;
+    [SerializeField]
+    private Vector3 m_vector3;
+    [SerializeField]
+    private Vector4 m_vector4;
+    [SerializeField]
+    private Color m_color;
 
     public bool Bool
     {
@@ -89,23 +95,68 @@ namespace AGXUnityEditor
       }
     }
 
-    public ScriptableObject ScriptableObject
-    {
-      get { return m_scriptableObject; }
-      set
-      {
-        m_scriptableObject = value;
-
-        OnValueChanged();
-      }
-    }
-
     public UnityEngine.Object Asset
     {
       get { return m_asset; }
       set
       {
         m_asset = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector2 Vector2
+    {
+      get { return m_vector2; }
+      set
+      {
+        if ( m_vector2 == value )
+          return;
+
+        m_vector2 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector3 Vector3
+    {
+      get { return m_vector3; }
+      set
+      {
+        if ( m_vector3 == value )
+          return;
+
+        m_vector3 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Vector4 Vector4
+    {
+      get { return m_vector4; }
+      set
+      {
+        if ( m_vector4 == value )
+          return;
+
+        m_vector4 = value;
+
+        OnValueChanged();
+      }
+    }
+
+    public Color Color
+    {
+      get { return m_color; }
+      set
+      {
+        if ( m_color == value )
+          return;
+
+        m_color = value;
 
         OnValueChanged();
       }
@@ -143,7 +194,7 @@ namespace AGXUnityEditor
       // E.g., clicking expand/collapse on a foldout we'd like the GUI to instantly respond.
       UnityEngine.Object obj = EditorUtility.InstanceIDToObject( InstanceId );
       if ( obj != null )
-        EditorUtility.SetDirty( obj );
+        SceneView.RepaintAll();
     }
   }
 }

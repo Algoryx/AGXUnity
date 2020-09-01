@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using AGXUnity;
 using AGXUnity.Collide;
-using GUI = AGXUnityEditor.Utils.GUI;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -97,7 +98,9 @@ namespace AGXUnityEditor.Tools
         if ( value && !ConstraintCreateTool ) {
           RemoveAllChildren();
 
-          var constraintCreateTool = new ConstraintCreateTool( RigidBody.gameObject, false );
+          var constraintCreateTool = new ConstraintCreateTool( RigidBody.gameObject,
+                                                               false,
+                                                               newConstraint => m_constraints.Add( newConstraint ) );
           AddChild( constraintCreateTool );
         }
         else if ( !value )
@@ -142,7 +145,13 @@ namespace AGXUnityEditor.Tools
     public RigidBodyTool( Object[] targets )
       : base( targets )
     {
-      var allConstraints = GameObject.FindObjectsOfType<Constraint>();
+#if UNITY_2019_1_OR_NEWER
+      var allConstraints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
+                             StageUtility.GetCurrentStageHandle().FindComponentsOfType<Constraint>() :
+                             Object.FindObjectsOfType<Constraint>();
+#else
+      var allConstraints = Object.FindObjectsOfType<Constraint>();
+#endif
       foreach ( var constraint in allConstraints ) {
         foreach ( var rb in GetTargets<RigidBody>() )
           if ( constraint.AttachmentPair.Contains( rb ) )
@@ -199,239 +208,66 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      bool toggleFindTransformGivenPoint = false;
-      bool toggleFindTransformGivenEdge  = false;
       bool toggleShapeCreate             = false;
       bool toggleConstraintCreate        = false;
       bool toggleDisableCollisions       = false;
       bool toggleRigidBodyVisualCreate   = false;
 
       if ( !IsMultiSelect && ToolsActive ) {
-        using ( new GUILayout.HorizontalScope() ) {
-          GUI.ToolsLabel( skin );
-          using ( GUI.ToolButtonData.ColorBlock ) {
-            toggleFindTransformGivenPoint = GUI.ToolButton( GUI.Symbols.SelectPointTool,
-                                                            FindTransformGivenPointTool,
-                                                            "Find rigid body transform given point on object.",
-                                                            skin );
-            toggleFindTransformGivenEdge  = GUI.ToolButton( GUI.Symbols.SelectEdgeTool,
-                                                            FindTransformGivenEdgeTool,
-                                                            "Find rigid body transform given edge on object.",
-                                                            skin );
-            toggleShapeCreate             = GUI.ToolButton( GUI.Symbols.ShapeCreateTool,
-                                                            ShapeCreateTool,
-                                                            "Create shape from visual objects",
-                                                            skin );
-            toggleConstraintCreate        = GUI.ToolButton( GUI.Symbols.ConstraintCreateTool,
-                                                            ConstraintCreateTool,
-                                                            "Create constraint to this rigid body",
-                                                            skin );
-            toggleDisableCollisions       = GUI.ToolButton( GUI.Symbols.DisableCollisionsTool,
-                                                            DisableCollisionsTool,
-                                                            "Disable collisions against other objects",
-                                                            skin );
-            using ( new EditorGUI.DisabledGroupScope( !Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) )
-              toggleRigidBodyVisualCreate = GUI.ToolButton( GUI.Symbols.ShapeVisualCreateTool,
-                                                            RigidBodyVisualCreateTool,
-                                                            "Create visual representation of each physical shape in this body",
-                                                            skin,
-                                                            14 );
-
-          }
-        }
+        InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
+                                                                      ConstraintCreateTool,
+                                                                      "Create new constraint to this rigid body.",
+                                                                      () => toggleConstraintCreate = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
+                                                                      DisableCollisionsTool,
+                                                                      "Disable collisions against other objects.",
+                                                                      () => toggleDisableCollisions = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      ShapeCreateTool,
+                                                                      "Create shape from child visual object.",
+                                                                      () => toggleShapeCreate = true ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateVisual,
+                                                                      RigidBodyVisualCreateTool,
+                                                                      "Create visual representation of each physical shape in this body.",
+                                                                      () => toggleRigidBodyVisualCreate = true,
+                                                                      Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) );
       }
 
-      if ( ShapeCreateTool ) {
-        GUI.Separator();
-
-        GetChild<ShapeCreateTool>().OnInspectorGUI();
-      }
       if ( ConstraintCreateTool ) {
-        GUI.Separator();
-
         GetChild<ConstraintCreateTool>().OnInspectorGUI();
       }
       if ( DisableCollisionsTool ) {
-        GUI.Separator();
-
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
       }
+      if ( ShapeCreateTool ) {
+        GetChild<ShapeCreateTool>().OnInspectorGUI();
+      }
       if ( RigidBodyVisualCreateTool ) {
-        GUI.Separator();
-
         GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
       }
 
-      GUI.Separator();
-
-      GUILayout.Label( GUI.MakeLabel( "Mass properties", true ), skin.label );
-      using ( new GUI.Indent( 12 ) )
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Mass properties", true ), skin.Label );
+      using ( InspectorGUI.IndentScope.Single )
         InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
 
-      GUI.Separator();
-
-      if ( toggleFindTransformGivenPoint )
-        FindTransformGivenPointTool = !FindTransformGivenPointTool;
-      if ( toggleFindTransformGivenEdge )
-        FindTransformGivenEdgeTool = !FindTransformGivenEdgeTool;
-      if ( toggleShapeCreate )
-        ShapeCreateTool = !ShapeCreateTool;
       if ( toggleConstraintCreate )
         ConstraintCreateTool = !ConstraintCreateTool;
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
+      if ( toggleShapeCreate )
+        ShapeCreateTool = !ShapeCreateTool;
       if ( toggleRigidBodyVisualCreate )
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
     }
 
     public override void OnPostTargetMembersGUI()
     {
-      var skin = InspectorEditor.Skin;
-
-      GUI.Separator();
-
-      GUIStyle dragDropFieldStyle = new GUIStyle( skin.textArea );
-      dragDropFieldStyle.alignment = TextAnchor.MiddleCenter;
-      dragDropFieldStyle.richText = true;
-
-      Rect dropArea = new Rect();
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Assign Shape Material [" + GUI.AddColorTag( "drop area", Color.Lerp( Color.green, Color.black, 0.4f ) ) + "]",
-                                        false,
-                                        "Assigns dropped shape material to all shapes in this rigid body." ),
-                         dragDropFieldStyle,
-                         GUILayout.Height( 22 ) );
-        dropArea = GUILayoutUtility.GetLastRect();
-
-        bool resetMaterials = GUILayout.Button( GUI.MakeLabel( "Reset",
-                                              false,
-                                              "Reset shapes material to null." ),
-                               skin.button,
-                               GUILayout.Width( 42 ) ) &&
-                               EditorUtility.DisplayDialog( "Reset shape materials", "Reset all shapes material to default [null]?", "OK", "Cancel" );
-        if ( resetMaterials )
-          AssignShapeMaterialToAllShapes( null );
-      }
-      GUILayout.EndHorizontal();
-
-      GUI.HandleDragDrop<ShapeMaterial>( dropArea, Event.current, ( shapeMaterial ) => { AssignShapeMaterialToAllShapes( shapeMaterial ); } );
-
-      GUI.Separator();
-
-      OnShapeListGUI( RigidBody.GetComponentsInChildren<Shape>(), this );
-
-      GUI.Separator();
-
-      OnConstraintListGUI( m_constraints.ToArray(), this );
-    }
-
-    public static void OnShapeListGUI( Shape[] shapes, CustomTargetTool context )
-    {
-      var skin = InspectorEditor.Skin;
-
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Shapes" ), GUI.MakeLabel( "Shapes", true ), skin ) ) {
-        context.RemoveEditors( shapes );
+      if ( IsMultiSelect )
         return;
-      }
 
-      if ( shapes.Length == 0 ) {
-        using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
-        return;
-      }
+      InspectorGUI.ToolArrayGUI( this, RigidBody.GetComponentsInChildren<Shape>(), "Shapes" );
 
-      using ( new GUI.Indent( 12 ) ) {
-        foreach ( var shape in shapes ) {
-          GUI.Separator();
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
-                                                          shape.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( shape.GetType().Name, Color.Lerp( Color.green, Color.black, 0.4f ) ) + "] " + shape.name ),
-                             skin ) ) {
-            context.RemoveEditor( shape );
-            continue;
-          }
-
-          GUI.Separator();
-          using ( new GUI.Indent( 12 ) ) {
-            var editor = context.GetOrCreateEditor( shape );
-            using ( new GUILayout.VerticalScope() )
-              editor.OnInspectorGUI();
-          }
-        }
-      }
-    }
-
-    public static void OnConstraintListGUI( Constraint[] constraints, CustomTargetTool context )
-    {
-      var skin = InspectorEditor.Skin;
-
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Constraints" ),
-                         GUI.MakeLabel( "Constraints", true ), skin ) ) {
-        context.RemoveEditors( constraints );
-        return;
-      }
-
-      if ( constraints.Length == 0 ) {
-        using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
-        return;
-      }
-
-      using ( new GUI.Indent( 12 ) ) {
-        foreach ( var constraint in constraints ) {
-          GUI.Separator();
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], constraint.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( constraint.Type.ToString(), Color.Lerp( Color.magenta, Color.black, 0.4f ) ) + "] " + constraint.name ),
-                             skin ) ) {
-            context.RemoveEditor( constraint );
-            continue;
-          }
-
-          GUI.Separator();
-          using ( new GUI.Indent( 12 ) ) {
-            var editor = context.GetOrCreateEditor( constraint );
-            editor.OnInspectorGUI();
-          }
-        }
-      }
-    }
-
-    public static void OnRigidBodyListGUI( RigidBody[] rigidBodies, CustomTargetTool context )
-    {
-      var skin = InspectorEditor.Skin;
-
-      if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], "Rigid Bodies" ),
-                         GUI.MakeLabel( "Rigid Bodies", true ), skin ) ) {
-        context.RemoveEditors( rigidBodies );
-        return;
-      }
-
-      if ( rigidBodies.Length == 0 ) {
-        using ( new GUI.Indent( 12 ) )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.label );
-        return;
-      }
-
-      using ( new GUI.Indent( 12 ) ) {
-        foreach ( var rb in rigidBodies ) {
-          GUI.Separator();
-
-          if ( !GUI.Foldout( EditorData.Instance.GetData( context.Targets[ 0 ], rb.GetInstanceID().ToString() ),
-                             GUI.MakeLabel( "[" + GUI.AddColorTag( "RigidBody", Color.Lerp( Color.blue, Color.white, 0.35f ) ) + "] " + rb.name ),
-                             skin ) ) {
-            context.RemoveEditor( rb );
-            continue;
-          }
-
-          GUI.Separator();
-
-          using ( new GUI.Indent( 12 ) ) {
-            var editor = context.GetOrCreateEditor( rb );
-            editor.OnInspectorGUI();
-          }
-        }
-      }
+      InspectorGUI.ToolArrayGUI( this, m_constraints.ToArray(), "Constraints" );
     }
 
     private void AssignShapeMaterialToAllShapes( ShapeMaterial shapeMaterial )

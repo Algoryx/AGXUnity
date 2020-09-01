@@ -8,57 +8,6 @@ namespace AGXUnityEditor
 {
   public class AssetPostprocessorHandler : AssetPostprocessor
   {
-    public static Object ReadAGXFile( string path )
-    {
-      return ReadAGXFile( new IO.AGXFileInfo( path ) );
-    }
-
-    public static Object ReadAGXFile( IO.AGXFileInfo info )
-    {
-      if ( info == null || !info.IsValid )
-        return null;
-
-      try {
-        Object prefab = null;
-        using ( var inputFile = new IO.InputAGXFile( info ) ) {
-          inputFile.TryLoad();
-          inputFile.TryParse();
-          inputFile.TryGenerate();
-          prefab = inputFile.TryCreatePrefab();
-        }
-
-        // Updating scene instances with e.g., shape visual size etc.
-        if ( prefab != null ) {
-          var restoredFileInstances = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
-          foreach ( var restoredFileInstance in restoredFileInstances ) {
-#if UNITY_2018_3_OR_NEWER
-            var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredFileInstance.gameObject ) == PrefabInstanceStatus.Connected &&
-                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#else
-            var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
-                                       PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#endif
-            if ( !isReadPrefabInstance )
-              continue;
-
-            var shapes = restoredFileInstance.GetComponentsInChildren<AGXUnity.Collide.Shape>();
-            foreach ( var shape in shapes ) {
-              var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
-              if ( visual != null )
-                visual.OnSizeUpdated();
-            }
-          }
-        }
-
-        return prefab;
-      }
-      catch ( System.Exception e ) {
-        Debug.LogException( e );
-      }
-
-      return null;
-    }
-
     private class CollisionGroupEntryEqualityComparer : IEqualityComparer<CollisionGroupEntry>
     {
       public bool Equals( CollisionGroupEntry cg1, CollisionGroupEntry cg2 )
@@ -172,14 +121,19 @@ namespace AGXUnityEditor
       Undo.SetCurrentGroupName( "Adding: " + instance.name + " to scene." );
       var grouId = Undo.GetCurrentGroup();
 
-      foreach ( var cm in fileInfo.GetAssets<ContactMaterial>() )
-        TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>().Add( cm );
+      var contactMaterialManager = TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>();
+      Undo.RecordObject( contactMaterialManager, "Adding contact materials" );
+      foreach ( var cm in IO.Utils.FindAssetsOfType<ContactMaterial>( fileInfo.DataDirectory ) )
+        contactMaterialManager.Add( cm );
 
       var fileData = fileInfo.ExistingPrefab.GetComponent<AGXUnity.IO.RestoredAGXFile>();
+      var collisionGroupsManager = TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>();
+      Undo.RecordObject( collisionGroupsManager, "Adding disabled collision groups" );
       foreach ( var disabledPair in fileData.DisabledGroups )
-        TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>().SetEnablePair( disabledPair.First, disabledPair.Second, false );
+        collisionGroupsManager.SetEnablePair( disabledPair.First, disabledPair.Second, false );
 
       var renderDatas = instance.GetComponentsInChildren<AGXUnity.Rendering.ShapeVisual>();
+      Undo.RecordObjects( renderDatas, "Applying render data hide flags" );
       foreach ( var renderData in renderDatas ) {
         renderData.hideFlags |= HideFlags.NotEditable;
         renderData.transform.hideFlags |= HideFlags.NotEditable;

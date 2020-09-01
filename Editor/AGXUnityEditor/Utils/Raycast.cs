@@ -235,22 +235,28 @@ namespace AGXUnityEditor.Utils
       }
       else if ( shape != null ) {
         var primitive = GetOrCreatePrimitive( shape );
-        if ( primitive != null ) {
-          var filters = primitive.GetComponentsInChildren<MeshFilter>();
-          var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
-          foreach ( var filter in filters ) {
-            var result = Intersect( ray,
-                                    filter.sharedMesh,
-                                    shape.transform.localToWorldMatrix *
-                                      filter.transform.localToWorldMatrix *
-                                      Matrix4x4.Scale( Vector3.Scale( shape.GetScale(), parentUnscale ) ),
-                                    shape.gameObject );
-            if ( result && result.Distance < bestResult.Distance )
-              bestResult = result;
-          }
-
-          return bestResult;
+        var filters   = primitive != null ?
+                          primitive.GetComponentsInChildren<MeshFilter>() :
+                          shape.GetComponentsInChildren<MeshFilter>();
+        var bestResult = new Result() { Hit = false, Distance = float.PositiveInfinity };
+        foreach ( var filter in filters ) {
+          // If we use 'primitive' it's by definition unit size so
+          // we scale it given shape scale/size. For non-primitive
+          // we try any child mesh filter.
+          var localToWorld = primitive != null ?
+                               shape.transform.localToWorldMatrix *
+                                 filter.transform.localToWorldMatrix *
+                                 Matrix4x4.Scale( Vector3.Scale( shape.GetScale(), parentUnscale ) ) :
+                               filter.transform.localToWorldMatrix;
+          var result = Intersect( ray,
+                                  filter.sharedMesh,
+                                  localToWorld,
+                                  shape.gameObject );
+          if ( result && result.Distance < bestResult.Distance )
+            bestResult = result;
         }
+
+        return bestResult;
       }
 
       return new Result() { Hit = false };
