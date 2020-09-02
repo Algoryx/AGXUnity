@@ -194,18 +194,18 @@ namespace AGXUnityEditor.Tools
                          true,
                          0.0f,
                          0.25f );
-        var shapes = rb.Shapes;
-        if ( shapes.Length < 2 )
-          continue;
-        int shapeIndex = 0;
-        foreach ( var shape in shapes ) {
-          var shapeLine = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( rbId + "_shape_" + (shapeIndex++).ToString(),
-                                                                                     "GUI/Text Shader" );
-          shapeLine.Color = new Color( 0, 1, 0, 0.05f );
-          shapeLine.Visible = true;
-          shapeLine.Pickable = false;
-          shapeLine.SetTransform( cmPosition, shape.transform.position, 0.015f );
-        }
+        //var shapes = rb.Shapes;
+        //if ( shapes.Length < 2 )
+        //  continue;
+        //int shapeIndex = 0;
+        //foreach ( var shape in shapes ) {
+        //  var shapeLine = GetOrCreateVisualPrimitive<Utils.VisualPrimitiveCylinder>( rbId + "_shape_" + (shapeIndex++).ToString(),
+        //                                                                             "GUI/Text Shader" );
+        //  shapeLine.Color = new Color( 0, 1, 0, 0.05f );
+        //  shapeLine.Visible = true;
+        //  shapeLine.Pickable = false;
+        //  shapeLine.SetTransform( cmPosition, shape.transform.position, 0.015f );
+        //}
       }
     }
 
