@@ -277,10 +277,22 @@ namespace AGXUnityEditor.IO
                                                                       cm.Material2 = materials[ 1 ];
                                                                       cm.RestoreLocalDataFrom( nativeContactMaterial );
                                                                     } );
-          if ( nativeFrictionModel != null )
-            contactMaterial.FrictionModel = FileInfo.ObjectDb.GetOrCreateAsset( contactMaterial.FrictionModel,
-                                                                                $"FrictionModel_{contactMaterial.name}",
-                                                                                fm => fm.RestoreLocalDataFrom( nativeFrictionModel ) );
+          if ( nativeFrictionModel != null ) {
+            var externalFrictionModel = contactMaterial.FrictionModel != null &&
+                                        !FileInfo.ObjectDb.ContainsAsset( contactMaterial.FrictionModel );
+            // The user has assigned a friction model, not located in our data directory,
+            // to this contact material. We approve this change (with a warning) by not
+            // assigning the friction model from the model.
+            if ( externalFrictionModel ) {
+              Debug.LogWarning( $"Friction Model {contactMaterial.FrictionModel.name} is external from the re-imported model. " +
+                                "No changes will be made.", contactMaterial );
+            }
+            else {
+              contactMaterial.FrictionModel = FileInfo.ObjectDb.GetOrCreateAsset( contactMaterial.FrictionModel,
+                                                                                  $"FrictionModel_{contactMaterial.name}",
+                                                                                  fm => fm.RestoreLocalDataFrom( nativeFrictionModel ) );
+            }
+          }
 
           node.Asset = contactMaterial;
 
@@ -443,7 +455,9 @@ namespace AGXUnityEditor.IO
       shape.gameObject.SetActive( nativeGeometry.isEnabled() );
       shape.IsSensor = nativeGeometry.isSensor();
 
-      shape.Material = RestoreShapeMaterial( shape.Material, nativeGeometry.getMaterial() );
+      shape.Material = RestoreShapeMaterial( shape.Material,
+                                             nativeGeometry.getMaterial(),
+                                             shape );
 
       shape.CollisionsEnabled = nativeGeometry.getEnableCollisions();
 
@@ -484,13 +498,13 @@ namespace AGXUnityEditor.IO
                                     proxy.GetComponent<MeshFilter>() != null &&
                                     proxy.GetComponent<MeshFilter>().sharedMesh != null
                               select proxy.GetComponent<MeshFilter>().sharedMesh ).ToArray();
-      var currentMaterials = shapeVisual == null ?
-                               new Material[] { } :
+      var currentRenderers = shapeVisual == null ?
+                               new MeshRenderer[] { } :
                                ( from proxy in shapeVisual.GetComponentsInChildren<OnSelectionProxy>()
                                  where proxy.Component == shape &&
-                                       proxy.GetComponent<MeshRenderer>() != null &&
-                                       proxy.GetComponent<MeshRenderer>().sharedMaterial != null
-                                 select proxy.GetComponent<MeshRenderer>().sharedMaterial ).ToArray();
+                                       proxy.GetComponent<MeshRenderer>() != null
+                                 select proxy.GetComponent<MeshRenderer>() ).ToArray();
+      var currentMaterials = ( from renderer in currentRenderers select renderer.sharedMaterial ).ToArray();
 
       var nativeGeometry = m_tree.GetGeometry( node.Parent.Uuid );
       var toWorld        = nativeGeometry.getTransform();
@@ -525,10 +539,15 @@ namespace AGXUnityEditor.IO
         }
       }
 
+      var materialName = string.IsNullOrEmpty( nativeRenderData.getRenderMaterial().getName() ) ?
+                           $"{shape.name}_Visual_Material" :
+                           nativeRenderData.getRenderMaterial().getName();
+
+
       // No structural changes from previous read visuals.
       if ( shapeVisual != null &&
            currentMeshes.Length == meshes.Length &&
-           currentMaterials.Length == meshes.Length ) {
+           currentRenderers.Length == meshes.Length ) {
         for ( int i = 0; i < meshes.Length; ++i ) {
           // Meshes and materials are already referenced so we don't have to
           // assign them again to the ShapeVisuals.
@@ -539,9 +558,11 @@ namespace AGXUnityEditor.IO
                                                 m.Clear();
                                                 EditorUtility.CopySerialized( meshes[ i ], m );
                                               } );
-          RestoreRenderMaterial( currentMaterials[ i ],
-                                 $"{shape.name}_Visual_Material",
-                                 nativeRenderData.getRenderMaterial() );
+          var material = RestoreRenderMaterial( currentMaterials[ i ],
+                                                materialName,
+                                                nativeRenderData.getRenderMaterial(),
+                                                shape );
+          currentRenderers[ i ].sharedMaterial = material;
           EditorUtility.SetDirty( shapeVisual );
         }
       }
@@ -552,9 +573,12 @@ namespace AGXUnityEditor.IO
           shapeVisual = null;
         }
 
-        var material = RestoreRenderMaterial( currentMaterials.Length > 0 ? currentMaterials[ 0 ] : null,
-                                              $"{shape.name}_Visual_Material",
-                                              nativeRenderData.getRenderMaterial() );
+        var material = RestoreRenderMaterial( currentMaterials.Length > 0 ?
+                                                currentMaterials[ 0 ] :
+                                                null,
+                                              materialName,
+                                              nativeRenderData.getRenderMaterial(),
+                                              shape );
         for ( int i = 0; i < meshes.Length; ++i ) {
           meshes[ i ] = FileInfo.ObjectDb.GetOrCreateAsset( i < currentMeshes.Length ? currentMeshes[ i ] : null,
                                                             $"{shape.name}_Visual_Mesh_{i}",
@@ -746,7 +770,9 @@ namespace AGXUnityEditor.IO
       else if ( nativeIt.prev().get().getNodeType() != agxWire.WireNode.Type.CONNECTING && nativeWire.getLastNode().getNodeType() == agxWire.WireNode.Type.BODY_FIXED )
         route.Add( nativeWire.getLastNode(), findRigidBody( nativeWire.getLastNode().getRigidBody() ) );
 
-      wire.Material = RestoreShapeMaterial( wire.Material, nativeWire.getMaterial() );
+      wire.Material = RestoreShapeMaterial( wire.Material,
+                                            nativeWire.getMaterial(),
+                                            wire );
 
       wire.GetComponent<WireRenderer>().InitializeRenderer();
       // Reset to assign default material.
@@ -782,10 +808,21 @@ namespace AGXUnityEditor.IO
       cable.RestoreLocalDataFrom( nativeCable );
       cable.RouteAlgorithm = Cable.RouteType.Identity;
 
-      cable.Properties = FileInfo.ObjectDb.GetOrCreateAsset( cable.Properties,
+      var externalCableProperties = cable.Properties != null &&
+                                    !FileInfo.ObjectDb.ContainsAsset( cable.Properties );
+      // The user has assigned a cable properties, not located in our data directory,
+      // to this cable. We approve this change (with a warning) by not assigning the
+      // cable properties from the model.
+      if ( externalCableProperties ) {
+        Debug.LogWarning( $"Friction Model {cable.Properties.name} is external from the re-imported model. " +
+                          "No changes will be made.", cable );
+      }
+      else {
+        cable.Properties = FileInfo.ObjectDb.GetOrCreateAsset( cable.Properties,
                                                              $"{cable.name}_properties",
                                                              p => p.RestoreLocalDataFrom( nativeCable.getCableProperties(),
                                                                                           nativeCable.getCablePlasticity() ) );
+      }
 
       for ( var it = nativeCable.getSegments().begin(); !it.EqualWith( nativeCable.getSegments().end() ); it.inc() ) {
         var segment = it.get();
@@ -802,7 +839,9 @@ namespace AGXUnityEditor.IO
                             } );
       }
 
-      cable.Material = RestoreShapeMaterial( cable.Material, nativeCable.getMaterial() );
+      cable.Material = RestoreShapeMaterial( cable.Material,
+                                             nativeCable.getMaterial(),
+                                             cable );
 
       cable.GetComponent<CableRenderer>().InitializeRenderer();
       cable.GetComponent<CableRenderer>().Material = null;
@@ -820,30 +859,44 @@ namespace AGXUnityEditor.IO
       return true;
     }
 
-    private ShapeMaterial RestoreShapeMaterial( ShapeMaterial currentShapeMaterial, agx.Material material )
+    private ShapeMaterial RestoreShapeMaterial( ShapeMaterial currentShapeMaterial,
+                                                agx.Material material,
+                                                UnityEngine.Object context )
     {
       if ( material == null )
         return null;
 
+      // Re-import: The user has assigned a ShapeMaterial that isn't in our
+      //            data directory. We approve this modification by not reading
+      //            data from 'material' and returning the current assigned material.
+      if ( currentShapeMaterial != null && !FileInfo.ObjectDb.ContainsAsset( currentShapeMaterial ) ) {
+        Debug.LogWarning( $"Shape Material {currentShapeMaterial.name} is external from the re-imported model. " +
+                          "No changes will be made.", context );
+        return currentShapeMaterial;
+      }
+
       var materialNode = m_tree.GetNode( material.getUuid() );
-      // If another shape material has been assigned to the object it's
-      // possible to detect that here, e.g.;
-      //     materialNode.Asset != null &&
-      //     currentShapeMaterial != null &&
-      //     materialNode.Assset != currentShapeMaterial
-      // For now we're taking the node's asset because the material UUID
-      // references the object we're currently processing.
-      var refMaterial = materialNode.Asset != null ?
-                          materialNode.Asset as ShapeMaterial :
-                          currentShapeMaterial;
-      return FileInfo.ObjectDb.GetOrCreateAsset( refMaterial,
+      // Re-import: The user may have assigned a ShapeMaterial that is in our data
+      //            directory but doesn't match the material in the model. This
+      //            change will go without warning because we don't know how
+      //            ShapeMaterial assets maps to agx.Material instances. I.e.,
+      //            there's no UUID for ShapeMaterial.
+      //
+      //            If the user desires to have a different material on this object
+      //            the user should assign a ShapeMaterial from a directory different
+      //            from our data directory (caught in the if-statement above),
+      //            resulting in currentShapeMaterial to be used instead.
+      return FileInfo.ObjectDb.GetOrCreateAsset( materialNode.Asset as ShapeMaterial ??
+                                                   currentShapeMaterial, // Important during re-import because materialNode.Asset is null.
                                                  FindName( material.getName(),
                                                            materialNode.Type.ToString() ),
-                                                           m =>
-                                                           {
-                                                             m.RestoreLocalDataFrom( material );
-                                                             materialNode.Asset = m;
-                                                           } );
+                                                 m =>
+                                                 {
+                                                   m.RestoreLocalDataFrom( material );
+                                                   // If node.Asset == null, assigning it here
+                                                   // in first ref to the material.
+                                                   materialNode.Asset = m;
+                                                 } );
     }
 
     private static void RestoreLocalDataFrom( Material thisMaterial, agxCollide.RenderMaterial nativeMaterial )
@@ -864,14 +917,55 @@ namespace AGXUnityEditor.IO
         thisMaterial.SetBlendMode( BlendMode.Transparent );
     }
 
-    private Material RestoreRenderMaterial( Material material,
-                                            string name,
+    private Dictionary<uint, Material> m_materialLibrary = new Dictionary<uint, Material>();
+
+    private Material MaterialFactory( agxCollide.RenderMaterial nativeMaterial )
+    {
+      var material = GetMaterial( nativeMaterial );
+      if ( material == null ) {
+        material = new Material( Shader.Find( "Standard" ) ?? Shader.Find( "Diffuse" ) );
+        UpdateMaterialLibrary( material, nativeMaterial );
+      }
+
+      return material;
+    }
+
+    private Material GetMaterial( agxCollide.RenderMaterial nativeMaterial )
+    {
+      Material material = null;
+      m_materialLibrary.TryGetValue( nativeMaterial.getHash(), out material );
+      return material;
+    }
+
+    private Material UpdateMaterialLibrary( Material material,
                                             agxCollide.RenderMaterial nativeMaterial )
     {
-      return FileInfo.ObjectDb.GetOrCreateAsset( material,
-                                                 Shader.Find( "Standard" ) ?? Shader.Find( "Diffuse" ),
-                                                 name,
-                                                 m => RestoreLocalDataFrom( m, nativeMaterial ) );
+      // Material read from a model (re-import) or is newly created, map
+      // instance to the native material hash.
+      if ( material != null && GetMaterial( nativeMaterial ) == null )
+        m_materialLibrary.Add( nativeMaterial.getHash(), material );
+      return GetMaterial( nativeMaterial );
+    }
+
+    private Material RestoreRenderMaterial( Material material,
+                                            string name,
+                                            agxCollide.RenderMaterial nativeMaterial,
+                                            UnityEngine.Object context )
+    {
+      // The user is referencing a material that isn't in our data directory.
+      // We should not couple this material to our native hash when it could
+      // result in other instances referencing materials in our directory to
+      // get this material instead.
+      if ( material != null && !FileInfo.ObjectDb.ContainsAsset( material ) ) {
+        Debug.LogWarning( $"Visual material {material.name} is external from the re-imported model. " +
+                          "No changes will be made.", context );
+        return material;
+      }
+
+      return FileInfo.ObjectDb.GetOrCreateMaterial( UpdateMaterialLibrary( material, nativeMaterial ),
+                                                    name,
+                                                    m => RestoreLocalDataFrom( m, nativeMaterial ),
+                                                    () => MaterialFactory( nativeMaterial ) );
     }
 
     private string FindName( string name, string typeName )

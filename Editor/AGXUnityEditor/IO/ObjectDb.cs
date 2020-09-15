@@ -93,6 +93,20 @@ namespace AGXUnityEditor.IO
       return m_statistics;
     }
 
+    public bool ContainsAsset<T>( T asset )
+      where T : ScriptableObject
+    {
+      if ( asset == null )
+        return false;
+
+      return m_assets[ RestoredAssetsRoot.FindAssetTypeIndex<T>() ].ContainsKey( asset.GetHashCode() );
+    }
+
+    public bool ContainsAsset( Material material )
+    {
+      return m_assets[ (int)RestoredAssetsRoot.ContainingType.RenderMaterial ].ContainsKey( material.GetHashCode() );
+    }
+
     public GameObject GetOrCreateGameObject( agx.Uuid uuid )
     {
       DbData data;
@@ -183,6 +197,17 @@ namespace AGXUnityEditor.IO
                                name,
                                onFirstRef,
                                () => new Material( shader ) );
+    }
+
+    public Material GetOrCreateMaterial( Material material,
+                                        string name,
+                                        System.Action<Material> onFirstRef,
+                                        System.Func<Material> factory )
+    {
+      return GetOrCreateAsset( material,
+                               name,
+                               onFirstRef,
+                               factory );
     }
 
     public GameObject[] GetUnreferencedGameObjects()
