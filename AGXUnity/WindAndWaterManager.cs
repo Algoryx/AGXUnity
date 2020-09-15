@@ -35,7 +35,7 @@ namespace AGXUnity
           if ( Native != null ) {
             foreach ( var shape in shapes ) {
               Native.addWater( shape.GetInitialized<Collide.Shape>().NativeGeometry );
-              Native.addWaterFlowGenerator( shape.NativeGeometry, m_waterCurrentGenerator );
+              Native.setWaterFlowGenerator( shape.NativeGeometry, m_waterCurrentGenerator );
             }
           }
         }

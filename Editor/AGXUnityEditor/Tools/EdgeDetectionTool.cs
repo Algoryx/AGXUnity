@@ -96,7 +96,8 @@ namespace AGXUnityEditor.Tools
         }
         var ray    = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition );
         var result = Utils.Raycast.Intersect( ray,
-                                              m_collectedData.Target );
+                                              m_collectedData.Target,
+                                              m_collectedData.Target.GetComponent<AGXUnity.RigidBody>() != null );
 
         m_collectedData.CurrentEdge = FindClosestEdgeIncludingTargetPrincipalAxes( ray, result.ClosestEdge );
       }
