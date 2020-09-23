@@ -87,10 +87,14 @@ namespace AGXUnityEditor.IO
       m_statistics.NumRemovedAssets += unreferencedAssets.Length;
       foreach ( var asset in unreferencedAssets ) {
         Debug.Log( $"{m_filename}: {GUI.AddColorTag( "Removing asset:", Color.red )} {asset.name}" );
+#if UNITY_2018_1_OR_NEWER
         AssetDatabase.RemoveObjectFromAsset( asset );
+#else
+        Object.DestroyImmediate( asset, true );
+#endif
       }
 
-      return m_statistics;
+        return m_statistics;
     }
 
     public bool ContainsAsset<T>( T asset )
