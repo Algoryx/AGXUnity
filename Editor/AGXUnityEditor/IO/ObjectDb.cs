@@ -94,7 +94,7 @@ namespace AGXUnityEditor.IO
 #endif
       }
 
-        return m_statistics;
+      return m_statistics;
     }
 
     public bool ContainsAsset<T>( T asset )
