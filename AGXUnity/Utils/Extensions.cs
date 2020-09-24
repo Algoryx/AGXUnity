@@ -464,12 +464,10 @@ namespace AGXUnity.Utils
       return GUI.AddColorTag( str, color );
     }
 
-    public static System.UInt32 To32BitFnv1aHash( this string str )
+    public static uint To32BitFnv1aHash( this string str )
     {
-      IEnumerable<byte> bytes = str.ToCharArray().Select( Convert.ToByte );
-
-      System.UInt32 hash = 2166136261u;
-      foreach ( byte val in bytes ) {
+      uint hash = 2166136261u;
+      foreach ( char val in str ) {
         hash ^= val;
         hash *= 16777619u;
       }
