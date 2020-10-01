@@ -374,6 +374,17 @@ namespace AGXUnityEditor.IO
       return node.GameObject;
     }
 
+    private T GetOrCreateShape<T>( Node node )
+      where T : AGXUnity.Collide.Shape
+    {
+      var shape = node.GameObject.GetComponent<AGXUnity.Collide.Shape>();
+      if ( shape != null && shape.GetType() == typeof( T ) )
+        return shape as T;
+      if ( shape != null )
+        UnityEngine.Object.DestroyImmediate( shape );
+      return node.GameObject.AddComponent<T>();
+    }
+
     private bool CreateShape( Node node )
     {
       var nativeGeometry  = m_tree.GetGeometry( node.Parent.Uuid );
@@ -381,47 +392,48 @@ namespace AGXUnityEditor.IO
       var nativeShapeType = (agxCollide.Shape.Type)nativeShape.getType();
 
       if ( nativeShapeType == agxCollide.Shape.Type.BOX ) {
-        node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Box>().HalfExtents = nativeShape.asBox().getHalfExtents().ToVector3();
+        var box         = GetOrCreateShape<AGXUnity.Collide.Box>( node );
+        box.HalfExtents = nativeShape.asBox().getHalfExtents().ToVector3();
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CYLINDER ) {
-        var cylinder    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Cylinder>();
+        var cylinder    = GetOrCreateShape<AGXUnity.Collide.Cylinder>( node );
         cylinder.Radius = Convert.ToSingle( nativeShape.asCylinder().getRadius() );
         cylinder.Height = Convert.ToSingle( nativeShape.asCylinder().getHeight() );
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
-        var hollowCylinder       = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCylinder>();
+        var hollowCylinder       = GetOrCreateShape<AGXUnity.Collide.HollowCylinder>( node );
         hollowCylinder.Thickness = Convert.ToSingle( nativeShape.asHollowCylinder().getThickness() );
         hollowCylinder.Radius    = Convert.ToSingle( nativeShape.asHollowCylinder().getOuterRadius() );
         hollowCylinder.Height    = Convert.ToSingle( nativeShape.asHollowCylinder().getHeight() );
       }
       else if (nativeShapeType == agxCollide.Shape.Type.CONE)
       {
-        var cone          = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Cone>();
+        var cone          = GetOrCreateShape<AGXUnity.Collide.Cone>( node );
         cone.BottomRadius = Convert.ToSingle(nativeShape.asCone().getBottomRadius());
         cone.TopRadius    = Convert.ToSingle(nativeShape.asCone().getTopRadius());
         cone.Height       = Convert.ToSingle(nativeShape.asCone().getHeight());
       }
       else if (nativeShapeType == agxCollide.Shape.Type.HOLLOW_CONE)
       {
-        var hollowCone          = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.HollowCone>();
+        var hollowCone          = GetOrCreateShape<AGXUnity.Collide.HollowCone>( node );
         hollowCone.Thickness    = Convert.ToSingle(nativeShape.asHollowCone().getThickness());
         hollowCone.BottomRadius = Convert.ToSingle(nativeShape.asHollowCone().getBottomOuterRadius());
         hollowCone.TopRadius    = Convert.ToSingle(nativeShape.asHollowCone().getTopOuterRadius());
         hollowCone.Height       = Convert.ToSingle(nativeShape.asHollowCone().getHeight());
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CAPSULE ) {
-        var capsule    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Capsule>();
+        var capsule    = GetOrCreateShape<AGXUnity.Collide.Capsule>( node );
         capsule.Radius = Convert.ToSingle( nativeShape.asCapsule().getRadius() );
         capsule.Height = Convert.ToSingle( nativeShape.asCapsule().getHeight() );
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.SPHERE ) {
-        var sphere    = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Sphere>();
+        var sphere    = GetOrCreateShape<AGXUnity.Collide.Sphere>( node );
         sphere.Radius = Convert.ToSingle( nativeShape.asSphere().getRadius() );
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CONVEX ||
                 nativeShapeType == agxCollide.Shape.Type.TRIMESH ||
                 nativeShapeType == agxCollide.Shape.Type.HEIGHT_FIELD ) {
-        var mesh          = node.GameObject.GetOrCreateComponent<AGXUnity.Collide.Mesh>();
+        var mesh          = GetOrCreateShape<AGXUnity.Collide.Mesh>( node );
         var collisionData = nativeShape.asMesh().getMeshData();
         var nativeToWorld = nativeShape.getTransform();
         var meshToLocal   = mesh.transform.worldToLocalMatrix;
