@@ -60,6 +60,19 @@ namespace AGXUnity.Utils
         else
           m_property.SetValue( obj, m_field.GetValue( obj ) );
       }
+
+      /// <summary>
+      /// Invoke property get from <paramref name="source"/> and property
+      /// set from <paramref name="destination"/>.
+      /// </summary>
+      /// <param name="source">Source instance.</param>
+      /// <param name="destination">Destination instance.</param>
+      public void Invoke( object source, object destination )
+      {
+        if ( !IsValid )
+          return;
+        m_property.SetValue( destination, m_property.GetValue( source ) );
+      }
     }
 
     private static Dictionary<Type, List<FieldPropertyPair>> m_cache = new Dictionary<Type, List<FieldPropertyPair>>();
@@ -91,6 +104,28 @@ namespace AGXUnity.Utils
     public static void Synchronize( object obj )
     {
       Synchronize( obj, GetOrCreateSynchronizedProperties( obj.GetType() ), false );
+    }
+
+    /// <summary>
+    /// Synchronize <paramref name="destination"/> given <paramref name="source"/>.
+    /// The type of <paramref name="source"/> and <paramref name="destination"/> has
+    /// to be equal.
+    /// </summary>
+    /// <example>
+    /// // Calling this method is identical to:
+    /// destination.MyProperty = source.MyProperty;
+    /// // ... but for all fields and properties.
+    /// </example>
+    /// <param name="source">Source instance.</param>
+    /// <param name="destination">Destination instance.</param>
+    public static void Synchronize( object source, object destination )
+    {
+      if ( source == null || destination == null )
+        throw new ArgumentNullException();
+      if ( source.GetType() != destination.GetType() )
+        throw new InvalidOperationException( "Type mismatch." );
+
+      Synchronize( source, destination, GetOrCreateSynchronizedProperties( source.GetType() ) );
     }
 
     /// <summary>
@@ -153,6 +188,20 @@ namespace AGXUnity.Utils
     {
       foreach ( var fieldPropertyPair in synchronizedProperties )
         fieldPropertyPair.Invoke( obj, propertyGetToSet );
+    }
+
+    /// <summary>
+    /// Property synchronization from <paramref name="source"/> to <paramref name="destination"/>.
+    /// </summary>
+    /// <param name="source">Source instance.</param>
+    /// <param name="destination">Destination instance.</param>
+    /// <param name="synchronizedProperties">List of fields and properties.</param>
+    private static void Synchronize( object source,
+                                     object destination,
+                                     List<FieldPropertyPair> synchronizedProperties )
+    {
+      foreach ( var fieldPropertyPair in synchronizedProperties )
+        fieldPropertyPair.Invoke( source, destination );
     }
 
     /// <summary>
