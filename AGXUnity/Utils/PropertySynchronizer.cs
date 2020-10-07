@@ -71,7 +71,8 @@ namespace AGXUnity.Utils
       {
         if ( !IsValid )
           return;
-        m_property.SetValue( destination, m_property.GetValue( source ) );
+        if ( m_field.FieldType.IsValueType )
+          m_property.SetValue( destination, m_property.GetValue( source ) );
       }
     }
 
@@ -111,6 +112,9 @@ namespace AGXUnity.Utils
     /// The type of <paramref name="source"/> and <paramref name="destination"/> has
     /// to be equal.
     /// </summary>
+    /// <remarks>
+    /// Only value types are synchronized.
+    /// </remarks>
     /// <example>
     /// // Calling this method is identical to:
     /// destination.MyProperty = source.MyProperty;
