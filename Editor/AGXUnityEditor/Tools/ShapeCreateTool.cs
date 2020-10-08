@@ -106,8 +106,9 @@ namespace AGXUnityEditor.Tools
         return;
 
       var hitResults = Utils.Raycast.IntersectChildren( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
-                                                        Parent );
-
+                                                        Parent,
+                                                        null,
+                                                        true );
       // Find target. Ignoring shapes.
       GameObject selected = null;
       for ( int i = 0; selected == null && i < hitResults.Length; ++i ) {
@@ -340,7 +341,7 @@ namespace AGXUnityEditor.Tools
         return;
 
       if ( vp is Utils.VisualPrimitiveMesh ) {
-        vp.Node.transform.localScale = shapeInitData.Filter.transform.localScale;
+        vp.Node.transform.localScale = shapeInitData.Filter.transform.lossyScale;
         vp.Node.transform.position   = shapeInitData.Filter.transform.position;
         vp.Node.transform.rotation   = shapeInitData.Filter.transform.rotation;
       }
