@@ -339,6 +339,12 @@ namespace AGXUnity
         m_space = m_simulation.getSpace();
         m_system = m_simulation.getDynamicsSystem();
 
+        // Since AGXUnity.Simulation is optional in the hierarchy
+        // we have to synchronize fixedDeltaTime here if SimulationTool
+        // never has been seen in the inspector.
+        if ( AutoSteppingMode == AutoSteppingModes.FixedUpdate )
+          TimeStep = Time.fixedDeltaTime;
+
         // Solver settings will assign number of threads.
         if ( m_solverSettings != null ) {
           m_solverSettings.SetSimulation( m_simulation );
