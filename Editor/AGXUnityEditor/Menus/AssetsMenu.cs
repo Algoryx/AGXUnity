@@ -96,7 +96,10 @@ namespace AGXUnityEditor
     public static UnityEngine.GameObject[] InstantiateSelectedUrdfFiles()
     {
       var urdfFilePaths = IO.URDF.Reader.GetSelectedUrdfFiles( true );
-      return IO.URDF.Reader.Instantiate( urdfFilePaths, null, false );
+      var instances = IO.URDF.Reader.Instantiate( urdfFilePaths, null, false );
+      if ( instances.Length > 0 )
+        Selection.objects = instances;
+      return instances;
     }
 
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]

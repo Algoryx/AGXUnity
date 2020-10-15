@@ -480,7 +480,9 @@ namespace AGXUnity.IO.URDF
       child.transform.rotation = childTransform.GetRotation();
 
       GameObject constraintGameObject = null;
-      if ( child.GetComponent<RigidBody>() != null && parent.GetComponent<RigidBody>() != null ) {
+      if ( !joint.IsFloating &&
+           child.GetComponent<RigidBody>() != null &&
+           parent.GetComponent<RigidBody>() != null ) {
         constraintGameObject = Factory.Create( joint.Type,
                                                Vector3.zero,
                                                joint.Axis,
@@ -491,9 +493,11 @@ namespace AGXUnity.IO.URDF
         var constraint                        = constraintGameObject.GetComponent<Constraint>();
         constraint.CollisionsState            = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
         if ( joint.Limit.Enabled ) {
-          var rangeController = constraint.GetController<RangeController>();
-          rangeController.Enable = true;
-          rangeController.Range  = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
+          if ( joint.Limit.RangeEnabled ) {
+            var rangeController = constraint.GetController<RangeController>();
+            rangeController.Enable = true;
+            rangeController.Range  = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
+          }
           // TODO URDF: Velocity and Effort. Velocity is maximum speed and Effort
           //            is the force range of the motor.
           if ( joint.Limit.Effort > 0.0f ) {
