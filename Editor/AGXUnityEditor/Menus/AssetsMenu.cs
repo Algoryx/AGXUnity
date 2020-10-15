@@ -86,6 +86,19 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackInternalMergeProperties>( "track internal merge properties" );
     }
 
+    [MenuItem( "Assets/AGXUnity/URDF/Instantiate selected", validate = true )]
+    public static bool IsUrdfSelected()
+    {
+      return IO.URDF.Reader.GetSelectedUrdfFiles().Length > 0;
+    }
+
+    [MenuItem( "Assets/AGXUnity/URDF/Instantiate selected" )]
+    public static UnityEngine.GameObject[] InstantiateSelectedUrdfFiles()
+    {
+      var urdfFilePaths = IO.URDF.Reader.GetSelectedUrdfFiles( true );
+      return IO.URDF.Reader.Instantiate( urdfFilePaths, null, false );
+    }
+
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
     public static bool IsAGXFileSelected()
     {

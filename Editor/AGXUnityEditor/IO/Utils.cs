@@ -195,9 +195,9 @@ namespace AGXUnityEditor.IO
     /// <returns>Path with <paramref name="root"/> as root.</returns>
     public static string MakeRelative( string complete, string root )
     {
-      Uri completeUri = new Uri( complete );
-      Uri rootUri = new Uri( root );
-      Uri relUri = rootUri.MakeRelativeUri( completeUri );
+      var completeUri = new Uri( complete );
+      var rootUri = new Uri( root );
+      var relUri = rootUri.MakeRelativeUri( completeUri );
       return Uri.UnescapeDataString( relUri.ToString() );
     }
 
@@ -227,6 +227,22 @@ namespace AGXUnityEditor.IO
                from obj
                in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
                select obj ).ToArray();
+    }
+
+    public class UndoCollapseBlock : IDisposable
+    {
+      public UndoCollapseBlock( string undoGroupName )
+      {
+        Undo.SetCurrentGroupName( undoGroupName );
+        m_undoIndex = Undo.GetCurrentGroup();
+      }
+
+      public void Dispose()
+      {
+        Undo.CollapseUndoOperations( m_undoIndex );
+      }
+
+      private int m_undoIndex = -1;
     }
   }
 }
