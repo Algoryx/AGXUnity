@@ -12,6 +12,7 @@ namespace AGXUnity.IO.URDF
   /// Model or "Robot", the root element of an URDF file, containing
   /// all data read in Unity/C# friendly structures (instead of XML and strings).
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Model : Element
   {
     /// <summary>
@@ -39,7 +40,7 @@ namespace AGXUnity.IO.URDF
       if ( version.Major != 1 && version.Minor != 0 )
         throw new UrdfIOException( $"Unsupported version {version.ToString()}, supported version is 1.0." );
 
-      return new Model( document.Root );
+      return Instantiate<Model>( document.Root );
     }
 
     /// <summary>
@@ -108,22 +109,56 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// True if this model requires additional resources when instantiated.
     /// </summary>
-    public bool RequiresResourceLoader { get; private set; } = false;
+    public bool RequiresResourceLoader { get { return m_requiresResourceLoader; } private set { m_requiresResourceLoader = value; } }
 
     /// <summary>
     /// Enumerate visual materials read from a URDF file.
     /// </summary>
-    public IEnumerable<Material> Materials { get { return m_materials; } }
+    public Material[] Materials
+    {
+      get
+      {
+        if ( m_materials == null )
+          m_materials = new Material[] { };
+        return m_materials;
+      }
+    }
+
+    public UnityEngine.Material[] RenderMaterials
+    {
+      get
+      {
+        if ( m_renderMaterials == null )
+          m_renderMaterials = new UnityEngine.Material[] { };
+        return m_renderMaterials;
+      }
+    }
 
     /// <summary>
     /// Enumerate links read from a URDF file.
     /// </summary>
-    public IEnumerable<Link> Links { get { return m_links; } }
+    public Link[] Links
+    {
+      get
+      {
+        if ( m_links == null )
+          m_links = new Link[] { };
+        return m_links;
+      }
+    }
 
     /// <summary>
     /// Enumerate joints read from a URDF file.
     /// </summary>
-    public IEnumerable<UJoint> Joints { get { return m_joints; } }
+    public UJoint[] Joints
+    {
+      get
+      {
+        if ( m_joints == null )
+          m_joints = new UJoint[] { };
+        return m_joints;
+      }
+    }
 
     /// <summary>
     /// Find parsed material given name.
@@ -136,7 +171,7 @@ namespace AGXUnity.IO.URDF
         return m_materials[ materialIndex ];
       return null;
     }
-    
+
     /// <summary>
     /// Find UnityEngine.Material given name.
     /// </summary>
@@ -144,8 +179,8 @@ namespace AGXUnity.IO.URDF
     /// <returns>UnityEngine.Material with the given name - null if not found.</returns>
     public UnityEngine.Material GetRenderMaterial( string name )
     {
-      if ( m_renderMaterialsTable.TryGetValue( name, out var renderMaterial ) )
-        return renderMaterial;
+      if ( m_renderMaterialsTable.TryGetValue( name, out var renderMaterialIndex ) )
+        return m_renderMaterials[ renderMaterialIndex ];
       return null;
     }
 
@@ -190,6 +225,7 @@ namespace AGXUnity.IO.URDF
       try {
         robot = GetOrCreateGameObject( Factory.CreateName( Name ) );
         GetOrCreateComponent<ArticulatedRoot>( robot );
+        GetOrCreateComponent<ElementComponent>( robot ).SetElement( this );
 
         var linkInstanceTable = new Dictionary<string, GameObject>();
         foreach ( var link in Links ) {
@@ -197,19 +233,21 @@ namespace AGXUnity.IO.URDF
           linkGo.transform.parent = robot.transform;
           linkInstanceTable.Add( link.Name, linkGo );
 
-          if ( link.IsWorld )
-            continue;
+          // IsWorld == true when <link name="a_link" />.
+          if ( !link.IsWorld ) {
+            var rb = CreateRigidBody( linkGo, link );
+            foreach ( var collision in link.Collisions )
+              OnElementGameObject( AddCollision( rb, collision ), collision );
 
-          var rb = CreateRigidBody( linkGo, link );
-          foreach ( var collision in link.Collisions )
-            AddCollision( rb, collision );
+            foreach ( var visual in link.Visuals )
+              OnElementGameObject( AddVisual( rb, visual ), visual );
+          }
 
-          foreach ( var visual in link.Visuals )
-            AddVisual( rb, visual );
+          OnElementGameObject( linkGo, link );
         }
 
         foreach ( var joint in Joints )
-          AddJoint( joint, linkInstanceTable );
+          OnElementGameObject( AddJoint( joint, linkInstanceTable ), joint );
       }
       catch ( System.Exception ) {
         if ( robot != null )
@@ -218,7 +256,7 @@ namespace AGXUnity.IO.URDF
       }
       finally {
         m_resourceLoader = null;
-        m_resourceCache  = null;
+        m_resourceCache = null;
         m_onObjectCreate = null;
       }
 
@@ -226,33 +264,23 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
-    /// Default constructor, call Read with root/robot element of the XML document.
-    /// </summary>
-    public Model()
-    {
-    }
-
-    /// <summary>
-    /// Construct given root/robot element in a XML document.
+    /// Read data given root/robot element in a XML document.
     /// </summary>
     /// <param name="root"></param>
-    public Model( XElement root )
-    {
-      Read( root, false );
-    }
-
     public override void Read( XElement root, bool optional )
     {
       // Reading mandatory 'name'.
       base.Read( root, false );
 
-      // Reading optional materials.
+      // Reading optional materials. Note Descendants.
+      var materials = new List<Material>();
+      var renderMaterials = new List<UnityEngine.Material>();
       foreach ( var materialElement in root.Descendants( "material" ) ) {
         // This is some type of physics material.
         if ( materialElement.Parent.Name == "gazebo" )
           continue;
 
-        var material = new Material( materialElement );
+        var material = Instantiate<Material>( materialElement );
         // Ignoring material references for now.
         if ( material.IsReference )
           continue;
@@ -260,35 +288,45 @@ namespace AGXUnity.IO.URDF
         if ( m_materialTable.ContainsKey( material.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( materialElement )}: Non-unique material name '{material.Name}'." );
 
-        m_materialTable.Add( material.Name, m_materials.Count );
-        m_materials.Add( material );
+        m_materialTable.Add( material.Name, materials.Count );
+        materials.Add( material );
 
         // TODO URDF: Handle texture.
         var renderMaterial = new UnityEngine.Material( Shader.Find( "Standard" ) );
+        renderMaterial.name = material.name;
         renderMaterial.color = material.Color;
-        m_renderMaterialsTable.Add( material.Name, renderMaterial );
-      }
 
+        m_renderMaterialsTable.Add( material.Name, renderMaterials.Count );
+        renderMaterials.Add( renderMaterial );
+      }
+      m_materials = materials.ToArray();
+      m_renderMaterials = renderMaterials.ToArray();
+
+      // Reading links defined under the "robot" scope.
+      var links = new List<Link>();
       foreach ( var linkElement in root.Elements( "link" ) ) {
-        var link = new Link( linkElement );
+        var link = Instantiate<Link>( linkElement );
 
         if ( m_linkTable.ContainsKey( link.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( linkElement )}: Non-unique link name '{link.Name}'." );
 
         var missingMaterials = link.Visuals.Where( visual => !string.IsNullOrEmpty( visual.Material ) &&
-                                                    GetMaterial( visual.Material ) == null ).Select( visual => visual.Material ).ToArray();
+                                                   GetMaterial( visual.Material ) == null ).Select( visual => visual.Material ).ToArray();
         if ( missingMaterials.Length > 0 )
           throw new UrdfIOException( $"{Utils.GetLineInfo( linkElement )}: Visual element(s) in link '{link.Name}' is referring " +
                                      $"to material(s) '" + string.Join( "' '", missingMaterials ) + "' that doesn't exist." );
 
-        m_linkTable.Add( link.Name, m_links.Count );
-        m_links.Add( link );
+        m_linkTable.Add( link.Name, links.Count );
+        links.Add( link );
 
         RequiresResourceLoader = RequiresResourceLoader || FindRequiresResourceLoader( link );
       }
+      m_links = links.ToArray();
 
+      // Reading joints defined under the "robot" scope.
+      var joints = new List<UJoint>();
       foreach ( var jointElement in root.Elements( "joint" ) ) {
-        var joint = new UJoint( jointElement );
+        var joint = Instantiate<UJoint>( jointElement );
 
         if ( m_jointTable.ContainsKey( joint.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( jointElement )}: Non-unique link name '{joint.Name}'." );
@@ -297,9 +335,10 @@ namespace AGXUnity.IO.URDF
         if ( GetLink( joint.Child ) == null )
           throw new UrdfIOException( $"{Utils.GetLineInfo( jointElement )}: Joint child link with name {joint.Child} doesn't exist." );
 
-        m_jointTable.Add( joint.Name, m_joints.Count );
-        m_joints.Add( joint );
+        m_jointTable.Add( joint.Name, joints.Count );
+        joints.Add( joint );
       }
+      m_joints = joints.ToArray();
     }
 
     private bool FindRequiresResourceLoader( Link link )
@@ -328,6 +367,12 @@ namespace AGXUnity.IO.URDF
       return component;
     }
 
+    private void OnElementGameObject( GameObject go, Element element )
+    {
+      if ( go != null && element != null )
+        GetOrCreateComponent<ElementComponent>( go ).SetElement( element );
+    }
+
     private void SetTransform( Transform transform, Pose pose )
     {
       if ( pose == null )
@@ -340,6 +385,7 @@ namespace AGXUnity.IO.URDF
     private RigidBody CreateRigidBody( GameObject gameObject, Link link )
     {
       var rb = GetOrCreateComponent<RigidBody>( gameObject );
+      GetOrCreateComponent<ElementComponent>( gameObject ).SetElement( link );
       if ( link.Inertial == null || link.IsStatic ) {
         rb.MotionControl = agx.RigidBody.MotionControl.STATIC;
         return rb;
@@ -369,6 +415,7 @@ namespace AGXUnity.IO.URDF
                           CreateName( rb.transform, $"_{collision.Geometry.Type.ToString()}" ) :
                           collision.Name;
       var shapeGo = GetOrCreateGameObject( shapeGoName );
+      GetOrCreateComponent<ElementComponent>( shapeGo ).SetElement( collision );
       try {
         if ( collision.Geometry.Type == Geometry.GeometryType.Box ) {
           var box = GetOrCreateComponent<Collide.Box>( shapeGo );
@@ -378,13 +425,13 @@ namespace AGXUnity.IO.URDF
           // <cylinder> in URDF have their cylinder axis along z but in
           // Unity/AGX Dynamics the cylinder axis is along y. We're adding
           // an additional child which transform the axis to be z.
-          var cylinderY2Z                = GetOrCreateGameObject( collision.Name + "_extra" );
-          cylinderY2Z.transform.parent   = shapeGo.transform;
+          var cylinderY2Z = GetOrCreateGameObject( collision.Name + "_extra" );
+          cylinderY2Z.transform.parent = shapeGo.transform;
           cylinderY2Z.transform.rotation = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
 
-          var cylinder                   = GetOrCreateComponent<Collide.Cylinder>( cylinderY2Z );
-          cylinder.Radius                = collision.Geometry.Radius;
-          cylinder.Height                = collision.Geometry.Length;
+          var cylinder = GetOrCreateComponent<Collide.Cylinder>( cylinderY2Z );
+          cylinder.Radius = collision.Geometry.Radius;
+          cylinder.Height = collision.Geometry.Length;
         }
         else if ( collision.Geometry.Type == Geometry.GeometryType.Sphere ) {
           var sphere = GetOrCreateComponent<Collide.Sphere>( shapeGo );
@@ -446,13 +493,14 @@ namespace AGXUnity.IO.URDF
       // Additional rotation for <cylinder> when URDF have cylinder axis
       // along z and Unity/AGX along y.
       if ( visual.Geometry.Type == Geometry.GeometryType.Cylinder ) {
-        gameObjectToTransform       = GetOrCreateGameObject( instance.name + "_extra" );
-        instance.transform.parent   = gameObjectToTransform.transform;
+        gameObjectToTransform = GetOrCreateGameObject( instance.name + "_extra" );
+        instance.transform.parent = gameObjectToTransform.transform;
         instance.transform.rotation = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
       }
 
       gameObjectToTransform.transform.parent = rb.transform;
       SetTransform( gameObjectToTransform.transform, visual );
+      GetOrCreateComponent<ElementComponent>( gameObjectToTransform ).SetElement( visual );
 
       return gameObjectToTransform;
     }
@@ -467,7 +515,7 @@ namespace AGXUnity.IO.URDF
       };
 
       var parent = getGameObject( joint.Parent );
-      var child  = getGameObject( joint.Child );
+      var child = getGameObject( joint.Child );
       if ( parent == null )
         throw new UrdfIOException( $"Unable to find parent link '{joint.Parent}' in joint '{joint.Name}'." );
       if ( child == null )
@@ -475,7 +523,7 @@ namespace AGXUnity.IO.URDF
       var childTransform = parent.transform.localToWorldMatrix * Matrix4x4.TRS( joint.Xyz.ToLeftHanded(),
                                                                                 joint.Rpy.RadEulerToLeftHanded(),
                                                                                 Vector3.one );
-      child.transform.parent   = parent.transform;
+      child.transform.parent = parent.transform;
       child.transform.position = childTransform.GetTranslate();
       child.transform.rotation = childTransform.GetRotation();
 
@@ -496,25 +544,30 @@ namespace AGXUnity.IO.URDF
                                                joint.Axis,
                                                child.GetComponent<RigidBody>(),
                                                parent.GetComponent<RigidBody>() );
-        constraintGameObject.name             = joint.Name;
-        constraintGameObject.transform.parent = parent.transform;
-        var constraint                        = constraintGameObject.GetComponent<Constraint>();
-        constraint.CollisionsState            = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+
+        var constraint = constraintGameObject.GetComponent<Constraint>();
+        constraint.CollisionsState = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
         if ( joint.Limit.Enabled ) {
           if ( joint.Limit.RangeEnabled ) {
             var rangeController = constraint.GetController<RangeController>();
             rangeController.Enable = true;
-            rangeController.Range  = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
+            rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
           }
           // TODO URDF: Velocity and Effort. Velocity is maximum speed and Effort
           //            is the force range of the motor.
           if ( joint.Limit.Effort > 0.0f ) {
-            var targetSpeedController        = constraint.GetController<TargetSpeedController>();
-            targetSpeedController.Enable     = true;
+            var targetSpeedController = constraint.GetController<TargetSpeedController>();
+            targetSpeedController.Enable = true;
             targetSpeedController.ForceRange = new RangeReal( joint.Limit.Effort );
           }
         }
       }
+      else
+        constraintGameObject = new GameObject( joint.name );
+
+      constraintGameObject.name = joint.Name;
+      constraintGameObject.transform.parent = parent.transform;
+      GetOrCreateComponent<ElementComponent>( constraintGameObject ).SetElement( joint );
 
       return constraintGameObject;
     }
@@ -551,24 +604,36 @@ namespace AGXUnity.IO.URDF
 
     private string CreateName( Transform parent, string postFix )
     {
-      var name      = parent.name + postFix;
+      var name = parent.name + postFix;
       var finalName = name;
-      var counter   = 0;
+      var counter = 0;
       while ( parent.Find( finalName ) != null )
         finalName = $"{name} ({++counter})";
 
       return finalName;
     }
 
+    [SerializeField]
+    private bool m_requiresResourceLoader = false;
+
+    [SerializeField]
+    private Material[] m_materials = new Material[] { };
+
+    [SerializeField]
+    private Link[] m_links = new Link[] { };
+
+    [SerializeField]
+    private UJoint[] m_joints = new UJoint[] { };
+
+    [SerializeField]
+    private UnityEngine.Material[] m_renderMaterials = new UnityEngine.Material[] { };
+
     private Dictionary<string, int> m_materialTable = new Dictionary<string, int>();
-    private List<Material> m_materials = new List<Material>();
     private Dictionary<string, int> m_linkTable = new Dictionary<string, int>();
-    private List<Link> m_links = new List<Link>();
     private Dictionary<string, int> m_jointTable = new Dictionary<string, int>();
-    private List<UJoint> m_joints = new List<UJoint>();
     private Func<string, GameObject> m_resourceLoader = null;
     private Action<UnityEngine.Object> m_onObjectCreate = null;
     private Dictionary<string, GameObject> m_resourceCache = null;
-    private Dictionary<string, UnityEngine.Material> m_renderMaterialsTable = new Dictionary<string, UnityEngine.Material>();
+    private Dictionary<string, int> m_renderMaterialsTable = new Dictionary<string, int>();
   }
 }

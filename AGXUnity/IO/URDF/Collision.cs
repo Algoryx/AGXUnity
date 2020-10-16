@@ -9,6 +9,7 @@ namespace AGXUnity.IO.URDF
   ///   - Optional element "origin" (<see cref="Pose"/>).
   ///   - Required element "geometry" (<see cref="Geometry"/>).
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Collision : Pose
   {
     /// <summary>

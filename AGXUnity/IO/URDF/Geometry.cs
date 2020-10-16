@@ -18,6 +18,7 @@ namespace AGXUnity.IO.URDF
   /// the geometry type read. E.g., will throw when Type == GeometryType.Box
   /// and Geometry.Radius is used.
   /// </remarks>
+  [DoNotGenerateCustomEditor]
   public class Geometry : Element
   {
     /// <summary>
@@ -31,7 +32,7 @@ namespace AGXUnity.IO.URDF
       var geometryElement = parent.Element( "geometry" );
       if ( geometryElement == null )
         throw new UrdfIOException( $"{Utils.GetLineInfo( parent )}: {parent.Name} doesn't contain required 'geometry'." );
-      return new Geometry( geometryElement );
+      return Instantiate<Geometry>( geometryElement );
     }
 
     /// <summary>
@@ -157,7 +158,7 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Type of this geometry.
     /// </summary>
-    public GeometryType Type { get; private set; } = GeometryType.Unknown;
+    public GeometryType Type { get { return m_type; } private set { m_type = value; } }
 
     /// <summary>
     /// Reads required element "geometry".
@@ -196,16 +197,13 @@ namespace AGXUnity.IO.URDF
       }
     }
 
-    /// <summary>
-    /// Construct given "geometry" element.
-    /// </summary>
-    /// <param name="element">Required "geometry" element - invalid if null.</param>
-    public Geometry( XElement element )
-    {
-      Read( element );
-    }
-
+    [SerializeField]
     private Vector3 m_size = Vector3.zero;
+
+    [SerializeField]
     private string m_filename = string.Empty;
+
+    [SerializeField]
+    private GeometryType m_type = GeometryType.Unknown;
   }
 }

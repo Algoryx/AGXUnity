@@ -11,6 +11,7 @@ namespace AGXUnity.IO.URDF
   ///   - Required element "inertia" with required attributes "ixx", "ixy", "ixz",
   ///     "iyy", "iyz" and "izz" (<see cref="Inertia"/>). 
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Inertial : Pose
   {
     /// <summary>
@@ -23,7 +24,7 @@ namespace AGXUnity.IO.URDF
       if ( element == null )
         return null;
 
-      return new Inertial( element );
+      return Instantiate<Inertial>( element );
     }
 
     /// <summary>
@@ -47,15 +48,6 @@ namespace AGXUnity.IO.URDF
 
       Mass    = Utils.ReadFloat( element?.Element( "mass" ), "value" );
       Inertia = Inertia.Read( element?.Element( "inertia" ) );
-    }
-
-    /// <summary>
-    /// Construct given optional element "inertial".
-    /// </summary>
-    /// <param name="element">Optional element "inertial" under "link".</param>
-    public Inertial( XElement element )
-    {
-      Read( element );
     }
   }
 }

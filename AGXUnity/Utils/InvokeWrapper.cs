@@ -370,7 +370,7 @@ namespace AGXUnity.Utils
     /// <returns>True if this property has a set method, otherwise false.</returns>
     public override bool CanWrite()
     {
-      return Property.GetSetMethod() != null;
+      return Property.GetSetMethod() != null && Property.GetSetMethod().IsPublic;
     }
 
     /// <returns>Type of this property.</returns>

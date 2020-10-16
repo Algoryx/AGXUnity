@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System;
+using System.Xml.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.URDF
@@ -25,6 +26,7 @@ namespace AGXUnity.IO.URDF
   ///   - Optional element "limit" with required attributes "effort" and "velocity", and optional
   ///     attributes "lower" (default: 0.0) and "upper" (default: 0.0)
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class UJoint : Pose
   {
     /// <summary>
@@ -67,6 +69,7 @@ namespace AGXUnity.IO.URDF
     /// Element "limit" data under "joint". This element is required for
     /// "revolute" and "prismatic".
     /// </summary>
+    [Serializable]
     public struct LimitData
     {
       /// <summary>
@@ -133,37 +136,37 @@ namespace AGXUnity.IO.URDF
     /// Constraint type.
     /// TODO URDF: Change from ConstraintType to JointType using the terminology of the specification.
     /// </summary>
-    public JointType Type { get; private set; } = JointType.Unknown;
+    public JointType Type { get { return m_type; } private set { m_type = value; } }
 
     /// <summary>
     /// Parent link (name) of this joint.
     /// </summary>
-    public string Parent { get; private set; } = string.Empty;
+    public string Parent { get { return m_parent; } private set { m_parent = value; } }
 
     /// <summary>
     /// Child link (name) of this joint.
     /// </summary>
-    public string Child { get; private set; } = string.Empty;
+    public string Child { get { return m_child; } private set { m_child = value; } }
 
     /// <summary>
     /// Axis of this joint.
     /// </summary>
-    public Vector3 Axis { get; private set; } = Vector3.right;
+    public Vector3 Axis { get { return m_axis; } private set { m_axis = value; } }
 
     /// <summary>
     /// Damping of this joint.
     /// </summary>
-    public float Damping { get; private set; } = 0.0f;
+    public float Damping { get { return m_damping; } private set { m_damping = value; } }
 
     /// <summary>
     /// Friction coefficient of this joint.
     /// </summary>
-    public float Friction { get; private set; } = 0.0f;
+    public float Friction { get { return m_friction; } private set { m_friction = value; } }
 
     /// <summary>
     /// Limit data of this joint.
     /// </summary>
-    public LimitData Limit { get; private set; }
+    public LimitData Limit { get { return m_limitData; } private set { m_limitData = value; } }
 
     /// <summary>
     /// Reads element "joint" with required attributes "name" and "type".
@@ -205,13 +208,25 @@ namespace AGXUnity.IO.URDF
       Limit = LimitData.Read( element, type != "revolute" && type != "prismatic" );
     }
 
-    /// <summary>
-    /// Construct given optional element "joint".
-    /// </summary>
-    /// <param name="element">Optional element "joint".</param>
-    public UJoint( XElement element )
-    {
-      Read( element );
-    }
+    [SerializeField]
+    private JointType m_type = JointType.Unknown;
+
+    [SerializeField]
+    private string m_parent = string.Empty;
+
+    [SerializeField]
+    private string m_child = string.Empty;
+
+    [SerializeField]
+    private Vector3 m_axis = Vector3.right;
+
+    [SerializeField]
+    private float m_damping = 0.0f;
+
+    [SerializeField]
+    private float m_friction = 0.0f;
+
+    [SerializeField]
+    private LimitData m_limitData;
   }
 }

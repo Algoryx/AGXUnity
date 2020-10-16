@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
+using UnityEngine;
 
 namespace AGXUnity.IO.URDF
 {
@@ -12,22 +13,40 @@ namespace AGXUnity.IO.URDF
   ///   - Optional element(s) "visual" - multiple supported (<see cref="Visual"/>).
   ///   - Optional element(s) "collision" - multiple supported (<see cref="Collision"/>).
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Link : Element
   {
     /// <summary>
     /// Inertial of this link. Null if not defined for this link.
     /// </summary>
-    public Inertial Inertial { get; private set; } = null;
+    public Inertial Inertial { get { return m_inertial; } private set { m_inertial = value; } }
 
     /// <summary>
     /// Array of visuals, empty array if none defined for this link.
     /// </summary>
-    public Visual[] Visuals { get; private set; } = new Visual[] { };
+    public Visual[] Visuals
+    {
+      get
+      {
+        if ( m_visuals == null )
+          m_visuals = new Visual[] { };
+        return m_visuals;
+      }
+      private set { m_visuals = value; }
+    }
 
     /// <summary>
     /// Array of collisions, empty array if none defined for this link.
     /// </summary>
-    public Collision[] Collisions { get; private set; } = new Collision[] { };
+    public Collision[] Collisions
+    {
+      get
+      {
+        if ( m_collisions == null )
+          m_collisions = new Collision[] { };
+        return m_collisions;
+      }
+      private set { m_collisions = value; } }
 
     /// <summary>
     /// True if this link doesn't have any child elements, otherwise false.
@@ -56,8 +75,8 @@ namespace AGXUnity.IO.URDF
         return;
 
       Inertial   = Inertial.ReadOptional( element.Element( "inertial" ) );
-      Visuals    = ( from visualElement in element.Elements( "visual" ) select new Visual( visualElement ) ).ToArray();
-      Collisions = ( from collisionElement in element.Elements( "collision" ) select new Collision( collisionElement ) ).ToArray();
+      Visuals    = ( from visualElement in element.Elements( "visual" ) select Instantiate<Visual>( visualElement ) ).ToArray();
+      Collisions = ( from collisionElement in element.Elements( "collision" ) select Instantiate<Collision>( collisionElement ) ).ToArray();
       IsStatic   = Inertial == null || Inertial.Mass == 0.0f;
     }
 
@@ -69,5 +88,14 @@ namespace AGXUnity.IO.URDF
     {
       Read( element );
     }
+
+    [SerializeField]
+    private Inertial m_inertial = null;
+
+    [SerializeField]
+    private Visual[] m_visuals = new Visual[] { };
+
+    [SerializeField]
+    private Collision[] m_collisions = new Collision[] { };
   }
 }

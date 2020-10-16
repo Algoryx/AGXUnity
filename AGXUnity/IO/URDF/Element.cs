@@ -1,16 +1,33 @@
 ﻿using System.Xml.Linq;
+using UnityEngine;
 
 namespace AGXUnity.IO.URDF
 {
   /// <summary>
   /// Base URDF element with either required or optional "name" attribute.
   /// </summary>
-  public class Element
+  [DoNotGenerateCustomEditor]
+  public class Element : ScriptableObject
   {
+    public static T Instantiate<T>()
+      where T : Element
+    {
+      var instance = CreateInstance<T>();
+      return instance;
+    }
+
+    public static T Instantiate<T>( XElement element, bool optional = true )
+      where T : Element
+    {
+      var instance = Instantiate<T>();
+      instance.Read( element, optional );
+      return instance;
+    }
+
     /// <summary>
     /// Name attribute of the element.
     /// </summary>
-    public string Name { get; private set; } = null;
+    public string Name { get { return m_name; } private set { m_name = value; } }
 
     /// <summary>
     /// Reads attribute "name". Throws if <paramref name="optional"/> == false
@@ -22,5 +39,8 @@ namespace AGXUnity.IO.URDF
     {
       Name = Utils.ReadString( element, "name", optional );
     }
+
+    [SerializeField]
+    private string m_name = string.Empty;
   }
 }

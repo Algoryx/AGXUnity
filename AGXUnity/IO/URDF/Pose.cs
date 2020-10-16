@@ -10,23 +10,25 @@ namespace AGXUnity.IO.URDF
   ///   - Conditionally optional "name" (required for element "link" which inherits from this class).
   ///   - Optional attributes "xyz" and "rpy", both defaults to [0, 0, 0].
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Pose : Element
   {
     /// <summary>
     /// Returns 'this', this property is a mapping to the specification,
     /// e.g., link.Origin.Xyz which is identical to link.Xyz.
     /// </summary>
+    [HideInInspector]
     public Pose Origin { get { return this; } }
 
     /// <summary>
     /// Offset position.
     /// </summary>
-    public Vector3 Xyz { get; private set; } = Vector3.zero;
+    public Vector3 Xyz { get { return m_xyz; } private set { m_xyz = value; } }
 
     /// <summary>
     /// Offset rotation; roll, pitch and yaw in radians.
     /// </summary>
-    public Vector3 Rpy { get; private set; } = Vector3.zero;
+    public Vector3 Rpy { get { return m_rpy; } private set { m_rpy = value; } }
 
     /// <summary>
     /// Reads "name" (conditionally optional) and optional element "origin"
@@ -48,5 +50,11 @@ namespace AGXUnity.IO.URDF
       Xyz = Utils.ReadVector3( origin, "xyz" );
       Rpy = Utils.ReadVector3( origin, "rpy" );
     }
+
+    [SerializeField]
+    private Vector3 m_xyz = Vector3.zero;
+
+    [SerializeField]
+    private Vector3 m_rpy = Vector3.zero;
   }
 }

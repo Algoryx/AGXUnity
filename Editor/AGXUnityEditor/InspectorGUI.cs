@@ -367,9 +367,9 @@ namespace AGXUnityEditor
         var assetName = instanceType.Name.SplitCamelCase().ToLower();
         var assetExtension = IO.AGXFileInfo.FindAssetExtension( instanceType );
         var path = EditorUtility.SaveFilePanel( "Create new " + assetName,
-                                                          "Assets",
-                                                          "new " + assetName + assetExtension,
-                                                          assetExtension.TrimStart( '.' ) );
+                                                "Assets",
+                                                "new " + assetName + assetExtension,
+                                                assetExtension.TrimStart( '.' ) );
         if ( path != string.Empty ) {
           var info = new System.IO.FileInfo( path );
           var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );

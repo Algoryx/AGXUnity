@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using UnityEngine;
+using System.Xml.Linq;
 
 namespace AGXUnity.IO.URDF
 {
@@ -10,17 +11,18 @@ namespace AGXUnity.IO.URDF
   ///   - Optional element "material" (<see cref="Material"/>).
   ///   - Required element "geometry" (<see cref="Geometry"/>).
   /// </summary>
+  [DoNotGenerateCustomEditor]
   public class Visual : Pose
   {
     /// <summary>
     /// Geometry of this visual.
     /// </summary>
-    public Geometry Geometry { get; private set; } = null;
+    public Geometry Geometry { get { return m_geometry; } private set { m_geometry = value; } }
 
     /// <summary>
     /// Material reference (name) of this visual.
     /// </summary>
-    public string Material { get; private set; } = string.Empty;
+    public string Material { get { return m_material; } private set { m_material = value; } }
 
     /// <summary>
     /// Reads optional "name" and "origin" and required "geometry" if
@@ -39,13 +41,9 @@ namespace AGXUnity.IO.URDF
       Material = Utils.ReadString( element.Element( "material" ), "name" );
     }
 
-    /// <summary>
-    /// Construct given optional element <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">Optional element "visual".</param>
-    public Visual( XElement element )
-    {
-      Read( element );
-    }
+    [SerializeField]
+    private Geometry m_geometry = null;
+    [SerializeField]
+    private string m_material = string.Empty;
   }
 }

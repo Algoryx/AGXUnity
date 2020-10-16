@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System;
+using System.Xml.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.URDF
@@ -7,6 +8,7 @@ namespace AGXUnity.IO.URDF
   /// Optional element "inertia" reading required attributes "ixx",
   /// "ixy", "ixz", "iyy", "iyz" and "izz".
   /// </summary>
+  [Serializable]
   public struct Inertia
   {
     /// <summary>
@@ -102,7 +104,10 @@ namespace AGXUnity.IO.URDF
       return new Vector2Int( globalIndex % 3, globalIndex / 3 );
     }
 
+    [SerializeField]
     private Vector3 m_data1;
+
+    [SerializeField]
     private Vector3 m_data2;
   }
 }
