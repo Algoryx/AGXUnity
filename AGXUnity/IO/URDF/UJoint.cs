@@ -28,6 +28,42 @@ namespace AGXUnity.IO.URDF
   public class UJoint : Pose
   {
     /// <summary>
+    /// Per specification joint types.
+    /// </summary>
+    public enum JointType
+    {
+      /// <summary>
+      /// Hinge with limits.
+      /// </summary>
+      Revolute,
+      /// <summary>
+      /// Hinge without limits.
+      /// </summary>
+      Continuous,
+      /// <summary>
+      /// Sliding joint with limits.
+      /// </summary>
+      Prismatic,
+      /// <summary>
+      /// 6 DOF constrained.
+      /// </summary>
+      Fixed,
+      /// <summary>
+      /// 0 DOF constrained.
+      /// </summary>
+      Floating,
+      /// <summary>
+      /// 4 DOF constrained, allowing movement in a plane
+      /// defined by Axis.
+      /// </summary>
+      Planar,
+      /// <summary>
+      /// Parse error.
+      /// </summary>
+      Unknown
+    }
+
+    /// <summary>
     /// Element "limit" data under "joint". This element is required for
     /// "revolute" and "prismatic".
     /// </summary>
@@ -97,7 +133,7 @@ namespace AGXUnity.IO.URDF
     /// Constraint type.
     /// TODO URDF: Change from ConstraintType to JointType using the terminology of the specification.
     /// </summary>
-    public ConstraintType Type { get; private set; } = ConstraintType.Unknown;
+    public JointType Type { get; private set; } = JointType.Unknown;
 
     /// <summary>
     /// Parent link (name) of this joint.
@@ -130,12 +166,6 @@ namespace AGXUnity.IO.URDF
     public LimitData Limit { get; private set; }
 
     /// <summary>
-    /// True if this is a "floating" joint.
-    /// TODO URDF: Remove this when we have JointType.
-    /// </summary>
-    public bool IsFloating { get; private set; } = false;
-
-    /// <summary>
     /// Reads element "joint" with required attributes "name" and "type".
     /// </summary>
     /// <param name="element">Optional element "joint".</param>
@@ -147,21 +177,18 @@ namespace AGXUnity.IO.URDF
 
       base.Read( element, false );
       var type = Utils.ReadString( element, "type", false );
-      Type = type == "revolute" || type == "continuous" ?
-               ConstraintType.Hinge :
+      Type = type == "revolute" ?
+               JointType.Revolute :
+             type == "continuous" ?
+               JointType.Continuous :
              type == "prismatic" ?
-               ConstraintType.Prismatic :
+               JointType.Prismatic :
              type == "fixed" ?
-               ConstraintType.LockJoint :
-             // Unsure if PlaneJoint is the same as "planar" - from the specification:
-             //    "This joint allows motion in a plane perpendicular to the axis."
-             // PlaneJoint is only 1D and I suspect "planar" is 4D.
+               JointType.Fixed:
              type == "planar" ?
-               ConstraintType.PlaneJoint :
-               ConstraintType.Unknown;
-      IsFloating = Type == ConstraintType.Unknown &&
-                           type == "floating";
-      if ( !IsFloating && Type == ConstraintType.Unknown )
+               JointType.Planar :
+               JointType.Unknown;
+      if ( Type == JointType.Unknown )
         throw new UrdfIOException( $"{Utils.GetLineInfo( element )}: Unknown joint type '{type}'." );
 
       Parent = Utils.ReadString( element.Element( "parent" ), "link", false );

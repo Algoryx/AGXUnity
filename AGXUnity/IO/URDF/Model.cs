@@ -480,10 +480,18 @@ namespace AGXUnity.IO.URDF
       child.transform.rotation = childTransform.GetRotation();
 
       GameObject constraintGameObject = null;
-      if ( !joint.IsFloating &&
+      if ( joint.Type != UJoint.JointType.Floating &&
            child.GetComponent<RigidBody>() != null &&
            parent.GetComponent<RigidBody>() != null ) {
-        constraintGameObject = Factory.Create( joint.Type,
+        constraintGameObject = Factory.Create( joint.Type == UJoint.JointType.Revolute || joint.Type == UJoint.JointType.Continuous ?
+                                                 ConstraintType.Hinge :
+                                               joint.Type == UJoint.JointType.Prismatic ?
+                                                 ConstraintType.Prismatic :
+                                               joint.Type == UJoint.JointType.Fixed ?
+                                                 ConstraintType.LockJoint :
+                                               joint.Type == UJoint.JointType.Planar ?
+                                                 ConstraintType.PlaneJoint :
+                                                 ConstraintType.Unknown,
                                                Vector3.zero,
                                                joint.Axis,
                                                child.GetComponent<RigidBody>(),
