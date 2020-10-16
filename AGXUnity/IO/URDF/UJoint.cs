@@ -133,8 +133,7 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
-    /// Constraint type.
-    /// TODO URDF: Change from ConstraintType to JointType using the terminology of the specification.
+    /// Joint type.
     /// </summary>
     public JointType Type { get { return m_type; } private set { m_type = value; } }
 
@@ -206,6 +205,8 @@ namespace AGXUnity.IO.URDF
       }
 
       Limit = LimitData.Read( element, type != "revolute" && type != "prismatic" );
+
+      // TODO URDF: Read all data defined in "joint".
     }
 
     [SerializeField]
