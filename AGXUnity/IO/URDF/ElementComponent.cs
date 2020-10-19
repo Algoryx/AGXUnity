@@ -4,7 +4,6 @@ namespace AGXUnity.IO.URDF
 {
   public class ElementComponent : ScriptComponent
   {
-    [AllowRecursiveEditing]
     public Element Element { get { return m_element; } private set { m_element = value; } }
 
     public void SetElement( Element element )

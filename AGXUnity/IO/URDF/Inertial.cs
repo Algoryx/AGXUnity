@@ -1,4 +1,5 @@
 ﻿using System.Xml.Linq;
+using UnityEngine;
 
 namespace AGXUnity.IO.URDF
 {
@@ -30,12 +31,12 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Mass if the link if "inertial" is defined. Default: 0.0.
     /// </summary>
-    public float Mass { get; private set; } = 0.0f;
+    public float Mass { get { return m_mass; } private set { m_mass = value; } }
 
     /// <summary>
     /// Inertia of the link if "inertial" is defined. Default: zeros.
     /// </summary>
-    public Inertia Inertia { get; private set; } = Inertia.zero;
+    public Inertia Inertia { get { return m_inerta; } private set { m_inerta = value; } }
 
     /// <summary>
     /// Reads optional element "inertial".
@@ -49,5 +50,11 @@ namespace AGXUnity.IO.URDF
       Mass    = Utils.ReadFloat( element?.Element( "mass" ), "value" );
       Inertia = Inertia.Read( element?.Element( "inertia" ) );
     }
+
+    [SerializeField]
+    private float m_mass = 0.0f;
+
+    [SerializeField]
+    private Inertia m_inerta = Inertia.zero;
   }
 }

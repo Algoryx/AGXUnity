@@ -107,11 +107,6 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
-    /// True if this model requires additional resources when instantiated.
-    /// </summary>
-    public bool RequiresResourceLoader { get { return m_requiresResourceLoader; } private set { m_requiresResourceLoader = value; } }
-
-    /// <summary>
     /// Enumerate visual materials read from a URDF file.
     /// </summary>
     public Material[] Materials
@@ -159,6 +154,11 @@ namespace AGXUnity.IO.URDF
         return m_joints;
       }
     }
+
+    /// <summary>
+    /// True if this model requires additional resources when instantiated.
+    /// </summary>
+    public bool RequiresResourceLoader { get { return m_requiresResourceLoader; } private set { m_requiresResourceLoader = value; } }
 
     /// <summary>
     /// Find parsed material given name.

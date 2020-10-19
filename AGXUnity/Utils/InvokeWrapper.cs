@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace AGXUnity.Utils
 {
@@ -37,10 +38,18 @@ namespace AGXUnity.Utils
                                                            BindingFlags fieldBindingFlags = DefaultBindingFlags,
                                                            BindingFlags propertyBindingFlags = DefaultBindingFlags )
     {
-      FieldWrapper[] fields        = FieldWrapper.FindFields( type, fieldBindingFlags );
-      PropertyWrapper[] properties = PropertyWrapper.FindProperties( type, propertyBindingFlags );
+      var isDefaultBindings = fieldBindingFlags == DefaultBindingFlags &&
+                              propertyBindingFlags == DefaultBindingFlags;
+      if ( isDefaultBindings &&
+           s_defaultBindingFlagsFieldsPropertiesCache.TryGetValue( type, out var fieldsAndPropertiesCache ) )
+        return fieldsAndPropertiesCache;
 
-      return fields.Concat<InvokeWrapper>( properties ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      var fields              = FieldWrapper.FindFields( type, fieldBindingFlags );
+      var properties          = PropertyWrapper.FindProperties( type, propertyBindingFlags );
+      var fieldsAndProperties = fields.Concat<InvokeWrapper>( properties ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      if ( isDefaultBindings )
+        s_defaultBindingFlagsFieldsPropertiesCache.Add( type, fieldsAndProperties );
+      return fieldsAndProperties;
     }
 
     /// <summary>
@@ -183,6 +192,8 @@ namespace AGXUnity.Utils
     /// <param name="instances">Array of instances.</param>
     /// <returns>true if all values are equal - otherwise false.</returns>
     public abstract bool AreValuesEqual( object[] instances );
+
+    private static Dictionary<Type, InvokeWrapper[]> s_defaultBindingFlagsFieldsPropertiesCache = new Dictionary<Type, InvokeWrapper[]>();
   }
 
   /// <summary>
@@ -210,9 +221,14 @@ namespace AGXUnity.Utils
     /// <returns>Priority sorted array (higher priority earlier in array).</returns>
     public static FieldWrapper[] FindFields( Type type, BindingFlags bindingFlags = DefaultBindingFlags )
     {
-      return ( from fieldInfo
-               in type.GetFields( bindingFlags )
-               select new FieldWrapper( fieldInfo ) ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      if ( bindingFlags == DefaultBindingFlags && s_defaultBindingsCache.TryGetValue( type, out var cachedFields ) )
+        return cachedFields;
+      var fields = ( from fieldInfo
+                     in type.GetFields( bindingFlags )
+                     select new FieldWrapper( fieldInfo ) ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      if ( bindingFlags == DefaultBindingFlags )
+        s_defaultBindingsCache.Add( type, fields );
+      return fields;
     }
 
     /// <summary>
@@ -310,6 +326,8 @@ namespace AGXUnity.Utils
 
       return true;
     }
+
+    private static Dictionary<Type, FieldWrapper[]> s_defaultBindingsCache = new Dictionary<Type, FieldWrapper[]>();
   }
 
   /// <summary>
@@ -336,9 +354,14 @@ namespace AGXUnity.Utils
     /// <returns>Priority sorted array (higher priority earlier in array).</returns>
     public static PropertyWrapper[] FindProperties( Type type, BindingFlags bindingFlags = DefaultBindingFlags )
     {
-      return ( from propertyInfo
-               in type.GetProperties( bindingFlags )
-               select new PropertyWrapper( propertyInfo ) ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      if ( bindingFlags == DefaultBindingFlags && s_defaultBindingsCache.TryGetValue( type, out var cachedProperties ) )
+        return cachedProperties;
+      var properties = ( from propertyInfo
+                         in type.GetProperties( bindingFlags )
+                         select new PropertyWrapper( propertyInfo ) ).OrderByDescending( wrapper => wrapper.Priority ).ToArray();
+      if ( bindingFlags == DefaultBindingFlags )
+        s_defaultBindingsCache.Add( type, properties );
+      return properties;
     }
 
     /// <summary>
@@ -445,5 +468,7 @@ namespace AGXUnity.Utils
 
       return true;
     }
+
+    private static Dictionary<Type, PropertyWrapper[]> s_defaultBindingsCache = new Dictionary<Type, PropertyWrapper[]>();
   }
 }

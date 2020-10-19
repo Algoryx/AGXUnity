@@ -96,6 +96,16 @@ namespace AGXUnity.IO.URDF
       get { return new Vector3( m_data1[ 0 ], m_data2[ 1 ], m_data2[ 2 ] ); }
     }
 
+    /// <summary>
+    /// Row 0, 1 or 2 of this inertia.
+    /// </summary>
+    /// <param name="i">Row number.</param>
+    /// <returns>Row <paramref name="i"/> of this inertia.</returns>
+    public Vector3 GetRow( int i )
+    {
+      return new Vector3( this[ i, 0 ], this[ i, 1 ], this[ i, 2 ] );
+    }
+
     private Vector2Int GetIndex( int i, int j )
     {
       var globalIndex = i + j;

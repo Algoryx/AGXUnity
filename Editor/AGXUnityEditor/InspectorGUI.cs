@@ -19,10 +19,11 @@ namespace AGXUnityEditor
   /// </summary>
   public static class InspectorGUI
   {
-    public static GUIContent MakeLabel( MemberInfo field )
+    public static GUIContent MakeLabel( MemberInfo field,
+                                        string postText = "" )
     {
       var content = new GUIContent();
-      content.text = field.Name.SplitCamelCase();
+      content.text = field.Name.SplitCamelCase() + postText;
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
 
       return content;
@@ -426,7 +427,7 @@ namespace AGXUnityEditor
       var isBuiltInMaterial = editor.target == null ||
                               !AssetDatabase.GetAssetPath( editor.target ).StartsWith( "Assets" ) ||
                               ( editor.target as Material ) == Manager.GetOrCreateShapeVisualDefaultMaterial();
-      using ( new EditorGUI.DisabledGroupScope( isBuiltInMaterial ) )
+      using ( new GUI.EnabledBlock( !isBuiltInMaterial ) )
       using ( IndentScope.NoIndent ) {
         editor.DrawHeader();
         editor.OnInspectorGUI();
@@ -1066,6 +1067,132 @@ namespace AGXUnityEditor
 
       return result;
     }
+
+    /// <summary>
+    /// Draws Vector2 field with custom sub-labels (default "X,Y").
+    /// </summary>
+    /// <param name="label">Vector2 label.</param>
+    /// <param name="value">Current value.</param>
+    /// <param name="subLabels">Comma separated string with name of each element.</param>
+    /// <returns>Updated value of the Vector2 field.</returns>
+    public static Vector2 Vector2Field( GUIContent label, Vector2 value, string subLabels = "X,Y" )
+    {
+      for ( int i = 0; i < s_multiFloat2Values.Length; ++i )
+        s_multiFloat2Values[ i ] = value[ i ];
+      Vector234FieldEx( label, s_multiFloat2Values, subLabels, "X,Y", values =>
+      {
+        for ( int i = 0; i < values.Length; ++i )
+          value[ i ] = values[ i ];
+      } );
+      return value;
+    }
+
+    /// <summary>
+    /// Draws Vector3 field with custom sub-labels (default "X,Y,Z").
+    /// </summary>
+    /// <param name="label">Vector3 label.</param>
+    /// <param name="value">Current value.</param>
+    /// <param name="subLabels">Comma separated string with name of each element.</param>
+    /// <returns>Updated value of the Vector3 field.</returns>
+    public static Vector3 Vector3Field( GUIContent label, Vector3 value, string subLabels = "X,Y,Z" )
+    {
+      for ( int i = 0; i < s_multiFloat3Values.Length; ++i )
+        s_multiFloat3Values[ i ] = value[ i ];
+      Vector234FieldEx( label, s_multiFloat3Values, subLabels, "X,Y,Z", values =>
+      {
+        for ( int i = 0; i < values.Length; ++i )
+          value[ i ] = values[ i ];
+      } );
+      return value;
+    }
+
+    /// <summary>
+    /// Draws Vector4 field with custom sub-labels (default "X,Y,Z,W").
+    /// </summary>
+    /// <param name="label">Vector4 label.</param>
+    /// <param name="value">Current value.</param>
+    /// <param name="subLabels">Comma separated string with name of each element.</param>
+    /// <returns>Updated value of the Vector4 field.</returns>
+    public static Vector4 Vector4Field( GUIContent label, Vector4 value, string subLabels = "X,Y,Z,W" )
+    {
+      for ( int i = 0; i < s_multiFloat4Values.Length; ++i )
+        s_multiFloat4Values[ i ] = value[ i ];
+      Vector234FieldEx( label, s_multiFloat4Values, subLabels, "X,Y,Z", values =>
+      {
+        for ( int i = 0; i < values.Length; ++i )
+          value[ i ] = values[ i ];
+      } );
+      return value;
+    }
+
+    internal static void Vector234FieldEx( GUIContent label,
+                                           float[] values,
+                                           string subLabels,
+                                           string defaultSubLabels,
+                                           Action<float[]> onChange )
+    {
+      string[] subs = null;
+      if ( subLabels == defaultSubLabels )
+        subs = values.Length == 2 ?
+                 s_multiFloat2DefaultSubLabels :
+               values.Length == 3 ?
+                 s_multiFloat3DefaultSubLabels :
+                 s_multiFloat4DefaultSubLabels;
+      else
+        subs = subLabels.Split( ',' );
+      if ( subs.Length != values.Length )
+        throw new AGXUnity.Exception( $"Wrong number of sub-labels for vector, expected {values.Length} commas, got {subLabels.Length}: '{subLabels}'" );
+      var contents = values.Length == 2 ?
+                       s_multiFloat2Contents :
+                     values.Length == 3 ?
+                       s_multiFloat3Contents :
+                       s_multiFloat4Contents;
+      for ( int i = 0; i < values.Length; ++i )
+        contents[ i ].text = subs[ i ];
+      var rect = EditorGUILayout.GetControlRect();
+      EditorGUI.BeginChangeCheck();
+      if ( label == null ) {
+        var orgXMax = rect.xMax;
+        rect.x += EditorGUIUtility.labelWidth + 2;
+        rect.xMax = orgXMax;
+        EditorGUI.MultiFloatField( rect,
+                                   contents,
+                                   values );
+      }
+      else {
+        EditorGUI.MultiFloatField( rect,
+                                   label,
+                                   contents,
+                                   values );
+      }
+      if ( EditorGUI.EndChangeCheck() )
+        onChange?.Invoke( values );
+    }
+
+    private static float[] s_multiFloat2Values = new float[] { 0, 0 };
+    private static float[] s_multiFloat3Values = new float[] { 0, 0, 0 };
+    private static float[] s_multiFloat4Values = new float[] { 0, 0, 0, 0 };
+    private static readonly string[] s_multiFloat2DefaultSubLabels = new string[] { "X", "Y" };
+    private static readonly string[] s_multiFloat3DefaultSubLabels = new string[] { "X", "Y", "Z" };
+    private static readonly string[] s_multiFloat4DefaultSubLabels = new string[] { "X", "Y", "Z", "W" };
+    private static GUIContent[] s_multiFloat2Contents = new GUIContent[]
+    {
+      new GUIContent( s_multiFloat2DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiFloat2DefaultSubLabels[ 1 ] )
+    };
+    private static GUIContent[] s_multiFloat3Contents = new GUIContent[]
+    {
+      new GUIContent( s_multiFloat3DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiFloat3DefaultSubLabels[ 1 ] ),
+      new GUIContent( s_multiFloat3DefaultSubLabels[ 2 ] )
+    };
+    private static GUIContent[] s_multiFloat4Contents = new GUIContent[]
+    {
+      new GUIContent( s_multiFloat4DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiFloat4DefaultSubLabels[ 1 ] ),
+      new GUIContent( s_multiFloat4DefaultSubLabels[ 2 ] ),
+      new GUIContent( s_multiFloat4DefaultSubLabels[ 3 ] )
+    };
 
     private static GUIContent s_customFloatFieldEmptyContent = new GUIContent( " " );
     private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };

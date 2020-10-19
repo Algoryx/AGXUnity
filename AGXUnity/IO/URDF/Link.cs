@@ -16,6 +16,13 @@ namespace AGXUnity.IO.URDF
   [DoNotGenerateCustomEditor]
   public class Link : Element
   {
+    public enum InterpretedType
+    {
+      World,
+      Static,
+      Dynamic
+    }
+
     /// <summary>
     /// Inertial of this link. Null if not defined for this link.
     /// </summary>
@@ -46,17 +53,27 @@ namespace AGXUnity.IO.URDF
           m_collisions = new Collision[] { };
         return m_collisions;
       }
-      private set { m_collisions = value; } }
+      private set { m_collisions = value; }
+    }
+
+    /// <summary>
+    /// Interpreted type of this link given its content, e.g., "world"
+    /// when the element is empty, "static" when "inertial" isn't defined
+    /// or inertial mass is zero - otherwise "dynamic".
+    /// </summary>
+    public InterpretedType InterpretedAs { get { return m_interpredType; } private set { m_interpredType = value; } }
 
     /// <summary>
     /// True if this link doesn't have any child elements, otherwise false.
     /// </summary>
-    public bool IsWorld { get; private set; } = true;
+    [HideInInspector]
+    public bool IsWorld { get { return m_interpredType == InterpretedType.World; } }
 
     /// <summary>
-    /// True if "inertial" isn't defined, otherwise false.
+    /// True if "inertial" isn't defined or mass is zero, otherwise false.
     /// </summary>
-    public bool IsStatic { get; private set; } = true;
+    [HideInInspector]
+    public bool IsStatic { get { return m_interpredType == InterpretedType.Static; } }
 
     /// <summary>
     /// Reads element "link" with required attribute "name".
@@ -70,14 +87,14 @@ namespace AGXUnity.IO.URDF
 
       base.Read( element, false );
 
-      IsWorld = !element.HasElements;
-      if ( IsWorld )
-        return;
-
-      Inertial   = Inertial.ReadOptional( element.Element( "inertial" ) );
-      Visuals    = ( from visualElement in element.Elements( "visual" ) select Instantiate<Visual>( visualElement ) ).ToArray();
-      Collisions = ( from collisionElement in element.Elements( "collision" ) select Instantiate<Collision>( collisionElement ) ).ToArray();
-      IsStatic   = Inertial == null || Inertial.Mass == 0.0f;
+      Inertial      = Inertial.ReadOptional( element.Element( "inertial" ) );
+      Visuals       = ( from visualElement in element.Elements( "visual" ) select Instantiate<Visual>( visualElement ) ).ToArray();
+      Collisions    = ( from collisionElement in element.Elements( "collision" ) select Instantiate<Collision>( collisionElement ) ).ToArray();
+      InterpretedAs = !element.HasElements ?
+                        InterpretedType.World :
+                      Inertial == null || Inertial.Mass == 0.0f ?
+                        InterpretedType.Static :
+                        InterpretedType.Dynamic;
     }
 
     /// <summary>
@@ -97,5 +114,8 @@ namespace AGXUnity.IO.URDF
 
     [SerializeField]
     private Collision[] m_collisions = new Collision[] { };
+
+    [SerializeField]
+    private InterpretedType m_interpredType = InterpretedType.World;
   }
 }

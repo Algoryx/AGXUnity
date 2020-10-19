@@ -72,22 +72,22 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( Vector4 ) )]
     public static object Vector4Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector4Field( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                           wrapper.Get<Vector4>( objects[ 0 ] ) );
+      return InspectorGUI.Vector4Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector4>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector3 ) )]
     public static object Vector3Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector3>( objects[ 0 ] ) );
+      return InspectorGUI.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector3>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector2 ) )]
     public static object Vector2Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector2Field( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector2>( objects[ 0 ] ) );
+      return InspectorGUI.Vector2Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector2>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( int ) )]
@@ -576,58 +576,82 @@ namespace AGXUnityEditor
       return result;
     }
 
-    public static void DrawUrdfElement( AGXUnity.IO.URDF.Element element, int elementArrayIndex = -1 )
+    public static void DrawUrdfElement( AGXUnity.IO.URDF.Element element,
+                                        int elementArrayIndex = -1 )
     {
       if ( element == null )
         return;
 
       var dropDownName = string.IsNullOrEmpty( element.Name ) ?
-                           elementArrayIndex >= 0 ?
-                             $"{element.GetType().Name}[{elementArrayIndex}]" :
-                             element.GetType().Name :
-                           element.Name;
+                            elementArrayIndex >= 0 ?
+                              $"{element.GetType().Name}[{elementArrayIndex}]" :
+                              element.GetType().Name :
+                            element.Name;
       if ( !InspectorGUI.Foldout( GetEditorData( element, dropDownName ),
-                                  GUI.MakeLabel( InspectorGUISkin.Instance.TagTypename( $"URDF.{element.GetType().Name}" ) +
-                                                 ' ' +
-                                                 dropDownName ) ) )
+                                  GUI.MakeLabel( InspectorGUISkin.Instance.TagTypename( $"Urdf.{element.GetType().Name}" ) +
+                                                  ' ' +
+                                                  dropDownName ) ) )
         return;
 
-      var elementIndent = new InspectorGUI.IndentScope();
-      var properties = GetOrFindProperties( element.GetType() );
-      var elementArg = new object[] { element };
-      var geometry = element as AGXUnity.IO.URDF.Geometry;
-      foreach ( var property in properties ) {
-        // Ignoring Unity specific properties such as "name" and "hideFlags".
-        if ( !char.IsUpper( property.Member.Name[ 0 ] ) )
-          continue;
-        if ( !InspectorEditor.ShouldBeShownInInspector( property.Member ) )
-          continue;
+      using ( InspectorGUI.IndentScope.Single ) {
+        var ignoreName = element is AGXUnity.IO.URDF.Inertial;
+        if ( !ignoreName ) {
+          var nameRect = EditorGUILayout.GetControlRect();
+          EditorGUI.PrefixLabel( nameRect, GUI.MakeLabel( "Name" ), InspectorEditor.Skin.Label );
+          var orgXMax   = nameRect.xMax;
+          nameRect.x   += EditorGUIUtility.labelWidth - 14.0f * InspectorGUI.IndentScope.Level;
+          nameRect.xMax = orgXMax;
+          EditorGUI.SelectableLabel( nameRect, element.Name, InspectorEditor.Skin.TextField );
+        }
 
-        var containingType = property.GetContainingType();
-        if ( containingType.IsArray ) {
-          if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType.GetElementType() ) ) {
-            var array = property.Get<System.Collections.ICollection>( element );
-            if ( !InspectorGUI.Foldout( GetEditorData( element, property.Member.Name ),
-                                        InspectorGUI.MakeLabel( property.Member ) ) )
-              continue;
+        var pose = element as AGXUnity.IO.URDF.Pose;
+        if ( pose != null )
+          DrawUrdfPose( pose );
 
-            using ( new InspectorGUI.IndentScope() ) {
-              var arrayIndex = 0;
-              foreach ( var arrayItem in array ) {
-                DrawUrdfElement( arrayItem as AGXUnity.IO.URDF.Element, arrayIndex++ );
+        var properties = GetOrFindProperties( element.GetType() );
+        var elementArg = new object[] { element };
+        var geometry = element as AGXUnity.IO.URDF.Geometry;
+        foreach ( var property in properties ) {
+          // Ignoring Unity specific properties such as "name" and "hideFlags".
+          if ( !char.IsUpper( property.Member.Name[ 0 ] ) )
+            continue;
+          if ( !InspectorEditor.ShouldBeShownInInspector( property.Member ) )
+            continue;
+
+          var containingType = property.GetContainingType();
+          if ( containingType.IsArray ) {
+            if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType.GetElementType() ) ) {
+              var array = property.Get<System.Collections.ICollection>( element );
+              if ( !InspectorGUI.Foldout( GetEditorData( element, property.Member.Name ),
+                                          InspectorGUI.MakeLabel( property.Member,
+                                                                  $" [{array.Count}]" ) ) )
+                continue;
+
+              using ( InspectorGUI.IndentScope.Single ) {
+                var arrayIndex = 0;
+                foreach ( var arrayItem in array )
+                  DrawUrdfElement( arrayItem as AGXUnity.IO.URDF.Element, arrayIndex++ );
               }
             }
           }
-        }
-        else if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType ) ) {
-          DrawUrdfElement( property.Get<AGXUnity.IO.URDF.Element>( element ) );
-        }
-        else if ( geometry == null || IsValidGeometryProperty( geometry, property ) ) {
-          var drawerMethod = GetDrawerMethod( containingType );
-          drawerMethod.Drawer?.Invoke( null, new object[] { elementArg, property } );
+          else if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType ) ) {
+            DrawUrdfElement( property.Get<AGXUnity.IO.URDF.Element>( element ), -1 );
+          }
+          else if ( geometry == null || IsValidGeometryProperty( geometry, property ) ) {
+            var drawerMethod = GetDrawerMethod( containingType );
+            drawerMethod.Drawer?.Invoke( null, new object[] { elementArg, property } );
+          }
         }
       }
-      elementIndent.Dispose();
+    }
+
+    public static void DrawUrdfPose( AGXUnity.IO.URDF.Pose pose )
+    {
+      EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Origin", true ) );
+      using ( new InspectorGUI.IndentScope() ) {
+        InspectorGUI.Vector3Field( GUI.MakeLabel( "Position" ), pose.Xyz );
+        InspectorGUI.Vector3Field( GUI.MakeLabel( "Roll, Pitch, Yaw" ), pose.Rpy, "R,P,Y" );
+      }
     }
 
     private static EditorDataEntry GetEditorData( AGXUnity.IO.URDF.Element element, string name )
@@ -652,16 +676,36 @@ namespace AGXUnityEditor
     {
       if ( s_propertyWrapperCache.TryGetValue( type, out var cachedProperties ) )
         return cachedProperties;
-      var properties = PropertyWrapper.FindProperties( type, BindingFlags.Instance | BindingFlags.Public );
+      Func<PropertyWrapper, int> propertyPriority = wrapper =>
+      {
+        var containingType = wrapper.GetContainingType();
+        return typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType ) ||
+               containingType.IsArray ?
+                 -1 :
+               wrapper.Member.Name == "Name" ?
+                 1 :
+                 wrapper.Priority;
+      };
+      var properties = PropertyWrapper.FindProperties( type ).OrderByDescending( propertyPriority ).ToArray();
       s_propertyWrapperCache.Add( type, properties );
       return properties;
     }
     private static Dictionary<Type, PropertyWrapper[]> s_propertyWrapperCache = new Dictionary<Type, PropertyWrapper[]>();
 
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) )]
+    public static object UrdfInertiaDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var inertia = wrapper.Get<AGXUnity.IO.URDF.Inertia>( objects[ 0 ] );
+      InspectorGUI.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ), inertia.GetRow( 0 ), "XX,XY,XZ" );
+      InspectorGUI.Vector3Field( null, inertia.GetRow( 1 ), "YX,YY,YZ" );
+      InspectorGUI.Vector3Field( null, inertia.GetRow( 2 ), "ZX,ZY,ZZ" );
+      return null;
+    }
+
     [InspectorDrawer( typeof( AGXUnity.IO.URDF.Element ) )]
     public static object UrdfElementDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ) );
+      DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ), -1 );
 
       return null;
     }

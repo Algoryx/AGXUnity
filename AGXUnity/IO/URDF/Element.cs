@@ -27,6 +27,7 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Name attribute of the element.
     /// </summary>
+    [HideInInspector]
     public string Name { get { return m_name; } private set { m_name = value; } }
 
     /// <summary>

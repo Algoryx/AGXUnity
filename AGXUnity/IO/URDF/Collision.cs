@@ -1,4 +1,5 @@
 ﻿using System.Xml.Linq;
+using UnityEngine;
 
 namespace AGXUnity.IO.URDF
 {
@@ -15,7 +16,7 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Geometry of this collision.
     /// </summary>
-    public Geometry Geometry { get; private set; } = null;
+    public Geometry Geometry { get { return m_geometry; } private set { m_geometry = value; } }
 
     /// <summary>
     /// Reads optional "name" and "origin" and required "geometry" if
@@ -41,5 +42,8 @@ namespace AGXUnity.IO.URDF
     {
       Read( element );
     }
+
+    [SerializeField]
+    private Geometry m_geometry = null;
   }
 }

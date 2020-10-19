@@ -23,11 +23,13 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Offset position.
     /// </summary>
+    [HideInInspector] // Rendered explicitly in Element Inspector GUI.
     public Vector3 Xyz { get { return m_xyz; } private set { m_xyz = value; } }
 
     /// <summary>
     /// Offset rotation; roll, pitch and yaw in radians.
     /// </summary>
+    [HideInInspector] // Rendered explicitly in Element Inspector GUI.
     public Vector3 Rpy { get { return m_rpy; } private set { m_rpy = value; } }
 
     /// <summary>
