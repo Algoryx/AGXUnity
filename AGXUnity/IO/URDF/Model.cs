@@ -81,22 +81,35 @@ namespace AGXUnity.IO.URDF
     public static Func<string, GameObject> CreateDefaultResourceLoader( string dataDirectory = "",
                                                                         Func<string, GameObject> resourceLoad = null )
     {
-      if ( dataDirectory == null )
-        dataDirectory = string.Empty;
-      else
+      var hasDataDirectory = !string.IsNullOrEmpty( dataDirectory );
+      var isPlayerResource = resourceLoad == null;
+      if ( hasDataDirectory )
         dataDirectory.Replace( '\\', '/' );
 
       Func<string, GameObject> resourceLoader = resourceFilename =>
       {
-        if ( resourceFilename.StartsWith( "package:/" ) )
-          resourceFilename = dataDirectory + resourceFilename.Substring( "package:/".Length );
-        if ( !File.Exists( resourceFilename ) && resourceFilename.EndsWith( ".dae" ) )
+        var patchRotation = resourceFilename.EndsWith( ".dae" );
+        if ( resourceFilename.StartsWith( "package:/" ) ) {
+          if ( hasDataDirectory )
+            resourceFilename = dataDirectory + resourceFilename.Substring( "package:/".Length );
+          else
+            resourceFilename = resourceFilename.Substring( "package://".Length );
+
+          // Remove file extension when using Resources.Load.
+          if ( isPlayerResource )
+            resourceFilename = resourceFilename.Substring( 0, resourceFilename.Length - 4 );
+        }
+
+        // Search for .obj file instead of Collada if we're not loading from Resources.
+        if ( !isPlayerResource &&
+             !File.Exists( resourceFilename ) &&
+             resourceFilename.EndsWith( ".dae" ) )
           resourceFilename = resourceFilename.Substring( 0, resourceFilename.Length - 3 ) + "obj";
         var resource = resourceLoad != null ?
                          resourceLoad( resourceFilename ) :
                          Resources.Load<GameObject>( resourceFilename );
         // Unity adds a -90 rotation about x for unknown reasons - reverting that.
-        if ( resource != null && resourceFilename.EndsWith( ".dae" ) ) {
+        if ( resource != null && patchRotation ) {
           var transforms = resource.GetComponentsInChildren<Transform>();
           foreach ( var transform in transforms )
             transform.rotation = Quaternion.identity;
