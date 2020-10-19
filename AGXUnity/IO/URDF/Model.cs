@@ -81,23 +81,22 @@ namespace AGXUnity.IO.URDF
     public static Func<string, GameObject> CreateDefaultResourceLoader( string dataDirectory = "",
                                                                         Func<string, GameObject> resourceLoad = null )
     {
-      var hasDataDirectory = !string.IsNullOrEmpty( dataDirectory );
       var isPlayerResource = resourceLoad == null;
-      if ( hasDataDirectory )
+      if ( !string.IsNullOrEmpty( dataDirectory ) ) {
         dataDirectory.Replace( '\\', '/' );
+        if ( !dataDirectory.EndsWith( "/" ) )
+          dataDirectory += '/';
+      }
 
       Func<string, GameObject> resourceLoader = resourceFilename =>
       {
         var patchRotation = resourceFilename.EndsWith( ".dae" );
         if ( resourceFilename.StartsWith( "package:/" ) ) {
-          if ( hasDataDirectory )
-            resourceFilename = dataDirectory + resourceFilename.Substring( "package:/".Length );
-          else
-            resourceFilename = resourceFilename.Substring( "package://".Length );
+          resourceFilename = dataDirectory + resourceFilename.Substring( "package://".Length );
 
           // Remove file extension when using Resources.Load.
-          if ( isPlayerResource )
-            resourceFilename = resourceFilename.Substring( 0, resourceFilename.Length - 4 );
+          if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
+            resourceFilename = resourceFilename.Substring( 0, resourceFilename.LastIndexOf( '.' ) );
         }
 
         // Search for .obj file instead of Collada if we're not loading from Resources.
@@ -114,6 +113,7 @@ namespace AGXUnity.IO.URDF
           foreach ( var transform in transforms )
             transform.rotation = Quaternion.identity;
         }
+
         return resource;
       };
       return resourceLoader;
