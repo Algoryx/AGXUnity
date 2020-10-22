@@ -3,6 +3,8 @@ using System.Xml;
 using System.Xml.Linq;
 using UnityEngine;
 
+using AGXUnity.Utils;
+
 namespace AGXUnity.IO.URDF
 {
   public static class Utils
@@ -87,7 +89,7 @@ namespace AGXUnity.IO.URDF
       var attribute = GetAttribute( element, attributeName, optional );
       if ( attribute == null )
         return Vector3.zero;
-      var values = attribute.Value.Split( new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries );
+      var values = attribute.Value.SplitSpace();
       if ( values.Length != 3 )
         throw new UrdfIOException( $"{GetLineInfo( attribute )}: Attribute {attributeName} in {element.Name} of {element.Parent.Name} " +
                                  $"expected 3 values != read {values.Length}." );

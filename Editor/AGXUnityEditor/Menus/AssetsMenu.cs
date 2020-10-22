@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Model;
@@ -9,81 +9,81 @@ namespace AGXUnityEditor
   public static class AssetsMenu
   {
     [MenuItem( "Assets/AGXUnity/Shape Material" )]
-    public static UnityEngine.Object CreateMaterial()
+    public static Object CreateMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ShapeMaterial>( "material" );
     }
 
     [MenuItem( "Assets/AGXUnity/Contact Material" )]
-    public static UnityEngine.Object CreateContactMaterial()
+    public static Object CreateContactMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ContactMaterial>( "contact material" );
     }
 
     [MenuItem( "Assets/AGXUnity/Friction Model" )]
-    public static UnityEngine.Object CreateFrictionModel()
+    public static Object CreateFrictionModel()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<FrictionModel>( "friction model" );
     }
 
     [MenuItem( "Assets/AGXUnity/Cable Properties" )]
-    public static UnityEngine.Object CreateCableProperties()
+    public static Object CreateCableProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<CableProperties>( "cable properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Geometry Contact Merge Split Thresholds" )]
-    public static UnityEngine.Object CreateGeometryContactMergeSplitThresholds()
+    public static Object CreateGeometryContactMergeSplitThresholds()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<GeometryContactMergeSplitThresholds>( "contact merge split thresholds" );
     }
 
     [MenuItem( "Assets/AGXUnity/Constraint Merge Split Thresholds" )]
-    public static UnityEngine.Object CreateConstraintMergeSplitThresholds()
+    public static Object CreateConstraintMergeSplitThresholds()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ConstraintMergeSplitThresholds>( "constraint merge split thresholds" );
     }
 
     [MenuItem("Assets/AGXUnity/Two Body Tire Properties")]
-    public static UnityEngine.Object CreateTwoBodyTireProperties()
+    public static Object CreateTwoBodyTireProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TwoBodyTireProperties>("two body tire properties");
+      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
     }
 
     [MenuItem( "Assets/AGXUnity/Solver Settings" )]
-    public static UnityEngine.Object CrateSolverSettings()
+    public static Object CrateSolverSettings()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<SolverSettings>( "solver settings" );
     }
 
     [MenuItem( "Assets/AGXUnity/Deformable Terrain Properties" )]
-    public static UnityEngine.Object CrateDeformableTerrainProperties()
+    public static Object CrateDeformableTerrainProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainProperties>( "deformable terrain properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Deformable Terrain Material" )]
-    public static UnityEngine.Object CrateDeformableTerrainMaterial()
+    public static Object CrateDeformableTerrainMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainMaterial>( "deformable terrain material" );
     }
 
     [MenuItem( "Assets/AGXUnity/Deformable Terrain Shovel Settings" )]
-    public static UnityEngine.Object CrateDeformableTerrainShovelSettings()
+    public static Object CrateDeformableTerrainShovelSettings()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainShovelSettings>( "deformable terrain shovel settings" );
     }
 
     [MenuItem( "Assets/AGXUnity/Track Properties" )]
-    public static UnityEngine.Object CreateTrackProperties()
+    public static Object CreateTrackProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackProperties>( "track properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<TrackProperties>( "track properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Track Internal Merge Properties" )]
-    public static UnityEngine.Object CreateTrackInternalMergeProperties()
+    public static Object CreateTrackInternalMergeProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackInternalMergeProperties>( "track internal merge properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<TrackInternalMergeProperties>( "track internal merge properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/URDF/Instantiate selected", validate = true )]
@@ -93,13 +93,41 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "Assets/AGXUnity/URDF/Instantiate selected" )]
-    public static UnityEngine.GameObject[] InstantiateSelectedUrdfFiles()
+    public static GameObject[] InstantiateSelectedUrdfFiles()
     {
       var urdfFilePaths = IO.URDF.Reader.GetSelectedUrdfFiles( true );
       var instances = IO.URDF.Reader.Instantiate( urdfFilePaths, null, false );
       if ( instances.Length > 0 )
         Selection.objects = instances;
       return instances;
+    }
+
+    [MenuItem( "Assets/AGXUnity/STL/Instantiate selected", validate = true )]
+    public static bool IsStlSelected()
+    {
+      return IO.Utils.GetSelectedFiles( ".stl", false ).Length > 0;
+    }
+
+    [MenuItem( "Assets/AGXUnity/STL/Instantiate selected" )]
+    public static void ReadSelectedStl()
+    {
+      var selectedStlPaths = IO.Utils.GetSelectedFiles( ".stl", true );
+      var createdParents = new List<GameObject>();
+      using ( new Utils.UndoCollapseBlock( $"Instantiating {selectedStlPaths.Length} STL files" ) ) {
+        foreach ( var selectedStlPath in selectedStlPaths ) {
+          try {
+            createdParents.AddRange( AGXUnity.IO.StlFileImporter.Instantiate( selectedStlPath,
+                                                                              obj => Undo.RegisterCreatedObjectUndo( obj, "Created " +
+                                                                                                                          obj.GetType().Name ) ) );
+          }
+          catch ( Exception e ) {
+            Debug.LogException( e );
+            continue;
+          }
+        }
+      }
+      if ( createdParents.Count > 0 )
+        Selection.objects = createdParents.ToArray();
     }
 
     [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
@@ -147,7 +175,7 @@ namespace AGXUnityEditor
       var numChanged = 0;
       foreach ( var guid in Selection.assetGUIDs ) {
         var localAssetPath = AssetDatabase.GUIDToAssetPath( guid ).Remove( 0, "Assets".Length );
-        var path = UnityEngine.Application.dataPath + localAssetPath;
+        var path = Application.dataPath + localAssetPath;
         if ( AssetDatabase.IsValidFolder( AssetDatabase.GUIDToAssetPath( guid ) ) ) {
           try {
             numChanged += dllToScriptResolver.PatchFilesInDirectory( path,
@@ -157,7 +185,7 @@ namespace AGXUnityEditor
                                                                      saveBackup );
           }
           catch ( Exception e ) {
-            UnityEngine.Debug.LogException( e );
+            Debug.LogException( e );
           }
         }
         else {
@@ -165,11 +193,11 @@ namespace AGXUnityEditor
             numChanged += System.Convert.ToInt32( dllToScriptResolver.PatchFile( path, saveBackup ) );
           }
           catch ( Exception e ) {
-            UnityEngine.Debug.LogException( e );
+            Debug.LogException( e );
           }
         }
 
-        UnityEngine.Debug.Log( "Number of files changed: " + numChanged );
+        Debug.Log( "Number of files changed: " + numChanged );
       }
     }
   }

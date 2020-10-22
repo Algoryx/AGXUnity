@@ -62,7 +62,7 @@ namespace AGXUnityEditor.IO.URDF
           timer.reset( true );
 
         // Instantiating the model, will throw if anything goes wrong.
-        using ( new Utils.UndoCollapseBlock( $"Instantiating model {model.Name}" ) )
+        using ( new AGXUnityEditor.Utils.UndoCollapseBlock( $"Instantiating model {model.Name}" ) )
           instance = model.Instantiate( resourceLoader ?? CreateDefaultResourceLoader( dataDirectory ),
                                         obj => Undo.RegisterCreatedObjectUndo( obj, $"Created: {obj.name}" ) );
 
@@ -92,7 +92,7 @@ namespace AGXUnityEditor.IO.URDF
                                             Func<string, GameObject> resourceLoader = null,
                                             bool silent = true )
     {
-      using ( new Utils.UndoCollapseBlock( $"Instantiating {urdfFilePaths.Length} models" ) )
+      using ( new AGXUnityEditor.Utils.UndoCollapseBlock( $"Instantiating {urdfFilePaths.Length} models" ) )
         return ( from urdfFilePath in urdfFilePaths
                  let go = Instantiate( urdfFilePath, resourceLoader, silent )
                  where go != null
@@ -133,24 +133,7 @@ namespace AGXUnityEditor.IO.URDF
     /// <returns>Array of selected URDF files relative to the project.</returns>
     public static string[] GetSelectedUrdfFiles( bool warnAboutNonUrdfFiles = false )
     {
-      var urdfFilePaths = new List<string>();
-      var nonUrdfFilePaths = new List<string>();
-      foreach ( var obj in Selection.objects ) {
-        var assetPath = AssetDatabase.GetAssetPath( obj );
-        if ( string.IsNullOrEmpty( assetPath ) )
-          continue;
-        if ( !assetPath.ToLower().EndsWith( ".urdf" ) ) {
-          nonUrdfFilePaths.Add( assetPath );
-          continue;
-        }
-        urdfFilePaths.Add( assetPath );
-      }
-
-      if ( warnAboutNonUrdfFiles )
-        foreach ( var nonUrdfFilePath in nonUrdfFilePaths )
-          Debug.LogWarning( $"{AddColor( nonUrdfFilePath, Color.red )} isn't a supported URDF file." );
-
-      return urdfFilePaths.ToArray();
+      return Utils.GetSelectedFiles( ".urdf", warnAboutNonUrdfFiles );
     }
 
     private static string AddColor( string str, Color color )

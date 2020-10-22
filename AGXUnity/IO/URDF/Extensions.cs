@@ -5,11 +5,6 @@ namespace AGXUnity.IO.URDF
 {
   public static class Extensions
   {
-    public static Vector3 ToLeftHanded( this Vector3 v )
-    {
-      return new Vector3( -v.x, v.y, v.z );
-    }
-
     public static agx.Matrix3x3 RadEulerToRotationMatrix( this Vector3 v )
     {
       var euler = new agx.EulerAngles( v.ToVec3() );

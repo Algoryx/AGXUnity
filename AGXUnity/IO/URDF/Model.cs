@@ -36,9 +36,12 @@ namespace AGXUnity.IO.URDF
       if ( document.Root.Name != "robot" )
         throw new UrdfIOException( $"Expecting root attribute name 'robot', got '{document.Root.Name}'." );
 
-      var version = Version.Parse( document.Declaration.Version );
-      if ( version.Major != 1 && version.Minor != 0 )
-        throw new UrdfIOException( $"Unsupported version {version.ToString()}, supported version is 1.0." );
+      // How should we handle documents without: <?xml version="1.0" ?>.
+      if ( document.Declaration != null ) {
+        var version = Version.Parse( document.Declaration.Version );
+        if ( version.Major != 1 && version.Minor != 0 )
+          throw new UrdfIOException( $"Unsupported version {version.ToString()}, supported version is 1.0." );
+      }
 
       return Instantiate<Model>( document.Root );
     }
@@ -285,16 +288,18 @@ namespace AGXUnity.IO.URDF
       // Reading mandatory 'name'.
       base.Read( root, false );
 
-      // Reading optional materials. Note Descendants.
+      // Reading material declarations - materials that can be referenced with name.
       var materials = new List<Material>();
       var renderMaterials = new List<UnityEngine.Material>();
       foreach ( var materialElement in root.Descendants( "material" ) ) {
-        // This is some type of physics material.
-        if ( materialElement.Parent.Name == "gazebo" )
-          continue;
-
         var material = Instantiate<Material>( materialElement );
-        // Ignoring material references for now.
+
+        // Material reference under the robot?
+        // <material name="foo">
+        //   <color rgba="1 0 0 1"/>
+        // </material>
+        // <material name="foo"/>
+        // It's a no-op.
         if ( material.IsReference )
           continue;
 
