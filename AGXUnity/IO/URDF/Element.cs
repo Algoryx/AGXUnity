@@ -31,6 +31,13 @@ namespace AGXUnity.IO.URDF
     public string Name { get { return m_name; } private set { m_name = value; } }
 
     /// <summary>
+    /// Line number this element is located in the read URDF document.
+    /// -1 if unknown.
+    /// </summary>
+    [HideInInspector]
+    public int LineNumber { get { return m_lineNumber; } private set { m_lineNumber = value; } }
+
+    /// <summary>
     /// Reads attribute "name". Throws if <paramref name="optional"/> == false
     /// and "name" isn't present.
     /// </summary>
@@ -38,10 +45,17 @@ namespace AGXUnity.IO.URDF
     /// <param name="optional">True for optional "name" attribute, false to throw if "name" isn't present.</param>
     public virtual void Read( XElement element, bool optional = true )
     {
-      Name = Utils.ReadString( element, "name", optional );
+      name = Name = Utils.ReadString( element, "name", optional );
+
+      var lineInfo = element as System.Xml.IXmlLineInfo;
+      if ( lineInfo != null && lineInfo.HasLineInfo() )
+        LineNumber = lineInfo.LineNumber;
     }
 
     [SerializeField]
     private string m_name = string.Empty;
+
+    [SerializeField]
+    private int m_lineNumber = -1;
   }
 }

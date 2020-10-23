@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
+using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
+
 namespace AGXUnity.IO.URDF
 {
   /// <summary>
@@ -16,10 +19,34 @@ namespace AGXUnity.IO.URDF
   public class Model : Element
   {
     /// <summary>
+    /// Resource types the resource loader may request.
+    /// </summary>
+    public enum ResourceType
+    {
+      /// <summary>
+      /// GameObject with collision mesh(es).
+      /// </summary>
+      CollisionMesh,
+      /// <summary>
+      /// GameObject to instantiate as visual.
+      /// </summary>
+      VisualMesh,
+      /// <summary>
+      /// Material texture.
+      /// </summary>
+      Texture,
+      /// <summary>
+      /// All resource requests has been made. Use this type to
+      /// unload/destroy previously requested resources.
+      /// </summary>
+      FinalizedLoad
+    }
+
+    /// <summary>
     /// Read an URDF file into intermediate data structures.
     /// </summary>
     /// <param name="filename">URDF filename including path to it.</param>
-    /// <returns>Read model, throws System.Xml.XmlException or AGXUnity.IO.URDF.UrdfIOException on errors.</returns>
+    /// <returns>Read model, throws System.Xml.XmlException or AGXUnity.UrdfIOException on errors.</returns>
     public static Model Read( string filename )
     {
       var fileInfo = new FileInfo( filename );
@@ -53,10 +80,10 @@ namespace AGXUnity.IO.URDF
     /// <param name="filename">URDF filename including path to it.</param>
     /// <param name="resourceLoader">Callback when a resources is required.</param>
     /// <param name="onCreate">Optional callback when a game object or component is created.</param>
-    /// <returns>Created instance, throws System.Xml.XmlException or AGXUnity.IO.URDF.UrdfIOException on errors.</returns>
+    /// <returns>Created instance, throws System.Xml.XmlException or AGXUnity.UrdfIOException on errors.</returns>
     public static GameObject ReadAndInstantiate( string filename,
-                                                 Func<string, GameObject> resourceLoader,
-                                                 Action<UnityEngine.Object> onCreate = null )
+                                                 Func<string, ResourceType, Object> resourceLoader,
+                                                 Action<Object> onCreate = null )
     {
       return Read( filename ).Instantiate( resourceLoader, onCreate );
     }
@@ -81,8 +108,8 @@ namespace AGXUnity.IO.URDF
     /// <param name="resourceLoad">The actual call to Load. UnityEngine.Resources.Load by default (if null) and, e.g.,
     ///                            AssetDataBase.LoadAssetAtPath can be used when in the editor.</param>
     /// <returns>Resource loader function.</returns>
-    public static Func<string, GameObject> CreateDefaultResourceLoader( string dataDirectory = "",
-                                                                        Func<string, GameObject> resourceLoad = null )
+    public static Func<string, ResourceType, Object> CreateDefaultResourceLoader( string dataDirectory = "",
+                                                                                  Func<string, ResourceType, Object> resourceLoad = null )
     {
       var isPlayerResource = resourceLoad == null;
       if ( !string.IsNullOrEmpty( dataDirectory ) ) {
@@ -91,16 +118,17 @@ namespace AGXUnity.IO.URDF
           dataDirectory += '/';
       }
 
-      Func<string, GameObject> resourceLoader = resourceFilename =>
+      Func<string, ResourceType, Object> resourceLoader = ( resourceFilename, type ) =>
       {
         var patchRotation = resourceFilename.EndsWith( ".dae" );
-        if ( resourceFilename.StartsWith( "package:/" ) ) {
+        if ( resourceFilename.StartsWith( "package:/" ) )
           resourceFilename = dataDirectory + resourceFilename.Substring( "package://".Length );
+        else if ( !string.IsNullOrEmpty( dataDirectory ) )
+          resourceFilename = dataDirectory + resourceFilename;
 
-          // Remove file extension when using Resources.Load.
-          if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
-            resourceFilename = resourceFilename.Substring( 0, resourceFilename.LastIndexOf( '.' ) );
-        }
+        // Remove file extension when using Resources.Load.
+        if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
+          resourceFilename = resourceFilename.Substring( 0, resourceFilename.LastIndexOf( '.' ) );
 
         // Search for .obj file instead of Collada if we're not loading from Resources.
         if ( !isPlayerResource &&
@@ -108,11 +136,12 @@ namespace AGXUnity.IO.URDF
              resourceFilename.EndsWith( ".dae" ) )
           resourceFilename = resourceFilename.Substring( 0, resourceFilename.Length - 3 ) + "obj";
         var resource = resourceLoad != null ?
-                         resourceLoad( resourceFilename ) :
-                         Resources.Load<GameObject>( resourceFilename );
+                         resourceLoad( resourceFilename, type ) :
+                         Resources.Load<Object>( resourceFilename );
         // Unity adds a -90 rotation about x for unknown reasons - reverting that.
         if ( resource != null && patchRotation ) {
-          var transforms = resource.GetComponentsInChildren<Transform>();
+          var resourceGo = resource as GameObject;
+          var transforms = resourceGo.GetComponentsInChildren<Transform>();
           foreach ( var transform in transforms )
             transform.rotation = Quaternion.identity;
         }
@@ -132,16 +161,6 @@ namespace AGXUnity.IO.URDF
         if ( m_materials == null )
           m_materials = new Material[] { };
         return m_materials;
-      }
-    }
-
-    public UnityEngine.Material[] RenderMaterials
-    {
-      get
-      {
-        if ( m_renderMaterials == null )
-          m_renderMaterials = new UnityEngine.Material[] { };
-        return m_renderMaterials;
       }
     }
 
@@ -189,18 +208,6 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
-    /// Find UnityEngine.Material given name.
-    /// </summary>
-    /// <param name="name">Name of the material.</param>
-    /// <returns>UnityEngine.Material with the given name - null if not found.</returns>
-    public UnityEngine.Material GetRenderMaterial( string name )
-    {
-      if ( m_renderMaterialsTable.TryGetValue( name, out var renderMaterialIndex ) )
-        return m_renderMaterials[ renderMaterialIndex ];
-      return null;
-    }
-
-    /// <summary>
     /// Find parsed link given name.
     /// </summary>
     /// <param name="name">Name of the link.</param>
@@ -228,17 +235,23 @@ namespace AGXUnity.IO.URDF
     /// Instantiate this model in the current scene.
     /// </summary>
     /// <param name="resourceLoader">Resource loader callback - default is used if null.
-    ///                              <see cref="CreateDefaultResourceLoader(string, Func{string, GameObject})"/></param>
+    ///                              <see cref="CreateDefaultResourceLoader(string, Func{string, Object})"/></param>
     /// <param name="onObjectCreate">Optional callback when a game object or component is created.</param>
-    /// <returns>Created instance, throws System.Xml.XmlException or AGXUnity.IO.URDF.UrdfIOException on errors.</returns>
-    public GameObject Instantiate( Func<string, GameObject> resourceLoader,
-                                   Action<UnityEngine.Object> onObjectCreate = null )
+    /// <returns>Created instance, throws System.Xml.XmlException or AGXUnity.UrdfIOException on errors.</returns>
+    public GameObject Instantiate( Func<string, ResourceType, Object> resourceLoader,
+                                   Action<Object> onObjectCreate = null )
     {
       m_resourceLoader = resourceLoader ?? CreateDefaultResourceLoader();
       m_onObjectCreate = onObjectCreate;
 
       GameObject robot = null;
       try {
+        // Generate render materials that may be referenced from within the model.
+        if ( m_renderMaterials.Count != m_materials.Length ) {
+          m_renderMaterials.Clear();
+          m_renderMaterialsTable.Clear();
+          GenerateGloballyDeclaredRenderMaterials();
+        }
         robot = GetOrCreateGameObject( Factory.CreateName( Name ) );
         GetOrCreateComponent<ArticulatedRoot>( robot );
         GetOrCreateComponent<ElementComponent>( robot ).SetElement( this );
@@ -271,6 +284,7 @@ namespace AGXUnity.IO.URDF
         throw;
       }
       finally {
+        m_resourceLoader?.Invoke( string.Empty, ResourceType.FinalizedLoad );
         m_resourceLoader = null;
         m_resourceCache = null;
         m_onObjectCreate = null;
@@ -290,8 +304,7 @@ namespace AGXUnity.IO.URDF
 
       // Reading material declarations - materials that can be referenced with name.
       var materials = new List<Material>();
-      var renderMaterials = new List<UnityEngine.Material>();
-      foreach ( var materialElement in root.Descendants( "material" ) ) {
+      foreach ( var materialElement in root.Elements( "material" ) ) {
         var material = Instantiate<Material>( materialElement );
 
         // Material reference under the robot?
@@ -300,25 +313,18 @@ namespace AGXUnity.IO.URDF
         // </material>
         // <material name="foo"/>
         // It's a no-op.
-        if ( material.IsReference )
+        if ( material.IsReference && GetMaterial( material.name ) != null ) {
+          Object.DestroyImmediate( material );
           continue;
+        }
 
         if ( m_materialTable.ContainsKey( material.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( materialElement )}: Non-unique material name '{material.Name}'." );
 
         m_materialTable.Add( material.Name, materials.Count );
         materials.Add( material );
-
-        // TODO URDF: Handle texture.
-        var renderMaterial = new UnityEngine.Material( Shader.Find( "Standard" ) );
-        renderMaterial.name = material.name;
-        renderMaterial.color = material.Color;
-
-        m_renderMaterialsTable.Add( material.Name, renderMaterials.Count );
-        renderMaterials.Add( renderMaterial );
       }
       m_materials = materials.ToArray();
-      m_renderMaterials = renderMaterials.ToArray();
 
       // Reading links defined under the "robot" scope.
       var links = new List<Link>();
@@ -328,11 +334,16 @@ namespace AGXUnity.IO.URDF
         if ( m_linkTable.ContainsKey( link.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( linkElement )}: Non-unique link name '{link.Name}'." );
 
-        var missingMaterials = link.Visuals.Where( visual => !string.IsNullOrEmpty( visual.Material ) &&
-                                                   GetMaterial( visual.Material ) == null ).Select( visual => visual.Material ).ToArray();
-        if ( missingMaterials.Length > 0 )
-          throw new UrdfIOException( $"{Utils.GetLineInfo( linkElement )}: Visual element(s) in link '{link.Name}' is referring " +
-                                     $"to material(s) '" + string.Join( "' '", missingMaterials ) + "' that doesn't exist." );
+        var missingMaterialReferences = link.Visuals.Where( visual => visual.Material != null &&
+                                                                      visual.Material.IsReference &&
+                                                                      GetMaterial( visual.Material.Name ) == null ).Select( visual => visual.Material ).ToArray();
+        if ( missingMaterialReferences.Length > 0 ) {
+          Debug.LogWarning( $"{GUI.AddColorTag( "URDF Warning", Color.yellow )}: {link.Name} contains " +
+                            $"{missingMaterialReferences.Length} missing material references:" );
+          foreach ( var missingMaterialReference in missingMaterialReferences )
+            Debug.LogWarning( $"    line({(missingMaterialReference.LineNumber < 0 ? "unknown" : missingMaterialReference.LineNumber.ToString())}): " +
+                              $"<material name = \"{missingMaterialReference.Name}\"/>" );
+        }
 
         m_linkTable.Add( link.Name, links.Count );
         links.Add( link );
@@ -364,7 +375,8 @@ namespace AGXUnity.IO.URDF
       if ( link == null || link.IsWorld )
         return false;
       return link.Collisions.Any( collision => collision.Geometry.Type == Geometry.GeometryType.Mesh ) ||
-             link.Visuals.Any( visual => visual.Geometry.Type == Geometry.GeometryType.Mesh );
+             link.Visuals.Any( visual => visual.Geometry.Type == Geometry.GeometryType.Mesh ||
+                                         ( visual.Material != null && !string.IsNullOrEmpty( visual.Material.Texture ) ) );
     }
 
     private GameObject GetOrCreateGameObject( string name )
@@ -383,6 +395,58 @@ namespace AGXUnity.IO.URDF
         m_onObjectCreate?.Invoke( component );
       }
       return component;
+    }
+
+    private UnityEngine.Material GetRenderMaterial( string name )
+    {
+      if ( m_renderMaterialsTable.TryGetValue( name, out var renderMaterialIndex ) )
+        return m_renderMaterials[ renderMaterialIndex ];
+      return null;
+    }
+
+    private UnityEngine.Material CreateRenderMaterial( Material material )
+    {
+      var renderMaterial   = new UnityEngine.Material( Shader.Find( "Standard" ) );
+      renderMaterial.name  = material.Name;
+      renderMaterial.color = material.Color;
+
+      if ( !string.IsNullOrEmpty( material.Texture ) ) {
+        var texture = GetResource<Texture>( material.Texture, ResourceType.Texture );
+        if ( texture == null )
+          throw new UrdfIOException( $"Texture resource '{material.Texture}' is null." );
+        renderMaterial.SetTexture( "_MainTex", texture );
+      }
+
+      m_onObjectCreate?.Invoke( material );
+
+      return renderMaterial;
+    }
+
+    /// <summary>
+    /// Finds referenced material or creates a new.
+    /// </summary>
+    /// <remarks>
+    /// This method can return null if <paramref name="material"/> is null or
+    /// if a material is referencing a material that doesn't exist.
+    /// </remarks>
+    /// <param name="material">Material element.</param>
+    /// <returns>Referenced or newly created material, null if something is wrong.</returns>
+    private UnityEngine.Material GetOrCreateRenderMaterial( Material material )
+    {
+      if ( material == null )
+        return null;
+      if ( material.IsReference )
+        return GetRenderMaterial( material.Name );
+      return CreateRenderMaterial( material );
+    }
+
+    private void GenerateGloballyDeclaredRenderMaterials()
+    {
+      foreach ( var material in m_materials ) {
+        var renderMaterial = CreateRenderMaterial( material );
+        m_renderMaterialsTable.Add( material.Name, m_renderMaterials.Count );
+        m_renderMaterials.Add( renderMaterial );
+      }
     }
 
     private void OnElementGameObject( GameObject go, Element element )
@@ -416,8 +480,7 @@ namespace AGXUnity.IO.URDF
       // CM frame and rotate the game object.
       var rotationMatrix = link.Inertial.Rpy.RadEulerToRotationMatrix();
       var inertia3x3 = (agx.Matrix3x3)link.Inertial.Inertia;
-      // NOTE: Could be that this should be the other way around.
-      inertia3x3 = rotationMatrix.transpose().Multiply( inertia3x3 ).Multiply( rotationMatrix );
+      inertia3x3 = rotationMatrix.Multiply( inertia3x3 ).Multiply( rotationMatrix.transpose() );
       native.getMassProperties().setInertiaTensor( new agx.SPDMatrix3x3( inertia3x3 ) );
       native.getCmFrame().setLocalTranslate( link.Inertial.Xyz.ToVec3() );
 
@@ -456,7 +519,7 @@ namespace AGXUnity.IO.URDF
           sphere.Radius = collision.Geometry.Radius;
         }
         else if ( collision.Geometry.Type == Geometry.GeometryType.Mesh ) {
-          var meshResource = GetResource( collision.Geometry.Filename );
+          var meshResource = GetResource<GameObject>( collision.Geometry.Filename, ResourceType.CollisionMesh );
           if ( meshResource == null )
             throw new UrdfIOException( $"Mesh resource '{collision.Geometry.Filename}' is null." );
           shapeGo.transform.localScale = collision.Geometry.Scale;
@@ -482,8 +545,9 @@ namespace AGXUnity.IO.URDF
     private GameObject AddVisual( RigidBody rb, Visual visual )
     {
       GameObject instance = null;
+      UnityEngine.Material renderMaterial = null;
       if ( visual.Geometry.Type == Geometry.GeometryType.Mesh ) {
-        var meshResource = GetResource( visual.Geometry.Filename );
+        var meshResource = GetResource<GameObject>( visual.Geometry.Filename, ResourceType.VisualMesh );
         if ( meshResource == null )
           throw new UrdfIOException( $"Mesh resource '{visual.Geometry.Filename}' is null." );
         instance = GameObject.Instantiate<GameObject>( meshResource );
@@ -491,9 +555,13 @@ namespace AGXUnity.IO.URDF
       else {
         instance = InstantiateAndSizePrimitiveRenderer( visual );
 
-        var renderers = ( from renderer in instance.GetComponentsInChildren<MeshRenderer>() select renderer ).ToArray();
-        var renderMaterial = GetRenderMaterial( visual.Material ) ??
-                             Rendering.ShapeVisual.DefaultMaterial;
+        renderMaterial = GetOrCreateRenderMaterial( visual.Material ) ??
+                         Rendering.ShapeVisual.DefaultMaterial;
+      }
+
+      if ( renderMaterial != null ) {
+        var renderers = ( from renderer in instance.GetComponentsInChildren<MeshRenderer>()
+                          select renderer ).ToArray();
         foreach ( var renderer in renderers )
           renderer.sharedMaterial = renderMaterial;
       }
@@ -607,17 +675,18 @@ namespace AGXUnity.IO.URDF
       return instance;
     }
 
-    private GameObject GetResource( string filename )
+    private T GetResource<T>( string filename, ResourceType type )
+      where T : Object
     {
       if ( m_resourceCache == null )
-        m_resourceCache = new Dictionary<string, GameObject>();
+        m_resourceCache = new Dictionary<string, Object>();
       else if ( m_resourceCache.TryGetValue( filename, out var cachedResource ) )
-        return cachedResource;
+        return cachedResource as T;
 
-      var resource = m_resourceLoader?.Invoke( filename );
+      var resource = m_resourceLoader?.Invoke( filename, type );
       if ( resource != null )
         m_resourceCache.Add( filename, resource );
-      return resource;
+      return resource as T;
     }
 
     private string CreateName( Transform parent, string postFix )
@@ -643,15 +712,13 @@ namespace AGXUnity.IO.URDF
     [SerializeField]
     private UJoint[] m_joints = new UJoint[] { };
 
-    [SerializeField]
-    private UnityEngine.Material[] m_renderMaterials = new UnityEngine.Material[] { };
-
     private Dictionary<string, int> m_materialTable = new Dictionary<string, int>();
     private Dictionary<string, int> m_linkTable = new Dictionary<string, int>();
     private Dictionary<string, int> m_jointTable = new Dictionary<string, int>();
-    private Func<string, GameObject> m_resourceLoader = null;
-    private Action<UnityEngine.Object> m_onObjectCreate = null;
-    private Dictionary<string, GameObject> m_resourceCache = null;
+    private Func<string, ResourceType, Object> m_resourceLoader = null;
+    private Action<Object> m_onObjectCreate = null;
+    private Dictionary<string, Object> m_resourceCache = null;
+    private List<UnityEngine.Material> m_renderMaterials = new List<UnityEngine.Material>();
     private Dictionary<string, int> m_renderMaterialsTable = new Dictionary<string, int>();
   }
 }

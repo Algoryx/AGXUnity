@@ -604,9 +604,12 @@ namespace AGXUnityEditor
           EditorGUI.SelectableLabel( nameRect, element.Name, InspectorEditor.Skin.TextField );
         }
 
-        var pose = element as AGXUnity.IO.URDF.Pose;
-        if ( pose != null )
-          DrawUrdfPose( pose );
+        if ( element is AGXUnity.IO.URDF.Pose )
+          DrawUrdfPose( element as AGXUnity.IO.URDF.Pose );
+        else if ( element is AGXUnity.IO.URDF.Material ) {
+          DrawUrdfMaterial( element as AGXUnity.IO.URDF.Material );
+          return;
+        }
 
         var properties = GetOrFindProperties( element.GetType() );
         var elementArg = new object[] { element };
@@ -652,6 +655,20 @@ namespace AGXUnityEditor
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Position" ), pose.Xyz );
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Roll, Pitch, Yaw" ), pose.Rpy, "R,P,Y" );
       }
+    }
+
+    public static void DrawUrdfMaterial( AGXUnity.IO.URDF.Material material )
+    {
+      // Name has already been rendered.
+      InspectorGUI.Toggle( GUI.MakeLabel( "Is Reference" ), material.IsReference );
+      if ( material.IsReference )
+        return;
+      var colorRect = EditorGUILayout.GetControlRect();
+      EditorGUI.PrefixLabel( colorRect, GUI.MakeLabel( "Color" ) );
+      var oldXMax = colorRect.xMax;
+      colorRect.x += EditorGUIUtility.labelWidth;
+      colorRect.xMax = oldXMax;
+      EditorGUI.DrawRect( colorRect, material.Color );
     }
 
     private static EditorDataEntry GetEditorData( AGXUnity.IO.URDF.Element element, string name )

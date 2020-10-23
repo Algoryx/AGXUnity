@@ -15,6 +15,19 @@ namespace AGXUnity.IO.URDF
   public class Material : Element
   {
     /// <summary>
+    /// Reads optional "material".
+    /// </summary>
+    /// <param name="element">Optional element "material" under "robot" or "visual".</param>
+    /// <returns>Material instance if <paramref name="element"/> != null, otherwise null.</returns>
+    public static Material ReadOptional( XElement element )
+    {
+      if ( element == null )
+        return null;
+
+      return Instantiate<Material>( element );
+    }
+
+    /// <summary>
     /// Color of this material.
     /// </summary>
     public Color Color { get { return m_color; } private set { m_color = value; } }

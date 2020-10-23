@@ -22,7 +22,7 @@ namespace AGXUnity.IO.URDF
     /// <summary>
     /// Material reference (name) of this visual.
     /// </summary>
-    public string Material { get { return m_material; } private set { m_material = value; } }
+    public Material Material { get { return m_material; } private set { m_material = value; } }
 
     /// <summary>
     /// Reads optional "name" and "origin" and required "geometry" if
@@ -38,12 +38,12 @@ namespace AGXUnity.IO.URDF
 
       base.Read( element, true );
       Geometry = Geometry.ReadRequired( element );
-      Material = Utils.ReadString( element.Element( "material" ), "name" );
+      Material = Material.ReadOptional( element.Element( "material" ) );
     }
 
     [SerializeField]
     private Geometry m_geometry = null;
     [SerializeField]
-    private string m_material = string.Empty;
+    private Material m_material = null;
   }
 }

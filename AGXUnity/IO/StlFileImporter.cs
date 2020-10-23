@@ -55,13 +55,26 @@ namespace AGXUnity.IO
         stream.Read( buffer, 0, (int)stream.Length );
       }
 
-      var asciiMatch = "solid";
-      var solidStr   = System.Text.Encoding.ASCII.GetString( buffer, 0, asciiMatch.Length );
-      if ( solidStr == asciiMatch )
+      //var asciiMatch = "solid";
+      //var solidStr   = System.Text.Encoding.ASCII.GetString( buffer, 0, asciiMatch.Length );
+      if ( !IsBinary( buffer, 0, 256 ) )
         return ReadAscii( buffer, normalSmoothAngleThreshold );
       else
         return ReadBinary( buffer, normalSmoothAngleThreshold );
     }
+
+    /// <summary>
+    /// Read meshes from STL file and instantiate game objects with UnityEngine.MeshRenderer
+    /// and UnityEngine.MeshFilter. <seealso cref="Read(string)"/>
+    /// </summary>
+    /// <remarks>
+    /// If the STL file contains several meshes, a parent game object is created without
+    /// any UnityEngine.MeshFilter or UnityEngine.MeshRenderer and the meshes are instead
+    /// added as children.
+    /// </remarks>
+    /// <param name="stlFile">STL file, including relative path to current context.</param>
+    /// <returns>Array of parent game objects.</returns>
+    public static GameObject[] Instantiate( string stlFile ) => Instantiate( stlFile, DefaultNormalAngleThreshold, null );
 
     /// <summary>
     /// Read meshes from STL file and instantiate game objects with UnityEngine.MeshRenderer
@@ -309,6 +322,22 @@ namespace AGXUnity.IO
       }
 
       return meshes.ToArray();
+    }
+
+    /// <summary>
+    /// True if the bytes in given range is interpreted as binary content.
+    /// </summary>
+    /// <param name="bytes">Bytes buffer.</param>
+    /// <param name="startIndex">Start index in buffer.</param>
+    /// <param name="count">Number of elements to check.</param>
+    /// <returns>True if the content is interpreted as binary - otherwise false.</returns>
+    public static bool IsBinary( byte[] bytes, int startIndex, int count )
+    {
+      count = System.Math.Min( startIndex + count, bytes.Length );
+      return System.Text.Encoding.ASCII.GetString( bytes, startIndex, count ).Any( c => char.IsControl( c ) &&
+                                                                                        c != '\r' &&
+                                                                                        c != '\n' &&
+                                                                                        c != '\t' );
     }
 
     private class MeshData
