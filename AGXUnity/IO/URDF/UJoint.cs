@@ -66,6 +66,86 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
+    /// Optional element "calibration" data under "joint". The reference positions
+    /// of the joint, used to calibrate the absolute position of the joint.
+    /// </summary>
+    [Serializable]
+    public struct CalibrationData
+    {
+      /// <summary>
+      /// Read "calibration" given parent. The default values of "rising" and
+      /// "falling" are both 0.0. Enabled is true when the element "calibration"
+      /// exists.
+      /// </summary>
+      /// <param name="parent">Parent element.</param>
+      /// <returns>Calibration data.</returns>
+      public static CalibrationData ReadOptional( XElement parent )
+      {
+        var element = parent?.Element( "calibration" );
+        if ( element == null )
+          return new CalibrationData();
+
+        return new CalibrationData()
+        {
+          Rising  = Utils.ReadFloat( element, "rising" ),
+          Falling = Utils.ReadFloat( element, "falling" ),
+          Enabled = true
+        };
+      }
+
+      /// <summary>
+      /// When the joint moves in a positive direction, this reference position will trigger a rising edge.
+      /// </summary>
+      public float Rising;
+
+      /// <summary>
+      /// When the joint moves in a positive direction, this reference position will trigger a falling edge.
+      /// </summary>
+      public float Falling;
+
+      /// <summary>
+      /// True when "calibration" exists.
+      /// </summary>
+      public bool Enabled;
+    }
+
+    /// <summary>
+    /// Optional element "dynamics" data under "joint".
+    /// </summary>
+    [Serializable]
+    public struct DynamicsData
+    {
+      /// <summary>
+      /// Read "dynamics" given parent. Defaults to Damping = 0.0 and Friction = 0.0
+      /// if "dynamics" is null.
+      /// </summary>
+      /// <param name="parent">Parent element.</param>
+      /// <returns>Dynamics data.</returns>
+      public static DynamicsData ReadOptional( XElement parent )
+      {
+        var element = parent?.Element( "dynamics" );
+        if ( element == null )
+          return new DynamicsData();
+
+        return new DynamicsData()
+        {
+          Damping = Utils.ReadFloat( element, "damping" ),
+          Friction = Utils.ReadFloat( element, "friction" )
+        };
+      }
+
+      /// <summary>
+      /// Damping of the joint.
+      /// </summary>
+      public float Damping;
+
+      /// <summary>
+      /// Friction coefficient of the joint.
+      /// </summary>
+      public float Friction;
+    }
+
+    /// <summary>
     /// Element "limit" data under "joint". This element is required for
     /// "revolute" and "prismatic".
     /// </summary>
@@ -133,6 +213,111 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
+    /// Element "mimic" data under "joint".
+    /// </summary>
+    [Serializable]
+    public struct MimicData
+    {
+      /// <summary>
+      /// Reads optional "mimic" under given parent. If "mimic" is given,
+      /// "joint" is required and "multiplier" and "offset" are both default 0.0.
+      /// </summary>
+      /// <param name="parent"></param>
+      /// <returns></returns>
+      public static MimicData ReadOptional( XElement parent )
+      {
+        var element = parent?.Element( "mimic" );
+        if ( element == null )
+          return new MimicData();
+
+        return new MimicData()
+        {
+          Joint      = Utils.ReadString( element, "joint", false ),
+          Multiplier = Utils.ReadFloat( element, "multiplier" ),
+          Offset     = Utils.ReadFloat( element, "offset" ),
+          Enabled    = true
+        };
+      }
+
+      /// <summary>
+      /// Joint name to mimic.
+      /// </summary>
+      public string Joint;
+
+      /// <summary>
+      /// Multiplicative factor.
+      /// </summary>
+      public float Multiplier;
+
+      /// <summary>
+      /// Joint angle offset in radians.
+      /// </summary>
+      public float Offset;
+
+      /// <summary>
+      /// True when "mimic" exists.
+      /// </summary>
+      public bool Enabled;
+    }
+
+    /// <summary>
+    /// Element "safety_controller" under "joint".
+    /// </summary>
+    [Serializable]
+    public struct SafetyControllerData
+    {
+      /// <summary>
+      /// Reads optional "safety_controller" under given parent. If "safety_controller"
+      /// is given, "k_velocity" is required and the rest of the parameters are optional
+      /// and default 0.0.
+      /// </summary>
+      /// <param name="parent">Parent element.</param>
+      /// <returns></returns>
+      public static SafetyControllerData ReadOptional( XElement parent )
+      {
+        var element = parent?.Element( "safety_controller" );
+        if ( element == null )
+          return new SafetyControllerData();
+
+        return new SafetyControllerData()
+        {
+          SoftLowerLimit = Utils.ReadFloat( element, "soft_lower_limit" ),
+          SoftUpperLimit = Utils.ReadFloat( element, "soft_upper_limit" ),
+          KPosition      = Utils.ReadFloat( element, "k_position" ),
+          KVelocity      = Utils.ReadFloat( element, "k_velocity", false ),
+          Enabled        = true
+        };
+      }
+
+      /// <summary>
+      /// Lower boundary of the joint where the safety controller starts
+      /// limiting the position of the joint. Default: 0.0
+      /// </summary>
+      public float SoftLowerLimit;
+
+      /// <summary>
+      /// Upper boundary of the joint where the safety controller start
+      /// to limiting the position of the joint. Default: 0.0
+      /// </summary>
+      public float SoftUpperLimit;
+
+      /// <summary>
+      /// Value specifying the relation between position and velocity limits. Default: 0.0
+      /// </summary>
+      public float KPosition;
+
+      /// <summary>
+      /// Value specifying the relation between effort and velocity limits. Required.
+      /// </summary>
+      public float KVelocity;
+
+      /// <summary>
+      /// True when "safety_controller" is given under "joint".
+      /// </summary>
+      public bool Enabled;
+    }
+
+    /// <summary>
     /// Joint type.
     /// </summary>
     public JointType Type { get { return m_type; } private set { m_type = value; } }
@@ -153,19 +338,29 @@ namespace AGXUnity.IO.URDF
     public Vector3 Axis { get { return m_axis; } private set { m_axis = value; } }
 
     /// <summary>
-    /// Damping of this joint.
+    /// Calibration data of this joint.
     /// </summary>
-    public float Damping { get { return m_damping; } private set { m_damping = value; } }
+    public CalibrationData Calibration { get { return m_calibrationData; } private set { m_calibrationData = value; } }
 
     /// <summary>
-    /// Friction coefficient of this joint.
+    /// Dynamics data of this joint.
     /// </summary>
-    public float Friction { get { return m_friction; } private set { m_friction = value; } }
+    public DynamicsData Dynamics { get { return m_dynamicsData; } private set { m_dynamicsData = value; } }
 
     /// <summary>
     /// Limit data of this joint.
     /// </summary>
     public LimitData Limit { get { return m_limitData; } private set { m_limitData = value; } }
+
+    /// <summary>
+    /// Mimic data of this joint.
+    /// </summary>
+    public MimicData Mimic { get { return m_mimicData; } private set { m_mimicData = value; } }
+
+    /// <summary>
+    /// Safety controller data of this joint.
+    /// </summary>
+    public SafetyControllerData SafetyController { get { return m_safetyControllerData; } private set { m_safetyControllerData = value; } }
 
     /// <summary>
     /// Reads element "joint" with required attributes "name" and "type".
@@ -199,14 +394,11 @@ namespace AGXUnity.IO.URDF
       if ( element.Element( "axis" ) != null )
         Axis = Utils.ReadVector3( element.Element( "axis" ), "xyz", false );
 
-      if ( element.Element( "dynamics" ) != null ) {
-        Damping  = Utils.ReadFloat( element.Element( "dynamics" ), "damping" );
-        Friction = Utils.ReadFloat( element.Element( "dynamics" ), "friction" );
-      }
-
-      Limit = LimitData.Read( element, type != "revolute" && type != "prismatic" );
-
-      // TODO URDF: Read all data defined in "joint".
+      Calibration      = CalibrationData.ReadOptional( element );
+      Dynamics         = DynamicsData.ReadOptional( element );
+      Limit            = LimitData.Read( element, type != "revolute" && type != "prismatic" );
+      Mimic            = MimicData.ReadOptional( element );
+      SafetyController = SafetyControllerData.ReadOptional( element );
     }
 
     [SerializeField]
@@ -222,12 +414,18 @@ namespace AGXUnity.IO.URDF
     private Vector3 m_axis = Vector3.right;
 
     [SerializeField]
-    private float m_damping = 0.0f;
+    private CalibrationData m_calibrationData;
 
     [SerializeField]
-    private float m_friction = 0.0f;
+    private DynamicsData m_dynamicsData;
 
     [SerializeField]
     private LimitData m_limitData;
+
+    [SerializeField]
+    private MimicData m_mimicData;
+
+    [SerializeField]
+    private SafetyControllerData m_safetyControllerData;
   }
 }
