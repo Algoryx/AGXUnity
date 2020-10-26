@@ -52,7 +52,7 @@ namespace AGXUnity
           // Explicit inertia tensor and setMass above will rescale
           // the inertia given new mass - assign "back" the user value.
           if ( !m_inertiaDiagonal.UseDefault )
-            native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
+            native.getMassProperties().setInertiaTensor( GetInertiaTensor( m_inertiaDiagonal, m_inertiaOffDiagonal ) );
         }
       }
     }
@@ -85,8 +85,25 @@ namespace AGXUnity
 
         var native = GetNative();
         if ( native != null )
-          native.getMassProperties().setInertiaTensor( m_inertiaDiagonal.Value.ToVec3() );
+          native.getMassProperties().setInertiaTensor( GetInertiaTensor( m_inertiaDiagonal, m_inertiaOffDiagonal ) );
       }
+    }
+
+    [SerializeField]
+    private DefaultAndUserValueVector3 m_inertiaOffDiagonal = new DefaultAndUserValueVector3();
+
+    /// <summary>
+    /// Off-diagonal elements of the inertia. This is currently paired
+    /// and used with the diagonal, e.g., when all elements of the
+    /// inertia has been given (m_inertiaDiagonal.UseDefault == false and
+    /// m_inertiaOffDiagonal.UseDefault == false).
+    /// </summary>
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public DefaultAndUserValueVector3 InertiaOffDiagonal
+    {
+      get { return m_inertiaOffDiagonal; }
+      private set { m_inertiaOffDiagonal = value; }
     }
 
     [SerializeField]
@@ -173,6 +190,7 @@ namespace AGXUnity
         inertiaScale = Mass.UserValue / Mass.DefaultValue;
 
       InertiaDiagonal.DefaultValue = inertiaScale * nativeRb.getMassProperties().getPrincipalInertiae().ToVector3();
+      InertiaOffDiagonal.DefaultValue = inertiaScale * GetNativeOffDiagonal( nativeRb.getMassProperties().getInertiaTensor() ).ToVector3();
     }
 
     /// <summary>
@@ -197,6 +215,7 @@ namespace AGXUnity
     {
       m_mass.CopyFrom( source.m_mass );
       m_inertiaDiagonal.CopyFrom( source.m_inertiaDiagonal );
+      m_inertiaOffDiagonal.CopyFrom( source.m_inertiaOffDiagonal );
       m_centerOfMassOffset.CopyFrom( source.m_centerOfMassOffset );
 
       m_massCoefficients    = source.m_massCoefficients;
@@ -210,11 +229,16 @@ namespace AGXUnity
     public void RestoreLocalDataFrom( agx.RigidBody native )
     {
       Mass.UserValue = Convert.ToSingle( native.getMassProperties().getMass() );
-      InertiaDiagonal.UserValue = native.getMassProperties().getPrincipalInertiae().ToVector3();
+
+      var nativeInertia = native.getMassProperties().getInertiaTensor();
+      InertiaDiagonal.UserValue = nativeInertia.getDiagonal().ToVector3();
+      InertiaOffDiagonal.UserValue = GetNativeOffDiagonal( nativeInertia ).ToVector3();
+
       CenterOfMassOffset.UserValue = native.getCmFrame().getLocalTranslate().ToHandedVector3();
 
       Mass.UseDefault = false;
       InertiaDiagonal.UseDefault = false;
+      InertiaOffDiagonal.UseDefault = false;
       CenterOfMassOffset.UseDefault = false;
     }
 
@@ -260,7 +284,7 @@ namespace AGXUnity
     private void OnUserInertiaUpdated( Vector3 newValue )
     {
       if ( !InertiaDiagonal.UseDefault && GetNative() != null )
-        GetNative().getMassProperties().setInertiaTensor( newValue.ToVec3() );
+        GetNative().getMassProperties().setInertiaTensor( GetInertiaTensor( newValue, m_inertiaOffDiagonal ) );
     }
 
     private void OnUserCenterOfMassUpdated( Vector3 newCenterOfMass )
@@ -304,6 +328,37 @@ namespace AGXUnity
         OnUserCenterOfMassUpdated( CenterOfMassOffset.DefaultValue );
       else
         OnUserCenterOfMassUpdated( CenterOfMassOffset.UserValue );
+    }
+
+    private static agx.SPDMatrix3x3 GetInertiaTensor( DefaultAndUserValueVector3 diagonal,
+                                                      DefaultAndUserValueVector3 offDiagonal )
+    {
+      if ( diagonal == null || offDiagonal == null )
+        throw new ArgumentNullException();
+      if ( diagonal.UseDefault )
+        throw new Exception( "Don't use GetInertiatensor with non-user defined diagonal." );
+      return GetInertiaTensor( diagonal.UserValue, offDiagonal );
+    }
+
+    private static agx.SPDMatrix3x3 GetInertiaTensor( Vector3 diagonal,
+                                                      DefaultAndUserValueVector3 offDiagonal )
+    {
+      var inertia = new agx.SPDMatrix3x3( diagonal.ToVec3() );
+      // Off-diagonal elements are by default 0 when the user
+      // has specified the diagonal.
+      if ( !offDiagonal.UseDefault ) {
+        inertia.set( offDiagonal.UserValue[ 0 ], 0, 1 );
+        inertia.set( offDiagonal.UserValue[ 1 ], 0, 2 );
+        inertia.set( offDiagonal.UserValue[ 2 ], 1, 2 );
+      }
+      return inertia;
+    }
+
+    private static agx.Vec3 GetNativeOffDiagonal( agx.SPDMatrix3x3 nativeInertia )
+    {
+      return new agx.Vec3( nativeInertia.at( 0, 1 ),
+                           nativeInertia.at( 0, 2 ),
+                           nativeInertia.at( 1, 2 ) );
     }
   }
 }

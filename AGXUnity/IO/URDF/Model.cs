@@ -516,7 +516,6 @@ namespace AGXUnity.IO.URDF
       native.getMassProperties().setInertiaTensor( new agx.SPDMatrix3x3( inertia3x3 ) );
       native.getCmFrame().setLocalTranslate( link.Inertial.Xyz.ToVec3() );
 
-      // TODO URDF: Off-diagonal inertia.
       rb.RestoreLocalDataFrom( native );
 
       return rb;
