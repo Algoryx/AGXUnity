@@ -25,6 +25,17 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
+    /// Returns "line(<paramref name="lineNumber"/>)" when <paramref name="lineNumber"/> is
+    /// larger than zero, otherwise "line(unknown)".
+    /// </summary>
+    /// <param name="lineNumber">Line number.</param>
+    /// <returns>Line number info string.</returns>
+    public static string GetLineInfo( int lineNumber )
+    {
+      return $"line({(lineNumber <= 0 ? "unknown" : lineNumber.ToString())})";
+    }
+
+    /// <summary>
     /// Finds attribute of given <paramref name="attributeName"/> in <paramref name="element"/>.
     /// If <paramref name="optional"/> == false and the attribute isn't present in
     /// <paramref name="element"/> an UrdfIOException is thrown.

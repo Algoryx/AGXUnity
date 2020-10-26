@@ -709,13 +709,83 @@ namespace AGXUnityEditor
     }
     private static Dictionary<Type, PropertyWrapper[]> s_propertyWrapperCache = new Dictionary<Type, PropertyWrapper[]>();
 
-    [InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) )]
+    private static void DrawUrdfJointData<T>( AGXUnity.IO.URDF.UJoint parent,
+                                              MemberInfo member,
+                                              T jointData )
+      where T : struct
+    {
+      var fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( typeof( T ) );
+      var enabledFieldOrProperty = fieldsAndProperties.FirstOrDefault( wrapper => wrapper.Member.Name == "Enabled" );
+      if ( enabledFieldOrProperty == null )
+        return;
+      var enabled = enabledFieldOrProperty.Get<bool>( jointData );
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        if ( !InspectorGUI.Foldout( GetEditorData( parent, member.Name ), InspectorGUI.MakeLabel( member ) ) )
+          return;
+        using ( InspectorGUI.IndentScope.Single ) {
+          foreach ( var wrapper in fieldsAndProperties ) {
+            if ( wrapper == enabledFieldOrProperty )
+              continue;
+
+            var drawer = GetDrawerMethod( wrapper.GetContainingType() );
+            drawer.Drawer?.Invoke( null, new object[] { new object[] { jointData }, wrapper } );
+          }
+        }
+      }
+    }
+
+    [ InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) ) ]
     public static object UrdfInertiaDrawer( object[] objects, InvokeWrapper wrapper )
     {
       var inertia = wrapper.Get<AGXUnity.IO.URDF.Inertia>( objects[ 0 ] );
       InspectorGUI.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ), inertia.GetRow( 0 ), "XX,XY,XZ" );
       InspectorGUI.Vector3Field( null, inertia.GetRow( 1 ), "YX,YY,YZ" );
       InspectorGUI.Vector3Field( null, inertia.GetRow( 2 ), "ZX,ZY,ZZ" );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.CalibrationData ) )]
+    public static object UrdfJointCalibrationDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.CalibrationData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.DynamicsData ) )]
+    public static object UrdfJointDynamicsDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.DynamicsData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.LimitData ) )]
+    public static object UrdfJointLimitDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.LimitData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.MimicData ) )]
+    public static object UrdfJointMimicDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.MimicData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.SafetyControllerData ) )]
+    public static object UrdfJointSafetyControllerDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.SafetyControllerData>( objects[ 0 ] ) );
       return null;
     }
 

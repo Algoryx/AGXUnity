@@ -275,8 +275,35 @@ namespace AGXUnity.IO.URDF
           OnElementGameObject( linkGo, link );
         }
 
-        foreach ( var joint in Joints )
-          OnElementGameObject( AddJoint( joint, linkInstanceTable ), joint );
+        var jointMimics        = new List<UJoint>();
+        var jointInstanceTable = new Dictionary<string, GameObject>();
+        foreach ( var joint in Joints ) {
+          jointInstanceTable.Add( joint.Name,
+                                  OnElementGameObject( AddJoint( joint,
+                                                                 linkInstanceTable ),
+                                                       joint ) );
+          if ( joint.Mimic.Enabled )
+            jointMimics.Add( joint );
+        }
+
+        foreach ( var jointMimic in jointMimics ) {
+          var beginActuatorConstraint = jointInstanceTable[ jointMimic.Mimic.Joint ].GetComponent<Constraint>();
+          var endActuatorConstraint   = jointInstanceTable[ jointMimic.Name ].GetComponent<Constraint>();
+          if ( beginActuatorConstraint == null || endActuatorConstraint == null ) {
+            Debug.LogWarning( $"{Utils.GetLineInfo( jointMimic.LineNumber )}: Unable to mimic joint - '{jointMimic.Mimic.Joint}' and/or " +
+                              $"'{jointMimic.Name}' isn't actual constraint instances." );
+            continue;
+          }
+          if ( jointMimic.Mimic.Offset != 0.0f )
+            Debug.LogWarning( $"{Utils.GetLineInfo( jointMimic.LineNumber )}: '{jointMimic.Name}' mimic offset attribute != 0 ignored." );
+
+          var gearConstraint                     = beginActuatorConstraint.gameObject.AddComponent<GearConstraint>();
+          gearConstraint.BeginActuatorConstraint = beginActuatorConstraint;
+          gearConstraint.EndActuatorConstraint   = endActuatorConstraint;
+
+          // Gear ratio URDF specification to AGX Dynamics definition.
+          gearConstraint.GearRatio = 1.0f / jointMimic.Mimic.Multiplier;
+        }
       }
       catch ( System.Exception ) {
         if ( robot != null )
@@ -341,8 +368,7 @@ namespace AGXUnity.IO.URDF
           Debug.LogWarning( $"{GUI.AddColorTag( "URDF Warning", Color.yellow )}: {link.Name} contains " +
                             $"{missingMaterialReferences.Length} missing material references:" );
           foreach ( var missingMaterialReference in missingMaterialReferences )
-            Debug.LogWarning( $"    line({(missingMaterialReference.LineNumber < 0 ? "unknown" : missingMaterialReference.LineNumber.ToString())}): " +
-                              $"<material name = \"{missingMaterialReference.Name}\"/>" );
+            Debug.LogWarning( $"    {Utils.GetLineInfo( missingMaterialReference.LineNumber )}: <material name = \"{missingMaterialReference.Name}\"/>" );
         }
 
         m_linkTable.Add( link.Name, links.Count );
@@ -368,6 +394,11 @@ namespace AGXUnity.IO.URDF
         joints.Add( joint );
       }
       m_joints = joints.ToArray();
+
+      // Verifying "mimic" references in the joints.
+      foreach ( var joint in Joints )
+        if ( joint.Mimic.Enabled && GetJoint( joint.Mimic.Joint ) == null )
+          throw new UrdfIOException( $"{Utils.GetLineInfo( joint.LineNumber )}: Mimic joint '{joint.Mimic.Joint}' isn't defined." );
     }
 
     private bool FindRequiresResourceLoader( Link link )
@@ -449,10 +480,11 @@ namespace AGXUnity.IO.URDF
       }
     }
 
-    private void OnElementGameObject( GameObject go, Element element )
+    private GameObject OnElementGameObject( GameObject go, Element element )
     {
       if ( go != null && element != null )
         GetOrCreateComponent<ElementComponent>( go ).SetElement( element );
+      return go;
     }
 
     private void SetTransform( Transform transform, Pose pose )
@@ -627,23 +659,25 @@ namespace AGXUnity.IO.URDF
                                                  ConstraintType.PlaneJoint :
                                                  ConstraintType.Unknown,
                                                Vector3.zero,
-                                               joint.Axis,
+                                               joint.Axis.ToLeftHanded(),
                                                child.GetComponent<RigidBody>(),
                                                parent.GetComponent<RigidBody>() );
 
         var constraint = constraintGameObject.GetComponent<Constraint>();
         constraint.CollisionsState = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+        // Note: If this is a mimic joint we're just setting the values,
+        //       the actual controllers are disabled.
         if ( joint.Limit.Enabled ) {
           if ( joint.Limit.RangeEnabled ) {
             var rangeController = constraint.GetController<RangeController>();
-            rangeController.Enable = true;
+            rangeController.Enable = !joint.Mimic.Enabled;
             rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
           }
           // TODO URDF: Velocity and Effort. Velocity is maximum speed and Effort
           //            is the force range of the motor.
           if ( joint.Limit.Effort > 0.0f ) {
             var targetSpeedController = constraint.GetController<TargetSpeedController>();
-            targetSpeedController.Enable = true;
+            targetSpeedController.Enable = !joint.Mimic.Enabled;
             targetSpeedController.ForceRange = new RangeReal( joint.Limit.Effort );
           }
         }

@@ -129,8 +129,9 @@ namespace AGXUnity.IO.URDF
 
         return new DynamicsData()
         {
-          Damping = Utils.ReadFloat( element, "damping" ),
-          Friction = Utils.ReadFloat( element, "friction" )
+          Damping  = Utils.ReadFloat( element, "damping" ),
+          Friction = Utils.ReadFloat( element, "friction" ),
+          Enabled  = true
         };
       }
 
@@ -143,6 +144,11 @@ namespace AGXUnity.IO.URDF
       /// Friction coefficient of the joint.
       /// </summary>
       public float Friction;
+
+      /// <summary>
+      /// True when "dynamics" exists.
+      /// </summary>
+      public bool Enabled;
     }
 
     /// <summary>
@@ -220,7 +226,8 @@ namespace AGXUnity.IO.URDF
     {
       /// <summary>
       /// Reads optional "mimic" under given parent. If "mimic" is given,
-      /// "joint" is required and "multiplier" and "offset" are both default 0.0.
+      /// "joint" is required and "multiplier" has default value 1.0 and
+      /// "offset" 0.0.
       /// </summary>
       /// <param name="parent"></param>
       /// <returns></returns>
@@ -233,7 +240,9 @@ namespace AGXUnity.IO.URDF
         return new MimicData()
         {
           Joint      = Utils.ReadString( element, "joint", false ),
-          Multiplier = Utils.ReadFloat( element, "multiplier" ),
+          Multiplier = element.Attribute( "multiplier" ) == null ?
+                         1.0f :
+                         Utils.ReadFloat( element, "multiplier" ),
           Offset     = Utils.ReadFloat( element, "offset" ),
           Enabled    = true
         };
