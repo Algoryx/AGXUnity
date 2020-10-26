@@ -118,16 +118,32 @@ namespace AGXUnity.IO.URDF
           dataDirectory += '/';
       }
 
+      var loadedInstances = new List<GameObject>();
       Func<string, ResourceType, Object> resourceLoader = ( resourceFilename, type ) =>
       {
-        var patchRotation = resourceFilename.EndsWith( ".dae" );
+        if ( type == ResourceType.FinalizedLoad ) {
+          loadedInstances.ForEach( instance => Object.DestroyImmediate( instance ) );
+          loadedInstances = null;
+          return null;
+        }
+
         if ( resourceFilename.StartsWith( "package:/" ) )
           resourceFilename = dataDirectory + resourceFilename.Substring( "package://".Length );
         else if ( !string.IsNullOrEmpty( dataDirectory ) )
           resourceFilename = dataDirectory + resourceFilename;
 
+        var hasExtension  = Path.HasExtension( resourceFilename );
+        var patchRotation = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".dae";
+        var isStlFile     = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".stl";
+
+        // STL file we instantiate it and delete them at FinalizeLoad.
+        if ( isStlFile ) {
+          var stlInstances = StlFileImporter.Instantiate( resourceFilename );
+          loadedInstances.AddRange( stlInstances );
+          return stlInstances.FirstOrDefault();
+        }
         // Remove file extension when using Resources.Load.
-        if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
+        else if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
           resourceFilename = resourceFilename.Substring( 0, resourceFilename.LastIndexOf( '.' ) );
 
         // Search for .obj file instead of Collada if we're not loading from Resources.
@@ -672,8 +688,7 @@ namespace AGXUnity.IO.URDF
             rangeController.Enable = !joint.Mimic.Enabled;
             rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
           }
-          // TODO URDF: Velocity and Effort. Velocity is maximum speed and Effort
-          //            is the force range of the motor.
+
           if ( joint.Limit.Effort > 0.0f ) {
             var targetSpeedController = constraint.GetController<TargetSpeedController>();
             targetSpeedController.Enable = !joint.Mimic.Enabled;

@@ -122,23 +122,9 @@ namespace AGXUnityEditor.IO.URDF
       if ( !dataDirectory.StartsWith( "Assets/" ) )
         Debug.LogWarning( $"The data directory ('{dataDirectory}') must be relative to the project." );
 
-      var loadedInstances = new List<GameObject>();
       Func<string, AGXUnity.IO.URDF.Model.ResourceType, Object> assetLoader = ( resourceFilename, type ) =>
       {
-        if ( type == AGXUnity.IO.URDF.Model.ResourceType.FinalizedLoad ) {
-          loadedInstances.ForEach( instance => Object.DestroyImmediate( instance ) );
-          loadedInstances = null;
-          return null;
-        }
-
-        // TODO URDF: Move STL instancing to the default loader in Model.
-        if ( System.IO.Path.GetExtension( resourceFilename ).ToLower() == ".stl" ) {
-          var instances = AGXUnity.IO.StlFileImporter.Instantiate( resourceFilename );
-          loadedInstances.AddRange( instances );
-          return instances.FirstOrDefault();
-        }
-        else
-          return AssetDatabase.LoadAssetAtPath<GameObject>( resourceFilename );
+        return AssetDatabase.LoadAssetAtPath<GameObject>( resourceFilename );
       };
 
       return AGXUnity.IO.URDF.Model.CreateDefaultResourceLoader( dataDirectory,

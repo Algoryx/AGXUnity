@@ -50,7 +50,6 @@ namespace AGXUnity.IO
         if ( stream.Length > int.MaxValue )
           throw new Exception( $"{stlFile} is too large - maximum supported size is 2048 Mb." );
 
-        Debug.Log( $"{stlFileInfo.Name}: Reading {stream.Length} bytes." );
         buffer = new byte[ stream.Length ];
         stream.Read( buffer, 0, (int)stream.Length );
       }
@@ -297,12 +296,10 @@ namespace AGXUnity.IO
       // -------------------------------------------------------------------
 
       var meshes = new List<Mesh>();
-      using ( var timerBlock = new TimerBlock( $"Reading binary {(float)bytes.Length / 1024 } Kb." ) )
       using ( var memStream = new MemoryStream( bytes ) )
       using ( var binStream = new BinaryReader( memStream ) ) {
         binStream.ReadBytes( 80 );
         int numTriangles = (int)binStream.ReadUInt32();
-        Debug.Log( $"Reading {numTriangles} triangles..." );
         var meshData  = new MeshData( 3 * numTriangles, normalSmoothAngleThreshold );
         var vertexBuffer = new Vector3[ 3 ];
         for ( int globalTriangleNumber = 0; globalTriangleNumber < numTriangles; ++globalTriangleNumber ) {
