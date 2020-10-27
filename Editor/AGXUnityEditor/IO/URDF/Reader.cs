@@ -47,11 +47,48 @@ namespace AGXUnityEditor.IO.URDF
         // and no resource loader callback is provided.
         var dataDirectory = string.Empty;
         if ( resourceLoader == null && model.RequiresResourceLoader ) {
-          dataDirectory = EditorUtility.OpenFolderPanel( $"Select '{urdfFilePath}' root data folder.",
-                                                         System.IO.Path.GetDirectoryName( urdfFilePath ).Replace( '\\', '/' ),
-                                                         "" );
-          if ( !string.IsNullOrEmpty( dataDirectory ) )
-            dataDirectory = Utils.MakeRelative( dataDirectory, Application.dataPath );
+          var resourcePath = model.RequiredResources.First();
+          var sugestedDirectory = System.IO.Path.GetDirectoryName( urdfFilePath ).Replace( '\\', '/' );
+          var packageRootFound = false;
+          // Finding package root directory.
+          if ( resourcePath.StartsWith( "package://" ) ) {
+            resourcePath = resourcePath.Substring( "package://".Length );
+            try {
+              var files = ( from filename in System.IO.Directory.GetFiles( "Assets",
+                                                                            System.IO.Path.GetFileName( resourcePath ),
+                                                                            System.IO.SearchOption.AllDirectories )
+                            select filename.Replace( '\\', '/' ) ).ToArray();
+
+              var numFound = 0;
+              foreach ( var file in files ) {
+                var startIndex = file.IndexOf( resourcePath );
+                if ( startIndex >= 0 ) {
+                  // Selecting first found if many as sugestedDirectory for folder panel.
+                  if ( numFound == 0 )
+                    sugestedDirectory = file.Substring( 0, startIndex - 1 );
+                  ++numFound;
+                }
+              }
+              packageRootFound = numFound == 1;
+            }
+            catch ( System.IO.IOException ) {
+            }
+          }
+          // Assuming path is relative to the URDF file.
+          else {
+            packageRootFound = System.IO.File.Exists( sugestedDirectory + '/' + resourcePath );
+          }
+
+          if ( packageRootFound )
+            dataDirectory = sugestedDirectory;
+          else {
+            dataDirectory = EditorUtility.OpenFolderPanel( $"Select '{urdfFilePath}' root data folder.",
+                                                           sugestedDirectory,
+                                                           "" );
+            if ( !string.IsNullOrEmpty( dataDirectory ) )
+              dataDirectory = Utils.MakeRelative( dataDirectory, Application.dataPath );
+          }
+
           if ( !AssetDatabase.IsValidFolder( dataDirectory ) ) {
             Debug.LogWarning( $"Unable to find given '{dataDirectory}' in the project Assets folder." );
             dataDirectory = string.Empty;
