@@ -370,6 +370,8 @@ namespace AGXUnity.IO
         meshData.TriangleNormals.Clear();
         meshData.Vertices.Clear();
         meshData.Triangles.Clear();
+        meshData.m_sharedVerticesMap.Clear();
+        meshData.m_triangleData = TriangleData.Invalid;
 
         return mesh;
       }
@@ -443,8 +445,7 @@ namespace AGXUnity.IO
       private void AddVertex( Vector3 vertex )
       {
         var vertexIndex = Vertices.Count;
-        List<int> sharedVertices;
-        if ( !m_sharedVerticesMap.TryGetValue( vertex, out sharedVertices ) ) {
+        if ( !m_sharedVerticesMap.TryGetValue( vertex, out var sharedVertices ) ) {
           sharedVertices = new List<int>();
           m_sharedVerticesMap.Add( vertex, sharedVertices );
         }
