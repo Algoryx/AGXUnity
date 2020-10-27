@@ -92,7 +92,7 @@ namespace AGXUnity.IO.URDF
       Collisions    = ( from collisionElement in element.Elements( "collision" ) select Instantiate<Collision>( collisionElement ) ).ToArray();
       InterpretedAs = !element.HasElements ?
                         InterpretedType.World :
-                      Inertial == null || Inertial.Mass == 0.0f ?
+                      Inertial != null && Inertial.Mass == 0.0f ?
                         InterpretedType.Static :
                         InterpretedType.Dynamic;
     }

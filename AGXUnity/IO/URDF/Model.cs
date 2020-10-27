@@ -212,6 +212,31 @@ namespace AGXUnity.IO.URDF
     public bool RequiresResourceLoader { get { return m_requiresResourceLoader; } private set { m_requiresResourceLoader = value; } }
 
     /// <summary>
+    /// Iterates required, unmodified, resources read from the model. E.g.,
+    /// "package://folder/meshes/visual/link.stl".
+    /// </summary>
+    public IEnumerable<string> RequiredResources
+    {
+      get
+      {
+        if ( !RequiresResourceLoader )
+          yield break;
+
+        foreach ( var link in Links ) {
+          foreach ( var collision in link.Collisions )
+            if ( collision.Geometry.Type == Geometry.GeometryType.Mesh )
+              yield return collision.Geometry.Filename;
+          foreach ( var visual in link.Visuals ) {
+            if ( visual.Geometry.Type == Geometry.GeometryType.Mesh )
+              yield return visual.Geometry.Filename;
+            if ( visual.Material != null && !string.IsNullOrEmpty( visual.Material.Texture ) )
+              yield return visual.Material.Texture;
+          }
+        }
+      }
+    }
+
+    /// <summary>
     /// Find parsed material given name.
     /// </summary>
     /// <param name="name">Name of the material.</param>
@@ -371,14 +396,25 @@ namespace AGXUnity.IO.URDF
 
       // Reading links defined under the "robot" scope.
       var links = new List<Link>();
+      var localMaterials = new HashSet<string>();
       foreach ( var linkElement in root.Elements( "link" ) ) {
         var link = Instantiate<Link>( linkElement );
 
         if ( m_linkTable.ContainsKey( link.Name ) )
           throw new UrdfIOException( $"{Utils.GetLineInfo( linkElement )}: Non-unique link name '{link.Name}'." );
 
+        // Render materials with unique name is added to the global
+        // library as we instantiate the model.
+        var newDefinedMaterials = link.Visuals.Where( visual => visual.Material != null &&
+                                                                !visual.Material.IsReference &&
+                                                                !localMaterials.Contains( visual.Material.Name ) &&
+                                                                GetMaterial( visual.Material.Name ) == null ).Select( visual => visual.Material.Name ).ToArray();
+        foreach ( var newDefinedMaterialName in newDefinedMaterials )
+          localMaterials.Add( newDefinedMaterialName );
+
         var missingMaterialReferences = link.Visuals.Where( visual => visual.Material != null &&
                                                                       visual.Material.IsReference &&
+                                                                      !localMaterials.Contains( visual.Material.Name ) &&
                                                                       GetMaterial( visual.Material.Name ) == null ).Select( visual => visual.Material ).ToArray();
         if ( missingMaterialReferences.Length > 0 ) {
           Debug.LogWarning( $"{GUI.AddColorTag( "URDF Warning", Color.yellow )}: {link.Name} contains " +
@@ -484,16 +520,25 @@ namespace AGXUnity.IO.URDF
         return null;
       if ( material.IsReference )
         return GetRenderMaterial( material.Name );
-      return CreateRenderMaterial( material );
+      // Some seems to define materials in the first elements and references
+      // them later in the file. Add the material to the library for later
+      // references if this material has a unique name.
+      var renderMaterial = CreateRenderMaterial( material );
+      if ( !string.IsNullOrEmpty( material.Name ) && GetRenderMaterial( material.Name ) == null )
+        AddGloballyDeclaredRenderMaterial( renderMaterial );
+      return renderMaterial;
     }
 
     private void GenerateGloballyDeclaredRenderMaterials()
     {
-      foreach ( var material in m_materials ) {
-        var renderMaterial = CreateRenderMaterial( material );
-        m_renderMaterialsTable.Add( material.Name, m_renderMaterials.Count );
-        m_renderMaterials.Add( renderMaterial );
-      }
+      foreach ( var material in m_materials )
+        AddGloballyDeclaredRenderMaterial( CreateRenderMaterial( material ) );
+    }
+
+    private void AddGloballyDeclaredRenderMaterial( UnityEngine.Material renderMaterial )
+    {
+      m_renderMaterialsTable.Add( renderMaterial.name, m_renderMaterials.Count );
+      m_renderMaterials.Add( renderMaterial );
     }
 
     private GameObject OnElementGameObject( GameObject go, Element element )
@@ -516,23 +561,31 @@ namespace AGXUnity.IO.URDF
     {
       var rb = GetOrCreateComponent<RigidBody>( gameObject );
       GetOrCreateComponent<ElementComponent>( gameObject ).SetElement( link );
-      if ( link.Inertial == null || link.IsStatic ) {
+      if ( link.IsStatic ) {
         rb.MotionControl = agx.RigidBody.MotionControl.STATIC;
         return rb;
       }
 
-      var native = new agx.RigidBody();
-      native.getMassProperties().setMass( link.Inertial.Mass, false );
-      // Inertia tensor is given in the inertia frame. The rotation of the
-      // CM frame can't be applied to the CM frame so we transform the inertia
-      // CM frame and rotate the game object.
-      var rotationMatrix = link.Inertial.Rpy.RadEulerToRotationMatrix();
-      var inertia3x3 = (agx.Matrix3x3)link.Inertial.Inertia;
-      inertia3x3 = rotationMatrix.Multiply( inertia3x3 ).Multiply( rotationMatrix.transpose() );
-      native.getMassProperties().setInertiaTensor( new agx.SPDMatrix3x3( inertia3x3 ) );
-      native.getCmFrame().setLocalTranslate( link.Inertial.Xyz.ToVec3() );
+      // Note: When <inertial> isn't defined the collision shapes defines
+      //       the mass properties.
 
-      rb.RestoreLocalDataFrom( native );
+      // <inertial> defined with required <mass> and <inertia>. Create
+      // a native rigid body with the given properties and read the
+      // values back to our rigid body component.
+      if ( link.Inertial != null ) {
+        var native = new agx.RigidBody();
+        native.getMassProperties().setMass( link.Inertial.Mass, false );
+        // Inertia tensor is given in the inertia frame. The rotation of the
+        // CM frame can't be applied to the CM frame so we transform the inertia
+        // CM frame and rotate the game object.
+        var rotationMatrix = link.Inertial.Rpy.RadEulerToRotationMatrix();
+        var inertia3x3 = (agx.Matrix3x3)link.Inertial.Inertia;
+        inertia3x3 = rotationMatrix.Multiply( inertia3x3 ).Multiply( rotationMatrix.transpose() );
+        native.getMassProperties().setInertiaTensor( new agx.SPDMatrix3x3( inertia3x3 ) );
+        native.getCmFrame().setLocalTranslate( link.Inertial.Xyz.ToVec3() );
+
+        rb.RestoreLocalDataFrom( native );
+      }
 
       return rb;
     }
@@ -598,6 +651,8 @@ namespace AGXUnity.IO.URDF
         if ( meshResource == null )
           throw new UrdfIOException( $"Mesh resource '{visual.Geometry.Filename}' is null." );
         instance = GameObject.Instantiate<GameObject>( meshResource );
+        // Overrides model if <material> is defined under <visual>.
+        renderMaterial = GetOrCreateRenderMaterial( visual.Material );
       }
       else {
         instance = InstantiateAndSizePrimitiveRenderer( visual );
@@ -685,14 +740,18 @@ namespace AGXUnity.IO.URDF
         if ( joint.Limit.Enabled ) {
           if ( joint.Limit.RangeEnabled ) {
             var rangeController = constraint.GetController<RangeController>();
-            rangeController.Enable = !joint.Mimic.Enabled;
-            rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
+            if ( rangeController != null ) {
+              rangeController.Enable = !joint.Mimic.Enabled;
+              rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
+            }
           }
 
           if ( joint.Limit.Effort > 0.0f ) {
             var targetSpeedController = constraint.GetController<TargetSpeedController>();
-            targetSpeedController.Enable = !joint.Mimic.Enabled;
-            targetSpeedController.ForceRange = new RangeReal( joint.Limit.Effort );
+            if ( targetSpeedController != null ) {
+              targetSpeedController.Enable = !joint.Mimic.Enabled;
+              targetSpeedController.ForceRange = new RangeReal( joint.Limit.Effort );
+            }
           }
         }
       }

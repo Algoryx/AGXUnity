@@ -17,17 +17,14 @@ namespace AGXUnity.IO.URDF
     public static readonly Inertia zero;
 
     /// <summary>
-    /// Reading optional element "inertia" from parent "inertial".
+    /// Reading required element "inertia" from parent "inertial".
     /// If <paramref name="element"/> != null, required attributes
     /// "ixx", "ixy", "ixz", "iyy", "iyz" and "izz" are read.
     /// </summary>
-    /// <param name="element">Optional element "inertia".</param>
+    /// <param name="element">Required element "inertia".</param>
     /// <returns>Read "inertia" if <paramref name="element"/> != null, otherwise zero.</returns>
     public static Inertia Read( XElement element )
     {
-      if ( element == null )
-        return zero;
-
       float xx = (float)element.Attribute( "ixx" );
       float xy = (float)element.Attribute( "ixy" );
       float xz = (float)element.Attribute( "ixz" );

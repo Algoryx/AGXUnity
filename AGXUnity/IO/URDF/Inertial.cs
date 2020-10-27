@@ -8,7 +8,7 @@ namespace AGXUnity.IO.URDF
   /// This element reads:
   ///   - Optional element "origin" defining the pose of the inertial reference frame relative
   ///     to the reference frame of the "link" (<see cref="Pose"/>).
-  ///   - Required element "mass" with required attribute "value". Default: 0.0.
+  ///   - Required element "mass" with required attribute "value".
   ///   - Required element "inertia" with required attributes "ixx", "ixy", "ixz",
   ///     "iyy", "iyz" and "izz" (<see cref="Inertia"/>). 
   /// </summary>
@@ -45,10 +45,18 @@ namespace AGXUnity.IO.URDF
     /// <param name="optional">Unused.</param>
     public override void Read( XElement element, bool optional = true )
     {
+      // <origin> is optional.
       base.Read( element, true );
 
-      Mass    = Utils.ReadFloat( element?.Element( "mass" ), "value" );
-      Inertia = Inertia.Read( element?.Element( "inertia" ) );
+      if ( element == null )
+        return;
+
+      // <mass> and <inertia> is required if <inertial> exists.
+      Mass = Utils.ReadFloat( element.Element( "mass" ), "value", false );
+      var inertiaElement = element.Element( "inertia" );
+      if ( inertiaElement == null )
+        throw new UrdfIOException( $"{Utils.GetLineInfo( element )}: Required element 'inertia' is missing from <inertial>." );
+      Inertia = Inertia.Read( inertiaElement );
     }
 
     [SerializeField]
