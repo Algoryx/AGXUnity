@@ -792,6 +792,11 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( AGXUnity.IO.URDF.Element ) )]
     public static object UrdfElementDrawer( object[] objects, InvokeWrapper wrapper )
     {
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of URDF Elements isn't supported." );
+        return null;
+      }
+
       DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ), -1 );
 
       return null;
