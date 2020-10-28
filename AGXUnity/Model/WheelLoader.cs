@@ -425,6 +425,9 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
+      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-DriveTrain" ) )
+        Debug.LogWarning( "WheelLoader requires a valid license for the AGX Dynamics module: AgX-DriveTrain", this );
+
       PowerLine = new agxPowerLine.PowerLine();
       PowerLine.setName( name );
       Engine = new agxDriveTrain.CombustionEngine( InletVolume );
