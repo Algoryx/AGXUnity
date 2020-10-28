@@ -55,22 +55,23 @@ namespace AGXUnity.IO.URDF
       if ( fileInfo.Extension.ToLower() != ".urdf" )
         throw new UrdfIOException( $"Unknown file extension {fileInfo.Extension}." );
 
-      var document = XDocument.Load( fileInfo.OpenRead(), LoadOptions.SetLineInfo );
-      if ( document == null )
-        throw new UrdfIOException( $"Unable to parse URDF file {filename}." );
-      if ( document.Root == null )
-        throw new UrdfIOException( "Unable to parse URDF file - file seems empty." );
-      if ( document.Root.Name != "robot" )
-        throw new UrdfIOException( $"Expecting root attribute name 'robot', got '{document.Root.Name}'." );
+      using ( var stream = fileInfo.OpenRead() ) {
+        var document = XDocument.Load( fileInfo.OpenRead(), LoadOptions.SetLineInfo );
+        if ( document == null )
+          throw new UrdfIOException( $"Unable to parse URDF file {filename}." );
+        if ( document.Root == null )
+          throw new UrdfIOException( "Unable to parse URDF file - file seems empty." );
+        if ( document.Root.Name != "robot" )
+          throw new UrdfIOException( $"Expecting root attribute name 'robot', got '{document.Root.Name}'." );
 
-      // How should we handle documents without: <?xml version="1.0" ?>.
-      if ( document.Declaration != null ) {
-        var version = Version.Parse( document.Declaration.Version );
-        if ( version.Major != 1 && version.Minor != 0 )
-          throw new UrdfIOException( $"Unsupported version {version.ToString()}, supported version is 1.0." );
+        // How should we handle documents without: <?xml version="1.0" ?>.
+        if ( document.Declaration != null ) {
+          var version = Version.Parse( document.Declaration.Version );
+          if ( version.Major != 1 && version.Minor != 0 )
+            throw new UrdfIOException( $"Unsupported version {version.ToString()}, supported version is 1.0." );
+        }
+        return Instantiate<Model>( document.Root );
       }
-
-      return Instantiate<Model>( document.Root );
     }
 
     /// <summary>
@@ -651,6 +652,7 @@ namespace AGXUnity.IO.URDF
         if ( meshResource == null )
           throw new UrdfIOException( $"Mesh resource '{visual.Geometry.Filename}' is null." );
         instance = GameObject.Instantiate<GameObject>( meshResource );
+        instance.transform.localScale = visual.Geometry.Scale;
         // Overrides model if <material> is defined under <visual>.
         renderMaterial = GetOrCreateRenderMaterial( visual.Material );
       }
