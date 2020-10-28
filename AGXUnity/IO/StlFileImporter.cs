@@ -177,7 +177,6 @@ namespace AGXUnity.IO
     {
       var meshes = new List<Mesh>();
 
-      using ( var timerBlock = new TimerBlock( $"Reading ASCII {(float)bytes.Length / 1024 } Kb." ) )
       using ( var memStream = new MemoryStream( bytes ) )
       using ( var strStream = new StreamReader( memStream ) ) {
         string line = string.Empty;
