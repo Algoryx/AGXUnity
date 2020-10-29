@@ -83,6 +83,8 @@ namespace AGXUnity.Rendering
 
       var numNodes = 0;
       foreach ( var track in Tracks ) {
+        track.RemoveInvalidWheels();
+
         if ( !track.isActiveAndEnabled )
           continue;
 

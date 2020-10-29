@@ -36,6 +36,57 @@ namespace AGXUnity.Model
   [DisallowMultipleComponent]
   public class TrackWheel : ScriptComponent
   {
+    /// <summary>
+    /// Adds TrackWheel component to <paramref name="parent"/> and configures
+    /// the wheel properties given shapes and meshes.
+    /// </summary>
+    /// <param name="parent">Parent game object, will become TrackWheel.Frame.Parent.</param>
+    /// <returns>TrackWheel component if added, otherwise null (throws if <paramref name="parent"/> already has a TrackWheel component)</returns>
+    public static TrackWheel Create( GameObject parent )
+    {
+      if ( parent == null )
+        return null;
+
+      // Use TrackWheel.Configure( parent ) to reconfigure already existing track wheels.
+      if ( parent.GetComponent<TrackWheel>() != null )
+        throw new Exception( "Unable to create TrackWheel - parent already have a TrackWheel component." );
+
+      return parent.AddComponent<TrackWheel>().Configure( parent );
+    }
+
+    /// <summary>
+    /// Finds TrackWheelModel given name (case insensitive). If the name contains
+    /// "sprocket" results in TrackWheelModel.Sprocket, "idler" in TrackWheelModel.Idler
+    /// and "roller" in TrackWheelModel.Roller.
+    /// </summary>
+    /// <param name="name">Name of the object.</param>
+    /// <param name="model">Output track wheel model if found.</param>
+    /// <returns>True if <paramref name="model"/> is set given <paramref name="name"/>, otherwise false.</returns>
+    public static bool TryFindModel( string name, ref TrackWheelModel model )
+    {
+      if ( string.IsNullOrEmpty( name ) )
+        return false;
+
+      name = name.ToLower();
+      if ( name.Contains( "sprocket" ) ) {
+        model = TrackWheelModel.Sprocket;
+        return true;
+      }
+      else if ( name.Contains( "idler" ) ) {
+        model = TrackWheelModel.Idler;
+        return true;
+      }
+      else if ( name.Contains( "roller" ) ) {
+        model = TrackWheelModel.Roller;
+        return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Native instance, created in Initialize.
+    /// </summary>
     public agxVehicle.TrackWheel Native { get; private set; } = null;
 
     /// <summary>
@@ -143,26 +194,54 @@ namespace AGXUnity.Model
       get
       {
         if ( m_rb == null )
-          m_rb = GetComponent<RigidBody>();
+          m_rb = Frame.Parent?.GetComponentInParent<RigidBody>();
         return m_rb;
       }
     }
 
+    public TrackWheel Configure( GameObject parent )
+    {
+      // What if we don't have a rigid body in hierarchy? Initialize will fail.
+      m_rb = parent.GetComponentInParent<RigidBody>();
+      m_frame.SetParent( parent );
+
+      Radius = Tire.FindRadius( parent, true );
+
+      // Up is z.
+      var upVector = parent.transform.parent != null ?
+                       parent.transform.parent.TransformDirection( Vector3.up ) :
+                       Vector3.up;
+      var rotationAxis = Tire.FindRotationAxisWorld( parent );
+      m_frame.Rotation = Quaternion.FromToRotation( Vector3.up, rotationAxis );
+      m_frame.Rotation *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
+      // This should be rotation axis anchor point.
+      m_frame.LocalPosition = Vector3.zero;
+
+      var model = TrackWheelModel.Roller;
+      if ( TryFindModel( parent.name, ref model ) ||
+           TryFindModel( RigidBody?.name, ref model ) )
+        Model = model;
+      else
+        Model = TrackWheelModel.Roller;
+
+      return this;
+    }
+
     protected override bool Initialize()
     {
-      var rb = GetComponent<RigidBody>();
-      if ( rb == null ) {
-        Debug.LogError( "Component: TrackWheel requires RigidBody component.", this );
+      if ( RigidBody == null ) {
+        Debug.LogError( "Component: TrackWheel requires RigidBody component in hierarchy.", this );
         return false;
       }
-
-      if ( rb.GetInitialized<RigidBody>() == null )
+      else if ( RigidBody.GetInitialized<RigidBody>() == null ) {
+        // Assuming RigidBody is printing relevant error message.
         return false;
+      }
 
       Native = new agxVehicle.TrackWheel( ToNative( Model ),
                                           Radius,
                                           RigidBody.Native,
-                                          Frame.NativeLocalMatrix );
+                                          Frame.NativeMatrix * RigidBody.Native.getTransform().inverse() );
 
       return true;
     }
@@ -174,30 +253,10 @@ namespace AGXUnity.Model
 
     private void Reset()
     {
-      if ( RigidBody == null ) {
-        Debug.LogError( "Component: TrackWheel requires RigidBody component.", this );
-      }
-      else {
-        Radius = Tire.FindRadius( RigidBody, true );
-        m_frame.SetParent( RigidBody.gameObject );
-
-        // Up is z.
-        var upVector = RigidBody.transform.parent != null ?
-                         RigidBody.transform.parent.TransformDirection( Vector3.up ) :
-                         Vector3.up;
-        var rotationAxis = Tire.FindRotationAxisWorld( RigidBody );
-        m_frame.Rotation = Quaternion.FromToRotation( Vector3.up, rotationAxis );
-        m_frame.Rotation *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
-        // This should be rotation axis anchor point.
-        m_frame.LocalPosition = Vector3.zero;
-
-        if ( name.ToLower().Contains( "sprocket" ) )
-          Model = TrackWheelModel.Sprocket;
-        else if ( name.ToLower().Contains( "idler" ) )
-          Model = TrackWheelModel.Idler;
-        else
-          Model = TrackWheelModel.Roller;
-      }
+      // We cannot use this.RigidBody when it used frame parent and
+      // parent of the frame is set in Configure.
+      if ( GetComponentInParent<RigidBody>() == null )
+        Debug.LogError( "Component: TrackWheel requires RigidBody component in hierarchy.", this );
     }
 
     private RigidBody m_rb = null;

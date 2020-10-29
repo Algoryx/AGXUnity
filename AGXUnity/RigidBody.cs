@@ -16,6 +16,35 @@ namespace AGXUnity
   public class RigidBody : ScriptComponent
   {
     /// <summary>
+    /// Finds shapes belonging to <paramref name="gameObject"/> where
+    /// <paramref name="gameObject"/> could be part of an articulated
+    /// system where gameObject.GetComponentsInChildren( typeof( Shape ) )
+    /// could return the wrong set of shapes.
+    /// </summary>
+    /// <param name="gameObject">Game object to find shapes for.</param>
+    /// <returns>Array of shapes associated to <paramref name="gameObject"/>.</returns>
+    public static Shape[] FindShapes( GameObject gameObject )
+    {
+      var shapes = new Shape[] { };
+      if ( gameObject == null )
+        return shapes;
+
+      if ( gameObject.GetComponent<RigidBody>() != null )
+        shapes = gameObject.GetComponent<RigidBody>().Shapes;
+      else {
+        var parentRigidBody = gameObject.GetComponentInParent<RigidBody>();
+        shapes = gameObject.GetComponentsInChildren<Shape>();
+        // If the parent rigid body is part of an articulated system we match the
+        // child shapes against its shapes, so we're excluding shapes that belongs
+        // to other rigid bodies.
+        if ( parentRigidBody != null && parentRigidBody.HasArticulatedRoot )
+          shapes = shapes.Where( shape => parentRigidBody.Shapes.Contains( shape ) ).ToArray();
+      }
+
+      return shapes;
+    }
+
+    /// <summary>
     /// Native instance.
     /// </summary>
     private agx.RigidBody m_rb = null;

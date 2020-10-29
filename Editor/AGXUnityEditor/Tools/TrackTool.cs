@@ -111,28 +111,32 @@ namespace AGXUnityEditor.Tools
         return;
       }
 
-      var rb = selection.GetComponentInParent<RigidBody>();
-      if ( rb == null ) {
+      if ( selection.GetComponentInParent<RigidBody>() == null ) {
         Debug.LogError( "Invalid TrackWheel selection - unable to find RigidBody component.", selection );
         return;
       }
 
-      var createNewComponent = rb.GetComponent<TrackWheel>() == null;
+      var createNewComponent = selection.GetComponent<TrackWheel>() == null;
       if ( createNewComponent )
-        Undo.RegisterCreatedObjectUndo( rb.gameObject.AddComponent<TrackWheel>(), "Create TrackWheel" );
-      else if ( Track.Contains( rb.GetComponent<TrackWheel>() ) ) {
+        Undo.RegisterCreatedObjectUndo( TrackWheel.Create( selection ), "Create TrackWheel" );
+      else if ( Track.Contains( selection.GetComponent<TrackWheel>() ) ) {
         Debug.Log( "TrackWheel already part of Track - ignoring selection." );
         return;
       }
+      // Reconfigure TrackWheel given new or the same selection.
+      else
+        selection.GetComponent<TrackWheel>().Configure( selection );
 
-      if ( !Track.Add( rb.GetComponent<TrackWheel>() ) ) {
+      if ( !Track.Add( selection.GetComponent<TrackWheel>() ) ) {
         Debug.LogError( "Track failed to add TrackWheel instance.", Track );
         if ( createNewComponent )
-          Object.DestroyImmediate( rb.GetComponent<TrackWheel>() );
+          Object.DestroyImmediate( selection.GetComponent<TrackWheel>() );
         return;
       }
 
-      InspectorGUI.GetItemToolArrayGUIData( Track, "Wheels", rb.GetComponent<TrackWheel>() ).Bool = true;
+      InspectorGUI.GetItemToolArrayGUIData( Track,
+                                            "Wheels",
+                                            selection.GetComponent<TrackWheel>() ).Bool = true;
 
       EditorUtility.SetDirty( Track );
     }

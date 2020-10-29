@@ -144,8 +144,23 @@ namespace AGXUnityEditor
           }
         }
 
-        Debug.Log( "Removing all non-user specific content..." );
-        IO.DirectoryContentHandler.DeleteContent();
+        var newPackageFileInfo = new FileInfo( packageName );
+        if ( newPackageFileInfo.Name.EndsWith( "_Plugins_x86_64.unitypackage" ) ) {
+          // Manager is loaded when the binaries hasn't been added and ExternalAGXInitializer
+          // pops up and asks if the user would like to located AGX Dynamics. We're
+          // installing the binaries so it's a "user said no!" to begin with.
+          ExternalAGXInitializer.UserSaidNo = true;
+
+          var directoryHandler = new IO.DirectoryContentHandler( IO.Utils.AGXUnityPluginDirectory +
+                                                                 Path.DirectorySeparatorChar +
+                                                                 "agx" );
+          Debug.Log( $"Removing AGX Dynamics data directory {directoryHandler.RootDirectory}..." );
+          directoryHandler.DeleteAllCollected();
+        }
+        else {
+          Debug.Log( "Removing all non-user specific content..." );
+          IO.DirectoryContentHandler.DeleteContent();
+        }
 
         // This will generate compile errors from scripts using AGXUnity and
         // we don't know how to hide these until we're done, mainly because

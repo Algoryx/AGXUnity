@@ -351,7 +351,8 @@ namespace AGXUnityEditor
       // Trigger repaint of inspector GUI for our targets.
       var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       foreach ( var target in targets )
-        EditorUtility.SetDirty( target );
+        if ( target != null )
+          EditorUtility.SetDirty( target );
 
       // Collecting scripts that may require synchronize of
       // data post undo/redo where the private serialized
@@ -652,11 +653,17 @@ namespace AGXUnityEditor
 
         try {
           AGXUnity.NativeHandler.Instance.Register( null );
+
+          if ( GetRequestScriptReloadData().Bool ) {
+            Debug.Log( AGXUnity.Utils.GUI.AddColorTag( "AGX Dynamics successfully loaded.", Color.green ) );
+            GetRequestScriptReloadData().Bool = false;
+          }
         }
         catch ( TypeInitializationException ) {
           var lastRequestData = GetRequestScriptReloadData();
           if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
             lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+            lastRequestData.Bool  = true;
 #if UNITY_2019_3_OR_NEWER
             Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
             EditorUtility.RequestScriptReload();
