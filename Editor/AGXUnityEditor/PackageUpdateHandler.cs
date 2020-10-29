@@ -151,11 +151,14 @@ namespace AGXUnityEditor
           // installing the binaries so it's a "user said no!" to begin with.
           ExternalAGXInitializer.UserSaidNo = true;
 
-          var directoryHandler = new IO.DirectoryContentHandler( IO.Utils.AGXUnityPluginDirectory +
-                                                                 Path.DirectorySeparatorChar +
-                                                                 "agx" );
-          Debug.Log( $"Removing AGX Dynamics data directory {directoryHandler.RootDirectory}..." );
-          directoryHandler.DeleteAllCollected();
+          var dataDirectory = IO.Utils.AGXUnityPluginDirectory +
+                              Path.DirectorySeparatorChar +
+                              "agx";
+          if ( Directory.Exists( dataDirectory ) ) {
+            var directoryHandler = new IO.DirectoryContentHandler( dataDirectory );
+            Debug.Log( $"Removing AGX Dynamics data directory {directoryHandler.RootDirectory}..." );
+            directoryHandler.DeleteAllCollected();
+          }
         }
         else {
           Debug.Log( "Removing all non-user specific content..." );
