@@ -22,16 +22,16 @@ namespace AGXUnityEditor
                                             "package.json" );
     }
 
-    public static void Install( FileInfo packageFileInfo )
+    public static bool Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {
         Debug.LogError( "Error: Unable to install AGX Dynamics for Unity - file info is null." );
-        return;
+        return false;
       }
 
       if ( !packageFileInfo.Exists ) {
         Debug.LogError( $"Error: Unable to install package from {packageFileInfo.FullName} - file doesn't exit." );
-        return;
+        return false;
       }
 
       if ( !EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
@@ -43,7 +43,7 @@ namespace AGXUnityEditor
                                          $"backed up and all explorers and terminals closed and ready for install?",
                                          "Yes",
                                          "No" ) )
-        return;
+        return false;
 
       var unsavedScenes = ( from scene in Scenes where scene.isDirty select scene ).ToArray();
       if ( unsavedScenes.Length > 0 ) {
@@ -60,7 +60,7 @@ namespace AGXUnityEditor
                                                             "Cancel",
                                                             "Continue without saving" );
         if ( decision == 1 )
-          return;
+          return false;
 
         if ( decision == 0 )
           EditorSceneManager.SaveScenes( unsavedScenes );
@@ -101,6 +101,7 @@ namespace AGXUnityEditor
                                      "-executeMethod",
                                      "AGXUnityEditor.PackageUpdateHandler.PostReload",
                                      s_packageIdentifier + packageFileInfo.FullName.Replace( '\\', '/' ) );
+      return true;
     }
 
     private static void PostReload()
