@@ -284,7 +284,11 @@ namespace AGXUnityEditor
 
     public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
     {
-      var newState = EditorGUILayout.Foldout( state.Bool, content, true );
+      // There's a indentation bug (a few pixels off) in EditorGUILayout.Foldout.
+      var newState = EditorGUI.Foldout( EditorGUILayout.GetControlRect(),
+                                        state.Bool,
+                                        content,
+                                        true );
 
       if ( newState != state.Bool )
         UnityEngine.GUI.changed = false;
