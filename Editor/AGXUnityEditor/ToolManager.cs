@@ -271,6 +271,17 @@ namespace AGXUnityEditor
     }
 
     /// <summary>
+    /// Register additional assembly where CustomTargetTool is used.
+    /// Manager.AGXUnityEditorAssemblyName is added by default.
+    /// </summary>
+    /// <param name="assemblyName"></param>
+    public static void RegisterCustomToolsAssembly( string assemblyName )
+    {
+      if ( !m_assembliesWithCustomTools.Contains( assemblyName ) )
+        m_assembliesWithCustomTools.Add( assemblyName );
+    }
+
+    /// <summary>
     /// Recursive depth-first visit of tool and its children.
     /// </summary>
     /// <param name="tool">Current parent tool.</param>
@@ -346,7 +357,16 @@ namespace AGXUnityEditor
 
       Type customToolType = null;
       if ( !m_cachedCustomToolTypeMap.TryGetValue( targetType, out customToolType ) ) {
-        var types = Assembly.Load( Manager.AGXUnityEditorAssemblyName ).GetTypes();
+        Type[] types = null;
+        try {
+          types = m_assembliesWithCustomTools.SelectMany( name => Assembly.Load( name ).GetTypes() ).ToArray();
+        }
+        catch ( Exception ) {
+        }
+
+        if ( types == null )
+          types = Assembly.Load( Manager.AGXUnityEditorAssemblyName ).GetTypes();
+
         var customToolTypes = new List<Type>();
         foreach ( var type in types ) {
           // CustomTool attribute can only be used with tools
@@ -381,5 +401,7 @@ namespace AGXUnityEditor
 
       return customToolType;
     }
+
+    private static List<string> m_assembliesWithCustomTools = new List<string>() { Manager.AGXUnityEditorAssemblyName };
   }
 }

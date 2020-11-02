@@ -51,12 +51,12 @@ namespace AGXUnityEditor
     /// <summary>
     /// Name of assembly AGXUnity is built in to.
     /// </summary>
-    public static readonly string AGXUnityAssemblyName = "AGXUnity";
+    public const string AGXUnityAssemblyName = "AGXUnity";
 
     /// <summary>
     /// Name of assembly AGXUnityEditor is built in to.
     /// </summary>
-    public static readonly string AGXUnityEditorAssemblyName = "AGXUnityEditor";
+    public const string AGXUnityEditorAssemblyName = "AGXUnityEditor";
 
     /// <summary>
     /// Scene view window handler, i.e., GUI windows rendered in Scene View.
