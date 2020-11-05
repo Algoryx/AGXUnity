@@ -307,20 +307,5 @@ namespace AGXUnity.Model
         Material                = otherTracks[ 0 ].Material;
       }
     }
-
-    private static Mesh m_gizmosMesh = null;
-
-    private static Mesh GetOrCreateGizmosMesh()
-    {
-      if ( m_gizmosMesh != null )
-        return m_gizmosMesh;
-
-      var tmp = Resources.Load<GameObject>( @"Debug/BoxRenderer" );
-      var filter = tmp.GetComponentInChildren<MeshFilter>();
-      if ( filter == null )
-        return null;
-      m_gizmosMesh = filter.sharedMesh;
-      return m_gizmosMesh;
-    }
   }
 }
