@@ -33,7 +33,6 @@ namespace AGXUnity.Model
   }
 
   [AddComponentMenu( "AGXUnity/Model/Track Wheel" )]
-  [DisallowMultipleComponent]
   public class TrackWheel : ScriptComponent
   {
     /// <summary>
@@ -41,17 +40,14 @@ namespace AGXUnity.Model
     /// the wheel properties given shapes and meshes.
     /// </summary>
     /// <param name="parent">Parent game object, will become TrackWheel.Frame.Parent.</param>
+    /// <param name="positionAlongRotationAxis">Position offset along the rotation axis. Default: 0.</param>
     /// <returns>TrackWheel component if added, otherwise null (throws if <paramref name="parent"/> already has a TrackWheel component)</returns>
-    public static TrackWheel Create( GameObject parent )
+    public static TrackWheel Create( GameObject parent, float positionAlongRotationAxis = 0.0f )
     {
       if ( parent == null )
         return null;
 
-      // Use TrackWheel.Configure( parent ) to reconfigure already existing track wheels.
-      if ( parent.GetComponent<TrackWheel>() != null )
-        throw new Exception( "Unable to create TrackWheel - parent already have a TrackWheel component." );
-
-      return parent.AddComponent<TrackWheel>().Configure( parent );
+      return parent.AddComponent<TrackWheel>().Configure( parent, positionAlongRotationAxis );
     }
 
     /// <summary>
@@ -199,7 +195,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public TrackWheel Configure( GameObject parent )
+    public TrackWheel Configure( GameObject parent, float positionAlongRotationAxis = 0.0f )
     {
       // What if we don't have a rigid body in hierarchy? Initialize will fail.
       m_rb = parent.GetComponentInParent<RigidBody>();
@@ -208,14 +204,13 @@ namespace AGXUnity.Model
       Radius = Tire.FindRadius( parent, true );
 
       // Up is z.
-      var upVector = parent.transform.parent != null ?
-                       parent.transform.parent.TransformDirection( Vector3.up ) :
-                       Vector3.up;
-      var rotationAxis = Tire.FindRotationAxisWorld( parent );
-      m_frame.Rotation = Quaternion.FromToRotation( Vector3.up, rotationAxis );
-      m_frame.Rotation *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
-      // This should be rotation axis anchor point.
-      m_frame.LocalPosition = Vector3.zero;
+      var upVector          = parent.transform.parent != null ?
+                                parent.transform.parent.TransformDirection( Vector3.up ) :
+                                Vector3.up;
+      var rotationAxis      = Tire.FindRotationAxisWorld( parent );
+      m_frame.Rotation      = Quaternion.FromToRotation( Vector3.up, rotationAxis );
+      m_frame.Rotation     *= Quaternion.Euler( 0, Vector3.Angle( m_frame.Rotation * Vector3.forward, upVector ), 0 );
+      m_frame.LocalPosition = positionAlongRotationAxis * Vector3.up;
 
       var model = TrackWheelModel.Roller;
       if ( TryFindModel( parent.name, ref model ) ||
