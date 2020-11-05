@@ -351,7 +351,7 @@ namespace AGXUnityEditor
 
           createNewPressed = Button( buttonRect,
                                      MiscIcon.CreateAsset,
-                                     true,
+                                     UnityEngine.GUI.enabled,
                                      "Create new asset." );
         }
       }

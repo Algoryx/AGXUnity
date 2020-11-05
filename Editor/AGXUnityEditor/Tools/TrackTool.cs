@@ -38,11 +38,13 @@ namespace AGXUnityEditor.Tools
         InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.FindTrackWheel,
                                                                       SelectWheelToolEnable,
                                                                       "Select track wheel to add in scene view.",
-                                                                      () => toggleSelectWheel = true ),
+                                                                      () => toggleSelectWheel = true,
+                                                                      UnityEngine.GUI.enabled ),
                                   InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
                                                                       DisableCollisionsTool,
                                                                       "Disable collisions between this track and other objects.",
-                                                                      () => toggleDisableCollisions = true ) );
+                                                                      () => toggleDisableCollisions = true,
+                                                                      UnityEngine.GUI.enabled ) );
 
         if ( DisableCollisionsTool )
           GetChild<DisableCollisionsTool>().OnInspectorGUI();
