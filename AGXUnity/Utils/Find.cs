@@ -94,8 +94,10 @@ namespace AGXUnity.Utils
         data.Shapes = CollectShapes( parent, rb, shape, searchChildren );
       }
       else {
-        // These groups has no effect.
-        Debug.LogWarning( "No leaf objects found. Are you missing a searchChildren = true?", parent );
+        // These groups has no effect. It's not possible to issue warning
+        // where when CollisionGroups.Initialize searches both with
+        // searchChildren = false and searchChildren = true regardless
+        // of the collision group "Propagate to children" state.
       }
 
       return data;
