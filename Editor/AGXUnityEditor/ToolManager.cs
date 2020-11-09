@@ -194,7 +194,7 @@ namespace AGXUnityEditor
         return;
 
       // Target component has been destroyed.
-      if ( targets.Contains( null ) ) {
+      if ( targets.Any( target => target == null ) ) {
         List<CustomTargetTool> toolsToRemove = new List<CustomTargetTool>();
         foreach ( var activeTool in m_activeTools )
           if ( activeTool.HasInvalidTargets )
