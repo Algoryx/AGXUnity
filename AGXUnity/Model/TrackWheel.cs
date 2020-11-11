@@ -58,21 +58,24 @@ namespace AGXUnity.Model
     /// <param name="name">Name of the object.</param>
     /// <param name="model">Output track wheel model if found.</param>
     /// <returns>True if <paramref name="model"/> is set given <paramref name="name"/>, otherwise false.</returns>
-    public static bool TryFindModel( string name, ref TrackWheelModel model )
+    public static bool TryFindModel( string name,
+                                     ref TrackWheelModel model,
+                                     Func<string, TrackWheelModel, bool> predicate = null )
     {
       if ( string.IsNullOrEmpty( name ) )
         return false;
 
+      var nameModelPredicate = predicate ?? new Func<string, TrackWheelModel, bool>( (n, m) => false );
       name = name.ToLower();
-      if ( name.Contains( "sprocket" ) ) {
+      if ( name.Contains( "sprocket" ) || nameModelPredicate( name, TrackWheelModel.Sprocket ) ) {
         model = TrackWheelModel.Sprocket;
         return true;
       }
-      else if ( name.Contains( "idler" ) ) {
+      else if ( name.Contains( "idler" ) || nameModelPredicate( name, TrackWheelModel.Idler ) ) {
         model = TrackWheelModel.Idler;
         return true;
       }
-      else if ( name.Contains( "roller" ) ) {
+      else if ( name.Contains( "roller" ) || nameModelPredicate( name, TrackWheelModel.Roller ) ) {
         model = TrackWheelModel.Roller;
         return true;
       }
@@ -195,7 +198,9 @@ namespace AGXUnity.Model
       }
     }
 
-    public TrackWheel Configure( GameObject parent, float positionAlongRotationAxis = 0.0f )
+    public TrackWheel Configure( GameObject parent,
+                                 float positionAlongRotationAxis = 0.0f,
+                                 Func<string, TrackWheelModel, bool> nameModelPredicate = null )
     {
       // What if we don't have a rigid body in hierarchy? Initialize will fail.
       m_rb = parent.GetComponentInParent<RigidBody>();
@@ -213,8 +218,8 @@ namespace AGXUnity.Model
       m_frame.LocalPosition = positionAlongRotationAxis * Vector3.up;
 
       var model = TrackWheelModel.Roller;
-      if ( TryFindModel( parent.name, ref model ) ||
-           TryFindModel( RigidBody?.name, ref model ) )
+      if ( TryFindModel( parent.name, ref model, nameModelPredicate ) ||
+           TryFindModel( RigidBody?.name, ref model, nameModelPredicate ) )
         Model = model;
       else
         Model = TrackWheelModel.Roller;
