@@ -357,6 +357,46 @@ namespace AGXUnity
       }
     }
 
+    public static agx.RigidBody InstantiateTemplate( RigidBody template, Shape[] shapes )
+    {
+      if ( template == null )
+        return null;
+
+      var native = new agx.RigidBody( template.name );
+      foreach ( var shape in shapes ) {
+        var nativeShape = shape.CreateTemporaryNative();
+        if ( nativeShape != null ) {
+          var geometry = new agxCollide.Geometry( nativeShape );
+
+          geometry.setEnable( shape.IsEnabled );
+
+          if ( shape.Material != null )
+            geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
+          native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
+        }
+      }
+
+      template.SyncNativeTransform( native );
+
+      // MassProperties (synchronization below) wont write any data if UseDefault = true.
+      native.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
+      native.updateMassProperties();
+      template.MassProperties.SetDefaultCalculated( native );
+      native.getMassProperties().setAutoGenerateMask( 0u );
+
+      var prevNative = template.m_rb;
+      try {
+        template.m_rb = native;
+        PropertySynchronizer.Synchronize( template );
+        PropertySynchronizer.Synchronize( template.MassProperties );
+      }
+      finally {
+        template.m_rb = prevNative;
+      }
+
+      return native;
+    }
+
     public bool PatchMassPropertiesAsComponent()
     {
       // Already have mass properties as component - this instance has been patched.
