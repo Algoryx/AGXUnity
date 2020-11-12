@@ -8,7 +8,7 @@ using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
-  [CustomEditor( typeof( Belt ) )]
+  [CustomEditor( typeof( ConveyorBelt ) )]
   public class BeltEditor : InspectorEditor
   {
     protected override void OnTargetsDeleted()
@@ -33,10 +33,10 @@ namespace AGXUnityEditor.Tools
     }
   }
 
-  [CustomTool( typeof( Belt ) )]
+  [CustomTool( typeof( ConveyorBelt ) )]
   public class BeltTool : CustomTargetTool
   {
-    public Belt Belt { get { return Targets[ 0 ] as Belt; } }
+    public ConveyorBelt Belt { get { return Targets[ 0 ] as ConveyorBelt; } }
 
     public BeltTool( Object[] targets )
       : base( targets )
@@ -75,9 +75,9 @@ namespace AGXUnityEditor.Tools
                                    "Tracks" );
     }
 
-    private Object ResourceHandler( Belt.ResourceHandlerRequest request, Object context, Type type )
+    private Object ResourceHandler( ConveyorBelt.ResourceHandlerRequest request, Object context, Type type )
     {
-      if ( request == Belt.ResourceHandlerRequest.Begin ) {
+      if ( request == ConveyorBelt.ResourceHandlerRequest.Begin ) {
         if ( m_undoGroupId < 0 ) {
           Undo.SetCurrentGroupName( "Belt" );
           m_undoGroupId = Undo.GetCurrentGroup();
@@ -88,19 +88,19 @@ namespace AGXUnityEditor.Tools
           Debug.Log( "Undo id is already set." );
         return null;
       }
-      else if ( request == Belt.ResourceHandlerRequest.End ) {
+      else if ( request == ConveyorBelt.ResourceHandlerRequest.End ) {
         if ( m_undoGroupId >= 0 )
           Undo.CollapseUndoOperations( m_undoGroupId );
         m_undoGroupId = -1;
         return null;
       }
-      else if ( request == Belt.ResourceHandlerRequest.AboutToChange ) {
+      else if ( request == ConveyorBelt.ResourceHandlerRequest.AboutToChange ) {
         Undo.RecordObject( context, $"{context.name} changes." );
         return null;
       }
-      else if ( request == Belt.ResourceHandlerRequest.AddComponent )
+      else if ( request == ConveyorBelt.ResourceHandlerRequest.AddComponent )
         return Undo.AddComponent( context as GameObject, type );
-      else if ( request == Belt.ResourceHandlerRequest.DestroyObject ) {
+      else if ( request == ConveyorBelt.ResourceHandlerRequest.DestroyObject ) {
         Undo.DestroyObjectImmediate( context );
         return null;
       }

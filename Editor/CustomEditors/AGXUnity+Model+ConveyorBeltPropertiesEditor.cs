@@ -6,8 +6,8 @@ using UnityEditor;
 
 namespace AGXUnityEditor.Editors
 {
-  [CustomEditor( typeof( AGXUnity.Model.BeltProperties ) )]
+  [CustomEditor( typeof( AGXUnity.Model.ConveyorBeltProperties ) )]
   [CanEditMultipleObjects]
-  public class AGXUnityModelBeltPropertiesEditor : InspectorEditor
+  public class AGXUnityModelConveyorBeltPropertiesEditor : InspectorEditor
   { }
 }

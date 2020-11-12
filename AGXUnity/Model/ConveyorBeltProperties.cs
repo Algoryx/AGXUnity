@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
-  public class BeltProperties : ScriptAsset
+  public class ConveyorBeltProperties : ScriptAsset
   {
     [SerializeField]
     private Vector3 m_translationalCompliance = 1.0E-8f * Vector3.one;
@@ -32,7 +32,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Register( Belt belt )
+    public void Register( ConveyorBelt belt )
     {
       if ( !m_belts.Contains( belt ) ) {
         m_belts.Add( belt );
@@ -41,7 +41,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Unregister( Belt belt )
+    public void Unregister( ConveyorBelt belt )
     {
       m_belts.Remove( belt );
     }
@@ -103,6 +103,6 @@ namespace AGXUnity.Model
     }
 
     [NonSerialized]
-    private List<Belt> m_belts = new List<Belt>();
+    private List<ConveyorBelt> m_belts = new List<ConveyorBelt>();
   }
 }

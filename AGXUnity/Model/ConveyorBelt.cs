@@ -14,7 +14,7 @@ namespace AGXUnity.Model
   /// </summary>
   [DoNotGenerateCustomEditor]
   [DisallowMultipleComponent]
-  public class Belt : ScriptComponent
+  public class ConveyorBelt : ScriptComponent
   {
     [SerializeField]
     private int m_numberOfTracks = 3;
@@ -179,13 +179,13 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private BeltProperties m_properties = null;
+    private ConveyorBeltProperties m_properties = null;
 
     /// <summary>
     /// Belt (specific) properties of this belt.
     /// </summary>
     [AllowRecursiveEditing]
-    public BeltProperties Properties
+    public ConveyorBeltProperties Properties
     {
       get { return m_properties; }
       set
@@ -469,7 +469,7 @@ namespace AGXUnity.Model
     /// in the editor by the Belt Tool.
     /// </summary>
     /// <returns>This instance.</returns>
-    public Belt AddDefaultComponents()
+    public ConveyorBelt AddDefaultComponents()
     {
       SynchronizeNumberOfTracks();
       return this;
@@ -726,7 +726,7 @@ namespace AGXUnity.Model
 
     private class ResourceRequestsScope : IDisposable
     {
-      public ResourceRequestsScope( Belt belt )
+      public ResourceRequestsScope( ConveyorBelt belt )
       {
         m_belt = belt;
       }
@@ -736,7 +736,7 @@ namespace AGXUnity.Model
         m_belt?.EndResourceRequests();
       }
 
-      private Belt m_belt = null;
+      private ConveyorBelt m_belt = null;
     }
 
     private Track[] FindTracks()
