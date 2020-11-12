@@ -57,25 +57,26 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="name">Name of the object.</param>
     /// <param name="model">Output track wheel model if found.</param>
+    /// <param name="nameModelPredicate">Match name vs. model - true if name match the model, otherwise false.</param>
     /// <returns>True if <paramref name="model"/> is set given <paramref name="name"/>, otherwise false.</returns>
     public static bool TryFindModel( string name,
                                      ref TrackWheelModel model,
-                                     Func<string, TrackWheelModel, bool> predicate = null )
+                                     Func<string, TrackWheelModel, bool> nameModelPredicate = null )
     {
       if ( string.IsNullOrEmpty( name ) )
         return false;
 
-      var nameModelPredicate = predicate ?? new Func<string, TrackWheelModel, bool>( (n, m) => false );
+      var predicate = nameModelPredicate ?? new Func<string, TrackWheelModel, bool>( (n, m) => false );
       name = name.ToLower();
-      if ( name.Contains( "sprocket" ) || nameModelPredicate( name, TrackWheelModel.Sprocket ) ) {
+      if ( name.Contains( "sprocket" ) || predicate( name, TrackWheelModel.Sprocket ) ) {
         model = TrackWheelModel.Sprocket;
         return true;
       }
-      else if ( name.Contains( "idler" ) || nameModelPredicate( name, TrackWheelModel.Idler ) ) {
+      else if ( name.Contains( "idler" ) || predicate( name, TrackWheelModel.Idler ) ) {
         model = TrackWheelModel.Idler;
         return true;
       }
-      else if ( name.Contains( "roller" ) || nameModelPredicate( name, TrackWheelModel.Roller ) ) {
+      else if ( name.Contains( "roller" ) || predicate( name, TrackWheelModel.Roller ) ) {
         model = TrackWheelModel.Roller;
         return true;
       }
@@ -198,6 +199,14 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Configure this component to <paramref name="parent"/> and configures
+    /// the wheel properties given shapes and meshes.
+    /// </summary>
+    /// <param name="parent">Parent game object, will become TrackWheel.Frame.Parent.</param>
+    /// <param name="positionAlongRotationAxis">Position offset along the rotation axis. Default: 0.</param>
+    /// <param name="nameModelPredicate">Match name vs. model - true if name match the model, otherwise false.</param>
+    /// <returns>TrackWheel component if added, otherwise null (throws if <paramref name="parent"/> already has a TrackWheel component)</returns>
     public TrackWheel Configure( GameObject parent,
                                  float positionAlongRotationAxis = 0.0f,
                                  Func<string, TrackWheelModel, bool> nameModelPredicate = null )
