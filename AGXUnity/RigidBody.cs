@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using AGXUnity.Utils;
 using AGXUnity.Collide;
 using UnityEngine;
@@ -270,9 +270,9 @@ namespace AGXUnity
     /// <returns>Array of shapes belonging to this rigid body.</returns>
     public Shape[] GetShapes()
     {
-      return ( from shape in GetComponentsInChildren<Shape>()
-               where shape.GetComponentInParent<RigidBody>() == this
-               select shape ).ToArray();
+      var shapes = new List<Shape>();
+      CollectShapes( transform, shapes );
+      return shapes.ToArray();
     }
 
     /// <summary>
@@ -536,6 +536,29 @@ namespace AGXUnity
           Debug.LogException( e, shape );
         }
       }
+    }
+
+    /// <summary>
+    /// Depth first search for shapes. If another rigid body instance is found,
+    /// we assume this rigid body is part of an Articulated Root, and stop the
+    /// search for that child.
+    /// </summary>
+    /// <param name="parent">Parent transform.</param>
+    /// <param name="shapes">Collected shapes along the way.</param>
+    private void CollectShapes( Transform parent, List<Shape> shapes )
+    {
+      if ( parent == null )
+        return;
+      var rb = parent.GetComponent<RigidBody>();
+      if ( rb != null && rb != this )
+        return;
+
+      var shape = parent.GetComponent<Shape>();
+      if ( shape != null )
+        shapes.Add( shape );
+
+      foreach ( Transform child in parent )
+        CollectShapes( child, shapes );
     }
 
     private void SyncUnityTransform()
