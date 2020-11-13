@@ -742,20 +742,15 @@ namespace AGXUnity.Model
     private Track[] FindTracks()
     {
       return ( from track in GetComponentsInChildren<Track>()
-               let sprocket = GetSprocket( track )
-               where sprocket != null && sprocket.Frame.Parent != null
-               orderby sprocket.Frame.CalculateLocalPosition( sprocket.RigidBody.gameObject ).y
+               let wheel = track.Wheels.FirstOrDefault()
+               where wheel != null && wheel.Frame.Parent != null
+               orderby wheel.Frame.CalculateLocalPosition( wheel.RigidBody.gameObject ).y
                select track ).ToArray();
     }
 
     private string GetGroupName( int trackIndex )
     {
       return $"{name}_track_{trackIndex}";
-    }
-
-    private TrackWheel GetSprocket( Track track )
-    {
-      return track.Wheels.FirstOrDefault( wheel => wheel.Model == TrackWheelModel.Sprocket );
     }
 
     private void OnDrawGizmosSelected()
