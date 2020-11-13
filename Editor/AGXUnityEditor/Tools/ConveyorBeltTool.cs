@@ -49,6 +49,10 @@ namespace AGXUnityEditor.Tools
 
       Belt.RemoveInvalidRollers();
 
+      foreach ( var track in Belt.Tracks )
+        if ( ( track.hideFlags & HideFlags.HideInInspector ) == 0 )
+          track.hideFlags |= HideFlags.HideInInspector;
+
       if ( Belt.Tracks.Length == 0 )
         Belt.AddDefaultComponents();
     }
@@ -67,12 +71,30 @@ namespace AGXUnityEditor.Tools
                                 Belt.Rollers,
                                 "Rollers",
                                 wheel => Belt.Add( wheel ),
-                                wheel => Belt.Remove( wheel ) );
+                                wheel => Belt.Remove( wheel ),
+                                OnRollerGUI );
 
       using ( new GUI.EnabledBlock( false ) )
         InspectorGUI.ToolArrayGUI( this,
                                    Belt.Tracks,
                                    "Tracks" );
+    }
+
+    private void OnRollerGUI( GameObject roller, int index )
+    {
+      var wheel = roller.GetComponent<TrackWheel>();
+      if ( wheel == null )
+        return;
+      var newModel = (TrackWheelModel)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Model" ),
+                                                                 wheel.Model,
+                                                                 InspectorEditor.Skin.Popup );
+      if ( newModel != wheel.Model ) {
+        var trackWheels = roller.GetComponents<TrackWheel>();
+        Undo.RecordObjects( trackWheels, "Track Wheel Model" );
+        foreach ( var trackWheel in trackWheels ) {
+          trackWheel.Model = newModel;
+        }
+      }
     }
 
     private Object ResourceHandler( ConveyorBelt.ResourceHandlerRequest request, Object context, Type type )

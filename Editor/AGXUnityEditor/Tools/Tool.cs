@@ -353,6 +353,13 @@ namespace AGXUnityEditor.Tools
 
     public Editor GetOrCreateEditor( Object target )
     {
+      // We get null reference exception when we destroy a
+      // GameObjectInspector and OnInspectorGUI doesn't show
+      // anything, it probably requires more, but still it's
+      // not desired to recurse the whole GameObject.
+      if ( target is GameObject )
+        return null;
+
       Editor editor = null;
       if ( m_editors.TryGetValue( target, out editor ) )
         return editor;
@@ -371,6 +378,7 @@ namespace AGXUnityEditor.Tools
       Editor editor = null;
       if ( !m_editors.TryGetValue( target, out editor ) )
         return;
+
       m_editors.Remove( target );
       Object.DestroyImmediate( editor );
     }
