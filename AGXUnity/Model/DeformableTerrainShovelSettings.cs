@@ -262,13 +262,15 @@ namespace AGXUnity.Model
     /// <param name="shovel">Deformable shovel instance to which these settings should apply.</param>
     public void Register( DeformableTerrainShovel shovel )
     {
-      if ( !m_shovels.Contains( shovel ) ) {
+      if ( !m_shovels.Contains( shovel ) )
         m_shovels.Add( shovel );
 
-        // Synchronizing settings for all shovels. Could be
-        // avoided by adding a state so that Propagate only
-        // shows current added shovel.
+      try {
+        m_singleSynchronizeInstance = shovel;
         Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
       }
     }
 
@@ -300,11 +302,21 @@ namespace AGXUnity.Model
       if ( action == null )
         return;
 
+      if ( m_singleSynchronizeInstance != null ) {
+        if ( m_singleSynchronizeInstance.Native != null )
+          action( m_singleSynchronizeInstance.Native );
+        return;
+      }
+
       foreach ( var shovel in m_shovels )
         if ( shovel.Native != null )
           action( shovel.Native );
     }
 
+    [NonSerialized]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
+
+    [NonSerialized]
+    private DeformableTerrainShovel m_singleSynchronizeInstance = null;
   }
 }
