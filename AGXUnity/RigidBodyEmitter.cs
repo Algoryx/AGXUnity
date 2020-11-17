@@ -51,6 +51,57 @@ namespace AGXUnity
       /// </summary>
       [SerializeField]
       public float ProbabilityWeight = 0.5f;
+
+      /// <summary>
+      /// Find render resource coupled to the RigidBody template prefab.
+      /// If RigidBody has AGXUnity.Rendering.ShapeVisual, the shape visual
+      /// game object will be used. If RigidBod has a MeshRenderer the top
+      /// parent without AGXUnity.Collide.Shape and/or AGXUnity.RigidBody in
+      /// its hierarchy will be used.
+      /// </summary>
+      /// <returns>Render resource game object if found - otherwise null.</returns>
+      public GameObject FindRenderResource()
+      {
+        if ( RigidBody == null )
+          return null;
+
+        // Prefer ShapeVisual, additional objects can be placed as
+        // children to the ShapeVisual game object.
+        var shapeVisual = RigidBody.GetComponentInChildren<Rendering.ShapeVisual>();
+        if ( shapeVisual != null && !HasPhysics( shapeVisual.transform ) )
+          return shapeVisual.gameObject;
+
+        var meshRenderer = RigidBody.GetComponentInChildren<MeshRenderer>();
+        if ( meshRenderer != null )
+          return FindParentWithoutPhysics( meshRenderer.transform );
+
+        return null;
+      }
+
+      /// <summary>
+      /// Finds top parent without physics components as children.
+      /// </summary>
+      /// <param name="child">Child transform.</param>
+      /// <returns>Top parent game object without physics components - null if not found.</returns>
+      private static GameObject FindParentWithoutPhysics( Transform child )
+      {
+        if ( child == null )
+          return null;
+
+        if ( HasPhysics( child ) )
+          return null;
+
+        while ( child.parent != null && !HasPhysics( child.parent ) )
+          child = child.parent;
+
+        return child?.gameObject;
+      }
+
+      private static bool HasPhysics( Transform transform )
+      {
+        return transform.GetComponentInChildren<Collide.Shape>() != null ||
+               transform.GetComponentInChildren<RigidBody>() != null;
+      }
     }
 
     /// <summary>
@@ -300,7 +351,7 @@ namespace AGXUnity
         NativeDistributionTable.addModel( new agx.RigidBodyEmitter.DistributionModel( templateInstance,
                                                                                       entry.ProbabilityWeight ) );
         m_event.MapResource( entry.RigidBody.name,
-                             entry.RigidBody.GetComponentInChildren<Rendering.ShapeVisual>()?.gameObject );
+                             entry.FindRenderResource() );
       }
 
       Native.setGeometry( EmitterShape.NativeGeometry );
@@ -359,14 +410,6 @@ namespace AGXUnity
       }
     }
 
-    private agx.RigidBody CreateTemplate( float radius )
-    {
-      var rb = new agx.RigidBody( $"{name}_t_{radius.ToString( "0.00" )}" );
-      rb.add( new agxCollide.Geometry( new agxCollide.Sphere( radius ) ) );
-      rb.setHandleAsParticle( true );
-      return rb;
-    }
-
     private class EmitEvent : agx.RigidBodyEmitterEvent
     {
       public List<agx.RigidBody> RigidBodies { get; private set; } = new List<agx.RigidBody>();
@@ -377,6 +420,9 @@ namespace AGXUnity
         : base( emitter.Native )
       {
         m_visualRoot = RuntimeObjects.GetOrCreateRoot( emitter );
+        var keepAliveGo = new GameObject( $"{m_visualRoot.name}_keepAlive" );
+        keepAliveGo.AddComponent<OnSelectionProxy>().Component = emitter;
+        m_visualRoot.AddChild( keepAliveGo );
       }
 
       public void MapResource( string name, GameObject resource )
@@ -392,7 +438,7 @@ namespace AGXUnity
         if ( m_nameResourceTable.TryGetValue( instance.getName(), out var resource ) ) {
           var visual = Instantiate( resource );
           if ( m_visualRoot != null )
-            visual.transform.parent = m_visualRoot.transform;
+            visual.transform.SetParent( m_visualRoot.transform );
           visual.transform.position = instance.getPosition().ToHandedVector3();
           visual.transform.rotation = instance.getRotation().ToHandedQuaternion();
           Visuals.Add( visual );
