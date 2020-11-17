@@ -280,6 +280,26 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// terrain instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the terrain has been created.
+    /// </remarks>
+    /// <param name="terrain">Terrain instance to synchronize.</param>
+    public void Synchronize( DeformableTerrain terrain )
+    {
+      try {
+        m_singleSynchronizeInstance = terrain;
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
     public void Register( DeformableTerrain terrain )
     {
       if ( !m_terrains.Contains( terrain ) )
@@ -289,13 +309,7 @@ namespace AGXUnity.Model
       // deformable terrain. It's better to synchronize one
       // or more times too many than to miss synchronization
       // when the native instance of the terrain has been created.
-      try {
-        m_singleSynchronizeInstance = terrain;
-        Utils.PropertySynchronizer.Synchronize( this );
-      }
-      finally {
-        m_singleSynchronizeInstance = null;
-      }
+      Synchronize( terrain );
     }
 
     public void Unregister( DeformableTerrain terrain )

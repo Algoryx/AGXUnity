@@ -256,6 +256,26 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// terrain shovel instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the shovel has been created.
+    /// </remarks>
+    /// <param name="shovel">Terrain shovel instance to synchronize.</param>
+    public void Synchronize( DeformableTerrainShovel shovel )
+    {
+      try {
+        m_singleSynchronizeInstance = shovel;
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
+    /// <summary>
     /// Register as listener of these settings. Current settings will
     /// be applied to the shovel instance directly when added.
     /// </summary>
@@ -265,13 +285,7 @@ namespace AGXUnity.Model
       if ( !m_shovels.Contains( shovel ) )
         m_shovels.Add( shovel );
 
-      try {
-        m_singleSynchronizeInstance = shovel;
-        Utils.PropertySynchronizer.Synchronize( this );
-      }
-      finally {
-        m_singleSynchronizeInstance = null;
-      }
+      Synchronize( shovel );
     }
 
     /// <summary>

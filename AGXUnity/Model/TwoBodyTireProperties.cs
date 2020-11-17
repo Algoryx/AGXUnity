@@ -172,6 +172,26 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// tire instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the tire has been created.
+    /// </remarks>
+    /// <param name="tire">Tire instance to synchronize.</param>
+    public void Synchronize( TwoBodyTire tire )
+    {
+      try {
+        m_singleSynchronizeInstance = tire;
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
+    /// <summary>
     /// Internal.
     /// 
     /// Register tire instance to adopt these tire properties.
@@ -179,14 +199,10 @@ namespace AGXUnity.Model
     /// <param name="tire"></param>
     public void Register( TwoBodyTire tire )
     {
-      if ( !m_tires.Contains( tire ) ) {
+      if ( !m_tires.Contains( tire ) )
         m_tires.Add( tire );
 
-        // Synchronizing properties for all shovels. Could be
-        // avoided by adding a state so that Propagate only
-        // shows current added terrain.
-        Utils.PropertySynchronizer.Synchronize( this );
-      }
+      Synchronize( tire );
     }
 
     /// <summary>
@@ -222,11 +238,21 @@ namespace AGXUnity.Model
       if ( action == null )
         return;
 
+      if ( m_singleSynchronizeInstance != null ) {
+        if ( m_singleSynchronizeInstance.Native != null )
+          action( m_singleSynchronizeInstance.Native );
+        return;
+      }
+
       foreach ( var tire in m_tires )
         if ( tire.Native != null )
           action( tire.Native );
     }
 
+    [NonSerialized]
     private List<TwoBodyTire> m_tires = new List<TwoBodyTire>();
+
+    [NonSerialized]
+    private TwoBodyTire m_singleSynchronizeInstance = null;
   }
 }
