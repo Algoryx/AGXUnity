@@ -391,7 +391,15 @@ namespace AGXUnityEditor
 
       if ( targets.Count() > 0 )
         SceneView.RepaintAll();
+
+      // When a prefab is drag-dropped into a scene we receive a
+      // callback to this method for unknown reasons. Event.current == null
+      // when that's the case, i.e., not an actual undo/redo.
+      if ( Event.current != null )
+        s_lastUndoRedoTime = EditorApplication.timeSinceStartup;
     }
+
+    private static double s_lastUndoRedoTime = 0;
 
     /// <summary>
     /// Callback from InspectorEditor when in OnDisable and target == null,
@@ -537,7 +545,16 @@ namespace AGXUnityEditor
         var isPrefabInstance = PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.PrefabInstance ||
                                PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.DisconnectedPrefabInstance;
 #endif
-        if ( isPrefabInstance )
+        // We want to catch when a prefab has been instantiated in the
+        // scene. Maybe this feature should be explicit, i.e., some
+        // method doing the work.
+        // NOTE: We receive callbacks to OnHierarchyWindowChanged when a
+        //       component is added and when the undo/redo is performed.
+        //       To not screw up the undo/redo history we block this feature
+        //       when undo/redo has been made close in time.
+        // TODO: Make this work - OnHierarchyWindowChanged is not a good place
+        //       to instantiate additional things.
+        if ( isPrefabInstance && ( EditorApplication.timeSinceStartup - s_lastUndoRedoTime ) > 2.0 )
           AssetPostprocessorHandler.OnPrefabAddedToScene( Selection.activeGameObject );
       }
 

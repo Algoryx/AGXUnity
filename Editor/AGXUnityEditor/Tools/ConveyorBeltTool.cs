@@ -18,7 +18,7 @@ namespace AGXUnityEditor.Tools
         return;
 
       var undoGroupId = Undo.GetCurrentGroup();
-      var tracks = Selection.activeGameObject.GetComponents<AGXUnity.Model.Track>();
+      var tracks = Selection.activeGameObject.GetComponents<Track>();
       foreach ( var track in tracks ) {
         Undo.RecordObject( track, "Removing track wheels" );
         foreach ( var trackWheel in track.Wheels ) {
