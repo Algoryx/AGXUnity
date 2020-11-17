@@ -268,6 +268,16 @@ namespace AGXUnity.Utils
     }
 
     /// <summary>
+    /// Convert from right handed Vector3 to left handed Vector3 by flipping x-axis.
+    /// </summary>
+    /// <param name="v">Right handed Vector3.</param>
+    /// <returns>Left handed Vector3.</returns>
+    public static Vector3 ToLeftHanded( this Vector3 v )
+    {
+      return new Vector3( -v.x, v.y, v.z );
+    }
+
+    /// <summary>
     /// Convert from agx.Vec4 to UnityEngine.Color.
     /// </summary>
     /// <returns>Vec4 as Color.</returns>
@@ -452,6 +462,11 @@ namespace AGXUnity.Utils
     {
       return "#" + ( (int)( 255 * color.r ) ).ToString( "X2" ) + ( (int)( 255 * color.g ) ).ToString( "X2" ) + ( (int)( 255 * color.b ) ).ToString( "X2" );
     }
+
+    public static Vector3 ReadVector3( this System.IO.BinaryReader stream )
+    {
+      return new Vector3( stream.ReadSingle(), stream.ReadSingle(), stream.ReadSingle() );
+    }
   }
 
   /// <summary>
@@ -490,11 +505,51 @@ namespace AGXUnity.Utils
 
     public static string FirstCharToUpperCase( this string str )
     {
-      if ( String.IsNullOrEmpty( str ) )
+      if ( string.IsNullOrEmpty( str ) )
         return str;
 
       return str.First().ToString().ToUpper() + str.Substring( 1 );
     }
+
+    /// <summary>
+    /// Split on space but exclude multiple spaces, e.g.,
+    /// "0.2      3  4" will return ["0.2", "3", "4"].
+    /// </summary>
+    /// <returns>Array of strings not containing entries with empty spaces.</returns>
+    public static string[] SplitSpace( this string str )
+    {
+      return str.Split( s_strSplit, StringSplitOptions.RemoveEmptyEntries );
+    }
+
+    /// <summary>
+    /// Find index in string array given predicate.
+    /// </summary>
+    /// <param name="predicate">String predicate.</param>
+    /// <returns>Index where <paramref name="predicate"/> returns true, -1 if not found.</returns>
+    public static int IndexOf( this string[] strs, Func<string, bool> predicate )
+    {
+      for ( int i = 0; predicate != null && i < strs.Length; ++i )
+        if ( predicate.Invoke( strs[ i ] ) )
+          return i;
+      return -1;
+    }
+
+    /// <summary>
+    /// Parse 3 floats from string array from <paramref name="startIndex"/> to <paramref name="startIndex"/> + 2.
+    /// </summary>
+    /// <param name="startIndex">Start index.</param>
+    /// <returns>Vector3 if successful, throws on failures.</returns>
+    public static Vector3 ParseVector3( this string[] strs, int startIndex )
+    {
+      if ( startIndex + 2 >= strs.Length )
+        throw new IndexOutOfRangeException( $"Unable to parse Vector3: End index {startIndex + 2} >= length " +
+                                            $"of string array with {strs.Length} elements." );
+      return new Vector3( float.Parse( strs[ startIndex + 0 ] ),
+                          float.Parse( strs[ startIndex + 1 ] ),
+                          float.Parse( strs[ startIndex + 2 ] ) );
+    }
+
+    private static char[] s_strSplit = new char[] { ' ' };
   }
 
   /// <summary>

@@ -81,6 +81,11 @@ namespace AGXUnity
                                      ConstraintFrame referenceFrame,
                                      ConstraintFrame connectedFrame )
     {
+      if ( type == ConstraintType.Unknown ) {
+        Debug.LogWarning( "Unable to create constraint - unknown constraint type." );
+        return null;
+      }
+
       GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity." + type ) );
       try {
         Constraint constraint = constraintGameObject.AddComponent<Constraint>();

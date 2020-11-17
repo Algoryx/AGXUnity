@@ -108,7 +108,7 @@ namespace AGXUnityEditor.Tools
       if ( gameObject == null || gameObject.GetComponentInParent<RigidBody>() == null )
         return null;
 
-      var result = Utils.Raycast.Intersect( ray, gameObject );
+      var result = Utils.Raycast.Intersect( ray, gameObject, true );
       if ( !result )
         return null;
 

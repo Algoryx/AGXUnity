@@ -148,15 +148,37 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// track instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the track has been created.
+    /// </remarks>
+    /// <param name="track">Track instance to synchronize.</param>
+    public void Synchronize( Track track )
+    {
+      try {
+        m_singleSynchronizeInstance = track;
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
     public void Register( Track track )
     {
-      if ( !m_tracks.Contains( track ) ) {
+      if ( !m_tracks.Contains( track ) )
         m_tracks.Add( track );
 
-        // Synchronizing properties for all tracks. Could be
-        // avoided by adding a state so that Propagate only
-        // shows current added terrain.
+      try {
+        m_singleSynchronizeInstance = track;
         Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
       }
     }
 
@@ -180,11 +202,24 @@ namespace AGXUnity.Model
 
     private void Propagate( Action<agxVehicle.TrackInternalMergeProperties> action )
     {
+      if ( action == null )
+        return;
+
+      if ( m_singleSynchronizeInstance != null ) {
+        if ( m_singleSynchronizeInstance.Native != null )
+          action( m_singleSynchronizeInstance.Native.getInternalMergeProperties() );
+        return;
+      }
+
       foreach ( var track in m_tracks )
         if ( track.Native != null )
           action( track.Native.getInternalMergeProperties() );
     }
 
+    [NonSerialized]
     private List<Track> m_tracks = new List<Track>();
+
+    [NonSerialized]
+    private Track m_singleSynchronizeInstance = null;
   }
 }

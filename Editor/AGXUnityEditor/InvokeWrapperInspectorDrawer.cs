@@ -63,7 +63,7 @@ namespace AGXUnityEditor
         return;
 
       info.IsNullable = resultAttribute.IsNullable;
-      info.CopyOp     = drawerClass.GetMethod( info.Drawer.Name + "CopyOp", BindingFlags.Public | BindingFlags.Static );
+      info.CopyOp = drawerClass.GetMethod( info.Drawer.Name + "CopyOp", BindingFlags.Public | BindingFlags.Static );
     }
 
     private static Dictionary<Type, DrawerInfo> m_drawerMethodsCache = new Dictionary<Type, DrawerInfo>();
@@ -72,22 +72,22 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( Vector4 ) )]
     public static object Vector4Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector4Field( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                           wrapper.Get<Vector4>( objects[ 0 ] ) );
+      return InspectorGUI.Vector4Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector4>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector3 ) )]
     public static object Vector3Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector3>( objects[ 0 ] ) );
+      return InspectorGUI.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector3>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector2 ) )]
     public static object Vector2Drawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector2Field( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector2>( objects[ 0 ] ) );
+      return InspectorGUI.Vector2Field( InspectorGUI.MakeLabel( wrapper.Member ),
+                                        wrapper.Get<Vector2>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( int ) )]
@@ -260,25 +260,25 @@ namespace AGXUnityEditor
         throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
 
       var updateButtonWidth = 20.0f;
-      var rect              = EditorGUILayout.GetControlRect();
-      
+      var rect = EditorGUILayout.GetControlRect();
+
       // Now we know the total width if the Inspector. Remove
       // width of button and right most spacing.
       rect.xMax -= updateButtonWidth;
-      
+
       // We don't want the tooltip of the toggle to show when
       // hovering the update button or float field(s) so use
       // xMax as label width minus some magic number so that
       // e.g., Mass float field slider appears and works.
       var widthUntilButton = rect.xMax;
-      rect.xMax            = EditorGUIUtility.labelWidth - 28;
+      rect.xMax = EditorGUIUtility.labelWidth - 28;
 
       // Result and reference instance.
-      var result   = new DefaultAndUserValueResult();
+      var result = new DefaultAndUserValueResult();
       var instance = wrapper.Get<DefaultAndUserValue<ValueT>>( objects[ 0 ] );
 
       UnityEngine.GUI.changed = false;
-      var hasMixedUseDefault  = !CompareMulti<ValueT>( objects,
+      var hasMixedUseDefault = !CompareMulti<ValueT>( objects,
                                                        wrapper,
                                                        other => other.UseDefault == instance.UseDefault );
       EditorGUI.showMixedValue = hasMixedUseDefault;
@@ -303,8 +303,8 @@ namespace AGXUnityEditor
       // the current indent level since label width is independent
       // of the indent level. Unsure why we have to add LayoutMagicNumber pixels...
       // could be float field(s) default minimum label size.
-      rect.xMax  = widthUntilButton;
-      rect.x     = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + InspectorGUI.LayoutMagicNumber;
+      rect.xMax = widthUntilButton;
+      rect.x = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + InspectorGUI.LayoutMagicNumber;
       rect.xMax += -rect.x + InspectorGUI.LayoutMagicNumber;
 
       s_fieldMethodArgs[ 0 ] = rect;
@@ -326,9 +326,9 @@ namespace AGXUnityEditor
         }
       }
 
-      rect.x                      = rect.xMax;
-      rect.width                  = updateButtonWidth;
-      rect.height                 = EditorGUIUtility.singleLineHeight -
+      rect.x = rect.xMax;
+      rect.width = updateButtonWidth;
+      rect.height = EditorGUIUtility.singleLineHeight -
                                     EditorGUIUtility.standardVerticalSpacing;
       result.UpdateDefaultClicked = InspectorGUI.Button( rect,
                                                          MiscIcon.Update,
@@ -355,7 +355,7 @@ namespace AGXUnityEditor
       // propagate the unchanged value to other instances during
       // multi-select.
       var result = (InspectorGUI.RangeRealResult)data;
-      var value  = (RangeReal)destination;
+      var value = (RangeReal)destination;
       if ( result.MinChanged )
         value.Min = result.Min;
       if ( result.MaxChanged )
@@ -384,18 +384,18 @@ namespace AGXUnityEditor
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( objects[ 0 ] as Object, wrapper.Member.Name ),
                                  InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
-          data.Value.Enabled                   = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
+          data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
                                                                       data.Value.Enabled );
-          data.EnabledChanged                  = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed              = false;
-          data.Value.CreateDynamicMassEnabled  = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
+          data.EnabledChanged = UnityEngine.GUI.changed;
+          UnityEngine.GUI.changed = false;
+          data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
                                                                       data.Value.CreateDynamicMassEnabled );
           data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed              = false;
-          data.Value.ForceFeedbackEnabled      = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
+          UnityEngine.GUI.changed = false;
+          data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
                                                                       data.Value.ForceFeedbackEnabled );
-          data.ForceFeedbackEnabledChanged     = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed              = false;
+          data.ForceFeedbackEnabledChanged = UnityEngine.GUI.changed;
+          UnityEngine.GUI.changed = false;
         }
         UnityEngine.GUI.changed = data.ContainsChanges;
       }
@@ -405,7 +405,7 @@ namespace AGXUnityEditor
     public static object DeformableTerrainShovelExcavationSettingsDrawerCopyOp( object data, object destination )
     {
       var result = (ExcavationSettingsResult)data;
-      var value  = (DeformableTerrainShovelSettings.ExcavationSettings)destination;
+      var value = (DeformableTerrainShovelSettings.ExcavationSettings)destination;
       if ( result.EnabledChanged )
         value.Enabled = result.Value.Enabled;
       if ( result.CreateDynamicMassEnabledChanged )
@@ -467,9 +467,9 @@ namespace AGXUnityEditor
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
                                  InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         object insertElementBefore = null;
-        object insertElementAfter  = null;
-        object eraseElement        = null;
-        var skin                   = InspectorEditor.Skin;
+        object insertElementAfter = null;
+        object eraseElement = null;
+        var skin = InspectorEditor.Skin;
         var buttonLayout = new GUILayoutOption[]
         {
           GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
@@ -552,11 +552,11 @@ namespace AGXUnityEditor
     [InspectorDrawerResult( IsNullable = true )]
     public static object ScriptDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      object result         = null;
-      var type              = wrapper.GetContainingType();
+      object result = null;
+      var type = wrapper.GetContainingType();
       bool allowSceneObject = type == typeof( GameObject ) ||
                               typeof( ScriptComponent ).IsAssignableFrom( type );
-      Object valInField     = wrapper.Get<Object>( objects[ 0 ] );
+      Object valInField = wrapper.Get<Object>( objects[ 0 ] );
       bool recursiveEditing = wrapper.HasAttribute<AllowRecursiveEditing>();
 
       if ( recursiveEditing ) {
@@ -574,6 +574,232 @@ namespace AGXUnityEditor
                                               allowSceneObject );
 
       return result;
+    }
+
+    public static void DrawUrdfElement( AGXUnity.IO.URDF.Element element,
+                                        int elementArrayIndex = -1 )
+    {
+      if ( element == null )
+        return;
+
+      var dropDownName = string.IsNullOrEmpty( element.Name ) ?
+                            elementArrayIndex >= 0 ?
+                              $"{element.GetType().Name}[{elementArrayIndex}]" :
+                              element.GetType().Name :
+                            element.Name;
+      if ( !InspectorGUI.Foldout( GetEditorData( element, dropDownName ),
+                                  GUI.MakeLabel( InspectorGUISkin.Instance.TagTypename( $"Urdf.{element.GetType().Name}" ) +
+                                                  ' ' +
+                                                  dropDownName ) ) )
+        return;
+
+      using ( InspectorGUI.IndentScope.Single ) {
+        var ignoreName = element is AGXUnity.IO.URDF.Inertial;
+        if ( !ignoreName ) {
+          var nameRect = EditorGUILayout.GetControlRect();
+          EditorGUI.PrefixLabel( nameRect, GUI.MakeLabel( "Name" ), InspectorEditor.Skin.Label );
+          var orgXMax   = nameRect.xMax;
+          nameRect.x   += EditorGUIUtility.labelWidth - 14.0f * InspectorGUI.IndentScope.Level;
+          nameRect.xMax = orgXMax;
+          EditorGUI.SelectableLabel( nameRect, element.Name, InspectorEditor.Skin.TextField );
+        }
+
+        if ( element is AGXUnity.IO.URDF.Pose )
+          DrawUrdfPose( element as AGXUnity.IO.URDF.Pose );
+        else if ( element is AGXUnity.IO.URDF.Material ) {
+          DrawUrdfMaterial( element as AGXUnity.IO.URDF.Material );
+          return;
+        }
+
+        var properties = GetOrFindProperties( element.GetType() );
+        var elementArg = new object[] { element };
+        var geometry = element as AGXUnity.IO.URDF.Geometry;
+        foreach ( var property in properties ) {
+          // Ignoring Unity specific properties such as "name" and "hideFlags".
+          if ( !char.IsUpper( property.Member.Name[ 0 ] ) )
+            continue;
+          if ( !InspectorEditor.ShouldBeShownInInspector( property.Member ) )
+            continue;
+
+          var containingType = property.GetContainingType();
+          if ( containingType.IsArray ) {
+            if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType.GetElementType() ) ) {
+              var array = property.Get<System.Collections.ICollection>( element );
+              if ( !InspectorGUI.Foldout( GetEditorData( element, property.Member.Name ),
+                                          InspectorGUI.MakeLabel( property.Member,
+                                                                  $" [{array.Count}]" ) ) )
+                continue;
+
+              using ( InspectorGUI.IndentScope.Single ) {
+                var arrayIndex = 0;
+                foreach ( var arrayItem in array )
+                  DrawUrdfElement( arrayItem as AGXUnity.IO.URDF.Element, arrayIndex++ );
+              }
+            }
+          }
+          else if ( typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType ) ) {
+            DrawUrdfElement( property.Get<AGXUnity.IO.URDF.Element>( element ), -1 );
+          }
+          else if ( geometry == null || IsValidGeometryProperty( geometry, property ) ) {
+            var drawerMethod = GetDrawerMethod( containingType );
+            drawerMethod.Drawer?.Invoke( null, new object[] { elementArg, property } );
+          }
+        }
+      }
+    }
+
+    public static void DrawUrdfPose( AGXUnity.IO.URDF.Pose pose )
+    {
+      EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Origin", true ) );
+      using ( new InspectorGUI.IndentScope() ) {
+        InspectorGUI.Vector3Field( GUI.MakeLabel( "Position" ), pose.Xyz );
+        InspectorGUI.Vector3Field( GUI.MakeLabel( "Roll, Pitch, Yaw" ), pose.Rpy, "R,P,Y" );
+      }
+    }
+
+    public static void DrawUrdfMaterial( AGXUnity.IO.URDF.Material material )
+    {
+      // Name has already been rendered.
+      InspectorGUI.Toggle( GUI.MakeLabel( "Is Reference" ), material.IsReference );
+      if ( material.IsReference )
+        return;
+      var colorRect = EditorGUILayout.GetControlRect();
+      EditorGUI.PrefixLabel( colorRect, GUI.MakeLabel( "Color" ) );
+      var oldXMax = colorRect.xMax;
+      colorRect.x += EditorGUIUtility.labelWidth;
+      colorRect.xMax = oldXMax;
+      EditorGUI.DrawRect( colorRect, material.Color );
+    }
+
+    private static EditorDataEntry GetEditorData( AGXUnity.IO.URDF.Element element, string name )
+    {
+      return EditorData.Instance.GetData( element, name, entry => entry.Bool = false );
+    }
+
+    private static bool IsValidGeometryProperty( AGXUnity.IO.URDF.Geometry geometry, PropertyWrapper wrapper )
+    {
+      // Geometry will throw when the wrong property is used.
+      try {
+        wrapper.Property.GetValue( geometry, null );
+      }
+      catch ( System.Exception ) {
+        return false;
+      }
+
+      return true;
+    }
+
+    private static PropertyWrapper[] GetOrFindProperties( Type type )
+    {
+      if ( s_propertyWrapperCache.TryGetValue( type, out var cachedProperties ) )
+        return cachedProperties;
+      Func<PropertyWrapper, int> propertyPriority = wrapper =>
+      {
+        var containingType = wrapper.GetContainingType();
+        return typeof( AGXUnity.IO.URDF.Element ).IsAssignableFrom( containingType ) ||
+               containingType.IsArray ?
+                 -1 :
+               wrapper.Member.Name == "Name" ?
+                 1 :
+                 wrapper.Priority;
+      };
+      var properties = PropertyWrapper.FindProperties( type ).OrderByDescending( propertyPriority ).ToArray();
+      s_propertyWrapperCache.Add( type, properties );
+      return properties;
+    }
+    private static Dictionary<Type, PropertyWrapper[]> s_propertyWrapperCache = new Dictionary<Type, PropertyWrapper[]>();
+
+    private static void DrawUrdfJointData<T>( AGXUnity.IO.URDF.UJoint parent,
+                                              MemberInfo member,
+                                              T jointData )
+      where T : struct
+    {
+      var fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( typeof( T ) );
+      var enabledFieldOrProperty = fieldsAndProperties.FirstOrDefault( wrapper => wrapper.Member.Name == "Enabled" );
+      if ( enabledFieldOrProperty == null )
+        return;
+      var enabled = enabledFieldOrProperty.Get<bool>( jointData );
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        if ( !InspectorGUI.Foldout( GetEditorData( parent, member.Name ), InspectorGUI.MakeLabel( member ) ) )
+          return;
+        using ( InspectorGUI.IndentScope.Single ) {
+          foreach ( var wrapper in fieldsAndProperties ) {
+            if ( wrapper == enabledFieldOrProperty )
+              continue;
+
+            var drawer = GetDrawerMethod( wrapper.GetContainingType() );
+            drawer.Drawer?.Invoke( null, new object[] { new object[] { jointData }, wrapper } );
+          }
+        }
+      }
+    }
+
+    [ InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) ) ]
+    public static object UrdfInertiaDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var inertia = wrapper.Get<AGXUnity.IO.URDF.Inertia>( objects[ 0 ] );
+      InspectorGUI.Vector3Field( InspectorGUI.MakeLabel( wrapper.Member ), inertia.GetRow( 0 ), "XX,XY,XZ" );
+      InspectorGUI.Vector3Field( null, inertia.GetRow( 1 ), "YX,YY,YZ" );
+      InspectorGUI.Vector3Field( null, inertia.GetRow( 2 ), "ZX,ZY,ZZ" );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.CalibrationData ) )]
+    public static object UrdfJointCalibrationDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.CalibrationData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.DynamicsData ) )]
+    public static object UrdfJointDynamicsDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.DynamicsData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.LimitData ) )]
+    public static object UrdfJointLimitDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.LimitData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.MimicData ) )]
+    public static object UrdfJointMimicDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.MimicData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.UJoint.SafetyControllerData ) )]
+    public static object UrdfJointSafetyControllerDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      DrawUrdfJointData( objects[ 0 ] as AGXUnity.IO.URDF.UJoint,
+                         wrapper.Member,
+                         wrapper.Get<AGXUnity.IO.URDF.UJoint.SafetyControllerData>( objects[ 0 ] ) );
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.Element ) )]
+    public static object UrdfElementDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of URDF Elements isn't supported." );
+        return null;
+      }
+
+      DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ), -1 );
+
+      return null;
     }
   }
 }

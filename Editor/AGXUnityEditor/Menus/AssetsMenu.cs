@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Model;
@@ -8,85 +8,130 @@ namespace AGXUnityEditor
 {
   public static class AssetsMenu
   {
-    [MenuItem( "Assets/AGXUnity/Shape Material" )]
-    public static UnityEngine.Object CreateMaterial()
+    [MenuItem( "Assets/AGXUnity/Shape Material", priority = 600 )]
+    public static Object CreateMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ShapeMaterial>( "material" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Contact Material" )]
-    public static UnityEngine.Object CreateContactMaterial()
+    [MenuItem( "Assets/AGXUnity/Contact Material", priority = 600 )]
+    public static Object CreateContactMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ContactMaterial>( "contact material" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Friction Model" )]
-    public static UnityEngine.Object CreateFrictionModel()
+    [MenuItem( "Assets/AGXUnity/Friction Model", priority = 600 )]
+    public static Object CreateFrictionModel()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<FrictionModel>( "friction model" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Cable Properties" )]
-    public static UnityEngine.Object CreateCableProperties()
+    [MenuItem( "Assets/AGXUnity/Cable Properties", priority = 620 )]
+    public static Object CreateCableProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<CableProperties>( "cable properties" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Geometry Contact Merge Split Thresholds" )]
-    public static UnityEngine.Object CreateGeometryContactMergeSplitThresholds()
+    [MenuItem( "Assets/AGXUnity/Geometry Contact Merge Split Thresholds", priority = 640 )]
+    public static Object CreateGeometryContactMergeSplitThresholds()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<GeometryContactMergeSplitThresholds>( "contact merge split thresholds" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Constraint Merge Split Thresholds" )]
-    public static UnityEngine.Object CreateConstraintMergeSplitThresholds()
+    [MenuItem( "Assets/AGXUnity/Constraint Merge Split Thresholds", priority = 640 )]
+    public static Object CreateConstraintMergeSplitThresholds()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ConstraintMergeSplitThresholds>( "constraint merge split thresholds" );
     }
 
-    [MenuItem("Assets/AGXUnity/Two Body Tire Properties")]
-    public static UnityEngine.Object CreateTwoBodyTireProperties()
+    [MenuItem( "Assets/AGXUnity/Two Body Tire Properties", priority = 660 )]
+    public static Object CreateTwoBodyTireProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TwoBodyTireProperties>("two body tire properties");
+      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
     }
 
-    [MenuItem( "Assets/AGXUnity/Solver Settings" )]
-    public static UnityEngine.Object CrateSolverSettings()
+    [MenuItem( "Assets/AGXUnity/Solver Settings", priority = 680 )]
+    public static Object CrateSolverSettings()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<SolverSettings>( "solver settings" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Deformable Terrain Properties" )]
-    public static UnityEngine.Object CrateDeformableTerrainProperties()
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Properties", priority = 700 )]
+    public static Object CrateDeformableTerrainProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainProperties>( "deformable terrain properties" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Deformable Terrain Material" )]
-    public static UnityEngine.Object CrateDeformableTerrainMaterial()
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Material", priority = 700 )]
+    public static Object CrateDeformableTerrainMaterial()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainMaterial>( "deformable terrain material" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Deformable Terrain Shovel Settings" )]
-    public static UnityEngine.Object CrateDeformableTerrainShovelSettings()
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Shovel Settings", priority = 700 )]
+    public static Object CrateDeformableTerrainShovelSettings()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainShovelSettings>( "deformable terrain shovel settings" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Track Properties" )]
-    public static UnityEngine.Object CreateTrackProperties()
+    [MenuItem( "Assets/AGXUnity/Track Properties", priority = 720 )]
+    public static Object CreateTrackProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackProperties>( "track properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<TrackProperties>( "track properties" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Track Internal Merge Properties" )]
-    public static UnityEngine.Object CreateTrackInternalMergeProperties()
+    [MenuItem( "Assets/AGXUnity/Track Internal Merge Properties", priority = 720 )]
+    public static Object CreateTrackInternalMergeProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<AGXUnity.Model.TrackInternalMergeProperties>( "track internal merge properties" );
+      return Selection.activeObject = Utils.AssetFactory.Create<TrackInternalMergeProperties>( "track internal merge properties" );
     }
 
-    [MenuItem( "Assets/Import AGX file as prefab", validate = true )]
+    [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]
+    public static bool IsUrdfSelected()
+    {
+      return IO.URDF.Reader.GetSelectedUrdfFiles().Length > 0;
+    }
+
+    [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", priority = 550 )]
+    public static GameObject[] InstantiateSelectedUrdfFiles()
+    {
+      var urdfFilePaths = IO.URDF.Reader.GetSelectedUrdfFiles( true );
+      var instances = IO.URDF.Reader.Instantiate( urdfFilePaths, null, false );
+      if ( instances.Length > 0 )
+        Selection.objects = instances;
+      return instances;
+    }
+
+    [MenuItem( "Assets/AGXUnity/Import/Selected STL [instance]", validate = true, priority = 551 )]
+    public static bool IsStlSelected()
+    {
+      return IO.Utils.GetSelectedFiles( ".stl", false ).Length > 0;
+    }
+
+    [MenuItem( "Assets/AGXUnity/Import/Selected STL [instance]", priority = 551 )]
+    public static void ReadSelectedStl()
+    {
+      var selectedStlPaths = IO.Utils.GetSelectedFiles( ".stl", true );
+      var createdParents = new List<GameObject>();
+      using ( new Utils.UndoCollapseBlock( $"Instantiating {selectedStlPaths.Length} STL files" ) ) {
+        foreach ( var selectedStlPath in selectedStlPaths ) {
+          try {
+            createdParents.AddRange( AGXUnity.IO.StlFileImporter.Instantiate( selectedStlPath,
+                                                                              obj => Undo.RegisterCreatedObjectUndo( obj, "Created " +
+                                                                                                                          obj.GetType().Name ) ) );
+          }
+          catch ( Exception e ) {
+            Debug.LogException( e );
+            continue;
+          }
+        }
+      }
+      if ( createdParents.Count > 0 )
+        Selection.objects = createdParents.ToArray();
+    }
+
+    [MenuItem( "Assets/Import AGX Dynamics file [prefab]", validate = true )] // <- Remove this for AGXUnity -> Import.
+    [MenuItem( "Assets/AGXUnity/Import/Selected AGX Dynamics file [prefab]", validate = true, priority = 552 )]
     public static bool IsAGXFileSelected()
     {
       bool agxFileFound = false;
@@ -101,60 +146,11 @@ namespace AGXUnityEditor
       return agxFileFound;
     }
 
-    [MenuItem( "Assets/Import AGX file as prefab" )]
+    [MenuItem( "Assets/Import AGX Dynamics file [prefab]" )] // <- Remove this for AGXUnity -> Import.
+    [MenuItem( "Assets/AGXUnity/Import/Selected AGX Dynamics file [prefab]", priority = 552 )]
     public static void GenerateAGXFileAsPrefab()
     {
       IO.AGXFileImporter.Import( Selection.objects );
-    }
-
-    [MenuItem( "Assets/AGXUnity/Utils/Patch AGXUnity asset(s)" )]
-    public static void ConvertDeprecatedToAGXUnity()
-    {
-      var hasFolder = false;
-      var hasFile = false;
-
-      foreach ( var guid in Selection.assetGUIDs ) {
-        var isFolder = AssetDatabase.IsValidFolder( AssetDatabase.GUIDToAssetPath( guid ) );
-        hasFolder = hasFolder || isFolder;
-        hasFile = hasFile || !isFolder;
-      }
-
-      var searchSubFolders = hasFolder && EditorUtility.DisplayDialog( "Patch AGXUnity assets(s)", "Search sub-folders for files to patch?", "Yes", "No" );
-      if ( hasFolder )
-        System.Threading.Thread.Sleep( 250 );
-      var saveBackup = ( hasFolder || hasFile ) && EditorUtility.DisplayDialog( "Patch AGXUnity assets(s)", "Save backup of affected files?", "Yes", "No" );
-
-      var dllToScriptResolver = new IO.DllToScriptResolver();
-      if ( !dllToScriptResolver.IsValid )
-        return;
-
-      var numChanged = 0;
-      foreach ( var guid in Selection.assetGUIDs ) {
-        var localAssetPath = AssetDatabase.GUIDToAssetPath( guid ).Remove( 0, "Assets".Length );
-        var path = UnityEngine.Application.dataPath + localAssetPath;
-        if ( AssetDatabase.IsValidFolder( AssetDatabase.GUIDToAssetPath( guid ) ) ) {
-          try {
-            numChanged += dllToScriptResolver.PatchFilesInDirectory( path,
-                                                                     searchSubFolders ?
-                                                                       System.IO.SearchOption.AllDirectories :
-                                                                       System.IO.SearchOption.TopDirectoryOnly,
-                                                                     saveBackup );
-          }
-          catch ( Exception e ) {
-            UnityEngine.Debug.LogException( e );
-          }
-        }
-        else {
-          try {
-            numChanged += System.Convert.ToInt32( dllToScriptResolver.PatchFile( path, saveBackup ) );
-          }
-          catch ( Exception e ) {
-            UnityEngine.Debug.LogException( e );
-          }
-        }
-
-        UnityEngine.Debug.Log( "Number of files changed: " + numChanged );
-      }
     }
   }
 }

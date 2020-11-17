@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
@@ -195,12 +196,19 @@ namespace AGXUnityEditor.IO
     /// <returns>Path with <paramref name="root"/> as root.</returns>
     public static string MakeRelative( string complete, string root )
     {
-      Uri completeUri = new Uri( complete );
-      Uri rootUri = new Uri( root );
-      Uri relUri = rootUri.MakeRelativeUri( completeUri );
+      var completeUri = new Uri( complete );
+      var rootUri = new Uri( root );
+      var relUri = rootUri.MakeRelativeUri( completeUri );
       return Uri.UnescapeDataString( relUri.ToString() );
     }
 
+    /// <summary>
+    /// Finds assets of given type <typeparamref name="T"/> inside the given
+    /// <paramref name="directory"/>.
+    /// </summary>
+    /// <typeparam name="T">Asset type.</typeparam>
+    /// <param name="directory">Directory relative to the projects folder.</param>
+    /// <returns>Array of assets of given type in the given directory.</returns>
     public static T[] FindAssetsOfType<T>( string directory )
       where T : Object
     {
@@ -209,6 +217,14 @@ namespace AGXUnityEditor.IO
                select obj as T ).ToArray();
     }
 
+    /// <summary>
+    /// Finds assets of given type <paramref name="type"/> inside the given
+    /// <paramref name="directory"/>.
+    /// </summary>
+    /// <typeparam name="T">Asset type.</typeparam>
+    /// <param name="directory">Directory relative to the projects folder.</param>
+    /// <param name="type">Asset type.</param>
+    /// <returns>Array of assets of given type in the given directory.</returns>
     public static Object[] FindAssetsOfType( string directory, Type type )
     {
       // FindAssets will return same GUID for all grouped assets (AddObjectToAsset), so
@@ -227,6 +243,39 @@ namespace AGXUnityEditor.IO
                from obj
                in AssetDatabase.LoadAllAssetsAtPath( AssetDatabase.GUIDToAssetPath( guid ) )
                select obj ).ToArray();
+    }
+
+    /// <summary>
+    /// Finds selected assets with extension <paramref name="fileExtension"/>.
+    /// </summary>
+    /// <param name="fileExtension">File extension, e.g., ".txt"."</param>
+    /// <param name="warnAboutDifferentExtensions">True to warn about assets that doesn't match <paramref name="fileExtension"/>.</param>
+    /// <returns>Array of asset paths to selected assets of given <paramref name="fileExtension"/> extension.</returns>
+    public static string[] GetSelectedFiles( string fileExtension,
+                                             bool warnAboutDifferentExtensions = false )
+    {
+      if ( string.IsNullOrEmpty( fileExtension ) )
+        return new string[] { };
+      if ( fileExtension[ 0 ] != '.' )
+        fileExtension = '.' + fileExtension;
+
+      var filesWithCorrectExtension = new List<string>();
+      var filesWithWrongExtension = new List<string>();
+      foreach ( var guid in Selection.assetGUIDs ) {
+        var assetPath = AssetDatabase.GUIDToAssetPath( guid );
+        if ( string.IsNullOrEmpty( assetPath ) )
+          continue;
+        if ( Path.GetExtension( assetPath ).ToLower() == fileExtension.ToLower() )
+          filesWithCorrectExtension.Add( assetPath );
+        else if ( warnAboutDifferentExtensions )
+          filesWithWrongExtension.Add( assetPath );          
+      }
+
+      foreach ( var fileWithWrongExtension in filesWithWrongExtension )
+        Debug.LogWarning( $"File extension of {AGXUnity.Utils.GUI.AddColorTag( fileWithWrongExtension, Color.red )} " +
+                          $"doesn't match the given {fileExtension} extension." );
+
+      return filesWithCorrectExtension.ToArray();
     }
   }
 }
