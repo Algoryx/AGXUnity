@@ -256,20 +256,36 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// terrain shovel instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the shovel has been created.
+    /// </remarks>
+    /// <param name="shovel">Terrain shovel instance to synchronize.</param>
+    public void Synchronize( DeformableTerrainShovel shovel )
+    {
+      try {
+        m_singleSynchronizeInstance = shovel;
+        Utils.PropertySynchronizer.Synchronize( this );
+      }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
+    /// <summary>
     /// Register as listener of these settings. Current settings will
     /// be applied to the shovel instance directly when added.
     /// </summary>
     /// <param name="shovel">Deformable shovel instance to which these settings should apply.</param>
     public void Register( DeformableTerrainShovel shovel )
     {
-      if ( !m_shovels.Contains( shovel ) ) {
+      if ( !m_shovels.Contains( shovel ) )
         m_shovels.Add( shovel );
 
-        // Synchronizing settings for all shovels. Could be
-        // avoided by adding a state so that Propagate only
-        // shows current added shovel.
-        Utils.PropertySynchronizer.Synchronize( this );
-      }
+      Synchronize( shovel );
     }
 
     /// <summary>
@@ -300,11 +316,21 @@ namespace AGXUnity.Model
       if ( action == null )
         return;
 
+      if ( m_singleSynchronizeInstance != null ) {
+        if ( m_singleSynchronizeInstance.Native != null )
+          action( m_singleSynchronizeInstance.Native );
+        return;
+      }
+
       foreach ( var shovel in m_shovels )
         if ( shovel.Native != null )
           action( shovel.Native );
     }
 
+    [NonSerialized]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
+
+    [NonSerialized]
+    private DeformableTerrainShovel m_singleSynchronizeInstance = null;
   }
 }

@@ -280,16 +280,36 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Register( DeformableTerrain terrain )
+    /// <summary>
+    /// Explicit synchronization of all properties to the given
+    /// terrain instance.
+    /// </summary>
+    /// <remarks>
+    /// This call wont have any effect unless the native instance
+    /// of the terrain has been created.
+    /// </remarks>
+    /// <param name="terrain">Terrain instance to synchronize.</param>
+    public void Synchronize( DeformableTerrain terrain )
     {
-      if ( !m_terrains.Contains( terrain ) ) {
-        m_terrains.Add( terrain );
-
-        // Synchronizing properties for all terrains. Could be
-        // avoided by adding a state so that Propagate only
-        // shows current added terrain.
+      try {
+        m_singleSynchronizeInstance = terrain;
         Utils.PropertySynchronizer.Synchronize( this );
       }
+      finally {
+        m_singleSynchronizeInstance = null;
+      }
+    }
+
+    public void Register( DeformableTerrain terrain )
+    {
+      if ( !m_terrains.Contains( terrain ) )
+        m_terrains.Add( terrain );
+
+      // Propagating our properties to the newly registered
+      // deformable terrain. It's better to synchronize one
+      // or more times too many than to miss synchronization
+      // when the native instance of the terrain has been created.
+      Synchronize( terrain );
     }
 
     public void Unregister( DeformableTerrain terrain )
@@ -315,11 +335,21 @@ namespace AGXUnity.Model
       if ( action == null )
         return;
 
+      if ( m_singleSynchronizeInstance != null ) {
+        if ( m_singleSynchronizeInstance.Native != null )
+          action( m_singleSynchronizeInstance.Native.getProperties() );
+        return;
+      }
+
       foreach ( var terrain in m_terrains )
         if ( terrain.Native != null )
           action( terrain.Native.getProperties() );
     }
 
+    [NonSerialized]
     private List<DeformableTerrain> m_terrains = new List<DeformableTerrain>();
+
+    [NonSerialized]
+    private DeformableTerrain m_singleSynchronizeInstance = null;
   }
 }
