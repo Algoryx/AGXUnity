@@ -56,15 +56,13 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private float m_fixedUpdateRealTimeFactor = 0.333f;
+    private float m_fixedUpdateRealTimeFactor = 0.0f;
 
     /// <summary>
     /// Value defining the maximum time we may spend in FixedUpdate. Setting
     /// this value to 1.0 means we may not spend more time than Time.fixedDeltaTime,
     /// resulting in slow-motion looking simulations when the simulation time is
-    /// high - but the rendering FPS is still (relatively) high. Default: 0.333,
-    /// i.e., 3 * Time.fixedDeltaTime as maximum time spent in FixedUpdate to
-    /// resolve simulation performance spikes.
+    /// high - but the rendering FPS is still (relatively) high. Default: 0.0, disabled.
     /// 
     /// 0.0: Disabled - every FixedUpdate callback will call simulation.stepForward().
     /// 0.333: Three times fixedDeltaTime may be spent stepping the simulation.
