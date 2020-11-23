@@ -668,33 +668,17 @@ namespace AGXUnityEditor
         // This is necessary when e.g., terrain dynamically loads dll's.
         AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
 
+        var initSuccess = false;
         try {
           AGXUnity.NativeHandler.Instance.Register( null );
 
-          if ( GetRequestScriptReloadData().Bool ) {
-            Debug.Log( AGXUnity.Utils.GUI.AddColorTag( "AGX Dynamics successfully loaded.", Color.green ) );
-            GetRequestScriptReloadData().Bool = false;
-          }
+          initSuccess = true;
         }
-        catch ( TypeInitializationException ) {
-          var lastRequestData = GetRequestScriptReloadData();
-          if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
-            lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
-            lastRequestData.Bool  = true;
-#if UNITY_2019_3_OR_NEWER
-            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
-            EditorUtility.RequestScriptReload();
-#else
-            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
-#endif
-          }
+        catch ( Exception ) {
+        }
 
+        if ( !HandleScriptReload( initSuccess ) )
           return EnvironmentState.Uninitialized;
-        }
-        catch ( Exception e ) {
-          Debug.LogException( e );
-          return EnvironmentState.Uninitialized;
-        }
 
         if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
           AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
@@ -713,8 +697,11 @@ namespace AGXUnityEditor
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
       }
+      // Check if user would like to initialize AGX Dynamics with an
+      // installed (or Algoryx developer) version.
       else {
-        ExternalAGXInitializer.Initialize();
+        if ( !HandleScriptReload( ExternalAGXInitializer.Initialize() ) )
+          return EnvironmentState.Uninitialized;
       }
 
       // This validate is only for "license status" window so
@@ -733,6 +720,30 @@ namespace AGXUnityEditor
 
       return EnvironmentState.Initialized;
 #endif
+    }
+
+    private static bool HandleScriptReload( bool success )
+    {
+      var lastRequestData = GetRequestScriptReloadData();
+      if ( success ) {
+        if ( lastRequestData.Bool )
+          Debug.Log( "AGX Dynamics successfully loaded.".Color( Color.green ) );
+        lastRequestData.Bool = false;
+      }
+      else {
+        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+          lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+          lastRequestData.Bool = true;
+#if UNITY_2019_3_OR_NEWER
+          Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
+          EditorUtility.RequestScriptReload();
+#else
+          Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
+#endif
+        }
+      }
+
+      return success;
     }
 
     private static EditorDataEntry GetRequestScriptReloadData()
