@@ -88,11 +88,15 @@ namespace AGXUnityEditor.Tools
       var newModel = (TrackWheelModel)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Model" ),
                                                                  wheel.Model,
                                                                  InspectorEditor.Skin.Popup );
-      if ( newModel != wheel.Model ) {
+      var newProperties = (TrackWheelProperty)EditorGUILayout.EnumFlagsField( GUI.MakeLabel( "Properties" ),
+                                                                              wheel.Properties,
+                                                                              InspectorEditor.Skin.Popup );
+      if ( newModel != wheel.Model || newProperties != wheel.Properties ) {
         var trackWheels = roller.GetComponents<TrackWheel>();
         Undo.RecordObjects( trackWheels, "Track Wheel Model" );
         foreach ( var trackWheel in trackWheels ) {
           trackWheel.Model = newModel;
+          trackWheel.Properties = newProperties;
         }
       }
     }
