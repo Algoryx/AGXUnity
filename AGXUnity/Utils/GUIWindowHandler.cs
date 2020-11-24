@@ -277,6 +277,7 @@ namespace AGXUnity.Utils
 
         if ( data.RequestFocus ) {
           UnityEngine.GUI.FocusWindow( data.Id );
+          UnityEngine.GUI.BringWindowToFront( data.Id );
           data.RequestFocus = false;
         }
 

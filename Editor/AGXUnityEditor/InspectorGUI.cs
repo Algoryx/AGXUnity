@@ -29,19 +29,6 @@ namespace AGXUnityEditor
       return content;
     }
 
-    public static float GetWidth( GUIContent content, GUIStyle style )
-    {
-      var width = 0.0f;
-      var maxWidth = 0.0f;
-      style.CalcMinMaxWidth( content, out width, out maxWidth );
-      return width;
-    }
-
-    public static float GetWidthIncludingIndent( GUIContent content, GUIStyle style )
-    {
-      return GetWidth( content, style ) + IndentScope.PixelLevel;
-    }
-
     public static float LayoutMagicNumber
     {
       get
