@@ -516,7 +516,10 @@ namespace AGXUnity.Model
         Debug.LogWarning( "Belt: No tracks found.", this );
         return false;
       }
-      if ( tracks.Any( track => track.GetInitialized<Track>() == null ) ) {
+      if ( tracks.Any( track => track.GetInitialized<Track>() == null ) ||
+           // Tracks has zero nodes when the license isn't loaded or
+           // doesn't include the tracks module.
+           tracks.Any( Track => Track.Native.getNumNodes() == 0 ) ) {
         Debug.LogError( "Belt: One or more tracks failed to initialize.", this );
         return false;
       }
@@ -628,8 +631,8 @@ namespace AGXUnity.Model
               track.InternalMergeProperties = InternalMergeProperties;
               track.Material                = Material;
 
-              if ( GetComponent<AGXUnity.Rendering.TrackRenderer>() == null )
-                AddComponent<AGXUnity.Rendering.TrackRenderer>( gameObject );
+              if ( GetComponent<Rendering.TrackRenderer>() == null )
+                AddComponent<Rendering.TrackRenderer>( gameObject );
             }
             track.hideFlags = HideFlags.HideInInspector;
 
@@ -741,7 +744,7 @@ namespace AGXUnity.Model
 
     private Track[] FindTracks()
     {
-      return ( from track in GetComponentsInChildren<Track>()
+      return ( from track in GetComponents<Track>()
                let wheel = track.Wheels.FirstOrDefault()
                where wheel != null && wheel.Frame.Parent != null
                orderby wheel.Frame.CalculateLocalPosition( wheel.RigidBody.gameObject ).y
@@ -773,7 +776,7 @@ namespace AGXUnity.Model
           }
         }
         else {
-          var renderer = track.GetComponent<AGXUnity.Rendering.TrackRenderer>();
+          var renderer = track.GetComponent<Rendering.TrackRenderer>();
           if ( renderer == null )
             continue;
           var data = renderer.GetData( track );
