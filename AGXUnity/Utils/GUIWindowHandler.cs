@@ -51,7 +51,7 @@ namespace AGXUnity.Utils
       /// <returns></returns>
       public bool Contains( Vector2 position )
       {
-        Rect rect = new Rect( m_rect );
+        var rect = new Rect( m_rect );
         rect.position += new Vector2( 0, -20 );
         return rect.Contains( position );
       }
@@ -230,6 +230,19 @@ namespace AGXUnity.Utils
     }
 
     /// <summary>
+    /// Finds window data given predicate, e.g., data => data.Title == myTitle.
+    /// </summary>
+    /// <param name="predicate">Predicate for data.</param>
+    /// <returns>Data if matched with given predicate.</returns>
+    public Data GetWindowData( Predicate<Data> predicate )
+    {
+      foreach ( var data in m_activeWindows.Values )
+        if ( predicate( data ) )
+          return data;
+      return null;
+    }
+
+    /// <summary>
     /// Finds current window the mouse pointer is over. Null if none.
     /// </summary>
     /// <param name="mousePosition">Current scene view mouse position.</param>
@@ -244,33 +257,33 @@ namespace AGXUnity.Utils
 
     public bool RenderWindows( Event current )
     {
-      List<Data> windowsToClose = new List<Data>();
-      foreach ( Data data in m_activeWindows.Values ) {
-        Rect rect = GUILayout.Window( data.Id,
-                                      data.GetRect(),
-                                      id =>
-                                      {
-                                        // Call to the user method.
-                                        EventType windowEventType = current.GetTypeForControl( id );
-                                        data.Callback( windowEventType );
+      var windowsToClose = new List<Data>();
+      foreach ( var data in m_activeWindows.Values ) {
+        var rect = GUILayout.Window( data.Id,
+                                     data.GetRect(),
+                                     id =>
+                                     {
+                                       // Call to the user method.
+                                       EventType windowEventType = current.GetTypeForControl( id );
+                                       data.Callback( windowEventType );
 
-                                        // Handle movable window.
-                                        if ( data.Movable ) {
-                                          // We'll have Repaint, Layout etc. events here as well and
-                                          // GUI.DragWindow has to be called for all these other events.
-                                          // Call DragWindow from mouse down to mouse up.
-                                          data.IsMoving = windowEventType != EventType.MouseUp &&
-                                                          ( data.IsMoving || windowEventType == EventType.MouseDown );
+                                       // Handle movable window.
+                                       if ( data.Movable ) {
+                                         // We'll have Repaint, Layout etc. events here as well and
+                                         // GUI.DragWindow has to be called for all these other events.
+                                         // Call DragWindow from mouse down to mouse up.
+                                         data.IsMoving = windowEventType != EventType.MouseUp &&
+                                                         ( data.IsMoving || windowEventType == EventType.MouseDown );
 
-                                          if ( data.IsMoving )
-                                            UnityEngine.GUI.DragWindow();
-                                        }
+                                         if ( data.IsMoving )
+                                           UnityEngine.GUI.DragWindow();
+                                       }
 
-                                        EatMouseEvents( data );
-                                      },
-                                      data.Title,
-                                      GUI.Skin.window,
-                                      new GUILayoutOption[] { GUILayout.Width( data.Size.x ) } );
+                                       EatMouseEvents( data );
+                                     },
+                                     data.Title,
+                                     GUI.Skin.window,
+                                     new GUILayoutOption[] { GUILayout.Width( data.Size.x ) } );
 
         data.Size     = rect.size;
         data.Position = rect.position;
@@ -283,7 +296,7 @@ namespace AGXUnity.Utils
 
         bool hasListener = data.CloseEventListener.GetInvocationList().Length > 1;
         if ( hasListener ) {
-          Data.CloseEventType currentCloseEvent = Data.CloseEventType.None;
+          var currentCloseEvent = Data.CloseEventType.None;
           if ( IsKeyEscapeDown( current ) )
             currentCloseEvent = Data.CloseEventType.KeyEscape;
           else if ( IsLeftMouseClick( current ) && !data.Contains( current.mousePosition ) )
@@ -294,7 +307,7 @@ namespace AGXUnity.Utils
         }
       }
 
-      foreach ( Data data in windowsToClose )
+      foreach ( var data in windowsToClose )
         Close( data.Callback );
 
       // Explicit repaint when the mouse is moved so that the window
