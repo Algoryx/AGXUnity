@@ -465,6 +465,29 @@ namespace AGXUnityEditor
         EditorData.Instance.GC();
     }
 
+#if UNITY_2020_1_OR_NEWER
+    private static double s_lastPickGameObjectTime = 0.0;
+#endif
+
+    private static bool TimeToPick()
+    {
+      // We receive many calls to UpdateMouseOverPrimitives from
+      // OnSceneView in Unity 2020 when moving the mouse over the
+      // scene view. HandleUtility.PickGameObject will update gizmos
+      // and that takes a lot of time (e.g., a scene with many
+      // constraints). With this we're only calling PickGameObject
+      // in at maximum 10 times per second.
+#if UNITY_2020_1_OR_NEWER
+      if ( EditorApplication.timeSinceStartup - s_lastPickGameObjectTime > 0.1 ) {
+        s_lastPickGameObjectTime = EditorApplication.timeSinceStartup;
+        return true;
+      }
+      return false;
+#else
+      return true;
+#endif
+    }
+
     public static void UpdateMouseOverPrimitives( Event current, bool forced = false )
     {
       // Can't perform picking during repaint event.
@@ -486,10 +509,11 @@ namespace AGXUnityEditor
         // If the mouse is hovering a scene view window - MouseOverObject should be null.
         if ( SceneViewGUIWindowHandler.GetMouseOverWindow( current.mousePosition ) != null )
           MouseOverObject = null;
-        else
+        else if ( forced || TimeToPick() ) {
           MouseOverObject = RouteObject( HandleUtility.PickGameObject( current.mousePosition,
                                                                        false,
                                                                        ignoreList.ToArray() ) ) as GameObject;
+        }
       }
 
       // Early exit if we haven't any active visual primitives.
