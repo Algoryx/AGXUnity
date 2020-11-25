@@ -542,6 +542,7 @@ namespace AGXUnity
       public Rect RectMemoryEnabled { get; set; }
       public Font Font { get; private set; }
       public GUIStyle LabelStyle { get; set; }
+      public GUIStyle WindowStyle { get; set; }
       public float ManagedStepForward { get; set; }
 
       public StatisticsWindowData( Rect rect, Rect rectMemoryEnabled )
@@ -562,6 +563,13 @@ namespace AGXUnity
         LabelStyle = Utils.GUI.Align( Utils.GUI.Skin.label, TextAnchor.MiddleLeft );
         if ( Font != null )
           LabelStyle.font = Font;
+
+        WindowStyle = new GUIStyle( Utils.GUI.Skin.window );
+        if ( Font != null ) {
+          WindowStyle.font = Font;
+          // Increased top padding so that the title name isn't too far up.
+          WindowStyle.padding.top = 22;
+        }
       }
 
       public void Dispose()
@@ -615,8 +623,8 @@ namespace AGXUnity
       var dataColor     = Color.Lerp( Color.white, Color.magenta, 0.2f );
       var memoryColor   = Color.Lerp( Color.white, Color.red, 0.2f );
 
-      var labelStyle = m_statisticsWindowData.LabelStyle;
-      var stats = agx.Statistics.instance();
+      var labelStyle         = m_statisticsWindowData.LabelStyle;
+      var stats              = agx.Statistics.instance();
       var simTime            = stats.getTimingInfo( "Simulation", "Step forward time" );
       var spaceTime          = stats.getTimingInfo( "Simulation", "Collision-detection time" );
       var dynamicsSystemTime = stats.getTimingInfo( "Simulation", "Dynamics-system time" );
@@ -659,7 +667,7 @@ namespace AGXUnity
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Post step callbacks:   ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PostStepForward ).PadLeft( 6, ' ' ) ), labelStyle );
                         },
                         "AGX Dynamics statistics",
-                        Utils.GUI.Skin.window );
+                        m_statisticsWindowData.WindowStyle );
     }
 
     public void OpenInNativeViewer()

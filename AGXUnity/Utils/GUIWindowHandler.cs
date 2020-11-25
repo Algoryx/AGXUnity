@@ -110,6 +110,11 @@ namespace AGXUnity.Utils
       /// </summary>
       public bool RequestFocus { get; set; }
 
+      /// <summary>
+      /// Window GUI style.
+      /// </summary>
+      public GUIStyle Style { get; set; } = null;
+
       public enum CloseEventType
       {
         None,
@@ -176,7 +181,12 @@ namespace AGXUnity.Utils
     /// <param name="title">Title of the window.</param>
     /// <param name="requestFocus">Request focus to the window.</param>
     /// <returns>Window data.</returns>
-    public Data Show( Action<EventType> guiCallback, Vector2 size, Vector2 position, string title, bool requestFocus = false )
+    public Data Show( Action<EventType> guiCallback,
+                      Vector2 size,
+                      Vector2 position,
+                      string title,
+                      bool requestFocus = false,
+                      GUIStyle style = null )
     {
       if ( guiCallback == null )
         throw new ArgumentNullException( "guiCallback" );
@@ -191,6 +201,7 @@ namespace AGXUnity.Utils
       data.Position     = position;
       data.Title        = title;
       data.RequestFocus = requestFocus;
+      data.Style        = style ?? GUI.Skin.window;
 
       return data;
     }
@@ -282,7 +293,7 @@ namespace AGXUnity.Utils
                                        EatMouseEvents( data );
                                      },
                                      data.Title,
-                                     GUI.Skin.window,
+                                     data.Style,
                                      new GUILayoutOption[] { GUILayout.Width( data.Size.x ) } );
 
         data.Size     = rect.size;
