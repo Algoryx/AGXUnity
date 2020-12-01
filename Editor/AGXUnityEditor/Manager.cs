@@ -696,6 +696,9 @@ namespace AGXUnityEditor
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
       try {
+        foreach ( var dir in AGXUnity.LicenseManager.LicenseFileDirectories )
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dir );
+
         AGXUnity.NativeHandler.Instance.ValidateLicense();
         if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
              !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )

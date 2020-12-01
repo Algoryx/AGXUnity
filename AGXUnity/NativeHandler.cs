@@ -67,11 +67,16 @@ namespace AGXUnity
         for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
           envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
 
+        // TODO: Reduce this? RUNTIME_PATH is required for AGX Dynamics and
+        //       one RESOURCE_PATH for additional data one SOURCE_PATH for
+        //       the license.
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPath );
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataPluginsPath );
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
+        foreach ( var dir in LicenseManager.LicenseFileDirectories )
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dir );
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
@@ -96,21 +101,6 @@ namespace AGXUnity
   /// </summary>
   public class NativeHandler
   {
-#region Singleton Stuff
-    private static NativeHandler m_instance = null;
-    public static NativeHandler Instance
-    {
-      get
-      {
-        if ( m_instance == null )
-          m_instance = new NativeHandler();
-        return m_instance;
-      }
-    }
-#endregion
-
-    private InitShutdownAGXDynamics m_isAgx = null;
-
     NativeHandler()
     {
       m_isAgx = new InitShutdownAGXDynamics();
@@ -198,5 +188,20 @@ namespace AGXUnity
 
       return (HasValidLicense = agx.Runtime.instance().verifyAndUnlock( licenseStr ));
     }
+
+    #region Singleton Stuff
+    private static NativeHandler s_instance = null;
+    public static NativeHandler Instance
+    {
+      get
+      {
+        if ( s_instance == null )
+          s_instance = new NativeHandler();
+        return s_instance;
+      }
+    }
+    #endregion
+
+    private InitShutdownAGXDynamics m_isAgx = null;
   }
 }

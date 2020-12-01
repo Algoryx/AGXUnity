@@ -846,6 +846,74 @@ namespace AGXUnityEditor
       return false;
     }
 
+    /// <summary>
+    /// Text field with selectable text which isn't possible to edit.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in the text field.</param>
+    public static void SelectableTextField( GUIContent label,
+                                            string text )
+    {
+      SelectableTextField( label, text, InspectorEditor.Skin.TextField );
+    }
+
+    /// <summary>
+    /// Text field with selectable text which isn't possible to edit.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in the text field.</param>
+    /// <param name="textFieldStyle">Style of text field.</param>
+    public static void SelectableTextField( GUIContent label,
+                                            string text,
+                                            GUIStyle textFieldStyle )
+    {
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( label, InspectorEditor.Skin.Label );
+        EditorGUILayout.SelectableLabel( text,
+                                         textFieldStyle,
+                                         GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
+      }
+    }
+
+    /// <summary>
+    /// Displays license information as:
+    ///   License expires            2020-05-13 (14 days 7 hours remaining)
+    /// or
+    ///   License expired            License not found
+    /// or
+    ///   License expired            2020-05-13 (3 days ago)
+    /// </summary>
+    /// <param name="info">License info.</param>
+    public static void LicenseEndDateField( AGXUnity.LicenseManager.LicenseInfo info )
+    {
+      var fieldColor = EditorGUIUtility.isProSkin ?
+                         Color.white :
+                         Color.black;
+      var fieldErrorColor = Color.Lerp( Color.red,
+                                        Color.black,
+                                        0.25f );
+      var fieldOkColor = Color.Lerp( Color.green,
+                                     Color.black,
+                                     0.35f );
+      var fieldWarningColor = Color.Lerp( Color.yellow,
+                                          Color.black,
+                                          0.45f );
+      EditorGUILayout.LabelField( GUI.MakeLabel( info.LicenseExpired ?
+                                                   "License expired" :
+                                                   "License expires" ),
+                                  info.ValidEndDate ?
+                                    GUI.MakeLabel( info.EndDate.ToString( "yyyy-MM-dd" ) +
+                                                   GUI.AddColorTag( $" ({info.DiffString} {( info.LicenseExpired ? "ago" : "remaining" )})",
+                                                                    info.LicenseExpired ?
+                                                                      fieldErrorColor :
+                                                                      info.IsLicenseAboutToBeExpired( 10 ) ?
+                                                                        fieldWarningColor :
+                                                                        fieldOkColor ),
+                                                   fieldColor ) :
+                                    GUI.MakeLabel( "License not found", fieldErrorColor ),
+                                  InspectorEditor.Skin.Label );
+    }
+
     public static Color ProBackgroundColor = new Color32( 56, 56, 56, 255 );
     public static Color IndieBackgroundColor = new Color32( 194, 194, 194, 255 );
 
