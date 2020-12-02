@@ -278,24 +278,6 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
-    private void DrawGizmos( Color color )
-    {
-      Gizmos.color = color;
-      Native.getHinge().getAttachmentPair().transform();
-      var position = Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.ANCHOR_POS ).ToHandedVector3();
-      Gizmos.DrawMesh( Constraint.GetOrCreateGizmosMesh(),
-                       position,
-                       Quaternion.FromToRotation( Vector3.up,
-                                                  Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.N ).ToHandedVector3() ),
-                       0.85f * Rendering.Spawner.Utils.FindConstantScreenSizeScale( position, Camera.current ) * Vector3.one );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      if ( Native != null )
-        DrawGizmos( Color.Lerp( Color.yellow, Color.green, 0.25f ) );
-    }
-
     private bool m_tireRimConstraintInitialState = true;
   }
 }
