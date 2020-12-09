@@ -251,9 +251,18 @@ namespace AGXUnity.Model
                                          FindNativeTransform( TireRigidBody ) );
       GetSimulation().add( Native );
 
-      if ( TireRimConstraint != null && TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
-        m_tireRimConstraintInitialState = TireRimConstraint.enabled;
-        TireRimConstraint.enabled = false;
+      if ( TireRimConstraint != null ) {
+        // Disable the tire rim constraint since agx.TwoBodyTire will
+        // create an additional constraint between the tire and the rim
+        // with tire properties applied.
+        if ( TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
+          m_tireRimConstraintInitialState = TireRimConstraint.enabled;
+          TireRimConstraint.enabled = false;
+        }
+
+        // The "hinge" is replacing the TireRimConstraint, take the
+        // solve type from disabled rim constraint.
+        Native.getHinge().setSolveType( Constraint.Convert( TireRimConstraint.SolveType ) );
       }
 
       if ( Properties != null )
