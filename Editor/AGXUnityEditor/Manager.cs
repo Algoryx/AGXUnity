@@ -659,7 +659,7 @@ namespace AGXUnityEditor
         SceneView.RepaintAll();
     }
 
-    private enum EnvironmentState
+    internal enum EnvironmentState
     {
       Unknown,
       Updating,
@@ -667,7 +667,7 @@ namespace AGXUnityEditor
       Initialized
     }
 
-    private static EnvironmentState ConfigureEnvironment()
+    internal static EnvironmentState ConfigureEnvironment()
     {
 #if AGXUNITY_UPDATING
       Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );

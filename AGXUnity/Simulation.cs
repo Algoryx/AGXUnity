@@ -180,9 +180,9 @@ namespace AGXUnity
 
         if ( m_displayStatistics && m_statisticsWindowData == null )
           m_statisticsWindowData = new StatisticsWindowData( new Rect( new Vector2( 10, 10 ),
-                                                                       new Vector2( 275, 236 ) ),
+                                                                       new Vector2( 278, 236 ) ),
                                                              new Rect( new Vector2( 10, 10 ),
-                                                                       new Vector2( 275, 320 ) ) );
+                                                                       new Vector2( 278, 320 ) ) );
         else if ( !m_displayStatistics && m_statisticsWindowData != null ) {
           m_statisticsWindowData.Dispose();
           m_statisticsWindowData = null;
@@ -637,6 +637,9 @@ namespace AGXUnity
       var numShapes      = m_space.getGeometries().Count;
       var numConstraints = m_system.getConstraints().Count +
                            m_space.getGeometryContacts().Count;
+      var numParticles   = Native.getParticleSystem() != null ?
+                             (int)Native.getParticleSystem().getNumParticles() :
+                             0;
 
       GUILayout.Window( m_statisticsWindowData.Id,
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
@@ -654,7 +657,8 @@ namespace AGXUnity
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of bodies:      ", dataColor ) + numBodies ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of shapes:      ", dataColor ) + numShapes ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of constraints: ", dataColor ) + numConstraints ), labelStyle );
-                          GUILayout.Label( "" );
+                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of particles:   ", dataColor ) + numParticles ), labelStyle );
+                          GUILayout.Space( 12 );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "StepForward (managed):", memoryColor ), 14, true ), labelStyle );
                           GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
                           if ( !DisplayMemoryAllocations )

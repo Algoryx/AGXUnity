@@ -251,9 +251,18 @@ namespace AGXUnity.Model
                                          FindNativeTransform( TireRigidBody ) );
       GetSimulation().add( Native );
 
-      if ( TireRimConstraint != null && TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
-        m_tireRimConstraintInitialState = TireRimConstraint.enabled;
-        TireRimConstraint.enabled = false;
+      if ( TireRimConstraint != null ) {
+        // Disable the tire rim constraint since agx.TwoBodyTire will
+        // create an additional constraint between the tire and the rim
+        // with tire properties applied.
+        if ( TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
+          m_tireRimConstraintInitialState = TireRimConstraint.enabled;
+          TireRimConstraint.enabled = false;
+        }
+
+        // The "hinge" is replacing the TireRimConstraint, take the
+        // solve type from disabled rim constraint.
+        Native.getHinge().setSolveType( Constraint.Convert( TireRimConstraint.SolveType ) );
       }
 
       if ( Properties != null )
@@ -276,24 +285,6 @@ namespace AGXUnity.Model
       Native = null;
 
       base.OnDestroy();
-    }
-
-    private void DrawGizmos( Color color )
-    {
-      Gizmos.color = color;
-      Native.getHinge().getAttachmentPair().transform();
-      var position = Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.ANCHOR_POS ).ToHandedVector3();
-      Gizmos.DrawMesh( Constraint.GetOrCreateGizmosMesh(),
-                       position,
-                       Quaternion.FromToRotation( Vector3.up,
-                                                  Native.getHinge().getAttachment( 0 ).get( agx.Attachment.Transformed.N ).ToHandedVector3() ),
-                       0.85f * Rendering.Spawner.Utils.FindConstantScreenSizeScale( position, Camera.current ) * Vector3.one );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      if ( Native != null )
-        DrawGizmos( Color.Lerp( Color.yellow, Color.green, 0.25f ) );
     }
 
     private bool m_tireRimConstraintInitialState = true;

@@ -95,7 +95,7 @@ namespace AGXUnity.Model
       get
       {
         return Mathf.Sign( Vector3.Dot( BucketForwardWorld, RefUpWorld ) ) *
-               Mathf.Acos( Vector3.Dot( BucketForwardWorld, RefForwardWorld ) );
+               Mathf.Acos( Mathf.Clamp( Vector3.Dot( BucketForwardWorld, RefForwardWorld ), -1.0f, 1.0f ) );
       }
     }
 
