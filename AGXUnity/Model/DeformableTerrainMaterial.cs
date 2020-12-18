@@ -856,18 +856,16 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_aggregateStiffnessMultiplier = 2.0f;
+    private float m_aggregateStiffnessMultiplier = 1.0f;
 
     /// <summary>
-    /// Internal Method
-    /// 
     /// The contact stiffness multiplier for the generated contacts between
-    /// the soil aggregates <-> terrain for excavation and deformation. The
+    /// the soil aggregates and terrains for excavation and deformation. The
     /// final Young's modulus value that will be used in the contact material
     /// thus becomes:
     ///   bulkYoungsModulus * stiffnessMultiplier
     /// </summary>
-    [ClampAboveZeroInInspector( true )]
+    [ClampAboveZeroInInspector]
     public float AggregateStiffnessMultiplier
     {
       get
@@ -881,6 +879,33 @@ namespace AGXUnity.Model
         m_aggregateStiffnessMultiplier = value;
         if ( Native != null )
           Native.getExcavationContactProperties().setAggregateStiffnessMultiplier( m_aggregateStiffnessMultiplier );
+      }
+    }
+
+    [SerializeField]
+    private float m_excavationStiffnessMultiplier = 1.0f;
+
+    /// <summary>
+    /// The contact stiffness multiplier for the generated contacts between
+    /// the soil aggregates and shovels in primary excavation. The final
+    /// Young's modulus value that will be used in the contact material
+    /// thus becomes:
+    ///   bulkYoungsModulus * stiffnessMultiplier
+    /// </summary>
+    [ClampAboveZeroInInspector]
+    public float ExcavationStiffnessMultiplier
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getExcavationStiffnessMultiplier() ) :
+                 m_excavationStiffnessMultiplier;
+      }
+      set
+      {
+        m_excavationStiffnessMultiplier = value;
+        if ( Native != null )
+          Native.getExcavationContactProperties().setExcavationStiffnessMultiplier( m_excavationStiffnessMultiplier );
       }
     }
     #endregion

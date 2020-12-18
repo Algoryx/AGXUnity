@@ -277,6 +277,11 @@ namespace AGXUnity.Model
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
+      // Native terrain may change the number of PPGS iterations to default (25).
+      // Override if we have solver settings set to the simulation.
+      if ( Simulation.Instance.SolverSettings != null )
+        GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
+
       return true;
     }
 

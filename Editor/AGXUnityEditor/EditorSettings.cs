@@ -227,6 +227,12 @@ namespace AGXUnityEditor
         EditorDataDirectory + "/Settings.asset"
       };
 
+      if ( Manager.ConfigureEnvironment() != Manager.EnvironmentState.Initialized ) {
+        Debug.LogError( "Unable to initialize AGX Dynamics - missing dll(s)?" );
+        EditorApplication.Exit( 1 );
+        return;
+      }
+
       Debug.Log( "Applying package build settings..." );
       foreach ( var excludedFile in dataFilesToExclude ) {
         var fi = new FileInfo( excludedFile );

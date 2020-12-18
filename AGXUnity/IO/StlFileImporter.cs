@@ -150,9 +150,9 @@ namespace AGXUnity.IO
         else
           createdParents.Add( go );
 
+        onCreate?.Invoke( go );
         onCreate?.Invoke( filter );
         onCreate?.Invoke( renderer );
-        onCreate?.Invoke( go );
       }
 
       return createdParents.ToArray();

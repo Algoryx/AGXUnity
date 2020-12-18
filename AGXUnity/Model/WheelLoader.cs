@@ -517,11 +517,8 @@ namespace AGXUnity.Model
 
       try {
         GetOrCreateTireModelProperties();
-        foreach ( WheelLocation location in Enum.GetValues( typeof( WheelLocation ) ) ) {
-          var tireModel = GetOrCreateTireModel( location );
-          if ( tireModel != null )
-            tireModel.GetInitialized<TwoBodyTire>();
-        }
+        foreach ( WheelLocation location in Enum.GetValues( typeof( WheelLocation ) ) )
+          GetOrCreateTireModel( location )?.GetInitialized<TwoBodyTire>();
       }
       catch ( Exception e ) {
         Debug.LogWarning( "Unable to initialize tire models: " + e.Message );

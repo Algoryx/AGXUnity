@@ -227,6 +227,24 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private int m_ppgsRestingIterations = 25;
+
+    /// <summary>
+    /// Parallel Projected Gauss Seidel (PPGS) resting iterations. Default: 25
+    /// </summary>
+    [Description( "Number of Parallel Projected Gauss Seidel (PPGS) resting iterations, if it is used in the solver. Default: 25" )]
+    public int PpgsRestingIterations
+    {
+      get { return m_ppgsRestingIterations; }
+      set
+      {
+        m_ppgsRestingIterations = Math.Max( value, 0 );
+        if ( SimulationInstance != null )
+          SimulationInstance.getSolver().setNumPPGSRestingIterations( (ulong)m_ppgsRestingIterations );
+      }
+    }
+
     /// <summary>
     /// Assigns default values to a native simulation instance.
     /// </summary>
