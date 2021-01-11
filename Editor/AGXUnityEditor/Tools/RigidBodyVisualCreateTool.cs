@@ -14,9 +14,8 @@ namespace AGXUnityEditor.Tools
       if ( rb == null )
         return false;
 
-      var shapes = rb.GetComponentsInChildren<Shape>();
       int numSupportedNewShapeVisual = 0;
-      foreach ( var shape in shapes )
+      foreach ( var shape in rb.Shapes )
         numSupportedNewShapeVisual += System.Convert.ToInt32( ShapeVisualCreateTool.CanCreateVisual( shape ) );
 
       return numSupportedNewShapeVisual > 0;
@@ -32,8 +31,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
-      var shapes = RigidBody.GetComponentsInChildren<Shape>();
-      foreach ( var shape in shapes )
+      foreach ( var shape in RigidBody.Shapes )
         AddChild( new ShapeVisualCreateTool( shape, false ) );
     }
 

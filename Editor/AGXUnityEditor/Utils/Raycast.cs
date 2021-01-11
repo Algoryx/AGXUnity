@@ -179,15 +179,15 @@ namespace AGXUnityEditor.Utils
     public static Result Intersect( Ray ray, Shape shape )
     {
       var parentUnscale = Vector3.one;
-      if ( shape != null && shape.transform.parent != null )
-        parentUnscale = new Vector3( 1.0f / shape.transform.parent.lossyScale.x,
-                                     1.0f / shape.transform.parent.lossyScale.y,
-                                     1.0f / shape.transform.parent.lossyScale.z );
+      if ( shape != null )
+        parentUnscale = new Vector3( 1.0f / shape.transform.lossyScale.x,
+                                     1.0f / shape.transform.lossyScale.y,
+                                     1.0f / shape.transform.lossyScale.z );
 
       if ( shape is AGXUnity.Collide.Mesh ) {
         var bestResult = Result.Invalid;
         foreach ( var mesh in ( shape as AGXUnity.Collide.Mesh ).SourceObjects ) {
-          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix * Matrix4x4.Scale( parentUnscale ), shape.gameObject );
+          var result = Intersect( ray, mesh, shape.transform.localToWorldMatrix, shape.gameObject );
           if ( result && result.Distance < bestResult.Distance )
             bestResult = result;
         }
@@ -296,16 +296,18 @@ namespace AGXUnityEditor.Utils
       if ( target == null )
         return Result.Invalid;
 
-      var hasShape = target.GetComponent<Shape>() != null;
+      var rb = target.GetComponent<RigidBody>();
+      var hasShape = rb != null && rb.Shapes.Length > 0;
       if ( includeChildren ) {
         return hasShape ?
-                 Intersect( ray, target.GetComponentsInChildren<Shape>() ) :
+                 Intersect( ray, rb.Shapes ) :
                  Intersect( ray, target.GetComponentsInChildren<MeshFilter>() );
       }
       else {
         var filter = target.GetComponent<MeshFilter>();
-        return hasShape ?
-                 Intersect( ray, target.GetComponent<Shape>() ) :
+        var shape = target.GetComponent<Shape>();
+        return shape != null ?
+                 Intersect( ray, shape ) :
                filter != null ?
                  Intersect( ray, filter.sharedMesh, target.transform.localToWorldMatrix, filter.gameObject ) :
                  Result.Invalid;
@@ -318,21 +320,30 @@ namespace AGXUnityEditor.Utils
     /// <param name="ray">Ray in world coordinate system.</param>
     /// <param name="parent">Parent game object.</param>
     /// <param name="predicate">Optional predicate to filter <paramref name="parent"/> children.</param>
+    /// <param name="includeParent">Include parent in the intersection tests - similar to GetComponentsInChildren - default false.</param>
     /// <returns>Array of valid results, closest hit first.</returns>
-    public static Result[] IntersectChildren( Ray ray, GameObject parent, Predicate<GameObject> predicate = null )
+    public static Result[] IntersectChildren( Ray ray,
+                                              GameObject parent,
+                                              Predicate<GameObject> predicate = null,
+                                              bool includeParent = false )
     {
       var results = new List<Result>();
       if ( parent == null )
         return results.ToArray();
 
-      parent.TraverseChildren( go =>
+      Action<GameObject> doTest = go =>
       {
         if ( predicate == null || predicate( go ) ) {
           var result = Intersect( ray, go );
           if ( result )
             results.Add( result );
         }
-      } );
+      };
+
+      if ( includeParent )
+        doTest( parent );
+
+      parent.TraverseChildren( doTest );
 
       results.Sort( ( r1, r2 ) => { return r1.Distance < r2.Distance ? -1 : 1; } );
 

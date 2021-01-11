@@ -100,22 +100,7 @@ namespace AGXUnityEditor
     #region Rigid bodies
     private static GameObject CreateRigidBody( MenuCommand command, GameObject child = null )
     {
-      // It's possible, but very unintuitive, to have validation methods
-      // for GameObject context menu since validation is performed when
-      // the menu item is clicked (i.e., not when shown), so the invalid items
-      // aren't grayed out. Currently it's better to given the user a warning
-      // with context.
-      var parent      = command.context as GameObject;
-      var parentValid = parent == null ||
-                        parent.GetComponentInParent<RigidBody>() == null;
-      if ( !parentValid ) {
-        Debug.LogWarning( "Invalid to create child rigid body to " +
-                          parent.name +
-                          " because parent rigid body already exists.",
-                          parent.GetComponentInParent<RigidBody>() );
-        return null;
-      }
-
+      var parent = command.context as GameObject;
       var go = child != null ?
                  Factory.Create<RigidBody>( child ) :
                  Factory.Create<RigidBody>();
@@ -366,6 +351,12 @@ namespace AGXUnityEditor
     public static GameObject WindAndWaterManager()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<WindAndWaterManager>().gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Managers/Script Asset Manager", priority = 65 )]
+    public static GameObject ScriptAssetManager()
+    {
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ScriptAssetManager>().gameObject;
     }
 
     [MenuItem( "AGXUnity/Managers/Pick Handler (Game View)", priority = 65 )]

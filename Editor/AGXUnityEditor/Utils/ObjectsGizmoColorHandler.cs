@@ -83,8 +83,7 @@ namespace AGXUnityEditor.Utils
       if ( colorData.Colorized )
         return colorData.Color;
 
-      var shapes = rb.GetComponentsInChildren<Shape>();
-      foreach ( var shape in shapes ) {
+      foreach ( var shape in rb.Shapes ) {
         if ( !shape.IsEnabledInHierarchy )
           continue;
 
@@ -124,8 +123,7 @@ namespace AGXUnityEditor.Utils
         return;
 
       Color rbColor = Colorize( rb );
-      var shapes = rb.GetComponentsInChildren<Shape>();
-      foreach ( var shape in shapes ) {
+      foreach ( var shape in rb.Shapes ) {
         if ( !shape.IsEnabledInHierarchy )
           continue;
 

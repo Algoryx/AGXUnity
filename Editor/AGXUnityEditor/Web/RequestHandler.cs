@@ -100,7 +100,12 @@ namespace AGXUnityEditor.Web
 
         data.OnProgress?.Invoke( 1.0f );
 
+#if UNITY_2020_2_OR_NEWER
+        var status = ( data.WebRequest.result == UnityWebRequest.Result.ProtocolError ||
+                       data.WebRequest.result == UnityWebRequest.Result.ConnectionError ) ?
+#else
         var status = ( data.WebRequest.isHttpError || data.WebRequest.isNetworkError ) ?
+#endif
                        Status.Error :
                        Status.Success;
         if ( status == Status.Error )

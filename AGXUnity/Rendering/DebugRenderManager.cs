@@ -96,11 +96,10 @@ namespace AGXUnity.Rendering
     /// </summary>
     public static void OnPostSynchronizeTransforms( RigidBody rb )
     {
-      if ( !IsActiveForSynchronize )
+      if ( rb == null || !IsActiveForSynchronize )
         return;
 
-      Collide.Shape[] shapes = rb.GetComponentsInChildren<Collide.Shape>();
-      foreach ( Collide.Shape shape in shapes )
+      foreach ( var shape in rb.Shapes )
         Instance.SynchronizeShape( shape );
     }
 

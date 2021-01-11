@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using UnityEngine;
 
@@ -9,6 +9,13 @@ namespace AGXUnityEditor.IO
 {
   public static partial class Utils
   {
+    public static class Yaml
+    {
+      public static Regex FileIdMatcher = new Regex( @"\{fileID: (?<fileid>[-0-9]+)", RegexOptions.Compiled );
+
+      public static Regex GuidMatcher = new Regex( @" guid: (?<guid>[a-z0-9]+)", RegexOptions.Compiled );
+    }
+
     public class YamlScope
     {
       public string Name = string.Empty;
@@ -39,7 +46,7 @@ namespace AGXUnityEditor.IO
           if ( !line.StartsWith( "  m_Script:" ) )
             continue;
 
-          var guidMatcher = DllToScriptResolver.GuidMatcher.Match( line );
+          var guidMatcher = Yaml.GuidMatcher.Match( line );
           return guidMatcher.Success && guidMatcher.Value.Contains( "guid: " + guid );
         }
 

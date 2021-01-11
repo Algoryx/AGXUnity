@@ -135,7 +135,14 @@ namespace AGXUnity
   public class DefaultAndUserValueVector3 : DefaultAndUserValue<Vector3>
   {
     public DefaultAndUserValueVector3()
-      : base( new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ) ) { }
+      : base( new Vector3( 1, 1, 1 ), new Vector3( 1, 1, 1 ) )
+    {
+    }
+
+    public DefaultAndUserValueVector3( Vector3 defaultValue, Vector3 userValue )
+      : base( defaultValue, userValue )
+    {
+    }
 
     public override bool Equals( object obj )
     {

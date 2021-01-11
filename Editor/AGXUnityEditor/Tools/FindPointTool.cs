@@ -46,7 +46,9 @@ namespace AGXUnityEditor.Tools
 
         HighlightObject = m_collectedData.Target;
 
-        m_collectedData.RaycastResult = Utils.Raycast.Intersect( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ), m_collectedData.Target );
+        m_collectedData.RaycastResult = Utils.Raycast.Intersect( HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ),
+                                                                 m_collectedData.Target,
+                                                                 m_collectedData.Target.GetComponent<AGXUnity.RigidBody>() != null );
 
         // Done (next state) when the user left click and we've a valid triangle.
         m_collectedData.TriangleGiven = m_collectedData.RaycastResult && Manager.HijackLeftMouseClick();

@@ -87,10 +87,28 @@ namespace AGXUnityEditor.IO
       m_statistics.NumRemovedAssets += unreferencedAssets.Length;
       foreach ( var asset in unreferencedAssets ) {
         Debug.Log( $"{m_filename}: {GUI.AddColorTag( "Removing asset:", Color.red )} {asset.name}" );
+#if UNITY_2018_1_OR_NEWER
         AssetDatabase.RemoveObjectFromAsset( asset );
+#else
+        Object.DestroyImmediate( asset, true );
+#endif
       }
 
       return m_statistics;
+    }
+
+    public bool ContainsAsset<T>( T asset )
+      where T : ScriptableObject
+    {
+      if ( asset == null )
+        return false;
+
+      return m_assets[ RestoredAssetsRoot.FindAssetTypeIndex<T>() ].ContainsKey( asset.GetHashCode() );
+    }
+
+    public bool ContainsAsset( Material material )
+    {
+      return m_assets[ (int)RestoredAssetsRoot.ContainingType.RenderMaterial ].ContainsKey( material.GetHashCode() );
     }
 
     public GameObject GetOrCreateGameObject( agx.Uuid uuid )
@@ -183,6 +201,17 @@ namespace AGXUnityEditor.IO
                                name,
                                onFirstRef,
                                () => new Material( shader ) );
+    }
+
+    public Material GetOrCreateMaterial( Material material,
+                                        string name,
+                                        System.Action<Material> onFirstRef,
+                                        System.Func<Material> factory )
+    {
+      return GetOrCreateAsset( material,
+                               name,
+                               onFirstRef,
+                               factory );
     }
 
     public GameObject[] GetUnreferencedGameObjects()

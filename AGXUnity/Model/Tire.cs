@@ -19,7 +19,7 @@ namespace AGXUnity.Model
     /// <returns>Radius > 0 if radius was found, otherwise 0.</returns>
     public static float FindRadius( RigidBody rb, bool ignoreMeshFilterWhenShapeHasRadius = false )
     {
-      var radiusShapes = FindRadius( rb.GetComponentsInChildren<Collide.Shape>() );
+      var radiusShapes = FindRadius( rb.Shapes );
       if ( radiusShapes > 0.0f && ignoreMeshFilterWhenShapeHasRadius )
         return radiusShapes;
 
@@ -85,7 +85,7 @@ namespace AGXUnity.Model
         return Vector3.zero;
 
       var result = Vector3.zero;
-      foreach ( var shape in tireRigidBody.GetComponentsInChildren<Collide.Shape>() ) {
+      foreach ( var shape in tireRigidBody.Shapes ) {
         if ( shape is Collide.Cylinder || shape is Collide.Capsule )
           result = shape.transform.TransformDirection( Vector3.up );
       }

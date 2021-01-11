@@ -11,13 +11,24 @@ namespace AGXUnityEditor.Menus
     [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", validate = true )]
     public static bool CreateVisualValidation( MenuCommand command )
     {
+#if UNITY_2019_4_OR_NEWER
+      // Issue reported to Unity that command.context == null, making validation
+      // impossible so we'll do some additional validations in CreateVisual instead.
+      return true;
+#else
       return command != null &&
              command.context != null;
+#endif
     }
 
     [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", priority = 21 )]
     public static void CreateVisual( MenuCommand command )
     {
+#if UNITY_2019_4_OR_NEWER
+      if ( command.context == null )
+        return;
+#endif
+
       var go = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
                                                   SelectionMode.Editable ).FirstOrDefault( selected => selected == command.context );
       if ( go == null ) {
