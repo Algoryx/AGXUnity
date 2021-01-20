@@ -9,6 +9,8 @@ namespace AGXUnity.Data
 {
   public class Plot2D : System.IDisposable
   {
+    private string m_yAxisTitle, m_xAxisTitle;
+
     public int NumCurves { get { return m_curves.Count; } }
 
     public Rect MainSurfaceRect
@@ -30,7 +32,7 @@ namespace AGXUnity.Data
       }
     }
 
-    public Plot2D( string title, Vector2 size, Vector2 position )
+    public Plot2D( string title, Vector2 size, Vector2 position, string yAxisTitle = "", string xAxisTitle = "t [s]" )
     {
       m_windowData = GUIWindowHandler.Instance.Show( OnGUI,
                                                      size,
@@ -40,6 +42,9 @@ namespace AGXUnity.Data
       m_windowData.ExpandSize = false;
 
       m_material = new Material( Shader.Find( "Lines/Foo" ) );
+
+      m_xAxisTitle = xAxisTitle;
+      m_yAxisTitle = yAxisTitle;
     }
 
     public void Dispose()
@@ -152,6 +157,33 @@ namespace AGXUnity.Data
         var yValue = Utils.FromNormalizedY( ref valuesRect, 1.0f - yAxisScale );
         UnityEngine.GUI.Label( yValuesRect, GUI.MakeLabel( yValue.ToString( "F1" ), Color.black ), m_valuesTextStyle );
         yAxisScale -= 0.1f;
+      }
+      if (m_yAxisTitle.Length > 0)
+      {
+        yValuesRect.width = 60f;
+        yValuesRect.x = yAxisRect.x - 30f;
+        yValuesRect.y = yAxisRect.yMin - 0.4f * outerBorderSize - 5f;
+        UnityEngine.GUI.Label(yValuesRect, GUI.MakeLabel(m_yAxisTitle, Color.black), m_valuesTextStyle);
+      }
+
+      var xValuesRect = new Rect(xAxisRect);
+      var xAxisScale = 0.0f;
+      while (xAxisScale < 1.05f)
+      {
+        xValuesRect.x = xAxisRect.xMin + xAxisScale * xAxisRect.width - 0.4f * outerBorderSize;
+        xValuesRect.y = xAxisRect.y + 8f;
+        xValuesRect.width = 0.85f * outerBorderSize;
+        xValuesRect.height = 8.0f;
+        var xValue = Utils.FromNormalizedX(ref valuesRect, xAxisScale);
+        UnityEngine.GUI.Label(xValuesRect, GUI.MakeLabel(xValue.ToString("F1"), Color.black), m_valuesTextStyle);
+        xAxisScale += 0.1f;
+      }
+      if (m_xAxisTitle.Length > 0)
+      {
+        xValuesRect.width = 40f;
+        xValuesRect.x = xAxisRect.xMax + 2f;
+        xValuesRect.y = xAxisRect.y - xValuesRect.height / 2;
+        UnityEngine.GUI.Label(xValuesRect, GUI.MakeLabel(m_xAxisTitle, Color.black), m_valuesTextStyle);
       }
     }
 
