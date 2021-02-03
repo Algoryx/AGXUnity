@@ -167,7 +167,7 @@ namespace AGXUnityEditor
       EditorApplication.UnlockReloadAssemblies();
     }
 
-    private static IEnumerable<PluginImporter> NativePlugins
+    internal static IEnumerable<PluginImporter> NativePlugins
     {
       get
       {

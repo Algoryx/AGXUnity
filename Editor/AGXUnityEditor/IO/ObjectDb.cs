@@ -78,6 +78,11 @@ namespace AGXUnityEditor.IO
       var unreferencedGameObjects = GetUnreferencedGameObjects();
       m_statistics.NumRemovedGameObjects += unreferencedGameObjects.Length;
       foreach ( var unreferencedGameObject in unreferencedGameObjects ) {
+        // The unreferenced object could be a child of an already
+        // destroyed GameObject.
+        if ( unreferencedGameObject == null )
+          continue;
+
         Debug.Log( $"{m_filename}: {GUI.AddColorTag( "Removing game object:", Color.yellow )} {unreferencedGameObject.name}" );
         Object.DestroyImmediate( unreferencedGameObject, true );
         EditorUtility.SetDirty( prefabInstance );
