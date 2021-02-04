@@ -41,6 +41,8 @@ Plugins/x86_64/*.dll
 Plugins/x86_64/*.dll.meta
 !Plugins/x86_64/agxDotnet.dll
 !Plugins/x86_64/agxDotnet.dll.meta
+!Plugins/x86_64/Brick/*.dll
+!Plugins/x86_64/Brick/*.dll.meta
 Plugins/x86_64/agx.lic
 Plugins/x86_64/agx.lic.meta
 Plugins/x86_64/agx
