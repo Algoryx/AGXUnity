@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
+
+using AGXUnity.Utils;
 
 using GUI   = AGXUnity.Utils.GUI;
 using Debug = UnityEngine.Debug;
@@ -151,11 +154,81 @@ namespace AGXUnityEditor.Build
                            targetDataPath );
     }
 
+    /// <summary>
+    /// Verifying all dll's in the project are located in the correct
+    /// folder in the final build. If there's a mismatch, we check if
+    /// all or some of the dll's are located in the parent directory and
+    /// copy them to the correct.
+    /// </summary>
+    private static void VerifyBuild( string targetDataPath )
+    {
+      var nativePluginsDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) );
+      if ( !nativePluginsDirectory.Exists ) {
+        Debug.LogWarning( "Build Warning: ".Color( Color.yellow ) +
+                          nativePluginsDirectory.FullName +
+                          " doesn't exist. " +
+                          "This directory is where the AGX Dynamics binaries are expected to be located." );
+        return;
+      }
+
+      // It's not possible to use the PluginImporter during builds.
+      Predicate<FileInfo> isNativePlugin = fi => { return fi.Name.ToLower() != "agxdotnet.dll"; };
+      var inProjectDllNames = new HashSet<string>( from dllFile
+                                                   in new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull ).EnumerateFiles( "*.dll" )
+                                                   where isNativePlugin( dllFile )
+                                                   select dllFile.Name );
+      Func<bool> matchingNumProjectDllsWithBuild = () =>
+      {
+        var numMatchingDllsInBuild = nativePluginsDirectory.EnumerateFiles( "*.dll" ).Count( dllFi => inProjectDllNames.Contains( dllFi.Name ) );
+        // The dlls from the projects are all located in the
+        // expected nativePluginsDirectory.
+        return numMatchingDllsInBuild == inProjectDllNames.Count;
+      };
+      if ( matchingNumProjectDllsWithBuild() )
+        return;
+
+      // Check if the missing dlls are located in the parent
+      // directory of nativePluginsDirectory.
+      var nativePluginsParentDirectory = nativePluginsDirectory.Parent;
+      int numMoved = 0;
+      try {
+        foreach ( var dllFi in nativePluginsParentDirectory.EnumerateFiles( "*.dll" ) ) {
+          if ( !inProjectDllNames.Contains( dllFi.Name ) )
+            continue;
+          dllFi.MoveTo( nativePluginsDirectory.FullName +
+                        Path.DirectorySeparatorChar +
+                        dllFi.Name );
+          ++numMoved;
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+        return;
+      }
+      if ( matchingNumProjectDllsWithBuild() ) {
+        Debug.Log( "Build info: ".Color( Color.green ) +
+                   $"Successfully moved {numMoved} AGX Dynamics binaries to {nativePluginsDirectory.FullName.Replace( '\\', '/' )}" );
+      }
+      else {
+        Debug.LogWarning( "Build warning: ".Color( Color.yellow ) +
+                          "AGX Dynamics binaries mismatch in build vs project. The application may not properly load AGX Dynamics." );
+      }
+    }
+
     private static void PostBuildInternal( string agxDynamicsPath,
                                            string agxPluginPath,
                                            FileInfo targetExecutableFileInfo,
                                            string targetDataPath )
     {
+      // Some versions of Unity 2019.3 (fixed in 2019.3.9) isn't consistent
+      // where native modules are located. E.g., if Burst is installed, some
+      // dll's will be created in <project>_Data/Plugins/x86_64 and if AGX
+      // dll's are in <project>_Data/Plugins, the dll's wont load.
+      //     - Unity 2019.3 and later:   <project>_Data/Plugins/x86_64
+      //     - Unity 2019.2 and earlier: <project>_Data/Plugins
+      if ( !Directory.Exists( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) ) )
+        Directory.CreateDirectory( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) );
+
       // Assuming all dlls are present in the plugins directory and that
       // "Components" are in a folder named "agx" in the plugins directory.
       // Unity will copy the dlls.
@@ -172,6 +245,8 @@ namespace AGXUnityEditor.Build
       // Deleting all .meta-files that are present in our "agx" folder.
       foreach ( var fi in destinationDirectory.EnumerateFiles( "*.meta", SearchOption.AllDirectories ) )
         fi.Delete();
+
+      VerifyBuild( targetDataPath );
     }
 
     private static void PostBuildExternal( string agxDynamicsPath,
