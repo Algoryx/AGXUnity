@@ -13,6 +13,7 @@ using B_MultiConnector = Brick.Physics.Mechanics.MultiAttachmentConnector;
 using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
 using B_RbAttachment = Brick.Physics.Mechanics.RigidBodyAttachment;
+using B_Camera = Brick.Scene.Camera;
 using System.Linq;
 
 namespace AGXUnity.BrickUnity
@@ -146,6 +147,9 @@ namespace AGXUnity.BrickUnity
         case B_Visual.Shape b_visualShape:
           go = HandleVisuals(go, b_visualShape);
           break;
+        case B_Camera b_camera:
+          HandleCamera(go, b_camera);
+          break;
         default:
           break;
       }
@@ -216,6 +220,22 @@ namespace AGXUnity.BrickUnity
       constraint.SetControllers(b_connector);
 
       return go_constraint;
+    }
+
+
+    public Camera HandleCamera(GameObject go, B_Camera b_camera)
+    {
+      Camera camera = go.AddComponent<Camera>();
+      var b_clipPlanes = b_camera.Clip;
+      camera.farClipPlane = (float)b_clipPlanes.Far;
+      camera.nearClipPlane = (float)b_clipPlanes.Near;
+      camera.fieldOfView = (float)b_camera.FieldOfView;
+      if (b_camera.Projection == B_Camera.CameraProjection.Orthographic)
+        camera.orthographic = true;
+      else if (b_camera.Projection == B_Camera.CameraProjection.Perspective)
+        camera.orthographic = false;
+
+      return camera;
     }
 
 
