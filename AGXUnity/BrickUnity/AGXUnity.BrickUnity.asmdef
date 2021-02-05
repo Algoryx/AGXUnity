@@ -1,8 +1,7 @@
 {
-    "name": "AGXUnity.Brick",
+    "name": "AGXUnity.BrickUnity",
     "references": [
         "GUID:d5acb60c7b83ed24894b00d550fbf2d3",
-        "GUID:420b22ad236fbe346b4ae6fae545e26a",
         "GUID:c88d84fe729b34154ab007369cae02e4"
     ],
     "includePlatforms": [],

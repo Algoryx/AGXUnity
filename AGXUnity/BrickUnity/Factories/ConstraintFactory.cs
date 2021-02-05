@@ -4,7 +4,7 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
 using B_Mechanics = Brick.Physics.Mechanics;
 
-namespace BrickUnity.Factories
+namespace AGXUnity.BrickUnity.Factories
 {
   public static class ConstraintFactory
   {

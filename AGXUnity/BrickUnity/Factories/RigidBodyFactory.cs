@@ -6,7 +6,7 @@ using AGXUnity.Utils;
 using B_RigidBody = Brick.Physics.Mechanics.RigidBody;
 using B_Geometry = Brick.Physics.Geometry;
 
-namespace BrickUnity.Factories
+namespace AGXUnity.BrickUnity.Factories
 {
   public static class RigidBodyFactory
   {
@@ -94,7 +94,7 @@ namespace BrickUnity.Factories
       b_triMesh.InitTask.Wait();
 
       // Copy vertices and indices into agx Vectors for processing in
-      // AGXUnity.Utils.MeshSplitter as is done in 
+      // AGXUnity.Utils.MeshSplitter as is done in
       // AGXUnityEditor.IO.InputAGXFile
       // Can this be done avioded? If Brick already provided these. Or
       // if MeshSplitter could take a list of agx.Vec3 instead of an agx.Vector?
@@ -132,7 +132,7 @@ namespace BrickUnity.Factories
       rotation.SetFromToRotation(go.transform.up, normal);
       var distance = (float)b_d / normal.magnitude;
 
-      // Rotate transforms up vector to point along 
+      // Rotate transforms up vector to point along
       go.transform.localRotation = rotation;
       go.transform.localPosition = -normal.normalized * distance;
     }

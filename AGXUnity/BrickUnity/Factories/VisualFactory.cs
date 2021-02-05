@@ -6,7 +6,7 @@ using AGXUnity;
 
 using B_VisualShape = Brick.Visual.Shape;
 
-namespace BrickUnity.Factories
+namespace AGXUnity.BrickUnity.Factories
 {
   public static class VisualFactory
   {
@@ -77,7 +77,7 @@ namespace BrickUnity.Factories
       Assimp.AssimpUnity.InitializePlugin();
       var go = MeshImporter.Load(filepath);
       List<Transform> children = new List<Transform>();
-      // Have to add children to list first because it becomes wierd too loop through all 
+      // Have to add children to list first because it becomes wierd too loop through all
       // children and removing some at the same time as adding new
       foreach (Transform child in go.transform)
       {

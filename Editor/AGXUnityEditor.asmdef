@@ -1,7 +1,8 @@
 {
     "name": "AGXUnityEditor",
     "references": [
-        "AGXUnity"
+        "AGXUnity",
+        "AGXUnity.BrickUnity"
     ],
     "includePlatforms": [
         "Editor"
@@ -12,5 +13,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }

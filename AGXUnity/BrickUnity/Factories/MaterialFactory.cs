@@ -6,7 +6,7 @@ using B_Node = Brick.Scene.Node;
 using B_Material = Brick.Physics.Material;
 using B_ContactMaterial = Brick.Physics.ContactMaterial;
 
-namespace BrickUnity.Factories
+namespace AGXUnity.BrickUnity.Factories
 {
   public static class MaterialFactory
   {
