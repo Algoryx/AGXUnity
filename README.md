@@ -161,6 +161,48 @@ msvcp140.dll
 vcruntime140.dll
 ```
 
+## Brick workflow
+
+To run a Brick project, the `BRICK_DIR` environment variable needs to be set to point to a Brick root directory.
+
+### Building Brick
+
+To build new Brick dlls, you need to run the following commands from the Unity project root directory:
+
+```
+set AGXDOTNET_PATH=%~dp0Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
+set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
+dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
+if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
+if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+```
+
+Or you can create a batch file in the Unity project root directory with the following contents:
+
+```
+@echo off
+setlocal
+
+set AGXDOTNET_PATH=%~dp0Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
+if not exist %AGXDOTNET_PATH% (
+    echo WARNING! agxDotNet.dll could not be found. Make sure it exists in %AGXDOTNET_PATH%
+    exit /b 1
+)
+
+if "%BRICK_DIR%"=="" (
+    echo Could not find Brick modules, make sure the BRICK_DIR environment variable has been set to point to a Brick root directory.
+    exit /b 1
+)
+echo Using BRICK_DIR=%BRICK_DIR%
+
+set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
+dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
+if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
+if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+
+exit /b 0
+```
+
 ## Issues and contributions
 
 Do not hesitate to send us a Pull Request.
