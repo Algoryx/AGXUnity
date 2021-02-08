@@ -170,8 +170,8 @@ To run a Brick project, the `BRICK_DIR` environment variable needs to be set to 
 To build new Brick dlls, you need to run the following commands from the Unity project root directory:
 
 ```
-set AGXDOTNET_PATH=%~dp0Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
-set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
+set AGXDOTNET_PATH=%cd%\Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
+set BRICK_PUBLISH_DIR=%cd%\Assets\AGXUnity\Plugins\x86_64\Brick
 dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
 if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
 if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
