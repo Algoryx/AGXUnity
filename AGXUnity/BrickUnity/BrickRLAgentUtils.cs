@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+using AGXUnity.BrickUnity;
+
 using B_Signal = Brick.Signal;
 using B_Agent = Brick.MachineLearning.RLAgent;
 
@@ -12,7 +14,7 @@ public static class BrickRLAgentUtils
 
     foreach(var rb in bodies)
     {
-      dict.Add(rb.name, rb.transform.localPosition);
+      dict.Add(rb.name, rb.transform.localPosition); 
     }
 
     return dict;
