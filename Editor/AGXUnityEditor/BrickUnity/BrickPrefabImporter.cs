@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity.IO;
 
+using AGXUnity.BrickUnity;
 using AGXUnity.BrickUnity.Factories;
 using B_Node = Brick.Scene.Node;
 using B_Component = Brick.Physics.Component;
@@ -14,8 +15,9 @@ using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
 using B_RbAttachment = Brick.Physics.Mechanics.RigidBodyAttachment;
 using System.Linq;
+using AGXUnityEditor.IO;
 
-namespace AGXUnity.BrickUnity
+namespace AGXUnityEditor.BrickUnity
 {
   public class BrickPrefabImporter
   {
@@ -145,6 +147,42 @@ namespace AGXUnity.BrickUnity
           break;
         case B_Visual.Shape b_visualShape:
           go = HandleVisuals(go, b_visualShape);
+          break;
+        case B_Component b_component:
+          if (!b_component._externalFilepathIsDefault)
+          {
+            var relPath = b_component.ExternalFilepath;
+            var workDirPath = Path.GetFullPath(relPath);
+            var brickDirPath = Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), relPath);
+            var fullPath = File.Exists(workDirPath) ? workDirPath : File.Exists(brickDirPath) ? brickDirPath : null;
+            if (fullPath is null)
+            {
+              Debug.LogError($"Brick Component could not handle external file {b_component.ExternalFilepath}. File does not exist." +
+                "Absolute paths searched:\n" +
+                $"{workDirPath}\n" +
+                $"{brickDirPath}");
+              throw new AGXUnity.Exception($"Could not find external file: {b_component.ExternalFilepath}");
+            }
+            var ext = Path.GetExtension(fullPath);
+            if (ext == ".agx" || ext == ".aagx")
+            {
+              GetOrCreateDataDirectory();
+              var fileInfo = new AGXFileInfo(fullPath, DataDirectoryPath);
+              using (var inputFile = new InputAGXFile(fileInfo))
+              {
+                inputFile.TryLoad();
+                inputFile.TryParse();
+                var statistics = inputFile.TryGenerate();
+                var go_agx = fileInfo.PrefabInstance;
+                go_agx.transform.SetParent(go.transform, false);
+              }
+              //var go_agx = AGXFileImporter.Import(fullPath);
+            }
+            else
+            {
+              throw new AGXUnity.Exception($"Brick could not load external file {fullPath}. Unknown file extension: {ext}");
+            }
+          }
           break;
         default:
           break;

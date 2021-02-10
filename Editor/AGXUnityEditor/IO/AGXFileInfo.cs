@@ -81,7 +81,7 @@ namespace AGXUnityEditor.IO
                FileType.AGXPrefab :
                FileType.Unknown;
     }
-    
+
     /// <summary>
     /// True if valid path was given.
     /// </summary>
@@ -151,9 +151,18 @@ namespace AGXUnityEditor.IO
     /// Construct given path to file.
     /// </summary>
     /// <param name="path"></param>
-    public AGXFileInfo( string path )
+    public AGXFileInfo(string path)
     {
-      Construct( path );
+      Construct(path);
+    }
+
+    /// <summary>
+    /// Construct given path to file and desired directories.
+    /// </summary>
+    /// <param name="path"></param>
+    public AGXFileInfo(string path, string dataDirectory)
+    {
+      Construct(path, dataDirectory);
     }
 
     /// <summary>
@@ -235,6 +244,19 @@ namespace AGXUnityEditor.IO
     {
       AssetDatabase.SaveAssets();
       AssetDatabase.Refresh();
+    }
+
+    private void Construct( string path, string dataDirectory )
+    {
+      if (path == "")
+        return;
+
+      m_fileInfo = new FileInfo(path);
+      Name = Path.GetFileNameWithoutExtension(m_fileInfo.Name);
+      Type = FindType(m_fileInfo);
+
+      RootDirectory = m_fileInfo.DirectoryName.Replace('\\', '/');
+      DataDirectory = dataDirectory;
     }
 
     private void Construct( string path )
