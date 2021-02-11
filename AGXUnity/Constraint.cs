@@ -405,6 +405,35 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Get a value from the ElementaryConstraintRowData instance of this constraint's
+    /// ordinary elementary constraints. This can be e.g. Compliance, Damping or ForceRange.
+    /// </summary>
+    /// <typeparam name="TOUT">The type of the outputed data.</typeparam>
+    /// <typeparam name="TDOF">Either RotationalDof or TranslationalDof</typeparam>
+    /// <param name="callback">Callback to fetch a value from a row data instance.</param>
+    /// <param name="dof">Enum value X, Y, or Z. If the enum value All is used, an exception will be thrown.</param>
+    /// <returns>The data to be fetched from the constraint.</returns>
+    private TOUT GetRowData<TOUT, TDOF>(Func<ElementaryConstraintRowData, TOUT> callback, TDOF dof)
+    {
+      if (System.Convert.ToInt32(dof) > 2)
+      {
+        throw new AGXUnity.Exception("Choose a degree of freedom for the row data. Cannot get row data for All.");
+      }
+
+      var rowParser = ConstraintUtils.ConstraintRowParser.Create(this);
+      var rows = typeof(TDOF) == typeof(TranslationalDof) ?
+                   rowParser.TranslationalRows :
+                   rowParser.RotationalRows;
+
+      var data = rows[System.Convert.ToInt32(dof)];
+      if (data != null)
+        return callback(data.RowData);
+      Debug.LogError($"Could not find row data for dof {dof}. Returning default.");
+      return default;
+    }
+
+
+    /// <summary>
     /// Set compliance to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
     /// </summary>
@@ -501,6 +530,66 @@ namespace AGXUnity
     public void SetForceRange( RangeReal forceRange, RotationalDof dof )
     {
       TraverseRowData( data => data.ForceRange = forceRange, dof );
+    }
+
+    /// <summary>
+    /// Get the compliance of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The compliance for the specified degree of freedom.</returns>
+    public float GetCompliance(RotationalDof dof)
+    {
+      return GetRowData(data => data.Compliance, dof);
+    }
+
+    /// <summary>
+    /// Get the compliance of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The compliance for the specified degree of freedom.</returns>
+    public float GetCompliance(TranslationalDof dof)
+    {
+      return GetRowData(data => data.Compliance, dof);
+    }
+
+    /// <summary>
+    /// Get the damping of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The damping for the specified degree of freedom.</returns>
+    public float GetDamping(RotationalDof dof)
+    {
+      return GetRowData(data => data.Damping, dof);
+    }
+
+    /// <summary>
+    /// Get the damping of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The damping for the specified degree of freedom.</returns>
+    public float GetDamping(TranslationalDof dof)
+    {
+      return GetRowData(data => data.Damping, dof);
+    }
+
+    /// <summary>
+    /// Get the force range of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The force range for the specified degree of freedom.</returns>
+    public RangeReal GetForceRange(RotationalDof dof)
+    {
+      return GetRowData(data => data.ForceRange, dof);
+    }
+
+    /// <summary>
+    /// Get the force range of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The force range for the specified degree of freedom.</returns>
+    public RangeReal GetForceRange(TranslationalDof dof)
+    {
+      return GetRowData(data => data.ForceRange, dof);
     }
 
     /// <summary>
