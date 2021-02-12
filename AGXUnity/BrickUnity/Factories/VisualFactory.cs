@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using UnityMeshImporter;
-using AGXUnity;
+using AGXUnity.Utils;
 
 using B_VisualShape = Brick.Visual.Shape;
 
