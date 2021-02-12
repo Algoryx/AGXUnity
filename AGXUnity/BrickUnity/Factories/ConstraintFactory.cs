@@ -47,6 +47,12 @@ namespace AGXUnity.BrickUnity.Factories
       }
     }
 
+    /// <summary>
+    /// Set the properties of the target speed controller of a constraint from a Brick object
+    /// </summary>
+    /// <param name="constraint">An AGXUnity.Constraint with a target speed controller</param>
+    /// <param name="b_motor1D">A Brick motor 1D interaction</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetTargetSpeedController(this AU_Constraint constraint,
                                                 B_Interaction.MotorInteraction1D b_motor1D,
                                                 bool overwriteIfDefault)
@@ -66,6 +72,12 @@ namespace AGXUnity.BrickUnity.Factories
         targetSpeedController.LockAtZeroSpeed = b_motor1D.LockAtZeroSpeed;
     }
 
+    /// <summary>
+    /// Set the properties of the lock controller of a constraint from a Brick object
+    /// </summary>
+    /// <param name="constraint">An AGXUnity.Constraint with a lock controller</param>
+    /// <param name="b_lock1D">A Brick lock 1D interaction</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetLockController(this AU_Constraint constraint,
                                          B_Interaction.LockInteraction1D b_lock1D,
                                          bool overwriteIfDefault)
@@ -79,6 +91,12 @@ namespace AGXUnity.BrickUnity.Factories
       //lockController.Position = ??
     }
 
+    /// <summary>
+    /// Set the properties of the range controller of a constraint from a Brick object
+    /// </summary>
+    /// <param name="constraint">An AGXUnity.Constraint with a range controller</param>
+    /// <param name="b_range1D">A Brick range 1D interaction</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetRangeController(this AU_Constraint constraint,
                                           B_Interaction.RangeMinMaxInteraction1D b_range1D,
                                           bool overwriteIfDefault)
@@ -100,6 +118,12 @@ namespace AGXUnity.BrickUnity.Factories
       rangeController.Range = range;
     }
 
+    /// <summary>
+    /// Set the properties of the friction controller of a constraint from a Brick object
+    /// </summary>
+    /// <param name="constraint">An AGXUnity.Constraint with a friction controller</param>
+    /// <param name="b_friction1D">A Brick friction 1D interaction</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetFrictionController(this AU_Constraint constraint,
                                              B_Interaction.FrictionInteraction1D b_friction1D,
                                              bool overwriteIfDefault)
@@ -117,6 +141,12 @@ namespace AGXUnity.BrickUnity.Factories
         frictionController.FrictionCoefficient = (float)b_friction1D.Coefficient;
     }
 
+    /// <summary>
+    /// Set compliance, damping and force range of a controller.
+    /// </summary>
+    /// <param name="controller">An AGXUnity 1D controller on which to set the properties</param>
+    /// <param name="b_interaction">A Brick 1D interaction from which the properties will be set</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity controller's values even if the Brick values are default</param>
     public static void SetGeneralControllerValues(this AU_Controller controller,
                                                   B_Interaction.Interaction1D b_interaction,
                                                   bool overwriteIfDefault)
@@ -135,6 +165,12 @@ namespace AGXUnity.BrickUnity.Factories
       controller.ForceRange = forceRange;
     }
 
+    /// <summary>
+    /// Set compliance and damping on all degrees of freedom of a ball joint
+    /// </summary>
+    /// <param name="constraint">The AGXUnity ball joint constraint on which to set the values</param>
+    /// <param name="b_interaction">The Brick interaction from which the values will be set</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity controller's values even if the Brick values are default</param>
     public static void SetBallJointComplianceAndDamping(this AU_Constraint constraint,
                                                         B_Interaction b_interaction,
                                                         bool overwriteIfDefault)
@@ -147,6 +183,12 @@ namespace AGXUnity.BrickUnity.Factories
       constraint.SetBrickDamping(b_interaction.Damping6D, AU_Constraint.TranslationalDof.Z, overwriteIfDefault);
     }
 
+    /// <summary>
+    ///Get a value from a Brick interaction data (compliance or damping) given a rotational degree of freedom
+    /// </summary>
+    /// <param name="data">The Brick interaction data</param>
+    /// <param name="dof">The degree of freedom for which to get the value</param>
+    /// <returns>The interaction value (compliance or damping)</returns>
     public static float GetValue(this B_Mechanics.InteractionData6D data, AU_Constraint.RotationalDof dof)
     {
       switch (dof)
@@ -162,6 +204,12 @@ namespace AGXUnity.BrickUnity.Factories
       }
     }
 
+    /// <summary>
+    ///Get a value from a Brick interaction data (compliance or damping) given a translational degree of freedom
+    /// </summary>
+    /// <param name="data">The Brick interaction data</param>
+    /// <param name="dof">The degree of freedom for which to get the value</param>
+    /// <returns>The interaction value (compliance or damping)</returns>
     public static float GetValue(this B_Mechanics.InteractionData6D data, AU_Constraint.TranslationalDof dof)
     {
       switch (dof)
@@ -177,6 +225,12 @@ namespace AGXUnity.BrickUnity.Factories
       }
     }
 
+    /// <summary>
+    /// Check if a Brick interaction data value (compliance or damping) is default (not manually set by the user)
+    /// </summary>
+    /// <param name="data">The Brick interaction data</param>
+    /// <param name="dof">The degree of freedom for which to check</param>
+    /// <returns>True if the interaction data value is default</returns>
     public static bool GetValueIsDefault(this B_Mechanics.InteractionData6D data, AU_Constraint.RotationalDof dof)
     {
       switch (dof)
@@ -192,6 +246,12 @@ namespace AGXUnity.BrickUnity.Factories
       }
     }
 
+    /// <summary>
+    /// Check if a Brick interaction data value (compliance or damping) is default (not manually set by the user)
+    /// </summary>
+    /// <param name="data">The Brick interaction data</param>
+    /// <param name="dof">The degree of freedom for which to check</param>
+    /// <returns>True if the interaction data value is default</returns>
     public static bool GetValueIsDefault(this B_Mechanics.InteractionData6D data, AU_Constraint.TranslationalDof dof)
     {
       switch (dof)
@@ -207,6 +267,13 @@ namespace AGXUnity.BrickUnity.Factories
       }
     }
 
+    /// <summary>
+    /// Set damping of an AGXUnity constraint from Brick, for a specific degree of freedom
+    /// </summary>
+    /// <param name="constraint">The AGXUnity constraint on which to set the damping</param>
+    /// <param name="damping">The Brick damping to set</param>
+    /// <param name="dof">The degree of freedom for which to set the damping</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetBrickDamping(this AU_Constraint constraint,
                                        B_Damping damping,
                                        AU_Constraint.RotationalDof dof,
@@ -216,6 +283,13 @@ namespace AGXUnity.BrickUnity.Factories
         constraint.SetDamping(damping.GetValue(dof) * constraint.GetDamping(dof), dof);
     }
 
+    /// <summary>
+    /// Set damping of an AGXUnity constraint from Brick, for a specific degree of freedom
+    /// </summary>
+    /// <param name="constraint">The AGXUnity constraint on which to set the damping</param>
+    /// <param name="damping">The Brick damping to set</param>
+    /// <param name="dof">The degree of freedom for which to set the damping</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetBrickDamping(this AU_Constraint constraint,
                                        B_Damping damping,
                                        AU_Constraint.TranslationalDof dof,
@@ -225,6 +299,13 @@ namespace AGXUnity.BrickUnity.Factories
         constraint.SetDamping(damping.GetValue(dof) * constraint.GetDamping(dof), dof);
     }
 
+    /// <summary>
+    /// Set compliance of an AGXUnity constraint from Brick stiffness, for a specific degree of freedom
+    /// </summary>
+    /// <param name="constraint">The AGXUnity constraint on which to set the compliance</param>
+    /// <param name="stiffness">The Brick stiffness to set</param>
+    /// <param name="dof">The degree of freedom for which to set the compliance</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetBrickCompliance(this AU_Constraint constraint,
                                           B_Stiffness stiffness,
                                           AU_Constraint.RotationalDof dof,
@@ -234,6 +315,13 @@ namespace AGXUnity.BrickUnity.Factories
         constraint.SetCompliance(1f / stiffness.GetValue(dof), dof);
     }
 
+    /// <summary>
+    /// Set compliance of an AGXUnity constraint from Brick stiffness, for a specific degree of freedom
+    /// </summary>
+    /// <param name="constraint">The AGXUnity constraint on which to set the compliance</param>
+    /// <param name="stiffness">The Brick stiffness to set</param>
+    /// <param name="dof">The degree of freedom for which to set the compliance</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetBrickCompliance(this AU_Constraint constraint,
                                           B_Stiffness stiffness,
                                           AU_Constraint.TranslationalDof dof,
@@ -243,6 +331,12 @@ namespace AGXUnity.BrickUnity.Factories
         constraint.SetCompliance(1f / stiffness.GetValue(dof), dof);
     }
 
+    /// <summary>
+    /// Set compliance and damping of an AGXUnity constraint given a Brick interaction
+    /// </summary>
+    /// <param name="constraint">The AGXUnity constraint on which to set the compliance and damping</param>
+    /// <param name="b_interaction">The Brick interaction from which the values will be set</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
     public static void SetComplianceAndDamping(this AU_Constraint constraint,
                                                B_Interaction b_interaction,
                                                bool overwriteIfDefault)
