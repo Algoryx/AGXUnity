@@ -212,8 +212,8 @@ namespace AGXUnity.BrickUnity
       c_attachmentPair.ConnectedObject = b_body2 is null ? null : bodyDict[b_body2 as B_RigidBody];
       c_attachmentPair.ConnectedFrame = new AGXUnity.ConstraintFrame(attachmentDict[b_attachment2]);
 
-      constraint.SetComplianceAndDamping(b_connector.MainInteraction);
-      constraint.SetControllers(b_connector);
+      constraint.SetComplianceAndDamping(b_connector.MainInteraction, overwriteIfDefault: true);
+      constraint.SetControllers(b_connector, overwriteIfDefault: true);
 
       return go_constraint;
     }
