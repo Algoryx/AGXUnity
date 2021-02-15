@@ -171,11 +171,19 @@ namespace AGXUnity.IO
     /// <summary>
     /// Plugins path where the AGX Dynamics native modules are located.
     /// </summary>
+    /// <remarks>
+    /// From Unity 2019.3 native modules should be located in data_folder/Plugins/x86_64
+    /// and data_folder/Plugins for earlier versions.
+    /// </remarks>
     /// <param name="dataPath">Path to player data folder - nameOfExecutable_Data.</param>
     /// <returns>Path to the plugins folder.</returns>
     public static string GetPlayerPluginPath( string dataPath )
     {
-      return dataPath + Path.DirectorySeparatorChar + "Plugins";
+#if UNITY_2019_3_OR_NEWER
+      return dataPath + "/Plugins/x86_64";
+#else
+      return dataPath + "/Plugins";
+#endif
     }
 
     /// <summary>
@@ -186,7 +194,7 @@ namespace AGXUnity.IO
     /// <returns>Path to the AGX Dynamics runtime folder.</returns>
     public static string GetPlayerAGXRuntimePath( string dataPath )
     {
-      return GetPlayerPluginPath( dataPath ) + Path.DirectorySeparatorChar + "agx";
+      return GetPlayerPluginPath( dataPath ) + "/agx";
     }
   }
 }
