@@ -312,7 +312,10 @@ namespace AGXUnity.BrickUnity.Factories
                                           bool overwriteIfDefault)
     {
       if (overwriteIfDefault || !stiffness.GetValueIsDefault(dof))
+      {
         constraint.SetCompliance(1f / stiffness.GetValue(dof), dof);
+        constraint.SetDamping(constraint.GetDamping(dof) / stiffness.GetValue(dof), dof);
+      }
     }
 
     /// <summary>
@@ -328,7 +331,10 @@ namespace AGXUnity.BrickUnity.Factories
                                           bool overwriteIfDefault)
     {
       if (overwriteIfDefault || !stiffness.GetValueIsDefault(dof))
+      {
         constraint.SetCompliance(1f / stiffness.GetValue(dof), dof);
+        constraint.SetDamping(constraint.GetDamping(dof) / stiffness.GetValue(dof), dof);
+      }
     }
 
     /// <summary>
