@@ -280,7 +280,7 @@ namespace AGXUnity.BrickUnity.Factories
                                        bool overwriteIfDefault)
     {
       if (overwriteIfDefault || !damping.GetValueIsDefault(dof))
-        constraint.SetDamping(damping.GetValue(dof) * constraint.GetDamping(dof), dof);
+        constraint.SetDamping(damping.GetValue(dof) * constraint.GetCompliance(dof), dof);
     }
 
     /// <summary>
@@ -296,7 +296,7 @@ namespace AGXUnity.BrickUnity.Factories
                                        bool overwriteIfDefault)
     {
       if (overwriteIfDefault || !damping.GetValueIsDefault(dof))
-        constraint.SetDamping(damping.GetValue(dof) * constraint.GetDamping(dof), dof);
+        constraint.SetDamping(damping.GetValue(dof) * constraint.GetCompliance(dof), dof);
     }
 
     /// <summary>
