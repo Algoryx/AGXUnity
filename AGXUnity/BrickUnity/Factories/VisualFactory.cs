@@ -74,7 +74,6 @@ namespace AGXUnity.BrickUnity.Factories
     {
       // Currently a problem if "/" is included in names/comments in .obj files
       // See: https://github.com/assimp/assimp/issues/3532
-      Assimp.AssimpUnity.InitializePlugin();
       var go = MeshImporter.Load(filepath);
       List<Transform> children = new List<Transform>();
       // Have to add children to list first because it becomes wierd too loop through all
@@ -121,6 +120,7 @@ namespace AGXUnity.BrickUnity.Factories
           break;
         case Brick.Visual.File b_vMeshFile:
           go_visual = CreateFileVisual(b_vMeshFile.AbsoluteFilepath);
+          go_visual.transform.localScale = b_vMeshFile.Scaling.ToVector3();
           break;
         default:
           throw new Exception($"Unknown shape! {b_visual._ModelValuePath}");
