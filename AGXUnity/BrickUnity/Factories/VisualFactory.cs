@@ -120,6 +120,7 @@ namespace AGXUnity.BrickUnity.Factories
           break;
         case Brick.Visual.File b_vMeshFile:
           go_visual = CreateFileVisual(b_vMeshFile.AbsoluteFilepath);
+          go_visual.transform.localScale = b_vMeshFile.Scaling.ToVector3();
           break;
         default:
           throw new Exception($"Unknown shape! {b_visual._ModelValuePath}");
