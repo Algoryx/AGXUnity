@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
@@ -289,21 +290,22 @@ namespace AGXUnity.Model
     {
       if ( GetComponent<Rendering.TrackRenderer>() != null )
         GetComponent<Rendering.TrackRenderer>().OnTrackReset();
-    }
 
-    private static Mesh m_gizmosMesh = null;
-
-    private static Mesh GetOrCreateGizmosMesh()
-    {
-      if ( m_gizmosMesh != null )
-        return m_gizmosMesh;
-
-      var tmp = Resources.Load<GameObject>( @"Debug/BoxRenderer" );
-      var filter = tmp.GetComponentInChildren<MeshFilter>();
-      if ( filter == null )
-        return null;
-      m_gizmosMesh = filter.sharedMesh;
-      return m_gizmosMesh;
+      // Is this too risky or desired? Sharing references and
+      // copying values from an already created track.
+      var otherTracks = GetComponents<Track>().Where( track => track != this ).ToArray();
+      if ( otherTracks.Length > 0 ) {
+        // This could be made "automatically" with PropertySynchronizer
+        // but there are many properties with [IgnoreSynchronization]
+        // in this class so it has to be overridden.
+        NumberOfNodes           = otherTracks[ 0 ].NumberOfNodes;
+        Thickness               = otherTracks[ 0 ].Thickness;
+        Width                   = otherTracks[ 0 ].Width;
+        InitialTensionDistance  = otherTracks[ 0 ].InitialTensionDistance;
+        Properties              = otherTracks[ 0 ].Properties;
+        InternalMergeProperties = otherTracks[ 0 ].InternalMergeProperties;
+        Material                = otherTracks[ 0 ].Material;
+      }
     }
   }
 }

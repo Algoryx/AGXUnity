@@ -178,10 +178,21 @@ namespace AGXUnityEditor
       return base.RequiresConstantRepaint() || RequestConstantRepaint;
     }
 
+    protected virtual void OnTargetsDeleted() { }
+
+    private Type m_targetType = null;
+    private GameObject[] m_targetGameObjects = null;
+    private int m_numTargetGameObjectsTargetComponents = 0;
+
     private void OnEnable()
     {
       if ( this.target == null )
         return;
+
+      m_targetType = this.target.GetType();
+      m_targetGameObjects = this.targets.Where( obj => obj is Component )
+                                        .Select( obj => ( obj as Component ).gameObject ).ToArray();
+      m_numTargetGameObjectsTargetComponents = m_targetGameObjects.Sum( go => go.GetComponents( m_targetType ).Length );
 
       // Entire class/component marked as hidden - enable "hide in inspector".
       if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
@@ -192,10 +203,36 @@ namespace AGXUnityEditor
 
     private void OnDisable()
     {
-      if ( this.target == null )
-        Manager.OnEditorTargetsDeleted();
+      if ( this.target == null ) {
+        if ( IsTargetMostProbablyDeleted() ) {
+          Manager.OnEditorTargetsDeleted();
+          OnTargetsDeleted();
+        }
+      }
 
       ToolManager.OnTargetEditorDisable( this.targets );
+
+      m_targetType = null;
+      m_targetGameObjects = null;
+      m_numTargetGameObjectsTargetComponents = 0;
+    }
+
+    private bool IsTargetMostProbablyDeleted()
+    {
+      // Nothing selected so the user probably hit 'Delete'.
+      if ( Selection.activeGameObject == null || m_targetGameObjects == null )
+        return true;
+
+      // Any of the previously (OnEnable) collected game objects
+      // is "null".
+      if ( m_targetGameObjects.Any( go => go == null ) )
+        return true;
+
+      var targetComponents = m_targetGameObjects.SelectMany( go => go.GetComponents( m_targetType ) )
+                                                .Select( component => component ).ToArray();
+      // Current number of components doesn't match the amount of
+      // components collected in OnEnable.
+      return targetComponents.Length != m_numTargetGameObjectsTargetComponents;
     }
 
     private static bool HandleType( InvokeWrapper wrapper,

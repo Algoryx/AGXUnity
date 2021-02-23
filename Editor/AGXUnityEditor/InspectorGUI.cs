@@ -29,19 +29,6 @@ namespace AGXUnityEditor
       return content;
     }
 
-    public static float GetWidth( GUIContent content, GUIStyle style )
-    {
-      var width = 0.0f;
-      var maxWidth = 0.0f;
-      style.CalcMinMaxWidth( content, out width, out maxWidth );
-      return width;
-    }
-
-    public static float GetWidthIncludingIndent( GUIContent content, GUIStyle style )
-    {
-      return GetWidth( content, style ) + IndentScope.PixelLevel;
-    }
-
     public static float LayoutMagicNumber
     {
       get
@@ -284,7 +271,11 @@ namespace AGXUnityEditor
 
     public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
     {
-      var newState = EditorGUILayout.Foldout( state.Bool, content, true );
+      // There's a indentation bug (a few pixels off) in EditorGUILayout.Foldout.
+      var newState = EditorGUI.Foldout( EditorGUILayout.GetControlRect(),
+                                        state.Bool,
+                                        content,
+                                        true );
 
       if ( newState != state.Bool )
         UnityEngine.GUI.changed = false;
@@ -347,7 +338,7 @@ namespace AGXUnityEditor
 
           createNewPressed = Button( buttonRect,
                                      MiscIcon.CreateAsset,
-                                     true,
+                                     UnityEngine.GUI.enabled,
                                      "Create new asset." );
         }
       }
@@ -644,10 +635,29 @@ namespace AGXUnityEditor
     public static void ToolListGUI<T>( Tools.CustomTargetTool context,
                                        T[] items,
                                        string identifier,
+                                       T[] availableItemsToAdd,
+                                       Action<T> onAdd,
+                                       Action<T> onRemove )
+      where T : Object
+    {
+      ToolListGUI( context,
+                   items,
+                   identifier,
+                   onAdd,
+                   onRemove,
+                   null,
+                   null,
+                   availableItemsToAdd );
+    }
+
+    public static void ToolListGUI<T>( Tools.CustomTargetTool context,
+                                       T[] items,
+                                       string identifier,
                                        Action<T> onAdd,
                                        Action<T> onRemove,
                                        Action<T, int> preItemEditor = null,
-                                       Action<T, int> postItemEditor = null )
+                                       Action<T, int> postItemEditor = null,
+                                       T[] availableItemsToAdd = null )
       where T : Object
     {
       var displayItemsList = Foldout( GetTargetToolArrayGUIData( context.Targets[ 0 ], identifier ),
@@ -705,11 +715,13 @@ namespace AGXUnityEditor
           }
 
           if ( addButtonPressed ) {
-            var sceneItems = isAsset ?
-                               IO.Utils.FindAssetsOfType<T>( string.Empty ) :
-                               Object.FindObjectsOfType<T>();
+            var sceneItems = availableItemsToAdd ?? ( isAsset ?
+                                                        IO.Utils.FindAssetsOfType<T>( string.Empty ) :
+                                                        Object.FindObjectsOfType<T>() );
             var addItemMenu = new GenericMenu();
-            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit + "(s) in " + ( isAsset ? "project" : "scene:" ) ) );
+            addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit +
+                                                        "(s) in " +
+                                                        ( isAsset || availableItemsToAdd != null ? "project" : "scene" ) ) );
             addItemMenu.AddSeparator( string.Empty );
             foreach ( var sceneItem in sceneItems ) {
               if ( Array.IndexOf( items, sceneItem ) >= 0 )

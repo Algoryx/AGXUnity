@@ -52,6 +52,13 @@ namespace AGXUnity.Rendering
       m_tracks = GetComponents<Model.Track>();
     }
 
+    public UninitializedTrackData GetData( Model.Track track )
+    {
+      if ( m_uninitializedTrackData.TryGetValue( track, out var data ) )
+        return data;
+      return null;
+    }
+
     protected override bool Initialize()
     {
       return true;
@@ -83,6 +90,8 @@ namespace AGXUnity.Rendering
 
       var numNodes = 0;
       foreach ( var track in Tracks ) {
+        track.RemoveInvalidWheels();
+
         if ( !track.isActiveAndEnabled )
           continue;
 
@@ -138,10 +147,10 @@ namespace AGXUnity.Rendering
             renderInstance.rotation = node.Rotation;
             renderInstance.position = node.Position +
                                       renderInstance.TransformDirection( node.HalfExtents.z * Vector3.forward );
-            if (AutomaticScaling)
+            if ( AutomaticScaling )
               renderInstance.localScale = 2.0f * node.HalfExtents;
             else
-              renderInstance.localScale = new Vector3(1, 1, 1); //2.0f * node.HalfExtents;
+              renderInstance.localScale = Vector3.one;
           }
         }
       }
@@ -161,7 +170,7 @@ namespace AGXUnity.Rendering
         Configure( track, child.gameObject );
     }
 
-    struct TrackDesc
+    public struct TrackDesc
     {
       public int NumberOfNodes;
       public float Width;
@@ -169,7 +178,7 @@ namespace AGXUnity.Rendering
       public float InitialTensionDistance;
     }
 
-    struct TrackWheelDesc
+    public struct TrackWheelDesc
     {
       public Model.TrackWheelModel WheelModel;
       public float Radius;
@@ -192,7 +201,7 @@ namespace AGXUnity.Rendering
       }
     }
 
-    struct TrackNodeDesc
+    public struct TrackNodeDesc
     {
       public static TrackNodeDesc Create( agxVehicle.TrackNodeDesc nodeDesc )
       {
@@ -209,7 +218,7 @@ namespace AGXUnity.Rendering
       public Quaternion Rotation;
     }
 
-    class UninitializedTrackData
+    public class UninitializedTrackData
     {
       public TrackDesc Track = new TrackDesc();
       public TrackWheelDesc[] TrackWheels = new TrackWheelDesc[] { };

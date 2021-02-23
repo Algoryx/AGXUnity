@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
@@ -14,7 +14,41 @@ namespace AGXUnity.Collide
   public abstract class Shape : ScriptComponent
   {
     /// <summary>
-    /// Utils (resize etc.) utils for this shape if supported.
+    /// Finds mesh filters representative for this shape, i.e., mesh filters
+    /// on <paramref name="shape"/> or any child which doesn't have another
+    /// shape as parent.
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    public static MeshFilter[] FindMeshFilters( Shape shape )
+    {
+      if ( shape == null )
+        return new MeshFilter[] { };
+
+      return ( from filter in shape.GetComponentsInChildren<MeshFilter>()
+               where filter.GetComponentInParent<Shape>() == shape
+               select filter ).ToArray();
+    }
+
+    /// <summary>
+    /// Finds all mesh filters represented by the list of shapes.
+    /// </summary>
+    /// <remarks>
+    /// There's no relation between the size of the incoming array and
+    /// the resulting array, i.e., it's not trivial to determine which
+    /// mesh filter(s) belonging to which shape.
+    /// </remarks>
+    /// <param name="shapes">Array of shapes.</param>
+    /// <returns>Array of mesh filters representing the given <paramref name="shapes"/>.</returns>
+    public static MeshFilter[] FindMeshFilters( Shape[] shapes )
+    {
+      return ( from shape in shapes
+               from filter in FindMeshFilters( shape )
+               select filter ).ToArray();
+    }
+
+    /// <summary>
+    /// Utilities (resize etc.) for this shape if supported.
     /// </summary>
     private ShapeUtils m_utils = null;
 
