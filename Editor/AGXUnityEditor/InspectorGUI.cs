@@ -887,6 +887,22 @@ namespace AGXUnityEditor
       }
     }
 
+    public static void SelectableTextField( GUIContent label,
+                                            string text,
+                                            MiscIcon buttonIcon,
+                                            Action onButtonClicked,
+                                            string buttonTooltip = "" )
+    {
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( label, InspectorEditor.Skin.Label );
+        EditorGUILayout.SelectableLabel( text,
+                                         InspectorEditor.Skin.TextField,
+                                         GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
+        if ( Button( buttonIcon, true, buttonTooltip ) )
+          onButtonClicked?.Invoke();
+      }
+    }
+
     /// <summary>
     /// Displays license information as:
     ///   License expires            2020-05-13 (14 days 7 hours remaining)
@@ -896,7 +912,7 @@ namespace AGXUnityEditor
     ///   License expired            2020-05-13 (3 days ago)
     /// </summary>
     /// <param name="info">License info.</param>
-    public static void LicenseEndDateField( AGXUnity.LicenseManager.LicenseInfo info )
+    public static void LicenseEndDateField( LicenseInfo info )
     {
       var fieldColor = EditorGUIUtility.isProSkin ?
                          Color.white :

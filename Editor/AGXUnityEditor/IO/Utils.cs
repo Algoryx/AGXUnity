@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using AGXUnity.Utils;
 
 using Object = UnityEngine.Object;
 
@@ -196,10 +197,7 @@ namespace AGXUnityEditor.IO
     /// <returns>Path with <paramref name="root"/> as root.</returns>
     public static string MakeRelative( string complete, string root )
     {
-      var completeUri = new Uri( complete );
-      var rootUri = new Uri( root );
-      var relUri = rootUri.MakeRelativeUri( completeUri );
-      return Uri.UnescapeDataString( relUri.ToString() );
+      return complete.MakeRelative( root );
     }
 
     /// <summary>

@@ -512,6 +512,40 @@ namespace AGXUnity.Utils
     }
 
     /// <summary>
+    /// Make absolute/complete path relative to given root path.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var relativeToProjectPath = absolutePath.MakeRelative( Application.dataPath );
+    /// </code>
+    /// </example>
+    /// <param name="complete">Complete path.</param>
+    /// <param name="root">Root path.</param>
+    /// <returns>Path relative to <paramref name="root"/>.</returns>
+    public static string MakeRelative( this string complete, string root )
+    {
+      var completeUri = new Uri( complete );
+      var rootUri = new Uri( root );
+      var relUri = rootUri.MakeRelativeUri( completeUri );
+      return Uri.UnescapeDataString( relUri.ToString() );
+    }
+
+    /// <summary>
+    /// Makes path relative to application path and replaces \\ with /.
+    /// </summary>
+    /// <param name="path">Absolute or relative path.</param>
+    /// <returns>Path relative to application root and with / instead of \\.</returns>
+    public static string PrettyPath( this string path )
+    {
+      var result = path.Replace( '\\', '/' );
+      if ( System.IO.Path.IsPathRooted( result ) )
+        result = result.MakeRelative( Application.dataPath );
+      if ( result.StartsWith( "./" ) )
+        result = result.Remove( 0, 2 );
+      return result;
+    }
+
+    /// <summary>
     /// Split on space but exclude multiple spaces, e.g.,
     /// "0.2      3  4" will return ["0.2", "3", "4"].
     /// </summary>

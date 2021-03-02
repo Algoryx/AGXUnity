@@ -35,7 +35,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnEnable()
     {
-      s_agxInfo = AGXUnity.LicenseManager.LicenseInfo.Create();
+      s_agxInfo = AGXUnity.LicenseInfo.Create();
     }
 
     private void OnGUI()
@@ -102,6 +102,6 @@ namespace AGXUnityEditor.Windows
                                        InspectorEditor.Skin.LabelWordWrap );
     }
 
-    private AGXUnity.LicenseManager.LicenseInfo s_agxInfo = new AGXUnity.LicenseManager.LicenseInfo();
+    private AGXUnity.LicenseInfo s_agxInfo = new AGXUnity.LicenseInfo();
   }
 }
