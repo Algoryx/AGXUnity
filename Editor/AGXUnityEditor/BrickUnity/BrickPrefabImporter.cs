@@ -36,7 +36,7 @@ namespace AGXUnityEditor.BrickUnity
     private Dictionary<B_RbAttachment, GameObject> attachmentDict;
     private Dictionary<B_Connector, GameObject> connectorDict;
     private Dictionary<B_Connector, GameObject> implicitConnectorDict; // Implicit connectors that should not by synced
-    private Dictionary<B_RigidBody, GameObject> bodyDict;
+    private BrickAGXUnityMap<B_RigidBody, AGXUnity.RigidBody> bodyDict;
 
     private Dictionary<string, Object> shapeMaterials;
     private Dictionary<string, Object> contactMaterials;
@@ -51,7 +51,7 @@ namespace AGXUnityEditor.BrickUnity
       attachmentDict = new Dictionary<B_RbAttachment, GameObject>();
       connectorDict = new Dictionary<B_Connector, GameObject>();
       implicitConnectorDict = new Dictionary<B_Connector, GameObject>();
-      bodyDict = new Dictionary<B_RigidBody, GameObject>();
+      bodyDict = new BrickAGXUnityMap<B_RigidBody, AGXUnity.RigidBody>();
       shapeMaterials = new Dictionary<string, Object>();
       contactMaterials = new Dictionary<string, Object>();
       frictionModels = new Dictionary<string, Object>();
