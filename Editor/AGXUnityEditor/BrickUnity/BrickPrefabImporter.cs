@@ -33,7 +33,6 @@ namespace AGXUnityEditor.BrickUnity
       }
     }
 
-    private Dictionary<B_RbAttachment, GameObject> attachmentDict;
     private Dictionary<B_Connector, GameObject> connectorDict;
     private Dictionary<B_Connector, GameObject> implicitConnectorDict; // Implicit connectors that should not by synced
     private BrickAGXUnityMap<B_RigidBody, AGXUnity.RigidBody> bodyDict;
@@ -48,7 +47,6 @@ namespace AGXUnityEditor.BrickUnity
 
     public GameObject ImportFile(string filepath, string modelName)
     {
-      attachmentDict = new Dictionary<B_RbAttachment, GameObject>();
       connectorDict = new Dictionary<B_Connector, GameObject>();
       implicitConnectorDict = new Dictionary<B_Connector, GameObject>();
       bodyDict = new BrickAGXUnityMap<B_RigidBody, AGXUnity.RigidBody>();
@@ -58,11 +56,8 @@ namespace AGXUnityEditor.BrickUnity
       renderMaterials = new List<Object>();
 
       var b_component = BrickUtils.LoadComponentFromFile(filepath, modelName);
-      if (!Brick.Physics.Mechanics.Utils.IsPositioned(b_component))
-      {
-        var stopAfterDefinedOrder = true;
-        Brick.Physics.ComponentLoader.InitializeComponent(b_component, stopAfterDefinedOrder);
-      }
+      var b_simulation = new Brick.AgxBrick.BrickSimulation();
+      b_simulation.AddComponent(b_component);
 
       // TODO: if source filepath is within the Assets directory so should we set the rootpath to that.
       RootPath = "Assets";
@@ -80,7 +75,7 @@ namespace AGXUnityEditor.BrickUnity
       var go_brickComponent = new GameObject(b_component.GetValueNameOrModelPath());
       try
       {
-        HandleNode(b_component, go_brickComponent);
+        HandleNode(b_component, ref go_brickComponent);
       }
       catch (System.Exception)
       {
@@ -125,11 +120,13 @@ namespace AGXUnityEditor.BrickUnity
       MaterialFactory.CreateOrUpdateContactMaterials(shapeMaterials, contactMaterials, frictionModels, b_component.ContactMaterials);
     }
 
-    public GameObject HandleNode(B_Node b_node, GameObject go, GameObject go_parent = null)
-    {
-      // Set the transform
-      go.SetLocalTransformFromBrick(b_node);
 
+    public GameObject HandleNode(
+      B_Node b_node,
+      ref GameObject go,
+      GameObject go_parent = null,
+      GameObject go_external = null)
+    {
       switch (b_node)
       {
         case B_Geometry b_geometry:
@@ -139,44 +136,85 @@ namespace AGXUnityEditor.BrickUnity
               au_shape.Material = shapeMaterials[b_geometry.Material.Name] as AGXUnity.ShapeMaterial;
           break;
         case B_RigidBody b_body:
-          go.AddRigidBody(b_body);
+          var extRef = b_body.ExternalReference;
+          if (string.IsNullOrEmpty(extRef))
+          {
+            go.AddRigidBody(b_body);
+          }
+          else if (go_external == null)
+          {
+            throw new AGXUnity.Exception($"Got an external reference ({extRef}) but no external component is present.");
+          }
+          else
+          {
+            // Try to find external body by UUID
+            bool bodyFound = false;
+            bool testUuid(Uuid uuid) => uuid.Str == extRef;
+            var c_uuid = go_external.GetComponentsInChildren<Uuid>().SingleOrDefault(testUuid);
+            GameObject go_rb_external = null;
+            if (c_uuid != default && c_uuid.GetComponent<AGXUnity.RigidBody>() != null)
+            {
+              go_rb_external = c_uuid.gameObject;
+              bodyFound = true;
+            }
+
+            // Try to find external body by name
+            bool testRb(AGXUnity.RigidBody rb) => rb.name == extRef;
+            var c_rb = go_external.GetComponentsInChildren<AGXUnity.RigidBody>().SingleOrDefault(testRb);
+            if (c_rb != default)
+            {
+              go_rb_external = c_rb.gameObject;
+              bodyFound = true;
+            }
+
+            if (!bodyFound)
+              throw new AGXUnity.Exception($"No external body with name or UUID \"{extRef}\" was found.");
+
+            Object.DestroyImmediate(go);
+            go = go_rb_external;
+          }
           bodyDict.Add(b_body, go);
           break;
         case B_RbAttachment b_rbAttachment:
-          attachmentDict.Add(b_rbAttachment, go);
           break;
         case B_Visual.Shape b_visualShape:
           go = HandleVisuals(go, b_visualShape);
           break;
         case B_Component b_component:
+          // Find the full path of the external file (if it is relative)
           if (!b_component._externalFilepathIsDefault)
           {
-            var relPath = b_component.ExternalFilepath;
-            var workDirPath = Path.GetFullPath(relPath);
-            var brickDirPath = Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), relPath);
-            var fullPath = File.Exists(workDirPath) ? workDirPath : File.Exists(brickDirPath) ? brickDirPath : null;
-            if (fullPath is null)
+            var externalFilepath = b_component.ExternalFilepath;
+            var componentFilePath = b_component._ModelValue.File.Filepath;
+            var componentFolderPath = Path.GetDirectoryName(componentFilePath);
+            var fullPaths = new List<string>
             {
-              Debug.LogError($"Brick Component could not handle external file {b_component.ExternalFilepath}. File does not exist." +
-                "Absolute paths searched:\n" +
-                $"{workDirPath}\n" +
-                $"{brickDirPath}");
-              throw new AGXUnity.Exception($"Could not find external file: {b_component.ExternalFilepath}");
+              Path.Combine(componentFolderPath, externalFilepath),
+              Path.GetFullPath(externalFilepath),
+              Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), externalFilepath)
+            };
+
+            var fullPath = fullPaths.FirstOrDefault(path => File.Exists(path));
+            if (fullPath == default)
+            {
+              Debug.LogError("Paths searched:\n  " + string.Join("\n  ", fullPaths));
+              throw new FileNotFoundException("External file not found", externalFilepath);
             }
+
+            // Copy the AGX file to the Data directory (under Assets), then use AGXUnity to import it
             var ext = Path.GetExtension(fullPath);
             if (ext == ".agx" || ext == ".aagx")
             {
+              var filename = Path.GetFileName(fullPath);
+              var dataFilepath = Path.Combine(this.DataDirectoryPath, filename);
               GetOrCreateDataDirectory();
-              var fileInfo = new AGXFileInfo(fullPath, DataDirectoryPath);
-              using (var inputFile = new InputAGXFile(fileInfo))
-              {
-                inputFile.TryLoad();
-                inputFile.TryParse();
-                var statistics = inputFile.TryGenerate();
-                var go_agx = fileInfo.PrefabInstance;
-                go_agx.transform.SetParent(go.transform, false);
-              }
-              //var go_agx = AGXFileImporter.Import(fullPath);
+              File.Copy(fullPath, dataFilepath, true);
+              var oldName = go.name;
+              Object.DestroyImmediate(go);
+              var agxPrefab = AGXFileImporter.Import(dataFilepath);
+              go = Object.Instantiate(agxPrefab);
+              go.name = oldName + " (external)";
+              go_external = go;
             }
             else
             {
@@ -188,6 +226,9 @@ namespace AGXUnityEditor.BrickUnity
           break;
       }
 
+      // Set the transform
+      go.SetLocalTransformFromBrick(b_node);
+
       // worldPositionStays=false makes sure that all the gameobjects are set according to their parent.
       if (go_parent != null)
         go.transform.SetParent(go_parent.transform, false);
@@ -198,7 +239,26 @@ namespace AGXUnityEditor.BrickUnity
       // RigidBodies before we can add the connectors
       foreach (var b_connector in b_node._Values.OfType<B_Connector>())
       {
-        connectorDict.Add(b_connector, go);
+        if (string.IsNullOrEmpty(b_connector.ExternalReference))
+        {
+          connectorDict.Add(b_connector, go);
+        }
+        else if (go_external is null)
+        {
+          throw new AGXUnity.Exception($"Found Brick connector with external reference {b_connector.ExternalReference} without external component");
+        }
+        else
+        {
+          // If the Connector is an external, then the constraint with its references are already created. We just
+          // have to set the regularization parameters and controllers from the Brick object.
+          var tf_constraint = go_external.transform.Find(b_connector.ExternalReference);
+          var c_constraint = tf_constraint.gameObject.GetComponent<AGXUnity.Constraint>();
+          c_constraint.gameObject.name = b_connector.GetValueNameOrModelPath();
+          c_constraint.SetComplianceAndDamping(b_connector.MainInteraction, true);
+          var c_brickObject = c_constraint.gameObject.AddBrickObject(b_connector, go);
+          c_constraint.SetControllers(b_connector, true);
+          c_brickObject.synchronize = true;
+        }
       }
 
       // Handle MultiConnectors
@@ -215,7 +275,7 @@ namespace AGXUnityEditor.BrickUnity
         // If something goes wrong the created gameobject must be destroyed. Or it will linger in the hierarchy
         try
         {
-          HandleNode(b_childNode, go_child, go);
+          HandleNode(b_childNode, ref go_child, go, go_external);
         }
         catch (System.Exception)
         {
@@ -245,10 +305,23 @@ namespace AGXUnityEditor.BrickUnity
       var b_body1 = b_attachment1.Body;
       var b_body2 = b_attachment2.Body;
       var c_attachmentPair = constraint.AttachmentPair;
-      c_attachmentPair.ReferenceObject = bodyDict[b_body1 as B_RigidBody];
-      c_attachmentPair.ReferenceFrame = new AGXUnity.ConstraintFrame(attachmentDict[b_attachment1]);
-      c_attachmentPair.ConnectedObject = b_body2 is null ? null : bodyDict[b_body2 as B_RigidBody];
-      c_attachmentPair.ConnectedFrame = new AGXUnity.ConstraintFrame(attachmentDict[b_attachment2]);
+      if (b_body1 == null)
+      {
+        c_attachmentPair.ReferenceObject = bodyDict[b_body2 as B_RigidBody].gameObject;
+        c_attachmentPair.ReferenceFrame.LocalPosition = b_attachment2.LocalPosition.ToHandedVector3();
+        c_attachmentPair.ReferenceFrame.LocalRotation = b_attachment2.LocalRotation.ToHandedQuaternion();
+        c_attachmentPair.ConnectedObject = null;
+        c_attachmentPair.ConnectedFrame.LocalPosition = b_attachment1.LocalPosition.ToHandedVector3();
+        c_attachmentPair.ConnectedFrame.LocalRotation = b_attachment1.LocalRotation.ToHandedQuaternion();
+      } else
+      {
+        c_attachmentPair.ReferenceObject = bodyDict[b_body1 as B_RigidBody].gameObject;
+        c_attachmentPair.ReferenceFrame.LocalPosition = b_attachment1.LocalPosition.ToHandedVector3();
+        c_attachmentPair.ReferenceFrame.LocalRotation = b_attachment1.LocalRotation.ToHandedQuaternion();
+        c_attachmentPair.ConnectedObject = b_body2 is null ? null : bodyDict[b_body2 as B_RigidBody].gameObject;
+        c_attachmentPair.ConnectedFrame.LocalPosition = b_attachment2.LocalPosition.ToHandedVector3();
+        c_attachmentPair.ConnectedFrame.LocalRotation = b_attachment2.LocalRotation.ToHandedQuaternion();
+      }
 
       constraint.SetComplianceAndDamping(b_connector.MainInteraction, overwriteIfDefault: true);
       constraint.SetControllers(b_connector, overwriteIfDefault: true);
