@@ -207,7 +207,7 @@ namespace AGXUnityEditor.IO
           node.GameObject.transform.position = nativeRb.getPosition().ToHandedVector3();
           node.GameObject.transform.rotation = nativeRb.getRotation().ToHandedQuaternion();
 
-          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );
+          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );          
 
           break;
         case Node.NodeType.Geometry:
@@ -635,7 +635,7 @@ namespace AGXUnityEditor.IO
 
       Constraint constraint = node.GameObject.GetOrCreateComponent<Constraint>();
 
-      // Is the constraint enabled/active?
+      // Is the constraint enabled/active? 
       // Somewhat strange though: Why is not only the Constraint component disabled?
       // For RigidBody component, only that component is disabled, but the below code disables the whole constraint GameObject.
       // Works for now
