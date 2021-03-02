@@ -250,9 +250,16 @@ namespace AGXUnityEditor
 
       binData[ AGX_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agx_dependencies_{binData[ AGX_DEPENDENCIES ].Value}*" ).FirstOrDefault();
       binData[ AGXTERRAIN_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agxTerrain_dependencies_{binData[ AGXTERRAIN_DEPENDENCIES ].Value}*" ).FirstOrDefault();
-      binData[ INSTALLED ].Directory = new DirectoryInfo( AGX_DIR +
-                                                          Path.DirectorySeparatorChar +
-                                                          binData[ INSTALLED ].Value );
+
+      // Handle both absolute and relative CMAKE_INSTALL_PREFIX
+      var installPath = binData[INSTALLED].Value;
+      if (Path.IsPathRooted(installPath))
+        binData[ INSTALLED ].Directory = new DirectoryInfo( installPath );
+      else
+        binData[ INSTALLED ].Directory = new DirectoryInfo( AGX_DIR +
+                                                            Path.DirectorySeparatorChar +
+                                                            installPath );
+
       if ( binData.Any( data => data.Directory == null || !data.Directory.Exists ) ) {
         foreach ( var data in binData )
           if ( data.Directory == null || !data.Directory.Exists )
