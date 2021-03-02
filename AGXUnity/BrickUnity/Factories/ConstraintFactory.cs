@@ -40,7 +40,6 @@ namespace AGXUnity.BrickUnity.Factories
             if (b_interaction != b_connector.MainInteraction)
             {
               Debug.LogWarning($"Could not create interaction for {constraint.GetComponent<BrickObject>().path}. Unknown interaction type.");
-              var go_interaction = new GameObject();
             }
             break;
         }
