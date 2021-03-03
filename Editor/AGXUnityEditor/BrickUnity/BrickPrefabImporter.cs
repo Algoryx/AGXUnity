@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity.IO;
 
+using AGXUnity.BrickUnity;
 using AGXUnity.BrickUnity.Factories;
 using B_Node = Brick.Scene.Node;
 using B_Component = Brick.Physics.Component;
@@ -15,7 +16,7 @@ using B_Visual = Brick.Visual;
 using B_RbAttachment = Brick.Physics.Mechanics.RigidBodyAttachment;
 using System.Linq;
 
-namespace AGXUnity.BrickUnity
+namespace AGXUnityEditor.BrickUnity
 {
   public class BrickPrefabImporter
   {
