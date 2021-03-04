@@ -172,9 +172,12 @@ To build new Brick dlls, you need to run the following commands from the Unity p
 ```
 set AGXDOTNET_PATH=%cd%\Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
 set BRICK_PUBLISH_DIR=%cd%\Assets\AGXUnity\Plugins\x86_64\Brick
-dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+set BRICK_DISABLE_GRPC=1
+set TMP_DIR=brick_tmp_build_dir
+mkdir %TMP_DIR%
+dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %TMP_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
+robocopy %TMP_DIR% %BRICK_PUBLISH_DIR% /mir /xf *.meta /xf agxDotNet.*
+rmdir %TMP_DIR%
 ```
 
 Or you can create a batch file in the Unity project root directory with the following contents:
@@ -194,11 +197,14 @@ if "%BRICK_DIR%"=="" (
     exit /b 1
 )
 echo Using BRICK_DIR=%BRICK_DIR%
-
+set BRICK_DISABLE_GRPC=1
 set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
-dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+set TMP_DIR=brick_tmp_build_dir
+if exist %TMP_DIR% rmdir /s /q %TMP_DIR%
+mkdir %TMP_DIR%
+dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %TMP_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release || exit /b %ERRORLEVEL%
+robocopy %TMP_DIR% %BRICK_PUBLISH_DIR% /mir /xf *.meta /xf agxDotNet.* || exit /b %ERRORLEVEL%
+rmdir /s /q %TMP_DIR% || exit /b %ERRORLEVEL%
 
 exit /b 0
 ```
