@@ -64,56 +64,6 @@ namespace AGXUnityEditor.Tools
       if ( !ConstraintTypeGUI( constraints, differentTypes ) )
         return;
 
-      //if ( anyUnknownType ) {
-      //  if ( constraints.Length > 1 )
-      //    InspectorGUI.WarningLabel( "One or more constraints is of unknown type and has to be " +
-      //                               "configured separately:\n" +
-      //                               string.Join( "\n", constraints.Where( c => c.Type == ConstraintType.Unknown ) ) );
-      //  else {
-      //    var newType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Choose type" ),
-      //                                                             refConstraint.Type,
-      //                                                             InspectorEditor.Skin.Popup );
-      //    if ( newType != ConstraintType.Unknown ) {
-      //      var undoIndex = Undo.GetCurrentGroup();
-      //      refConstraint.ChangeType( newType,
-      //                                createdObject =>
-      //                                {
-      //                                  Undo.RegisterCreatedObjectUndo( createdObject, "ElementaryConstraint created." );
-      //                                },
-      //                                destroyObject =>
-      //                                {
-      //                                  Undo.DestroyObjectImmediate( destroyObject );
-      //                                } );
-      //      Undo.CollapseUndoOperations( undoIndex );
-      //    }
-      //  }
-
-      //  return;
-      //}
-
-      //EditorGUI.showMixedValue = differentTypes;
-      //using ( new GUI.EnabledBlock( true ) ) {
-      //  var newType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
-      //                             refConstraint.Type,
-      //                             InspectorEditor.Skin.Popup,
-      //                             GUILayout.Width( EditorGUIUtility.labelWidth +
-      //                                              2.0f * 76.0f ) );
-      //  if ( newType != refConstraint.Type) {
-      //    var undoIndex = Undo.GetCurrentGroup();
-      //    refConstraint.ChangeType( newType,
-      //                              createdObject =>
-      //                              {
-      //                                Undo.RegisterCreatedObjectUndo( createdObject, "ElementaryConstraint created." );
-      //                              },
-      //                              destroyObject =>
-      //                              {
-      //                                Undo.DestroyObjectImmediate( destroyObject );
-      //                              } );
-      //    Undo.CollapseUndoOperations( undoIndex );
-      //  }
-      //}
-      //EditorGUI.showMixedValue = false;
-
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
       EditorGUI.showMixedValue = false;
