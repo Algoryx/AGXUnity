@@ -5,6 +5,7 @@ using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
 using B_Mechanics = Brick.Physics.Mechanics;
 using B_Stiffness = Brick.Physics.Mechanics.InteractionData6D.Stiffness6D;
 using B_Damping = Brick.Physics.Mechanics.InteractionData6D.Damping6D;
+using B_GearInteraction1D = Brick.Physics.Mechanics.HingeInteraction.HingeGear1DInteraction;
 
 using AU_Constraint = AGXUnity.Constraint;
 using AU_Controller = AGXUnity.ElementaryConstraintController;
@@ -35,6 +36,9 @@ namespace AGXUnity.BrickUnity.Factories
             break;
           case B_Interaction.FrictionInteraction1D b_friction1D:
             constraint.SetFrictionController(b_friction1D, overwriteIfDefault);
+            break;
+          case B_GearInteraction1D _:
+            // This is handled internally by Brick when adding drivetrains
             break;
           default:
             if (b_interaction != b_connector.MainInteraction)
