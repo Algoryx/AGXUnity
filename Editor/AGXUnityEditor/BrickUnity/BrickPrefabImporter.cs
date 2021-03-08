@@ -45,6 +45,12 @@ namespace AGXUnityEditor.BrickUnity
     private Dictionary<string, Object> frictionModels;
 
 
+    /// <summary>
+    /// Import a Brick file into a prefab GameObject.
+    /// </summary>
+    /// <param name="filepath">Path to the Brick file.</param>
+    /// <param name="modelName">Name of the model in the Brick file.</param>
+    /// <returns>A reference to the created GameObject.</returns>
     public GameObject ImportFile(string filepath, string modelName)
     {
       connectorDict = new Dictionary<B_Connector, GameObject>();
@@ -62,7 +68,7 @@ namespace AGXUnityEditor.BrickUnity
       // TODO: if source filepath is within the Assets directory so should we set the rootpath to that.
       RootPath = "Assets";
       Name = b_component._ModelValuePath.Name.Str;
-      var dirInfo = GetOrCreateDataDirectory();
+      GetOrCreateDataDirectory();
       // TODO: If the DataDirectory already exists. For all asset types load the existing assets into the appropriate dictionary.
       GetSavedAssets(contactMaterials, RestoredAssetsRoot.ContainingType.ContactMaterial);
       GetSavedAssets(frictionModels, RestoredAssetsRoot.ContainingType.FrictionModel);
@@ -114,14 +120,16 @@ namespace AGXUnityEditor.BrickUnity
       return go_brickComponent;
     }
 
-    public void HandleMaterials(B_Component b_component)
+
+    private void HandleMaterials(B_Component b_component)
     {
       MaterialFactory.CreateShapeMaterials(shapeMaterials, b_component.Materials);
       MaterialFactory.CreateOrUpdateContactMaterials(shapeMaterials, contactMaterials, frictionModels, b_component.ContactMaterials);
     }
 
 
-    public GameObject HandleNode(
+    // Recursively create GameObjects with corresponding AGXUnity components from a Brick.Node and its children
+    private GameObject HandleNode(
       B_Node b_node,
       ref GameObject go,
       GameObject go_parent = null,
@@ -130,97 +138,16 @@ namespace AGXUnityEditor.BrickUnity
       switch (b_node)
       {
         case B_Geometry b_geometry:
-          var au_shape = go.AddShape(b_geometry);
-          if (b_geometry.Material != null)
-            if (shapeMaterials.ContainsKey(b_geometry.Material.Name))
-              au_shape.Material = shapeMaterials[b_geometry.Material.Name] as AGXUnity.ShapeMaterial;
+          HandleGeometry(go, b_geometry);
           break;
         case B_RigidBody b_body:
-          var extRef = b_body.ExternalReference;
-          if (string.IsNullOrEmpty(extRef))
-          {
-            go.AddRigidBody(b_body);
-          }
-          else if (go_external == null)
-          {
-            throw new AGXUnity.Exception($"Got an external reference ({extRef}) but no external component is present.");
-          }
-          else
-          {
-            // Try to find external body by UUID
-            bool bodyFound = false;
-            bool testUuid(Uuid uuid) => uuid.Str == extRef;
-            var c_uuid = go_external.GetComponentsInChildren<Uuid>().SingleOrDefault(testUuid);
-            GameObject go_rb_external = null;
-            if (c_uuid != default && c_uuid.GetComponent<AGXUnity.RigidBody>() != null)
-            {
-              go_rb_external = c_uuid.gameObject;
-              bodyFound = true;
-            }
-
-            // Try to find external body by name
-            bool testRb(AGXUnity.RigidBody rb) => rb.name == extRef;
-            var c_rb = go_external.GetComponentsInChildren<AGXUnity.RigidBody>().SingleOrDefault(testRb);
-            if (c_rb != default)
-            {
-              go_rb_external = c_rb.gameObject;
-              bodyFound = true;
-            }
-
-            if (!bodyFound)
-              throw new AGXUnity.Exception($"No external body with name or UUID \"{extRef}\" was found.");
-
-            Object.DestroyImmediate(go);
-            go = go_rb_external;
-          }
-          bodyDict.Add(b_body, go);
-          break;
-        case B_RbAttachment b_rbAttachment:
+          HandleRigidBody(ref go, go_external, b_body);
           break;
         case B_Visual.Shape b_visualShape:
-          go = HandleVisuals(go, b_visualShape);
+          HandleVisuals(ref go, b_visualShape);
           break;
         case B_Component b_component:
-          // Find the full path of the external file (if it is relative)
-          if (!b_component._externalFilepathIsDefault)
-          {
-            var externalFilepath = b_component.ExternalFilepath;
-            var componentFilePath = b_component._ModelValue.File.Filepath;
-            var componentFolderPath = Path.GetDirectoryName(componentFilePath);
-            var fullPaths = new List<string>
-            {
-              Path.Combine(componentFolderPath, externalFilepath),
-              Path.GetFullPath(externalFilepath),
-              Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), externalFilepath)
-            };
-
-            var fullPath = fullPaths.FirstOrDefault(path => File.Exists(path));
-            if (fullPath == default)
-            {
-              Debug.LogError("Paths searched:\n  " + string.Join("\n  ", fullPaths));
-              throw new FileNotFoundException("External file not found", externalFilepath);
-            }
-
-            // Copy the AGX file to the Data directory (under Assets), then use AGXUnity to import it
-            var ext = Path.GetExtension(fullPath);
-            if (ext == ".agx" || ext == ".aagx")
-            {
-              var filename = Path.GetFileName(fullPath);
-              var dataFilepath = Path.Combine(this.DataDirectoryPath, filename);
-              GetOrCreateDataDirectory();
-              File.Copy(fullPath, dataFilepath, true);
-              var oldName = go.name;
-              Object.DestroyImmediate(go);
-              var agxPrefab = AGXFileImporter.Import(dataFilepath);
-              go = Object.Instantiate(agxPrefab);
-              go.name = oldName + " (external)";
-              go_external = go;
-            }
-            else
-            {
-              throw new AGXUnity.Exception($"Brick could not load external file {fullPath}. Unknown file extension: {ext}");
-            }
-          }
+          HandleComponent(ref go, ref go_external, b_component);
           break;
         default:
           break;
@@ -243,21 +170,15 @@ namespace AGXUnityEditor.BrickUnity
         {
           connectorDict.Add(b_connector, go);
         }
-        else if (go_external is null)
-        {
-          throw new AGXUnity.Exception($"Found Brick connector with external reference {b_connector.ExternalReference} without external component");
-        }
-        else
+        else if (go_external != null)
         {
           // If the Connector is an external, then the constraint with its references are already created. We just
           // have to set the regularization parameters and controllers from the Brick object.
-          var tf_constraint = go_external.transform.Find(b_connector.ExternalReference);
-          var c_constraint = tf_constraint.gameObject.GetComponent<AGXUnity.Constraint>();
-          c_constraint.gameObject.name = b_connector.GetValueNameOrModelPath();
-          c_constraint.SetComplianceAndDamping(b_connector.MainInteraction, true);
-          var c_brickObject = c_constraint.gameObject.AddBrickObject(b_connector, go);
-          c_constraint.SetControllers(b_connector, true);
-          c_brickObject.synchronize = true;
+          HandleExternalConnector(go, go_external, b_connector);
+        }
+        else
+        {
+          throw new AGXUnity.Exception($"Found Brick connector with external reference {b_connector.ExternalReference} without external component");
         }
       }
 
@@ -288,9 +209,72 @@ namespace AGXUnityEditor.BrickUnity
     }
 
 
+    // Add an AGXUnity shape to a GameObject from a Brick.Physics.Geometry object
+    private void HandleGeometry(GameObject go, B_Geometry b_geometry)
+    {
+      var au_shape = go.AddShape(b_geometry);
+      if (b_geometry.Material != null)
+        if (shapeMaterials.ContainsKey(b_geometry.Material.Name))
+          au_shape.Material = shapeMaterials[b_geometry.Material.Name] as AGXUnity.ShapeMaterial;
+    }
+
+
+    // Adds an AGXUnity.RigidBody from a Brick.Physics.Mechanics.RigidBody object to a GameObject. If the Brick body
+    // has an external reference, the referenced body will have its properties set from the Brick object instead.
+    private void HandleRigidBody(ref GameObject go, GameObject go_external, B_RigidBody b_body)
+    {
+      if (string.IsNullOrEmpty(b_body.ExternalReference))
+      {
+        go.AddRigidBody(b_body);
+      }
+      else if (go_external != null)
+      {
+        HandleExternalRigidBody(ref go, go_external, b_body);
+      }
+      else
+      {
+        throw new AGXUnity.Exception($"Got an external reference ({b_body.ExternalReference}) but no external component is present.");
+      }
+      bodyDict.Add(b_body, go);
+    }
+
+
+    // Set the properties of an AGX RigidBody referenced by a Brick RigidBody object
+    private static void HandleExternalRigidBody(ref GameObject go, GameObject go_external, B_RigidBody b_body)
+    {
+      var extRef = b_body.ExternalReference;
+
+      // Try to find external body by UUID
+      bool bodyFound = false;
+      bool testUuid(Uuid uuid) => uuid.Str == extRef;
+      var c_uuid = go_external.GetComponentsInChildren<Uuid>().SingleOrDefault(testUuid);
+      GameObject go_rb_external = null;
+      if (c_uuid != default && c_uuid.GetComponent<AGXUnity.RigidBody>() != null)
+      {
+        go_rb_external = c_uuid.gameObject;
+        bodyFound = true;
+      }
+
+      // Try to find external body by name
+      bool testRb(AGXUnity.RigidBody rb) => rb.name == extRef;
+      var c_rb = go_external.GetComponentsInChildren<AGXUnity.RigidBody>().SingleOrDefault(testRb);
+      if (c_rb != default)
+      {
+        go_rb_external = c_rb.gameObject;
+        bodyFound = true;
+      }
+
+      if (!bodyFound)
+        throw new AGXUnity.Exception($"No external body with name or UUID \"{extRef}\" was found.");
+
+      Object.DestroyImmediate(go);
+      go = go_rb_external;
+    }
+
+
     // Handle a connector, i.e. create and configure an AGXUnity Constraint GameObject and add a BrickObject component
     // The "synchronize" argument determines if the connector should be synched with the Brick data tree during runtime
-    public GameObject HandleConnector(B_Connector b_connector, GameObject go_parent, bool synchronize)
+    private GameObject HandleConnector(B_Connector b_connector, GameObject go_parent, bool synchronize)
     {
       var go_constraint = AGXUnity.Factory.Create(b_connector.GetAGXUnityConstraintType());
       go_constraint.name = b_connector._ModelValue.Name.Str;
@@ -330,7 +314,21 @@ namespace AGXUnityEditor.BrickUnity
     }
 
 
-    public GameObject HandleVisuals(GameObject go, B_Visual.Shape b_visualShape)
+    // Set the constraint properties of an AGX Constraint referenced by a Brick connector object
+    private void HandleExternalConnector(GameObject go, GameObject go_external, B_Connector b_connector)
+    {
+      var tf_constraint = go_external.transform.Find(b_connector.ExternalReference);
+      var c_constraint = tf_constraint.gameObject.GetComponent<AGXUnity.Constraint>();
+      c_constraint.gameObject.name = b_connector.GetValueNameOrModelPath();
+      c_constraint.SetComplianceAndDamping(b_connector.MainInteraction, true);
+      var c_brickObject = c_constraint.gameObject.AddBrickObject(b_connector, go);
+      c_constraint.SetControllers(b_connector, true);
+      c_brickObject.synchronize = true;
+    }
+
+
+    // Add a renderer component to a GameObject from a Brick Visual
+    private void HandleVisuals(ref GameObject go, B_Visual.Shape b_visualShape)
     {
       var name = b_visualShape._ModelValuePath.Name.Str;
       Object.DestroyImmediate(go);
@@ -347,18 +345,65 @@ namespace AGXUnityEditor.BrickUnity
         material.name = b_visualShape.GetValueNameOrModelPath();
         renderMaterials.Add(material);
       }
-      return go;
     }
 
 
-    public DirectoryInfo GetOrCreateDataDirectory()
+    // Handle a Brick Component. This only does something if the component has an external file path. In that case,
+    // read the external file and assign the corresponding GameObject to go_external so that it can be referenced by
+    // the Brick Node's children
+    private void HandleComponent(ref GameObject go, ref GameObject go_external, B_Component b_component)
+    {
+      if (b_component._externalFilepathIsDefault)
+        return;
+
+      var externalFilepath = b_component.ExternalFilepath;
+      var componentFilePath = b_component._ModelValue.File.Filepath;
+      var componentFolderPath = Path.GetDirectoryName(componentFilePath);
+      var fullPaths = new List<string>
+            {
+              Path.Combine(componentFolderPath, externalFilepath),
+              Path.GetFullPath(externalFilepath),
+              Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), externalFilepath)
+            };
+
+      var fullPath = fullPaths.FirstOrDefault(path => File.Exists(path));
+      if (fullPath == default)
+      {
+        Debug.LogError("Paths searched:\n  " + string.Join("\n  ", fullPaths));
+        throw new FileNotFoundException("External file not found", externalFilepath);
+      }
+
+      // Copy the AGX file to the Data directory (under Assets), then use AGXUnity to import it
+      var ext = Path.GetExtension(fullPath);
+      if (ext == ".agx" || ext == ".aagx")
+      {
+        var filename = Path.GetFileName(fullPath);
+        var dataFilepath = Path.Combine(this.DataDirectoryPath, filename);
+        GetOrCreateDataDirectory();
+        File.Copy(fullPath, dataFilepath, true);
+        var oldName = go.name;
+        Object.DestroyImmediate(go);
+        var agxPrefab = AGXFileImporter.Import(dataFilepath);
+        go = Object.Instantiate(agxPrefab);
+        go.name = oldName + " (external)";
+      }
+      else
+      {
+        throw new AGXUnity.Exception($"Brick could not load external file {fullPath}. Unknown file extension: {ext}");
+      }
+
+      go_external = go;
+    }
+
+
+    private DirectoryInfo GetOrCreateDataDirectory()
     {
       if (!AssetDatabase.IsValidFolder(DataDirectoryPath))
         AssetDatabase.CreateFolder(RootPath, Name + "_Data");
       return new DirectoryInfo(DataDirectoryPath);
     }
 
-    public void RefreshAssets()
+    private void RefreshAssets()
     {
       createOrUpdateAssets(shapeMaterials, RestoredAssetsRoot.ContainingType.ShapeMaterial);
       createOrUpdateAssets(contactMaterials, RestoredAssetsRoot.ContainingType.ContactMaterial);
