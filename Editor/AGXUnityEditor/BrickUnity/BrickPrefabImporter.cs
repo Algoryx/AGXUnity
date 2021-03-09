@@ -13,7 +13,6 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_MultiConnector = Brick.Physics.Mechanics.MultiAttachmentConnector;
 using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
-using B_RbAttachment = Brick.Physics.Mechanics.RigidBodyAttachment;
 using System.Linq;
 using AGXUnityEditor.IO;
 
