@@ -212,6 +212,8 @@ namespace AGXUnityEditor.BrickUnity
     // Add an AGXUnity shape to a GameObject from a Brick.Physics.Geometry object
     private void HandleGeometry(GameObject go, B_Geometry b_geometry)
     {
+      if (b_geometry.IsExternal)
+        return;
       var au_shape = go.AddShape(b_geometry);
       if (b_geometry.Material != null)
         if (shapeMaterials.ContainsKey(b_geometry.Material.Name))
