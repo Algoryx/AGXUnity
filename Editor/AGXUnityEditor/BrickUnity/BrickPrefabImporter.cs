@@ -282,7 +282,7 @@ namespace AGXUnityEditor.BrickUnity
       go_constraint.name = b_connector._ModelValue.Name.Str;
       go_constraint.transform.SetParent(go_parent.transform, false);
       var c_brickObject = go_constraint.AddBrickObject(b_connector, go_parent);
-      c_brickObject.synchronize = synchronize;
+      c_brickObject.synchronize &= synchronize;
 
       var constraint = go_constraint.GetComponent<AGXUnity.Constraint>();
 
@@ -323,9 +323,8 @@ namespace AGXUnityEditor.BrickUnity
       var c_constraint = tf_constraint.gameObject.GetComponent<AGXUnity.Constraint>();
       c_constraint.gameObject.name = b_connector.GetValueNameOrModelPath();
       c_constraint.SetComplianceAndDamping(b_connector.MainInteraction, true);
-      var c_brickObject = c_constraint.gameObject.AddBrickObject(b_connector, go);
+      c_constraint.gameObject.AddBrickObject(b_connector, go);
       c_constraint.SetControllers(b_connector, true);
-      c_brickObject.synchronize = true;
     }
 
 
