@@ -8,17 +8,17 @@ namespace AGXUnity.Model
   /// Two body tire model where the rubber tire and solid rim are separate
   /// rigid bodies. The elastic behaviors are controlled by radial, lateral,
   /// bend and torsional stiffness and damping coefficients.
-  /// 
+  ///
   ///  - Radial stiffness/damping affects translation orthogonal to tire rotation axis.
   ///  - Lateral stiffness/damping affects translation in axis of rotation.
   ///  - Bending stiffness/damping affects rotation orthogonal to axis of rotation.
   ///  - Torsional stiffness/damping affects rotation in axis of rotation.
-  /// 
+  ///
   /// The unit for translational stiffness is force/displacement (if using SI: N/m)
   /// The unit for rotational stiffness is torque/angular displacement(if using SI: Nm/rad)
   /// The unit for the translational damping coefficient is force* time/displacement(if using SI: Ns/m)
   /// The unit for the rotational damping coefficient is torque* time/angular displacement(if using SI: Nms/rad)
-  /// 
+  ///
   /// Note: This feature requires specific license in AGX Dynamics.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Model/Two Body Tire" )]
@@ -243,7 +243,7 @@ namespace AGXUnity.Model
         Debug.LogError( "TwoBodyTire failed to initialize: Tire or Rim rigid body failed to initialize.", this );
         return false;
       }
-
+      var transform = FindNativeTransform(TireRigidBody);
       Native = new agxModel.TwoBodyTire( nativeTireRigidBody,
                                          TireRadius,
                                          nativeRimRigidBody,

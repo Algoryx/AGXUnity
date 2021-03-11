@@ -13,6 +13,7 @@ namespace AGXUnity.IO
       CableProperties,
       RenderMaterial,
       Mesh,
+      TwoBodyTireProperties,
       Unknown // This is last - add entries before this.
     }
 
