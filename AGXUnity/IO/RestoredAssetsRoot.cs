@@ -79,6 +79,7 @@ namespace AGXUnity.IO
       typeof( CableProperties ),
       typeof( Material ),
       typeof( Mesh ),
+      typeof( Model.TwoBodyTireProperties ),
       null // Unknown assets, the only one valid to be null.
     };
   }
