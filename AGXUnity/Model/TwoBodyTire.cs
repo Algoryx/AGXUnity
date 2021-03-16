@@ -243,7 +243,7 @@ namespace AGXUnity.Model
         Debug.LogError( "TwoBodyTire failed to initialize: Tire or Rim rigid body failed to initialize.", this );
         return false;
       }
-      var transform = FindNativeTransform(TireRigidBody);
+
       Native = new agxModel.TwoBodyTire( nativeTireRigidBody,
                                          TireRadius,
                                          nativeRimRigidBody,
