@@ -13,6 +13,7 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_MultiConnector = Brick.Physics.Mechanics.MultiAttachmentConnector;
 using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
+using B_TwoBodyTire = Brick.AgxBrick.TwoBodyTire;
 using System.Linq;
 using AGXUnityEditor.IO;
 
@@ -35,9 +36,11 @@ namespace AGXUnityEditor.BrickUnity
     private Dictionary<B_Connector, GameObject> connectorDict;
     private Dictionary<B_Connector, GameObject> implicitConnectorDict; // Implicit connectors that should not by synced
     private Dictionary<B_RigidBody, GameObject> bodyDict;
+    private Dictionary<B_TwoBodyTire, GameObject> tireDict;
 
     private Dictionary<string, Object> shapeMaterials;
     private Dictionary<string, Object> contactMaterials;
+    private Dictionary<string, Object> tireProperties;
     // TODO: Should switch to a dictionary for renderMaterials instead of List as soon as
     // we can guarentee unique names for rendermaterials.
     // private Dictionary<string, Object> renderMaterials;
@@ -55,9 +58,11 @@ namespace AGXUnityEditor.BrickUnity
       connectorDict = new Dictionary<B_Connector, GameObject>();
       implicitConnectorDict = new Dictionary<B_Connector, GameObject>();
       bodyDict = new Dictionary<B_RigidBody, GameObject>();
+      tireDict = new Dictionary<B_TwoBodyTire, GameObject>();
       shapeMaterials = new Dictionary<string, Object>();
       contactMaterials = new Dictionary<string, Object>();
       frictionModels = new Dictionary<string, Object>();
+      tireProperties = new Dictionary<string, Object>();
       renderMaterials = new List<Object>();
 
       var b_component = BrickUtils.LoadComponentFromFile(filepath, modelName);
@@ -104,6 +109,14 @@ namespace AGXUnityEditor.BrickUnity
         HandleConnector(b_connector, go_parent, false);
       }
 
+      // Handle TwoBodyTire
+      foreach (var tireGameObjectPair in tireDict)
+      {
+        var b_tire = tireGameObjectPair.Key;
+        var go = tireGameObjectPair.Value;
+        go.AddTwoBodyTire(b_tire, bodyDict, tireProperties);
+      }
+
       var runtimeObject = go_brickComponent.AddComponent<BrickRuntimeComponent>();
       runtimeObject.filePath = filepath;
       runtimeObject.modelName = modelName;
@@ -144,6 +157,9 @@ namespace AGXUnityEditor.BrickUnity
           break;
         case B_Visual.Shape b_visualShape:
           HandleVisuals(ref go, b_visualShape);
+          break;
+        case B_TwoBodyTire b_tire:
+          tireDict.Add(b_tire, go);
           break;
         case B_Component b_component:
           HandleComponent(ref go, ref go_external, b_component);
@@ -405,6 +421,7 @@ namespace AGXUnityEditor.BrickUnity
 
     private void RefreshAssets()
     {
+      createOrUpdateAssets(tireProperties, RestoredAssetsRoot.ContainingType.TwoBodyTireProperties);
       createOrUpdateAssets(shapeMaterials, RestoredAssetsRoot.ContainingType.ShapeMaterial);
       createOrUpdateAssets(contactMaterials, RestoredAssetsRoot.ContainingType.ContactMaterial);
       createOrUpdateAssets(renderMaterials, RestoredAssetsRoot.ContainingType.RenderMaterial);
