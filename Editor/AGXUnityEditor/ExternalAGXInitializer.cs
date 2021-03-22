@@ -252,8 +252,8 @@ namespace AGXUnityEditor
       binData[ AGXTERRAIN_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agxTerrain_dependencies_{binData[ AGXTERRAIN_DEPENDENCIES ].Value}*" ).FirstOrDefault();
 
       // Handle both absolute and relative CMAKE_INSTALL_PREFIX
-      var installPath = binData[INSTALLED].Value;
-      if (Path.IsPathRooted(installPath))
+      var installPath = binData[ INSTALLED ].Value;
+      if ( Path.IsPathRooted( installPath ) )
         binData[ INSTALLED ].Directory = new DirectoryInfo( installPath );
       else
         binData[ INSTALLED ].Directory = new DirectoryInfo( AGX_DIR +
@@ -270,7 +270,7 @@ namespace AGXUnityEditor
       AGX_BIN_PATH    = ( from data in binData
                           select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
       AGX_PLUGIN_PATH = $"{AGX_BIN_PATH[ INSTALLED ]}{Path.DirectorySeparatorChar}plugins";
-      AGX_DATA_DIR    = $"{AGX_DIR}{Path.DirectorySeparatorChar}{binData[ INSTALLED ].Value}{Path.DirectorySeparatorChar}data";
+      AGX_DATA_DIR    = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
 
       return true;
     }
@@ -288,7 +288,6 @@ namespace AGXUnityEditor
     {
       public string CMakeKey         = string.Empty;
       public string Value            = string.Empty;
-      public string Path             = string.Empty;
       public DirectoryInfo Directory = null;
 
       public bool HasValue { get { return !string.IsNullOrEmpty( Value ); } }

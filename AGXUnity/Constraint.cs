@@ -718,7 +718,9 @@ namespace AGXUnity
     /// in the native instance. Throws if an elementary constraint fails to initialize.
     /// </summary>
     /// <param name="native">Native instance.</param>
-    public void TryAddElementaryConstraints( agx.Constraint native )
+    /// <param name="onObjectCreated">Optional callback when elementary constraint has been created.</param>
+    public void TryAddElementaryConstraints( agx.Constraint native,
+                                             Action<UnityEngine.Object> onObjectCreated = null )
     {
       if ( native == null )
         throw new ArgumentNullException( "native", "Native constraint is null." );
@@ -733,6 +735,8 @@ namespace AGXUnity
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
+        onObjectCreated?.Invoke( ec );
+
         m_elementaryConstraints.Add( ec );
       }
 
@@ -743,6 +747,8 @@ namespace AGXUnity
         var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
+
+        onObjectCreated?.Invoke( sc );
 
         m_elementaryConstraints.Add( sc );
       }
@@ -764,6 +770,43 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Change constraint type. Note that all values will be default
+    /// when the type has changed.
+    /// </summary>
+    /// <param name="type">New type of the constraint.</param>
+    /// <param name="onObjectCreated">Optional callback when an object has been created.</param>
+    /// <param name="destroyObject">
+    /// Optional callback to destroy an object - Object.DestroyImmediate
+    /// is used by default.
+    /// </param>
+    public void ChangeType( ConstraintType type,
+                            Action<UnityEngine.Object> onObjectCreated = null,
+                            Action<UnityEngine.Object> destroyObject = null )
+    {
+      if ( Native != null ) {
+        Debug.LogWarning( "Invalid to change type of an initialized constraint.", this );
+        return;
+      }
+
+      foreach ( var elementaryConstraint in m_elementaryConstraints ) {
+        if ( destroyObject != null )
+          destroyObject( elementaryConstraint );
+        else
+          DestroyImmediate( elementaryConstraint );
+      }
+
+      m_elementaryConstraints.Clear();
+
+      SetType( type, true );
+
+      if ( type == ConstraintType.Unknown )
+        return;
+
+      using ( var tempNative = new TemporaryNative( NativeType, AttachmentPair ) )
+        TryAddElementaryConstraints( tempNative.Instance, onObjectCreated );
+    }
+
+    /// <summary>
     /// Creates native instance and adds it to the simulation if this constraint
     /// is properly configured.
     /// </summary>
@@ -772,6 +815,11 @@ namespace AGXUnity
     {
       if ( AttachmentPair.ReferenceObject == null ) {
         Debug.LogError( "Unable to initialize constraint - reference object must be valid and contain a rigid body component.", this );
+        return false;
+      }
+
+      if ( Type == ConstraintType.Unknown ) {
+        Debug.LogError( "Unable to initialize constraint - constraint type is Unknown.", this );
         return false;
       }
 
@@ -897,6 +945,11 @@ namespace AGXUnity
       Native = null;
 
       base.OnDestroy();
+    }
+
+    private void Reset()
+    {
+      Type = ConstraintType.Unknown;
     }
 
     private void OnPreStepForwardUpdate()
