@@ -169,7 +169,7 @@ To run a Brick project, the `BRICK_DIR` environment variable needs to be set to 
 
 To build new Brick dlls, you need to follow these steps:
 
-1. Find your AgxBrick directory (located in `brick/AgxBrick/cs/brick/AgxBrick` relative to your AGX directory), and save the path to `AGXBRICK_DIR`
+1. Find your AgxBrick directory (located in `brick/AgxBrick/cs/brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
 2. Copy the `brick\BuildConfig.props` to `brick\LocalBuildConfig.props` (both relative to your AGX directory) and fill it with the following content:
 
 ```xml
