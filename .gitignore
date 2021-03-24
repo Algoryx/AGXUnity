@@ -43,6 +43,7 @@ Plugins/x86_64/*.dll.meta
 !Plugins/x86_64/agxDotnet.dll.meta
 /**/*.lic*
 /**/*.lfx*
+/**/*.rtlfx*
 Plugins/x86_64/agx
 Plugins/x86_64/agx.meta
 Editor/Data/Data.asset*
