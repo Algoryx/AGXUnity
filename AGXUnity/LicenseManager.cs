@@ -11,25 +11,6 @@ namespace AGXUnity
   public static class LicenseManager
   {
     /// <summary>
-    /// License types that AGX Dynamics supports.
-    /// </summary>
-    public enum LicenseType
-    {
-      /// <summary>
-      /// An agx.lfx file or encrypted string.
-      /// </summary>
-      Service,
-      /// <summary>
-      /// An agx.lic file or obfuscated string.
-      /// </summary>
-      Legacy,
-      /// <summary>
-      /// Unidentified license type.
-      /// </summary>
-      Invalid
-    }
-
-    /// <summary>
     /// Current license information loaded in AGX Dynamics.
     /// </summary>
     public static LicenseInfo LicenseInfo
@@ -49,13 +30,13 @@ namespace AGXUnity
     /// <summary>
     /// Enumerate known license types.
     /// </summary>
-    public static IEnumerable<LicenseType> LicenseTypes
+    public static IEnumerable<LicenseInfo.LicenseType> LicenseTypes
     {
       get
       {
-        foreach ( LicenseType licenseType in Enum.GetValues( typeof( LicenseType ) ) ) {
-          if ( licenseType == LicenseType.Invalid )
-            yield break;
+        foreach ( LicenseInfo.LicenseType licenseType in Enum.GetValues( typeof( LicenseInfo.LicenseType ) ) ) {
+          if ( licenseType == LicenseInfo.LicenseType.Unknown )
+            continue;
           else
             yield return licenseType;
         }
@@ -63,9 +44,19 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// True if a license is being refreshed.
+    /// </summary>
+    public static bool IsRefreshing => s_refreshTask != null && !s_refreshTask.IsCompleted;
+
+    /// <summary>
+    /// True if a license is being activated.
+    /// </summary>
+    public static bool IsActivating => s_activationTask != null && !s_activationTask.IsCompleted;
+
+    /// <summary>
     /// True if the activation task is running, otherwise false.
     /// </summary>
-    public static bool IsActivating { get { return s_activationTask != null && !s_activationTask.IsCompleted; } }
+    public static bool IsBusy => IsActivating || IsRefreshing;
 
     /// <summary>
     /// Load license file (service or legacy) located in any directory
@@ -78,10 +69,16 @@ namespace AGXUnity
     /// </returns>
     public static bool LoadFile()
     {
-      var filename = FindLicenseFiles( LicenseType.Service ).FirstOrDefault() ??
-                     FindLicenseFiles( LicenseType.Legacy ).FirstOrDefault();
-      return LoadFile( filename?.PrettyPath(),
-                       $"Searching for license service or legacy license file from application root: \"{filename?.PrettyPath()}\"." );
+      Reset();
+
+      var filename = FindLicenseFiles( LicenseInfo.LicenseType.Service ).FirstOrDefault() ??
+                     FindLicenseFiles( LicenseInfo.LicenseType.Legacy ).FirstOrDefault();
+
+      if ( string.IsNullOrEmpty( filename ) )
+        return false;
+
+      return LoadFile( filename.PrettyPath(),
+                       $"Searching for license service or legacy license file from application root: \"{filename.PrettyPath()}\"." );
     }
 
     /// <summary>
@@ -107,6 +104,142 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Generate an encrypted license file containing runtime license activation
+    /// information for a given build/application. The main purpose of this is to
+    /// protect from undesired activations of the license outside of the application.
+    /// 
+    /// The <paramref name="applicationRootDirectory"/> is expected to be an absolute
+    /// path to the root directory of the build/application, i.e., the directory
+    /// containing the main executable and the application data directory.
+    /// 
+    /// The <paramref name="referenceApplicationFile"/> is expected to be relative to
+    /// <paramref name="applicationRootDirectory"/>. This file location (relative
+    /// to application root) must be exist now, exist during the activation and contain
+    /// the exact same information (e.g., a dll or something else static and unique
+    /// to the application).
+    /// </summary>
+    /// <param name="runtimeLicenseId">Runtime license activation id.</param>
+    /// <param name="runtimeLicensePassword">Runtime license activation password.</param>
+    /// <param name="applicationRootDirectory">Absolute path to the application/build directory.</param>
+    /// <param name="referenceApplicationFile">Relative (to <paramref name="applicationRootDirectory"/>) path to a static file.</param>
+    /// <param name="onSuccess">Optional callback with the generated filename (including path) if successful - otherwise check return value and logs.</param>
+    /// <returns>True if successfully generated, otherwise false (check console output).</returns>
+    public static bool GenerateEncryptedRuntime( int runtimeLicenseId,
+                                                 string runtimeLicensePassword,
+                                                 string applicationRootDirectory,
+                                                 string referenceApplicationFile,
+                                                 Action<string> onSuccess = null )
+    {
+      if ( !Directory.Exists( applicationRootDirectory ) ) {
+        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
+                        $"application root directory \"{applicationRootDirectory}\" doesn't exist." );
+        return false;
+      }
+
+      if ( !Path.IsPathRooted( applicationRootDirectory ) ) {
+        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
+                        $"application root directory \"{applicationRootDirectory}\" isn't rooted." );
+        return false;
+      }
+
+      var absolutePathToReferenceFile = $"{applicationRootDirectory}/{referenceApplicationFile}".Replace( '\\', '/' );
+      if ( !File.Exists( absolutePathToReferenceFile ) ) {
+        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
+                        $"reference file \"{referenceApplicationFile}\" doesn't exist relative to \"{applicationRootDirectory}\"." );
+        return false;
+      }
+
+      try {
+        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( applicationRootDirectory );
+        var encrypted = agx.Runtime.instance().encryptRuntimeActivation( runtimeLicenseId,
+                                                                         runtimeLicensePassword,
+                                                                         referenceApplicationFile );
+        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( applicationRootDirectory );
+
+        if ( !string.IsNullOrEmpty( encrypted ) ) {
+          // Fall-back directory is application root but we'll try to find
+          // the AGX Dynamics binaries and place it there if applicationRootDirectory
+          // is part of the resources of AGX Dynamics.
+          var licenseTargetDirectory = Directory.GetFiles( applicationRootDirectory,
+                                                           "agxPhysics.dll",
+                                                           SearchOption.AllDirectories ).Select( file => new FileInfo( file ).Directory.FullName ).FirstOrDefault() ??
+                                       applicationRootDirectory;
+
+          var encryptedFilename = $"{licenseTargetDirectory}/agx{s_runtimeActivationExtension}".Replace( '\\', '/' );
+
+          File.WriteAllText( encryptedFilename, encrypted );
+
+          onSuccess?.Invoke( encryptedFilename );
+
+          return true;
+        }
+
+        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
+                        $"encryption failed with status: {agx.Runtime.instance().getStatus()}" );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogError( "AGXUnity.LicenseManager: Exception occurred during generate of encrypted runtime " +
+                        $"for application root \"{applicationRootDirectory}\"." );
+        Debug.LogException( e );
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Searches for encrypted runtime license from application root, and if
+    /// found, activates the license and writes the file in <paramref name="targetDirectory"/>.
+    /// The encrypted license file found will be deleted if the activation is successful.
+    /// </summary>
+    /// <param name="targetDirectory">Target directory of the activated license file.</param>
+    /// <returns>True if successfully activated, otherwise false.</returns>
+    public static bool ActivateEncryptedRuntime( string targetDirectory )
+    {
+      var filename = FindRuntimeActivationFiles().FirstOrDefault();
+      if ( string.IsNullOrEmpty( filename ) ) {
+        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, license file not found.",
+                          $"Searching all directories under {Application.dataPath} for {s_runtimeActivationExtension} files." );
+        return false;
+      }
+
+      return ActivateEncryptedRuntime( filename, targetDirectory );
+    }
+
+    /// <summary>
+    /// Activate encrypted license file <paramref name="filename"/> given target directory
+    /// <paramref name="targetDirectory"/> where the activated license file should be written.
+    /// 
+    /// The given encrypted file will be deleted if the activation is successful.
+    /// </summary>
+    /// <param name="filename">Encrypted license file, including path.</param>
+    /// <param name="targetDirectory">Target directory where the activated license file should be written.</param>
+    /// <returns>True if successfully activated and written, otherwise false.</returns>
+    public static bool ActivateEncryptedRuntime( string filename, string targetDirectory )
+    {
+      if ( string.IsNullOrEmpty( filename ) || !File.Exists( filename ) ) {
+        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, filename not given or doesn't exist.",
+                          $"Explicit runtime activation with filename: \"{filename}\"" );
+        return false;
+      }
+
+      try {
+        if ( !Directory.Exists( targetDirectory ) )
+          Directory.CreateDirectory( targetDirectory );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogError( $"AGXUnity.LicenseManager: Unable to create given target directory - \"{targetDirectory}\"." );
+        Debug.LogException( e );
+        return false;
+      }
+
+      var success = LoadFile( filename, $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
+      if ( success )
+        File.Delete( filename );
+
+      return success;
+    }
+
+    /// <summary>
     /// Update license information of the license loaded
     /// into AGX Dynamics.
     /// </summary>
@@ -120,33 +253,44 @@ namespace AGXUnity
     /// </summary>
     /// <param name="licenseId">License id.</param>
     /// <param name="licensePassword">License password.</param>
-    /// <param name="targetDirectory">Target directory of the license file.</param>
+    /// <param name="targetDirectory">Target directory of the activated license file.</param>
     /// <param name="onDone">Callback when the request has been done.</param>
     public static void ActivateAsync( int licenseId,
                                       string licensePassword,
                                       string targetDirectory,
                                       Action<bool> onDone )
     {
-      if ( IsActivating ) {
+      if ( IsBusy ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to activate license with id {licenseId} - activation is still in progress." );
+        onDone?.Invoke( false );
         return;
       }
 
+      var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
       s_activationTask = Task.Run( () =>
       {
         try {
           var success = agx.Runtime.instance().activateAgxLicense( licenseId,
                                                                    licensePassword,
-                                                                   $"{targetDirectory}/agx{GetLicenseExtension( LicenseType.Service )}" );
+                                                                   licenseFilename );
           UpdateLicenseInformation();
           onDone?.Invoke( success );
         }
         catch ( Exception e ) {
           Debug.LogException( e );
+          onDone?.Invoke( false );
         }
       } );
     }
 
+    /// <summary>
+    /// Activate license with given id and password. The activation is blocking
+    /// and may take several seconds to perform.
+    /// </summary>
+    /// <param name="licenseId">License id.</param>
+    /// <param name="licensePassword">License password.</param>
+    /// <param name="targetDirectory">Target directory of the activated license file.</param>
+    /// <returns>True if successful, otherwise false.</returns>
     public static bool Activate( int licenseId,
                                  string licensePassword,
                                  string targetDirectory )
@@ -157,6 +301,70 @@ namespace AGXUnity
       return success;
     }
 
+    /// <summary>
+    /// Refresh given license with updated information from the license server.
+    /// Note that the given license will be loaded after a successful refresh.
+    /// </summary>
+    /// <param name="filename">License file to refresh and load.</param>
+    /// <param name="onDone">Callback with the result.</param>
+    public static void RefreshAsync( string filename,
+                                     Action<bool> onDone )
+    {
+      var isBusy     = IsBusy;
+      var seemsValid = !string.IsNullOrEmpty( filename ) &&
+                       !isBusy &&
+                       File.Exists( filename ) &&
+                       GetLicenseType( filename ) == LicenseInfo.LicenseType.Service;
+      if ( !seemsValid ) {
+        var warning = $"AGXUnity.LicenseManager: Unable to refresh license file \"{filename}\" - ";
+        if ( string.IsNullOrEmpty( filename ) )
+          warning += "the license file is null or empty.";
+        else if ( isBusy )
+          warning += "the license manager is busy activating or refreshing another license.";
+        else if ( !File.Exists( filename ) )
+          warning += "the license file doesn't exist.";
+        else
+          warning += "the license file doesn't support refresh.";
+
+        Debug.LogWarning( warning );
+        onDone?.Invoke( false );
+
+        return;
+      }
+
+      s_refreshTask = Task.Run( () =>
+      {
+        try {
+          var success = agx.Runtime.instance().loadLicenseFile( filename, true );
+          UpdateLicenseInformation();
+          onDone?.Invoke( success );
+        }
+        catch ( Exception e ) {
+          Debug.LogException( e );
+          onDone?.Invoke( false );
+        }
+      } );
+    }
+
+    /// <summary>
+    /// Refresh given license with updated information from the license server.
+    /// Note that the given license will be loaded after a successful refresh.
+    /// </summary>
+    /// <param name="filename">License file to refresh and load.</param>
+    public static bool Refresh( string filename )
+    {
+      var success = false;
+      RefreshAsync( filename, isSuccess => success = isSuccess );
+      s_refreshTask?.Wait();
+      return success;
+    }
+
+    /// <summary>
+    /// Deactivates the license and deletes the license file. Legacy licenses
+    /// are only deleted.
+    /// </summary>
+    /// <param name="filename">License file to deactivate.</param>
+    /// <returns>True if the license were successfully deactivated and deleted.</returns>
     public static bool DeactivateAndDelete( string filename )
     {
       if ( !File.Exists( filename ) ) {
@@ -165,12 +373,12 @@ namespace AGXUnity
       }
 
       var licenseType = GetLicenseType( filename );
-      if ( licenseType == LicenseType.Invalid ) {
+      if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - unknown file extension." );
         return false;
       }
 
-      if ( licenseType == LicenseType.Legacy ) {
+      if ( licenseType == LicenseInfo.LicenseType.Legacy ) {
         Reset();
         return DeleteFile( filename );
       }
@@ -187,6 +395,10 @@ namespace AGXUnity
       return DeactivateLoaded() && DeleteFile( filename );
     }
 
+    /// <summary>
+    /// Deactivate currently loaded license.
+    /// </summary>
+    /// <returns>True if successfully deactivated, otherwise false.</returns>
     public static bool DeactivateLoaded()
     {
       var success = false;
@@ -210,7 +422,7 @@ namespace AGXUnity
     public static void Reset()
     {
       try {
-        agx.Runtime.instance().unlock( null );
+        agx.Runtime.instance().clear();
       }
       catch ( Exception ) {
       }
@@ -226,13 +438,13 @@ namespace AGXUnity
     /// </summary>
     /// <param name="licenseFilename">License filename (optionally including path).</param>
     /// <returns>License type if found, otherwise LicenseType.Invalid.</returns>
-    public static LicenseType GetLicenseType( string licenseFilename )
+    public static LicenseInfo.LicenseType GetLicenseType( string licenseFilename )
     {
       var extension = Path.GetExtension( licenseFilename );
       var index = Array.IndexOf( s_licenseExtensions, extension );
       if ( index < 0 )
-        return LicenseType.Invalid;
-      return (LicenseType)index;
+        return LicenseInfo.LicenseType.Unknown;
+      return (LicenseInfo.LicenseType)index;
     }
 
     /// <summary>
@@ -241,7 +453,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="type">License type to check for.</param>
     /// <returns>Array of license files (absolute path).</returns>
-    public static string[] FindLicenseFiles( LicenseType type )
+    public static string[] FindLicenseFiles( LicenseInfo.LicenseType type )
     {
       return Directory.GetFiles( ".",
                                  $"*{GetLicenseExtension( type )}",
@@ -261,11 +473,24 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Searches all directories from application/project root for encrypted runtime
+    /// activation files. These files are used to activate runtime licenses on other
+    /// computers and results in a service license file post successful activation.
+    /// </summary>
+    /// <returns>Array of all AGX Dynamics encrypted runtime activation files.</returns>
+    public static string[] FindRuntimeActivationFiles()
+    {
+      return Directory.GetFiles( ".",
+                                 $"*{s_runtimeActivationExtension}",
+                                 SearchOption.AllDirectories ).Select( filename => filename.PrettyPath() ).ToArray();
+    }
+
+    /// <summary>
     /// Predefined license file name given license type.
     /// </summary>
     /// <param name="type">License type.</param>
     /// <returns>Predefined license filename for given license type.</returns>
-    public static string GetLicenseExtension( LicenseType type )
+    public static string GetLicenseExtension( LicenseInfo.LicenseType type )
     {
       return s_licenseExtensions[ (int)type ];
     }
@@ -280,6 +505,12 @@ namespace AGXUnity
       s_activationTask = null;
     }
 
+    /// <summary>
+    /// Load text file with context.
+    /// </summary>
+    /// <param name="filename">Filename, including path, to load.</param>
+    /// <param name="context">Context of the call to this method.</param>
+    /// <returns>True if successfully loaded, otherwise false.</returns>
     private static bool LoadFile( string filename, string context )
     {
       if ( string.IsNullOrEmpty( filename ) ) {
@@ -305,6 +536,12 @@ namespace AGXUnity
       return Load( text, context );
     }
 
+    /// <summary>
+    /// Load license string with context.
+    /// </summary>
+    /// <param name="licenseContent">License content.</param>
+    /// <param name="context">Context description or target filename (including path) if runtime activation.</param>
+    /// <returns>True if successful, otherwise false.</returns>
     private static bool Load( string licenseContent, string context )
     {
       if ( string.IsNullOrEmpty( licenseContent ) ) {
@@ -317,6 +554,12 @@ namespace AGXUnity
         if ( licenseContent.StartsWith( @"<SoftwareKey>" ) ) {
           agx.Runtime.instance().loadLicenseString( licenseContent );
           LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
+                    context );
+        }
+        // Runtime license activation.
+        else if ( licenseContent.StartsWith( @"RT=" ) ) {
+          agx.Runtime.instance().activateEncryptedRuntime( licenseContent, context );
+          LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {agx.Runtime.instance().isValid()}.",
                     context );
         }
         // Legacy type.
@@ -340,7 +583,7 @@ namespace AGXUnity
 
       UpdateLicenseInformation();
 
-      return LicenseInfo.LicenseValid;
+      return LicenseInfo.IsValid;
     }
 
     /// <summary>
@@ -368,19 +611,21 @@ namespace AGXUnity
 
     private static void LoadInfo( string info, string context )
     {
-      //if ( !Application.isEditor )
+      if ( !Application.isEditor )
         Debug.Log( $"AGXUnity.LicenseManager: {info} (Context: {context})" );
     }
 
     private static void IssueLoadWarning( string warning, string context )
     {
-      //if ( !Application.isEditor )
+      if ( !Application.isEditor )
         Debug.LogWarning( $"AGXUnity.LicenseManager: {warning} (Context: {context})" );
     }
 
 
-    private static string[] s_licenseExtensions = new string[] { ".lfx", ".lic", null };
+    private static string[] s_licenseExtensions = new string[] { null, ".lfx", ".lic" };
+    private static string s_runtimeActivationExtension = ".rtlfx";
     private static LicenseInfo s_licenseInfo = new LicenseInfo();
     private static Task s_activationTask = null;
+    private static Task s_refreshTask = null;
   }
 }

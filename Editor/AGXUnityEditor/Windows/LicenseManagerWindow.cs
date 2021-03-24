@@ -31,7 +31,9 @@ namespace AGXUnityEditor.Windows
       }
       private set
       {
-        GetLicenseDirectoryData().String = value.PrettyPath();
+        if ( Path.IsPathRooted( value ) )
+          value = value.MakeRelative( Directory.GetCurrentDirectory(), false ).Replace( '\\', '/' );
+        GetLicenseDirectoryData().String = value;
       }
     }
 
@@ -39,6 +41,8 @@ namespace AGXUnityEditor.Windows
 
     private void OnEnable()
     {
+      m_activeLicenseStyle = null;
+
       ValidateLicenseDirectory();
 
       StartUpdateLicenseInformation();
@@ -54,60 +58,85 @@ namespace AGXUnityEditor.Windows
     {
       ValidateLicenseDirectory();
 
-      AboutWindow.AGXDynamicsForUnityLogoGUI();
+      using ( GUI.AlignBlock.Center )
+        GUILayout.Box( IconManager.GetAGXUnityLogo(),
+                       GUI.Skin.customStyles[ 3 ],
+                       GUILayout.Width( 400 ),
+                       GUILayout.Height( 100 ) );
+
+      EditorGUILayout.LabelField( "© " + System.DateTime.Now.Year + " Algoryx Simulation AB",
+                                  InspectorEditor.Skin.LabelMiddleCenter );
+
+      InspectorGUI.BrandSeparator( 1, 6 );
 
       m_scroll = EditorGUILayout.BeginScrollView( m_scroll );
 
       if ( IsUpdatingLicenseInformation )
         ShowNotification( GUI.MakeLabel( "Reading..." ) );
+      else if ( AGXUnity.LicenseManager.IsBusy )
+        ShowNotification( GUI.MakeLabel( AGXUnity.LicenseManager.IsActivating ?
+                                           "Activating..." :
+                                           "Refreshing..." ) );
 
-      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation ) ) {
+      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !AGXUnity.LicenseManager.IsBusy ) ) {
         for ( int i = 0; i < m_licenseData.Count; ++i ) {
           var data = m_licenseData[ i ];
           LicenseDataGUI( data );
           if ( i + 1 < m_licenseData.Count )
-            InspectorGUI.Separator( 2, 6 );
+            InspectorGUI.Separator( 2, 6, InspectorGUISkin.BrandColorBlue );
         }
 
         if ( m_licenseData.Count > 0 )
-          InspectorGUI.BrandSeparator( 1, 6 );
+          InspectorGUI.Separator( 2, 6, InspectorGUISkin.BrandColorBlue );
 
         ActivateLicenseGUI();
       }
 
       EditorGUILayout.EndScrollView();
 
-      if ( AGXUnity.LicenseManager.IsActivating || IsUpdatingLicenseInformation )
+      if ( AGXUnity.LicenseManager.IsBusy || IsUpdatingLicenseInformation )
         Repaint();
     }
 
     private void ActivateLicenseGUI()
     {
-      InspectorGUI.SelectFolder( GUI.MakeLabel( "License file directory" ),
-                                 LicenseDirectory,
-                                 "License file directory",
-                                 newDirectory =>
-                                 {
-                                   newDirectory = newDirectory.Replace( '\\', '/' );
-                                   if ( Path.IsPathRooted( newDirectory ) ) {
-                                     newDirectory = IO.Utils.MakeRelative( newDirectory,
-                                                                           Application.dataPath );
-                                   }
-
-                                   if ( string.IsNullOrEmpty( newDirectory ) )
-                                     newDirectory = "Assets";
-
-                                   if ( !Directory.Exists( newDirectory ) ) {
-                                     Debug.LogWarning( $"Invalid license directory: {newDirectory} - directory doesn't exist." );
-                                     return;
-                                   }
-                                   LicenseDirectory = newDirectory;
-                                 } );
-
-      InspectorGUI.Separator( 1, 6 );
-
       GUILayout.Label( GUI.MakeLabel( "Activate license", true ), InspectorEditor.Skin.Label );
-      using ( new GUI.EnabledBlock( !AGXUnity.LicenseManager.IsActivating ) )
+      var selectLicenseRect  = GUILayoutUtility.GetLastRect();
+      selectLicenseRect.x    += selectLicenseRect.width;
+      selectLicenseRect.width = 28;
+      selectLicenseRect.x    -= selectLicenseRect.width;
+      selectLicenseRect.y    -= EditorGUIUtility.standardVerticalSpacing;
+      if ( UnityEngine.GUI.Button( selectLicenseRect,
+                                   GUI.MakeLabel( "...",
+                                                  InspectorGUISkin.BrandColor,
+                                                  true,
+                                                  "Select license file on this computer" ),
+                                   InspectorEditor.Skin.ButtonMiddle ) ) {
+        var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
+                                                         ".",
+                                                         $"{AGXUnity.LicenseManager.GetLicenseExtension( AGXUnity.LicenseInfo.LicenseType.Service ).Remove( 0, 1 )}," +
+                                                         $"{AGXUnity.LicenseManager.GetLicenseExtension( AGXUnity.LicenseInfo.LicenseType.Legacy ).Remove( 0, 1 )}" );
+        if ( !string.IsNullOrEmpty( sourceLicense ) ) {
+          var targetLicense = AGXUnity.IO.Environment.FindUniqueFilename( $"{LicenseDirectory}/{Path.GetFileName( sourceLicense )}" ).PrettyPath();
+          if ( EditorUtility.DisplayDialog( "Copy AGX Dynamics license",
+                                          $"Copy \"{sourceLicense}\" to \"{targetLicense}\"?",
+                                          "Yes",
+                                          "Cancel" ) ) {
+            try {
+              File.Copy( sourceLicense, targetLicense, false );
+              StartUpdateLicenseInformation();
+              GUIUtility.ExitGUI();
+            }
+            catch ( ExitGUIException ) {
+              throw;
+            }            
+            catch ( System.Exception e ) {
+              Debug.LogException( e );
+            }
+          }
+        }
+      }
+
       using ( InspectorGUI.IndentScope.Single ) {
         m_licenseActivateData.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Id" ),
                                                               m_licenseActivateData.Id,
@@ -117,14 +146,32 @@ namespace AGXUnityEditor.Windows
         m_licenseActivateData.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Password" ),
                                                                         m_licenseActivateData.Password );
 
+        InspectorGUI.SelectFolder( GUI.MakeLabel( "License File Directory" ),
+                                   LicenseDirectory,
+                                   "License file directory",
+                                   newDirectory =>
+                                   {
+                                     newDirectory = newDirectory.PrettyPath();
+
+                                     if ( string.IsNullOrEmpty( newDirectory ) )
+                                       newDirectory = "Assets";
+
+                                     if ( !Directory.Exists( newDirectory ) ) {
+                                       Debug.LogWarning( $"Invalid license directory: {newDirectory} - directory doesn't exist." );
+                                       return;
+                                     }
+                                     LicenseDirectory = newDirectory;
+                                   } );
+
         using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
                                       m_licenseActivateData.Id.Length > 0 &&
                                       m_licenseActivateData.Password.Length > 0 ) ) {
           // It isn't possible to press this button during activation.
-          if ( GUILayout.Button( GUI.MakeLabel( AGXUnity.LicenseManager.IsActivating ?
-                                                  "Activating..." :
-                                                  "Activate" ),
-                                                InspectorEditor.Skin.Button ) ) {
+          if ( UnityEngine.GUI.Button( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() ),
+                                       GUI.MakeLabel( AGXUnity.LicenseManager.IsBusy ?
+                                                        "Activating..." :
+                                                        "Activate" ),
+                                                      InspectorEditor.Skin.Button ) ) {
             AGXUnity.LicenseManager.ActivateAsync( System.Convert.ToInt32( m_licenseActivateData.Id ),
                                                    m_licenseActivateData.Password,
                                                    LicenseDirectory,
@@ -141,33 +188,62 @@ namespace AGXUnityEditor.Windows
 
     private void LicenseDataGUI( LicenseData data )
     {
+      var highlight = m_licenseData.Count > 1 &&
+                      data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId;
+      if ( highlight && m_activeLicenseStyle == null )
+        m_activeLicenseStyle = new GUIStyle( InspectorEditor.Skin.Label );
+      // The texture is deleted when hitting stop in the editor while
+      // m_activeLicenseStyle != null.
+      if ( m_activeLicenseStyle != null && m_activeLicenseStyle.normal.background == null )
+        m_activeLicenseStyle.normal.background = GUI.CreateColoredTexture( 1,
+                                                                           1,
+                                                                           Color.Lerp( InspectorGUI.BackgroundColor,
+                                                                                       Color.green,
+                                                                                       0.025f ) );
+
+      var licenseFileButtons = new InspectorGUI.MiscButtonData[]
+      {
+        InspectorGUI.MiscButtonData.Create( MiscIcon.Update,
+                                            () =>
+                                            {
+                                              RefreshLicense( data );
+                                            },
+                                            UnityEngine.GUI.enabled,
+                                            "Refresh license from server." ),
+        InspectorGUI.MiscButtonData.Create( MiscIcon.EntryRemove,
+                                            () =>
+                                            {
+                                              var deactivateDelete = EditorUtility.DisplayDialog( "Deactivate and erase license.",
+                                                                                                  "Would you like to deactivate the current license " +
+                                                                                                  "and remove the license file from this project?\n\n" +
+                                                                                                  "It's possible to activate the license again in this " +
+                                                                                                  "License Manager and/or download the license file again " +
+                                                                                                  "from the license portal.",
+                                                                                                  "Yes",
+                                                                                                  "Cancel" );
+                                              if ( deactivateDelete ) {
+                                                AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename );
+                                                StartUpdateLicenseInformation();
+                                                GUIUtility.ExitGUI();
+                                              }
+                                            },
+                                            UnityEngine.GUI.enabled,
+                                            "Deactivate and erase license file from project." )
+      };
+
+      var highlightScope = highlight ? new EditorGUILayout.VerticalScope( m_activeLicenseStyle ) : null;
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "License file" ),
                                         data.Filename,
-                                        MiscIcon.EntryRemove,
-                                        () =>
-                                        {
-                                          var deactivateDelete = EditorUtility.DisplayDialog( "Deactivate and erase license.",
-                                                                                              "Would you like to deactivate the current license " +
-                                                                                              "and remove the license file from this project?\n\n" +
-                                                                                              "It's possible to activate the license again in this " +
-                                                                                              "License Manager and/or download the license file again " +
-                                                                                              "from the license portal.",
-                                                                                              "Yes",
-                                                                                              "Cancel" );
-                                          if ( deactivateDelete ) {
-                                            AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename );
-                                            StartUpdateLicenseInformation();
-                                            GUIUtility.ExitGUI();
-                                          }
-                                        },
-                                        "Deactivate and erase license file from project." );
-      InspectorGUI.SelectableTextField( GUI.MakeLabel( "License type" ), data.LicenseInfo.Type );
+                                        licenseFileButtons );
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "License type" ), data.LicenseInfo.TypeDescription );
 
       InspectorGUI.Separator( 1, 6 );
 
       InspectorGUI.LicenseEndDateField( data.LicenseInfo );
 
-      EditorGUILayout.EnumFlagsField( GUI.MakeLabel( "Enabled modules" ),
+      EditorGUILayout.EnumFlagsField( GUI.MakeLabel( "Enabled modules",
+                                                     false,
+                                                     data.LicenseInfo.EnabledModules.ToString() ),
                                       data.LicenseInfo.EnabledModules,
                                       false,
                                       InspectorEditor.Skin.Popup );
@@ -175,6 +251,7 @@ namespace AGXUnityEditor.Windows
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "User" ), data.LicenseInfo.User );
 
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "Contact" ), data.LicenseInfo.Contact );
+      highlightScope?.Dispose();
     }
 
     private static EditorDataEntry GetLicenseDirectoryData()
@@ -194,6 +271,7 @@ namespace AGXUnityEditor.Windows
       if ( IsUpdatingLicenseInformation )
         return;
 
+      var currentLicense = AGXUnity.LicenseManager.LicenseInfo.UniqueId;
       var licenseData = new List<LicenseData>();
       m_updateLicenseInfoTask = Task.Run( () =>
       {
@@ -206,8 +284,15 @@ namespace AGXUnityEditor.Windows
           } );
         }
 
-        // Default behavior - unsure how we know which license that's loaded before update.
-        AGXUnity.LicenseManager.LoadFile();
+        // Try to load previously loaded license.
+        var data = licenseData.Find( d => !string.IsNullOrEmpty( currentLicense ) &&
+                                          d.LicenseInfo.UniqueId == currentLicense );
+        var successfullyLoadedPrevLicense = data.LicenseInfo.IsParsed &&
+                                            data.LicenseInfo.IsValid &&
+                                            AGXUnity.LicenseManager.LoadFile( data.Filename );
+        // Fall-back to default behavior.
+        if ( !successfullyLoadedPrevLicense )
+          AGXUnity.LicenseManager.LoadFile();
 
         return licenseData;
       } );
@@ -226,7 +311,27 @@ namespace AGXUnityEditor.Windows
         EditorApplication.update -= OnUpdateLicenseInformation;
     }
 
-    private struct IdPassword
+    private void RefreshLicense( LicenseData licenseData )
+    {
+      var prevLicense = m_licenseData.Find( data => data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId );
+      AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
+                                            success =>
+                                            {
+                                              UpdateLicenseInfo( licenseData.Filename, AGXUnity.LicenseManager.LicenseInfo );
+                                              if ( prevLicense.Filename != licenseData.Filename )
+                                                AGXUnity.LicenseManager.LoadFile( prevLicense.Filename );
+                                            } );
+    }
+
+    private void UpdateLicenseInfo( string filename, AGXUnity.LicenseInfo licenseInfo )
+    {
+      for ( int i = 0; i < m_licenseData.Count; ++i ) {
+        if ( m_licenseData[ i ].Filename == filename )
+          m_licenseData[ i ] = new LicenseData() { Filename = filename, LicenseInfo = licenseInfo };
+      }
+    }
+
+    internal struct IdPassword
     {
       public static IdPassword Empty() { return new IdPassword() { Id = string.Empty, Password = string.Empty }; }
       public string Id;
@@ -244,5 +349,7 @@ namespace AGXUnityEditor.Windows
     [System.NonSerialized]
     private List<LicenseData> m_licenseData = new List<LicenseData>();
     private Task<List<LicenseData>> m_updateLicenseInfoTask = null;
+    [System.NonSerialized]
+    private GUIStyle m_activeLicenseStyle = null;
   }
 }

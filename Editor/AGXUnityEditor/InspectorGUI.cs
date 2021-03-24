@@ -131,21 +131,25 @@ namespace AGXUnityEditor
 
     public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
-      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
-      rect.height = height;
-      rect.y += space / 2.0f;
-      EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+      Separator( height, space, InspectorGUISkin.BrandColor, 1.0f );
     }
 
     public static void Separator( float height = 1.0f, float space = 1.0f )
     {
+      Separator( height, space, Color.black );
+    }
+
+    public static void Separator( float height, float space, Color color )
+    {
+      Separator( height, space, color, EditorGUIUtility.isProSkin ? 0.35f : 0.25f );
+    }
+
+    public static void Separator( float height, float space, Color color, float intensity01 )
+    {
       var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
       rect.height = height;
       rect.y += space / 2.0f;
-      EditorGUI.DrawRect( rect,
-                          Color.Lerp( BackgroundColor,
-                                      Color.black,
-                                      EditorGUIUtility.isProSkin ? 0.35f : 0.25f ) );
+      EditorGUI.DrawRect( rect, Color.Lerp( BackgroundColor, color, intensity01 ) );
     }
 
     public static void DashedBrandSeparator( float height = 1.0f, float space = 1.0f )
@@ -438,23 +442,69 @@ namespace AGXUnityEditor
 
       EditorGUI.PrefixLabel( rect, label );
 
-      rect.x    += EditorGUIUtility.labelWidth;
+      rect.x    += EditorGUIUtility.labelWidth -
+                   IndentScope.PixelLevel + 2;
       rect.width = orgWidth -
                    EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth;
+                   selectNewFolderButtonWidth +
+                   IndentScope.PixelLevel - 2;
       EditorGUI.TextField( rect,
                            currentFolder,
                            InspectorEditor.Skin.TextField );
       rect.x    += rect.width;
       rect.width = selectNewFolderButtonWidth;
       if ( UnityEngine.GUI.Button( rect,
-                                   GUI.MakeLabel( "..." ),
+                                   GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
                                    InspectorEditor.Skin.ButtonMiddle ) ) {
         string result = EditorUtility.OpenFolderPanel( openFolderTitle,
                                                        currentFolder,
                                                        "" );
         if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
-          onNewFolder( result );
+          onNewFolder?.Invoke( result );
+          // Remove focus from any control so that the field is updated.
+          UnityEngine.GUI.FocusControl( "" );
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    public static bool SelectFile( GUIContent label,
+                                   string currentFile,
+                                   string openFileTitle,
+                                   string openFileDirectory,
+                                   Action<string> onNewFileSelected )
+    {
+      var selectNewFolderButtonWidth = 28.0f;
+
+      var rect     = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+      rect.width   = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      rect.x    += EditorGUIUtility.labelWidth;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth -
+                   selectNewFolderButtonWidth;
+      EditorGUI.SelectableLabel( rect,
+                                 currentFile,
+                                 InspectorEditor.Skin.TextField );
+      rect.x    += rect.width;
+      rect.width = selectNewFolderButtonWidth;
+      if ( UnityEngine.GUI.Button( rect,
+                                   GUI.MakeLabel( "...",
+                                                  InspectorGUISkin.BrandColor,
+                                                  true ),
+                                   InspectorEditor.Skin.ButtonMiddle ) ) {
+        string result = EditorUtility.OpenFilePanel( openFileTitle,
+                                                     openFileDirectory,
+                                                     "" );
+        if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
+          onNewFileSelected?.Invoke( result );
+          // Remove focus from any control so that the field is updated.
+          UnityEngine.GUI.FocusControl( "" );
           return true;
         }
       }
@@ -480,7 +530,9 @@ namespace AGXUnityEditor
 
       EditorGUI.PrefixLabel( saveInitialRect, label );
 
-      saveInitialRect.x    += EditorGUIUtility.labelWidth;
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      saveInitialRect.x    += EditorGUIUtility.labelWidth - indentOffset;
       saveInitialRect.width = saveInitialToggleWidth;
       enabled               = EditorGUI.Toggle( saveInitialRect,
                                                 enabled );
@@ -490,14 +542,15 @@ namespace AGXUnityEditor
         saveInitialRect.width = saveInitialOrgWidth -
                                 EditorGUIUtility.labelWidth -
                                 saveInitialToggleWidth -
-                                saveInitialSaveFilePanelButtonWidth;
+                                saveInitialSaveFilePanelButtonWidth +
+                                indentOffset;
         currentEntry = EditorGUI.TextField( saveInitialRect,
                                             currentEntry,
                                             InspectorEditor.Skin.TextField );
         saveInitialRect.x    += saveInitialRect.width;
         saveInitialRect.width = saveInitialSaveFilePanelButtonWidth;
         if ( UnityEngine.GUI.Button( saveInitialRect,
-                                     GUI.MakeLabel( "..." ),
+                                     GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
                                      InspectorEditor.Skin.ButtonMiddle ) ) {
           string result = EditorUtility.SaveFilePanel( saveFilePanelTitle,
                                                        currentEntry,
@@ -879,28 +932,149 @@ namespace AGXUnityEditor
                                             string text,
                                             GUIStyle textFieldStyle )
     {
-      using ( new GUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( label, InspectorEditor.Skin.Label );
-        EditorGUILayout.SelectableLabel( text,
-                                         textFieldStyle,
-                                         GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
-      }
+      var rect = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+
+      rect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+      rect.x += EditorGUIUtility.labelWidth - indentOffset;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth +
+                   indentOffset;
+
+      EditorGUI.SelectableLabel( rect,
+                                 text,
+                                 textFieldStyle );
     }
 
+    /// <summary>
+    /// Misc button data.
+    /// </summary>
+    public struct MiscButtonData
+    {
+      /// <summary>
+      /// Create given misc icon and an on click callback.
+      /// </summary>
+      /// <param name="icon">Misc icon for the button.</param>
+      /// <param name="onClick">Callback when the button is clicked.</param>
+      /// <param name="enabled">True if the button is enabled, otherwise false.</param>
+      /// <param name="tooltip">Optional tool-tip of the button.</param>
+      /// <param name="width">Width of the button.</param>
+      /// <returns></returns>
+      public static MiscButtonData Create( MiscIcon icon,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           string tooltip = "",
+                                           float width = 28.0f )
+      {
+        return new MiscButtonData()
+        {
+          Icon      = icon,
+          IconLabel = null,
+          OnClick   = onClick,
+          Enabled   = enabled,
+          Tooltip   = tooltip,
+          Width     = width
+        };
+      }
+
+      /// <summary>
+      /// Create given button content and an on click callback.
+      /// </summary>
+      /// <param name="buttonContent">Button content.</param>
+      /// <param name="onClick">Callback when the button is clicked.</param>
+      /// <param name="enabled">True if the button is enabled, otherwise false.</param>
+      /// <param name="tooltip">Option tool-tip of the button.</param>
+      /// <param name="width">Width of the button.</param>
+      /// <returns></returns>
+      public static MiscButtonData Create( GUIContent buttonContent,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           string tooltip = "",
+                                           float width = 28.0f )
+      {
+        buttonContent.tooltip = tooltip;
+
+        return new MiscButtonData()
+        {
+          IconLabel = buttonContent,
+          OnClick   = onClick,
+          Enabled   = enabled,
+          Tooltip   = tooltip,
+          Width     = width
+        };
+      }
+
+      public MiscIcon Icon;
+      public GUIContent IconLabel;
+      public Action OnClick;
+      public bool Enabled;
+      public string Tooltip;
+      public float Width;
+    }
+
+    /// <summary>
+    /// Selectable text field which isn't possible to edit. On the right
+    /// of the text field an arbitrary number of buttons can be added.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in text field.</param>
+    /// <param name="buttonData">Buttons.</param>
     public static void SelectableTextField( GUIContent label,
                                             string text,
-                                            MiscIcon buttonIcon,
-                                            Action onButtonClicked,
-                                            string buttonTooltip = "" )
+                                            params MiscButtonData[] buttonData )
     {
-      using ( new EditorGUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( label, InspectorEditor.Skin.Label );
-        EditorGUILayout.SelectableLabel( text,
-                                         InspectorEditor.Skin.TextField,
-                                         GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
-        if ( Button( buttonIcon, true, buttonTooltip ) )
-          onButtonClicked?.Invoke();
+      if ( buttonData.Length == 0 ) {
+        SelectableTextField( label, text );
+        return;
       }
+
+      var buttonSectionTotalWidth = buttonData.Sum( data => data.Width );
+      var rect = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+
+      rect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth -
+                   buttonSectionTotalWidth +
+                   indentOffset;
+
+      EditorGUI.SelectableLabel( rect,
+                                 text,
+                                 InspectorEditor.Skin.TextField );
+
+      rect.x += rect.width;
+
+      Action clickAction = null;
+      foreach ( var data in buttonData ) {
+        rect.width = data.Width;
+        var clicked = false;
+        if ( data.IconLabel != null )
+          using ( new GUI.EnabledBlock( data.Enabled ) )
+            clicked = UnityEngine.GUI.Button( rect,
+                                              data.IconLabel,
+                                              InspectorEditor.Skin.ButtonMiddle );
+        else
+          clicked = Button( rect,
+                            data.Icon,
+                            data.Enabled,
+                            data.Tooltip );
+        if ( clicked )
+          clickAction = data.OnClick;
+
+        rect.x += rect.width;
+      }
+
+      clickAction?.Invoke();
     }
 
     /// <summary>
@@ -926,15 +1100,15 @@ namespace AGXUnityEditor
       var fieldWarningColor = Color.Lerp( Color.yellow,
                                           Color.black,
                                           0.45f );
-      EditorGUILayout.LabelField( GUI.MakeLabel( info.LicenseExpired ?
+      EditorGUILayout.LabelField( GUI.MakeLabel( info.IsExpired ?
                                                    "License expired" :
                                                    "License expires" ),
                                   info.ValidEndDate ?
                                     GUI.MakeLabel( info.EndDate.ToString( "yyyy-MM-dd" ) +
-                                                   GUI.AddColorTag( $" ({info.DiffString} {( info.LicenseExpired ? "ago" : "remaining" )})",
-                                                                    info.LicenseExpired ?
+                                                   GUI.AddColorTag( $" ({info.DiffString} {( info.IsExpired ? "ago" : "remaining" )})",
+                                                                    info.IsExpired ?
                                                                       fieldErrorColor :
-                                                                      info.IsLicenseAboutToBeExpired( 10 ) ?
+                                                                      info.IsAboutToBeExpired( 10 ) ?
                                                                         fieldWarningColor :
                                                                         fieldOkColor ),
                                                    fieldColor ) :

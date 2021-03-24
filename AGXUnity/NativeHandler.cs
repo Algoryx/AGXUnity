@@ -72,6 +72,9 @@ namespace AGXUnity
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
+
+        if ( !LicenseManager.LoadFile() )
+          LicenseManager.ActivateEncryptedRuntime( dataPluginsPath );
       }
 
       agx.agxSWIG.setEntityCreationThreadSafe( true );

@@ -522,12 +522,20 @@ namespace AGXUnity.Utils
     /// <param name="complete">Complete path.</param>
     /// <param name="root">Root path.</param>
     /// <returns>Path relative to <paramref name="root"/>.</returns>
-    public static string MakeRelative( this string complete, string root )
+    public static string MakeRelative( this string complete,
+                                       string root,
+                                       bool includeTopRoot = true )
     {
       var completeUri = new Uri( complete );
       var rootUri = new Uri( root );
       var relUri = rootUri.MakeRelativeUri( completeUri );
-      return Uri.UnescapeDataString( relUri.ToString() );
+      var result = Uri.UnescapeDataString( relUri.ToString() );
+      if ( !string.IsNullOrEmpty( result ) && !includeTopRoot ) {
+        var di = new System.IO.DirectoryInfo( root );
+        if ( result.StartsWith( di.Name ) )
+          result = result.Remove( 0, di.Name.Length + 1 );
+      }
+      return result;
     }
 
     /// <summary>

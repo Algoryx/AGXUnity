@@ -32,6 +32,25 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// License types that AGX Dynamics supports.
+    /// </summary>
+    public enum LicenseType
+    {
+      /// <summary>
+      /// Unidentified license type.
+      /// </summary>
+      Unknown,
+      /// <summary>
+      /// An agx.lfx file or encrypted string.
+      /// </summary>
+      Service,
+      /// <summary>
+      /// An agx.lic file or obfuscated string.
+      /// </summary>
+      Legacy
+    }
+
+    /// <summary>
     /// Create and parse native license info.
     /// </summary>
     /// <returns>Native license info.</returns>
@@ -55,18 +74,27 @@ namespace AGXUnity
             info.EndDate = DateTime.MinValue;
         }
 
-        info.LicenseValid = agx.Runtime.instance().isValid();
-        info.LicenseStatus = agx.Runtime.instance().getStatus();
+        info.IsValid = agx.Runtime.instance().isValid();
+        info.Status = agx.Runtime.instance().getStatus();
 
         info.User = agx.Runtime.instance().readValue( "User" );
         info.Contact = agx.Runtime.instance().readValue( "Contact" );
 
         var subscriptionType = agx.Runtime.instance().readValue( "Product" ).Split( '-' );
         if ( subscriptionType.Length == 2 )
-          info.Type = subscriptionType[ 1 ].Trim();
+          info.TypeDescription = subscriptionType[ 1 ].Trim();
 
-        if ( string.IsNullOrEmpty( info.Type ) )
-          info.Type = "Unknown";
+        if ( string.IsNullOrEmpty( info.TypeDescription ) )
+          info.TypeDescription = "Unknown";
+
+        if ( agx.Runtime.instance().hasKey( "InstallationID" ) ) {
+          info.Type = LicenseType.Service;
+          info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
+        }
+        else {
+          info.Type = LicenseType.Legacy;
+          info.UniqueId = agx.Runtime.instance().readValue( "License" );
+        }
 
         var enabledModules = agx.Runtime.instance().getEnabledModules().ToArray();
         info.EnabledModules = Module.None;
@@ -81,8 +109,6 @@ namespace AGXUnity
           if ( Enum.TryParse<Module>( enabledModule, out var enumModule ) )
             info.EnabledModules |= enumModule;
         }
-
-        info.IsParsed = true;
       }
       catch ( System.Exception ) {
         info = new LicenseInfo();
@@ -95,11 +121,6 @@ namespace AGXUnity
     /// AGX Dynamics version.
     /// </summary>
     public string Version;
-
-    /// <summary>
-    /// License type - "Unknown" if not successfully parsed.
-    /// </summary>
-    public string Type;
 
     /// <summary>
     /// License end data.
@@ -124,12 +145,27 @@ namespace AGXUnity
     /// <summary>
     /// True if the license is valid - otherwise false.
     /// </summary>
-    public bool LicenseValid;
+    public bool IsValid;
 
     /// <summary>
     /// License status if something is wrong - otherwise an empty string.
     /// </summary>
-    public string LicenseStatus;
+    public string Status;
+
+    /// <summary>
+    /// AGX Dynamics license type.
+    /// </summary>
+    public LicenseType Type;
+
+    /// <summary>
+    /// License type - "Unknown" if not successfully parsed.
+    /// </summary>
+    public string TypeDescription;
+
+    /// <summary>
+    /// Unique license identifier.
+    /// </summary>
+    public string UniqueId;
 
     /// <summary>
     /// True if there's a parsed, valid end date - otherwise false.
@@ -139,7 +175,7 @@ namespace AGXUnity
     /// <summary>
     /// True if the license has expired.
     /// </summary>
-    public bool LicenseExpired { get { return !ValidEndDate || EndDate < DateTime.Now; } }
+    public bool IsExpired { get { return !ValidEndDate || EndDate < DateTime.Now; } }
 
     /// <summary>
     /// Info string regarding how long it is until the license expires or
@@ -166,14 +202,14 @@ namespace AGXUnity
     /// <summary>
     /// True when the license information has been parsed from AGX Dynamics.
     /// </summary>
-    public bool IsParsed { get; private set; }
+    public bool IsParsed { get { return Type != LicenseType.Unknown; } }
 
     /// <summary>
     /// True if the license expires within given <paramref name="days"/>.
     /// </summary>
     /// <param name="days">Number of days.</param>
     /// <returns>True if the license expires within given <paramref name="days"/> - otherwise false.</returns>
-    public bool IsLicenseAboutToBeExpired( int days )
+    public bool IsAboutToBeExpired( int days )
     {
       var diff = EndDate - DateTime.Now;
       return Convert.ToInt32( diff.TotalDays + 0.5 ) < days;
@@ -181,9 +217,9 @@ namespace AGXUnity
 
     public override string ToString()
     {
-      return $"Valid: {LicenseValid}, Valid End Date: {ValidEndDate}, End Date: {EndDate}, " +
+      return $"Valid: {IsValid}, Valid End Date: {ValidEndDate}, End Date: {EndDate}, " +
              $"Modules: [{string.Join( ",", EnabledModules )}], User: {User}, Contact: {Contact}, " +
-             $"Status: {LicenseStatus}";
+             $"Status: {Status}";
     }
   }
 }
