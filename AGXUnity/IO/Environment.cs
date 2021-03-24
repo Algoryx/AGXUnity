@@ -196,5 +196,25 @@ namespace AGXUnity.IO
     {
       return GetPlayerPluginPath( dataPath ) + "/agx";
     }
+
+    /// <summary>
+    /// Finds new similar filename or returns <paramref name="filename"/> if it doesn't exist.
+    /// E.g., if foo.bar already exist, foo (1).bar will be returned.
+    /// </summary>
+    /// <param name="filename">Desired filename including path.</param>
+    /// <returns>Filename similar to <paramref name="filename"/> that doesn't exist.</returns>
+    public static string FindUniqueFilename( string filename )
+    {
+      if ( !File.Exists( filename ) )
+        return filename;
+
+      var extension = Path.GetExtension( filename );
+      var orgName   = Path.GetFileNameWithoutExtension( filename );
+      var directory = new FileInfo( filename ).Directory;
+      int counter   = 0;
+      while ( directory.GetFiles( $"{orgName} ({++counter}){extension}", SearchOption.TopDirectoryOnly ).Length > 0 )
+        ;
+      return $"{directory.FullName.Replace( '\\', '/' )}/{orgName} ({counter}){extension}";
+    }
   }
 }
