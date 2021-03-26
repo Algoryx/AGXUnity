@@ -369,6 +369,13 @@ namespace AGXUnity.Collide
       base.OnDestroy();
     }
 
+    private void Reset()
+    {
+      var shapeVisual = Rendering.ShapeVisual.Find( this );
+      if ( shapeVisual != null )
+        shapeVisual.OnSizeUpdated();
+    }
+
     /// <summary>
     /// Late update call from Unity where stepForward can
     /// be assumed to be done.

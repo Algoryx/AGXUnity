@@ -2,8 +2,6 @@
 
 To set up a machine learning (ML) scene with ML Agents and Brick you first need to install ML-Agents and its package. Make sure you use the correct version of the package (“Show preview packages” probably needs to be checked).
 
-Currently, the correct Brick-branch is also needed, called “feature/machine-learning-module”.
-
 In Brick, the observations and actions of the Agent are set up as signals, and by using the functions in `BrickRLAgentUtils` it is easy to transfer these directly to ML-Agents and Unity. Note that right now, only continuous actions are supported in Brick.
 
 An example of a reinforcement learning agent from Brick can be seen in Tutorial12_ML.yml in Brick.
@@ -17,7 +15,7 @@ brickRuntimeComponent = brickGameObject.GetComponent<BrickRuntimeComponent>().Ge
 brickAgent = brickRuntimeComponent.GetBrickAgent(agentName);
 ```
 
-Adding this to a game object will automatically add the `Behavior Parameters` component as well. Some of these parameters might have been set in the Brick-file and you can read these values into the behavior parameters and the agent. To set the number of observations in the behavior parameters, there is a help function that counts the number of observations in the Brick agent:
+Adding this scipt to a game object will automatically add the `Behavior Parameters` component as well. Some of these parameters might have been set in the Brick-file and you can read these values into the behavior parameters and the agent. To set the number of observations in the behavior parameters, there is a help function that counts the number of observations in the Brick agent:
 
 ```cs
 parameters = GetComponent<BehaviorParameters>();
@@ -29,7 +27,7 @@ Reading observations can be done in the following way:
 ```cs
 public override void CollectObservations(VectorSensor sensor)
 {
-  sensor.AddObservation(m_brickAgent.GetSignalObservations());
+  sensor.AddObservation(brickAgent.GetSignalObservations());
 }
 ```
 
@@ -63,8 +61,8 @@ Dictionary<string, Quaternion> inititalRotation = BrickRLAgentUtils.GetLocalRota
 Then it is possibe to reset the collected bodies as:
 
 ```cs
-BrickRLAgentUtils.SetLocalPositions(m_bodies, m_inititalPosition);
-BrickRLAgentUtils.SetLocalRotations(m_bodies, m_inititalRotation);
+BrickRLAgentUtils.SetLocalPositions(bodies, inititalPosition);
+BrickRLAgentUtils.SetLocalRotations(bodies, inititalRotation);
 foreach(AGXUnity.RigidBody body in bodies)
 {
   body.AngularVelocity = new Vector3(0, 0, 0);

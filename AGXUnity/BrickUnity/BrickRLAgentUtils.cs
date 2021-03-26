@@ -14,7 +14,7 @@ public static class BrickRLAgentUtils
 
     foreach(var rb in bodies)
     {
-      dict.Add(rb.name, rb.transform.localPosition); 
+      dict.Add(rb.name, rb.transform.localPosition);
     }
 
     return dict;

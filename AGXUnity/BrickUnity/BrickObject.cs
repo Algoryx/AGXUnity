@@ -39,6 +39,10 @@ namespace AGXUnity.BrickUnity
     {
       SetPath(b_object, go_parent);
       SetType(b_object);
+
+      // This object has probably been created by the Brick runtime and should not be synchronized
+      if (b_object._ModelValue is null)
+        synchronize = false;
     }
 
     public Brick.Path GetBrickPath()

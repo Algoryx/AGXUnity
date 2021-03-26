@@ -23,10 +23,17 @@ namespace AGXUnityEditor.BrickUnity
       {
         return;
       }
+
       var brickFile = File.FromFilepath(filepath);
+      if (brickFile is null)
+      {
+        EditorUtility.DisplayDialog($"Brick Import Error", $"Something went wrong when parsing {filepath}. " +
+                                    $"Make sure that a brick.config.yml file exists and is configured correctly.", "Close");
+        return;
+      }
       if (brickFile.Models.IsEmpty())
       {
-        EditorUtility.DisplayDialog("Brick Import Error", "Brick file {filepath} does not seem to contain any models.", "Close");
+        EditorUtility.DisplayDialog("Brick Import Error", $"Brick file {filepath} does not seem to contain any models.", "Close");
         return;
       }
       var models = brickFile.Models.Select(m => m.Key).ToArray();
