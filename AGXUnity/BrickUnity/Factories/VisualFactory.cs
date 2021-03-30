@@ -2,7 +2,6 @@
 using UnityEngine;
 using System.IO;
 using UnityMeshImporter;
-using AGXUnity;
 
 using B_VisualShape = Brick.Visual.Shape;
 

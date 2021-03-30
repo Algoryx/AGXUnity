@@ -9,6 +9,7 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_Signal = Brick.Signal;
 using B_BrickSimulation = Brick.AgxBrick.BrickSimulation;
 using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
+using B_Agent = Brick.MachineLearning.RLAgent;
 
 namespace AGXUnity.BrickUnity
 {
@@ -19,6 +20,27 @@ namespace AGXUnity.BrickUnity
 
     protected B_Component m_component;
     private B_BrickSimulation m_brickSimulation;
+
+    public B_Agent GetBrickAgent(string agentName)
+    {
+      B_Agent agent = null;
+
+      var b_agents = m_component._RecursiveValues.OfType<B_Agent>();
+      foreach (var b_agent in b_agents)
+      {
+        var name = b_agent._ModelValuePath.Name.Str;
+        if (name.Equals(agentName))
+        {
+          agent = b_agent;
+        }
+      }
+      if (agent == null)
+        Debug.LogWarning("Could not find brick agent with name: " + agentName);
+
+      return agent;
+    }
+
+
 
     protected override bool Initialize()
     {
