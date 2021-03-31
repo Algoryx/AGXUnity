@@ -21,6 +21,8 @@ namespace AGXUnity.BrickUnity
     protected B_Component m_component;
     private B_BrickSimulation m_brickSimulation;
 
+    public B_Component Component => m_component;
+
     public B_Agent GetBrickAgent(string agentName)
     {
       B_Agent agent = null;
