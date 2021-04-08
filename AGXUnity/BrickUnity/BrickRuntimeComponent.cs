@@ -140,52 +140,103 @@ namespace AGXUnity.BrickUnity
     }
 
 
+    // Create GameObjects for the Signals. These GameObjects can be used to monitor signals and set them if they are
+    // inputs. If no Signals exist in m_brickSimulation then no GameObject will be created.
     private void HandleSignals()
     {
-      var b_signals = m_component._RecursiveValues.OfType<B_Signal.SignalBase>();
+      var go_inputs = HandleInputSignals();
+      var go_outputs = HandleOutputSignals();
+
+      if (go_inputs is null && go_outputs is null)
+        return;
+
       var go_signals = new GameObject("Signals");
       go_signals.transform.SetParent(this.transform);
-      foreach (var b_signal in b_signals)
+
+      if (go_inputs != null)
+        go_inputs.transform.SetParent(go_signals.transform);
+
+      if (go_outputs != null)
+        go_outputs.transform.SetParent(go_signals.transform);
+    }
+
+
+    // Create GameObjects for input Signals. They will all share a common parent GameObject. Returns null if no inputs
+    // exist in m_brickSimulation.
+    private GameObject HandleInputSignals()
+    {
+      var b_inputs = m_brickSimulation.InputSignals;
+      if (b_inputs.Count < 1)
+        return null;
+
+      var go_inputs = new GameObject("Inputs");
+      foreach (var b_input in b_inputs)
       {
-        var go_signal = new GameObject(b_signal._ModelValuePath.Str);
-        go_signal.transform.SetParent(go_signals.transform);
-        switch (b_signal)
+        var go = new GameObject(b_input.GetValueNameOrModelPath());
+        go.transform.SetParent(go_inputs.transform);
+        switch (b_input)
         {
           case B_Signal.Input<double> doubleInput:
             {
-              var comp = go_signal.AddComponent<BrickDoubleInput>();
+              var comp = go.AddComponent<BrickDoubleInput>();
               comp.signal = doubleInput;
             }
             break;
+          default:
+            Debug.LogWarning($"Unkown input signal type: {b_input.GetType()}");
+            break;
+        }
+      }
+      return go_inputs;
+    }
+
+
+    // Create GameObjects for output Signals. They will all share a common parent GameObject. Returns null if no
+    // outputs exist in m_brickSimulation.
+    private GameObject HandleOutputSignals()
+    {
+      var b_outputs = m_brickSimulation.OutputSignals;
+      if (b_outputs.Count < 1)
+        return null;
+
+      var go_outputs = new GameObject("Inputs");
+      foreach (var b_output in b_outputs)
+      {
+        var go = new GameObject(b_output.GetValueNameOrModelPath());
+        go.transform.SetParent(go_outputs.transform);
+        switch (b_output)
+        {
           case B_Signal.Output<double> doubleOutput:
             {
-              var comp = go_signal.AddComponent<BrickDoubleOutput>();
+              var comp = go.AddComponent<BrickDoubleOutput>();
               comp.signal = doubleOutput;
             }
             break;
           case B_Signal.Output<Brick.Math.Vec3> vec3Output:
             {
-              var comp = go_signal.AddComponent<BrickVec3Output>();
+              var comp = go.AddComponent<BrickVec3Output>();
               comp.signal = vec3Output;
             }
             break;
           case B_Signal.Output<Brick.Math.Quat> quatOutput:
             {
-              var comp = go_signal.AddComponent<BrickQuatOutput>();
+              var comp = go.AddComponent<BrickQuatOutput>();
               comp.signal = quatOutput;
             }
             break;
           case B_Signal.Output<Brick.Scene.Transform> transformOutput:
             {
-              var comp = go_signal.AddComponent<BrickTransformOutput>();
+              var comp = go.AddComponent<BrickTransformOutput>();
               comp.signal = transformOutput;
             }
             break;
           default:
-            Debug.LogWarning($"Unkown signal type: {b_signal.GetType()}");
+            Debug.LogWarning($"Unkown output signal type: {b_output.GetType()}");
             break;
         }
+
       }
+      return go_outputs;
     }
   }
 }
