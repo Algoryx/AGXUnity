@@ -60,7 +60,7 @@ namespace AGXUnity.BrickUnity
       AddDriveTrains();
       if (Application.isEditor)
         HandleSignals();
-
+      m_brickSimulation.ConnectToROS();
       return base.Initialize();
     }
 

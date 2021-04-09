@@ -74,6 +74,8 @@ namespace AGXUnity.BrickUnity.Factories
       // Currently a problem if "/" is included in names/comments in .obj files
       // See: https://github.com/assimp/assimp/issues/3532
       var go = MeshImporter.Load(filepath);
+      if (go is null)
+        Debug.LogError($"Could not locate: {filepath}");
       List<Transform> children = new List<Transform>();
       // Have to add children to list first because it becomes wierd too loop through all
       // children and removing some at the same time as adding new
@@ -84,11 +86,18 @@ namespace AGXUnity.BrickUnity.Factories
       foreach (var child in children)
       {
         var nrChildren = child.childCount;
+        var grandChildren = new List<Transform>();
         foreach (Transform grandchild in child)
         {
-          grandchild.parent = go.transform;
+          grandChildren.Add(grandchild);
           grandchild.gameObject.FindAndDestoryMeshCollider();
         }
+        // Since the number of children of child
+        // is reduced when setting the parent,
+        // we have to do it in a second step
+        foreach(Transform grandchild in grandChildren)
+           grandchild.parent = go.transform;
+
         if (nrChildren > 0)
           UnityEngine.Object.DestroyImmediate(child.gameObject);
         else
