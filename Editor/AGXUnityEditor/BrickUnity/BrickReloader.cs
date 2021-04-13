@@ -75,40 +75,29 @@ namespace AGXUnityEditor.BrickUnity {
 
         // ReferenceFrame
         if ((Updates & UpdateParameters.ConnectedFrame) == UpdateParameters.ConnectedFrame)
-        {
-          var new_frame = new_ap.ConnectedFrame;
-          var old_frame = old_ap.ConnectedFrame;
+          UpdateFrame(new_ap.ConnectedFrame, old_ap.ConnectedFrame);
 
-          if (new_frame.Parent != null)
-          {
-            var path = new_frame.Parent.GetComponent<BrickObject>().path;
-            var new_pos = new_frame.LocalPosition;
-            var new_rot = new_frame.LocalRotation;
-            var new
-            old_ap.ConnectedFrame = AGXUnity.ConstraintFrame.CreateLocal(GetGameObjectFromBrickPath(path, RootGameObject), new_pos, new_rot);
-            var new_old_frame = AGXUnity.ConstraintFrame.CreateLocal(GetGameObjectFromBrickPath(path, RootGameObject), new_pos, new_rot);
-          }
-        }
+        // ConnectedFrame
+        if ((Updates & UpdateParameters.ReferenceFrame) == UpdateParameters.ReferenceFrame)
+          UpdateFrame(new_ap.ReferenceFrame, old_ap.ReferenceFrame);
       }
-    }
 
-    private class ConstraintFrameUpdater
-    {
-      public AGXUnity.ConstraintFrame OldConstraintFrame { get; private set; }
-      public AGXUnity.ConstraintFrame NewConstraintFrame { get; private set; }
-      private readonly GameObject RootGameObject;
-
-      public void Update()
+      private void UpdateFrame(AGXUnity.ConstraintFrame new_frame, AGXUnity.ConstraintFrame old_frame)
       {
-        var new_parent = NewConstraintFrame.Parent;
-        var old_parent = NewConstraintFrame.Parent;
-        if (new_parent != null)
+        if (new_frame.Parent != null)
         {
-          var path = new_parent.GetComponent<BrickObject>().path;
-          OldConstraintFrame.Parent = GetGameObjectFromBrickPath(path, RootGameObject);
+          var path = new_frame.Parent.GetComponent<BrickObject>().path;
+          old_frame.SetParent(GetGameObjectFromBrickPath(path, RootGameObject), false);
         }
+        else if (old_frame.Parent != null)
+        {
+          old_frame.SetParent(null, false);
+        }
+        old_frame.LocalPosition = new_frame.LocalPosition;
+        old_frame.LocalRotation = new_frame.LocalRotation;
       }
     }
+
 
     public void Reload()
     {
@@ -170,7 +159,6 @@ namespace AGXUnityEditor.BrickUnity {
       return go.gameObject;
     }
 
-
     private void Compare(GameObject go_new, GameObject go_old)
     {
       var new_children = go_new.GetComponents<BrickObject>();
@@ -188,10 +176,11 @@ namespace AGXUnityEditor.BrickUnity {
           var old_constraint = old_child.GetComponent<AGXUnity.Constraint>();
           if (old_constraint != null) {
             var new_constraint = new_child.GetComponent<AGXUnity.Constraint>();
-            this.newConstraints.Add( new AttachmentPairUpdateHolder(
+            this.newConstraints.Add( new AttachmentPairUpdater(
               UpdateParameters.ConnectedBody | UpdateParameters.ReferenceBody,
               old_constraint.AttachmentPair,
-              new_constraint.AttachmentPair
+              new_constraint.AttachmentPair,
+              this.runtimeComponent.gameObject
             ) );
           }
           shouldUpdate = false;
@@ -293,7 +282,7 @@ namespace AGXUnityEditor.BrickUnity {
         var new_connectedBody = old_ap.ConnectedObject;
 
         // Check connectedBody
-        var updateHolder = new AttachmentPairUpdateHolder(UpdateParameters.None, old_ap, new_ap);
+        var updateHolder = new AttachmentPairUpdater(UpdateParameters.None, old_ap, new_ap, this.runtimeComponent.gameObject);
         if (new_connectedBody is null && old_connectedBody is null)
         {
           // Do nothing
@@ -302,7 +291,7 @@ namespace AGXUnityEditor.BrickUnity {
           old_ap.ConnectedObject = null;
         } else if (new_connectedBody != null && old_connectedBody is null)
         {
-          updateHolder.UpdateParameters |= UpdateParameters.ConnectedBody;
+          updateHolder.Updates |= UpdateParameters.ConnectedBody;
         }
 
         // Check referenceBody
@@ -310,21 +299,34 @@ namespace AGXUnityEditor.BrickUnity {
         var old_connectedBrickObject = old_connectedBody.GetComponent<BrickObject>();
         if (old_connectedBrickObject.path != new_connectedBrickObject.path)
         {
-          updateHolder.UpdateParameters |= UpdateParameters.ReferenceBody;
+          updateHolder.Updates |= UpdateParameters.ReferenceBody;
         }
 
-        if (updateHolder.UpdateParameters != UpdateParameters.None)
+        // Update frames
+        {
+          var old_referenceFrame = old_ap.ReferenceFrame;
+          var new_referenceFrame = new_ap.ReferenceFrame;
+          var old_path = old_referenceFrame.Parent.GetComponent<BrickObject>().path;
+          var new_path = new_referenceFrame.Parent.GetComponent<BrickObject>().path;
+          if (new_path != old_path)
+            updateHolder.Updates |= UpdateParameters.ReferenceFrame;
+        }
+
+        {
+          var old_connectedFrame = old_ap.ConnectedFrame;
+          var new_connectedFrame = new_ap.ConnectedFrame;
+          var old_path = old_connectedFrame.Parent.GetComponent<BrickObject>().path;
+          var new_path = new_connectedFrame.Parent.GetComponent<BrickObject>().path;
+          if (new_path != old_path)
+            updateHolder.Updates |= UpdateParameters.ConnectedFrame;
+        }
+
+
+        if (updateHolder.Updates != UpdateParameters.None)
         {
           newConstraints.Add(updateHolder);
         }
 
-        // Update frames
-        var old_referenceFrame = old_ap.ReferenceFrame;
-        var new_referenceFrame = new_ap.ReferenceFrame;
-
-
-        var old_connectedFrame = old_ap.ConnectedFrame;
-        var new_connectedFrame = new_ap.ConnectedFrame;
 
         // Update elementary constraints
         for (int i = 0; i < old_ecs.Length; i++)
