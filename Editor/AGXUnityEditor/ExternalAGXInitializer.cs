@@ -183,7 +183,7 @@ namespace AGXUnityEditor
 
       EditorUtility.SetDirty( Instance );
       AssetDatabase.SaveAssets();
-      
+
       var success = false;
       if ( type == AGXDirectoryType.Checkout )
         success = Instance.InitializeCheckout( newAgxDir.FullName );

@@ -43,10 +43,26 @@ namespace AGXUnity.BrickUnity
     }
 
 
+    public void Reload()
+    {
+      Brick.Model.MarkDirtyModels();
+      var b_component = BrickUtils.LoadComponentFromFile(filePath, modelName);
+      ReloadBodies(b_component);
+    }
+
+    public void ReloadBodies(B_Component b_component)
+    {
+      foreach (var au_body in GetComponentsInChildren<AGXUnity.RigidBody>())
+      {
+        var c_brickObject = au_body.GetComponent<BrickObject>();
+      }
+    }
+
 
     protected override bool Initialize()
     {
       Debug.Log($"Synchronizing Brick component {filePath}:{modelName}");
+      Brick.Model.MarkDirtyModels();
       m_component = BrickUtils.LoadComponentFromFile(filePath, modelName);
       var au_sim = AGXUnity.Simulation.Instance.GetInitialized<AGXUnity.Simulation>();
       m_brickSimulation = new B_BrickSimulation(au_sim.Native);
@@ -72,7 +88,7 @@ namespace AGXUnity.BrickUnity
         var c_brickObject = au_body.GetComponent<BrickObject>();
         if (c_brickObject == null || !c_brickObject.synchronize)
           continue;
-        var b_body = GetBrickValue<B_RigidBody>(c_brickObject);
+        var b_body = c_brickObject.GetBrickValue<B_RigidBody>(m_component);
         if (b_body == null)
           continue;
         var agx_body = au_body.GetInitialized<AGXUnity.RigidBody>().Native;
@@ -88,7 +104,7 @@ namespace AGXUnity.BrickUnity
         var c_brickObject = au_constraint.GetComponent<BrickObject>();
         if (c_brickObject == null || !c_brickObject.synchronize)
           continue;
-        var b_connector = GetBrickValue<B_Connector>(c_brickObject);
+        var b_connector = c_brickObject.GetBrickValue<B_Connector>(m_component);
         if (b_connector == null)
           continue;
         var nativeConstraint = au_constraint.GetInitialized<AGXUnity.Constraint>().Native;
@@ -125,18 +141,6 @@ namespace AGXUnity.BrickUnity
     private void AddSignals()
     {
       this.m_brickSimulation.CreateSignals(m_component);
-    }
-
-
-    private T GetBrickValue<T>(BrickObject brickObject) where T : Brick.Object
-    {
-
-      var b_path = brickObject.GetBrickPathRelativeRoot();
-      var b_object = m_component._Get(b_path);
-      if (b_object is T b_T)
-        return b_T;
-      Debug.LogWarning($"Type of Brick object {b_path} ({b_object.GetType()}) does not match the expected type {typeof(T)}");
-      return null;
     }
 
 

@@ -53,8 +53,9 @@ namespace AGXUnityEditor.BrickUnity
     /// </summary>
     /// <param name="filepath">Path to the Brick file.</param>
     /// <param name="modelName">Name of the model in the Brick file.</param>
+    /// <param name="createAssetData">Set to true if persistent asset data should be created for the model.</param>
     /// <returns>A reference to the created GameObject.</returns>
-    public GameObject ImportFile(string filepath, string modelName)
+    public GameObject ImportFile(string filepath, string modelName, bool createAssetData = true)
     {
       connectorDict = new Dictionary<B_Connector, GameObject>();
       implicitConnectorDict = new Dictionary<B_Connector, GameObject>();
@@ -73,11 +74,14 @@ namespace AGXUnityEditor.BrickUnity
       // TODO: if source filepath is within the Assets directory so should we set the rootpath to that.
       RootPath = "Assets";
       Name = b_component._ModelValuePath.Name.Str;
-      GetOrCreateDataDirectory();
-      // TODO: If the DataDirectory already exists. For all asset types load the existing assets into the appropriate dictionary.
-      GetSavedAssets(contactMaterials, RestoredAssetsRoot.ContainingType.ContactMaterial);
-      GetSavedAssets(frictionModels, RestoredAssetsRoot.ContainingType.FrictionModel);
 
+      if (createAssetData)
+      {
+        GetOrCreateDataDirectory();
+        // TODO: If the DataDirectory already exists. For all asset types load the existing assets into the appropriate dictionary.
+        GetSavedAssets(contactMaterials, RestoredAssetsRoot.ContainingType.ContactMaterial);
+        GetSavedAssets(frictionModels, RestoredAssetsRoot.ContainingType.FrictionModel);
+      }
 
       // Creates ShapeMaterials and ContactMaterials
       HandleMaterials(b_component);
@@ -86,7 +90,7 @@ namespace AGXUnityEditor.BrickUnity
       var go_brickComponent = new GameObject(b_component.GetValueNameOrModelPath());
       try
       {
-        HandleNode(b_component, ref go_brickComponent);
+        HandleNode(b_component, ref go_brickComponent, createAssetData);
       }
       catch (System.Exception)
       {
@@ -145,6 +149,7 @@ namespace AGXUnityEditor.BrickUnity
     private GameObject HandleNode(
       B_Node b_node,
       ref GameObject go,
+      bool createAssetData,
       GameObject go_parent = null,
       GameObject go_external = null)
     {
@@ -163,7 +168,7 @@ namespace AGXUnityEditor.BrickUnity
           tireDict.Add(b_tire, go);
           break;
         case B_Component b_component:
-          HandleComponent(ref go, ref go_external, b_component);
+          HandleComponent(ref go, ref go_external, b_component, createAssetData);
           break;
         default:
           break;
@@ -383,10 +388,14 @@ namespace AGXUnityEditor.BrickUnity
 
     // Handle a Brick Component. This only does something if the component has an external file path. In that case,
     // read the external file and assign the corresponding GameObject to go_external so that it can be referenced by
-    // the Brick Node's children
-    private void HandleComponent(ref GameObject go, ref GameObject go_external, B_Component b_component)
+    // the Brick Node's children.
+    // If createAssetData is set to false, no editor functions can be used so external files cannot be imported.
+    private void HandleComponent(ref GameObject go, ref GameObject go_external, B_Component b_component, bool createAssetData)
     {
       if (b_component._externalFilepathIsDefault)
+        return;
+
+      if (!createAssetData)
         return;
 
       var externalFilepath = b_component.ExternalFilepath;

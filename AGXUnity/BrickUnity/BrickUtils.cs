@@ -9,6 +9,7 @@ namespace AGXUnity.BrickUnity
       Brick.AgxBrick._BrickModule.Init();
       Brick.Model.MarkDirtyModels(true);
 
+      Brick.Model.MarkDirtyModels(true);
       var loader = new Brick.AgxBrick.BrickFileLoader();
       var simWrapper = loader.LoadFile(filePath, nodePath);
       return simWrapper.Scene;
