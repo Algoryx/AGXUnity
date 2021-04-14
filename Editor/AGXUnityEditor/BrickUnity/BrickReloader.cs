@@ -4,6 +4,14 @@ using UnityEngine;
 using AGXUnity.BrickUnity;
 
 namespace AGXUnityEditor.BrickUnity {
+
+  /// <summary>
+  /// Class for reloading BrickObjects.
+  ///
+  /// Usage:
+  ///   var reloader = new BrickReloader(brickRuntimeComponent);
+  ///   reloader.Reload();
+  /// </summary>
   public class BrickReloader
   {
     private readonly BrickRuntimeComponent runtimeComponent;
@@ -46,59 +54,62 @@ namespace AGXUnityEditor.BrickUnity {
 
       public void Update()
       {
-        var new_ap = NewAttachmentPair;
-        var old_ap = OldAttachmentPair;
+        var newAp = NewAttachmentPair;
+        var oldAp = OldAttachmentPair;
 
         // ConnectedBody
         if ((Updates & UpdateParameters.ConnectedBody) == UpdateParameters.ConnectedBody)
         {
-          var new_connected = new_ap.ConnectedObject;
-          var old_connected = old_ap.ConnectedObject;
-          if (new_connected != null)
+          var newConnected = newAp.ConnectedObject;
+          var oldConnected = oldAp.ConnectedObject;
+          if (newConnected != null)
           {
-            var path = new_connected.GetComponent<BrickObject>().path;
-            old_ap.ConnectedObject = GetGameObjectFromBrickPath(path, RootGameObject);
+            var path = newConnected.GetComponent<BrickObject>().path;
+            oldAp.ConnectedObject = GetGameObjectFromBrickPath(path, RootGameObject);
           }
-          else if (old_connected != null)
+          else if (oldConnected != null)
           {
-            old_ap.ConnectedObject = null;
+            oldAp.ConnectedObject = null;
           }
         }
 
         // ReferenceBody
         if ((Updates & UpdateParameters.ReferenceBody) == UpdateParameters.ReferenceBody)
         {
-          var new_reference = new_ap.ReferenceObject;
-          var path = new_reference.GetComponent<BrickObject>().path;
-          old_ap.ReferenceObject = GetGameObjectFromBrickPath(path, RootGameObject);
+          var newReference = newAp.ReferenceObject;
+          var path = newReference.GetComponent<BrickObject>().path;
+          oldAp.ReferenceObject = GetGameObjectFromBrickPath(path, RootGameObject);
         }
 
         // ReferenceFrame
         if ((Updates & UpdateParameters.ConnectedFrame) == UpdateParameters.ConnectedFrame)
-          UpdateFrame(new_ap.ConnectedFrame, old_ap.ConnectedFrame);
+          UpdateFrame(newAp.ConnectedFrame, oldAp.ConnectedFrame);
 
         // ConnectedFrame
         if ((Updates & UpdateParameters.ReferenceFrame) == UpdateParameters.ReferenceFrame)
-          UpdateFrame(new_ap.ReferenceFrame, old_ap.ReferenceFrame);
+          UpdateFrame(newAp.ReferenceFrame, oldAp.ReferenceFrame);
       }
 
-      private void UpdateFrame(AGXUnity.ConstraintFrame new_frame, AGXUnity.ConstraintFrame old_frame)
+      private void UpdateFrame(AGXUnity.ConstraintFrame newFrame, AGXUnity.ConstraintFrame oldFrame)
       {
-        if (new_frame.Parent != null)
+        if (newFrame.Parent != null)
         {
-          var path = new_frame.Parent.GetComponent<BrickObject>().path;
-          old_frame.SetParent(GetGameObjectFromBrickPath(path, RootGameObject), false);
+          var path = newFrame.Parent.GetComponent<BrickObject>().path;
+          oldFrame.SetParent(GetGameObjectFromBrickPath(path, RootGameObject), false);
         }
-        else if (old_frame.Parent != null)
+        else if (oldFrame.Parent != null)
         {
-          old_frame.SetParent(null, false);
+          oldFrame.SetParent(null, false);
         }
-        old_frame.LocalPosition = new_frame.LocalPosition;
-        old_frame.LocalRotation = new_frame.LocalRotation;
+        oldFrame.LocalPosition = newFrame.LocalPosition;
+        oldFrame.LocalRotation = newFrame.LocalRotation;
       }
     }
 
 
+    /// <summary>
+    /// Reload the Brick file associated with this Reloader.
+    /// </summary>
     public void Reload()
     {
       // Get the file path of the Brick object
@@ -119,7 +130,7 @@ namespace AGXUnityEditor.BrickUnity {
       {
         RemoveOld(go_new, go_old);
         Compare(go_new, go_old);
-        UpdateConstraints();
+        UpdateAttachmentPairs();
       }
       catch
       {
@@ -133,7 +144,9 @@ namespace AGXUnityEditor.BrickUnity {
     }
 
 
-    private void UpdateConstraints()
+    // Update AttachmentPairs that were saved during the Compare phase. This has to be done as a separate step
+    // since the AttachmentPairs might refer to bodies not yet created.
+    private void UpdateAttachmentPairs()
     {
       foreach (var apHolder in newConstraints)
       {
@@ -142,55 +155,50 @@ namespace AGXUnityEditor.BrickUnity {
     }
 
 
+    // Get a GameObject from a Brick path (e.g. path.to.brick.object)
     private static GameObject GetGameObjectFromBrickPath(string path, GameObject rootGameObject)
     {
       var unityPath = path.Split(new[] { '.' }, 2)[1].Replace('.', '/');
       var go = rootGameObject.transform.Find(unityPath);
-
-      //if (body == null)
-      //{
-      //  throw new AGXUnity.Exception($"Failed to find connected body with path {unityPath}");
-      //}
-
-      //if (body.GetComponent<AGXUnity.RigidBody>() == null)
-      //{
-      //  throw new AGXUnity.Exception($"ConnectedBody GameObject with path {unityPath} lacks a RigidBody component.");
-      //}
       return go.gameObject;
     }
 
+
+    // Compare 2 Brick GameObjects
+    // This is done by recursively going through all the old GameObject's children and comparing them to the
+    // corresponding new GameObject
+    // TODO: Handle Visuals
     private void Compare(GameObject go_new, GameObject go_old)
     {
-      //var new_children = go_new.GetComponentsInChildren<BrickObject>();
       var shouldUpdate = true;
-      foreach (Transform new_child in go_new.transform)
+      foreach (Transform newChild in go_new.transform)
       {
-        var new_brickObject = new_child.GetComponent<BrickObject>();
-        if (new_brickObject == null)
+        var newBrickObject = newChild.GetComponent<BrickObject>();
+        if (newBrickObject == null)
           continue;
 
-        var old_child = go_old.transform.Find(new_child.name);
+        var oldChild = go_old.transform.Find(newChild.name);
 
         // Create a new child if it doesn't exist yet
-        if (old_child != null && old_child.GetComponent<BrickObject>() == null)
-          throw new AGXUnity.Exception($"The new Brick object with path {new_brickObject.path} has an old GameObject which is not a Brick object. Remove or rename the old GameObject and try to reload again.");
-        else if (old_child == null)
+        if (oldChild != null && oldChild.GetComponent<BrickObject>() == null)
+          throw new AGXUnity.Exception($"The new Brick object with path {newBrickObject.path} has an old GameObject which is not a Brick object. Remove or rename the old GameObject and try to reload again.");
+        else if (oldChild == null)
         {
-          old_child = Object.Instantiate(new_child, go_old.transform).transform;
-          var old_constraint = old_child.GetComponent<AGXUnity.Constraint>();
-          if (old_constraint != null) {
-            var new_constraint = new_child.GetComponent<AGXUnity.Constraint>();
+          oldChild = Object.Instantiate(newChild, go_old.transform).transform;
+          var oldConstraint = oldChild.GetComponent<AGXUnity.Constraint>();
+          if (oldConstraint != null) {
+            var newConstraint = newChild.GetComponent<AGXUnity.Constraint>();
             this.newConstraints.Add( new AttachmentPairUpdater(
               UpdateParameters.ConnectedBody | UpdateParameters.ReferenceBody,
-              old_constraint.AttachmentPair,
-              new_constraint.AttachmentPair,
+              oldConstraint.AttachmentPair,
+              newConstraint.AttachmentPair,
               this.runtimeComponent.gameObject
             ) );
           }
           shouldUpdate = false;
         }
 
-        Compare(new_child.gameObject, old_child.gameObject);
+        Compare(newChild.gameObject, oldChild.gameObject);
       }
 
       go_old.transform.localPosition = go_new.transform.localPosition;
@@ -205,45 +213,45 @@ namespace AGXUnityEditor.BrickUnity {
       if (brickType.StartsWith("Brick.Physics.Geometry"))
       {
         //Handle geometries
-        var old_shape = go_old.GetComponent<AGXUnity.Collide.Shape>();
-        var new_shape = go_new.GetComponent<AGXUnity.Collide.Shape>();
-        switch (old_shape)
+        var oldShape = go_old.GetComponent<AGXUnity.Collide.Shape>();
+        var newShape = go_new.GetComponent<AGXUnity.Collide.Shape>();
+        switch (oldShape)
         {
-          case AGXUnity.Collide.Box old_box:
-            var new_box = new_shape as AGXUnity.Collide.Box;
-            old_box.HalfExtents = new_box.HalfExtents;
+          case AGXUnity.Collide.Box oldBox:
+            var newBox = newShape as AGXUnity.Collide.Box;
+            oldBox.HalfExtents = newBox.HalfExtents;
             break;
-          case AGXUnity.Collide.Capsule old_capsule:
-            var new_capsule = new_shape as AGXUnity.Collide.Capsule;
-            old_capsule.Radius = new_capsule.Radius;
-            old_capsule.Height = new_capsule.Height;
+          case AGXUnity.Collide.Capsule oldCapsule:
+            var newCapsule = newShape as AGXUnity.Collide.Capsule;
+            oldCapsule.Radius = newCapsule.Radius;
+            oldCapsule.Height = newCapsule.Height;
             break;
-          case AGXUnity.Collide.Cone old_cone:
-            var new_cone = new_shape as AGXUnity.Collide.Cone;
-            old_cone.Height = new_cone.Height;
-            old_cone.BottomRadius = new_cone.BottomRadius;
-            old_cone.TopRadius = new_cone.TopRadius;
+          case AGXUnity.Collide.Cone oldCone:
+            var newCone = newShape as AGXUnity.Collide.Cone;
+            oldCone.Height = newCone.Height;
+            oldCone.BottomRadius = newCone.BottomRadius;
+            oldCone.TopRadius = newCone.TopRadius;
             break;
-          case AGXUnity.Collide.Cylinder old_cylinder:
-            var new_cylinder = new_shape as AGXUnity.Collide.Cylinder;
-            old_cylinder.Radius = new_cylinder.Radius;
-            old_cylinder.Height = new_cylinder.Height;
+          case AGXUnity.Collide.Cylinder oldCylinder:
+            var newCylinder = newShape as AGXUnity.Collide.Cylinder;
+            oldCylinder.Radius = newCylinder.Radius;
+            oldCylinder.Height = newCylinder.Height;
             break;
-          case AGXUnity.Collide.HollowCone old_hollowCone:
-            var new_hollowCone = new_shape as AGXUnity.Collide.HollowCone;
-            old_hollowCone.Height = new_hollowCone.Height;
-            old_hollowCone.BottomRadius = new_hollowCone.BottomRadius;
-            old_hollowCone.TopRadius = new_hollowCone.TopRadius;
+          case AGXUnity.Collide.HollowCone oldHollowCone:
+            var newHollowCone = newShape as AGXUnity.Collide.HollowCone;
+            oldHollowCone.Height = newHollowCone.Height;
+            oldHollowCone.BottomRadius = newHollowCone.BottomRadius;
+            oldHollowCone.TopRadius = newHollowCone.TopRadius;
             break;
-          case AGXUnity.Collide.HollowCylinder old_hollowCylinder:
-            var new_hollowCylinder = new_shape as AGXUnity.Collide.HollowCylinder;
-            old_hollowCylinder.Radius = new_hollowCylinder.Radius;
-            old_hollowCylinder.Height = new_hollowCylinder.Height;
-            old_hollowCylinder.Thickness = new_hollowCylinder.Thickness;
+          case AGXUnity.Collide.HollowCylinder oldHollowCylinder:
+            var newHollowCylinder = newShape as AGXUnity.Collide.HollowCylinder;
+            oldHollowCylinder.Radius = newHollowCylinder.Radius;
+            oldHollowCylinder.Height = newHollowCylinder.Height;
+            oldHollowCylinder.Thickness = newHollowCylinder.Thickness;
             break;
-          case AGXUnity.Collide.Sphere old_sphere:
-            var new_sphere = new_shape as AGXUnity.Collide.Sphere;
-            old_sphere.Radius = new_sphere.Radius;
+          case AGXUnity.Collide.Sphere oldSphere:
+            var newSphere = newShape as AGXUnity.Collide.Sphere;
+            oldSphere.Radius = newSphere.Radius;
             break;
           default:
             break;
@@ -251,15 +259,15 @@ namespace AGXUnityEditor.BrickUnity {
       }
       else if (brickType == "Brick.Physics.Mechanics.RigidBody")
       {
-        var old_body = go_old.GetComponent<AGXUnity.RigidBody>();
-        var new_body = go_new.GetComponent<AGXUnity.RigidBody>();
-        old_body.MotionControl = new_body.MotionControl;
+        var oldBody = go_old.GetComponent<AGXUnity.RigidBody>();
+        var newBody = go_new.GetComponent<AGXUnity.RigidBody>();
+        oldBody.MotionControl = newBody.MotionControl;
 
-        var old_mp = old_body.MassProperties;
-        var new_mp = new_body.MassProperties;
-        old_mp.CenterOfMassOffset = new_mp.CenterOfMassOffset;
-        old_mp.InertiaDiagonal = new_mp.InertiaDiagonal;
-        old_mp.Mass = new_mp.Mass;
+        var oldMP = oldBody.MassProperties;
+        var newMP = newBody.MassProperties;
+        oldMP.CenterOfMassOffset = newMP.CenterOfMassOffset;
+        oldMP.InertiaDiagonal = newMP.InertiaDiagonal;
+        oldMP.Mass = newMP.Mass;
       }
       else if (brickType.StartsWith("Brick.Visual"))
       {
@@ -269,41 +277,39 @@ namespace AGXUnityEditor.BrickUnity {
       else if (brickType.StartsWith("Brick.Physics.Mechanics") && brickType.EndsWith("Connector"))
       {
         // Handle connectors
-        var old_constraint = go_old.GetComponent<AGXUnity.Constraint>();
-        var new_constraint = go_new.GetComponent<AGXUnity.Constraint>();
-        var old_ecs = old_constraint.ElementaryConstraints;
-        var new_ecs = new_constraint.ElementaryConstraints;
-        if (old_constraint.Type != new_constraint.Type)
+        var oldConstraint = go_old.GetComponent<AGXUnity.Constraint>();
+        var newConstraint = go_new.GetComponent<AGXUnity.Constraint>();
+        if (oldConstraint.Type != newConstraint.Type)
         {
-          Debug.LogError($"Old constraint type ({old_constraint.Type}) does not match new constraint type ({new_constraint.Type}) for Brick connector {brickPath}. Constraint will not be updated. Manually change the type of the old constraint to the same type as the old and try again.");
+          Debug.LogError($"Old constraint type ({oldConstraint.Type}) does not match new constraint type ({newConstraint.Type}) for Brick connector {brickPath}. Constraint will not be updated. Manually change the type of the old constraint to the same type as the old and try again.");
           return;
         }
 
-        var old_ap = old_constraint.AttachmentPair;
-        var old_connectedBody = old_ap.ConnectedObject;
+        var oldAP = oldConstraint.AttachmentPair;
+        var oldConnectedBody = oldAP.ConnectedObject;
 
-        var new_ap = new_constraint.AttachmentPair;
-        var new_connectedBody = old_ap.ConnectedObject;
+        var newAP = newConstraint.AttachmentPair;
+        var newConnectedBody = oldAP.ConnectedObject;
 
         // Check connectedBody
-        var updateHolder = new AttachmentPairUpdater(UpdateParameters.None, old_ap, new_ap, this.runtimeComponent.gameObject);
-        if (new_connectedBody == null && old_connectedBody != null)
+        var updateHolder = new AttachmentPairUpdater(UpdateParameters.None, oldAP, newAP, this.runtimeComponent.gameObject);
+        if (newConnectedBody == null && oldConnectedBody != null)
         {
-          old_ap.ConnectedObject = null;
-        } else if (new_connectedBody != null && old_connectedBody == null)
+          oldAP.ConnectedObject = null;
+        } else if (newConnectedBody != null && oldConnectedBody == null)
         {
           updateHolder.Updates |= UpdateParameters.ConnectedBody;
         }
 
         // Check referenceBody
-        var new_referenceBrickObject = new_ap.ReferenceObject.GetComponent<BrickObject>();
-        var old_referenceBrickObject = old_ap.ReferenceObject.GetComponent<BrickObject>();
-        if (old_referenceBrickObject.path != new_referenceBrickObject.path)
+        var newReferenceBrickObject = newAP.ReferenceObject.GetComponent<BrickObject>();
+        var oldReferenceBrickObject = oldAP.ReferenceObject.GetComponent<BrickObject>();
+        if (oldReferenceBrickObject.path != newReferenceBrickObject.path)
         {
           updateHolder.Updates |= UpdateParameters.ReferenceBody;
         }
 
-        bool ShouldUpdateFrame(AGXUnity.ConstraintFrame oldFrame, AGXUnity.ConstraintFrame newFrame) {
+        static bool ShouldUpdateFrame(AGXUnity.ConstraintFrame oldFrame, AGXUnity.ConstraintFrame newFrame) {
           var oldParent = oldFrame.Parent;
           var newParent = newFrame.Parent;
           if (oldParent != null && oldParent != null)
@@ -323,9 +329,9 @@ namespace AGXUnityEditor.BrickUnity {
         }
 
         // Update frames
-        if (ShouldUpdateFrame(old_ap.ReferenceFrame, new_ap.ReferenceFrame))
+        if (ShouldUpdateFrame(oldAP.ReferenceFrame, newAP.ReferenceFrame))
           updateHolder.Updates |= UpdateParameters.ReferenceFrame;
-        if (ShouldUpdateFrame(old_ap.ConnectedFrame, new_ap.ConnectedFrame))
+        if (ShouldUpdateFrame(oldAP.ConnectedFrame, newAP.ConnectedFrame))
           updateHolder.Updates |= UpdateParameters.ConnectedFrame;
 
         if (updateHolder.Updates != UpdateParameters.None)
@@ -335,22 +341,21 @@ namespace AGXUnityEditor.BrickUnity {
 
 
         // Update elementary constraints
-        for (int i = 0; i < old_ecs.Length; i++)
+        var oldECs = oldConstraint.ElementaryConstraints;
+        var newECs = newConstraint.ElementaryConstraints;
+        for (int i = 0; i < oldECs.Length; i++)
         {
-          var old_ec = old_ecs[i];
-          var new_ec = new_ecs[i];
-          old_ec.CopyFrom(new_ec);
+          var oldEC = oldECs[i];
+          var newEC = newECs[i];
+          oldEC.CopyFrom(newEC);
         }
       }
     }
 
 
-    private static void CopyLocalTransform()
-    {
-
-    }
-
-
+    // Remove Brick GameObjects that exist in the old structure but not the new.
+    // This is done by recursively iterating through the new GameObject's children and making sure that they exist in
+    // the new one as well.
     private static void RemoveOld(GameObject go_new, GameObject go_old)
     {
       foreach (Transform old_child in go_old.transform)
