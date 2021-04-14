@@ -202,7 +202,7 @@ namespace AGXUnityEditor.BrickUnity {
       var brickType = go_old.GetComponent<BrickObject>().type;
       var brickPath = go_old.GetComponent<BrickObject>().path;
 
-      if (brickType.StartsWith("Brick.Physics.Mechanics.Geometry"))
+      if (brickType.StartsWith("Brick.Physics.Geometry"))
       {
         //Handle geometries
         var old_shape = go_old.GetComponent<AGXUnity.Collide.Shape>();
