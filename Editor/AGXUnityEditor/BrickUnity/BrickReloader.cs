@@ -147,12 +147,12 @@ namespace AGXUnityEditor.BrickUnity {
       var unityPath = path.Split(new[] { '.' }, 2)[1].Replace('.', '/');
       var go = rootGameObject.transform.Find(unityPath);
 
-      //if (body is null)
+      //if (body == null)
       //{
       //  throw new AGXUnity.Exception($"Failed to find connected body with path {unityPath}");
       //}
 
-      //if (body.GetComponent<AGXUnity.RigidBody>() is null)
+      //if (body.GetComponent<AGXUnity.RigidBody>() == null)
       //{
       //  throw new AGXUnity.Exception($"ConnectedBody GameObject with path {unityPath} lacks a RigidBody component.");
       //}
@@ -161,16 +161,20 @@ namespace AGXUnityEditor.BrickUnity {
 
     private void Compare(GameObject go_new, GameObject go_old)
     {
-      var new_children = go_new.GetComponents<BrickObject>();
+      //var new_children = go_new.GetComponentsInChildren<BrickObject>();
       var shouldUpdate = true;
-      foreach (var new_child in new_children)
+      foreach (Transform new_child in go_new.transform)
       {
+        var new_brickObject = new_child.GetComponent<BrickObject>();
+        if (new_brickObject == null)
+          continue;
+
         var old_child = go_old.transform.Find(new_child.name);
 
         // Create a new child if it doesn't exist yet
         if (old_child != null && old_child.GetComponent<BrickObject>() == null)
-          throw new AGXUnity.Exception($"The new Brick object with path {new_child.path} has an old GameObject which is not a Brick object. Remove or rename the old GameObject and try to reload again.");
-        else if (old_child is null)
+          throw new AGXUnity.Exception($"The new Brick object with path {new_brickObject.path} has an old GameObject which is not a Brick object. Remove or rename the old GameObject and try to reload again.");
+        else if (old_child == null)
         {
           old_child = Object.Instantiate(new_child, go_old.transform).transform;
           var old_constraint = old_child.GetComponent<AGXUnity.Constraint>();
@@ -283,44 +287,46 @@ namespace AGXUnityEditor.BrickUnity {
 
         // Check connectedBody
         var updateHolder = new AttachmentPairUpdater(UpdateParameters.None, old_ap, new_ap, this.runtimeComponent.gameObject);
-        if (new_connectedBody is null && old_connectedBody is null)
-        {
-          // Do nothing
-        } else if (new_connectedBody is null && old_connectedBody != null)
+        if (new_connectedBody == null && old_connectedBody != null)
         {
           old_ap.ConnectedObject = null;
-        } else if (new_connectedBody != null && old_connectedBody is null)
+        } else if (new_connectedBody != null && old_connectedBody == null)
         {
           updateHolder.Updates |= UpdateParameters.ConnectedBody;
         }
 
         // Check referenceBody
-        var new_connectedBrickObject = new_connectedBody.GetComponent<BrickObject>();
-        var old_connectedBrickObject = old_connectedBody.GetComponent<BrickObject>();
-        if (old_connectedBrickObject.path != new_connectedBrickObject.path)
+        var new_referenceBrickObject = new_ap.ReferenceObject.GetComponent<BrickObject>();
+        var old_referenceBrickObject = old_ap.ReferenceObject.GetComponent<BrickObject>();
+        if (old_referenceBrickObject.path != new_referenceBrickObject.path)
         {
           updateHolder.Updates |= UpdateParameters.ReferenceBody;
         }
 
+        bool ShouldUpdateFrame(AGXUnity.ConstraintFrame oldFrame, AGXUnity.ConstraintFrame newFrame) {
+          var oldParent = oldFrame.Parent;
+          var newParent = newFrame.Parent;
+          if (oldParent != null && oldParent != null)
+          {
+            if (oldParent.GetComponent<BrickObject>().path != newParent.GetComponent<BrickObject>().path)
+              return true;
+            return false;
+          } else if (oldParent == null && newParent != null)
+          {
+            return true;
+          } else if (oldParent != null && newParent == null)
+          {
+            return true;
+          }
+
+          return false;  // Both are null
+        }
+
         // Update frames
-        {
-          var old_referenceFrame = old_ap.ReferenceFrame;
-          var new_referenceFrame = new_ap.ReferenceFrame;
-          var old_path = old_referenceFrame.Parent.GetComponent<BrickObject>().path;
-          var new_path = new_referenceFrame.Parent.GetComponent<BrickObject>().path;
-          if (new_path != old_path)
-            updateHolder.Updates |= UpdateParameters.ReferenceFrame;
-        }
-
-        {
-          var old_connectedFrame = old_ap.ConnectedFrame;
-          var new_connectedFrame = new_ap.ConnectedFrame;
-          var old_path = old_connectedFrame.Parent.GetComponent<BrickObject>().path;
-          var new_path = new_connectedFrame.Parent.GetComponent<BrickObject>().path;
-          if (new_path != old_path)
-            updateHolder.Updates |= UpdateParameters.ConnectedFrame;
-        }
-
+        if (ShouldUpdateFrame(old_ap.ReferenceFrame, new_ap.ReferenceFrame))
+          updateHolder.Updates |= UpdateParameters.ReferenceFrame;
+        if (ShouldUpdateFrame(old_ap.ConnectedFrame, new_ap.ConnectedFrame))
+          updateHolder.Updates |= UpdateParameters.ConnectedFrame;
 
         if (updateHolder.Updates != UpdateParameters.None)
         {
@@ -347,13 +353,16 @@ namespace AGXUnityEditor.BrickUnity {
 
     private static void RemoveOld(GameObject go_new, GameObject go_old)
     {
-      var old_children = go_old.GetComponents<BrickObject>();
-      foreach (var old_child in old_children)
+      foreach (Transform old_child in go_old.transform)
       {
+        var old_brickObject = old_child.GetComponent<BrickObject>();
+        if (old_brickObject == null)
+          continue;
+
         var new_child = go_new.transform.Find(old_child.name);
         if (new_child == null)
         {
-          Debug.Log($"New child corresponding to {old_child.path}");
+          Debug.Log($"New child corresponding to {old_brickObject.path}");
           Object.DestroyImmediate(old_child);
           continue;
         }
@@ -361,14 +370,14 @@ namespace AGXUnityEditor.BrickUnity {
         var new_child_bo = new_child.GetComponent<BrickObject>();
         if (new_child_bo == null)
         {
-          Debug.Log($"New child {new_child.name} does not have BrickObject corresponding to {old_child.path}. Destroying old object.");
+          Debug.Log($"New child {new_child.name} does not have BrickObject corresponding to {old_brickObject.path}. Destroying old object.");
           Object.DestroyImmediate(old_child);
           continue;
         }
 
-        if (new_child_bo.path != old_child.path)
+        if (new_child_bo.path != old_brickObject.path)
         {
-          Debug.LogError($"Brick path of new child ({new_child_bo.path} is not the same as the old child {old_child.path}");
+          Debug.LogError($"Brick path of new child ({new_child_bo.path} is not the same as the old child {old_brickObject.path}");
           Object.DestroyImmediate(old_child);
           continue;
         }
