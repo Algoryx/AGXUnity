@@ -115,9 +115,15 @@ namespace AGXUnity.BrickUnity.Factories
       rangeController.SetGeneralControllerValues(b_range1D, overwriteIfDefault);
       var range = rangeController.Range;
       if (overwriteIfDefault || !b_range1D._minValueIsDefault)
-        range.Min = (float)Brick.Math.Utils.ToRad(b_range1D.MinValue);
+        if (controllerType == AU_ControllerType.Rotational)
+          range.Min = (float)Brick.Math.Utils.ToRad(b_range1D.MinValue);
+        else
+          range.Min = (float)b_range1D.MinValue;
       if (overwriteIfDefault || !b_range1D._maxValueIsDefault)
-        range.Max = (float)Brick.Math.Utils.ToRad(b_range1D.MaxValue);
+        if (controllerType == AU_ControllerType.Rotational)
+          range.Max = (float)Brick.Math.Utils.ToRad(b_range1D.MaxValue);
+        else
+          range.Max = (float)b_range1D.MaxValue;
       rangeController.Range = range;
     }
 
