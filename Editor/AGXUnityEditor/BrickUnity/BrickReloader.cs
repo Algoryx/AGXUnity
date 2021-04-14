@@ -107,7 +107,7 @@ namespace AGXUnityEditor.BrickUnity {
 
       // Read the file into a new GameObject hierarchy
       var importer = new BrickPrefabImporter();
-      var go_new = importer.ImportFile(filepath, modelName, createAssetData: false);
+      var go_new = importer.ImportFile(filepath, modelName);
       var go_old = runtimeComponent.gameObject;
 
       // Make sure the new root GameObject has the same position as this one
