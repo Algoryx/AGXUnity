@@ -7,6 +7,7 @@ namespace AGXUnity.BrickUnity
     public static B_Component LoadComponentFromFile(string filePath, string nodePath)
     {
       Brick.AgxBrick._BrickModule.Init();
+      Brick.Model.MarkDirtyModels(true);
 
       var loader = new Brick.AgxBrick.BrickFileLoader();
       var simWrapper = loader.LoadFile(filePath, nodePath);

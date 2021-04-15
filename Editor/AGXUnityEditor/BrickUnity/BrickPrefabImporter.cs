@@ -14,6 +14,7 @@ using B_MultiConnector = Brick.Physics.Mechanics.MultiAttachmentConnector;
 using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
 using B_TwoBodyTire = Brick.AgxBrick.TwoBodyTire;
+using B_Joint = Brick.Robotics.Joint;
 using System.Linq;
 using AGXUnityEditor.IO;
 
@@ -204,6 +205,12 @@ namespace AGXUnityEditor.BrickUnity
           implicitConnectorDict.Add(b_connector, go);
       }
 
+      // Handle Robotics.Joints
+      foreach (var b_joint in b_node._Values.OfType<B_Joint>())
+      {
+        HandleRoboticsJoint(go, b_joint);
+      }
+
       // Handle child nodes
       foreach (var b_childNode in b_node.Children)
       {
@@ -221,6 +228,16 @@ namespace AGXUnityEditor.BrickUnity
         }
       }
       return go;
+    }
+
+
+    // Robotics.Joint does not inherit from Component so we need to handle this explicitly
+    private void HandleRoboticsJoint(GameObject go_parent, B_Joint b_joint)
+    {
+      var go = new GameObject(b_joint.GetValueNameOrModelPath());
+      go.transform.SetParent(go_parent.transform);
+      go.AddBrickObject(b_joint, go_parent);
+      connectorDict.Add(b_joint.Connector, go);
     }
 
 
