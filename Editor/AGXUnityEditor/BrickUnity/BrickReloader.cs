@@ -164,6 +164,30 @@ namespace AGXUnityEditor.BrickUnity {
     }
 
 
+    // Check if a ConstraintFrame should update. I.e. if their parents point to the same body
+    private static bool ShouldUpdateFrame(AGXUnity.ConstraintFrame oldFrame, AGXUnity.ConstraintFrame newFrame)
+    {
+      var oldParent = oldFrame.Parent;
+      var newParent = newFrame.Parent;
+      if (oldParent != null && oldParent != null)
+      {
+        if (oldParent.GetComponent<BrickObject>().path != newParent.GetComponent<BrickObject>().path)
+          return true;
+        return false;
+      }
+      else if (oldParent == null && newParent != null)
+      {
+        return true;
+      }
+      else if (oldParent != null && newParent == null)
+      {
+        return true;
+      }
+
+      return false;  // Both are null
+    }
+
+
     // Compare 2 Brick GameObjects
     // This is done by recursively going through all the old GameObject's children and comparing them to the
     // corresponding new GameObject
@@ -307,25 +331,6 @@ namespace AGXUnityEditor.BrickUnity {
         if (oldReferenceBrickObject.path != newReferenceBrickObject.path)
         {
           updateHolder.Updates |= UpdateParameters.ReferenceBody;
-        }
-
-        static bool ShouldUpdateFrame(AGXUnity.ConstraintFrame oldFrame, AGXUnity.ConstraintFrame newFrame) {
-          var oldParent = oldFrame.Parent;
-          var newParent = newFrame.Parent;
-          if (oldParent != null && oldParent != null)
-          {
-            if (oldParent.GetComponent<BrickObject>().path != newParent.GetComponent<BrickObject>().path)
-              return true;
-            return false;
-          } else if (oldParent == null && newParent != null)
-          {
-            return true;
-          } else if (oldParent != null && newParent == null)
-          {
-            return true;
-          }
-
-          return false;  // Both are null
         }
 
         // Update frames
