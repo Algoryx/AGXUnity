@@ -492,9 +492,9 @@ namespace AGXUnity.Model
         new agx.RealPair( 1.00000, 0.98 ),
         new agx.RealPair( 1.00100, 0.98 )
       } );
-      TorqueConverter.setMuTable( munu );
-      TorqueConverter.setMaxMultiplication( 2.0 );
-      TorqueConverter.setPumpTorqueReferenceRPM( 1000.0 );
+      //TorqueConverter.setMuTable( munu );
+      //TorqueConverter.setMaxMultiplication( 2.0 );
+      //TorqueConverter.setPumpTorqueReferenceRPM( 1000.0 );
 
       GearBox.setGearRatios( new agx.RealVector( new double[] { GearRatios.x, GearRatios.y } ) );
       GearBox.gearUp();
