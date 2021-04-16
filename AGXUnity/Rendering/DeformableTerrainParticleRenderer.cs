@@ -19,7 +19,7 @@ namespace AGXUnity.Rendering
 
     [Tooltip("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced")]
     [SerializeField]
-    private GranuleRenderMode m_renderMode = GranuleRenderMode.GameObject;
+    private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
 
     public GranuleRenderMode RenderMode
     {
