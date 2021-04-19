@@ -47,6 +47,7 @@ namespace AGXUnityEditor.Tools
       var constraints    = GetTargets<Constraint>().ToArray();
       var refConstraint  = constraints[ 0 ];
       var differentTypes = false;
+      var anyUnknownType = constraints.Any( c => c.Type == ConstraintType.Unknown );
       for ( int i = 1; i < constraints.Length; ++i )
         differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
@@ -57,14 +58,11 @@ namespace AGXUnityEditor.Tools
 
       UnityEngine.GUI.changed = false;
 
-      EditorGUI.showMixedValue = differentTypes;
-      using ( new GUI.EnabledBlock( false ) )
-        EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
-                                   refConstraint.Type,
-                                   InspectorEditor.Skin.Popup,
-                                   GUILayout.Width( EditorGUIUtility.labelWidth +
-                                                    2.0f * 76.0f ) );
-      EditorGUI.showMixedValue = false;
+      // The constraint type is Unknown when, e.g., go.AddComponent<Constraint>()
+      // or when the constraint has been reset. If any of the selected constraints
+      // is of type Unknown, we exit the GUI here.
+      if ( !ConstraintTypeGUI( constraints, differentTypes ) )
+        return;
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
@@ -212,44 +210,104 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    private bool ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
+    {
+      var anyUnknownType = constraints.Any( c => c.Type == ConstraintType.Unknown );
+      // Reference type is set to unknown if we have multi-select and
+      // the types aren't the same. This is to detect if the user has
+      // selected some valid type, with the limitation that it's not
+      // possible to change to Unknown (that action will be ignored).
+      var refType = differentTypes ?
+                      ConstraintType.Unknown :
+                      constraints[ 0 ].Type;
+
+      EditorGUI.showMixedValue = differentTypes;
+
+      var newType = refType;
+      using ( new GUI.EnabledBlock( !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
+        if ( refType == ConstraintType.Unknown )
+          newType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Choose type" ),
+                                                               refType,
+                                                               InspectorEditor.Skin.Popup );
+        else
+          newType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type" ),
+                                                               refType,
+                                                               InspectorEditor.Skin.Popup,
+                                                               GUILayout.Width( EditorGUIUtility.labelWidth +
+                                                                                2.0f * 76.0f ) );
+      }
+
+      EditorGUI.showMixedValue = false;
+
+      // Avoiding change to Unknown when it wasn't possible
+      // to handle undo/redo for that case.
+      if ( newType != refType && newType != ConstraintType.Unknown ) {
+        var performChange = constraints.All( c => c.Type == ConstraintType.Unknown ) ||
+                            EditorUtility.DisplayDialog( "Change constraint type",
+                                                         "Any changes to parameters (compliance, damping etc.) and/or states of " +
+                                                         $"any controller will be lost when the type changes to {newType}.\n\n" +
+                                                         "Do you want to continue?",
+                                                         "Yes",
+                                                         "Cancel" );
+        if ( performChange ) {
+          var undoIndex = Undo.GetCurrentGroup();
+          foreach ( var constraint in constraints ) {
+            if ( newType == constraint.Type )
+              continue;
+
+            constraint.ChangeType( newType,
+                                   createdObject =>
+                                   {
+                                     Undo.RegisterCreatedObjectUndo( createdObject, "ElementaryConstraint created." );
+                                   },
+                                   destroyObject =>
+                                   {
+                                     Undo.DestroyObjectImmediate( destroyObject );
+                                   } );
+          }
+          Undo.CollapseUndoOperations( undoIndex );
+        }
+      }
+
+      return !anyUnknownType;
+    }
+
     public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state )
     {
       var skin          = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;
 
-      GUILayout.BeginHorizontal();
-      {
+      using ( new EditorGUILayout.HorizontalScope() ) {
         EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Disable Collisions", true ),
                                       InspectorEditor.Skin.LabelMiddleLeft );
 
-        UnityEngine.GUI.enabled = !EditorApplication.isPlaying;
-        var rbVsRbActive = !EditorGUI.showMixedValue &&
-                           state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
-        var refVsConActive = !EditorGUI.showMixedValue &&
-                             state == Constraint.ECollisionsState.DisableReferenceVsConnected;
+        using ( new GUI.EnabledBlock( !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
+          var rbVsRbActive = !EditorGUI.showMixedValue &&
+                             state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+          var refVsConActive = !EditorGUI.showMixedValue &&
+                               state == Constraint.ECollisionsState.DisableReferenceVsConnected;
 
-        if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
-                                              rbVsRbActive,
-                                              "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                skin.GetButton( rbVsRbActive,
-                                                InspectorGUISkin.ButtonType.Left ),
-                                GUILayout.Width( 76 ) ) )
-          state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
-                    Constraint.ECollisionsState.KeepExternalState :
-                    Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
+          if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
+                                                rbVsRbActive,
+                                                "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
+                                  skin.GetButton( rbVsRbActive,
+                                                  InspectorGUISkin.ButtonType.Left ),
+                                  GUILayout.Width( 76 ) ) )
+            state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
+                      Constraint.ECollisionsState.KeepExternalState :
+                      Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
-        if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
-                                              refVsConActive,
-                                              "Disable Reference object vs. Connected object." ),
-                                skin.GetButton( refVsConActive,
-                                                InspectorGUISkin.ButtonType.Right ),
-                                GUILayout.Width( 76 ) ) )
-          state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
-                    Constraint.ECollisionsState.KeepExternalState :
-                    Constraint.ECollisionsState.DisableReferenceVsConnected;
-        UnityEngine.GUI.enabled = guiWasEnabled;
+          if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
+                                                refVsConActive,
+                                                "Disable Reference object vs. Connected object." ),
+                                  skin.GetButton( refVsConActive,
+                                                  InspectorGUISkin.ButtonType.Right ),
+                                  GUILayout.Width( 76 ) ) )
+            state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
+                      Constraint.ECollisionsState.KeepExternalState :
+                      Constraint.ECollisionsState.DisableReferenceVsConnected;
+        }
       }
-      GUILayout.EndHorizontal();
 
       return state;
     }
