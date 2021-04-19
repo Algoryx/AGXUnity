@@ -67,11 +67,14 @@ namespace AGXUnity.Utils
       /// </summary>
       /// <param name="source">Source instance.</param>
       /// <param name="destination">Destination instance.</param>
-      public void Invoke( object source, object destination )
+      /// <param name="onlyValueTypes">True to only synchronize value types, false to also move references (huge warning).</param>
+      public void Invoke( object source, object destination, bool onlyValueTypes )
       {
         if ( !IsValid )
           return;
         if ( m_field.FieldType.IsValueType )
+          m_property.SetValue( destination, m_property.GetValue( source ) );
+        else if ( !onlyValueTypes && m_property.GetSetMethod() != null && m_property.GetSetMethod().IsPublic )
           m_property.SetValue( destination, m_property.GetValue( source ) );
       }
     }
@@ -122,14 +125,15 @@ namespace AGXUnity.Utils
     /// </example>
     /// <param name="source">Source instance.</param>
     /// <param name="destination">Destination instance.</param>
-    public static void Synchronize( object source, object destination )
+    /// <param name="onlyValueTypes">True to only synchronize value types, false to also move references (huge warning).</param>
+    public static void Synchronize( object source, object destination, bool onlyValueTypes = true )
     {
       if ( source == null || destination == null )
         throw new ArgumentNullException();
       if ( source.GetType() != destination.GetType() )
         throw new InvalidOperationException( "Type mismatch." );
 
-      Synchronize( source, destination, GetOrCreateSynchronizedProperties( source.GetType() ) );
+      Synchronize( source, destination, GetOrCreateSynchronizedProperties( source.GetType() ), onlyValueTypes );
     }
 
     /// <summary>
@@ -200,12 +204,14 @@ namespace AGXUnity.Utils
     /// <param name="source">Source instance.</param>
     /// <param name="destination">Destination instance.</param>
     /// <param name="synchronizedProperties">List of fields and properties.</param>
+    /// <param name="onlyValueTypes">True to only synchronize value types, false to also move references (huge warning).</param>
     private static void Synchronize( object source,
                                      object destination,
-                                     List<FieldPropertyPair> synchronizedProperties )
+                                     List<FieldPropertyPair> synchronizedProperties,
+                                     bool onlyValueTypes )
     {
       foreach ( var fieldPropertyPair in synchronizedProperties )
-        fieldPropertyPair.Invoke( source, destination );
+        fieldPropertyPair.Invoke( source, destination, onlyValueTypes );
     }
 
     /// <summary>

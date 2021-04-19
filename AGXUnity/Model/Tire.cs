@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using AGXUnity.Utils;
 
 namespace AGXUnity.Model
@@ -7,6 +8,43 @@ namespace AGXUnity.Model
   [AddComponentMenu( "" )]
   public class Tire : ScriptComponent
   {
+    /// <summary>
+    /// Estimates radius given shapes and rendering meshes in the game object.
+    /// The maximum radius found is returned - 0 if nothing was found.
+    /// </summary>
+    /// <param name="gameObject">Game object to estimate radius of.</param>
+    /// <param name="ignoreMeshFilterWhenShapeHasRadius">
+    /// False to always include mesh filter bounds even when shapes has radius,
+    /// true to exclude mesh filters when shapes have radius.
+    /// </param>
+    /// <returns>Radius > 0 if radius was found, otherwise 0.</returns>
+    public static float FindRadius( GameObject gameObject, bool ignoreMeshFilterWhenShapeHasRadius = false )
+    {
+      if ( gameObject == null )
+        return 0.0f;
+
+      var shapes       = RigidBody.FindShapes( gameObject );
+      var radiusShapes = FindRadius( shapes );
+      if ( radiusShapes > 0.0f && ignoreMeshFilterWhenShapeHasRadius )
+        return radiusShapes;
+
+      // If the shapes mesh filters can represent the radius we're good,
+      // but when the user selects [Visual] as parent we don't have any
+      // information from the shapes since it's empty.
+      var meshFilters = Collide.Shape.FindMeshFilters( shapes );
+      if ( meshFilters.Length == 0 )
+        meshFilters = gameObject.GetComponentsInChildren<MeshFilter>();
+      var radiusMeshes = FindRadius( meshFilters,
+                                     FindRotationAxisWorld( shapes,
+                                                            meshFilters ) );
+      // Unsure how reliable shape radius is and it seems that
+      // the maximum of the two gives most accurate result. E.g.,
+      // the tire has a primitive cylinder encapsulating the whole
+      // wheel while the rim probably don't have one encapsulating
+      // the rim.
+      return Mathf.Max( radiusShapes, radiusMeshes );
+    }
+
     /// <summary>
     /// Estimates radius given shapes and rendering meshes in the rigid
     /// body. The maximum radius found is returned - 0 if nothing was found.
@@ -19,17 +57,10 @@ namespace AGXUnity.Model
     /// <returns>Radius > 0 if radius was found, otherwise 0.</returns>
     public static float FindRadius( RigidBody rb, bool ignoreMeshFilterWhenShapeHasRadius = false )
     {
-      var radiusShapes = FindRadius( rb.Shapes );
-      if ( radiusShapes > 0.0f && ignoreMeshFilterWhenShapeHasRadius )
-        return radiusShapes;
+      if ( rb == null )
+        return 0.0f;
 
-      var radiusMeshes = FindRadius( rb.GetComponentsInChildren<MeshFilter>(), FindRotationAxisWorld( rb ) );
-      // Unsure how reliable shape radius is and it seems that
-      // the maximum of the two gives most accurate result. E.g.,
-      // the tire has a primitive cylinder encapsulating the whole
-      // wheel while the rim probably don't have one encapsulating
-      // the rim.
-      return Mathf.Max( radiusShapes, radiusMeshes );
+      return FindRadius( rb.gameObject, ignoreMeshFilterWhenShapeHasRadius );
     }
 
     /// <summary>
@@ -42,7 +73,7 @@ namespace AGXUnity.Model
     {
       float maxRadius = 0.0f;
       foreach ( var shape in shapes ) {
-        var radiusProperty = shape.GetType().GetProperty( "Radius", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public );
+        var radiusProperty = GetRadiusProperty( shape.GetType() );
         if ( radiusProperty == null )
           continue;
         maxRadius = Mathf.Max( maxRadius, (float)radiusProperty.GetGetMethod().Invoke( shape, new object[] { } ) );
@@ -72,29 +103,34 @@ namespace AGXUnity.Model
       return maxRadius;
     }
 
-    /// <summary>
-    /// Estimates rotation axis of "cylinder like" rigid body with
-    /// distinct mesh bounds (two extends approximately equal and
-    /// the last is smaller than the ones that are approximately equal)
-    /// </summary>
-    /// <param name="tireRigidBody">Rigid body.</param>
-    /// <returns>Rotation axis in world coordinate frame - Vector3.zero if failed.</returns>
-    public static Vector3 FindRotationAxisWorld( RigidBody tireRigidBody )
+    public static Vector3 FindRotationAxisWorld( GameObject gameObject )
     {
-      if ( tireRigidBody == null )
-        return Vector3.zero;
+      var shapes = RigidBody.FindShapes( gameObject );
+      var meshFilters = Collide.Shape.FindMeshFilters( shapes );
+      if ( meshFilters.Length == 0 )
+        meshFilters = gameObject.GetComponentsInChildren<MeshFilter>();
+      return FindRotationAxisWorld( shapes, meshFilters );
+    }
 
-      var result = Vector3.zero;
-      foreach ( var shape in tireRigidBody.Shapes ) {
-        if ( shape is Collide.Cylinder || shape is Collide.Capsule )
-          result = shape.transform.TransformDirection( Vector3.up );
-      }
-      if ( result != Vector3.zero )
-        return result;
+    /// <summary>
+    /// Estimates world rotation axis given a set of shapes and/or mesh filters.
+    /// Vector3.zero is returned if the rotation axis wasn't possible to extract.
+    /// </summary>
+    /// <param name="shapes">Set of shapes.</param>
+    /// <param name="meshFilters">Set of mesh filters.</param>
+    /// <returns>World rotation axis if found - otherwise Vector3.zero.</returns>
+    public static Vector3 FindRotationAxisWorld( Collide.Shape[] shapes,
+                                                 MeshFilter[] meshFilters )
+    {
+      // Assuming any shape type with Radius property is defined
+      // with its rotation axis along y.
+      foreach ( var shape in shapes )
+        if ( GetRadiusProperty( shape.GetType() ) != null )
+          return shape.transform.TransformDirection( Vector3.up );
 
-      MeshFilter bestFilter = null;
-      float maxExtent = 0.0f;
-      foreach ( var filter in tireRigidBody.GetComponentsInChildren<MeshFilter>() ) {
+      MeshFilter bestFilter    = null;
+      float maxExtent          = 0.0f;
+      foreach ( var filter in meshFilters ) {
         var boundsExtents = filter.sharedMesh.bounds.extents;
         // 1. Max and middle value should be approximately the same.
         // 2. Min value is "much" less than the middle value.
@@ -107,6 +143,7 @@ namespace AGXUnity.Model
         }
       }
 
+      var result = Vector3.zero;
       if ( bestFilter != null ) {
         var localAxis = Vector3.zero;
         localAxis[ bestFilter.sharedMesh.bounds.extents.MinIndex() ] = 1.0f;
@@ -128,7 +165,8 @@ namespace AGXUnity.Model
         return agx.AffineMatrix4x4.identity();
       }
 
-      var worldRotationAxis = FindRotationAxisWorld( rb );
+      var worldRotationAxis = FindRotationAxisWorld( rb.Shapes,
+                                                     Collide.Shape.FindMeshFilters( rb.Shapes ) );
       var rotationAxisTransform = agx.AffineMatrix4x4.identity();
       if ( worldRotationAxis == Vector3.zero ) {
         Debug.LogWarning( "TwoBodyTire failed to identify rotation axis - assuming Tire local z axis." );
@@ -139,6 +177,16 @@ namespace AGXUnity.Model
                                                           agx.Vec3.Y_AXIS() ) );
       }
       return rotationAxisTransform;
+    }
+
+    /// <summary>
+    /// Finds property named "Radius" if it exists in <paramref name="type"/>.
+    /// </summary>
+    /// <param name="type">Type to check for property "Radius".</param>
+    /// <returns>Property info of "Radius" if exist - otherwise null.</returns>
+    protected static System.Reflection.PropertyInfo GetRadiusProperty( System.Type type )
+    {
+      return type.GetProperty( "Radius", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public );
     }
   }
 }

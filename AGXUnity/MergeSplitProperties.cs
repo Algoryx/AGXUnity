@@ -76,6 +76,17 @@ namespace AGXUnity
     [HideInInspector]
     public agxSDK.MergeSplitProperties[] Natives { get { return m_natives.ToArray(); } }
 
+    public bool RegisterNativeAndSynchronize( agxSDK.MergeSplitProperties properties )
+    {
+      if ( properties == null || m_natives.Contains( properties ) )
+        return false;
+
+      Add( properties );
+      Utils.PropertySynchronizer.Synchronize( this );
+
+      return true;
+    }
+
     protected override bool Initialize()
     {
       m_natives.Clear();

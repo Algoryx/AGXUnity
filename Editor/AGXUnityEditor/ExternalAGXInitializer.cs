@@ -43,24 +43,24 @@ namespace AGXUnityEditor
       // All binaries should be in path, try initialize agx.
       try {
         AGXUnity.NativeHandler.Instance.Register( null );
+
+        var envInstance = agxIO.Environment.instance();
+
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DIR );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_PLUGIN_PATH );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR +
+                                                                                      Path.DirectorySeparatorChar +
+                                                                                      "cfg" );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
       }
-      catch ( TypeInitializationException ) {
-        Debug.LogError( $"{"ERROR".Color( Color.red )}: Missing dll." );
+      catch ( Exception ) {
         return false;
       }
-
-      var envInstance = agxIO.Environment.instance();
-      for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
-        envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
-
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DIR );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_PLUGIN_PATH );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR +
-                                                                                    Path.DirectorySeparatorChar +
-                                                                                    "cfg" );
-      envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
 
       return true;
     }
@@ -122,9 +122,8 @@ namespace AGXUnityEditor
       var instance = Instance;
 
       // Applying already initialized data.
-      if ( instance.HasData &&
-           instance.ApplyData() )
-        return true;
+      if ( instance.HasData )
+        return instance.ApplyData();
 
       IsApplied = false;
 
