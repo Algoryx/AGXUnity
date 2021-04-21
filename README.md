@@ -61,9 +61,9 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 ### Requirements
 
-+ AGX Dynamics 2.29.1.0 (64-bit) or later (2.29.0.0 in rc/2.1, 2.28.1.0 in rc/2.0).
-+ Unity 3D 2017.4.10 (64-bit) or later. Could work in earlier version but hasn't been tested.
-+ Unity Script Runtime Version .NET 4.x Equivalent (Experimental in 2017.x).
++ AGX Dynamics 2.30.0.0 (64-bit) or later (2.29.1.0 in rc/2.3, 2.29.0.0 in rc/2.1, 2.28.1.0 in rc/2.0).
++ Unity 3D 2018.4 LTS (64-bit) or later. Could work in earlier version but hasn't been tested.
++ Unity Script Runtime Version .NET 4.x Equivalent.
 + Valid AGX Dynamics license. [Contact us for more information.](https://www.algoryx.se/contact/)
 
 ## Migrating from AGXUnity-deprecated to AGXUnity
