@@ -75,12 +75,6 @@ namespace AGXUnityEditor.Tools
         Debug.LogWarning( $"Emitter template: {template.name} isn't a prefab." );
         return;
       }
-      // Is this required? Is Unity figuring out we're referencing this
-      // component/game object even if it isn't in a Resources folder?
-      if ( !assetPath.Contains( "/Resources/" ) ) {
-        Debug.LogWarning( $"Emitter template: {template.name} isn't located in a 'Resources' folder." );
-        return;
-      }
 
       Emitter.AddTemplate( template, 0.5f );
     }

@@ -141,6 +141,7 @@ namespace AGXUnity.Rendering
         m_meshInstanceMaterial = material;
         m_granuleMatrices = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
+        m_meshInstanceScale = filters[ 0 ].transform.lossyScale;
       }
 
       Synchronize();
@@ -214,7 +215,7 @@ namespace AGXUnity.Rendering
           // Assuming unit size of the instance, scale to diameter of the granule.
           m_granuleMatrices[ i ] = Matrix4x4.TRS( granule.position().ToHandedVector3(),
                                                   granule.rotation().ToHandedQuaternion(),
-                                                  Vector3.one * 2.0f * (float)granule.getRadius() );
+                                                  m_meshInstanceScale * 2.0f * (float)granule.getRadius() );
 
           // Return the proxy class to the pool to avoid garbage.
           granule.ReturnToPool();
@@ -262,6 +263,7 @@ namespace AGXUnity.Rendering
       m_meshInstanceMaterial = null;
       m_granuleMatrices = null;
       m_meshInstanceProperties = null;
+      m_meshInstanceScale = Vector3.one;
     }
 
     private void Destroy( int count )
@@ -290,6 +292,7 @@ namespace AGXUnity.Rendering
     private int m_numGranulars = 0;
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_meshInstance = null;
+    private Vector3 m_meshInstanceScale = Vector3.one;
     private Material m_meshInstanceMaterial = null;
   }
 }
