@@ -405,6 +405,35 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Get a value from the ElementaryConstraintRowData instance of this constraint's
+    /// ordinary elementary constraints. This can be e.g. Compliance, Damping or ForceRange.
+    /// </summary>
+    /// <typeparam name="TOUT">The type of the outputed data.</typeparam>
+    /// <typeparam name="TDOF">Either RotationalDof or TranslationalDof</typeparam>
+    /// <param name="callback">Callback to fetch a value from a row data instance.</param>
+    /// <param name="dof">Enum value X, Y, or Z. If the enum value All is used, an exception will be thrown.</param>
+    /// <returns>The data to be fetched from the constraint.</returns>
+    private TOUT GetRowData<TOUT, TDOF>(Func<ElementaryConstraintRowData, TOUT> callback, TDOF dof)
+    {
+      if (System.Convert.ToInt32(dof) > 2)
+      {
+        throw new AGXUnity.Exception("Choose a degree of freedom for the row data. Cannot get row data for All.");
+      }
+
+      var rowParser = ConstraintUtils.ConstraintRowParser.Create(this);
+      var rows = typeof(TDOF) == typeof(TranslationalDof) ?
+                   rowParser.TranslationalRows :
+                   rowParser.RotationalRows;
+
+      var data = rows[System.Convert.ToInt32(dof)];
+      if (data != null)
+        return callback(data.RowData);
+      Debug.LogError($"Could not find row data for dof {dof}. Returning default.");
+      return default;
+    }
+
+
+    /// <summary>
     /// Set compliance to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
     /// </summary>
@@ -501,6 +530,66 @@ namespace AGXUnity
     public void SetForceRange( RangeReal forceRange, RotationalDof dof )
     {
       TraverseRowData( data => data.ForceRange = forceRange, dof );
+    }
+
+    /// <summary>
+    /// Get the compliance of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The compliance for the specified degree of freedom.</returns>
+    public float GetCompliance(RotationalDof dof)
+    {
+      return GetRowData(data => data.Compliance, dof);
+    }
+
+    /// <summary>
+    /// Get the compliance of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The compliance for the specified degree of freedom.</returns>
+    public float GetCompliance(TranslationalDof dof)
+    {
+      return GetRowData(data => data.Compliance, dof);
+    }
+
+    /// <summary>
+    /// Get the damping of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The damping for the specified degree of freedom.</returns>
+    public float GetDamping(RotationalDof dof)
+    {
+      return GetRowData(data => data.Damping, dof);
+    }
+
+    /// <summary>
+    /// Get the damping of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The damping for the specified degree of freedom.</returns>
+    public float GetDamping(TranslationalDof dof)
+    {
+      return GetRowData(data => data.Damping, dof);
+    }
+
+    /// <summary>
+    /// Get the force range of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific rotational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The force range for the specified degree of freedom.</returns>
+    public RangeReal GetForceRange(RotationalDof dof)
+    {
+      return GetRowData(data => data.ForceRange, dof);
+    }
+
+    /// <summary>
+    /// Get the force range of a specified degree of freedom.
+    /// </summary>
+    /// <param name="dof">Specific translational degree of freedom (X, Y, or Z). All is not valid.</param>
+    /// <returns>The force range for the specified degree of freedom.</returns>
+    public RangeReal GetForceRange(TranslationalDof dof)
+    {
+      return GetRowData(data => data.ForceRange, dof);
     }
 
     /// <summary>
@@ -629,7 +718,9 @@ namespace AGXUnity
     /// in the native instance. Throws if an elementary constraint fails to initialize.
     /// </summary>
     /// <param name="native">Native instance.</param>
-    public void TryAddElementaryConstraints( agx.Constraint native )
+    /// <param name="onObjectCreated">Optional callback when elementary constraint has been created.</param>
+    public void TryAddElementaryConstraints( agx.Constraint native,
+                                             Action<UnityEngine.Object> onObjectCreated = null )
     {
       if ( native == null )
         throw new ArgumentNullException( "native", "Native constraint is null." );
@@ -644,6 +735,8 @@ namespace AGXUnity
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
+        onObjectCreated?.Invoke( ec );
+
         m_elementaryConstraints.Add( ec );
       }
 
@@ -654,6 +747,8 @@ namespace AGXUnity
         var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
+
+        onObjectCreated?.Invoke( sc );
 
         m_elementaryConstraints.Add( sc );
       }
@@ -675,6 +770,43 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Change constraint type. Note that all values will be default
+    /// when the type has changed.
+    /// </summary>
+    /// <param name="type">New type of the constraint.</param>
+    /// <param name="onObjectCreated">Optional callback when an object has been created.</param>
+    /// <param name="destroyObject">
+    /// Optional callback to destroy an object - Object.DestroyImmediate
+    /// is used by default.
+    /// </param>
+    public void ChangeType( ConstraintType type,
+                            Action<UnityEngine.Object> onObjectCreated = null,
+                            Action<UnityEngine.Object> destroyObject = null )
+    {
+      if ( Native != null ) {
+        Debug.LogWarning( "Invalid to change type of an initialized constraint.", this );
+        return;
+      }
+
+      foreach ( var elementaryConstraint in m_elementaryConstraints ) {
+        if ( destroyObject != null )
+          destroyObject( elementaryConstraint );
+        else
+          DestroyImmediate( elementaryConstraint );
+      }
+
+      m_elementaryConstraints.Clear();
+
+      SetType( type, true );
+
+      if ( type == ConstraintType.Unknown )
+        return;
+
+      using ( var tempNative = new TemporaryNative( NativeType, AttachmentPair ) )
+        TryAddElementaryConstraints( tempNative.Instance, onObjectCreated );
+    }
+
+    /// <summary>
     /// Creates native instance and adds it to the simulation if this constraint
     /// is properly configured.
     /// </summary>
@@ -683,6 +815,11 @@ namespace AGXUnity
     {
       if ( AttachmentPair.ReferenceObject == null ) {
         Debug.LogError( "Unable to initialize constraint - reference object must be valid and contain a rigid body component.", this );
+        return false;
+      }
+
+      if ( Type == ConstraintType.Unknown ) {
+        Debug.LogError( "Unable to initialize constraint - constraint type is Unknown.", this );
         return false;
       }
 
@@ -808,6 +945,11 @@ namespace AGXUnity
       Native = null;
 
       base.OnDestroy();
+    }
+
+    private void Reset()
+    {
+      Type = ConstraintType.Unknown;
     }
 
     private void OnPreStepForwardUpdate()

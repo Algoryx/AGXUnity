@@ -13,6 +13,7 @@ namespace AGXUnity.IO
       CableProperties,
       RenderMaterial,
       Mesh,
+      TwoBodyTireProperties,
       Unknown // This is last - add entries before this.
     }
 
@@ -78,6 +79,7 @@ namespace AGXUnity.IO
       typeof( CableProperties ),
       typeof( Material ),
       typeof( Mesh ),
+      typeof( Model.TwoBodyTireProperties ),
       null // Unknown assets, the only one valid to be null.
     };
   }

@@ -9,6 +9,7 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_Signal = Brick.Signal;
 using B_BrickSimulation = Brick.AgxBrick.BrickSimulation;
 using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
+using B_Agent = Brick.MachineLearning.RLAgent;
 
 namespace AGXUnity.BrickUnity
 {
@@ -20,9 +21,48 @@ namespace AGXUnity.BrickUnity
     protected B_Component m_component;
     private B_BrickSimulation m_brickSimulation;
 
+    public B_Component Component => m_component;
+
+    public B_Agent GetBrickAgent(string agentName)
+    {
+      B_Agent agent = null;
+
+      var b_agents = m_component._RecursiveValues.OfType<B_Agent>();
+      foreach (var b_agent in b_agents)
+      {
+        var name = b_agent._ModelValuePath.Name.Str;
+        if (name.Equals(agentName))
+        {
+          agent = b_agent;
+        }
+      }
+      if (agent == null)
+        Debug.LogWarning("Could not find brick agent with name: " + agentName);
+
+      return agent;
+    }
+
+
+    public void Reload()
+    {
+      Brick.Model.MarkDirtyModels();
+      var b_component = BrickUtils.LoadComponentFromFile(filePath, modelName);
+      ReloadBodies(b_component);
+    }
+
+    public void ReloadBodies(B_Component b_component)
+    {
+      foreach (var au_body in GetComponentsInChildren<AGXUnity.RigidBody>())
+      {
+        var c_brickObject = au_body.GetComponent<BrickObject>();
+      }
+    }
+
+
     protected override bool Initialize()
     {
       Debug.Log($"Synchronizing Brick component {filePath}:{modelName}");
+      Brick.Model.MarkDirtyModels();
       m_component = BrickUtils.LoadComponentFromFile(filePath, modelName);
       var au_sim = AGXUnity.Simulation.Instance.GetInitialized<AGXUnity.Simulation>();
       m_brickSimulation = new B_BrickSimulation(au_sim.Native);
@@ -36,7 +76,7 @@ namespace AGXUnity.BrickUnity
       AddDriveTrains();
       if (Application.isEditor)
         HandleSignals();
-
+      m_brickSimulation.ConnectToROS();
       return base.Initialize();
     }
 
@@ -48,7 +88,7 @@ namespace AGXUnity.BrickUnity
         var c_brickObject = au_body.GetComponent<BrickObject>();
         if (c_brickObject == null || !c_brickObject.synchronize)
           continue;
-        var b_body = GetBrickValue<B_RigidBody>(c_brickObject);
+        var b_body = c_brickObject.GetBrickValue<B_RigidBody>(m_component);
         if (b_body == null)
           continue;
         var agx_body = au_body.GetInitialized<AGXUnity.RigidBody>().Native;
@@ -64,7 +104,7 @@ namespace AGXUnity.BrickUnity
         var c_brickObject = au_constraint.GetComponent<BrickObject>();
         if (c_brickObject == null || !c_brickObject.synchronize)
           continue;
-        var b_connector = GetBrickValue<B_Connector>(c_brickObject);
+        var b_connector = c_brickObject.GetBrickValue<B_Connector>(m_component);
         if (b_connector == null)
           continue;
         var nativeConstraint = au_constraint.GetInitialized<AGXUnity.Constraint>().Native;
@@ -104,64 +144,103 @@ namespace AGXUnity.BrickUnity
     }
 
 
-    private T GetBrickValue<T>(BrickObject brickObject) where T : Brick.Object
+    // Create GameObjects for the Signals. These GameObjects can be used to monitor signals and set them if they are
+    // inputs. If no Signals exist in m_brickSimulation then no GameObject will be created.
+    private void HandleSignals()
     {
+      var go_inputs = HandleInputSignals();
+      var go_outputs = HandleOutputSignals();
 
-      var b_path = brickObject.GetBrickPathRelativeRoot();
-      var b_object = m_component._Get(b_path);
-      if (b_object is T b_T)
-        return b_T;
-      Debug.LogWarning($"Type of Brick object {b_path} ({b_object.GetType()}) does not match the expected type {typeof(T)}");
-      return null;
+      if (go_inputs is null && go_outputs is null)
+        return;
+
+      var go_signals = new GameObject("Signals");
+      go_signals.transform.SetParent(this.transform);
+
+      if (go_inputs != null)
+        go_inputs.transform.SetParent(go_signals.transform);
+
+      if (go_outputs != null)
+        go_outputs.transform.SetParent(go_signals.transform);
     }
 
 
-    private void HandleSignals()
+    // Create GameObjects for input Signals. They will all share a common parent GameObject. Returns null if no inputs
+    // exist in m_brickSimulation.
+    private GameObject HandleInputSignals()
     {
-      var b_signals = m_component._RecursiveValues.OfType<B_Signal.SignalBase>();
-      var go_signals = new GameObject("Signals");
-      go_signals.transform.SetParent(this.transform);
-      foreach (var b_signal in b_signals)
+      var b_inputs = m_brickSimulation.InputSignals;
+      if (b_inputs.Count < 1)
+        return null;
+
+      var go_inputs = new GameObject("Inputs");
+      foreach (var b_input in b_inputs)
       {
-        var go_signal = new GameObject(b_signal._ModelValuePath.Str);
-        go_signal.transform.SetParent(go_signals.transform);
-        switch (b_signal)
+        var go = new GameObject(b_input.GetValueNameOrModelPath());
+        go.transform.SetParent(go_inputs.transform);
+        switch (b_input)
         {
           case B_Signal.Input<double> doubleInput:
             {
-              var comp = go_signal.AddComponent<BrickDoubleInput>();
+              var comp = go.AddComponent<BrickDoubleInput>();
               comp.signal = doubleInput;
             }
             break;
+          default:
+            Debug.LogWarning($"Unkown input signal type: {b_input.GetType()}");
+            break;
+        }
+      }
+      return go_inputs;
+    }
+
+
+    // Create GameObjects for output Signals. They will all share a common parent GameObject. Returns null if no
+    // outputs exist in m_brickSimulation.
+    private GameObject HandleOutputSignals()
+    {
+      var b_outputs = m_brickSimulation.OutputSignals;
+      if (b_outputs.Count < 1)
+        return null;
+
+      var go_outputs = new GameObject("Inputs");
+      foreach (var b_output in b_outputs)
+      {
+        var go = new GameObject(b_output.GetValueNameOrModelPath());
+        go.transform.SetParent(go_outputs.transform);
+        switch (b_output)
+        {
           case B_Signal.Output<double> doubleOutput:
             {
-              var comp = go_signal.AddComponent<BrickDoubleOutput>();
+              var comp = go.AddComponent<BrickDoubleOutput>();
               comp.signal = doubleOutput;
             }
             break;
           case B_Signal.Output<Brick.Math.Vec3> vec3Output:
             {
-              var comp = go_signal.AddComponent<BrickVec3Output>();
+              var comp = go.AddComponent<BrickVec3Output>();
               comp.signal = vec3Output;
             }
             break;
           case B_Signal.Output<Brick.Math.Quat> quatOutput:
             {
-              var comp = go_signal.AddComponent<BrickQuatOutput>();
+              var comp = go.AddComponent<BrickQuatOutput>();
               comp.signal = quatOutput;
             }
             break;
           case B_Signal.Output<Brick.Scene.Transform> transformOutput:
             {
-              var comp = go_signal.AddComponent<BrickTransformOutput>();
+              var comp = go.AddComponent<BrickTransformOutput>();
               comp.signal = transformOutput;
             }
             break;
           default:
-            Debug.LogWarning($"Unkown signal type: {b_signal.GetType()}");
+            Debug.LogWarning($"Unkown output signal type: {b_output.GetType()}");
             break;
         }
+
       }
+      return go_outputs;
     }
   }
 }

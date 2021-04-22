@@ -167,17 +167,33 @@ To run a Brick project, the `BRICK_DIR` environment variable needs to be set to 
 
 ### Building Brick
 
-To build new Brick dlls, you need to run the following commands from the Unity project root directory:
+To build new Brick dlls, you need to follow these steps:
+
+1. Find your AgxBrick directory (located in `brick/AgxBrick/cs/brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
+2. Create the file `brick\LocalBuildConfig.props` (relative to your AGX directory) and fill it with the following content:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <BRICK_SOURCE_DIR>$(BRICK_DIR)</BRICK_SOURCE_DIR>
+    <BRICK_VERSION></BRICK_VERSION>
+  </PropertyGroup>
+</Project>
+```
+3. Run the following commands from the Unity project root directory:
 
 ```
-set AGXDOTNET_PATH=%~dp0Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
-set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
-dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+set AGXDOTNET_PATH=%cd%\Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
+set BRICK_PUBLISH_DIR=%cd%\Assets\AGXUnity\Plugins\x86_64\Brick
+set BRICK_DISABLE_GRPC=1
+set TMP_DIR=brick_tmp_build_dir
+mkdir %TMP_DIR%
+dotnet publish %AGXBRICK_DIR% -f net471 --output %TMP_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
+robocopy %TMP_DIR% %BRICK_PUBLISH_DIR% /purge /xf *.meta /xf agxDotNet.*
+rmdir %TMP_DIR%
 ```
 
-Or you can create a batch file in the Unity project root directory with the following contents:
+As an alternative to step 3 you can also create and run a batch file in the Unity project root directory with the following contents:
 
 ```
 @echo off
@@ -193,12 +209,33 @@ if "%BRICK_DIR%"=="" (
     echo Could not find Brick modules, make sure the BRICK_DIR environment variable has been set to point to a Brick root directory.
     exit /b 1
 )
-echo Using BRICK_DIR=%BRICK_DIR%
 
+if "%AGXBRICK_DIR%"=="" (
+    echo AGXBRICK_DIR environment variable not set. Set it to point to the directory of the AgxBrick.csproj file.
+    exit /b 1
+)
+
+echo Using BRICK_DIR=%BRICK_DIR%
+echo Using AGXBRICK_DIR=%AGXBRICK_DIR%
+set BRICK_DISABLE_GRPC=1
 set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
-dotnet publish %BRICK_DIR%\cs\brick\AgxBrick -f net471 --output %BRICK_PUBLISH_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.dll del %BRICK_PUBLISH_DIR%\agxDotNet.dll
-if exist %BRICK_PUBLISH_DIR%\agxDotNet.pdb del %BRICK_PUBLISH_DIR%\agxDotNet.pdb
+set TMP_DIR=brick_tmp_build_dir
+if exist %TMP_DIR% rmdir /s /q %TMP_DIR%
+mkdir %TMP_DIR%
+dotnet publish %AGXBRICK_DIR%^
+    -f net471^
+    --output %TMP_DIR%^
+    --self-contained false^
+    -p:BuildNetFxOnly=true^
+    -c Release^
+    || exit /b %ERRORLEVEL%
+robocopy %TMP_DIR% %BRICK_PUBLISH_DIR%^
+    *.dll *.pdb^
+    /purge^
+    /xf *.meta^
+    /xf agxDotNet.*^
+    || exit /b %ERRORLEVEL%
+rmdir /s /q %TMP_DIR% || exit /b %ERRORLEVEL%
 
 exit /b 0
 ```
