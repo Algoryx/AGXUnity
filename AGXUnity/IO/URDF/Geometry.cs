@@ -36,6 +36,24 @@ namespace AGXUnity.IO.URDF
     }
 
     /// <summary>
+    /// Finds mesh resource type from the file extension of the given filename.
+    /// </summary>
+    /// <param name="filename">Filename (with or without path).</param>
+    /// <returns>Mesh resource type.</returns>
+    public static MeshResourceType FindResourceType( string filename )
+    {
+      if ( string.IsNullOrEmpty( filename ) || !System.IO.Path.HasExtension( filename ) )
+        return MeshResourceType.Unknown;
+
+      var extension = System.IO.Path.GetExtension( filename ).ToLowerInvariant();
+      return extension == ".dae" ?
+               MeshResourceType.Collada :
+             extension == ".stl" ?
+               MeshResourceType.STL :
+               MeshResourceType.Unknown;
+    }
+
+    /// <summary>
     /// Geometry types given specification.
     /// </summary>
     public enum GeometryType
@@ -54,10 +72,49 @@ namespace AGXUnity.IO.URDF
       Sphere,
       /// <summary>
       /// Geometry type "mesh" with required attribute "filename" => Filename and
-      /// optional attribute "scale" => Scale (default [1, 1, 1]).
+      /// optional attribute "scale". If "scale" is given the localScale of the
+      /// instantiated resource is assigned.
       /// </summary>
       Mesh,
       Unknown
+    }
+
+    /// <summary>
+    /// Mesh resource type by file extension in "mesh filename".
+    /// </summary>
+    public enum MeshResourceType
+    {
+      /// <summary>
+      /// File extension is unknown.
+      /// </summary>
+      Unknown,
+      /// <summary>
+      /// File extension is ".dae".
+      /// </summary>
+      Collada,
+      /// <summary>
+      /// File extension is ".stl".
+      /// </summary>
+      STL
+    }
+
+    /// <summary>
+    /// True if a mesh element has the scale attribute, otherwise false.
+    /// </summary>
+    public bool HasScale
+    {
+      get
+      {
+        if ( Type != GeometryType.Mesh )
+          throw new UrdfIOException( $"Asking has scale of GeometryType {Type} is undefined." );
+        return m_hasScale;
+      }
+      set
+      {
+        if ( Type != GeometryType.Mesh )
+          throw new UrdfIOException( $"Asking has scale of GeometryType {Type} is undefined." );
+        m_hasScale = value;
+      }
     }
 
     /// <summary>
@@ -95,6 +152,26 @@ namespace AGXUnity.IO.URDF
         if ( Type != GeometryType.Mesh )
           throw new UrdfIOException( $"Asking filename of GeometryType {Type} is undefined." );
         m_filename = value;
+      }
+    }
+
+    /// <summary>
+    /// Mesh resource type given file extension in "mesh filename".
+    /// </summary>
+    [HideInInspector]
+    public MeshResourceType ResourceType
+    {
+      get
+      {
+        if ( Type != GeometryType.Mesh )
+          throw new UrdfIOException( $"Asking mesh resource type of GeometryType {Type} is undefined." );
+        return m_meshResourceType;
+      }
+      set
+      {
+        if ( Type != GeometryType.Mesh )
+          throw new UrdfIOException( $"Asking mesh resource type of GeometryType {Type} is undefined." );
+        m_meshResourceType = value;
       }
     }
 
@@ -190,10 +267,11 @@ namespace AGXUnity.IO.URDF
       else if ( Type == GeometryType.Sphere )
         Radius = Utils.ReadFloat( children[ 0 ], "radius", false );
       else {
-        Filename = Utils.ReadString( children[ 0 ], "filename", false );
-        Scale    = children[ 0 ].Attribute( "scale" ) != null ?
-                     Utils.ReadVector3( children[ 0 ], "scale" ) :
-                     Vector3.one;
+        Filename     = Utils.ReadString( children[ 0 ], "filename", false );
+        ResourceType = FindResourceType( Filename );
+        HasScale     = children[ 0 ].Attribute( "scale" ) != null;
+        if ( HasScale )
+          Scale = Utils.ReadVector3( children[ 0 ], "scale" );
       }
     }
 
@@ -205,5 +283,11 @@ namespace AGXUnity.IO.URDF
 
     [SerializeField]
     private GeometryType m_type = GeometryType.Unknown;
+
+    [SerializeField]
+    private bool m_hasScale = false;
+
+    [SerializeField]
+    private MeshResourceType m_meshResourceType = MeshResourceType.Unknown;
   }
 }
