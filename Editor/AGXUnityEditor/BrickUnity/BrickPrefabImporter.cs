@@ -398,6 +398,9 @@ namespace AGXUnityEditor.BrickUnity
       else if (b_camera.Projection == B_Camera.CameraProjection.Perspective)
         camera.orthographic = false;
 
+      go.transform.Rotate(-90, 0, 0);
+      go.transform.Rotate(0, 0, 180);
+
       return camera;
     }
 

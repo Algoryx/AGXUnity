@@ -77,7 +77,7 @@ namespace AGXUnity.BrickUnity
     public static void SetLocalFromBrick(this Transform u_transform, Brick.Scene.Transform b_transform)
     {
       u_transform.localPosition = b_transform.Position.ToHandedVector3();
-      u_transform.localRotation = b_transform.Rotation.ToHandedQuaternion();
+      u_transform.localRotation = b_transform.Rotation.ToHandedQuaternion()*u_transform.localRotation;
     }
 
     public static BrickObject AddBrickObject(this GameObject go, Brick.Object b_object, GameObject go_parent = null)
