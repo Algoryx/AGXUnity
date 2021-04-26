@@ -401,6 +401,9 @@ namespace AGXUnityEditor.BrickUnity
       go.transform.Rotate(-90, 0, 0);
       go.transform.Rotate(0, 0, 180);
 
+      if (b_camera is B_Camera.DepthCamera)
+        go.AddComponent<DepthPostprocessing>();
+
       return camera;
     }
 
