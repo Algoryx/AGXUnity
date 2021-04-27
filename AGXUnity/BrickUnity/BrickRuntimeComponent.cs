@@ -144,6 +144,8 @@ namespace AGXUnity.BrickUnity
       AddCameraSignals();
     }
 
+
+    // Add the camera signal components to the cameras that are used in signals
     private void AddCameraSignals()
     {
       var b_outputs = m_brickSimulation.OutputSignals;
@@ -252,6 +254,7 @@ namespace AGXUnity.BrickUnity
             }
             break;
           case B_Signal.CameraOutput cameraOutput:
+            // No object added for camera signals right now
             break;
           default:
             Debug.LogWarning($"Unkown output signal type: {b_output.GetType()}");

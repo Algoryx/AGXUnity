@@ -386,6 +386,7 @@ namespace AGXUnityEditor.BrickUnity
 
 
 
+    // Add cameras to the scene
     public Camera HandleCamera(GameObject go, B_Camera b_camera)
     {
       Camera camera = go.AddComponent<Camera>();
@@ -398,10 +399,13 @@ namespace AGXUnityEditor.BrickUnity
       else if (b_camera.Projection == B_Camera.CameraProjection.Perspective)
         camera.orthographic = false;
 
+      // Cameras in Brick point along the y-axis, and in Unity they point along the z-axis,
+      // so we need to rotate them.
       go.transform.Rotate(-90, 0, 0);
       go.transform.Rotate(0, 0, 180);
 
       if (b_camera is B_Camera.DepthCamera)
+        // The component adds the depth camera shader for the depth camera
         go.AddComponent<DepthPostprocessing>();
 
       return camera;
