@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using AGXUnity;
@@ -11,6 +12,21 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof( RigidBodyEmitter ) )]
   public class RigidBodyEmitterTool : CustomTargetTool
   {
+    public static RigidBody[] FindAvailableTemplates( IEnumerable<string> directories = null )
+    {
+      directories = directories != null ?
+                      directories :
+                      Directory.GetDirectories( "Assets",
+                                                "Resources",
+                                                SearchOption.AllDirectories ).Select( dir => dir.Replace( '\\', '/' ) );
+      return ( from dir in directories
+               from guid in AssetDatabase.FindAssets( "t:GameObject", new string[] { dir } ).Distinct()
+               let assetPath = AssetDatabase.GUIDToAssetPath( guid )
+               let rb = AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ).GetComponent<RigidBody>()
+               where rb != null
+               select rb ).ToArray();
+    }
+
     public RigidBodyEmitter Emitter { get { return Targets[ 0 ] as RigidBodyEmitter; } }
 
     public RigidBodyEmitterTool( Object[] targets )
@@ -22,15 +38,7 @@ namespace AGXUnityEditor.Tools
     {
       Emitter.RemoveInvalidTemplates();
 
-      var directories = Directory.GetDirectories( "Assets",
-                                                  "Resources",
-                                                  SearchOption.AllDirectories ).Select( dir => dir.Replace( '\\', '/' ) );
-      m_availableTemplates = ( from dir in directories
-                               from guid in AssetDatabase.FindAssets( "t:GameObject", new string[] { dir } ).Distinct()
-                               let assetPath = AssetDatabase.GUIDToAssetPath( guid )
-                               let rb = AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ).GetComponent<RigidBody>()
-                               where rb != null
-                               select rb ).ToArray();
+      m_availableTemplates = FindAvailableTemplates();
     }
 
     public override void OnRemove()
