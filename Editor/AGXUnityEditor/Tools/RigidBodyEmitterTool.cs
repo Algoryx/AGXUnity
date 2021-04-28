@@ -38,7 +38,9 @@ namespace AGXUnityEditor.Tools
     {
       Emitter.RemoveInvalidTemplates();
 
-      m_availableTemplates = FindAvailableTemplates();
+      m_availableTemplates = null;
+      if ( !EditorApplication.isPlayingOrWillChangePlaymode )
+        m_availableTemplates = FindAvailableTemplates();
     }
 
     public override void OnRemove()

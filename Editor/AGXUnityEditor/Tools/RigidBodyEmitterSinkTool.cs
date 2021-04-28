@@ -19,7 +19,9 @@ namespace AGXUnityEditor.Tools
     public override void OnAdd()
     {
       Sink.RemoveInvalidTemplates();
-      m_availableTemplates = RigidBodyEmitterTool.FindAvailableTemplates();
+      m_availableTemplates = null;
+      if ( !EditorApplication.isPlayingOrWillChangePlaymode )
+        m_availableTemplates = RigidBodyEmitterTool.FindAvailableTemplates();
     }
 
     public override void OnPostTargetMembersGUI()
