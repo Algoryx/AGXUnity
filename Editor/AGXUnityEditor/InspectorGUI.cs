@@ -711,7 +711,7 @@ namespace AGXUnityEditor
             rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
             rect.xMax = xMax;
             rect.width = buttonWidth;
-            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, true );
+            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, UnityEngine.GUI.enabled );
           }
 
           if ( addButtonPressed ) {
