@@ -44,25 +44,27 @@ namespace AGXUnityEditor.Tools
       else
         Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
 
-      var newSingleSource = ShapeMeshSourceGUI( singleSource );
-      if ( newSingleSource != null ) {
+      ShapeMeshSourceGUI( singleSource, newSource =>
+      {
         if ( IsMultiSelect ) {
           foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
             if ( target != null )
-              target.SetSourceObject( newSingleSource );
+              target.SetSourceObject( newSource );
         }
         else
-          Mesh.SetSourceObject( newSingleSource );
-      }
+          Mesh.SetSourceObject( newSource );
+      } );
     }
 
-    public static Mesh ShapeMeshSourceGUI( Mesh currentSource )
+    public static void ShapeMeshSourceGUI( Mesh currentSource,
+                                           System.Action<Mesh> onNewMesh )
     {
       var newSource = EditorGUILayout.ObjectField( GUI.MakeLabel( "Source" ),
                                                    currentSource,
                                                    typeof( Mesh ),
                                                    false ) as Mesh;
-      return newSource != currentSource ? newSource : null;
+      if ( newSource != currentSource )
+        onNewMesh?.Invoke( newSource );
     }
   }
 }
