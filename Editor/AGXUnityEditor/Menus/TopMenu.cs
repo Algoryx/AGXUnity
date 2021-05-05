@@ -28,6 +28,8 @@ namespace AGXUnityEditor
       if ( parent != null )
         go.transform.SetParent( parent.transform, false );
 
+      AGXUnity.Rendering.ShapeVisual.Create( go.GetComponent<T>() );
+
       Undo.RegisterCreatedObjectUndo( go, "shape" );
 
       return go;
@@ -118,7 +120,7 @@ namespace AGXUnityEditor
     private static GameObject CreateRigidBody<T>( MenuCommand command )
       where T : Shape
     {
-      return CreateRigidBody( command, Factory.Create<T>() );
+      return CreateRigidBody( command, CreateShape<T>( new MenuCommand( null ) ) );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Box", priority = 20 )]
