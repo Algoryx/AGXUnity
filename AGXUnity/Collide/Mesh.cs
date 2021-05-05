@@ -168,5 +168,14 @@ namespace AGXUnity.Collide
       var merger = MeshMerger.Merge( transform, meshes );
       return new agxCollide.Trimesh( merger.Vertices, merger.Indices, "Trimesh" );
     }
+
+    private void Reset()
+    {
+      if ( SourceObjects.Length == 0 ) {
+        var filter = GetComponent<MeshFilter>();
+        if ( filter != null )
+          SetSourceObject( filter.sharedMesh );
+      }
+    }
   }
 }
