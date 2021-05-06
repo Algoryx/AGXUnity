@@ -404,6 +404,7 @@ namespace AGXUnity
 
       GetSimulation().add( Native );
       Simulation.Instance.StepCallbacks.PostStepForward += SynchronizeVisuals;
+      Simulation.Instance.StepCallbacks.SimulationPreCollide += OnSimulationPreCollide;
 
       return true;
     }
@@ -425,6 +426,7 @@ namespace AGXUnity
       if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
         Simulation.Instance.StepCallbacks.PostStepForward -= SynchronizeVisuals;
+        Simulation.Instance.StepCallbacks.SimulationPreCollide -= OnSimulationPreCollide;
       }
 
       Native = null;
@@ -441,6 +443,14 @@ namespace AGXUnity
     {
       RandomSeed = (int)UnityEngine.Random.Range( 0.0f, (float)int.MaxValue - 1 );
       EmitterShape = GetComponent<Collide.Shape>();
+    }
+
+    private void OnSimulationPreCollide()
+    {
+      // The emitter is emitting bodies before simulation pre-collide
+      // events are fired. Simulation pre-collide is called from the
+      // main thread so it's safe to instantiate visuals from here.
+      m_event?.CreateEmittedVisuals();
     }
 
     private void SynchronizeVisuals()
@@ -480,6 +490,24 @@ namespace AGXUnity
         return true;
       }
 
+      public void CreateEmittedVisuals()
+      {
+        foreach ( var data in m_resourcesToInstantiate ) {
+          var visual = Instantiate( data.Visual );
+          if ( m_visualRoot != null )
+            visual.transform.SetParent( m_visualRoot.transform );
+          visual.transform.position = data.RigidBody.getPosition().ToHandedVector3();
+          visual.transform.rotation = data.RigidBody.getRotation().ToHandedQuaternion();
+
+          m_instanceDataTable.Add( data.RigidBody, new EmitData()
+          {
+            RigidBody = data.RigidBody,
+            Visual = visual
+          } );
+        }
+        m_resourcesToInstantiate.Clear();
+      }
+
       public void SynchronizeVisuals()
       {
         List<agx.RigidBody> keysToRemove = null;
@@ -509,17 +537,13 @@ namespace AGXUnity
 
       public override void onEmit( agx.RigidBody instance )
       {
+        // NOTE: This method can be called from a thread different from main so
+        //       we cannot perform Instantiate in this method.
         if ( m_nameResourceTable.TryGetValue( instance.getName(), out var resource ) ) {
-          var visual = Instantiate( resource );
-          if ( m_visualRoot != null )
-            visual.transform.SetParent( m_visualRoot.transform );
-          visual.transform.position = instance.getPosition().ToHandedVector3();
-          visual.transform.rotation = instance.getRotation().ToHandedQuaternion();
-
-          m_instanceDataTable.Add( instance, new EmitData()
+          m_resourcesToInstantiate.Add( new EmitData()
           {
             RigidBody = instance,
-            Visual = visual
+            Visual = resource
           } );
         }
         else {
@@ -531,6 +555,7 @@ namespace AGXUnity
 
       protected override void Dispose( bool disposing )
       {
+        m_resourcesToInstantiate.Clear();
         m_instanceDataTable.Clear();
         m_nameResourceTable.Clear();
         if ( m_visualRoot != null )
@@ -547,6 +572,7 @@ namespace AGXUnity
 
       private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
       private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();
+      private List<EmitData> m_resourcesToInstantiate = new List<EmitData>();
       private GameObject m_visualRoot = null;
     }
 
