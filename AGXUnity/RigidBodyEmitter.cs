@@ -339,12 +339,27 @@ namespace AGXUnity
     /// <returns>Native template if found, otherwise null.</returns>
     public agx.RigidBody GetNativeTemplate( RigidBody template )
     {
-      if ( Native == null )
+      if ( !Application.isPlaying )
         return null;
 
       var index = m_templates.FindIndex( entry => entry.RigidBody == template );
-      if ( index < m_distributionModels.Count )
-        return m_distributionModels[ index ].getBodyTemplate();
+      // Template found, check if we have the instance in the distribution
+      // model or we have to create an before we're initialized.
+      if ( index >= 0 ) {
+        if ( Native != null ) {
+          if ( index < m_distributionModels.Count )
+            return m_distributionModels[ index ].getBodyTemplate();
+        }
+        else if ( m_preInitializedTemplates.TryGetValue( template, out var cachedPreInitialized ) )
+          return cachedPreInitialized;
+        else {
+          var templateInstance = RigidBody.InstantiateTemplate( template,
+                                                                template.GetComponentsInChildren<Collide.Shape>() );
+          if ( templateInstance != null )
+            m_preInitializedTemplates.Add( template, templateInstance );
+          return templateInstance;
+        }
+      }
 
       return null;
     }
@@ -378,8 +393,10 @@ namespace AGXUnity
       m_distributionModels = new List<agx.RigidBodyEmitter.DistributionModel>();
       var msProperties = GetComponent<MergeSplitProperties>()?.GetInitialized<MergeSplitProperties>();
       foreach ( var entry in TemplateEntries ) {
-        var templateInstance = RigidBody.InstantiateTemplate( entry.RigidBody,
-                                                              entry.RigidBody.GetComponentsInChildren<Collide.Shape>() );
+        agx.RigidBody templateInstance = null;
+        if ( !m_preInitializedTemplates.TryGetValue( entry.RigidBody, out templateInstance ) )
+          templateInstance = RigidBody.InstantiateTemplate( entry.RigidBody,
+                                                            entry.RigidBody.GetComponentsInChildren<Collide.Shape>() );
         if ( msProperties != null )
           msProperties.RegisterNativeAndSynchronize( agxSDK.MergeSplitHandler.getOrCreateProperties( templateInstance ) );
         var distributionModel = new agx.RigidBodyEmitter.DistributionModel( templateInstance,
@@ -399,6 +416,8 @@ namespace AGXUnity
           foreach ( var collisionGroupEntry in collisionGroupComponent.Groups )
             Native.addCollisionGroup( collisionGroupEntry.Tag.To32BitFnv1aHash() );
       }
+
+      m_preInitializedTemplates.Clear();
 
       Native.setGeometry( EmitterShape.NativeGeometry );
 
@@ -544,13 +563,6 @@ namespace AGXUnity
         }
       }
 
-      //public override void onEmit( agx.RigidBody instance )
-      //{
-      //  // NOTE: This method can be called from a thread different from main so
-      //  //       we cannot perform Instantiate in this method.
-      //  //m_newInstances.Add( instance );
-      //}
-
       protected override void Dispose( bool disposing )
       {
         m_newInstances.Clear();
@@ -576,6 +588,13 @@ namespace AGXUnity
 
     [SerializeField]
     private List<TemplateEntry> m_templates = new List<TemplateEntry>();
+
+    /// <summary>
+    /// If this emitter is disabled in some way we must be able to provide
+    /// native templates to sinks.
+    /// </summary>
+    [NonSerialized]
+    private Dictionary<RigidBody, agx.RigidBody> m_preInitializedTemplates = new Dictionary<RigidBody, agx.RigidBody>();
 
     [NonSerialized]
     private EmitEvent m_event = null;
