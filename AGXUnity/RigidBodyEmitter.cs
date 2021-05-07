@@ -458,7 +458,7 @@ namespace AGXUnity
       m_event?.SynchronizeVisuals();
     }
 
-    private class EmitEvent : agx.RigidBodyEmitterEvent
+    private class EmitEvent : agx.RigidBodyEmitterEmitCache
     {
       public EmitEvent( RigidBodyEmitter emitter )
         : base( emitter.Native )
@@ -492,20 +492,29 @@ namespace AGXUnity
 
       public void CreateEmittedVisuals()
       {
-        foreach ( var data in m_resourcesToInstantiate ) {
-          var visual = Instantiate( data.Visual );
-          if ( m_visualRoot != null )
-            visual.transform.SetParent( m_visualRoot.transform );
-          visual.transform.position = data.RigidBody.getPosition().ToHandedVector3();
-          visual.transform.rotation = data.RigidBody.getRotation().ToHandedQuaternion();
+        var emittedBodies = base.getEmittedBodies();
+        foreach ( var instance in emittedBodies ) {
+          var resourceName = instance.getName();
+          if ( m_nameResourceTable.TryGetValue( resourceName, out var resource ) ) {
+            var visual = Instantiate( resource );
+            if ( m_visualRoot != null )
+              visual.transform.SetParent( m_visualRoot.transform );
+            visual.transform.position = instance.getPosition().ToHandedVector3();
+            visual.transform.rotation = instance.getRotation().ToHandedQuaternion();
 
-          m_instanceDataTable.Add( data.RigidBody, new EmitData()
-          {
-            RigidBody = data.RigidBody,
-            Visual = visual
-          } );
+            m_instanceDataTable.Add( instance.get(), new EmitData()
+            {
+              RigidBody = instance.get(),
+              Visual = visual
+            } );
+          }
+          else {
+            Debug.LogWarning( $"AGXUnity.RigidBodyEmitter: No visual resource matched emitted named \"{resourceName}\"." );
+
+            Simulation.Instance.Native.remove( instance.get() );
+          }
         }
-        m_resourcesToInstantiate.Clear();
+        base.clear();
       }
 
       public void SynchronizeVisuals()
@@ -535,27 +544,16 @@ namespace AGXUnity
         }
       }
 
-      public override void onEmit( agx.RigidBody instance )
-      {
-        // NOTE: This method can be called from a thread different from main so
-        //       we cannot perform Instantiate in this method.
-        if ( m_nameResourceTable.TryGetValue( instance.getName(), out var resource ) ) {
-          m_resourcesToInstantiate.Add( new EmitData()
-          {
-            RigidBody = instance,
-            Visual = resource
-          } );
-        }
-        else {
-          Debug.LogWarning( $"AGXUnity.RigidBodyEmitter: No visual resource matched emitted named \"{instance.getName()}\"." );
-
-          Simulation.Instance.Native.remove( instance );
-        }
-      }
+      //public override void onEmit( agx.RigidBody instance )
+      //{
+      //  // NOTE: This method can be called from a thread different from main so
+      //  //       we cannot perform Instantiate in this method.
+      //  //m_newInstances.Add( instance );
+      //}
 
       protected override void Dispose( bool disposing )
       {
-        m_resourcesToInstantiate.Clear();
+        m_newInstances.Clear();
         m_instanceDataTable.Clear();
         m_nameResourceTable.Clear();
         if ( m_visualRoot != null )
@@ -572,7 +570,7 @@ namespace AGXUnity
 
       private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
       private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();
-      private List<EmitData> m_resourcesToInstantiate = new List<EmitData>();
+      private List<agx.RigidBody> m_newInstances = new List<agx.RigidBody>();
       private GameObject m_visualRoot = null;
     }
 
