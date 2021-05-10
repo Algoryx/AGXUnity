@@ -331,6 +331,11 @@ namespace AGXUnity
         EndWinch.OnPostStepForward( this );
     }
 
+    private void Reset()
+    {
+      Route.Clear();
+    }
+
     //private void DrawGizmos( Color color )
     //{
     //  if ( Application.isPlaying )

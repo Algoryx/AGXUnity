@@ -460,6 +460,11 @@ namespace AGXUnity
       return true;
     }
 
+    private void Reset()
+    {
+      Route.Clear();
+    }
+
     private agxCable.Cable CreateNative( float resolutionPerUnitLength )
     {
       var native = new agxCable.Cable( Radius, new agxCable.IdentityRoute( resolutionPerUnitLength ) );
