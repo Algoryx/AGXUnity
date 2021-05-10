@@ -1,5 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
+using Scene = UnityEngine.SceneManagement.Scene;
 
 namespace AGXUnity
 {
@@ -34,11 +36,19 @@ namespace AGXUnity
         if ( m_destroyed && !Application.isPlaying )
           ResetDestroyedState();
 
+        var wasNull = m_instance == null;
+
         if ( !m_destroyed && m_instance == null && ( m_instance = FindObjectOfType( typeof( T ) ) as T ) == null ) {
           string name = ( typeof( T ).Namespace != null ? typeof( T ).Namespace + "." : "" ) + typeof( T ).Name;
           m_instance = ( new GameObject( name ) ).AddComponent<T>();
           m_instance.transform.hideFlags = HideFlags.NotEditable;
         }
+
+        // When a scene has been unloaded it's safe to create
+        // an instance of this singleton again.
+        if ( wasNull && m_instance != null )
+          SceneManager.sceneUnloaded += OnSceneUnloaded;
+
         return m_instance;
       }
     }
@@ -70,6 +80,12 @@ namespace AGXUnity
       base.OnDestroy();
 
       m_destroyed = true;
+    }
+
+    private static void OnSceneUnloaded( Scene scene )
+    {
+      ResetDestroyedState();
+      SceneManager.sceneUnloaded -= OnSceneUnloaded;
     }
   }
 }
