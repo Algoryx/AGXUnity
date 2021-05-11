@@ -339,12 +339,27 @@ namespace AGXUnity
     /// <returns>Native template if found, otherwise null.</returns>
     public agx.RigidBody GetNativeTemplate( RigidBody template )
     {
-      if ( Native == null )
+      if ( !Application.isPlaying )
         return null;
 
       var index = m_templates.FindIndex( entry => entry.RigidBody == template );
-      if ( index < m_distributionModels.Count )
-        return m_distributionModels[ index ].getBodyTemplate();
+      // Template found, check if we have the instance in the distribution
+      // model or we have to create an before we're initialized.
+      if ( index >= 0 ) {
+        if ( Native != null ) {
+          if ( index < m_distributionModels.Count )
+            return m_distributionModels[ index ].getBodyTemplate();
+        }
+        else if ( m_preInitializedTemplates.TryGetValue( template, out var cachedPreInitialized ) )
+          return cachedPreInitialized;
+        else {
+          var templateInstance = RigidBody.InstantiateTemplate( template,
+                                                                template.GetComponentsInChildren<Collide.Shape>() );
+          if ( templateInstance != null )
+            m_preInitializedTemplates.Add( template, templateInstance );
+          return templateInstance;
+        }
+      }
 
       return null;
     }
@@ -378,8 +393,10 @@ namespace AGXUnity
       m_distributionModels = new List<agx.RigidBodyEmitter.DistributionModel>();
       var msProperties = GetComponent<MergeSplitProperties>()?.GetInitialized<MergeSplitProperties>();
       foreach ( var entry in TemplateEntries ) {
-        var templateInstance = RigidBody.InstantiateTemplate( entry.RigidBody,
-                                                              entry.RigidBody.GetComponentsInChildren<Collide.Shape>() );
+        agx.RigidBody templateInstance = null;
+        if ( !m_preInitializedTemplates.TryGetValue( entry.RigidBody, out templateInstance ) )
+          templateInstance = RigidBody.InstantiateTemplate( entry.RigidBody,
+                                                            entry.RigidBody.GetComponentsInChildren<Collide.Shape>() );
         if ( msProperties != null )
           msProperties.RegisterNativeAndSynchronize( agxSDK.MergeSplitHandler.getOrCreateProperties( templateInstance ) );
         var distributionModel = new agx.RigidBodyEmitter.DistributionModel( templateInstance,
@@ -399,6 +416,8 @@ namespace AGXUnity
           foreach ( var collisionGroupEntry in collisionGroupComponent.Groups )
             Native.addCollisionGroup( collisionGroupEntry.Tag.To32BitFnv1aHash() );
       }
+
+      m_preInitializedTemplates.Clear();
 
       Native.setGeometry( EmitterShape.NativeGeometry );
 
@@ -458,7 +477,7 @@ namespace AGXUnity
       m_event?.SynchronizeVisuals();
     }
 
-    private class EmitEvent : agx.RigidBodyEmitterEvent
+    private class EmitEvent : agx.RigidBodyEmitterEmitCache
     {
       public EmitEvent( RigidBodyEmitter emitter )
         : base( emitter.Native )
@@ -492,20 +511,29 @@ namespace AGXUnity
 
       public void CreateEmittedVisuals()
       {
-        foreach ( var data in m_resourcesToInstantiate ) {
-          var visual = Instantiate( data.Visual );
-          if ( m_visualRoot != null )
-            visual.transform.SetParent( m_visualRoot.transform );
-          visual.transform.position = data.RigidBody.getPosition().ToHandedVector3();
-          visual.transform.rotation = data.RigidBody.getRotation().ToHandedQuaternion();
+        var emittedBodies = base.getEmittedBodies();
+        foreach ( var instance in emittedBodies ) {
+          var resourceName = instance.getName();
+          if ( m_nameResourceTable.TryGetValue( resourceName, out var resource ) ) {
+            var visual = Instantiate( resource );
+            if ( m_visualRoot != null )
+              visual.transform.SetParent( m_visualRoot.transform );
+            visual.transform.position = instance.getPosition().ToHandedVector3();
+            visual.transform.rotation = instance.getRotation().ToHandedQuaternion();
 
-          m_instanceDataTable.Add( data.RigidBody, new EmitData()
-          {
-            RigidBody = data.RigidBody,
-            Visual = visual
-          } );
+            m_instanceDataTable.Add( instance.get(), new EmitData()
+            {
+              RigidBody = instance.get(),
+              Visual = visual
+            } );
+          }
+          else {
+            Debug.LogWarning( $"AGXUnity.RigidBodyEmitter: No visual resource matched emitted named \"{resourceName}\"." );
+
+            Simulation.Instance.Native.remove( instance.get() );
+          }
         }
-        m_resourcesToInstantiate.Clear();
+        base.clear();
       }
 
       public void SynchronizeVisuals()
@@ -535,27 +563,9 @@ namespace AGXUnity
         }
       }
 
-      public override void onEmit( agx.RigidBody instance )
-      {
-        // NOTE: This method can be called from a thread different from main so
-        //       we cannot perform Instantiate in this method.
-        if ( m_nameResourceTable.TryGetValue( instance.getName(), out var resource ) ) {
-          m_resourcesToInstantiate.Add( new EmitData()
-          {
-            RigidBody = instance,
-            Visual = resource
-          } );
-        }
-        else {
-          Debug.LogWarning( $"AGXUnity.RigidBodyEmitter: No visual resource matched emitted named \"{instance.getName()}\"." );
-
-          Simulation.Instance.Native.remove( instance );
-        }
-      }
-
       protected override void Dispose( bool disposing )
       {
-        m_resourcesToInstantiate.Clear();
+        m_newInstances.Clear();
         m_instanceDataTable.Clear();
         m_nameResourceTable.Clear();
         if ( m_visualRoot != null )
@@ -572,12 +582,19 @@ namespace AGXUnity
 
       private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
       private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();
-      private List<EmitData> m_resourcesToInstantiate = new List<EmitData>();
+      private List<agx.RigidBody> m_newInstances = new List<agx.RigidBody>();
       private GameObject m_visualRoot = null;
     }
 
     [SerializeField]
     private List<TemplateEntry> m_templates = new List<TemplateEntry>();
+
+    /// <summary>
+    /// If this emitter is disabled in some way we must be able to provide
+    /// native templates to sinks.
+    /// </summary>
+    [NonSerialized]
+    private Dictionary<RigidBody, agx.RigidBody> m_preInitializedTemplates = new Dictionary<RigidBody, agx.RigidBody>();
 
     [NonSerialized]
     private EmitEvent m_event = null;

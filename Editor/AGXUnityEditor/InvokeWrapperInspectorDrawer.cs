@@ -734,7 +734,7 @@ namespace AGXUnityEditor
       }
     }
 
-    [ InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) ) ]
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) )]
     public static object UrdfInertiaDrawer( object[] objects, InvokeWrapper wrapper )
     {
       var inertia = wrapper.Get<AGXUnity.IO.URDF.Inertia>( objects[ 0 ] );
