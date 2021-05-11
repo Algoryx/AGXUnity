@@ -180,6 +180,21 @@ namespace AGXUnityEditor.BrickUnity
       if (go_parent != null)
         go.transform.SetParent(go_parent.transform, false);
 
+      // We need to handle the camera position after the transform has been set, or it will be overwritten
+      if (b_node is B_Camera b_cam)
+      {
+        go.transform.localPosition = b_cam.Eye.ToHandedVector3();
+        //var rot = Brick.Math.Quat.TryDoubleFromTo(Brick.Math.Vec3.Z_Axis, b_camera.Center, Brick.Math.Vec3.Y_Axis, b_camera.Up);
+        Vector3 worldCenter = b_cam.Center.ToHandedVector3();
+        Vector3 worldUp = b_cam.Up.ToHandedVector3();
+        if (go_parent != null)
+        {
+          worldCenter = go_parent.transform.TransformPoint(worldCenter);
+          worldUp = go_parent.transform.TransformDirection(worldUp);
+        }
+        go.transform.LookAt(worldCenter, worldUp);
+      }
+
       go.AddBrickObject(b_node, go_parent);
 
       // Save the connectors for later, since we need to initialize all
@@ -401,8 +416,6 @@ namespace AGXUnityEditor.BrickUnity
 
       // Cameras in Brick point along the y-axis, and in Unity they point along the z-axis,
       // so we need to rotate them.
-      go.transform.Rotate(-90, 0, 0);
-      go.transform.Rotate(0, 0, 180);
 
       if (b_camera is B_Camera.DepthCamera)
         // The component adds the depth camera shader for the depth camera
