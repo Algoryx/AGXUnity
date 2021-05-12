@@ -83,7 +83,7 @@ namespace AGXUnityEditor
         Debug.Log( "    ... success." );
       else {
         Debug.LogWarning( "    ...failed. This could cause plugins to be loaded post reload - leading to errors." );
-        return;
+        return false;
       }
 
       foreach ( var nativePlugin in NativePlugins ) {
