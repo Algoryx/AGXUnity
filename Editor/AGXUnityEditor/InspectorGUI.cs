@@ -437,24 +437,23 @@ namespace AGXUnityEditor
       var updated = false;
       SelectableTextField( label,
                            currentFolder,
-                           new MiscButtonData()
-                           {
-                             Enabled = UnityEngine.GUI.enabled,
-                             IconLabel = GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
-                             OnClick = () =>
-                             {
-                               string result = EditorUtility.OpenFolderPanel( openFolderTitle,
-                                                                              currentFolder,
-                                                                              "" );
-                               if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
-                                 onNewFolder?.Invoke( result );
-                                 // Remove focus from any control so that the field is updated.
-                                 UnityEngine.GUI.FocusControl( "" );
-                                 updated = true;
-                               }
-                             },
-                             Width = 28.0f
-                           } );
+                           MiscButtonData.Create( GUI.MakeLabel( "...",
+                                                                 InspectorGUISkin.BrandColor,
+                                                                 true ),
+                                                  () =>
+                                                  {
+                                                    string result = EditorUtility.OpenFolderPanel( openFolderTitle,
+                                                                                                   currentFolder,
+                                                                                                   "" );
+                                                    if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
+                                                      onNewFolder?.Invoke( result );
+                                                      // Remove focus from any control so that the field is updated.
+                                                      UnityEngine.GUI.FocusControl( "" );
+                                                      updated = true;
+                                                    }
+                                                  },
+                                                  UnityEngine.GUI.enabled,
+                                                  "Open select folder panel." ) );
       return updated;
     }
 
