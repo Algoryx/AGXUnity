@@ -160,6 +160,10 @@ namespace AGXUnityEditor.Windows
                                        Debug.LogWarning( $"Invalid license directory: {newDirectory} - directory doesn't exist." );
                                        return;
                                      }
+                                     else if ( !IO.Utils.IsValidProjectFolder( newDirectory ) ) {
+                                       Debug.LogWarning( $"Invalid license directory: {newDirectory} - directory has to be in the project." );
+                                       return;
+                                     }
                                      LicenseDirectory = newDirectory;
                                    } );
 
