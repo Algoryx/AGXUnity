@@ -201,6 +201,27 @@ namespace AGXUnityEditor.IO
     }
 
     /// <summary>
+    /// Checks whether <paramref name="folder"/> is a folder in the
+    /// current project, i.e., including the parent folder containing
+    /// the "Assets" folder.
+    /// </summary>
+    /// <param name="folder">Folder to check.</param>
+    /// <returns>True if part of the project, otherwise false.</returns>
+    public static bool IsValidProjectFolder( string folder )
+    {
+      if ( !Directory.Exists( folder ) )
+        return false;
+
+      // Located somewhere under the Assets folder.
+      if ( AssetDatabase.IsValidFolder( folder ) )
+        return true;
+
+      var projectFolderFullName = new DirectoryInfo( Application.dataPath ).Parent.FullName;
+      var folderFullName = new DirectoryInfo( folder ).FullName;
+      return folderFullName.StartsWith( projectFolderFullName );
+    }
+
+    /// <summary>
     /// Finds assets of given type <typeparamref name="T"/> inside the given
     /// <paramref name="directory"/>.
     /// </summary>
