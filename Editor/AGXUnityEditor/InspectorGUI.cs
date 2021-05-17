@@ -434,40 +434,28 @@ namespace AGXUnityEditor
                                      string openFolderTitle,
                                      Action<string> onNewFolder )
     {
-      var selectNewFolderButtonWidth = 28.0f;
-
-      var rect     = EditorGUILayout.GetControlRect();
-      var orgWidth = rect.width;
-      rect.width   = EditorGUIUtility.labelWidth;
-
-      EditorGUI.PrefixLabel( rect, label );
-
-      rect.x    += EditorGUIUtility.labelWidth -
-                   IndentScope.PixelLevel + 2;
-      rect.width = orgWidth -
-                   EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth +
-                   IndentScope.PixelLevel - 2;
-      EditorGUI.TextField( rect,
+      var updated = false;
+      SelectableTextField( label,
                            currentFolder,
-                           InspectorEditor.Skin.TextField );
-      rect.x    += rect.width;
-      rect.width = selectNewFolderButtonWidth;
-      if ( UnityEngine.GUI.Button( rect,
-                                   GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
-                                   InspectorEditor.Skin.ButtonMiddle ) ) {
-        string result = EditorUtility.OpenFolderPanel( openFolderTitle,
-                                                       currentFolder,
-                                                       "" );
-        if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
-          onNewFolder?.Invoke( result );
-          // Remove focus from any control so that the field is updated.
-          UnityEngine.GUI.FocusControl( "" );
-          return true;
-        }
-      }
-
-      return false;
+                           new MiscButtonData()
+                           {
+                             Enabled = UnityEngine.GUI.enabled,
+                             IconLabel = GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
+                             OnClick = () =>
+                             {
+                               string result = EditorUtility.OpenFolderPanel( openFolderTitle,
+                                                                              currentFolder,
+                                                                              "" );
+                               if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
+                                 onNewFolder?.Invoke( result );
+                                 // Remove focus from any control so that the field is updated.
+                                 UnityEngine.GUI.FocusControl( "" );
+                                 updated = true;
+                               }
+                             },
+                             Width = 28.0f
+                           } );
+      return updated;
     }
 
     public static bool SelectFile( GUIContent label,
