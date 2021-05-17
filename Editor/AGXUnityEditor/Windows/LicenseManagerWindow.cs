@@ -212,7 +212,8 @@ namespace AGXUnityEditor.Windows
                                             {
                                               RefreshLicense( data );
                                             },
-                                            UnityEngine.GUI.enabled,
+                                            UnityEngine.GUI.enabled &&
+                                            data.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service,
                                             "Refresh license from server." ),
         InspectorGUI.MiscButtonData.Create( MiscIcon.EntryRemove,
                                             () =>
