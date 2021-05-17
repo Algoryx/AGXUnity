@@ -312,7 +312,6 @@ namespace AGXUnityEditor
 
   public class IconViewerWindow : EditorWindow
   {
-    [MenuItem( "Window/AGXUnity/Icon management" )]
     public static void Create()
     {
       GetWindow<IconViewerWindow>( false, "Icon Management" );

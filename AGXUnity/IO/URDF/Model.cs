@@ -133,9 +133,8 @@ namespace AGXUnity.IO.URDF
         else if ( !string.IsNullOrEmpty( dataDirectory ) )
           resourceFilename = dataDirectory + resourceFilename;
 
-        var hasExtension  = Path.HasExtension( resourceFilename );
-        var patchRotation = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".dae";
-        var isStlFile     = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".stl";
+        var hasExtension = Path.HasExtension( resourceFilename );
+        var isStlFile    = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".stl";
 
         // STL file we instantiate it and delete them at FinalizeLoad.
         if ( isStlFile ) {
@@ -155,14 +154,6 @@ namespace AGXUnity.IO.URDF
         var resource = resourceLoad != null ?
                          resourceLoad( resourceFilename, type ) :
                          Resources.Load<Object>( resourceFilename );
-        // Unity adds a -90 rotation about x for unknown reasons - reverting that.
-        if ( resource != null && patchRotation ) {
-          var resourceGo = resource as GameObject;
-          var transforms = resourceGo.GetComponentsInChildren<Transform>();
-          foreach ( var transform in transforms )
-            transform.rotation = Quaternion.identity;
-        }
-
         return resource;
       };
       return resourceLoader;
@@ -554,8 +545,23 @@ namespace AGXUnity.IO.URDF
       if ( pose == null )
         return;
 
-      transform.position = pose.Xyz.ToLeftHanded();
-      transform.rotation = pose.Rpy.RadEulerToLeftHanded();
+      // By default, Unity puts a transform on Collada models
+      // when the model is loaded into a project. This "patch"
+      // undo this transform in many cases. Assumes <up_axis>Z_UP</up_axis>
+      // in the .dae.
+      var patchTransform = Options.TransformCollada &&
+                           pose is Visual visual &&
+                           visual.Geometry.Type == Geometry.GeometryType.Mesh &&
+                           visual.Geometry.ResourceType == Geometry.MeshResourceType.Collada;
+      if ( patchTransform ) {
+        var xRotation = Quaternion.Euler( new Vector3( 90, 0, 0 ) );
+        transform.SetPositionAndRotation( pose.Xyz.ToLeftHanded() +  xRotation * transform.position,
+                                          ( pose.Rpy.RadEulerToLeftHanded() * xRotation ) * transform.rotation );
+      }
+      else {
+        transform.position = pose.Xyz.ToLeftHanded();
+        transform.rotation = pose.Rpy.RadEulerToLeftHanded();
+      }
     }
 
     private RigidBody CreateRigidBody( GameObject gameObject, Link link )
@@ -623,7 +629,8 @@ namespace AGXUnity.IO.URDF
           var meshResource = GetResource<GameObject>( collision.Geometry.Filename, ResourceType.CollisionMesh );
           if ( meshResource == null )
             throw new UrdfIOException( $"Mesh resource '{collision.Geometry.Filename}' is null." );
-          shapeGo.transform.localScale = collision.Geometry.Scale;
+          if ( collision.Geometry.HasScale )
+            shapeGo.transform.localScale = collision.Geometry.Scale;
           var sourceMeshes = ( from filter in meshResource.GetComponentsInChildren<MeshFilter>() select filter.sharedMesh ).ToArray();
           if ( sourceMeshes.Length == 0 )
             throw new UrdfIOException( $"Mesh resource '{collision.Geometry.Filename}' doesn't contain any meshes." );
@@ -652,7 +659,8 @@ namespace AGXUnity.IO.URDF
         if ( meshResource == null )
           throw new UrdfIOException( $"Mesh resource '{visual.Geometry.Filename}' is null." );
         instance = GameObject.Instantiate<GameObject>( meshResource );
-        instance.transform.localScale = visual.Geometry.Scale;
+        if ( visual.Geometry.HasScale )
+          instance.transform.localScale = visual.Geometry.Scale;
         // Overrides model if <material> is defined under <visual>.
         renderMaterial = GetOrCreateRenderMaterial( visual.Material );
       }

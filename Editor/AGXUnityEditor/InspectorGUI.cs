@@ -764,7 +764,7 @@ namespace AGXUnityEditor
             rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
             rect.xMax = xMax;
             rect.width = buttonWidth;
-            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, true );
+            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, UnityEngine.GUI.enabled );
           }
 
           if ( addButtonPressed ) {
@@ -1419,13 +1419,12 @@ namespace AGXUnityEditor
                        s_multiFloat4Contents;
       for ( int i = 0; i < values.Length; ++i )
         contents[ i ].text = subs[ i ];
-      var rect = EditorGUILayout.GetControlRect();
+      var rect = EditorGUILayout.GetControlRect( label != null,
+                                                 EditorGUIUtility.singleLineHeight * ( EditorGUIUtility.wideMode ? 1 : 2 ) );
       EditorGUI.BeginChangeCheck();
       if ( label == null ) {
-        var orgXMax = rect.xMax;
-        rect.x += EditorGUIUtility.labelWidth + 2;
-        rect.xMax = orgXMax;
         EditorGUI.MultiFloatField( rect,
+                                   s_customFloatFieldEmptyContent,
                                    contents,
                                    values );
       }

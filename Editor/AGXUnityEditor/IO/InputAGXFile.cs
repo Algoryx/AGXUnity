@@ -551,10 +551,14 @@ namespace AGXUnityEditor.IO
         }
       }
 
-      var materialName = string.IsNullOrEmpty( nativeRenderData.getRenderMaterial().getName() ) ?
+      var materialName = nativeRenderData.getRenderMaterial() == null ||
+                         string.IsNullOrEmpty( nativeRenderData.getRenderMaterial().getName() ) ?
                            $"{shape.name}_Visual_Material" :
                            nativeRenderData.getRenderMaterial().getName();
 
+      if ( nativeRenderData.getRenderMaterial() == null )
+        Debug.LogWarning( "<b>WARNING:</b>".Color( Color.yellow ) +
+                          $" Render material for shape {shape.name} is null - default render material will be used instead." );
 
       // No structural changes from previous read visuals.
       if ( shapeVisual != null &&
@@ -913,6 +917,9 @@ namespace AGXUnityEditor.IO
 
     private static void RestoreLocalDataFrom( Material thisMaterial, agxCollide.RenderMaterial nativeMaterial )
     {
+      if ( nativeMaterial == null )
+        return;
+
       if ( nativeMaterial.hasDiffuseColor() ) {
         var color = nativeMaterial.getDiffuseColor().ToColor();
         color.a = 1.0f - nativeMaterial.getTransparency();
@@ -944,6 +951,9 @@ namespace AGXUnityEditor.IO
 
     private Material GetMaterial( agxCollide.RenderMaterial nativeMaterial )
     {
+      if ( nativeMaterial == null )
+        return Manager.GetOrCreateShapeVisualDefaultMaterial();
+
       Material material = null;
       m_materialLibrary.TryGetValue( nativeMaterial.getHash(), out material );
       return material;
@@ -964,6 +974,9 @@ namespace AGXUnityEditor.IO
                                             agxCollide.RenderMaterial nativeMaterial,
                                             UnityEngine.Object context )
     {
+      if ( nativeMaterial == null )
+        return material;
+
       // The user is referencing a material that isn't in our data directory.
       // We should not couple this material to our native hash when it could
       // result in other instances referencing materials in our directory to
