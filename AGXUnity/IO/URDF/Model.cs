@@ -52,7 +52,7 @@ namespace AGXUnity.IO.URDF
       var fileInfo = new FileInfo( filename );
       if ( !fileInfo.Exists )
         throw new UrdfIOException( $"URDF file {fileInfo.FullName} doesn't exist." );
-      if ( fileInfo.Extension.ToLower() != ".urdf" )
+      if ( fileInfo.Extension.ToLowerInvariant() != ".urdf" )
         throw new UrdfIOException( $"Unknown file extension {fileInfo.Extension}." );
 
       using ( var stream = fileInfo.OpenRead() ) {
@@ -134,7 +134,8 @@ namespace AGXUnity.IO.URDF
           resourceFilename = dataDirectory + resourceFilename;
 
         var hasExtension = Path.HasExtension( resourceFilename );
-        var isStlFile    = hasExtension && Path.GetExtension( resourceFilename ).ToLower() == ".stl";
+        var isStlFile    = hasExtension && Path.GetExtension( resourceFilename ).ToLowerInvariant() == ".stl";
+        var isCollada    = hasExtension && !isStlFile && Path.GetExtension( resourceFilename ).ToLowerInvariant() == ".dae";
 
         // STL file we instantiate it and delete them at FinalizeLoad.
         if ( isStlFile ) {
@@ -143,17 +144,35 @@ namespace AGXUnity.IO.URDF
           return stlInstances.FirstOrDefault();
         }
         // Remove file extension when using Resources.Load.
-        else if ( isPlayerResource && Path.HasExtension( resourceFilename ) )
+        else if ( isPlayerResource && hasExtension )
           resourceFilename = resourceFilename.Substring( 0, resourceFilename.LastIndexOf( '.' ) );
 
         // Search for .obj file instead of Collada if we're not loading from Resources.
         if ( !isPlayerResource &&
              !File.Exists( resourceFilename ) &&
-             resourceFilename.EndsWith( ".dae" ) )
+             isCollada )
           resourceFilename = resourceFilename.Substring( 0, resourceFilename.Length - 3 ) + "obj";
+
         var resource = resourceLoad != null ?
                          resourceLoad( resourceFilename, type ) :
                          Resources.Load<Object>( resourceFilename );
+
+        if ( !isPlayerResource && isCollada && resource != null ) {
+          var colladaInfo = Utils.ParseColladaInfo( resourceFilename );
+          var resourceGo = resource as GameObject;
+          // Model implementation assumes Z-up, anything other than that
+          // has to be transformed.
+          if ( resourceGo != null && !colladaInfo.IsDefault ) {
+            var colladaInstance = Object.Instantiate<GameObject>( resourceGo );
+            if ( colladaInfo.UpAxis == Utils.ColladaInfo.Axis.Y )
+              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 0 ) * colladaInstance.transform.rotation;
+            else if ( colladaInfo.UpAxis == Utils.ColladaInfo.Axis.X )
+              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 90 ) * colladaInstance.transform.rotation;
+            loadedInstances.Add( colladaInstance );
+            resource = colladaInstance;
+          }
+        }
+
         return resource;
       };
       return resourceLoader;
@@ -629,8 +648,16 @@ namespace AGXUnity.IO.URDF
           var meshResource = GetResource<GameObject>( collision.Geometry.Filename, ResourceType.CollisionMesh );
           if ( meshResource == null )
             throw new UrdfIOException( $"Mesh resource '{collision.Geometry.Filename}' is null." );
+
           if ( collision.Geometry.HasScale )
             shapeGo.transform.localScale = collision.Geometry.Scale;
+
+          // The Collada importer in Unity is scaling the models depending
+          // on the units used.
+          if ( collision.Geometry.ResourceType == Geometry.MeshResourceType.Collada )
+            shapeGo.transform.localScale = Vector3.Scale( shapeGo.transform.localScale,
+                                                          meshResource.transform.localScale );
+
           var sourceMeshes = ( from filter in meshResource.GetComponentsInChildren<MeshFilter>() select filter.sharedMesh ).ToArray();
           if ( sourceMeshes.Length == 0 )
             throw new UrdfIOException( $"Mesh resource '{collision.Geometry.Filename}' doesn't contain any meshes." );
