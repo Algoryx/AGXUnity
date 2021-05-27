@@ -314,7 +314,9 @@ namespace AGXUnityEditor
       EditorGUI.showMixedValue = !CompareMulti<ValueT>( objects,
                                                         wrapper,
                                                         other => instance.Value.Equals( other.Value ) );
-      using ( new GUI.EnabledBlock( !instance.UseDefault && !hasMixedUseDefault ) ) {
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
+                                    !instance.UseDefault &&
+                                    !hasMixedUseDefault ) ) {
         EditorGUI.BeginChangeCheck();
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
         if ( EditorGUI.EndChangeCheck() ) {
@@ -718,7 +720,8 @@ namespace AGXUnityEditor
       var enabledFieldOrProperty = fieldsAndProperties.FirstOrDefault( wrapper => wrapper.Member.Name == "Enabled" );
       if ( enabledFieldOrProperty == null )
         return;
-      var enabled = enabledFieldOrProperty.Get<bool>( jointData );
+      var enabled = UnityEngine.GUI.enabled &&
+                    enabledFieldOrProperty.Get<bool>( jointData );
       using ( new GUI.EnabledBlock( enabled ) ) {
         if ( !InspectorGUI.Foldout( GetEditorData( parent, member.Name ), InspectorGUI.MakeLabel( member ) ) )
           return;

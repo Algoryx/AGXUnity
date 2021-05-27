@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Collide
@@ -61,7 +61,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native capsule object if created.
     /// </summary>
-    public agxCollide.Capsule Native { get { return m_shape as agxCollide.Capsule; } }
+    public agxCollide.Capsule Native { get { return NativeShape?.asCapsule(); } }
 
     /// <summary>
     /// Debug rendering scale is unsupported since debug render object
@@ -78,9 +78,10 @@ namespace AGXUnity.Collide
     /// Creates the native capsule object given current radius and height.
     /// </summary>
     /// <returns>Native capsule object.</returns>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Capsule( m_radius, m_height );
+      return new agxCollide.Geometry( new agxCollide.Capsule( m_radius, m_height ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }
