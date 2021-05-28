@@ -5,13 +5,29 @@ namespace AGXUnity.Collide
   [DoNotGenerateCustomEditor]
   public class CollisionMeshOptions : ScriptableObject
   {
+    /// <summary>
+    /// Collection of supported mesh modes.
+    /// </summary>
     public enum MeshMode
     {
+      /// <summary>
+      /// Concave triangle mesh is the default mode.
+      /// </summary>
       Trimesh,
+      /// <summary>
+      /// Mesh will be treated as a convex.
+      /// </summary>
       Convex,
+      /// <summary>
+      /// Concave meshes will be divided into several convex meshes.
+      /// </summary>
       ConvexDecomposition
     }
 
+    /// <summary>
+    /// Get or set mode of the mesh. Note that Apply has to
+    /// be called before the change to take effect.
+    /// </summary>
     public MeshMode Mode
     {
       get { return m_mode; }
@@ -24,6 +40,10 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// Enable/disable triangle reduction of the mesh data.
+    /// Note that Apply has to be called before the change to take effect.
+    /// </summary>
     [InspectorGroupBegin( Name = "Vertex Reduction" )]
     public bool ReductionEnabled
     {
@@ -37,6 +57,11 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// Reduction ratio ranging from [0.02, 0.98] where 1.0 is
+    /// no reduction and 0 is maximum reduction.
+    /// Note that Apply has to be called before the change to take effect.
+    /// </summary>
     public float ReductionRatio
     {
       get { return m_reductionRatio; }
@@ -63,6 +88,7 @@ namespace AGXUnity.Collide
 
     /// <summary>
     /// Convex decomposition - resolution parameter [20, 400]. Default: 50.
+    /// The larger
     /// </summary>
     [InspectorGroupBegin( Name = "Convex Decomposition" )]
     public int ElementResolutionPerAxis

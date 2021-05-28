@@ -113,13 +113,12 @@ namespace AGXUnity.Collide
       }
     }
 
-  
-
     /// <summary>
     /// Shape material instance paired with property Material.
     /// </summary>
     [SerializeField]
     private ShapeMaterial m_material = null;
+
     /// <summary>
     /// Get or set shape material instance.
     /// </summary>

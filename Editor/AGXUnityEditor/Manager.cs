@@ -389,12 +389,8 @@ namespace AGXUnityEditor
           visual.OnSizeUpdated();
       }
 
-      // Implement virtual OnUndoRedo.
-      var fooTool = ToolManager.ActiveTools.FirstOrDefault( tool => tool is Tools.ShapeMeshTool ) as Tools.ShapeMeshTool;
-      if ( fooTool != null )
-        fooTool.DoIt();
-      if ( Selection.activeGameObject != null && Selection.activeGameObject.GetComponent<AGXUnity.Collide.Mesh>() is var selectedMesh && selectedMesh != null )
-        selectedMesh.OnPrecomputedCollisionMeshDataDirty();
+      foreach ( var customTargetTool in ToolManager.ActiveTools )
+        customTargetTool.OnUndoRedo();
 
       if ( targets.Count() > 0 )
         SceneView.RepaintAll();

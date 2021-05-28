@@ -11,11 +11,7 @@ namespace AGXUnity.Collide
   {
     public CollisionMeshData[] CollisionMeshes
     {
-      get { return m_collisionMeshes; }
-      private set
-      {
-        m_collisionMeshes = value;
-      }
+      get { return m_collisionMeshes.ToArray(); }
     }
 
     public CollisionMeshOptions Options
@@ -36,14 +32,14 @@ namespace AGXUnity.Collide
       // Vertices in AGX Dynamics format - right handed and indices 0, 2, 1.
       var merger = MeshMerger.Merge( null, mesh.SourceObjects );
       if ( Options.Mode == CollisionMeshOptions.MeshMode.Trimesh ) {
-        CollisionMeshes = new CollisionMeshData[] { CreateDataOptionallyReduce( merger ) };
+        m_collisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
       }
       else if ( Options.Mode == CollisionMeshOptions.MeshMode.Convex ) {
-        using ( var tmpComvex = agxUtil.agxUtilSWIG.createConvex( merger.Vertices ) ) {
+        using ( var tmpComvex = agxUtil.agxUtilSWIG.createConvexRef( merger.Vertices ) ) {
           merger.Vertices = tmpComvex.getMeshData().getVertices();
           merger.Indices  = tmpComvex.getMeshData().getIndices();
 
-          CollisionMeshes = new CollisionMeshData[] { CreateDataOptionallyReduce( merger ) };
+          m_collisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
         }
       }
       else if ( Options.Mode == CollisionMeshOptions.MeshMode.ConvexDecomposition ) {
@@ -52,12 +48,11 @@ namespace AGXUnity.Collide
                                                             merger.Indices,
                                                             convexes,
                                                             (uint)Options.ElementResolutionPerAxis );
-        CollisionMeshes = new CollisionMeshData[ convexes.Count ];
         for ( int i = 0; i < convexes.Count; ++i ) {
           merger.Vertices = convexes[ i ].getMeshData().getVertices();
           merger.Indices  = convexes[ i ].getMeshData().getIndices();
 
-          CollisionMeshes[ i ] = CreateDataOptionallyReduce( merger );
+          m_collisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
         }
       }
 
@@ -82,14 +77,7 @@ namespace AGXUnity.Collide
 
     public void DestroyCollisionMeshes()
     {
-      foreach ( var collisionMesh in CollisionMeshes ) {
-#if UNITY_EDITOR
-        UnityEditor.Undo.DestroyObjectImmediate( collisionMesh );
-#else
-          DestroyImmediate( collisionMesh );
-#endif
-      }
-      m_collisionMeshes = new CollisionMeshData[] { };
+      m_collisionMeshes.Clear();
     }
 
     private CollisionMeshData CreateDataOptionallyReduce( MeshMerger merger )
@@ -97,17 +85,14 @@ namespace AGXUnity.Collide
       if ( Options.ReductionEnabled )
         merger.Reduce( Options.ReductionRatio, Options.ReductionAggressiveness );
 
-      var meshData = CreateInstance<CollisionMeshData>();
-#if UNITY_EDITOR
-      UnityEditor.Undo.RegisterCreatedObjectUndo( meshData, "Create mesh data" );
-#endif
+      var meshData = new CollisionMeshData();
       meshData.Apply( merger.Vertices, merger.Indices );
 
       return meshData;
     }
 
     [SerializeField]
-    private CollisionMeshData[] m_collisionMeshes = new CollisionMeshData[] { };
+    private List<CollisionMeshData> m_collisionMeshes = new List<CollisionMeshData>();
 
     [SerializeField]
     private CollisionMeshOptions m_options = null;

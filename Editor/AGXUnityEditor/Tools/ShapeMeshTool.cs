@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using AGXUnity.Utils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -15,10 +15,7 @@ namespace AGXUnityEditor.Tools
     public ShapeMeshTool( Object[] targets )
       : base( targets )
     {
-      m_targetMeshOptions = ( from mesh in GetTargets<AGXUnity.Collide.Mesh>()
-                              select mesh.PrecomputedMeshData?.Options ??
-                                     GetCachedMeshOptions( mesh ) ??
-                                     ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
+      SynchronizeLocalMeshOptions();
     }
 
     public override void OnAdd()
@@ -74,15 +71,51 @@ namespace AGXUnityEditor.Tools
       base.OnPostTargetMembersGUI();
 
       MeshOptionsGUI();
+
+      if ( !IsMultiSelect && Mesh.PrecomputedMeshData != null ) {
+        EditorGUILayout.Space();
+
+        InspectorGUI.Separator();
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Number of meshes" ),
+                                    GUI.MakeLabel( Mesh.PrecomputedMeshData.CollisionMeshes.Length.ToString(), Color.green ),
+                                    InspectorEditor.Skin.TextField );
+        var totNumTriangles = 0;
+        using ( InspectorGUI.IndentScope.Single ) {
+          InspectorGUI.Separator();
+          for ( int i = 0; i < Mesh.PrecomputedMeshData.CollisionMeshes.Length; ++i ) {
+            var numVertices = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Vertices.Length;
+            var numTriangles = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Indices.Length / 3;
+            totNumTriangles += numTriangles;
+            EditorGUILayout.LabelField( GUI.MakeLabel( $"[{i}] Number of triangles (vertices)" ),
+                                        GUI.MakeLabel( $"{numTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue )} ({numVertices.ToString()})" ),
+                                        InspectorEditor.Skin.TextField );
+          }
+          InspectorGUI.Separator();
+        }
+        var totNumTrianglesString = totNumTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue );
+        if ( Mesh.PrecomputedMeshData.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
+             Mesh.PrecomputedMeshData.Options.ReductionEnabled ) {
+          totNumTrianglesString += $" (originally: {Mesh.SourceObjects.Select( source => source.triangles.Length / 3 ).Sum().ToString().Color( Color.red )})";
+        }
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Total number of triangles" ),
+                                    GUI.MakeLabel( totNumTrianglesString ),
+                                    InspectorEditor.Skin.TextField );
+      }
     }
 
-    public void DoIt()
+    public override void OnUndoRedo()
     {
-      var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-      m_targetMeshOptions = ( from mesh in meshes
-                              select mesh.PrecomputedMeshData?.Options ??
-                                     GetCachedMeshOptions( mesh ) ??
-                                     ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
+      SynchronizeLocalMeshOptions();
+
+      foreach ( var go in Selection.gameObjects ) {
+        if ( go.GetComponent<AGXUnity.Collide.Mesh>() is var mesh && mesh != null ) {
+          mesh.OnPrecomputedCollisionMeshDataDirty();
+          Debug.Log( "Hello world" );
+          if ( mesh.PrecomputedMeshData != null && mesh.PrecomputedMeshData.Options != null )
+            Debug.Log( $"{mesh.PrecomputedMeshData.Options}" );
+            //Debug.Log( $"{mesh.PrecomputedMeshData.Options.Mode}" );
+        }
+      }
     }
 
     private void MeshOptionsGUI()
@@ -98,28 +131,50 @@ namespace AGXUnityEditor.Tools
                                                            "Reset values to default." );
         if ( result == InspectorGUI.PositiveNegativeResult.Positive ) {
           var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-          for ( int i = 0; i < NumTargets; ++i ) {
-            var mesh = meshes[ i ];
-            if ( mesh.PrecomputedMeshData == null ) {
-              mesh.PrecomputedMeshData = ScriptableObject.CreateInstance<AGXUnity.Collide.PrecomputedCollisionMeshData>();
-              mesh.PrecomputedMeshData.Options = m_targetMeshOptions[ i ];
-              CacheMeshOptions( mesh, null );
-              Undo.RegisterCreatedObjectUndo( mesh.PrecomputedMeshData, "Pre-computed mesh data" );
+          using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
+            for ( int i = 0; i < meshes.Length; ++i ) {
+              var mesh = meshes[ i ];
+              if ( mesh.PrecomputedMeshData == null ) {
+                Undo.RecordObject( mesh, "Generating mesh data" );
+                mesh.PrecomputedMeshData = ScriptableObject.CreateInstance<AGXUnity.Collide.PrecomputedCollisionMeshData>();
+                mesh.PrecomputedMeshData.Options = m_targetMeshOptions[ i ];
+                CacheMeshOptions( mesh, null );
+              }
+
+              Undo.RecordObjects( new Object[] { mesh, mesh.PrecomputedMeshData }, "Apply" );
+              mesh.PrecomputedMeshData.Apply( mesh );
             }
-
-            Debug.Assert( mesh.PrecomputedMeshData.Options != null, "Options expected to be assigned." );
-            Debug.Assert( mesh.PrecomputedMeshData.Options == m_targetMeshOptions[ i ], "Options mismatch." );
-
-            Undo.RecordObject( mesh.PrecomputedMeshData, "Applying precomputed mesh data" );
-            mesh.PrecomputedMeshData.Apply( mesh );
           }
-          m_targetMeshOptions = ( from mesh in meshes
-                                  select mesh.PrecomputedMeshData?.Options ??
-                                         GetCachedMeshOptions( mesh ) ??
-                                         ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
+
+          SynchronizeLocalMeshOptions();
         }
         else if ( result == InspectorGUI.PositiveNegativeResult.Negative ) {
+          // Dialog: Are you sure?
+
+          // Doesn't work.
           //var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
+          //using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
+          //  for ( int i = 0; i < meshes.Length; ++i ) {
+          //    var mesh = meshes[ i ];
+          //    if ( mesh.PrecomputedMeshData == null )
+          //      continue;
+          //    //Undo.RecordObject( mesh, "Resetting collision mesh data" );
+          //    Undo.RecordObjects( new Object[] { mesh, mesh.PrecomputedMeshData, mesh.PrecomputedMeshData.Options }, "Reset" );
+
+          //    Undo.DestroyObjectImmediate( mesh.PrecomputedMeshData.Options );
+          //    mesh.PrecomputedMeshData.Options = null;
+          //    Undo.DestroyObjectImmediate( mesh.PrecomputedMeshData );
+
+          //    mesh.PrecomputedMeshData = null;
+          //    CacheMeshOptions( mesh, null );
+
+          //    mesh.OnPrecomputedCollisionMeshDataDirty();
+          //  }
+
+          //  SynchronizeLocalMeshOptions();
+          //}
+
+          // OLD
           //Undo.RecordObjects( meshes, "Generated mesh data" );
           //for ( int i = 0; i < meshes.Length; ++i ) {
           //  var mesh = meshes[ i ];
@@ -145,6 +200,15 @@ namespace AGXUnityEditor.Tools
           //                               ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
         }
       }
+    }
+
+    private void SynchronizeLocalMeshOptions()
+    {
+      var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
+      m_targetMeshOptions = ( from mesh in meshes
+                              select mesh.PrecomputedMeshData?.Options ??
+                                     GetCachedMeshOptions( mesh ) ??
+                                     ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
     }
 
     private EditorDataEntry GetEditorData( AGXUnity.Collide.Mesh mesh )

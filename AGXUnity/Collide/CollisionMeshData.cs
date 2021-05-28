@@ -9,7 +9,8 @@ namespace AGXUnity.Collide
   /// Class containing UNSCALED collision mesh data in AGX Dynamics format.
   /// </summary>
   [DoNotGenerateCustomEditor]
-  public class CollisionMeshData : ScriptableObject
+  [Serializable]
+  public class CollisionMeshData
   {
     /// <summary>
     /// Vertices stored in AGX Dynamics format, right handed.
