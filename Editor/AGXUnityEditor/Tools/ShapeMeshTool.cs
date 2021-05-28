@@ -75,7 +75,10 @@ namespace AGXUnityEditor.Tools
       if ( !IsMultiSelect && Mesh.PrecomputedMeshData != null ) {
         EditorGUILayout.Space();
 
-        InspectorGUI.Separator();
+        InspectorGUI.BrandSeparator();
+
+        EditorGUILayout.Space();
+
         EditorGUILayout.LabelField( GUI.MakeLabel( "Number of meshes" ),
                                     GUI.MakeLabel( Mesh.PrecomputedMeshData.CollisionMeshes.Length.ToString(), Color.green ),
                                     InspectorEditor.Skin.TextField );
@@ -108,13 +111,8 @@ namespace AGXUnityEditor.Tools
       SynchronizeLocalMeshOptions();
 
       foreach ( var go in Selection.gameObjects ) {
-        if ( go.GetComponent<AGXUnity.Collide.Mesh>() is var mesh && mesh != null ) {
+        if ( go.GetComponent<AGXUnity.Collide.Mesh>() is var mesh && mesh != null )
           mesh.OnPrecomputedCollisionMeshDataDirty();
-          Debug.Log( "Hello world" );
-          if ( mesh.PrecomputedMeshData != null && mesh.PrecomputedMeshData.Options != null )
-            Debug.Log( $"{mesh.PrecomputedMeshData.Options}" );
-            //Debug.Log( $"{mesh.PrecomputedMeshData.Options.Mode}" );
-        }
       }
     }
 
