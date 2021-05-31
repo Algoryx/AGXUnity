@@ -141,6 +141,25 @@ namespace AGXUnity.BrickUnity
     private void AddSignals()
     {
       this.m_brickSimulation.CreateSignals(m_component);
+      AddCameraSignals();
+    }
+
+
+    // Add the camera signal components to the cameras that are used in signals
+    private void AddCameraSignals()
+    {
+      var b_outputs = m_brickSimulation.OutputSignals;
+
+      foreach (var b_output in b_outputs)
+      {
+        if ( b_output is B_Signal.CameraOutput)
+        {
+          B_Signal.CameraOutput cameraSignal = (B_Signal.CameraOutput)b_output;
+          var camera = transform.Find(cameraSignal.Camera._ModelValuePath.Name.Str);
+          var cameraOutput = camera.gameObject.AddComponent<BrickCameraOutput>();
+          cameraOutput.b_cameraOutput = cameraSignal;
+        }
+      }
     }
 
 
@@ -233,6 +252,9 @@ namespace AGXUnity.BrickUnity
               var comp = go.AddComponent<BrickTransformOutput>();
               comp.signal = transformOutput;
             }
+            break;
+          case B_Signal.CameraOutput cameraOutput:
+            // No object added for camera signals right now
             break;
           default:
             Debug.LogWarning($"Unkown output signal type: {b_output.GetType()}");
