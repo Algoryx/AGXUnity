@@ -54,6 +54,9 @@ namespace AGXUnityEditor.Tools
       else
         Undo.RecordObjects( Mesh.GetUndoCollection(), "Mesh source" );
 
+      // TODO: Display Dialog if CollisionMeshOptions should be applied
+      //       to the new source.
+
       ShapeMeshSourceGUI( singleSource, newSource =>
       {
         if ( IsMultiSelect ) {
@@ -72,38 +75,7 @@ namespace AGXUnityEditor.Tools
 
       MeshOptionsGUI();
 
-      if ( !IsMultiSelect && Mesh.PrecomputedMeshData != null ) {
-        EditorGUILayout.Space();
-
-        InspectorGUI.BrandSeparator();
-
-        EditorGUILayout.Space();
-
-        EditorGUILayout.LabelField( GUI.MakeLabel( "Number of meshes" ),
-                                    GUI.MakeLabel( Mesh.PrecomputedMeshData.CollisionMeshes.Length.ToString(), Color.green ),
-                                    InspectorEditor.Skin.TextField );
-        var totNumTriangles = 0;
-        using ( InspectorGUI.IndentScope.Single ) {
-          InspectorGUI.Separator();
-          for ( int i = 0; i < Mesh.PrecomputedMeshData.CollisionMeshes.Length; ++i ) {
-            var numVertices = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Vertices.Length;
-            var numTriangles = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Indices.Length / 3;
-            totNumTriangles += numTriangles;
-            EditorGUILayout.LabelField( GUI.MakeLabel( $"[{i}] Number of triangles (vertices)" ),
-                                        GUI.MakeLabel( $"{numTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue )} ({numVertices.ToString()})" ),
-                                        InspectorEditor.Skin.TextField );
-          }
-          InspectorGUI.Separator();
-        }
-        var totNumTrianglesString = totNumTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue );
-        if ( Mesh.PrecomputedMeshData.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
-             Mesh.PrecomputedMeshData.Options.ReductionEnabled ) {
-          totNumTrianglesString += $" (originally: {Mesh.SourceObjects.Select( source => source.triangles.Length / 3 ).Sum().ToString().Color( Color.red )})";
-        }
-        EditorGUILayout.LabelField( GUI.MakeLabel( "Total number of triangles" ),
-                                    GUI.MakeLabel( totNumTrianglesString ),
-                                    InspectorEditor.Skin.TextField );
-      }
+      MeshStatisticsGUI();
     }
 
     public override void OnUndoRedo()
@@ -200,6 +172,49 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    private void MeshStatisticsGUI()
+    {
+      if ( IsMultiSelect || Mesh.PrecomputedMeshData == null )
+        return;
+
+      EditorGUILayout.Space();
+
+      InspectorGUI.BrandSeparator();
+
+      var numCollisionMeshes = Mesh.PrecomputedMeshData.CollisionMeshes.Length;
+      var totNumVertices = Mesh.PrecomputedMeshData.CollisionMeshes.Select( collisionMesh => collisionMesh.Vertices.Length ).Sum();
+      var totNumTriangles = Mesh.PrecomputedMeshData.CollisionMeshes.Select( collisionMesh => collisionMesh.Indices.Length ).Sum() / 3;
+      var meshPlural = numCollisionMeshes > 1 ? "es" : string.Empty;
+      var summaryString = $"Summary ({numCollisionMeshes} mesh{meshPlural}, {totNumTriangles} triangles, {totNumVertices} vertices)";
+      if ( InspectorGUI.Foldout( GetMeshStatisticsEditorData( Mesh ),
+                                 GUI.MakeLabel( summaryString ) ) ) {
+        InspectorGUI.Separator();
+
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Number of meshes" ),
+                                    GUI.MakeLabel( Mesh.PrecomputedMeshData.CollisionMeshes.Length.ToString(), Color.green ),
+                                    InspectorEditor.Skin.TextField );
+        using ( InspectorGUI.IndentScope.Single ) {
+          InspectorGUI.Separator();
+          for ( int i = 0; i < Mesh.PrecomputedMeshData.CollisionMeshes.Length; ++i ) {
+            var numVertices = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Vertices.Length;
+            var numTriangles = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Indices.Length / 3;
+            EditorGUILayout.LabelField( GUI.MakeLabel( $"[{i}] Number of triangles (vertices)" ),
+                                        GUI.MakeLabel( $"{numTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue )} ({numVertices.ToString()})" ),
+                                        InspectorEditor.Skin.TextField );
+          }
+          InspectorGUI.Separator();
+        }
+        var totNumTrianglesString = totNumTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue );
+        if ( Mesh.PrecomputedMeshData.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
+             Mesh.PrecomputedMeshData.Options.ReductionEnabled ) {
+          totNumTrianglesString += $" (originally: {Mesh.SourceObjects.Select( source => source.triangles.Length / 3 ).Sum().ToString().Color( Color.red )})";
+        }
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Total number of triangles" ),
+                                    GUI.MakeLabel( totNumTrianglesString ),
+                                    InspectorEditor.Skin.TextField );
+      }
+    }
+
     private void SynchronizeLocalMeshOptions()
     {
       var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
@@ -207,6 +222,11 @@ namespace AGXUnityEditor.Tools
                               select mesh.PrecomputedMeshData?.Options ??
                                      GetCachedMeshOptions( mesh ) ??
                                      ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
+    }
+
+    private EditorDataEntry GetMeshStatisticsEditorData( AGXUnity.Collide.Mesh mesh )
+    {
+      return EditorData.Instance.GetData( mesh, "ShapeMeshTool_StatisticsData", entry => entry.Bool = false );
     }
 
     private EditorDataEntry GetEditorData( AGXUnity.Collide.Mesh mesh )
