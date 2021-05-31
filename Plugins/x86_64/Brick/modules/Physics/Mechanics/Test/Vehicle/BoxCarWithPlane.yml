@@ -1,0 +1,15 @@
+.format: 4
+
+BoxCarWithPlane:
+  .extends: Physics.Component
+
+  boxCar:
+    .type: Physics.Mechanics.Test.Vehicle.BoxCar.BoxCarDriveTrainsBack
+    .value: Physics.Mechanics.Test.Vehicle.BoxCar.BoxCarDriveTrainsBack
+
+  plane:
+    .type: Physics.Geometry.Plane
+    a: 0
+    b: 0
+    c: 1
+    d: 1

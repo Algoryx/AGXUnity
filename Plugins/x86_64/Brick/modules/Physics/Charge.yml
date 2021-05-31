@@ -1,0 +1,17 @@
+.format: 4
+
+Charge:
+  .extends: Scene.Node
+  name:
+    .type: String
+    .value: ''
+
+  connectName:
+    .doc: Name used for generating implicit connectors
+    .type: String
+    .value: null
+
+  connectType:
+    .type: String
+    .value: null
+

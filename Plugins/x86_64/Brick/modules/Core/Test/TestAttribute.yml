@@ -1,0 +1,22 @@
+.format: 4
+
+# Base
+Foo:
+  v1:
+    .type: Real
+
+
+# Inherit
+Bar:
+  .extends: Foo
+  v1: 3
+  v2:
+    .type: String
+
+Hej:
+  .doc: Attribute with base, but instance of subtype
+  val:
+    .type: Foo
+    .value: Bar
+    v2: test
+

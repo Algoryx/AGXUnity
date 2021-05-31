@@ -1,0 +1,11 @@
+.format: 4
+
+DataBinding:
+  .doc: Data binding between two model attribute value instances
+  source:
+    # type: Path, Path<Value>, Ref<Value>
+    # type: AttributeValue
+    .type: Path
+
+  target:
+    .type: Path

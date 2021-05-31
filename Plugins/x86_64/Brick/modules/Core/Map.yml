@@ -1,0 +1,30 @@
+.format: 4
+
+Map:
+  .doc: Map collection type
+  .genericParameters:
+    - KeyT: Type
+    - ValueT: Type
+
+
+  .methods:
+    Add:
+      doc: Add an element to the map. Return error if the key already exists.
+      parameters:
+        key: KeyT
+        value: ValueT
+
+    Set:
+      doc: Add an element to the map. Return error if the key already exists.
+      parameters:
+        key: KeyT
+        value: ValueT
+
+    Delete:
+      doc: Delete an element from the map
+      parameters:
+        key: KeyT
+
+    Clear:
+      doc: Clear the map
+      parameters: {}

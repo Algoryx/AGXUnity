@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairConnector, LockJointInteraction]
+
+LockJointConnector:
+  .extends: AttachmentPairConnector
+
+  mainInteraction:
+    .value: LockJointInteraction
+

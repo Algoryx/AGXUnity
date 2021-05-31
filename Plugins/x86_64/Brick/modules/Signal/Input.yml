@@ -1,0 +1,8 @@
+.format: 4
+
+Input:
+  .extends: Signal<T>
+  .abstract: true
+  .doc: A general, abstract input
+  .genericParameters:
+    - T: Type  # The return type of the output

@@ -1,0 +1,9 @@
+.format: 4
+
+
+GearAttachment:
+  .extends: Physics.Charge
+
+  sign:
+    .type: Real
+    .value: 1

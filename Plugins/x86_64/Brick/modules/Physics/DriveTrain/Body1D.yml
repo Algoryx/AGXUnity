@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.MassProperties: [MassProperties1D]
+  Physics.KinematicsData: [Kinematics1D]
+
+
+Body1D:
+  .extends: Physics.Body
+
+  massProperties: MassProperties1D()

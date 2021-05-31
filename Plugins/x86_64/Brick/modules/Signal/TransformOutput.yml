@@ -1,0 +1,7 @@
+.format: 4
+
+TransformOutput:
+  .extends: Signal.Output<Scene.Transform>
+  .doc: Outputs the complete transform (position and orientation) of a node as a Scene.Transform
+  node:
+    .type: Scene.Node

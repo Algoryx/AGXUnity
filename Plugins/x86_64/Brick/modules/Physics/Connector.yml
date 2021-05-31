@@ -1,0 +1,24 @@
+.format: 4
+
+Connector:
+  .doc: Base connector
+
+  name:
+    .type: String
+    .value: ''
+
+  enabledPositioning:
+    .type: Bool
+    .value: True
+
+  enabledInteractions:
+    .type: Bool
+    .value: True
+
+  constrainDofs:
+    .type: Bool
+    .value: True
+
+  positioningResultString:
+    .type: String
+    .value: Not Used For Positioning

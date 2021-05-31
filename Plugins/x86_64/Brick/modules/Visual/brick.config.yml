@@ -1,0 +1,30 @@
+ModuleConfig:
+  name: Visual
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  files.exclude:
+    - Test
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+    Scene:
+      filepath: ../Scene
+
+  generators:
+    Python:
+      # targetDirectory: python
+      enable: true
+      useGrpc: true
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+
+    Grpc:
+      enable: true
+      csNamespace: Brick.Visual.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Visual # TODO!

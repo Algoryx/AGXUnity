@@ -1,0 +1,12 @@
+.format: 4
+
+MultiCylindricalConnector:
+  .extends: Physics.Mechanics.MultiAttachmentConnector
+
+  translationalFrictionCoefficient:
+    .type: Real
+    .value: 0
+
+  rotationalFrictionCoefficient:
+    .type: Real
+    .value: 0

@@ -1,0 +1,7 @@
+.format: 4
+
+Geometry:
+  .frameInterface: true
+  frame:
+    .type: Geometry.Frame
+    .value: Geometry.Frame()

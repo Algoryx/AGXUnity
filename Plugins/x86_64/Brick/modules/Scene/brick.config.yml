@@ -1,0 +1,29 @@
+ModuleConfig:
+  name: Scene
+  doc: Models for 3d scene composition
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  # NOTE: Needs fix for scanning partially built modules, eg when loading `Physics.Mechanics.Test.Crane`
+  # files.exclude:
+  #   - **/Test
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+
+  generators:
+
+    Python:
+      useGrpc: true
+      enable: true
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+    Grpc:
+      enable: true
+      csNamespace: Brick.Scene.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Scene # TODO!

@@ -1,0 +1,59 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RotationalPairConnector, CylindricalAttachment, CylindricalInteraction]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalFrictionInteraction1D,TranslationalFrictionInteraction1D, RotationalMotorInteraction1D,TranslationalMotorInteraction1D, RotationalRangeMinMaxInteraction1D, TranslationalRangeMinMaxInteraction1D, TranslationalLockInteraction1D,RotationalLockInteraction1D]
+
+CylindricalConnector:
+  .extends: RotationalPairConnector
+
+  distance:
+    .type: Real
+    .doc: >
+      Distance in meters between the CylindricalAttachments.
+      If null, no distance is set, and the translational degree of freedom is still there.
+      If it is set, the cylindrical connector sets all degrees of freedom.
+      Default value is zero, meaning the cylindrical connector will be considered positioning all dofs.
+    .value: 0
+
+  distanceConstrainDof:
+    .doc: >
+      If true, the positioning algorithm will consider the distance to be constrained.
+      If false, the variable is set, but is still free to change during positioning.
+    .type: Bool
+    .value: true
+
+  translationalFrictionCoefficient:
+    .type: Real
+    .value: 0
+
+  frictionTranslational:
+    .type: TranslationalFrictionInteraction1D
+    coefficient: this.translationalFrictionCoefficient
+
+  mainInteraction:
+    .value: CylindricalInteraction
+
+  rotationalMotor:
+    .type: RotationalMotorInteraction1D
+    .value: null
+
+  translationalMotor:
+    .type: TranslationalMotorInteraction1D
+    .value: null
+
+  rotationalRange:
+    .type: RotationalRangeMinMaxInteraction1D
+    .value: null
+
+  translationalRange:
+    .type: TranslationalRangeMinMaxInteraction1D
+    .value: null
+  
+  rotationalLock:
+    .type: RotationalLockInteraction1D
+    .value: null
+
+  translationalLock:
+    .type: TranslationalLockInteraction1D
+    .value: null

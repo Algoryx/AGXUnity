@@ -1,0 +1,10 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [Body1D]
+
+
+RotatingBody1D:
+  .extends: Body1D
+
+

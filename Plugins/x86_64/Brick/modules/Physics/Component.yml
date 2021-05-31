@@ -1,0 +1,69 @@
+.format: 4
+
+Component:
+  .extends: Scene.Node
+  name:
+    .type: String
+    .value: ''
+  # frame:
+  #   .type: Geometry.Frame
+  #   .value: Geometry.Frame()
+
+  internalCollisionsEnabled:
+    .type: Bool
+    .value: True
+
+  # TODO: This should be at a lower level, pure data, no physics
+  dataBindings:
+    .type: List<DataBinding>
+    .value: null
+
+  positioningThreshold:
+    .type: Real
+    .value: 1E-7
+
+  positionAsBlock:
+    .type: Bool
+    .value: this.wantInternalPositioning
+    .doc: >
+      Set True if this Component should be able to position as one piece.
+      All parts will move as one.
+      By default set to the same as "wantInternalPositioning"
+      If set False, all parts will propagate to parent component,
+      which will then position then position them individually.
+
+  wantInternalPositioning:
+    .type: Bool
+    .value: False
+    .doc: >
+      True if this Component want to place its own contents. The placement
+      algorithm will call 'position_bodies' on such Components.
+      'position_bodies' can call attachment_creation.attach_to_parent to attach
+      bodies to its parent component, or set the isPlaced flag on components.
+      The contents will otherwise be placed by the main placement algorithm.
+
+  orderedConnectorLimit:
+    .doc: >
+      Variable to be able to control how many of the ordered connectors to use.
+      A way to be able to debug the positioning step by step. Default -1, which means: use all.
+    .type: Int
+    .value: -1
+
+  definedConnectorsOrder:
+    .type: List<Physics.Connector>
+    .value: []
+
+  externalFilepath:
+    .type: String
+    .value: null
+
+  logPositioningResults:
+    .type: Bool
+    .value: False
+
+  # .methods:
+  #   exportFMU:
+  #     doc: Export the component as a FMU
+  #     parameters:
+  #       filepath: String
+

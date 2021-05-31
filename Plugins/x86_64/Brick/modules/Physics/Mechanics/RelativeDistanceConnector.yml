@@ -1,0 +1,8 @@
+.format: 4
+
+RelativeDistanceConnector:
+  .extends: Physics.Mechanics.TranslateRelativeConnector
+
+  interaction:
+    .type: Physics.Mechanics.AttachmentPairInteraction.RelativeDistanceInteraction1D
+    .value: Physics.Mechanics.AttachmentPairInteraction.RelativeDistanceInteraction1D

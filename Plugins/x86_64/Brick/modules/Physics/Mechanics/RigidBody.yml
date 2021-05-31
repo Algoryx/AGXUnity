@@ -1,0 +1,20 @@
+.format: 4
+
+.import:
+  Physics.MassProperties: [MassProperties3D]
+  Physics.Mechanics: [ RigidBodyAttachment]
+  Physics.KinematicsData: [ Kinematics3D]
+
+
+RigidBody:
+  .extends: Body
+
+  massProperties: MassProperties3D
+
+  mass:
+    .type: Real
+    .alias: massProperties.mass
+
+  autoGenerateMass:
+    .type: Bool
+    .value: True

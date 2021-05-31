@@ -1,0 +1,39 @@
+.format: 4
+
+Axis:
+  .extends: Geometry
+
+  direction:
+    .type: Vec3
+  # Should we have a type called `Normal<Vec3>` ?
+  # guarantee normalized storage
+  # Inherit from Vec3, etc
+
+  # No default direction!
+  # direction: Vec3(1,0,0)
+
+  # Should have frame instead? Yes!?
+  # origin: Vec3()
+
+
+  positionAt:
+    .kind: Method
+    .doc: Get position at specified offset
+    .return: Vec3
+    offset:
+      .type: Real
+
+X:
+  .value: Axis
+  .const: True
+  direction: Vec3(1, 0, 0)
+
+Y:
+  .value: Axis
+  .const: True
+  direction: Vec3(0, 1, 0)
+
+Z:
+  .value: Axis
+  .const: True
+  direction: Vec3(0, 0, 1)

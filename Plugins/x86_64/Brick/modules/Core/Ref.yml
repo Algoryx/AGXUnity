@@ -1,0 +1,10 @@
+.format: 4
+
+Ref:
+  .extends: Node
+  .doc: Reference type
+  # .genericParameters:
+  #   - T: Type
+
+  target:
+    .type: Path

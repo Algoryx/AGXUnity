@@ -1,0 +1,102 @@
+.format: 4
+
+.import:
+  Physics: [Component, Geometry]
+  Physics.Geometry: [Cylinder, Box, Sphere]
+  Math: [Quat]
+  Scene: [Transform]
+  Physics.Mechanics: [RigidBody,HingeAttachment, CylindricalAttachment, PrismaticAttachment, LockJointAttachment, RigidBodyAttachment,SpringJointConnector,BallJointConnector, LockJointConnector ,HingeConnector, CylindricalConnector, PrismaticConnector]
+  Physics.Mechanics.HingeConnector: [RotationalActuatorHingeConnector]
+  Physics.Mechanics.DegreeOfFreedom: [NoDegreeOfFreedomRelativeParent]
+  Physics.Mechanics.Test.StrandBeest.StrandBeestMulti: [StrandBeestNotWalking]
+  Physics.DriveTrain: [RotatingShaft, GearConnector, DifferentialConnector, RotationalActuator, FixedVelocityEngine]
+
+# Engine where a ROS signal directly controls the velocity (RPM)
+Engine:
+  .extends: FixedVelocityEngine
+  rosControlAttributeName:
+    .type: String
+  rosSensorAttributeName:
+    .type: String
+
+
+# Drivetrain consisting of an engine connected to a differential
+#
+#                                             <-> rotationalActuatorLeft
+# engine <-> gear <-> shaft <-> differential
+#                                             <-> rotationalActuatorRight
+DifferentialDriveTrain:
+  .extends: Physics.Component
+  gearRatio:
+    .type: Real
+    .value: 1.0
+
+  engine:
+    .type: Engine
+    .value: Engine
+    targetRPM: 100
+
+  gear:
+    .type: GearConnector
+    attachment1: this.engine.outputAttachment
+    attachment2: this.shaft.inputAttachment
+    interaction:
+      gearRatio: this.gearRatio
+
+  shaft:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  rotationalActuatorLeftFront:
+    .type: RotationalActuator
+    .value: RotationalActuator
+
+  rotationalActuatorRightFront:
+    .type: RotationalActuator
+    .value: RotationalActuator
+
+  rotationalActuatorLeftBack:
+    .type: RotationalActuator
+    .value: RotationalActuator
+
+  rotationalActuatorRightBack:
+    .type: RotationalActuator
+    .value: RotationalActuator
+
+  differential:
+    .type: DifferentialConnector
+    inputAttachment: this.shaft.outputAttachment
+    outputAttachments:
+      - this.rotationalActuatorLeftFront.inputAttachment
+      - this.rotationalActuatorRightFront.inputAttachment
+      - this.rotationalActuatorLeftBack.inputAttachment
+      - this.rotationalActuatorRightBack.inputAttachment
+
+
+StrandBeestDriveTrain:
+  .extends: StrandBeestNotWalking
+  gearRatio:
+    .type: Real
+    .value: -0.5
+
+  driveTrain:
+    .type: DifferentialDriveTrain
+    gearRatio: this.gearRatio
+    rotationalActuatorLeftFront:
+      interaction: this.m_parent_ConnectorLF.mainInteraction
+    rotationalActuatorRightFront:
+      interaction: this.m_parent_ConnectorRF.mainInteraction
+    rotationalActuatorLeftBack:
+      interaction: this.m_parent_ConnectorLB.mainInteraction
+    rotationalActuatorRightBack:
+      interaction: this.m_parent_ConnectorRB.mainInteraction
+    engine:
+      rosControlAttributeName: rear_voltage
+      rosSensorAttributeName: rear_motor_velocity_rpm
+  plane:
+    .type: Physics.Geometry.Plane
+    a: 0
+    b: 0
+    c: 1
+    d: 1
+

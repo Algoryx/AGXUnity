@@ -1,0 +1,6 @@
+.format: 4
+
+Stream:
+  .doc: Stream of data elements
+  .genericParameters:
+    - T: Type

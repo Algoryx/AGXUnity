@@ -1,0 +1,17 @@
+.format: 4
+.ignore: true
+
+
+.import:
+  Physics.Attachment: [AxisAttachment, CylindricalAttachment]
+
+# TODO: Import from external module as well
+# TODO: Import not just models, import namespaces
+
+TestImport:
+  attachment1:
+    .type: AxisAttachment
+  attachment2:
+    .type: CylindricalAttachment
+  attachment3:
+    .type: List<CylindricalAttachment>

@@ -1,0 +1,6 @@
+.format: 4
+
+Namespace:
+  .doc: Namespace api node
+  .extends: Scope
+

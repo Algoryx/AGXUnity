@@ -1,0 +1,39 @@
+.format: 4
+
+RotationalPairConnector:
+  .extends: Physics.Mechanics.AttachmentPairConnector
+
+  .doc: >
+     A connector that can identify already used attachments that does not constraint
+     the rotational dofs for a body or node of the two involved attachments.
+     This to rotate a node around its rotational axis to achieve the wanted positioning of its attachments.
+     It may also rotate two nodes, to  achieve the positioning.
+  angle:
+    .type: Real
+    .doc: >
+      Angle in degrees between the normal vectors of the HingeAttachments.
+      If null, no angle is set, and the rotational degree of freedom is still there.
+      If it is set, the hinge connector sets all degrees of freedom.
+      Default value is zero, meaning the hinge connector will be considered positioning all dofs.
+    .value: 0
+
+  angleConstrainDof:
+    .doc: >
+      If true, the positioning algorithm will consider the angle to be constrained.
+      If false, the variable is set, but is still free to change during positioning.
+    .type: Bool
+    .value: true
+
+  rotationalFrictionCoefficient:
+    .type: Real
+    .value: 0
+
+  frictionRotational:
+    .type: Physics.Mechanics.AttachmentPairInteraction.RotationalFrictionInteraction1D
+    coefficient: this.rotationalFrictionCoefficient
+
+  validAngleRange:
+    .doc: >
+      A range used for declaring valid angles when positioning, not to be confuced with an interaction.
+    .type: Physics.Mechanics.AttachmentPairConnector.AttachmentPairRange
+    .value: null

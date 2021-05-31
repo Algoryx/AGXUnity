@@ -1,0 +1,57 @@
+.format: 4
+
+ContactMaterial:
+
+  name:
+    .type: String
+    .value: ''
+
+  material1:
+    .type: Physics.Material
+  material2:
+    .type: Physics.Material
+
+  restitution:
+    .type: Real
+    .value: 0.5
+
+  tangentialRestitution:
+    .type: Real
+    .value: 0.0
+
+  youngsModulus:
+    .type: Real
+    .value: 1E9
+
+  surfaceViscosity:
+    .type: Real
+    .value: 1E-8
+
+  damping:
+    .type: Real
+    .value: this.youngsModulus / 20.0
+
+  adhesiveForce:
+    .type: Real
+    .value: 0
+
+  adhesiveOverlap:
+    .type: Real
+    .value: 0
+
+  frictionReferenceNode:
+    .type: Scene.Node
+    .doc: A coordinate system, defining the primary and secondary friction direction
+    .value: null
+
+  primaryFrictionCoefficient:
+    .type: Real
+    .value: 0.1
+
+  secondaryFrictionCoefficient:
+    .type: Real
+    .value: 0.1
+
+  externalReference:
+    .type: String
+    .value: null

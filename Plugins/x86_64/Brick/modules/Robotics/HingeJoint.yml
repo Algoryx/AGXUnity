@@ -1,0 +1,18 @@
+.format: 4
+.import:
+  Physics.Mechanics: [HingeConnector]
+  Robotics: [Joint]
+
+HingeJoint:
+  .extends: Joint
+  .doc: >
+    A HingeJoint is connecting two Segments with a Hinge.
+
+  hingeConnector:
+    .type: HingeConnector
+    .value: null
+
+  connector: this.hingeConnector
+
+
+

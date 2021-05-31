@@ -1,0 +1,24 @@
+.format: 4
+
+Client:
+  inValue:
+    .type: Real
+    .value: 0
+
+Server:
+  outValue:
+    .type: Real
+    .value: 0
+
+StreamComponent:
+  .extends: Physics.Component
+  client:
+    .type: Client
+    .value: Client
+  server:
+    .type: Server
+    .value: Server
+
+  dataBindings:
+    - source: server.outValue
+      target: client.inValue

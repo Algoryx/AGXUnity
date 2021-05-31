@@ -1,0 +1,36 @@
+.format: 4
+
+DefaultMaterial:
+  .extends: Physics.Material
+  .const: true
+  locallyDefined: false
+  name: DefaultMaterial
+  surface:
+    roughness: 0.2
+    viscosity: 5E-9
+    adhesiveForce: 0
+    adhesiveOverlap: 0
+
+  bulk:
+    density: 1000
+    viscosity: 0.5
+    youngsModulus: 1E9
+
+
+Steel:
+  .extends: Physics.Material
+  .const: true
+  name: Steel
+  locallyDefined: false
+
+  surface:
+    roughness: 0.2
+    viscosity: 5E-9
+    adhesiveForce: 0
+    adhesiveOverlap: 0
+
+  bulk:
+    density: 7700
+    viscosity: 0.5
+    youngsModulus: 2E11
+    # poissonsRatio: 0.3

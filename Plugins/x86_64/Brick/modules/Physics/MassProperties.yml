@@ -1,0 +1,73 @@
+.format: 4
+
+MassProperties:
+  .extends: Scene.Node
+  .doc: Abstract, fundamental property of a Physics.Body.
+  dimension:
+    .type: Int
+
+MassProperties1D:
+  .extends: MassProperties
+  dimension: 1
+
+  inertia:
+    .type: Real
+    .value: 1
+
+
+# MassMatrix:
+#   .doc: Mass Matrix representation of RigidBody.
+#   M:
+#     .type: Math.Vec3
+#     .value: Vec3(1,1,1)
+#   I:
+#     .type: Math.Matrix3x3
+#     i11: 1
+#     i22: 1
+#     i33: 1
+
+MassProperties3D:
+  .extends: MassProperties
+  dimension: 3
+
+  mass:
+    .doc: Scalar mass.
+    .type: Real
+    .value: 1
+  inertia:
+    .doc: Diagonal elements of the inertia tensor
+    .type: Vec3
+    .value: Vec3(1,1,1)
+
+OffDiagonalMassProperties3D:
+  .doc: >
+    Defines full 3x3 matrix for the inertia tensor.
+    Defines a Vec3 for the mass, allowing for different mass 
+    in different directions.
+    The inertia matrix must be positive definite.
+    Three off diagonal elements are possible to declare,
+    inertia12_21, inertia13_31 inertia23_32
+    Forcing it to be symmetric,
+  .extends: MassProperties3D
+
+  effectiveMass:
+    .doc: RigidBody Effective Mass 
+    .type: Vec3
+    x: this.mass
+    y: this.mass
+    z: this.mass
+
+  massCoefficients:
+    .doc: RigidBody Effective Mass. Default set to [0,0,0]
+    .type: Vec3
+    .value: Vec3(0,0,0)
+
+  inertia12_21:
+    .type: Real
+    .value: 0
+  inertia13_31:
+    .type: Real
+    .value: 0
+  inertia23_32:
+    .type: Real
+    .value: 0

@@ -1,0 +1,9 @@
+.format: 4
+
+# Scene:
+#   root:
+#     .type: Node
+
+
+Scene:
+  .extends: Node

@@ -1,0 +1,159 @@
+.format: 4
+.strict: false
+
+TestOperators:
+  .value: Unittest
+
+  PreMulScalar:
+    .value: Assertion.Equal
+    lhs: 2.5 * Vec3(1, 2, 3)
+    rhs: Vec3(2.5, 5, 7.5)
+
+  PostMulScalar:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3) * 2
+    rhs: Vec3(2, 4, 6)
+
+  Dot:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3) * Vec3(5, 6, 7)
+    rhs: 38
+
+  Add:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3) + Vec3(5, 6, 7)
+    rhs: Vec3(6, 8, 10)
+
+  Sub:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3) - Vec3(5, 6, 7)
+    rhs: Vec3(-4, -4, -4)
+
+  # NOTE: Disabled until load fix in format-v5
+  # Neg:
+  #   .value: Assertion.Equal
+  #   lhs: -Vec3(1, 2, 3)
+  #   rhs: Vec3(-1, -2, -3)
+
+  ExpressionWithXYZ:
+    .value: Assertion.Equal
+    .doc: Make sure expression for Vec3 elements are properly evaluated as part of expression
+    x: 2
+    foo:
+      .value: Vec3
+      x: ExpressionWithXYZ.x
+      y: x + 1
+      z: x + y
+    lhs: foo - Vec3(5, 6, 7)
+    rhs: Vec3(-3, -3, -2)
+
+TestConstructors:
+  .value: Unittest
+
+  Empty:
+    .value: Assertion.Equal
+    lhs: Vec3()
+    rhs: Vec3(0, 0, 0)
+
+
+  XYZ:
+    .value: Assertion.Equal
+    lhs: Vec3(1)
+    rhs: Vec3(1, 1, 1)
+
+  X_Y_Z:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3)
+    rhs:
+      .value: Vec3
+      x: 1
+      y: 2
+      z: 3
+
+  # XY_Z:
+  #   .value: Assertion.Equal
+  #   lhs: Vec3(Vec2(1, 2), 3)
+  #   rhs: Vec3(1, 2, 3)
+
+  # X_YZ:
+  #   .value: Assertion.Equal
+  #   lhs: Vec3(1, Vec2(2, 3))
+  #   rhs: Vec3(1, 2, 3)
+
+TestProperties:
+  .value: Unittest
+
+  Length:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3).length
+    rhs: 3.7416573867739413
+
+  Normal:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3).normal
+    rhs: Vec3(0.2672612419124244, 0.5345224838248488, 0.8017837257372732)
+
+
+# TODO: Move to core module testing
+TestChainedCalls:
+  .value: Unittest
+
+  TestChainedMethodCalls:
+    .value: Assertion.Equal
+    lhs: Vec3(1, 2, 3).Foo(2.2).Bar()
+    rhs: Vec3(-2200, -4400, -6600)
+
+  TestCallMethodOnGroupExpression:
+    .value: Assertion.Equal
+    lhs: (Vec3(1, 2, 3) * 10).Foo(2.2)
+    rhs: Vec3(-22, -44, -66)
+
+
+TestMethods:
+  .value: Unittest
+
+  PreMulScalar:
+    .value: Assertion.Equal
+    lhs: Vec3.Mul(2.5, Vec3(1, 2, 3))
+    rhs: Vec3(2.5, 5, 7.5)
+
+  PostMulScalar:
+    .value: Assertion.Equal
+    lhs: Vec3.Mul(Vec3(1, 2, 3), 2)
+    rhs: Vec3(2, 4, 6)
+
+
+  Add:
+    .value: Assertion.Equal
+    lhs: Vec3.Add(Vec3(1, 2, 3), Vec3(5, 6, 7))
+    rhs: Vec3(6, 8, 10)
+
+  Sub:
+    .value: Assertion.Equal
+    lhs: Vec3.Sub(Vec3(1, 2, 3), Vec3(5, 6, 7))
+    rhs: Vec3(-4, -4, -4)
+
+  Dot:
+    .value: Assertion.Equal
+    lhs: Vec3.Dot(Vec3(1, 2, 3), Vec3(5, 6, 7))
+    rhs: 38
+
+  Cross:
+    .value: Assertion.Equal
+    lhs: Vec3.Cross(Vec3(1, 2, 3), Vec3(5, 6, 7))
+    rhs: Vec3(-4, 8, -4)
+
+
+  Random:
+    r1: Vec3.Random(Vec3(0,0,0), Vec3(1,1,1))
+    r2: Vec3.Random(Vec3(0,0,0), Vec3(1,1,1))
+    # TODO:
+    # VerifyBounds:
+    #   .value: Assertion.InsideClosedBound
+    #   value: r1
+    #   min: Vec3(0)
+    #   max: Vec3(1)
+    VerifyNotEqual:
+      .value: Assertion.NotEqual
+      lhs: r1
+      rhs: r2

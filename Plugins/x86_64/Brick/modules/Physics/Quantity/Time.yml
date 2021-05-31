@@ -1,0 +1,11 @@
+.ignore: true
+.format: 4
+
+Time:
+  .extends: Physics.Quantity
+  dimension: T
+  symbol: t
+  SI_unit: Physics.Unit.Second
+  units:
+    - Physics.Unit.Second
+

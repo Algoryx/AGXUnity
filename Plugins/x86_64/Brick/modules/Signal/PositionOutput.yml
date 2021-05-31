@@ -1,0 +1,7 @@
+.format: 4
+
+PositionOutput:
+  .extends: Signal.Output<Vec3>
+  .doc: Outputs the position of a node as a Vec3
+  node:
+    .type: Scene.Node

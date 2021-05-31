@@ -1,0 +1,65 @@
+.format: 4
+
+# NOTE: Quat is not neccessarely a rotation!
+Quat:
+  .arrayPrimitive: true
+  # .nativeType: true
+  .customData: true
+
+  x:
+    .type: Real
+    .value: 0
+  y:
+    .type: Real
+    .value: 0
+  z:
+    .type: Real
+    .value: 0
+  w:
+    .type: Real
+    .value: 1
+
+
+  .transformers:
+    - EulerAngles
+
+
+  AngleAxis:
+    .kind: Method
+    .static: true
+    .return: Quat
+    .doc: Create using angle in degrees rotated around axis
+    degrees:
+      .type: Real
+    axis:
+      .type: Vec3
+
+  FromTo:
+    .kind: Method
+    .doc: Create by defining a rotation from one vec3 to another vec3
+    .static: true
+    .return: Quat
+    from:
+      .type: Vec3
+    to:
+      .type: Vec3
+
+
+
+  TryFromToZXPair:
+    .kind: Method
+    .static: true
+    .doc: >
+      The reason this function exist is for helping the user to define the full rotation of a Transform using two vector pairs.
+      We try to find a transform that primarily makes Z point to newZ and secondarily X point to newX.
+      It is NOT equivalent to doing two FromTo rotations,
+       FromTo(Z, newZ)
+       FromTo(X, newX)
+      since we are keeping the newZ axis fixed while trying to do rotate the X to newX.
+      It is far from certain that the wanted rotation of the newX is possible to put through.
+    newZ:
+      .type: Vec3
+    newX:
+      .type: Vec3
+    .return: Quat
+

@@ -1,0 +1,19 @@
+.format: 4
+
+Profile:
+  user:
+    .doc: User name
+    .type: String
+    .value: null
+  brickDirectory:
+    .doc: Root directory for brick
+    .type: String
+    .value: null
+  agxDirectory:
+    .doc: Root directory for AGX
+    .type: String
+    .value: null
+  pythonLibraryDirectory:
+    .doc: Python library directory
+    .type: String
+    .value: null

@@ -1,0 +1,11 @@
+.format: 4
+
+CommunicationProtocol:
+  name:
+    .type: String
+
+RosCommunicationProtocol:
+  .extends: CommunicationProtocol
+  .const: true
+  name: RosProtocol
+

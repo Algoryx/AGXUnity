@@ -1,0 +1,207 @@
+.format: 4
+
+Vec3:
+  .doc: Vec3 linear algebra primitive
+  # .nativeType: true
+  .arrayPrimitive: true
+  # .type: ArrayPrimitive<Real, 3>
+  .customData: true
+
+  x:
+    .type: Real
+    .value: 0
+  y:
+    .type: Real
+    .value: 0
+  z:
+    .type: Real
+    .value: 0
+
+  length:
+    .kind: Property
+    .doc: The length/magnitude of the vector
+    .type: Real
+
+  normal:
+    .kind: Property
+    .doc: The normalized vector
+    .type: Vec3
+
+  X_Axis:
+    .static: true
+    .const: true
+    .type: Vec3
+    .value: Vec3(1, 0, 0)
+
+  Y_Axis:
+    .static: true
+    .const: true
+    .type: Vec3
+    .value: Vec3(0, 1, 0)
+
+  Z_Axis:
+    .static: true
+    .const: true
+    .type: Vec3
+    .value: Vec3(0, 0, 1)
+
+  .constructors:
+  - x:
+      .type: Real
+    y:
+      .type: Real
+    z:
+      .type: Real
+
+  - xyz:
+      .type: Real
+
+  # - xy:
+  #     .type: Vec2
+  #   z:
+  #     .type: Real
+
+  # - x:
+  #     .type: Real
+  #   yz:
+  #     .type: Vec2
+
+
+  Random:
+    .kind: MethodGroup
+    .methods:
+
+    - .static: true
+      .doc: Randomize vec3 coordinates
+      min:
+        .type: Vec3
+      max:
+        .type: Vec3
+      .return: Vec3
+
+  Angle:
+    .doc: Angle in degrees
+    .kind: Method
+    .static: true
+    lhs:
+      .type: Vec3
+    rhs:
+      .type: Vec3
+    .return: Real
+
+  Dot:
+    .kind: Method
+    .static: true
+    lhs:
+      .type: Vec3
+    rhs:
+      .type: Vec3
+    .return: Real
+
+  Cross:
+    .kind: Method
+    .static: true
+    lhs:
+      .type: Vec3
+    rhs:
+      .type: Vec3
+    .return: Vec3
+
+  Add:
+    .kind: MethodGroup
+    .methods:
+
+    # # Add(Vec3, Real)
+    # - .static: true
+    #   lhs:
+    #     .type: Vec3
+    #   rhs:
+    #     .type: Real
+    #   .return: Vec3
+
+    # # Add(Real, Vec3)
+    # - .static: true
+    #   lhs:
+    #     .type: Real
+    #   rhs:
+    #     .type: Vec3
+    #   .return: Vec3
+
+    # Add(Vec3, Vec3)
+    - .static: true
+      lhs:
+        .type: Vec3
+      rhs:
+        .type: Vec3
+      .return: Vec3
+
+  Sub:
+    .kind: MethodGroup
+    .methods:
+
+    # Sub(Vec3, Vec3)
+    - .static: true
+      lhs:
+        .type: Vec3
+      rhs:
+        .type: Vec3
+      .return: Vec3
+
+  Neg:
+    .kind: Method
+    .static: true
+    v:
+      .type: Vec3
+    .return: Vec3
+
+  Mul:
+    .kind: MethodGroup
+    .methods:
+
+    # Mul(Vec3, Real)
+    - .static: true
+      lhs:
+        .type: Vec3
+      rhs:
+        .type: Real
+      .return: Vec3
+
+    # Mul(Real, Vec3)
+    - .static: true
+      lhs:
+        .type: Real
+      rhs:
+        .type: Vec3
+      .return: Vec3
+
+    # Mul(Vec3, Vec3)
+    - .static: true
+      lhs:
+        .type: Vec3
+      rhs:
+        .type: Vec3
+      .return: Real
+
+
+  Div:
+    .kind: MethodGroup
+    .methods:
+
+    # Div(Vec3, Real)
+    - .static: true
+      lhs:
+        .type: Vec3
+      rhs:
+        .type: Real
+      .return: Vec3
+
+
+  Foo:
+    .kind: Method
+    lol:
+      .type: Real
+    .return: Vec3
+
+  Bar:
+    .kind: Method
+    .return: Vec3

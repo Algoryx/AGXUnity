@@ -1,0 +1,27 @@
+.format: 4
+
+Subscriber:
+  .abstract: true
+  topic:
+    .type: String
+
+DefaultMessageSubscriber:
+  .extends: Subscriber
+  .doc: Subscribes to a topic publishing a message that can be directly converted to a signal.
+  signal:
+    .type: Signal.SignalBase
+    .value: null
+
+CustomMessageSubscriber:
+  .extends: Subscriber
+  .doc: Subscribes to a topic publishing a custom message that contains multiple submessages
+    that can be directly converted to signals.
+  messageType:
+    .doc: The type name of the custom message (e.g. my_msgs/Test)
+    .type: String
+  signals:
+    .doc: The signals that will be set from the message. Each signal corresponds to a single
+      submessage with the same name as the name of the map entry. E.g. if the map is comprised of
+      a Vec3 signal and a Quaternion signal, the message received must include a
+      geometry_msgs/Point and a geometry_msgs/Quaternion submessage.
+    .type: Map<String, Signal.SignalBase>

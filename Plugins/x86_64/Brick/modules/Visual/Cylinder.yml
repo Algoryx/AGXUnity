@@ -1,0 +1,8 @@
+.format: 4
+
+Cylinder:
+  .extends: Visual.Shape
+  length:
+    .type: Real
+  radius:
+    .type: Real

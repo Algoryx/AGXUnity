@@ -1,0 +1,8 @@
+.format: 4
+
+Int:
+  .doc: Integer number representation
+
+  .transformers:
+    - Real
+

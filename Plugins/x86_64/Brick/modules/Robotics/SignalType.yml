@@ -1,0 +1,40 @@
+.format: 4
+
+SignalType:
+  name:
+    .type: String
+
+OutputDistanceSignal:
+  .extends: SignalType
+  .const: true
+  name: OutputDistanceSignal
+
+InputForceSignal:
+  .extends: SignalType
+  .const: true
+  name: InputForceSignal
+
+OutputForceSignal:
+  .extends: SignalType
+  .const: true
+  name: OutputForceSignal
+
+InputVelocitySignal:
+  .extends: SignalType
+  .const: true
+  name: InputVelocitySignal
+
+OutputVelocitySignal:
+  .extends: SignalType
+  .const: true
+  name: OutputVelocitySignal
+
+InputPositionSignal:
+  .extends: SignalType
+  .const: true
+  name: InputPositionSignal
+
+OutputPositionSignal:
+  .extends: SignalType
+  .const: true
+  name: OutputPositionSignal

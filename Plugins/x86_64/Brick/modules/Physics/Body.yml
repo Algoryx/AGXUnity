@@ -1,0 +1,27 @@
+.format: 4
+
+.import:
+  Physics: [KinematicsData, MassProperties, Charge]
+  Physics.KinematicsData: [Kinematics3D]
+
+Body:
+  .extends: Scene.Node
+  name:
+    .type: String
+    .value: ""
+
+  motionControl:
+    .type: Physics.MotionControl
+    .value: Dynamics
+
+  massProperties:
+    .type: MassProperties
+
+  kinematics:
+    .type: Kinematics3D
+    .value: Kinematics3D
+
+  externalReference:
+    .type: String
+    .value: null
+

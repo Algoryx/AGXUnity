@@ -1,0 +1,8 @@
+.format: 4
+
+Image:
+  .doc: A datatype representing an image
+  width:
+    .type: Int
+  height:
+    .type: Int

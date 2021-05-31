@@ -1,0 +1,13 @@
+.format: 4
+.strict: false
+
+TestStrandBeest:
+  .value: Physics.ComponentTest
+
+  strandBeest:
+    .value: Physics.Mechanics.Test.StrandBeest.StrandBeestMulti.StrandBeestNotWalking
+
+  hiConnectorTest:
+    .value: Assertion.Equal
+    lhs: strandBeest.legRF.h_Link.input.position
+    rhs: strandBeest.legRF.i_Link.output.position

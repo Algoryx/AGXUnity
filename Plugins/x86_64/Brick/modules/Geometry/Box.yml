@@ -1,0 +1,7 @@
+.ignore: true
+
+Box:
+  parent: Geometry
+  attributes:
+    halfExtents: Vec3
+    # halfExtents: Quantity.Length<Math.Vec3>

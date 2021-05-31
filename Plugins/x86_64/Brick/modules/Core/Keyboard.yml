@@ -1,0 +1,116 @@
+.format: 4
+
+# TODO: Key declarations
+# Ignore for now, simply use string declarations
+Key:
+  name:
+    .type: String
+
+  # A:
+  #   .const: true
+  #   .type: Key
+  #   name: A
+
+  # B:
+  #   .const: true
+  #   .type: Key
+  #   name: B
+
+  # # ...
+
+  # Shift:
+  #   .const: true
+  #   .type: Key
+  #   name: Shift
+
+  # Alt:
+  #   .const: true
+  #   .type: Key
+  #   name: Alt
+
+  # # ...
+
+Event:
+  key:
+    .type: String
+    .doc: The key for the event
+
+  altKey:
+    .type: Bool
+    .doc: True if the Alt ( Option or ⌥ on OS X) key was active when the key event was generated
+    .value: false
+
+  shiftKey:
+    .type: Bool
+    .doc: True if the Shift key was active when the key event was generated
+    .value: false
+
+  ctrlKey:
+    .type: Bool
+    .doc: True if the Ctrl key was active when the key event was generated.
+    .value: false
+
+  metaKey:
+    .type: Bool
+    .doc: True if the Meta key (on Mac keyboards, the ⌘ Command key; on Windows keyboards, the Windows key (⊞)) was active when the key event was generated
+    .value: false
+
+KeyboardAction:
+  key:
+    # .type: Key
+    .type: String
+
+  beginDate:
+    .type: Timestamp
+    .value: null
+    .access:
+      get: Public
+
+  isActive:
+    .type: Bool
+    .value: false
+    .access:
+      get: Public
+
+  duration:
+    .type: Real
+    .value: 0
+    .access:
+      get: Public
+
+
+  onBegin:
+    .type: Action
+    .value: null
+
+  onStep:
+    .type: Action
+    .value: null
+
+  onEnd:
+    .type: Action
+    .value: null
+
+# Enum:
+#   name: KeyState
+#   values:
+#     - DOWN
+#     - UP
+
+# ---
+
+# Type:
+#   name: Key
+#   attributes:
+#     - name: name
+#       type: String
+#     - name: state
+#       type: KeyState
+
+# ---
+
+# Type:
+#   name: Keyboard
+#   attributes:
+#     - name: pressedKeys
+#       type: List<Key>

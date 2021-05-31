@@ -1,0 +1,28 @@
+.format: 4
+
+TogglePlay:
+  .extends: Action
+  .doc: Toggle play
+
+Reload:
+  .extends: Action
+  .doc: Reload root model
+
+Load:
+  .extends: Action
+  .doc: Load root model
+  model:
+    .type: Model
+
+SetActiveCamera:
+  .extends: Action
+  .doc: Specify the active SetActiveCamera
+  camera:
+    .type: Scene.Camera
+
+
+CycleNextCamera:
+  .extends: Action
+
+CyclePrevCamera:
+  .extends: Action

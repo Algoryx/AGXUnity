@@ -1,0 +1,7 @@
+.format: 4
+
+AngularVelocityOutput:
+  .extends: Signal.Output<Vec3>
+  .doc: Outputs the angular velocity of a body as a Vec3
+  body:
+    .type: Physics.Mechanics.RigidBody

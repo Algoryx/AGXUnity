@@ -1,0 +1,4 @@
+.format: 4
+
+SignalHolder:
+  .doc: Utility component to hold signals when building custom messages

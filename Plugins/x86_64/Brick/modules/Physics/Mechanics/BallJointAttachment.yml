@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment]
+
+BallJointAttachment:
+  .extends: RigidBodyAttachment
+  .doc: >
+    Attachments that indicates the use of a Ball constraint
+
+  connectType: Ball

@@ -1,0 +1,41 @@
+ModuleConfig:
+  name: Simulation
+  doc: Simulation of a virtual world. Can contain both physics system, rendering system, etc.
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  files.exclude:
+    - Test
+
+  import:
+    Math:
+      filepath: ../Math
+    Scene:
+      filepath: ../Scene
+    Physics:
+      filepath: ../Physics
+    Visual:
+      filepath: ../Visual
+    Signal:
+      filepath: ../Signal
+    ROS:
+      filepath: ../ROS
+    Robotics:
+      filepath: ../Robotics
+    MachineLearning:
+      filepath: ../MachineLearning
+
+  generators:
+
+    Python:
+      useGrpc: true
+      enable: true
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+    Grpc:
+      # enable: false
+      csNamespace: Brick.Simulation.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Simulation # TODO!

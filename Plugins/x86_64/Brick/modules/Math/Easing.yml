@@ -1,0 +1,75 @@
+.format: 4
+
+EasingStyle:
+  .kind: Enum
+  values:
+  - Linear
+  - LinearEaseIn
+  - LinearEaseOut
+  - LinearEaseInOut
+  - BackEaseIn
+  - BackEaseOut
+  - BackEaseInOut
+  - BounceEaseIn
+  - BounceEaseOut
+  - BounceEaseInOut
+  - CircleEaseIn
+  - CircleEaseOut
+  - CircleEaseInOut
+  - CubicEaseIn
+  - CubicEaseOut
+  - CubicEaseInOut
+  - ElasticEaseIn
+  - ElasticEaseOut
+  - ElasticEaseInOut
+  - ExpoEaseIn
+  - ExpoEaseOut
+  - ExpoEaseInOut
+  - QuadEaseIn
+  - QuadEaseOut
+  - QuadEaseInOut
+  - QuartEaseIn
+  - QuartEaseOut
+  - QuartEaseInOut
+  - QuintEaseIn
+  - QuintEaseOut
+  - QuintEaseInOut
+  - SineEaseIn
+  - SineEaseOut
+  - SineEaseInOut
+  - StrongEaseIn
+  - StrongEaseOut
+  - StrongEaseInOut
+
+Easing:
+  # .extends: Signal
+  style:
+    .doc: Preset easing styles
+    .type: EasingStyle
+
+  value:
+    .doc: Current easing value (output)
+    .type: Real
+    .value: 0
+    .access:
+      get: Public
+
+  timeStart:
+    .doc: Current easing time ()
+    .type: Real
+    .value: 0
+
+  timeEnd:
+    .doc: Current easing time ()
+    .type: Real
+    # .value: 0
+
+  valueStart:
+    .doc: Start value ()
+    .type: Real
+    .value: 0
+
+  valueEnd:
+    .doc: End value
+    .type: Real
+    .value: 1

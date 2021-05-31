@@ -1,0 +1,6 @@
+.format: 4
+.strict: false
+
+ComponentTest:
+  .extends: Unittest
+  .doc: Perform `Physics.Component` initialization, including positioning, before evaluating assertions

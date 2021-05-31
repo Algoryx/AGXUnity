@@ -1,0 +1,8 @@
+.format: 4
+
+MultiHingeConnector:
+  .extends: Physics.Mechanics.MultiAttachmentConnector
+
+  rotationalFrictionCoefficient:
+    .type: Real
+    .value: 0

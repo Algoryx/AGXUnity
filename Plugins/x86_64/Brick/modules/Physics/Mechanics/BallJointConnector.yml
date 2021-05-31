@@ -1,0 +1,10 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairConnector, BallJointInteraction]
+
+BallJointConnector:
+  .extends: AttachmentPairConnector
+
+  mainInteraction:
+    .value: BallJointInteraction

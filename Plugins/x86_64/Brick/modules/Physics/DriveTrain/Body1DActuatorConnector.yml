@@ -1,0 +1,14 @@
+.format: 4
+
+.import:
+  Physics: [Connector]
+  Physics.DriveTrain: [Body1D]
+
+Body1DActuatorConnector:
+  .extends: Connector
+
+  body1D:
+    .type: Body1D
+
+
+

@@ -1,0 +1,17 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [RotatingBody1D, GearAttachment]
+  Physics.Mechanics: [AttachmentPairConnector, AttachmentPairInteraction]
+
+RotationalActuator:
+  .extends: RotatingBody1D
+
+  interaction:
+    .type: AttachmentPairInteraction
+
+  inputAttachment:
+    .type: GearAttachment
+    .value: GearAttachment
+    sign: -1
+

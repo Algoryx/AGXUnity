@@ -1,0 +1,45 @@
+.format: 4
+
+TestSuite:
+  .doc: Collection of tests
+
+  name:
+    .type: String
+
+  module:
+    .type: Module
+
+  startTime:
+    .type: Timestamp
+
+  endTime:
+    .type: Timestamp
+
+  duration:
+    .doc: Measured time to evaluate test
+    # .type: Duration
+    .type: Real
+
+  numPassedTests:
+    .doc: Aggregated number of passed tests
+    .type: Int
+
+  numFailedTests:
+    .doc: Aggregated number of failed tests
+    .type: Int
+
+  numSkippedTests:
+    .doc: Aggregated number of skipped tests
+    .type: Int
+
+  numPassedAssertions:
+    .doc: Aggregated number of passed assertions
+    .type: Int
+
+  numFailedAssertions:
+    .doc: Aggregated number of failed assertions
+    .type: Int
+
+  tests:
+    .type: List<Unittest>
+    .value: []

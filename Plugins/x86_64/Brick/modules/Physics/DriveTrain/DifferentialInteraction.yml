@@ -1,0 +1,19 @@
+.format: 4
+
+.import:
+  Physics: [Interaction]
+  Physics.DriveTrain: [GearAttachment]
+
+DifferentialInteraction:
+  .extends: Interaction
+
+  inputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  outputAttachments:
+    .type: List<GearAttachment>
+    .value: List<GearAttachment>()
+
+  interactionType: Differential
+

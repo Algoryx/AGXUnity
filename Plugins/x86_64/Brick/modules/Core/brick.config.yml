@@ -1,0 +1,23 @@
+ModuleConfig:
+  name: Core
+  doc: Core brick library
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  generators:
+
+    Python:
+      useGrpc: true
+      enable: true
+
+    Cs:
+      useGrpc: true
+      targetDirectory: ${env:BRICK_DIR}/parser/src
+      # rootNamespace: 'x'
+      enable: true
+
+    Grpc:
+      # enable: false
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Core # TODO!
+      csNamespace: Brick.Grpc
+      enable: true

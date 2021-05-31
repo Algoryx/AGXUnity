@@ -1,0 +1,42 @@
+.format: 4
+# .ignore: true
+
+# Import:
+#   filepath: String
+
+
+Module:
+  .extends: Directory
+
+  # rootDirectory:
+  #   .doc: Root filesystem directory of the module. Identified by the location of the `brick.module.yml`
+  #   .type: String
+  #   .value: null # Calculated
+
+  apiRoot:
+    .doc: Local directory where api declaration files are located
+    .type: Directory
+    # .value: api
+
+  # files:
+  #   .type: Map<String, File>
+  #   .value: {}
+
+  # generators: Map<String, Generator>
+  # generators: List<Generator>
+  # import: List<Import>
+
+
+  .methods:
+    Create:
+      .static: true
+      doc: Create a new module
+      parameters:
+        path: String
+        name: String
+
+    AddImport:
+      doc: Import a module into the current context
+      parameters:
+        path: String
+        # autoImport: Bool

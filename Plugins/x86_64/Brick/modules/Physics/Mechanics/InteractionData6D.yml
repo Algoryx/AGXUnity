@@ -1,0 +1,31 @@
+.format: 4
+
+InteractionData6D:
+  defaultValue:
+    .type: Real
+  alongTangent:
+    .type: Real
+    .value: this.defaultValue
+  aroundTangent:
+    .type: Real
+    .value: this.defaultValue
+  alongNormal:
+    .type: Real
+    .value: this.defaultValue
+  aroundNormal:
+    .type: Real
+    .value: this.defaultValue
+  alongCross:
+    .type: Real
+    .value: this.defaultValue
+  aroundCross:
+    .type: Real
+    .value: this.defaultValue
+
+Stiffness6D:
+  .extends: InteractionData6D
+  defaultValue: 2E9
+
+Damping6D:
+  .extends: InteractionData6D
+  defaultValue: 1E8

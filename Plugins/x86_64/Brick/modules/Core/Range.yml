@@ -1,0 +1,11 @@
+.format: 4
+
+# TODO: This should be templated, eg support Vec3
+
+Range:
+  min:
+    .type: Real
+    .value: 0
+  max:
+    .type: Real
+    .value: 0

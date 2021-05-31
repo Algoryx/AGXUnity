@@ -1,0 +1,61 @@
+# Definition of a Cylinder Part
+# Two Cylinder Parts are used to compose a Cylinder
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, LockJointAttachment]
+  Physics.Materials: [Steel]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+  Physics.Geometry: [Cylinder,Box]
+
+CylinderPart:
+  .extends: RigidBody
+  holeSign:
+    .type: Real
+    .value: 1
+  holeWidth:
+    .type: Real
+    .value: 0.16
+  length:
+    .type: Real
+    .value: 0.5
+  radius:
+    .type: Real
+    .value: 0.05
+  holePos:
+    .type: Real
+    .value: 1.25*this.length
+  internalAttachment:
+    .type: ConnectionAttachment
+    relRot: Quat.FromTo(Vec3(0,0,1), Vec3(0,this.holeSign,0).normal)
+    relPos: Vec3(0,0,0.0)
+  bearingR:
+    .type: ConnectionAttachment
+    relPos: Vec3(0,this.holePos,this.holeWidth*0.5)
+    relRot: Quat()
+  bearingL:
+    .type: ConnectionAttachment
+    relPos: Vec3(0,this.holePos,-this.holeWidth*0.5)
+    relRot: Quat()
+  externalAttachment:
+    .type: ConnectionAttachment
+    relPos: (this.bearingL.relPos + this.bearingR.relPos)*0.5
+    relRot: Quat()
+  boxSize:
+    .type: Vec3
+    .value: Vec3(0.32,0.64,0.08)*this.length
+  cylinder:
+    .type: Cylinder
+    radius: 0.075
+    length: this.length
+    localPosition: Vec3(0,this.length*0.5,0)
+  attachGeometry1:
+    .type: Box
+    enableCollisions: False
+    lengths: this.boxSize
+    localPosition: Vec3(0,this.length,this.holeWidth*0.5)
+  attachGeometry2:
+    .type: Box
+    enableCollisions: False
+    lengths: this.boxSize
+    localPosition: Vec3(0,this.length,-this.holeWidth*0.5)

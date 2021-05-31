@@ -1,0 +1,73 @@
+.format: 4
+
+.import:
+  Physics: [Component, Geometry]
+  Physics.Geometry: [Cylinder, Box, Sphere]
+  Math: [Quat]
+  Scene: [Transform]
+  Physics.Mechanics: [RigidBody,HingeAttachment, CylindricalAttachment, PrismaticAttachment, LockJointAttachment, RigidBodyAttachment,SpringJointConnector,BallJointConnector, LockJointConnector ,HingeConnector, CylindricalConnector, PrismaticConnector]
+  Physics.Mechanics.HingeConnector: [RotationalActuatorHingeConnector]
+  Physics.Mechanics.DegreeOfFreedom: [NoDegreeOfFreedomRelativeParent]
+
+
+CubeMaterial:
+  .const: true
+  .extends: Material
+  name: CubeMaterial
+  bulk:
+    density: 2E2
+
+FloorMaterial:
+  .const: true
+  .extends: Material
+  name: FloorMaterial
+  bulk:
+    density: 2E2
+
+
+Cube:
+  .extends: RigidBody
+  length:
+    .type: Real
+    .value: 1
+  shape:
+    .type: Box
+    lengths: Vec3(this.length,this.length,this.length)
+    material: CubeMaterial
+
+  frictionAttachmentFrame:
+    .type: RigidBodyAttachment
+    .value: RigidBodyAttachment
+    localTransform:
+      rotation: Quat.FromTo(Vec3(0,0,1),Vec3(0,1,0))
+
+BoxOnPlane:
+  .extends: Component
+
+
+  cube:
+    .type: Cube
+    .value: Cube
+    localTransform:
+      position: Vec3(0,0,2)
+
+  plane:
+    .type: Physics.Geometry.Plane
+    material: Physics.Materials.Steel
+    a: 0
+    b: 0
+    c: 1
+    d: 1
+
+
+
+  contactMaterial:
+    .type: ContactMaterial
+    material1: CubeMaterial
+    material2: Physics.Materials.Steel
+    tangentialRestitution: 0.1
+    restitution: 0.5
+    youngsModulus: 1E9
+    frictionReferenceNode: this.cube.frictionAttachmentFrame
+    primaryFrictionCoefficient: 1
+    secondaryFrictionCoefficient: 0

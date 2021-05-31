@@ -1,0 +1,81 @@
+.format: 4
+.ignore: true
+
+# Value:
+#   declaration:
+#     .type: String
+
+# Identifier:
+#   name:
+#     .type: String
+
+Reference:
+  .extends: Node
+  path:
+    .type: Path
+
+BinaryOp:
+  .kind: Enum
+  .values:
+    - Add
+    - Sub
+    - Mul
+    - Div
+
+BinaryOpCall:
+  .extends: Node
+
+  op:
+    .type: BinaryOp
+
+  lhs:
+    .type: Value/Expression
+
+  rhs:
+    .type: Value/Expression
+
+
+# Literal:
+#   # .extends: Value
+
+#   type:
+#     .type: Model
+
+#   value:
+#     .type: Any
+
+  #################
+  # Embedded models
+  #################
+  # Number:
+  #   .type: Literal
+
+  # List:
+  #   .type: Literal
+
+  # Map:
+  #   .type: Literal
+
+  # Set:
+  #   .type: Literal
+
+
+# Extend/embed models from outside?
+# Literal.Number:
+#   .type: Literal
+
+# NumberLiteral:
+#   .type: Literal
+
+Expression:
+  .extends: Value
+
+  # root:
+  #   .type: Value
+
+
+FunctionCall:
+  function:
+    .type: String
+    # .type: Identifier
+    # .type: Function

@@ -1,0 +1,19 @@
+.format: 4
+
+Axis:
+  .kind: Enum
+  values:
+    - X
+    - Y
+    - Z
+
+
+SingleAxisPositionOutput:
+  .extends: Signal.Output<Real>
+  .doc: Outputs the position of a node, along one given axis in the reference node's coordinate system
+  node:
+    .type: Scene.Node
+  referenceNode:
+    .type: Scene.Node
+  outputAxis:
+    .type: Axis

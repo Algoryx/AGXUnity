@@ -1,0 +1,6 @@
+.format: 4
+.ignore: true
+
+Second:
+  .extends: Physics.Unit
+  symbol: s

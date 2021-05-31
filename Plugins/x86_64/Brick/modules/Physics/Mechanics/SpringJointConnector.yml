@@ -1,0 +1,12 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairConnector, SpringJointInteraction]
+
+SpringJointConnector:
+  .extends: AttachmentPairConnector
+
+  enabledPositioning: false
+
+  mainInteraction:
+    .value: SpringJointInteraction

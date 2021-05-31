@@ -1,0 +1,19 @@
+.format: 4
+
+CollisionGroup:
+
+  name:
+    .type: String
+    .value: null
+  members:
+    .doc: Will give all Geometries found downstream the collision group id.
+    .type: List<Scene.Node>
+    .value: List<Scene.Node>()
+
+
+CollisionGroupPair:
+
+  group1:
+    .type: CollisionGroup
+  group2:
+    .type: CollisionGroup

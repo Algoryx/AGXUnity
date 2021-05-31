@@ -1,0 +1,21 @@
+.format: 4
+
+Plane:
+  .extends: Visual.Shape
+  .doc: "A plane defined by the plane equation: ax + by + cz + d = 0. The width of the two plane directions can be set with the width attribute."
+  a:
+    .type: Real
+    .value: 0.0
+  b:
+    .type: Real
+    .value: 0.0
+  c:
+    .type: Real
+    .value: 1.0
+  d:
+    .type: Real
+    .value: 0.0
+  widths:
+    .type: Math.Vec2
+    x: 10.0
+    y: 10.0

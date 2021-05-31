@@ -1,0 +1,81 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [GearAttachment, TorqueConverterInteraction]
+
+EfficiencyVelRatioPair:
+  efficiency:
+    .type: Real
+    .value: 0
+  velRatio:
+    .type: Real
+    .value: 0
+
+GeometryFactorVelRatioPair:
+  geometryFactor:
+    .type: Real
+    .value: 0
+  velRatio:
+    .type: Real
+    .value: 0
+
+TorqueConverterConnector:
+  .extends: Physics.Connector
+  .doc: Model of a torque converter using a two curves describing the torque multiplication
+
+  efficiencyList:
+    .doc: List describing the relation between the torque efficiency and the velocity ratio
+    .type: List<EfficiencyVelRatioPair>
+    .value:
+      - efficiency: 2.1
+        velRatio: 0.0
+      - efficiency: 1.5
+        velRatio: 0.5
+      - efficiency: 0.7
+        velRatio: 0.95
+      - efficiency: 0.0
+        velRatio: 1.0
+      - efficiency: 1.0
+        velRatio: 1.1
+      - efficiency: 1.5
+        velRatio: 1.25
+      - efficiency: 1.5
+        velRatio: 1.5
+
+  geometryFactorList:
+    .doc: List describing how the counter torque changes with the velocity ratio
+    .type: List<GeometryFactorVelRatioPair>
+    .value:
+      - geometryFactor: 1.0
+        velRatio: 0.0
+      - geometryFactor: 1.0
+        velRatio: 0.5
+      - geometryFactor: 0.75
+        velRatio: 0.75
+      - geometryFactor: 0.0
+        velRatio: 1.0
+      - geometryFactor: -0.3
+        velRatio: 1.5
+  
+  pumpDiameter:
+    .doc: Torque converter pump diamter, in meters
+    .type: Real
+    .value: 0.12
+
+  oilDensity:
+    .doc: Density of the oil inside the torque converter
+    .type: Real
+    .value: 890
+
+  inputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  outputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  interaction:
+    .type: TorqueConverterInteraction
+    inputAttachment: this.inputAttachment
+    outputAttachment: this.outputAttachment

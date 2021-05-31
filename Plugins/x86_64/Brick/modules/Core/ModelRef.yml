@@ -1,0 +1,8 @@
+.format: 4
+.ignore: true
+
+ModelRef:
+  .extends: Ref
+  # .genericParameters:
+  #   - T: Type
+  .doc: Reference to a model (type/value) which is used as a template. TODO; Make proper design for this...

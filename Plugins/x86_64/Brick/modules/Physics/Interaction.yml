@@ -1,0 +1,26 @@
+.format: 4
+
+Interaction:
+  .doc: Base description of an interaction.
+
+  name:
+    .type: String
+    .value: ''
+
+  enabled:
+    .doc: Set to false if the interaction should be disabled
+    .type: Bool
+    .value: true
+
+  stiffness:
+    .doc: Corresponds to spring coefficient in Hooke's Law.
+    .type: Real
+    .value: 2E9
+
+  damping:
+    .doc: the damping coefficient (for linear dimensions, in force*time/distance; for rotational dimensions, in torque*time/radians).
+    .type: Real
+    .value: 1E8
+
+  interactionType:
+    .type: String

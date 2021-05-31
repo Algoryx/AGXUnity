@@ -1,0 +1,10 @@
+.format: 4
+
+CameraOutput:
+  .extends: Output<Image>
+  camera:
+    .type: Scene.Camera
+  width:
+    .type: Int
+  height:
+    .type: Int

@@ -1,0 +1,12 @@
+.ignore: true
+.format: 4
+
+Angle:
+  .extends: Physics.Quantity
+  # dimension:
+  # symbol:
+  SI_unit: Physics.Unit.Radians
+  units:
+    - Physics.Unit.Radians
+    - Physics.Unit.Degrees
+

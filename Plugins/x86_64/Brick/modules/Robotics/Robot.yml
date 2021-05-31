@@ -1,0 +1,37 @@
+.format: 4
+.import:
+  Physics: [Component]
+  Robotics: [RobotBase, CommunicationProtocol]
+
+Robot:
+  .extends: Component
+  .doc: >
+    The Brick.Physics.Robotics.Robot model is built up by
+    one robot base and one or more robot arms.
+
+    It is possible to interpret an external component
+    (see Physics.Component) as a robot.
+    To do this a segment can be created on Robot level
+    (otherwise segments are at RobotArm level)
+    with an externalReference to the Name or unique ID
+    if the rigid body or connector/constraint that is
+    wanted to be interpreted as a segment or joint.
+
+    The Robot module will try following a linear structure
+    starting from the external rigid body or connector
+    to build an arm. If the structure is branching
+    it is assumed the arm ends.
+    It is possible to declare several external segments/joints,
+    they will join in the same external arm.
+
+  wantInternalPositioning: True
+
+  base:
+    .type: RobotBase
+
+  communicationProtocol:
+    .type: CommunicationProtocol
+    .value: null
+
+
+

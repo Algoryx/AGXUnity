@@ -1,0 +1,7 @@
+.format: 4
+
+FixedVelocityEngineInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the (signed) speed, in rad/s, of a FixedVelocityEngine.
+  engine:
+    .type: Physics.DriveTrain.FixedVelocityEngine

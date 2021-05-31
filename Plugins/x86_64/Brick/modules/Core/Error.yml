@@ -1,0 +1,12 @@
+.format: 4
+
+Error:
+  .doc: Error type
+
+  message:
+    # .kind: Property
+    .doc: Error message
+    .type: String
+    .access:
+      get: Public
+

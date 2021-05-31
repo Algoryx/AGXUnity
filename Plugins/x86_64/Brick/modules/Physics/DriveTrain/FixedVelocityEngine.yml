@@ -1,0 +1,26 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [RotatingBody1D, GearAttachment]
+
+
+FixedVelocityEngine:
+  .extends: RotatingBody1D
+
+  targetRPM:
+    .type: Real
+    .value: 0
+
+  maxAcceleration:
+    .doc: Limits how much the motor can accelerate, without consideration of the needed torque.
+    .type: Real
+    .value: 1000000.0
+
+  maxTorque:
+    .type: Real
+    .value: 1000000.0
+
+  outputAttachment:
+    .type: GearAttachment
+    sign: 1
+

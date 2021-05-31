@@ -1,0 +1,11 @@
+.format: 4
+
+DistanceOutput:
+  .extends: Signal.ContactDepthOutput
+  .doc: Outputs the distance between the contact point and a local position
+  
+  localParentPosition:
+    .type: Vec3
+
+  maxReach:
+    .type: Real

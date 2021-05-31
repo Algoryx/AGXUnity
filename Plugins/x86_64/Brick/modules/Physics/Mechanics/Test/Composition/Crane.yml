@@ -1,0 +1,299 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.Test.Composition.Components: [DriveLink, GuideLink, Column, Boom, Axle, CylinderComponent]
+  Physics.Mechanics.Test.Composition.Connections: [BearingAxleConnector, AxleConnection]
+  Physics.Mechanics: [LockJointConnector, RigidBodyAttachment, MultiHingeConnector, MultiCylindricalConnector, MultiTranslateRelativeLockConnector, RotateRelativeConnector]
+  Physics.Mechanics.DegreeOfFreedom: [NoDegreeOfFreedomRelativeParent]
+  Physics.Materials: [Steel]
+  Physics.Mechanics.MultiAttachmentConnector: [PairwiseRange]
+
+CraneParts:
+  .extends: Physics.Component
+  wantInternalPositioning: True
+
+  SteelSteel:
+    .type: Physics.ContactMaterial
+    name: SteelSteel
+    material1: Steel
+    material2: Steel
+    restitution: 0
+    primaryFrictionCoefficient: 0
+    secondaryFrictionCoefficient: 0
+
+  driveLinkR:
+    .type: DriveLink
+    .value: DriveLink
+
+  driveLinkL:
+    .type: DriveLink
+    .value: DriveLink
+
+  guideLinkR:
+    .type: GuideLink
+    .value: GuideLink
+
+  guideLinkL:
+    .type: GuideLink
+    .value: GuideLink
+
+  column:
+    .type: Column
+    .value: Column
+
+  boomCylinder:
+    .type: CylinderComponent
+    .value: CylinderComponent
+
+  boom:
+    .type: Boom
+    .value: Boom
+
+  boomAxle:
+    .type: Axle
+    length: 0.3
+
+  groundAxle:
+    .type: Axle
+    length: 0.3
+
+  driveAxle:
+    .type: Axle
+    length: 0.3
+
+  guideAxle:
+    .type: Axle
+    length: 0.3
+
+  linkAxle:
+    .type: Axle
+    length: 0.3
+
+
+Crane:
+  .extends: CraneParts
+
+  boomBoomOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.boom.holeBoom
+    distanceCentral: 0
+  boomColumnOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.column.holeBoom
+    distanceCentral: 0
+  boomConnection:
+    .type: AxleConnection
+    centralAttachment: this.boomAxle.attachment
+    positionAttachments:
+      - this.column.holeBoom
+      - this.boom.holeBoom
+    interactionAttachments:
+      - this.column.holeBoom
+      - this.boom.bearingBoomR
+      - this.boom.bearingBoomL
+    offsets:
+      - this.boomBoomOffset
+      - this.boomColumnOffset
+
+  groundRestriction:
+    .type: PairwiseRange
+    attachment1: this.column.holeGround
+    attachment2: this.boomCylinder.tube.externalAttachment
+    range:
+      maxValue: 90
+      minValue: 0
+
+  columnGroundOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.column.holeGround
+    distanceCentral: 0
+  boomCylinderOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.boomCylinder.tube.externalAttachment
+    distanceCentral: 0
+  groundConnection:
+    .type: AxleConnection
+    centralAttachment: this.groundAxle.attachment
+    positionAttachments:
+      - this.column.holeGround
+      - this.boomCylinder.tube.externalAttachment
+    interactionAttachments:
+      - this.column.holeGround
+      - this.boomCylinder.tube.bearingL
+      - this.boomCylinder.tube.bearingR
+    pairwiseRanges:
+      - this.groundRestriction
+    offsets:
+      - this.columnGroundOffset
+      - this.boomCylinderOffset
+
+
+  guideRightOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.guideLinkR.holeA
+    distanceCentral: 0.11
+  guideLeftOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.guideLinkL.holeA
+    distanceCentral: -0.11
+  columnOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.column.holeGuideR
+    distanceCentral: (this.column.holeGuideL.localPosition - this.column.holeGuideR.localPosition).length * 0.5
+
+  guideRightConnection:
+    .type: AxleConnection
+    centralAttachment: this.guideAxle.attachment
+    positionAttachments:
+      - this.column.holeGuideR
+      - this.guideLinkR.holeA
+    interactionAttachments:
+      - this.guideLinkR.holeA
+      - this.column.bearingGuideRR
+      - this.column.bearingGuideRL
+    offsets:
+      - this.guideRightOffset
+      - this.guideLeftOffset
+      - this.columnOffset
+
+  guideLeftConnection:
+    .type: AxleConnection
+    centralAttachment: this.guideAxle.attachment
+    positionAttachments:
+      - this.column.holeGuideL
+      - this.guideLinkL.holeA
+    interactionAttachments:
+      - this.guideLinkL.holeA
+      - this.column.bearingGuideLR
+      - this.column.bearingGuideLL
+
+  driveRightOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.driveLinkR.holeA
+    distanceCentral: 0.105
+  driveLeftOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.driveLinkL.holeA
+    distanceCentral: -0.015
+  boomDriveOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.boom.holeDriveR
+    distanceCentral: (this.boom.holeDriveL.localPosition - this.boom.holeDriveR.localPosition).length*0.5
+  driveRightConnection:
+    .type: AxleConnection
+    centralAttachment: this.driveAxle.attachment
+    positionAttachments:
+      - this.boom.holeDriveR
+      - this.driveLinkR.holeA
+    interactionAttachments:
+      - this.driveLinkR.holeA
+      - this.boom.bearingDriveRR
+      - this.boom.bearingDriveRL
+    offsets:
+      - this.driveRightOffset
+      - this.driveLeftOffset
+      - this.boomDriveOffset
+
+  driveLeftConnection:
+    .type: AxleConnection
+    centralAttachment: this.driveAxle.attachment
+    positionAttachments:
+      - this.boom.holeDriveL
+      - this.driveLinkL.holeA
+    interactionAttachments:
+      - this.driveLinkL.holeA
+      - this.boom.bearingDriveLR
+      - this.boom.bearingDriveLL
+
+  driveRightLinkAxleOffset:
+    .type: MultiTranslateRelativeLockConnector.AttachmentDistancePair
+    attachment: this.driveLinkR.holeB
+    distanceCentral: 0
+
+  linkConnection:
+    .type: AxleConnection
+    centralAttachment: this.linkAxle.attachment
+    positionAttachments:
+      - this.boomCylinder.rod.externalAttachment
+      - this.driveLinkL.holeB
+      - this.driveLinkR.holeB
+      - this.guideLinkL.holeB
+      - this.guideLinkR.holeB
+    interactionAttachments:
+      - this.boomCylinder.rod.bearingL
+      - this.boomCylinder.rod.bearingR
+      - this.driveLinkL.holeB
+      - this.driveLinkR.holeB
+      - this.guideLinkL.holeB
+      - this.guideLinkR.holeB
+    offsets:
+      - this.driveRightLinkAxleOffset
+
+WorldAttachment:
+  .extends: RigidBodyAttachment
+  worldLock:
+    .type: NoDegreeOfFreedomRelativeParent
+    .value: NoDegreeOfFreedomRelativeParent
+
+CraneAngle:
+  .extends: Crane
+  boomAngle:
+    .type: RotateRelativeConnector
+    attachment1: this.boom.holeBoom
+    attachment2: this.column.holeBoom
+    relativeValue: -20
+
+CraneAngleWorld:
+  .extends: Physics.Component
+  wantInternalPositioning: true
+  logPositioningResults: True
+  crane:
+    .type: CraneAngle
+    .value: CraneAngle
+    boomCylinder:
+      internalConnector:
+        translationalMotor:
+          speed: 0.0
+          name: boomCylinder
+  worldAttachment:
+    .type: WorldAttachment
+    .value: WorldAttachment
+
+  boomCylinderForce:
+    .type: Signal.MotorForceOutput
+    motor: this.crane.boomCylinder.internalConnector.translationalMotor
+
+  worldLock:
+    .type: LockJointConnector
+    attachment1: this.crane.column.parentAttachment
+    attachment2: this.worldAttachment
+  angle:
+    .type: Physics.BatchVariable
+    target: this.crane.boomAngle.relativeValue
+    model: this
+    name: angle
+    default: -20
+    step: 5
+    numStep: 5
+
+
+CraneCylinderWorld:
+  .extends: Physics.Component
+  wantInternalPositioning: true
+  logPositioningResults: True
+  crane:
+    .type: Crane
+    .value: Crane
+    boomCylinder:
+      internalConnector:
+        distance: 0.3
+
+  worldAttachment:
+    .type: WorldAttachment
+    .value: WorldAttachment
+
+  worldLock:
+    .type: LockJointConnector
+    attachment1: this.crane.column.parentAttachment
+    attachment2: this.worldAttachment
+

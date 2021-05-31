@@ -1,0 +1,41 @@
+.format: 4
+
+Frame:
+  world:
+    .type: Scene.Transform
+    .value: Scene.Transform()
+  local:
+    .type: Scene.Transform
+    .value: Scene.Transform()
+  parent:
+    .type: Frame
+    .access:
+      get: Public
+    .value: null
+  # TODO: Swap parent/children modelling
+  # Children are readonly, parent is assignable!
+  children:
+    .type: List<Frame>
+    # .value: List<Frame>()
+    .value: []
+
+  # .methods:
+  #   pointToWorld:
+  #     parameters:
+  #       point: Vec3
+  #     return: Vec3
+
+  #   vectorToWorld:
+  #     parameters:
+  #       vec: Vec3
+  #     return: Vec3
+
+  #   pointToLocal:
+  #     parameters:
+  #       point: Vec3
+  #     return: Vec3
+
+  #   vectorToLocal:
+  #     parameters:
+  #       vec: Vec3
+  #     return: Vec3

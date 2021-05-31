@@ -1,0 +1,12 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairInteraction]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D,TranslationalMotorInteraction1D]
+
+
+CylindricalInteraction:
+  .extends: AttachmentPairInteraction
+
+  interactionType: Cylindrical
+

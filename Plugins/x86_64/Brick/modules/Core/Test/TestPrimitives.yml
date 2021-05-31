@@ -1,0 +1,15 @@
+.format: 4
+
+TestPrimitives:
+  real:
+    .type: Real
+    .value: Real()
+  int:
+    .type: Int
+    .value: Int()
+  string:
+    .type: String
+    .value: String()
+  bool:
+    .type: Bool
+    .value: Bool()

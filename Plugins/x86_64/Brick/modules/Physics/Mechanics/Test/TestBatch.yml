@@ -1,0 +1,73 @@
+.format: 4
+
+.import:
+  Physics: [BatchVariable]
+  Physics.Mechanics.Test.TestMaterials: [BoxOnPlane]
+  Physics.Mechanics.Test.TestPositioning: [DoublePendulum]
+
+BoxOnPlaneBatch:
+  .extends: BoxOnPlane
+
+  # At some point the batch variable has to be declared in the model
+  # before it can be used as a batch variable
+  cube:
+    kinematics:
+      linearVelocity:
+        y: 0
+
+  initialVelocityY:
+    .type: Physics.BatchVariable
+    target: this.cube.kinematics.linearVelocity.y
+    model: this
+    name: initialVelocityY
+    default: -10
+    step: 20
+    numStep: 2
+
+  # The Contact material is declared in another file
+  primaryFriction:
+    .type: Physics.BatchVariable
+    target: this.contactMaterial.primaryFrictionCoefficient
+    model: this
+    name: primaryFriction
+    default: 0
+    step: 1
+    numStep: 2
+
+  # The Contact material is declared in another file
+  youngsModulus:
+    .type: Physics.BatchVariable
+    target: this.contactMaterial.youngsModulus
+    model: this
+    name: youngsModulus
+    default: 1000000
+    step: 9999000000
+    numStep: 2
+
+    # The Contact material is declared in another file
+  tangentialRestitution:
+    .type: Physics.BatchVariable
+    target: this.contactMaterial.tangentialRestitution
+    model: this
+    name: tangentialRestitution
+    default: 0
+    step: 0.5
+    numStep: 2
+
+DoublePendulumBatch:
+  .extends: DoublePendulum
+  
+  connector12:
+    mainInteraction:
+      stiffness6D:
+        defaultValue: 1E9
+  
+  # The Contact material is declared in another file
+  stiffness:
+    .type: Physics.BatchVariable
+    target: this.connector12.mainInteraction.stiffness6D.defaultValue
+    model: this
+    name: stiffness
+    default: 1E6
+    step: 9.999E10
+    numStep: 2

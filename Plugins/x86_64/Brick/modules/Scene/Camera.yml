@@ -1,0 +1,52 @@
+.format: 4
+
+CameraProjection:
+  .kind: Enum
+  values:
+  - Perspective
+  - Orthographic
+
+ClipPlanes:
+  near:
+    .type: Real
+    .value: 0.01
+  far:
+    .type: Real
+    .value: 100
+
+Camera:
+  .extends: Node
+
+  projection:
+    .type: CameraProjection
+    .value: Perspective
+
+  fieldOfView:
+    .type: Real
+    .value: 60
+
+  up:
+    .doc: The "up" vector of the camera, determining the orientation of the view.
+    .type: Vec3
+    .value: Vec3(0, 0, 1)
+
+  eye:
+    .doc: The position of the camera relative to its parent.
+    .type: Vec3
+    .value: Vec3(0, 0, 0)
+
+  center:
+    .doc: The point at which the camera is aimed, in its parent's coordinate system.
+    .type: Vec3
+    .value: Vec3(1, 0, 0)
+
+  clip:
+    .type: ClipPlanes
+    .value: ClipPlanes
+
+
+DepthCamera:
+  .extends: Camera
+  .doc: A camera that instead of colors from visible light displays depth. The depth is defined as
+    the distance from the camera's position, and is represented as a grayscale image, where
+    white corresponds to objects closer than the near clip plane, and black to objects farther away

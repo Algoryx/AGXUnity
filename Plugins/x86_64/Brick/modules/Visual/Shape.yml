@@ -1,0 +1,16 @@
+.format: 4
+
+Shape:
+  .extends: Scene.Node
+  color:
+    .type: Vec3
+    .value: Vec3(1, 1, 1)
+  texture:
+    .type: String
+    .value: ""
+  smoothness:
+    .type: Real
+    .value: 0  # Value between 0 and 1
+  metallic:
+    .type: Real
+    .value: 0  # Value between 0 and 1

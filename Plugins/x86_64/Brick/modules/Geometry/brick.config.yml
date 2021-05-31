@@ -1,0 +1,28 @@
+ModuleConfig:
+  name: Geometry
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  files.exclude:
+    - Test
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+    Scene:
+      filepath: ../Scene
+
+  generators:
+    Python:
+      useGrpc: false
+      enable: false
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+    Grpc:
+      # enable: false
+      csNamespace: Brick.Geometry.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Geometry # TODO!

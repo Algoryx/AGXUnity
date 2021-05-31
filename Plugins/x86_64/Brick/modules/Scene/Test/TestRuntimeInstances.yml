@@ -1,0 +1,197 @@
+.format: 4
+
+
+Node:
+  .extends: Scene.Node
+  localTransform:
+    position:
+      z: this.transform.position.x + 1002
+      # z: 3254
+
+  # transform:
+  #   .type: Transform
+  #   .value: Transform
+  # localTransform:
+  #   .type: Transform
+  #   .value: Transform
+  #   position:
+  #     z: this.transform.position.x + 1.2
+
+RigidBody:
+  .extends: Node
+  foo:
+    .type: Scene.Node
+    .value: Scene.Node
+
+BoxPair:
+  .extends: Node
+  transform:
+    position:
+      x: 666
+      y: 34
+    rotation: EulerAngles.Degrees(90, 180, 360)
+  left:
+    .type: Node
+    transform:
+      position:
+        x: 1222
+        y: this.transform.position.y + 1.2
+        z: localTransform.position.z
+      rotation: EulerAngles(0.2, 1.2, 1.4)
+
+  rb:
+    .type: RigidBody
+    .value: RigidBody
+
+  center:
+    .type: Scene.Node
+    position: Vec3(2,4,5)
+    rotation: EulerAngles.Degrees(90, -90, -180)
+
+  testExpressionSubPathBinding:
+    .type: Real
+    .value: center.rotation.x
+
+  foo:
+    .type: Vec3
+    .value: left.transform.position
+
+  foo2:
+    .type: Vec3
+    .value: Vec3(1.0, 2.0, 3.0)
+
+  foo3:
+    .type: Vec3
+    .value: foo2
+
+  # foo4:
+  #   .type: Real
+  #   .value: foo3.length
+
+  foo5:
+    .type: Real
+    .value: Math.Sqrt(64)
+
+  foo6:
+    .type: Real
+    .value: Math.PI
+
+  foo7:
+    .type: Vec3
+    .value: Vec3.Y_Axis
+
+  # FooTemplate:
+  #   # .type: Model<Scene.Node>
+  #   .type: Model
+  #   .value: Node
+
+  # foo8:
+  #   .type: Scene.Node
+  #   .value: FooTemplate
+  #   transform:
+  #     position:
+  #       x: 10.0
+
+TestDefault:
+  .extends: Scene.Node
+
+  # Explicit constructor creates non-default value
+  position: Vec3()
+  localRotation:
+    x: 0.3
+
+  n1:
+    .type: Node
+    transform:
+      position:
+        y: 4
+
+TestDefault2:
+  .value: TestDefault
+
+  n1:
+    transform:
+      # Type template can be used to reset value to default
+      position: Vec3
+
+TestCircularEvaluation:
+
+  # Binding to self
+  # NOTE: This is detected during parsing
+  # TODO: Allow failing load for testing of parser
+  # foo:
+  #   .type: Real
+  #   .value: foo
+
+  # foo2:
+  #   .type: Real
+  #   .value: 1.0 + foo2
+
+  # Loop binding of compiled type
+  v:
+    .type: Vec3
+    x: y - 1.0
+    y: z + 1.0
+    z: x
+
+
+  # Loop binding
+  a:
+    .type: Real
+    .value: b - 1.0
+
+  b:
+    .type: Real
+    .value: c + 5.0
+
+  c:
+    .type: Real
+    .value: a * 40.0
+
+# TODO
+# TestUndefined:
+#   foo:
+#     .type: Real
+#     .value: undefined
+
+
+A1:
+  a1:
+    .type: Real
+    .value: 10
+  a2:
+    .type: Real
+    .value: a1
+
+A2:
+  .extends: A1
+  a3:
+    .type: Real
+    .value: -3
+
+  a1: a3 * 1000
+
+B1:
+  b1:
+    .type: A1
+    .value: A1
+
+  b2:
+    .type: A2
+    .value: A2
+
+  b3:
+    .type: A2
+    .value: A2
+    a1: b2.a1 * 3
+
+B2:
+  .extends: B1
+
+
+B3:
+  .extends: B2
+
+  # Mutate b2 which was skipped in B2
+  b2:
+    a1: 133

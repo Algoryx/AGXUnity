@@ -1,0 +1,14 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairInteraction]
+  Physics.Mechanics.AttachmentPairInteraction: [TranslationalMotorInteraction1D]
+
+SpringJointInteraction:
+  .extends: AttachmentPairInteraction
+  interactionType: Spring
+
+SpringJointMotorInteraction:
+  .extends: TranslationalMotorInteraction1D
+
+

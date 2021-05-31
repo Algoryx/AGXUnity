@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RotationFreeAttachment]
+
+HingeAttachment:
+  .extends: RotationFreeAttachment
+  .doc: >
+    Attachments that indicates the use of a Hinge constraint
+
+  connectType: Hinge

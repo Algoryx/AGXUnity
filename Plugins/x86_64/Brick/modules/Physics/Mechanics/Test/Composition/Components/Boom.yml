@@ -1,0 +1,93 @@
+# Definition of the Crane Part - Boom
+# attachment positions found from the Cad Model
+# which is exported to boom.obj and used as a visual
+# and mesh for collision
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, LockJointAttachment]
+  Physics.Materials: [Steel]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+  Physics.Geometry: [Cylinder,Box, Trimesh]
+
+
+Boom:
+  .extends: RigidBody
+  massProperties:
+    mass: 70
+    inertia: Vec3(1,0.7,0.5)
+  shape:
+    .type: Physics.Geometry.Trimesh
+    filepath: "boom.obj"
+    scale: 0.001
+    material: Steel
+
+  positionDriveRR:
+    .type: Vec3
+    .value: Vec3(0.64349, -0.03499, -0.06953)
+  positionDriveRL:
+    .type: Vec3
+    .value: Vec3(0.64349, 0.0199, -0.06953)
+  positionDriveR:
+    .type: Vec3
+    .value: (this.positionDriveRR + this.positionDriveRL)*0.5
+  positionDriveLR:
+    .type: Vec3
+    .value: Vec3(0.64349, 0.08715, -0.06953)
+  positionDriveLL:
+    .type: Vec3
+    .value: Vec3(0.64349, 0.14203, -0.06953)
+  positionDriveL:
+    .type: Vec3
+    .value: (this.positionDriveLR + this.positionDriveLL)*0.5
+
+  positionBoomL:
+    .type: Vec3
+    .value: Vec3(-0.081, 0.093, 0.03086) + Vec3(0,0.0,0)
+  positionBoomR:
+    .type: Vec3
+    .value: Vec3(-0.081, 0.093, 0.03086) + Vec3(0,-0.2,0)
+  positionBoom:
+    .type: Vec3
+    .value: (this.positionBoomR + this.positionBoomL)*0.5
+
+
+
+  holeDriveL:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveL
+  bearingDriveLR:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveLR
+  bearingDriveLL:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveLL
+  holeDriveR:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveR
+  bearingDriveRR:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveRR
+  bearingDriveRL:
+    .type: ConnectionAttachment
+    relPos: this.positionDriveRL
+
+  holeBoom:
+    .type: ConnectionAttachment
+    relPos: this.positionBoom
+  bearingBoomR:
+    .type: ConnectionAttachment
+    relPos: this.positionBoomR
+  bearingBoomL:
+    .type: ConnectionAttachment
+    relPos: this.positionBoomL
+  visual:
+    .type: Visual.File
+    filepath: boom.glb"
+    localTransform:
+      rotation: Quat.FromTo(Vec3.X_Axis, Vec3.Z_Axis)
+      position: Vec3(0, 0.05, 0)
+    scaling: Vec3(0.001,0.001,0.001)
+
+
+

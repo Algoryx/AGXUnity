@@ -1,0 +1,8 @@
+.format: 4
+.ignore: true
+
+Generator:
+  name:
+    .type: String
+  targetDirectory:
+    .type: String

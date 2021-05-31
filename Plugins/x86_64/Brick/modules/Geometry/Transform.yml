@@ -1,0 +1,66 @@
+.ignore: true
+.format: 4
+
+# Position/rotation should be pure interfaces, no data?
+
+Position:
+  # .extends: Math.Vec3
+  .extends: Vec3
+  .arrayPrimitive: True
+    # .value: Vec3()
+
+  .transformers:
+    - Vec3
+
+Rotation:
+  .extends: EulerAngles
+  .arrayPrimitive: True
+
+  .transformers:
+    - EulerAngles
+    - Quat
+    # - Transform # Ugh disabled due to circular
+
+  # Constructors by pattern matching kwargs
+  # .constructors:
+  #   FromTo:
+  #     doc: Relative rotation between two directions
+  #     parameters:
+  #       from: Vec3
+  #       to: Vec3
+
+  #   FromToAxis:
+  #     doc: >
+  #       Relative rotation between two directions given an axis to rotate around.
+  #       Both from and to must be orthogonal to axis and axis must be unit length.
+  #     parameters:
+  #       from: Vec3
+  #       to: Vec3
+  #       axis: Vec3
+
+  #   AngleAxis:
+  #     doc: Rotation around a single axis
+  #     parameters:
+  #       angle: Real
+  #       axis: Vec3
+
+Transform:
+  # These are also pure functional getters and not data?
+  position:
+    .type: Position
+    .value: Position()
+  rotation:
+    .type: Rotation
+    .value: Rotation()
+
+
+  .transformers:
+    - Rotation
+    - Position
+
+
+  # .constructors:
+  #   FromSequence:
+  #     doc: Construct a transformation by applying a list of partial transformations.
+  #     parameters:
+  #       sequence: List<Transform>

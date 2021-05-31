@@ -1,0 +1,22 @@
+.format: 4
+
+
+Model:
+  .extends: Scope
+  # .type: Namespace
+  .abstract: true
+  .doc: >
+    A model entity declaration. Data attributes, methods, etc. TODO: doc
+
+  # TODO: This should move to Node?
+  # Or be pure computed property, by iterating scope parents?
+  # module:
+  #   .type: Module
+  #   .doc: Module which the model is part of
+  #   .value: null
+
+  # origin:
+  #   .type: Model
+  #   .doc: Origin model, which this model is derived from
+  #   .value: null
+

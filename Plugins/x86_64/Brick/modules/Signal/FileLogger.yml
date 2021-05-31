@@ -1,0 +1,8 @@
+.format: 4
+
+FileLogger:
+  .doc: Log raw signals to file
+  filepath:
+    .type: String
+  signal:
+    .type: SignalBase

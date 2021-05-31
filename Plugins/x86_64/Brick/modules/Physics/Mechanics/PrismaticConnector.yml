@@ -1,0 +1,48 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairConnector, PrismaticAttachment, PrismaticInteraction]
+  Physics.Mechanics.AttachmentPairInteraction: [TranslationalLockInteraction1D,TranslationalMotorInteraction1D, TranslationalRangeMinMaxInteraction1D]
+
+PrismaticConnector:
+  .extends: AttachmentPairConnector
+
+  distance:
+    .type: Real
+    .doc: >
+      Distance in meters between the PrismaticAttachments.
+      If null, no distance is set, and the translational degree of freedom is still there.
+      If it is set, the prismatic connector sets all degrees of freedom.
+      Default value is zero, meaning the prismatic connector will be considered positioning all dofs.
+    .value: 0
+
+  distanceConstrainDof:
+    .doc: >
+      If true, the positioning algorithm will consider the distance to be constrained.
+      If false, the variable is set, but is still free to change during positioning.
+    .type: Bool
+    .value: true
+
+  translationalFrictionCoefficient:
+    .type: Real
+    .value: 0
+
+  frictionTranslational:
+    .type: Physics.Mechanics.AttachmentPairInteraction.TranslationalFrictionInteraction1D
+    coefficient: this.translationalFrictionCoefficient
+
+  mainInteraction:
+    .value: PrismaticInteraction
+
+  motor:
+    .type: TranslationalMotorInteraction1D
+    .value: null
+
+  range:
+    .type: TranslationalRangeMinMaxInteraction1D
+    .value: null
+  
+  lock:
+    .type: TranslationalLockInteraction1D
+    .value: null
+

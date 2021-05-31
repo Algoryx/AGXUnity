@@ -24,6 +24,7 @@ namespace AGXUnityEditor.BrickUnity
         return;
       }
 
+      BrickUtils.SetupBrickEnvironment();
       var brickFile = File.FromFilepath(filepath);
       if (brickFile is null)
       {

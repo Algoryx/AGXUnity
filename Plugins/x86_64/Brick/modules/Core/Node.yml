@@ -1,0 +1,27 @@
+.format: 4
+
+Node:
+  .doc: Base node in brick AST
+  .abstract: true
+
+  name:
+    .doc: Name of the node
+    .type: Name
+    # .userImplementations: [Cs]
+
+  doc:
+    .doc: Documentation of the api node
+    .type: String
+    .value: ''
+
+  # path:
+  #   .doc: Path of the node
+  #   .type: Path
+  #   .value: null
+  #   # .calculated: True
+
+  scope:
+    .doc: Parent scope where the node is located
+    # .type: Ref<Scope>
+    .type: Node
+    .value: null

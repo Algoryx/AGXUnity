@@ -1,0 +1,9 @@
+.format: 4
+.ignore: true
+
+ArrayPrimitive:
+  .doc: Packed sequential array of elements
+  .generic:
+    T: Model
+    Dim1T: Int
+    Dim2T: Int(1)

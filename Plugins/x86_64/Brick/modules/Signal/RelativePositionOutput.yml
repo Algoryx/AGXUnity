@@ -1,0 +1,9 @@
+.format: 4
+
+RelativePositionOutput:
+  .extends: Signal.Output<Vec3>
+  .doc: Outputs the position of a node as a Vec3, in the reference node's coordinate system
+  node:
+    .type: Scene.Node
+  referenceNode:
+    .type: Scene.Node

@@ -1,0 +1,17 @@
+.format: 4
+.ignore: true
+
+# NOTE: Should be Module, not ModuleConfig, once core is stable enough to include self-generated models
+ModuleConfig:
+  name:
+    .type: String
+  # generators: Map<String, Generator>
+  generators:
+    .type: List<Generator>
+
+# ---
+
+#   Model:
+#     name: GraphQLSchema
+#     parent: Generator
+#     attributes: {}

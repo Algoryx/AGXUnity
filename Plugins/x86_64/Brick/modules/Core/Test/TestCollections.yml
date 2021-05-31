@@ -1,0 +1,51 @@
+.format: 4
+.ignore: true
+.strict: false
+
+# TestCollections:
+#   list:
+#     .type: List
+#     .value: List()
+#   map:
+#     .type: Map
+#     .value: Map()
+#   set:
+#     .type: Set
+#     .value: Set()
+
+
+ListOwner:
+  members:
+    .type: List<Real>
+    .value: []
+
+
+TestList:
+  .value: Unittest
+
+  l1:
+    .value: ListOwner
+
+  l2:
+    .value: ListOwner
+    members:
+      - 1
+      - 12
+      - -2
+
+
+  testDefaultEmptyList:
+    .value: Assertion.Equal
+    lhs: l1.members
+    rhs: []
+
+
+  # testListMembers:
+  #   .value: Assertion.Equal
+  #   lhs: l2.members.length
+  #   rhs: 3
+
+  # testListMembers2:
+  #   .value: Assertion.Equal
+  #   lhs: l2.members
+  #   rhs: [1, 12, -2]

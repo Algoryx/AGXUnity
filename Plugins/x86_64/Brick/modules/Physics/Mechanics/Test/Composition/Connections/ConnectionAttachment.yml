@@ -1,0 +1,17 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [CylindricalAttachment]
+
+# Defines an attachment oriented in the standard way for the Crane
+ConnectionAttachment:
+  .extends: CylindricalAttachment
+  relPos:
+    .type: Vec3
+    .value: Vec3(0,0,0)
+
+  relRot:
+    .type: Quat
+    .value: Quat.FromTo(Vec3(0,0,1), Vec3(0,1,0))
+  localRotation: this.relRot
+  localPosition: this.relPos

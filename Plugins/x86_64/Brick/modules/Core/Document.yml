@@ -1,0 +1,13 @@
+.format: 4
+
+Document:
+  .extends: ScannableNamespace
+  .doc: >
+    A document is a collection of declarations (think same scope as a file)
+
+  # models:
+  #   .type: List<Model>
+  #   # .computed: true
+  #   # TODO: These collections should be automatically generated?
+  #   # .userImplementations: [Cs]
+

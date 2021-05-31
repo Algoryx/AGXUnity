@@ -1,0 +1,89 @@
+# Definition of the Crane Part - Column
+# attachment positions found from the Cad Model
+# which is exported to column.obj and used as a visual
+# and mesh for collision
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, LockJointAttachment]
+  Physics.Materials: [Steel]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+  Physics.Geometry: [Cylinder,Box, Trimesh]
+
+Column:
+  .extends: RigidBody
+  massProperties:
+    mass: 150
+    inertia: Vec3(3,2,1)
+    localPosition: Vec3(0,0,0)
+  shape:
+    .type: Trimesh
+    filepath: "column.obj"
+    scale: 0.001
+    material: Steel
+
+  positionGround:
+    .type: Vec3
+    .value: Vec3(0.10882, 0.265, 0.8499) + Vec3(0,0.05,0)
+
+  guideZPos:
+    .type: Real
+    .value: 1.63119
+  positionGuideBearingRR:
+    .type: Vec3
+    .value: Vec3(0.18022, 0.18, this.guideZPos)
+  positionGuideBearingRL:
+    .type: Vec3
+    .value: Vec3(0.18022, 0.23866, this.guideZPos)
+  positionGuideR:
+    .type: Vec3
+    .value: (this.positionGuideBearingRL + this.positionGuideBearingRR)*0.5
+
+  positionGuideBearingLR:
+    .type: Vec3
+    .value: Vec3(0.18022, 0.3956, this.guideZPos)
+  positionGuideBearingLL:
+    .type: Vec3
+    .value: Vec3(0.18022, 0.45426,this.guideZPos)
+  positionGuideL:
+    .type: Vec3
+    .value: (this.positionGuideBearingLL + this.positionGuideBearingLR)*0.5
+
+  positionBoom:
+    .type: Vec3
+    .value: Vec3(-0.0925, 0.35, 1.89959) + Vec3(0,-0.05,0) # first value from CAD
+
+  parentAttachment:
+    .type: LockJointAttachment
+    .value: LockJointAttachment
+
+
+  holeGround:
+    .type: ConnectionAttachment
+    relPos: this.positionGround
+
+  holeGuideR:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideR
+  bearingGuideRR:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideBearingRR
+  bearingGuideRL:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideBearingRL
+
+  holeGuideL:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideL
+  bearingGuideLR:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideBearingLR
+  bearingGuideLL:
+    .type: ConnectionAttachment
+    relPos: this.positionGuideBearingLL
+
+  holeBoom:
+    .type: ConnectionAttachment
+    relPos: this.positionBoom
+    relRot: Quat.FromTo(Vec3(0,0,1), Vec3(0,1,0))
+

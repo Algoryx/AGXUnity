@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment]
+
+SpringJointAttachment:
+  .extends: RigidBodyAttachment
+  .doc: >
+    Attachments that indicates the use of a distance (Spring) constraint
+
+  connectType: Spring

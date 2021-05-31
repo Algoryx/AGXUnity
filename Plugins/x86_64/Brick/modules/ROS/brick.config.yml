@@ -1,0 +1,28 @@
+ModuleConfig:
+  name: ROS
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+    Scene:
+      filepath: ../Scene
+    Signal:
+      filepath: ../Signal
+
+  generators:
+    Python:
+      # targetDirectory: python
+      enable: true
+      useGrpc: true
+
+    Cs:
+      useGrpc: false
+      enable: true
+
+    Grpc:
+      enable: true
+      csNamespace: Brick.ROS.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/ROS # TODO!

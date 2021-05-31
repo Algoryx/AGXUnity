@@ -1,0 +1,73 @@
+.format: 4
+
+Engine:
+  .doc: Brick runtime engine
+
+  host:
+    .doc: Engine server hostname
+    .type: String
+
+  port:
+    .doc: Engine server port
+    .type: Int
+    .value: 8282
+
+  Ping:
+    .kind: Method
+    .static: true
+    .doc: Ping-Pong
+
+  Shutdown:
+    .kind: Method
+    .static: true
+    .doc: Shut down engine
+
+  GetWorkingDirectory:
+    .kind: Method
+    .static: true
+    .doc: Get working directory
+    .return: String
+
+  SetWorkingDirectory:
+    .kind: Method
+    .static: true
+    .doc: Set working directory
+    path:
+      .type: String
+
+
+  # TODO: Where to put this...
+  Reload:
+    .kind: Method
+    .doc: Reload the current root scene
+
+  Load:
+    .kind: Method
+    .doc: Load a specified root scene
+    model:
+      .type: Model
+
+  SimulationPlay:
+    .kind: Method
+    .doc: Play simulation
+
+  SimulationPause:
+    .kind: Method
+    .doc: Pause simulation
+
+  SimulationTogglePlay:
+    .kind: Method
+    .doc: Play simulation
+
+  SetActiveCamera:
+    .kind: Method
+    .doc: Activate a specified camera
+    camera:
+      # .type: Camera # Ugh, wrong module...
+      .type: Any
+
+  CycleNextCamera:
+    .kind: Method
+
+  CyclePrevCamera:
+    .kind: Method

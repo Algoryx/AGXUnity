@@ -1,0 +1,7 @@
+.format: 4
+
+TransformRelativeConnector:
+  .extends: Physics.Mechanics.AttachmentPairConnector
+
+  relativeValue:
+    .type: Real

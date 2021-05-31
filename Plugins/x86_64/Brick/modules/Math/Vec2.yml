@@ -1,0 +1,13 @@
+.format: 4
+
+Vec2:
+  # .nativeType: true
+  # .arrayPrimitive: true
+  x:
+    .type: Real
+    .value: 0
+  y:
+    .type: Real
+    .value: 0
+
+# TODO: Add math methods (Add, Sub, etc)

@@ -1,0 +1,4 @@
+.format: 4
+
+TranslateRelativeConnector:
+  .extends: Physics.Mechanics.TransformRelativeConnector

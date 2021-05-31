@@ -1,0 +1,34 @@
+ModuleConfig:
+  name: Physics
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  # NOTE: Needs fix for scanning partially built modules, eg when loading `Physics.Mechanics.Test.Crane`
+  # files.exclude:
+  #   - "**/Test"
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+    Scene:
+      filepath: ../Scene
+    Geometry:
+      filepath: ../Geometry
+
+  generators:
+    Python:
+      # targetDirectory: python
+      enable: true
+      useGrpc: true
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+
+    Grpc:
+      # enable: false
+      csNamespace: Brick.Physics.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Physics # TODO!
+

@@ -1,0 +1,6 @@
+.format: 4
+
+Set:
+  .doc: Set collection type
+  .genericParameters:
+    - T: Type

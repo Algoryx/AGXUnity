@@ -1,0 +1,19 @@
+.format: 4
+
+.import:
+  Physics: [Interaction]
+  Physics.DriveTrain: [GearAttachment]
+
+TorqueConverterInteraction:
+  .extends: Interaction
+
+  inputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  outputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  interactionType: TorqueConverter
+  

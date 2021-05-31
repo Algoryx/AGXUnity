@@ -1,0 +1,127 @@
+.format: 4
+
+.import:
+  Physics: [Interaction]
+  Physics.Mechanics.InteractionData6D: [Stiffness6D, Damping6D]
+
+AttachmentPairInteraction:
+  .extends: Interaction
+
+  damping6D:
+    .type: Damping6D
+    .value: Damping6D
+    defaultValue: this.damping
+
+  stiffness6D:
+    .type: Stiffness6D
+    .value: Stiffness6D
+    defaultValue: this.stiffness
+
+  # frame1:
+  #   .type: Geometry.Frame
+
+  # frame2:
+  #   .type: Geometry.Frame
+
+Interaction1D:
+  .doc: Describes an interaction constraining one degree of freedom
+  .extends: Interaction
+  constrainDof:
+    .type: Bool
+    .value: false
+
+  minForce:
+    .type: Real
+    .value: -.inf
+    .doc: >
+          the smallest possible force (torque if it is a rotational dof)
+          this interaction can produce. If not set, it is considered negative infinity.
+  maxForce:
+    .type: Real
+    .value: .inf
+    .doc: >
+          the largest possible force (torque if it is a rotational dof)
+          this interaction can produce. If not set, it is considered infinity.
+
+MotorInteraction1D:
+  .doc: Describes a motor interaction constraining one degree of freedom
+  .extends: Interaction1D
+  lockAtZeroSpeed:
+    .type: Bool
+    .value: false
+
+  speed:
+    .type: Real
+    .value: 0
+
+
+LockInteraction1D:
+  .doc: Describes a motor interaction constraining one degree of freedom
+  .extends: Interaction1D
+
+  position:
+    .doc: Reference position relative connector angle/distance
+    .type: Real
+    .value: 0.0
+
+RangeMinMaxInteraction1D:
+  .doc: Describes a range for where the DOF is free
+  .extends: Interaction1D
+  minValue:
+    .type: Real
+    .value: 0
+  maxValue:
+    .type: Real
+    .value: 0
+
+RotationalRangeMinMaxInteraction1D:
+  .extends: RangeMinMaxInteraction1D
+  interactionType: RotationalRange
+
+TranslationalRangeMinMaxInteraction1D:
+  .extends: RangeMinMaxInteraction1D
+  interactionType: TranslationalRange
+
+RotationalMotorInteraction1D:
+  .extends: MotorInteraction1D
+  interactionType: RotationalMotor
+
+AngleRotationalMotorInteraction1D:
+  .extends: RotationalMotorInteraction1D
+  .doc: A motor that moves to a desired angle with a constant speed.
+  maxSpeed:
+    .doc: Maximum allowed speed, in degrees/second
+    .type: Real
+    .value: 1
+
+TranslationalMotorInteraction1D:
+  .extends: MotorInteraction1D
+  interactionType: TranslationalMotor
+
+
+RelativeDistanceInteraction1D:
+  .extends: Interaction1D
+  interactionType: RelativeDistance
+
+TranslationalLockInteraction1D:
+  .extends: LockInteraction1D
+  interactionType: TranslationalLock
+
+RotationalLockInteraction1D:
+  .extends: LockInteraction1D
+  interactionType: TranslationalLock
+
+FrictionInteraction1D:
+  .doc: Describes a friction interaction constraining one degree of freedom
+  .extends: Interaction1D
+  coefficient:
+    .type: Real
+    .value: 0
+
+RotationalFrictionInteraction1D:
+  .doc: Describes a friction interaction constraining one degree of freedom
+  .extends: FrictionInteraction1D
+
+TranslationalFrictionInteraction1D:
+  .doc: Describes a friction interaction constraining one degree of freedom
+  .extends: FrictionInteraction1D

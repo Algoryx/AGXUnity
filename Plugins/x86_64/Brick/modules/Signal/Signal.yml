@@ -1,0 +1,7 @@
+.format: 4
+
+Signal:
+  .extends: SignalBase
+  .abstract: true
+  .genericParameters:
+    - T: Type

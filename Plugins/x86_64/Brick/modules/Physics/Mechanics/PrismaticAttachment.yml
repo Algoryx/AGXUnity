@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment]
+
+PrismaticAttachment:
+  .extends: RigidBodyAttachment
+  .doc: >
+    Attachments that indicates the use of a Prismatic constraint
+
+  connectType: Prismatic

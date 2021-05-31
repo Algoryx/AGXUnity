@@ -1,0 +1,10 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [RotatingBody1D]
+
+RotatingBodyRPMOutput:
+  .extends: Signal.Output<Real>
+  .doc: Gets the RPM of a rotating body in a drivetrain.
+  rotatingBody:
+    .type: RotatingBody1D

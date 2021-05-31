@@ -1,0 +1,10 @@
+.format: 4
+
+Name:
+  .doc: |
+    String with some constraints.
+    Used as components in Path.
+    TODO: Document constraints.
+
+  .transformers:
+    - String

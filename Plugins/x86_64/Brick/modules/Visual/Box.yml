@@ -1,0 +1,6 @@
+.format: 4
+
+Box:
+  .extends: Visual.Shape
+  lengths:
+    .type: Vec3

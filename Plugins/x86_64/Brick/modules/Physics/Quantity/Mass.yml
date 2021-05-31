@@ -1,0 +1,12 @@
+.ignore: true
+.format: 4
+
+Mass:
+  .extends: Physics.Quantity
+  dimension: M
+  symbol: m
+  SI_unit: Physics.Unit.Kilogram
+  units:
+    - Physics.Unit.Kilogram
+    # - Physics.Unit.Imperial.Pound
+

@@ -1,0 +1,17 @@
+.format: 4
+
+Quantity:
+  .doc: Physical quantity definition
+
+  name:
+    .type: String
+  symbol:
+    .type: String
+  # quantityDimension: Scalar/Vector/Tensor?
+  SI_unit:
+    .type: Physics.Unit
+  units:
+    .type: List<Physics.Unit>
+  dimension:
+    .type: String
+

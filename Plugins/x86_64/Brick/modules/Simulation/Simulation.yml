@@ -1,0 +1,90 @@
+.format: 4
+
+Simulation:
+  .doc: Simulation of a virtual world. Can contain both physics system, rendering system, etc.
+
+  scene:
+    .doc: Root scene component.
+    .type: Physics.Component
+
+  timestep:
+    .doc: Simulation timestep.
+    .type: Real
+    .value: 1.0 / 60
+
+  realtimeThrottle:
+    .doc: Enable throttling to realtime.
+    .type: Bool
+    .value: false
+
+  playbackSpeed:
+    .doc: >
+      Playback speed multiplier. Only used when realtimeThrottle is enabled.
+    .type: Real
+    .value: 1.0
+
+  relaxationDuration:
+    .doc: >
+      Apply relaxation before starting the actual simulation. The relaxation period means
+      - No realtime throttling
+      - No simulation data recording
+      - Relaxation is applied before entering the paused state, if startPaused is enabled.
+    .type: Real
+    .value: 0.0
+
+  duration:
+    .doc: The duration of the simulation, after reaching the relaxed initial state.
+    .type: Real
+    .value: .Inf
+
+  startPaused:
+    .doc: Specify if the simulation should start in a paused state.
+    .type: Bool
+    .value: false
+
+  numThreads:
+    .doc: Number of threads to allocate for simulation, 0 means automatic thread allocation.
+    .type: Int
+    .value: 1
+
+
+  # AGX Specific stuff. TODO: Move to AGX namespace
+  agxViewerCliArguments:
+    .doc: List of command line arguments to pass to `agxViewer` C++ implementation
+    .type: List<String>
+    .value: []
+
+  rcs:
+    .type: RemoteCommandServer
+    .value: RemoteCommandServer
+
+  interactiveRemoteClient:
+    .doc: This will setup timeout for initial remote client connection, after which the simulation is terminated if no connection is received
+    .type: Bool
+    .value: false
+
+  osgViewer:
+    .type: Bool
+    .value: false
+
+RemoteCommandServer:
+  enable:
+    .doc: Specifies if the remote command server is enabled.
+    .type: Bool
+    .value: true
+
+  port:
+    .doc: The port to listen for connections, 0 means automatic port configuration.
+    .type: Int
+    # .value: 5656
+    .value: 0
+
+  allowExternal:
+    .doc: Allow non-localhost connections.
+    .type: Bool
+    .value: false
+
+  authToken:
+    .doc: Authentication token required for connection.
+    .type: String
+    .value: null

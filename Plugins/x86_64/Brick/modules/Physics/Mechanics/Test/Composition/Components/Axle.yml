@@ -1,0 +1,26 @@
+# Definition of an Axle used for Axle Connections
+# defines an Attachment, for connecting parts
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody]
+  Physics.Materials: [Steel]
+  Physics.Geometry: [Cylinder]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+
+
+Axle:
+  .extends: RigidBody
+  length:
+    .type: Real
+
+  attachment:
+    .type: ConnectionAttachment
+    relRot: Quat.FromTo(Vec3(0,0,1), Vec3(0,1,0))
+
+  shape:
+    .type: Cylinder
+    radius: 0.025
+    length: this.length
+    enableCollisions: False
+    material: Steel

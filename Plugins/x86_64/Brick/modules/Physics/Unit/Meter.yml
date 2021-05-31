@@ -1,0 +1,6 @@
+.format: 4
+.ignore: true
+
+Meter:
+  .extends: Physics.Unit
+  symbol: m

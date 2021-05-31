@@ -1,0 +1,149 @@
+# This example shows how it is possible to use the machine learning module to make it easier to
+# set up a machine learning environment. This example specifically shows how to set up a
+# reinforcement learning agent in Brick.
+
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, HingeAttachment, HingeConnector, PrismaticAttachment]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D, TranslationalMotorInteraction1D]
+
+# We will create two, rigid bodies, one box and one cylinder, to set up the classical cartpole-example
+# The goal should be to learn to balance the pole by moving the cart it is connected to
+Box:
+  .extends: RigidBody
+  shape:
+    .type: Physics.Geometry.Box
+    lengths: Math.Vec3(0.4, 0.4, 0.2)
+  
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(0, 0.0, this.shape.lengths.z)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(0, 1, 0))
+    
+  worldAttachment:
+    .type: PrismaticAttachment
+    localTransform:
+      position: Vec3(0, 0.0, 0)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+
+Pole:
+  .extends: RigidBody
+  shape:
+    .type: Physics.Geometry.Cylinder
+    length: 0.8
+    radius: 0.04
+  
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(0, this.shape.length / 2, 0)
+
+Cartpole:
+  .extends: Physics.Component
+  # We set wantInternalPositioning to true to let the bodies position themselves
+  wantInternalPositioning: true
+  logPositioningResults: true
+
+  cart:
+    .type: Box
+    .value: Box
+
+  pole:
+    .type: Pole
+    .value: Pole
+  
+  # Disable collisions between cart and pole, since they are not necessary
+  disabledCollisionGroup:
+    .type: Physics.CollisionGroup
+    members:
+      - this.cart
+      - this.pole
+
+  collisionGroupPair:
+    .type: Physics.CollisionGroup.CollisionGroupPair
+    group1: disabledCollisionGroup
+    group2: disabledCollisionGroup
+
+  # Connect pole to cart with a hinge connector.
+  connector:
+    .type: HingeConnector
+    attachment1: this.cart.attachment
+    attachment2: this.pole.attachment
+    angle: 0
+    # We use to motor to collect angle information, so make sure it does not apply torque
+    motor:
+      .type: RotationalMotorInteraction1D
+      maxForce: 0
+      minForce: -0
+      speed: 0.0
+
+  worldAttachment:
+    .type: PrismaticAttachment
+    localTransform:
+      position: Vec3(0, 0.0, 0)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+
+  # Connect the cart to the world with a prismatic connector
+  worldConnector:
+    .type: Physics.Mechanics.PrismaticConnector
+    attachment1: this.cart.worldAttachment
+    attachment2: this.worldAttachment
+    distance: 0
+    # This motor will be used to control move the cart
+    motor: 
+      .type: TranslationalMotorInteraction1D
+      maxForce: 100
+      minForce: -100
+      speed: 0.0
+
+  # To collect observations for the agent, signals are needed. In this case, the angle
+  # of the pole and the position and velocity of the cart are used for the observations.
+  poleAngleSignal:
+    .type: Signal.MotorAngleOutput
+    motor: this.connector.motor
+
+  cartPositionSignal:
+    .type: Signal.MotorAngleOutput
+    motor: this.worldConnector.motor
+
+  cartMotorVelSignal:
+    .type: Signal.MotorVelocityInput
+    motor: this.worldConnector.motor
+
+  # We set up the observations. Normalizing the values will make the learning a bit easier.
+  # The max and min value are used in the normalization, meaning -20 will be 0 and 20 will
+  # be 1, when angle value is normalized.
+  angleObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: poleAngleSignal
+    normalize: true
+    maxValue: 20
+    minValue: -20
+
+  positionObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: cartPositionSignal
+    normalize: true
+    maxValue: 0.5
+    minValue: -0.5
+
+  # We also need to set up a signal to be able to set an action. The action will be the 
+  # velocity of the cart, limited by a max and min value.
+  velAction:
+    .type: MachineLearning.RLAgent.ContinuousAction
+    signal: cartMotorVelSignal
+    maxValue: 2
+    minValue: -2
+
+  # Lastly we can set up the RLAgent. maxSteps decides how long the maximum length of the 
+  # episode should be.
+  agent:
+    .type: MachineLearning.RLAgent
+    observations:
+      - poleAngleSignal
+      - cartPositionSignal
+    actions:
+      - velAction
+    maxSteps: 200

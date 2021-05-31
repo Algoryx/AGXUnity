@@ -1,0 +1,38 @@
+.format: 4
+
+BatchVariable:
+  .doc: >
+        The Batch Variable allow declaration of a parameter space
+        for a Real value. The parameter, when updated will iterate
+        between the 'numStep' different values the parameter can have.
+        The initial value is the 'default' value. For each update the
+        .Current() value (accessible from the runtime application)
+        will increase by 'step'.
+        A Physics.Component will iterate over all of its BatchVariables,
+        and update one of them when:
+        Physics.Component.UpdateBatchConfiguration() is called.
+        Physics.Component.GetNumBatchConfigurations() will tell the running
+        application how many different parameter configurations there are.
+
+  name:
+    .type: String
+
+  default:
+    .doc: Initial value
+    .type: Real
+
+  step:
+    .doc: Step length for each update
+    .type: Real
+
+  numStep:
+    .doc: Defines the number of discretizations this parameter has
+    .type: Int
+
+  target:
+    .doc: Path to variable to vary
+    .type: Path
+
+  model:
+    .doc: The Component for which the target is relative
+    .type: Physics.Component

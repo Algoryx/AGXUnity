@@ -1,0 +1,13 @@
+.ignore: true
+.format: 4
+
+Length:
+  .extends: Physics.Quantity
+  dimension: L
+  symbol: l
+  SI_unit: Physics.Unit.Meter
+  units:
+    - Physics.Unit.Meter
+    - Physics.Unit.Foot
+    - Physics.Unit.Inch
+

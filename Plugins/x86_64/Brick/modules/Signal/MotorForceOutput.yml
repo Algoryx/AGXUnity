@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.AttachmentPairInteraction: [MotorInteraction1D]
+
+MotorForceOutput:
+  .extends: Signal.Output<Real>
+  .doc: Outputs the current force or torque of a motor. The unit is N for linear motors
+    and Nm for rotational ones
+  motor:
+    .type: MotorInteraction1D

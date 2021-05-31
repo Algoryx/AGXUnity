@@ -1,0 +1,67 @@
+.format: 4
+
+RLAction:
+  signal:
+    .type: Signal.SignalBase
+
+ContinuousAction:
+  .doc: Action with a continuous value between maxValue and minValue
+  .extends: RLAction
+  maxValue:
+    .type: Real
+    .value: 1
+
+  minValue:
+    .type: Real
+    .value: -1
+
+DiscreteAction:
+  .doc: Action can only be one of the values listed
+  .extends: RLAction
+  values:
+    .type: List<Real>
+    .value: []
+
+
+Observation:
+  .doc: Observation signal
+  signal:
+    .type: Signal.SignalBase
+  maxValue:
+    .type: Real
+  minValue:
+    .type: Real
+  normalize:
+    .doc: Normalize signal using max and min values, quaternions will not be normalized
+    .type: Bool
+    .value: false
+  clamp:
+    .doc: Clamp signal value using max and min values, quaternions will not be clamped
+
+    .type: Bool
+    .value: false
+
+
+
+RLAgent:
+  .doc: An agent in a reinforcement learning environment
+
+  observations:
+    .type: List<Observation>
+    .value: []
+
+  actions:
+    .type: List<RLAction>
+    .value: []
+
+  stackedObservations:
+    .doc: Value decides how many previous time steps are included in observations. 1 means only current time step is used.
+    .type: Int
+    .value: 1
+
+  maxSteps:
+    .doc: Maximum steps the agent will take per episode.
+    .type: Int
+    .value: 0
+
+

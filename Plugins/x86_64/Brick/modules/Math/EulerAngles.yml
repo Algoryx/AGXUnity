@@ -1,0 +1,44 @@
+.format: 4
+
+EulerAngles:
+  # parent: Vec3
+  .arrayPrimitive: true
+  # .nativeType: true
+  .customData: true
+
+  x:
+    .type: Real
+    .value: 0
+  y:
+    .type: Real
+    .value: 0
+  z:
+    .type: Real
+    .value: 0
+
+  .transformers:
+    - Quat
+
+  Degrees:
+    .kind: Method
+    .static: true
+    .doc: Create using degrees
+    x:
+      .type: Real
+    y:
+      .type: Real
+    z:
+      .type: Real
+    .return: EulerAngles
+
+  Radians:
+    .kind: Method
+    .static: true
+    .doc: Create using radians
+    x:
+      .type: Real
+    y:
+      .type: Real
+    z:
+      .type: Real
+    .return: EulerAngles

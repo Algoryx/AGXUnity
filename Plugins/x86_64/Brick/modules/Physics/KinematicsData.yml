@@ -1,0 +1,32 @@
+.format: 4
+# Named KinematicsData and not Kinematics since the brick parser will fail
+# due to MotionControl.Kinematics enum
+KinematicsData:
+  dimension:
+    .type: Int
+
+  linearPosition:
+    .type: Vec3
+  linearVelocity:
+    .type: Vec3
+  angularPosition:
+    .type: Quat
+  angularVelocity:
+    .type: Vec3
+
+Kinematics1D:
+  .extends: KinematicsData
+  dimension: 1
+  linearPosition: Vec3(0,0,0)
+  linearVelocity: Vec3(0,0,0)
+  angularPosition: Quat()
+  angularVelocity: Vec3(0,0,0)
+
+Kinematics3D:
+  .extends: KinematicsData
+  dimension: 3
+
+  linearPosition: Vec3(0,0,0)
+  linearVelocity: Vec3(0,0,0)
+  angularPosition: Quat()
+  angularVelocity: Vec3(0,0,0)

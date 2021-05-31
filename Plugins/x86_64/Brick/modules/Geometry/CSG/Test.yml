@@ -1,0 +1,21 @@
+.format: 4
+.ignore: true
+
+Cross:
+  CSG.Union:
+    lhs: Cylinder-X
+    rhs:
+      CSG.Union:
+        lhs: Cylinder-Y
+        rhs: Cylinder-Z
+
+Body:
+  CSG.Intersection:
+    lhs: Sphere
+    rhs: Box
+
+Final:
+  CSG.Difference:
+    lhs: Body
+    rhs: Cross
+

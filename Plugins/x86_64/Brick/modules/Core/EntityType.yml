@@ -1,0 +1,15 @@
+.format: 4
+
+EntityType:
+  .extends: Type
+
+  localAttributes:
+    .type: Map<String, Attribute>
+    .doc: List of model attributes
+    .value: {}
+
+  # .methods:
+  #   addAttribute:
+  #     doc: Add an attribute to the model
+  #     parameters:
+  #       attribute: Attribute

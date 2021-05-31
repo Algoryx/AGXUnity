@@ -1,0 +1,85 @@
+.format: 4
+.strict: false
+
+TestArithmetic:
+  .value: Unittest
+
+  testPositiveInf:
+    .value: Assertion.Equal
+    lhs: .inf
+    rhs: 1.0/0
+
+  testNegativeInf:
+    .value: Assertion.Equal
+    lhs: -.inf
+    rhs: -1.0/0
+
+  testSmall:
+    .value: Assertion.Equal
+    lhs: "0.001"
+    rhs: 0.001
+
+  testSmallNegative:
+    .value: Assertion.Equal
+    lhs: "-0.001"
+    rhs: -0.001
+
+  testExponent:
+    .value: Assertion.Equal
+    lhs: "1.2e-3"
+    rhs: 1.2e-3
+
+  testAdd:
+    .value: Assertion.Equal
+    lhs: 2 + 3
+    rhs: 5
+
+  testSub:
+    .value: Assertion.Equal
+    lhs: 2 - 3
+    rhs: -1
+
+  testMul:
+    .value: Assertion.Equal
+    lhs: 2 * 3
+    rhs: 6
+
+  testDiv:
+    .value: Assertion.Equal
+    lhs: 10 / 5
+    rhs: 2
+
+  testNeg:
+    .value: Assertion.Equal
+    lhs: -(1+1)
+    rhs: -2
+
+  testOperatorPrecedence1:
+    .value: Assertion.Equal
+    lhs: 2 * 3 + 9 / 3 - 1
+    rhs: 8
+
+  testOperatorPrecedence2:
+    .value: Assertion.Equal
+    lhs: 2 * ((3 + 9) / 3 - 1)
+    rhs: 6
+
+  testWhiteSpace1:
+    .value: Assertion.Equal
+    lhs: 2  *  (  (  3  +  9  )  /  3  -  1  )
+    rhs: testOperatorPrecedence2.lhs
+
+  testWhiteSpace2:
+    .value: Assertion.Equal
+    lhs: 2*((3+9)/3-1)
+    rhs: testOperatorPrecedence2.lhs
+
+  # testStringLiteral:
+  #   .value: Assertion.Equal
+  #   lhs:  '"hello"'
+  #   rhs: hello
+
+  # TODO: Fix comparson operators
+  # testComparison:
+  #   .value: Assertion.True
+  #   value: 2 == 2

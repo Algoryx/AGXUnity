@@ -1,0 +1,359 @@
+.format: 4
+
+.import:
+- Physics.Geometry
+- Physics.Component
+- Scene.Transform
+- Physics.Geometry: [Cylinder, Box, Sphere]
+- Physics.Mechanics:
+  - RigidBody
+  - HingeAttachment
+  - CylindricalAttachment
+  - PrismaticAttachment
+  - LockJointAttachment
+  - RigidBodyAttachment
+  - SpringJointConnector
+  - BallJointConnector
+  - LockJointConnector
+  - HingeConnector
+  - CylindricalConnector
+  - PrismaticConnector
+  - DegreeOfFreedom.NoDegreeOfFreedomRelativeParent
+
+Link:
+  .extends: RigidBody
+  length:
+    .type: Real
+    .value: 0.3
+  shape:
+    .type: Box
+    lengths: Vec3(0.1,0.1,this.length)
+
+  input:
+    .type: CylindricalAttachment
+    localTransform:
+      position: Vec3(0,0,-this.length*0.6)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(0,0,1))
+
+  prismatic:
+    .type: PrismaticAttachment
+    .value: PrismaticAttachment
+    localTransform:
+      rotation: Quat.TryFromToZXPair(Vec3(1,0,0), Vec3(0,0,1))
+
+
+  output:
+    .type: CylindricalAttachment
+    localTransform:
+      position: Vec3(0,0,this.length*0.6)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(0,0,1))
+
+LinkInWorld:
+  .extends: Component
+  wantInternalPositioning: true
+  link:
+    .type: Link
+    .value: Link
+
+  worldAttachment:
+    .type: CylindricalAttachment
+    localTransform:
+      position: Vec3(1,1,1)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(1,0,0))
+
+
+  worldConnector:
+    .type: CylindricalConnector
+    attachment1: this.link.input
+    attachment2: this.worldAttachment
+    angle: 40
+
+LockedBallPendulum:
+  .extends: Physics.Component
+
+  worldAttachment:
+    .type: LockJointAttachment
+    localTransform:
+      position: Vec3(1,1,1)
+
+  link1:
+    .type: Link
+    .value: Link
+
+  link2:
+    .type: Link
+    .value: Link
+
+  lockConnector:
+    .type: LockJointConnector
+    attachment1: this.worldAttachment
+    attachment2: this.link1.input
+
+  ballConnector:
+    .type: BallJointConnector
+    attachment1: this.link1.output
+    attachment2: this.link2.input
+
+  springConnector:
+    .type: SpringJointConnector
+    mainInteraction:
+      stiffness: 1E3
+    attachment1: this.link1.prismatic
+    attachment2: this.link2.prismatic
+
+DoublePendulum:
+  .extends: LinkInWorld
+
+  wp:
+    .type: Vec3
+    .value: Vec3(1,1,1)
+
+  worldAttachment:
+    localTransform:
+      position: this.wp
+
+  link:
+    input:
+      name: AttachmentRelativeWorld
+
+  link2:
+    .type: Link
+    .value: Link
+
+  connector12:
+    .type: CylindricalConnector
+    angle: 20
+    attachment1: this.link.output
+    attachment2: this.link2.input
+
+DoublePendulum2:
+  .extends: Component
+
+  worldAttachment:
+    .type: CylindricalAttachment
+    localTransform:
+      position: Vec3(1,1,1)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(-1,0,0))
+
+  worldConnector:
+    .type: CylindricalConnector
+    attachment1: this.link1.input
+    attachment2: this.worldAttachment
+    angle: 40
+
+  link1:
+    .type: Link
+    output:
+      localTransform:
+        position: Vec3(0.1,0.1,1*this.link1.length)
+
+  link2:
+    .type: Link
+    input:
+      localTransform:
+        position: Vec3(0.1,0.1,-1*this.link2.length)
+
+  connector12:
+    .type: CylindricalConnector
+    angle: 20
+    attachment1: this.link1.output
+    attachment2: this.link2.input
+
+PrismaticCoupling:
+  .extends: LinkInWorld
+  link2:
+    .type: Link
+    .value: Link
+
+  connector12:
+    .type: PrismaticConnector
+    translationalFrictionCoefficient: 10
+    distance: 2
+    attachment1: this.link.prismatic
+    attachment2: this.link2.prismatic
+
+ParentAttachment:
+  .extends: RigidBodyAttachment
+  nodof:
+    .type: NoDegreeOfFreedomRelativeParent
+    .value: NoDegreeOfFreedomRelativeParent
+
+
+CylinderTube:
+  .extends: Link
+
+
+CylinderLoopCloser:
+  .extends: Component
+  tube:
+    .type: CylinderTube
+    .value: CylinderTube
+    prismatic:
+      localTransform:
+        rotation: Quat.AngleAxis(180, Vec3(1,0,0))
+        position:
+          y: -0.1*this.tube.length
+
+    input:
+      connectName: Right
+  rod:
+    .type: Link
+    .value: Link
+    input:
+      connectName: Left
+    prismatic:
+      localTransform:
+        rotation: Quat.AngleAxis(180, Vec3(1,0,0))
+
+  pConnector:
+    .type: CylindricalConnector
+    mainInteraction:
+      stiffness: 1E4
+    translationalFrictionCoefficient: 10
+    attachment1: this.tube.prismatic
+    attachment2: this.rod.prismatic
+
+LinkLoopCloser:
+  .extends: Component
+  link1:
+    .type: Link
+    .value: Link
+    input:
+      connectName: Right
+    # output:
+    #   clockwiseOrderIndex: 1
+  link2:
+    .type: Link
+    .value: Link
+    input:
+      connectName: Left
+
+  linkConnector:
+    .type: HingeConnector
+    attachment1: this.link1.output
+    attachment2: this.link2.output
+    validAngleRange:
+      minValue: 0
+      maxValue: 180
+
+LoopCoupling:
+  .extends: LinkInWorld
+
+  linkLeft:
+    .type: Link
+    .value: Link
+    output:
+      connectName: Left
+
+  linkRight:
+    .type: Link
+    .value: Link
+    input:
+      localTransform:
+        position:
+          y: -0.1*this.linkRight.length
+          z: -this.linkRight.length*0.6
+    output:
+      connectName: Right
+
+  loopCloser:
+    .type: Physics.Component
+
+  connectorLeft:
+    .type: CylindricalConnector
+    angle: 30
+    attachment1: this.link.output
+    attachment2: this.linkLeft.input
+
+  connectorRight:
+    .type: CylindricalConnector
+    angle: -25
+    attachment1: this.link.output
+    attachment2: this.linkRight.input
+
+
+PrismaticLoopCoupling:
+  .extends: LoopCoupling
+
+  loopCloser: CylinderLoopCloser
+  disabledCollisionGroup:
+    .type: Physics.CollisionGroup
+    members:
+      - this.link
+      - this.linkLeft
+      - this.linkRight
+      - this.loopCloser
+
+  collisionGroupPair:
+    .type: Physics.CollisionGroup.CollisionGroupPair
+    group1: this.disabledCollisionGroup
+    group2: this.disabledCollisionGroup
+
+LinkLoopCoupling:
+  .extends: LoopCoupling
+
+  loopCloser: LinkLoopCloser
+  disabledCollisionGroup:
+    .type: Physics.CollisionGroup
+    members:
+      - this.link
+      - this.linkLeft
+      - this.linkRight
+      - this.loopCloser
+
+  collisionGroupPair:
+    .type: Physics.CollisionGroup.CollisionGroupPair
+    group1: this.disabledCollisionGroup
+    group2: this.disabledCollisionGroup
+
+Axle:
+  .extends: RigidBody
+  shape:
+    .type: Cylinder
+    radius: 0.01
+    length: 0.1
+  attachment:
+    .type: CylindricalAttachment
+    localTransform:
+      rotation: Quat.FromTo(Vec3.Y_Axis,Vec3.Z_Axis)
+
+MultiLinkOnAxle:
+  .extends: Physics.Component
+
+  axle:
+    .type: Axle
+    .value: Axle
+    motionControl: Static
+    localPosition: Vec3(1,1,1)
+
+
+  link1:
+    .type: Link
+    .value: Link
+  link2:
+    .type: Link
+    .value: Link
+  link3:
+    .type: Link
+    .value: Link
+
+  multiConnector:
+    .type: Physics.Mechanics.MultiHingeConnector
+    centralAttachment: this.axle.attachment
+    attachments:
+      - this.link1.input
+      - this.link2.input
+      - this.link3.input
+
+  disabledCollisionGroup:
+    .type: Physics.CollisionGroup
+    members:
+      - this.link1
+      - this.link2
+      - this.link3
+      - this.axle
+
+  collisionGroupPair:
+    .type: Physics.CollisionGroup.CollisionGroupPair
+    group1: this.disabledCollisionGroup
+    group2: this.disabledCollisionGroup

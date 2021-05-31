@@ -1,0 +1,6 @@
+.format: 4
+
+# This is used to get all the signals during runtime, since it can't be done easily with templates
+SignalBase:
+  .abstract: true
+  .doc: Base component for generic signal

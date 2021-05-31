@@ -1,0 +1,24 @@
+ModuleConfig:
+  name: Math
+  doc: Math library
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  files.exclude:
+    - Test
+
+  generators:
+
+    Python:
+      useGrpc: true
+      enable: true
+
+    Cs:
+      useGrpc: true
+      # targetDirectory: ${env:BRICK_DIR}/parser/src
+      enable: true
+
+    Grpc:
+      enable: true
+      csNamespace: Brick.Math.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/Math # TODO!

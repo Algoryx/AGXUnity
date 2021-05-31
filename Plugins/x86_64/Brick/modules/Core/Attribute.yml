@@ -1,0 +1,29 @@
+.format: 4
+
+Attribute:
+  .doc: Model attribute
+  .extends: Scope
+
+  # name:
+  #   .doc: Name of the attribute
+  #   .type: String
+
+  # doc:
+  #   .doc: doc of the attribute
+  #   .type: String
+
+  localType:
+    .doc: Local type of the attribute. TODO Describe inheritance
+    .type: Type
+
+  # public:
+  #   .doc: "TODO: Redesign"
+  #   .type: String
+
+  # unit:
+  #   .doc: Unit of the attribute
+  #   .type: Physics.Unit
+
+  # default:
+  #   .doc: Default value of the attribute
+  #   .type: Any

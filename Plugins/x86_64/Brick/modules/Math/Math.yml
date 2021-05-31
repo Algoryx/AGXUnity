@@ -1,0 +1,88 @@
+.format: 4
+
+E:
+  .value: Real(2.71828182845905)
+  .const: true
+
+PI:
+  .value: Real(3.14159265358979)
+  .const: true
+
+Abs:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Sin:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Cos:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Tan:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Asin:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Acos:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Atan:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+# Atan2:
+#   .kind: Function
+#   .return: Real
+#   value:
+#     .type: Real
+
+Ceil:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Floor:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Exp:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+Log:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real
+
+
+Sqrt:
+  .kind: Function
+  .return: Real
+  value:
+    .type: Real

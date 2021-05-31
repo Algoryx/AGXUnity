@@ -1,0 +1,26 @@
+.format: 4
+
+Output:
+  .abstract: true
+  .doc: A general, abstract output
+  .genericParameters:
+    - T: Type  # The return type of the output
+  .extends: Signal<T>
+
+# PositionOutput:
+#   .extends: Output<Vec3>
+#   .doc: Outputs the position of a node as a Vec3
+#   node:
+#     .type: Scene.Node
+
+# OrientationOutput:
+#   .extends: Output<Quat>
+#   .doc: Outputs the orientation/rotation of a node as a Quat
+#   node:
+#     .type: Scene.Node
+
+# TransformOutput:
+#   .extends: Output<Scene.Transform>
+#   .doc: Outputs the transform of a node
+#   node:
+#     .type: Scene.Node

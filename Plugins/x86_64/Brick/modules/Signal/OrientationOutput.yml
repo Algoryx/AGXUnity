@@ -1,0 +1,7 @@
+.format: 4
+
+OrientationOutput:
+  .extends: Signal.Output<Quat>
+  .doc: Outputs the orientation of a node as a Quat
+  node:
+    .type: Scene.Node

@@ -1,0 +1,15 @@
+.format: 4
+
+Function:
+  .doc: Function declaration
+  .extends: Type
+
+  parameters:
+    .type: Map<String, Parameter>
+    .doc: List of method parameters
+    .value: {}
+
+  # returnValue:
+  #   .type: Value
+  #   .doc: Method return value
+  #   .value: null

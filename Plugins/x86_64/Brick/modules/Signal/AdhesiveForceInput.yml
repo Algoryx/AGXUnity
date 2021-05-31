@@ -1,0 +1,10 @@
+.format: 4
+
+.import:
+  Physics: [ContactMaterial]
+
+AdhesiveForceInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the constand adhesive force (always positive) of a contact material
+  contactMaterial:
+    .type: ContactMaterial

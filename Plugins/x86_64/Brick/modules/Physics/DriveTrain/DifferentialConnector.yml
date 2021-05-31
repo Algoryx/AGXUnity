@@ -1,0 +1,30 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [GearAttachment, DifferentialInteraction]
+
+DifferentialConnector:
+  .extends: Physics.Connector
+
+  lockEnable:
+    .doc:  Force all outputs to rotate at the same speed
+    .type: Bool
+    .value: false
+
+  inputAttachment:
+    .type: GearAttachment
+    .value: null
+
+  outputAttachments:
+    .type: List<GearAttachment>
+    .value: []
+
+  interaction:
+    .type: DifferentialInteraction
+    .value: DifferentialInteraction
+    inputAttachment: this.inputAttachment
+
+
+
+
+

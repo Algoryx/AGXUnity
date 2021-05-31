@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment]
+
+LockJointAttachment:
+  .extends: RigidBodyAttachment
+  .doc: >
+    Attachments that indicates the use of a Lock constraint
+
+  connectType: Lock

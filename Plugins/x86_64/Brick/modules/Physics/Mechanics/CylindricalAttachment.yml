@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RotationFreeAttachment]
+
+CylindricalAttachment:
+  .extends: RotationFreeAttachment
+  .doc: >
+    Attachments that indicates the use of a Cylindrical constraint
+
+  connectType: "Cylindrical"

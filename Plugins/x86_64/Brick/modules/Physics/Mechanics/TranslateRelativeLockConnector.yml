@@ -1,0 +1,8 @@
+.format: 4
+
+TranslateRelativeLockConnector:
+  .extends: Physics.Mechanics.TranslateRelativeConnector
+
+  interaction:
+    .type: Physics.Mechanics.AttachmentPairInteraction.TranslationalLockInteraction1D
+    .value: Physics.Mechanics.AttachmentPairInteraction.TranslationalLockInteraction1D

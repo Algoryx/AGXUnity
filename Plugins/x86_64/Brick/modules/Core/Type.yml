@@ -1,0 +1,24 @@
+.format: 4
+
+Type:
+  .extends: Value
+  .abstract: true
+
+  # methods:
+  #   .type: Map<String, MethodGroup>
+  #   .value: {}
+
+  # .methods:
+  #   build:
+  #     .static: true
+  #     doc: Build a model file or model directory
+  #     parameters:
+  #       filepath: String
+
+    # evaluate:
+    #   .static: true
+    #   doc: Evaluate a model
+    #   parameters:
+    #     filepath: String
+    #     modelName: String
+    #   # return: Value

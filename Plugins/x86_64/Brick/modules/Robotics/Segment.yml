@@ -1,0 +1,41 @@
+.format: 4
+.import:
+  Physics.Mechanics: [HingeAttachment, RigidBody, RigidBodyAttachment]
+
+Segment:
+  .extends: Physics.Component
+  wantInternalPositioning: false
+  positionAsBlock: true
+  .doc: >
+    Model of a Segment, which is a component between
+    two Joints of a RobotArm.
+    A Segment has one input and one output attachemt,
+    defining the direction from the RobotBase to the tool
+
+    A Segment has a Mechanics.RigidBody attribute, body, which
+    define it's degrees of freedom.
+    The Segment may have an ExternalReference, which ref.
+    to a RigidBody in an external scene description,
+    defined in the external model imported by
+    the externalFilePath of the Robot of consern.
+
+    The Segment can be assigned a collisionGeometry,
+    which will automatically be part of the body.
+
+
+  externalReference:
+    .type: String
+    .value: null
+
+  body:
+    .type: RigidBody
+    .value: null
+
+  inputAttachment:
+    .type: RigidBodyAttachment
+    .value: HingeAttachment
+
+  outputAttachment:
+    .type: RigidBodyAttachment
+    .value: HingeAttachment
+

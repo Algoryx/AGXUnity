@@ -1,0 +1,6 @@
+.format: 4
+.ignore: true
+
+Degrees:
+  .extends: Physics.Unit
+  symbol: °

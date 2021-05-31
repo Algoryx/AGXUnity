@@ -1,0 +1,7 @@
+.format: 4
+
+EngineIdleRPMInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the idle RPM (RPM when there's no throttle) of an engine
+  engine:
+    .type: Physics.DriveTrain.Engine

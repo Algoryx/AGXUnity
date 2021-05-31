@@ -1,0 +1,86 @@
+.format: 4
+.doc: >
+  This test runtime collection instances. This file is currently outside test directory because currently we never generate runtime classes and code for test directory files!
+
+
+FoFo:
+  list:
+    .type: List<Real>
+    .value: []
+
+  map:
+    .type: Map<String, Real>
+    .value: {}
+
+  # set:
+  #   .type: Set<Real>
+  #   .value: {}
+
+Bar:
+  .value: FoFo
+  list:
+    - 1
+    - 12
+    - -2.22
+
+  map:
+    foo: 1
+    bar: 12
+    hej: -2.22
+
+
+
+# This is a const-test, not collection test
+ConstBar:
+  .value: Bar
+  .const: true
+  list: [7, 3]
+
+# Allow inheritance if itself is const
+ConstBar2:
+  .value: ConstBar
+  .const: true
+  list: [7, 5]
+
+AB:
+  a:
+    .type: FoFo
+  b:
+    .type: FoFo
+  c:
+    .type: FoFo
+
+ConstValue:
+  .value: AB
+  a: ConstBar
+  b: ConstBar
+  c: ConstBar2
+
+
+# Generic parameter type
+GenericTypeTest:
+  .genericParameters:
+    - T: Type
+  val:
+    .type: T
+
+# Instance of generic type
+GenericTypeValue:
+  .value: GenericTypeTest<Vec3>
+  val: Vec3(1, 2, 3)
+
+# Inheritance of generic instance
+GenericTypeChild:
+  .extends: GenericTypeTest<Vec3>
+  val: Vec3(2, 5, 7)
+
+# Inheritance of generic base with generic parameter
+GenericTypeGenericChild:
+  .genericParameters:
+    - T: Type
+  .extends: GenericTypeTest<T>
+
+# Inheritance of generic child instance
+GenericTypeChild2:
+  .extends: GenericTypeGenericChild<Vec3>
+  val: Vec3(4, 2, 4)

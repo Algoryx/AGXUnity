@@ -1,0 +1,5 @@
+.format: 4
+
+Client:
+  uri:
+    .type: String

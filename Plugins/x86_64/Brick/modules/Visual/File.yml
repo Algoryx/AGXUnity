@@ -1,0 +1,9 @@
+.format: 4
+
+File:
+  .extends: Visual.Shape
+  filepath:
+    .type: String
+  scaling:
+    .type: Vec3
+    .value: null

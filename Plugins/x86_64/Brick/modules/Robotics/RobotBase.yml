@@ -1,0 +1,8 @@
+.format: 4
+.import:
+  Robotics: [Segment]
+
+RobotBase:
+  .extends: Segment
+  .doc: >
+    Maybe this should not exist?

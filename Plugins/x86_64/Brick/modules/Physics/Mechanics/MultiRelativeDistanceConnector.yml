@@ -1,0 +1,19 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment, MultiAttachmentConnector]
+
+AttachmentDistancePair:
+  attachment:
+    .type: RigidBodyAttachment
+  distanceCentral:
+    .type: Real
+    .value: 0
+
+MultiRelativeDistanceConnector:
+  .extends: MultiAttachmentConnector
+
+  attachmentDistancePairs:
+    .type: List<AttachmentDistancePair>
+    .value: []
+

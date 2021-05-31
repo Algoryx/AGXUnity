@@ -1,0 +1,55 @@
+# Defines all equations and the positioning
+# for the connections around one Axle of the crane.
+.format: 4
+
+.import:
+  Physics.Mechanics.Test.Composition.Connections: [BearingAxleConnector]
+  Physics: [Component]
+  Physics.Mechanics: [RigidBodyAttachment, MultiCylindricalConnector, TranslateRelativeLockConnector, MultiTranslateRelativeLockConnector]
+  Physics.Mechanics.MultiAttachmentConnector: [PairwiseRange]
+
+
+AxleConnection:
+  .extends: Component
+  # Normally the attachment of the axle
+  centralAttachment:
+    .type: RigidBodyAttachment
+  # Attachments used for positioning Crane Parts
+  # Could be the position in the middle of two bearings, or the bearing position
+  positionAttachments:
+    .type: List<RigidBodyAttachment>
+  # Attachments used for interactions (exact bearing positions)
+  interactionAttachments:
+    .type: List<RigidBodyAttachment>
+
+  # Define valid ranges for the relative CranePart
+  pairwiseRanges:
+    .type: List<PairwiseRange>
+    .value: []
+
+  # Sideway offsets for parts relative the axle
+  offsets:
+    .type: List<MultiTranslateRelativeLockConnector.AttachmentDistancePair>
+    .value: []
+
+  # Positions Crane Parts relative the axle
+  positioningConnection:
+    .type: MultiCylindricalConnector
+    enabledInteractions: False
+    centralAttachment: this.centralAttachment
+    attachments: this.positionAttachments
+    pairwiseRanges: this.pairwiseRanges
+
+  # Generates constraints for each bearing relative the axle
+  interactionConnection:
+    .type: BearingAxleConnector
+    enabledPositioning: False
+    centralAttachment: this.centralAttachment
+    attachments: this.interactionAttachments
+
+  # Moves and Locks Axle sideways
+  axleLock:
+    .type: MultiTranslateRelativeLockConnector
+    centralAttachment: this.centralAttachment
+    attachmentDistancePairs: this.offsets
+

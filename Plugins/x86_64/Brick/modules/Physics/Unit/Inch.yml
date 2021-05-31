@@ -1,0 +1,6 @@
+.format: 4
+.ignore: true
+
+Inch:
+  .extends: Physics.Unit
+  symbol: in

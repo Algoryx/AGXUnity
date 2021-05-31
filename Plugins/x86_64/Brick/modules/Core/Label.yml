@@ -1,0 +1,14 @@
+.format: 4
+
+
+Label:
+  name:
+    .doc: Name of the label
+    .type: String
+  # color:
+  #   .doc: Color of the label
+  #   .type: Color
+  value:
+    .doc: Labels can have a value attached to them
+    .type: Any
+    .value: null

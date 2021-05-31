@@ -1,0 +1,13 @@
+.format: 4
+
+Scope:
+  .extends: Node
+
+  # nodes:
+  #   .doc: Child nodes in scope
+  #   .type: Map<String, Node>
+  #   .value: Map<String, Node>()
+
+  # symbols:
+  #   .doc: Active symbols in scope
+  #   .type: Map<String, Node>

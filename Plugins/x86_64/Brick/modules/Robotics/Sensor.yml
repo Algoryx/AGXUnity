@@ -1,0 +1,52 @@
+.format: 4
+.import:
+  Physics.Mechanics: [AttachmentPairConnector, RigidBody]
+  Robotics: [Segment, Joint]
+  Robotics.SignalType: [OutputForceSignal, OutputVelocitySignal, OutputDistanceSignal]
+
+Sensor:
+  .doc: >
+    A Sensor points to one signal in the model
+    It also declares the outputReference for this signal
+
+  protocolReference:
+    .doc: Reference for the sensor use for communication over some protocol
+    .type: String
+    .value: null
+
+
+JointSensor:
+  .extends: Sensor
+  .doc: >
+    Joint sensor, will internally create the wanted sensor type
+
+  outputSignalType:
+    .type: Robotics.SignalType
+
+  joint:
+    .type: Joint
+
+DistanceSensor:
+  .extends: Sensor
+  .doc: >
+    Measures distance to first obstacle
+
+  outputSignalType:
+    .type: OutputDistanceSignal
+    .value: OutputDistanceSignal
+
+  body:
+    .type: RigidBody
+    .value: null
+
+  startPoint:
+    .type: Vec3
+    .value: Vec3(0,0,0)
+
+  direction:
+    .type: Vec3
+    .value: Vec3(1,0,0)
+
+  length:
+    .type: Real
+    .value: 1

@@ -1,0 +1,41 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [RotatingBody1D, GearAttachment]
+
+RPMTorquePair:
+  rpm:
+    .type: Real
+    .value: 0
+  torque:
+    .type: Real
+    .value: 0
+
+Engine:
+  .extends: RotatingBody1D
+  .doc: An engine that uses a torque curve to determine the maximum available torque for the current RPM.
+
+  idleRPM:
+    .doc: The RPM the Engine will try to reach even at throttle 0.
+    .type: Real
+    .value: 30
+
+  idleTorque:
+    .doc: Torque the engine produce at and below idle RPM. (Simple controller to try to keep idleRPM)
+    .type: Real
+    .value: 10
+
+  throttle:
+    .doc: between 0 and 1. Where 1 is 100% throttle
+    .type: Real
+    .value: 1
+
+  RPMTorqueList:
+    .doc: A list of RPM and torque values which will define the torque curve of the engine
+    .type: List<RPMTorquePair>
+    .value: []
+
+  outputAttachment:
+    .type: GearAttachment
+    sign: 1
+

@@ -1,0 +1,34 @@
+ModuleConfig:
+  name: MachineLearning
+  doc: MachineLearning library
+  # apiRoot: api
+  targetDirectory: ${env:BRICK_DIR}
+
+  files.exclude:
+    - Test
+
+  import:
+    Math:
+      filepath: ../Math
+      autoImport: true
+    Scene:
+      filepath: ../Scene
+    Physics:
+      filepath: ../Physics
+    Signal:
+      filepath: ../Signal
+
+  generators:
+
+    Python:
+      useGrpc: true
+      enable: true
+
+    Cs:
+      useGrpc: true
+      enable: true
+
+    Grpc:
+      enable: true
+      csNamespace: Brick.MachineLearning.Grpc
+      goPackage: algoryx/bamse/worker/api/grpc/brick/MachineLearning

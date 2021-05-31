@@ -1,0 +1,8 @@
+.format: 4
+
+Unit:
+  .doc: Physical unit definition
+  name:
+    .type: String
+  symbol:
+    .type: String

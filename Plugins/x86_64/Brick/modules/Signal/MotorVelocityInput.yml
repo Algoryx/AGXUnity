@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.AttachmentPairInteraction: [MotorInteraction1D]
+
+MotorVelocityInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the (signed) speed of a motor (angular speed if rotational motor)
+    Units are m/s for linear actuators, and rad/s for rotational motors.
+  motor:
+    .type: MotorInteraction1D

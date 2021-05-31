@@ -1,0 +1,40 @@
+.format: 4
+
+AttachmentPairRange:
+  .doc: >
+          A scalar range defining a valid range for one degree of freedom.
+          The degree of freedom is by dafault related to the tangential direction.
+  minValue:
+    .type: Real
+  maxValue:
+    .type: Real
+
+
+
+AttachmentPairConnector:
+  .extends: Physics.Connector
+
+  attachment1:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    .value: null
+
+  attachment2:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    .value: null
+
+  mainInteraction:
+    .type: Physics.Mechanics.AttachmentPairInteraction
+    .value: null
+
+  connectOrder:
+    .doc: >
+            Positive ( > 0 ) value moves body of attachment2 to body of attachment1,
+            negative value vice versa. 0 will have to investigate order according to constrained degrees o freedom.
+            All affected dof's has to be constrained of the body not moved, for the connect to happen.
+    .type: Int
+    .value: 0
+
+  externalReference:
+    .type: String
+    .value: null
+

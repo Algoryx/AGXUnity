@@ -1,0 +1,80 @@
+.format: 4
+
+DegreeOfFreedom:
+  name:
+    .type: String
+    .value: ''
+
+  # minScalar:
+  #   .doc: Defines minimum of a scalar range for the DOF, for which it is free within. null means Infinity
+  #   .type: Real
+  #   .value: null
+
+  # maxScalar:
+  #   .doc: Defines maximum of a scalar range for the DOF, for which it is free within. null means Infinity
+  #   .type: Real
+  #   .value: null
+  parentNode:
+    .type: Scene.Node
+    .value: null
+
+  normalLocal:
+    .doc: Normalized vector along the free DOF in body coordinates.
+    .type: Vec3
+
+  positionLocal:
+    .doc: Position of the origin of the body local coordinate system describing the DOF.
+    .type: Vec3
+
+  attachment:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    .value: null
+    .doc: >
+      The Attachment that has left over DOF(s).
+
+  relativeAttachment:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    .value: null
+    .doc: >
+      The attachment that the not free DOF's are constrained relative.
+
+  threshold:
+    .type: Real
+    .value: 0.00001
+
+
+RotationalDegreeOfFreedom:
+  .extends: DegreeOfFreedom
+  range:
+    .type: Physics.Mechanics.AttachmentPairConnector.AttachmentPairRange
+    .value: null
+
+TranslationalDegreeOfFreedom:
+  .extends: DegreeOfFreedom
+  range:
+    .type: Physics.Mechanics.AttachmentPairConnector.AttachmentPairRange
+    .value: null
+
+NoDegreeOfFreedomRelativeParent:
+  .extends: DegreeOfFreedom
+  .doc: >
+    The body of this attachment may only be moved by moving a parent node.
+    If there is no parent node then this body may not move at all.
+
+NoRotationalDegreeOfFreedomRelativeParent:
+  .extends: DegreeOfFreedom
+
+
+NoTranslationalDegreeOfFreedomRelativeParent:
+  .extends: DegreeOfFreedom
+
+
+# Declaration of Degrees of freedom that define possible transform
+# for a frame constrained by an attachment
+
+RotationalFree3D:
+  .extends: DegreeOfFreedom
+
+TranslationalFree3D:
+  .extends: DegreeOfFreedom
+

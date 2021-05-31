@@ -1,0 +1,11 @@
+.format: 4
+
+Bar:
+  x:
+    .type: Real
+    .value: 5
+
+Hej:
+  .value: Bar
+  .const: true
+  x: 102

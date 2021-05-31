@@ -1,0 +1,57 @@
+.format: 4
+
+
+SurfaceMaterial:
+  roughness:
+    .type: Real
+    .value: 0.5
+  viscosity:
+    .type: Real
+    .value: 1E-8
+  adhesiveForce:
+    .type: Real
+    .value: 0
+  adhesiveOverlap:
+    .type: Real
+    .value: 0
+
+
+
+BulkMaterial:
+  density:
+    .type: Real
+    .value: 1E3
+  viscosity:
+    .type: Real
+    .value: 0.5
+  damping:
+    .type: Real
+    .doc: the damping coefficient (for linear dimensions, in force*time/distance; for rotational dimensions, in torque*time/radians).
+    .value: this.youngsModulus / 20.0
+  youngsModulus:
+    .type: Real
+    .value: 1E9
+  # poissonsRatio:
+  #   .type: Real
+  #   .value: 0.5
+
+Material:
+  name:
+    .type: String
+    .value: ""
+  surface:
+    .type: SurfaceMaterial
+    .value: SurfaceMaterial
+  bulk:
+    .type: BulkMaterial
+    .value: BulkMaterial
+
+  locallyDefined:
+    .type: Bool
+    .value: true
+    .doc: >
+          Materials defined locally in the model must be known about when writing the model to file.
+
+  externalReference:
+    .type: String
+    .value: null

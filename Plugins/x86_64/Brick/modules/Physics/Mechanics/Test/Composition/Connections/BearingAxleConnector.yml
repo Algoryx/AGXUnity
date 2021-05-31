@@ -1,0 +1,20 @@
+# Define the physical interactions for the bearings
+# Stiff in radial direction.
+# soft but not neglitiable for rotation orthogonal
+# to the axle axis
+.format: 4
+
+.import:
+  Physics.Mechanics: [MultiCylindricalConnector]
+
+BearingAxleConnector:
+  .extends: MultiCylindricalConnector
+  enabledPositioning: False
+  stiffness6D:
+    alongNormal: 1E9
+    alongCross: 1E9
+    alongTangent: 0
+    aroundNormal: 1E4
+    aroundCross: 1E4
+    aroundTangent: 0
+

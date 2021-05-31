@@ -1,0 +1,161 @@
+.format: 4
+
+Assertion:
+  .doc: |
+    Assertions are used to verify the model state. They are evaluated after the owner model is loaded.
+  .abstract: true
+
+  name:
+    .type: String
+    .value: ""
+
+  state:
+    .type: TestState
+    # TODO: Fix enum lookup
+    .value: TestState.TestState.NotEvaluated
+
+  error:
+    .doc: The error if state is Failed
+    .type: Error
+    .value: null
+
+  # .methods:
+  #   Evaluate:
+  #     .doc: Assertion implementation
+  #     parameters: {}
+
+
+
+# TODO: Handle floating point equality with epsilon
+# TODO: Handle object equality properly, https://coding.abel.nu/2014/09/net-and-equals/
+# TODO: Handle deep equality, or not :)
+Equal:
+  .doc: Verify equality of two values
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+
+###################################################
+NotEqual:
+  .doc: Verify inverse equality of two values
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+###################################################
+LessThan:
+  .doc: Verify less-than relation
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+###################################################
+GreaterThan:
+  .doc: Verify greater-than relation
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+###################################################
+LessThanOrEqual:
+  .doc: Verify less-than-or-equal relation
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+###################################################
+GreaterThanOrEqual:
+  .doc: Verify greater-than-or-equal relation
+  .extends: Assertion
+
+  lhs:
+    .doc: The lhs value
+    .type: Any
+
+  rhs:
+    .doc: The rhs value
+    .type: Any
+
+###################################################
+InsideClosedBound:
+  .doc: Verify closed bound
+  .extends: Assertion
+
+  value:
+    .doc: The value
+    .type: Any
+
+  min:
+    .doc: The minimum bound
+    .type: Any
+
+  max:
+    .doc: The maximum bound
+    .type: Any
+
+###################################################
+"True":
+  .doc: Verify truthness of a value
+  .extends: Assertion
+
+  value:
+    .doc: The test value
+    .type: Bool
+
+###################################################
+"False":
+  .doc: Verify inverse truthness of a value
+  .extends: Assertion
+
+  value:
+    .doc: The test value
+    .type: Bool
+
+###################################################
+IsNull:
+  .doc: Verify that a value is null
+  .extends: Assertion
+
+  value:
+    .doc: The test value
+    .type: Any
+
+###################################################
+NotNull:
+  .doc: Verify that a value is not null
+  .extends: Assertion
+
+  value:
+    .doc: The test value
+    .type: Any

@@ -1,0 +1,43 @@
+# Definition of the Crane Part - GuideLink
+# attachment positions found from the Cad Model
+# which is exported to guideLink.obj and used as a visual
+# and mesh for collision
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody]
+  Physics.Materials: [Steel]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+  Physics.Geometry: [Cylinder,Box, Trimesh]
+
+GuideLink:
+  .extends: RigidBody
+  massProperties:
+    mass: 10
+    inertia: Vec3(0.35,0.25,0.15)
+  shape:
+    .type: Trimesh
+    filepath: guideLink.obj
+    scale: 0.001
+    material: Steel
+
+  length:
+    .type: Real
+    .value: 0.39561
+  distA:
+    .type: Real
+    .value: -0.1425
+
+  distB:
+    .type: Real
+    .value: this.distA + this.length
+
+  holeA:
+    .type: ConnectionAttachment
+    relPos: Vec3(this.distA,-0.02,0.0025)
+    relRot: Quat()
+
+  holeB:
+    .type: ConnectionAttachment
+    relPos: Vec3(this.distB,-0.02,0.0025)
+    relRot: Quat()

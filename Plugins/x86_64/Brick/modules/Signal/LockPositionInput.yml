@@ -1,0 +1,11 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.AttachmentPairInteraction: [LockInteraction1D]
+
+LockPositionInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the (signed) input position of a lock (angle if rotational lock)
+    Units are [m] for linear actuators, and [degrees] for rotational.
+  lock:
+    .type: LockInteraction1D

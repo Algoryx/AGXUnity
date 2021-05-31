@@ -1,0 +1,8 @@
+.format: 4
+
+EngineThrottleInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the throttle of an engine.
+    The throttle should go between 0 (no throttle) and 1 (full throttle).
+  engine:
+    .type: Physics.DriveTrain.Engine

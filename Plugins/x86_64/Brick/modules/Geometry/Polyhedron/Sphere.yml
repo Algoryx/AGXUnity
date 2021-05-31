@@ -1,0 +1,11 @@
+.format: 4
+.ignore: true
+
+# TODO: Polyhedron/tesselation modelling...
+Geometry.Sphere:
+  .:
+    name: Sphere
+    attributes:
+      stacks: UInt
+      slices: UInt
+

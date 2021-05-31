@@ -1,0 +1,8 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairInteraction]
+BallJointInteraction:
+  .extends: AttachmentPairInteraction
+
+  interactionType: Ball

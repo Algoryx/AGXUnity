@@ -1,0 +1,27 @@
+.format: 4
+.strict: false
+
+TestDoublePendulum:
+  .value: Physics.ComponentTest
+  wantInternalPositioning: true
+  pendulum:
+    .value: Physics.Mechanics.Test.TestPositioning.DoublePendulum
+
+  verifyWorldAttachmentPosition:
+    .value: Assertion.Equal
+    lhs: pendulum.link.input.position
+    rhs: pendulum.worldAttachment.position
+
+  verifyAttachmentPosition:
+    .value: Assertion.Equal
+    lhs: pendulum.link.output.position
+    rhs: pendulum.link2.input.position
+
+  verifyAttachmentAngle:
+    .value: Assertion.Equal
+    lhs: >
+      Vec3.Angle(
+        pendulum.link.transform.vectorToWorld(Vec3.X_Axis),
+        pendulum.link2.transform.vectorToWorld(Vec3.X_Axis)
+      )
+    rhs: 20

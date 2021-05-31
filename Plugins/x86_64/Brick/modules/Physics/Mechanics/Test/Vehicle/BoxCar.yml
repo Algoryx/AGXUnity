@@ -1,0 +1,228 @@
+.format: 4
+
+.import:
+  Physics: [Component, Geometry]
+  Physics.Geometry: [Cylinder, Box, Sphere]
+  Math: [Quat]
+  Scene: [Transform]
+  Physics.Mechanics: [RigidBody,HingeAttachment, RigidBodyAttachment, HingeConnector]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D]
+  Physics.Mechanics.HingeConnector: [RotationalActuatorHingeConnector]
+  Physics.Mechanics.DegreeOfFreedom: [NoDegreeOfFreedomRelativeParent]
+  Physics.Mechanics.Test.Vehicle.DriveTrain: [FixedVelocityDriveTrain]
+
+Wheel:
+  .extends: RigidBody
+
+  tire:
+    .type: Sphere
+    radius: 0.12
+
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(0,-this.tire.radius,0)
+      rotation: Quat.FromTo(Vec3(0,0,1), Vec3(0,1,0))
+
+WorldAttachment:
+  .extends: RigidBodyAttachment
+  worldLock:
+    .type: NoDegreeOfFreedomRelativeParent
+    .value: NoDegreeOfFreedomRelativeParent
+
+Chassis:
+  .extends: RigidBody
+
+  width:
+    .type: Real
+
+  length:
+    .type: Real
+
+  height:
+    .type: Real
+
+  shape:
+    .type: Box
+    lengths: Vec3(this.length,this.width, this.height)
+
+  axleRB:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(-this.length*0.35,this.width*0.55, -this.height*0.3)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(0,0,1))
+
+  axleRF:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(this.length*0.35,this.width*0.55, -this.height*0.3)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0), Vec3(0,0,1))
+
+  axleLB:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(-this.length*0.35,-this.width*0.55, -this.height*0.3)
+      rotation: Quat.TryFromToZXPair(Vec3(0,-1,0), Vec3(0,0,-1))
+
+  axleLF:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(this.length*0.35,-this.width*0.55, -this.height*0.3)
+      rotation: Quat.TryFromToZXPair(Vec3(0,-1,0), Vec3(0,0,1))
+
+
+MotorConnector:
+  .extends: HingeConnector
+  motor: RotationalMotorInteraction1D
+
+Wheels:
+  .extends: Component
+  wheelRB:
+    .type: Wheel
+    .value: Wheel
+
+  wheelRF:
+    .type: Wheel
+    .value: Wheel
+
+  wheelLB:
+    .type: Wheel
+    .value: Wheel
+
+  wheelLF:
+    .type: Wheel
+    .value: Wheel
+
+BoxCar:
+  .doc: >
+    Test for declaring a box Car
+  .extends: Component
+
+  wantInternalPositioning: true
+
+  width:
+    .type: Real
+    .value: 0.5
+
+  length:
+    .type: Real
+    .value: 1
+
+  height:
+    .type: Real
+    .value: 0.3
+
+  chassis:
+    .type: Chassis
+    length: this.length
+    height: this.height
+    width: this.width
+
+  wheels:
+    .type: Wheels
+    .value: Wheels
+
+
+BoxCarNoMotor:
+  .extends: BoxCar
+  wantInternalPositioning: true
+  chassis:
+    localPosition: Vec3(1,2,3)
+    axleRB:
+      connectName: RB
+    axleRF:
+      connectName: RF
+    axleLB:
+      connectName: LB
+    axleLF:
+      connectName: LF
+
+  wheels:
+    wheelRB:
+      attachment:
+        connectName: RB
+    wheelRF:
+      attachment:
+        connectName: RF
+
+    wheelLB:
+      attachment:
+        connectName: LB
+
+    wheelLF:
+      attachment:
+        connectName: LF
+
+BoxCarMotorsBack:
+  .extends: BoxCar
+  wantInternalPositioning: true
+  chassis:
+    axleRF:
+      connectName: RF
+    axleLF:
+      connectName: LF
+
+  wheels:
+    wheelRF:
+      attachment:
+        connectName: RF
+
+    wheelLF:
+      attachment:
+        connectName: LF
+
+  leftMotorConnection:
+    .type: MotorConnector
+    attachment1: this.chassis.axleLB
+    attachment2: this.wheels.wheelLB.attachment
+    motor:
+      speed: 0.5
+
+  rightMotorConnection:
+    .type: MotorConnector
+    attachment1: this.chassis.axleRB
+    attachment2: this.wheels.wheelRB.attachment
+    motor:
+      speed: -0.4
+
+BoxCarDriveTrainsBack:
+  .extends: BoxCar
+  wantInternalPositioning: true
+  chassis:
+    axleRF:
+      connectName: RF
+    axleLF:
+      connectName: LF
+  wheels:
+    wheelRF:
+      massProperties:
+        mass: 1
+      attachment:
+        connectName: RF
+
+    wheelLF:
+      attachment:
+        connectName: LF
+
+  driveTrainLeft:
+    .type: FixedVelocityDriveTrain
+    .value: FixedVelocityDriveTrain
+
+  leftMotorConnection:
+    .type: RotationalActuatorHingeConnector
+    attachment1: this.chassis.axleLB
+    attachment2: this.wheels.wheelLB.attachment
+    shaft: this.driveTrainLeft.shaft
+
+  driveTrainRight:
+    .type: FixedVelocityDriveTrain
+    .value: FixedVelocityDriveTrain
+    gear:
+      interaction:
+        gearRatio: -1
+
+  rightMotorConnection:
+    .type: RotationalActuatorHingeConnector
+    attachment1: this.chassis.axleRB
+    attachment2: this.wheels.wheelRB.attachment
+    shaft: this.driveTrainRight.shaft

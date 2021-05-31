@@ -1,0 +1,6 @@
+.format: 4
+
+Sphere:
+  .extends: Visual.Shape
+  radius:
+    .type: Real

@@ -1,0 +1,31 @@
+.format: 4
+
+Action:
+  .doc: A function with only sideeffects and no return value
+  # .abstract: true
+
+  Invoke:
+    .doc: Implementation of the action
+    .kind: Method
+
+
+
+TestAction:
+  .extends: Action
+  .doc: Used for unittesting, increments counter for each invokation and print the value
+
+  count:
+    .type: Int
+    .value: 0
+
+
+SetValue:
+  .extends: Action
+  .doc: Write a value to a target node
+
+  target:
+    # .type: Ref<Any>
+    .type: Any
+
+  value:
+    .type: Any

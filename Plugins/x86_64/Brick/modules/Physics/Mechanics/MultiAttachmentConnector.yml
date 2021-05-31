@@ -1,0 +1,36 @@
+.format: 4
+
+PairwiseRange:
+  attachment1:
+    .type: Physics.Mechanics.RigidBodyAttachment
+  attachment2:
+    .type: Physics.Mechanics.RigidBodyAttachment
+  range:
+    .type: Physics.Mechanics.AttachmentPairConnector.AttachmentPairRange
+
+
+MultiAttachmentConnector:
+  .extends: Physics.Connector
+
+  enabledInteractions: true
+  enabledPositioning: true
+
+  attachments:
+    .type: List<Physics.Mechanics.RigidBodyAttachment>
+    .value: []
+
+  centralAttachment:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    .value: null
+
+  stiffness6D:
+    .type: Physics.Mechanics.InteractionData6D.Stiffness6D
+    .value: Physics.Mechanics.InteractionData6D.Stiffness6D
+
+  damping6D:
+    .type: Physics.Mechanics.InteractionData6D.Damping6D
+    .value: Physics.Mechanics.InteractionData6D.Damping6D
+
+  pairwiseRanges:
+    .type: List<PairwiseRange>
+    .value: []

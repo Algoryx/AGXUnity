@@ -1,0 +1,25 @@
+.format: 4
+.strict: false
+.ignore: true
+
+MyEnum:
+  .kind: Enum
+  values:
+    - Foo
+    - Bar
+
+EnumOwner:
+  e:
+    .type: MyEnum
+    .value: Bar
+
+TestEnum:
+  .value: Unittest
+
+  enumOwner:
+    .value: EnumOwner
+
+  verifyEnumValue:
+    .value: Assertion.Equal
+    lhs: enumOwner.e
+    rhs: MyEnum.Bar

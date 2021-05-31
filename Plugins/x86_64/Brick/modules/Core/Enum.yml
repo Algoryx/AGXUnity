@@ -1,0 +1,8 @@
+.format: 4
+
+Enum:
+  .doc: Enum representation
+  name:
+    .type: String
+  values:
+    .type: List<String>

@@ -1,0 +1,55 @@
+# Definition of a the Cylinder
+# Uses two CylinderParts
+# Connects them with a Cylindrical connector
+.format: 4
+
+.import:
+  Physics: [Component, CollisionGroup]
+  Physics.Mechanics: [CylindricalConnector]
+  Physics.Mechanics.Test.Composition.Components: [CylinderPart]
+  Physics.Mechanics.Test.Composition.Connections: [ConnectionAttachment]
+
+
+CylinderComponent:
+  .extends: Component
+  wantInternalPositioning: True
+
+  cylinderGroup:
+    .type: CollisionGroup
+    members:
+      - this.rod
+      - this.tube
+  collisionGroupPair:
+    .type: CollisionGroup.CollisionGroupPair
+    group1: this.cylinderGroup
+    group2: this.cylinderGroup
+
+  tube:
+    .type: CylinderPart
+    length: 0.5
+    localPosition: Vec3(0,0,0)
+  rod:
+    .type: CylinderPart
+    length: 0.45
+    radius: 0.025
+    holeSign: -1
+
+  minLength:
+    .type: Real
+    .value: 0.1
+
+  maxLength:
+    .type: Real
+    .value: 0.4
+
+  internalConnector:
+    .type: CylindricalConnector
+    attachment1: this.tube.internalAttachment
+    attachment2: this.rod.internalAttachment
+
+    rotationalMotor:
+      minForce: 0
+      maxForce: 0
+    translationalRange:
+      minValue: this.minLength
+      maxValue: this.maxLength

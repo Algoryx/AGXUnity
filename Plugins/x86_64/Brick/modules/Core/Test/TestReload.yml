@@ -1,0 +1,13 @@
+.format: 4
+
+Foo:
+  .doc: Testing file watch and reload
+  bar:
+    .type: Real
+    .value: 403
+  hej:
+    .type: Real
+    .value: bar + 2.6
+  v:
+    .type: Test.TestReload2.Bar
+    x: Test.TestReload2.Hej.x + hej * 0.24

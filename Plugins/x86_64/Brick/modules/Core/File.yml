@@ -1,0 +1,13 @@
+.format: 4
+
+File:
+  .extends: Document
+
+  filepath:
+    .type: String
+
+  # module:
+  #   .type: Module
+
+  # hasModelDirectory:
+  #   .type: Bool

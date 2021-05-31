@@ -1,0 +1,107 @@
+.format: 4
+
+.import:
+  Physics: [Component]
+  Physics.Geometry: [Box]
+  Physics.DriveTrain: [RotatingShaft, Engine, FixedVelocityEngine, GearAttachment, GearConnector, DifferentialConnector, RotationalActuator]
+  Physics.Mechanics: [RigidBody, HingeAttachment, RigidBodyAttachment]
+  Physics.Mechanics.HingeConnector: [RotationalActuatorHingeConnector]
+
+
+RotatingBody:
+  .extends: RigidBody
+
+  shape:
+    .type: Box
+    lengths: Vec3(1,1,1)
+
+
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      rotation: Quat.FromTo(Vec3.Z_Axis, Vec3.Y_Axis)
+
+
+FixedVelocityDriveTrain:
+  .extends: Component
+  engine:
+    .type: FixedVelocityEngine
+    .value: FixedVelocityEngine
+    targetRPM: 20
+
+  shaft:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  gear:
+    .type: GearConnector
+    attachment1: this.engine.outputAttachment
+    attachment2: this.shaft.inputAttachment
+
+MinimalDriveTrain:
+  .extends: FixedVelocityDriveTrain
+
+  rotatingBody:
+    .type: RotatingBody
+    localTransform:
+      position: Vec3(-2,0,0)
+
+  hinge:
+    .type: RotationalActuatorHingeConnector
+    attachment1: this.rotatingBody.attachment
+    attachment2: null
+    shaft: this.shaft
+
+
+
+  # differential:
+  #   .type: DifferentialConnector
+  #   inputAttachment: this.shaft.outputAttachment
+  #   outputAttachments:
+  #     - this.actuator1.inputAttachment
+  #     - this.actuator2.inputAttachment
+
+DriveTrainWithDifferential:
+  .extends: Component
+
+  rotatingBody:
+    .type: RotatingBody
+    localTransform:
+      position: Vec3(-2,0,0)
+
+
+  rotatingBody2:
+    .type: RotatingBody
+    localTransform:
+      position: Vec3(2,0,0)
+
+  engine:
+    .type: Engine
+    .value: Engine
+
+  shaft1:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  shaft2:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  hinge1:
+    .type: RotationalActuatorHingeConnector
+    attachment1: this.rotatingBody.attachment
+    attachment2: HingeAttachment
+    shaft: this.shaft1
+
+  hinge2:
+    .type: RotationalActuatorHingeConnector
+    attachment1: this.rotatingBody2.attachment
+    attachment2: HingeAttachment
+    shaft: this.shaft2
+
+  differential:
+    .type: DifferentialConnector
+    inputAttachment: this.engine.outputAttachment
+    outputAttachments:
+      - this.shaft1.inputAttachment
+      - this.shaft2.inputAttachment

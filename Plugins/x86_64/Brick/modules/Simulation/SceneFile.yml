@@ -1,0 +1,13 @@
+.format: 4
+
+SceneFile:
+  .extends: Physics.Component
+
+  filepath:
+    .doc: Filepath to the scene file
+    .type: String
+
+  kind:
+    .doc: The file type identifier
+    .type: String
+    .value: ""

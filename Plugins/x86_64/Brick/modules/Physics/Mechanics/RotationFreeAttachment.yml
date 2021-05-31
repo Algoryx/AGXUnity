@@ -1,0 +1,9 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBodyAttachment]
+
+RotationFreeAttachment:
+  .extends: RigidBodyAttachment
+  .doc: >
+    Attachments that indicates the use of a Hinge constraint

@@ -1,0 +1,12 @@
+.format: 4
+
+Value:
+  .doc: Definition of a concrete value
+  .extends: Model
+  .abstract: true
+
+  type:
+    .type: Type
+
+  # localType:
+  #   .type: Type

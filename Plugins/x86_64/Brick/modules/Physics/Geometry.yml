@@ -1,0 +1,118 @@
+.format: 4
+
+RenderData:
+  specularColor:
+    .type: Vec3
+    .value: Vec3(0.5,0.5,0.5)
+  diffuseColor:
+    .type: Vec3
+    .value: Vec3(0.5,0.5,0.5)
+  opacity:
+    .type: Real
+    .value: 0
+
+Geometry:
+  .extends: Scene.Node
+
+  name:
+    .type: String
+    .value: ""
+
+  enableCollisions:
+    .type: Bool
+    .value: true
+
+  material:
+    .type: Physics.Material
+    .value: Physics.Materials.DefaultMaterial
+
+  renderMaterial:
+    .type: RenderData
+    .value: null
+
+  isSensor:
+    .type: Bool
+    .value: false
+
+
+Cylinder:
+  .extends: Geometry
+  length:
+    .type: Real
+  radius:
+    .type: Real
+
+Box:
+  .extends: Geometry
+  lengths:
+    .type: Vec3
+
+
+Sphere:
+  .extends: Geometry
+  radius:
+    .type: Real
+
+
+Trimesh:
+  .extends: Geometry
+
+  filepath:
+    .type: String
+    .value: null
+
+  scale:
+    .type: Real
+    .value: 1.0
+
+  # vertices:
+  #   .type: List<Vec3>
+  #   .value: List<Vec3>()
+  # normals:
+  #   .type: List<Vec3>
+  #   .value: List<Vec3>()
+  # indices:
+  #   .type: List<Int>
+  #   .value: List<Int>()
+
+
+Convex:
+  .extends: Geometry
+  vertices:
+    .type: List<Vec3>
+    .value: List<Vec3>()
+  scale:
+    .type: Real
+    .value: 1.0
+  asTrimesh:
+    .type: Bool
+    .value: false
+    # constructors:
+    #   widthHeightLength:
+    #     parameters:
+    #       width: Real
+    #       height: Real
+    #       length: Real
+
+
+Plane:
+  .extends: Geometry
+  .doc: "A plane defined by the plane equation: ax + by + cz + d = 0"
+  a:
+    .type: Real
+  b:
+    .type: Real
+  c:
+    .type: Real
+  d:
+    .type: Real
+
+Line:
+  .extends: Geometry
+  .doc: A line between the two local points of the parent of the geometry
+  point1:
+    .type: Vec3
+
+  point2:
+    .type: Vec3
+

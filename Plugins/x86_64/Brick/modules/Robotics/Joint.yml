@@ -1,0 +1,83 @@
+.format: 4
+.import:
+  Physics.Mechanics: [AttachmentPairConnector]
+  Physics.Mechanics.InteractionData6D: [Stiffness6D, Damping6D]
+  Robotics: [Segment]
+  Robotics.SignalType: [InputForceSignal, InputVelocitySignal, InputPositionSignal]
+
+Joint:
+  .doc: >
+    A Joint is connecting two Segments.
+    Segment1 and Segment2
+
+    Each joint need a reference to an AttachmentPairConnector,
+    which will be responsible for the positioning of the Segments.
+
+    Segment1 and Segment2 in their turn
+    need references to the attachments of the Connector.
+
+    A Joint has a position attribute,
+    which define it's position during positioning.
+
+    The Joint may have an ExternalReference, which ref.
+    to an AttachmentPairConnector in an external scene description,
+    defined in the external model imported by
+    the externalFilePath of the Robot of consern.
+
+
+
+  externalReference:
+    .type: String
+    .value: null
+
+  initialPosition:
+    .type: Real
+    .value: 0
+
+  connector:
+    .type: AttachmentPairConnector
+    .value: null
+
+  segment1:
+    .type: Segment
+    .value: null
+
+  segment2:
+    .type: Segment
+    .value: null
+
+  motorStiffness:
+    .type: Real
+    .value: 2E9
+
+  motorDamping:
+    .type: Real
+    .value: 1E8
+
+  motorFriction:
+    .type: Real
+    .value: 0
+
+  maxMotorForce:
+    .type: Real
+    .value: 0
+
+  attachmentStiffness:
+    .type: Stiffness6D
+    defaultValue: this.motorStiffness
+
+  attachmentDamping:
+    .type: Damping6D
+    .value: null
+
+  inputSignalType:
+    .type: Robotics.SignalType
+    .value: null
+
+  protocolReference:
+    .doc: Reference for the signal to be communicated over some protocol
+    .type: String
+    .value: null
+
+
+

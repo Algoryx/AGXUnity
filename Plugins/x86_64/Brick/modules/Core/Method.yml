@@ -1,0 +1,11 @@
+.format: 4
+
+Method:
+  .doc: Method declaration
+  .extends: Function
+
+  isStatic:
+    .type: Bool
+    .doc: True if the method is static and not bound to a specific model instance
+    .value: false
+

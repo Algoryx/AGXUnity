@@ -1,0 +1,38 @@
+.format: 4
+
+List:
+  .doc: List collection type
+  .genericParameters:
+    - T: Type
+
+  # length:
+  #   .kind: Property
+  #   .doc: The length of the list
+  #   .type: Int
+
+  .methods:
+    Add:
+      doc: Add an element to the list
+      parameters:
+        value: T
+
+    Insert:
+      doc: Insert an element to the list
+      parameters:
+        index: Int
+        value: T
+
+    Delete:
+      doc: Delete an element from the list
+      parameters:
+        index: Int
+
+    Set:
+      doc: Set an element in the list
+      parameters:
+        index: Int
+        value: T
+
+    Clear:
+      doc: Clear the list
+      parameters: {}

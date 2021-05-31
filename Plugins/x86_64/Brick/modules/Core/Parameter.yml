@@ -1,0 +1,5 @@
+.format: 4
+
+# TODO: Parameter vs Attribute?
+Parameter:
+  .extends: Attribute

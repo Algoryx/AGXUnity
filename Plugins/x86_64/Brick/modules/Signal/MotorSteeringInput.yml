@@ -1,0 +1,17 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.AttachmentPairInteraction: [AngleRotationalMotorInteraction1D]
+
+MotorSteeringInput:
+  .extends: Signal.Input<Real>
+  .doc: Sets the desired normalized angle of a motor/servo as a value between -1 and 1.
+    What these values corresponds to are specified by the minAngle and maxAngle attributes
+    respectively. The speed with which the motor will try to reach its goal is defined by the
+    motor interaction (AngleRotationalMotorInteraction1D).
+  motor:
+    .type: AngleRotationalMotorInteraction1D
+  maxAngle:
+    .type: Real
+  minAngle:
+    .type: Real

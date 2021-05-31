@@ -1,0 +1,7 @@
+.format: 4
+
+ContactDepthOutput:
+  .extends: Signal.Output<Real>
+  .doc: Outputs the maximum depth registred for the geometry for any collision
+  geometry:
+    .type: Physics.Geometry

@@ -1,0 +1,10 @@
+.format: 4
+.import:
+  Physics: [Component]
+
+RobotArm:
+  .extends: Component
+  .doc: >
+    A linear structure of Segments, connected by Joints.
+
+

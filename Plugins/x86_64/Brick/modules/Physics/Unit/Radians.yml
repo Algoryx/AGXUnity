@@ -1,0 +1,7 @@
+.format: 4
+.ignore: true
+
+Radians:
+  .extends: Physics.Unit
+  symbol: rad
+

@@ -1,0 +1,6 @@
+.format: 4
+.ignore: true
+
+Foot:
+  .extends: Physics.Unit
+  symbol: ft

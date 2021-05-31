@@ -1,0 +1,47 @@
+.format: 4
+
+Node:
+  .doc: |
+    Base node in scene hierarchy. Subclass attributes of type `Node` are automatically attached as children to the Node transform.
+
+  transform:
+    .doc: World transform
+    .type: Transform
+    .value: Transform
+
+  position:
+    # .kind: Property
+    # .property: true
+    .alias: transform.position
+    .doc: World position, alias for `transform.position`
+    # .quantity: Position
+    .type: Math.Vec3
+
+  rotation:
+    # .kind: Property
+    # .property: true
+    .alias: transform.rotation
+    .doc: World rotation, alias for `transform.rotation`
+    # .type: Rotation
+    .type: Math.Quat
+
+  localTransform:
+    .doc: local transform
+    .type: Transform
+    .value: Transform
+
+  localPosition:
+    # .kind: Property
+    # .property: true
+    .alias: localTransform.position
+    .doc: World position, alias for `localTransform.position`
+    # .type: Position
+    .type: Math.Vec3
+
+  localRotation:
+    # .kind: Property
+    # .property: true
+    .alias: localTransform.rotation
+    .doc: World rotation, alias for `localTransform.rotation`
+    # .type: Rotation
+    .type: Math.Quat

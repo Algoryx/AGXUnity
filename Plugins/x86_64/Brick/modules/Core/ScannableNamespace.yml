@@ -1,0 +1,6 @@
+.format: 4
+
+# TODO: Remove
+ScannableNamespace:
+  .extends: Namespace
+  # .abstract: true

@@ -1,0 +1,29 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [DegreeOfFreedom]
+  Physics.Mechanics.DegreeOfFreedom: [RotationalFree3D, TranslationalFree3D]
+  Physics: [Charge]
+
+RigidBodyAttachment:
+  .extends: Physics.Charge
+  .doc: >
+    The purpose of a RigidBodyAttachment (RBA) is to define a local coordinate system
+    for a RigidBody to align and interact with other RigidBodies.
+
+
+  referenceTangent:
+    .doc: >
+        Primary direction for attachment frame.
+        Defined in body coordinates.
+        Named Tangent since it's primary function is to tangent a constraint surface.
+    .type: Vec3
+    .value: Vec3(0,0,1)
+
+  referenceNormal:
+    .doc: >
+        Secondary direction for attachment frame.
+        Defined in body coordinates.
+        Named Normal since it must be orthogonal to the Tangent.
+    .type: Vec3
+    .value: Vec3(1,0,0)

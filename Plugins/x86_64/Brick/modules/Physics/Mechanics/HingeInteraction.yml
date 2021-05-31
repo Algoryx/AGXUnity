@@ -1,0 +1,19 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [AttachmentPairInteraction]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D]
+  Physics.DriveTrain: [GearInteraction, RotatingShaft]
+
+HingeInteraction:
+  .extends: AttachmentPairInteraction
+
+  interactionType: Hinge
+
+
+HingeGear1DInteraction:
+  .extends: Interaction
+  interactionType: HingeGear1D
+
+  inputShaft:
+    .type: RotatingShaft

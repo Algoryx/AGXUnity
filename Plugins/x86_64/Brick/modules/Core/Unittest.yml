@@ -1,0 +1,61 @@
+
+.format: 4
+
+# TODO: xUnit export, http://reflex.gforge.inria.fr/xunit.html#xunitReport
+Unittest:
+  .doc: |
+    The unittest type only contains the result attributes. Arbitrary local values may be instantiated, as well as a set of assertions. The test loader will gather all assertions and check their status and build the result lists.
+
+  .storeCustomData: true
+
+  # TODO: How do we evaluate the skip-value without evaluating the whole test state?
+  skip:
+    .doc: Set true to skip evaluating this test
+    .type: Bool
+    .value: false
+
+  startTime:
+    .type: Timestamp
+
+  endTime:
+    .type: Timestamp
+
+  duration:
+    .doc: Measured time to evaluate test
+    # .type: Duration
+    .type: Real
+
+  state:
+    .type: TestState
+    # TODO: Fix enum lookup
+    .value: TestState.TestState.NotEvaluated
+
+  numPassed:
+    .doc: Number of passed assertions
+    .type: Int
+
+  numFailed:
+    .doc: Number of failed assertions
+    .type: Int
+
+  # TODO: Labels as meta value instead?
+  # labels:
+  #   .doc: Set of labels
+  #   .type: List<Label>
+  #   .value: null
+
+  # failedAssertions:
+  #   .doc: Result of the test, list of all failed assertions
+  #   .type: List<Assertion>
+  #   .value: null
+
+  # successfulAssertions:
+  #   .doc: Result of the test, list of all successful assertions
+  #   .type: List<Assertion>
+  #   .value: null
+
+  .methods:
+    Evaluate:
+      doc: Evaluate the unittest values and assertions
+      parameters: {}
+
