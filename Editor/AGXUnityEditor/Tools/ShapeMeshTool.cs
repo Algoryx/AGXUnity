@@ -1,12 +1,49 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEditor;
+
 using AGXUnity.Utils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
+  public static class CanceledAsyncCollisionMeshGeneretors
+  {
+    public static void RegisterCanceled( AGXUnity.Collide.CollisionMeshGenerator generator )
+    {
+      if ( generator == null || s_canceledGenerators.Contains( generator ) )
+        return;
+
+      if ( s_canceledGenerators.Count == 0 )
+        EditorApplication.update += OnUpdate;
+
+      Debug.Log( $"Registering canceled: {generator.GetHashCode()}" );
+      s_canceledGenerators.Add( generator );
+    }
+
+    private static void OnUpdate()
+    {
+      var generators = s_canceledGenerators.ToArray();
+      if ( generators.Length == 0 ) {
+        Debug.Log( "Unregister update callback, all canceled tasks has been removed." );
+        EditorApplication.update -= OnUpdate;
+        return;
+      }
+
+      foreach ( var generator in generators ) {
+        if ( generator.IsRunning )
+          continue;
+        Debug.Log( $"Canceled generator is done - removing {generator.GetHashCode()} from queue." );
+        generator.Dispose();
+        s_canceledGenerators.Remove( generator );
+      }
+    }
+
+    private static List<AGXUnity.Collide.CollisionMeshGenerator> s_canceledGenerators = new List<AGXUnity.Collide.CollisionMeshGenerator>();
+  }
+
   [CustomTool( typeof( AGXUnity.Collide.Mesh ) )]
   public class ShapeMeshTool : ShapeTool
   {
@@ -30,7 +67,7 @@ namespace AGXUnityEditor.Tools
       var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
       for ( int i = 0; i < NumTargets; ++i ) {
         var mesh = meshes[ i ];
-        if ( mesh.PrecomputedMeshData == null )
+        if ( mesh.Options == null )
           CacheMeshOptions( mesh, m_targetMeshOptions[ i ] );
       }
 
@@ -92,98 +129,83 @@ namespace AGXUnityEditor.Tools
     {
       InspectorGUI.Separator();
 
-      if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Properties" ) ) ) {
+      if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
         InspectorEditor.DrawMembersGUI( m_targetMeshOptions );
-        var result = InspectorGUI.PositiveNegativeButtons( true,
-                                                           "Apply",
-                                                           "Apply the changes",
-                                                           "Reset",
-                                                           "Reset values to default." );
-        if ( result == InspectorGUI.PositiveNegativeResult.Positive ) {
+        var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
+                                                            "Apply",
+                                                            "Apply the changes",
+                                                            "Reset",
+                                                            "Reset values to default." );
+        if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Positive ) {
           var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-          using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
-            for ( int i = 0; i < meshes.Length; ++i ) {
-              var mesh = meshes[ i ];
-              if ( mesh.PrecomputedMeshData == null ) {
-                Undo.RecordObject( mesh, "Generating mesh data" );
-                mesh.PrecomputedMeshData = ScriptableObject.CreateInstance<AGXUnity.Collide.PrecomputedCollisionMeshData>();
-                mesh.PrecomputedMeshData.Options = m_targetMeshOptions[ i ];
-                CacheMeshOptions( mesh, null );
-              }
+          var collisionMeshGenerator = new AGXUnity.Collide.CollisionMeshGenerator();
+          var generatorStartTime = EditorApplication.timeSinceStartup;
+          collisionMeshGenerator.GenerateAsync( meshes, m_targetMeshOptions );
+          var isCanceled = false;
+          while ( !isCanceled && collisionMeshGenerator.IsRunning ) {
+            var progressBarTitle = $"Generating collision meshes: {(int)( EditorApplication.timeSinceStartup - generatorStartTime )} s";
+            var progressBarInfo = string.Empty;
+            var progress = collisionMeshGenerator.Progress;
+            isCanceled = EditorUtility.DisplayCancelableProgressBar( progressBarTitle, progressBarInfo, progress );
+            if ( !isCanceled )
+              System.Threading.Thread.Sleep( 50 );
+          }
 
-              Undo.RecordObjects( new Object[] { mesh, mesh.PrecomputedMeshData }, "Apply" );
-              mesh.PrecomputedMeshData.Apply( mesh );
+          EditorUtility.ClearProgressBar();
+
+          if ( isCanceled )
+            CanceledAsyncCollisionMeshGeneretors.RegisterCanceled( collisionMeshGenerator );
+          else {
+            var results = collisionMeshGenerator.CollectResults();
+            using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
+              foreach ( var result in results ) {
+                Undo.RecordObject( result.Mesh, "Collision Meshes" );
+                result.Mesh.Options = result.Options;
+                CacheMeshOptions( result.Mesh, null );
+                result.Mesh.SetPrecomputedCollisionMeshes( result.CollisionMeshes );
+
+                EditorUtility.SetDirty( result.Mesh );
+                EditorUtility.SetDirty( result.Mesh.Options );
+              }
             }
           }
 
+          collisionMeshGenerator = null;
           SynchronizeLocalMeshOptions();
+
+          GUIUtility.ExitGUI();
         }
-        else if ( result == InspectorGUI.PositiveNegativeResult.Negative ) {
+        else if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Negative ) {
           // Dialog: Are you sure?
 
-          // Doesn't work.
-          //var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-          //using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
-          //  for ( int i = 0; i < meshes.Length; ++i ) {
-          //    var mesh = meshes[ i ];
-          //    if ( mesh.PrecomputedMeshData == null )
-          //      continue;
-          //    //Undo.RecordObject( mesh, "Resetting collision mesh data" );
-          //    Undo.RecordObjects( new Object[] { mesh, mesh.PrecomputedMeshData, mesh.PrecomputedMeshData.Options }, "Reset" );
-
-          //    Undo.DestroyObjectImmediate( mesh.PrecomputedMeshData.Options );
-          //    mesh.PrecomputedMeshData.Options = null;
-          //    Undo.DestroyObjectImmediate( mesh.PrecomputedMeshData );
-
-          //    mesh.PrecomputedMeshData = null;
-          //    CacheMeshOptions( mesh, null );
-
-          //    mesh.OnPrecomputedCollisionMeshDataDirty();
-          //  }
-
-          //  SynchronizeLocalMeshOptions();
-          //}
-
-          // OLD
-          //Undo.RecordObjects( meshes, "Generated mesh data" );
-          //for ( int i = 0; i < meshes.Length; ++i ) {
-          //  var mesh = meshes[ i ];
-          //  if ( mesh.PrecomputedMeshData != null ) {
-          //    mesh.PrecomputedMeshData.DestroyCollisionMeshes();
-
-          //    Undo.DestroyObjectImmediate( mesh.PrecomputedMeshData.Options );
-
-          //    var data = mesh.PrecomputedMeshData;
-          //    mesh.PrecomputedMeshData = null;
-          //    Undo.DestroyObjectImmediate( data );
-
-          //    m_targetMeshOptions[ i ] = ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>();
-          //    CacheMeshOptions( mesh, m_targetMeshOptions[ i ] );
-
-          //    mesh.OnPrecomputedCollisionMeshDataDirty();
-          //  }
-          //}
-
-          //m_targetMeshOptions = ( from mesh in meshes
-          //                        select mesh.PrecomputedMeshData?.Options ??
-          //                               GetCachedMeshOptions( mesh ) ??
-          //                               ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
+          var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
+          using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
+            for ( int i = 0; i < meshes.Length; ++i ) {
+              var mesh = meshes[ i ];
+              Undo.RecordObject( mesh, "Resetting collision mesh data" );
+              mesh.DestroyCollisionMeshes();
+              if ( mesh.Options != null ) {
+                Undo.RecordObject( mesh.Options, "Resetting mesh options to default" );
+                mesh.Options.ResetToDesfault();
+              }
+            }
+          }
         }
       }
     }
 
     private void MeshStatisticsGUI()
     {
-      if ( IsMultiSelect || Mesh.PrecomputedMeshData == null )
+      if ( IsMultiSelect || Mesh.PrecomputedCollisionMeshes.Length == 0 )
         return;
 
       EditorGUILayout.Space();
 
       InspectorGUI.BrandSeparator();
 
-      var numCollisionMeshes = Mesh.PrecomputedMeshData.CollisionMeshes.Length;
-      var totNumVertices = Mesh.PrecomputedMeshData.CollisionMeshes.Select( collisionMesh => collisionMesh.Vertices.Length ).Sum();
-      var totNumTriangles = Mesh.PrecomputedMeshData.CollisionMeshes.Select( collisionMesh => collisionMesh.Indices.Length ).Sum() / 3;
+      var numCollisionMeshes = Mesh.PrecomputedCollisionMeshes.Length;
+      var totNumVertices = Mesh.PrecomputedCollisionMeshes.Select( collisionMesh => collisionMesh.Vertices.Length ).Sum();
+      var totNumTriangles = Mesh.PrecomputedCollisionMeshes.Select( collisionMesh => collisionMesh.Indices.Length ).Sum() / 3;
       var meshPlural = numCollisionMeshes > 1 ? "es" : string.Empty;
       var summaryString = $"Summary ({numCollisionMeshes} mesh{meshPlural}, {totNumTriangles} triangles, {totNumVertices} vertices)";
       if ( InspectorGUI.Foldout( GetMeshStatisticsEditorData( Mesh ),
@@ -191,13 +213,13 @@ namespace AGXUnityEditor.Tools
         InspectorGUI.Separator();
 
         EditorGUILayout.LabelField( GUI.MakeLabel( "Number of meshes" ),
-                                    GUI.MakeLabel( Mesh.PrecomputedMeshData.CollisionMeshes.Length.ToString(), Color.green ),
+                                    GUI.MakeLabel( Mesh.PrecomputedCollisionMeshes.Length.ToString(), Color.green ),
                                     InspectorEditor.Skin.TextField );
         using ( InspectorGUI.IndentScope.Single ) {
           InspectorGUI.Separator();
-          for ( int i = 0; i < Mesh.PrecomputedMeshData.CollisionMeshes.Length; ++i ) {
-            var numVertices = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Vertices.Length;
-            var numTriangles = Mesh.PrecomputedMeshData.CollisionMeshes[ i ].Indices.Length / 3;
+          for ( int i = 0; i < Mesh.PrecomputedCollisionMeshes.Length; ++i ) {
+            var numVertices = Mesh.PrecomputedCollisionMeshes[ i ].Vertices.Length;
+            var numTriangles = Mesh.PrecomputedCollisionMeshes[ i ].Indices.Length / 3;
             EditorGUILayout.LabelField( GUI.MakeLabel( $"[{i}] Number of triangles (vertices)" ),
                                         GUI.MakeLabel( $"{numTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue )} ({numVertices.ToString()})" ),
                                         InspectorEditor.Skin.TextField );
@@ -205,8 +227,8 @@ namespace AGXUnityEditor.Tools
           InspectorGUI.Separator();
         }
         var totNumTrianglesString = totNumTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue );
-        if ( Mesh.PrecomputedMeshData.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
-             Mesh.PrecomputedMeshData.Options.ReductionEnabled ) {
+        if ( Mesh.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
+             Mesh.Options.ReductionEnabled ) {
           totNumTrianglesString += $" (originally: {Mesh.SourceObjects.Select( source => source.triangles.Length / 3 ).Sum().ToString().Color( Color.red )})";
         }
         EditorGUILayout.LabelField( GUI.MakeLabel( "Total number of triangles" ),
@@ -219,7 +241,7 @@ namespace AGXUnityEditor.Tools
     {
       var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
       m_targetMeshOptions = ( from mesh in meshes
-                              select mesh.PrecomputedMeshData?.Options ??
+                              select mesh.Options ??
                                      GetCachedMeshOptions( mesh ) ??
                                      ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
     }

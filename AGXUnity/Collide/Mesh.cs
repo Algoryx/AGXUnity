@@ -1,7 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
+
+using Random = UnityEngine.Random;
 
 namespace AGXUnity.Collide
 {
@@ -35,21 +38,42 @@ namespace AGXUnity.Collide
     }
 
     [SerializeField]
-    private PrecomputedCollisionMeshData m_precomputedMeshData = null;
+    private List<CollisionMeshData> m_precomputedCollisionMeshes = new List<CollisionMeshData>();
 
     /// <summary>
-    /// Optional precomputed mesh data which could for example be convex,
-    /// convex decomposition and/or reduced mesh.
+    /// Precomputed collision meshes, e.g., generated from
+    /// convex decomposition and/or mesh reduction.
     /// </summary>
-    [IgnoreSynchronization]
-    public PrecomputedCollisionMeshData PrecomputedMeshData
+    [HideInInspector]
+    public CollisionMeshData[] PrecomputedCollisionMeshes
     {
-      get { return m_precomputedMeshData; }
+      get { return m_precomputedCollisionMeshes.ToArray(); }
+    }
+
+    public void SetPrecomputedCollisionMeshes( CollisionMeshData[] collisionMeshes )
+    {
+      m_precomputedCollisionMeshes.Clear();
+      m_precomputedCollisionMeshes.AddRange( collisionMeshes );
+      OnPrecomputedCollisionMeshDataDirty();
+    }
+
+    [SerializeField]
+    private CollisionMeshOptions m_options = null;
+
+    /// <summary>
+    /// Options for precomputed collision meshes. Default: null, meaning
+    /// collision mesh data is read from the source objects.
+    /// </summary>
+    [HideInInspector]
+    public CollisionMeshOptions Options
+    {
+      get { return m_options; }
       set
       {
-        m_precomputedMeshData = value;
+        m_options = value;
       }
     }
+
 
     /// <summary>
     /// Returns native mesh object if created.
@@ -132,6 +156,48 @@ namespace AGXUnity.Collide
       ResetRenderMeshes();
     }
 
+    public void GenerateCollisionMeshes( CollisionMeshOptions options )
+    {
+      Options = options;
+      GenerateCollisionMeshes();
+    }
+
+    public void GenerateCollisionMeshes()
+    {
+      // TODO: Error handling.
+
+      DestroyCollisionMeshes();
+
+      // Vertices in AGX Dynamics format - right handed and indices 0, 2, 1.
+      var merger = MeshMerger.Merge( null, SourceObjects );
+      if ( Options.Mode == CollisionMeshOptions.MeshMode.Trimesh ) {
+        m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
+      }
+      else if ( Options.Mode == CollisionMeshOptions.MeshMode.Convex ) {
+        using ( var tmpComvex = agxUtil.agxUtilSWIG.createConvexRef( merger.Vertices ) ) {
+          merger.Vertices = tmpComvex.getMeshData().getVertices();
+          merger.Indices  = tmpComvex.getMeshData().getIndices();
+
+          m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
+        }
+      }
+      else if ( Options.Mode == CollisionMeshOptions.MeshMode.ConvexDecomposition ) {
+        var convexes = new agxCollide.ConvexVector();
+        agxUtil.agxUtilSWIG.createVHACDConvexDecomposition( merger.Vertices,
+                                                            merger.Indices,
+                                                            convexes,
+                                                            (uint)Options.ElementResolutionPerAxis );
+        for ( int i = 0; i < convexes.Count; ++i ) {
+          merger.Vertices = convexes[ i ].getMeshData().getVertices();
+          merger.Indices  = convexes[ i ].getMeshData().getIndices();
+
+          m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
+        }
+      }
+
+      OnPrecomputedCollisionMeshDataDirty();
+    }
+
     /// <summary>
     /// Scale of meshes are inherited by the parents and supports non-uniform scaling.
     /// </summary>
@@ -195,18 +261,19 @@ namespace AGXUnity.Collide
     private agxCollide.Geometry Create( UnityEngine.Mesh[] meshes )
     {
       var geometry = new agxCollide.Geometry();
-      if ( m_precomputedMeshData != null && m_precomputedMeshData.CreateShapes( transform ) is var shapes && shapes != null ) {
+      if ( m_precomputedCollisionMeshes.Count > 0 && CreateShapes() is var shapes && shapes != null ) {
         foreach ( var shape in shapes )
           geometry.add( shape, GetNativeGeometryOffset() );
       }
       else {
-        if ( m_precomputedMeshData != null )
+        if ( m_precomputedCollisionMeshes.Count > 0 )
           Debug.LogWarning( "AGXUnity.Mesh: Failed to create shapes from precomputed data - using Trimesh as fallback.", this );
 
         var merger = MeshMerger.Merge( transform, meshes );
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              "AGXUnity.Mesh: Trimesh" ) );
+                                              "AGXUnity.Mesh: Trimesh" ),
+                      GetNativeGeometryOffset() );
       }
 
       if ( geometry.getShapes().Count == 0 ) {
@@ -215,6 +282,40 @@ namespace AGXUnity.Collide
       }
 
       return geometry;
+    }
+
+    private agxCollide.Mesh[] CreateShapes()
+    {
+      // TODO: Create given source objects.
+      if ( m_precomputedCollisionMeshes.Count == 0 )
+        return null;
+
+      // The vertices are assumed to be stored in local coordinates of the
+      // given transform. For the scale to be correct w
+      var toWorld = transform.localToWorldMatrix;
+      Func<Vector3, Vector3> transformer = v =>
+      {
+        return transform.InverseTransformDirection( toWorld * v.ToLeftHanded() );
+      };
+
+      return m_precomputedCollisionMeshes.Select( collisionMesh => collisionMesh.CreateShape( transformer, Options.Mode ) ).ToArray();
+    }
+
+    public void DestroyCollisionMeshes()
+    {
+      m_precomputedCollisionMeshes.Clear();
+      OnPrecomputedCollisionMeshDataDirty();
+    }
+
+    private CollisionMeshData CreateDataOptionallyReduce( MeshMerger merger )
+    {
+      if ( Options.ReductionEnabled )
+        merger.Reduce( Options.ReductionRatio, Options.ReductionAggressiveness );
+
+      var meshData = new CollisionMeshData();
+      meshData.Apply( merger.Vertices, merger.Indices );
+
+      return meshData;
     }
 
     private new void Reset()
@@ -259,13 +360,13 @@ namespace AGXUnity.Collide
     {
       ResetRenderMeshes();
 
-      if ( m_precomputedMeshData != null ) {
+      if ( m_precomputedCollisionMeshes.Count > 0 ) {
         var renderMeshes = new List<UnityEngine.Mesh>();
         var renderColors = new List<Color>();
 
         var prevState = Random.state;
         Random.InitState( GetInstanceID() );
-        foreach ( var collisionMesh in m_precomputedMeshData.CollisionMeshes ) {
+        foreach ( var collisionMesh in PrecomputedCollisionMeshes ) {
           // TODO: Remove this. It shouldn't be null.
           if ( collisionMesh == null )
             continue;
@@ -291,9 +392,9 @@ namespace AGXUnity.Collide
       }
     }
 
-    [System.NonSerialized]
+    [NonSerialized]
     private UnityEngine.Mesh[] m_renderMeshes = new UnityEngine.Mesh[] { };
-    [System.NonSerialized]
+    [NonSerialized]
     private Color[] m_renderColors = new Color[] { };
   }
 }

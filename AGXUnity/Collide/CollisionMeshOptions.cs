@@ -88,7 +88,6 @@ namespace AGXUnity.Collide
 
     /// <summary>
     /// Convex decomposition - resolution parameter [20, 400]. Default: 50.
-    /// The larger
     /// </summary>
     [InspectorGroupBegin( Name = "Convex Decomposition" )]
     public int ElementResolutionPerAxis
@@ -101,6 +100,15 @@ namespace AGXUnity.Collide
 
         m_elementResolutionPerAxis = System.Math.Max( value, 1 );
       }
+    }
+
+    public void ResetToDesfault()
+    {
+      m_mode = MeshMode.Trimesh;
+      m_reductionEnabled = false;
+      m_reductionRatio = 0.5f;
+      m_reductionAggressiveness = 7.0f;
+      m_elementResolutionPerAxis = 50;
     }
 
 
