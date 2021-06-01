@@ -22,7 +22,7 @@ namespace AGXUnity.BrickUnity
     {
       if (string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("BRICK_DIR")) && string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("BRICK_MODULEPATH")))
       {
-        var modulePath = System.IO.Path.Combine(Application.dataPath, "Plugins", "x86_64", "Brick", "modules");
+        var modulePath = System.IO.Path.Combine(Application.dataPath, "AGXUnity", "Plugins", "x86_64", "Brick", "modules");
         System.Environment.SetEnvironmentVariable("BRICK_MODULEPATH", modulePath);
       }
     }
