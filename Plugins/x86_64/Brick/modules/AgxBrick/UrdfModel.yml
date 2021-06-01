@@ -1,0 +1,8 @@
+.format: 4
+
+UrdfModel:
+  .extends: Robotics.Robot
+
+  packagePath:
+    .type: String
+    .value: null

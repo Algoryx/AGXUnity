@@ -1,0 +1,48 @@
+.format: 4
+.ignore: true
+
+GravityField: {}
+    # DefaultGravitationalAcceleration:
+    #   type: Real
+    #   const: true
+    #   static: true
+    #   default: 9.82
+
+
+UniformGravityField:
+  .extends: GravityField
+  .doc: Local gravity approximation with uniform gravity vector
+  direction:
+    .type: Vec3
+    # Should type be `Normal`? Enforce unit length, or eg `Vec3.Normalized`
+    .doc: Gravitation acceleration vector
+    # TODO Use global setting for up-vector
+    # default: -Axis.Z
+    .value: Vec3(0,0,-1)
+
+  magnitude:
+    .type: Real
+    # default: DefaultGravitationalAcceleration
+    .value: 9.82
+
+  vector:
+    .type: Vec3
+    .doc: Gravitation acceleration vector
+    # NOTE: This is a binding, allow to read/write from any of the three, and maintain relationship
+    # default: this.direction * this.magnitude
+
+
+# NOTE: Should use more generic formula from Newton's law of universal gravitation
+PointGravityField:
+  .extends: GravityField
+  .doc: Local gravity approximation with uniform gravity vector
+  center:
+    .type: Vec3
+    .doc: Gravitational center point towards which the gravitational force is applied
+    .value: Vec3()
+    # default: Vec3.zero
+  magnitude:
+    .type: Real
+    .doc: Gravitation acceleration magnitude # TODO: Should be a constant depending on distance to center
+
+

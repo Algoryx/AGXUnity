@@ -1,0 +1,96 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, HingeAttachment, LockJointConnector, RigidBodyAttachment]
+
+TireRimAttachment:
+  .extends: RigidBodyAttachment
+
+TireBody:
+  .doc: Tire body, to be used with TwoBodyTire, with an attachment to connect to the rim
+  .extends: RigidBody
+  attachmentToRim:
+    .type: TireRimAttachment
+    .value: TireRimAttachment
+
+RimBody:
+  .doc: >
+    Rim body, to be used with TwoBodyTire, with an attachment to connect to the tire and a hinge 
+    attachment to connecto the tire to something.
+  .extends: RigidBody
+  attachment:
+    .type: HingeAttachment
+    .value: HingeAttachment
+  attachmentToTire:
+    .type: TireRimAttachment
+    .value: TireRimAttachment
+
+TireRimConnector:
+  .doc: Connector used to position the tire and rim correctly relative each other
+  .extends: LockJointConnector
+  attachmentOnTire:
+    .type: TireRimAttachment
+  attachmentOnRim:
+    .type: TireRimAttachment
+  attachment1: this.attachmentOnTire
+  attachment2: this.attachmentOnRim
+  enabledInteractions: false
+  enabledPositioning: true
+
+
+TwoBodyTire:
+  .doc: >
+    An implementation of a tire model with two separate rigid bodies; the tire and the rim.
+    If there already exists a connector between the bodies, it should be disabled.
+  .extends: Physics.Component
+
+  wantInternalPositioning: true
+
+  attachmentOnRim:
+    .type: TireRimAttachment
+
+  attachmentOnTire:
+    .type: TireRimAttachment
+
+  tireRadius:
+    .type: Real
+
+  rimRadius:
+    .type: Real
+
+  radialStiffness:
+    .type: Real
+    .value: 500000
+
+  lateralStiffness:
+    .type: Real
+    .value: 5E7
+
+  bendingStiffness:
+    .type: Real
+    .value: 250000
+
+  torsionalStiffness:
+    .type: Real
+    .value: 250000
+
+  radialDamping:
+    .type: Real
+    .value: 17000
+
+  lateralDamping:
+    .type: Real
+    .value: 1700000
+
+  bendingDamping:
+    .type: Real
+    .value: 8500
+
+  torsionalDamping:
+    .type: Real
+    .value: 8500
+
+  trConnector:
+    .type: TireRimConnector
+    attachmentOnTire: this.attachmentOnTire
+    attachmentOnRim: this.attachmentOnRim

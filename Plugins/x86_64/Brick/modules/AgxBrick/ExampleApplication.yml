@@ -1,0 +1,20 @@
+.format: 4
+
+ExampleApplication:
+  entrypoint:
+    .type: String
+  agxOnly:
+    .type: Bool
+    .value: false
+  stopAfter:
+    .type: Real
+    .value: -1
+
+
+# Foo:
+#   model:
+#     .type: ExternalAgxScene
+#     entrypoint: myRobot.py
+#     frame:
+#       world:
+#         position: Vec3(10, 0 0)

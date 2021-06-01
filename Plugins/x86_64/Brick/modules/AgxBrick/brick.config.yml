@@ -1,0 +1,37 @@
+ModuleConfig:
+  # NOTE: This module can not be called `agx`. Because of python load mismatch when also loading `agx` module from AGX swig bindings
+  name: AGXBrick
+  # apiRoot: api
+
+  files.exclude:
+    - cs/**
+  # NOTE: Needs fix for scanning partially built modules, eg when loading `Physics.Mechanics.Test.Crane`
+  #   - **/Test
+
+  import:
+    Math:
+      autoImport: true
+
+    Scene: {}
+    Physics: {}
+    Visual: {}
+    Simulation: {}
+    Robotics: {}
+
+  generators:
+
+    Python:
+      useGrpc: false
+      enable: false
+      targetDirectory: python
+
+    Cs:
+      useGrpc: false
+      enable: true
+      # rootNamespace: ""
+      targetDirectory: cs
+
+    Grpc:
+      enable: false
+      csNamespace: Brick.AGXBrick.Grpc
+      targetDirectory: grpc

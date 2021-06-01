@@ -1,0 +1,7 @@
+.format: 4
+
+ExternalAgxScene:
+  .extends: Physics.Component
+  entrypoint:
+    .type: String
+

@@ -1,0 +1,18 @@
+.format: 4
+
+.import:
+  Physics.Geometry: [Box]
+
+SurfaceVelocityConveyorBox:
+  .doc: >
+    A geometry using the SurfaceVelocityConveyorBelt API in AGX
+  .extends: Box
+
+  points:
+    .doc: >
+      Represents a connected line segment along the conveyor
+    .type: List<Vec3>
+
+  speed:
+    .type: Real
+    .value: 0

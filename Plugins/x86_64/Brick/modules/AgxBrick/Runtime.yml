@@ -1,0 +1,10 @@
+.format: 4
+.ignore: true
+
+Runtime:
+  port:
+    .type: Int
+    .value: 50010
+  simulation:
+    .type: Simulation
+    .value: Simulation()

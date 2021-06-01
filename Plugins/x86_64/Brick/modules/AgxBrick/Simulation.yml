@@ -1,0 +1,48 @@
+.format: 4
+
+.ignore: true
+
+# Simulation:
+#   .doc: A simulation context where models can be simulated... TODO
+#   gravity:
+#     .doc: Gravitational field
+#     .type: Gravity.GravityField
+#     # TODO: Does not load
+#     # default: DefaultGravityField
+#     .value: null
+
+#   timestep:
+#     .doc: Simulation timestep
+#     .type: Real
+#     # quantity: Time, or TimeInterval (to infer inverse relation to frequency)
+#     .value: 1/60
+
+#   timestamp:
+#     .doc: Simulation timestamp
+#     .type: Real
+#     .value: 0
+
+#   # Part of 'SimulationApplication' ?
+#   endTime:
+#     .doc: Simulation end time
+#     .type: Real
+#     # TODO: Does not load
+#     # default: Infinity
+#     .value: -1
+
+#   models:
+#     .doc: The simulation models
+#     .type: Map<String, Physics.Component>
+#     .value: null
+
+#   # These are pure getter functions?
+#   # bodies:
+#   # constraints:
+#   # contacts:
+
+
+# Journal:
+#   path:
+#     .type: String
+#     .value: journal.agxJournal
+

@@ -1,0 +1,12 @@
+.format: 4
+
+.import:
+  Physics: [ContactMaterial]
+
+IterativeProjectedConeFrictionContactMaterial:
+  .doc: >
+    A ContactMaterial that will use the
+    IterativeProjectedConeFrictionModel of AGX.
+    Note! 
+    The 'frictionReferenceNode' attribute is ignored
+  .extends: ContactMaterial
