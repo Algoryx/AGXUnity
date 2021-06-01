@@ -52,7 +52,6 @@ namespace AGXUnityEditor.Tools
     public ShapeMeshTool( Object[] targets )
       : base( targets )
     {
-      SynchronizeLocalMeshOptions();
     }
 
     public override void OnAdd()
@@ -63,15 +62,6 @@ namespace AGXUnityEditor.Tools
     public override void OnRemove()
     {
       base.OnRemove();
-
-      var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-      for ( int i = 0; i < NumTargets; ++i ) {
-        var mesh = meshes[ i ];
-        if ( mesh.Options == null )
-          CacheMeshOptions( mesh, m_targetMeshOptions[ i ] );
-      }
-
-      m_targetMeshOptions = new AGXUnity.Collide.CollisionMeshOptions[] { };
     }
 
     public override void OnPreTargetMembersGUI()
@@ -117,10 +107,9 @@ namespace AGXUnityEditor.Tools
 
     public override void OnUndoRedo()
     {
-      SynchronizeLocalMeshOptions();
-
       foreach ( var go in Selection.gameObjects ) {
-        if ( go.GetComponent<AGXUnity.Collide.Mesh>() is var mesh && mesh != null )
+        var meshes = go.GetComponentsInChildren<AGXUnity.Collide.Mesh>();
+        foreach ( var mesh in meshes )
           mesh.OnPrecomputedCollisionMeshDataDirty();
       }
     }
@@ -130,17 +119,17 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.Separator();
 
       if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
-        InspectorEditor.DrawMembersGUI( m_targetMeshOptions );
+        InspectorEditor.DrawMembersGUI( Targets, t => ( t as AGXUnity.Collide.Mesh ).Options );
         var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
-                                                            "Apply",
-                                                            "Apply the changes",
-                                                            "Reset",
-                                                            "Reset values to default." );
+                                                                     "Apply",
+                                                                     "Apply the changes",
+                                                                     "Reset",
+                                                                     "Reset values to default." );
         if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Positive ) {
           var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
           var collisionMeshGenerator = new AGXUnity.Collide.CollisionMeshGenerator();
           var generatorStartTime = EditorApplication.timeSinceStartup;
-          collisionMeshGenerator.GenerateAsync( meshes, m_targetMeshOptions );
+          collisionMeshGenerator.GenerateAsync( meshes );
           var isCanceled = false;
           while ( !isCanceled && collisionMeshGenerator.IsRunning ) {
             var progressBarTitle = $"Generating collision meshes: {(int)( EditorApplication.timeSinceStartup - generatorStartTime )} s";
@@ -161,17 +150,24 @@ namespace AGXUnityEditor.Tools
               foreach ( var result in results ) {
                 Undo.RecordObject( result.Mesh, "Collision Meshes" );
                 result.Mesh.Options = result.Options;
-                CacheMeshOptions( result.Mesh, null );
-                result.Mesh.SetPrecomputedCollisionMeshes( result.CollisionMeshes );
-
-                EditorUtility.SetDirty( result.Mesh );
-                EditorUtility.SetDirty( result.Mesh.Options );
+                result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
               }
+            }
+
+            var hasPrefabAssetBeenChanged = results.Any( result =>
+                                                           PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
+                                                           PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );
+            // Trying to dirty gizmos rendering of all affected prefab instances.
+            // We don't have to dirty them all but it's hard to determine where
+            // the instance is located in the hierarchy.
+            if ( hasPrefabAssetBeenChanged ) {
+              var allMeshes = Object.FindObjectsOfType<AGXUnity.Collide.Mesh>();
+              foreach ( var m in allMeshes )
+                m.OnPrecomputedCollisionMeshDataDirty();
             }
           }
 
           collisionMeshGenerator = null;
-          SynchronizeLocalMeshOptions();
 
           GUIUtility.ExitGUI();
         }
@@ -185,7 +181,7 @@ namespace AGXUnityEditor.Tools
               Undo.RecordObject( mesh, "Resetting collision mesh data" );
               mesh.DestroyCollisionMeshes();
               if ( mesh.Options != null ) {
-                Undo.RecordObject( mesh.Options, "Resetting mesh options to default" );
+                Undo.RecordObject( mesh, "Resetting mesh options to default" );
                 mesh.Options.ResetToDesfault();
               }
             }
@@ -227,23 +223,16 @@ namespace AGXUnityEditor.Tools
           InspectorGUI.Separator();
         }
         var totNumTrianglesString = totNumTriangles.ToString().Color( InspectorGUISkin.BrandColorBlue );
-        if ( Mesh.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
-             Mesh.Options.ReductionEnabled ) {
+        var hasReducedNumTriangles = Mesh.Options != null &&
+                                     ( Mesh.Options.Mode != AGXUnity.Collide.CollisionMeshOptions.MeshMode.Trimesh ||
+                                       Mesh.Options.ReductionEnabled );
+        if ( hasReducedNumTriangles ) {
           totNumTrianglesString += $" (originally: {Mesh.SourceObjects.Select( source => source.triangles.Length / 3 ).Sum().ToString().Color( Color.red )})";
         }
         EditorGUILayout.LabelField( GUI.MakeLabel( "Total number of triangles" ),
                                     GUI.MakeLabel( totNumTrianglesString ),
                                     InspectorEditor.Skin.TextField );
       }
-    }
-
-    private void SynchronizeLocalMeshOptions()
-    {
-      var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-      m_targetMeshOptions = ( from mesh in meshes
-                              select mesh.Options ??
-                                     GetCachedMeshOptions( mesh ) ??
-                                     ScriptableObject.CreateInstance<AGXUnity.Collide.CollisionMeshOptions>() ).ToArray();
     }
 
     private EditorDataEntry GetMeshStatisticsEditorData( AGXUnity.Collide.Mesh mesh )
@@ -254,19 +243,6 @@ namespace AGXUnityEditor.Tools
     private EditorDataEntry GetEditorData( AGXUnity.Collide.Mesh mesh )
     {
       return EditorData.Instance.GetData( mesh, "ShapeMeshTool" );
-    }
-
-    private AGXUnity.Collide.CollisionMeshOptions GetCachedMeshOptions( AGXUnity.Collide.Mesh mesh )
-    {
-      var cachedOptionsAsset = GetEditorData( mesh ).Asset;
-      if ( cachedOptionsAsset == null )
-        return null;
-      return cachedOptionsAsset as AGXUnity.Collide.CollisionMeshOptions;
-    }
-
-    private void CacheMeshOptions( AGXUnity.Collide.Mesh mesh, AGXUnity.Collide.CollisionMeshOptions options )
-    {
-      GetEditorData( mesh ).Asset = options;
     }
 
     public static void ShapeMeshSourceGUI( Mesh currentSource,
@@ -281,7 +257,5 @@ namespace AGXUnityEditor.Tools
           onNewMesh?.Invoke( newSource );
       }
     }
-
-    private AGXUnity.Collide.CollisionMeshOptions[] m_targetMeshOptions = null;
   }
 }

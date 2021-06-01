@@ -45,20 +45,20 @@ namespace AGXUnity.Collide
     /// convex decomposition and/or mesh reduction.
     /// </summary>
     [HideInInspector]
+    [IgnoreSynchronization]
     public CollisionMeshData[] PrecomputedCollisionMeshes
     {
       get { return m_precomputedCollisionMeshes.ToArray(); }
-    }
-
-    public void SetPrecomputedCollisionMeshes( CollisionMeshData[] collisionMeshes )
-    {
-      m_precomputedCollisionMeshes.Clear();
-      m_precomputedCollisionMeshes.AddRange( collisionMeshes );
-      OnPrecomputedCollisionMeshDataDirty();
+      set
+      {
+        m_precomputedCollisionMeshes.Clear();
+        m_precomputedCollisionMeshes.AddRange( value );
+        OnPrecomputedCollisionMeshDataDirty();
+      }
     }
 
     [SerializeField]
-    private CollisionMeshOptions m_options = null;
+    private CollisionMeshOptions m_options = new CollisionMeshOptions();
 
     /// <summary>
     /// Options for precomputed collision meshes. Default: null, meaning
@@ -154,48 +154,6 @@ namespace AGXUnity.Collide
     public void OnPrecomputedCollisionMeshDataDirty()
     {
       ResetRenderMeshes();
-    }
-
-    public void GenerateCollisionMeshes( CollisionMeshOptions options )
-    {
-      Options = options;
-      GenerateCollisionMeshes();
-    }
-
-    public void GenerateCollisionMeshes()
-    {
-      // TODO: Error handling.
-
-      DestroyCollisionMeshes();
-
-      // Vertices in AGX Dynamics format - right handed and indices 0, 2, 1.
-      var merger = MeshMerger.Merge( null, SourceObjects );
-      if ( Options.Mode == CollisionMeshOptions.MeshMode.Trimesh ) {
-        m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
-      }
-      else if ( Options.Mode == CollisionMeshOptions.MeshMode.Convex ) {
-        using ( var tmpComvex = agxUtil.agxUtilSWIG.createConvexRef( merger.Vertices ) ) {
-          merger.Vertices = tmpComvex.getMeshData().getVertices();
-          merger.Indices  = tmpComvex.getMeshData().getIndices();
-
-          m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
-        }
-      }
-      else if ( Options.Mode == CollisionMeshOptions.MeshMode.ConvexDecomposition ) {
-        var convexes = new agxCollide.ConvexVector();
-        agxUtil.agxUtilSWIG.createVHACDConvexDecomposition( merger.Vertices,
-                                                            merger.Indices,
-                                                            convexes,
-                                                            (uint)Options.ElementResolutionPerAxis );
-        for ( int i = 0; i < convexes.Count; ++i ) {
-          merger.Vertices = convexes[ i ].getMeshData().getVertices();
-          merger.Indices  = convexes[ i ].getMeshData().getIndices();
-
-          m_precomputedCollisionMeshes.Add( CreateDataOptionallyReduce( merger ) );
-        }
-      }
-
-      OnPrecomputedCollisionMeshDataDirty();
     }
 
     /// <summary>
@@ -307,17 +265,6 @@ namespace AGXUnity.Collide
       OnPrecomputedCollisionMeshDataDirty();
     }
 
-    private CollisionMeshData CreateDataOptionallyReduce( MeshMerger merger )
-    {
-      if ( Options.ReductionEnabled )
-        merger.Reduce( Options.ReductionRatio, Options.ReductionAggressiveness );
-
-      var meshData = new CollisionMeshData();
-      meshData.Apply( merger.Vertices, merger.Indices );
-
-      return meshData;
-    }
-
     private new void Reset()
     {
       if ( SourceObjects.Length == 0 ) {
@@ -367,10 +314,6 @@ namespace AGXUnity.Collide
         var prevState = Random.state;
         Random.InitState( GetInstanceID() );
         foreach ( var collisionMesh in PrecomputedCollisionMeshes ) {
-          // TODO: Remove this. It shouldn't be null.
-          if ( collisionMesh == null )
-            continue;
-
           var meshes = collisionMesh.CreateRenderMeshes( transform );
           renderMeshes.AddRange( meshes );
           var color = Random.ColorHSV();
@@ -382,13 +325,14 @@ namespace AGXUnity.Collide
         m_renderColors = renderColors.ToArray();
       }
       else {
-        m_renderMeshes = SourceObjects;
-
-        var prevState = Random.state;
-        Random.InitState( GetInstanceID() );
-        var color = Random.ColorHSV();
-        m_renderColors = Enumerable.Repeat( color, m_renderMeshes.Length ).ToArray();
-        Random.state = prevState;
+        // Avoid rendering of meshes that hasn't been modified. To render
+        // these it's possible to do:
+        //     m_renderMeshes = SourceObjects;
+        //     var prevState = Random.state;
+        //     Random.InitState( GetInstanceID() );
+        //     var color = Random.ColorHSV();
+        //     m_renderColors = Enumerable.Repeat( color, m_renderMeshes.Length ).ToArray();
+        //     Random.state = prevState;
       }
     }
 

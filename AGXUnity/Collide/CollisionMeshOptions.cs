@@ -3,7 +3,8 @@
 namespace AGXUnity.Collide
 {
   [DoNotGenerateCustomEditor]
-  public class CollisionMeshOptions : ScriptableObject
+  [System.Serializable]
+  public class CollisionMeshOptions
   {
     /// <summary>
     /// Collection of supported mesh modes.

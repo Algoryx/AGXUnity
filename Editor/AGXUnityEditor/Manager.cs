@@ -566,12 +566,8 @@ namespace AGXUnityEditor
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
       else if ( Selection.activeGameObject != null ) {
-#if UNITY_2018_3_OR_NEWER
         var isPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) != PrefabInstanceStatus.NotAPrefab;
-#else
-        var isPrefabInstance = PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.PrefabInstance ||
-                               PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.DisconnectedPrefabInstance;
-#endif
+
         // We want to catch when a prefab has been instantiated in the
         // scene. Maybe this feature should be explicit, i.e., some
         // method doing the work.
