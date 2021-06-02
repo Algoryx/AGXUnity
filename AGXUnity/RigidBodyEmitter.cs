@@ -520,6 +520,7 @@ namespace AGXUnity
               visual.transform.SetParent( m_visualRoot.transform );
             visual.transform.position = instance.getPosition().ToHandedVector3();
             visual.transform.rotation = instance.getRotation().ToHandedQuaternion();
+            visual.transform.localScale = resource.transform.lossyScale;
 
             m_instanceDataTable.Add( instance.get(), new EmitData()
             {
