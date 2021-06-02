@@ -314,15 +314,12 @@ namespace AGXUnity.IO.URDF
           linkGo.transform.parent = robot.transform;
           linkInstanceTable.Add( link.Name, linkGo );
 
-          // IsWorld == true when <link name="a_link" />.
-          if ( !link.IsWorld ) {
-            var rb = CreateRigidBody( linkGo, link );
-            foreach ( var collision in link.Collisions )
-              OnElementGameObject( AddCollision( rb, collision ), collision );
+          var rb = CreateRigidBody( linkGo, link );
+          foreach ( var collision in link.Collisions )
+            OnElementGameObject( AddCollision( rb, collision ), collision );
 
-            foreach ( var visual in link.Visuals )
-              OnElementGameObject( AddVisual( rb, visual ), visual );
-          }
+          foreach ( var visual in link.Visuals )
+            OnElementGameObject( AddVisual( rb, visual ), visual );
 
           OnElementGameObject( linkGo, link );
         }
@@ -606,7 +603,7 @@ namespace AGXUnity.IO.URDF
         // CM frame and rotate the game object.
         var rotationMatrix = link.Inertial.Rpy.RadEulerToRotationMatrix();
         var inertia3x3 = (agx.Matrix3x3)link.Inertial.Inertia;
-        inertia3x3 = rotationMatrix.Multiply( inertia3x3 ).Multiply( rotationMatrix.transpose() );
+        inertia3x3 = rotationMatrix.transpose().Multiply( inertia3x3 ).Multiply( rotationMatrix );
         native.getMassProperties().setInertiaTensor( new agx.SPDMatrix3x3( inertia3x3 ) );
         native.getCmFrame().setLocalTranslate( link.Inertial.Xyz.ToVec3() );
 
