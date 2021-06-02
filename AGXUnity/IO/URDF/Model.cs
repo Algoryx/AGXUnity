@@ -788,6 +788,17 @@ namespace AGXUnity.IO.URDF
             }
           }
         }
+
+        if ( joint.Dynamics.Enabled ) {
+          if ( joint.Dynamics.Friction > 0 ) {
+            var frictionController = constraint.GetController<FrictionController>();
+            if ( frictionController != null ) {
+              frictionController.Enable = true;
+              frictionController.FrictionCoefficient = 0.0f;
+              frictionController.MinimumStaticFrictionForceRange = new RangeReal( joint.Dynamics.Friction );
+            }
+          }
+        }
       }
       else
         constraintGameObject = new GameObject( joint.name );
