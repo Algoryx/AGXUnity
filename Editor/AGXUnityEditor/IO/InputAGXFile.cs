@@ -240,8 +240,11 @@ namespace AGXUnityEditor.IO
           var materialNodes = node.GetReferences( Node.NodeType.Material );
           Func<string> contactMaterialMaterialNames = () =>
           {
-            return m_tree.GetMaterial( materialNodes[ 0 ].Uuid ).getName() + " <-> " +
-                   m_tree.GetMaterial( materialNodes[ 1 ].Uuid ).getName();
+            var n1 = m_tree.GetMaterial( materialNodes[ 0 ].Uuid ).getName();
+            var n2 = materialNodes.Length > 1 ?
+                       m_tree.GetMaterial( materialNodes[ 1 ].Uuid ).getName() :
+                       n1;
+            return n1 + " <-> " + n2;
           };
           if ( materialNodes.Length == 0 ) {
             Debug.LogWarning( "No materials referenced to ContactMaterial node - ignoring contact material." );
