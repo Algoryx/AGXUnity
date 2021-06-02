@@ -118,71 +118,75 @@ namespace AGXUnityEditor.Tools
     {
       InspectorGUI.Separator();
 
-      if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
-        InspectorEditor.DrawMembersGUI( Targets, t => ( t as AGXUnity.Collide.Mesh ).Options );
-        var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
-                                                                     "Apply",
-                                                                     "Apply the changes",
-                                                                     "Reset",
-                                                                     "Reset values to default." );
-        if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Positive ) {
-          var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-          var collisionMeshGenerator = new AGXUnity.Collide.CollisionMeshGenerator();
-          var generatorStartTime = EditorApplication.timeSinceStartup;
-          collisionMeshGenerator.GenerateAsync( meshes );
-          var isCanceled = false;
-          while ( !isCanceled && collisionMeshGenerator.IsRunning ) {
-            var progressBarTitle = $"Generating collision meshes: {(int)( EditorApplication.timeSinceStartup - generatorStartTime )} s";
-            var progressBarInfo = string.Empty;
-            var progress = collisionMeshGenerator.Progress;
-            isCanceled = EditorUtility.DisplayCancelableProgressBar( progressBarTitle, progressBarInfo, progress );
-            if ( !isCanceled )
-              System.Threading.Thread.Sleep( 50 );
-          }
-
-          EditorUtility.ClearProgressBar();
-
-          if ( isCanceled )
-            CanceledAsyncCollisionMeshGeneretors.RegisterCanceled( collisionMeshGenerator );
-          else {
-            var results = collisionMeshGenerator.CollectResults();
-            using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
-              foreach ( var result in results ) {
-                Undo.RecordObject( result.Mesh, "Collision Meshes" );
-                result.Mesh.Options = result.Options;
-                result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
+      using ( new GUI.EnabledBlock( !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
+        if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
+          using ( InspectorGUI.IndentScope.Single ) {
+            InspectorEditor.DrawMembersGUI( Targets, t => ( t as AGXUnity.Collide.Mesh ).Options );
+            var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
+                                                                         "Apply",
+                                                                         "Apply the changes",
+                                                                         "Reset",
+                                                                         "Delete collision meshes and reset mesh options values to default." );
+            if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Positive ) {
+              var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
+              var collisionMeshGenerator = new AGXUnity.Collide.CollisionMeshGenerator();
+              var generatorStartTime = EditorApplication.timeSinceStartup;
+              collisionMeshGenerator.GenerateAsync( meshes );
+              var isCanceled = false;
+              while ( !isCanceled && collisionMeshGenerator.IsRunning ) {
+                var progressBarTitle = $"Generating collision meshes: {(int)( EditorApplication.timeSinceStartup - generatorStartTime )} s";
+                var progressBarInfo = string.Empty;
+                var progress = collisionMeshGenerator.Progress;
+                isCanceled = EditorUtility.DisplayCancelableProgressBar( progressBarTitle, progressBarInfo, progress );
+                if ( !isCanceled )
+                  System.Threading.Thread.Sleep( 50 );
               }
+
+              EditorUtility.ClearProgressBar();
+
+              if ( isCanceled )
+                CanceledAsyncCollisionMeshGeneretors.RegisterCanceled( collisionMeshGenerator );
+              else {
+                var results = collisionMeshGenerator.CollectResults();
+                using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
+                  foreach ( var result in results ) {
+                    Undo.RecordObject( result.Mesh, "Collision Meshes" );
+                    result.Mesh.Options = result.Options;
+                    result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
+                  }
+                }
+
+                var hasPrefabAssetBeenChanged = results.Any( result =>
+                                                               PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
+                                                               PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );
+                // Trying to dirty gizmos rendering of all affected prefab instances.
+                // We don't have to dirty them all but it's hard to determine where
+                // the instance is located in the hierarchy.
+                if ( hasPrefabAssetBeenChanged ) {
+                  var allMeshes = Object.FindObjectsOfType<AGXUnity.Collide.Mesh>();
+                  foreach ( var m in allMeshes )
+                    m.OnPrecomputedCollisionMeshDataDirty();
+                }
+              }
+
+              collisionMeshGenerator = null;
+
+              GUIUtility.ExitGUI();
             }
+            else if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Negative ) {
+              // Dialog: Are you sure?
 
-            var hasPrefabAssetBeenChanged = results.Any( result =>
-                                                           PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
-                                                           PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );
-            // Trying to dirty gizmos rendering of all affected prefab instances.
-            // We don't have to dirty them all but it's hard to determine where
-            // the instance is located in the hierarchy.
-            if ( hasPrefabAssetBeenChanged ) {
-              var allMeshes = Object.FindObjectsOfType<AGXUnity.Collide.Mesh>();
-              foreach ( var m in allMeshes )
-                m.OnPrecomputedCollisionMeshDataDirty();
-            }
-          }
-
-          collisionMeshGenerator = null;
-
-          GUIUtility.ExitGUI();
-        }
-        else if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Negative ) {
-          // Dialog: Are you sure?
-
-          var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
-          using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
-            for ( int i = 0; i < meshes.Length; ++i ) {
-              var mesh = meshes[ i ];
-              Undo.RecordObject( mesh, "Resetting collision mesh data" );
-              mesh.DestroyCollisionMeshes();
-              if ( mesh.Options != null ) {
-                Undo.RecordObject( mesh, "Resetting mesh options to default" );
-                mesh.Options.ResetToDesfault();
+              var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
+              using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
+                for ( int i = 0; i < meshes.Length; ++i ) {
+                  var mesh = meshes[ i ];
+                  Undo.RecordObject( mesh, "Resetting collision mesh data" );
+                  mesh.DestroyCollisionMeshes();
+                  if ( mesh.Options != null ) {
+                    Undo.RecordObject( mesh, "Resetting mesh options to default" );
+                    mesh.Options.ResetToDesfault();
+                  }
+                }
               }
             }
           }

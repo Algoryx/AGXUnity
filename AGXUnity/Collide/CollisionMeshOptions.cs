@@ -63,6 +63,7 @@ namespace AGXUnity.Collide
     /// no reduction and 0 is maximum reduction.
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
+    [FloatSliderInInspector(0.02f, 0.98f)]
     public float ReductionRatio
     {
       get { return m_reductionRatio; }
@@ -75,6 +76,10 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// Lower is faster and higher is better decimation. Valid range is [0.01,..].
+    /// Default: 7.0
+    /// </summary>
     public float ReductionAggressiveness
     {
       get { return m_reductionAggressiveness; }
@@ -103,6 +108,9 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// Reset all values to default.
+    /// </summary>
     public void ResetToDesfault()
     {
       m_mode = MeshMode.Trimesh;

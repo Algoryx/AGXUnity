@@ -1,19 +1,37 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace AGXUnity.Collide
 {
   public class CollisionMeshGenerator : IDisposable
   {
+    /// <summary>
+    /// Collision mesh result given options and original mesh.
+    /// </summary>
     public struct Result
     {
+      /// <summary>
+      /// Original mesh with source objects.
+      /// </summary>
       public Mesh Mesh;
+
+      /// <summary>
+      /// Options how the collision meshes should be generated.
+      /// </summary>
       public CollisionMeshOptions Options;
+
+      /// <summary>
+      /// Resulting collision meshes.
+      /// </summary>
       public CollisionMeshData[] CollisionMeshes;
     }
 
+    /// <summary>
+    /// True if ready to generate collision meshes, i.e.,
+    /// no task is currently generating meshes. If false it's
+    /// not valid to call Generate or GenerateAsync.
+    /// </summary>
     public bool IsReady
     {
       get
@@ -22,11 +40,17 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// True while the collision meshes are generated, otherwise false.
+    /// </summary>
     public bool IsRunning
     {
       get { return m_task != null && !m_task.IsCompleted; }
     }
 
+    /// <summary>
+    /// Current progress ranging [0, 1].
+    /// </summary>
     public float Progress
     {
       get
@@ -41,6 +65,49 @@ namespace AGXUnity.Collide
       }
     }
 
+    /// <summary>
+    /// Start task to generate the collision meshes given an array
+    /// of AGXUnity.Collide.Mesh instances and optionally mesh options.
+    /// If the array of options is given it has to be of the same length
+    /// as <paramref name="meshes"/>.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// [ContextMenu( "GameObject/Meshing/Generate Convexes" )]
+    /// private void GenerateConvexes( MenuCommand command )
+    /// {
+    ///   var go = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+    ///                                               SelectionMode.Editable ).FirstOrDefault();
+    ///   if ( go == null )
+    ///     return;
+    /// 
+    ///   var meshes = go.GetComponentsInChildren<AGXUnity.Collide.Mesh>();
+    ///   // "get or create options".
+    ///   var meshOptions = meshes.Select( mesh => mesh.Options ??
+    ///                                            new AGXUnity.Collide.CollisionMeshOptions() ).ToArray();
+    ///   foreach ( var options in meshOptions )
+    ///     options.Mode = AGXUnity.Collide.CollisionMeshOptions.MeshMode.Convex;
+    /// 
+    ///   var generator = new AGXUnity.Collide.CollisionMeshGenerator();
+    ///   generator.GenerateAsync( meshes, meshOptions );
+    ///   while ( generator.IsRunning ) {
+    ///     EditorUtility.DisplayProgressBar( "Generating collision meshes...",
+    ///                                       string.Empty,
+    ///                                       generator.Progress );
+    ///   }
+    ///   EditorUtility.ClearProgressBar();
+    /// 
+    ///   var results = generator.CollectResults();
+    ///   foreach ( var result in results ) {
+    ///     Undo.RecordObject( result.Mesh, "Convex collision mesh" );
+    ///     result.Mesh.Options = result.Options;
+    ///     result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
+    ///   }
+    /// }
+    /// </code>
+    /// </example>
+    /// <param name="meshes">Array of meshes to generate collision meshes for.</param>
+    /// <param name="options">Optional array of meshing options, mesh.Options is used if this argument isn't given.</param>
     public void GenerateAsync( Mesh[] meshes, CollisionMeshOptions[] options = null )
     {
       if ( !IsReady ) {
@@ -59,12 +126,23 @@ namespace AGXUnity.Collide
       m_task = Create( meshes, options );
     }
 
+    /// <summary>
+    /// Generates collision meshes, blocking, and returns the results.
+    /// </summary>
+    /// <param name="meshes">Array of meshes to generate collision meshes for.</param>
+    /// <param name="options">Optional array of meshing options, mesh.Option is used if this argument isn't given.</param>
+    /// <returns></returns>
     public Result[] Generate( Mesh[] meshes, CollisionMeshOptions[] options = null )
     {
       GenerateAsync( meshes, options );
       return CollectResults();
     }
 
+    /// <summary>
+    /// Waits for the collision mesh generator task to finish and returns
+    /// the result.
+    /// </summary>
+    /// <returns>Array of results matching the arguments given to Generate or GenerateAsync.</returns>
     public Result[] CollectResults()
     {
       if ( m_task == null )
@@ -79,6 +157,9 @@ namespace AGXUnity.Collide
       return results;
     }
 
+    /// <summary>
+    /// Wait for the collision mesh generator task to finish.
+    /// </summary>
     public void Wait()
     {
       m_task?.Wait();

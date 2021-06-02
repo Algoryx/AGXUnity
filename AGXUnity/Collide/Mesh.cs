@@ -52,7 +52,8 @@ namespace AGXUnity.Collide
       set
       {
         m_precomputedCollisionMeshes.Clear();
-        m_precomputedCollisionMeshes.AddRange( value );
+        if ( value != null )
+          m_precomputedCollisionMeshes.AddRange( value );
         OnPrecomputedCollisionMeshDataDirty();
       }
     }
@@ -219,9 +220,31 @@ namespace AGXUnity.Collide
     private agxCollide.Geometry Create( UnityEngine.Mesh[] meshes )
     {
       var geometry = new agxCollide.Geometry();
-      if ( m_precomputedCollisionMeshes.Count > 0 && CreateShapes() is var shapes && shapes != null ) {
-        foreach ( var shape in shapes )
+      if ( m_precomputedCollisionMeshes.Count > 0 ) {
+        // The vertices are assumed to be stored in local coordinates of the
+        // given transform. For the scale to be correct w
+        var toWorld = transform.localToWorldMatrix;
+        Func<Vector3, Vector3> transformer = v =>
+        {
+          return transform.InverseTransformDirection( toWorld * v.ToLeftHanded() );
+        };
+
+        var mode = Options != null ? Options.Mode : CollisionMeshOptions.MeshMode.Trimesh;
+        for ( int i = 0; i < m_precomputedCollisionMeshes.Count; ++i ) {
+          var collisionMesh = m_precomputedCollisionMeshes[ i ];
+          if ( collisionMesh == null ) {
+            Debug.LogWarning( $"AGXUnity.Collide.Mesh: Null precomputed collision mesh at index {i}.", this );
+            continue;
+          }
+
+          var shape = collisionMesh.CreateShape( transformer, mode );
+          if ( shape == null ) {
+            Debug.LogWarning( $"AGXUnity.Collide.Mesh: Precomputed collision mesh at index {i} resulted in an invalid shape.", this );
+            continue;
+          }
+
           geometry.add( shape, GetNativeGeometryOffset() );
+        }
       }
       else {
         if ( m_precomputedCollisionMeshes.Count > 0 )
@@ -240,23 +263,6 @@ namespace AGXUnity.Collide
       }
 
       return geometry;
-    }
-
-    private agxCollide.Mesh[] CreateShapes()
-    {
-      // TODO: Create given source objects.
-      if ( m_precomputedCollisionMeshes.Count == 0 )
-        return null;
-
-      // The vertices are assumed to be stored in local coordinates of the
-      // given transform. For the scale to be correct w
-      var toWorld = transform.localToWorldMatrix;
-      Func<Vector3, Vector3> transformer = v =>
-      {
-        return transform.InverseTransformDirection( toWorld * v.ToLeftHanded() );
-      };
-
-      return m_precomputedCollisionMeshes.Select( collisionMesh => collisionMesh.CreateShape( transformer, Options.Mode ) ).ToArray();
     }
 
     public void DestroyCollisionMeshes()
