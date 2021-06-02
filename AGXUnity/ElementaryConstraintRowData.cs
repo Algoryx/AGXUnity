@@ -71,7 +71,7 @@ namespace AGXUnity
     /// Damping of this row in the elementary constraint. Paired with property Damping.
     /// </summary>
     [SerializeField]
-    private float m_damping = 2.0f / 60.0f;
+    private float m_damping = 2.0f / 50.0f;
 
     /// <summary>
     /// Damping of this row in the elementary constraint.
@@ -121,7 +121,10 @@ namespace AGXUnity
       m_row = row;
       if ( tmpEc != null ) {
         m_compliance = Convert.ToSingle( tmpEc.getCompliance( RowUInt ) );
-        m_damping = Convert.ToSingle( tmpEc.getDamping( RowUInt ) );
+        // AGX Dynamics damping is optimized for 60 Hz simulations. Assuming
+        // a fixed update of 50 Hz in Unity we scale the damping by 60 / 50 = 1.2
+        // to transform the damping to 50 Hz.
+        m_damping = 1.2f * Convert.ToSingle( tmpEc.getDamping( RowUInt ) );
         m_forceRange = new RangeReal( tmpEc.getForceRange( RowUInt ) );
       }
     }
