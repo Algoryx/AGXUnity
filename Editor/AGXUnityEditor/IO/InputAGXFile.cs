@@ -895,6 +895,7 @@ namespace AGXUnityEditor.IO
       }
 
       var materialNode = m_tree.GetNode( material.getUuid() );
+
       // Re-import: The user may have assigned a ShapeMaterial that is in our data
       //            directory but doesn't match the material in the model. This
       //            change will go without warning because we don't know how
@@ -905,8 +906,40 @@ namespace AGXUnityEditor.IO
       //            the user should assign a ShapeMaterial from a directory different
       //            from our data directory (caught in the if-statement above),
       //            resulting in currentShapeMaterial to be used instead.
-      return FileInfo.ObjectDb.GetOrCreateAsset( materialNode.Asset as ShapeMaterial ??
-                                                   currentShapeMaterial, // Important during re-import because materialNode.Asset is null.
+
+      // Update: We're catching user interactions above, as long as the material
+      //         isn't located in our data directory. Materials could be changed
+      //         in the model. We can't rely on currentShapeMaterial to be the one
+      //         the object should have now. For now, until UUID is properly exported
+      //         on all platforms, we try to match them by name.
+      var shapeMaterialToUse = materialNode.Asset as ShapeMaterial;
+      var nativeMaterialName = material.getName();
+      if ( shapeMaterialToUse == null && currentShapeMaterial != null ) {
+        var isCurrentNameUnique = IsUniqueAssetName( currentShapeMaterial.name );
+        // If this is deterministic, we don't have to issue a warning if the
+        // name of the null ShapeMaterial would become the same as currentShapeMaterial.name.
+        var nonUniqueButLikelyTheSame = !isCurrentNameUnique &&
+                                        FindUniqueName( material.getName(),
+                                                        materialNode.Type.ToString(),
+                                                        m_names ) == currentShapeMaterial.name;
+        // The name doesn't seems to be unique, use existing to avoid
+        // creating many new materials in each import.
+        if ( !isCurrentNameUnique ) {
+          if ( !nonUniqueButLikelyTheSame )
+            Debug.LogWarning( $"Existing ShapeMaterial name \"{currentShapeMaterial.name}\" doesn't seems to be unique. " +
+                              $"It's not possible to determine if \"{nativeMaterialName}\" is the same or not. " +
+                              $"Using current {currentShapeMaterial.name}.", context );
+          shapeMaterialToUse = currentShapeMaterial;
+        }
+        // Matching names, use current.
+        else if ( nativeMaterialName == currentShapeMaterial.name )
+          shapeMaterialToUse = currentShapeMaterial;
+        // Creating a new ShapeMaterial when the names doesn't match.
+        else
+          Debug.Assert( shapeMaterialToUse == null );
+      }
+
+      return FileInfo.ObjectDb.GetOrCreateAsset( shapeMaterialToUse,
                                                  FindName( material.getName(),
                                                            materialNode.Type.ToString() ),
                                                  m =>
@@ -998,17 +1031,52 @@ namespace AGXUnityEditor.IO
 
     private string FindName( string name, string typeName )
     {
-      if ( name == "" )
-        name = typeName;
-
-      string result = name;
-      int counter = 1;
-      while ( m_names.Contains( result ) )
-        result = name + " (" + ( counter++ ) + ")";
+      var result = FindUniqueName( name, typeName, m_names );
 
       m_names.Add( result );
 
       return result;
+    }
+
+    private static string FindUniqueName( string name, string typeName, HashSet<string> names )
+    {
+      if ( string.IsNullOrEmpty( name ) )
+        name = typeName;
+
+      string result = name;
+      int counter = 1;
+      // NOTE: If name behavior is changed here the algorithm in
+      //       IsUniqueAssetName has to follow.
+      while ( names.Contains( result ) )
+        result = name + " (" + ( counter++ ) + ")";
+
+      return result;
+    }
+
+    /// <summary>
+    /// Checks if FindName has found a non-unique name and added an
+    /// additional " (1)" or any other number than 1. Use with cause
+    /// when anyone can name things like "foo (52)".
+    /// </summary>
+    /// <param name="name">Name to check.</param>
+    /// <returns>True if <paramref name="name"/> doesn't ends with "(number)", otherwise false.</returns>
+    private static bool IsUniqueAssetName( string name )
+    {
+      // This shouldn't happen since the type name is assigned when "" from FindName.
+      if ( string.IsNullOrEmpty( name ) )
+        return false;
+      if ( !name.EndsWith( ")" ) )
+        return true;
+      var cIndex = name.LastIndexOf( " (" );
+      // Unique if "foo_bar)", we're searching for "foo_bar (7)".
+      if ( cIndex < 0 )
+        return true;
+      cIndex += 2;
+      var isNumberStr = name.Substring( cIndex, name.Length - 1 - cIndex );
+      var isOnlyNumbers = isNumberStr.Length > 0;
+      foreach ( var c in isNumberStr )
+        isOnlyNumbers = isOnlyNumbers && char.IsNumber( c );
+      return !isOnlyNumbers;
     }
 
     internal class SubProgress : IDisposable
