@@ -534,7 +534,31 @@ namespace AGXUnity
         return false;
       }
 
-      return Load( text, context );
+      var loadSuccess = Load( text, context );
+
+      // If the license has been refreshed we have to write the
+      // new license content to 'filename' independent of 'loadSuccess'.
+      try {
+        var isRefreshed = agx.Runtime.instance().isLicenseRefreshed();
+        var isRefreshedAndCanWrite = isRefreshed &&
+                                     IO.Environment.CanWriteToExisting( filename );
+        if ( isRefreshedAndCanWrite ) {
+          LoadInfo( $"The license has been refreshed - rewriting license file {filename}.", context );
+
+          using ( var str = new StreamWriter( filename, false ) )
+            str.WriteLine( agx.Runtime.instance().readEncryptedLicense() );
+
+          LoadInfo( $"Successfully updated license file {filename}.", context );
+        }
+        else if ( isRefreshed ) {
+          Debug.LogError( $"AGXUnity.LicenseManager: Unable to write updated license information to {filename} - write access is required." );
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+      }
+
+      return loadSuccess;
     }
 
     /// <summary>
@@ -553,7 +577,6 @@ namespace AGXUnity
       try {
         // Service type.
         if ( licenseContent.StartsWith( @"<SoftwareKey>" ) ) {
-          // TODO: Use loadLicenseFile or Runtime.readEncryptedLicense if refreshed (Runtime.isLicenseRefreshed()).
           agx.Runtime.instance().loadLicenseString( licenseContent );
           LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
                     context );

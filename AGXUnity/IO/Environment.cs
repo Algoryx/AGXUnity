@@ -216,5 +216,23 @@ namespace AGXUnity.IO
         ;
       return $"{directory.FullName.Replace( '\\', '/' )}/{orgName} ({counter}){extension}";
     }
+
+    /// <summary>
+    /// Opens given <paramref name="filename"/> and checks if it's possible
+    /// to write to that file.
+    /// </summary>
+    /// <param name="filename">Filename to check.</param>
+    /// <returns>True if the file exists and it's possible to write to it, otherwise false.</returns>
+    public static bool CanWriteToExisting( string filename )
+    {
+      if ( !File.Exists( filename ) )
+        return false;
+
+      var canWrite = false;
+      using ( var fs = File.Open( filename, FileMode.Open ) )
+        canWrite = fs.CanWrite;
+
+      return canWrite;
+    }
   }
 }
