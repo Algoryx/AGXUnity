@@ -386,13 +386,14 @@ namespace AGXUnity
       // If we're not able to load the license we cannot deactivate it because
       // we don't know if we're deactivating the given file or some other
       // license loaded.
-      if ( !LoadFile( filename, $"Deactivating license: \"{filename}\"." ) ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - the license has to be valid." );
-        return false;
+      if ( LoadFile( filename, $"Deactivating license: \"{filename}\"." ) )
+        DeactivateLoaded();
+      else {
+        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate the license {filename} - the license has to be valid.\n" +
+                          LicenseInfo.Status );
       }
 
-      // Do not delete file if deactivation failed.
-      return DeactivateLoaded() && DeleteFile( filename );
+      return DeleteFile( filename );
     }
 
     /// <summary>

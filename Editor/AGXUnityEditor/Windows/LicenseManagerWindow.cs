@@ -14,9 +14,12 @@ namespace AGXUnityEditor.Windows
   {
     public static LicenseManagerWindow Open()
     {
-      return GetWindow<LicenseManagerWindow>( false,
-                                              "License Manager - AGX Dynamics for Unity",
-                                              true );
+      var window = GetWindow<LicenseManagerWindow>( false,
+                                                    "License Manager - AGX Dynamics for Unity",
+                                                    true );
+      window.minSize = new Vector2( 300, 250 );
+
+      return window;
     }
 
     /// <summary>
@@ -61,7 +64,7 @@ namespace AGXUnityEditor.Windows
       using ( GUI.AlignBlock.Center )
         GUILayout.Box( IconManager.GetAGXUnityLogo(),
                        GUI.Skin.customStyles[ 3 ],
-                       GUILayout.Width( 400 ),
+                       GUILayout.Width( System.Math.Min( 400.0f, position.width - 20.0f ) ),
                        GUILayout.Height( 100 ) );
 
       EditorGUILayout.LabelField( "© " + System.DateTime.Now.Year + " Algoryx Simulation AB",
@@ -101,17 +104,17 @@ namespace AGXUnityEditor.Windows
     private void ActivateLicenseGUI()
     {
       GUILayout.Label( GUI.MakeLabel( "Activate license", true ), InspectorEditor.Skin.Label );
-      var selectLicenseRect  = GUILayoutUtility.GetLastRect();
-      selectLicenseRect.x    += selectLicenseRect.width;
-      selectLicenseRect.width = 28;
-      selectLicenseRect.x    -= selectLicenseRect.width;
-      selectLicenseRect.y    -= EditorGUIUtility.standardVerticalSpacing;
-      if ( UnityEngine.GUI.Button( selectLicenseRect,
-                                   GUI.MakeLabel( "...",
-                                                  InspectorGUISkin.BrandColor,
-                                                  true,
-                                                  "Select license file on this computer" ),
-                                   InspectorEditor.Skin.ButtonMiddle ) ) {
+      var selectLicenseRect    = GUILayoutUtility.GetLastRect();
+      selectLicenseRect.x     += selectLicenseRect.width;
+      selectLicenseRect.width  = 28;
+      selectLicenseRect.x     -= selectLicenseRect.width;
+      selectLicenseRect.y     -= EditorGUIUtility.standardVerticalSpacing;
+      var selectLicensePressed = InspectorGUI.Button( selectLicenseRect,
+                                                      MiscIcon.Locate,
+                                                      UnityEngine.GUI.enabled,
+                                                      "Select license file on this computer",
+                                                      1.25f );
+      if ( selectLicensePressed ) {
         var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
                                                          ".",
                                                          $"{AGXUnity.LicenseManager.GetLicenseExtension( AGXUnity.LicenseInfo.LicenseType.Service ).Remove( 0, 1 )}," +
@@ -183,6 +186,9 @@ namespace AGXUnityEditor.Windows
                                                    {
                                                      if ( success )
                                                        m_licenseActivateData = IdPassword.Empty();
+                                                     else
+                                                       Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
+
                                                      StartUpdateLicenseInformation();
                                                    } );
           }

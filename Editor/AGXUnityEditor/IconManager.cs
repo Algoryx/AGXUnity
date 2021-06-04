@@ -46,7 +46,8 @@ namespace AGXUnityEditor
     Capsule,
     Cylinder,
     Mesh,
-    ResetDefault
+    ResetDefault,
+    Locate
   }
 
   public static class IconManager
@@ -264,6 +265,7 @@ namespace AGXUnityEditor
       miscIconFilenames[ (int)MiscIcon.Cylinder ]          = "cylinder_icon";
       miscIconFilenames[ (int)MiscIcon.Mesh ]              = "mesh_icon";
       miscIconFilenames[ (int)MiscIcon.ResetDefault ]      = "sync_icon";
+      miscIconFilenames[ (int)MiscIcon.Locate ]            = "download_icon";
 
       m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
     }
