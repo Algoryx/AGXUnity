@@ -75,7 +75,10 @@ namespace AGXUnity.BrickUnity.Factories
       // See: https://github.com/assimp/assimp/issues/3532
       var go = MeshImporter.Load(filepath);
       if (go is null)
-        Debug.LogError($"Could not locate: {filepath}");
+      {
+        Debug.LogWarning($"Could not locate: {filepath}");
+        return null;
+      }
       List<Transform> children = new List<Transform>();
       // Have to add children to list first because it becomes wierd too loop through all
       // children and removing some at the same time as adding new
@@ -128,6 +131,7 @@ namespace AGXUnity.BrickUnity.Factories
           break;
         case Brick.Visual.File b_vMeshFile:
           go_visual = CreateFileVisual(b_vMeshFile.AbsoluteFilepath);
+          if (go_visual == null) return null;
           go_visual.transform.localScale = b_vMeshFile.Scaling.ToVector3();
           break;
         default:

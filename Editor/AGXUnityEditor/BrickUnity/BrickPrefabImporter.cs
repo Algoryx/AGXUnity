@@ -329,6 +329,12 @@ namespace AGXUnityEditor.BrickUnity
     // The "synchronize" argument determines if the connector should be synched with the Brick data tree during runtime
     private GameObject HandleConnector(B_Connector b_connector, GameObject go_parent, bool synchronize)
     {
+      if (b_connector.GetAGXUnityConstraintType() == AGXUnity.ConstraintType.Unknown)
+      {
+        var brickPath = go_parent.GetComponent<BrickObject>().path + "." + b_connector.GetValueNameOrModelPath();
+        Debug.LogWarning($"Could not create constraint for {brickPath}. Unknown constraint type!");
+        return null;
+      }
       var go_constraint = AGXUnity.Factory.Create(b_connector.GetAGXUnityConstraintType());
       go_constraint.name = b_connector._ModelValue.Name.Str;
       go_constraint.transform.SetParent(go_parent.transform, false);
@@ -385,6 +391,11 @@ namespace AGXUnityEditor.BrickUnity
       var name = b_visualShape._ModelValuePath.Name.Str;
       Object.DestroyImmediate(go);
       go = VisualFactory.CreateVisual(b_visualShape);
+      if (go == null)
+      {
+        Debug.LogWarning($"Error when creating visual for {name}. See other log messages for more information. Empty GameObject will be created for this Visual.");
+        go = new GameObject();
+      }
       go.name = name;
       go.SetLocalTransformFromBrick(b_visualShape);
 
