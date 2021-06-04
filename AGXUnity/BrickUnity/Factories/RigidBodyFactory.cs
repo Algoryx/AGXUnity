@@ -113,7 +113,7 @@ namespace AGXUnity.BrickUnity.Factories
       var meshes = MeshSplitter.Split(
                                         agxVertices,
                                         agxIndices,
-                                        v => v.ToHandedVector3(),
+                                        v => v.ToHandedVector3() * (float)b_triMesh.Scale,
                                         UInt16.MaxValue
                                         ).Meshes;
       au_mesh.SetSourceObject(null);
