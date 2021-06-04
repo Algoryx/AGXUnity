@@ -552,6 +552,7 @@ namespace AGXUnity
       try {
         // Service type.
         if ( licenseContent.StartsWith( @"<SoftwareKey>" ) ) {
+          // TODO: Use loadLicenseFile or Runtime.readEncryptedLicense if refreshed (Runtime.isLicenseRefreshed()).
           agx.Runtime.instance().loadLicenseString( licenseContent );
           LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
                     context );
