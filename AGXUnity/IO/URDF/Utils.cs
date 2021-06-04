@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Xml;
 using System.Xml.Linq;
+using System.Globalization;
+using System.Collections.Generic;
 using UnityEngine;
 
 using AGXUnity.Utils;
@@ -143,6 +145,89 @@ namespace AGXUnity.IO.URDF
       if ( attribute == null )
         return string.Empty;
       return (string)attribute;
+    }
+
+    public struct ColladaInfo
+    {
+      public enum Axis
+      {
+        X,
+        Y,
+        Z,
+        Unknown
+      }
+
+      public Axis UpAxis;
+
+      public bool IsDefault => UpAxis == Axis.Z;
+    }
+
+    /// <summary>
+    /// Parsing a small part of the Collada file, searching for the
+    /// "asset" element, containing information about the up axis.
+    /// Default up axis is Z.
+    /// </summary>
+    /// <remarks>
+    /// Scale is handled by the Collada importer in Unity.
+    /// </remarks>
+    /// <param name="colladaFilename">Collada filename including path.</param>
+    /// <returns>Collada info parsed.</returns>
+    public static ColladaInfo ParseColladaInfo( string colladaFilename )
+    {
+      var colladaInfo = new ColladaInfo()
+      {
+        UpAxis = ColladaInfo.Axis.Z
+      };
+
+      try {
+        var lines = ParseColladaAssetElement( colladaFilename );
+        if ( lines != null ) {
+          var doc = XDocument.Parse( string.Join( "\n", lines ) );
+          var assetElement = doc?.Element( "asset" );
+          var upAxisStr = assetElement?.Element( "up_axis" )?.Value;
+          if ( !string.IsNullOrEmpty( upAxisStr ) )
+            colladaInfo.UpAxis = upAxisStr == "Z_UP" ?
+                                    ColladaInfo.Axis.Z :
+                                  upAxisStr == "Y_UP" ?
+                                    ColladaInfo.Axis.Y :
+                                  upAxisStr == "X_UP" ?
+                                    ColladaInfo.Axis.X :
+                                    ColladaInfo.Axis.Z; // Defaults to z if something is wrong.
+        }
+      }
+      catch {
+      }
+
+      return colladaInfo;
+    }
+
+    public static string[] ParseColladaAssetElement( string colladaFilename, int maxNumLines = 50 )
+    {
+      List<string> assetElement = null;
+
+      try {
+        using ( var stream = System.IO.File.OpenText( colladaFilename ) ) {
+          var line = string.Empty;
+          var lineNumber = 0;
+          while ( ++lineNumber <= maxNumLines && (line = stream.ReadLine()) != null ) {
+            if ( assetElement == null && line.TrimStart().StartsWith( "<asset>" ) ) {
+              assetElement = new System.Collections.Generic.List<string>();
+              assetElement.Add( line );
+            }
+            else if ( assetElement != null && line.TrimStart().StartsWith( "</asset>" ) ) {
+              assetElement.Add( line );
+              break;
+            }
+            else if ( assetElement != null )
+              assetElement.Add( line );
+          }
+        }
+      }
+      catch {
+        assetElement?.Clear();
+      }
+
+      return assetElement?.ToArray();
     }
   }
 }

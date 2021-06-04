@@ -56,6 +56,25 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private RangeReal m_minimumStaticFrictionForceRange = new RangeReal( 0.0f );
+
+    /// <summary>
+    /// Minimum friction force (range) that is always applied, independent
+    /// of the current normal force. This is the "joint.dynamics.friction"
+    /// parameter in the URDF specification. Default: (0, 0)
+    /// </summary>
+    public RangeReal MinimumStaticFrictionForceRange
+    {
+      get { return m_minimumStaticFrictionForceRange; }
+      set
+      {
+        m_minimumStaticFrictionForceRange = value;
+        if ( Native != null )
+          agx.FrictionController.safeCast( Native ).setMinimumStaticFrictionForceRange( m_minimumStaticFrictionForceRange.Native );
+      }
+    }
+
     protected override void Construct( agx.ElementaryConstraint tmpEc )
     {
       base.Construct( tmpEc );

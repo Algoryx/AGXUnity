@@ -13,12 +13,7 @@ namespace AGXUnity.IO.URDF
 
     public static Quaternion RadEulerToLeftHanded( this Vector3 v )
     {
-      return Quaternion.Euler( Mathf.Rad2Deg * v ).ToLeftHanded();
-    }
-
-    public static Quaternion ToLeftHanded( this Quaternion q )
-    {
-      return new Quaternion( -q.x, q.y, q.z, -q.w );
+      return new agx.Quat( new agx.EulerAngles( v.ToVec3() ) ).ToHandedQuaternion();
     }
   }
 }
