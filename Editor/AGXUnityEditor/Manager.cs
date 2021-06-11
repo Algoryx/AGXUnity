@@ -299,8 +299,7 @@ namespace AGXUnityEditor
         return;
 
       // TODO: Fix so that "MouseOver" works for newly created primitives.
-
-      if ( primitive.Node.transform.parent != VisualsParent )
+     if ( primitive.Node.transform.parent != VisualsParent )
         VisualsParent.AddChild( primitive.Node );
 
       m_visualPrimitives.Add( primitive );
@@ -336,6 +335,8 @@ namespace AGXUnityEditor
           m_visualsParent = GameObject.Find( m_visualParentName ) ?? new GameObject( m_visualParentName );
           m_visualsParent.hideFlags = HideFlags.HideAndDontSave;
         }
+
+        StageUtility.PlaceGameObjectInCurrentStage( m_visualsParent );
 
         return m_visualsParent;
       }
