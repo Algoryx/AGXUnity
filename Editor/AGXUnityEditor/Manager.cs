@@ -336,7 +336,7 @@ namespace AGXUnityEditor
           m_visualsParent.hideFlags = HideFlags.HideAndDontSave;
         }
 
-        StageUtility.PlaceGameObjectInCurrentStage( m_visualsParent );
+        PrefabUtils.PlaceInCurrentStange( m_visualsParent );
 
         return m_visualsParent;
       }
