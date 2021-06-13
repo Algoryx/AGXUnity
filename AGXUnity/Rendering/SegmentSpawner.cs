@@ -69,17 +69,6 @@ namespace AGXUnity.Rendering
       }
     }
 
-    public GameObject[] Segments
-    {
-      get
-      {
-        return m_segments == null ? new GameObject[] {} :
-               ( from segmentTransform in m_segments.GetComponentsInChildren<Transform>()
-                 where segmentTransform != m_segments.transform
-                 select segmentTransform.gameObject ).ToArray();
-      }
-    }
-
     public SegmentSpawner( ScriptComponent parentComponent, string prefabObjectPath, string separateFirstObjectPath = "" )
     {
       m_parentComponent = parentComponent;
@@ -231,5 +220,83 @@ namespace AGXUnity.Rendering
       foreach ( Transform child in instance.transform )
         child.gameObject.GetOrCreateComponent<OnSelectionProxy>().Component = m_parentComponent;
     }
+
+    public void DrawGizmos( Vector3[] points, float radius, Color color )
+    {
+      if ( m_gizmosMeshes == null || m_gizmosMeshes.Length == 0 ) {
+        var resource = Resources.Load<GameObject>( m_separateFirstObjectPrefabPath );
+        m_gizmosMeshes = new Mesh[]
+        {
+          resource?.transform.GetChild( 0 ).GetComponent<MeshFilter>()?.sharedMesh,
+          resource?.transform.GetChild( 1 ).GetComponent<MeshFilter>()?.sharedMesh,
+          resource?.transform.GetChild( 2 ).GetComponent<MeshFilter>()?.sharedMesh
+        };
+
+        if ( Array.Find( m_gizmosMeshes, mesh => mesh == null ) )
+          m_gizmosMeshes = new Mesh[] { };
+      }
+
+      if ( m_gizmosMeshes.Length != 3 || points.Length < 2 )
+        return;
+
+      var diameter    = 2.0f * radius;
+      var worldMatrix = Matrix4x4.identity;
+      Gizmos.color    = color;
+      for ( int i = 1; i < points.Length; ++i ) {
+        var begin      = points[ i - 1 ];
+        var end        = points[ i ];
+        var beginToEnd = end - begin;
+        var length     = beginToEnd.magnitude;
+        if ( length < 1.0E-4f )
+          continue;
+
+        beginToEnd /= length;
+
+        worldMatrix = Matrix4x4.TRS( begin + 0.5f * length * beginToEnd,
+                                     Quaternion.FromToRotation( Vector3.up, beginToEnd ),
+                                     Vector3.one );
+        Action<int, Vector3, Quaternion, Vector3> drawMesh = ( index,
+                                                               localPosition,
+                                                               localRotation,
+                                                               localScale ) =>
+        {
+          Gizmos.matrix = worldMatrix * Matrix4x4.TRS( localPosition,
+                                                       localRotation,
+                                                       localScale );
+          Gizmos.DrawWireMesh( m_gizmosMeshes[ index ] );
+        };
+
+        var halfLengthUp     = 0.5f * length * Vector3.up;
+        var sphericalScale   = diameter * Vector3.one;
+        var cylindricalScale = new Vector3( diameter, length, diameter );
+        if ( i == 1 ) {
+          drawMesh( 0,
+                    halfLengthUp,
+                    Quaternion.identity,
+                    sphericalScale );
+          drawMesh( 1,
+                    Vector3.zero,
+                    Quaternion.identity,
+                    cylindricalScale );
+          drawMesh( 2,
+                    -halfLengthUp,
+                    Quaternion.FromToRotation( Vector3.up, Vector3.down ),
+                    sphericalScale );
+        }
+        else {
+          drawMesh( 1,
+                    Vector3.zero,
+                    Quaternion.identity,
+                    cylindricalScale );
+          drawMesh( 2,
+                    halfLengthUp,
+                    Quaternion.identity,
+                    sphericalScale );
+        }
+      }
+    }
+
+    [NonSerialized]
+    private static Mesh[] m_gizmosMeshes = new Mesh[] { };
   }
 }

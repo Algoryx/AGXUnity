@@ -14,8 +14,17 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public SegmentSpawner SegmentSpawner { get { return m_segmentSpawner; } }
 
+    [System.NonSerialized]
+    private Cable m_cable = null;
+
     [HideInInspector]
-    public Cable Cable { get { return GetComponent<Cable>(); } }
+    public Cable Cable
+    {
+      get
+      {
+        return m_cable ?? ( m_cable = GetComponent<Cable>() );
+      }
+    }
 
     [SerializeField]
     private Material m_material = null;
@@ -36,7 +45,9 @@ namespace AGXUnity.Rendering
         m_segmentSpawner = null;
       }
 
-      m_segmentSpawner = new SegmentSpawner( GetComponent<Cable>(), @"Cable/CableSegment", @"Cable/CableSegmentBegin" );
+      m_segmentSpawner = new SegmentSpawner( Cable,
+                                             @"Cable/CableSegment",
+                                             @"Cable/CableSegmentBegin" );
       m_segmentSpawner.Initialize( gameObject );
     }
 
@@ -78,6 +89,11 @@ namespace AGXUnity.Rendering
       if ( m_segmentSpawner == null )
         return;
 
+      // Let OnDrawGizmos handle rendering when in prefab edit mode.
+      // It's not possible to use RuntimeObjects while there.
+      if ( PrefabUtils.IsEditingPrefab )
+        return;
+
       m_segmentSpawner.Begin();
       try {
         var points = Cable.GetRoutePoints();
@@ -95,7 +111,7 @@ namespace AGXUnity.Rendering
       if ( m_segmentSpawner == null )
         return;
 
-      agxCable.Cable native = Cable.Native;
+      var native = Cable.Native;
       if ( native == null ) {
         if ( m_segmentSpawner != null ) {
           m_segmentSpawner.Destroy();
@@ -104,14 +120,19 @@ namespace AGXUnity.Rendering
         return;
       }
 
-      agxCable.CableIterator it = native.begin();
-      agxCable.CableIterator endIt = native.end();
+      var it = native.begin();
+      var endIt = native.end();
 
       m_segmentSpawner.Begin();
       try {
         float radius = Cable.Radius;
+        var prevEndPosition = it.EqualWith( endIt ) ?
+                                Vector3.zero :
+                                it.getBeginPosition().ToHandedVector3();
         while ( !it.EqualWith( endIt ) ) {
-          m_segmentSpawner.CreateSegment( it.getBeginPosition().ToHandedVector3(), it.getEndPosition().ToHandedVector3(), radius );
+          var endPosition = it.getEndPosition().ToHandedVector3();
+          m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
+          prevEndPosition = endPosition;
           it.inc();
         }
       }
@@ -122,6 +143,31 @@ namespace AGXUnity.Rendering
 
       it.ReturnToPool();
       endIt.ReturnToPool();
+    }
+
+    private void DrawGizmos( bool isSelected )
+    {
+      if ( Application.isPlaying || !PrefabUtils.IsEditingPrefab )
+        return;
+
+      if ( Cable == null || Cable.Route == null || Cable.Route.NumNodes < 2 )
+        return;
+
+      var defaultColor  = Color.Lerp( Color.black, Color.white, 0.15f );
+      var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
+      m_segmentSpawner?.DrawGizmos( Cable.GetRoutePoints(),
+                                    Cable.Radius,
+                                    isSelected ? selectedColor : defaultColor );
+    }
+
+    private void OnDrawGizmos()
+    {
+      DrawGizmos( false );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+      DrawGizmos( true );
     }
   }
 }

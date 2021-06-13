@@ -341,24 +341,11 @@ namespace AGXUnity
     /// <returns>Array of, equally distant, points defining the cable route.</returns>
     public Vector3[] GetRoutePoints()
     {
-      if ( RoutePointCurveUpToDate )
-        return m_routePointsCache;
+      if ( m_routePointsCache == null )
+        m_routePointsCache = new Vector3[] { };
 
-      m_routePointsCache = new Vector3[] { };
-
-      var result = SynchronizeRoutePointCurve();
-      if ( result.Successful || Mathf.Abs( result.Error ) < 5.0E-3f ) {
-        m_routePointResulutionPerUnitLength = ResolutionPerUnitLength;
-        List<Vector3> routePoints = new List<Vector3>();
-        m_routePointCurve.Traverse( ( curr, next, type ) =>
-        {
-          routePoints.Add( curr.Point );
-          if ( type == PointCurve.SegmentType.Last && Mathf.Abs( next.Time - 1.0f ) < Mathf.Abs( curr.Time - 1 ) )
-            routePoints.Add( next.Point );
-        }, result.SegmentLength );
-
-        m_routePointsCache = routePoints.ToArray();
-      }
+      if ( m_routePointsCache.Length == 0 && Route.NumNodes > 1 )
+        SynchronizeRoutePointCurve();
 
       return m_routePointsCache;
     }
@@ -507,6 +494,7 @@ namespace AGXUnity
         m_routePointCurve = new PointCurve();
 
       m_routePointCurve.LastSuccessfulResult = new PointCurve.SegmentationResult() { Error = float.PositiveInfinity, Successful = false };
+      m_routePointsCache = new Vector3[] { };
 
       if ( m_routePointCurve.NumPoints == Route.NumNodes ) {
         for ( int i = 0; i < Route.NumNodes; ++i )
@@ -521,8 +509,20 @@ namespace AGXUnity
       if ( m_routePointCurve.Finalize() ) {
         var numSegments = Mathf.Max( Mathf.CeilToInt( ResolutionPerUnitLength * Route.TotalLength ), 1 );
         var result = m_routePointCurve.FindSegmentLength( numSegments, PointCurve.DefaultErrorFunc, 5.0E-3f, 1.0E-3f );
-        if ( result.Successful )
+        if ( result.Successful ) {
+          m_routePointResulutionPerUnitLength = ResolutionPerUnitLength;
+          var routePoints = new List<Vector3>();
+          m_routePointCurve.Traverse( ( curr, next, type ) =>
+          {
+            routePoints.Add( curr.Point );
+            if ( type == PointCurve.SegmentType.Last && Mathf.Abs( next.Time - 1.0f ) < Mathf.Abs( curr.Time - 1 ) )
+              routePoints.Add( next.Point );
+          }, result.SegmentLength );
+
+          m_routePointsCache = routePoints.ToArray();
+
           return result;
+        }
       }
 
       return new PointCurve.SegmentationResult() { Error = float.PositiveInfinity, Successful = false };
