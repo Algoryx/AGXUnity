@@ -111,25 +111,36 @@ namespace AGXUnity.Rendering
       if ( length < 0.0001f )
         return null;
 
-      GameObject instance = GetInstance();
+      var instance     = GetInstance();
+      Transform top    = null;
+      Transform main   = null;
+      Transform bottom = null;
 
-      if ( instance == m_firstSegmentInstance ) {
-        Transform top    = instance.transform.GetChild( 0 );
-        Transform main   = instance.transform.GetChild( 1 );
-        Transform bottom = instance.transform.GetChild( 2 );
-
-        main.localScale                    = new Vector3( width, length, height );
-        top.localScale = bottom.localScale = new Vector3( width, width, height );
-        top.transform.localPosition        =  0.5f * length * Vector3.up;
-        bottom.transform.localPosition     = -0.5f * length * Vector3.up;
+      var topBottomScale = new Vector3( width, width, height );
+      var mainScale      = new Vector3( width, length, height );
+      var halfLengthUp   = 0.5f * length * Vector3.up;
+      if ( m_firstSegmentInstance != null && m_counter == 1 ) {
+        top    = instance.transform.GetChild( 0 );
+        main   = instance.transform.GetChild( 1 );
+        bottom = instance.transform.GetChild( 2 );
       }
       else {
-        Transform main = instance.transform.GetChild( 0 );
-        Transform top  = instance.transform.GetChild( 1 );
+        main = instance.transform.GetChild( 0 );
+        top  = instance.transform.GetChild( 1 );
+      }
 
-        main.localScale             = new Vector3( width, length, height );
-        top.localScale              = new Vector3( width, width, height );
-        top.transform.localPosition = new Vector3( 0, 0.5f * length, 0 );
+      top.localPosition = halfLengthUp;
+      top.localRotation = Quaternion.identity;
+      top.localScale    = topBottomScale;
+
+      main.localPosition = Vector3.zero;
+      main.localRotation = Quaternion.identity;
+      main.localScale    = mainScale;
+
+      if ( bottom != null ) {
+        bottom.localPosition = -halfLengthUp;
+        bottom.localRotation = Quaternion.FromToRotation( Vector3.up, Vector3.down );
+        bottom.localScale    = topBottomScale;
       }
 
       instance.transform.rotation = Quaternion.FromToRotation( Vector3.up, startToEnd );
@@ -173,6 +184,7 @@ namespace AGXUnity.Rendering
         if ( m_firstSegmentInstance == null ) {
           m_firstSegmentInstance = PrefabLoader.Instantiate<GameObject>( m_separateFirstObjectPrefabPath );
           m_firstSegmentInstance.hideFlags = HideFlags.DontSaveInEditor;
+          m_firstSegmentInstance.transform.hideFlags = HideFlags.DontSaveInEditor;
           setMaterialFunc( m_firstSegmentInstance, Material );
           AddSelectionProxy( m_firstSegmentInstance );
           Add( m_firstSegmentInstance );
@@ -204,7 +216,6 @@ namespace AGXUnity.Rendering
         return;
 
       index = Mathf.Max( 0, index );
-
       while ( m_segments.transform.childCount > index )
         GameObject.DestroyImmediate( m_segments.transform.GetChild( m_segments.transform.childCount - 1 ).gameObject );
     }

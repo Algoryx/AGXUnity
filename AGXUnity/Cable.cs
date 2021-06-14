@@ -485,7 +485,7 @@ namespace AGXUnity
       }
     }
 
-    private PointCurve.SegmentationResult SynchronizeRoutePointCurve()
+    public PointCurve.SegmentationResult SynchronizeRoutePointCurve()
     {
       if ( RoutePointCurveUpToDate && m_routePointCurve.LastSuccessfulResult.Successful )
         return m_routePointCurve.LastSuccessfulResult;

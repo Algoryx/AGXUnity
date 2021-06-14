@@ -93,7 +93,7 @@ namespace AGXUnity.Rendering
 
       // Let OnDrawGizmos handle rendering when in prefab edit mode.
       // It's not possible to use RuntimeObjects while there.
-      if ( PrefabUtils.IsEditingPrefab )
+      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
         return;
 
       if ( Wire != null && Wire.Native == null )
@@ -176,10 +176,13 @@ namespace AGXUnity.Rendering
 
     private void DrawGizmos( bool isSelected )
     {
-      if ( Application.isPlaying || !PrefabUtils.IsEditingPrefab )
+      if ( Application.isPlaying )
         return;
 
       if ( Wire == null || Wire.Route == null || Wire.Route.NumNodes < 2 )
+        return;
+
+      if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
         return;
 
       var routePoints = Wire.Route.Select( routePoint => routePoint.Position ).ToArray();
