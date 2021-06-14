@@ -314,6 +314,8 @@ namespace AGXUnityEditor
         return null;
       }
 
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
       go.transform.position = new Vector3( -30, 0, -30 );
       go.AddComponent<AGXUnity.Model.DeformableTerrain>();
 
