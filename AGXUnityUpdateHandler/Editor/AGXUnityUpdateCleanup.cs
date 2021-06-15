@@ -27,13 +27,14 @@ namespace AGXUnityUpdate.Detail
   [InitializeOnLoad]
   internal static class AGXUnityUpdateCleanup
   {
-    private static readonly string OnNewVersionDefineSymbol = "AGXUNITY_NEW_VERSION";
+    private static readonly string OnImportDefineSymbol = "AGXUNITY_ON_IMPORT";
 
     static AGXUnityUpdateCleanup()
     {
-      Debug.Log( "AGXUnityUpdateCleanup: Checking for imported packages." );
-      AssetDatabase.importPackageCompleted += OnImportCompleted;
-      EditorApplication.update += OnEditorUpdate;
+      if ( !EditorApplication.isPlayingOrWillChangePlaymode ) {
+        AssetDatabase.importPackageCompleted += OnImportCompleted;
+        EditorApplication.update += OnEditorUpdate;
+      }
     }
 
     [MenuItem( "AGXUnity/Utils/Update Cleanup" )]
@@ -45,7 +46,7 @@ namespace AGXUnityUpdate.Detail
                                  ImportAssetOptions.ForceSynchronousImport );
 #if UNITY_2020_1_OR_NEWER
       EditorApplication.update += OnEditorUpdate;
-      DefineSymbols.Add( OnNewVersionDefineSymbol );
+      DefineSymbols.Add( OnImportDefineSymbol );
 #endif
     }
 
@@ -82,19 +83,21 @@ namespace AGXUnityUpdate.Detail
 
     private static void ShowNotification( string message, double fadeoutWait )
     {
+#if UNITY_2019_1_OR_NEWER
       foreach ( SceneView sceneView in SceneView.sceneViews )
         sceneView.ShowNotification( new GUIContent( message ), fadeoutWait );
+#endif
     }
 
     private static void OnEditorUpdate()
     {
       if ( EditorApplication.isCompiling ) {
-        ShowNotification( "AGX Dynamics for Unity is updating...", 1.0 );
+        ShowNotification( "AGX Dynamics for Unity is being installed...", 1.0 );
         return;
       }
 
-      if ( DefineSymbols.Contains( OnNewVersionDefineSymbol ) )
-        DefineSymbols.Remove( OnNewVersionDefineSymbol );
+      if ( DefineSymbols.Contains( OnImportDefineSymbol ) )
+        DefineSymbols.Remove( OnImportDefineSymbol );
       else 
         EditorApplication.update -= OnEditorUpdate;
     }
