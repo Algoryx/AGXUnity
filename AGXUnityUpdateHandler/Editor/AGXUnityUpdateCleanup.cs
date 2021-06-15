@@ -31,6 +31,7 @@ namespace AGXUnityUpdate.Detail
 
     static AGXUnityUpdateCleanup()
     {
+      Debug.Log( "AGXUnityUpdateCleanup: Checking for imported packages." );
       AssetDatabase.importPackageCompleted += OnImportCompleted;
       EditorApplication.update += OnEditorUpdate;
     }
