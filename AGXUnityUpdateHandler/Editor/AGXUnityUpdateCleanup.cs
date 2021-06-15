@@ -45,7 +45,7 @@ namespace AGXUnityUpdate.Detail
                                  ImportAssetOptions.ForceSynchronousImport );
 #if UNITY_2020_1_OR_NEWER
       EditorApplication.update += OnEditorUpdate;
-      DefineSymbols.Add( OnUpdateDefine );
+      DefineSymbols.Add( OnNewVersionDefineSymbol );
 #endif
     }
 
