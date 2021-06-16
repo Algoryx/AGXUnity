@@ -7,7 +7,7 @@ using UnityEngine;
 namespace AGXUnityUpdate.Detail
 {
   /// <summary>
-  /// Patching updates in Unity 2019.4 and later.
+  /// Patching AGX Dynamics for Unity import in Unity 2019.4 and later.
   /// 
   /// During update, we're deleting all our scripts, dll's and assets, then
   /// we call AssetDatabase.ImportPackage with the new version. This is done
@@ -17,6 +17,11 @@ namespace AGXUnityUpdate.Detail
   /// only partly, updated - resulting in various issues such as compile errors
   /// and/or crash when AGX Dynamics is called.
   /// 
+  /// This script is listening to AssetDatabase.importPackageCompleted and
+  /// EditorApplication.update from our InitializeOnLoad constructor. If
+  /// nothing is happening we remove ourselves from EditorApplication.update
+  /// but keep waiting for packages to be imported.
+  /// 
   /// 2019.4: It's enough to re-import from the AGXUnity root directory. Similar
   ///         to right-click on the AGXUnity directory and click "Reimport".
   /// 2020.1: A "Reimport" isn't enough. Re-import and adding a define symbol
@@ -25,11 +30,16 @@ namespace AGXUnityUpdate.Detail
   ///         additional define symbol to trigger compilation again.
   /// </summary>
   [InitializeOnLoad]
-  internal static class AGXUnityUpdateCleanup
+  internal static class AGXUnityImportCleanup
   {
     private static readonly string OnImportDefineSymbol = "AGXUNITY_ON_IMPORT";
 
-    static AGXUnityUpdateCleanup()
+    private static bool HasOngoingDefineSymbols
+    {
+      get { return DefineSymbols.Contains( OnImportDefineSymbol ); }
+    }
+
+    static AGXUnityImportCleanup()
     {
       if ( !EditorApplication.isPlayingOrWillChangePlaymode ) {
         AssetDatabase.importPackageCompleted += OnImportCompleted;
@@ -92,7 +102,8 @@ namespace AGXUnityUpdate.Detail
     private static void OnEditorUpdate()
     {
       if ( EditorApplication.isCompiling ) {
-        ShowNotification( "AGX Dynamics for Unity is being installed...", 1.0 );
+        if ( HasOngoingDefineSymbols )
+          ShowNotification( "AGX Dynamics for Unity is being installed...", 1.0 );
         return;
       }
 
