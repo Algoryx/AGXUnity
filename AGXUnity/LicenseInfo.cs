@@ -28,7 +28,8 @@ namespace AGXUnity
       AGXTires         = 1 << 10,
       AGXTracks        = 1 << 11,
       AGXWireLink      = 1 << 12,
-      AGXWires         = 1 << 13
+      AGXWires         = 1 << 13,
+      All              = ~0
     }
 
     /// <summary>
@@ -141,6 +142,23 @@ namespace AGXUnity
     /// Activated AGX Dynamics modules.
     /// </summary>
     public Module EnabledModules;
+
+    /// <summary>
+    /// True if all available modules are enabled.
+    /// </summary>
+    public bool AllModulesEnabled
+    {
+      get
+      {
+        var allSet = true;
+        foreach ( Module eVal in Enum.GetValues( typeof( Module ) ) ) {
+          if ( eVal == Module.None || eVal == Module.All )
+            continue;
+          allSet = allSet && ( (long)eVal & (long)EnabledModules ) != 0;
+        }
+        return allSet;
+      }
+    }
 
     /// <summary>
     /// True if the license is valid - otherwise false.

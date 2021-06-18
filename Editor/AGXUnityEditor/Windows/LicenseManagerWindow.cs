@@ -255,7 +255,9 @@ namespace AGXUnityEditor.Windows
       EditorGUILayout.EnumFlagsField( GUI.MakeLabel( "Enabled modules",
                                                      false,
                                                      data.LicenseInfo.EnabledModules.ToString() ),
-                                      data.LicenseInfo.EnabledModules,
+                                      data.LicenseInfo.AllModulesEnabled ?
+                                        AGXUnity.LicenseInfo.Module.All :
+                                        data.LicenseInfo.EnabledModules,
                                       false,
                                       InspectorEditor.Skin.Popup );
 
