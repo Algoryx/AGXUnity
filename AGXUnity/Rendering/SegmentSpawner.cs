@@ -46,6 +46,11 @@ namespace AGXUnity.Rendering
           assignMaterial( m_firstSegmentInstance );
         if ( m_segmentInstance != null )
           assignMaterial( m_segmentInstance );
+
+        if ( m_segments != null ) {
+          GameObject.DestroyImmediate( m_segments );
+          m_segments = null;
+        }
       }
     }
 
