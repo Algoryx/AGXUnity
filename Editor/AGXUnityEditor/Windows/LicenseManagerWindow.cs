@@ -141,12 +141,12 @@ namespace AGXUnityEditor.Windows
       }
 
       using ( InspectorGUI.IndentScope.Single ) {
-        m_licenseActivateData.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Id" ),
+        m_licenseActivateData.Id = EditorGUILayout.TextField( GUI.MakeLabel( "License Id" ),
                                                               m_licenseActivateData.Id,
                                                               InspectorEditor.Skin.TextField );
         if ( m_licenseActivateData.Id.Any( c => !char.IsDigit( c ) ) )
           m_licenseActivateData.Id = new string( m_licenseActivateData.Id.Where( c => char.IsDigit( c ) ).ToArray() );
-        m_licenseActivateData.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Password" ),
+        m_licenseActivateData.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Activation Code" ),
                                                                         m_licenseActivateData.Password );
 
         InspectorGUI.SelectFolder( GUI.MakeLabel( "License File Directory" ),

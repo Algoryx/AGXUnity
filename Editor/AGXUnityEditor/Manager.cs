@@ -812,11 +812,27 @@ namespace AGXUnityEditor
       if ( EditorApplication.isPlayingOrWillChangePlaymode )
         return true;
 
-      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
-      var currDll             = new FileInfo( localDllFilename );
-      var installedDll        = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
+      var dotNetAssemblyNames = new string[]
+      {
+        "agxDotNet.dll",
+        "agxMathDotNet.dll"
+      };
 
-      // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
+      var result = true;
+      foreach ( var dotNetAssemblyName in dotNetAssemblyNames )
+        result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
+                 result;
+
+      return result;
+    }
+
+    private static bool VerifyDotNetAssemblyCompatibility( string dotNetAssemblyName )
+    {
+      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + $"/{dotNetAssemblyName}";
+      var currDll = new FileInfo( localDllFilename );
+      var installedDll = AGXUnity.IO.Environment.FindFile( dotNetAssemblyName );
+
+      // Wasn't able to find any installed version of the assembly - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
         return true;
 
@@ -827,7 +843,7 @@ namespace AGXUnityEditor
       AGXUnity.NativeHandler.Instance.Register( null );
 
       if ( !currDll.Exists || HasBeenChanged( currDll, installedDll ) ) {
-        Debug.Log( "<color=green>New version of agxDotNet.dll located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
+        Debug.Log( $"<color=green>New version of {dotNetAssemblyName} located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
         installedDll.CopyTo( localDllFilename, true );
         return false;
       }
