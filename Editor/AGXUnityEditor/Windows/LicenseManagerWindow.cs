@@ -216,6 +216,8 @@ namespace AGXUnityEditor.Windows
     private void LicenseDataGUI( LicenseData data )
     {
       var highlight = m_licenseData.Count > 1 &&
+                      !IsUpdatingLicenseInformation &&
+                      !AGXUnity.LicenseManager.IsBusy &&
                       data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId;
       if ( highlight && m_activeLicenseStyle == null )
         m_activeLicenseStyle = new GUIStyle( InspectorEditor.Skin.Label );
@@ -252,7 +254,6 @@ namespace AGXUnityEditor.Windows
                                               if ( deactivateDelete ) {
                                                 AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename );
                                                 StartUpdateLicenseInformation();
-                                                GUIUtility.ExitGUI();
                                               }
                                             },
                                             UnityEngine.GUI.enabled,
@@ -306,11 +307,13 @@ namespace AGXUnityEditor.Windows
       m_updateLicenseInfoTask = Task.Run( () =>
       {
         foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
-          AGXUnity.LicenseManager.LoadFile( licenseFile );
+          var valid = AGXUnity.LicenseManager.LoadFile( licenseFile );
           licenseData.Add( new LicenseData()
           {
             Filename = licenseFile,
-            LicenseInfo = AGXUnity.LicenseManager.LicenseInfo
+            LicenseInfo = valid ?
+                            AGXUnity.LicenseManager.LicenseInfo :
+                            new AGXUnity.LicenseInfo()
           } );
         }
 
@@ -353,6 +356,8 @@ namespace AGXUnityEditor.Windows
                                               UpdateLicenseInfo( licenseData.Filename, AGXUnity.LicenseManager.LicenseInfo );
                                               if ( prevLicense.Filename != licenseData.Filename )
                                                 AGXUnity.LicenseManager.LoadFile( prevLicense.Filename );
+
+                                              StartUpdateLicenseInformation();
                                             } );
     }
 
