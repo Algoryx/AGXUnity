@@ -1458,9 +1458,9 @@ namespace AGXUnityEditor
       var position = MultiFloatFieldPrefixLabel( label );
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
-                                  GUIContent.none,
-                                  contents,
-                                  values );
+                                 GUIContent.none,
+                                 contents,
+                                 values );
       if ( EditorGUI.EndChangeCheck() )
         onChange?.Invoke( values );
     }
