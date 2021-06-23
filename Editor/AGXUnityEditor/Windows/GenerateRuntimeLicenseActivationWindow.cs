@@ -13,7 +13,7 @@ namespace AGXUnityEditor.Windows
   {
     public static GenerateRuntimeLicenseActivationWindow Open()
     {
-      var window = GetWindowWithRect<GenerateRuntimeLicenseActivationWindow>( new Rect( 300, 300, 500, 235 ),
+      var window = GetWindowWithRect<GenerateRuntimeLicenseActivationWindow>( new Rect( 300, 300, 500, 352 ),
                                                                               true,
                                                                               "AGX Dynamics for Unity" );
       return window;
@@ -90,6 +90,17 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.BrandSeparator( 1, 6 );
 
+      var agxLfxColor = Color.Lerp( Color.green, Color.black, 0.35f );
+      var encryptedFilename = $"agx{AGXUnity.LicenseManager.GetRuntimeActivationExtension()}".Color( agxLfxColor );
+      var serviceFilename = $"agx{AGXUnity.LicenseManager.GetLicenseExtension( AGXUnity.LicenseInfo.LicenseType.Service )}".Color( agxLfxColor );
+      InspectorGUI.ToolDescription( "Generate an AGX Dynamics for Unity runtime activation file containing " +
+                                    "encrypted License Id and Activation Code bound to the application. The " +
+                                    "generated runtime activation file (" + encryptedFilename + ") will be replaced " +
+                                    "with a hardware locked " + serviceFilename + " if the activation is successful.\n\n" +
+                                    "<b>Internet access is required during the activation on the target hardware.</b>" );
+
+      InspectorGUI.Separator( 1, 6 );
+
       InspectorGUI.SelectFolder( GUI.MakeLabel( "Build directory" ),
                                  BuildDirectory,
                                  "Build directory",
@@ -113,16 +124,17 @@ namespace AGXUnityEditor.Windows
                                  ReferenceFileInBuild = newFilename;
                                } );
 
-      m_idPassword.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Id" ),
+      m_idPassword.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Runtime License Id" ),
                                                    m_idPassword.Id,
                                                    InspectorEditor.Skin.TextField );
       if ( m_idPassword.Id.Any( c => !char.IsDigit( c ) ) )
         m_idPassword.Id = new string( m_idPassword.Id.Where( c => char.IsDigit( c ) ).ToArray() );
-      m_idPassword.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Password" ),
+      m_idPassword.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Runtime Activation Code" ),
                                                              m_idPassword.Password );
 
       var generateToolTip = string.Empty;
       using ( new GUI.EnabledBlock( ValidateGenerate( ref generateToolTip ) ) ) {
+        GUILayout.Space( 3 );
         if ( GUILayout.Button( GUI.MakeLabel( "Generate", false, generateToolTip ) ) ) {
           var generatedFilename = string.Empty;
           if ( AGXUnity.LicenseManager.GenerateEncryptedRuntime( System.Convert.ToInt32( m_idPassword.Id ),
