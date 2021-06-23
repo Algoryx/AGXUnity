@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
 
-// TODO:
-//   - Return agxCollide.Geometry from CreateTemporaryNative.
-//   - Cache convex decomposed mesh data.
-
 namespace AGXUnity.Collide
 {
   /// <summary>
