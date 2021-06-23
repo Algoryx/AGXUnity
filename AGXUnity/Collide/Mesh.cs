@@ -294,6 +294,8 @@ namespace AGXUnity.Collide
         CreateRenderMeshes();
       var prevColor = Gizmos.color;
       for ( int i = 0; i < m_renderMeshes.Length; ++i ) {
+        if ( m_renderMeshes[ i ] == null || m_renderMeshes[ i ].vertexCount == 0 )
+          continue;
         Gizmos.color = m_renderColors[ i ];
         Gizmos.DrawWireMesh( m_renderMeshes[ i ],
                              transform.position,

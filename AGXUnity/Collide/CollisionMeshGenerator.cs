@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace AGXUnity.Collide
 {
@@ -189,13 +190,16 @@ namespace AGXUnity.Collide
           var merger = mergers[ i ];
           numProcessedVertices += merger.Vertices.Count;
           if ( options == null || options.Mode == CollisionMeshOptions.MeshMode.Trimesh ) {
+            var collisionMesh = CreateDataOptionallyReduce( mesh,
+                                                            options,
+                                                            merger );
             var result = new Result()
             {
               Mesh = mesh,
               Options = options,
-              CollisionMeshes = new CollisionMeshData[] { CreateDataOptionallyReduce( mesh,
-                                                                                      options,
-                                                                                      merger ) }
+              CollisionMeshes = collisionMesh != null ?
+                                  new CollisionMeshData[] { collisionMesh } :
+                                  null
             };
             results[ i ] = result;
           }
@@ -211,7 +215,9 @@ namespace AGXUnity.Collide
             {
               Mesh = mesh,
               Options = options,
-              CollisionMeshes = new CollisionMeshData[] { collisionMesh }
+              CollisionMeshes = collisionMesh != null ?
+                                  new CollisionMeshData[] { collisionMesh } :
+                                  null
             };
             results[ i ] = result;
           }
@@ -229,10 +235,19 @@ namespace AGXUnity.Collide
                                                                 merger.Indices,
                                                                 convexes,
                                                                 (uint)elementsPerAxis );
-            result.CollisionMeshes = convexes.Select( convex => CreateDataOptionallyReduce( mesh,
-                                                                                            options,
-                                                                                            merger,
-                                                                                            convex.get() ) ).ToArray();
+            if ( convexes.Count == 0 )
+              UnityEngine.Debug.LogWarning( $"Convex Decomposition of {mesh} resulted in zero convex shapes.", mesh );
+
+            var collisionMeshes = ( from convexRef in convexes
+                                    let collisionMesh = CreateDataOptionallyReduce( mesh,
+                                                                                    options,
+                                                                                    merger,
+                                                                                    convexRef.get() )
+                                    where collisionMesh != null
+                                    select collisionMesh ).ToArray();
+            if ( collisionMeshes.Length > 0 )
+              result.CollisionMeshes = collisionMeshes;
+
             results[ i ] = result;
           }
 
@@ -259,8 +274,20 @@ namespace AGXUnity.Collide
                                                                  CollisionMeshOptions options,
                                                                  Utils.MeshMerger merger )
     {
-      if ( options != null && options.ReductionEnabled )
+      var reductionEnabled = options != null && options.ReductionEnabled;
+      var orgNumVertices = merger.Vertices.Count;
+      if ( reductionEnabled )
         merger.Reduce( options.ReductionRatio, options.ReductionAggressiveness );
+
+      if ( merger.Vertices.Count == 0 ) {
+        if ( reductionEnabled && orgNumVertices > 0 )
+          UnityEngine.Debug.LogWarning( $"Vertex Reduction reduced a collision mesh from {orgNumVertices} vertices to zero. " +
+                                        "Ignoring collision mesh.", mesh );
+        else
+          UnityEngine.Debug.LogWarning( $"Mesh \"{mesh.name}\" doesn't contain any vertices for the collision mesh. " +
+                                        "Ignoring collision mesh.", mesh );
+        return null;
+      }
 
       var meshData = new CollisionMeshData();
       meshData.Apply( merger.Vertices, merger.Indices );
