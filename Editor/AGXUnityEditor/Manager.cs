@@ -715,10 +715,12 @@ namespace AGXUnityEditor
         for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
           envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
 
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
-        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+        // Adding Plugins/x86_64/agx to RESOURCE_PATH (for additional data) and
+        // to RUNTIME_PATH (for entities and components). The license file is
+        // searched for by the license manager.
+        var dataAndRuntimePath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAndRuntimePath );
       }
       // Check if user would like to initialize AGX Dynamics with an
       // installed (or Algoryx developer) version.
@@ -730,6 +732,8 @@ namespace AGXUnityEditor
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
       try {
+        AGXUnity.LicenseManager.LoadFile();
+
         AGXUnity.NativeHandler.Instance.ValidateLicense();
         if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
              !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
@@ -806,11 +810,27 @@ namespace AGXUnityEditor
       if ( EditorApplication.isPlayingOrWillChangePlaymode )
         return true;
 
-      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
-      var currDll             = new FileInfo( localDllFilename );
-      var installedDll        = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
+      var dotNetAssemblyNames = new string[]
+      {
+        "agxDotNet.dll",
+        "agxMathDotNet.dll"
+      };
 
-      // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
+      var result = true;
+      foreach ( var dotNetAssemblyName in dotNetAssemblyNames )
+        result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
+                 result;
+
+      return result;
+    }
+
+    private static bool VerifyDotNetAssemblyCompatibility( string dotNetAssemblyName )
+    {
+      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + $"/{dotNetAssemblyName}";
+      var currDll = new FileInfo( localDllFilename );
+      var installedDll = AGXUnity.IO.Environment.FindFile( dotNetAssemblyName );
+
+      // Wasn't able to find any installed version of the assembly - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
         return true;
 
@@ -821,7 +841,7 @@ namespace AGXUnityEditor
       AGXUnity.NativeHandler.Instance.Register( null );
 
       if ( !currDll.Exists || HasBeenChanged( currDll, installedDll ) ) {
-        Debug.Log( "<color=green>New version of agxDotNet.dll located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
+        Debug.Log( $"<color=green>New version of {dotNetAssemblyName} located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
         installedDll.CopyTo( localDllFilename, true );
         return false;
       }

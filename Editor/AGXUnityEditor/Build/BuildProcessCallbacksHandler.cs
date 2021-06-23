@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Diagnostics;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -247,6 +247,8 @@ namespace AGXUnityEditor.Build
         fi.Delete();
 
       VerifyBuild( targetDataPath );
+
+      CheckGenerateEncryptedRuntime( targetExecutableFileInfo );
     }
 
     private static void PostBuildExternal( string agxDynamicsPath,
@@ -303,6 +305,13 @@ namespace AGXUnityEditor.Build
       CopyDirectory( new DirectoryInfo( agxPluginPath + Path.DirectorySeparatorChar + "Components" ),
                      new DirectoryInfo( agxRuntimeDataPath + Path.DirectorySeparatorChar + "Components" ) );
 
+      var targetDataDir = agxRuntimeDataPath + Path.DirectorySeparatorChar + "data";
+      Debug.Log( "Copying data to: " + GUI.AddColorTag( targetDataDir, Color.green ) );
+      if ( !Directory.Exists( targetDataDir ) )
+        Directory.CreateDirectory( targetDataDir );
+      CopyDirectory( new DirectoryInfo( agxDynamicsPath + Path.DirectorySeparatorChar + "data" + Path.DirectorySeparatorChar + "TerrainMaterials" ),
+                     new DirectoryInfo( targetDataDir + Path.DirectorySeparatorChar + "TerrainMaterials" ) );
+
       foreach ( var modulePath in loadedAgxModulesPaths ) {
         var moduleFileInfo = new FileInfo( modulePath );
         try {
@@ -321,6 +330,47 @@ namespace AGXUnityEditor.Build
                      GUI.AddColorTag( moduleFileInfo.Name, Color.red ) +
                      ": " + e.Message );
         }
+      }
+
+      CheckGenerateEncryptedRuntime( targetExecutableFileInfo );
+    }
+
+    private static void CheckGenerateEncryptedRuntime( FileInfo targetExecutableFileInfo )
+    {
+      if ( AGXUnity.LicenseManager.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service &&
+           !Application.isBatchMode &&
+           AskGenerateRuntimeLicense ) {
+        var generateEncryptedRuntimeActivation = EditorUtility.DisplayDialogComplex( "Generate encrypted runtime license?",
+                                                                                     "Open separate window to generate",
+                                                                                     "Yes",
+                                                                                     "No",
+                                                                                     "Never" );
+        if ( generateEncryptedRuntimeActivation == 0 )
+          Windows.GenerateRuntimeLicenseActivationWindow.Open().Initialize( targetExecutableFileInfo.Directory.FullName,
+                                                                            targetExecutableFileInfo.FullName );
+        else if ( generateEncryptedRuntimeActivation == 2 )
+          AskGenerateRuntimeLicense = false;
+      }
+    }
+
+    private static bool AskGenerateRuntimeLicense
+    {
+      get
+      {
+        return GenerateRuntimeLicenseData.Bool;
+      }
+      set
+      {
+        GenerateRuntimeLicenseData.Bool = value;
+      }
+    }
+
+    private static EditorDataEntry GenerateRuntimeLicenseData
+    {
+      get
+      {
+        return EditorData.Instance.GetStaticData( "BuildProcess_AskGenerateRuntimeLicense",
+                                                  entry => entry.Bool = true );
       }
     }
   }
