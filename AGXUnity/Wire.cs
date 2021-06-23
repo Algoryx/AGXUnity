@@ -6,7 +6,6 @@ namespace AGXUnity
   /// <summary>
   /// Wire object.
   /// </summary>
-  [AddComponentMenu( "" )]
   [RequireComponent( typeof( WireRoute ) )]
   public class Wire : ScriptComponent
   {
