@@ -269,17 +269,18 @@ namespace AGXUnity
       var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
       s_activationTask = Task.Run( () =>
       {
+        var success = false;
         try {
-          var success = agx.Runtime.instance().activateAgxLicense( licenseId,
-                                                                   licensePassword,
-                                                                   licenseFilename );
+          success = agx.Runtime.instance().activateAgxLicense( licenseId,
+                                                               licensePassword,
+                                                               licenseFilename );
           UpdateLicenseInformation();
-          onDone?.Invoke( success );
         }
         catch ( Exception e ) {
           Debug.LogException( e );
-          onDone?.Invoke( false );
+          success = false;
         }
+        onDone?.Invoke( success );
       } );
     }
 
@@ -334,15 +335,16 @@ namespace AGXUnity
 
       s_refreshTask = Task.Run( () =>
       {
+        var success = false;
         try {
-          var success = agx.Runtime.instance().loadLicenseFile( filename, true );
+          success = agx.Runtime.instance().loadLicenseFile( filename, true );
           UpdateLicenseInformation();
-          onDone?.Invoke( success );
         }
         catch ( Exception e ) {
           Debug.LogException( e );
-          onDone?.Invoke( false );
+          success = false;
         }
+        onDone?.Invoke( success );
       } );
     }
 
@@ -494,6 +496,15 @@ namespace AGXUnity
     public static string GetLicenseExtension( LicenseInfo.LicenseType type )
     {
       return s_licenseExtensions[ (int)type ];
+    }
+
+    /// <summary>
+    /// Runtime activation license file extension.
+    /// </summary>
+    /// <returns>The runtime activation license file extension.</returns>
+    public static string GetRuntimeActivationExtension()
+    {
+      return s_runtimeActivationExtension;
     }
 
     /// <summary>

@@ -471,10 +471,12 @@ namespace AGXUnityEditor
 
       EditorGUI.PrefixLabel( rect, label );
 
-      rect.x    += EditorGUIUtility.labelWidth;
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
       rect.width = orgWidth -
                    EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth;
+                   selectNewFolderButtonWidth + indentOffset;
       EditorGUI.SelectableLabel( rect,
                                  currentFile,
                                  InspectorEditor.Skin.TextField );
