@@ -61,7 +61,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native cylinder object if created.
     /// </summary>
-    public agxCollide.Cylinder Native { get { return m_shape as agxCollide.Cylinder; } }
+    public agxCollide.Cylinder Native { get { return NativeShape?.asCylinder(); } }
 
     /// <summary>
     /// Debug rendering scale assuming the rendered cylinder has diameter 1 and height 1.
@@ -74,9 +74,10 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Creates the native cylinder object given current radius and height.
     /// </summary>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Cylinder( m_radius, m_height );
+      return new agxCollide.Geometry( new agxCollide.Cylinder( m_radius, m_height ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }

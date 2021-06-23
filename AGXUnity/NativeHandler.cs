@@ -141,6 +141,12 @@ namespace AGXUnity
         agx.Thread.registerAsAgxThread();
     }
 
+    public void UnregisterCurrentThread()
+    {
+      if ( !agx.Thread.isMainThread() )
+        agx.Thread.unregisterAsAgxThread();
+    }
+
     /// <summary>
     /// Unlock AGX Dynamics using obfuscated license string.
     /// </summary>

@@ -53,6 +53,8 @@ namespace AGXUnityEditor.Tools
 
     public bool IsMultiSelect { get { return NumTargets > 1; } }
 
+    public virtual void OnUndoRedo() { }
+
     protected CustomTargetTool( Object[] targets )
       : base( isSingleInstanceTool: false )
     {

@@ -12,7 +12,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns native plane if created.
     /// </summary>
-    public agxCollide.Plane Native { get { return m_shape as agxCollide.Plane; } }
+    public agxCollide.Plane Native { get { return NativeShape?.asPlane(); } }
 
     /// <summary>
     /// Debug rendering scale is one since size isn't a thing for planes.
@@ -26,9 +26,10 @@ namespace AGXUnity.Collide
     /// Creates native plane object given current transform up vector.
     /// </summary>
     /// <returns></returns>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Plane( transform.up.ToHandedVec3(), 0 );
+      return new agxCollide.Geometry( new agxCollide.Plane( transform.up.ToHandedVec3(), 0 ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }

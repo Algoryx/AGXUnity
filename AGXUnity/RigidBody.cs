@@ -328,16 +328,15 @@ namespace AGXUnity
       else {
         using ( var rb = new agx.RigidBody() ) {
           foreach ( var shape in Shapes ) {
-            var nativeShape = shape.CreateTemporaryNative();
-            if ( nativeShape != null ) {
-              var geometry = new agxCollide.Geometry( nativeShape );
+            var geometry = shape.CreateTemporaryNative();
+            if ( geometry == null )
+              continue;
 
-              geometry.setEnable( shape.IsEnabled );
+            geometry.setEnable( shape.IsEnabled );
+            if ( shape.Material != null )
+              geometry.setMaterial( shape.Material.CreateTemporaryNative() );
 
-              if ( shape.Material != null )
-                geometry.setMaterial( shape.Material.CreateTemporaryNative() );
-              rb.add( geometry, shape.GetNativeRigidBodyOffset( this ) );
-            }
+            rb.add( geometry, shape.GetNativeRigidBodyOffset( this ) );
           }
 
           // For center of mass position/rotation to be correct we have to
@@ -365,16 +364,12 @@ namespace AGXUnity
 
       var native = new agx.RigidBody( template.name );
       foreach ( var shape in shapes ) {
-        var nativeShape = shape.CreateTemporaryNative();
-        if ( nativeShape != null ) {
-          var geometry = new agxCollide.Geometry( nativeShape );
+        var geometry = shape.CreateTemporaryNative();
 
-          geometry.setEnable( shape.IsEnabled );
-
-          if ( shape.Material != null )
-            geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
-          native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
-        }
+        geometry.setEnable( shape.IsEnabled );
+        if ( shape.Material != null )
+          geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
+        native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
       }
 
       template.SyncNativeTransform( native );
