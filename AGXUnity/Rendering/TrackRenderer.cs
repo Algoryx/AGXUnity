@@ -40,6 +40,7 @@ namespace AGXUnity.Rendering
       set
       {
         m_resource = value;
+        m_gizmosMesh = null;
         if ( m_root != null ) {
           DestroyImmediate( m_root );
           m_root = null;
@@ -80,9 +81,6 @@ namespace AGXUnity.Rendering
         return;
       }
 
-      if ( m_root == null )
-        m_root = RuntimeObjects.GetOrCreateRoot( this );
-
       var containsNullEntries = m_uninitializedTrackData.FirstOrDefault( pair => pair.Key == null ).Value != null;
       if ( containsNullEntries )
         m_uninitializedTrackData = m_uninitializedTrackData.Where( pair => pair.Key != null ).ToDictionary( pair => pair.Key,
@@ -105,6 +103,14 @@ namespace AGXUnity.Rendering
           numNodes += trackData.TrackNodes.Length;
         }
       }
+
+      // Avoid creating root in the prefab stage. We have to
+      // do the rendering as gizmos.
+      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+        return;
+
+      if ( m_root == null )
+        m_root = RuntimeObjects.GetOrCreateRoot( this );
 
       if ( numNodes > m_root.transform.childCount ) {
         var numToAdd = numNodes - m_root.transform.childCount;
@@ -162,6 +168,16 @@ namespace AGXUnity.Rendering
         Debug.LogError( "TrackRenderer requires Track component.", this );
     }
 
+    private void OnDrawGizmos()
+    {
+      DrawGizmos( false );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+      DrawGizmos( true );
+    }
+
     private void Configure( Model.Track track, GameObject instance )
     {
       instance.hideFlags = HideFlags.DontSaveInEditor;
@@ -169,6 +185,65 @@ namespace AGXUnity.Rendering
       foreach ( Transform child in instance.transform )
         Configure( track, child.gameObject );
     }
+
+    private void DrawGizmos( bool isSelected )
+    {
+      if ( Application.isPlaying )
+        return;
+
+      if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+        return;
+
+      // The conveyor belt has some rendering when selected.
+      if ( GetComponent<Model.ConveyorBelt>() != null )
+        return;
+
+      var defaultColor = Color.Lerp( Color.black, Color.red, 0.15f );
+      var selectedColor = Color.Lerp( defaultColor, Color.white, 0.15f );
+      foreach ( var track in Tracks )
+        DrawGizmosUninitialized( track, isSelected ? selectedColor : defaultColor );
+    }
+
+    public bool DrawGizmosUninitialized( Model.Track track, Color color )
+    {
+      if ( track == null )
+        return false;
+
+      var data = GetData( track );
+      if ( data == null )
+        return false;
+
+      if ( m_gizmosMesh == null ) {
+        if ( Resource == null )
+          return false;
+
+        var filters = Resource.GetComponentsInChildren<MeshFilter>();
+        if ( filters.Length == 0 )
+          return false;
+
+        var combines = new CombineInstance[ filters.Length ];
+        for ( int i = 0; i < combines.Length; ++i ) {
+          combines[ i ].mesh = filters[ i ].sharedMesh;
+          combines[ i ].transform = filters[ i ].transform.localToWorldMatrix;
+        }
+
+        m_gizmosMesh = new Mesh();
+        m_gizmosMesh.CombineMeshes( combines );
+      }
+
+      Gizmos.color = color;
+      foreach ( var node in data.TrackNodes ) {
+        Gizmos.DrawWireMesh( m_gizmosMesh,
+                             node.Position + node.Rotation * ( node.HalfExtents.z * Vector3.forward ),
+                             node.Rotation,
+                             2.0f * node.HalfExtents );
+      }
+
+      return true;
+    }
+
+    [System.NonSerialized]
+    private Mesh m_gizmosMesh = null;
 
     public struct TrackDesc
     {

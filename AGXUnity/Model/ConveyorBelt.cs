@@ -779,15 +779,9 @@ namespace AGXUnity.Model
           var renderer = track.GetComponent<Rendering.TrackRenderer>();
           if ( renderer == null )
             continue;
-          var data = renderer.GetData( track );
-          if ( data == null )
+
+          if ( !renderer.DrawGizmosUninitialized( track, color ) )
             continue;
-          foreach ( var node in data.TrackNodes ) {
-            Gizmos.DrawWireMesh( m_nodeGizmoMesh,
-                                 node.Position + node.Rotation * ( node.HalfExtents.z * Vector3.forward ),
-                                 node.Rotation,
-                                 2.0f * node.HalfExtents );
-          }
         }
         color = new Color( color.r + 1.0f / tracks.Length,
                            color.g + 1.0f / tracks.Length,

@@ -45,6 +45,8 @@ namespace AGXUnityEditor.Tools
         foreach ( var child in children )
           yield return child;
       }
+
+      yield break;
     }
 
     public int NumTargets { get { return Targets.Length; } }
