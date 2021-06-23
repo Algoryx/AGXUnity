@@ -207,6 +207,8 @@ namespace AGXUnityEditor.Windows
                                                        Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
 
                                                      StartUpdateLicenseInformation();
+
+                                                     UnityEngine.GUI.FocusControl( "" );
                                                    } );
           }
         }
