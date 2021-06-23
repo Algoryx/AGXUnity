@@ -173,9 +173,10 @@ namespace AGXUnityEditor.Tools
 
               GUIUtility.ExitGUI();
             }
-            else if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Negative ) {
-              // Dialog: Are you sure?
-
+            else if ( applyResetResult == InspectorGUI.PositiveNegativeResult.Negative &&
+                      EditorUtility.DisplayDialog( "Reset collision meshes to default",
+                                                   "Destroy collision meshes and reset mesh options to default?",
+                                                   "Yes", "Cancel" ) ) {
               var meshes = GetTargets<AGXUnity.Collide.Mesh>().ToArray();
               using ( new Utils.UndoCollapseBlock( "Reset collision mesh data" ) ) {
                 for ( int i = 0; i < meshes.Length; ++i ) {
