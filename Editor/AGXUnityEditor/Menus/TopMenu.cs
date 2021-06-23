@@ -451,10 +451,16 @@ namespace AGXUnityEditor
       Windows.AboutWindow.Open();
     }
 
-    [MenuItem( "AGXUnity/License Manager", priority = 2041 )]
+    [MenuItem( "AGXUnity/License/License Manager", priority = 2041 )]
     public static void LicenseManagerWindow()
     {
       Windows.LicenseManagerWindow.Open();
+    }
+
+    [MenuItem( "AGXUnity/License/Runtime Activation Generator", priority = 2042 )]
+    public static void RuntimeGeneratorWindow()
+    {
+      Windows.GenerateRuntimeLicenseActivationWindow.Open();
     }
 
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]
