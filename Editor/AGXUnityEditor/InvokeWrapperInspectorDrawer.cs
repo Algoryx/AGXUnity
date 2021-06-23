@@ -652,7 +652,9 @@ namespace AGXUnityEditor
 
     public static void DrawUrdfPose( AGXUnity.IO.URDF.Pose pose )
     {
-      EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Origin", true ) );
+      UnityEngine.GUI.Label( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() ),
+                             GUI.MakeLabel( "Origin", true ),
+                             InspectorEditor.Skin.Label );
       using ( new InspectorGUI.IndentScope() ) {
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Position" ), pose.Xyz );
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Roll, Pitch, Yaw" ), pose.Rpy, "R,P,Y" );

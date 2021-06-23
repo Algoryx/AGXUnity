@@ -1288,6 +1288,49 @@ namespace AGXUnityEditor
                              displayInvalidRangeWarning );
     }
 
+    /// <summary>
+    /// Prefix label of EditorGUI.MultiFloatField, e.g.,
+    ///     EditorGUI.MultiFloatField( MultiFloatFieldPrefixLabel( label ),
+    ///                                GUIContent.none,
+    ///                                ... );
+    /// </summary>
+    /// <param name="label">Label, no label if null.</param>
+    /// <returns>Rect to be used for the EditorGUI.MultiFloatField.</returns>
+    public static Rect MultiFloatFieldPrefixLabel( GUIContent label )
+    {
+      var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
+      var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
+      var position = EditorGUILayout.GetControlRect( false, rectHeight );
+
+      var orgXMax = position.xMax;
+      // No label, indent resulting rect by label width in wide mode.
+      // In narrow mode we indent by one indent level (15).
+      if ( label == null ) {
+        // Wide mode (normal), indent by labelWidth and correction.
+        if ( EditorGUIUtility.wideMode ) {
+          var indentOffset = IndentScope.PixelLevel - 2;
+          position.x += EditorGUIUtility.labelWidth - indentOffset;
+        }
+        // Narrow mode, indent by one indent level.
+        else
+          position.x += 15;
+      }
+      // Prefix label is given, draw label and correct for indentation
+      // and/or wide mode state.
+      else {
+        EditorGUI.PrefixLabel( position, label );
+        if ( EditorGUIUtility.wideMode )
+          position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel + 2;
+        else
+          position.x += 15;
+        if ( numRectRows == 2 )
+          position.y += EditorGUIUtility.singleLineHeight;
+      }
+      position.xMax = orgXMax;
+
+      return position;
+    }
+
     public static RangeRealResult RangeRealField( GUIContent content,
                                                   RangeReal value,
                                                   GUIContent minContent,
@@ -1304,7 +1347,8 @@ namespace AGXUnityEditor
         MaxChanged = false
       };
 
-      var position = EditorGUILayout.GetControlRect();
+      var position = MultiFloatFieldPrefixLabel( content );
+
       s_rangeRealContent[ 0 ] = minContent;
       s_rangeRealContent[ 1 ] = maxContent;
       s_rangeRealValues[ 0 ]  = value.Min;
@@ -1312,7 +1356,7 @@ namespace AGXUnityEditor
 
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
-                                 content,
+                                 GUIContent.none,
                                  s_rangeRealContent,
                                  s_rangeRealValues );
       if ( EditorGUI.EndChangeCheck() ) {
@@ -1410,21 +1454,13 @@ namespace AGXUnityEditor
                        s_multiFloat4Contents;
       for ( int i = 0; i < values.Length; ++i )
         contents[ i ].text = subs[ i ];
-      var rect = EditorGUILayout.GetControlRect( label != null,
-                                                 EditorGUIUtility.singleLineHeight * ( EditorGUIUtility.wideMode ? 1 : 2 ) );
+
+      var position = MultiFloatFieldPrefixLabel( label );
       EditorGUI.BeginChangeCheck();
-      if ( label == null ) {
-        EditorGUI.MultiFloatField( rect,
-                                   s_customFloatFieldEmptyContent,
-                                   contents,
-                                   values );
-      }
-      else {
-        EditorGUI.MultiFloatField( rect,
-                                   label,
-                                   contents,
-                                   values );
-      }
+      EditorGUI.MultiFloatField( position,
+                                  GUIContent.none,
+                                  contents,
+                                  values );
       if ( EditorGUI.EndChangeCheck() )
         onChange?.Invoke( values );
     }
@@ -1454,20 +1490,19 @@ namespace AGXUnityEditor
       new GUIContent( s_multiFloat4DefaultSubLabels[ 3 ] )
     };
 
-    private static GUIContent s_customFloatFieldEmptyContent = new GUIContent( " " );
     private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };
     private static float[] s_customFloatFieldData = new float[] { 0.0f };
 
     public static float CustomFloatField( GUIContent labelContent, GUIContent fieldContent, float value )
     {
-      var content                             = labelContent ?? s_customFloatFieldEmptyContent;
-      var position                            = EditorGUILayout.GetControlRect();
+      var position = MultiFloatFieldPrefixLabel( labelContent );
+
       s_customFloatFieldSubLabelContents[ 0 ] = fieldContent;
       s_customFloatFieldData[ 0 ]             = value;
 
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
-                                 content,
+                                 GUIContent.none,
                                  s_customFloatFieldSubLabelContents,
                                  s_customFloatFieldData );
       if ( EditorGUI.EndChangeCheck() )

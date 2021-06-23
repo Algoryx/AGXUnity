@@ -130,7 +130,7 @@ namespace AGXUnityEditor.Tools
                                        select constraintParser[ rowType ][ i ].RowData ).ToArray();
 
               using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
-                var labelContent = i == 0 ? InspectorGUI.MakeLabel( wrapper.Member ) : new GUIContent( " " );
+                var labelContent = i == 0 ? InspectorGUI.MakeLabel( wrapper.Member ) : null;
                 var fieldContent = GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] );
                 if ( wrapper.IsType<float>() ) {
                   EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
