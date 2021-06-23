@@ -499,6 +499,15 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Runtime activation license file extension.
+    /// </summary>
+    /// <returns>The runtime activation license file extension.</returns>
+    public static string GetRuntimeActivationExtension()
+    {
+      return s_runtimeActivationExtension;
+    }
+
+    /// <summary>
     /// Await active tasks to complete.
     /// </summary>
     public static void AwaitTasks()
