@@ -458,7 +458,7 @@ namespace AGXUnity.IO.URDF
         // Avoiding warning for "world" type of links, i.e., 'parentLink' of
         // this joint may have inertial == null.
         if ( childLink.Inertial == null && childLink.Collisions.Length == 0 )
-          Debug.LogWarning( $"{warningBeginStr} ({Utils.GetLineInfo( childLink.LineNumber )}): Intermediate link '{childLink.Name}' is defined without " +
+          Debug.LogWarning( $"{warningBeginStr} [{Utils.GetLineInfo( childLink.LineNumber )}]: Intermediate link '{childLink.Name}' is defined without " +
                             $"<inertial> and <collision> which results in default mass (1) and default inertia diagonal (1, 1, 1)." );
       }
       m_joints = joints.ToArray();
