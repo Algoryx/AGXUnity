@@ -172,7 +172,7 @@ namespace AGXUnityEditor.Build
       }
 
       // It's not possible to use the PluginImporter during builds.
-      Predicate<FileInfo> isNativePlugin = fi => { return fi.Name.ToLower() != "agxdotnet.dll"; };
+      Predicate<FileInfo> isNativePlugin = fi => { return !fi.Name.ToLower().EndsWith( "dotnet.dll" ); };
       var inProjectDllNames = new HashSet<string>( from dllFile
                                                    in new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull ).EnumerateFiles( "*.dll" )
                                                    where isNativePlugin( dllFile )
