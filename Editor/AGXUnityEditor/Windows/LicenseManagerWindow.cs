@@ -392,8 +392,7 @@ namespace AGXUnityEditor.Windows
     [System.NonSerialized]
     private GUIStyle m_activeLicenseStyle = null;
 
-    // TODO: Update link when documentation is there.
-    private static readonly string s_licenseManagerUrl = @"https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#managers";
+    private static readonly string s_licenseManagerUrl = @"https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#license-manager";
     private static readonly string s_licensingUrl = @"https://us.download.algoryx.se/AGXUnity/documentation/current/getting_started.html#licensing";
     private static readonly string s_freeTrialUrl = @"https://www.algoryx.se/agx-unity/";
   }
