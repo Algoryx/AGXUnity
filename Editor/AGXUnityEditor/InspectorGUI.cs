@@ -131,21 +131,25 @@ namespace AGXUnityEditor
 
     public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
-      var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
-      rect.height = height;
-      rect.y += space / 2.0f;
-      EditorGUI.DrawRect( rect, InspectorGUISkin.BrandColor );
+      Separator( height, space, InspectorGUISkin.BrandColor, 1.0f );
     }
 
     public static void Separator( float height = 1.0f, float space = 1.0f )
     {
+      Separator( height, space, Color.black );
+    }
+
+    public static void Separator( float height, float space, Color color )
+    {
+      Separator( height, space, color, EditorGUIUtility.isProSkin ? 0.35f : 0.25f );
+    }
+
+    public static void Separator( float height, float space, Color color, float intensity01 )
+    {
       var rect = EditorGUILayout.GetControlRect( GUILayout.Height( space + height ) );
       rect.height = height;
       rect.y += space / 2.0f;
-      EditorGUI.DrawRect( rect,
-                          Color.Lerp( BackgroundColor,
-                                      Color.black,
-                                      EditorGUIUtility.isProSkin ? 0.35f : 0.25f ) );
+      EditorGUI.DrawRect( rect, Color.Lerp( BackgroundColor, color, intensity01 ) );
     }
 
     public static void DashedBrandSeparator( float height = 1.0f, float space = 1.0f )
@@ -430,6 +434,35 @@ namespace AGXUnityEditor
                                      string openFolderTitle,
                                      Action<string> onNewFolder )
     {
+      var updated = false;
+      SelectableTextField( label,
+                           currentFolder,
+                           MiscButtonData.Create( GUI.MakeLabel( "...",
+                                                                 InspectorGUISkin.BrandColor,
+                                                                 true ),
+                                                  () =>
+                                                  {
+                                                    string result = EditorUtility.OpenFolderPanel( openFolderTitle,
+                                                                                                   currentFolder,
+                                                                                                   "" );
+                                                    if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
+                                                      onNewFolder?.Invoke( result );
+                                                      // Remove focus from any control so that the field is updated.
+                                                      UnityEngine.GUI.FocusControl( "" );
+                                                      updated = true;
+                                                    }
+                                                  },
+                                                  UnityEngine.GUI.enabled,
+                                                  "Open select folder panel." ) );
+      return updated;
+    }
+
+    public static bool SelectFile( GUIContent label,
+                                   string currentFile,
+                                   string openFileTitle,
+                                   string openFileDirectory,
+                                   Action<string> onNewFileSelected )
+    {
       var selectNewFolderButtonWidth = 28.0f;
 
       var rect     = EditorGUILayout.GetControlRect();
@@ -438,23 +471,29 @@ namespace AGXUnityEditor
 
       EditorGUI.PrefixLabel( rect, label );
 
-      rect.x    += EditorGUIUtility.labelWidth;
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
       rect.width = orgWidth -
                    EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth;
-      EditorGUI.TextField( rect,
-                           currentFolder,
-                           InspectorEditor.Skin.TextField );
+                   selectNewFolderButtonWidth + indentOffset;
+      EditorGUI.SelectableLabel( rect,
+                                 currentFile,
+                                 InspectorEditor.Skin.TextField );
       rect.x    += rect.width;
       rect.width = selectNewFolderButtonWidth;
       if ( UnityEngine.GUI.Button( rect,
-                                   GUI.MakeLabel( "..." ),
+                                   GUI.MakeLabel( "...",
+                                                  InspectorGUISkin.BrandColor,
+                                                  true ),
                                    InspectorEditor.Skin.ButtonMiddle ) ) {
-        string result = EditorUtility.OpenFolderPanel( openFolderTitle,
-                                                       currentFolder,
-                                                       "" );
-        if ( !string.IsNullOrEmpty( result ) && result != currentFolder ) {
-          onNewFolder( result );
+        string result = EditorUtility.OpenFilePanel( openFileTitle,
+                                                     openFileDirectory,
+                                                     "" );
+        if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
+          onNewFileSelected?.Invoke( result );
+          // Remove focus from any control so that the field is updated.
+          UnityEngine.GUI.FocusControl( "" );
           return true;
         }
       }
@@ -480,7 +519,9 @@ namespace AGXUnityEditor
 
       EditorGUI.PrefixLabel( saveInitialRect, label );
 
-      saveInitialRect.x    += EditorGUIUtility.labelWidth;
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      saveInitialRect.x    += EditorGUIUtility.labelWidth - indentOffset;
       saveInitialRect.width = saveInitialToggleWidth;
       enabled               = EditorGUI.Toggle( saveInitialRect,
                                                 enabled );
@@ -490,14 +531,15 @@ namespace AGXUnityEditor
         saveInitialRect.width = saveInitialOrgWidth -
                                 EditorGUIUtility.labelWidth -
                                 saveInitialToggleWidth -
-                                saveInitialSaveFilePanelButtonWidth;
+                                saveInitialSaveFilePanelButtonWidth +
+                                indentOffset;
         currentEntry = EditorGUI.TextField( saveInitialRect,
                                             currentEntry,
                                             InspectorEditor.Skin.TextField );
         saveInitialRect.x    += saveInitialRect.width;
         saveInitialRect.width = saveInitialSaveFilePanelButtonWidth;
         if ( UnityEngine.GUI.Button( saveInitialRect,
-                                     GUI.MakeLabel( "..." ),
+                                     GUI.MakeLabel( "...", InspectorGUISkin.BrandColor, true ),
                                      InspectorEditor.Skin.ButtonMiddle ) ) {
           string result = EditorUtility.SaveFilePanel( saveFilePanelTitle,
                                                        currentEntry,
@@ -858,6 +900,213 @@ namespace AGXUnityEditor
       return false;
     }
 
+    /// <summary>
+    /// Text field with selectable text which isn't possible to edit.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in the text field.</param>
+    public static void SelectableTextField( GUIContent label,
+                                            string text )
+    {
+      SelectableTextField( label, text, InspectorEditor.Skin.TextField );
+    }
+
+    /// <summary>
+    /// Text field with selectable text which isn't possible to edit.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in the text field.</param>
+    /// <param name="textFieldStyle">Style of text field.</param>
+    public static void SelectableTextField( GUIContent label,
+                                            string text,
+                                            GUIStyle textFieldStyle )
+    {
+      var rect = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+
+      rect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+      rect.x += EditorGUIUtility.labelWidth - indentOffset;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth +
+                   indentOffset;
+
+      EditorGUI.SelectableLabel( rect,
+                                 text,
+                                 textFieldStyle );
+    }
+
+    /// <summary>
+    /// Misc button data.
+    /// </summary>
+    public struct MiscButtonData
+    {
+      /// <summary>
+      /// Create given misc icon and an on click callback.
+      /// </summary>
+      /// <param name="icon">Misc icon for the button.</param>
+      /// <param name="onClick">Callback when the button is clicked.</param>
+      /// <param name="enabled">True if the button is enabled, otherwise false.</param>
+      /// <param name="tooltip">Optional tool-tip of the button.</param>
+      /// <param name="width">Width of the button.</param>
+      /// <returns></returns>
+      public static MiscButtonData Create( MiscIcon icon,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           string tooltip = "",
+                                           float width = 28.0f )
+      {
+        return new MiscButtonData()
+        {
+          Icon      = icon,
+          IconLabel = null,
+          OnClick   = onClick,
+          Enabled   = enabled,
+          Tooltip   = tooltip,
+          Width     = width
+        };
+      }
+
+      /// <summary>
+      /// Create given button content and an on click callback.
+      /// </summary>
+      /// <param name="buttonContent">Button content.</param>
+      /// <param name="onClick">Callback when the button is clicked.</param>
+      /// <param name="enabled">True if the button is enabled, otherwise false.</param>
+      /// <param name="tooltip">Option tool-tip of the button.</param>
+      /// <param name="width">Width of the button.</param>
+      /// <returns></returns>
+      public static MiscButtonData Create( GUIContent buttonContent,
+                                           Action onClick,
+                                           bool enabled = true,
+                                           string tooltip = "",
+                                           float width = 28.0f )
+      {
+        buttonContent.tooltip = tooltip;
+
+        return new MiscButtonData()
+        {
+          IconLabel = buttonContent,
+          OnClick   = onClick,
+          Enabled   = enabled,
+          Tooltip   = tooltip,
+          Width     = width
+        };
+      }
+
+      public MiscIcon Icon;
+      public GUIContent IconLabel;
+      public Action OnClick;
+      public bool Enabled;
+      public string Tooltip;
+      public float Width;
+    }
+
+    /// <summary>
+    /// Selectable text field which isn't possible to edit. On the right
+    /// of the text field an arbitrary number of buttons can be added.
+    /// </summary>
+    /// <param name="label">Text field label.</param>
+    /// <param name="text">Text in text field.</param>
+    /// <param name="buttonData">Buttons.</param>
+    public static void SelectableTextField( GUIContent label,
+                                            string text,
+                                            params MiscButtonData[] buttonData )
+    {
+      if ( buttonData.Length == 0 ) {
+        SelectableTextField( label, text );
+        return;
+      }
+
+      var buttonSectionTotalWidth = buttonData.Sum( data => data.Width );
+      var rect = EditorGUILayout.GetControlRect();
+      var orgWidth = rect.width;
+
+      rect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( rect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
+      rect.width = orgWidth -
+                   EditorGUIUtility.labelWidth -
+                   buttonSectionTotalWidth +
+                   indentOffset;
+
+      EditorGUI.SelectableLabel( rect,
+                                 text,
+                                 InspectorEditor.Skin.TextField );
+
+      rect.x += rect.width;
+
+      Action clickAction = null;
+      foreach ( var data in buttonData ) {
+        rect.width = data.Width;
+        var clicked = false;
+        if ( data.IconLabel != null )
+          using ( new GUI.EnabledBlock( data.Enabled ) )
+            clicked = UnityEngine.GUI.Button( rect,
+                                              data.IconLabel,
+                                              InspectorEditor.Skin.ButtonMiddle );
+        else
+          clicked = Button( rect,
+                            data.Icon,
+                            data.Enabled,
+                            data.Tooltip );
+        if ( clicked )
+          clickAction = data.OnClick;
+
+        rect.x += rect.width;
+      }
+
+      clickAction?.Invoke();
+    }
+
+    /// <summary>
+    /// Displays license information as:
+    ///   License expires            2020-05-13 (14 days 7 hours remaining)
+    /// or
+    ///   License expired            License not found
+    /// or
+    ///   License expired            2020-05-13 (3 days ago)
+    /// </summary>
+    /// <param name="info">License info.</param>
+    public static void LicenseEndDateField( LicenseInfo info )
+    {
+      var fieldColor = EditorGUIUtility.isProSkin ?
+                         Color.white :
+                         Color.black;
+      var fieldErrorColor = Color.Lerp( Color.red,
+                                        Color.black,
+                                        0.25f );
+      var fieldOkColor = Color.Lerp( Color.green,
+                                     Color.black,
+                                     0.35f );
+      var fieldWarningColor = Color.Lerp( Color.yellow,
+                                          Color.black,
+                                          0.45f );
+      EditorGUILayout.LabelField( GUI.MakeLabel( info.IsExpired ?
+                                                   "License expired" :
+                                                   "License expires" ),
+                                  info.ValidEndDate ?
+                                    GUI.MakeLabel( info.EndDate.ToString( "yyyy-MM-dd" ) +
+                                                   GUI.AddColorTag( $" ({info.DiffString} {( info.IsExpired ? "ago" : "remaining" )})",
+                                                                    info.IsExpired ?
+                                                                      fieldErrorColor :
+                                                                      info.IsAboutToBeExpired( 10 ) ?
+                                                                        fieldWarningColor :
+                                                                        fieldOkColor ),
+                                                   fieldColor ) :
+                                  info.IsParsed ?
+                                    GUI.MakeLabel( "Invalid license", fieldErrorColor, false, info.Status ) :
+                                    GUI.MakeLabel( "License not found", fieldErrorColor ),
+                                  InspectorEditor.Skin.Label );
+    }
+
     public static Color ProBackgroundColor = new Color32( 56, 56, 56, 255 );
     public static Color IndieBackgroundColor = new Color32( 194, 194, 194, 255 );
 
@@ -1039,6 +1288,49 @@ namespace AGXUnityEditor
                              displayInvalidRangeWarning );
     }
 
+    /// <summary>
+    /// Prefix label of EditorGUI.MultiFloatField, e.g.,
+    ///     EditorGUI.MultiFloatField( MultiFloatFieldPrefixLabel( label ),
+    ///                                GUIContent.none,
+    ///                                ... );
+    /// </summary>
+    /// <param name="label">Label, no label if null.</param>
+    /// <returns>Rect to be used for the EditorGUI.MultiFloatField.</returns>
+    public static Rect MultiFloatFieldPrefixLabel( GUIContent label )
+    {
+      var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
+      var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
+      var position = EditorGUILayout.GetControlRect( false, rectHeight );
+
+      var orgXMax = position.xMax;
+      // No label, indent resulting rect by label width in wide mode.
+      // In narrow mode we indent by one indent level (15).
+      if ( label == null ) {
+        // Wide mode (normal), indent by labelWidth and correction.
+        if ( EditorGUIUtility.wideMode ) {
+          var indentOffset = IndentScope.PixelLevel - 2;
+          position.x += EditorGUIUtility.labelWidth - indentOffset;
+        }
+        // Narrow mode, indent by one indent level.
+        else
+          position.x += 15;
+      }
+      // Prefix label is given, draw label and correct for indentation
+      // and/or wide mode state.
+      else {
+        EditorGUI.PrefixLabel( position, label );
+        if ( EditorGUIUtility.wideMode )
+          position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel + 2;
+        else
+          position.x += 15;
+        if ( numRectRows == 2 )
+          position.y += EditorGUIUtility.singleLineHeight;
+      }
+      position.xMax = orgXMax;
+
+      return position;
+    }
+
     public static RangeRealResult RangeRealField( GUIContent content,
                                                   RangeReal value,
                                                   GUIContent minContent,
@@ -1055,7 +1347,8 @@ namespace AGXUnityEditor
         MaxChanged = false
       };
 
-      var position = EditorGUILayout.GetControlRect();
+      var position = MultiFloatFieldPrefixLabel( content );
+
       s_rangeRealContent[ 0 ] = minContent;
       s_rangeRealContent[ 1 ] = maxContent;
       s_rangeRealValues[ 0 ]  = value.Min;
@@ -1063,7 +1356,7 @@ namespace AGXUnityEditor
 
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
-                                 content,
+                                 GUIContent.none,
                                  s_rangeRealContent,
                                  s_rangeRealValues );
       if ( EditorGUI.EndChangeCheck() ) {
@@ -1161,21 +1454,13 @@ namespace AGXUnityEditor
                        s_multiFloat4Contents;
       for ( int i = 0; i < values.Length; ++i )
         contents[ i ].text = subs[ i ];
-      var rect = EditorGUILayout.GetControlRect( label != null,
-                                                 EditorGUIUtility.singleLineHeight * ( EditorGUIUtility.wideMode ? 1 : 2 ) );
+
+      var position = MultiFloatFieldPrefixLabel( label );
       EditorGUI.BeginChangeCheck();
-      if ( label == null ) {
-        EditorGUI.MultiFloatField( rect,
-                                   s_customFloatFieldEmptyContent,
-                                   contents,
-                                   values );
-      }
-      else {
-        EditorGUI.MultiFloatField( rect,
-                                   label,
-                                   contents,
-                                   values );
-      }
+      EditorGUI.MultiFloatField( position,
+                                 GUIContent.none,
+                                 contents,
+                                 values );
       if ( EditorGUI.EndChangeCheck() )
         onChange?.Invoke( values );
     }
@@ -1205,20 +1490,19 @@ namespace AGXUnityEditor
       new GUIContent( s_multiFloat4DefaultSubLabels[ 3 ] )
     };
 
-    private static GUIContent s_customFloatFieldEmptyContent = new GUIContent( " " );
     private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };
     private static float[] s_customFloatFieldData = new float[] { 0.0f };
 
     public static float CustomFloatField( GUIContent labelContent, GUIContent fieldContent, float value )
     {
-      var content                             = labelContent ?? s_customFloatFieldEmptyContent;
-      var position                            = EditorGUILayout.GetControlRect();
+      var position = MultiFloatFieldPrefixLabel( labelContent );
+
       s_customFloatFieldSubLabelContents[ 0 ] = fieldContent;
       s_customFloatFieldData[ 0 ]             = value;
 
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
-                                 content,
+                                 GUIContent.none,
                                  s_customFloatFieldSubLabelContents,
                                  s_customFloatFieldData );
       if ( EditorGUI.EndChangeCheck() )

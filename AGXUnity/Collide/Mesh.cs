@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
+
+using Random = UnityEngine.Random;
 
 namespace AGXUnity.Collide
 {
@@ -33,10 +37,49 @@ namespace AGXUnity.Collide
       get { return m_sourceObjects.ToArray(); }
     }
 
+    [SerializeField]
+    private List<CollisionMeshData> m_precomputedCollisionMeshes = new List<CollisionMeshData>();
+
+    /// <summary>
+    /// Precomputed collision meshes, e.g., generated from
+    /// convex decomposition and/or mesh reduction.
+    /// </summary>
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public CollisionMeshData[] PrecomputedCollisionMeshes
+    {
+      get { return m_precomputedCollisionMeshes.ToArray(); }
+      set
+      {
+        m_precomputedCollisionMeshes.Clear();
+        if ( value != null )
+          m_precomputedCollisionMeshes.AddRange( value );
+        OnPrecomputedCollisionMeshDataDirty();
+      }
+    }
+
+    [SerializeField]
+    private CollisionMeshOptions m_options = new CollisionMeshOptions();
+
+    /// <summary>
+    /// Options for precomputed collision meshes. Default: null, meaning
+    /// collision mesh data is read from the source objects.
+    /// </summary>
+    [HideInInspector]
+    public CollisionMeshOptions Options
+    {
+      get { return m_options; }
+      set
+      {
+        m_options = value;
+      }
+    }
+
+
     /// <summary>
     /// Returns native mesh object if created.
     /// </summary>
-    public agxCollide.Mesh Native { get { return m_shape as agxCollide.Mesh; } }
+    public agxCollide.Mesh Native { get { return NativeShape?.asMesh(); } }
 
     /// <summary>
     /// Single source object assignment. All meshes that has been added before
@@ -106,6 +149,15 @@ namespace AGXUnity.Collide
     }
 
     /// <summary>
+    /// Resets gizmos rendering meshes when there has been changes
+    /// in the mesh data.
+    /// </summary>
+    public void OnPrecomputedCollisionMeshDataDirty()
+    {
+      ResetRenderMeshes();
+    }
+
+    /// <summary>
     /// Scale of meshes are inherited by the parents and supports non-uniform scaling.
     /// </summary>
     public override Vector3 GetScale()
@@ -116,7 +168,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Creates a native instance of the mesh and returns it. Performance warning.
     /// </summary>
-    public override agxCollide.Shape CreateTemporaryNative()
+    public override agxCollide.Geometry CreateTemporaryNative()
     {
       return CreateNative();
     }
@@ -124,7 +176,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Create the native mesh object given the current source mesh.
     /// </summary>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
       return Create( SourceObjects );
     }
@@ -156,6 +208,8 @@ namespace AGXUnity.Collide
         DestroyImmediate( debugRenderData.Node );
 
       Rendering.ShapeVisualMesh.HandleMeshSource( this, source, added );
+
+      ResetRenderMeshes();
     }
 
     /// <summary>
@@ -163,19 +217,136 @@ namespace AGXUnity.Collide
     /// </summary>
     /// <param name="meshes">Source meshes.</param>
     /// <returns>Native trimesh.</returns>
-    private agxCollide.Mesh Create( UnityEngine.Mesh[] meshes )
+    private agxCollide.Geometry Create( UnityEngine.Mesh[] meshes )
     {
-      var merger = MeshMerger.Merge( transform, meshes );
-      return new agxCollide.Trimesh( merger.Vertices, merger.Indices, "Trimesh" );
+      var geometry = new agxCollide.Geometry();
+      if ( m_precomputedCollisionMeshes.Count > 0 ) {
+        // The vertices are assumed to be stored in local coordinates of the
+        // given transform. For the scale to be correct w
+        var toWorld = transform.localToWorldMatrix;
+        Func<Vector3, Vector3> transformer = v =>
+        {
+          return transform.InverseTransformDirection( toWorld * v.ToLeftHanded() );
+        };
+
+        var mode = Options != null ? Options.Mode : CollisionMeshOptions.MeshMode.Trimesh;
+        for ( int i = 0; i < m_precomputedCollisionMeshes.Count; ++i ) {
+          var collisionMesh = m_precomputedCollisionMeshes[ i ];
+          if ( collisionMesh == null ) {
+            Debug.LogWarning( $"AGXUnity.Collide.Mesh: Null precomputed collision mesh at index {i}.", this );
+            continue;
+          }
+
+          var shape = collisionMesh.CreateShape( transformer, mode );
+          if ( shape == null ) {
+            Debug.LogWarning( $"AGXUnity.Collide.Mesh: Precomputed collision mesh at index {i} resulted in an invalid shape.", this );
+            continue;
+          }
+
+          geometry.add( shape, GetNativeGeometryOffset() );
+        }
+      }
+      else {
+        if ( m_precomputedCollisionMeshes.Count > 0 )
+          Debug.LogWarning( "AGXUnity.Mesh: Failed to create shapes from precomputed data - using Trimesh as fallback.", this );
+
+        var merger = MeshMerger.Merge( transform, meshes );
+        geometry.add( new agxCollide.Trimesh( merger.Vertices,
+                                              merger.Indices,
+                                              "AGXUnity.Mesh: Trimesh" ),
+                      GetNativeGeometryOffset() );
+      }
+
+      if ( geometry.getShapes().Count == 0 ) {
+        geometry.Dispose();
+        geometry = null;
+      }
+
+      return geometry;
     }
 
-    private void Reset()
+    public void DestroyCollisionMeshes()
+    {
+      m_precomputedCollisionMeshes.Clear();
+      OnPrecomputedCollisionMeshDataDirty();
+    }
+
+    private new void Reset()
     {
       if ( SourceObjects.Length == 0 ) {
+        var visual = Rendering.ShapeVisual.Find( this );
+        if ( visual != null )
+          DestroyImmediate( visual.gameObject );
+
         var filter = GetComponent<MeshFilter>();
         if ( filter != null )
           SetSourceObject( filter.sharedMesh );
       }
+
+      base.Reset();
+
+      ResetRenderMeshes();
     }
+
+    private void OnDrawGizmosSelected()
+    {
+      if ( m_renderMeshes.Length == 0 && m_sourceObjects.Count > 0 )
+        CreateRenderMeshes();
+      var prevColor = Gizmos.color;
+      for ( int i = 0; i < m_renderMeshes.Length; ++i ) {
+        if ( m_renderMeshes[ i ] == null || m_renderMeshes[ i ].vertexCount == 0 )
+          continue;
+        Gizmos.color = m_renderColors[ i ];
+        Gizmos.DrawWireMesh( m_renderMeshes[ i ],
+                             transform.position,
+                             transform.rotation,
+                             transform.lossyScale );
+      }
+      Gizmos.color = prevColor;
+    }
+
+    private void ResetRenderMeshes()
+    {
+      m_renderMeshes = new UnityEngine.Mesh[] { };
+      m_renderColors = new Color[] { };
+    }
+
+    private void CreateRenderMeshes()
+    {
+      ResetRenderMeshes();
+
+      if ( m_precomputedCollisionMeshes.Count > 0 ) {
+        var renderMeshes = new List<UnityEngine.Mesh>();
+        var renderColors = new List<Color>();
+
+        var prevState = Random.state;
+        Random.InitState( GetInstanceID() );
+        foreach ( var collisionMesh in PrecomputedCollisionMeshes ) {
+          var meshes = collisionMesh.CreateRenderMeshes( transform );
+          renderMeshes.AddRange( meshes );
+          var color = Random.ColorHSV();
+          renderColors.AddRange( Enumerable.Repeat( color, meshes.Length ) );
+        }
+        Random.state = prevState;
+
+        m_renderMeshes = renderMeshes.ToArray();
+        m_renderColors = renderColors.ToArray();
+      }
+      else {
+        // Avoid rendering of meshes that hasn't been modified. To render
+        // these it's possible to do:
+        //     m_renderMeshes = SourceObjects;
+        //     var prevState = Random.state;
+        //     Random.InitState( GetInstanceID() );
+        //     var color = Random.ColorHSV();
+        //     m_renderColors = Enumerable.Repeat( color, m_renderMeshes.Length ).ToArray();
+        //     Random.state = prevState;
+      }
+    }
+
+    [NonSerialized]
+    private UnityEngine.Mesh[] m_renderMeshes = new UnityEngine.Mesh[] { };
+    [NonSerialized]
+    private Color[] m_renderColors = new Color[] { };
   }
 }

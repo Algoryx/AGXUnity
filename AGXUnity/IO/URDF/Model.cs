@@ -405,6 +405,7 @@ namespace AGXUnity.IO.URDF
       // Reading links defined under the "robot" scope.
       var links = new List<Link>();
       var localMaterials = new HashSet<string>();
+      var warningBeginStr = GUI.AddColorTag( "URDF Warning", Color.yellow );
       foreach ( var linkElement in root.Elements( "link" ) ) {
         var link = Instantiate<Link>( linkElement );
 
@@ -425,7 +426,7 @@ namespace AGXUnity.IO.URDF
                                                                       !localMaterials.Contains( visual.Material.Name ) &&
                                                                       GetMaterial( visual.Material.Name ) == null ).Select( visual => visual.Material ).ToArray();
         if ( missingMaterialReferences.Length > 0 ) {
-          Debug.LogWarning( $"{GUI.AddColorTag( "URDF Warning", Color.yellow )}: {link.Name} contains " +
+          Debug.LogWarning( $"{warningBeginStr}: {link.Name} contains " +
                             $"{missingMaterialReferences.Length} missing material references:" );
           foreach ( var missingMaterialReference in missingMaterialReferences )
             Debug.LogWarning( $"    {Utils.GetLineInfo( missingMaterialReference.LineNumber )}: <material name = \"{missingMaterialReference.Name}\"/>" );
@@ -447,11 +448,18 @@ namespace AGXUnity.IO.URDF
           throw new UrdfIOException( $"{Utils.GetLineInfo( jointElement )}: Non-unique link name '{joint.Name}'." );
         if ( GetLink( joint.Parent ) == null )
           throw new UrdfIOException( $"{Utils.GetLineInfo( jointElement )}: Joint parent link with name {joint.Parent} doesn't exist." );
-        if ( GetLink( joint.Child ) == null )
+        var childLink = GetLink( joint.Child );
+        if ( childLink == null )
           throw new UrdfIOException( $"{Utils.GetLineInfo( jointElement )}: Joint child link with name {joint.Child} doesn't exist." );
 
         m_jointTable.Add( joint.Name, joints.Count );
         joints.Add( joint );
+
+        // Avoiding warning for "world" type of links, i.e., 'parentLink' of
+        // this joint may have inertial == null.
+        if ( childLink.Inertial == null && childLink.Collisions.Length == 0 )
+          Debug.LogWarning( $"{warningBeginStr} [{Utils.GetLineInfo( childLink.LineNumber )}]: Intermediate link '{childLink.Name}' is defined without " +
+                            $"<inertial> and <collision> which results in default mass (1) and default inertia diagonal (1, 1, 1)." );
       }
       m_joints = joints.ToArray();
 

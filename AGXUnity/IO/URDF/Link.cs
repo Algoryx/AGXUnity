@@ -70,7 +70,7 @@ namespace AGXUnity.IO.URDF
     public bool IsWorld { get { return m_interpredType == InterpretedType.World; } }
 
     /// <summary>
-    /// True if "inertial" isn't defined or mass is zero, otherwise false.
+    /// True if "inertial" is defined and mass is zero, otherwise false.
     /// </summary>
     [HideInInspector]
     public bool IsStatic { get { return m_interpredType == InterpretedType.Static; } }

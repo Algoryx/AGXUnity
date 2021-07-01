@@ -14,7 +14,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native height field object if created.
     /// </summary>
-    public agxCollide.HeightField Native { get { return m_shape as agxCollide.HeightField; } }
+    public agxCollide.HeightField Native { get { return NativeShape?.asHeightField(); } }
 
     /// <summary>
     /// Debug rendering scale and debug rendering in general not supported.
@@ -92,7 +92,7 @@ namespace AGXUnity.Collide
     /// object - if present (in component level or in parents).
     /// </summary>
     /// <returns>Native height field shape object.</returns>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
       var terrainData = TerrainData;
       if ( terrainData == null )
@@ -106,7 +106,8 @@ namespace AGXUnity.Collide
                                            heights.Heights,
                                            false,
                                            150.0 );
-      return hf;
+      return new agxCollide.Geometry( hf,
+                                      GetNativeGeometryOffset() );
     }
 
     private Terrain m_terrain = null;

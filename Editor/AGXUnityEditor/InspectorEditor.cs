@@ -80,7 +80,10 @@ namespace AGXUnityEditor
         if ( group.IsHidden )
           continue;
 
-        hasChanges = HandleType( wrapper, objects, fallback ) || hasChanges;
+        var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                              wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+          hasChanges = HandleType( wrapper, objects, fallback ) || hasChanges;
       }
       group.Dispose();
 
@@ -96,7 +99,9 @@ namespace AGXUnityEditor
         return false;
 
       // Override hidden in inspector.
-      if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) )
+      var runtimeHide = EditorApplication.isPlayingOrWillChangePlaymode &&
+                        memberInfo.IsDefined( typeof( HideInRuntimeInspectorAttribute ), true );
+      if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) || runtimeHide )
         return false;
 
       // In general, don't show UnityEngine objects unless ShowInInspector is set.
