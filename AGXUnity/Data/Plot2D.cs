@@ -22,7 +22,7 @@ namespace AGXUnity.Data
         const float windowTitleHeight = 16.0f;
         const float windowBorderSize  = 2.0f;
 
-        var rect     = m_windowData.Rect;
+        var rect     = m_windowData.GetRect();
         rect.x       = 0;
         rect.width  -= 2.0f * windowBorderSize;
         rect.x      += windowBorderSize;

@@ -42,17 +42,7 @@ namespace AGXUnity.Utils
       private Rect m_rect = new Rect();
 
       /// <returns>Rect of the window.</returns>
-      public Rect Rect
-      {
-        get
-        {
-          return m_rect;
-        }
-        set
-        {
-          m_rect = value;
-        }
-      }
+      public Rect GetRect() { return m_rect; }
 
       /// <summary>
       /// Hack to compensate for Unity "window title" offset. Off by 20 pixels.
@@ -79,7 +69,7 @@ namespace AGXUnity.Utils
       {
         get
         {
-          return Rect.size;
+          return m_rect.size;
         }
         set
         {
@@ -94,7 +84,7 @@ namespace AGXUnity.Utils
       {
         get
         {
-          return Rect.position;
+          return m_rect.position;
         }
         set
         {
@@ -289,7 +279,6 @@ namespace AGXUnity.Utils
     {
       var windowsToClose = new List<Data>();
       foreach ( var data in m_activeWindows.Values ) {
-<<<<<<< HEAD
         UnityEngine.GUI.WindowFunction onWindowCallback = id =>
         {
           // Call to the user method.
@@ -361,11 +350,11 @@ namespace AGXUnity.Utils
     /// <param name="data">Window data.</param>
     public static void EatMouseEvents( Data data )
     {
-      int controlID = GUIUtility.GetControlID( data.Id, FocusType.Passive, data.Rect );
+      int controlID = GUIUtility.GetControlID( data.Id, FocusType.Passive, data.GetRect() );
 
       switch ( Event.current.GetTypeForControl( controlID ) ) {
         case EventType.MouseDown:
-          if ( data.Rect.Contains( Event.current.mousePosition ) ) {
+          if ( data.GetRect().Contains( Event.current.mousePosition ) ) {
             GUIUtility.hotControl = controlID;
             Event.current.Use();
           }
@@ -384,7 +373,7 @@ namespace AGXUnity.Utils
           break;
 
         case EventType.ScrollWheel:
-          if ( data.Rect.Contains( Event.current.mousePosition ) )
+          if ( data.GetRect().Contains( Event.current.mousePosition ) )
             Event.current.Use();
           break;
       }
