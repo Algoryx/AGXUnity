@@ -48,6 +48,9 @@ namespace AGXUnity
     {
       GameObject go = new GameObject( CreateName<T>() );
       go.AddComponent<T>();
+
+      PrefabUtils.PlaceInCurrentStange( go );
+
       return go;
     }
 
@@ -74,8 +77,13 @@ namespace AGXUnity
     /// <returns>Constraint game object if the configuration is valid.</returns>
     public static GameObject Create( ConstraintType constraintType, AttachmentPair givenAttachmentPair = null )
     {
-      Constraint constraint = Constraint.Create( constraintType, givenAttachmentPair );
-      return constraint != null ? constraint.gameObject : null;
+      var constraint = Constraint.Create( constraintType, givenAttachmentPair );
+      if ( constraint == null )
+        return null;
+
+      PrefabUtils.PlaceInCurrentStange( constraint.gameObject );
+
+      return constraint.gameObject;
     }
 
     /// <summary>
@@ -141,6 +149,8 @@ namespace AGXUnity
       wire.ResolutionPerUnitLength = resolutionPerUnitLength;
       wire.Material                = material;
 
+      PrefabUtils.PlaceInCurrentStange( go );
+
       return wire;
     }
 
@@ -159,6 +169,8 @@ namespace AGXUnity
       cable.Radius                  = radius;
       cable.ResolutionPerUnitLength = resolutionPerUnitLength;
       cable.Material                = material;
+
+      PrefabUtils.PlaceInCurrentStange( go );
 
       return cable;
     }

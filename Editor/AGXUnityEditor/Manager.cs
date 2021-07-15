@@ -51,12 +51,12 @@ namespace AGXUnityEditor
     /// <summary>
     /// Name of assembly AGXUnity is built in to.
     /// </summary>
-    public static readonly string AGXUnityAssemblyName = "AGXUnity";
+    public const string AGXUnityAssemblyName = "AGXUnity";
 
     /// <summary>
     /// Name of assembly AGXUnityEditor is built in to.
     /// </summary>
-    public static readonly string AGXUnityEditorAssemblyName = "AGXUnityEditor";
+    public const string AGXUnityEditorAssemblyName = "AGXUnityEditor";
 
     /// <summary>
     /// Scene view window handler, i.e., GUI windows rendered in Scene View.
@@ -299,8 +299,7 @@ namespace AGXUnityEditor
         return;
 
       // TODO: Fix so that "MouseOver" works for newly created primitives.
-
-      if ( primitive.Node.transform.parent != VisualsParent )
+     if ( primitive.Node.transform.parent != VisualsParent )
         VisualsParent.AddChild( primitive.Node );
 
       m_visualPrimitives.Add( primitive );
@@ -337,6 +336,8 @@ namespace AGXUnityEditor
           m_visualsParent.hideFlags = HideFlags.HideAndDontSave;
         }
 
+        PrefabUtils.PlaceInCurrentStange( m_visualsParent );
+
         return m_visualsParent;
       }
     }
@@ -351,7 +352,8 @@ namespace AGXUnityEditor
       // Trigger repaint of inspector GUI for our targets.
       var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       foreach ( var target in targets )
-        EditorUtility.SetDirty( target );
+        if ( target != null )
+          EditorUtility.SetDirty( target );
 
       // Collecting scripts that may require synchronize of
       // data post undo/redo where the private serialized
@@ -388,9 +390,20 @@ namespace AGXUnityEditor
           visual.OnSizeUpdated();
       }
 
+      foreach ( var customTargetTool in ToolManager.ActiveTools )
+        customTargetTool.OnUndoRedo();
+
       if ( targets.Count() > 0 )
         SceneView.RepaintAll();
+
+      // When a prefab is drag-dropped into a scene we receive a
+      // callback to this method for unknown reasons. Event.current == null
+      // when that's the case, i.e., not an actual undo/redo.
+      if ( Event.current != null )
+        s_lastUndoRedoTime = EditorApplication.timeSinceStartup;
     }
+
+    private static double s_lastUndoRedoTime = 0;
 
     /// <summary>
     /// Callback from InspectorEditor when in OnDisable and target == null,
@@ -456,6 +469,29 @@ namespace AGXUnityEditor
         EditorData.Instance.GC();
     }
 
+#if UNITY_2020_1_OR_NEWER
+    private static double s_lastPickGameObjectTime = 0.0;
+#endif
+
+    private static bool TimeToPick()
+    {
+      // We receive many calls to UpdateMouseOverPrimitives from
+      // OnSceneView in Unity 2020 when moving the mouse over the
+      // scene view. HandleUtility.PickGameObject will update gizmos
+      // and that takes a lot of time (e.g., a scene with many
+      // constraints). With this we're only calling PickGameObject
+      // in at maximum 10 times per second.
+#if UNITY_2020_1_OR_NEWER
+      if ( EditorApplication.timeSinceStartup - s_lastPickGameObjectTime > 0.1 ) {
+        s_lastPickGameObjectTime = EditorApplication.timeSinceStartup;
+        return true;
+      }
+      return false;
+#else
+      return true;
+#endif
+    }
+
     public static void UpdateMouseOverPrimitives( Event current, bool forced = false )
     {
       // Can't perform picking during repaint event.
@@ -477,10 +513,11 @@ namespace AGXUnityEditor
         // If the mouse is hovering a scene view window - MouseOverObject should be null.
         if ( SceneViewGUIWindowHandler.GetMouseOverWindow( current.mousePosition ) != null )
           MouseOverObject = null;
-        else
+        else if ( forced || TimeToPick() ) {
           MouseOverObject = RouteObject( HandleUtility.PickGameObject( current.mousePosition,
                                                                        false,
                                                                        ignoreList.ToArray() ) ) as GameObject;
+        }
       }
 
       // Early exit if we haven't any active visual primitives.
@@ -530,13 +567,18 @@ namespace AGXUnityEditor
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
       else if ( Selection.activeGameObject != null ) {
-#if UNITY_2018_3_OR_NEWER
         var isPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) != PrefabInstanceStatus.NotAPrefab;
-#else
-        var isPrefabInstance = PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.PrefabInstance ||
-                               PrefabUtility.GetPrefabType( Selection.activeGameObject ) == PrefabType.DisconnectedPrefabInstance;
-#endif
-        if ( isPrefabInstance )
+
+        // We want to catch when a prefab has been instantiated in the
+        // scene. Maybe this feature should be explicit, i.e., some
+        // method doing the work.
+        // NOTE: We receive callbacks to OnHierarchyWindowChanged when a
+        //       component is added and when the undo/redo is performed.
+        //       To not screw up the undo/redo history we block this feature
+        //       when undo/redo has been made close in time.
+        // TODO: Make this work - OnHierarchyWindowChanged is not a good place
+        //       to instantiate additional things.
+        if ( isPrefabInstance && ( EditorApplication.timeSinceStartup - s_lastUndoRedoTime ) > 2.0 )
           AssetPostprocessorHandler.OnPrefabAddedToScene( Selection.activeGameObject );
       }
 
@@ -650,27 +692,17 @@ namespace AGXUnityEditor
         // This is necessary when e.g., terrain dynamically loads dll's.
         AGXUnity.IO.Environment.AddToPath( IO.Utils.AGXUnityPluginDirectoryFull );
 
+        var initSuccess = false;
         try {
           AGXUnity.NativeHandler.Instance.Register( null );
-        }
-        catch ( TypeInitializationException ) {
-          var lastRequestData = GetRequestScriptReloadData();
-          if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
-            lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
-#if UNITY_2019_3_OR_NEWER
-            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
-            EditorUtility.RequestScriptReload();
-#else
-            Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
-#endif
-          }
 
-          return EnvironmentState.Uninitialized;
+          initSuccess = true;
         }
-        catch ( Exception e ) {
-          Debug.LogException( e );
-          return EnvironmentState.Uninitialized;
+        catch ( Exception ) {
         }
+
+        if ( !HandleScriptReload( initSuccess ) )
+          return EnvironmentState.Uninitialized;
 
         if ( !AGXUnity.IO.Environment.IsSet( AGXUnity.IO.Environment.Variable.AGX_DIR ) )
           AGXUnity.IO.Environment.Set( AGXUnity.IO.Environment.Variable.AGX_DIR,
@@ -684,18 +716,25 @@ namespace AGXUnityEditor
         for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
           envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
 
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( IO.Utils.AGXUnityPluginDirectoryFull );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
-        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH ) );
+        // Adding Plugins/x86_64/agx to RESOURCE_PATH (for additional data) and
+        // to RUNTIME_PATH (for entities and components). The license file is
+        // searched for by the license manager.
+        var dataAndRuntimePath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAndRuntimePath );
       }
+      // Check if user would like to initialize AGX Dynamics with an
+      // installed (or Algoryx developer) version.
       else {
-        ExternalAGXInitializer.Initialize();
+        if ( !HandleScriptReload( ExternalAGXInitializer.Initialize() ) )
+          return EnvironmentState.Uninitialized;
       }
 
       // This validate is only for "license status" window so
       // the user will be noticed when something is wrong.
       try {
+        AGXUnity.LicenseManager.LoadFile();
+
         AGXUnity.NativeHandler.Instance.ValidateLicense();
         if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
              !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
@@ -709,6 +748,30 @@ namespace AGXUnityEditor
 
       return EnvironmentState.Initialized;
 #endif
+    }
+
+    private static bool HandleScriptReload( bool success )
+    {
+      var lastRequestData = GetRequestScriptReloadData();
+      if ( success ) {
+        if ( lastRequestData.Bool )
+          Debug.Log( "AGX Dynamics successfully loaded.".Color( Color.green ) );
+        lastRequestData.Bool = false;
+      }
+      else {
+        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+          lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
+          lastRequestData.Bool = true;
+#if UNITY_2019_3_OR_NEWER
+          Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
+          EditorUtility.RequestScriptReload();
+#else
+          Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
+#endif
+        }
+      }
+
+      return success;
     }
 
     private static EditorDataEntry GetRequestScriptReloadData()
@@ -748,11 +811,27 @@ namespace AGXUnityEditor
       if ( EditorApplication.isPlayingOrWillChangePlaymode )
         return true;
 
-      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + "/agxDotNet.dll";
-      var currDll             = new FileInfo( localDllFilename );
-      var installedDll        = AGXUnity.IO.Environment.FindFile( "agxDotNet.dll" );
+      var dotNetAssemblyNames = new string[]
+      {
+        "agxDotNet.dll",
+        "agxMathDotNet.dll"
+      };
 
-      // Wasn't able to find any installed agxDotNet.dll - it's up to Unity to handle this...
+      var result = true;
+      foreach ( var dotNetAssemblyName in dotNetAssemblyNames )
+        result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
+                 result;
+
+      return result;
+    }
+
+    private static bool VerifyDotNetAssemblyCompatibility( string dotNetAssemblyName )
+    {
+      string localDllFilename = IO.Utils.AGXUnityPluginDirectoryFull + $"/{dotNetAssemblyName}";
+      var currDll = new FileInfo( localDllFilename );
+      var installedDll = AGXUnity.IO.Environment.FindFile( dotNetAssemblyName );
+
+      // Wasn't able to find any installed version of the assembly - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
         return true;
 
@@ -763,7 +842,7 @@ namespace AGXUnityEditor
       AGXUnity.NativeHandler.Instance.Register( null );
 
       if ( !currDll.Exists || HasBeenChanged( currDll, installedDll ) ) {
-        Debug.Log( "<color=green>New version of agxDotNet.dll located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
+        Debug.Log( $"<color=green>New version of {dotNetAssemblyName} located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
         installedDll.CopyTo( localDllFilename, true );
         return false;
       }

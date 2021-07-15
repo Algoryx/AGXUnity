@@ -7,12 +7,12 @@ namespace AGXUnity.Model
   public class DeformableTerrainProperties : ScriptAsset
   {
     [SerializeField]
-    private float m_soilMergeSpeedThreshold = 0.05f;
+    private float m_soilMergeSpeedThreshold = 4.0f;
 
     /// <summary>
     /// The maximum speed (m/s) threshold where soil particles
     /// are allowed to merge with the terrain.
-    /// Default: 0.05
+    /// Default: 4.0
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     public float SoilMergeSpeedThreshold
@@ -22,6 +22,26 @@ namespace AGXUnity.Model
       {
         m_soilMergeSpeedThreshold = value;
         Propagate( properties => properties.setSoilMergeSpeedThreshold( m_soilMergeSpeedThreshold ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_soilParticleMergeRate = 9.0f;
+
+    /// <summary>
+    /// Set the merge rate for soil particles into the terrain. The
+    /// merge rate is defined as the fraction of the current particle
+    /// mass that should be merged into the terrain for each second.
+    /// Default: 9.0
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public float SoilParticleMergeRate
+    {
+      get { return m_soilParticleMergeRate; }
+      set
+      {
+        m_soilParticleMergeRate = value;
+        Propagate( properties => properties.setSoilParticleMergeRate( m_soilParticleMergeRate ) );
       }
     }
 

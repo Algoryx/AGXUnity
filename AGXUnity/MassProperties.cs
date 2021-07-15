@@ -260,7 +260,7 @@ namespace AGXUnity
     /// <returns>Native rigid body instance where native.getMassproperties() == this (native).</returns>
     private agx.RigidBody GetNative()
     {
-      return m_rb != null ? m_rb.Native : null;
+      return RigidBody != null ? RigidBody.Native : null;
     }
 
     /// <summary>

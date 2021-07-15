@@ -43,24 +43,24 @@ namespace AGXUnityEditor
       // All binaries should be in path, try initialize agx.
       try {
         AGXUnity.NativeHandler.Instance.Register( null );
+
+        var envInstance = agxIO.Environment.instance();
+
+        for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
+          envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
+
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DIR );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_PLUGIN_PATH );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR +
+                                                                                      Path.DirectorySeparatorChar +
+                                                                                      "cfg" );
+        envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
       }
-      catch ( TypeInitializationException ) {
-        Debug.LogError( $"{"ERROR".Color( Color.red )}: Missing dll." );
+      catch ( Exception ) {
         return false;
       }
-
-      var envInstance = agxIO.Environment.instance();
-      for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
-        envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
-
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( "." );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DIR );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_PLUGIN_PATH );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR );
-      envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( AGX_DATA_DIR +
-                                                                                    Path.DirectorySeparatorChar +
-                                                                                    "cfg" );
-      envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
 
       return true;
     }
@@ -122,9 +122,8 @@ namespace AGXUnityEditor
       var instance = Instance;
 
       // Applying already initialized data.
-      if ( instance.HasData &&
-           instance.ApplyData() )
-        return true;
+      if ( instance.HasData )
+        return instance.ApplyData();
 
       IsApplied = false;
 
@@ -250,9 +249,16 @@ namespace AGXUnityEditor
 
       binData[ AGX_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agx_dependencies_{binData[ AGX_DEPENDENCIES ].Value}*" ).FirstOrDefault();
       binData[ AGXTERRAIN_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agxTerrain_dependencies_{binData[ AGXTERRAIN_DEPENDENCIES ].Value}*" ).FirstOrDefault();
-      binData[ INSTALLED ].Directory = new DirectoryInfo( AGX_DIR +
-                                                          Path.DirectorySeparatorChar +
-                                                          binData[ INSTALLED ].Value );
+
+      // Handle both absolute and relative CMAKE_INSTALL_PREFIX
+      var installPath = binData[ INSTALLED ].Value;
+      if ( Path.IsPathRooted( installPath ) )
+        binData[ INSTALLED ].Directory = new DirectoryInfo( installPath );
+      else
+        binData[ INSTALLED ].Directory = new DirectoryInfo( AGX_DIR +
+                                                            Path.DirectorySeparatorChar +
+                                                            installPath );
+
       if ( binData.Any( data => data.Directory == null || !data.Directory.Exists ) ) {
         foreach ( var data in binData )
           if ( data.Directory == null || !data.Directory.Exists )
@@ -263,7 +269,7 @@ namespace AGXUnityEditor
       AGX_BIN_PATH    = ( from data in binData
                           select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
       AGX_PLUGIN_PATH = $"{AGX_BIN_PATH[ INSTALLED ]}{Path.DirectorySeparatorChar}plugins";
-      AGX_DATA_DIR    = $"{AGX_DIR}{Path.DirectorySeparatorChar}{binData[ INSTALLED ].Value}{Path.DirectorySeparatorChar}data";
+      AGX_DATA_DIR    = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
 
       return true;
     }
@@ -281,7 +287,6 @@ namespace AGXUnityEditor
     {
       public string CMakeKey         = string.Empty;
       public string Value            = string.Empty;
-      public string Path             = string.Empty;
       public DirectoryInfo Directory = null;
 
       public bool HasValue { get { return !string.IsNullOrEmpty( Value ); } }

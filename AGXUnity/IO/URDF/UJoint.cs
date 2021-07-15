@@ -141,7 +141,7 @@ namespace AGXUnity.IO.URDF
       public float Damping;
 
       /// <summary>
-      /// Friction coefficient of the joint.
+      /// Minimum static friction force in the joint.
       /// </summary>
       public float Friction;
 

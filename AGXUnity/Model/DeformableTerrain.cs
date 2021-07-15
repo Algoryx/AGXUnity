@@ -332,9 +332,11 @@ namespace AGXUnity.Model
     /// <param name="offset">Height offset.</param>
     private static TerrainUtils.NativeHeights WriteTerrainDataOffset( Terrain terrain, float offset )
     {
-      var terrainData      = terrain.terrainData;
-      var nativeHeightData = TerrainUtils.FindHeights( terrainData );
-      var tmp              = new float[,] { { 0.0f } };
+      var terrainData        = terrain.terrainData;
+      var nativeHeightData   = TerrainUtils.FindHeights( terrainData );
+      var tmp                = new float[,] { { 0.0f } };
+      var dataMaxHeight      = terrainData.size.y;
+      var maxClampedHeight   = -1.0f;
       for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
         var newHeight = nativeHeightData.Heights[ i ] += offset;
 
@@ -342,10 +344,22 @@ namespace AGXUnity.Model
         var vertexY = i / nativeHeightData.ResolutionY;
 
         tmp[ 0, 0 ] = (float)newHeight / terrainData.heightmapScale.y;
+        if ( newHeight > dataMaxHeight )
+          maxClampedHeight = System.Math.Max( maxClampedHeight, (float)newHeight );
+
         terrainData.SetHeightsDelayLOD( TerrainUtils.TerrainDataResolution( terrainData ) - vertexX - 1,
                                         TerrainUtils.TerrainDataResolution( terrainData ) - vertexY - 1,
                                         tmp );
       }
+
+      if ( maxClampedHeight > 0.0f ) {
+        Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
+                          dataMaxHeight +
+                          " and AGXUnity.Model.DeformableTerrain.MaximumDepth = " +
+                          offset +
+                          ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
+      }
+
 #if UNITY_2019_1_OR_NEWER
       terrainData.SyncHeightmap();
 #else
@@ -362,6 +376,13 @@ namespace AGXUnity.Model
 
       TerrainData.SetHeights( 0, 0, m_initialHeights );
       transform.position = transform.position + MaximumDepth * Vector3.up;
+
+#if UNITY_EDITOR
+      // If the editor is closed during play the modified height
+      // data isn't saved, this resolves corrupt heights in such case.
+      UnityEditor.EditorUtility.SetDirty( TerrainData );
+      UnityEditor.AssetDatabase.SaveAssets();
+#endif
     }
 
     private void OnPostStepForward()

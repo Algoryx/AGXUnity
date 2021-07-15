@@ -19,6 +19,18 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public SegmentSpawner SegmentSpawner { get { return m_segmentSpawner; } }
 
+    [NonSerialized]
+    private Wire m_wire = null;
+
+    [HideInInspector]
+    public Wire Wire
+    {
+      get
+      {
+        return m_wire ?? ( m_wire = GetComponent<Wire>() );
+      }
+    }
+
     [SerializeField]
     private Material m_material = null;
 
@@ -47,7 +59,9 @@ namespace AGXUnity.Rendering
         m_segmentSpawner = null;
       }
 
-      m_segmentSpawner = new SegmentSpawner( GetComponent<Wire>(), @"Wire/WireSegment", @"Wire/WireSegmentBegin" );
+      m_segmentSpawner = new SegmentSpawner( Wire,
+                                             @"Wire/WireSegment",
+                                             @"Wire/WireSegmentBegin" );
       m_segmentSpawner.Initialize( gameObject );
     }
 
@@ -77,9 +91,13 @@ namespace AGXUnity.Rendering
       if ( Application.isPlaying )
         return;
 
-      Wire wire = GetComponent<Wire>();
-      if ( wire != null && wire.Native == null )
-        RenderRoute( wire.Route, wire.Radius );
+      // Let OnDrawGizmos handle rendering when in prefab edit mode.
+      // It's not possible to use RuntimeObjects while there.
+      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+        return;
+
+      if ( Wire != null && Wire.Native == null )
+        RenderRoute( Wire.Route, Wire.Radius );
     }
 
     private void RenderRoute( WireRoute route, float radius )
@@ -154,6 +172,36 @@ namespace AGXUnity.Rendering
 
       it.ReturnToPool();
       endIt.ReturnToPool();
+    }
+
+    private void DrawGizmos( bool isSelected )
+    {
+      if ( Application.isPlaying )
+        return;
+
+      if ( Wire == null || Wire.Route == null || Wire.Route.NumNodes < 2 )
+        return;
+
+      if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+        return;
+
+      var routePoints = Wire.Route.Select( routePoint => routePoint.Position ).ToArray();
+
+      var defaultColor  = Color.Lerp( Color.black, Color.white, 0.55f );
+      var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
+      m_segmentSpawner?.DrawGizmos( routePoints,
+                                    Wire.Radius,
+                                    isSelected ? selectedColor : defaultColor );
+    }
+
+    private void OnDrawGizmos()
+    {
+      DrawGizmos( false );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+      DrawGizmos( true );
     }
   }
 }

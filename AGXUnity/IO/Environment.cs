@@ -171,11 +171,19 @@ namespace AGXUnity.IO
     /// <summary>
     /// Plugins path where the AGX Dynamics native modules are located.
     /// </summary>
+    /// <remarks>
+    /// From Unity 2019.3 native modules should be located in data_folder/Plugins/x86_64
+    /// and data_folder/Plugins for earlier versions.
+    /// </remarks>
     /// <param name="dataPath">Path to player data folder - nameOfExecutable_Data.</param>
     /// <returns>Path to the plugins folder.</returns>
     public static string GetPlayerPluginPath( string dataPath )
     {
-      return dataPath + Path.DirectorySeparatorChar + "Plugins";
+#if UNITY_2019_3_OR_NEWER
+      return dataPath + "/Plugins/x86_64";
+#else
+      return dataPath + "/Plugins";
+#endif
     }
 
     /// <summary>
@@ -186,7 +194,45 @@ namespace AGXUnity.IO
     /// <returns>Path to the AGX Dynamics runtime folder.</returns>
     public static string GetPlayerAGXRuntimePath( string dataPath )
     {
-      return GetPlayerPluginPath( dataPath ) + Path.DirectorySeparatorChar + "agx";
+      return GetPlayerPluginPath( dataPath ) + "/agx";
+    }
+
+    /// <summary>
+    /// Finds new similar filename or returns <paramref name="filename"/> if it doesn't exist.
+    /// E.g., if foo.bar already exist, foo (1).bar will be returned.
+    /// </summary>
+    /// <param name="filename">Desired filename including path.</param>
+    /// <returns>Filename similar to <paramref name="filename"/> that doesn't exist.</returns>
+    public static string FindUniqueFilename( string filename )
+    {
+      if ( !File.Exists( filename ) )
+        return filename;
+
+      var extension = Path.GetExtension( filename );
+      var orgName   = Path.GetFileNameWithoutExtension( filename );
+      var directory = new FileInfo( filename ).Directory;
+      int counter   = 0;
+      while ( directory.GetFiles( $"{orgName} ({++counter}){extension}", SearchOption.TopDirectoryOnly ).Length > 0 )
+        ;
+      return $"{directory.FullName.Replace( '\\', '/' )}/{orgName} ({counter}){extension}";
+    }
+
+    /// <summary>
+    /// Opens given <paramref name="filename"/> and checks if it's possible
+    /// to write to that file.
+    /// </summary>
+    /// <param name="filename">Filename to check.</param>
+    /// <returns>True if the file exists and it's possible to write to it, otherwise false.</returns>
+    public static bool CanWriteToExisting( string filename )
+    {
+      if ( !File.Exists( filename ) )
+        return false;
+
+      var canWrite = false;
+      using ( var fs = File.Open( filename, FileMode.Open ) )
+        canWrite = fs.CanWrite;
+
+      return canWrite;
     }
   }
 }

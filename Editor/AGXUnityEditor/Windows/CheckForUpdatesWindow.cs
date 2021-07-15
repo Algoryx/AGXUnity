@@ -55,14 +55,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnGUI()
     {
-      GUILayout.BeginHorizontal( GUILayout.Width( 570 ) );
-      GUILayout.Box( IconManager.GetAGXUnityLogo(),
-                     GUI.Skin.customStyles[ 3 ],
-                     GUILayout.Width( 400 ),
-                     GUILayout.Height( 100 ) );
-      GUILayout.EndHorizontal();
-
-      InspectorGUI.Separator( 1, 4 );
+      AboutWindow.AGXDynamicsForUnityLogoGUI();
 
       EditorGUILayout.LabelField( GUI.MakeLabel( "Current version" ),
                                   GUI.MakeLabel( m_currentVersion.IsValid ?

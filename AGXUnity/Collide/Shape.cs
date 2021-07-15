@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Linq;
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
@@ -14,7 +14,41 @@ namespace AGXUnity.Collide
   public abstract class Shape : ScriptComponent
   {
     /// <summary>
-    /// Utils (resize etc.) utils for this shape if supported.
+    /// Finds mesh filters representative for this shape, i.e., mesh filters
+    /// on <paramref name="shape"/> or any child which doesn't have another
+    /// shape as parent.
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <returns></returns>
+    public static MeshFilter[] FindMeshFilters( Shape shape )
+    {
+      if ( shape == null )
+        return new MeshFilter[] { };
+
+      return ( from filter in shape.GetComponentsInChildren<MeshFilter>()
+               where filter.GetComponentInParent<Shape>() == shape
+               select filter ).ToArray();
+    }
+
+    /// <summary>
+    /// Finds all mesh filters represented by the list of shapes.
+    /// </summary>
+    /// <remarks>
+    /// There's no relation between the size of the incoming array and
+    /// the resulting array, i.e., it's not trivial to determine which
+    /// mesh filter(s) belonging to which shape.
+    /// </remarks>
+    /// <param name="shapes">Array of shapes.</param>
+    /// <returns>Array of mesh filters representing the given <paramref name="shapes"/>.</returns>
+    public static MeshFilter[] FindMeshFilters( Shape[] shapes )
+    {
+      return ( from shape in shapes
+               from filter in FindMeshFilters( shape )
+               select filter ).ToArray();
+    }
+
+    /// <summary>
+    /// Utilities (resize etc.) for this shape if supported.
     /// </summary>
     private ShapeUtils m_utils = null;
 
@@ -27,11 +61,6 @@ namespace AGXUnity.Collide
     /// Native geometry instance.
     /// </summary>
     protected agxCollide.Geometry m_geometry = null;
-
-    /// <summary>
-    /// Native shape instance.
-    /// </summary>
-    protected agxCollide.Shape m_shape = null;
 
     /// <summary>
     /// Some value of minimum size of a shape.
@@ -80,13 +109,12 @@ namespace AGXUnity.Collide
       }
     }
 
-  
-
     /// <summary>
     /// Shape material instance paired with property Material.
     /// </summary>
     [SerializeField]
     private ShapeMaterial m_material = null;
+
     /// <summary>
     /// Get or set shape material instance.
     /// </summary>
@@ -108,9 +136,10 @@ namespace AGXUnity.Collide
     public agxCollide.Geometry NativeGeometry { get { return m_geometry; } }
 
     /// <summary>
-    /// Native shape objects, if initialized.
+    /// First native shape (normally the case, exception for convex decomposed meshes).
+    /// Only valid when initialized.
     /// </summary>
-    public agxCollide.Shape NativeShape { get { return m_shape; } }
+    public agxCollide.Shape NativeShape { get { return NativeGeometry?.getShapes().FirstOrDefault()?.get(); } }
 
     /// <summary>
     /// True if this shape component is enabled, active in hierarchy and if part of a rigid body,
@@ -165,18 +194,18 @@ namespace AGXUnity.Collide
     public abstract Vector3 GetScale();
 
     /// <summary>
-    /// Creates an instance of the native shape and returns it. This method
+    /// Creates an instance of the native geometry and returns it. This method
     /// shouldn't store an instance to this object, simply create a new instance.
-    /// E.g., sphere "return new agxCollide.Sphere( Radius );".
+    /// E.g., sphere "return new agxCollide.Geometry( new agxCollide.Sphere( Radius ) );".
     /// </summary>
     /// <returns>An instance to the native shape.</returns>
-    protected abstract agxCollide.Shape CreateNative();
+    protected abstract agxCollide.Geometry CreateNative();
 
     /// <summary>
     /// Used to calculate things related to our shapes, e.g., CM-offset, mass and inertia.
     /// </summary>
     /// <returns>Native shape to be considered temporary (i.e., probably not defined to keep reference to this shape).</returns>
-    public virtual agxCollide.Shape CreateTemporaryNative()
+    public virtual agxCollide.Geometry CreateTemporaryNative()
     {
       return CreateNative();
     }
@@ -203,8 +232,10 @@ namespace AGXUnity.Collide
         return agx.AffineMatrix4x4.identity();
 
       // Using the world position of the shape - which includes scaling etc.
-      agx.AffineMatrix4x4 shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(), transform.position.ToHandedVec3() );
-      agx.AffineMatrix4x4 rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(), rb.transform.position.ToHandedVec3() );
+      var shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
+                                                  transform.position.ToHandedVec3() );
+      var rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(),
+                                                  rb.transform.position.ToHandedVec3() );
       return shapeInWorld * rbInWorld.inverse();
     }
 
@@ -281,12 +312,11 @@ namespace AGXUnity.Collide
     {
       m_transform = transform;
       
-      m_shape = CreateNative();
+      m_geometry = CreateNative();
 
-      if ( m_shape == null )
+      if ( m_geometry == null )
         return false;
 
-      m_geometry = new agxCollide.Geometry( m_shape, GetNativeGeometryOffset() );
       m_geometry.setName( name );
       m_geometry.setEnable( IsEnabled );
 
@@ -356,10 +386,6 @@ namespace AGXUnity.Collide
       if ( Simulation.HasInstance )
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
 
-      if ( m_shape != null )
-        m_shape.Dispose();
-      m_shape = null;
-
       if ( m_geometry != null )
         m_geometry.Dispose();
       m_geometry = null;
@@ -367,6 +393,13 @@ namespace AGXUnity.Collide
       m_transform = null;
 
       base.OnDestroy();
+    }
+
+    protected void Reset()
+    {
+      var shapeVisual = Rendering.ShapeVisual.Find( this );
+      if ( shapeVisual != null )
+        shapeVisual.OnSizeUpdated();
     }
 
     /// <summary>

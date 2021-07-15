@@ -22,16 +22,16 @@ namespace AGXUnityEditor
                                             "package.json" );
     }
 
-    public static void Install( FileInfo packageFileInfo )
+    public static bool Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {
         Debug.LogError( "Error: Unable to install AGX Dynamics for Unity - file info is null." );
-        return;
+        return false;
       }
 
       if ( !packageFileInfo.Exists ) {
         Debug.LogError( $"Error: Unable to install package from {packageFileInfo.FullName} - file doesn't exit." );
-        return;
+        return false;
       }
 
       if ( !EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
@@ -43,7 +43,7 @@ namespace AGXUnityEditor
                                          $"backed up and all explorers and terminals closed and ready for install?",
                                          "Yes",
                                          "No" ) )
-        return;
+        return false;
 
       var unsavedScenes = ( from scene in Scenes where scene.isDirty select scene ).ToArray();
       if ( unsavedScenes.Length > 0 ) {
@@ -60,7 +60,7 @@ namespace AGXUnityEditor
                                                             "Cancel",
                                                             "Continue without saving" );
         if ( decision == 1 )
-          return;
+          return false;
 
         if ( decision == 0 )
           EditorSceneManager.SaveScenes( unsavedScenes );
@@ -83,7 +83,7 @@ namespace AGXUnityEditor
         Debug.Log( "    ... success." );
       else {
         Debug.LogWarning( "    ...failed. This could cause plugins to be loaded post reload - leading to errors." );
-        return;
+        return false;
       }
 
       foreach ( var nativePlugin in NativePlugins ) {
@@ -101,6 +101,7 @@ namespace AGXUnityEditor
                                      "-executeMethod",
                                      "AGXUnityEditor.PackageUpdateHandler.PostReload",
                                      s_packageIdentifier + packageFileInfo.FullName.Replace( '\\', '/' ) );
+      return true;
     }
 
     private static void PostReload()
@@ -144,8 +145,26 @@ namespace AGXUnityEditor
           }
         }
 
-        Debug.Log( "Removing all non-user specific content..." );
-        IO.DirectoryContentHandler.DeleteContent();
+        var newPackageFileInfo = new FileInfo( packageName );
+        if ( newPackageFileInfo.Name.EndsWith( "_Plugins_x86_64.unitypackage" ) ) {
+          // Manager is loaded when the binaries hasn't been added and ExternalAGXInitializer
+          // pops up and asks if the user would like to located AGX Dynamics. We're
+          // installing the binaries so it's a "user said no!" to begin with.
+          ExternalAGXInitializer.UserSaidNo = true;
+
+          var dataDirectory = IO.Utils.AGXUnityPluginDirectory +
+                              Path.DirectorySeparatorChar +
+                              "agx";
+          if ( Directory.Exists( dataDirectory ) ) {
+            var directoryHandler = new IO.DirectoryContentHandler( dataDirectory );
+            Debug.Log( $"Removing AGX Dynamics data directory {directoryHandler.RootDirectory}..." );
+            directoryHandler.DeleteAllCollected();
+          }
+        }
+        else {
+          Debug.Log( "Removing all non-user specific content..." );
+          IO.DirectoryContentHandler.DeleteContent();
+        }
 
         // This will generate compile errors from scripts using AGXUnity and
         // we don't know how to hide these until we're done, mainly because
@@ -167,7 +186,7 @@ namespace AGXUnityEditor
       EditorApplication.UnlockReloadAssemblies();
     }
 
-    private static IEnumerable<PluginImporter> NativePlugins
+    internal static IEnumerable<PluginImporter> NativePlugins
     {
       get
       {

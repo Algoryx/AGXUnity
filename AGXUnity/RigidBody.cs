@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using AGXUnity.Collide;
@@ -15,6 +16,35 @@ namespace AGXUnity
   [RequireComponent( typeof( MassProperties ) )]
   public class RigidBody : ScriptComponent
   {
+    /// <summary>
+    /// Finds shapes belonging to <paramref name="gameObject"/> where
+    /// <paramref name="gameObject"/> could be part of an articulated
+    /// system where gameObject.GetComponentsInChildren( typeof( Shape ) )
+    /// could return the wrong set of shapes.
+    /// </summary>
+    /// <param name="gameObject">Game object to find shapes for.</param>
+    /// <returns>Array of shapes associated to <paramref name="gameObject"/>.</returns>
+    public static Shape[] FindShapes( GameObject gameObject )
+    {
+      var shapes = new Shape[] { };
+      if ( gameObject == null )
+        return shapes;
+
+      if ( gameObject.GetComponent<RigidBody>() != null )
+        shapes = gameObject.GetComponent<RigidBody>().Shapes;
+      else {
+        var parentRigidBody = gameObject.GetComponentInParent<RigidBody>();
+        shapes = gameObject.GetComponentsInChildren<Shape>();
+        // If the parent rigid body is part of an articulated system we match the
+        // child shapes against its shapes, so we're excluding shapes that belongs
+        // to other rigid bodies.
+        if ( parentRigidBody != null && parentRigidBody.HasArticulatedRoot )
+          shapes = shapes.Where( shape => parentRigidBody.Shapes.Contains( shape ) ).ToArray();
+      }
+
+      return shapes;
+    }
+
     /// <summary>
     /// Native instance.
     /// </summary>
@@ -298,16 +328,15 @@ namespace AGXUnity
       else {
         using ( var rb = new agx.RigidBody() ) {
           foreach ( var shape in Shapes ) {
-            var nativeShape = shape.CreateTemporaryNative();
-            if ( nativeShape != null ) {
-              var geometry = new agxCollide.Geometry( nativeShape );
+            var geometry = shape.CreateTemporaryNative();
+            if ( geometry == null )
+              continue;
 
-              geometry.setEnable( shape.IsEnabled );
+            geometry.setEnable( shape.IsEnabled );
+            if ( shape.Material != null )
+              geometry.setMaterial( shape.Material.CreateTemporaryNative() );
 
-              if ( shape.Material != null )
-                geometry.setMaterial( shape.Material.CreateTemporaryNative() );
-              rb.add( geometry, shape.GetNativeRigidBodyOffset( this ) );
-            }
+            rb.add( geometry, shape.GetNativeRigidBodyOffset( this ) );
           }
 
           // For center of mass position/rotation to be correct we have to
@@ -326,6 +355,42 @@ namespace AGXUnity
           }
         }
       }
+    }
+
+    public static agx.RigidBody InstantiateTemplate( RigidBody template, Shape[] shapes )
+    {
+      if ( template == null )
+        return null;
+
+      var native = new agx.RigidBody( template.name );
+      foreach ( var shape in shapes ) {
+        var geometry = shape.CreateTemporaryNative();
+
+        geometry.setEnable( shape.IsEnabled );
+        if ( shape.Material != null )
+          geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
+        native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
+      }
+
+      template.SyncNativeTransform( native );
+
+      // MassProperties (synchronization below) wont write any data if UseDefault = true.
+      native.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
+      native.updateMassProperties();
+      template.MassProperties.SetDefaultCalculated( native );
+      native.getMassProperties().setAutoGenerateMask( 0u );
+
+      var prevNative = template.m_rb;
+      try {
+        template.m_rb = native;
+        PropertySynchronizer.Synchronize( template );
+        PropertySynchronizer.Synchronize( template.MassProperties );
+      }
+      finally {
+        template.m_rb = prevNative;
+      }
+
+      return native;
     }
 
     public bool PatchMassPropertiesAsComponent()
