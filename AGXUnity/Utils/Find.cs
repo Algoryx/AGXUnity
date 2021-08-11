@@ -108,10 +108,18 @@ namespace AGXUnity.Utils
                                                   Collide.Shape shape,
                                                   bool searchChildren )
     {
-      return shape != null && !searchChildren ? parent.GetComponents<Collide.Shape>() :
-             shape != null || rb != null      ? parent.GetComponentsInChildren<Collide.Shape>() :
-                                                // Both shape and rb == null and PropagateToChildren == true.
-                                                parent.GetComponentsInChildren<Collide.Shape>();
+      // Search children - just collect all we can find.
+      if ( searchChildren )
+        return parent.GetComponentsInChildren<Collide.Shape>();
+      // Rigid body given, beware of articulated systems so use
+      // the shapes the rigid body knows it owns.
+      else if ( rb != null )
+        return rb.Shapes;
+      // If there's a shape on parent, check for more shapes.
+      else if ( shape != null )
+        return parent.GetComponents<Collide.Shape>();
+      else
+        return new Collide.Shape[] { };
     }
 
     public static GameObject RootGameObject( GameObject parent )

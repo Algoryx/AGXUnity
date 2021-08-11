@@ -725,12 +725,15 @@ namespace AGXUnity
     protected override bool Initialize()
     {
       if ( AttachmentPair.ReferenceObject == null ) {
-        Debug.LogError( "Unable to initialize constraint - reference object must be valid and contain a rigid body component.", this );
+        Debug.LogError( "Unable to initialize constraint - reference object " +
+                        "must be valid and contain a rigid body component.",
+                        this );
         return false;
       }
 
       if ( Type == ConstraintType.Unknown ) {
-        Debug.LogError( "Unable to initialize constraint - constraint type is Unknown.", this );
+        Debug.LogError( "Unable to initialize constraint - constraint type is Unknown.",
+                        this );
         return false;
       }
 
@@ -744,7 +747,9 @@ namespace AGXUnity
       //       E.g., rb.AwaitInitialize += ThisConstraintInitialize.
       RigidBody rb1 = AttachmentPair.ReferenceObject.GetInitializedComponentInParent<RigidBody>();
       if ( rb1 == null ) {
-        Debug.LogError( "Unable to initialize constraint - reference object must contain a rigid body component.", AttachmentPair.ReferenceObject );
+        Debug.LogError( "Unable to initialize constraint - reference object must " +
+                        "contain a rigid body component.",
+                        AttachmentPair.ReferenceObject );
         return false;
       }
 
@@ -757,9 +762,13 @@ namespace AGXUnity
       f1.setLocalTranslate( AttachmentPair.ReferenceFrame.CalculateLocalPosition( rb1.gameObject ).ToHandedVec3() );
       f1.setLocalRotate( AttachmentPair.ReferenceFrame.CalculateLocalRotation( rb1.gameObject ).ToHandedQuat() );
 
-      RigidBody rb2 = AttachmentPair.ConnectedObject != null ? AttachmentPair.ConnectedObject.GetInitializedComponentInParent<RigidBody>() : null;
+      RigidBody rb2 = AttachmentPair.ConnectedObject != null ?
+                        AttachmentPair.ConnectedObject.GetInitializedComponentInParent<RigidBody>() :
+                        null;
       if ( rb1 == rb2 ) {
-        Debug.LogError( "Unable to initialize constraint - reference and connected rigid body is the same instance.", this );
+        Debug.LogError( "Unable to initialize constraint - reference and connected " +
+                        "rigid body is the same instance.",
+                        this );
         return false;
       }
 
@@ -775,36 +784,45 @@ namespace AGXUnity
       }
 
       try {
-        Native = (agx.Constraint)Activator.CreateInstance( NativeType, new object[] { rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2 } );
+        Native = (agx.Constraint)Activator.CreateInstance( NativeType,
+                                                           new object[]
+                                                           {
+                                                             rb1.Native,
+                                                             f1,
+                                                             ( rb2 != null ? rb2.Native : null ),
+                                                             f2
+                                                           } );
 
         // Assigning native elementary constraints to our elementary constraint instances.
         foreach ( ElementaryConstraint ec in ElementaryConstraints )
           if ( !ec.OnConstraintInitialize( this ) )
-            throw new Exception( "Unable to initialize elementary constraint: " + ec.NativeName + " (not present in native constraint). ConstraintType: " + Type );
+            throw new Exception( "Unable to initialize elementary constraint: " +
+                                 ec.NativeName +
+                                 " (not present in native constraint). ConstraintType: " + Type );
 
         bool added = GetSimulation().add( Native );
         Native.setEnable( IsEnabled );
 
         // Not possible to handle collisions if connected frame parent is null/world.
         if ( CollisionsState != ECollisionsState.KeepExternalState && AttachmentPair.ConnectedObject != null ) {
-          string groupName          = gameObject.name + "_" + gameObject.GetInstanceID().ToString();
-          GameObject go1            = null;
-          GameObject go2            = null;
-          bool propagateToChildren1 = false;
-          bool propagateToChildren2 = false;
+          string groupName = gameObject.name + "_" + gameObject.GetInstanceID().ToString();
+          GameObject go1   = null;
+          GameObject go2   = null;
           if ( CollisionsState == ECollisionsState.DisableReferenceVsConnected ) {
             go1 = AttachmentPair.ReferenceObject;
             go2 = AttachmentPair.ConnectedObject;
           }
           else {
-            go1                  = rb1.gameObject;
-            propagateToChildren1 = true;
-            go2                  = rb2 != null ? rb2.gameObject : AttachmentPair.ConnectedObject;
-            propagateToChildren2 = true;
+            go1 = rb1.gameObject;
+            go2 = rb2 != null ?
+                    rb2.gameObject :
+                    AttachmentPair.ConnectedObject;
           }
 
-          go1.GetOrCreateComponent<CollisionGroups>().GetInitialized<CollisionGroups>().AddGroup( groupName, propagateToChildren1 );
-          go2.GetOrCreateComponent<CollisionGroups>().GetInitialized<CollisionGroups>().AddGroup( groupName, propagateToChildren2 );
+          go1.GetOrCreateComponent<CollisionGroups>().GetInitialized<CollisionGroups>().AddGroup( groupName, false );
+          // Propagate to children if rb2 is null, which means
+          // that go2 could be some static structure.
+          go2.GetOrCreateComponent<CollisionGroups>().GetInitialized<CollisionGroups>().AddGroup( groupName, rb2 == null );
           CollisionGroupsManager.Instance.GetInitialized<CollisionGroupsManager>().SetEnablePair( groupName, groupName, false );
         }
 
