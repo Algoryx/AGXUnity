@@ -287,22 +287,22 @@ namespace AGXUnityEditor.Tools
           var refVsConActive = !EditorGUI.showMixedValue &&
                                state == Constraint.ECollisionsState.DisableReferenceVsConnected;
 
-          if ( GUILayout.Button( GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
+          if ( GUILayout.Toggle( rbVsRbActive,
+                                 GUI.MakeLabel( "Rb " + GUI.Symbols.ArrowLeftRight.ToString() + " Rb",
                                                 rbVsRbActive,
                                                 "Disable all shapes in rigid body 1 against all shapes in rigid body 2." ),
-                                  skin.GetButton( rbVsRbActive,
-                                                  InspectorGUISkin.ButtonType.Left ),
-                                  GUILayout.Width( 76 ) ) )
+                                  skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                                  GUILayout.Width( 76 ) ) != rbVsRbActive )
             state = state == Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2 ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
-          if ( GUILayout.Button( GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
+          if ( GUILayout.Toggle( refVsConActive,
+                                 GUI.MakeLabel( "Ref " + GUI.Symbols.ArrowLeftRight.ToString() + " Con",
                                                 refVsConActive,
                                                 "Disable Reference object vs. Connected object." ),
-                                  skin.GetButton( refVsConActive,
-                                                  InspectorGUISkin.ButtonType.Right ),
-                                  GUILayout.Width( 76 ) ) )
+                                  skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                                  GUILayout.Width( 76 ) ) != refVsConActive )
             state = state == Constraint.ECollisionsState.DisableReferenceVsConnected ?
                       Constraint.ECollisionsState.KeepExternalState :
                       Constraint.ECollisionsState.DisableReferenceVsConnected;

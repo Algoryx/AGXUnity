@@ -327,9 +327,10 @@ namespace AGXUnityEditor
     {
       var disabledScope = new EditorGUI.DisabledScope( !enabled );
       var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
-      var pressed = UnityEngine.GUI.Button( rect,
+      var pressed = UnityEngine.GUI.Toggle( rect,
+                                            active,
                                             buttonContent,
-                                            InspectorEditor.Skin.GetButton( active, buttonType ) );
+                                            InspectorEditor.Skin.GetButton( buttonType ) ) != active;
       if ( buttonContent == s_tooltipContent && content.image != null ) {
         using ( IconManager.ForegroundColorBlock( active, enabled ) )
           UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );

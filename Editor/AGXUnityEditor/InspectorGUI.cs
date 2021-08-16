@@ -273,6 +273,93 @@ namespace AGXUnityEditor
       return EditorGUILayout.Toggle( content, value );
     }
 
+    public static bool Toggle( MiscIcon icon,
+                               bool active,
+                               bool enabled,
+                               string tooltip = "",
+                               params GUILayoutOption[] options )
+    {
+
+      return Toggle( icon,
+                     active,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     1.0f,
+                     options );
+    }
+
+    public static bool Toggle( MiscIcon icon,
+                               bool active,
+                               bool enabled,
+                               string tooltip = "",
+                               float buttonScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+
+      return Toggle( icon,
+                     active,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     buttonScale,
+                     options );
+    }
+
+    public static bool Toggle( MiscIcon icon,
+                               bool active,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f,
+                               params GUILayoutOption[] options )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var result = GUILayout.Toggle( active,
+                                     s_miscIconButtonContent,
+                                     buttonStyle,
+                                     options );
+      ButtonIcon( GUILayoutUtility.GetLastRect(), icon, enabled, iconScale );
+
+      return result;
+    }
+
+    public static bool Toggle( Rect rect,
+                               MiscIcon icon,
+                               bool active,
+                               bool enabled,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      return Toggle( rect,
+                     icon,
+                     active,
+                     enabled,
+                     InspectorEditor.Skin.ButtonMiddle,
+                     tooltip,
+                     iconScale );
+    }
+
+    public static bool Toggle( Rect rect,
+                               MiscIcon icon,
+                               bool active,
+                               bool enabled,
+                               GUIStyle buttonStyle,
+                               string tooltip = "",
+                               float iconScale = 1.0f )
+    {
+      s_miscIconButtonContent.tooltip = tooltip;
+      var result = false;
+      using ( new GUI.EnabledBlock( enabled ) )
+        result = UnityEngine.GUI.Toggle( rect,
+                                         active,
+                                         s_miscIconButtonContent,
+                                         buttonStyle );
+      ButtonIcon( rect, icon, enabled, iconScale );
+
+      return result;
+    }
+
     public static bool Foldout( EditorDataEntry state, GUIContent content, Action<bool> onStateChanged = null )
     {
       // There's a indentation bug (a few pixels off) in EditorGUILayout.Foldout.
@@ -619,10 +706,14 @@ namespace AGXUnityEditor
     {
       var texture = IconManager.GetIcon( data.Icon );
       var pressed = false;
-      using ( new GUI.EnabledBlock( data.Enabled ) )
-        pressed = UnityEngine.GUI.Button( rect,
-                                          ToolButtonTooltip( data.Tooltip ),
-                                          InspectorEditor.Skin.GetButton( data.IsActive, buttonType ) );
+      using ( new GUI.EnabledBlock( data.Enabled ) ) {
+        var active = UnityEngine.GUI.Toggle( rect,
+                                             data.IsActive,
+                                             ToolButtonTooltip( data.Tooltip ),
+                                             InspectorEditor.Skin.GetButton( buttonType ) );
+        pressed = active != data.IsActive;
+      }
+
       if ( texture != null ) {
         using ( IconManager.ForegroundColorBlock( data.IsActive, data.Enabled ) )
           UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
