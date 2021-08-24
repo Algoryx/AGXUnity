@@ -274,11 +274,12 @@ namespace AGXUnityEditor.Tools
                                                         skin.Button,
                                                         GUILayout.Width( 128 ) );
           UnityEngine.GUI.enabled = m_selection.Count > 0 && Assembly.GetComponentInChildren<RigidBody>() != null;
-          addToExistingRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Add to existing",
+          addToExistingRigidBodyPressed = GUILayout.Toggle( m_subMode == SubMode.SelectRigidBody,
+                                                            GUI.MakeLabel( "Add to existing",
                                                                            false,
                                                                            "Add selected objects to existing rigid body" ),
-                                                            skin.GetButton( m_subMode == SubMode.SelectRigidBody ),
-                                                            GUILayout.Width( 100 ) );
+                                                            skin.Button,
+                                                            GUILayout.Width( 100 ) ) != ( m_subMode == SubMode.SelectRigidBody );
           UnityEngine.GUI.enabled = selectionHasRigidBody;
           moveToNewRigidBodyPressed = GUILayout.Button( GUI.MakeLabel( "Move to new",
                                                                        false,

@@ -23,19 +23,11 @@ namespace AGXUnityEditor
 
     public GUIStyle Button { get; private set; } = null;
 
-    public GUIStyle ButtonActive { get; private set; } = null;
-
     public GUIStyle ButtonLeft { get; private set; } = null;
-
-    public GUIStyle ButtonLeftActive { get; private set; } = null;
 
     public GUIStyle ButtonMiddle { get; private set; } = null;
 
-    public GUIStyle ButtonMiddleActive { get; private set; } = null;
-
     public GUIStyle ButtonRight { get; private set; } = null;
-
-    public GUIStyle ButtonRightActive { get; private set; } = null;
 
     public GUIStyle Label { get; private set; } = null;
 
@@ -74,16 +66,13 @@ namespace AGXUnityEditor
 #endif
 
     /// <summary>
-    /// Button style given active state and button type.
+    /// Button style given button type.
     /// </summary>
-    /// <param name="active">True if the button is active, i.e., pressed (e.g., when a tool is active).</param>
     /// <param name="type">Button type; left, middle, right or normal.</param>
     /// <returns>Button style to use.</returns>
-    public GUIStyle GetButton( bool active, ButtonType type = ButtonType.Normal )
+    public GUIStyle GetButton( ButtonType type = ButtonType.Normal )
     {
-      return active ?
-               m_buttonActiveStyles[ (int)type ] :
-               m_buttonStyles[ (int)type ];
+      return m_buttonStyles[ (int)type ];
     }
 
     public string TagTypename( string typename )
@@ -115,25 +104,21 @@ namespace AGXUnityEditor
       {
         richText = true
       };
-      ButtonActive = InvertStyle( Button );
 
       ButtonLeft = new GUIStyle( EditorStyles.miniButtonLeft )
       {
         richText = true
       };
-      ButtonLeftActive = InvertStyle( ButtonLeft );
 
       ButtonMiddle = new GUIStyle( EditorStyles.miniButtonMid )
       {
         richText = true
       };
-      ButtonMiddleActive = InvertStyle( ButtonMiddle );
 
       ButtonRight = new GUIStyle( EditorStyles.miniButtonRight )
       {
         richText = true
       };
-      ButtonRightActive = InvertStyle( ButtonRight );
 
       m_buttonStyles = new GUIStyle[]
       {
@@ -141,14 +126,6 @@ namespace AGXUnityEditor
         ButtonLeft,
         ButtonMiddle,
         ButtonRight
-      };
-
-      m_buttonActiveStyles = new GUIStyle[]
-      {
-        ButtonActive,
-        ButtonLeftActive,
-        ButtonMiddleActive,
-        ButtonRightActive
       };
 
       Label = new GUIStyle( EditorStyles.label )
@@ -178,15 +155,6 @@ namespace AGXUnityEditor
 
     }
 
-    private GUIStyle InvertStyle( GUIStyle org )
-    {
-      return new GUIStyle( org )
-      {
-        normal = org.active,
-        active = org.normal
-      };
-    }
-
     private GUIStyle AnchorStyle( GUIStyle org, TextAnchor anchor )
     {
       return new GUIStyle( org )
@@ -196,7 +164,6 @@ namespace AGXUnityEditor
     }
 
     private GUIStyle[] m_buttonStyles = null;
-    private GUIStyle[] m_buttonActiveStyles = null;
     private static InspectorGUISkin s_instance = null;
   }
 }
