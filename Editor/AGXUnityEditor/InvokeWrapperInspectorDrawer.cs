@@ -584,6 +584,12 @@ namespace AGXUnityEditor
       if ( element == null )
         return;
 
+      var isModel = element is AGXUnity.IO.URDF.Model;
+      if ( isModel ) {
+        if ( GUILayout.Button( GUI.MakeLabel( "Do it!" ) ) )
+          IO.URDF.Prefab.Create( element as AGXUnity.IO.URDF.Model );
+      }
+
       var dropDownName = string.IsNullOrEmpty( element.Name ) ?
                             elementArrayIndex >= 0 ?
                               $"{element.GetType().Name}[{elementArrayIndex}]" :
@@ -596,6 +602,11 @@ namespace AGXUnityEditor
         return;
 
       using ( InspectorGUI.IndentScope.Single ) {
+        if ( isModel ) {
+          var assetPath = AssetDatabase.GetAssetPath( element );
+          InspectorGUI.SelectableTextField( GUI.MakeLabel( "Asset Path" ), assetPath );
+        }
+
         var ignoreName = element is AGXUnity.IO.URDF.Inertial;
         if ( !ignoreName ) {
           var nameRect = EditorGUILayout.GetControlRect();
