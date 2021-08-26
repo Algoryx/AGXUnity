@@ -404,6 +404,7 @@ namespace AGXUnity.Rendering
         shape.gameObject.AddChild( go );
         go.transform.localPosition = Vector3.zero;
         go.transform.localRotation = Quaternion.identity;
+        go.transform.localScale = Vector3.one;
       }
       catch ( System.Exception e ) {
         Debug.LogException( e );

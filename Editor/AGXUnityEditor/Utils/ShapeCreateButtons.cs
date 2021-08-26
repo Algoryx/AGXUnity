@@ -58,13 +58,14 @@ namespace AGXUnityEditor.Utils
                        isFirst                      ? InspectorGUISkin.ButtonType.Left :
                        isLast                       ? InspectorGUISkin.ButtonType.Right :
                                                       InspectorGUISkin.ButtonType.Middle;
-      var toggleDropdown = InspectorGUI.Button( rect,
+      var toggleDropdown = InspectorGUI.Toggle( rect,
                                                 Icon,
+                                                State.DropdownEnabled,
                                                 UnityEngine.GUI.enabled,
-                                                InspectorEditor.Skin.GetButton( true, buttonType ),
+                                                InspectorEditor.Skin.GetButton( buttonType ),
                                                 "Create new " +
                                                 State.ShapeType.ToString().ToLower() +
-                                                "as parent of the selected object(s)." );
+                                                " as parent of the selected object(s)." ) != State.DropdownEnabled;
 
       if ( toggleDropdown )
         State.DropdownEnabled = !State.DropdownEnabled;
@@ -88,7 +89,7 @@ namespace AGXUnityEditor.Utils
 
       using ( InspectorGUI.IndentScope.Create( 2 ) ) {
         var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 25.0f ) );
-        rect.width = 45.0f;
+        rect.width = 50.0f;
 
         if ( hasRadius ) {
           State.CreatePressed = OnButtonGUI( rect,
@@ -155,7 +156,7 @@ namespace AGXUnityEditor.Utils
       using ( InspectorGUI.IndentScope.Create( 2 ) ) {
         var down = UnityEngine.GUI.Button( rect,
                                            GUI.MakeLabel( name ),
-                                           InspectorEditor.Skin.GetButton( true, buttonType ) );
+                                           InspectorEditor.Skin.GetButton( buttonType ) );
         if ( current.type == EventType.Repaint &&
              rect.Contains( current.mousePosition ) )
           onMouseOver();

@@ -37,7 +37,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native box object if created.
     /// </summary>
-    public agxCollide.Box Native { get { return m_shape as agxCollide.Box; } }
+    public agxCollide.Box Native { get { return NativeShape?.asBox(); } }
 
     /// <summary>
     /// Debug rendering scale assuming the rendered box is 1x1x1.
@@ -51,9 +51,10 @@ namespace AGXUnity.Collide
     /// Creates the native box with current half extents.
     /// </summary>
     /// <returns>Native box object.</returns>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Box( HalfExtents.ToVec3() );
+      return new agxCollide.Geometry( new agxCollide.Box( HalfExtents.ToVec3() ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }

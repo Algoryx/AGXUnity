@@ -13,6 +13,22 @@ namespace AGXUnity
     public ShowInInspector() { }
   }
 
+  /// <summary>
+  /// Disable changes of field or property in the Inspector during runtime.
+  /// </summary>
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
+  public class DisableInRuntimeInspectorAttribute : Attribute
+  {
+  }
+
+  /// <summary>
+  /// Hide field or property in the Inspector during runtime.
+  /// </summary>
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class HideInRuntimeInspectorAttribute : Attribute
+  {
+  }
+
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
   public class InspectorPriorityAttribute : Attribute
   {

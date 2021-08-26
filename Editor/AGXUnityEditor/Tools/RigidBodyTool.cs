@@ -99,7 +99,7 @@ namespace AGXUnityEditor.Tools
           RemoveAllChildren();
 
           var constraintCreateTool = new ConstraintCreateTool( RigidBody.gameObject,
-                                                               false,
+                                                               true,
                                                                newConstraint => m_constraints.Add( newConstraint ) );
           AddChild( constraintCreateTool );
         }

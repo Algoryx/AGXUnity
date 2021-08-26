@@ -187,7 +187,7 @@ namespace AGXUnityEditor.Tools
                                       newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
             }
       }
-      else {
+      else if ( materials.Length == 1 ) {
         ShapeVisualMaterialGUI( "Render Material",
                                 materials[ 0 ],
                                 newMaterial => shapeVisual.ReplaceMaterial( 0, newMaterial ) );

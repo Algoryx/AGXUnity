@@ -6,7 +6,6 @@ namespace AGXUnity
   /// <summary>
   /// Wire object.
   /// </summary>
-  [AddComponentMenu( "" )]
   [RequireComponent( typeof( WireRoute ) )]
   public class Wire : ScriptComponent
   {
@@ -329,6 +328,11 @@ namespace AGXUnity
 
       if ( EndWinch != null )
         EndWinch.OnPostStepForward( this );
+    }
+
+    private void Reset()
+    {
+      Route.Clear();
     }
 
     //private void DrawGizmos( Color color )
