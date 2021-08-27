@@ -1,0 +1,16 @@
+.format: 4
+
+
+ExperimentDimension:
+  .abstract: true
+  .doc: >
+        Base dimension that can belong to a parameter space
+  name:
+    .type: String
+  targets:
+    .type: List<String>
+  model:
+    .doc: The Component for which the target is relative
+    .type: Physics.Component
+
+

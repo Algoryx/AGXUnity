@@ -1,0 +1,20 @@
+.format: 4
+
+
+RelativeDotProductOutput:
+  .extends: Signal.Output<Real>
+  .doc: >
+    Outputs the dot product of two normalized axes, 
+    the local axis of the node and the refereceNode
+    transformed to the world coordinate system.
+    If axis is not normalized, 
+    it will be before the dot product is computed.
+
+  node:
+    .type: Scene.Node
+  referenceNode:
+    .type: Scene.Node
+    .value: null
+  axis:
+    .type: Vec3
+    

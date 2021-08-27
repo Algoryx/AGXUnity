@@ -1,0 +1,7 @@
+.format: 4
+
+GeometryPairContactDepthOutput:
+  .extends: Signal.ContactDepthOutput
+  .doc: Outputs the maximum collision depth registred between geometry and pairGeometry
+  pairGeometry:
+    .type: Physics.Geometry

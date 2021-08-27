@@ -64,4 +64,7 @@ RLAgent:
     .type: Int
     .value: 0
 
-
+  scaleActions:
+    .doc: Bool whether to scale the recieved actions values before setting signals or not
+    .type: Bool
+    .value: true

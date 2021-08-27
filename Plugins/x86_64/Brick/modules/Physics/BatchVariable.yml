@@ -2,6 +2,9 @@
 
 BatchVariable:
   .doc: >
+        DEPRECATED! in favor of ExperimentParameterSpace together
+        with ExperimentFactorialDimension.
+
         The Batch Variable allow declaration of a parameter space
         for a Real value. The parameter, when updated will iterate
         between the 'numStep' different values the parameter can have.

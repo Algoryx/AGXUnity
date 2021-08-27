@@ -9,11 +9,11 @@ namespace AGXUnity.BrickUnity
     {
       SetupBrickEnvironment();
 
-      Brick.AgxBrick._BrickModule.Init();
+      Brick.AGXBrick._BrickModule.Init();
       Brick.Model.MarkDirtyModels(true);
 
       Brick.Model.MarkDirtyModels(true);
-      var loader = new Brick.AgxBrick.BrickFileLoader();
+      var loader = new Brick.AGXBrick.BrickFileLoader();
       var simWrapper = loader.LoadFile(filePath, nodePath);
       return simWrapper.Scene;
     }

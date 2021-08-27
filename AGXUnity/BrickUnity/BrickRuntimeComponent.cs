@@ -7,7 +7,7 @@ using B_Component = Brick.Physics.Component;
 using B_RigidBody = Brick.Physics.Mechanics.RigidBody;
 using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_Signal = Brick.Signal;
-using B_BrickSimulation = Brick.AgxBrick.BrickSimulation;
+using B_BrickSimulation = Brick.AGXBrick.BrickSimulation;
 using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
 using B_Agent = Brick.MachineLearning.RLAgent;
 

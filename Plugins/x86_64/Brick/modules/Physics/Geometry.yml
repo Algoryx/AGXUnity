@@ -34,6 +34,22 @@ Geometry:
     .type: Bool
     .value: false
 
+  externalReference:
+    .doc: >
+      A geometry with an external reference will only be
+      successfuly extended with Brick if it has no parent RigidBody
+      or if the parent RigidBody is also successfully extended 
+      with an external reference. 
+      Geometry attributes that can be overrided are 
+      'enableCollisions', 'material', 'renderMaterial' and 'isSensor'.
+      Local transforms are ignored.
+
+      Shape specific attributes require both the Brick instance
+      and the external instance to share in the interpreter/translator between formats.
+      
+    .type: String
+    .value: null
+
 
 Cylinder:
   .extends: Geometry

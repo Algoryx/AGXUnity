@@ -15,8 +15,8 @@ ModuleConfig:
 
   generators:
     Python:
-      useGrpc: false
-      enable: false
+      useGrpc: true
+      enable: true
 
     Cs:
       useGrpc: true

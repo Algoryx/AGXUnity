@@ -1,0 +1,12 @@
+.format: 4
+
+ExperimentCurriculumDimension:
+  .doc: >
+        Dimension where the values of the targets change after a certain threshold is reached.
+  .extends: ExperimentDimension
+  targetValues:
+    .type: List<Real>
+    .value: []
+  thresholds:
+    .type: List<Real>
+    .value: []

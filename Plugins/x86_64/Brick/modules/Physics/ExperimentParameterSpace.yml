@@ -1,0 +1,27 @@
+.format: 4
+
+ExperimentParameterSpace:
+  .doc: >
+        Dimensions added to this parameter space will have its value updated when the 
+        parameter space is updated.
+
+        Read about the update policy for each dimension in the documentation of that 
+        specific dimension.
+
+  uniformRandomDimensions:
+    .type: List<ExperimentUniformRandomDimension>
+    .value: []
+  
+  factorialDimensions:
+    .type: List<ExperimentFactorialDimension>
+    .value: []
+
+  curriculumDimensions:
+    .type: List<ExperimentCurriculumDimension>
+    .value: []
+
+  seed:
+    .type: Int
+    .value: null
+    .doc: >
+      Seed for random numbers

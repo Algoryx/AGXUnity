@@ -163,13 +163,14 @@ vcruntime140.dll
 
 ## Brick workflow
 
-To run a Brick project, the `BRICK_DIR` environment variable needs to be set to point to a Brick root directory.
+Everything needed to run a Brick project is already present in this repository, and it should work out of the box. If you want to build your own Brick binaries, check the section below.
 
 ### Building Brick
 
 To build new Brick dlls, you need to follow these steps:
 
-1. Find your AgxBrick directory (located in `brick/AgxBrick/cs/brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
+1. Find your Brick root directory and save the path to the `BRICK_DIR` environment variable (`set BRICK_DIR=<absolute path>`).
+1. Find your AgxBrick directory (located in `brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
 2. Create the file `brick\LocalBuildConfig.props` (relative to your AGX directory) and fill it with the following content:
 
 ```xml
@@ -188,9 +189,11 @@ set BRICK_PUBLISH_DIR=%cd%\Assets\AGXUnity\Plugins\x86_64\Brick
 set BRICK_DISABLE_GRPC=1
 set TMP_DIR=brick_tmp_build_dir
 mkdir %TMP_DIR%
-dotnet publish %AGXBRICK_DIR% -f net471 --output %TMP_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
-robocopy %TMP_DIR% %BRICK_PUBLISH_DIR% /purge /xf *.meta /xf agxDotNet.*
+dotnet publish %AGXBRICK_DIR%\cs\brick\AgxBrick -f net471 --output %TMP_DIR% --self-contained false -p:BuildNetFxOnly=true -c Release
+robocopy %TMP_DIR% %BRICK_PUBLISH_DIR% /purge /xf *.meta /xf agxDotNet.* /xf agxMathDotNet.* /xf Newtonsoft.Json.* /xf System.Net.Http.* /xd modules
 rmdir %TMP_DIR%
+robocopy %BRICK_DIR%\modules %BRICK_PUBLISH_DIR%\modules /purge /s /xd .git /xd AgxBrick /xd AgxBrickDemos /xd DevOps /xd Experiments /xf *.meta
+robocopy %AGXBRICK_DIR% %BRICK_PUBLISH_DIR%\modules\AgxBrick *.yml /purge /xf *.meta
 ```
 
 As an alternative to step 3 you can also create and run a batch file in the Unity project root directory with the following contents:
@@ -222,20 +225,39 @@ set BRICK_PUBLISH_DIR=%~dp0Assets\AGXUnity\Plugins\x86_64\Brick
 set TMP_DIR=brick_tmp_build_dir
 if exist %TMP_DIR% rmdir /s /q %TMP_DIR%
 mkdir %TMP_DIR%
-dotnet publish %AGXBRICK_DIR%^
+dotnet publish %AGXBRICK_DIR%\cs\brick\AgxBrick^
     -f net471^
     --output %TMP_DIR%^
     --self-contained false^
     -p:BuildNetFxOnly=true^
     -c Release^
     || exit /b %ERRORLEVEL%
+
 robocopy %TMP_DIR% %BRICK_PUBLISH_DIR%^
     *.dll *.pdb^
     /purge^
     /xf *.meta^
     /xf agxDotNet.*^
-    || exit /b %ERRORLEVEL%
+    /xf agxMathDotNet.*^
+    /xf Newtonsoft.Json.*^
+    /xf System.Net.Http.*^
+    /xd modules
 rmdir /s /q %TMP_DIR% || exit /b %ERRORLEVEL%
+
+robocopy %BRICK_DIR%\modules %BRICK_PUBLISH_DIR%\modules^
+    /purge^
+    /s^
+    /xd .git^
+    /xd AgxBrick^
+    /xd AgxBrickDemos^
+    /xd DevOps^
+    /xd Experiments^
+    /xf *.meta
+
+robocopy %AGXBRICK_DIR% %BRICK_PUBLISH_DIR%\modules\AgxBrick^
+    *.yml^
+    /purge^
+    /xf *.meta
 
 exit /b 0
 ```

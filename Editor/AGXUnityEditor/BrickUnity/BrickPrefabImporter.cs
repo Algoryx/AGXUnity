@@ -13,7 +13,7 @@ using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 using B_MultiConnector = Brick.Physics.Mechanics.MultiAttachmentConnector;
 using B_Geometry = Brick.Physics.Geometry;
 using B_Visual = Brick.Visual;
-using B_TwoBodyTire = Brick.AgxBrick.TwoBodyTire;
+using B_TwoBodyTire = Brick.AGXBrick.TwoBodyTire;
 using B_Joint = Brick.Robotics.Joint;
 using B_Camera = Brick.Scene.Camera;
 using System.Linq;
@@ -68,7 +68,7 @@ namespace AGXUnityEditor.BrickUnity
       renderMaterials = new List<Object>();
 
       var b_component = BrickUtils.LoadComponentFromFile(filepath, modelName);
-      var b_simulation = new Brick.AgxBrick.BrickSimulation();
+      var b_simulation = new Brick.AGXBrick.BrickSimulation();
       b_simulation.AddComponent(b_component);
 
       // TODO: if source filepath is within the Assets directory so should we set the rootpath to that.

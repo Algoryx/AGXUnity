@@ -1,0 +1,98 @@
+.format: 4
+
+.import:
+  Physics: [ExperimentUniformRandomDimension, ExperimentParameterSpace]
+
+
+ParameterSpaceComponent:
+  .extends: Physics.Component
+
+  a:
+    .type: Real
+    .value: 0
+  
+  aCopy:
+    .type: Real
+    .value: 0
+
+  f0:
+    .type: Real
+    .value: 0
+  f1:
+    .type: Real
+    .value: 0
+
+  c0:
+    .type: Real
+    .value: 0
+  c1:
+    .type: Real
+    .value: 0
+  
+  aUniformRandomDimension:
+    .type: Physics.ExperimentUniformRandomDimension
+    name: a
+    targets: [this.a, this.aCopy]
+    model: this
+    min: -1.0
+    max: 1.0
+
+  f0FactorialDimension:
+    .type: Physics.ExperimentFactorialDimension
+    name: f
+    targets: [this.f0]
+    model: this
+    start: -1.0
+    stop: 1.0
+    numStep: 2
+
+  f1FactorialDimension:
+    .type: Physics.ExperimentFactorialDimension
+    name: f
+    targets: [this.f1]
+    model: this
+    start: 0.0
+    stop: 1.0
+    numStep: 2
+
+  c0CurriculumDimension:
+    .type: Physics.ExperimentCurriculumDimension
+    name: fparameter
+    targets:
+      - this.c0
+    model: this
+    targetValues:
+      - 1
+      - 2
+      - 3
+    thresholds:
+      - 2
+      - 4
+
+  c1CurriculumDimension:
+    .type: Physics.ExperimentCurriculumDimension
+    name: fparameter
+    targets:
+      - this.c1
+    model: this
+    targetValues:
+      - 2
+      - 4
+      - 6
+    thresholds:
+      - 2
+      - 2
+
+  parameterSpace:
+    .type: Physics.ExperimentParameterSpace
+
+    uniformRandomDimensions:
+     - aUniformRandomDimension
+    
+    factorialDimensions:
+     - f0FactorialDimension
+     - f1FactorialDimension
+
+    curriculumDimensions:
+      - c0CurriculumDimension
+      - c1CurriculumDimension

@@ -1,0 +1,10 @@
+.format: 4
+.import:
+  MachineLearning.RLAgent: [ContinuousAction]
+  Robotics: [Joint]
+
+JointAction:
+  .extends: ContinuousAction
+  signal: null
+  joint:
+    .type: Joint

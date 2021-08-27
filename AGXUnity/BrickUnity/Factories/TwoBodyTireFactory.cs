@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-using B_TwoBodyTire = Brick.AgxBrick.TwoBodyTire;
+using B_TwoBodyTire = Brick.AGXBrick.TwoBodyTire;
 using B_RigidBody = Brick.Physics.Mechanics.RigidBody;
 using B_Connector = Brick.Physics.Mechanics.AttachmentPairConnector;
 
@@ -25,7 +25,7 @@ namespace AGXUnity.BrickUnity.Factories
       au_tire.TireRadius = (float)b_tire.TireRadius;
 
       var tireRimLock = go.GetComponentInChildren<Constraint>();
-      if (tireRimLock.GetComponent<BrickObject>().type is "Brick.AgxBrick.TwoBodyTire.TireRimConnector")
+      if (tireRimLock.GetComponent<BrickObject>().type is "Brick.AGXBrick.TwoBodyTire.TireRimConnector")
       {
         au_tire.TireRimConstraint = tireRimLock;
       }

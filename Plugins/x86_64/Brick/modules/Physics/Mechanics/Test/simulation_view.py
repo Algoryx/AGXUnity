@@ -20,7 +20,7 @@ import time
 from Brick import Path, TypePath, Model
 from brick.Core.decorator import registerAgxSimulationParameter, registerAgxGuiEventListener
 from Brick.Simulation import Simulation
-from Brick.AgxBrick import SimulationApp
+from Brick.AGXBrick import SimulationApp
 from Brick.Physics import ComponentLoader
 
 rcs = Simulation.RemoteCommandServer()
@@ -91,10 +91,10 @@ simulationConfig.Rcs = rcs
 simulationApp = SimulationApp(simulationConfig)
 simulationApp.SetEnableControlChannelTickSignals(False)
 
-registerAgxGuiEventListener(simulationApp.AgxBrickSimulation, onGuiEvent)
-#simulationApp.AgxBrickSimulation.SynchronizeWithAgx = False
+registerAgxGuiEventListener(simulationApp.AGXBrickSimulation, onGuiEvent)
+#simulationApp.AGXBrickSimulation.SynchronizeWithAgx = False
 
-agx = simulationApp.AgxBrickSimulation.AgxSimulation
+agx = simulationApp.AGXBrickSimulation.AgxSimulation
 #agx.setTimeStep(0.001)
 simulationApp.Start()
 success = True
@@ -107,9 +107,9 @@ while(success):
     #     time.sleep(1)
     #     count = 0
     #     ComponentLoader.RepositionComponent(brick_instance)
-    #     simulationApp.AgxBrickSimulation.PositionAgxBodies()
+    #     simulationApp.AGXBrickSimulation.PositionAgxBodies()
 
-    # if (simulationApp.AgxBrickSimulation.AgxSimulation.getTimeStamp() > t):
+    # if (simulationApp.AGXBrickSimulation.AgxSimulation.getTimeStamp() > t):
     #     t = t +10
     #     print(t)
 

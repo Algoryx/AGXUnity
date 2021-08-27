@@ -27,55 +27,71 @@ Joint:
 
 
   externalReference:
+    .doc: >
+      A reference to some external instance that can
+      be used to fully or partly populate the Joint attributes.
+      The external attributes, such as motorFriction,
+      can be overriden in the Joint declaration.
     .type: String
     .value: null
 
   initialPosition:
+    .doc: Position of the degree of freedom of the Joint
     .type: Real
     .value: 0
 
   connector:
+    .doc:  A instantiable AttachmentPairConnector (i.e PrismaticConnector)
     .type: AttachmentPairConnector
     .value: null
 
   segment1:
+    .doc: A Segment which outputAttachment will be connect through this Joint.
     .type: Segment
     .value: null
 
   segment2:
+    .doc: A Segment which inputAttachment will be connect through this Joint.
     .type: Segment
     .value: null
 
   motorStiffness:
+    .doc: Stiffness of the motor constraint.
     .type: Real
     .value: 2E9
 
   motorDamping:
+    .doc: Mechanical Damping of the lock constraint (if used).
     .type: Real
     .value: 1E8
 
   motorFriction:
+    .doc: Friction coefficient of the motor.
     .type: Real
     .value: 0
 
   maxMotorForce:
+    .doc: Maximum force/torque for a velocity or position driven Joint.
     .type: Real
     .value: 0
 
   attachmentStiffness:
+    .doc: Stiffness definition for the non-motor degrees of freedom.
     .type: Stiffness6D
     defaultValue: this.motorStiffness
 
   attachmentDamping:
+    .doc: Damping definition for the non-motor degrees of freedom.
     .type: Damping6D
     .value: null
 
   inputSignalType:
+    .doc: Automatically sets up motor or lock and a input signal.
     .type: Robotics.SignalType
     .value: null
 
   protocolReference:
-    .doc: Reference for the signal to be communicated over some protocol
+    .doc: Reference for the signal to be communicated over some protocol.
     .type: String
     .value: null
 

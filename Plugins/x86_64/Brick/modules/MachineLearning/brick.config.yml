@@ -4,8 +4,8 @@ ModuleConfig:
   # apiRoot: api
   targetDirectory: ${env:BRICK_DIR}
 
-  files.exclude:
-    - Test
+  # files.exclude:
+  #   - Test
 
   import:
     Math:
@@ -17,6 +17,8 @@ ModuleConfig:
       filepath: ../Physics
     Signal:
       filepath: ../Signal
+    Robotics:
+      filepath: ../Robotics
 
   generators:
 

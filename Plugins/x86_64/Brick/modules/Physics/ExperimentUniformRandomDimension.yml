@@ -1,0 +1,10 @@
+.format: 4
+
+ExperimentUniformRandomDimension:
+  .doc: >
+        Dimension where the value is updated by sampling from an independent uniform distribution
+  .extends: ExperimentDimension
+  min:
+    .type: Real
+  max:
+    .type: Real

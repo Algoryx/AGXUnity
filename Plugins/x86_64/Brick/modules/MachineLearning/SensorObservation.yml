@@ -1,0 +1,11 @@
+.format: 4
+.import:
+  MachineLearning.RLAgent: [Observation]
+  Robotics: [Sensor]
+
+SensorObservation:
+  .extends: Observation   
+  signal: null
+  sensor:
+    .type: Sensor
+  

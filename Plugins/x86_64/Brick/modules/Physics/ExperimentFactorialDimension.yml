@@ -1,0 +1,17 @@
+.format: 4
+
+
+ExperimentFactorialDimension:
+  .extends: ExperimentDimension
+  .doc: >
+        Dimension where the value is updated depending such that every possible value
+        in this dimension is tried with every possible value of any other ExperimentFactorialDimension
+        in the current ExperimentParameterSpace.
+
+        The value starts a the start value and stops at the stop value. In between there are numStep steps.
+  start:
+    .type: Real
+  stop:
+    .type: Real
+  numStep:
+    .type: Real

@@ -1,0 +1,266 @@
+# This is a component with an MachineLearning.RLAgent for testing the setup of an RLAgent
+# and test functionality of the RLAgent. Such as setting actions and getting observations etc.
+
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody, HingeAttachment, HingeConnector, PrismaticAttachment]
+  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D, TranslationalMotorInteraction1D]
+
+Box:
+  .extends: RigidBody
+  shape:
+    .type: Physics.Geometry.Box
+    lengths: Math.Vec3(0.4, 0.4, 0.2)
+  
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(0, 0.0, this.shape.lengths.z)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(0, 1, 0))
+    
+  worldAttachment:
+    .type: PrismaticAttachment
+    localTransform:
+      position: Vec3(0, 0.0, 0)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+
+Pole:
+  .extends: RigidBody
+  shape:
+    .type: Physics.Geometry.Cylinder
+    length: 0.8
+    radius: 0.04
+  
+  attachment:
+    .type: HingeAttachment
+    localTransform:
+      position: Vec3(0, this.shape.length / 2, 0)
+
+Cartpole:
+  .extends: Physics.Component
+  wantInternalPositioning: true
+
+  cart:
+    .type: Box
+    .value: Box
+
+  pole:
+    .type: Pole
+    .value: Pole
+
+  connector:
+    .type: HingeConnector
+    attachment1: this.cart.attachment
+    attachment2: this.pole.attachment
+    angle: 0
+    motor:
+      .type: RotationalMotorInteraction1D
+      maxForce: 0
+      minForce: -0
+      speed: 0.0
+
+  worldAttachment:
+    .type: PrismaticAttachment
+    localTransform:
+      position: Vec3(0, 0.0, 0)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+
+  worldConnector:
+    .type: Physics.Mechanics.PrismaticConnector
+    attachment1: this.cart.worldAttachment
+    attachment2: this.worldAttachment
+    distance: 0
+    motor: 
+      .type: TranslationalMotorInteraction1D
+      maxForce: 100
+      minForce: -100
+      speed: 0.0
+
+  # Create the different signal types (Float, Vec3 etc) to make sure that they work as observations and actions
+  signalFloat:
+    .type: Signal.MotorAngleOutput
+    motor: this.connector.motor
+
+  signalVec3:
+    .type: Signal.RelativePositionOutput
+    node: pole
+    referenceNode: cart
+
+  signalQuat:
+    .type: Signal.OrientationOutput
+    node: this.pole
+  
+  signalTransform:
+    .type: Signal.TransformOutput
+    node: this.pole
+
+  floatObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalFloat
+  
+  vec3Observation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalVec3
+
+  quatObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalQuat
+
+  transformObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalTransform
+
+  # Create input signal for action
+  forceInputSignal:
+    .type: Signal.MotorForceInput
+    motor: this.worldConnector.motor
+  
+  velocityInputSignal:
+    .type: Signal.MotorVelocityInput
+    motor: this.connector.motor
+
+  # Create a continuous action
+  action0:
+    .type: MachineLearning.RLAgent.ContinuousAction
+    signal: forceInputSignal
+    maxValue: 2
+    minValue: -2
+
+  action1:
+    .type: MachineLearning.RLAgent.ContinuousAction
+    signal: velocityInputSignal
+    maxValue: 0
+    minValue: -2
+
+  # Lastly we can set up the RLAgent. maxSteps decides how long the maximum length of the 
+  # episode should be.
+  agent:
+    .type: MachineLearning.RLAgent
+    observations:
+      - floatObservation
+      - vec3Observation
+      - quatObservation
+      - transformObservation
+    actions:
+      - action0
+      - action1
+    maxSteps: 200
+
+
+RoboticsCartpole:
+  .extends: Robotics.Robot
+  wantInternalPositioning: true
+
+  cartSegment:
+    .type: Robotics.Segment
+    body: Box
+    inputAttachment:
+      localTransform:
+        position: Vec3(0, 0, 0)
+        rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+    outputAttachment:
+      localTransform:
+        position: Vec3(0, 0.0, 0.2)
+        rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(0, 1, 0))
+        
+    
+  poleSegment:
+    .type: Robotics.Segment
+    body: Pole
+    inputAttachment:
+      localTransform:
+        position: Vec3(0, 0.4, 0)
+
+  joint:
+    .type: Robotics.HingeJoint
+    initialPosition: 0
+    inputSignalType: Robotics.SignalType.InputVelocitySignal
+    hingeConnector: HingeConnector
+    maxMotorForce: 0
+    segment1: this.cartSegment
+    segment2: this.poleSegment
+
+  worldAttachment:
+    .type: PrismaticAttachment
+    localTransform:
+      position: Vec3(0, 0.0, 0)
+      rotation: Quat.FromTo(Vec3(0, 0, 1), Vec3(1, 0, 0))
+
+  worldConnector:
+    .type: Physics.Mechanics.PrismaticConnector
+    attachment1: this.cartSegment.inputAttachment
+    attachment2: this.worldAttachment
+    distance: 0
+    motor: 
+      .type: TranslationalMotorInteraction1D
+      maxForce: 100
+      minForce: -100
+      speed: 0.0
+
+  # Create the different signal types (Float, Vec3 etc) to make sure that they work as observations and actions
+  angleSensor:
+    .type: Robotics.Sensor.JointSensor
+    joint: this.joint
+    outputSignalType: Robotics.SignalType.OutputPositionSignal
+
+  signalVec3:
+    .type: Signal.RelativePositionOutput
+    node: poleSegment.body
+    referenceNode: cartSegment.body
+
+  signalQuat:
+    .type: Signal.OrientationOutput
+    node: this.poleSegment.body
+  
+  signalTransform:
+    .type: Signal.TransformOutput
+    node: this.poleSegment.body
+
+  floatObservation:
+    .type: MachineLearning.SensorObservation
+    sensor: this.angleSensor
+  
+  vec3Observation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalVec3
+
+  quatObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalQuat
+
+  transformObservation:
+    .type: MachineLearning.RLAgent.Observation
+    signal: signalTransform
+
+  # Create input signal for action
+  forceInputSignal:
+    .type: Signal.MotorForceInput
+    motor: this.worldConnector.motor
+
+  # Create a continuous action
+  action0:
+    .type: MachineLearning.RLAgent.ContinuousAction
+    signal: forceInputSignal
+    maxValue: 2
+    minValue: -2
+
+  action1:
+    .type: MachineLearning.JointAction
+    joint: this.joint
+    maxValue: 0
+    minValue: -2
+
+  # Lastly we can set up the RLAgent. maxSteps decides how long the maximum length of the 
+  # episode should be.
+  agent:
+    .type: MachineLearning.RLAgent
+    observations:
+      - floatObservation
+      - vec3Observation
+      - quatObservation
+      - transformObservation
+    actions:
+      - action0
+      - action1
+    maxSteps: 200
