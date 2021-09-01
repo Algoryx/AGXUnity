@@ -11,65 +11,153 @@ namespace AGXUnityEditor.IO.URDF
 {
   public static class Prefab
   {
-    public static GameObject Create( Model model, GameObject modelGameObject = null )
+    /// <summary>
+    /// Create prefab of the given <paramref name="rootGameObject"/> containing
+    /// the given URDF Model <paramref name="model"/>. If <paramref name="rootGameObject"/>
+    /// is null, the current selected game object will be used if it contains
+    /// <paramref name="model"/>. A folder panel will be opened to select directory
+    /// where the prefab and assets should be saved.
+    /// </summary>
+    /// <param name="model">URDF Model to save assets for.</param>
+    /// <param name="rootGameObject">Root game object instance to become prefab.</param>
+    /// <returns>Prefab game object.</returns>
+    public static GameObject Create( Model model, GameObject rootGameObject = null )
     {
       if ( model == null )
         return null;
 
-      if ( !System.IO.Directory.Exists( CachedCreatedDirectoryData.String ) )
-        CachedCreatedDirectoryData.String = "Assets";
-
-      var directory = EditorUtility.OpenFolderPanel( "URDF Prefab Directory",
-                                                     CachedCreatedDirectoryData.String,
-                                                     string.Empty );
+      var directory = OpenFolderPanel( "URDF Prefab Directory" );
       if ( string.IsNullOrEmpty( directory ) )
         return null;
 
-      directory = FileUtil.GetProjectRelativePath( directory );
-
-      if ( System.IO.Directory.Exists( directory ) && !AssetDatabase.IsValidFolder( directory ) ) {
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-      }
-
-      return Create( model, directory );
+      return Create( model, rootGameObject, directory );
     }
 
-    public static GameObject Create( Model model, string directory, GameObject modelGameObject = null )
+    /// <summary>
+    /// Create prefab of the given <paramref name="rootGameObject"/> containing
+    /// the given URDF Model <paramref name="model"/>. If <paramref name="rootGameObject"/>
+    /// is null, the current selected game object will be used if it contains
+    /// <paramref name="model"/>.
+    /// </summary>
+    /// <param name="model">URDF Model to save assets for.</param>
+    /// <param name="rootGameObject">Root game object instance to become prefab.</param>
+    /// <param name="directory">Directory to save the prefab and other assets.</param>
+    /// <returns>Prefab game object.</returns>
+    public static GameObject Create( Model model,
+                                     GameObject rootGameObject,
+                                     string directory )
     {
       if ( model == null )
         return null;
 
-      directory = FileUtil.GetProjectRelativePath( directory );
-
+      if ( !directory.StartsWith( "Assets" ) )
+        directory = FileUtil.GetProjectRelativePath( directory );
       if ( !AssetDatabase.IsValidFolder( directory ) ) {
-        Debug.LogWarning( $"URDF Prefab: Unable to create URDF prefab, directory {directory} isn't a valid project folder." );
+        Debug.LogError( $"URDF Prefab: Unable to create URDF prefab, directory {directory} isn't a valid project folder." );
         return null;
       }
 
-      // Check if the model is saved from click in the Inspector,
-      // and the model belongs to the selected game object.
-      if ( modelGameObject == null &&
-           Selection.activeGameObject?.GetComponent<ElementComponent>()?.Element as Model == model ) {
-        modelGameObject = Selection.activeGameObject;
-      }
-      // Check so that modelGameObject is the root of the model.
-      else if ( modelGameObject != null &&
-                modelGameObject.GetComponent<ElementComponent>()?.Element as Model != model ) {
-        Debug.LogWarning( $"URDF Prefab: Given model game object \"{modelGameObject.name}\" doesn't contain the " +
-                          $"given URDF model \"{model.Name}\". Ignoring the given game object.", modelGameObject );
-        modelGameObject = null;
+      rootGameObject = FindModelGameObject( model, rootGameObject );
+
+      var rootAssetsName = rootGameObject != null ?
+                             rootGameObject.name :
+                             model.Name;
+      if ( !CreateAssets( model, rootGameObject, directory, rootAssetsName ) )
+        return null;
+
+      var prefabPath = $"{directory}/{rootAssetsName}.prefab";
+      var prefab = PrefabUtility.SaveAsPrefabAssetAndConnect( rootGameObject,
+                                                              prefabPath,
+                                                              InteractionMode.AutomatedAction );
+      if ( prefab != null )
+        Debug.Log( $"URDF Prefab: Prefab {rootAssetsName} successfully saved to {prefabPath}." );
+
+      return prefab;
+    }
+
+    /// <summary>
+    /// Create all assets (URDF Elements, meshes, render materials) given
+    /// URDF model and root game object. The root game object is important
+    /// in order to find STL meshes and render materials. If root game object
+    /// is null, current selection is examined to contain <paramref name="model"/>.
+    /// </summary>
+    /// <param name="model">URDF Model to save assets for.</param>
+    /// <param name="rootGameObject">Root game object instance containing the model in its hierarchy.</param>
+    /// <returns></returns>
+    public static bool CreateAssets( Model model,
+                                     GameObject rootGameObject = null )
+    {
+      if ( model == null )
+        return false;
+
+      var directory = OpenFolderPanel( "URDF Assets Directory" );
+      if ( string.IsNullOrEmpty( directory ) )
+        return false;
+
+      rootGameObject = FindModelGameObject( model, rootGameObject );
+      return CreateAssets( model,
+                           rootGameObject,
+                           directory, rootGameObject != null ?
+                             rootGameObject.name :
+                             model.Name );
+    }
+
+    /// <summary>
+    /// Create all assets (URDF Elements, meshes, render materials) given
+    /// root game object containing an URDF Model in its hierarchy.
+    /// </summary>
+    /// <param name="rootGameObject">Root game object containing an URDF Model in its hierarchy.</param>
+    /// <param name="directory">Directory in project where the assets should be saved.</param>
+    /// <param name="rootAssetsName">Common name of main assets (without extension) - normally rootGameObject.name.</param>
+    /// <returns>True if save is successful, otherwise false.</returns>
+    public static bool CreateAssets( GameObject rootGameObject,
+                                     string directory,
+                                     string rootAssetsName )
+    {
+      var model = AGXUnity.IO.URDF.Utils.GetElementInChildren<Model>( rootGameObject );
+      if ( model == null ) {
+        Debug.LogError( $"URDF Prefab: Unable to create assets, URDF Model not present in root game object.",
+                        rootGameObject );
+        return false;
       }
 
-      CachedCreatedDirectoryData.String = directory;
+      return CreateAssets( model, rootGameObject, directory, rootAssetsName );
+    }
+
+    /// <summary>
+    /// Create all assets (URDF Elements, meshes, render materials) given
+    /// URDF Model instance and root game object. If root game object is
+    /// null, STL meshes and render materials won't be saved (warning in Console).
+    /// </summary>
+    /// <param name="model"></param>
+    /// <param name="rootGameObject">Root game object containing an URDF Model in its hierarchy.</param>
+    /// <param name="directory">Directory in project where the assets should be saved.</param>
+    /// <param name="rootAssetsName">Common name of main assets (without extension) - normally rootGameObject.name.</param>
+    /// <returns>True if save is successful, otherwise false.</returns>
+    public static bool CreateAssets( Model model,
+                                     GameObject rootGameObject,
+                                     string directory,
+                                     string rootAssetsName )
+    {
+      if ( model == null ) {
+        Debug.LogError( $"URDF Prefab: Unable to create assets, URDF Model instance is null." );
+        return false;
+      }
+
+      if ( !directory.StartsWith( "Assets" ) )
+        directory = FileUtil.GetProjectRelativePath( directory );
+      if ( !AssetDatabase.IsValidFolder( directory ) ) {
+        Debug.LogError( $"URDF Prefab: Unable to create URDF prefab, directory {directory} isn't a valid project folder." );
+        return false;
+      }
 
       // Collecting STL meshes and visual with materials.
-      var meshesToSave    = new List<Mesh>();
+      var meshesToSave = new List<Mesh>();
       var materialsToSave = new List<UnityEngine.Material>();
-      var collisions      = new List<Collision>();
-      var visuals         = new List<Visual>();
-      var geometries      = new List<Geometry>();
-      var urdfMaterials   = new List<Material>();
+      var collisions = new List<Collision>();
+      var visuals = new List<Visual>();
+      var geometries = new List<Geometry>();
+      var urdfMaterials = new List<Material>();
       System.Action<Link> CollectAndNameLinkAssets = link =>
       {
         CollectAndNameAssets( link.Collisions,
@@ -103,14 +191,15 @@ namespace AGXUnityEditor.IO.URDF
       // and STL meshes. Those two entities are only available if we have
       // access to the game object and components. Geometries are also
       // collected and named here.
-      if ( modelGameObject != null ) {
-        Traverse( modelGameObject, ( go, element ) =>
+      if ( rootGameObject != null ) {
+        Traverse( rootGameObject, ( go, element ) =>
         {
           if ( element is Link link ) {
             CollectAndNameLinkAssets( link );
           }
           else if ( element is Collision collision ) {
-            if ( collision.Geometry.ResourceType == Geometry.MeshResourceType.STL &&
+            if ( collision.Geometry.Type == Geometry.GeometryType.Mesh &&
+                 collision.Geometry.ResourceType == Geometry.MeshResourceType.STL &&
                  go.GetComponent<AGXUnity.Collide.Mesh>() != null ) {
               var collisionMesh = go.GetComponent<AGXUnity.Collide.Mesh>();
               CollectAndNameAssets( collisionMesh.SourceObjects,
@@ -121,9 +210,13 @@ namespace AGXUnityEditor.IO.URDF
             }
           }
           else if ( element is Visual visual ) {
+            var isMesh = visual.Geometry.Type == Geometry.GeometryType.Mesh;
             var saveMaterial = visual.Material != null ||
-                               visual.Geometry.ResourceType == Geometry.MeshResourceType.STL;
-            var saveMesh = visual.Geometry.ResourceType == Geometry.MeshResourceType.STL;
+                               ( 
+                                 isMesh &&
+                                 visual.Geometry.ResourceType == Geometry.MeshResourceType.STL
+                               );
+            var saveMesh = isMesh && visual.Geometry.ResourceType == Geometry.MeshResourceType.STL;
             if ( saveMaterial ) {
               var renderers = go.GetComponentsInChildren<MeshRenderer>();
               CollectAndNameAssets( renderers,
@@ -151,43 +244,85 @@ namespace AGXUnityEditor.IO.URDF
           CollectAndNameLinkAssets( link );
       }
 
-      var rootAssetsName = modelGameObject != null ?
-                             modelGameObject.name :
-                             model.Name;
-      AssetDatabase.CreateAsset( model, $"{directory}/{rootAssetsName}_Model.asset" );
+      materialsToSave = materialsToSave.Distinct().ToList();
+      var mainMaterialAsset = materialsToSave.FirstOrDefault( renderMaterial => !IsAsset( renderMaterial ) );
 
-      materialsToSave = ( from visualMaterial in materialsToSave
-                          where !IsAsset( visualMaterial )
-                          select visualMaterial ).Distinct().ToList();
-      if ( materialsToSave.Count > 0 ) {
-        AssetDatabase.CreateAsset( materialsToSave[ 0 ], $"{directory}/{rootAssetsName}_VisualMaterials.mat" );
+      var numCreatedAssets = 0;
+      var numAlreadyExistingAssets = 0;
+      CreateOrUpdateMainAsset( model,
+                               $"{directory}/{rootAssetsName}_Model.asset",
+                               ref numCreatedAssets,
+                               ref numAlreadyExistingAssets );
+
+      if ( mainMaterialAsset != null ) {
+        CreateOrUpdateMainAsset( mainMaterialAsset,
+                                 $"{directory}/{rootAssetsName}_VisualMaterials.mat",
+                                 ref numCreatedAssets,
+                                 ref numAlreadyExistingAssets );
         for ( int i = 1; i < materialsToSave.Count; ++i )
-          AssetDatabase.AddObjectToAsset( materialsToSave[ i ], materialsToSave[ 0 ] );
+          AddObjectToAsset( materialsToSave[ i ],
+                            mainMaterialAsset,
+                            ref numCreatedAssets,
+                            ref numAlreadyExistingAssets );
       }
 
-      meshesToSave = ( from mesh in meshesToSave
-                       where !IsAsset( mesh )
-                       select mesh ).Distinct().ToList();
+      meshesToSave = meshesToSave.Distinct().ToList();
       foreach ( var mesh in meshesToSave )
-        AssetDatabase.AddObjectToAsset( mesh, model );
+        AddObjectToAsset( mesh, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
 
       foreach ( var material in urdfMaterials )
-        AssetDatabase.AddObjectToAsset( material, model );
+        AddObjectToAsset( material, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
       foreach ( var geometry in geometries )
-        AssetDatabase.AddObjectToAsset( geometry, model );
+        AddObjectToAsset( geometry, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
       foreach ( var collision in collisions )
-        AssetDatabase.AddObjectToAsset( collision, model );
+        AddObjectToAsset( collision, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
       foreach ( var visual in visuals )
-        AssetDatabase.AddObjectToAsset( visual, model );
+        AddObjectToAsset( visual, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
       foreach ( var link in model.Links )
-        AssetDatabase.AddObjectToAsset( link, model );
+        AddObjectToAsset( link, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
       foreach ( var joint in model.Joints )
-        AssetDatabase.AddObjectToAsset( joint, model );
+        AddObjectToAsset( joint, model, ref numCreatedAssets, ref numAlreadyExistingAssets );
 
       AssetDatabase.Refresh();
       AssetDatabase.SaveAssets();
 
-      return null;
+      Debug.Log( $"URDF Prefab: {numCreatedAssets} created and {numAlreadyExistingAssets} already existing assets " +
+                 $"successfully saved to {directory}/{rootAssetsName}." );
+
+      return true;
+    }
+
+    private static void CreateOrUpdateMainAsset( Object mainAsset,
+                                                 string path,
+                                                 ref int numCreatedAssets,
+                                                 ref int numAlreadyExistingAssets )
+    {
+      if ( IsAsset( mainAsset ) ) {
+        // Not sure if there's something that may have changed that
+        // we should take care of here. If it's already on disk,
+        // Unity should take care of it.
+        ++numAlreadyExistingAssets;
+        return;
+      }
+
+      AssetDatabase.CreateAsset( mainAsset, path );
+      ++numCreatedAssets;
+    }
+
+    private static void AddObjectToAsset( Object asset,
+                                          Object mainAsset,
+                                          ref int numCreatedAssets,
+                                          ref int numAlreadyExistingAssets )
+    {
+      if ( IsAsset( asset ) ) {
+        // Don't think we want to move 'asset' to 'mainAsset'
+        // in the case where 'asset' is saved elsewhere.
+        ++numAlreadyExistingAssets;
+        return;
+      }
+
+      AssetDatabase.AddObjectToAsset( asset, mainAsset );
+      ++numCreatedAssets;
     }
 
     private static void Traverse( GameObject go, System.Action<GameObject, Element> callback )
@@ -230,6 +365,49 @@ namespace AGXUnityEditor.IO.URDF
     {
       return @object != null &&
              !string.IsNullOrEmpty( AssetDatabase.GetAssetPath( @object.GetInstanceID() ) );
+    }
+
+    public static GameObject FindModelGameObject( Model model, GameObject rootGameObject )
+    {
+      // Check if the model is saved from click in the Inspector,
+      // and the model belongs to the selected game object.
+      if ( rootGameObject == null &&
+           AGXUnity.IO.URDF.Utils.GetElementInChildren<Model>( Selection.activeGameObject ) == model ) {
+        rootGameObject = Selection.activeGameObject;
+      }
+      // Check so that modelGameObject is the root of the model.
+      else if ( rootGameObject != null &&
+                !AGXUnity.IO.URDF.Utils.GetElementsInChildren<Model>( rootGameObject ).Contains( model ) ) {
+        Debug.LogWarning( $"URDF Prefab: Given model game object \"{rootGameObject.name}\" doesn't contain the " +
+                          $"given URDF model \"{model.Name}\". Ignoring the given game object.", rootGameObject );
+        rootGameObject = null;
+      }
+
+      return rootGameObject;
+    }
+
+    public static string OpenFolderPanel( string title )
+    {
+      if ( !System.IO.Directory.Exists( CachedCreatedDirectoryData.String ) )
+        CachedCreatedDirectoryData.String = "Assets";
+
+      var directory = EditorUtility.OpenFolderPanel( title,
+                                                     CachedCreatedDirectoryData.String,
+                                                     string.Empty );
+      if ( string.IsNullOrEmpty( directory ) )
+        return string.Empty;
+
+      if ( !directory.StartsWith( "Assets" ) )
+        directory = FileUtil.GetProjectRelativePath( directory );
+
+      CachedCreatedDirectoryData.String = directory;
+
+      if ( System.IO.Directory.Exists( directory ) && !AssetDatabase.IsValidFolder( directory ) ) {
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+      }
+
+      return directory;
     }
 
     private static EditorDataEntry CachedCreatedDirectoryData => EditorData.Instance.GetStaticData( "URDF.Prefab_CreateDirectory",
