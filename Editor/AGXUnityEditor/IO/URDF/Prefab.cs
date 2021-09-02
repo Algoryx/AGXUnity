@@ -65,12 +65,18 @@ namespace AGXUnityEditor.IO.URDF
       if ( !CreateAssets( model, rootGameObject, directory, rootAssetsName ) )
         return null;
 
+      var isPrefab = PrefabUtility.GetPrefabInstanceStatus( rootGameObject ) == PrefabInstanceStatus.Connected;
+      GameObject prefab = null;
       var prefabPath = $"{directory}/{rootAssetsName}.prefab";
-      var prefab = PrefabUtility.SaveAsPrefabAssetAndConnect( rootGameObject,
-                                                              prefabPath,
-                                                              InteractionMode.AutomatedAction );
+      if ( isPrefab )
+        prefab = PrefabUtility.GetCorrespondingObjectFromSource( rootGameObject );
+      else {
+        prefab = PrefabUtility.SaveAsPrefabAssetAndConnect( rootGameObject,
+                                                            prefabPath,
+                                                            InteractionMode.AutomatedAction );
+      }
       if ( prefab != null )
-        Debug.Log( $"URDF Prefab: Prefab {rootAssetsName} successfully saved to {prefabPath}." );
+        Debug.Log( $"URDF Prefab: Prefab {prefab.name} successfully saved in {AssetDatabase.GetAssetPath( prefab )}." );
 
       return prefab;
     }
