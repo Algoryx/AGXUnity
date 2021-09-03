@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using System.Globalization;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -211,7 +211,7 @@ namespace AGXUnity.IO.URDF
           var lineNumber = 0;
           while ( ++lineNumber <= maxNumLines && (line = stream.ReadLine()) != null ) {
             if ( assetElement == null && line.TrimStart().StartsWith( "<asset>" ) ) {
-              assetElement = new System.Collections.Generic.List<string>();
+              assetElement = new List<string>();
               assetElement.Add( line );
             }
             else if ( assetElement != null && line.TrimStart().StartsWith( "</asset>" ) ) {
@@ -228,6 +228,53 @@ namespace AGXUnity.IO.URDF
       }
 
       return assetElement?.ToArray();
+    }
+
+    public static T GetElement<T>( GameObject gameObject )
+      where T : ScriptableObject
+    {
+      if ( gameObject == null )
+        return null;
+      var components = gameObject.GetComponents<ElementComponent>();
+      foreach ( var component in components )
+        if ( component.Element is T element )
+          return element;
+      return null;
+    }
+
+    public static T GetElementInChildren<T>( GameObject gameObject )
+      where T : ScriptableObject
+    {
+      if ( gameObject == null )
+        return null;
+      var components = gameObject.GetComponentsInChildren<ElementComponent>();
+      foreach ( var component in components )
+        if ( component.Element is T element )
+          return element;
+      return null;
+    }
+
+    public static T[] GetElementsInChildren<T>( GameObject gameObject )
+      where T : ScriptableObject
+    {
+      if ( gameObject == null )
+        return new T[] { };
+
+      var components = gameObject.GetComponentsInChildren<ElementComponent>();
+      return ( from component in components
+               where component.Element is T
+               select component.Element as T ).ToArray();
+    }
+
+    public static GameObject FindGameObjectWithElement( GameObject rootGameObject, Element element )
+    {
+      if ( rootGameObject == null )
+        return null;
+      var components = rootGameObject.GetComponentsInChildren<ElementComponent>();
+      foreach ( var component in components )
+        if ( component.Element == element )
+          return component.gameObject;
+      return null;
     }
   }
 }
