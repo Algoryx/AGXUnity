@@ -380,14 +380,22 @@ namespace AGXUnityEditor
           PropertySynchronizer.Synchronize( obj );
       }
 
-      // Synchronizing all shape sizes with visuals - it's not possible
-      // to determine affected shapes from tools targets or selection
-      // since it may have changed when undo is performed.
-      var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
-      foreach ( var shape in shapes ) {
+      // Shapes or bodies doesn't have to be selected when having their
+      // size updated, due to the recursive editors. We know that one of
+      // their parent is though (since selection is included in undo/redo),
+      // so find shapes in children of the selection and access bodies
+      // from there as well.
+      var shapesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                                 SelectionMode.Editable )
+                                       .SelectMany( go => go.GetComponentsInChildren<AGXUnity.Collide.Shape>() );
+      foreach ( var shape in shapesInSelection ) {
         var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
-        if ( visual )
+        if ( visual != null )
           visual.OnSizeUpdated();
+
+        var rb = shape.RigidBody;
+        if ( rb != null )
+          rb.UpdateMassProperties();
       }
 
       foreach ( var customTargetTool in ToolManager.ActiveTools )
