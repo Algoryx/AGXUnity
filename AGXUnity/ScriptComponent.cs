@@ -94,6 +94,8 @@ namespace AGXUnity
           IsSynchronizingProperties = true;
           Utils.PropertySynchronizer.Synchronize( this );
           IsSynchronizingProperties = false;
+
+          m_uuidHash = Simulation.Instance.ContactCallbacks.Map( this );
         }
       }
 
@@ -132,11 +134,17 @@ namespace AGXUnity
 
     protected virtual void OnDestroy()
     {
+      if ( Simulation.HasInstance )
+        Simulation.Instance.ContactCallbacks.Unmap( m_uuidHash );
+
       NativeHandler.Instance.Unregister( this );
 
       State = States.DESTROYED;
     }
 
     protected virtual void OnApplicationQuit() { }
+
+    [NonSerialized]
+    private uint m_uuidHash = 0u;
   }
 }
