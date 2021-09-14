@@ -1250,24 +1250,80 @@ namespace AGXUnityEditor
     /// <typeparam name="T">Expected dropped object type.</typeparam>
     /// <param name="dropArea">Drop rect.</param>
     /// <param name="current">Current event.</param>
+    /// <param name="validator">Validate if the drop event is valid for the given object in current context.</param>
     /// <param name="onDrop">Callback when an object has been dropped.</param>
-    public static void HandleDragDrop<T>( Rect dropArea, Event current, Action<T> onDrop )
+    public static void HandleDragDrop<T>( Rect dropArea,
+                                          Event current,
+                                          Predicate<T> validator,
+                                          Action<T> onDrop )
       where T : Object
     {
-      bool isDragDropEventInDropArea = ( current.type == EventType.DragPerform || current.type == EventType.DragUpdated ) && dropArea.Contains( current.mousePosition );
+      bool isDragDropEventInDropArea = current != null &&
+                                       ( current.type == EventType.DragPerform ||
+                                         current.type == EventType.DragUpdated ) &&
+                                       dropArea.Contains( current.mousePosition ) &&
+                                       DragAndDrop.objectReferences.Length == 1;
       if ( !isDragDropEventInDropArea )
         return;
 
-      bool validObject = DragAndDrop.objectReferences.Length == 1 && DragAndDrop.objectReferences[ 0 ] is T;
-      DragAndDrop.visualMode = validObject ?
+      var objectDragged = DragAndDrop.objectReferences[ 0 ] as T;
+      if ( objectDragged == null )
+        return;
+
+      DragAndDrop.visualMode = validator( objectDragged ) ?
                                   DragAndDropVisualMode.Copy :
                                   DragAndDropVisualMode.Rejected;
-
-      if ( Event.current.type == EventType.DragPerform && validObject ) {
+      if ( DragAndDrop.visualMode == DragAndDropVisualMode.Copy &&
+           Event.current.type == EventType.DragPerform ) {
         DragAndDrop.AcceptDrag();
 
         onDrop( DragAndDrop.objectReferences[ 0 ] as T );
       }
+
+      current.Use();
+    }
+
+    /// <summary>
+    /// Handles drag and drop over Scene View.
+    /// </summary>
+    /// <typeparam name="T">Type dragged.</typeparam>
+    /// <param name="current">Current event.</param>
+    /// <param name="mouseOverObjectValidator">Predicate if the mouse-over object in scene view supports <typeparamref name="T"/>.</param>
+    /// <param name="onDrop">Callback when an object has been dropped.</param>
+    public static void HandleSceneViewDragDrop<T>( Event current,
+                                                   Predicate<GameObject> mouseOverObjectValidator,
+                                                   Action<GameObject, T> onDrop )
+      where T : Object
+    {
+      var isDragDropEvent = current != null &&
+                            mouseOverObjectValidator != null &&
+                            onDrop != null &&
+                            ( current.type == EventType.DragPerform ||
+                              current.type == EventType.DragUpdated ) &&
+                            Manager.IsMouseOverWindow( SceneView.currentDrawingSceneView ) &&
+                            DragAndDrop.objectReferences.Length == 1;
+      if ( !isDragDropEvent )
+        return;
+
+      var objectDragged = DragAndDrop.objectReferences[ 0 ] as T;
+      if ( objectDragged == null )
+        return;
+
+      Manager.UpdateMouseOverPrimitives( current, true );
+
+      var isValidMouseOverGameObject = Manager.MouseOverObject != null &&
+                                       mouseOverObjectValidator( Manager.MouseOverObject );
+      DragAndDrop.visualMode = isValidMouseOverGameObject ?
+                                 DragAndDropVisualMode.Copy :
+                                 DragAndDropVisualMode.Rejected;
+      if ( DragAndDrop.visualMode == DragAndDropVisualMode.Copy &&
+           current.type == EventType.DragPerform ) {
+        DragAndDrop.AcceptDrag();
+
+        onDrop( Manager.MouseOverObject, objectDragged );
+      }
+
+      current.Use();
     }
 
     public static void HandleFrame( IFrame frame,
