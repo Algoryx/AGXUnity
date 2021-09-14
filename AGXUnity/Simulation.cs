@@ -589,6 +589,33 @@ namespace AGXUnity
 
     private StatisticsWindowData m_statisticsWindowData = null;
 
+    private static void StatisticsLabel( string name,
+                                         agx.TimingInfo time,
+                                         Color color,
+                                         GUIStyle style,
+                                         bool isHeader = false )
+    {
+      var labelStr = Utils.GUI.AddColorTag( name, color ) + time.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms";
+      GUILayout.Label( Utils.GUI.MakeLabel( labelStr, isHeader ? 14 : 12, isHeader ), style );
+    }
+
+    private static void StatisticsLabel( string name,
+                                         string data,
+                                         Color color,
+                                         GUIStyle style,
+                                         bool isHeader = false )
+    {
+      GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( name, color ) + data ), style );
+    }
+
+    private static void StatisticsLabel( string name,
+                                         Color color,
+                                         GUIStyle style,
+                                         bool isHeader = false )
+    {
+      GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( name, color ), isHeader ? 14 : 12, isHeader ), style );
+    }
+
     protected void OnGUI()
     {
       if ( m_simulation == null )
@@ -640,6 +667,7 @@ namespace AGXUnity
       var preTime            = stats.getTimingInfo( "Simulation", "Pre-step event time" );
       var postTime           = stats.getTimingInfo( "Simulation", "Post-step event time" );
       var lastTime           = stats.getTimingInfo( "Simulation", "Last-step event time" );
+      var contactEventsTime  = stats.getTimingInfo( "Simulation", "Triggering contact events" );
 
       var numBodies      = m_system.getRigidBodies().Count;
       var numShapes      = m_space.getGeometries().Count;
@@ -653,30 +681,49 @@ namespace AGXUnity
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Total time:            ", simColor ) + simTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms", 14, true ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre-collide step:      ", eventColor ) + preCollideTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Collision detection:   ", spaceColor ) + spaceTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre step:              ", eventColor ) + preTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Dynamics solvers:      ", dynamicsColor ) + dynamicsSystemTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Post step:             ", eventColor ) + postTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Last step:             ", eventColor ) + lastTime.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Data:                  ", dataColor ), 14, true ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Update frequency:      ", dataColor ) + (int)( 1.0f / TimeStep + 0.5f ) + " Hz" ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of bodies:      ", dataColor ) + numBodies ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of shapes:      ", dataColor ) + numShapes ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of constraints: ", dataColor ) + numConstraints ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Number of particles:   ", dataColor ) + numParticles ), labelStyle );
+                          StatisticsLabel( "Total time:            ", simTime, simColor, labelStyle, true );
+                          StatisticsLabel( "  - Pre-collide step:      ", preCollideTime, eventColor, labelStyle );
+                          StatisticsLabel( "  - Collision detection:   ", spaceTime, spaceColor, labelStyle );
+                          StatisticsLabel( "  - Contact event:         ", contactEventsTime, eventColor, labelStyle );
+                          StatisticsLabel( "  - Pre step:              ", preTime, eventColor, labelStyle );
+                          StatisticsLabel( "  - Dynamics solvers:      ", dynamicsSystemTime, dynamicsColor, labelStyle );
+                          StatisticsLabel( "  - Post step:             ", postTime, eventColor, labelStyle );
+                          StatisticsLabel( "  - Last step:             ", lastTime, eventColor, labelStyle );
+                          StatisticsLabel( "Data:                  ", dataColor, labelStyle, true );
+                          StatisticsLabel( "  - Update frequency:      ", (int)( 1.0f / TimeStep + 0.5f ) + " Hz", dataColor, labelStyle );
+                          StatisticsLabel( "  - Number of bodies:      ", numBodies.ToString(), dataColor, labelStyle );
+                          StatisticsLabel( "  - Number of shapes:      ", numShapes.ToString(), dataColor, labelStyle );
+                          StatisticsLabel( "  - Number of constraints: ", numConstraints.ToString(), dataColor, labelStyle );
+                          StatisticsLabel( "  - Number of particles:   ", numParticles.ToString(), dataColor, labelStyle );
                           GUILayout.Space( 12 );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "StepForward (managed):", memoryColor ), 14, true ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms" ), labelStyle );
+                          StatisticsLabel( "StepForward (managed):", memoryColor, labelStyle, true );
+                          StatisticsLabel( "  - Step forward:          ",
+                                           m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms",
+                                           memoryColor,
+                                           labelStyle );
                           if ( !DisplayMemoryAllocations )
                             return;
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "Allocations (managed):", memoryColor ), 14, true ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre step callbacks:    ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreStepForward ).PadLeft( 6, ' ' ) ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Pre synchronize:       ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreSynchronizeTransforms ).PadLeft( 6, ' ' ) ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Step forward:          ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.StepForward ).PadLeft( 6, ' ' ) ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Post synchronize:      ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PostSynchronizeTransforms ).PadLeft( 6, ' ' ) ), labelStyle );
-                          GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( "  - Post step callbacks:   ", memoryColor ) + MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PostStepForward ).PadLeft( 6, ' ' ) ), labelStyle );
+                          StatisticsLabel( "Allocations (managed):", memoryColor, labelStyle, true );
+                          StatisticsLabel( "  - Pre step callbacks:    ",
+                                           MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreStepForward ).PadLeft( 6, ' ' ),
+                                           memoryColor,
+                                           labelStyle );
+                          StatisticsLabel( "  - Pre synchronize:       ",
+                                           MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PreSynchronizeTransforms ).PadLeft( 6, ' ' ),
+                                           memoryColor,
+                                           labelStyle );
+                          StatisticsLabel( "  - Step forward:          ",
+                                           MemoryAllocations.GetDeltaString( MemoryAllocations.Section.StepForward ).PadLeft( 6, ' ' ),
+                                           memoryColor,
+                                           labelStyle );
+                          StatisticsLabel( "  - Post synchronize:      ",
+                                           MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PostSynchronizeTransforms ).PadLeft( 6, ' ' ),
+                                           memoryColor,
+                                           labelStyle );
+                          StatisticsLabel( "  - Post step callbacks:   ",
+                                           MemoryAllocations.GetDeltaString( MemoryAllocations.Section.PostStepForward ).PadLeft( 6, ' ' ),
+                                           memoryColor,
+                                           labelStyle );
                         },
                         "AGX Dynamics statistics",
                         m_statisticsWindowData.WindowStyle );
