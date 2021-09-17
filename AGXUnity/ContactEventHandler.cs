@@ -1,22 +1,81 @@
-using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
-
 namespace AGXUnity
 {
+  /// <summary>
+  /// Contact event handler of a simulation, enabling view and/or modification
+  /// of contact data in the given simulation. It's also possible to view the
+  /// forces applied by contacts given that the contact has been solved.
+  /// 
+  /// The callbacks are invoked within the stepping of the simulation for effective
+  /// filtering of all the contacts in the simulation given the components registered
+  /// for callbacks. This means that some data of the interacting components aren't
+  /// synchronized yet. A simplified view into the simulation events:
+  ///     1. preCollide events.
+  ///     2. Collision detection.
+  ///     3. Native contact events.
+  ///     4. pre events.
+  ///     5. Solve.
+  ///     6. post events.
+  /// The contacts are collected (on the native side) in (3) and the "OnContact" callbacks
+  /// are invoked in (4). "OnForce" callbacks are invoked in (6). In "OnContact" it's
+  /// possible to view and manipulate the given contact data while any modification is
+  /// ignored in "OnForce" because the changes wont have any effect.
+  /// </summary>
   public class ContactEventHandler
   {
+    /// <summary>
+    /// Signature of the contact callback.
+    /// </summary>
+    /// <param name="contactData">Matched contact data.</param>
+    /// <returns>
+    /// True if the given contactData has modifications and should be synchronized
+    /// back to the native contact point. False if no modifications has been made.
+    /// </returns>
     public delegate bool OnContactDelegate( ref ContactData contactData );
 
-    public agxSDK.Simulation NativeSimulation { get; private set; } = null;
+    /// <summary>
+    /// Finds callback name assuming it's one listener per delegate.
+    /// </summary>
+    /// <param name="callback">Callback.</param>
+    /// <returns>namespace(s).ClassName.MethodName</returns>
+    public static string FindCallbackName( OnContactDelegate callback )
+    {
+      if ( callback == null || callback.GetInvocationList().Length == 0 )
+        return "null";
 
+      return callback.GetInvocationList()[ 0 ].Target.GetType().FullName +
+             "." + callback.GetInvocationList()[ 0 ].Method.Name;
+    }
+
+    /// <summary>
+    /// Geometry contact handler, collecting contact data given registered listeners.
+    /// </summary>
     public GeometryContactHandler GeometryContactHandler { get; private set; } = new GeometryContactHandler();
 
+    /// <summary>
+    /// Register a contact callback, invoked before the contact has been solved,
+    /// given zero or more components. If zero components are given, all contacts
+    /// in the simulation will be filtered to the callback. If one component is
+    /// given, any object interacting with that component will be filtered to the
+    /// callback. If two or more components are given, any interaction between the
+    /// given components are filtered to the callback.
+    /// </summary>
+    /// <param name="onContact">
+    /// Callback that takes the contact data and returns true if modifications to
+    /// the contact point data has been made. All contact point data is synchronized
+    /// with its corresponding native instance which may affect performance if many
+    /// contacts has modifications. This callback should normally return false.
+    /// </param>
+    /// <param name="components">
+    /// Components (zero or more) defining which contacts that should be passed to
+    /// the given callback. The contact filtering is made given number of components
+    /// passed as:
+    ///     0: All contacts in the simulation will be passed to the callback.
+    ///     1: All contacts interacting with the given component will be passed to the callback.
+    ///  >= 2: All contacts between the given components will be passed to the callback.
+    /// </param>
     public void OnContact( OnContactDelegate onContact,
                            params ScriptComponent[] components )
     {
@@ -26,6 +85,30 @@ namespace AGXUnity
            agxSDK.ContactEventListener.ActivationMask.CONTACT );
     }
 
+    /// <summary>
+    /// Register a contact callback, invoked before AND after the contact has been solved,
+    /// given zero or more components. If zero components are given, all contacts
+    /// in the simulation will be filtered to the callback. If one component is
+    /// given, any object interacting with that component will be filtered to the
+    /// callback. If two or more components are given, any contacts between the
+    /// given components are filtered to the callback.
+    /// </summary>
+    /// <param name="onContactAndForce">
+    /// Callback that takes the contact data and returns true if modifications to
+    /// the contact point data has been made. All contact point data is synchronized
+    /// with its corresponding native instance which may affect performance if many
+    /// contacts has modifications. This callback should normally return false.
+    /// contactData.HasContactPointForceData is true the second time the callback
+    /// is invoked during the step/frame.
+    /// </param>
+    /// <param name="components">
+    /// Components (zero or more) defining which contacts that should be passed to
+    /// the given callback. The contact filtering is made given number of components
+    /// passed as:
+    ///     0: All contacts in the simulation will be passed to the callback.
+    ///     1: All contacts interacting with the given component will be passed to the callback.
+    ///  >= 2: All contacts between the given components will be passed to the callback.
+    /// </param>
     public void OnContactAndForce( OnContactDelegate onContactAndForce,
                                    params ScriptComponent[] components )
     {
@@ -36,6 +119,27 @@ namespace AGXUnity
            agxSDK.ContactEventListener.ActivationMask.POST );
     }
 
+    /// <summary>
+    /// Register a contact force callback, invoked after the contact has been solved,
+    /// given zero or more components. If zero components are given, all contacts
+    /// in the simulation will be filtered to the callback. If one component is
+    /// given, any object interacting with that component will be filtered to the
+    /// callback. If two or more components are given, any contacts between the
+    /// given components are filtered to the callback.
+    /// </summary>
+    /// <param name="onForce">
+    /// Callback that takes the contact data containing the forces applied during
+    /// the solve. The return value from the callback is ignored since the contact
+    /// already has been solved.
+    /// </param>
+    /// <param name="components">
+    /// Components (zero or more) defining which contacts that should be passed to
+    /// the given callback. The contact filtering is made given number of components
+    /// passed as:
+    ///     0: All contacts in the simulation will be passed to the callback.
+    ///     1: All contacts interacting with the given component will be passed to the callback.
+    ///  >= 2: All contacts between the given components will be passed to the callback.
+    /// </param>
     public void OnForce( OnContactDelegate onForce,
                          params ScriptComponent[] components )
     {
@@ -44,16 +148,85 @@ namespace AGXUnity
            agxSDK.ContactEventListener.ActivationMask.POST );
     }
 
-    public void Remove( OnContactDelegate onContact )
+    /// <summary>
+    /// Adds contact listener if valid.
+    /// </summary>
+    /// <param name="listener"></param>
+    /// <returns>True if added, otherwise false.</returns>
+    public bool Add( ContactListener listener )
     {
-      if ( m_isPerformingCallbacks ) {
-        m_listeners.FindAll( l => l.Callback == onContact ).ForEach( l => l.IsRemoved = true );
-        m_callbacksToRemove.Add( onContact );
+      if ( listener == null )
+        return false;
+
+      if ( listener.Callback == null ) {
+        Debug.LogWarning( $"AGXUnity.ContactEventHandler: Invalid contact listener with null callback." );
+        return false;
       }
-      else
-        m_listeners.RemoveAll( l => l.Callback == onContact && l.OnDestroy( NativeSimulation ) );
+
+      if ( !m_listeners.Contains( listener ) )
+        m_listeners.Add( listener );
+
+      return true;
     }
 
+    /// <summary>
+    /// Removes all occurrences of the given callback, i.e., the given callback
+    /// will not receive any more calls.
+    /// </summary>
+    /// <param name="callback">Callback to remove.</param>
+    public void Remove( OnContactDelegate callback )
+    {
+      Remove( listener => listener.Callback == callback );
+    }
+
+    /// <summary>
+    /// Stop listening to contacts for <paramref name="component"/> in
+    /// <paramref name="callbackId"/>.
+    /// </summary>
+    /// <param name="callbackId">Contact callback identifier.</param>
+    /// <param name="component">Component to remove from contact listener <paramref name="callbackId"/>.</param>
+    public void Remove( OnContactDelegate callbackId, ScriptComponent component )
+    {
+      var uuid = GetUuid( component );
+      if ( uuid == 0u ) {
+        Debug.LogWarning( $"AGXUnity.ContactEventHandler: Failed to remove component {component} from " +
+                          $"{FindCallbackName( callbackId )}, native UUID isn't found." );
+        return;
+      }
+
+      Remove( listener => listener.Callback == callbackId && listener.Remove( uuid, component ) );
+    }
+
+    /// <summary>
+    /// Remove contact listener(s) given predicate. All matching listeners
+    /// will be removed.
+    /// </summary>
+    /// <param name="predicate">Predicate to match contact listener(s) to remove.</param>
+    public void Remove( System.Predicate<ContactListener> predicate )
+    {
+      if ( m_isPerformingCallbacks ) {
+        var listenersToRemove = m_listeners.FindAll( listener => predicate( listener ) );
+        listenersToRemove.ForEach( listener => listener.IsRemoved = true );
+        m_listenersToRemove.AddRange( listenersToRemove );
+      }
+      else
+        m_listeners.RemoveAll( listener => predicate( listener ) && listener.OnDestroy( this ) );
+    }
+
+    /// <summary>
+    /// Removes the contact listener(s).
+    /// </summary>
+    /// <param name="listeners">Listener(s) to remove.</param>
+    public void Remove( params ContactListener[] listeners )
+    {
+      Remove( listener => System.Array.IndexOf( listeners, listener ) >= 0 );
+    }
+
+    /// <summary>
+    /// Tries to find component corresponding to the given geometry.
+    /// </summary>
+    /// <param name="geometry">Native geometry to find component for.</param>
+    /// <returns>Component if found, otherwise null.</returns>
     public ScriptComponent GetComponent( agxCollide.Geometry geometry )
     {
       if ( geometry == null )
@@ -62,6 +235,11 @@ namespace AGXUnity
       return GetComponent( agxSDK.UuidHashCollisionFilter.findCorrespondingUuid( geometry ) );
     }
 
+    /// <summary>
+    /// Checks if a component has be registered with the given native UUID.
+    /// </summary>
+    /// <param name="uuid">Native UUID.</param>
+    /// <returns>Component if registered, otherwise null.</returns>
     public ScriptComponent GetComponent( uint uuid )
     {
       if ( uuid == 0u )
@@ -71,28 +249,30 @@ namespace AGXUnity
       return component;
     }
 
+    /// <summary>
+    /// Finds UUID given component, if registered.
+    /// </summary>
+    /// <param name="component">Component to find UUID for.</param>
+    /// <returns>UUID if registered, otherwise 0.</returns>
     public uint GetUuid( ScriptComponent component )
     {
+      if ( component == null )
+        return 0u;
+
       uint uuid = 0u;
       m_componentUuidTable.TryGetValue( component, out uuid );
       return uuid;
     }
 
-    // TODO: Remove
-    private static agx.Timer s_timer = null;
-    private static uint s_numCalls = 0u;
-
+    /// <summary>
+    /// Maps component and UUID of the given component native instance, if found.
+    /// </summary>
+    /// <param name="component">Component to map.</param>
+    /// <returns>Native UUID if found, otherwise 0.</returns>
     public uint Map( ScriptComponent component )
     {
       if ( component == null )
         return 0u;
-
-      ++s_numCalls;
-
-      if ( s_timer == null )
-        s_timer = new agx.Timer( true );
-      else
-        s_timer.start();
 
       object nativeInstance = null;
       if ( component is Collide.Shape shape )
@@ -100,68 +280,80 @@ namespace AGXUnity
       else
         nativeInstance = component.GetType().GetProperty( "Native" )?.GetValue( component );
 
-      if ( nativeInstance == null ) {
-        s_timer.stop();
+      if ( nativeInstance == null )
         return 0u;
-      }
 
       var hash = agxSDK.UuidHashCollisionFilter.findUuid( nativeInstance as agx.Referenced );
-      if ( hash == 0u ) {
-        s_timer.stop();
+      if ( hash == 0u )
         return 0u;
-      }
 
       m_uuidComponentTable[ hash ] = component;
       m_componentUuidTable[ component ] = hash;
 
-      s_timer.stop();
-
       return hash;
     }
 
-    public void Print()
+    /// <summary>
+    /// Removes the mapping between the given component and its native UUID.
+    /// </summary>
+    /// <param name="uuid">Native UUID.</param>
+    public void Unmap( uint uuid )
     {
-      Debug.Log( $"Initialization took: {s_timer.getTime().ToString("0.00")} ms, components " +
-                 $"in table: {m_uuidComponentTable.Count}, called: {s_numCalls} -> {s_timer.getTime() / s_numCalls} ms per call." );
-    }
-
-    public void Unmap( uint uuidHash )
-    {
-      if ( uuidHash == 0u )
+      if ( uuid == 0u )
         return;
 
-      if ( m_uuidComponentTable.TryGetValue( uuidHash, out var component ) ) {
-        // TODO: The ScriptComponent is still accessible given this method
-        //       is called from OnDestroy. Remove the component from any
-        //       listener as well.
+      if ( m_uuidComponentTable.TryGetValue( uuid, out var component ) ) {
+        // Trying to capture when the user hits stop in the editor.
+        // isPlayingOrWillChangePlaymode == false by then.
+        var isRuntimeDestroy =
+#if UNITY_EDITOR
+          UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode;
+#else
+          Application.isPlaying;
+#endif
+        if ( isRuntimeDestroy )
+          m_listeners.RemoveAll( listener => listener.Remove( uuid, component ) );
 
         m_componentUuidTable.Remove( component );
-        m_uuidComponentTable.Remove( uuidHash );
+        m_uuidComponentTable.Remove( uuid );
       }
     }
 
-    public void OnInitialize( agxSDK.Simulation simulation )
+    /// <summary>
+    /// Called from the Simulation when its native instance has been created.
+    /// </summary>
+    /// <param name="simulation">Simulation this contact handler belongs to.</param>
+    public void OnInitialize( Simulation simulation )
     {
-      NativeSimulation = simulation;
-      Simulation.Instance.StepCallbacks.PreStepForward += OnPreStepForward;
-      Simulation.Instance.StepCallbacks._Internal_PrePre += OnPreStep;
-      Simulation.Instance.StepCallbacks._Internal_PrePost += OnPostStep;
+      GeometryContactHandler.OnInitialize( simulation.Native );
+
+      simulation.StepCallbacks.PreStepForward += OnPreStepForward;
+      simulation.StepCallbacks._Internal_PrePre += OnPreStep;
+      simulation.StepCallbacks._Internal_PrePost += OnPostStep;
     }
 
-    public void OnDestroy( agxSDK.Simulation simulation )
+    /// <summary>
+    /// Called form the simulation when its native instance is about to be deleted.
+    /// </summary>
+    /// <param name="simulation"></param>
+    public void OnDestroy( Simulation simulation )
     {
       foreach ( var listener in m_listeners )
-        listener.OnDestroy( simulation );
+        listener.OnDestroy( this );
       m_listeners.Clear();
 
-      NativeSimulation = null;
+      simulation.StepCallbacks.PreStepForward -= OnPreStepForward;
+      simulation.StepCallbacks._Internal_PrePre -= OnPreStep;
+      simulation.StepCallbacks._Internal_PrePost -= OnPostStep;
+
+      GeometryContactHandler.OnDestroy( simulation.Native );
     }
 
     private void Add( OnContactDelegate callback,
                       ScriptComponent[] components,
                       agxSDK.ContactEventListener.ActivationMask activationMask )
     {
-      m_listeners.Add( new ContactListener( callback, components, activationMask ) );
+      Add( new ContactListener( callback, components, activationMask ) );
     }
 
     private void OnBeginPerformingCallbacks()
@@ -173,8 +365,8 @@ namespace AGXUnity
     {
       m_isPerformingCallbacks = false;
 
-      foreach ( var callbackToRemove in m_callbacksToRemove )
-        Remove( callbackToRemove );
+      Remove( listener => m_listenersToRemove.Contains( listener ) );
+      m_listenersToRemove.Clear();
     }
 
     private void OnPreStepForward()
@@ -195,153 +387,52 @@ namespace AGXUnity
 
     private void GenerateDataAndExecuteCallbacks( bool hasForce )
     {
-      if ( NativeSimulation == null )
+      GeometryContactHandler.GenerateContactData( GetComponent, hasForce );
+      if ( GeometryContactHandler.ContactData.Count == 0 )
         return;
 
-      TimerBlock timer = null; // new TimerBlock( $"Copy {GeometryContactHandler.GeometryContacts.Count} contacts, {numPoints} points" );
-
       OnBeginPerformingCallbacks();
-      using ( GeometryContactHandler.GenerateContactData( GetComponent, hasForce ) ) {
-        foreach ( var listener in m_listeners ) {
-          if ( listener.NumGeometryContacts == 0 || listener.IsRemoved )
+      var isOnContact = !hasForce;
+      foreach ( var listener in m_listeners ) {
+        var isListening = ( isOnContact && listener.OnContactEnabled ) ||
+                          ( hasForce && listener.OnForceEnabled );
+        if ( listener.IsRemoved || !isListening )
+          continue;
+
+        var contactIndices = GeometryContactHandler.GetContactIndices( listener.Filter );
+        for ( int i = 0; i < contactIndices.Count; ++i ) {
+          uint contactIndex = contactIndices[ i ];
+          if ( listener.IsRemoved )
+            break;
+
+          ref var contactData = ref GeometryContactHandler.ContactData[ (int)contactIndex ];
+          var hasModifications = listener.Callback( ref contactData );
+
+          // Ignoring synchronization of any modifications when we are
+          // in post, when the changes won't have any effect.
+          if ( hasForce || !hasModifications )
             continue;
 
-          foreach ( var contactIndex in listener.Native.ContactIndices ) {
-            if ( listener.IsRemoved )
-              break;
-
-            ref var contactData = ref GeometryContactHandler.ContactData[ contactIndex ];
-            var hasModifications = listener.Callback( ref contactData );
-            // Ignoring synchronization of any modifications when we are
-            // in post, when the changes won't have any effect.
-            if ( hasForce || !hasModifications )
-              continue;
-
-            var gcPoints = GeometryContactHandler.GeometryContacts[ contactIndex ].points();
-            for ( int pointIndex = 0; pointIndex < contactData.Points.Count; ++pointIndex ) {
-              var gcPoint = gcPoints.at( (uint)pointIndex );
-              contactData.Points[ pointIndex ].To( gcPoint );
-              gcPoint.ReturnToPool();
-            }
-            gcPoints.ReturnToPool();
+          var gc = GeometryContactHandler.Native.getGeometryContact( contactIndex );
+          var gcPoints = gc.points();
+          for ( int pointIndex = 0; pointIndex < contactData.Points.Count; ++pointIndex ) {
+            var gcPoint = gcPoints.at( (uint)pointIndex );
+            contactData.Points[ pointIndex ].Synchronize( gcPoint );
+            gcPoint.ReturnToPool();
           }
-          listener.Native.Reset();
+          gcPoints.ReturnToPool();
+          gc.ReturnToPool();
         }
       }
       OnEndPerformingCallbacks();
-
-      timer?.Dispose();
-    }
-
-    private class ContactListener
-    {
-      public ScriptComponent[] Components { get; private set; } = null;
-
-      public OnContactDelegate Callback { get; private set; } = null;
-
-      public NativeUuidContactEvent Native { get; private set; } = null;
-
-      public int NumGeometryContacts { get { return Native != null ? Native.ContactIndices.Count : 0; } }
-
-      public bool IsRemoved { get; set; } = false;
-
-      public ContactListener( OnContactDelegate callback,
-                              ScriptComponent[] components,
-                              agxSDK.ContactEventListener.ActivationMask activationMask )
-      {
-        Callback = callback;
-        Components = components;
-        m_activationMask = activationMask;
-      }
-
-      public void Initialize( ContactEventHandler handler )
-      {
-        if ( Native != null )
-          return;
-
-        Native = new NativeUuidContactEvent( handler.GeometryContactHandler, m_activationMask );
-        Native.Filter.setMode( Components.Length == 0 ?
-                                 agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL :
-                               Components.Length == 1 ?
-                                 agxSDK.UuidHashCollisionFilter.Mode.MATCH_OR :
-                                 agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND );
-        handler.NativeSimulation.add( Native );
-
-        foreach ( var component in Components ) {
-          var uuid = handler.GetUuid( component );
-          if ( uuid == 0u ) {
-            Debug.LogWarning( $"AGXUnity.ContactEventHandler: Unknown unique simulation id for component of type {component.GetType().FullName} - " +
-                              $"it's not possible match contacts without identifier, ignoring component.",
-                              component );
-            continue;
-          }
-
-          Native.Filter.add( uuid );
-        }
-      }
-
-      public bool OnDestroy( agxSDK.Simulation simulation )
-      {
-        if ( Native == null )
-          return true;
-
-        simulation.remove( Native );
-        Native.Dispose();
-        Native.Filter.Dispose();
-        Native = null;
-
-        return true;
-      }
-
-      private agxSDK.ContactEventListener.ActivationMask m_activationMask;
     }
 
     private List<ContactListener> m_listeners = new List<ContactListener>();
-    private List<OnContactDelegate> m_callbacksToRemove = new List<OnContactDelegate>();
+    private List<ContactListener> m_listenersToRemove = new List<ContactListener>();
 
     private bool m_isPerformingCallbacks = false;
 
     private Dictionary<uint, ScriptComponent> m_uuidComponentTable = new Dictionary<uint, ScriptComponent>();
     private Dictionary<ScriptComponent, uint> m_componentUuidTable = new Dictionary<ScriptComponent, uint>();
-  }
-
-  public class NativeUuidContactEvent : agxSDK.ContactEventListener
-  {
-    public agxSDK.UuidHashCollisionFilter Filter { get; private set; }
-
-    public List<int> ContactIndices { get; private set; } = new List<int>();
-
-    public NativeUuidContactEvent( GeometryContactHandler geometryContactHandler,
-                                   ActivationMask activationMask )
-      : base( (int)activationMask )
-    {
-      Filter = new agxSDK.UuidHashCollisionFilter();
-      setFilter( Filter );
-      m_geometryContactHandler = geometryContactHandler;
-    }
-
-    public void Reset()
-    {
-      ContactIndices.Clear();
-    }
-
-    public override KeepContactPolicy impact( double time, agxCollide.GeometryContact geometryContact )
-    {
-      ContactIndices.Add( m_geometryContactHandler.GetIndex( geometryContact ) );
-      return KeepContactPolicy.KEEP_CONTACT;
-    }
-
-    public override KeepContactPolicy contact( double time, agxCollide.GeometryContact geometryContact )
-    {
-      ContactIndices.Add( m_geometryContactHandler.GetIndex( geometryContact ) );
-      return KeepContactPolicy.KEEP_CONTACT;
-    }
-
-    public override void post( double time, agxCollide.GeometryContact geometryContact )
-    {
-      ContactIndices.Add( m_geometryContactHandler.GetIndex( geometryContact ) );
-    }
-
-    private GeometryContactHandler m_geometryContactHandler = null;
   }
 }

@@ -247,10 +247,13 @@ namespace AGXUnity
     public agxSDK.Simulation Native { get { return GetOrCreateSimulation(); } }
 
     /// <summary>
-    /// Step callback interface. Valid use from "initialize" to "Destroy".
+    /// Step callback interface for this simulation. Valid use from "initialize" to "Destroy".
     /// </summary>
     public StepCallbackFunctions StepCallbacks { get; } = new StepCallbackFunctions();
 
+    /// <summary>
+    /// Contact callbacks interface for this simulation.
+    /// </summary>
     public ContactEventHandler ContactCallbacks { get; } = new ContactEventHandler();
 
     /// <summary>
@@ -316,7 +319,7 @@ namespace AGXUnity
       base.OnDestroy();
       if ( m_simulation != null ) {
         StepCallbacks.OnDestroy( m_simulation );
-        ContactCallbacks.OnDestroy( m_simulation );
+        ContactCallbacks.OnDestroy( this );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
         m_simulation.cleanup();
@@ -356,7 +359,7 @@ namespace AGXUnity
           agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
 
         StepCallbacks.OnInitialize( m_simulation );
-        ContactCallbacks.OnInitialize( m_simulation );
+        ContactCallbacks.OnInitialize( this );
       }
 
       return m_simulation;
@@ -407,10 +410,6 @@ namespace AGXUnity
     {
       if ( !NativeHandler.Instance.HasValidLicense || m_simulation == null )
         return;
-
-      // TODO: Remove
-      if ( m_simulation.getTimeStamp() == 0.0 )
-        ContactCallbacks.Print();
 
       PreStepForward();
       InvokeStepForward();

@@ -1,136 +1,232 @@
-using System;
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using AGXUnity.Utils;
 
 namespace AGXUnity
 {
-  public struct RefArraySegment<T>
-    where T : struct
+  /// <summary>
+  /// Applied force from a solved contact point.
+  /// </summary>
+  public struct ContactPointForceData
   {
-    public T[] Array { get; private set; }
+    /// <summary>
+    /// Normal force given in world coordinate frame.
+    /// </summary>
+    public Vector3 Normal;
 
-    public int Offset { get; private set; }
+    /// <summary>
+    /// Tangential (friction) force in the primary direction, given in world coordinate frame.
+    /// </summary>
+    public Vector3 PrimaryTangential;
 
-    public int Count { get; private set; }
+    /// <summary>
+    /// Tangential (friction) force in the secondary direction, given in world coordinate frame.
+    /// </summary>
+    public Vector3 SecondaryTangential;
 
-    public ref T this[ int index ]
+    /// <summary>
+    /// True if this contact point has been solved as an impacting point.
+    /// </summary>
+    public bool IsImpacting;
+
+    /// <summary>
+    /// Total tangential (friction) force, i.e., primary + secondary force, given in world coordinate frame.
+    /// </summary>
+    public Vector3 Tangential => PrimaryTangential + SecondaryTangential;
+
+    /// <summary>
+    /// Total force, i.e., normal + primary + secondary force, given in world coordinate frame.
+    /// </summary>
+    public Vector3 Total => Normal + Tangential;
+
+    /// <summary>
+    /// Create given native contact point.
+    /// </summary>
+    /// <param name="gcPoint">Native contact point.</param>
+    /// <returns>Contact point force data from the given native contact point.</returns>
+    public static ContactPointForceData Create( agxCollide.ContactPoint gcPoint )
+    {
+      return new ContactPointForceData()
+      {
+        Normal              = gcPoint.getNormalForce().ToHandedVector3(),
+        PrimaryTangential   = (float)gcPoint.getTangentialForceUMagnitude() * gcPoint.tangentU.ToHandedVector3(),
+        SecondaryTangential = (float)gcPoint.getTangentialForceVMagnitude() * gcPoint.tangentV.ToHandedVector3(),
+        IsImpacting         = gcPoint.hasState( agxCollide.ContactPoint.ContactPointState.IMPACTING )
+      };
+    }
+  }
+
+  /// <summary>
+  /// Data of a contacting point. The force is only available when the contacts
+  /// has been solved.
+  /// </summary>
+  public struct ContactPointData
+  {
+    /// <summary>
+    /// Position of the contact point given in world coordinate frame.
+    /// </summary>
+    public Vector3 Position;
+
+    /// <summary>
+    /// Contact normal of the contact point given in world coordinate frame.
+    /// </summary>
+    public Vector3 Normal;
+
+    /// <summary>
+    /// Primary tangent (friction) direction of the contact point given in world coordinate frame.
+    /// </summary>
+    public Vector3 PrimaryTangent;
+
+    /// <summary>
+    /// Secondary tangent (friction) direction of the contact point given in world coordinate frame.
+    /// </summary>
+    public Vector3 SecondaryTangent;
+
+    /// <summary>
+    /// Surface velocity if the contact point given in world coordinate frame.
+    /// </summary>
+    public Vector3 SurfaceVelocity;
+
+    /// <summary>
+    /// Penetration depth of the contact point.
+    /// </summary>
+    public float Depth;
+
+    /// <summary>
+    /// Enabled state of this contact point.
+    /// </summary>
+    public bool Enabled;
+
+    /// <summary>
+    /// True if the contact force of this contact point is available.
+    /// </summary>
+    public bool HasForce => m_force != null;
+
+    /// <summary>
+    /// Contact point force data, available when this contact point has been solved.
+    /// </summary>
+    public ContactPointForceData Force
     {
       get
       {
-        return ref Array[ Offset + index ];
+        if ( HasForce )
+          return m_force.Value;
+        return s_emptyForceData;
       }
     }
 
-    public RefArraySegment( T[] array, int offset, int count )
-    {
-      Array = array;
-      Offset = offset;
-      Count = count;
-    }
-
-    public Enumerator GetEnumerator()
-    {
-      return new Enumerator()
-      {
-        Segment = this
-      };
-    }
-
-    public struct Enumerator
-    {
-      public RefArraySegment<T> Segment
-      {
-        get { return m_segment; }
-        set
-        {
-          m_segment = value;
-          m_index = 0;
-        }
-      }
-
-      public bool MoveNext()
-      {
-        return m_index < Segment.Count;
-      }
-
-      public ref T Current
-      {
-        get
-        {
-          return ref Segment[ m_index++ ];
-        }
-      }
-
-      private int m_index;
-      private RefArraySegment<T> m_segment;
-    }
-  }
-
-  public struct ContactPointForceData
-  {
-    public Vector3 Normal;
-    public Vector3 PrimaryTangential;
-    public Vector3 SecondaryTangential;
-    public bool IsImpacting;
-
-    public Vector3 Tangential { get { return PrimaryTangential + SecondaryTangential; } }
-  }
-
-  public struct ContactPointData
-  {
-    public Vector3 Position;
-    public Vector3 Normal;
-    public Vector3 SurfaceVelocity;
-    public ContactPointForceData? Force;
-    public float Depth;
-    public bool Enabled;
-
+    /// <summary>
+    /// Copies data from the native contact point.
+    /// </summary>
+    /// <param name="gcPoint">Native contact point.</param>
+    /// <param name="hasForce">True if the force data should be read from the native contact point.</param>
     public void From( agxCollide.ContactPoint gcPoint, bool hasForce )
     {
-      Position        = gcPoint.point.ToHandedVector3();
-      Normal          = gcPoint.normal.ToHandedVector3();
-      SurfaceVelocity = gcPoint.velocity.ToHandedVector3();
-      Depth           = (float)gcPoint.depth;
-      Enabled         = gcPoint.enabled;
+      Position         = gcPoint.point.ToHandedVector3();
+      Normal           = gcPoint.normal.ToHandedVector3();
+      PrimaryTangent   = gcPoint.tangentU.ToHandedVector3();
+      SecondaryTangent = gcPoint.tangentV.ToHandedVector3();
+      SurfaceVelocity  = gcPoint.velocity.ToHandedVector3();
+      Depth            = (float)gcPoint.depth;
+      Enabled          = gcPoint.enabled;
 
-      if ( hasForce ) {
-        Force = new ContactPointForceData()
-        {
-          Normal = gcPoint.getNormalForce().ToHandedVector3(),
-          PrimaryTangential = (float)gcPoint.getTangentialForceUMagnitude() * gcPoint.tangentU.ToHandedVector3(),
-          SecondaryTangential = (float)gcPoint.getTangentialForceVMagnitude() * gcPoint.tangentV.ToHandedVector3(),
-          IsImpacting = gcPoint.hasState( agxCollide.ContactPoint.ContactPointState.IMPACTING )
-        };
-      }
+      if ( hasForce )
+        m_force = ContactPointForceData.Create( gcPoint );
       else
-        Force = null;
+        m_force = null;
     }
 
-    public void To( agxCollide.ContactPoint gcPoint )
+    /// <summary>
+    /// Synchronizes the native contact point given any value has been updated.
+    /// </summary>
+    /// <param name="gcPoint">Native contact point to update.</param>
+    public void Synchronize( agxCollide.ContactPoint gcPoint )
     {
       gcPoint.setPoint( Position.ToHandedVec3() );
       gcPoint.setNormal( Normal.ToHandedVec3f() );
+      gcPoint.setTangentU( PrimaryTangent.ToHandedVec3f() );
+      gcPoint.setTangentV( SecondaryTangent.ToHandedVec3f() );
       gcPoint.setVelocity( SurfaceVelocity.ToHandedVec3f() );
       gcPoint.setDepth( Depth );
       gcPoint.setEnabled( Enabled );
     }
+
+    private ContactPointForceData? m_force;
+    private static readonly ContactPointForceData s_emptyForceData = new ContactPointForceData();
   }
 
+  /// <summary>
+  /// Contact data with a set of contact points and interacting
+  /// components. The components, if found, is in the order in
+  /// which they appear in the native geometry contact.
+  /// </summary>
   public struct ContactData
   {
+    /// <summary>
+    /// First interacting component - null if not found.
+    /// </summary>
     public ScriptComponent Component1;
+
+    /// <summary>
+    /// Second interacting component - null of not found.
+    /// </summary>
     public ScriptComponent Component2;
+
+    /// <summary>
+    /// Array of contact points belonging to this contact.
+    /// </summary>
     public RefArraySegment<ContactPointData> Points;
 
+    /// <summary>
+    /// Access to the first geometry in the contact. This geometry
+    /// belongs to Component1.
+    /// </summary>
+    public agxCollide.Geometry Geometry1
+    {
+      get
+      {
+        return m_geometry1 ?? (m_geometry1 = new agxCollide.Geometry( m_geometry1Handle.Handle, false ));
+      }
+      set
+      {
+        m_geometry1Handle = agxCollide.Geometry.getCPtr( value );
+        m_geometry1 = null;
+      }
+    }
+
+
+    /// <summary>
+    /// Access to the second geometry in the contact. This geometry
+    /// belongs to Component1.
+    /// </summary>
+    public agxCollide.Geometry Geometry2
+    {
+      get
+      {
+        return m_geometry2 ?? ( m_geometry2 = new agxCollide.Geometry( m_geometry2Handle.Handle, false ) );
+      }
+      set
+      {
+        m_geometry2Handle = agxCollide.Geometry.getCPtr( value );
+        m_geometry2 = null;
+      }
+    }
+
+
+    /// <summary>
+    /// True if contact point force data is available.
+    /// </summary>
     public bool HasContactPointForceData
     {
       get
       {
-        return Points.Count > 0 && Points[ 0 ].Force.HasValue;
+        return Points.Count > 0 && Points[ 0 ].HasForce;
       }
     }
 
+    /// <summary>
+    /// Total normal force of this contact given in world coordinate frame.
+    /// </summary>
     public Vector3 TotalNormalForce
     {
       get
@@ -140,11 +236,14 @@ namespace AGXUnity
 
         var totalNormalForce = Vector3.zero;
         foreach ( ref var point in Points )
-          totalNormalForce += point.Force.Value.Normal;
+          totalNormalForce += point.Force.Normal;
         return totalNormalForce;
       }
     }
 
+    /// <summary>
+    /// Total primary tangential (friction) force of this contact, given in world coordinate frame.
+    /// </summary>
     public Vector3 TotalPrimaryTangentialForce
     {
       get
@@ -154,11 +253,14 @@ namespace AGXUnity
 
         var totalPrimaryTangentialForce = Vector3.zero;
         foreach ( ref var point in Points )
-          totalPrimaryTangentialForce += point.Force.Value.PrimaryTangential;
+          totalPrimaryTangentialForce += point.Force.PrimaryTangential;
         return totalPrimaryTangentialForce;
       }
     }
 
+    /// <summary>
+    /// Total secondary tangential (friction) force of this contact, given in world coordinate frame.
+    /// </summary>
     public Vector3 TotalSecondaryTangentialForce
     {
       get
@@ -168,12 +270,20 @@ namespace AGXUnity
 
         var totalSecondaryTangentialForce = Vector3.zero;
         foreach ( ref var point in Points )
-          totalSecondaryTangentialForce += point.Force.Value.SecondaryTangential;
+          totalSecondaryTangentialForce += point.Force.SecondaryTangential;
         return totalSecondaryTangentialForce;
       }
     }
 
+    /// <summary>
+    /// Total tangential (friction) force of this contact, given in world coordinate frame.
+    /// </summary>
     public Vector3 TotalTangentialForce => TotalPrimaryTangentialForce + TotalSecondaryTangentialForce;
+
+    /// <summary>
+    /// Total (normal and tangential) force of this contact, given in world coordinate frame.
+    /// </summary>
+    public Vector3 TotalForce => TotalNormalForce + TotalTangentialForce;
 
     public override string ToString()
     {
@@ -193,108 +303,10 @@ namespace AGXUnity
       }
       return result;
     }
-  }
 
-  // TODO: Move this to a separate file.
-  public class GeometryContactHandler
-  {
-    public class AccessScope : IDisposable
-    {
-      public GeometryContactHandler Handler { get; private set; }
-
-      public AccessScope( GeometryContactHandler handler )
-      {
-        Handler = handler;
-      }
-
-      public void Dispose()
-      {
-        Handler.ReturnNativeData();
-        Handler = null;
-      }
-    }
-
-    public List<agxCollide.GeometryContact> GeometryContacts { get; private set; } = new List<agxCollide.GeometryContact>();
-
-    public RefArraySegment<ContactData> ContactData { get; private set; }
-
-    public int GetIndex( agxCollide.GeometryContact geometryContact, bool returnProxyIfRedundant = true )
-    {
-      if ( m_geometryContactIndexTable.TryGetValue( geometryContact, out var index ) ) {
-        if ( returnProxyIfRedundant )
-          geometryContact.ReturnToPool();
-        return index;
-      }
-
-      index = GeometryContacts.Count;
-      GeometryContacts.Add( geometryContact );
-
-      var gcPoints = geometryContact.points();
-      m_numContactPoints += (int)gcPoints.size();
-      gcPoints.ReturnToPool();
-
-      m_geometryContactIndexTable.Add( geometryContact, index );
-
-      return index;
-    }
-
-    public AccessScope GenerateContactData( Func<agxCollide.Geometry, ScriptComponent> geometryToComponent,
-                                            bool hasForce )
-    {
-      if ( m_contactDataCache == null || GeometryContacts.Count > m_contactDataCache.Length )
-        m_contactDataCache = new ContactData[ GeometryContacts.Count ];
-      if ( m_contactPointDataCache == null || m_numContactPoints > m_contactPointDataCache.Length )
-        m_contactPointDataCache = new ContactPointData[ m_numContactPoints ];
-
-      ContactData = new RefArraySegment<ContactData>( m_contactDataCache,
-                                                      0,
-                                                      GeometryContacts.Count );
-
-      int contactPointStartIndex = 0;
-      for ( int contactIndex = 0; contactIndex < GeometryContacts.Count; ++contactIndex ) {
-        var gc = GeometryContacts[ contactIndex ];
-        ref var contactData = ref m_contactDataCache[ contactIndex ];
-
-        var g1 = gc.geometry( 0u );
-        contactData.Component1 = geometryToComponent( g1 );
-
-        var g2 = gc.geometry( 1u );
-        contactData.Component2 = geometryToComponent( g2 );
-
-        var gcPoints = gc.points();
-        var gcNumPoints = (int)gcPoints.size();
-        for ( int pointIndex = 0; pointIndex < gcNumPoints; ++pointIndex ) {
-          var gcPoint = gcPoints.at( (uint)pointIndex );
-
-          m_contactPointDataCache[ contactPointStartIndex + pointIndex ].From( gcPoint, hasForce );
-
-          gcPoint.ReturnToPool();
-        }
-
-        contactData.Points = new RefArraySegment<ContactPointData>( m_contactPointDataCache,
-                                                                    contactPointStartIndex,
-                                                                    gcNumPoints );
-        contactPointStartIndex += gcNumPoints;
-
-        g2.ReturnToPool();
-        g1.ReturnToPool();
-        gcPoints.ReturnToPool();
-      }
-
-      return new AccessScope( this );
-    }
-
-    public void ReturnNativeData()
-    {
-      m_geometryContactIndexTable.Clear();
-      m_numContactPoints = 0;
-      GeometryContacts.ForEach( gc => gc.ReturnToPool() );
-      GeometryContacts.Clear();
-    }
-
-    private Dictionary<agxCollide.GeometryContact, int> m_geometryContactIndexTable = new Dictionary<agxCollide.GeometryContact, int>();
-    private ContactData[] m_contactDataCache = null;
-    private ContactPointData[] m_contactPointDataCache = null;
-    private int m_numContactPoints = 0;
+    private HandleRef m_geometry1Handle;
+    private agxCollide.Geometry m_geometry1;
+    private HandleRef m_geometry2Handle;
+    private agxCollide.Geometry m_geometry2;
   }
 }
