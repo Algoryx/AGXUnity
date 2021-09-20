@@ -78,6 +78,10 @@ namespace AGXUnity
       if ( State == States.INITIALIZING )
         throw new Exception( "Initialize call when object is being initialized. Implement wait until initialized?" );
 
+      // Supporting GetInitialized calls in, e.g., Awake.
+      if ( State == States.CONSTRUCTED )
+        Awake();
+
       if ( State == States.AWAKE ) {
         try {
           NativeHandler.Instance.MakeMainThread();
@@ -113,8 +117,10 @@ namespace AGXUnity
     /// </summary>
     protected void Awake()
     {
-      State = States.AWAKE;
-      OnAwake();
+      if ( State == States.CONSTRUCTED ) {
+        State = States.AWAKE;
+        OnAwake();
+      }
     }
 
     /// <summary>
