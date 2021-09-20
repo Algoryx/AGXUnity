@@ -45,8 +45,10 @@ namespace AGXUnity
       if ( callback == null || callback.GetInvocationList().Length == 0 )
         return "null";
 
-      return callback.GetInvocationList()[ 0 ].Target.GetType().FullName +
-             "." + callback.GetInvocationList()[ 0 ].Method.Name;
+      var targetName = callback.GetInvocationList()[ 0 ].Target != null ?
+                         callback.GetInvocationList()[ 0 ].Target.GetType().FullName :
+                         "[static class]";
+      return targetName + "." + callback.GetInvocationList()[ 0 ].Method.Name;
     }
 
     /// <summary>
