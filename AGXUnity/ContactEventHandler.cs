@@ -273,24 +273,36 @@ namespace AGXUnity
     /// <returns>Native UUID if found, otherwise 0.</returns>
     public uint Map( ScriptComponent component )
     {
-      if ( component == null )
+      var isValid = component != null &&
+                    !m_incompatibleTypes.Contains( component.GetType() );
+      if ( !isValid )
         return 0u;
 
       object nativeInstance = null;
+      System.Type incompatibleType = null;
       if ( component is Collide.Shape shape )
         nativeInstance = shape.NativeGeometry;
-      else
-        nativeInstance = component.GetType().GetProperty( "Native" )?.GetValue( component );
+      else {
+        var propertyInfo = component.GetType().GetProperty( "Native" );
+        if ( propertyInfo != null && propertyInfo.GetGetMethod() != null )
+          nativeInstance = propertyInfo.GetValue( component );
+        else
+          incompatibleType = component.GetType();
+      }
 
-      if ( nativeInstance == null )
-        return 0u;
+      var hash = 0u;
+      if ( nativeInstance != null ) {
+        hash = agxSDK.UuidHashCollisionFilter.findUuid( nativeInstance as agx.Referenced );
 
-      var hash = agxSDK.UuidHashCollisionFilter.findUuid( nativeInstance as agx.Referenced );
-      if ( hash == 0u )
-        return 0u;
-
-      m_uuidComponentTable[ hash ] = component;
-      m_componentUuidTable[ component ] = hash;
+        if ( hash > 0u ) {
+          m_uuidComponentTable[ hash ] = component;
+          m_componentUuidTable[ component ] = hash;
+        }
+      }
+      else {
+        if ( incompatibleType != null )
+          m_incompatibleTypes.Add( incompatibleType );
+      }
 
       return hash;
     }
@@ -436,5 +448,35 @@ namespace AGXUnity
 
     private Dictionary<uint, ScriptComponent> m_uuidComponentTable = new Dictionary<uint, ScriptComponent>();
     private Dictionary<ScriptComponent, uint> m_componentUuidTable = new Dictionary<ScriptComponent, uint>();
+    private HashSet<System.Type> m_incompatibleTypes = new HashSet<System.Type>()
+    {
+      typeof( Utils.OnSelectionProxy ),
+      typeof( AttachmentPair ),
+      typeof( MassProperties ),
+      typeof( CollisionGroups ),
+      typeof( WireRoute ),
+      typeof( CableRoute ),
+      typeof( WireWinch ),
+      typeof( HydrodynamicsParameters ),
+      typeof( MergeSplitProperties ),
+      typeof( Simulation ),
+      typeof( ContactMaterialManager ),
+      typeof( CollisionGroupsManager ),
+      typeof( ScriptAssetManager ),
+      typeof( RuntimeObjects ),
+      typeof( Rendering.TrackRenderer ),
+      typeof( Rendering.WireRenderer ),
+      typeof( Rendering.CableRenderer ),
+      typeof( Rendering.ShapeVisualBox ),
+      typeof( Rendering.ShapeVisualSphere ),
+      typeof( Rendering.ShapeVisualCylinder ),
+      typeof( Rendering.ShapeVisualCapsule ),
+      typeof( Rendering.ShapeVisualPlane ),
+      typeof( Rendering.ShapeVisualMesh ),
+      typeof( Rendering.ShapeVisualCone ),
+      typeof( Rendering.ShapeVisualHollowCone ),
+      typeof( Rendering.ShapeVisualHollowCylinder ),
+      typeof( Rendering.ShapeDebugRenderData )
+    };
   }
 }
