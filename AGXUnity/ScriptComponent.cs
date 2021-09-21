@@ -99,7 +99,8 @@ namespace AGXUnity
           Utils.PropertySynchronizer.Synchronize( this );
           IsSynchronizingProperties = false;
 
-          m_uuidHash = Simulation.Instance.ContactCallbacks.Map( this );
+          if ( Application.isPlaying )
+            m_uuidHash = Simulation.Instance.ContactCallbacks.Map( this );
         }
       }
 
