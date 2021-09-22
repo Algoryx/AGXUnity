@@ -117,6 +117,8 @@ namespace AGXUnity
         var g2 = gc.geometry( 1u );
         contactData.Component2 = geometryToComponent( g2 );
 
+        contactData.Enabled = gc.isEnabled();
+
         contactData.Geometry1 = g1;
         contactData.Geometry2 = g2;
 

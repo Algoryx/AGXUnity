@@ -12,17 +12,17 @@ namespace AGXUnity
     /// <summary>
     /// Components this contact listener is listening to.
     /// </summary>
-    public ScriptComponent[] Components { get; private set; } = null;
+    public ScriptComponent[] Components { get; protected set; } = null;
 
     /// <summary>
     /// Callback taking ContactData for a matching component.
     /// </summary>
-    public ContactEventHandler.OnContactDelegate Callback { get; private set; } = null;
+    public ContactEventHandler.OnContactDelegate Callback { get; protected set; } = null;
 
     /// <summary>
     /// Native filter matching contacts in the simulation.
     /// </summary>
-    public agxSDK.UuidHashCollisionFilter Filter { get; private set; } = null;
+    public agxSDK.UuidHashCollisionFilter Filter { get; protected set; } = null;
 
     /// <summary>
     /// True if removed, otherwise false.
@@ -91,6 +91,20 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Constructor when subclassed. It's important that Callback is assigned before
+    /// this listener is added to the event handler, otherwise it will be ignored.
+    /// </summary>
+    /// <param name="components">Components to listen to.</param>
+    /// <param name="activationMask">Activation mask, default listening to IMPACT + CONTACT.</param>
+    protected ContactListener( ScriptComponent[] components = null,
+                               agxSDK.ContactEventListener.ActivationMask activationMask = agxSDK.ContactEventListener.ActivationMask.IMPACT |
+                                                                                           agxSDK.ContactEventListener.ActivationMask.CONTACT )
+    {
+      Components = components ?? new ScriptComponent[] { };
+      m_activationMask = activationMask;
+    }
+
+    /// <summary>
     /// Remove the given component with the given UUID from this listener.
     /// </summary>
     /// <param name="uuid">Native UUID of the given component.</param>
@@ -100,7 +114,7 @@ namespace AGXUnity
     /// True if this listener becomes invalid after successfully removing
     /// the component and should be removed.
     /// </returns>
-    public bool Remove( uint uuid, ScriptComponent component, bool notifyOnRemove = true )
+    virtual public bool Remove( uint uuid, ScriptComponent component, bool notifyOnRemove = true )
     {
       if ( Filter != null ) {
         if ( !Filter.contains( uuid ) )
@@ -131,7 +145,7 @@ namespace AGXUnity
     /// Finds UUIDs of our components and registers the filter to the simulation.
     /// </summary>
     /// <param name="handler">A contact event handler.</param>
-    public void Initialize( ContactEventHandler handler )
+    virtual public void Initialize( ContactEventHandler handler )
     {
       if ( Filter != null )
         return;
@@ -159,7 +173,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="handler">The contact event handler this listener was added to.</param>
     /// <returns>True.</returns>
-    public bool OnDestroy( ContactEventHandler handler )
+    virtual public bool OnDestroy( ContactEventHandler handler )
     {
       if ( Filter != null && handler.GeometryContactHandler.Native != null )
         handler.GeometryContactHandler.Native.remove( Filter );
@@ -170,15 +184,21 @@ namespace AGXUnity
       return true;
     }
 
-    public void SetActivationMask( agxSDK.MultiCollisionFilterContactHandler handler,
-                                   agxSDK.ContactEventListener.ActivationMask activationMask )
+    /// <summary>
+    /// Set new activation mask for our filter.
+    /// </summary>
+    /// <param name="handler">Native contact handler.</param>
+    /// <param name="activationMask">New activation mask.</param>
+    virtual public void SetActivationMask( agxSDK.MultiCollisionFilterContactHandler handler,
+                                           agxSDK.ContactEventListener.ActivationMask activationMask )
     {
       m_activationMask = activationMask;
       if ( handler != null && Filter != null )
         handler.setActivationMask( Filter, (int)m_activationMask );
     }
 
-    private agxSDK.ContactEventListener.ActivationMask m_activationMask;
-    private agxSDK.UuidHashCollisionFilter.Mode m_filteringMode = agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL;
+    protected agxSDK.ContactEventListener.ActivationMask m_activationMask = agxSDK.ContactEventListener.ActivationMask.IMPACT |
+                                                                            agxSDK.ContactEventListener.ActivationMask.CONTACT;
+    protected agxSDK.UuidHashCollisionFilter.Mode m_filteringMode = agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL;
   }
 }
