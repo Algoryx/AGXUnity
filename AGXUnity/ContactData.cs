@@ -63,32 +63,32 @@ namespace AGXUnity
   public struct ContactPointData
   {
     /// <summary>
-    /// Position of the contact point given in world coordinate frame.
+    /// Position of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 Position;
 
     /// <summary>
-    /// Contact normal of the contact point given in world coordinate frame.
+    /// Contact normal of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 Normal;
 
     /// <summary>
-    /// Primary tangent (friction) direction of the contact point given in world coordinate frame.
+    /// Primary tangent (friction) direction of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 PrimaryTangent;
 
     /// <summary>
-    /// Secondary tangent (friction) direction of the contact point given in world coordinate frame.
+    /// Secondary tangent (friction) direction of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 SecondaryTangent;
 
     /// <summary>
-    /// Surface velocity if the contact point given in world coordinate frame.
+    /// Surface velocity of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 SurfaceVelocity;
 
     /// <summary>
-    /// Penetration depth of the contact point.
+    /// Penetration depth of this contact point.
     /// </summary>
     public float Depth;
 
@@ -190,7 +190,10 @@ namespace AGXUnity
     {
       get
       {
-        return m_geometry1 ?? (m_geometry1 = new agxCollide.Geometry( m_geometry1Handle.Handle, false ));
+        return m_geometry1 ??
+               ( m_geometry1Handle.Handle == System.IntPtr.Zero ?
+                  null :
+                  m_geometry1 = new agxCollide.Geometry( m_geometry1Handle.Handle, false ) );
       }
       set
       {
@@ -202,13 +205,16 @@ namespace AGXUnity
 
     /// <summary>
     /// Access to the second geometry in the contact. This geometry
-    /// belongs to Component1.
+    /// belongs to Component2.
     /// </summary>
     public agxCollide.Geometry Geometry2
     {
       get
       {
-        return m_geometry2 ?? ( m_geometry2 = new agxCollide.Geometry( m_geometry2Handle.Handle, false ) );
+        return m_geometry2 ??
+               ( m_geometry2Handle.Handle == System.IntPtr.Zero ?
+                  null :
+                  m_geometry2 = new agxCollide.Geometry( m_geometry2Handle.Handle, false ) );
       }
       set
       {
@@ -289,6 +295,15 @@ namespace AGXUnity
     /// Total (normal and tangential) force of this contact, given in world coordinate frame.
     /// </summary>
     public Vector3 TotalForce => TotalNormalForce + TotalTangentialForce;
+
+    /// <summary>
+    /// Invalidates the geometries so that they cannot be accessed any more.
+    /// </summary>
+    public void InvalidateGeometries()
+    {
+      Geometry1 = null;
+      Geometry2 = null;
+    }
 
     public override string ToString()
     {
