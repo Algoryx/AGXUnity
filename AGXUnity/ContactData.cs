@@ -173,6 +173,11 @@ namespace AGXUnity
     public ScriptComponent Component2;
 
     /// <summary>
+    /// True if this contact is enabled, false if disabled.
+    /// </summary>
+    public bool Enabled;
+
+    /// <summary>
     /// Array of contact points belonging to this contact.
     /// </summary>
     public RefArraySegment<ContactPointData> Points;

@@ -161,7 +161,7 @@ namespace AGXUnity
         return false;
 
       if ( listener.Callback == null ) {
-        Debug.LogWarning( $"AGXUnity.ContactEventHandler: Invalid contact listener with null callback." );
+        Debug.LogError( $"AGXUnity.ContactEventHandler: Invalid contact listener with null callback - ignoring listener." );
         return false;
       }
 
@@ -428,6 +428,9 @@ namespace AGXUnity
             continue;
 
           var gc = GeometryContactHandler.Native.getGeometryContact( contactIndex );
+
+          gc.setEnable( contactData.Enabled );
+
           var gcPoints = gc.points();
           for ( int pointIndex = 0; pointIndex < contactData.Points.Count; ++pointIndex ) {
             var gcPoint = gcPoints.at( (uint)pointIndex );
