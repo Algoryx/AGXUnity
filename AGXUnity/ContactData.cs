@@ -83,7 +83,7 @@ namespace AGXUnity
     public Vector3 SecondaryTangent;
 
     /// <summary>
-    /// Surface velocity of this contact point given in world coordinate frame.
+    /// Target surface velocity of this contact point given in world coordinate frame.
     /// </summary>
     public Vector3 SurfaceVelocity;
 
