@@ -24,7 +24,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="filter">Filter to get contact indices for.</param>
     /// <returns>Shared vector with contact indices. Do not keep a reference to this vector.</returns>
-    public agx.UInt32Vector GetContactIndices( agxSDK.UuidHashCollisionFilter filter )
+    public agx.UInt32Vector GetContactIndices( agxSDK.ExecuteFilter filter )
     {
       if ( Native == null )
         return null;

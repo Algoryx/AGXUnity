@@ -22,7 +22,7 @@ namespace AGXUnity
     /// <summary>
     /// Native filter matching contacts in the simulation.
     /// </summary>
-    public agxSDK.UuidHashCollisionFilter Filter { get; protected set; } = null;
+    public agxSDK.ExecuteFilter Filter { get; protected set; } = null;
 
     /// <summary>
     /// True if removed, otherwise false.
@@ -53,20 +53,6 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Contact filtering mode of this filter.
-    /// </summary>
-    public agxSDK.UuidHashCollisionFilter.Mode FilteringMode
-    {
-      get { return m_filteringMode; }
-      set
-      {
-        m_filteringMode = value;
-        if ( Filter != null )
-          Filter.setMode( m_filteringMode );
-      }
-    }
-
-    /// <summary>
     /// Construct given callback, components and activation mask. If this listener
     /// is listening to OnContact, activation mask should be:
     ///     agxSDK.ContactEventListener.ActivationMask.IMPACT | agxSDK.ContactEventListener.ActivationMask.CONTACT
@@ -83,11 +69,11 @@ namespace AGXUnity
       Callback = callback ?? throw new ArgumentNullException( "callback" );
       Components = components ?? throw new ArgumentNullException( "components" );
       m_activationMask = activationMask;
-      FilteringMode = Components.Length == 0 ?
-                        agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL :
-                      Components.Length == 1 ?
-                        agxSDK.UuidHashCollisionFilter.Mode.MATCH_OR :
-                        agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND;
+      m_filteringMode = Components.Length == 0 ?
+                          agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL :
+                        Components.Length == 1 ?
+                          agxSDK.UuidHashCollisionFilter.Mode.MATCH_OR :
+                          agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND;
     }
 
     /// <summary>
@@ -105,6 +91,17 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Cast the agxSDK.ExecuteFilter to given type.
+    /// </summary>
+    /// <typeparam name="T">Target type.</typeparam>
+    /// <returns>Filter as <typeparamref name="T"/>.</returns>
+    public T GetFilter<T>()
+      where T : agxSDK.ExecuteFilter
+    {
+      return Filter as T;
+    }
+
+    /// <summary>
     /// Remove the given component with the given UUID from this listener.
     /// </summary>
     /// <param name="uuid">Native UUID of the given component.</param>
@@ -116,10 +113,11 @@ namespace AGXUnity
     /// </returns>
     virtual public bool Remove( uint uuid, ScriptComponent component, bool notifyOnRemove = true )
     {
-      if ( Filter != null ) {
-        if ( !Filter.contains( uuid ) )
+      var filter = GetFilter<agxSDK.UuidHashCollisionFilter>();
+      if ( filter != null ) {
+        if ( !filter.contains( uuid ) )
           return false;
-        Filter.remove( uuid );
+        filter.remove( uuid );
       }
 
       var index = Array.IndexOf( Components, component );
@@ -131,8 +129,8 @@ namespace AGXUnity
       // Remove us if we had one component and now zero, which disqualifies us from MATCH_OR.
       // Remove us if we had two or more components and now less than two, which disqualifies us from MATCH_AND.
       var removeMe = Filter == null ||
-                     ( Filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_OR && Components.Length == 0 ) ||
-                     ( Filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND && Components.Length < 2 );
+                     ( filter != null && filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_OR && Components.Length == 0 ) ||
+                     ( filter != null && filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND && Components.Length < 2 );
 
       if ( removeMe && notifyOnRemove )
         Debug.Log( $"AGXUnity.ContactListener: Removing contact callback {ContactEventHandler.FindCallbackName( Callback )} due " +
@@ -150,8 +148,8 @@ namespace AGXUnity
       if ( Filter != null )
         return;
 
-      Filter = new agxSDK.UuidHashCollisionFilter();
-      Filter.setMode( FilteringMode );
+      var filter = new agxSDK.UuidHashCollisionFilter();
+      filter.setMode( m_filteringMode );
       foreach ( var component in Components ) {
         // TODO: This should be a GetOrCreate where handler is assigning UUID.
         var uuid = handler.GetUuid( component );
@@ -162,9 +160,10 @@ namespace AGXUnity
           continue;
         }
 
-        Filter.add( uuid );
+        filter.add( uuid );
       }
 
+      Filter = filter;
       handler.GeometryContactHandler.Native.add( Filter, (int)m_activationMask );
     }
 
