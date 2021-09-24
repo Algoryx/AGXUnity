@@ -233,7 +233,7 @@ namespace AGXUnity
     {
       get
       {
-        return State == States.CONSTRUCTED || State == States.DESTROYED ?
+        return State != States.INITIALIZED ?
                  GetShapes() :
                  m_shapesCache;
       }
@@ -471,6 +471,9 @@ namespace AGXUnity
     {
       if ( Simulation.HasInstance )
         GetSimulation().remove( m_rb );
+
+      if ( m_rb != null )
+        m_rb.ReturnToPool();
 
       m_rb               = null;
       m_transform        = null;

@@ -138,12 +138,17 @@ namespace AGXUnityEditor
     /// Callback from Editor OnEnable. Checks for classes with
     /// CustomToolAttribute matching <paramref name="targets"/> type.
     /// </summary>
-    /// <typeparam name="T">Target type.</typeparam>
     /// <param name="targets">Target objects.</param>
-    public static void OnTargetEditorEnable( Object[] targets )
+    /// <param name="editor">Editor for the targets.</param>
+    public static void OnTargetEditorEnable( Object[] targets, Editor editor )
     {
       if ( targets.Length == 0 )
         return;
+
+      // The target type has our custom editor, register the
+      // assembly of the editor for possible custom target tools.
+      if ( editor != null )
+        RegisterCustomToolsAssembly( editor.GetType().Assembly.GetName().Name );
 
       Utils.KeyHandler.HandleDetectKeyOnEnable( targets );
 
@@ -274,7 +279,7 @@ namespace AGXUnityEditor
     /// Register additional assembly where CustomTargetTool is used.
     /// Manager.AGXUnityEditorAssemblyName is added by default.
     /// </summary>
-    /// <param name="assemblyName"></param>
+    /// <param name="assemblyName">Name of the assembly.</param>
     public static void RegisterCustomToolsAssembly( string assemblyName )
     {
       if ( !m_assembliesWithCustomTools.Contains( assemblyName ) )

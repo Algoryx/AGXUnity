@@ -59,6 +59,16 @@ namespace AGXUnity
     /// </summary>
     public StepCallbackDef SimulationLast;
 
+    /// <summary>
+    /// Internal preparation callbacks.
+    /// </summary>
+    public StepCallbackDef _Internal_PrePre;
+
+    /// <summary>
+    /// Internal preparation callbacks.
+    /// </summary>
+    public StepCallbackDef _Internal_PrePost;
+
     public void OnInitialize( agxSDK.Simulation simulation )
     {
       m_simulationStepEvents = new SimulationStepEvents( this );
@@ -94,12 +104,12 @@ namespace AGXUnity
 
       public sealed override void pre( double time )
       {
-        Invoke( m_functions.SimulationPre );
+        Invoke( m_functions.SimulationPre, m_functions._Internal_PrePre );
       }
 
       public sealed override void post( double time )
       {
-        Invoke( m_functions.SimulationPost );
+        Invoke( m_functions.SimulationPost, m_functions._Internal_PrePost );
       }
 
       public sealed override void last( double time )
@@ -107,11 +117,12 @@ namespace AGXUnity
         Invoke( m_functions.SimulationLast );
       }
 
-      private void Invoke( StepCallbackDef callbacks )
+      private void Invoke( StepCallbackDef callbacks, StepCallbackDef internalPre = null )
       {
-        if ( callbacks != null ) {
+        if ( callbacks != null || internalPre != null ) {
           BeginManagedCallbacks();
-          callbacks.Invoke();
+          internalPre?.Invoke();
+          callbacks?.Invoke();
           EndManagedCallbacks();
         }
       }
