@@ -6,9 +6,6 @@ namespace AGXUnityEditor.Utils
 {
   public class TimeInterpolator01 : IDisposable
   {
-    private double m_lastTime = 0.0;
-    private bool m_goingUp    = true;
-
     public float Time { get; private set; }
     public float SpeedUp { get; set; }
     public float SpeedDown { get; set; }
@@ -21,6 +18,7 @@ namespace AGXUnityEditor.Utils
       Time                      = Mathf.Clamp01( initialTime );
       EditorApplication.update += Update;
       m_lastTime                = EditorApplication.timeSinceStartup;
+      s_lastTimeTriggerRepaint  = m_lastTime;
     }
 
     public void Dispose()
@@ -39,6 +37,20 @@ namespace AGXUnityEditor.Utils
       return Color.Lerp( min, max, Time );
     }
 
+    private static bool ShouldTriggerRepaint
+    {
+      get
+      {
+        var dtTriggerRepaint = EditorApplication.timeSinceStartup - s_lastTimeTriggerRepaint;
+        if ( dtTriggerRepaint > 2.0 * 0.03333 ) {
+          s_lastTimeTriggerRepaint = EditorApplication.timeSinceStartup;
+          return true;
+        }
+
+        return false;
+      }
+    }
+
     private void Update()
     {
       float dt   = Convert.ToSingle( EditorApplication.timeSinceStartup - m_lastTime );
@@ -49,7 +61,12 @@ namespace AGXUnityEditor.Utils
       m_goingUp = Time > 1f || Time < 0f ? !m_goingUp : m_goingUp;
       Time      = Mathf.Clamp01( Time );
 
-      SceneView.RepaintAll();
+      if ( ShouldTriggerRepaint )
+        SceneView.RepaintAll();
     }
+
+    private double m_lastTime = 0.0;
+    private bool m_goingUp = true;
+    private static double s_lastTimeTriggerRepaint = 0.0;
   }
 }

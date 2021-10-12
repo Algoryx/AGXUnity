@@ -28,6 +28,8 @@ namespace AGXUnityEditor
       if ( parent != null )
         go.transform.SetParent( parent.transform, false );
 
+      AGXUnity.Rendering.ShapeVisual.Create( go.GetComponent<T>() );
+
       Undo.RegisterCreatedObjectUndo( go, "shape" );
 
       return go;
@@ -118,7 +120,7 @@ namespace AGXUnityEditor
     private static GameObject CreateRigidBody<T>( MenuCommand command )
       where T : Shape
     {
-      return CreateRigidBody( command, Factory.Create<T>() );
+      return CreateRigidBody( command, CreateShape<T>( new MenuCommand( null ) ) );
     }
 
     [MenuItem( "AGXUnity/Rigid body/Box", priority = 20 )]
@@ -312,6 +314,8 @@ namespace AGXUnityEditor
         return null;
       }
 
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
       go.transform.position = new Vector3( -30, 0, -30 );
       go.AddComponent<AGXUnity.Model.DeformableTerrain>();
 
@@ -323,46 +327,92 @@ namespace AGXUnityEditor
     #endregion
 
     #region Managers
+    [MenuItem( "AGXUnity/Managers/Debug Render Manager", validate = true )]
+    private static bool DebugRendererValidate()
+    {
+      return ValidateManager<AGXUnity.Rendering.DebugRenderManager>();
+    }
+
     [MenuItem( "AGXUnity/Managers/Debug Render Manager" ) ]
     public static GameObject DebugRenderer()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<AGXUnity.Rendering.DebugRenderManager>().gameObject;
     }
 
+    [MenuItem( "AGXUnity/Simulation", validate = true )]
+    private static bool SimulationValidate()
+    {
+      return ValidateManager<Simulation>();
+    }
+    
     [MenuItem( "AGXUnity/Simulation", priority = 66 )]
     public static GameObject Simulation()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>().gameObject;
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
     }
+
+    [MenuItem( "AGXUnity/Managers/Collision Groups Manager", validate = true )]
+    private static bool CollisionGroupsManagerValidate()
+    {
+      return ValidateManager<CollisionGroupsManager>();
+    }
+
 
     [MenuItem( "AGXUnity/Managers/Collision Groups Manager", priority = 65 )]
     public static GameObject CollisionGroupsManager()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<CollisionGroupsManager>().gameObject;
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<CollisionGroupsManager>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Managers/Contact Material Manager", validate = true )]
+    private static bool ContactMaterialManagerValidate()
+    {
+      return ValidateManager<ContactMaterialManager>();
     }
 
     [MenuItem( "AGXUnity/Managers/Contact Material Manager", priority = 65 )]
     public static GameObject ContactMaterialManager()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ContactMaterialManager>().gameObject;
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ContactMaterialManager>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Managers/Wind and Water Manager", validate = true )]
+    private static bool WindAndWaterManagerValidate()
+    {
+      return ValidateManager<WindAndWaterManager>();
     }
 
     [MenuItem( "AGXUnity/Managers/Wind and Water Manager", priority = 65 )]
     public static GameObject WindAndWaterManager()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<WindAndWaterManager>().gameObject;
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<WindAndWaterManager>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Managers/Script Asset Manager", validate = true )]
+    private static bool ScriptAssetManagerValidate()
+    {
+      return ValidateManager<ScriptAssetManager>();
     }
 
     [MenuItem( "AGXUnity/Managers/Script Asset Manager", priority = 65 )]
     public static GameObject ScriptAssetManager()
     {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ScriptAssetManager>().gameObject;
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<ScriptAssetManager>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Managers/Pick Handler (Game View)", validate = true )]
+    private static bool PickHandlerValidate()
+    {
+      return ValidateManager<PickHandler>();
     }
 
     [MenuItem( "AGXUnity/Managers/Pick Handler (Game View)", priority = 65 )]
     public static GameObject PickHandler()
     {
       var ph = GetOrCreateUniqueGameObject<PickHandler>();
+      if ( ph == null )
+        return null;
+
       if ( ph.MainCamera == null ) {
         // Check for tagged main camera.
         if ( Camera.main != null ) {
@@ -407,6 +457,11 @@ namespace AGXUnityEditor
       where T : ScriptComponent
     {
       bool hadInstance = UniqueGameObject<T>.HasInstance;
+      if ( !hadInstance && AGXUnity.Utils.PrefabUtils.IsEditingPrefab ) {
+        Debug.LogWarning( $"Invalid to create {typeof( T ).FullName} while editing prefabs." );
+        return null;
+      }
+
       if ( UniqueGameObject<T>.Instance == null )
         UniqueGameObject<T>.ResetDestroyedState();
 
@@ -415,6 +470,12 @@ namespace AGXUnityEditor
         Undo.RegisterCreatedObjectUndo( obj.gameObject, "Created " + obj.name );
 
       return obj;
+    }
+
+    private static bool ValidateManager<T>()
+      where T : UniqueGameObject<T>
+    {
+      return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
     }
     #endregion
 
@@ -447,6 +508,18 @@ namespace AGXUnityEditor
     public static void AboutWindow()
     {
       Windows.AboutWindow.Open();
+    }
+
+    [MenuItem( "AGXUnity/License/License Manager", priority = 2041 )]
+    public static void LicenseManagerWindow()
+    {
+      Windows.LicenseManagerWindow.Open();
+    }
+
+    [MenuItem( "AGXUnity/License/Runtime Activation Generator", priority = 2042 )]
+    public static void RuntimeGeneratorWindow()
+    {
+      Windows.GenerateRuntimeLicenseActivationWindow.Open();
     }
 
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]

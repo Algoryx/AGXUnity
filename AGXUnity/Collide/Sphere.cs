@@ -39,7 +39,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native sphere object if created.
     /// </summary>
-    public agxCollide.Sphere Native { get { return m_shape as agxCollide.Sphere; } }
+    public agxCollide.Sphere Native { get { return NativeShape?.asSphere(); } }
 
     /// <summary>
     /// Debug rendering scale assuming the rendered sphere has diameter 1.
@@ -52,9 +52,10 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Create native sphere object given current radius.
     /// </summary>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Sphere( Radius );
+      return new agxCollide.Geometry( new agxCollide.Sphere( Radius ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }

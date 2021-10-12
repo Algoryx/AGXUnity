@@ -85,6 +85,8 @@ namespace AGXUnityEditor.Tools
 
       Preview.transform.position = Shape.transform.position;
       Preview.transform.rotation = Shape.transform.rotation;
+      if ( Shape is AGXUnity.Collide.Mesh )
+        Preview.transform.localScale = Shape.transform.lossyScale;
     }
 
     public void OnInspectorGUI( bool onlyNameAndMaterial = false )

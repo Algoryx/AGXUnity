@@ -45,11 +45,15 @@ namespace AGXUnityEditor.Tools
         foreach ( var child in children )
           yield return child;
       }
+
+      yield break;
     }
 
     public int NumTargets { get { return Targets.Length; } }
 
     public bool IsMultiSelect { get { return NumTargets > 1; } }
+
+    public virtual void OnUndoRedo() { }
 
     protected CustomTargetTool( Object[] targets )
       : base( isSingleInstanceTool: false )

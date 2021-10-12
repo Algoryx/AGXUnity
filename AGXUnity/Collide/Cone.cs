@@ -84,7 +84,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native cone object if created.
     /// </summary>
-    public agxCollide.Cone Native { get { return m_shape as agxCollide.Cone; } }
+    public agxCollide.Cone Native { get { return NativeShape?.asCone(); } }
 
     /// <summary>
     /// Scale of meshes are inherited by the parents and supports non-uniform scaling.
@@ -97,9 +97,10 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Creates the native cone object given current top and bottom radii plus height.
     /// </summary>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Cone(m_topRadius, m_bottomRadius, m_height );
+      return new agxCollide.Geometry( new agxCollide.Cone( m_topRadius, m_bottomRadius, m_height ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }

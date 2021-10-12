@@ -314,7 +314,9 @@ namespace AGXUnityEditor
       EditorGUI.showMixedValue = !CompareMulti<ValueT>( objects,
                                                         wrapper,
                                                         other => instance.Value.Equals( other.Value ) );
-      using ( new GUI.EnabledBlock( !instance.UseDefault && !hasMixedUseDefault ) ) {
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
+                                    !instance.UseDefault &&
+                                    !hasMixedUseDefault ) ) {
         EditorGUI.BeginChangeCheck();
         newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
         if ( EditorGUI.EndChangeCheck() ) {
@@ -594,6 +596,51 @@ namespace AGXUnityEditor
         return;
 
       using ( InspectorGUI.IndentScope.Single ) {
+        if ( element is AGXUnity.IO.URDF.Model model ) {
+          var isSelectedPrefab = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) == PrefabInstanceStatus.Connected;
+          var modelAssetPath = AssetDatabase.GetAssetPath( element );
+
+          var savePrefabRect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() );
+          savePrefabRect.width = InspectorGUISkin.ToolButtonSize.x;
+          savePrefabRect.height = InspectorGUISkin.ToolButtonSize.y;
+          var savePrefab = InspectorGUI.Button( savePrefabRect,
+                                                MiscIcon.Locate,
+                                                !isSelectedPrefab,
+                                                "Save game object as prefab and all URDF elements, STL meshes and render materials in project.",
+                                                1.1f );
+          savePrefabRect.x += savePrefabRect.width;
+          savePrefabRect.xMax += savePrefabRect.width;
+          savePrefabRect.width = InspectorGUISkin.ToolButtonSize.x;
+          var saveAssets = false;
+          using ( new GUI.EnabledBlock( string.IsNullOrEmpty( modelAssetPath ) ) ) {
+            saveAssets = UnityEngine.GUI.Button( savePrefabRect,
+                                                 GUI.MakeLabel( "",
+                                                                false,
+                                                                "Save all URDF elements, STL meshes and render materials in project." ),
+                                                 InspectorEditor.Skin.ButtonMiddle );
+
+            savePrefabRect.x -= 6.0f;
+            savePrefabRect.y -= 4.0f;
+            InspectorGUI.ButtonIcon( savePrefabRect,
+                                     MiscIcon.Locate,
+                                     UnityEngine.GUI.enabled,
+                                     0.75f );
+            savePrefabRect.x += 2.0f * 6.0f - 1.0f;
+            savePrefabRect.y += 2.0f * 4.0f - 2.0f;
+            InspectorGUI.ButtonIcon( savePrefabRect,
+                                     MiscIcon.Locate,
+                                     UnityEngine.GUI.enabled,
+                                     0.75f );
+          }
+
+          if ( savePrefab )
+            IO.URDF.Prefab.Create( model );
+          if ( saveAssets )
+            IO.URDF.Prefab.CreateAssets( model );
+
+          InspectorGUI.SelectableTextField( GUI.MakeLabel( "Asset Path" ), modelAssetPath );
+        }
+
         var ignoreName = element is AGXUnity.IO.URDF.Inertial;
         if ( !ignoreName ) {
           var nameRect = EditorGUILayout.GetControlRect();
@@ -650,7 +697,9 @@ namespace AGXUnityEditor
 
     public static void DrawUrdfPose( AGXUnity.IO.URDF.Pose pose )
     {
-      EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Origin", true ) );
+      UnityEngine.GUI.Label( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() ),
+                             GUI.MakeLabel( "Origin", true ),
+                             InspectorEditor.Skin.Label );
       using ( new InspectorGUI.IndentScope() ) {
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Position" ), pose.Xyz );
         InspectorGUI.Vector3Field( GUI.MakeLabel( "Roll, Pitch, Yaw" ), pose.Rpy, "R,P,Y" );
@@ -718,7 +767,8 @@ namespace AGXUnityEditor
       var enabledFieldOrProperty = fieldsAndProperties.FirstOrDefault( wrapper => wrapper.Member.Name == "Enabled" );
       if ( enabledFieldOrProperty == null )
         return;
-      var enabled = enabledFieldOrProperty.Get<bool>( jointData );
+      var enabled = UnityEngine.GUI.enabled &&
+                    enabledFieldOrProperty.Get<bool>( jointData );
       using ( new GUI.EnabledBlock( enabled ) ) {
         if ( !InspectorGUI.Foldout( GetEditorData( parent, member.Name ), InspectorGUI.MakeLabel( member ) ) )
           return;
@@ -734,7 +784,7 @@ namespace AGXUnityEditor
       }
     }
 
-    [ InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) ) ]
+    [InspectorDrawer( typeof( AGXUnity.IO.URDF.Inertia ) )]
     public static object UrdfInertiaDrawer( object[] objects, InvokeWrapper wrapper )
     {
       var inertia = wrapper.Get<AGXUnity.IO.URDF.Inertia>( objects[ 0 ] );

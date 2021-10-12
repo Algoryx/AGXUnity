@@ -115,21 +115,6 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_dischargeCoefficient = 0.7f;
-
-    [ClampAboveZeroInInspector( true )]
-    public float DischargeCoefficient
-    {
-      get { return m_dischargeCoefficient; }
-      set
-      {
-        m_dischargeCoefficient = Mathf.Min( value, 1.0f );
-        if ( Engine != null )
-          Engine.setDischargeCoefficient( m_dischargeCoefficient );
-      }
-    }
-
-    [SerializeField]
     private float m_numberOfRevolutionsPerCycle = 2.0f;
 
     [ClampAboveZeroInInspector]
@@ -430,7 +415,10 @@ namespace AGXUnity.Model
 
       PowerLine = new agxPowerLine.PowerLine();
       PowerLine.setName( name );
+
       Engine = new agxDriveTrain.CombustionEngine( InletVolume );
+      Engine.setDischargeCoefficient( 0.2f );
+
       TorqueConverter = new agxDriveTrain.TorqueConverter();
       GearBox = new agxDriveTrain.GearBox();
       Differentials[ (int)DifferentialLocation.Rear ]   = new agxDriveTrain.Differential();
@@ -477,24 +465,6 @@ namespace AGXUnity.Model
       Differentials[ (int)DifferentialLocation.Rear ].connect( rearDiffRearRightWheelShaft );
       rearDiffRearLeftWheelShaft.connect( m_actuators[ (int)WheelLocation.LeftRear ] );
       rearDiffRearRightWheelShaft.connect( m_actuators[ (int)WheelLocation.RightRear ] );
-
-      var munu = new agx.RealPairVector( new agx.RealPair[]
-      {
-        new agx.RealPair( -0.0001, 0.00 ),
-        new agx.RealPair( 0.00001, 0.50 ),
-        new agx.RealPair( 0.00011, 2.00 ),
-        new agx.RealPair( 0.00100, 2.00 ),
-        new agx.RealPair( 0.20000, 1.10 ),
-        new agx.RealPair( 0.40000, 1.15 ),
-        new agx.RealPair( 0.60000, 1.05 ),
-        new agx.RealPair( 0.80000, 1.01 ),
-        new agx.RealPair( 0.90000, 0.99 ),
-        new agx.RealPair( 1.00000, 0.98 ),
-        new agx.RealPair( 1.00100, 0.98 )
-      } );
-      TorqueConverter.setMuTable( munu );
-      TorqueConverter.setMaxMultiplication( 2.0 );
-      TorqueConverter.setPumpTorqueReferenceRPM( 1000.0 );
 
       GearBox.setGearRatios( new agx.RealVector( new double[] { GearRatios.x, GearRatios.y } ) );
       GearBox.gearUp();

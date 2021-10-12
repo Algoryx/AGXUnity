@@ -103,12 +103,21 @@ namespace AGXUnityEditor.Tools
       m_createConstraintData.CollisionState = ConstraintTool.ConstraintCollisionsStateGUI( m_createConstraintData.CollisionState );
       m_createConstraintData.SolveType = ConstraintTool.ConstraintSolveTypeGUI( m_createConstraintData.SolveType );
 
+      if ( Parent != null ) {
+        MakeConstraintChildToParent = InspectorGUI.Toggle( GUI.MakeLabel( $"Create as child",
+                                                                          true,
+                                                                          $"Add the created constraint game object as child " +
+                                                                          $"to \"{Parent.name}\". If false, the game object is " +
+                                                                          $"created without a parent or under the prefab root if " +
+                                                                          $"created inside a prefab stage." ),
+                                                           MakeConstraintChildToParent );
+      }
+
       var createCancelState = InspectorGUI.PositiveNegativeButtons( m_createConstraintData.AttachmentPair.ReferenceObject != null &&
                                                                     m_createConstraintData.AttachmentPair.ReferenceObject.GetComponentInParent<RigidBody>() != null,
                                                                     "Create",
                                                                     "Create the constraint",
                                                                     "Cancel" );
-
       if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
         GameObject constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,
                                                           m_createConstraintData.AttachmentPair );
@@ -118,6 +127,11 @@ namespace AGXUnityEditor.Tools
 
         if ( MakeConstraintChildToParent )
           constraintGameObject.transform.SetParent( Parent.transform );
+        else {
+          // If we're in the Prefab Stage this call will add the constraint
+          // game object as child of the root prefab.
+          UnityEditor.SceneManagement.StageUtility.PlaceGameObjectInCurrentStage( constraintGameObject );
+        }
 
         Undo.RegisterCreatedObjectUndo( constraintGameObject, "New constraint '" + constraintGameObject.name + "' created" );
 

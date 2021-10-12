@@ -29,10 +29,8 @@ namespace AGXUnityEditor.Tools
         if ( value && !ShapeResizeTool ) {
           RemoveAllChildren();
 
-          var shapeResizeTool                                            = new ShapeResizeTool( Shape );
-          shapeResizeTool.ActivateKey.HideDefaultHandlesWhenIsDown       = true;
-          shapeResizeTool.SymmetricScaleKey.HideDefaultHandlesWhenIsDown = true;
-          shapeResizeTool.RemoveOnKeyEscape                              = true;
+          var shapeResizeTool               = new ShapeResizeTool( Shape );
+          shapeResizeTool.RemoveOnKeyEscape = true;
 
           AddChild( shapeResizeTool );
 
@@ -187,7 +185,7 @@ namespace AGXUnityEditor.Tools
                                       newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
             }
       }
-      else {
+      else if ( materials.Length == 1 ) {
         ShapeVisualMaterialGUI( "Render Material",
                                 materials[ 0 ],
                                 newMaterial => shapeVisual.ReplaceMaterial( 0, newMaterial ) );

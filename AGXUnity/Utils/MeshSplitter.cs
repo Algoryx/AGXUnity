@@ -63,6 +63,19 @@ namespace AGXUnity.Utils
         CreateMesh();
       }
 
+      public void CreateMesh( Vector3[] vertices,
+                              int[] indices )
+      {
+        m_vertices.AddRange( vertices.Select( v => v.ToLeftHanded() ) );
+        for ( int i = 0; i < indices.Length; i += 3 ) {
+          m_indices.Add( indices[ i + 0 ] );
+          m_indices.Add( indices[ i + 2 ] );
+          m_indices.Add( indices[ i + 1 ] );
+        }
+
+        CreateMesh();
+      }
+
       public void CreateMesh()
       {
         if ( m_mesh != null )
@@ -108,7 +121,7 @@ namespace AGXUnity.Utils
     public static MeshSplitter Split( agx.Vec3Vector vertices,
                                       agx.UInt32Vector indices,
                                       Func<agx.Vec3, Vector3> transformer,
-                                      int maxNumVertices = Int16.MaxValue )
+                                      int maxNumVertices = UInt16.MaxValue )
     {
       return Split( vertices, indices, null, transformer, maxNumVertices );
     }
@@ -117,7 +130,7 @@ namespace AGXUnity.Utils
                                       agx.UInt32Vector indices,
                                       agx.Vec2Vector uvs,
                                       Func<agx.Vec3, Vector3> vertexTransformer,
-                                      int maxNumVertices = Int16.MaxValue )
+                                      int maxNumVertices = UInt16.MaxValue )
     {
       var splitter = new MeshSplitter();
 
@@ -152,6 +165,36 @@ namespace AGXUnity.Utils
                                              splitter.m_vertices[ Convert.ToInt32( indices[ i + 2 ] ) ],
                                              splitter.m_vertices[ Convert.ToInt32( indices[ i + 1 ] ) ] );
         }
+      }
+
+      foreach ( var data in splitter.m_subMeshData )
+        data.CreateMesh();
+
+      return splitter;
+    }
+
+    /// <summary>
+    /// Assuming vertices and indices are stored in AGX mesh format.
+    /// </summary>
+    public static MeshSplitter Split( Vector3[] vertices,
+                                      int[] indices,
+                                      int maxNumVertices = UInt16.MaxValue )
+    {
+      var splitter = new MeshSplitter();
+
+      if ( vertices.Length < maxNumVertices ) {
+        splitter.m_subMeshData.Add( new SubMeshData( false, vertices.Length ) );
+        splitter.m_subMeshData.Last().CreateMesh( vertices, indices );
+        return splitter;
+      }
+
+      for ( int i = 0; i < indices.Length; i += 3 ) {
+        if ( i == 0 || splitter.m_subMeshData.Last().NumVertices >= maxNumVertices )
+          splitter.m_subMeshData.Add( new SubMeshData( false, maxNumVertices ) );
+
+        splitter.m_subMeshData.Last().Add( vertices[ indices[ i + 0 ] ],
+                                           vertices[ indices[ i + 2 ] ],
+                                           vertices[ indices[ i + 1 ] ] );
       }
 
       foreach ( var data in splitter.m_subMeshData )

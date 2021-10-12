@@ -46,7 +46,8 @@ namespace AGXUnityEditor
     Capsule,
     Cylinder,
     Mesh,
-    ResetDefault
+    ResetDefault,
+    Locate
   }
 
   public static class IconManager
@@ -264,6 +265,7 @@ namespace AGXUnityEditor
       miscIconFilenames[ (int)MiscIcon.Cylinder ]          = "cylinder_icon";
       miscIconFilenames[ (int)MiscIcon.Mesh ]              = "mesh_icon";
       miscIconFilenames[ (int)MiscIcon.ResetDefault ]      = "sync_icon";
+      miscIconFilenames[ (int)MiscIcon.Locate ]            = "download_icon";
 
       m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
     }
@@ -325,9 +327,10 @@ namespace AGXUnityEditor
     {
       var disabledScope = new EditorGUI.DisabledScope( !enabled );
       var buttonContent = content.image != null ? ToolButtonTooltip( content ) : content;
-      var pressed = UnityEngine.GUI.Button( rect,
+      var pressed = UnityEngine.GUI.Toggle( rect,
+                                            active,
                                             buttonContent,
-                                            InspectorEditor.Skin.GetButton( active, buttonType ) );
+                                            InspectorEditor.Skin.GetButton( buttonType ) ) != active;
       if ( buttonContent == s_tooltipContent && content.image != null ) {
         using ( IconManager.ForegroundColorBlock( active, enabled ) )
           UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), content.image );

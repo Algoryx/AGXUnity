@@ -39,10 +39,10 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumLength, value ), MinimumLength );
 
-        if (Native != null)
-          Native.setThickness(m_thickness);
+        if ( Native != null )
+          Native.setThickness( m_thickness );
 
         SizeUpdated();
       }
@@ -57,7 +57,7 @@ namespace AGXUnity.Collide
       get { return m_topRadius; }
       set
       {
-        m_topRadius = Utils.Math.ClampAbove( Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
+        m_topRadius = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumLength, value ), MinimumLength );
 
         if ( Native != null )
           Native.setTopOuterRadius( m_topRadius );
@@ -75,7 +75,7 @@ namespace AGXUnity.Collide
       get { return m_bottomRadius; }
       set
       {
-        m_bottomRadius = Utils.Math.ClampAbove( Mathf.Max(value, m_topRadius + MinimumLength), MinimumLength );
+        m_bottomRadius = Utils.Math.ClampAbove( Mathf.Max( value, m_topRadius + MinimumLength ), MinimumLength );
 
         if ( Native != null )
           Native.setBottomOuterRadius( m_bottomRadius );
@@ -106,7 +106,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Returns the native cone object if created.
     /// </summary>
-    public agxCollide.HollowCone Native { get { return m_shape as agxCollide.HollowCone; } }
+    public agxCollide.HollowCone Native { get { return NativeShape?.asHollowCone(); } }
 
     /// <summary>
     /// Scale of meshes are inherited by the parents and supports non-uniform scaling.
@@ -119,9 +119,10 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Creates the native cone object given current top and bottom radii plus height.
     /// </summary>
-    protected override agxCollide.Shape CreateNative()
+    protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.HollowCone(m_topRadius, m_bottomRadius, m_height, m_thickness);
+      return new agxCollide.Geometry( new agxCollide.HollowCone( m_topRadius, m_bottomRadius, m_height, m_thickness ),
+                                      GetNativeGeometryOffset() );
     }
   }
 }
