@@ -1,13 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System.ComponentModel;
+using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.Rendering;
+
 using AGXUnity.Utils;
 using AGXUnity.Model;
 
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
-  [RequireComponent( typeof(DeformableTerrain)) ]
+  [RequireComponent( typeof( DeformableTerrain ) )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
@@ -25,10 +28,10 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public DeformableTerrain DeformableTerrain { get; private set; } = null;
 
-    [Tooltip("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced")]
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
 
+    [Description("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced.")]
     public GranuleRenderMode RenderMode
     {
       get { return m_renderMode; }
@@ -41,10 +44,11 @@ namespace AGXUnity.Rendering
       }
     }
 
-    [Tooltip("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced")]
     [SerializeField]
     private SynchronizeMode m_syncMode = SynchronizeMode.PostStepForward;
 
+    [Description("Synchronize granular transforms for rendering when the transforms has been " +
+                 "changed (PostStepForward) or in Update whenever the transforms has been changed.")]
     public SynchronizeMode SyncMode
     {
       get { return m_syncMode; }
