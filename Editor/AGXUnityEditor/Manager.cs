@@ -830,6 +830,16 @@ namespace AGXUnityEditor
         result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
                  result;
 
+#if UNITY_2019_4_OR_NEWER
+      if ( !result ) {
+        var defineSymbol = "AGX_DYNAMICS_UPDATE_REBUILD";
+        if ( Build.DefineSymbols.Contains( defineSymbol ) )
+          Build.DefineSymbols.Remove( defineSymbol );
+        else
+          Build.DefineSymbols.Add( defineSymbol );
+      }
+#endif
+
       return result;
     }
 
