@@ -14,6 +14,59 @@ namespace AGXUnityEditor.Utils
   {
     private static ObjectsGizmoColorHandler m_colorHandler = new ObjectsGizmoColorHandler();
 
+    [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
+    public static void OnDrawGizmosConstraint(Constraint constraint, GizmoType gizmoType)
+    {
+      if (constraint.Native != null)
+        return;
+
+      bool selected = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
+
+      DrawArrowGizmo(selected ? Color.green : Color.blue, constraint.AttachmentPair, selected);
+    }
+
+    private static UnityEngine.Mesh m_gizmoMesh = null;
+    public static UnityEngine.Mesh GetOrCreateArrowGizmoMesh()
+    {
+      // Unity crashes before first scene view frame has been rendered on startup
+      // if we load resources. Wait some time before we show this gizmo...
+      //if ( !Application.isPlaying && Time.realtimeSinceStartup < 30.0f )
+      //  return null;
+
+      if (m_gizmoMesh != null)
+        return m_gizmoMesh;
+
+      GameObject tmp = Resources.Load<GameObject>(@"Debug/ConstraintRenderer");
+      MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
+      CombineInstance[] combine = new CombineInstance[filters.Length];
+
+      for (int i = 0; i < filters.Length; ++i)
+      {
+        combine[i].mesh = filters[i].sharedMesh;
+        combine[i].transform = filters[i].transform.localToWorldMatrix;
+      }
+
+      m_gizmoMesh = new UnityEngine.Mesh();
+      m_gizmoMesh.CombineMeshes(combine);
+
+      return m_gizmoMesh;
+    }
+
+    private static void DrawArrowGizmo(Color color, AttachmentPair attachmentPair, bool selected)
+    {
+      Gizmos.color = color;
+      Gizmos.DrawMesh(GetOrCreateArrowGizmoMesh(),
+                       attachmentPair.ReferenceFrame.Position,
+                       attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward),
+                       0.3f * Spawner.Utils.FindConstantScreenSizeScale(attachmentPair.ReferenceFrame.Position, Camera.current) * Vector3.one);
+
+      if (!attachmentPair.Synchronized && selected)
+      {
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(attachmentPair.ReferenceFrame.Position, attachmentPair.ConnectedFrame.Position);
+      }
+    }
+
     [DrawGizmo( GizmoType.Active | GizmoType.Selected )]
     public static void OnDrawGizmosCable( Cable cable, GizmoType gizmoType )
     {
@@ -176,7 +229,7 @@ namespace AGXUnityEditor.Utils
 
       Gizmos.color = manager.ContactColor;
       foreach ( var contact in manager.ContactList ) {
-        Gizmos.DrawMesh( Constraint.GetOrCreateGizmosMesh(),
+        Gizmos.DrawMesh( GetOrCreateArrowGizmoMesh(),
                          contact.Point,
                          Quaternion.FromToRotation( Vector3.up, contact.Normal ),
                          manager.ContactScale * Spawner.Utils.FindConstantScreenSizeScale( contact.Point, Camera.current ) * Vector3.one );
