@@ -145,7 +145,7 @@ namespace AGXUnityEditor.Utils
       if ( !selectionActive )
         m_colorHandler.TimeInterpolator.Reset();
 
-      // Early exist if we're not visualizing the bodies nor have active selections.
+      // Early exit if we're not visualizing the bodies nor have active selections.
       bool active = manager.ColorizeBodies || selectionActive || assemblyTool != null;
       if ( !active )
         return;
