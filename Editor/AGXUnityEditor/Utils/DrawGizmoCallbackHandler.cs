@@ -20,9 +20,26 @@ namespace AGXUnityEditor.Utils
       if (constraint.Native != null)
         return;
 
-      bool selected = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
+      bool inSelectionHierarchy = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
+      bool selected = (gizmoType & GizmoType.Selected) != 0;
 
-      DrawArrowGizmo(selected ? Color.green : Color.blue, constraint.AttachmentPair, selected);
+      AttachmentPair pair = constraint.AttachmentPair;
+      DrawArrowGizmo(inSelectionHierarchy ? Color.green : Color.blue, pair, inSelectionHierarchy);
+
+
+      Color discColor = new Color(0.5f, 0.5f, 1f, 0.1f);
+      Color wireColor = new Color(0.5f, 0.5f, 1f, 0.7f);
+      var frame = pair.ReferenceFrame;
+
+      switch (constraint.Type)
+      {
+        case ConstraintType.Hinge:
+          Handles.color = discColor;
+          Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, 0.5f);
+          Handles.color = wireColor;
+          Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, 0.5f);
+          break;
+      }
     }
 
     private static UnityEngine.Mesh m_gizmoMesh = null;
