@@ -21,8 +21,8 @@ namespace AGXUnityEditor.Utils
     [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
     public static void OnDrawGizmosConstraint(Constraint constraint, GizmoType gizmoType)
     {
-      if (constraint.Native != null)
-        return;
+      //if (constraint.Native != null)
+      //  return;
 
       //TODO: this should be in some kind of settings object - where? DebugRenderManager (get instance or use defaults) or own object? ScriptableObject could be one solution, even though we are not currently using them...
       if (!m_settingsObject)
@@ -35,6 +35,10 @@ namespace AGXUnityEditor.Utils
 
       Color transparentColor = new Color(0.5f, 0.5f, 1f, 0.1f);
       Color solidColor = new Color(0.5f, 0.5f, 1f, 0.7f);
+      Color currentColor = new Color(1f, 1f, 0f, 0.8f);
+      Color lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
+      Color lockPassiveColor = new Color(1f, 0f, 0f, 0.4f);
+      Color speedColor = new Color(0f, 1f, 0f, 0.8f);
 
       AttachmentPair pair = constraint.AttachmentPair;
       var frame = pair.ReferenceFrame;
@@ -45,14 +49,14 @@ namespace AGXUnityEditor.Utils
           var range = constraint.GetController<RangeController>();
           var min = Mathf.Rad2Deg * range.Range.Min;
           var max = Mathf.Rad2Deg * range.Range.Max;
-
+          var normal = frame.Rotation * Vector3.forward;
+          var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
+          var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
+          var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
           var circleScale = m_scale * 1.5f;
 
           if (range.Enable)
           {
-            var normal = frame.Rotation * Vector3.forward;
-            var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
-            var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
             if (max - min > 360f)
             {
               Handles.color = transparentColor;
@@ -81,6 +85,29 @@ namespace AGXUnityEditor.Utils
             Handles.color = solidColor;
             Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
           }
+
+          var lockC = constraint.GetController<LockController>();
+          //if (lockC.Enable)
+          //{
+            Handles.color = lockC.Enable ? lockActiveColor : lockPassiveColor;
+            var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
+            Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
+          //}
+
+          // Current position
+          Handles.color = currentColor;
+          Handles.DrawLine(frame.Position, frame.Position + currentAngleDirection * circleScale * 1.1f);
+
+          var speedC = constraint.GetController<TargetSpeedController>();
+          if (speedC.Enable)
+          {
+            Handles.color = speedColor;
+            var currentSpeedDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.left);
+            var pos = frame.Position + currentAngleDirection * circleScale;
+            Handles.DrawLine(pos, pos + currentSpeedDirection * speedC.Speed * Time.fixedDeltaTime * 5f);
+          }
+
+
           break;
       }
 

@@ -4,8 +4,7 @@ Properties {
 	_MainTex ("Base (RGB)", 2D) = "white" {}
 }
 SubShader {
-	//Using the transparent queue +50 ensures us that this object will be rendered after all other
-	//transparent objects, removing any possible alpha depth bugs. Using the transparent queue
+	//Transparent queue +50 makes this render last. Using the transparent queue
 	//instead of the geometry queue enables us to ignore zwriting properly
 	Tags { "Queue"="Transparent+50" "IgnoreProjector"="True" "RenderType"="Transparent" }
 	LOD 200
