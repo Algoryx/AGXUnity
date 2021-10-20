@@ -14,47 +14,89 @@ namespace AGXUnityEditor.Utils
   {
     private static ObjectsGizmoColorHandler m_colorHandler = new ObjectsGizmoColorHandler();
 
+    // TODO temporary, see below
+    private static DebugRenderManager m_settingsObject = null;
+    private static float m_scale = 0.3f;
+
     [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
     public static void OnDrawGizmosConstraint(Constraint constraint, GizmoType gizmoType)
     {
       if (constraint.Native != null)
         return;
 
+      //TODO: this should be in some kind of settings object - where? DebugRenderManager (get instance or use defaults) or own object? ScriptableObject could be one solution, even though we are not currently using them...
+      if (!m_settingsObject)
+        m_settingsObject = GameObject.FindObjectOfType<DebugRenderManager>();
+      if (m_settingsObject)
+        m_scale = m_settingsObject.ConstraintGizmoScale;
+
       bool inSelectionHierarchy = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
       bool selected = (gizmoType & GizmoType.Selected) != 0;
 
+      Color transparentColor = new Color(0.5f, 0.5f, 1f, 0.1f);
+      Color solidColor = new Color(0.5f, 0.5f, 1f, 0.7f);
+
       AttachmentPair pair = constraint.AttachmentPair;
-      DrawArrowGizmo(inSelectionHierarchy ? Color.green : Color.blue, pair, inSelectionHierarchy);
-
-
-      Color discColor = new Color(0.5f, 0.5f, 1f, 0.1f);
-      Color wireColor = new Color(0.5f, 0.5f, 1f, 0.7f);
       var frame = pair.ReferenceFrame;
 
       switch (constraint.Type)
       {
         case ConstraintType.Hinge:
-          Handles.color = discColor;
-          Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, 0.5f);
-          Handles.color = wireColor;
-          Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, 0.5f);
+          var range = constraint.GetController<RangeController>();
+          var min = Mathf.Rad2Deg * range.Range.Min;
+          var max = Mathf.Rad2Deg * range.Range.Max;
+
+          var circleScale = m_scale * 1.5f;
+
+          if (range.Enable)
+          {
+            var normal = frame.Rotation * Vector3.forward;
+            var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
+            var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
+            if (max - min > 360f)
+            {
+              Handles.color = transparentColor;
+              Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
+              Handles.color = solidColor;
+              Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
+              if (min != Mathf.NegativeInfinity)
+                Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
+              if (max != Mathf.Infinity)
+                Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
+            }
+            else
+            {
+              Handles.color = transparentColor;
+              Handles.DrawSolidArc(frame.Position, normal, start, max - min, circleScale);
+              Handles.color = solidColor;
+              Handles.DrawWireArc(frame.Position, normal, start, max - min, circleScale);
+              Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
+              Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
+            }
+          }
+          else
+          {
+            Handles.color = transparentColor;
+            Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
+            Handles.color = solidColor;
+            Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
+          }
           break;
       }
+
+      DrawArrowGizmo(inSelectionHierarchy ? Color.green : solidColor, pair, inSelectionHierarchy);
     }
 
     private static UnityEngine.Mesh m_gizmoMesh = null;
+    private static Material m_gizmoMaterial = null;
     public static UnityEngine.Mesh GetOrCreateArrowGizmoMesh()
     {
-      // Unity crashes before first scene view frame has been rendered on startup
-      // if we load resources. Wait some time before we show this gizmo...
-      //if ( !Application.isPlaying && Time.realtimeSinceStartup < 30.0f )
-      //  return null;
-
       if (m_gizmoMesh != null)
         return m_gizmoMesh;
 
       GameObject tmp = Resources.Load<GameObject>(@"Debug/ConstraintRenderer");
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
+      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
       CombineInstance[] combine = new CombineInstance[filters.Length];
 
       for (int i = 0; i < filters.Length; ++i)
@@ -66,16 +108,23 @@ namespace AGXUnityEditor.Utils
       m_gizmoMesh = new UnityEngine.Mesh();
       m_gizmoMesh.CombineMeshes(combine);
 
+      m_gizmoMaterial = renderers[0].sharedMaterial;
+
       return m_gizmoMesh;
     }
 
     private static void DrawArrowGizmo(Color color, AttachmentPair attachmentPair, bool selected)
     {
       Gizmos.color = color;
-      Gizmos.DrawMesh(GetOrCreateArrowGizmoMesh(),
-                       attachmentPair.ReferenceFrame.Position,
-                       attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward),
-                       0.3f * Spawner.Utils.FindConstantScreenSizeScale(attachmentPair.ReferenceFrame.Position, Camera.current) * Vector3.one);
+      //Gizmos.DrawMesh(GetOrCreateArrowGizmoMesh(),
+      //                 attachmentPair.ReferenceFrame.Position,
+      //                 attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward),
+      //                 m_scale * Vector3.one);// * Spawner.Utils.FindConstantScreenSizeScale(attachmentPair.ReferenceFrame.Position, Camera.current) * Vector3.one);
+
+      Matrix4x4 matrixTRS = Matrix4x4.TRS(attachmentPair.ReferenceFrame.Position, attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward), m_scale * Vector3.one);
+      GetOrCreateArrowGizmoMesh();
+      m_gizmoMaterial.SetPass(0);
+      Graphics.DrawMeshNow(m_gizmoMesh, matrixTRS);
 
       if (!attachmentPair.Synchronized && selected)
       {

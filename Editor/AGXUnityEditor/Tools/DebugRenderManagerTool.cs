@@ -56,6 +56,7 @@ namespace AGXUnityEditor.Tools
                                                                    false,
                                                                    "Include debug rendering when building the project." ),
                                                     Manager.IncludeInBuild );
+      Manager.ConstraintGizmoScale = EditorGUILayout.Slider(GUI.MakeLabel("Constraint Gizmo Scale"), Manager.ConstraintGizmoScale, 0.0f, 1.0f);
     }
   }
 }

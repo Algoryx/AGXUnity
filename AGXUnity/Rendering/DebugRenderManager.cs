@@ -222,6 +222,12 @@ namespace AGXUnity.Rendering
     private bool m_includeInBuild = false;
 
     /// <summary>
+    /// Size of gizmos used to visualize constraints
+    /// </summary>
+    [HideInInspector]
+    public float ConstraintGizmoScale = 0.3f;
+
+    /// <summary>
     /// Enable/disable debug rendering in builds. Default false ("do not include in build").
     /// </summary>
     [HideInInspector]
