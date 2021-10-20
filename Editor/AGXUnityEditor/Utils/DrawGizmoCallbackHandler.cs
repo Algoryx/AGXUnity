@@ -35,6 +35,7 @@ namespace AGXUnityEditor.Utils
 
       Color transparentColor = new Color(0.5f, 0.5f, 1f, 0.1f);
       Color solidColor = new Color(0.5f, 0.5f, 1f, 0.7f);
+      Color solidColorSelected = new Color(0.3f, 1f, 0.3f, 0.7f);
       Color currentColor = new Color(1f, 1f, 0f, 0.8f);
       Color lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
       Color lockPassiveColor = new Color(1f, 0f, 0f, 0.4f);
@@ -111,7 +112,7 @@ namespace AGXUnityEditor.Utils
           break;
       }
 
-      DrawArrowGizmo(inSelectionHierarchy ? Color.green : solidColor, pair, inSelectionHierarchy);
+      DrawArrowGizmo(inSelectionHierarchy ? solidColorSelected : solidColor, pair, inSelectionHierarchy);
     }
 
     private static UnityEngine.Mesh m_gizmoMesh = null;
@@ -142,7 +143,7 @@ namespace AGXUnityEditor.Utils
 
     private static void DrawArrowGizmo(Color color, AttachmentPair attachmentPair, bool selected)
     {
-      Gizmos.color = color;
+      //Gizmos.color = color;
       //Gizmos.DrawMesh(GetOrCreateArrowGizmoMesh(),
       //                 attachmentPair.ReferenceFrame.Position,
       //                 attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward),
@@ -150,7 +151,10 @@ namespace AGXUnityEditor.Utils
 
       Matrix4x4 matrixTRS = Matrix4x4.TRS(attachmentPair.ReferenceFrame.Position, attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward), m_scale * Vector3.one);
       GetOrCreateArrowGizmoMesh();
-      m_gizmoMaterial.SetPass(0);
+      var material = m_gizmoMaterial;
+      material.color = color;
+      material.SetPass(0);
+      
       Graphics.DrawMeshNow(m_gizmoMesh, matrixTRS);
 
       if (!attachmentPair.Synchronized && selected)
