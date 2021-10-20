@@ -136,7 +136,7 @@ namespace AGXUnityEditor.Utils
       m_gizmoMesh = new UnityEngine.Mesh();
       m_gizmoMesh.CombineMeshes(combine);
 
-      m_gizmoMaterial = renderers[0].sharedMaterial;
+      m_gizmoMaterial = new Material(renderers[0].sharedMaterial); // We just want a copy of the material here
 
       return m_gizmoMesh;
     }
