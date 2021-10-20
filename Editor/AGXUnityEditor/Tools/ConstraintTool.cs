@@ -51,6 +51,10 @@ namespace AGXUnityEditor.Tools
       for ( int i = 1; i < constraints.Length; ++i )
         differentTypes = differentTypes || refConstraint.Type != constraints[ i ].Type;
 
+      // Render type of constraint prominently
+      GUILayout.Label(GUI.MakeLabel(refConstraint.Type.ToString() + " Constraint", 16, true),
+                         skin.LabelMiddleCenter);
+
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
