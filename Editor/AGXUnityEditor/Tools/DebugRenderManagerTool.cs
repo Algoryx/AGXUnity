@@ -57,6 +57,11 @@ namespace AGXUnityEditor.Tools
                                                                    "Include debug rendering when building the project." ),
                                                     Manager.IncludeInBuild );
       Manager.ConstraintGizmoScale = EditorGUILayout.Slider(GUI.MakeLabel("Constraint Gizmo Scale"), Manager.ConstraintGizmoScale, 0.0f, 1.0f);
+      Manager.ConstraintGizmos = InspectorGUI.Toggle(GUI.MakeLabel( "Constraint Gizmos",
+                                                                    true,
+                                                                    "Turn on / off constraint visualization rendering."),
+                                                                    Manager.ConstraintGizmos);
+
     }
   }
 }

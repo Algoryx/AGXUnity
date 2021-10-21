@@ -222,6 +222,12 @@ namespace AGXUnity.Rendering
     private bool m_includeInBuild = false;
 
     /// <summary>
+    /// Use Constraint gizmos
+    /// </summary>
+    [HideInInspector]
+    public bool ConstraintGizmos = true;
+
+    /// <summary>
     /// Size of gizmos used to visualize constraints
     /// </summary>
     [HideInInspector]

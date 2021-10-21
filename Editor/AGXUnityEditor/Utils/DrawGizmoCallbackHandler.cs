@@ -18,6 +18,11 @@ namespace AGXUnityEditor.Utils
     private static DebugRenderManager m_settingsObject = null;
     private static float m_scale = 0.3f;
 
+
+    private static UnityEngine.Mesh m_arrowMesh = null;
+    private static UnityEngine.Mesh m_cylinderMesh = null;
+    private static Material m_gizmoMaterial = null;
+
     [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
     public static void OnDrawGizmosConstraint(Constraint constraint, GizmoType gizmoType)
     {
@@ -28,7 +33,12 @@ namespace AGXUnityEditor.Utils
       if (!m_settingsObject)
         m_settingsObject = GameObject.FindObjectOfType<DebugRenderManager>();
       if (m_settingsObject)
+      {
+        if (!m_settingsObject.ConstraintGizmos)
+          return;
+
         m_scale = m_settingsObject.ConstraintGizmoScale;
+      }
 
       bool inSelectionHierarchy = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
       bool selected = (gizmoType & GizmoType.Selected) != 0;
@@ -44,9 +54,12 @@ namespace AGXUnityEditor.Utils
       AttachmentPair pair = constraint.AttachmentPair;
       var frame = pair.ReferenceFrame;
 
+      // TODO: do we want to visualize connected frame? Could be spheres...
+
       switch (constraint.Type)
       {
         case ConstraintType.Hinge:
+          // TODO: this should be separated into a separate function so we can reuse it for other constraints that have rotational DOFs
           var range = constraint.GetController<RangeController>();
           var min = Mathf.Rad2Deg * range.Range.Min;
           var max = Mathf.Rad2Deg * range.Range.Max;
@@ -107,24 +120,40 @@ namespace AGXUnityEditor.Utils
             var pos = frame.Position + currentAngleDirection * circleScale;
             Handles.DrawLine(pos, pos + currentSpeedDirection * speedC.Speed * Time.fixedDeltaTime * 5f);
           }
+          break;
 
+        case ConstraintType.Prismatic:
+          //range = constraint.GetController<RangeController>();
+          //min = range.Range.Min;
+          //max = range.Range.Max;
+          //normal = frame.Rotation * Vector3.forward;
+          //start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
+          //currentAngleDirection = Quaternion.AngleAxis(constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
+          ////var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
+          //var rectScale = m_scale;
+          //
 
+          // Ok, so we need to draw meshes here. Need more generic draw mesh function than the arrow one, and have a cylinder mesh to draw for this application.
+          // Next, we need caps to mark end of ranges, could be solid circles or more cylinders.
+          // We also want to mark current pos and lock. 
+          // Finally, target speed.
+
+          //Gizmos.DrawCube(frame.Position, new Vector3(max - min, rectScale / 10f, rectScale / 10f));
           break;
       }
 
       DrawArrowGizmo(inSelectionHierarchy ? solidColorSelected : solidColor, pair, inSelectionHierarchy);
     }
 
-    private static UnityEngine.Mesh m_gizmoMesh = null;
-    private static Material m_gizmoMaterial = null;
-    public static UnityEngine.Mesh GetOrCreateArrowGizmoMesh()
+    public static UnityEngine.Mesh GetOrCreateGizmoMesh(string resourceName)
     {
-      if (m_gizmoMesh != null)
-        return m_gizmoMesh;
+      if (m_arrowMesh != null)
+        return m_arrowMesh;
+      if (m_gizmoMaterial == null)
+        GetOrCreateGizmoMaterial();
 
-      GameObject tmp = Resources.Load<GameObject>(@"Debug/ConstraintRenderer");
+      GameObject tmp = Resources.Load<GameObject>(@resourceName);
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
       CombineInstance[] combine = new CombineInstance[filters.Length];
 
       for (int i = 0; i < filters.Length; ++i)
@@ -133,12 +162,21 @@ namespace AGXUnityEditor.Utils
         combine[i].transform = filters[i].transform.localToWorldMatrix;
       }
 
-      m_gizmoMesh = new UnityEngine.Mesh();
-      m_gizmoMesh.CombineMeshes(combine);
+      m_arrowMesh = new UnityEngine.Mesh();
+      m_arrowMesh.CombineMeshes(combine);
 
-      m_gizmoMaterial = new Material(renderers[0].sharedMaterial); // We just want a copy of the material here
+      return m_arrowMesh;
+    }
 
-      return m_gizmoMesh;
+    // We want to render gizmo meshes with a material that has a shader that draws on top of other materials...
+    public static void GetOrCreateGizmoMaterial()
+    {
+      if (m_gizmoMaterial != null)
+        return;
+
+      GameObject tmp = Resources.Load<GameObject>(@"Debug/ConstraintRenderer");
+      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
+      m_gizmoMaterial = new Material(renderers[0].sharedMaterial); // We just want a copy of the material, in order to change the color but not make changes to the original material
     }
 
     private static void DrawArrowGizmo(Color color, AttachmentPair attachmentPair, bool selected)
@@ -150,12 +188,12 @@ namespace AGXUnityEditor.Utils
       //                 m_scale * Vector3.one);// * Spawner.Utils.FindConstantScreenSizeScale(attachmentPair.ReferenceFrame.Position, Camera.current) * Vector3.one);
 
       Matrix4x4 matrixTRS = Matrix4x4.TRS(attachmentPair.ReferenceFrame.Position, attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward), m_scale * Vector3.one);
-      GetOrCreateArrowGizmoMesh();
+      GetOrCreateGizmoMesh("Debug/ConstraintRenderer");
       var material = m_gizmoMaterial;
       material.color = color;
       material.SetPass(0);
       
-      Graphics.DrawMeshNow(m_gizmoMesh, matrixTRS);
+      Graphics.DrawMeshNow(m_arrowMesh, matrixTRS);
 
       if (!attachmentPair.Synchronized && selected)
       {
@@ -326,7 +364,7 @@ namespace AGXUnityEditor.Utils
 
       Gizmos.color = manager.ContactColor;
       foreach ( var contact in manager.ContactList ) {
-        Gizmos.DrawMesh( GetOrCreateArrowGizmoMesh(),
+        Gizmos.DrawMesh( GetOrCreateGizmoMesh("Debug/ConstraintRenderer"),
                          contact.Point,
                          Quaternion.FromToRotation( Vector3.up, contact.Normal ),
                          manager.ContactScale * Spawner.Utils.FindConstantScreenSizeScale( contact.Point, Camera.current ) * Vector3.one );
