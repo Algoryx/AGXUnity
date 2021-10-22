@@ -18,9 +18,7 @@ namespace AGXUnityEditor.Utils
     private static DebugRenderManager m_settingsObject = null;
     private static float m_scale = 0.3f;
 
-
-    private static UnityEngine.Mesh m_arrowMesh = null;
-    private static UnityEngine.Mesh m_cylinderMesh = null;
+    private static Dictionary<string, UnityEngine.Mesh> m_meshes = new Dictionary<string, UnityEngine.Mesh>();
     private static Material m_gizmoMaterial = null;
 
     [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
@@ -48,7 +46,7 @@ namespace AGXUnityEditor.Utils
       Color solidColorSelected = new Color(0.3f, 1f, 0.3f, 0.7f);
       Color currentColor = new Color(1f, 1f, 0f, 0.8f);
       Color lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
-      Color lockPassiveColor = new Color(1f, 0f, 0f, 0.4f);
+      Color lockPassiveColor = new Color(1f, 0f, 0f, 0.2f);
       Color speedColor = new Color(0f, 1f, 0f, 0.8f);
 
       AttachmentPair pair = constraint.AttachmentPair;
@@ -123,34 +121,64 @@ namespace AGXUnityEditor.Utils
           break;
 
         case ConstraintType.Prismatic:
-          //range = constraint.GetController<RangeController>();
-          //min = range.Range.Min;
-          //max = range.Range.Max;
-          //normal = frame.Rotation * Vector3.forward;
-          //start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
-          //currentAngleDirection = Quaternion.AngleAxis(constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
-          ////var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
-          //var rectScale = m_scale;
-          //
+          range = constraint.GetController<RangeController>();
+          min = range.Range.Min;
+          max = range.Range.Max;
+          normal = frame.Rotation * Vector3.forward;
+          var currentPosition = frame.Position + normal * constraint.GetCurrentAngle();
 
-          // Ok, so we need to draw meshes here. Need more generic draw mesh function than the arrow one, and have a cylinder mesh to draw for this application.
-          // Next, we need caps to mark end of ranges, could be solid circles or more cylinders.
-          // We also want to mark current pos and lock. 
-          // Finally, target speed.
+          var rectScale = m_scale / 10f;
 
-          //Gizmos.DrawCube(frame.Position, new Vector3(max - min, rectScale / 10f, rectScale / 10f));
+          float length = Mathf.Max(max - min, 0.01f);
+          float offset = (max - min) / 2 - max;
+          if (length == Mathf.Infinity)  // TODO: handle this case by drawing one end if there is one, and the other as an arrow or something
+          {
+            length = 1f;
+            offset = 0;
+          }
+
+          DrawMeshGizmo("Debug/CylinderRenderer", solidColor, frame.Position - normal * offset, frame.Rotation, new Vector3(rectScale, length / 2f, rectScale));
+          Handles.color = solidColor;
+          if (min != Mathf.NegativeInfinity)
+            DrawSolidAndWireDisc(frame.Position + normal * min, normal, rectScale * 2f, transparentColor, solidColor);
+          if (max != Mathf.Infinity)
+            DrawSolidAndWireDisc(frame.Position + normal * max, normal, rectScale * 2f, transparentColor, solidColor);
+
+
+          DrawSolidAndWireDisc(currentPosition, normal, rectScale * 2f, transparentColor, currentColor);
+
+          lockC = constraint.GetController<LockController>();
+          var lockPosition = frame.Position + normal * lockC.Position;
+          DrawSolidAndWireDisc(lockPosition, normal, rectScale * 2.1f, transparentColor, lockC.Enable ? lockActiveColor : lockPassiveColor);
+
+          // TODO target speed
+          break;
+
+        default:
+          DrawMeshGizmo("Debug/ConstraintRenderer", inSelectionHierarchy ? solidColorSelected : solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one);
           break;
       }
 
-      DrawArrowGizmo(inSelectionHierarchy ? solidColorSelected : solidColor, pair, inSelectionHierarchy);
+      if (!pair.Synchronized && inSelectionHierarchy)
+      {
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(pair.ReferenceFrame.Position, pair.ConnectedFrame.Position);
+      }
+    }
+
+    public static void DrawSolidAndWireDisc(Vector3 position, Vector3 normal, float radius, Color discColor, Color wireColor)
+    {
+      Handles.color = discColor;
+      Handles.DrawSolidDisc(position, normal, radius);
+      Handles.color = wireColor;
+      Handles.DrawWireDisc(position, normal, radius);
     }
 
     public static UnityEngine.Mesh GetOrCreateGizmoMesh(string resourceName)
     {
-      if (m_arrowMesh != null)
-        return m_arrowMesh;
-      if (m_gizmoMaterial == null)
-        GetOrCreateGizmoMaterial();
+      UnityEngine.Mesh mesh;
+      if (m_meshes.TryGetValue(resourceName, out mesh))
+        return mesh;
 
       GameObject tmp = Resources.Load<GameObject>(@resourceName);
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
@@ -162,24 +190,28 @@ namespace AGXUnityEditor.Utils
         combine[i].transform = filters[i].transform.localToWorldMatrix;
       }
 
-      m_arrowMesh = new UnityEngine.Mesh();
-      m_arrowMesh.CombineMeshes(combine);
+      mesh = new UnityEngine.Mesh();
+      mesh.CombineMeshes(combine);
 
-      return m_arrowMesh;
+      m_meshes.Add(resourceName, mesh);
+
+      return mesh;
     }
 
     // We want to render gizmo meshes with a material that has a shader that draws on top of other materials...
-    public static void GetOrCreateGizmoMaterial()
+    public static Material GetOrCreateGizmoMaterial()
     {
       if (m_gizmoMaterial != null)
-        return;
+        return m_gizmoMaterial;
 
       GameObject tmp = Resources.Load<GameObject>(@"Debug/ConstraintRenderer");
       MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
       m_gizmoMaterial = new Material(renderers[0].sharedMaterial); // We just want a copy of the material, in order to change the color but not make changes to the original material
+
+      return m_gizmoMaterial;
     }
 
-    private static void DrawArrowGizmo(Color color, AttachmentPair attachmentPair, bool selected)
+    private static void DrawMeshGizmo(string resourceName, Color color, Vector3 position, Quaternion rotation, Vector3 scale)
     {
       //Gizmos.color = color;
       //Gizmos.DrawMesh(GetOrCreateArrowGizmoMesh(),
@@ -187,19 +219,16 @@ namespace AGXUnityEditor.Utils
       //                 attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward),
       //                 m_scale * Vector3.one);// * Spawner.Utils.FindConstantScreenSizeScale(attachmentPair.ReferenceFrame.Position, Camera.current) * Vector3.one);
 
-      Matrix4x4 matrixTRS = Matrix4x4.TRS(attachmentPair.ReferenceFrame.Position, attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward), m_scale * Vector3.one);
-      GetOrCreateGizmoMesh("Debug/ConstraintRenderer");
-      var material = m_gizmoMaterial;
+      Matrix4x4 matrixTRS = Matrix4x4.TRS(position, rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward), scale);
+      UnityEngine.Mesh mesh = GetOrCreateGizmoMesh(resourceName);
+      if (mesh == null)
+        return;
+
+      var material = GetOrCreateGizmoMaterial();
       material.color = color;
       material.SetPass(0);
-      
-      Graphics.DrawMeshNow(m_arrowMesh, matrixTRS);
 
-      if (!attachmentPair.Synchronized && selected)
-      {
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(attachmentPair.ReferenceFrame.Position, attachmentPair.ConnectedFrame.Position);
-      }
+      Graphics.DrawMeshNow(mesh, matrixTRS);
     }
 
     [DrawGizmo( GizmoType.Active | GizmoType.Selected )]
