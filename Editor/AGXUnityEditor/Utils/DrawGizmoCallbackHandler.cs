@@ -99,12 +99,9 @@ namespace AGXUnityEditor.Utils
           }
 
           var lockC = constraint.GetController<LockController>();
-          //if (lockC.Enable)
-          //{
-            Handles.color = lockC.Enable ? lockActiveColor : lockPassiveColor;
-            var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
-            Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
-          //}
+          Handles.color = lockC.Enable ? lockActiveColor : lockPassiveColor;
+          var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
+          Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
 
           // Current position
           Handles.color = currentColor;
@@ -151,7 +148,9 @@ namespace AGXUnityEditor.Utils
           var lockPosition = frame.Position + normal * lockC.Position;
           DrawSolidAndWireDisc(lockPosition, normal, rectScale * 2.1f, transparentColor, lockC.Enable ? lockActiveColor : lockPassiveColor);
 
-          // TODO target speed
+          speedC = constraint.GetController<TargetSpeedController>();
+          if (speedC.Enable)
+            DrawMeshGizmo("Debug/ConstraintRenderer", solidColorSelected, currentPosition + frame.Rotation * Vector3.up * rectScale * 1.8f, frame.Rotation, new Vector3(rectScale * 2, speedC.Speed / 2f, rectScale * 2));
           break;
 
         default:
@@ -178,7 +177,11 @@ namespace AGXUnityEditor.Utils
     {
       UnityEngine.Mesh mesh;
       if (m_meshes.TryGetValue(resourceName, out mesh))
+      {
+        if (mesh == null)
+          m_meshes = new Dictionary<string, UnityEngine.Mesh>(); // Better luck next time
         return mesh;
+      }
 
       GameObject tmp = Resources.Load<GameObject>(@resourceName);
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
