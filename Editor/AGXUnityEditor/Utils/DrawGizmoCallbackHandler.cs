@@ -14,6 +14,14 @@ namespace AGXUnityEditor.Utils
   {
     private static ObjectsGizmoColorHandler m_colorHandler = new ObjectsGizmoColorHandler();
 
+    private static Color m_transparentColor = new Color(0.5f, 0.5f, 1f, 0.1f);
+    private static Color m_solidColor = new Color(0.5f, 0.5f, 1f, 0.7f);
+    private static Color m_solidColorSelected = new Color(0.3f, 1f, 0.3f, 0.7f);
+    private static Color m_currentColor = new Color(1f, 1f, 0f, 0.8f);
+    private static Color m_lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
+    private static Color m_lockPassiveColor = new Color(1f, 0f, 0f, 0.2f);
+    private static Color m_speedColor = new Color(0f, 1f, 0f, 0.8f);
+
     // TODO temporary, see below
     private static DebugRenderManager m_settingsObject = null;
     private static float m_scale = 0.3f;
@@ -41,14 +49,6 @@ namespace AGXUnityEditor.Utils
       bool inSelectionHierarchy = (gizmoType & GizmoType.InSelectionHierarchy) != 0;
       bool selected = (gizmoType & GizmoType.Selected) != 0;
 
-      Color transparentColor = new Color(0.5f, 0.5f, 1f, 0.1f);
-      Color solidColor = new Color(0.5f, 0.5f, 1f, 0.7f);
-      Color solidColorSelected = new Color(0.3f, 1f, 0.3f, 0.7f);
-      Color currentColor = new Color(1f, 1f, 0f, 0.8f);
-      Color lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
-      Color lockPassiveColor = new Color(1f, 0f, 0f, 0.2f);
-      Color speedColor = new Color(0f, 1f, 0f, 0.8f);
-
       AttachmentPair pair = constraint.AttachmentPair;
       var frame = pair.ReferenceFrame;
 
@@ -57,104 +57,15 @@ namespace AGXUnityEditor.Utils
       switch (constraint.Type)
       {
         case ConstraintType.Hinge:
-          // TODO: this should be separated into a separate function so we can reuse it for other constraints that have rotational DOFs
-          var range = constraint.GetController<RangeController>();
-          var min = Mathf.Rad2Deg * range.Range.Min;
-          var max = Mathf.Rad2Deg * range.Range.Max;
-          var normal = frame.Rotation * Vector3.forward;
-          var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
-          var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
-          var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
-          var circleScale = m_scale * 1.5f;
-
-          if (range.Enable)
-          {
-            if (max - min > 360f)
-            {
-              Handles.color = transparentColor;
-              Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
-              Handles.color = solidColor;
-              Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
-              if (min != Mathf.NegativeInfinity)
-                Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
-              if (max != Mathf.Infinity)
-                Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
-            }
-            else
-            {
-              Handles.color = transparentColor;
-              Handles.DrawSolidArc(frame.Position, normal, start, max - min, circleScale);
-              Handles.color = solidColor;
-              Handles.DrawWireArc(frame.Position, normal, start, max - min, circleScale);
-              Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
-              Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
-            }
-          }
-          else
-          {
-            Handles.color = transparentColor;
-            Handles.DrawSolidDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
-            Handles.color = solidColor;
-            Handles.DrawWireDisc(frame.Position, frame.Rotation * Vector3.forward, circleScale);
-          }
-
-          var lockC = constraint.GetController<LockController>();
-          Handles.color = lockC.Enable ? lockActiveColor : lockPassiveColor;
-          var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
-          Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
-
-          // Current position
-          Handles.color = currentColor;
-          Handles.DrawLine(frame.Position, frame.Position + currentAngleDirection * circleScale * 1.1f);
-
-          var speedC = constraint.GetController<TargetSpeedController>();
-          if (speedC.Enable)
-          {
-            Handles.color = speedColor;
-            var currentSpeedDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.left);
-            var pos = frame.Position + currentAngleDirection * circleScale;
-            Handles.DrawLine(pos, pos + currentSpeedDirection * speedC.Speed * Time.fixedDeltaTime * 5f);
-          }
+          DrawRotationalDofGizmos(constraint, frame);
           break;
 
         case ConstraintType.Prismatic:
-          range = constraint.GetController<RangeController>();
-          min = range.Range.Min;
-          max = range.Range.Max;
-          normal = frame.Rotation * Vector3.forward;
-          var currentPosition = frame.Position + normal * constraint.GetCurrentAngle();
-
-          var rectScale = m_scale / 10f;
-
-          float length = Mathf.Max(max - min, 0.01f);
-          float offset = (max - min) / 2 - max;
-          if (length == Mathf.Infinity)  // TODO: handle this case by drawing one end if there is one, and the other as an arrow or something
-          {
-            length = 1f;
-            offset = 0;
-          }
-
-          DrawMeshGizmo("Debug/CylinderRenderer", solidColor, frame.Position - normal * offset, frame.Rotation, new Vector3(rectScale, length / 2f, rectScale));
-          Handles.color = solidColor;
-          if (min != Mathf.NegativeInfinity)
-            DrawSolidAndWireDisc(frame.Position + normal * min, normal, rectScale * 2f, transparentColor, solidColor);
-          if (max != Mathf.Infinity)
-            DrawSolidAndWireDisc(frame.Position + normal * max, normal, rectScale * 2f, transparentColor, solidColor);
-
-
-          DrawSolidAndWireDisc(currentPosition, normal, rectScale * 2f, transparentColor, currentColor);
-
-          lockC = constraint.GetController<LockController>();
-          var lockPosition = frame.Position + normal * lockC.Position;
-          DrawSolidAndWireDisc(lockPosition, normal, rectScale * 2.1f, transparentColor, lockC.Enable ? lockActiveColor : lockPassiveColor);
-
-          speedC = constraint.GetController<TargetSpeedController>();
-          if (speedC.Enable)
-            DrawMeshGizmo("Debug/ConstraintRenderer", solidColorSelected, currentPosition + frame.Rotation * Vector3.up * rectScale * 1.8f, frame.Rotation, new Vector3(rectScale * 2, speedC.Speed / 2f, rectScale * 2));
+          DrawTranslationDofGizmos(constraint, frame);
           break;
 
         default:
-          DrawMeshGizmo("Debug/ConstraintRenderer", inSelectionHierarchy ? solidColorSelected : solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one);
+          DrawMeshGizmo("Debug/ConstraintRenderer", inSelectionHierarchy ? m_solidColorSelected : m_solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one);
           break;
       }
 
@@ -163,6 +74,112 @@ namespace AGXUnityEditor.Utils
         Gizmos.color = Color.red;
         Gizmos.DrawLine(pair.ReferenceFrame.Position, pair.ConnectedFrame.Position);
       }
+    }
+
+    public static void DrawRotationalDofGizmos(Constraint constraint, ConstraintFrame frame)
+    {
+      var rangeC = constraint.GetController<RangeController>();
+      var min = Mathf.Rad2Deg * rangeC.Range.Min;
+      var max = Mathf.Rad2Deg * rangeC.Range.Max;
+      var normal = frame.Rotation * Vector3.forward;
+      var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
+      var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
+      var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
+      var circleScale = m_scale * 1.5f;
+
+      if (rangeC.Enable)
+      {
+        if (max - min > 360f)
+        {
+          DrawSolidAndWireDisc(frame.Position, normal, circleScale, m_transparentColor, m_solidColor);
+
+          if (min != Mathf.NegativeInfinity)
+            Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
+          if (max != Mathf.Infinity)
+            Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
+        }
+        else
+        {
+          Handles.color = m_transparentColor;
+          Handles.DrawSolidArc(frame.Position, normal, start, max - min, circleScale);
+          Handles.color = m_solidColor;
+          Handles.DrawWireArc(frame.Position, normal, start, max - min, circleScale);
+
+          Handles.DrawLine(frame.Position, frame.Position + start * circleScale);
+          Handles.DrawLine(frame.Position, frame.Position + end * circleScale);
+        }
+      }
+      else
+        DrawSolidAndWireDisc(frame.Position, normal, circleScale, m_transparentColor, m_solidColor);
+
+      var lockC = constraint.GetController<LockController>();
+      Handles.color = lockC.Enable ? m_lockActiveColor : m_lockPassiveColor;
+      var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
+      Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
+
+      Handles.color = m_currentColor;
+      Handles.DrawLine(frame.Position, frame.Position + currentAngleDirection * circleScale * 1.1f);
+
+      var speedC = constraint.GetController<TargetSpeedController>();
+      if (speedC.Enable)
+      {
+        Handles.color = m_speedColor;
+        var currentSpeedDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.left);
+        var pos = frame.Position + currentAngleDirection * circleScale;
+        Handles.DrawLine(pos, pos + currentSpeedDirection * speedC.Speed * Time.fixedDeltaTime * 5f);
+      }
+
+    }
+
+    public static void DrawTranslationDofGizmos(Constraint constraint, ConstraintFrame frame)
+    {
+      var rangeC = constraint.GetController<RangeController>();
+      var min = rangeC.Range.Min;
+      var max = rangeC.Range.Max;
+      var normal = frame.Rotation * Vector3.forward;
+      var currentPosition = frame.Position + normal * constraint.GetCurrentAngle();
+
+      var rectScale = m_scale / 10f;
+
+      bool drawMax = true;
+      bool drawMin = true;
+      if (max == Mathf.Infinity && min == Mathf.NegativeInfinity)
+      {
+        max = 0.5f;
+        min = -0.5f;
+        drawMax = drawMin = false;
+      }
+      else if (max == Mathf.Infinity)
+      {
+        max = min + 1f;
+        drawMax = false;
+      }
+      else if (min == Mathf.NegativeInfinity)
+      {
+        min = max - 1f;
+        drawMin = false;
+      }
+
+      float length = Mathf.Max(max - min, 0.01f);
+      float offset = (max - min) / 2 - max;
+
+      DrawMeshGizmo("Debug/CylinderRenderer", m_solidColor, frame.Position - normal * offset, frame.Rotation, new Vector3(rectScale, length / 2f, rectScale));
+      Handles.color = m_solidColor;
+      if (drawMin)
+        DrawSolidAndWireDisc(frame.Position + normal * min, normal, rectScale * 2f, m_transparentColor, m_solidColor);
+      if (drawMax)
+        DrawSolidAndWireDisc(frame.Position + normal * max, normal, rectScale * 2f, m_transparentColor, m_solidColor);
+
+
+      DrawSolidAndWireDisc(currentPosition, normal, rectScale * 2f, m_transparentColor, m_currentColor);
+
+      var lockC = constraint.GetController<LockController>();
+      var lockPosition = frame.Position + normal * lockC.Position;
+      DrawSolidAndWireDisc(lockPosition, normal, rectScale * 2.1f, m_transparentColor, lockC.Enable ? m_lockActiveColor : m_lockPassiveColor);
+
+      var speedC = constraint.GetController<TargetSpeedController>();
+      if (speedC.Enable)
+        DrawMeshGizmo("Debug/ConstraintRenderer", m_solidColorSelected, currentPosition + frame.Rotation * Vector3.up * rectScale * 1.8f, frame.Rotation, new Vector3(rectScale * 2, speedC.Speed / 2f, rectScale * 2));
     }
 
     public static void DrawSolidAndWireDisc(Vector3 position, Vector3 normal, float radius, Color discColor, Color wireColor)
@@ -175,8 +192,7 @@ namespace AGXUnityEditor.Utils
 
     public static UnityEngine.Mesh GetOrCreateGizmoMesh(string resourceName)
     {
-      UnityEngine.Mesh mesh;
-      if (m_meshes.TryGetValue(resourceName, out mesh))
+      if (m_meshes.TryGetValue(resourceName, out UnityEngine.Mesh mesh))
       {
         if (mesh == null)
           m_meshes = new Dictionary<string, UnityEngine.Mesh>(); // Better luck next time
