@@ -61,7 +61,12 @@ namespace AGXUnityEditor.Utils
           break;
 
         case ConstraintType.Prismatic:
-          DrawTranslationDofGizmos(constraint, frame);
+          DrawTranslationalDofGizmos(constraint, frame);
+          break;
+
+        case ConstraintType.CylindricalJoint:
+          DrawTranslationalDofGizmos(constraint, frame);
+          DrawRotationalDofGizmos(constraint, frame);
           break;
 
         default:
@@ -78,12 +83,12 @@ namespace AGXUnityEditor.Utils
 
     public static void DrawRotationalDofGizmos(Constraint constraint, ConstraintFrame frame)
     {
-      var rangeC = constraint.GetController<RangeController>();
+      var rangeC = constraint.GetController<RangeController>(Constraint.ControllerType.Rotational);
       var min = Mathf.Rad2Deg * rangeC.Range.Min;
       var max = Mathf.Rad2Deg * rangeC.Range.Max;
       var normal = frame.Rotation * Vector3.forward;
       var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
-      var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
+      var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(Constraint.ControllerType.Rotational), normal) * (frame.Rotation * Vector3.up);
       var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
       var circleScale = m_scale * 1f;
 
@@ -112,7 +117,7 @@ namespace AGXUnityEditor.Utils
       else
         DrawSolidAndWireDisc(frame.Position, normal, circleScale, m_transparentColor, m_solidColor);
 
-      var lockC = constraint.GetController<LockController>();
+      var lockC = constraint.GetController<LockController>(Constraint.ControllerType.Rotational);
       Handles.color = lockC.Enable ? m_lockActiveColor : m_lockPassiveColor;
       var currentLockDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * lockC.Position, normal) * (frame.Rotation * Vector3.up);
       Handles.DrawLine(frame.Position, frame.Position + currentLockDirection * circleScale * 1.2f);
@@ -120,24 +125,24 @@ namespace AGXUnityEditor.Utils
       Handles.color = m_currentColor;
       Handles.DrawLine(frame.Position, frame.Position + currentAngleDirection * circleScale * 1.1f);
 
-      var speedC = constraint.GetController<TargetSpeedController>();
+      var speedC = constraint.GetController<TargetSpeedController>(Constraint.ControllerType.Rotational);
       if (speedC.Enable)
       {
         Handles.color = m_speedColor;
-        var currentSpeedDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.left);
+        var currentSpeedDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(Constraint.ControllerType.Rotational), normal) * (frame.Rotation * Vector3.left);
         var pos = frame.Position + currentAngleDirection * circleScale;
         Handles.DrawLine(pos, pos + currentSpeedDirection * speedC.Speed * Time.fixedDeltaTime * 5f);
       }
 
     }
 
-    public static void DrawTranslationDofGizmos(Constraint constraint, ConstraintFrame frame)
+    public static void DrawTranslationalDofGizmos(Constraint constraint, ConstraintFrame frame)
     {
-      var rangeC = constraint.GetController<RangeController>();
+      var rangeC = constraint.GetController<RangeController>(Constraint.ControllerType.Translational);
       var min = rangeC.Range.Min;
       var max = rangeC.Range.Max;
       var normal = frame.Rotation * Vector3.forward;
-      var currentPosition = frame.Position + normal * constraint.GetCurrentAngle();
+      var currentPosition = frame.Position + normal * constraint.GetCurrentAngle(Constraint.ControllerType.Translational);
 
       var rectScale = m_scale / 5f;
 
@@ -173,11 +178,11 @@ namespace AGXUnityEditor.Utils
 
       DrawSolidAndWireDisc(currentPosition, normal, rectScale * 2f, m_transparentColor, m_currentColor);
 
-      var lockC = constraint.GetController<LockController>();
+      var lockC = constraint.GetController<LockController>(Constraint.ControllerType.Translational);
       var lockPosition = frame.Position + normal * lockC.Position;
       DrawSolidAndWireDisc(lockPosition, normal, rectScale * 2.1f, m_transparentColor, lockC.Enable ? m_lockActiveColor : m_lockPassiveColor);
 
-      var speedC = constraint.GetController<TargetSpeedController>();
+      var speedC = constraint.GetController<TargetSpeedController>(Constraint.ControllerType.Translational);
       if (speedC.Enable)
         DrawMeshGizmo("Debug/ConstraintRenderer", m_solidColorSelected, currentPosition + frame.Rotation * Vector3.up * rectScale * 1.8f, frame.Rotation, new Vector3(rectScale * 2, speedC.Speed / 2f, rectScale * 2));
     }
