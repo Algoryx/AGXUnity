@@ -19,7 +19,7 @@ namespace AGXUnityEditor.Utils
     private static Color m_solidColorSelected = new Color(0.3f, 1f, 0.3f, 0.7f);
     private static Color m_currentColor = new Color(1f, 1f, 0f, 0.8f);
     private static Color m_lockActiveColor = new Color(1f, 0f, 0f, 0.8f);
-    private static Color m_lockPassiveColor = new Color(1f, 0f, 0f, 0.2f);
+    private static Color m_lockPassiveColor = new Color(1f, 0f, 0f, 0.3f);
     private static Color m_speedColor = new Color(0f, 1f, 0f, 0.8f);
 
     // TODO temporary, see below
@@ -85,7 +85,7 @@ namespace AGXUnityEditor.Utils
       var start = Quaternion.AngleAxis(min, normal) * (frame.Rotation * Vector3.up);
       var currentAngleDirection = Quaternion.AngleAxis(Mathf.Rad2Deg * constraint.GetCurrentAngle(), normal) * (frame.Rotation * Vector3.up);
       var end = Quaternion.AngleAxis(max, normal) * (frame.Rotation * Vector3.up);
-      var circleScale = m_scale * 1.5f;
+      var circleScale = m_scale * 1f;
 
       if (rangeC.Enable)
       {
@@ -139,7 +139,7 @@ namespace AGXUnityEditor.Utils
       var normal = frame.Rotation * Vector3.forward;
       var currentPosition = frame.Position + normal * constraint.GetCurrentAngle();
 
-      var rectScale = m_scale / 10f;
+      var rectScale = m_scale / 5f;
 
       bool drawMax = true;
       bool drawMin = true;
