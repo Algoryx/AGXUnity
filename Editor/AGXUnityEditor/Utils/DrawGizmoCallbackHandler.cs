@@ -69,6 +69,10 @@ namespace AGXUnityEditor.Utils
           DrawRotationalDofGizmos(constraint, frame);
           break;
 
+        case ConstraintType.BallJoint:
+          DrawMeshGizmo("Debug/SphereRenderer", inSelectionHierarchy ? m_solidColorSelected : m_solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one / 2f);
+          break;
+
         default:
           DrawMeshGizmo("Debug/ConstraintRenderer", inSelectionHierarchy ? m_solidColorSelected : m_solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one);
           break;
