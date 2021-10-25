@@ -73,6 +73,10 @@ namespace AGXUnityEditor.Utils
           DrawMeshGizmo("Debug/SphereRenderer", inSelectionHierarchy ? m_solidColorSelected : m_solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one / 2f);
           break;
 
+        case ConstraintType.LockJoint:
+          DrawMeshGizmo("Debug/BoxRenderer", inSelectionHierarchy ? m_solidColorSelected : m_lockPassiveColor, frame.Position, frame.Rotation, m_scale * Vector3.one / 3f);
+          break;
+
         default:
           DrawMeshGizmo("Debug/ConstraintRenderer", inSelectionHierarchy ? m_solidColorSelected : m_solidColor, frame.Position, frame.Rotation, m_scale * Vector3.one);
           break;
