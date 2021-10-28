@@ -152,6 +152,9 @@ namespace AGXUnity
       if ( s_instance != null )
         Debug.LogError( $"{s_instance.name}: Invalid to call FindOrCreateInstance called with non-null s_instance." );
 
+      if ( IsDestroyed )
+        Debug.LogWarning( $"{typeof( T ).FullName}: IsDestroyed == true and finding/creating a new instance." );
+
       Instance = FindObjectOfType<T>();
       Debug.Log( $"Found in scene: {typeof( T ).FullName}, {s_instance != null}" );
       if ( !onlyFind && s_instance == null ) {
