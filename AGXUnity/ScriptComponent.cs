@@ -42,8 +42,10 @@ namespace AGXUnity
     /// <returns>Native simulation object if not being destructed.</returns>
     public agxSDK.Simulation GetSimulation()
     {
-      Simulation simulation = Simulation.Instance;
-      return simulation ? simulation.Native : null;
+      if ( Simulation.IsDestroyed )
+        return null;
+
+      return Simulation.Instance?.Native;
     }
 
     /// <summary>
