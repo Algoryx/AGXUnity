@@ -121,6 +121,13 @@ namespace AGXUnity
     protected void Awake()
     {
       if ( State == States.CONSTRUCTED ) {
+        try {
+          NativeHandler.Instance.MakeMainThread();
+        }
+        catch ( System.Exception ) {
+          return;
+        }
+
         State = States.AWAKE;
         OnAwake();
       }
