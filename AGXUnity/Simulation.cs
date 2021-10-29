@@ -311,7 +311,7 @@ namespace AGXUnity
 
       m_stepForwardTimer = new agx.Timer();
 
-      return base.Initialize();
+      return true;
     }
 
     protected override void OnDestroy()
