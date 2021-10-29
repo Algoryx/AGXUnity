@@ -681,16 +681,6 @@ namespace AGXUnityEditor
       Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );
       return EnvironmentState.Updating;
 #else
-      // WARNING INFO:
-      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
-      //                       in players with API compatibility @ .NET Standard 2.0.
-      //     Unity 2017: AGX Dynamics for Unity won't compile due to 
-      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
-                          "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
-                          "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
-      }
-
       // Running from within the editor - two options:
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
@@ -754,9 +744,24 @@ namespace AGXUnityEditor
         return EnvironmentState.Uninitialized;
       }
 
+      // WARNING INFO:
+      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                       in players with API compatibility @ .NET Standard 2.0.
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
+                          $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
+                          $"<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> {apiCompatibilityLevelName}</b>" );
+      }
+
       return EnvironmentState.Initialized;
 #endif
-    }
+      }
 
     private static bool HandleScriptReload( bool success )
     {
