@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
+using AGXUnity;
 
 namespace AGXUnity
 {
-  [DisallowMultipleComponent] // TODO not 100 that we want to disallow multiples?
-  [RequireComponent(typeof(AGXUnity.Cable))] // TODO other ScriptComponents does this through code instead of Attribute
+  [DisallowMultipleComponent] // TODO not 100 that we want to disallow multiples, depends on usecases etc
+  [RequireComponent(typeof(AGXUnity.Cable))] // TODO other ScriptComponents does this through code instead of Attribute. Is this because RequireComponent will create instance of Cable? Look into how Cable is created from menu
   public class CableDamage : ScriptComponent
   {
     /// <summary>
@@ -19,15 +20,6 @@ namespace AGXUnity
     /// </summary>
     [HideInInspector]
     public Cable Cable { get { return m_cable ?? ( m_cable = GetComponent<Cable>() ); } }
-
-    public void TestyTest()
-    {
-      var dam = new agxCable.CableDamage();
-      dam.setStretchDeformationWeight(1);
-    }
-    //TODO
-    //public void RestoreLocalDataFrom( agx.RigidBody native )
-
 
     [SerializeField]
     private CableDamageProperties m_properties = null;
@@ -65,11 +57,6 @@ namespace AGXUnity
       }
 
       return true;
-    }
-
-    void Update()
-    {
-      Debug.Log("Test: " + Properties.BendDeformation);
     }
 
     protected override void OnDestroy()

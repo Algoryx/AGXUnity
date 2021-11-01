@@ -6,27 +6,6 @@ namespace AGXUnity
 {
   public class CableDamageProperties : ScriptAsset
   {
-    // CableDamageTypes.h
-    //     enum DamageType
-    // {
-    //   BEND_DEFORMATION,
-    //   TWIST_DEFORMATION,
-    //   STRETCH_DEFORMATION,
-
-    //   BEND_TENSION,
-    //   TWIST_TENSION,
-    //   STRETCH_TENSION,
-
-    //   BEND_RATE,
-    //   TWIST_RATE,
-    //   STRETCH_RATE,
-
-    //   NORMAL_FORCE,
-    //   FRICTION_FORCE,
-
-    //   NUM_CABLE_DAMAGE_TYPES
-    // };
-
     private const float defaultValue = 1f;
 
     [SerializeField]
@@ -38,6 +17,126 @@ namespace AGXUnity
       {
         m_bendDeformation = value;
         Propagate( damage => damage.setBendDeformationWeight( m_bendDeformation ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_bendTension = defaultValue;
+    public float BendTension
+    {
+      get { return m_bendTension; }
+      set
+      {
+        m_bendTension = value;
+        Propagate( damage => damage.setBendTensionWeight( m_bendTension ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_bendRate = defaultValue;
+    public float BendRate
+    {
+      get { return m_bendRate; }
+      set
+      {
+        m_bendRate = value;
+        Propagate( damage => damage.setBendRateWeight( m_bendRate ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_twistDeformation = defaultValue;
+    public float TwistDeformation
+    {
+      get { return m_twistDeformation; }
+      set
+      {
+        m_twistDeformation = value;
+        Propagate( damage => damage.setTwistDeformationWeight( m_twistDeformation ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_twistTension = defaultValue;
+    public float TwistTension
+    {
+      get { return m_twistTension; }
+      set
+      {
+        m_twistTension = value;
+        Propagate( damage => damage.setTwistTensionWeight( m_twistTension ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_twistRate = defaultValue;
+    public float TwistRate
+    {
+      get { return m_twistRate; }
+      set
+      {
+        m_twistRate = value;
+        Propagate( damage => damage.setTwistRateWeight( m_twistRate ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_stretchDeformation = defaultValue;
+    public float StretchDeformation
+    {
+      get { return m_stretchDeformation; }
+      set
+      {
+        m_stretchDeformation = value;
+        Propagate( damage => damage.setStretchDeformationWeight( m_stretchDeformation ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_stretchTension = defaultValue;
+    public float StretchTension
+    {
+      get { return m_stretchTension; }
+      set
+      {
+        m_stretchTension = value;
+        Propagate( damage => damage.setStretchTensionWeight( m_stretchTension ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_stretchRate = defaultValue;
+    public float StretchRate
+    {
+      get { return m_stretchRate; }
+      set
+      {
+        m_stretchRate = value;
+        Propagate( damage => damage.setStretchRateWeight( m_stretchRate ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_normalForce = defaultValue;
+    public float NormalForce
+    {
+      get { return m_normalForce; }
+      set
+      {
+        m_normalForce = value;
+        Propagate( damage => damage.setNormalForceWeight( m_normalForce ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_frictionForce = defaultValue;
+    public float FrictionForce
+    {
+      get { return m_frictionForce; }
+      set
+      {
+        m_frictionForce = value;
+        Propagate( damage => damage.setFrictionForceWeight( m_frictionForce ) );
       }
     }
 
