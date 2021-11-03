@@ -1193,7 +1193,12 @@ namespace AGXUnityEditor
                                                                         fieldOkColor ),
                                                    fieldColor ) :
                                   info.IsParsed ?
-                                    GUI.MakeLabel( "Invalid license", fieldErrorColor, false, info.Status ) :
+                                    GUI.MakeLabel( string.IsNullOrEmpty( info.Status ) ?
+                                                     "Invalid license" :
+                                                     info.Status,
+                                                   fieldErrorColor,
+                                                   false,
+                                                   info.Status ) :
                                     GUI.MakeLabel( "License not found", fieldErrorColor ),
                                   InspectorEditor.Skin.Label );
     }
