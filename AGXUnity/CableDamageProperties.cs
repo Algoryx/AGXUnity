@@ -140,6 +140,42 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private float m_bendThreshHold = defaultValue;
+    public float BendThreshold
+    {
+      get { return m_bendThreshHold; }
+      set
+      {
+        m_bendThreshHold = value;
+        Propagate( damage => damage.setBendThreshold( m_bendThreshHold ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_twistThreshold = defaultValue;
+    public float TwistThreshold
+    {
+      get { return m_twistThreshold; }
+      set
+      {
+        m_twistThreshold = value;
+        Propagate( damage => damage.setTwistThreshold( m_twistThreshold ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_stretchThreshold = defaultValue;
+    public float StretchThreshold
+    {
+      get { return m_stretchThreshold; }
+      set
+      {
+        m_stretchThreshold = value;
+        Propagate( damage => damage.setStretchThreshold( m_stretchThreshold ) );
+      }
+    }
+
     /// <summary>
     /// Explicit synchronization of all properties to the given
     /// cable damage instance.
