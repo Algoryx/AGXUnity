@@ -65,7 +65,10 @@ namespace AGXUnity
       get { return m_renderCableDamage; }
       set {
         m_renderCableDamage = value;
-        CableRenderer?.RenderDamages(value);
+        if (CableRenderer == null)
+          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
+        else
+          CableRenderer.RenderDamages(value);
       }
     }
 
