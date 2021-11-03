@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using AGXUnity.Utils;
+using System.Collections.Generic;
 
 namespace AGXUnity.Rendering
 {
@@ -36,6 +37,16 @@ namespace AGXUnity.Rendering
         m_material = value ?? m_segmentSpawner.DefaultMaterial;
         m_segmentSpawner.Material = m_material;
       }
+    }
+
+    private bool m_renderDamages = false, m_previousRenderDamages = false;
+    private float[] m_damageValues;
+    private float m_maxDamage;
+    public void RenderDamages(bool value) => m_renderDamages = value;
+    public void SetDamageValues(float[] values, float maxValue)
+    {
+      m_damageValues = values;
+      m_maxDamage = maxValue;
     }
 
     public void InitializeRenderer( bool destructLast = false )
@@ -95,6 +106,8 @@ namespace AGXUnity.Rendering
       m_segmentSpawner.End();
     }
 
+    private Dictionary<int, MeshRenderer> m_segmentRenderers = new Dictionary<int, MeshRenderer>();
+
     private void Render()
     {
       if ( m_segmentSpawner == null )
@@ -113,6 +126,9 @@ namespace AGXUnity.Rendering
 
       var it = native.begin();
       var endIt = native.end();
+      int i = 0;
+
+      MaterialPropertyBlock block = new MaterialPropertyBlock();
 
       m_segmentSpawner.Begin();
       try {
@@ -122,7 +138,33 @@ namespace AGXUnity.Rendering
                                 it.getBeginPosition().ToHandedVector3();
         while ( !it.EqualWith( endIt ) ) {
           var endPosition = it.getEndPosition().ToHandedVector3();
-          m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
+
+          var go = m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
+
+          // If using render damage
+          if ((m_renderDamages || m_previousRenderDamages) && m_damageValues != null){
+            int id = go.GetInstanceID();
+            if (!m_segmentRenderers.ContainsKey(id)){
+              var renderer = go.GetComponentInChildren<MeshRenderer>();
+              m_segmentRenderers.Add(id, renderer); // FIXME Just the first renderer for now
+            }
+
+            MeshRenderer meshRenderer;
+            if (m_segmentRenderers.TryGetValue(id, out meshRenderer) && meshRenderer != null){
+              if (m_renderDamages && m_damageValues.Length == (int)native.getNumSegments()){
+                float t = m_damageValues[i] / m_maxDamage;
+                block.SetColor("_Color", new Color(t, 1 - t, 0, 1));
+                meshRenderer.SetPropertyBlock(block);
+              }
+              else{ // if m_previousRenderDamage
+              Debug.Log("Gets here, color: " + Material.color.ToString());
+                block.SetColor("_Color", Material.color);
+                meshRenderer.SetPropertyBlock(block);
+              }
+            }
+          }
+
+          i++;
           prevEndPosition = endPosition;
           it.inc();
         }
@@ -131,6 +173,8 @@ namespace AGXUnity.Rendering
         Debug.LogException( e, this );
       }
       m_segmentSpawner.End();
+
+      m_previousRenderDamages = m_renderDamages;
 
       it.ReturnToPool();
       endIt.ReturnToPool();
