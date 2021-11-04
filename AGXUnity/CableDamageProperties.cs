@@ -10,6 +10,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_bendDeformation = defaultValue;
+    [HideInInspector]
     public float BendDeformation
     {
       get { return m_bendDeformation; }
@@ -22,6 +23,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_bendTension = defaultValue;
+    [HideInInspector]
     public float BendTension
     {
       get { return m_bendTension; }
@@ -34,6 +36,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_bendRate = defaultValue;
+    [HideInInspector]
     public float BendRate
     {
       get { return m_bendRate; }
@@ -46,6 +49,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_twistDeformation = defaultValue;
+    [HideInInspector]
     public float TwistDeformation
     {
       get { return m_twistDeformation; }
@@ -58,6 +62,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_twistTension = defaultValue;
+    [HideInInspector]
     public float TwistTension
     {
       get { return m_twistTension; }
@@ -70,6 +75,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_twistRate = defaultValue;
+    [HideInInspector]
     public float TwistRate
     {
       get { return m_twistRate; }
@@ -82,6 +88,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_stretchDeformation = defaultValue;
+    [HideInInspector]
     public float StretchDeformation
     {
       get { return m_stretchDeformation; }
@@ -94,6 +101,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_stretchTension = defaultValue;
+    [HideInInspector]
     public float StretchTension
     {
       get { return m_stretchTension; }
@@ -106,6 +114,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_stretchRate = defaultValue;
+    [HideInInspector]
     public float StretchRate
     {
       get { return m_stretchRate; }
@@ -118,6 +127,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_normalForce = defaultValue;
+    [HideInInspector]
     public float NormalForce
     {
       get { return m_normalForce; }
@@ -130,6 +140,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_frictionForce = defaultValue;
+    [HideInInspector]
     public float FrictionForce
     {
       get { return m_frictionForce; }
@@ -142,6 +153,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_bendThreshHold = defaultValue;
+    [HideInInspector]
     public float BendThreshold
     {
       get { return m_bendThreshHold; }
@@ -154,6 +166,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_twistThreshold = defaultValue;
+    [HideInInspector]
     public float TwistThreshold
     {
       get { return m_twistThreshold; }
@@ -166,6 +179,7 @@ namespace AGXUnity
 
     [SerializeField]
     private float m_stretchThreshold = defaultValue;
+    [HideInInspector]
     public float StretchThreshold
     {
       get { return m_stretchThreshold; }
@@ -255,22 +269,5 @@ namespace AGXUnity
     private CableDamage m_singleSynchronizeInstance = null;
 
     public Action<CableProperties.Direction> OnPropertyUpdated = delegate { };
-
-  // TODO there is no cableDamageProperties in native, this is just some bundling 
-    // public CableDamageProperties RestoreLocalDataFrom( agxCable.CableDamageProperties native, agxCable.CablePlasticity plasticity )
-    // {
-    //   if ( native == null )
-    //     return this;
-
-    //   foreach ( CableProperties.Direction dir in Directions ) {
-    //     this[ dir ].Deformation = Convert.ToSingle( native.getYoungsModulus( ToNative( dir ) ) );
-    //     this[ dir ].Rate = Convert.ToSingle( native.getPoissonsRatio( ToNative( dir ) ) );
-    //     this[ dir ].Tension    = plasticity != null ?
-    //                                   Convert.ToSingle( plasticity.getYieldPoint( ToNative( dir ) ) ) :
-    //                                   float.PositiveInfinity;
-    //   }
-
-    //   return this;
-    // }
   }
 }
