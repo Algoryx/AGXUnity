@@ -72,6 +72,14 @@ namespace AGXUnity
       }
     }
 
+    [System.NonSerialized]
+    private agxCable.SegmentDamagePtrVector m_currentDamages;
+    public agxCable.SegmentDamagePtrVector CurrentDamages  => m_currentDamages;
+
+    [System.NonSerialized]
+    private agxCable.SegmentDamagePtrVector m_accumulatedDamages;
+    public agxCable.SegmentDamagePtrVector AccumulatedDamages => m_accumulatedDamages;
+
     private float[] m_damageValues = new float[0]; // TODO it wouldn't be too bad to be able to see these in the inspector...
 
     protected override bool Initialize()
@@ -97,22 +105,23 @@ namespace AGXUnity
 
     void Update()
     {
-      var segmentDamages = Native.getCurrentDamages();
-
-      if (m_damageValues.Length != segmentDamages.Count)
-        m_damageValues = new float[segmentDamages.Count];
-
-      float maxValue = float.MinValue;
-      for (int i = 0; i < segmentDamages.Count; i++){
-        float value = (float)segmentDamages[i].total();
-        maxValue = Mathf.Max(maxValue, value);
-        m_damageValues[i] = value;
-      }
+      m_currentDamages = Native.getCurrentDamages();
+      m_accumulatedDamages = Native.getAccumulatedDamages();
 
       if (RenderCableDamage && CableRenderer)
-        CableRenderer.SetDamageValues(m_damageValues, maxValue);
+      {
+        if (m_damageValues.Length != m_currentDamages.Count)
+          m_damageValues = new float[m_currentDamages.Count];
 
-      //Debug.Log("Total damage: " + total);
+        float maxValue = float.MinValue;
+        for (int i = 0; i < m_currentDamages.Count; i++){
+          float value = (float)m_currentDamages[i].total();
+          maxValue = Mathf.Max(maxValue, value);
+          m_damageValues[i] = value;
+        }
+
+        CableRenderer.SetDamageValues(m_damageValues, maxValue);
+      }
     }
 
     protected override void OnDestroy()
