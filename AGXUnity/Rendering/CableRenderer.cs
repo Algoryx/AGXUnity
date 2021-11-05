@@ -156,8 +156,7 @@ namespace AGXUnity.Rendering
                 block.SetColor("_Color", new Color(t, 1 - t, 0, 1));
                 meshRenderer.SetPropertyBlock(block);
               }
-              else{ // if m_previousRenderDamage
-              Debug.Log("Gets here, color: " + Material.color.ToString());
+              else{
                 block.SetColor("_Color", Material.color);
                 meshRenderer.SetPropertyBlock(block);
               }
