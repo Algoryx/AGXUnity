@@ -442,6 +442,13 @@ namespace AGXUnityEditor
       Utils.CustomEditorGenerator.Generate();
     }
 
+    [MenuItem( "AGXUnity/Utils/Create Cable from Mesh", priority = 80 )]
+    public static void CreateCableFromMesh()
+    {
+      CreateCableFromMeshWindow.Open();
+    }
+
+
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
     public static void FocusSettings()
     {

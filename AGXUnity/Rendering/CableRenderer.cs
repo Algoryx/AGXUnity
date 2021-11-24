@@ -34,7 +34,8 @@ namespace AGXUnity.Rendering
       set
       {
         m_material = value ?? m_segmentSpawner.DefaultMaterial;
-        m_segmentSpawner.Material = m_material;
+        if (m_segmentSpawner != null)
+          m_segmentSpawner.Material = m_material;
       }
     }
 
