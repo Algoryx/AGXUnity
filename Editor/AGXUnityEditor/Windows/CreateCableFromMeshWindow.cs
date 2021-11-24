@@ -199,10 +199,6 @@ namespace AGXUnityEditor.Windows
       go.name = oldObject.name + " - agxCable";
       go.transform.SetParent(oldObject.transform.parent);
 
-      // TODO undo
-      //if ( go != null )
-      //  Undo.RegisterCreatedObjectUndo( go, "Cable from Mesh Wizard" );
-
       var cable = go.GetComponent<Cable>();
       cable.Radius = m_calculatedRadius > 0 ? m_calculatedRadius : 0.1f;
       Vector3 dir = Vector3.zero;
@@ -223,8 +219,11 @@ namespace AGXUnityEditor.Windows
           newCableRenderer.Material = materials[0];
       }
 
-      oldObject.SetActive(false);
+      if ( go != null )
+        Undo.RegisterCreatedObjectUndo( go, "Create Cable from Mesh Window" );
 
+      Undo.RecordObject( oldObject, "Disable Cable Mesh Object" );
+      oldObject.SetActive(false);
 
       this.Close();
     }
