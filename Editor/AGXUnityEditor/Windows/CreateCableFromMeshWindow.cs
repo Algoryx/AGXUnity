@@ -2,17 +2,19 @@ using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using AGXUnity;
+using AGXUnity.Utils;
 
-namespace AGXUnityEditor
+using GUI = AGXUnity.Utils.GUI;
+
+namespace AGXUnityEditor.Windows
 {
   public class CreateCableFromMeshWindow : EditorWindow
   {
-    public float ResolutionGuess = 10;
+    public MeshFilter MeshFilter = null;
     public float RadiusGuess = 0.1f;
+    public float ResolutionGuess = 10;
 
     public float GizmoSize = 0.05f;
-
-    public MeshFilter MeshFilter = null;
 
     private List<Vector3> m_movedVertexPositions = new List<Vector3>();
     private List<Vector3> m_nodePositions = new List<Vector3>();
@@ -21,13 +23,18 @@ namespace AGXUnityEditor
     private float m_previousResolutionGuess = Mathf.NegativeInfinity;
 
     private float m_previousRadiusGuess = Mathf.NegativeInfinity;
+    private bool m_rendererInitiallyVisible = true;
 
     private static Mesh m_mesh = null;
     private static Material m_material = null;
 
     private static GameObject m_instance = null;
 
+    private string m_errorMessage = "";
+
     private bool m_sorted = false;
+
+    private float m_calculatedRadius = 0;
     
     public static UnityEngine.Mesh GetOrCreateGizmoMesh(string resourceName)
     {
@@ -71,22 +78,33 @@ namespace AGXUnityEditor
 
     public static void Open()
     {
-      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 350 ),
-                                                   true,
-                                                   "Create Cable from mesh" );
+      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 400 ),
+                                                                              true,
+                                                                              "Create Cable from mesh" );
+     
       SceneView.duringSceneGui += window.OnSceneGUI;
     }
 
     void OnGUI()
     {
-      GUILayout.Label("Base Settings", EditorStyles.boldLabel);
-      ResolutionGuess = EditorGUILayout.FloatField("Resolution guess", ResolutionGuess);
-      RadiusGuess = EditorGUILayout.FloatField("Radius guess", RadiusGuess);
-      GizmoSize = EditorGUILayout.FloatField("Gizmo size", GizmoSize);
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Detect and create cable from Mesh", true ),
+                                  InspectorEditor.Skin.LabelMiddleCenter );
+                                
+      EditorGUILayout.SelectableLabel( "When a MeshFilter is selected, this utility will try to detect appropriate placements for the cable nodes in order to simulate a cable with the same radius and route as the mesh. Adjust the guess values until the red spheres meet and the green spheres are along the cable route, then click Create. The created cable can be adjusted with Rigidbody attachments, cable properties etc.",
+                                       InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(100) );
+
+
       MeshFilter = (MeshFilter) EditorGUILayout.ObjectField(MeshFilter, typeof(MeshFilter), true);
 
-      if (GUILayout.Button("Create"))
-        OnWizardCreate();
+      if (GUILayout.Button("Toggle mesh renderer visibility"))
+        ToggleMeshVisibility(MeshFilter);
+
+      InspectorGUI.BrandSeparator( 1, 6 );
+
+      GUILayout.Label("Cable detection values", EditorStyles.boldLabel);
+      RadiusGuess = EditorGUILayout.FloatField("Radius guess", RadiusGuess);
+      ResolutionGuess = EditorGUILayout.FloatField("Resolution guess", ResolutionGuess);
+      GizmoSize = EditorGUILayout.FloatField("Gizmo size", GizmoSize);
 
       if (m_previousRadiusGuess != RadiusGuess || m_previousResolutionGuess != ResolutionGuess)
       {
@@ -96,50 +114,84 @@ namespace AGXUnityEditor
       }
       else if (m_previousMesh != MeshFilter)
       {
-        //InitMesh(MeshFilter);
+        if (m_previousMesh != null)
+          RestoreMesh(m_previousMesh);
+
+        if (MeshFilter != null)
+        {
+          var renderer = MeshFilter.gameObject.GetComponent<MeshRenderer>();
+          if (renderer != null)
+            m_rendererInitiallyVisible = renderer.enabled;
+        }
+
         CalculatePositions();
-        //if (m_previousMesh != null)
-        //  RestoreMesh(m_previousMesh);
+
         m_previousMesh = MeshFilter;
       }
 
-      GUILayout.Label("Number of nodes: " + m_nodePositions.Count, EditorStyles.label);
-      GUILayout.Label("Nodes in order: " + ((m_nodePositions.Count > 0) ? m_sorted.ToString() : "-"), EditorStyles.label);
+      InspectorGUI.BrandSeparator( 1, 6 );
+
+      var fieldColor = EditorGUIUtility.isProSkin ?
+                         Color.white :
+                         Color.black;
+
+      bool cableOk = m_nodePositions.Count > 0 && m_sorted;
+
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "Number of cable nodes" ),
+                                        m_nodePositions.Count.ToString().Color( fieldColor ),
+                                        InspectorEditor.Skin.Label );
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "Calculated radius" ),
+                                        m_calculatedRadius.ToString().Color( fieldColor ),
+                                        InspectorEditor.Skin.Label );
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "Are the nodes ordered?" ),
+                                        ((cableOk) ? "yes" : "no").Color( cableOk ? Color.green : Color.red ),
+                                        InspectorEditor.Skin.Label );
+
+      InspectorGUI.BrandSeparator( 1, 6 );
+
+      if (GUILayout.Button("Create"))
+        OnCreate();
+
+      if (m_errorMessage.Length > 0)
+        InspectorGUI.SelectableTextField( GUI.MakeLabel( "Error:" ),
+                                        m_errorMessage.Color( Color.red ),
+                                        InspectorEditor.Skin.Label );
     }
 
     private Color m_originalColor;
 
-    private void InitMesh(MeshFilter mesh)
+    private void ToggleMeshVisibility(MeshFilter mesh)
     {
+      if (!mesh)
+        return;
+
       var renderer = mesh.gameObject.GetComponent<MeshRenderer>();
       if (renderer != null)
-      {
-        var block = new MaterialPropertyBlock();
-        renderer.GetPropertyBlock(block);
-        m_originalColor = block.GetColor("_Color");
-        Debug.Log("Saving color: " + m_originalColor);
-        //block.SetColor("_Color", new Color(m_originalColor.r, m_originalColor.g, m_originalColor.b, 0.3f));
-        //renderer.SetPropertyBlock(block);
-      }
+        renderer.enabled = !renderer.enabled;
     }
 
     private void RestoreMesh(MeshFilter mesh)
     {
+      if (!mesh)
+        return;
+
       var renderer = mesh.gameObject.GetComponent<MeshRenderer>();
       if (renderer != null)
-      {
-        var block = new MaterialPropertyBlock();
-        renderer.GetPropertyBlock(block);
-        Debug.Log("Returning color: " + m_originalColor);
-        //block.SetColor("_Color", m_originalColor);
-        //renderer.SetPropertyBlock(block);
-      }
+        renderer.enabled = m_rendererInitiallyVisible;
     }
 
-    void OnWizardCreate()
+    void OnCreate()
     {
-      if (!m_sorted || MeshFilter == null || m_nodePositions.Count < 3)
-        return; // TODO warn user instead of closing guide
+      m_errorMessage = "";
+      if (!m_sorted)
+        m_errorMessage = "Cable nodes seems unordered!";
+      else if (MeshFilter == null)
+        m_errorMessage = "No Mesh Filter component assigned!";
+      else if (m_nodePositions.Count < 2)
+        m_errorMessage = "Need more than one cable route point!";
+
+      if (m_errorMessage.Length > 0)
+        return;
 
       var oldObject = MeshFilter.gameObject;
 
@@ -152,7 +204,7 @@ namespace AGXUnityEditor
       //  Undo.RegisterCreatedObjectUndo( go, "Cable from Mesh Wizard" );
 
       var cable = go.GetComponent<Cable>();
-      cable.Radius = RadiusGuess; // TODO is this good enough? For the specific cable tested for we could conceive of analytically improved results...
+      cable.Radius = m_calculatedRadius > 0 ? m_calculatedRadius : 0.1f;
       Vector3 dir = Vector3.zero;
       for (int i = 0; i < m_nodePositions.Count; i++)
       {
@@ -175,24 +227,20 @@ namespace AGXUnityEditor
 
 
       this.Close();
-
-      //if (MeshFilter != null)
-      //  RestoreMesh(MeshFilter);
     }
 
     void OnDestroy()
     {
       SceneView.duringSceneGui -= this.OnSceneGUI; 
 
-      //if (MeshFilter != null)
-      //  RestoreMesh(MeshFilter);
+      RestoreMesh(m_previousMesh);
     }
 
     void OnSceneGUI(SceneView view)
     { 
 
       foreach (var pos in m_movedVertexPositions)
-        DrawMeshGizmo("Debug/SphereRenderer", Color.red, pos, Quaternion.identity, Vector3.one * GizmoSize * 0.9f);
+        DrawMeshGizmo("Debug/SphereRenderer", Color.red, pos, Quaternion.identity, Vector3.one * GizmoSize * 0.7f);
 
       for (int i = 0; i < m_nodePositions.Count; i++)
       {
@@ -201,13 +249,12 @@ namespace AGXUnityEditor
       }
     }
 
-    void OnWizardUpdate()
-    {
-      //helpString = "Helpful info on how this works, limitations etc";
-    }
-
     private void CalculatePositions()
     {
+      m_movedVertexPositions.RemoveRange(0, m_movedVertexPositions.Count);
+      m_nodePositions.RemoveRange(0, m_nodePositions.Count);
+      m_calculatedRadius = 0;
+
       if (MeshFilter == null)
         return;
 
@@ -216,22 +263,21 @@ namespace AGXUnityEditor
       var vertices = mesh.vertices;
       var normals = mesh.normals;
 
-      m_movedVertexPositions.RemoveRange(0, m_movedVertexPositions.Count);
 
       var transform = MeshFilter.gameObject.transform;
 
       Vector3 position = Vector3.zero;
       for (int i = 0; i < vertices.Length; i++)
       {
-        position = transform.TransformPoint(vertices[i] - RadiusGuess * normals[i]);
+        position = transform.TransformPoint(vertices[i]) - RadiusGuess * transform.TransformDirection(normals[i]);
         m_movedVertexPositions.Add(position);
       }
 
-      m_nodePositions.RemoveRange(0, m_nodePositions.Count);
+      List<Vector3> firstNodeVertices = new List<Vector3>();
       var searchPositions = m_movedVertexPositions.GetRange(0, m_movedVertexPositions.Count); // Copy
       float searchRange = 1 / ResolutionGuess;
       searchRange *= searchRange;
-      int n = 0;
+      int n = 0, k = 0;
       while (searchPositions.Count > 1) // at least two vertices left
       {
         var origin = searchPositions[0];
@@ -244,11 +290,14 @@ namespace AGXUnityEditor
           {
             position += searchPositions[i];
             n++;
+            if (k == 0)
+              firstNodeVertices.Add(transform.TransformPoint(vertices[i]));
             searchPositions.RemoveAt(i);
           }
         }
 
         m_nodePositions.Add(position / (float)n);
+        k++;
       }
 
       // Check if sorted
@@ -264,10 +313,16 @@ namespace AGXUnityEditor
           previousDir = dir;
         }
       }
-      Debug.Log("Sorted: " + m_sorted);
+      else if (m_nodePositions.Count < 2)
+      {
+        m_sorted = false;
+        return;
+      }
 
-      // TODO what if not sorted? 
-      // Probably start with the first node, find the closest node to that one, remove the first, start over, bit like the above algorithm...
+      // Calculate the cable radius by finding the distance from the nearest vertex to the first node
+      m_calculatedRadius = float.MaxValue;
+      for (int i = 0; i < firstNodeVertices.Count; i++)
+        m_calculatedRadius = Mathf.Min(m_calculatedRadius, (m_nodePositions[0] - firstNodeVertices[i]).magnitude);
     }
   }
 }
