@@ -3,6 +3,7 @@
 .import:
   Physics: [Interaction]
   Physics.Mechanics.InteractionData6D: [Stiffness6D, Damping6D]
+  Physics.DriveTrain: [RotatingShaft]
 
 AttachmentPairInteraction:
   .extends: Interaction
@@ -112,11 +113,29 @@ RotationalLockInteraction1D:
   interactionType: TranslationalLock
 
 FrictionInteraction1D:
-  .doc: Describes a friction interaction constraining one degree of freedom
+  .doc: > 
+    Describes a dynamic friction interaction constraining one degree of freedom.
+    The friction force will depend on the load on the mainInteraction of the
+    owning AttachmentPairConnector of this interaction.
   .extends: Interaction1D
   coefficient:
     .type: Real
     .value: 0
+
+StaticFrictionInteraction1D:
+  .extends: Interaction1D
+  .doc: >
+    A constant friction force, which resist motion in the direction of this interaction.
+  minForce: 0
+  maxForce: 0
+
+StaticRotationalFrictionInteraction1D:
+  .doc: Describes a rotational static friction interaction constraining one degree of freedom
+  .extends: StaticFrictionInteraction1D
+
+StaticTranslationalFrictionInteraction1D:
+  .doc: Describes a translational static friction interaction constraining one degree of freedom
+  .extends: StaticFrictionInteraction1D
 
 RotationalFrictionInteraction1D:
   .doc: Describes a friction interaction constraining one degree of freedom
@@ -125,3 +144,10 @@ RotationalFrictionInteraction1D:
 TranslationalFrictionInteraction1D:
   .doc: Describes a friction interaction constraining one degree of freedom
   .extends: FrictionInteraction1D
+
+Gear1DInteraction:
+  .extends: Interaction
+  interactionType: Gear1DInteraction
+
+  inputShaft:
+    .type: RotatingShaft

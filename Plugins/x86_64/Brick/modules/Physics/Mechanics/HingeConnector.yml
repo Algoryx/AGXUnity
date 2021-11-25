@@ -2,8 +2,7 @@
 
 .import:
   Physics.Mechanics: [RotationalPairConnector, HingeAttachment, HingeInteraction]
-  Physics.Mechanics.HingeInteraction: [HingeGear1DInteraction]
-  Physics.Mechanics.AttachmentPairInteraction: [RotationalMotorInteraction1D, RotationalRangeMinMaxInteraction1D, RotationalLockInteraction1D]
+  Physics.Mechanics.AttachmentPairInteraction: [Gear1DInteraction,RotationalMotorInteraction1D, RotationalRangeMinMaxInteraction1D, RotationalLockInteraction1D]
   Physics.DriveTrain: [RotatingShaft]
 
 HingeConnector:
@@ -36,5 +35,5 @@ RotationalActuatorHingeConnector:
     .type: RotatingShaft
 
   actuator:
-    .type: HingeGear1DInteraction
+    .type: Gear1DInteraction
     inputShaft: this.shaft

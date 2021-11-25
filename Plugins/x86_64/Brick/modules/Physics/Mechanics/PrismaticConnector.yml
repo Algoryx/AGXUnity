@@ -2,7 +2,8 @@
 
 .import:
   Physics.Mechanics: [AttachmentPairConnector, PrismaticAttachment, PrismaticInteraction]
-  Physics.Mechanics.AttachmentPairInteraction: [TranslationalLockInteraction1D,TranslationalMotorInteraction1D, TranslationalRangeMinMaxInteraction1D]
+  Physics.Mechanics.AttachmentPairInteraction: [Gear1DInteraction, TranslationalLockInteraction1D,TranslationalMotorInteraction1D, TranslationalRangeMinMaxInteraction1D]
+  Physics.DriveTrain: [RotatingShaft]
 
 PrismaticConnector:
   .extends: AttachmentPairConnector
@@ -31,6 +32,10 @@ PrismaticConnector:
     .type: Physics.Mechanics.AttachmentPairInteraction.TranslationalFrictionInteraction1D
     coefficient: this.translationalFrictionCoefficient
 
+  staticFrictionTranslational:
+    .type: Physics.Mechanics.AttachmentPairInteraction.StaticTranslationalFrictionInteraction1D
+    .value: Physics.Mechanics.AttachmentPairInteraction.StaticTranslationalFrictionInteraction1D
+
   mainInteraction:
     .value: PrismaticInteraction
 
@@ -46,3 +51,13 @@ PrismaticConnector:
     .type: TranslationalLockInteraction1D
     .value: null
 
+TranslationalActuatorPrismaticConnector:
+  .extends: PrismaticConnector
+  .doc: Connects a rotating shaft to the translational dimension
+
+  shaft:
+    .type: RotatingShaft
+
+  actuator:
+    .type: Gear1DInteraction
+    inputShaft: this.shaft

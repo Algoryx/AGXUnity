@@ -28,6 +28,10 @@ RotationalPairConnector:
     .type: Real
     .value: 0
 
+  staticFrictionRotational:
+    .type: Physics.Mechanics.AttachmentPairInteraction.StaticRotationalFrictionInteraction1D
+    .value: Physics.Mechanics.AttachmentPairInteraction.StaticRotationalFrictionInteraction1D
+
   frictionRotational:
     .type: Physics.Mechanics.AttachmentPairInteraction.RotationalFrictionInteraction1D
     coefficient: this.rotationalFrictionCoefficient

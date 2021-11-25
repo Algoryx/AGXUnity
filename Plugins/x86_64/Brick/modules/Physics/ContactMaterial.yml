@@ -55,3 +55,14 @@ ContactMaterial:
   externalReference:
     .type: String
     .value: null
+
+  interactionFidelity:
+    .doc: >
+      A number defining a wanted fidelity for the numerics of interaction.
+      Valid for integers between 0-10.
+      Where 0 is the lowest fidelity and 10 is maximum fidelity.
+      A negative value will ignore this parameter.
+      Default: -1, which will ignore this parameter.
+    .type: Int
+    .value: -1
+    

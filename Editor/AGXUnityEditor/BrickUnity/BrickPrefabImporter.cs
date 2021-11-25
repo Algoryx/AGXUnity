@@ -450,10 +450,12 @@ namespace AGXUnityEditor.BrickUnity
       var fullPaths = new List<string>
             {
               Path.Combine(componentFolderPath, externalFilepath),
-              Path.GetFullPath(externalFilepath),
-              Path.Combine(System.Environment.GetEnvironmentVariable("BRICK_DIR"), externalFilepath)
+              Path.GetFullPath(externalFilepath)
             };
-
+      var brick_dir = System.Environment.GetEnvironmentVariable("BRICK_DIR");
+      if (brick_dir != null) {
+        fullPaths.Add(Path.Combine(brick_dir, externalFilepath));
+      }
       var fullPath = fullPaths.FirstOrDefault(path => File.Exists(path));
       if (fullPath == default)
       {
