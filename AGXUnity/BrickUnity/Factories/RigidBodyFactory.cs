@@ -61,7 +61,7 @@ namespace AGXUnity.BrickUnity.Factories
           au_shape = go.AddCapsule(b_capsule);
           break;
         case B_Geometry.Rotated2DPolygonMesh b_r2DPMesh:
-          au_shape = go.AddRotated2DPolygnonMesh(b_r2DPMesh);
+          au_shape = go.AddRotated2DPolygonMesh(b_r2DPMesh);
             break;
         case B_Geometry.HollowCylinder b_hollowCylinder:
             au_shape = go.AddHollowCylinder(b_hollowCylinder);
@@ -148,7 +148,7 @@ namespace AGXUnity.BrickUnity.Factories
       }
       return au_mesh;
     }
-    public static AGXUnity.Collide.Mesh AddRotated2DPolygnonMesh(this GameObject go, B_Geometry.Rotated2DPolygonMesh b_r2DPMesh)
+    public static AGXUnity.Collide.Mesh AddRotated2DPolygonMesh(this GameObject go, B_Geometry.Rotated2DPolygonMesh b_r2DPMesh)
     {
       var au_mesh = go.AddComponent<AGXUnity.Collide.Mesh>();
       
