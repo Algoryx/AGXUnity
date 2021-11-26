@@ -100,10 +100,10 @@ namespace AGXUnity.Rendering
       }
       else if ( RenderMode == SegmentRenderMode.DrawMeshInstanced ) {
 
-        GetOrCreateMesh();
-        if (m_meshInstance == null)
+        if (!CreateMeshes())
         {
-          Debug.LogError( "Problem initializing mesh!");
+          Debug.LogError( "AGXUnity.Rendering.WireRenderer: " +
+                          "Problem initializing one or meshes!");
           return;
         }
 
@@ -114,9 +114,10 @@ namespace AGXUnity.Rendering
           return;
         }
 
-        Debug.Log("Initialize instanced");
-
-        m_segmentMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
+        if (m_segmentSphereMatrices == null)
+          m_segmentSphereMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
+        if (m_segmentCylinderMatrices == null)
+          m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
         m_meshInstanceProperties = new MaterialPropertyBlock();
       }
     }
@@ -133,6 +134,9 @@ namespace AGXUnity.Rendering
       if ( m_segmentSpawner != null )
         m_segmentSpawner.Destroy();
       m_segmentSpawner = null;
+
+      m_segmentCylinderMatrices = null;
+      m_segmentSphereMatrices = null;
 
       base.OnDestroy();
     }
@@ -200,7 +204,7 @@ namespace AGXUnity.Rendering
 
       var isValidDrawInstanceMode = RenderMode == SegmentRenderMode.DrawMeshInstanced &&
                                     m_positions.Count > 0 &&
-                                    m_meshInstance != null &&
+                                    m_sphereMeshInstance != null &&
                                     m_material != null;
 
 
@@ -211,7 +215,6 @@ namespace AGXUnity.Rendering
         it.inc();
       }
 
-      // TODO this is moved, check that it doesn't break anything
       it.ReturnToPool();
       endIt.ReturnToPool();
 
@@ -247,47 +250,93 @@ namespace AGXUnity.Rendering
       else 
       {
         // TODO adapt this and remove loop if max segments is actually 256 like implied above, otherwise complete for possible use of more than 1023 positions
-        // TODO this loop is only for end spheres, need cylinders as well
-        while ( m_positions.Count / 1023 + 1 > m_segmentMatrices.Count ) {
-          m_segmentMatrices.Add(new Matrix4x4[1023]);
+        while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count ) {
+          m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
         }
 
-        for ( int arrayIndex = 0; arrayIndex < (m_positions.Count / 1023 + 1); ++arrayIndex ) {
-          Matrix4x4[] matrices = m_segmentMatrices[arrayIndex];
-          int numGranulesInArray = Mathf.Min(1023, m_positions.Count - arrayIndex * 1023);
-          for ( int i = 0; i < numGranulesInArray; ++i ) {
-            matrices[i] = Matrix4x4.TRS(m_positions[i],
-                                        Quaternion.identity,
-                                        Vector3.one * wire.Radius * 2.0f );
+        int numCylinders = 0;
 
+        //for ( int arrayIndex = 0; arrayIndex < (m_positions.Count / 1023 + 1); ++arrayIndex ) {
+        //  //Matrix4x4[] matrices = m_segmentSphereMatrices[arrayIndex]; // TODO why local matrix here instead of just m_segmentMatrices[arrayindex][i] below?
+        //  int numInSphereArray = Mathf.Min(1023, m_positions.Count - 1 - arrayIndex * 1023);
+        //  for ( int i = 0; i < numInSphereArray; ++i ) {
+        //    m_segmentSphereMatrices[arrayIndex][i] = Matrix4x4.TRS(m_positions[i],
+        //                                             Quaternion.identity,
+        //                                             Vector3.one * wire.Radius * 2.0f );
+//
+        //  }
+        //}
+        float segmentDistance = float.MaxValue;
+        for ( int i = 0; i < m_positions.Count - 1; ++i ) {
+          segmentDistance = Mathf.Min(segmentDistance, (m_positions[i + 1] - m_positions[i]).magnitude);
+        }
+
+        segmentDistance /= 2; // TODO numberofsegmentspermeter?
+
+        Vector3 cylinderScale = new Vector3(wire.Radius * 2.0f, segmentDistance / 2, wire.Radius * 2.0f);
+        for ( int i = 0; i < m_positions.Count; ++i ) {
+          if (i < m_positions.Count - 1){
+            Vector3 curr        = m_positions[i];
+            Vector3 next        = m_positions[i + 1];
+            Vector3 currToNext  = next - curr;
+            float distance      = currToNext.magnitude;
+            currToNext         /= distance;
+            int numSegments     = Convert.ToInt32(Mathf.Ceil(distance / segmentDistance + 0.5f));
+            Quaternion rotation = Quaternion.FromToRotation( Vector3.up, currToNext );
+
+            curr += segmentDistance / 2 * currToNext;
+
+            for ( int j = 0; j < numSegments; ++j ) {
+              if (numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
+                m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
+
+              m_segmentCylinderMatrices[numCylinders / 1023][numCylinders % 1023] = 
+                Matrix4x4.TRS(curr,
+                              rotation,
+                              cylinderScale );
+
+              if (j < numSegments - 2)
+                curr = curr + segmentDistance  * currToNext;
+              else
+                curr =  next - segmentDistance  * currToNext;
+
+              numCylinders++;
+            }
           }
+
+          m_segmentSphereMatrices[i / 1023][i % 1023] = 
+            Matrix4x4.TRS(m_positions[i],
+                          Quaternion.identity,
+                          Vector3.one * wire.Radius * 2.0f );
         }
+ 
+
 
         // Spheres
-        if ( m_positions.Count < 1024 ) {
-          Graphics.DrawMeshInstanced( m_meshInstance,
+        for ( int i = 0; i < m_positions.Count; i += 1023 ) {
+          int count = Mathf.Min( 1023, m_positions.Count - i );
+          Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                       0,
                                       m_material,
-                                      m_segmentMatrices[ 0 ],
-                                      m_positions.Count,
+                                      m_segmentSphereMatrices[ i / 1023 ],
+                                      count,
                                       m_meshInstanceProperties,
                                       m_shadowCastingMode,
-                                      m_receiveShadows );
+                                      m_receiveShadows);
         }
-        // DrawMeshInstanced only supports up to 1023 meshes for each call,
-        // we need to subdivide if we have more particles than that.
-        //else {
-        //  for ( int i = 0; i < m_numSegments; i += 1023 ) {
-        //    int count = Mathf.Min( 1023, m_numSegments - i );
-        //    Graphics.DrawMeshInstanced( m_meshInstance,
-        //                                0,
-        //                                m_meshInstanceMaterial,
-        //                                m_granuleMatrices[ i / 1023 ],
-        //                                count,
-        //                                m_meshInstanceProperties,
-        //                                m_shadowCastingMode,
-        //                                m_receiveShadows);
-        //  }
+
+        // Cylinders
+        for ( int i = 0; i < numCylinders; i += 1023 ) {
+          int count = Mathf.Min( 1023, numCylinders - i );
+          Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
+                                      0,
+                                      m_material,
+                                      m_segmentCylinderMatrices[ i / 1023 ],
+                                      count,
+                                      m_meshInstanceProperties,
+                                      m_shadowCastingMode,
+                                      m_receiveShadows);
+        }
       }
     }
 
@@ -321,12 +370,21 @@ namespace AGXUnity.Rendering
       DrawGizmos( true );
     }
 
-    public Mesh GetOrCreateMesh()
+    public bool CreateMeshes()
     {
-      if ( m_meshInstance != null )
-        return m_meshInstance;
+      if (m_sphereMeshInstance == null)
+        m_sphereMeshInstance = CreateMesh(@"Debug/SphereRenderer");
+      if (m_cylinderMeshInstance == null)
+        m_cylinderMeshInstance = CreateMesh(@"Debug/CylinderRenderer");
 
-      GameObject tmp = Resources.Load<GameObject>( @"Debug/SphereRenderer" );
+      return (m_sphereMeshInstance != null || m_cylinderMeshInstance != null);
+    }
+
+    public Mesh CreateMesh(string resource)
+    {
+      
+
+      GameObject tmp = Resources.Load<GameObject>( resource );
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
       MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
       CombineInstance[] combine = new CombineInstance[ filters.Length ];
@@ -336,18 +394,19 @@ namespace AGXUnity.Rendering
         combine[ i ].transform = filters[ i ].transform.localToWorldMatrix;
       }
 
-      m_meshInstance = new Mesh();
-      m_meshInstance.CombineMeshes( combine );
+      var mesh = new Mesh();
+      mesh.CombineMeshes( combine );
 
+      // TODO nicer to have this somewhere else, or as settings
       m_shadowCastingMode = renderers[ 0 ].shadowCastingMode;
       m_receiveShadows = renderers[ 0 ].receiveShadows;
 
-      return m_meshInstance;
+      return mesh;
     }
 
-    private List<Matrix4x4[]> m_segmentMatrices;
+    private List<Matrix4x4[]> m_segmentSphereMatrices, m_segmentCylinderMatrices;
     private MaterialPropertyBlock m_meshInstanceProperties = null;
-    private Mesh m_meshInstance = null;
+    private Mesh m_sphereMeshInstance = null, m_cylinderMeshInstance = null;
     private ShadowCastingMode m_shadowCastingMode = ShadowCastingMode.On;
     private bool m_receiveShadows = true;
   }
