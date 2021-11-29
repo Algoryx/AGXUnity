@@ -1,15 +1,28 @@
 .format: 4
 
 RenderData:
+  defaultColor:
+    .type: Vec3
+    .value: Vec3(0.7,0.7,0.7)
+  ambientColor:
+    .type: Vec3
+    .value: this.defaultColor
+  emissiveColor:
+    .type: Vec3
+    .value: this.defaultColor
   specularColor:
     .type: Vec3
-    .value: Vec3(0.5,0.5,0.5)
+    .value: this.defaultColor
   diffuseColor:
     .type: Vec3
-    .value: Vec3(0.5,0.5,0.5)
+    .value: this.defaultColor
   opacity:
     .type: Real
-    .value: 0
+    .value: 1
+  texture:
+    .doc: Relative file path to texture, given the model file declaring the texture filepath.
+    .type: String
+    .value: ""
 
 Geometry:
   .extends: Scene.Node
@@ -28,7 +41,7 @@ Geometry:
 
   renderMaterial:
     .type: RenderData
-    .value: null
+    .value: RenderData
 
   isSensor:
     .type: Bool
@@ -56,6 +69,69 @@ Cylinder:
   length:
     .type: Real
   radius:
+    .type: Real
+
+Capsule:
+  .extends: Geometry
+  length:
+    .type: Real
+  radius:
+    .type: Real
+
+HollowCylinder:
+  .extends: Geometry
+  .doc: >
+    A hollow cylinder with a centrered circular hole 
+    with radius innerRadius. 
+    The full radius is calculated by the thickness and inner radius.
+  length:
+    .type: Real
+  innerRadius:
+    .doc: Valid for values > 0.
+    .type: Real
+  thickness:
+    .doc: Valid for values > 0.
+    .type: Real 
+
+Cone:
+  .extends: Geometry
+  .doc: > 
+    A regular cone for topRadius = 0.
+    A truncated cone for topRadius > 0.
+  topRadius:
+    .doc: > 
+      topRadius should be larger than, or equal to, zero.
+      topRadius should be less than bottomRadius.
+    .type: Real
+  bottomRadius:
+    .doc: >
+      bottomRadius should be larger than zero.
+    .type: Real
+  height:
+    .doc: should be larger than zero.
+    .type: Real
+
+HollowCone:
+  .extends: Geometry
+  .doc: > 
+    A hollow cone. 
+    If the top inner radius is larger than zero,
+    it will be a cut of cone, with the outerHeight ignored
+    and set to the declared innerHeight.
+  topInnerRadius:
+    .doc: topInnerRadius should be larger than, or equal to, zero.
+    .type: Real
+  bottomInnerRadius:
+    .doc: should be larger than topInnerRadius.
+    .type: Real
+  innerHeight:
+    .doc: should be larger than zero.
+    .type: Real
+  outerHeight:
+    .doc: should be larger or equal to innerHeight
+    .type: Real
+  thickness:
+    .doc: should be larger than zero.
     .type: Real
 
 Box:
@@ -91,6 +167,62 @@ Trimesh:
   #   .type: List<Int>
   #   .value: List<Int>()
 
+CogType:
+  .kind: Enum
+  values:
+    - Sinus
+    - Square
+    - Quadratic
+
+Rotated2DPolygonMesh:
+  .doc: >
+        A 2D polygon rotated around the y axis, at x = 0
+        Forming a 3D mesh.
+  .extends: Geometry
+  resolution:
+    .doc: Minimum 3. Defines the descritization of the mesh.
+    .type: Int
+
+  innerRadius:
+    .type: Real
+    .value: 0
+
+  numInnerCogs:
+    .type: Real
+    .value: 0
+    
+  numOuterCogs:
+    .type: Real
+    .value: 0
+  
+  outerCogType:
+    .type: CogType
+    .value: CogType.Sinus
+
+  innerCogType:
+    .type: CogType
+    .value: CogType.Sinus
+
+  outerCogHeight:
+    .type: Real
+    .value: 0.0
+
+  innerCogHeight:
+    .type: Real
+    .value: 0.0
+
+  points:
+    .doc: >
+          2D polygon. Will add one extra point (first)
+          at x = 0 at the y value of the first point.
+          And one extra point (last) at x = 0
+          at the y value of the last point.
+          Ignored if the first or last point is at x = 0.
+    .type: List<Vec3>
+    .value: List<Vec3>()
+  scale:
+    .type: Real
+    .value: 1
 
 Convex:
   .extends: Geometry

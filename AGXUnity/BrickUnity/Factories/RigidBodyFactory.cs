@@ -57,6 +57,15 @@ namespace AGXUnity.BrickUnity.Factories
         case B_Geometry.Plane b_plane:
           au_shape = go.AddPlane(b_plane);
           break;
+        case B_Geometry.Capsule b_capsule:
+          au_shape = go.AddCapsule(b_capsule);
+          break;
+        case B_Geometry.Rotated2DPolygonMesh b_r2DPMesh:
+          au_shape = go.AddRotated2DPolygonMesh(b_r2DPMesh);
+            break;
+        case B_Geometry.HollowCylinder b_hollowCylinder:
+            au_shape = go.AddHollowCylinder(b_hollowCylinder);
+            break;
         default:
           Debug.LogError($"Cannot create Shape for Brick object {b_geometry}. Unsupported type: {b_geometry.GetType()}");
           return null;
@@ -85,6 +94,22 @@ namespace AGXUnity.BrickUnity.Factories
       au_cylinder.Radius = (float)b_cylinder.Radius;
       au_cylinder.Height = (float)b_cylinder.Length;
       return au_cylinder;
+    }
+    public static AGXUnity.Collide.Capsule AddCapsule(this GameObject go, B_Geometry.Capsule b_capsule)
+    {
+      var au_capsule = go.AddComponent<AGXUnity.Collide.Capsule>();
+      au_capsule.Radius = (float)b_capsule.Radius;
+      au_capsule.Height = (float)b_capsule.Length;
+      return au_capsule;
+    }
+
+    public static AGXUnity.Collide.HollowCylinder AddHollowCylinder(this GameObject go, B_Geometry.HollowCylinder b_hollowCylinder)
+    {
+      var au_hollowCylinder = go.AddComponent<AGXUnity.Collide.HollowCylinder>();
+      au_hollowCylinder.Thickness = (float)b_hollowCylinder.Thickness;
+      au_hollowCylinder.Radius = (float)b_hollowCylinder.InnerRadius;
+      au_hollowCylinder.Height = (float)b_hollowCylinder.Length;
+      return au_hollowCylinder;
     }
 
     public static AGXUnity.Collide.Mesh AddMesh(this GameObject go, B_Geometry.Trimesh b_triMesh)
@@ -123,6 +148,41 @@ namespace AGXUnity.BrickUnity.Factories
       }
       return au_mesh;
     }
+    public static AGXUnity.Collide.Mesh AddRotated2DPolygonMesh(this GameObject go, B_Geometry.Rotated2DPolygonMesh b_r2DPMesh)
+    {
+      var au_mesh = go.AddComponent<AGXUnity.Collide.Mesh>();
+      
+      // Copy vertices and indices into agx Vectors for processing in
+      // AGXUnity.Utils.MeshSplitter as is done in
+      // AGXUnityEditor.IO.InputAGXFile
+      // Can this be done avioded? If Brick already provided these. Or
+      // if MeshSplitter could take a list of agx.Vec3 instead of an agx.Vector?
+      var agxVertices = new agx.Vec3Vector();
+      var agxIndices = new agx.UInt32Vector();
+      foreach (var v in b_r2DPMesh.Vertices)
+      {
+        agxVertices.Add(v);
+      }
+      foreach (var i in b_r2DPMesh.Indices)
+      {
+        agxIndices.Add((uint)i);
+      }
+
+      // Create Unity meshes with AGXUnitys utility MeshSplitter
+      var meshes = MeshSplitter.Split(
+                                        agxVertices,
+                                        agxIndices,
+                                        v => v.ToHandedVector3() * (float)b_r2DPMesh.Scale,
+                                        UInt16.MaxValue
+                                        ).Meshes;
+      au_mesh.SetSourceObject(null);
+      foreach (var mesh in meshes)
+      {
+        au_mesh.AddSourceObject(mesh);
+      }
+      return au_mesh;
+    }
+
 
     public static void SetPlaneEquationTransform(this GameObject go, Brick.Math.Vec3 b_normal, double b_d)
     {

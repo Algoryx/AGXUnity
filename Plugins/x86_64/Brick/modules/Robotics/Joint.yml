@@ -34,6 +34,10 @@ Joint:
       can be overriden in the Joint declaration.
     .type: String
     .value: null
+  
+  name:
+    .type: String
+    .value: ""
 
   initialPosition:
     .doc: Position of the degree of freedom of the Joint

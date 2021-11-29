@@ -115,7 +115,7 @@ namespace AGXUnity.BrickUnity
           {
             this.m_brickSimulation.InteractionMap.Add(b_interaction1D, nativeConstraint);
           }
-          else if (b_interaction != b_connector.MainInteraction)
+          else if (b_interaction != b_connector.MainInteraction && !(b_interaction is B_Interaction.Gear1DInteraction))
           {
             var brickObject = GetComponent<BrickObject>();
             Debug.LogError($"Unhandled Brick Interaction: {brickObject.path}. The Interaction is neither a MainInteraction or a controller.");

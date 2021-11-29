@@ -31,6 +31,10 @@ CylindricalConnector:
     .type: TranslationalFrictionInteraction1D
     coefficient: this.translationalFrictionCoefficient
 
+  staticFrictionTranslational:
+    .type: Physics.Mechanics.AttachmentPairInteraction.StaticTranslationalFrictionInteraction1D
+    .value: Physics.Mechanics.AttachmentPairInteraction.StaticTranslationalFrictionInteraction1D
+
   mainInteraction:
     .value: CylindricalInteraction
 

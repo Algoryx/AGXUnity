@@ -3,6 +3,7 @@
 .import:
   Physics.Mechanics: [AttachmentPairInteraction]
   Physics.Mechanics.AttachmentPairInteraction: [TranslationalMotorInteraction1D]
+  Physics.DriveTrain: [RotatingShaft]
 
 PrismaticInteraction:
   .extends: AttachmentPairInteraction

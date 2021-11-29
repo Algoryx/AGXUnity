@@ -10,10 +10,3 @@ HingeInteraction:
 
   interactionType: Hinge
 
-
-HingeGear1DInteraction:
-  .extends: Interaction
-  interactionType: HingeGear1D
-
-  inputShaft:
-    .type: RotatingShaft

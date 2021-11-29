@@ -5,7 +5,7 @@ using B_Interaction = Brick.Physics.Mechanics.AttachmentPairInteraction;
 using B_Mechanics = Brick.Physics.Mechanics;
 using B_Stiffness = Brick.Physics.Mechanics.InteractionData6D.Stiffness6D;
 using B_Damping = Brick.Physics.Mechanics.InteractionData6D.Damping6D;
-using B_GearInteraction1D = Brick.Physics.Mechanics.HingeInteraction.HingeGear1DInteraction;
+using B_GearInteraction1D = Brick.Physics.Mechanics.AttachmentPairInteraction.Gear1DInteraction;
 
 using AU_Constraint = AGXUnity.Constraint;
 using AU_Controller = AGXUnity.ElementaryConstraintController;
@@ -36,6 +36,9 @@ namespace AGXUnity.BrickUnity.Factories
             break;
           case B_Interaction.FrictionInteraction1D b_friction1D:
             constraint.SetFrictionController(b_friction1D, overwriteIfDefault);
+            break;
+          case B_Interaction.StaticFrictionInteraction1D b_staticFriction1D:
+            constraint.SetStaticFriction(b_staticFriction1D, overwriteIfDefault);
             break;
           case B_GearInteraction1D _:
             // This is handled internally by Brick when adding drivetrains
@@ -149,7 +152,28 @@ namespace AGXUnity.BrickUnity.Factories
       if (overwriteIfDefault || !b_friction1D._coefficientIsDefault)
         frictionController.FrictionCoefficient = (float)b_friction1D.Coefficient;
     }
+    /// <summary>
+    /// Set the properties of the friction controller of a constraint from a Brick object
+    /// </summary>
+    /// <param name="constraint">An AGXUnity.Constraint with a friction controller</param>
+    /// <param name="b_friction1D">A Brick friction 1D interaction</param>
+    /// <param name="overwriteIfDefault">Set to true to overwrite the AGXUnity constraint's values even if the Brick values are default</param>
+    
+    public static void SetStaticFriction(this AU_Constraint constraint,
+                                             B_Interaction.StaticFrictionInteraction1D b_friction1D,
+                                             bool overwriteIfDefault)
+    {
+      var controllerType = AU_ControllerType.Primary;
+      if (b_friction1D is B_Interaction.StaticRotationalFrictionInteraction1D)
+        controllerType = AU_ControllerType.Rotational;
+      else if (b_friction1D is B_Interaction.StaticTranslationalFrictionInteraction1D)
+        controllerType = AU_ControllerType.Translational;
 
+      var frictionController = constraint.GetController<AU_FrictionController>(controllerType);
+
+      if (overwriteIfDefault || !b_friction1D._minForceIsDefault || !b_friction1D._maxForceIsDefault)
+        frictionController.MinimumStaticFrictionForceRange = new RangeReal((float)b_friction1D.MinForce,(float)b_friction1D.MaxForce);
+    }
     /// <summary>
     /// Set compliance, damping and force range of a controller.
     /// </summary>
