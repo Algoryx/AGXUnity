@@ -20,7 +20,6 @@ namespace AGXUnity.Rendering
       DrawMeshInstanced
     }
 
-    // TODO Do draw with DrawMeshInstanced we need the same scale for all instances, thus we need to draw spheres at each point in one call, and cylinders with the same length in another... Rewrite GetOrCreateMesh two have two renderers, plus calculate positions for cylinders in Render
     [SerializeField]
     private SegmentRenderMode m_renderMode = SegmentRenderMode.DrawMeshInstanced;
 
@@ -249,7 +248,7 @@ namespace AGXUnity.Rendering
       }
       else 
       {
-        // TODO adapt this and remove loop if max segments is actually 256 like implied above, otherwise complete for possible use of more than 1023 positions
+        // TODO adapt this and remove loop if max segments is actually 256 like implied above
         while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count ) {
           m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
         }
@@ -266,14 +265,14 @@ namespace AGXUnity.Rendering
 //
         //  }
         //}
-        float segmentDistance = float.MaxValue;
+        float segmentLength = float.MaxValue;
         for ( int i = 0; i < m_positions.Count - 1; ++i ) {
-          segmentDistance = Mathf.Min(segmentDistance, (m_positions[i + 1] - m_positions[i]).magnitude);
+          segmentLength = Mathf.Min(segmentLength, (m_positions[i + 1] - m_positions[i]).magnitude);
         }
 
-        segmentDistance /= 2; // TODO numberofsegmentspermeter?
+        segmentLength /= 1; // TODO numberofsegmentspermeter?
 
-        Vector3 cylinderScale = new Vector3(wire.Radius * 2.0f, segmentDistance / 2, wire.Radius * 2.0f);
+        Vector3 cylinderScale = new Vector3(wire.Radius * 2.0f, segmentLength / 2, wire.Radius * 2.0f);
         for ( int i = 0; i < m_positions.Count; ++i ) {
           if (i < m_positions.Count - 1){
             Vector3 curr        = m_positions[i];
@@ -281,10 +280,10 @@ namespace AGXUnity.Rendering
             Vector3 currToNext  = next - curr;
             float distance      = currToNext.magnitude;
             currToNext         /= distance;
-            int numSegments     = Convert.ToInt32(Mathf.Ceil(distance / segmentDistance + 0.5f));
+            int numSegments     = Convert.ToInt32(Mathf.Ceil(distance / segmentLength));
             Quaternion rotation = Quaternion.FromToRotation( Vector3.up, currToNext );
 
-            curr += segmentDistance / 2 * currToNext;
+            curr += segmentLength / 2f * currToNext;
 
             for ( int j = 0; j < numSegments; ++j ) {
               if (numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
@@ -296,9 +295,9 @@ namespace AGXUnity.Rendering
                               cylinderScale );
 
               if (j < numSegments - 2)
-                curr = curr + segmentDistance  * currToNext;
+                curr = curr + segmentLength  * currToNext;
               else
-                curr =  next - segmentDistance  * currToNext;
+                curr =  next - segmentLength / 2f  * currToNext;
 
               numCylinders++;
             }
