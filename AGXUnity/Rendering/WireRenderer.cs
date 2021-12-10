@@ -4,6 +4,10 @@ using System.Linq;
 using UnityEngine;
 using AGXUnity.Utils;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 using System.ComponentModel;
 using UnityEngine.Rendering;
 
@@ -74,6 +78,8 @@ namespace AGXUnity.Rendering
     private Material m_material = null;
 
     private List<Vector3> m_positions;
+
+    private int m_numCylinders = 0;
 
     public Material Material
     {
@@ -175,20 +181,35 @@ namespace AGXUnity.Rendering
     /// </summary>
     protected void LateUpdate()
     {
-      Debug.Log("LateUpdate?");
       // During play we're receiving callbacks from the wire
       // to OnPostStepForward.
       if ( Application.isPlaying )
         return;
 
-      // Let OnDrawGizmos handle rendering when in prefab edit mode.
+      // Let OnDrawGizmos handle rendering when in prefab edit mode and using GameObjects for drawing.
       // It's not possible to use RuntimeObjects while there.
-      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) && RenderMode == SegmentRenderMode.GameObject)
         return;
 
       if ( Wire != null && Wire.Native == null )
         RenderRoute( Wire.Route, Wire.Radius );
     }
+
+#if UNITY_EDITOR
+
+    private int m_counter = 0;
+    // DrawMeshInstanced stuff is sometimes lost when in Editor pause. We don't know when - Quick and dirty fix, just redraw it occasionally
+    void OnRenderObject()
+    {
+      if ( !EditorApplication.isPaused)
+        return;
+      if ( Wire != null && m_counter++ > 10)
+      {
+        DrawWireInstanced();
+        m_counter = 0;
+      }
+    }
+#endif
 
     private void RenderRoute( WireRoute route, float radius )
     {
@@ -228,7 +249,8 @@ namespace AGXUnity.Rendering
         }
 
         InitMatrices();
-        DrawWireInstanced(Wire);
+        CalculateDrawInstancedData(Wire);
+        DrawWireInstanced();
       }
     }
 
@@ -289,17 +311,18 @@ namespace AGXUnity.Rendering
       }
       else 
       {
-        DrawWireInstanced(wire);
+        CalculateDrawInstancedData(wire);
+        DrawWireInstanced();
       }
     }
 
-    private void DrawWireInstanced(Wire wire)
+    private void CalculateDrawInstancedData(Wire wire)
     {
       while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count ) {
         m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
       }
 
-      int numCylinders = 0;
+      m_numCylinders = 0;
 
       float segmentLength = float.MaxValue;
       for ( int i = 0; i < m_positions.Count - 1; ++i ) {
@@ -320,10 +343,10 @@ namespace AGXUnity.Rendering
           curr += segmentLength / 2f * currToNext;
 
           for ( int j = 0; j < numSegments; ++j ) {
-            if (numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
+            if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
               m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
 
-            m_segmentCylinderMatrices[numCylinders / 1023][numCylinders % 1023] = 
+            m_segmentCylinderMatrices[m_numCylinders / 1023][m_numCylinders % 1023] = 
               Matrix4x4.TRS(curr,
                             rotation,
                             cylinderScale );
@@ -333,7 +356,7 @@ namespace AGXUnity.Rendering
             else
               curr =  next - segmentLength / 2f  * currToNext;
 
-            numCylinders++;
+            m_numCylinders++;
           }
         }
 
@@ -343,8 +366,10 @@ namespace AGXUnity.Rendering
                         Vector3.one * wire.Radius * 2.0f );
       }
 
+    }
 
-
+    private void DrawWireInstanced()
+    {
       // Spheres
       for ( int i = 0; i < m_positions.Count; i += 1023 ) {
         int count = Mathf.Min( 1023, m_positions.Count - i );
@@ -359,8 +384,8 @@ namespace AGXUnity.Rendering
       }
 
       // Cylinders
-      for ( int i = 0; i < numCylinders; i += 1023 ) {
-        int count = Mathf.Min( 1023, numCylinders - i );
+      for ( int i = 0; i < m_numCylinders; i += 1023 ) {
+        int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
                                     0,
                                     Material,
