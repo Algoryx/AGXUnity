@@ -435,11 +435,10 @@ namespace AGXUnity.Rendering
 
     public bool CreateMeshes()
     {
-      // TODO could probably save some time if using low poly versions of these
       if (m_sphereMeshInstance == null)
-        m_sphereMeshInstance = CreateMesh(@"Debug/SphereRenderer");
+        m_sphereMeshInstance = CreateMesh(@"Debug/LowPolySphereRenderer");
       if (m_cylinderMeshInstance == null)
-        m_cylinderMeshInstance = CreateMesh(@"Debug/CylinderRenderer");
+        m_cylinderMeshInstance = CreateMesh(@"Debug/LowPolyCylinderRenderer");
 
       return (m_sphereMeshInstance != null || m_cylinderMeshInstance != null);
     }
