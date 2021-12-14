@@ -338,43 +338,34 @@ namespace AGXUnity.Rendering
       if (segmentLength > 0)
         segmentLength = Mathf.Sqrt(segmentLength);
 
-      Vector3 cylinderScale = new Vector3(wire.Radius * 2.0f, segmentLength / 2, wire.Radius * 2.0f);
+      float doubleRadius = wire.Radius * 2.0f;
+      Vector3 sphereRadius = Vector3.one * doubleRadius;
       for ( int i = 0; i < m_positions.Count; ++i ) {
         if (i < m_positions.Count - 1){
           Vector3 curr        = m_positions[i];
           Vector3 next        = m_positions[i + 1];
           Vector3 currToNext  = next - curr;
           float distance      = currToNext.magnitude;
-          currToNext         /= distance;
-          int numSegments     = Convert.ToInt32(Mathf.Ceil(distance / segmentLength));
           Quaternion rotation = Quaternion.FromToRotation( Vector3.up, currToNext );
 
-          curr += segmentLength / 2f * currToNext;
+          Vector3 cylinderScale = new Vector3(doubleRadius, distance / 2, doubleRadius);
 
-          for ( int j = 0; j < numSegments; ++j ) {
-            if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
-              m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
+          if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
+            m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
 
-            m_segmentCylinderMatrices[m_numCylinders / 1023][m_numCylinders % 1023] = 
-              Matrix4x4.TRS(curr,
-                            rotation,
-                            cylinderScale );
+          m_segmentCylinderMatrices[m_numCylinders / 1023][m_numCylinders % 1023] = 
+            Matrix4x4.TRS((curr + next) / 2,
+                          rotation,
+                          cylinderScale );
 
-            if (j < numSegments - 2)
-              curr = curr + segmentLength  * currToNext;
-            else
-              curr =  next - segmentLength / 2f  * currToNext;
-
-            m_numCylinders++;
-          }
+          m_numCylinders++;
         }
 
         m_segmentSphereMatrices[i / 1023][i % 1023] = 
           Matrix4x4.TRS(m_positions[i],
                         Quaternion.identity,
-                        Vector3.one * wire.Radius * 2.0f );
+                        sphereRadius );
       }
-
     }
 
     private void DrawWireInstanced()
