@@ -255,6 +255,7 @@ namespace AGXUnity.Rendering
         }
 
         InitMatrices();
+        // TODO This could be optimized by only recalculating it when the wire was altered
         CalculateDrawInstancedData(Wire);
         DrawWireInstanced();
       }
@@ -332,8 +333,10 @@ namespace AGXUnity.Rendering
 
       float segmentLength = float.MaxValue;
       for ( int i = 0; i < m_positions.Count - 1; ++i ) {
-        segmentLength = Mathf.Min(segmentLength, (m_positions[i + 1] - m_positions[i]).magnitude);
+        segmentLength = Mathf.Min(segmentLength, (m_positions[i + 1] - m_positions[i]).sqrMagnitude);
       }
+      if (segmentLength > 0)
+        segmentLength = Mathf.Sqrt(segmentLength);
 
       Vector3 cylinderScale = new Vector3(wire.Radius * 2.0f, segmentLength / 2, wire.Radius * 2.0f);
       for ( int i = 0; i < m_positions.Count; ++i ) {
