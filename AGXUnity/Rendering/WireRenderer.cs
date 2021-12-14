@@ -28,6 +28,7 @@ namespace AGXUnity.Rendering
     private SegmentRenderMode m_renderMode = SegmentRenderMode.DrawMeshInstanced;
 
     [Description("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced.")]
+    [HideInInspector]
     public SegmentRenderMode RenderMode
     {
       get { return m_renderMode; }
@@ -48,15 +49,18 @@ namespace AGXUnity.Rendering
     /*
      * Only used in GameObject rendering mode
      */
+    [HideInInspector]
     public float NumberOfSegmentsPerMeter = 2.0f;
 
     /*
      * Only used in DrawMeshInstanced rendering mode
      */
+    [HideInInspector]
     public ShadowCastingMode ShadowCastingMode = ShadowCastingMode.On;
     /*
      * Only used in DrawMeshInstanced rendering mode
      */
+    [HideInInspector]
     public bool ReceiveShadows = true;
 
     [HideInInspector]
@@ -81,6 +85,7 @@ namespace AGXUnity.Rendering
 
     private int m_numCylinders = 0;
 
+    [HideInInspector]
     public Material Material
     {
       get { return m_material ?? DefaultMaterial(); }
@@ -203,8 +208,9 @@ namespace AGXUnity.Rendering
     {
       if ( !EditorApplication.isPaused)
         return;
-      if ( Wire != null && m_counter++ > 10)
+      if ( Wire != null && m_counter++ > 10 && CreateMeshes())
       {
+        InitMatrices();
         DrawWireInstanced();
         m_counter = 0;
       }
@@ -429,6 +435,7 @@ namespace AGXUnity.Rendering
 
     public bool CreateMeshes()
     {
+      // TODO could probably save some time if using low poly versions of these
       if (m_sphereMeshInstance == null)
         m_sphereMeshInstance = CreateMesh(@"Debug/SphereRenderer");
       if (m_cylinderMeshInstance == null)
