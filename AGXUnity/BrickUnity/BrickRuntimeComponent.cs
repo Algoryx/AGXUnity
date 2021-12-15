@@ -61,6 +61,7 @@ namespace AGXUnity.BrickUnity
 
     protected override bool Initialize()
     {
+      BrickUtils.SetupBrickEnvironment();
       Debug.Log($"Synchronizing Brick component {filePath}:{modelName}");
       Brick.Model.MarkDirtyModels();
       m_component = BrickUtils.LoadComponentFromFile(filePath, modelName);
