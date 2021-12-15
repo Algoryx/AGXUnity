@@ -60,8 +60,8 @@ namespace AGXUnity
 
     /// <summary>
     /// Load license file (service or legacy) located in any directory
-    /// under application/project root. Service (agx.lfx) is searched
-    /// for before legacy (agx.lic).
+    /// under application/project root. Service (*.lfx) is searched
+    /// for before legacy (*.lic). The first valid license found is loaded.
     /// </summary>
     /// <returns>
     /// True if successful, false if license files weren't found
@@ -71,14 +71,14 @@ namespace AGXUnity
     {
       Reset();
 
-      var filename = FindLicenseFiles( LicenseInfo.LicenseType.Service ).FirstOrDefault() ??
-                     FindLicenseFiles( LicenseInfo.LicenseType.Legacy ).FirstOrDefault();
-
-      if ( string.IsNullOrEmpty( filename ) )
-        return false;
-
-      return LoadFile( filename.PrettyPath(),
-                       $"Searching for license service or legacy license file from application root: \"{filename.PrettyPath()}\"." );
+      var licenseFiles = FindLicenseFiles();
+      foreach ( var licenseFile in licenseFiles ) {
+        var file = licenseFile.PrettyPath();
+        if ( LoadFile( file,
+                       $"License file \"{file}\" found in search from application root." ) )
+          return true;
+      }
+      return false;
     }
 
     /// <summary>

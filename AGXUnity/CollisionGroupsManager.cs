@@ -50,11 +50,11 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      agxCollide.Space space = GetSimulation().getSpace();
-      foreach ( CollisionGroupEntryPair pair in m_disabledPairs )
+      var space = GetSimulation().getSpace();
+      foreach ( var pair in m_disabledPairs )
         SetEnablePair( pair, false, space );
 
-      return base.Initialize();
+      return true;
     }
 
     private void AddToDisabled( string group1, string group2 )

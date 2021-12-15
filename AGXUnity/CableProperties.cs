@@ -44,10 +44,17 @@ namespace AGXUnity
     [HideInInspector]
     public float PoissonsRatio
     {
-      get { return m_poissonsRatio; }
+      get
+      {
+        // This is rendered in the Inspector by CablePropertiesEditor
+        // in CableTool and will only show up for the Twist direction,
+        // where it's used.
+        return m_poissonsRatio;
+      }
       set
       {
-        m_poissonsRatio = value;
+        // Poisson's ratio at -1.0 will result in a division by 0.
+        m_poissonsRatio = Utils.Math.Clamp( value, -0.999f, 0.5f );
         OnValueCanged( Direction );
       }
     }

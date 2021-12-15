@@ -105,7 +105,13 @@ namespace AGXUnityEditor.Tools
           var wrappers = PropertyWrapper.FindProperties<CableProperty>( System.Reflection.BindingFlags.Instance |
                                                                         System.Reflection.BindingFlags.Public );
           foreach ( var wrapper in wrappers ) {
-            if ( wrapper.GetContainingType() == typeof( float ) && InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ) {
+            // Poisson's ratio is only used in the Twist direction and
+            // has HideInInspector in CableProperties. Overriding HideInInspector
+            // and rendering Poisson's ratio if dir == CableProperties.Direction.Twist.
+            var renderFloat = wrapper.GetContainingType() == typeof( float ) &&
+                              ( InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ||
+                                ( wrapper.Member.Name == "PoissonsRatio" && dir == CableProperties.Direction.Twist ) );
+            if ( renderFloat ) {
               var value = EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
                                                       wrapper.Get<float>( properties[ dir ] ) );
               if ( UnityEngine.GUI.changed ) {

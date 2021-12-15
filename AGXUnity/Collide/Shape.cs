@@ -386,8 +386,10 @@ namespace AGXUnity.Collide
       if ( Simulation.HasInstance )
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
 
-      if ( m_geometry != null )
+      if ( m_geometry != null ) {
         m_geometry.Dispose();
+        m_geometry.ReturnToPool();
+      }
       m_geometry = null;
 
       m_transform = null;
@@ -413,8 +415,13 @@ namespace AGXUnity.Collide
       bool debugRenderingEnabled = Rendering.DebugRenderManager.IsActiveForSynchronize &&
                                    Rendering.DebugRenderManager.Instance.isActiveAndEnabled;
       // If we have a body the debug rendering synchronization is made from that body.
-      if ( debugRenderingEnabled && m_geometry != null && m_geometry.getRigidBody() == null )
-        Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
+      if ( debugRenderingEnabled && m_geometry != null ) {
+        var nativeRb = m_geometry.getRigidBody();
+        if ( nativeRb == null )
+          Rendering.DebugRenderManager.OnPostSynchronizeTransforms( this );
+        else
+          nativeRb.ReturnToPool();
+      }
     }
 
     /// <summary>
@@ -423,10 +430,16 @@ namespace AGXUnity.Collide
     /// </summary>
     protected virtual void SyncNativeTransform()
     {
+      if ( m_geometry == null )
+        return;
+
       // Automatic synchronization if we have a parent.
-      if ( m_geometry != null && m_geometry.getRigidBody() == null )
+      var nativeRb = m_geometry.getRigidBody();
+      if ( nativeRb == null )
         m_geometry.setLocalTransform( new agx.AffineMatrix4x4( m_transform.rotation.ToHandedQuat(),
                                                                m_transform.position.ToHandedVec3() ) );
+      else
+        nativeRb.ReturnToPool();
     }
 
     /// <summary>

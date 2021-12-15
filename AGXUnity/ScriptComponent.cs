@@ -42,8 +42,10 @@ namespace AGXUnity
     /// <returns>Native simulation object if not being destructed.</returns>
     public agxSDK.Simulation GetSimulation()
     {
-      Simulation simulation = Simulation.Instance;
-      return simulation ? simulation.Native : null;
+      if ( Simulation.IsDestroyed )
+        return null;
+
+      return Simulation.Instance?.Native;
     }
 
     /// <summary>
@@ -78,6 +80,10 @@ namespace AGXUnity
       if ( State == States.INITIALIZING )
         throw new Exception( "Initialize call when object is being initialized. Implement wait until initialized?" );
 
+      // Supporting GetInitialized calls in, e.g., Awake.
+      if ( State == States.CONSTRUCTED )
+        Awake();
+
       if ( State == States.AWAKE ) {
         try {
           NativeHandler.Instance.MakeMainThread();
@@ -94,6 +100,9 @@ namespace AGXUnity
           IsSynchronizingProperties = true;
           Utils.PropertySynchronizer.Synchronize( this );
           IsSynchronizingProperties = false;
+
+          if ( Application.isPlaying )
+            m_uuidHash = Simulation.Instance.ContactCallbacks.Map( this );
         }
       }
 
@@ -111,8 +120,17 @@ namespace AGXUnity
     /// </summary>
     protected void Awake()
     {
-      State = States.AWAKE;
-      OnAwake();
+      if ( State == States.CONSTRUCTED ) {
+        try {
+          NativeHandler.Instance.MakeMainThread();
+        }
+        catch ( System.Exception ) {
+          return;
+        }
+
+        State = States.AWAKE;
+        OnAwake();
+      }
     }
 
     /// <summary>
@@ -132,11 +150,17 @@ namespace AGXUnity
 
     protected virtual void OnDestroy()
     {
+      if ( Simulation.HasInstance )
+        Simulation.Instance.ContactCallbacks.Unmap( m_uuidHash );
+
       NativeHandler.Instance.Unregister( this );
 
       State = States.DESTROYED;
     }
 
     protected virtual void OnApplicationQuit() { }
+
+    [NonSerialized]
+    private uint m_uuidHash = 0u;
   }
 }
