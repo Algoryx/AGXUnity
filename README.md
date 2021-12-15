@@ -265,7 +265,7 @@ exit /b 0
 ### Building Unity-executable with Brick
 When building a standalone player from Unity, we want to be able to start the executable without having to install Brick first. To be able to do this a few things are needed.
 
-1. Copy the Brick `modules`-folder from `Assets/AGXUnity/Plugins/x86_64/Brick` to `<build-name>_Data/brick/modules`, in the build folder
+1. Copy the files in `Assets/AGXUnity/Plugins/x86_64/Brick/modules` to `<build-name>_Data/Brick/modules`, in the build folder
 2. Copy any Brick-yml files to the build folder and make sure that the file path in the `BrickRuntimeComponent` (set in the editor of the imported Brick object) points at it. It should be a relative path if you want to be able to find it even if the built application is moved to another computer.
 
 An example of what a build-script might look like if the Brick-yml files are located in a folder called BrickModels can be seen below. This should be run in the root directory of the project.
