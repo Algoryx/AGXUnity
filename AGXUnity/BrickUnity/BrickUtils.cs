@@ -29,7 +29,7 @@ namespace AGXUnity.BrickUnity
         }
         else
         {
-          var modulePath = System.IO.Path.Combine(Application.dataPath, "brick", "modules");
+          var modulePath = System.IO.Path.Combine(Application.dataPath, "Brick", "modules");
           System.Environment.SetEnvironmentVariable("BRICK_MODULEPATH", modulePath);
         }
       }
