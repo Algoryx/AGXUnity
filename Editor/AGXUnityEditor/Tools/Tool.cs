@@ -203,6 +203,11 @@ namespace AGXUnityEditor.Tools
     /// <param name="arrow">True to render as arrow, false to render as cylinder.</param>
     public void DebugRender( Vector3 start, Vector3 end, float radius, Color color, bool arrow = false )
     {
+      // Getting strange errors if we do this when the editor is
+      // going in or out of play mode.
+      if ( EditorApplication.isPlayingOrWillChangePlaymode != EditorApplication.isPlaying )
+        return;
+
       CreateDefaultDebugRenderable<Utils.VisualPrimitiveArrow>( color ).SetTransformEx( start,
                                                                                         end,
                                                                                         radius,
@@ -220,6 +225,9 @@ namespace AGXUnityEditor.Tools
     /// <param name="color">Color of sphere.</param>
     public void DebugRender( Vector3 center, float radius, Color color )
     {
+      if ( EditorApplication.isPlayingOrWillChangePlaymode != EditorApplication.isPlaying )
+        return;
+
       CreateDefaultDebugRenderable<Utils.VisualPrimitiveSphere>( color ).SetTransform( center,
                                                                                        Quaternion.identity,
                                                                                        radius,

@@ -203,7 +203,7 @@ namespace AGXUnityEditor
       if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
         this.target.hideFlags |= HideFlags.HideInInspector;
 
-      ToolManager.OnTargetEditorEnable( this.targets );
+      ToolManager.OnTargetEditorEnable( this.targets, this );
     }
 
     private void OnDisable()

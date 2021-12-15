@@ -61,7 +61,7 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      return base.Initialize();
+      return true;
     }
 
     /// <summary>

@@ -29,18 +29,17 @@ namespace AGXUnityEditor.Menus
         return;
 #endif
 
-      var go = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
-                                                  SelectionMode.Editable ).FirstOrDefault( selected => selected == command.context );
+      var go = FindSelectedGivenCommand( command );
       if ( go == null ) {
         Debug.LogWarning( $"Ignoring visual for {command.context.name} - object isn't editable." );
         return;
       }
 
-      var validShapes            = from shape in go.GetComponentsInChildren<Shape>()
-                                   where !ShapeVisual.HasShapeVisual( shape ) &&
-                                          ShapeVisual.SupportsShapeVisual( shape )
-                                   select shape;
-      var numSensors             = validShapes.Count( shape => shape.IsSensor );
+      var validShapes = from shape in go.GetComponentsInChildren<Shape>()
+                        where !ShapeVisual.HasShapeVisual( shape ) &&
+                               ShapeVisual.SupportsShapeVisual( shape )
+                        select shape;
+      var numSensors = validShapes.Count( shape => shape.IsSensor );
       var createVisualForSensors = validShapes.Count() > 0 &&
                                    numSensors > 0 &&
                                    // Negated when "No" is first (left button)
@@ -71,6 +70,61 @@ namespace AGXUnityEditor.Menus
         Debug.Log( "Create visual ignored: All shapes already have visual data or doesn't support to be visualized.",
                    Selection.activeGameObject );
       }
+    }
+
+    [MenuItem( "GameObject/AGXUnity/Save/URDF Model(s) as prefab(s)...", validate = false, priority = 11 )]
+    public static void ExportUrdfAsPrefab( MenuCommand command )
+    {
+      SaveUrdfs( command, true );
+    }
+
+    [MenuItem( "GameObject/AGXUnity/Save/URDF Model(s) assets...", validate = false, priority = 11 )]
+    public static void ExportUrdfAssets( MenuCommand command )
+    {
+      SaveUrdfs( command, false );
+    }
+
+    private static void SaveUrdfs( MenuCommand command, bool asPrefab )
+    {
+#if UNITY_2019_4_OR_NEWER
+      if ( command.context == null )
+        return;
+#endif
+      var strContext = asPrefab ? "prefab(s)" : "assets";
+      var rootGameObject = FindSelectedGivenCommand( command );
+      if ( rootGameObject == null ) {
+        Debug.LogWarning( $"Saving URDF Model as {strContext} failed for {command.context.name} - object isn't editable.",
+                          command.context );
+        return;
+      }
+
+      var urdfModels = AGXUnity.IO.URDF.Utils.GetElementsInChildren<AGXUnity.IO.URDF.Model>( rootGameObject );
+      if ( urdfModels.Length == 0 ) {
+        Debug.LogWarning( $"Saving URDF Model as {strContext} failed for {command.context.name} - the game object doesn't contain any URDF model(s).",
+                          command.context );
+        return;
+      }
+
+      var directory = IO.URDF.Prefab.OpenFolderPanel( asPrefab ? "URDF Prefab Directory" : "URDF Assets Directory" );
+      if ( string.IsNullOrEmpty( directory ) )
+        return;
+
+      foreach ( var urdfModel in urdfModels ) {
+        var modelRootGameObject = AGXUnity.IO.URDF.Utils.FindGameObjectWithElement( rootGameObject, urdfModel );
+        if ( modelRootGameObject == null )
+          continue;
+        if ( asPrefab )
+          IO.URDF.Prefab.Create( urdfModel, modelRootGameObject, directory );
+        else
+          IO.URDF.Prefab.CreateAssets( urdfModel, modelRootGameObject, directory, modelRootGameObject.name );
+      }
+    }
+
+    private static GameObject FindSelectedGivenCommand( MenuCommand command )
+    {
+      return Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                SelectionMode.Editable )
+                      .FirstOrDefault( selected => selected == command.context );
     }
   }
 }

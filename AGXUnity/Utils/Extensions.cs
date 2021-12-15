@@ -545,7 +545,15 @@ namespace AGXUnity.Utils
     /// <returns>Path relative to application root and with / instead of \\.</returns>
     public static string PrettyPath( this string path )
     {
-      var result = path.Replace( '\\', '/' );
+      var result = string.Copy( path );
+
+      // Unity AssetDataBase and/or Resources doesn't support
+      // intermediate relative (..) path, e.g., Assets/Foo/../Bar/file.txt.
+      if ( result.Contains( ".." ) )
+        result = System.IO.Path.GetFullPath( result );
+
+      result = result.Replace( '\\', '/' );
+
       if ( System.IO.Path.IsPathRooted( result ) )
         result = result.MakeRelative( Application.dataPath );
       if ( result.StartsWith( "./" ) )

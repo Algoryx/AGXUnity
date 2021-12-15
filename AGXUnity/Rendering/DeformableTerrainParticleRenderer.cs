@@ -1,4 +1,9 @@
-﻿using UnityEngine;
+﻿using System.ComponentModel;
+using System.Collections.Generic;
+
+using UnityEngine;
+using UnityEngine.Rendering;
+
 using AGXUnity.Utils;
 using AGXUnity.Model;
 
@@ -14,13 +19,19 @@ namespace AGXUnity.Rendering
       DrawMeshInstanced
     }
 
+    public enum SynchronizeMode
+    {
+      PostStepForward,
+      Update
+    }
+
     [HideInInspector]
     public DeformableTerrain DeformableTerrain { get; private set; } = null;
 
-    [Tooltip("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced")]
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
 
+    [Description("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced.")]
     public GranuleRenderMode RenderMode
     {
       get { return m_renderMode; }
@@ -32,6 +43,21 @@ namespace AGXUnity.Rendering
           InitializeRenderMode();
       }
     }
+
+    [SerializeField]
+    private SynchronizeMode m_syncMode = SynchronizeMode.PostStepForward;
+
+    [Description("Synchronize granular transforms for rendering when the transforms has been " +
+                 "changed (PostStepForward) or in Update whenever the transforms has been changed.")]
+    public SynchronizeMode SyncMode
+    {
+      get { return m_syncMode; }
+      set
+      {
+        m_syncMode = value;
+      }
+    }
+    private bool m_needsSynchronize = true;
 
     [SerializeField]
     private GameObject m_granuleInstance = null;
@@ -68,6 +94,7 @@ namespace AGXUnity.Rendering
     protected override void OnEnable()
     {
       Simulation.Instance.StepCallbacks.PostStepForward += PostUpdate;
+
       if ( State == States.INITIALIZED )
         InitializeRenderMode();
     }
@@ -92,7 +119,10 @@ namespace AGXUnity.Rendering
 
     private void PostUpdate()
     {
-      Synchronize();
+      if ( m_syncMode == SynchronizeMode.PostStepForward )
+        Synchronize();
+      else
+        m_needsSynchronize = true;
     }
 
     private bool InitializeRenderMode()
@@ -137,9 +167,19 @@ namespace AGXUnity.Rendering
           return false;
         }
 
+        var renderers = GranuleInstance.GetComponentsInChildren<MeshRenderer>();
+        if ( renderers.Length != 1 ) {
+          Debug.LogError("AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
+                          $"Invalid number of mesh renderers ({renderers.Length}) in GranuleInstance - expecting 1.",
+                          GranuleInstance);
+          return false;
+        }
+
         m_meshInstance = filters[ 0 ].sharedMesh;
+        m_shadowCastingMode = renderers[ 0 ].shadowCastingMode;
+        m_receiveShadows = renderers[ 0 ].receiveShadows;
         m_meshInstanceMaterial = material;
-        m_granuleMatrices = new Matrix4x4[ 1023 ];
+        m_granuleMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
         m_meshInstanceProperties = new MaterialPropertyBlock();
         m_meshInstanceScale = filters[ 0 ].transform.lossyScale;
       }
@@ -151,6 +191,12 @@ namespace AGXUnity.Rendering
 
     private void Update()
     {
+      if ( m_syncMode == SynchronizeMode.Update && m_needsSynchronize )
+      {
+        Synchronize();
+        m_needsSynchronize = false;
+      }
+
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_numGranulars > 0 &&
                                     m_meshInstance != null &&
@@ -162,11 +208,11 @@ namespace AGXUnity.Rendering
         Graphics.DrawMeshInstanced( m_meshInstance,
                                     0,
                                     m_meshInstanceMaterial,
-                                    m_granuleMatrices,
+                                    m_granuleMatrices[ 0 ],
                                     m_numGranulars,
                                     m_meshInstanceProperties,
-                                    UnityEngine.Rendering.ShadowCastingMode.On,
-                                    true );
+                                    m_shadowCastingMode,
+                                    m_receiveShadows );
       }
       // DrawMeshInstanced only supports up to 1023 meshes for each call,
       // we need to subdivide if we have more particles than that.
@@ -176,13 +222,11 @@ namespace AGXUnity.Rendering
           Graphics.DrawMeshInstanced( m_meshInstance,
                                       0,
                                       m_meshInstanceMaterial,
-                                      new System.ArraySegment<Matrix4x4>( m_granuleMatrices,
-                                                                          i,
-                                                                          count ).Array,
+                                      m_granuleMatrices[ i / 1023 ],
                                       count,
                                       m_meshInstanceProperties,
-                                      UnityEngine.Rendering.ShadowCastingMode.On,
-                                      true );
+                                      m_shadowCastingMode,
+                                      m_receiveShadows);
         }
       }
     }
@@ -205,20 +249,24 @@ namespace AGXUnity.Rendering
       if ( isValidDrawInstanceMode ) {
         // Use 1023 as arbitrary block size since that is the
         // amount of particles that can be drawn with DrawMeshInstanced.
-        if (m_numGranulars > m_granuleMatrices.Length)
-          System.Array.Resize(ref m_granuleMatrices, (m_numGranulars / 1023 + 1) * 1023);
+        while ( m_numGranulars / 1023 + 1 > m_granuleMatrices.Count ) {
+          m_granuleMatrices.Add(new Matrix4x4[1023]);
+        }
 
-        for (int i = 0; i < m_numGranulars; i++)
-        {
-          var granule = granulars.at((uint)i);
+        for ( int arrayIndex = 0; arrayIndex < (m_numGranulars / 1023 + 1); ++arrayIndex ) {
+          Matrix4x4[] matrices = m_granuleMatrices[arrayIndex];
+          int numGranulesInArray = Mathf.Min(1023, m_numGranulars - arrayIndex * 1023);
+          for ( int i = 0; i < numGranulesInArray; ++i ) {
+            var granule = granulars.at((uint)(i + arrayIndex * 1023));
 
-          // Assuming unit size of the instance, scale to diameter of the granule.
-          m_granuleMatrices[ i ] = Matrix4x4.TRS( granule.position().ToHandedVector3(),
-                                                  granule.rotation().ToHandedQuaternion(),
-                                                  m_meshInstanceScale * 2.0f * (float)granule.getRadius() );
+            // Assuming unit size of the instance, scale to diameter of the granule.
+            matrices[i] = Matrix4x4.TRS(granule.position().ToHandedVector3(),
+                                         granule.rotation().ToHandedQuaternion(),
+                                         m_meshInstanceScale * 2.0f * (float)granule.getRadius());
 
-          // Return the proxy class to the pool to avoid garbage.
-          granule.ReturnToPool();
+            // Return the proxy class to the pool to avoid garbage.
+            granule.ReturnToPool();
+          }
         }
       }
       else if ( isValidDrawGameObjectMode ) {
@@ -288,10 +336,12 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private Matrix4x4[] m_granuleMatrices;
+    private List<Matrix4x4[]> m_granuleMatrices;
     private int m_numGranulars = 0;
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_meshInstance = null;
+    private ShadowCastingMode m_shadowCastingMode = ShadowCastingMode.On;
+    private bool m_receiveShadows = true;
     private Vector3 m_meshInstanceScale = Vector3.one;
     private Material m_meshInstanceMaterial = null;
   }

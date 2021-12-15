@@ -29,10 +29,8 @@ namespace AGXUnityEditor.Tools
         if ( value && !ShapeResizeTool ) {
           RemoveAllChildren();
 
-          var shapeResizeTool                                            = new ShapeResizeTool( Shape );
-          shapeResizeTool.ActivateKey.HideDefaultHandlesWhenIsDown       = true;
-          shapeResizeTool.SymmetricScaleKey.HideDefaultHandlesWhenIsDown = true;
-          shapeResizeTool.RemoveOnKeyEscape                              = true;
+          var shapeResizeTool               = new ShapeResizeTool( Shape );
+          shapeResizeTool.RemoveOnKeyEscape = true;
 
           AddChild( shapeResizeTool );
 
