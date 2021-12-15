@@ -64,19 +64,25 @@ namespace AGXUnity
         if ( info.Version.ToLower().StartsWith( "agx-" ) )
           info.Version = info.Version.Remove( 0, 4 );
 
-        var endDateString = agx.Runtime.instance().readValue( "EndDate" );
-        try {
-          info.EndDate = DateTime.Parse( endDateString );
-        }
-        catch ( FormatException ) {
-          if ( endDateString.ToLower() == "none" )
-            info.EndDate = DateTime.MaxValue;
-          else
-            info.EndDate = DateTime.MinValue;
-        }
-
         info.IsValid = agx.Runtime.instance().isValid();
         info.Status = agx.Runtime.instance().getStatus();
+
+        ParseDate( ref info, agx.Runtime.instance().readValue( "EndDate" ) );
+
+        // Parsing end date from the status string.
+        if ( !info.IsValid && !info.ValidEndDate ) {
+          foreach ( var endDateTag in s_expiredEndDateTags ) {
+            var startIndex = info.Status.IndexOf( endDateTag );
+            if ( startIndex < 0 )
+              continue;
+            startIndex += endDateTag.Length;
+            if ( ParseDate( ref info,
+                            info.Status.Substring( startIndex,
+                                                   FindDateLength( info.Status,
+                                                                   startIndex ) ) ) )
+              break;
+          }
+        }
 
         info.User = agx.Runtime.instance().readValue( "User" );
         info.Contact = agx.Runtime.instance().readValue( "Contact" );
@@ -239,5 +245,38 @@ namespace AGXUnity
              $"Modules: [{string.Join( ",", EnabledModules )}], User: {User}, Contact: {Contact}, " +
              $"Status: {Status}";
     }
+
+    private static bool ParseDate( ref LicenseInfo info, string dateString )
+    {
+      try {
+        info.EndDate = DateTime.Parse( dateString );
+      }
+      catch ( FormatException ) {
+        if ( dateString.ToLower() == "none" )
+          info.EndDate = DateTime.MaxValue;
+        else
+          info.EndDate = DateTime.MinValue;
+
+        return false;
+      }
+
+      return true;
+    }
+
+    private static int FindDateLength( string dateStr, int endDateStartIndex )
+    {
+      char[] delims = new char[] { ' ', ',' };
+      int lastIndex = dateStr.Length;
+      foreach ( var delim in delims ) {
+        var index = dateStr.IndexOf( delim, endDateStartIndex );
+        if ( index >= 0 ) {
+          lastIndex = index;
+          break;
+        }
+      }
+      return lastIndex - endDateStartIndex;
+    }
+
+    private static string[] s_expiredEndDateTags = new string[] { "EndDate: ", "End date: " };
   }
 }

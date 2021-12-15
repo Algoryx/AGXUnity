@@ -28,7 +28,7 @@ namespace AGXUnity.IO.URDF
     /// Name attribute of the element.
     /// </summary>
     [HideInInspector]
-    public string Name { get { return m_name; } private set { m_name = value; } }
+    public string Name { get { return m_name; } private set { name = m_name = value; } }
 
     /// <summary>
     /// Line number this element is located in the read URDF document.

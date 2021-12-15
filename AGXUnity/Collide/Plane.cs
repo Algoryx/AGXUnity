@@ -28,7 +28,7 @@ namespace AGXUnity.Collide
     /// <returns></returns>
     protected override agxCollide.Geometry CreateNative()
     {
-      return new agxCollide.Geometry( new agxCollide.Plane( transform.up.ToHandedVec3(), 0 ),
+      return new agxCollide.Geometry( new agxCollide.Plane( agx.Vec3.Y_AXIS(), 0 ),
                                       GetNativeGeometryOffset() );
     }
   }

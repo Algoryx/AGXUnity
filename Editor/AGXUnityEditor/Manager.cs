@@ -380,14 +380,22 @@ namespace AGXUnityEditor
           PropertySynchronizer.Synchronize( obj );
       }
 
-      // Synchronizing all shape sizes with visuals - it's not possible
-      // to determine affected shapes from tools targets or selection
-      // since it may have changed when undo is performed.
-      var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
-      foreach ( var shape in shapes ) {
+      // Shapes or bodies doesn't have to be selected when having their
+      // size updated, due to the recursive editors. We know that one of
+      // their parent is though (since selection is included in undo/redo),
+      // so find shapes in children of the selection and access bodies
+      // from there as well.
+      var shapesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                                 SelectionMode.Editable )
+                                       .SelectMany( go => go.GetComponentsInChildren<AGXUnity.Collide.Shape>() );
+      foreach ( var shape in shapesInSelection ) {
         var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
-        if ( visual )
+        if ( visual != null )
           visual.OnSizeUpdated();
+
+        var rb = shape.RigidBody;
+        if ( rb != null )
+          rb.UpdateMassProperties();
       }
 
       foreach ( var customTargetTool in ToolManager.ActiveTools )
@@ -673,16 +681,6 @@ namespace AGXUnityEditor
       Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );
       return EnvironmentState.Updating;
 #else
-      // WARNING INFO:
-      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
-      //                       in players with API compatibility @ .NET Standard 2.0.
-      //     Unity 2017: AGX Dynamics for Unity won't compile due to 
-      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
-                          "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
-                          "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
-      }
-
       // Running from within the editor - two options:
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
@@ -746,9 +744,24 @@ namespace AGXUnityEditor
         return EnvironmentState.Uninitialized;
       }
 
+      // WARNING INFO:
+      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                       in players with API compatibility @ .NET Standard 2.0.
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
+                          $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
+                          $"<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> {apiCompatibilityLevelName}</b>" );
+      }
+
       return EnvironmentState.Initialized;
 #endif
-    }
+      }
 
     private static bool HandleScriptReload( bool success )
     {
@@ -821,6 +834,16 @@ namespace AGXUnityEditor
       foreach ( var dotNetAssemblyName in dotNetAssemblyNames )
         result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
                  result;
+
+#if UNITY_2019_4_OR_NEWER
+      if ( !result ) {
+        var defineSymbol = "AGX_DYNAMICS_UPDATE_REBUILD";
+        if ( Build.DefineSymbols.Contains( defineSymbol ) )
+          Build.DefineSymbols.Remove( defineSymbol );
+        else
+          Build.DefineSymbols.Add( defineSymbol );
+      }
+#endif
 
       return result;
     }

@@ -89,7 +89,7 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      if ( !WindAndWaterManager.HasInstance )
+      if ( !WindAndWaterManager.HasInstanceInScene )
         return false;
 
       m_objects = Find.LeafObjects( gameObject, PropagateToChildren );

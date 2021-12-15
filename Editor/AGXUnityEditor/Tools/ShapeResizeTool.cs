@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity.Collide;
 using AGXUnity.Utils;
@@ -26,11 +27,6 @@ namespace AGXUnityEditor.Tools
     }
 
     /// <summary>
-    /// Key code to activate this tool.
-    /// </summary>
-    public Utils.KeyHandler ActivateKey { get { return GetKeyHandler( "Activate" ); } }
-
-    /// <summary>
     /// Key code for symmetric scale/resize.
     /// </summary>
     public Utils.KeyHandler SymmetricScaleKey { get { return GetKeyHandler( "Symmetric" ); } }
@@ -48,24 +44,38 @@ namespace AGXUnityEditor.Tools
     public ShapeResizeTool( Shape shape )
       : base( isSingleInstanceTool: true )
     {
-      AddKeyHandler( "Activate", new Utils.KeyHandler( KeyCode.LeftControl ) );
-      AddKeyHandler( "Symmetric", new Utils.KeyHandler( KeyCode.LeftControl, KeyCode.LeftShift ) );
+      AddKeyHandler( "Symmetric", new Utils.KeyHandler( KeyCode.LeftShift ) );
 
       Shape = shape;
+    }
+
+    public override void OnAdd()
+    {
+      HideDefaultHandlesEnableWhenRemoved();
+      SizeUpdated = false;
+    }
+
+    public override void OnRemove()
+    {
+      if ( SizeUpdated )
+        OnSizeUpdatedUpdateMassProperties();
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
       if ( RemoveOnKeyEscape && Manager.KeyEscapeDown ) {
-        EditorUtility.SetDirty( Shape );
+        // Avoiding delay of this tool being active in the Inspector.
+        // It's not enough to dirty our Shape because this tool could
+        // be activated in an recursive editor.
+        if ( Selection.activeGameObject != null )
+          EditorUtility.SetDirty( Selection.activeGameObject );
 
         PerformRemoveFromParent();
 
         return;
       }
 
-      if ( ActivateKey.IsDown || SymmetricScaleKey.IsDown )
-        Update( SymmetricScaleKey.IsDown );
+      Update( SymmetricScaleKey.IsDown );
     }
 
     private void Update( bool symmetricScale )
@@ -73,20 +83,23 @@ namespace AGXUnityEditor.Tools
       if ( Shape == null )
         return;
 
-      ShapeUtils utils = Shape.GetUtils();
+      var utils = Shape.GetUtils();
       if ( utils == null )
         return;
+
+      if ( SizeUpdated && EditorApplication.timeSinceStartup - LastChangeTime > 0.333 )
+        OnSizeUpdatedUpdateMassProperties();
 
       Undo.RecordObject( Shape, "ShapeResizeTool" );
       Undo.RecordObject( Shape.transform, "ShapeResizeToolTransform" );
 
-      Color color = Color.gray;
-      float scale = 0.35f;
+      var color = Color.gray;
+      var scale = 0.35f;
       foreach ( ShapeUtils.Direction dir in System.Enum.GetValues( typeof( ShapeUtils.Direction ) ) ) {
-        Vector3 delta = DeltaSliderTool( utils.GetWorldFace( dir ), utils.GetWorldFaceDirection( dir ), color, scale );
+        var delta = DeltaSliderTool( utils.GetWorldFace( dir ), utils.GetWorldFaceDirection( dir ), color, scale );
         if ( delta.magnitude > 1.0E-5f ) {
-          Vector3 localSizeChange = Shape.transform.InverseTransformDirection( delta );
-          Vector3 localPositionDelta = 0.5f * localSizeChange;
+          var localSizeChange = Shape.transform.InverseTransformDirection( delta );
+          var localPositionDelta = 0.5f * localSizeChange;
           if ( !symmetricScale && utils.IsHalfSize( dir ) )
             localSizeChange *= 0.5f;
 
@@ -94,8 +107,24 @@ namespace AGXUnityEditor.Tools
 
           if ( !symmetricScale )
             Shape.transform.position += Shape.transform.TransformDirection( localPositionDelta );
+
+          SizeUpdated = true;
+          LastChangeTime = EditorApplication.timeSinceStartup;
         }
       }
     }
+
+    private void OnSizeUpdatedUpdateMassProperties()
+    {
+      var rb = Shape.RigidBody;
+      if ( rb != null ) {
+        rb.UpdateMassProperties();
+        EditorUtility.SetDirty( rb );
+      }
+      SizeUpdated = false;
+    }
+
+    private bool SizeUpdated { get; set; } = false;
+    private double LastChangeTime { get; set; } = 0.0;
   }
 }

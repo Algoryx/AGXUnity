@@ -133,6 +133,10 @@ namespace AGXUnity.IO.URDF
         else if ( !string.IsNullOrEmpty( dataDirectory ) )
           resourceFilename = dataDirectory + resourceFilename;
 
+        // Makes resourceFilename relative to the application root directory,
+        // expands any ".." in the path and replaces any \ with /.
+        resourceFilename = resourceFilename.PrettyPath();
+
         var hasExtension = Path.HasExtension( resourceFilename );
         var isStlFile    = hasExtension && Path.GetExtension( resourceFilename ).ToLowerInvariant() == ".stl";
         var isCollada    = hasExtension && !isStlFile && Path.GetExtension( resourceFilename ).ToLowerInvariant() == ".dae";

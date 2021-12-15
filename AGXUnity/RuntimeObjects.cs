@@ -111,11 +111,8 @@ namespace AGXUnity
         rootsToRemove.RemoveAt( rootsToRemove.Count - 1 );
       }
 
-      if ( transform.childCount == 0 ) {
+      if ( transform.childCount == 0 )
         DestroyImmediate( gameObject );
-        // Reset destroyed state so that another instance may be created.
-        ResetDestroyedState();
-      }
     }
 
     private static string GetName( MonoBehaviour script )
@@ -125,8 +122,6 @@ namespace AGXUnity
 
     private static RuntimeObjects RecoverAndGetInstance()
     {
-      if ( IsDestroyed && HasInstance )
-        ResetDestroyedState();
       return Instance;
     }
   }
