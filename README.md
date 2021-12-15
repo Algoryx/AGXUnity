@@ -170,8 +170,8 @@ Everything needed to run a Brick project is already present in this repository, 
 To build new Brick dlls, you need to follow these steps:
 
 1. Find your Brick root directory and save the path to the `BRICK_DIR` environment variable (`set BRICK_DIR=<absolute path>`).
-1. Find your AgxBrick directory (located in `brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
-2. Create the file `brick\LocalBuildConfig.props` (relative to your AGX directory) and fill it with the following content:
+2. Find your AgxBrick directory (located in `brick/AgxBrick` relative to your AGX directory), and save the path to the `AGXBRICK_DIR` environment variable (`set AGXBRICK_DIR=<absolute path>`).
+3. Create the file `brick\LocalBuildConfig.props` (relative to your AGX directory) and fill it with the following content:
 
 ```xml
 <Project>
@@ -181,7 +181,7 @@ To build new Brick dlls, you need to follow these steps:
   </PropertyGroup>
 </Project>
 ```
-3. Run the following commands from the Unity project root directory:
+4. Run the following commands from the Unity project root directory:
 
 ```
 set AGXDOTNET_PATH=%cd%\Assets\AGXUnity\Plugins\x86_64\agxDotNet.dll
@@ -260,6 +260,67 @@ robocopy %AGXBRICK_DIR% %BRICK_PUBLISH_DIR%\modules\AgxBrick^
     /xf *.meta
 
 exit /b 0
+```
+
+### Building Unity-executable with Brick
+When building a standalone player from Unity, we want to be able to start the executable without having to install Brick first. To be able to do this a few things are needed.
+
+1. Copy the files in `Assets/AGXUnity/Plugins/x86_64/Brick/modules` to `<build-name>_Data/Brick/modules`, in the build folder
+2. Copy any Brick-yml files to the build folder and make sure that the file path in the `BrickRuntimeComponent` (set in the editor of the imported Brick object) points at it. It should be a relative path if you want to be able to find it even if the built application is moved to another computer.
+
+An example of what a build-script might look like if the Brick-yml files are located in a folder called BrickModels can be seen below. This should be run in the root directory of the project.
+
+```
+echo "Building for %BUILD_TARGET%"
+
+:build_setup
+IF defined BUILD_PATH (
+  echo Use build path %BUILD_PATH%
+) ELSE (
+  set BUILD_PATH=Build
+)
+
+IF defined BUILD_TARGET (
+  echo Use build target %BUILD_TARGET%
+) ELSE (
+  set BUILD_TARGET=StandaloneWindows64
+)
+
+IF defined BUILD_NAME (
+  echo Use build name %BUILD_NAME%
+) ELSE (
+  set BUILD_NAME=brick-in-unity
+)
+
+echo on
+mkdir %BUILD_PATH% || goto :error
+
+:build
+"C:\Program Files\Unity\Hub\Editor\2020.3.24f1\Editor\Unity.exe" ^
+  -projectPath "%cd%" ^
+  -quit ^
+  -batchmode ^
+  -buildWindows64Player "%BUILD_PATH%/%BUILD_NAME%.exe" ^
+  -buildTarget %BUILD_TARGET% ^
+  -logFile buildlog.log ^
+  || goto :error
+
+REM Copy BrickDir folder to build path
+robocopy Assets\AGXUnity\Plugins\x86_64\Brick\modules %BUILD_PATH%/%BUILD_NAME%_Data\Brick\modules /MIR
+robocopy BrickModels %BUILD_PATH%BrickModels /MIR
+
+if NOT "%BUILD_TARGET%" == "StandaloneWindows64" (
+  goto :exit
+)
+
+:exit
+exit /b 0
+
+:error
+echo Failed with error #%errorlevel%.
+set STATUS=%errorlevel%
+if "%errorlevel%" == "0" (set STATUS=1)
+exit /b %STATUS%
 ```
 
 ## Issues and contributions
