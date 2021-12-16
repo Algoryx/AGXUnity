@@ -222,7 +222,7 @@ namespace AGXUnity.BrickUnity
       if (b_outputs.Count < 1)
         return null;
 
-      var go_outputs = new GameObject("Inputs");
+      var go_outputs = new GameObject("Outputs");
       foreach (var b_output in b_outputs)
       {
         var go = new GameObject(b_output.GetValueNameOrModelPath());
