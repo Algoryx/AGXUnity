@@ -596,6 +596,51 @@ namespace AGXUnityEditor
         return;
 
       using ( InspectorGUI.IndentScope.Single ) {
+        if ( element is AGXUnity.IO.URDF.Model model ) {
+          var isSelectedPrefab = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) == PrefabInstanceStatus.Connected;
+          var modelAssetPath = AssetDatabase.GetAssetPath( element );
+
+          var savePrefabRect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() );
+          savePrefabRect.width = InspectorGUISkin.ToolButtonSize.x;
+          savePrefabRect.height = InspectorGUISkin.ToolButtonSize.y;
+          var savePrefab = InspectorGUI.Button( savePrefabRect,
+                                                MiscIcon.Locate,
+                                                !isSelectedPrefab,
+                                                "Save game object as prefab and all URDF elements, STL meshes and render materials in project.",
+                                                1.1f );
+          savePrefabRect.x += savePrefabRect.width;
+          savePrefabRect.xMax += savePrefabRect.width;
+          savePrefabRect.width = InspectorGUISkin.ToolButtonSize.x;
+          var saveAssets = false;
+          using ( new GUI.EnabledBlock( string.IsNullOrEmpty( modelAssetPath ) ) ) {
+            saveAssets = UnityEngine.GUI.Button( savePrefabRect,
+                                                 GUI.MakeLabel( "",
+                                                                false,
+                                                                "Save all URDF elements, STL meshes and render materials in project." ),
+                                                 InspectorEditor.Skin.ButtonMiddle );
+
+            savePrefabRect.x -= 6.0f;
+            savePrefabRect.y -= 4.0f;
+            InspectorGUI.ButtonIcon( savePrefabRect,
+                                     MiscIcon.Locate,
+                                     UnityEngine.GUI.enabled,
+                                     0.75f );
+            savePrefabRect.x += 2.0f * 6.0f - 1.0f;
+            savePrefabRect.y += 2.0f * 4.0f - 2.0f;
+            InspectorGUI.ButtonIcon( savePrefabRect,
+                                     MiscIcon.Locate,
+                                     UnityEngine.GUI.enabled,
+                                     0.75f );
+          }
+
+          if ( savePrefab )
+            IO.URDF.Prefab.Create( model );
+          if ( saveAssets )
+            IO.URDF.Prefab.CreateAssets( model );
+
+          InspectorGUI.SelectableTextField( GUI.MakeLabel( "Asset Path" ), modelAssetPath );
+        }
+
         var ignoreName = element is AGXUnity.IO.URDF.Inertial;
         if ( !ignoreName ) {
           var nameRect = EditorGUILayout.GetControlRect();

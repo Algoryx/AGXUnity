@@ -313,9 +313,7 @@ namespace AGXUnityEditor.Windows
           licenseData.Add( new LicenseData()
           {
             Filename = licenseFile,
-            LicenseInfo = valid ?
-                            AGXUnity.LicenseManager.LicenseInfo :
-                            new AGXUnity.LicenseInfo()
+            LicenseInfo = AGXUnity.LicenseManager.LicenseInfo
           } );
         }
 
