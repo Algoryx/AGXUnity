@@ -90,7 +90,7 @@ namespace AGXUnityEditor.Windows
 
     public static void Open()
     {
-      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 570 ),
+      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 600 ),
                                                                               true,
                                                                               "Create Cable from mesh" );
      
@@ -243,13 +243,12 @@ namespace AGXUnityEditor.Windows
     void OnCreate()
     {
       m_errorMessage = "";
-      if (!m_sorted)
-        m_errorMessage = "Cable nodes seems unordered!";
-      else if (MeshFilter == null)
+      if (MeshFilter == null)
         m_errorMessage = "No Mesh Filter component assigned!";
+      else if (!m_sorted)
+        m_errorMessage = "Cable nodes seems unordered!";
       else if (m_nodePositions.Count < 2)
         m_errorMessage = "Need more than one cable route point!";
-
       if (m_errorMessage.Length > 0)
         return;
 
@@ -484,6 +483,8 @@ namespace AGXUnityEditor.Windows
 
     private void CalculatePositions(int iterations = 2)
     {
+      m_errorMessage = "";
+
       m_movedVertexPositions.Clear();
       m_nodePositions.Clear();
       m_calculatedRadius = 0;
