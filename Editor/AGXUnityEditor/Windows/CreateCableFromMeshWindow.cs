@@ -12,12 +12,14 @@ namespace AGXUnityEditor.Windows
   public class CreateCableFromMeshWindow : EditorWindow
   {
     public MeshFilter MeshFilter = null;
+    public CableProperties Properties = null;
+    public ShapeMaterial ShapeMaterial = null;
     public float RadiusGuess = 0.1f;
     public float ResolutionGuess = 10;
 
     public float GizmoSize = 0.05f;
 
-    public bool DrawVertices = true;
+    public bool DrawVertices = false;
 
     private List<Vector3> m_movedVertexPositions = new List<Vector3>();
     private List<Vector3> m_nodePositions = new List<Vector3>();
@@ -37,8 +39,15 @@ namespace AGXUnityEditor.Windows
 
     private bool m_sorted = false;
 
+    private float m_numEnhancements = 0;
+
+    private float m_cableLength = 0;
+
     private float m_calculatedRadius = 0;
-    
+
+    // Average of dot products of vectors between adjacent node points
+    float m_straightness = float.MaxValue; 
+
     public static UnityEngine.Mesh GetOrCreateGizmoMesh(string resourceName)
     {
       if (m_mesh != null)
@@ -81,7 +90,7 @@ namespace AGXUnityEditor.Windows
 
     public static void Open()
     {
-      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 400 ),
+      var window = EditorWindow.GetWindowWithRect<CreateCableFromMeshWindow>( new Rect( 300, 300, 400, 570 ),
                                                                               true,
                                                                               "Create Cable from mesh" );
      
@@ -90,14 +99,35 @@ namespace AGXUnityEditor.Windows
 
     void OnGUI()
     {
+
       EditorGUILayout.LabelField( GUI.MakeLabel( "Detect and create cable from Mesh", true ),
                                   InspectorEditor.Skin.LabelMiddleCenter );
-                                
-      EditorGUILayout.SelectableLabel( "When a MeshFilter is selected, this utility will try to detect appropriate placements for the cable nodes in order to simulate a cable with the same radius and route as the mesh. Adjust the guess values until the red spheres meet and the green spheres are along the cable route, then click Create. The created cable can be adjusted with Rigidbody attachments, cable properties etc.",
-                                       InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(100) );
 
+      if (EditorApplication.isPlaying)
+      {
+        EditorGUILayout.LabelField("This utility should not be used during play mode!");
+        return;
+      }
+
+      EditorGUILayout.LabelField( "When a MeshFilter is selected, this utility will try to detect appropriate placements for the cable nodes in order to simulate a cable with the same radius and route as the mesh.",
+                                       InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(50) );
+
+      EditorGUILayout.LabelField( "Not guaranteed to work: relies on mesh vertices resembling a cable shape, the cable not too tightly rolled up etc.",
+                                       InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(40) );
+
+      EditorGUILayout.LabelField( "Select the mesh and press the Auto Enhance buttons a few times, if this doesn't find the cable shape you can try adjusting the guess values manually and then auto enhancing again.",
+                                       InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(50) );
+
+
+
+      EditorGUILayout.Space();
 
       MeshFilter = (MeshFilter) EditorGUILayout.ObjectField(MeshFilter, typeof(MeshFilter), true);
+
+      EditorGUILayout.Space();
+
+      Properties = (CableProperties) EditorGUILayout.ObjectField(Properties, typeof(CableProperties), true);
+      ShapeMaterial = (ShapeMaterial) EditorGUILayout.ObjectField(ShapeMaterial, typeof(ShapeMaterial), true);
 
       if (GUILayout.Button("Toggle mesh renderer visibility"))
         ToggleMeshVisibility(MeshFilter);
@@ -106,9 +136,23 @@ namespace AGXUnityEditor.Windows
 
       GUILayout.Label("Cable detection values", EditorStyles.boldLabel);
       RadiusGuess = EditorGUILayout.FloatField("Radius guess", RadiusGuess);
-      ResolutionGuess = EditorGUILayout.FloatField("Resolution guess", ResolutionGuess);
+
+      float guess = EditorGUILayout.FloatField("Resolution guess", ResolutionGuess);
+      if (guess != ResolutionGuess)
+      {
+        m_numEnhancements = 0;
+        ResolutionGuess = guess;
+      }
+
+      if (GUILayout.Button("Enhance - Straighter"))
+        Enhance();
+      if (GUILayout.Button("Enhance - Longer"))
+        Enhance(false);
+
+      InspectorGUI.BrandSeparator( 1, 6 );
+
       GizmoSize = EditorGUILayout.FloatField("Gizmo size", GizmoSize);
-      DrawVertices = EditorGUILayout.Toggle("Draw Vertices", DrawVertices);
+      DrawVertices = EditorGUILayout.Toggle("Draw Debug Vertices", DrawVertices);
 
       if (m_previousRadiusGuess != RadiusGuess || m_previousResolutionGuess != ResolutionGuess)
       {
@@ -126,9 +170,15 @@ namespace AGXUnityEditor.Windows
           var renderer = MeshFilter.gameObject.GetComponent<MeshRenderer>();
           if (renderer != null)
             m_rendererInitiallyVisible = renderer.enabled;
+
         }
 
         CalculatePositions();
+
+        Enhance();
+        Enhance();
+        Enhance();
+        Enhance();
 
         m_previousMesh = MeshFilter;
       }
@@ -152,6 +202,9 @@ namespace AGXUnityEditor.Windows
                                         InspectorEditor.Skin.Label );
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "Mesh vertices" ),
                                         m_movedVertexPositions.Count.ToString().Color( fieldColor ),
+                                        InspectorEditor.Skin.Label );
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "Approximate length" ),
+                                        m_cableLength.ToString().Color( fieldColor ),
                                         InspectorEditor.Skin.Label );
 
       InspectorGUI.BrandSeparator( 1, 6 );
@@ -216,6 +269,9 @@ namespace AGXUnityEditor.Windows
         cable.Route.Add((i == 0 || i == m_nodePositions.Count - 1) ? Cable.NodeType.BodyFixedNode : Cable.NodeType.FreeNode, go, m_nodePositions[i], rot);
       }
 
+      cable.Properties = Properties;
+      cable.Material = ShapeMaterial;
+
       var newCableRenderer = go.AddComponent<AGXUnity.Rendering.CableRenderer>();
       var meshRenderer = MeshFilter.GetComponent<MeshRenderer>();
       if (meshRenderer != null)
@@ -232,7 +288,16 @@ namespace AGXUnityEditor.Windows
       Undo.RecordObject( oldObject, "Disable Cable Mesh Object" );
       oldObject.SetActive(false);
 
-      this.Close();
+      // Soft reset
+      m_previousMesh = null;
+      MeshFilter = null;
+      RadiusGuess = m_previousRadiusGuess = 0.1f;
+      ResolutionGuess = m_previousResolutionGuess = 10;
+      m_numEnhancements = 0;
+      m_sorted = false;
+      m_nodePositions.Clear();
+      m_movedVertexPositions.Clear();
+      m_cableLength = m_calculatedRadius = 0;
     }
 
     void OnDestroy()
@@ -256,26 +321,26 @@ namespace AGXUnityEditor.Windows
       }
     }
 
-    private List<Vector3> AveragePositions(List<Vector3> searchPositions)
+    private List<Vector3> GetNodePositionsFromVertices(List<Vector3> vertexPositions)
     {
       var nodePositions = new List<Vector3>();
       Vector3 position = Vector3.zero;
       float searchRange = 1 / ResolutionGuess;
       searchRange *= searchRange;
       int n = 0;
-      while (searchPositions.Count > 1) // at least two vertices left
+      while (vertexPositions.Count > 1) // at least two vertices left
       {
-        var origin = searchPositions[0];
+        var origin = vertexPositions[0];
         position = origin;
-        searchPositions.RemoveAt(0);
+        vertexPositions.RemoveAt(0);
         n = 1;
-        for (int i = searchPositions.Count - 1; i >= 0; i--)
+        for (int i = vertexPositions.Count - 1; i >= 0; i--)
         {
-          if ((searchPositions[i] - origin).sqrMagnitude < searchRange)
+          if ((vertexPositions[i] - origin).sqrMagnitude < searchRange)
           {
-            position += searchPositions[i];
+            position += vertexPositions[i];
             n++;
-            searchPositions.RemoveAt(i);
+            vertexPositions.RemoveAt(i);
           }
         }
 
@@ -285,30 +350,139 @@ namespace AGXUnityEditor.Windows
       return nodePositions;
     }
 
-    // Checks if list is sorted by seeing if the cable "bends" by more than 90 degrees, essentially
-    private bool IsSorted(List<Vector3> list)
+
+    // Checks if list is sorted by seeing if the cable "bends" by more than 90 degrees
+    private bool CheckCable(List<Vector3> list)
     {
-      // Check if sorted
       bool sorted = true;
+      float straightness = 0;
+      m_cableLength = 0;
       if (list.Count > 2)
       {
         Vector3 previousDir = list[1] - list[0];
+        m_cableLength += previousDir.magnitude;
         for (int i = 1; i < list.Count - 1; i++)
         {
           Vector3 dir = list[i + 1] - list[i];
-          if (Vector3.Dot(dir, previousDir) < 0)
+          m_cableLength += dir.magnitude;
+          float dot = Vector3.Dot(dir.normalized, previousDir.normalized);
+          straightness += dot;
+          if (dot < 0)
             sorted = false;
           previousDir = dir;
         }
+
+        m_straightness = straightness / (list.Count - 2);
       }
       else if (list.Count < 2)
       {
         sorted = false;
+        m_straightness = 0;
       }
+      else // exactly 2 nodes
+      {
+        m_cableLength = (list[0] - list[1]).magnitude;
+        m_straightness = 1;
+      }
+
       return sorted;
     }
 
-    private void CalculatePositions()
+    private void GetUpdatedNodesAndVertices(out List<Vector3> nodesOut, List<Vector3> nodesIn, out List<Vector3> movedVertices, List<Vector3> originalVertices, List<Vector3> normals, out List<float> radiusGuesses)
+    {
+      movedVertices = new List<Vector3>();
+      nodesOut = new List<Vector3>();
+      radiusGuesses = new List<float>();
+      
+      float searchRange = 1 / ResolutionGuess;
+      float searchRangeSqr = searchRange * searchRange;
+      int n = 0;
+      List<Vector3> matches = new List<Vector3>();
+      List<Vector3> matchNormals = new List<Vector3>();
+      nodesOut = new List<Vector3>();
+
+      for (int i = 0; i < nodesIn.Count; i++)
+      {
+        matches.Clear();
+        matchNormals.Clear();
+        Vector3 position = Vector3.zero;
+        n = 0;
+
+        for (int j = originalVertices.Count - 1; j >= 0; j--)
+        {
+          if ((originalVertices[j] - nodesIn[i]).sqrMagnitude < searchRangeSqr)
+          {
+            matches.Add(originalVertices[j]);
+            matchNormals.Add(normals[j]);
+            position += originalVertices[j];
+            originalVertices.RemoveAt(j);
+            normals.RemoveAt(j);
+            n++;
+          }
+        }
+
+        if (n == 0)
+          continue;
+
+        Vector3 newPosition = position / (float)n;
+        nodesOut.Add(newPosition);
+        for (int k = 0; k < matches.Count; k++)
+        {
+          Vector3 direction = matches[k] - newPosition;
+          float magnitude = direction.magnitude;
+          float sign = Mathf.Sign(Vector3.Dot(matchNormals[k], direction));
+          movedVertices.Add(matches[k] - sign * RadiusGuess * matchNormals[k]);
+          // If the normal of the point is pointing straight away from the node we add the distance to the radius guess list
+          if (sign > 0 && Vector3.Cross(direction, matchNormals[k]).magnitude < 0.05f * magnitude)
+            radiusGuesses.Add(magnitude);
+        }
+      }
+    }
+
+    // Brute force-y try different values for resolution. This could be wildly more efficient but we don't need efficiency
+    private void Enhance(bool straighter = true)
+    {
+      float previousRadius = RadiusGuess;
+      float previousResolution = ResolutionGuess;
+      float previousLength = m_sorted ? m_cableLength : 0f;
+
+      float bestStraightness = m_straightness;
+      float bestResolution = ResolutionGuess;
+
+      
+      List<float> guesses;
+      if (m_numEnhancements == 0)
+        guesses = new List<float> {ResolutionGuess / 5f, ResolutionGuess / 2f, ResolutionGuess / 1.5f, ResolutionGuess / 1.1f, ResolutionGuess * 1.1f, ResolutionGuess * 1.5f, ResolutionGuess * 2f, ResolutionGuess * 5f};
+      else
+      {
+        guesses = new List<float>();
+        for (float i = -0.3f; i < 0.34f; i += 0.05f)
+          guesses.Add(ResolutionGuess + ResolutionGuess * i / m_numEnhancements);
+      }
+
+      foreach (var guess in guesses)
+      {
+        ResolutionGuess = guess;
+        RadiusGuess = m_calculatedRadius;
+
+        CalculatePositions(1);
+
+        if (m_sorted && m_nodePositions.Count > 2 && (straighter ? m_straightness > bestStraightness : m_cableLength > previousLength))
+        {
+          bestResolution = guess;
+          bestStraightness = m_straightness;
+        }
+      }
+
+      ResolutionGuess = bestResolution;
+      CalculatePositions();
+      RadiusGuess = m_calculatedRadius;
+      m_numEnhancements++;
+
+      GizmoSize = m_calculatedRadius * 0.98f;
+    }
+
+    private void CalculatePositions(int iterations = 2)
     {
       m_movedVertexPositions.Clear();
       m_nodePositions.Clear();
@@ -318,78 +492,39 @@ namespace AGXUnityEditor.Windows
         return;
 
       var mesh = MeshFilter.sharedMesh;
-
       var vertices = mesh.vertices;
       var normals = mesh.normals;
-
       var meshTransform = MeshFilter.gameObject.transform;
+
+      List<float> radiusGuesses = new List<float>();
 
       List<Vector3> transformedVertices = new List<Vector3>();
       List<Vector3> transformedNormals = new List<Vector3>();
-      List<float> radiusGuesses = new List<float>();
       foreach (var vertex in vertices)
         transformedVertices.Add(meshTransform.TransformPoint(vertex));
       foreach (var normal in normals)
         transformedNormals.Add(meshTransform.TransformDirection(normal));
 
-      // First, we want a guess of node positions and then move each vertex close to those guesses backwards
-      var searchPositions = transformedVertices.GetRange(0, transformedVertices.Count); // Copy
-      var searchNormals = transformedNormals.GetRange(0, transformedNormals.Count);
-      var firstPositions = new List<Vector3>();
-      float searchRange = 1 / ResolutionGuess;
-      searchRange *= searchRange;
-      int n = 0;
-      List<Vector3> matches = new List<Vector3>();
-      List<Vector3> matchNormals = new List<Vector3>();
+      // Initial node guesses
+      m_nodePositions = GetNodePositionsFromVertices(transformedVertices.GetRange(0, transformedVertices.Count));
 
-      while (searchPositions.Count > 1) // at least two vertices left
+      // Enhance
+      for (int i = 0; i < iterations; i++)
       {
-        matches.Clear();
-        matchNormals.Clear();
-        var origin = searchPositions[0];
-        Vector3 position = origin;
-
-        matches.Add(position);
-        matchNormals.Add(searchNormals[0]);
-        searchPositions.RemoveAt(0);
-        searchNormals.RemoveAt(0);
-        n = 1;
-
-        for (int j = searchPositions.Count - 1; j >= 0; j--)
-        {
-          if ((searchPositions[j] - origin).sqrMagnitude < searchRange)
-          {
-            matches.Add(searchPositions[j]);
-            matchNormals.Add(searchNormals[j]);
-            position += searchPositions[j];
-            searchPositions.RemoveAt(j);
-            searchNormals.RemoveAt(j);
-            n++;
-          }
-        }
-
-        Vector3 newPosition = position / (float)n;
-        firstPositions.Add(newPosition);
-        for (int i = 0; i < matches.Count; i++)
-        {
-          Vector3 direction = matches[i] - newPosition;
-          float magnitude = direction.magnitude;
-          float sign = Mathf.Sign(Vector3.Dot(matchNormals[i], direction));
-          m_movedVertexPositions.Add(matches[i] - sign * RadiusGuess * matchNormals[i]);
-          // If the normal of the point is pointing straight away from the node we add the distance to the radius guess list
-          if (sign > 0 && Vector3.Cross(direction, matchNormals[i]).magnitude < 0.05f * magnitude)
-            radiusGuesses.Add(magnitude);
-        }
+        GetUpdatedNodesAndVertices(
+          out m_nodePositions, 
+          m_nodePositions.GetRange(0, m_nodePositions.Count),
+          out m_movedVertexPositions,
+          transformedVertices.GetRange(0, transformedVertices.Count),
+          transformedNormals.GetRange(0, transformedNormals.Count),
+          out radiusGuesses);
       }
 
-      m_nodePositions = AveragePositions(m_movedVertexPositions.GetRange(0, m_movedVertexPositions.Count));
-
-      // TODO iterate once more with new node positions for moving nodes
-
       // Check if sorted
-      m_sorted = IsSorted(m_nodePositions);
+      m_sorted = CheckCable(m_nodePositions);
 
-      if (!m_sorted)
+      // If not, sort
+      if (!m_sorted && m_nodePositions.Count > 1)
       {
         List<Vector3> sortedNodes = new List<Vector3>();
         sortedNodes.Add(m_nodePositions[0]); // TODO possibly allow to choose starting node
@@ -415,14 +550,14 @@ namespace AGXUnityEditor.Windows
         sortedNodes.Add(m_nodePositions[0]);
         m_nodePositions = sortedNodes;
 
-        m_sorted = IsSorted(m_nodePositions);
+        m_sorted = CheckCable(m_nodePositions);
       }
 
       // Calculate the cable radius by taking the median guess from above
       if (radiusGuesses.Count > 1)
       {
         radiusGuesses.Sort();
-        m_calculatedRadius = radiusGuesses[(int)((float)radiusGuesses.Count * 0.5f)];
+        m_calculatedRadius = radiusGuesses[(int)(((float)radiusGuesses.Count) * 0.5f)];
       }
       else
         m_calculatedRadius = 0.1f;
