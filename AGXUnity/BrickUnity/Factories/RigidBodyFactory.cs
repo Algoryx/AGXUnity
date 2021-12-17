@@ -83,6 +83,7 @@ namespace AGXUnity.BrickUnity.Factories
     }
 
 
+    // Add rendering to a AGX for Unity shape using the render material from Brick
     public static void AddGeometryRendering(this Collide.Shape au_shape, B_Geometry.RenderData b_material)
     {
       var go_visual = Rendering.ShapeVisual.Create(au_shape);
