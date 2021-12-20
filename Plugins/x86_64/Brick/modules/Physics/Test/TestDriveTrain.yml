@@ -1,0 +1,82 @@
+.format: 4
+
+.import:
+  Physics.Mechanics.HingeConnector: [RotationalActuatorHingeConnector]
+  Physics.Mechanics.PrismaticConnector: [TranslationalActuatorPrismaticConnector]
+  Physics.DriveTrain: [RotatingShaft, GearAttachment, TorqueDrivenEngine, GearConnector]
+
+ToolPart:
+  .extends: Physics.Mechanics.RigidBody
+  side:
+    .type: Real
+    .value: 1
+  geometry:
+    .type: Physics.Geometry
+    .value: Physics.Geometry.Box
+    lengths: Vec3(0.02,0.05,0.2)
+  attachment:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    localTransform:
+      position: Vec3(0.02*side,0,-0.1)
+      rotation: Quat.AngleAxis(90,Vec3(0,1,0))
+  inputAttachment:
+    .type: Physics.Mechanics.RigidBodyAttachment
+    localTransform:
+      position: Vec3(0,0,0)
+      rotation: Quat.AngleAxis(90,Vec3(1,0,0))
+
+MimicDriveTrain:
+  .extends: Physics.Component
+  
+  shaftLeft:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  shaftRight:
+    .type: RotatingShaft
+    .value: RotatingShaft
+
+  gear:
+    .type: GearConnector
+    attachment1: this.shaftLeft.outputAttachment
+    attachment2: this.shaftRight.inputAttachment
+    interaction:
+      gearRatio: -1
+
+GripperTool:
+  .extends: Physics.Component
+  wantInternalPositioning: true
+
+  driveTrain:
+    .type: MimicDriveTrain
+    .value: MimicDriveTrain
+
+  base:
+    .type: ToolPart
+    attachment:
+      localTransform: 
+        position: Vec3(0,0,0)
+    localTransform:
+      position: Vec3(0,0,0)
+      rotation: Quat.AngleAxis(0,Vec3(0,1,0))
+
+  right:
+    .type: ToolPart
+    .value: ToolPart
+  left:
+    .type: ToolPart
+    side: -1
+  
+  rightConnector:
+    .type: TranslationalActuatorPrismaticConnector
+    attachment1: this.base.attachment
+    attachment2: this.right.attachment
+    shaft: this.driveTrain.shaftRight
+    distance: 0
+
+  leftConnector:
+    .type: TranslationalActuatorPrismaticConnector
+    attachment1: this.base.attachment
+    attachment2: this.left.attachment
+    shaft: this.driveTrain.shaftLeft
+    distance: 0

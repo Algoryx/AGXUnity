@@ -1,0 +1,89 @@
+.format: 4
+
+.import:
+  Physics.Geometry: [Cylinder, HollowCylinder, Box, Cone, HollowCone, Trimesh, Convex, Line, Plane, Capsule]
+
+
+AllGeometries:
+  .extends: Physics.Component
+  wantInternalPositioning: true
+
+  explode: 
+    .type: Real
+    .value: 2
+
+  cylinder:
+    .type: Cylinder
+    localTransform:
+      position: Vec3(0,0,1)
+    length: 1
+    radius: 1
+  
+  hollowCylinder:
+    .type: HollowCylinder
+    localTransform:
+      position: Vec3(explode,0,1)
+    length: 1
+    innerRadius: 0.1
+    thickness: 0.1
+
+  box:
+    .type: Box
+    localTransform:
+      position: Vec3(0,explode,1)
+    lengths: Math.Vec3(explode,explode,1)
+
+  cone:
+    .type: Cone
+    localTransform:
+      position: Vec3(0,-explode,1)
+    topRadius: 0.1
+    bottomRadius: 0.2
+    height: 1
+  
+  hollowCone:
+    .type: HollowCone
+    localTransform:
+      position: Vec3(-explode,0,1)
+    topInnerRadius: 0.1
+    bottomInnerRadius: 0.2
+    innerHeight: 0.5
+    outerHeight: 1
+    thickness: 0.1
+
+  trimesh:
+    .type: Trimesh
+    localTransform:
+      position: Vec3(-explode,-explode,1)
+    filepath: ../Mechanics/Test/Composition/Components/boom.obj
+    scale: 0.001
+
+  convex:
+    .type: Convex
+    localTransform:
+      position: Vec3(explode,-explode,1)
+    vertices:
+      - Math.Vec3(0, 0.04, 0)
+      - Math.Vec3(0, -0.04, 0)
+      - Math.Vec3(1, 0.04, 0)
+      - Math.Vec3(1, -0.04, 0)
+      - Math.Vec3(1.5, 0.04, 0.75)
+      - Math.Vec3(1.5, -0.04, 0.75)
+      - Math.Vec3(1.15, 0.04, 1.5)
+      - Math.Vec3(1.15, -0.04, 1.5)
+      - Math.Vec3(0, 0.04, 1.5)
+      - Math.Vec3(0, -0.04, 1.5)
+
+  capsule:
+    .type: Capsule
+    localTransform:
+      position: Vec3(-explode,explode,1)
+    length: 0.4
+    radius: 0.1
+
+  plane:
+    .type: Plane
+    a: 0
+    b: 0
+    c: 1
+    d: 0

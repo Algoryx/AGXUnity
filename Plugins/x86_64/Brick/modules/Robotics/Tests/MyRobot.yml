@@ -1,0 +1,160 @@
+.format: 4
+
+# Use imports to avoid having two write the whole name of the component
+.import:
+  Robotics: [Robot, RobotArm, Segment, RobotBase, Joint, HingeJoint, SignalType]
+  Physics.Mechanics: [RigidBodyAttachment, HingeConnector]
+
+
+MySegmentGeometry:
+  .extends: Physics.Geometry.Cylinder
+  radius: 0.1
+  length: 0.8
+  localTransform:
+    position: Vec3(0,0,0.6)
+    rotation: Quat.AngleAxis(90, Vec3(1,0,0))
+
+MySegmentBody:
+  .extends: Physics.Mechanics.RigidBody
+  collisionGeometry: 
+    .type: Physics.Geometry
+    .value: MySegmentGeometry()
+  mass: 2
+
+MySegment:
+  .extends: Segment
+  body: MySegmentBody()
+  inputAttachment:
+    localTransform:
+      position: Vec3(0,0,0)
+      rotation: Quat.AngleAxis(90, Vec3(1,0,0))
+  outputAttachment:
+    localTransform:
+      position: Vec3(0,0,1)
+      rotation: Quat.AngleAxis(90, Vec3(1,0,0))
+  
+
+HingeWithInitialAngle:
+  .extends: HingeConnector
+  angle: 0
+
+
+
+MyRobotArm:
+  .extends: RobotArm
+  wantInternalPositioning: false
+  joint1:
+    .type: HingeJoint
+    hingeConnector: 
+      .type: HingeWithInitialAngle
+      mainInteraction:
+        name: segment_connection
+      motor:
+        speed: 0
+        constrainDof: false
+    segment1: this.segment1
+    segment2: this.segment2
+    inputSignalType: SignalType.InputVelocitySignal
+
+  segment1:
+    .type: MySegment
+    body:
+      name: segment1
+
+
+  segment2:
+    .type: MySegment
+    body:
+      name: segment2
+
+MyBaseGeometry:
+  .extends: Physics.Geometry.Box
+  lengths: Vec3(0.5,0.5,0.5)
+
+MyBaseBody:
+  .extends: Physics.Mechanics.RigidBody
+  collisionGeometry: 
+    .type: Physics.Geometry
+    .value: MyBaseGeometry()
+  mass: 2
+
+MyBase:
+  .extends: RobotBase
+
+  body: MyBaseBody()
+
+  attachment:
+    .type: RigidBodyAttachment
+    localPosition: Vec3(0.5,0,0)
+
+  inputAttachment:
+    localTransform:
+      position: Vec3(0,0,0)
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0),Vec3(0,0,1))
+  outputAttachment:
+    localTransform:
+      position: Vec3(0,0,0.5)
+      rotation: Quat.AngleAxis(90, Vec3(1,0,0))
+
+HingeJointWithPositionSensor:
+  .extends: HingeJoint
+  jointPositionSensor:
+    .type: Robotics.Sensor.JointSensor
+    joint: this
+    outputSignalType: Robotics.SignalType.OutputPositionSignal
+
+# Put the two boxes together and add a lock connector to world
+MyRobot:
+  .extends: Robot
+  wantInternalPositioning: true
+
+  base:
+    .value: MyBase
+
+  arm1:
+    .type: MyRobotArm
+    .value: MyRobotArm
+  # Connect the base with the arm with a joint including
+  # a position sensor
+  joint:
+    .type: HingeJointWithPositionSensor
+    hingeConnector:
+      .type: HingeWithInitialAngle
+      mainInteraction:
+        name: base_connection
+    segment1: this.base
+    segment2: this.arm1.segment1
+    inputSignalType: SignalType.InputPositionSignal
+  
+  jointVelocityOutput:
+    .type: Signal.MotorVelocityOutput
+    motor: this.joint.hingeConnector.motor
+
+  worldAttachment:
+    .type: Physics.Mechanics.LockJointAttachment
+    .value: Physics.Mechanics.LockJointAttachment
+    localTransform:
+      rotation: Quat.TryFromToZXPair(Vec3(0,1,0),Vec3(0,0,1))
+
+  worldConnector:
+    .type: Physics.Mechanics.PrismaticConnector
+    attachment1: this.base.inputAttachment
+    attachment2: this.worldAttachment
+    motor:
+      speed: 0
+      constrainDof: true
+  
+  jointForceSensor:
+    .type: Sensor.JointForce3DSensor
+    joint: this.joint
+  jointTorqueSensor:
+    .type: Sensor.JointTorque3DSensor
+    joint: this.joint
+  worldForceSensor:
+    .type: Sensor.ConnectorForce3DSensor
+    connector: this.worldConnector
+  worldTorqueSensor:
+    .type: Sensor.ConnectorTorque3DSensor
+    connector: this.worldConnector
+
+

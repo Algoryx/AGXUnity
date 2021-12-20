@@ -149,5 +149,10 @@ Gear1DInteraction:
   .extends: Interaction
   interactionType: Gear1DInteraction
 
+  internalInertia:
+    .doc: Inertia of extra part connecting to the two bodies of the interaction
+    .type: Real
+    .value: 0.01
+
   inputShaft:
     .type: RotatingShaft

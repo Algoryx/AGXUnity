@@ -9,6 +9,10 @@ Sensor:
     A Sensor points to one signal in the model
     It also declares the outputReference for this signal
 
+  name:
+    .type: String
+    .value: ""
+
   protocolReference:
     .doc: Reference for the sensor use for communication over some protocol
     .type: String
@@ -25,6 +29,61 @@ JointSensor:
 
   joint:
     .type: Joint
+
+
+Vec3Sensor:
+  .extends: Sensor
+  .abstract: true
+  .doc: > 
+    Abstract class for 3D vector sensor
+    
+
+  referenceRigidBody:
+    .doc: > 
+      Reference RigidBody in which coordinate system
+      the force and torque vectors are present. 
+      If not defined, the force and torque will be
+      in the world coordinate frame
+    .type: Physics.Mechanics.RigidBody
+    .value: null
+
+Force3DSensor:
+  .extends: Vec3Sensor
+  .doc: > 
+    Sensor for 3D force vector relative the referenceRigidBody
+
+Torque3DSensor:
+  .extends: Vec3Sensor
+  .doc: > 
+    Sensor for 3D torque vector relative the referenceRigidBody
+
+ConnectorForce3DSensor:
+  .extends: Force3DSensor
+  .doc: >
+    Sensor for force for a AttchmentPairConnector
+  connector:
+    .type: Physics.Mechanics.AttachmentPairConnector
+
+ConnectorTorque3DSensor:
+  .extends: Torque3DSensor
+  .doc: >
+    Sensor for force for a AttchmentPairConnector
+  connector:
+    .type: Physics.Mechanics.AttachmentPairConnector
+
+JointForce3DSensor:
+  .extends: Force3DSensor
+  .doc: >
+    Sensor for force and torque for a Joint
+  joint:
+    .type: Robotics.Joint
+
+JointTorque3DSensor:
+  .extends: Torque3DSensor
+  .doc: >
+    Sensor for force and torque for a Joint
+  joint:
+    .type: Robotics.Joint
 
 DistanceSensor:
   .extends: Sensor

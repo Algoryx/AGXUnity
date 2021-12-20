@@ -10,6 +10,9 @@ ShaftActuatorConnector:
     .type: RotatingShaft
     .value: null
 
+  internalInertia:
+    .type: Real
+    .value: 0.0
 
   body1D: this.shaft
 

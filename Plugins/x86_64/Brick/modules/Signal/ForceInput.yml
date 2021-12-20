@@ -1,0 +1,7 @@
+.format: 4
+
+ForceInput:
+  .abstract: true
+  .extends: Signal.Input<Real>
+  .doc: Sets the (signed) input force
+    Units are N for linear actuators, and Nm for rotational motors.

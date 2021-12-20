@@ -1,0 +1,18 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [GearConnector, HolonomicGearInteraction]
+
+HolonomicGearConnector:
+  .doc: >
+    Gear connector with memory of position
+  .extends: GearConnector
+
+  interaction: 
+    .value: HolonomicGearInteraction
+    attachment1: this.attachment1
+    attachment2: this.attachment2
+
+
+
+

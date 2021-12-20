@@ -219,7 +219,6 @@ Rotated2DPolygonMesh:
           at the y value of the last point.
           Ignored if the first or last point is at x = 0.
     .type: List<Vec3>
-    .value: List<Vec3>()
   scale:
     .type: Real
     .value: 1

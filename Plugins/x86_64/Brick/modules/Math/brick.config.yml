@@ -10,15 +10,15 @@ ModuleConfig:
   generators:
 
     Python:
-      useGrpc: true
-      enable: true
+      useGrpc: false
+      enable: false
 
     Cs:
-      useGrpc: true
+      useGrpc: false
       # targetDirectory: ${env:BRICK_DIR}/parser/src
       enable: true
 
     Grpc:
-      enable: true
+      enable: false
       csNamespace: Brick.Math.Grpc
       goPackage: algoryx/bamse/worker/api/grpc/brick/Math # TODO!

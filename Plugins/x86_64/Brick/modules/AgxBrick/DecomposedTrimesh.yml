@@ -1,0 +1,28 @@
+.format: 4
+
+.import:
+  Physics.Geometry: [Trimesh]
+
+DecomposedTrimesh:
+  .doc: >
+    A geometry built by convex shapes generated from a trimesh.
+  .extends: Trimesh
+
+  elementResolution:
+    .doc: > 
+      Resolution for the decomposition algorithm. 
+      Clamped between 20-400, where 400 takes a very long time, but gets fine resolution.
+      For ElementResolution <= 0, no decomposition will happen.
+    .type: Int
+    .value: -1
+# DecomposedRotated2DPolygonMesh:
+#   .doc: >
+#     A geometry built by convex shapes generated from a Rotated2DPolygonMesh.
+#   .extends: Rotated2DPolygonMesh
+
+#   elementResolution:
+#     .doc: > 
+#       Resolution for the decomposition algorithm. 
+#       Clamped between 20-400, where 400 takes a very long time, but gets fine resolution.
+#     .type: Int
+#     .value: 50

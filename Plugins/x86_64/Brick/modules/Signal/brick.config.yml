@@ -18,15 +18,15 @@ ModuleConfig:
   generators:
     Python:
       # targetDirectory: python
-      enable: true
-      useGrpc: true
+      enable: false
+      useGrpc: false
 
     Cs:
-      useGrpc: true
+      useGrpc: false
       enable: true
 
 
     Grpc:
-      enable: true
+      enable: false
       csNamespace: Brick.Signal.Grpc
       goPackage: algoryx/bamse/worker/api/grpc/brick/Signal # TODO!

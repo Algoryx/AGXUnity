@@ -16,14 +16,14 @@ ModuleConfig:
   generators:
 
     Python:
-      useGrpc: true
-      enable: true
+      useGrpc: false
+      enable: false
 
     Cs:
-      useGrpc: true
+      useGrpc: false
       enable: true
 
     Grpc:
-      enable: true
+      enable: false
       csNamespace: Brick.Scene.Grpc
       goPackage: algoryx/bamse/worker/api/grpc/brick/Scene # TODO!

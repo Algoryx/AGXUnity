@@ -4,7 +4,7 @@
   Physics.Mechanics.AttachmentPairInteraction: [MotorInteraction1D]
 
 MotorForceInput:
-  .extends: Signal.Input<Real>
+  .extends: Signal.ForceInput
   .doc: Sets the (signed) input force of a motor (torque if rotational motor)
     Units are N for linear actuators, and Nm for rotational motors.
   motor:

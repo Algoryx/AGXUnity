@@ -1,0 +1,13 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [GearInteraction]
+
+HolonomicGearInteraction:
+  .doc: >
+    Gear interaction with memory of position
+  .extends: GearInteraction
+
+  interactionType: HolonomicGear
+
+

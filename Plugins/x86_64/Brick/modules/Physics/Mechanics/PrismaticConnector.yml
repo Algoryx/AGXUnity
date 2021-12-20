@@ -58,6 +58,11 @@ TranslationalActuatorPrismaticConnector:
   shaft:
     .type: RotatingShaft
 
+  internalInertia:
+    .type: Real
+    .value: 0.01
+
   actuator:
     .type: Gear1DInteraction
+    internalInertia: this.internalInertia
     inputShaft: this.shaft

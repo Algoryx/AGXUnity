@@ -1,0 +1,16 @@
+.format: 4
+
+GearTorqueOutput:
+  .extends: Signal.ForceScalarOutput
+  .doc: >
+    Outputs the current torque of a gear interaction. The unit is Nm.
+    If atOutputAttachment parameter is set to true, the torque reported is the torque felt by the body of attachment2 of the gear connector.
+    If atOutputAttachment parameter is set to false, the torque reported is the torque felt by the body of attachment1 of the gear connector.
+
+  gear:
+    .type: Physics.DriveTrain.GearConnector
+
+  atOutputAttachment:
+    .type: Bool
+    .value: True
+

@@ -70,7 +70,12 @@ Joint:
     .value: 1E8
 
   motorFriction:
-    .doc: Friction coefficient of the motor.
+    .doc: Friction coefficient of the motor. A dynamic friction coefficient.
+    .type: Real
+    .value: 0
+
+  staticJointFriction:
+    .doc: Static Friction Force/Torque of the motor.
     .type: Real
     .value: 0
 

@@ -4,6 +4,8 @@
   Physics.DriveTrain: [GearAttachment, GearInteraction]
 
 GearConnector:
+  .doc: >
+    Gear connecor with no memory of position
   .extends: Physics.Connector
 
   attachment1:

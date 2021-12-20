@@ -1,0 +1,7 @@
+.format: 4
+
+ForceScalarOutput:
+  .extends: Signal.Output<Real>
+  .abstract: true
+  .doc: Outputs a scalar force or torque. of a motor. The unit is N for force and Nm for torque
+

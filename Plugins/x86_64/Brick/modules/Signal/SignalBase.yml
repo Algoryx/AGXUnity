@@ -4,3 +4,6 @@
 SignalBase:
   .abstract: true
   .doc: Base component for generic signal
+  name:
+    .type: String
+    .value: ""

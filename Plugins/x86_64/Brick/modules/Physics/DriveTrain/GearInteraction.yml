@@ -5,6 +5,8 @@
   Physics.DriveTrain: [GearAttachment]
 
 GearInteraction:
+  .doc: >
+    Gear interaction with no memory of position
   .extends: Interaction
 
   attachment1:

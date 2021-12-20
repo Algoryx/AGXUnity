@@ -1,0 +1,30 @@
+.format: 4
+
+Light:
+
+  generateShadow:
+    .type: Bool
+    .value: false
+
+  position:
+    .type: Vec3
+
+  ambient:
+    .type: Vec3
+    .value: Vec3(1,1,1)
+
+  specular:
+    .type: Vec3
+    .value: Vec3(1,1,1)
+
+  diffuse:
+    .type: Vec3
+    .value: Vec3(1,1,1)
+
+  quadraticAttenuation:
+    .type: Real
+    .value: 0.01
+  
+  linearAttenuation:
+    .type: Real
+    .value: 0.04

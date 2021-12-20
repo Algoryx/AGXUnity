@@ -1,0 +1,20 @@
+.format: 4
+
+.import:
+  Scene: [Light]
+
+SceneDecorator:
+  .extends: Node
+
+  backgroundColor1:
+    .type: Vec3
+    .value: Vec3(0.44, 0.46,0.44)
+
+  backgroundColor2:
+    .type: Vec3
+    .value: Vec3(0.64, 0.66,0.69)
+
+  lights:
+    .type: List<Light>
+    .value: []
+  

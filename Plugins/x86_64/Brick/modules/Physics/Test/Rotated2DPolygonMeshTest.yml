@@ -1,0 +1,43 @@
+.format: 4
+
+
+.import:
+  Physics: [Component]
+  Physics.Mechanics: [RigidBody]
+  # Physics.Mechanics.Attachments: [MechanicalAttachment]
+  Physics.Geometry: [Rotated2DPolygonMesh,Plane]
+
+DiscShape:
+  .extends: RigidBody
+
+  geometry:
+    .type: Rotated2DPolygonMesh
+    resolution: 100
+    points:
+     - Vec3(0.01,0.02,0)
+     - Vec3(0.05,0.019,0)
+     - Vec3(0.07,0.018,0)
+     - Vec3(0.09,0.017,0)
+     - Vec3(0.093,0.015,0)
+     - Vec3(0.089,0.014,0)
+     - Vec3(0.089,0.0135,0)
+     - Vec3(0.088,0.013,0)
+     - Vec3(0.087,0.0125,0)
+     - Vec3(0.0855,0.008,0)
+     - Vec3(0.085,0.005,0)
+     - Vec3(0.083,0.003,0)
+     - Vec3(0.077,0.003,0)
+     - Vec3(0.077,0.01,0)
+     - Vec3(0.077,0.017,0)
+     - Vec3(0.01,0.018,0)
+
+GearDiscShape:
+  .extends: Physics.Component
+
+  body:
+    .type: DiscShape
+    geometry:
+      resolution: 100
+      numOuterCogs: 10
+      outerCogHeight: 0.01
+      innerRadius: 0.01

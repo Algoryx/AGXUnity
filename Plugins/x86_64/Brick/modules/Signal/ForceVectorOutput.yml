@@ -1,0 +1,8 @@
+.format: 4
+
+ForceVectorOutput:
+  .extends: Signal.ConnectorVectorOutput
+  .doc: > 
+    Outputs the force vector of an AttachmentPairConnector.
+    onlyMainInteraction as true, will ignore the other interactions.
+    onlyMainInteraction as false, will include the other interactions.

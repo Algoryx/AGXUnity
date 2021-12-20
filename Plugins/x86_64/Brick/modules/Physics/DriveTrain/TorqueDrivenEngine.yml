@@ -1,0 +1,18 @@
+.format: 4
+
+.import:
+  Physics.DriveTrain: [RotatingBody1D, GearAttachment]
+
+TorqueDrivenEngine:
+  .extends: RotatingBody1D
+  .doc: An engine which takes a torque input
+
+  initialTorque:
+    .doc: Torque the engine produce at and below idle RPM. (Simple controller to try to keep idleRPM)
+    .type: Real
+    .value: 0
+
+  outputAttachment:
+    .type: GearAttachment
+    sign: 1
+

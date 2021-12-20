@@ -1,0 +1,8 @@
+.format: 4
+
+
+VelocityInput:
+  .abstract: true
+  .extends: Signal.Input<Real>
+  .doc: Sets the (signed) speed
+    Units are m/s for linear actuators, and rad/s for rotational motors.

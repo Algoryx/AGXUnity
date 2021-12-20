@@ -1,0 +1,7 @@
+.format: 4
+
+EngineTorqueInput:
+  .extends: Signal.ForceInput
+  .doc: Sets the input torque of an engine.
+  engine:
+    .type: Physics.DriveTrain.TorqueDrivenEngine

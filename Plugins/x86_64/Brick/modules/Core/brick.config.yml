@@ -7,17 +7,16 @@ ModuleConfig:
   generators:
 
     Python:
-      useGrpc: true
-      enable: true
+      useGrpc: false
+      enable: false
 
     Cs:
-      useGrpc: true
+      useGrpc: false
       targetDirectory: ${env:BRICK_DIR}/parser/src
       # rootNamespace: 'x'
       enable: true
 
     Grpc:
-      # enable: false
+      enable: false
       goPackage: algoryx/bamse/worker/api/grpc/brick/Core # TODO!
       csNamespace: Brick.Grpc
-      enable: true
