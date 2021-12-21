@@ -269,6 +269,19 @@ namespace AGXUnityEditor.BrickUnity
       if (b_geometry.Material != null)
         if (shapeMaterials.ContainsKey(b_geometry.Material.Name))
           au_shape.Material = shapeMaterials[b_geometry.Material.Name] as AGXUnity.ShapeMaterial;
+
+      // Make sure the RenderMaterial is saved if there is any
+      if (b_geometry.RenderMaterial != null)
+      {
+        foreach (var renderer in go.GetComponentsInChildren<MeshRenderer>())
+        {
+          var material = renderer.sharedMaterial;
+          if (material == null)
+            continue;
+          material.name = b_geometry.GetValueNameOrModelPath();
+          renderMaterials.Add(material);
+        }
+      }
     }
 
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using UnityEngine;
 
 using AGXUnity.Utils;
@@ -71,8 +72,47 @@ namespace AGXUnity.BrickUnity.Factories
           return null;
       }
       au_shape.CollisionsEnabled = b_geometry.EnableCollisions;
+
+      // Make sure to render shape if it has a render material
+      if (b_geometry.RenderMaterial != null)
+      {
+        var b_material = b_geometry.RenderMaterial;
+        au_shape.AddGeometryRendering(b_material);
+      }
       return au_shape;
     }
+
+
+    // Add rendering to a AGX for Unity shape using the render material from Brick
+    public static void AddGeometryRendering(this Collide.Shape au_shape, B_Geometry.RenderData b_material)
+    {
+      var go_visual = Rendering.ShapeVisual.Create(au_shape);
+      foreach (var renderer in go_visual.GetComponentsInChildren<MeshRenderer>())
+      {
+        renderer.sharedMaterial = new Material(Shader.Find("Standard"));
+
+        var color = b_material.DiffuseColor.ToUnityColor();
+        color.a = (float)b_material.Opacity;
+        renderer.sharedMaterial.SetVector("_Color", color);
+
+        renderer.sharedMaterial.SetVector("_EmissionColor", b_material.EmissiveColor.ToUnityColor());
+
+        renderer.sharedMaterial.SetFloat("_Metallic", 0.3f);
+        renderer.sharedMaterial.SetFloat("_Glossiness", 0.8f);
+
+        if (b_material.Opacity < 1.0f)
+          renderer.sharedMaterial.SetBlendMode(Rendering.BlendMode.Transparent);
+
+        if (!b_material._textureIsDefault)
+        {
+          var pngBytes = File.ReadAllBytes(b_material.AbsoluteTextureFilepath);
+          var tex = new Texture2D(1, 1);
+          tex.LoadImage(pngBytes);
+          renderer.sharedMaterial.SetTexture("_MainTex", tex);
+        }
+      }
+    }
+
 
     public static AGXUnity.Collide.Sphere AddSphere(this GameObject go, B_Geometry.Sphere b_sphere)
     {
@@ -151,7 +191,7 @@ namespace AGXUnity.BrickUnity.Factories
     public static AGXUnity.Collide.Mesh AddRotated2DPolygonMesh(this GameObject go, B_Geometry.Rotated2DPolygonMesh b_r2DPMesh)
     {
       var au_mesh = go.AddComponent<AGXUnity.Collide.Mesh>();
-      
+
       // Copy vertices and indices into agx Vectors for processing in
       // AGXUnity.Utils.MeshSplitter as is done in
       // AGXUnityEditor.IO.InputAGXFile
