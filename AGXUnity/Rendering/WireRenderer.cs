@@ -138,7 +138,12 @@ namespace AGXUnity.Rendering
       if ( inPrefabStage && m_positions.Count != Wire.Route.NumNodes )
         SynchronizeData( true );
 
-      Draw( sceneView.camera );
+      // In prefab stage we only want to render the wire in the Scene View.
+      // If paused, we want to render the wire as if not paused.
+      var camera = inPrefabStage ?
+                     sceneView.camera :
+                     null;
+      Draw( camera );
     }
 #endif
 
