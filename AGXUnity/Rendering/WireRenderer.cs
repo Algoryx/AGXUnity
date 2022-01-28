@@ -18,56 +18,15 @@ namespace AGXUnity.Rendering
   [RequireComponent( typeof( Wire ) )]
   public class WireRenderer : ScriptComponent
   {
-    public enum SegmentRenderMode
-    {
-      GameObject,
-      DrawMeshInstanced
-    }
-
-    [SerializeField]
-    private SegmentRenderMode m_renderMode = SegmentRenderMode.DrawMeshInstanced;
-
-    [Description("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced.")]
-    [HideInInspector]
-    public SegmentRenderMode RenderMode
-    {
-      get { return m_renderMode; }
-      set
-      {
-        if ( m_renderMode == SegmentRenderMode.GameObject && m_segmentSpawner != null )
-          m_segmentSpawner.Destroy();
-
-        m_renderMode = value;
-
-        if ( !IsSynchronizingProperties ) //  && Wire != null 
-          InitializeRenderer();
-      }
-    }
-
-    private SegmentSpawner m_segmentSpawner = null;
-
-    /*
-     * Only used in GameObject rendering mode
-     */
-    [HideInInspector]
-    public float NumberOfSegmentsPerMeter = 2.0f;
-
-    /*
-     * Only used in DrawMeshInstanced rendering mode
-     */
-    [HideInInspector]
+    /// <summary>
+    /// Shadow casting mode On for casting shadows, Off for no shadows.
+    /// </summary>
     public ShadowCastingMode ShadowCastingMode = ShadowCastingMode.On;
-    /*
-     * Only used in DrawMeshInstanced rendering mode
-     */
-    [HideInInspector]
+
+    /// <summary>
+    ///True for the wire to receive shadows, false to not receive shadows.
+    /// </summary>
     public bool ReceiveShadows = true;
-
-    [HideInInspector]
-    public SegmentSpawner SegmentSpawner { get { return m_segmentSpawner; } }
-
-    [NonSerialized]
-    private Wire m_wire = null;
 
     [HideInInspector]
     public Wire Wire
@@ -81,100 +40,72 @@ namespace AGXUnity.Rendering
     [SerializeField]
     private Material m_material = null;
 
-    private List<Vector3> m_positions;
-
-    private int m_numCylinders = 0;
-
-    [HideInInspector]
+    [AllowRecursiveEditing]
     public Material Material
     {
       get { return m_material ?? DefaultMaterial(); }
       set
       {
         m_material = value ?? DefaultMaterial();
-        if (m_segmentSpawner != null)
-          m_segmentSpawner.Material = m_material;
       }
-    }
-
-    private Material DefaultMaterial()
-    {
-      if (m_segmentSpawner == null)
-        m_segmentSpawner = new SegmentSpawner( Wire,
-                                         @"Wire/WireSegment",
-                                         @"Wire/WireSegmentBegin" );
-      return m_segmentSpawner.DefaultMaterial;    
     }
 
     public void Update()
     {
-      if ( Wire != null && m_renderMode == SegmentRenderMode.DrawMeshInstanced)
-        Render( Wire );
+      Draw();
     }
 
     public void OnPostStepForward( Wire wire )
     {
-      if ( wire != null && m_renderMode == SegmentRenderMode.GameObject)
-        Render( wire );
+      SynchronizeData( false );
     }
 
-    public void InitializeRenderer( bool destructLast = false )
+    public bool InitializeRenderer()
     {
-      if ( destructLast && m_segmentSpawner != null ) {
-        m_segmentSpawner.Destroy();
-        m_segmentSpawner = null;
+      if ( !CreateMeshes() ) {
+        Debug.LogError( "AGXUnity.Rendering.WireRenderer: Problem initializing one or both meshes!", this);
+        return false;
       }
 
-      if (m_renderMode == SegmentRenderMode.GameObject)
-      {
-        m_segmentSpawner = new SegmentSpawner( Wire,
-                                               @"Wire/WireSegment",
-                                               @"Wire/WireSegmentBegin" );
-        m_segmentSpawner.Initialize( gameObject );
+      if ( !Material.enableInstancing ) {
+        Debug.LogError( "AGXUnity.Rendering.WireRenderer: The wire render material must have instancing enabled for this render mode to work.",
+                        Material );
+        return false;
       }
-      else if ( RenderMode == SegmentRenderMode.DrawMeshInstanced ) 
-      {
-        if (!CreateMeshes())
-        {
-          Debug.LogError( "AGXUnity.Rendering.WireRenderer: " +
-                          "Problem initializing one or meshes!");
-          return;
-        }
 
-        if ( !Material.enableInstancing ) {
-          Debug.LogError( "AGXUnity.Rendering.WireRenderer: " +
-                          "The wire render material must have instancing enabled for this render mode to work.",
-                          Material );
-          return;
-        }
+      InitMatrices();
+      m_positions.Clear();
+      m_positions.Capacity = 256;
 
-        InitMatrices();
-      }
+      return true;
     }
 
-    private void InitMatrices()
+    protected override void OnEnable()
     {
-      if (m_segmentSphereMatrices == null)
-        m_segmentSphereMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
-      if (m_segmentCylinderMatrices == null)
-        m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
-      if (m_meshInstanceProperties == null)
-        m_meshInstanceProperties = new MaterialPropertyBlock();
+#if UNITY_EDITOR
+      // Used to draw in a prefab stage or when the editor is paused.
+      // It's not possible in OnEnable to check if our gameObject is
+      // part of a prefab stage.
+      SceneView.duringSceneGui += OnSceneView;
+#endif
+    }
+
+    protected override void OnDisable()
+    {
+#if UNITY_EDITOR
+      SceneView.duringSceneGui -= OnSceneView;
+#endif
     }
 
     protected override bool Initialize()
     {
-      InitializeRenderer( true );
+      InitializeRenderer();
 
-      return base.Initialize();
+      return true;
     }
 
     protected override void OnDestroy()
     {
-      if ( m_segmentSpawner != null )
-        m_segmentSpawner.Destroy();
-      m_segmentSpawner = null;
-
       m_segmentCylinderMatrices = null;
       m_segmentSphereMatrices = null;
 
@@ -191,185 +122,132 @@ namespace AGXUnity.Rendering
       if ( Application.isPlaying )
         return;
 
-      // Let OnDrawGizmos handle rendering when in prefab edit mode and using GameObjects for drawing.
-      // It's not possible to use RuntimeObjects while there.
-      if ( PrefabUtils.IsPartOfEditingPrefab( gameObject ) && RenderMode == SegmentRenderMode.GameObject)
-        return;
-
-      if ( Wire != null && Wire.Native == null )
-        RenderRoute( Wire.Route, Wire.Radius );
+      RenderRoute();
     }
 
 #if UNITY_EDITOR
-
-    private int m_counter = 0;
-    // DrawMeshInstanced stuff is sometimes lost when in Editor pause. We don't know when - Quick and dirty fix, just redraw it occasionally
-    void OnRenderObject()
+    // Editing wire prefab in a prefab stage and when the editor is paused
+    // requires Scene View GUI update callback.
+    private void OnSceneView( SceneView sceneView )
     {
-      if ( !EditorApplication.isPaused)
+      var inPrefabStage = PrefabUtils.IsPartOfEditingPrefab( gameObject );
+      var performDraw = EditorApplication.isPaused || inPrefabStage;
+      if ( !performDraw )
         return;
-      if ( Wire != null && m_counter++ > 10 && CreateMeshes())
-      {
-        InitMatrices();
-        DrawWireInstanced();
-        m_counter = 0;
-      }
+
+      if ( inPrefabStage && m_positions.Count != Wire.Route.NumNodes )
+        SynchronizeData( true );
+
+      Draw( sceneView.camera );
     }
 #endif
 
-    private void RenderRoute( WireRoute route, float radius )
+    private static Material DefaultMaterial()
     {
-      if ( route == null )
-        return;
-
-      if (m_renderMode == SegmentRenderMode.GameObject)
-      {
-        m_segmentSpawner.Begin();
-
-        try {
-          WireRouteNode[] nodes = route.ToArray();
-          for ( int i = 1; i < nodes.Length; ++i )
-            m_segmentSpawner.CreateSegment( nodes[ i - 1 ].Position, nodes[ i ].Position, radius );
-        }
-        catch ( System.Exception e ) {
-          Debug.LogException( e );
-        }
-
-        m_segmentSpawner.End();
-      }
-      else if (m_renderMode == SegmentRenderMode.DrawMeshInstanced)
-      {
-        if ( m_positions == null ) {
-          m_positions = new List<Vector3>();
-          m_positions.Capacity = 256;
-        }
-        m_positions.Clear();
-
-        try {
-          WireRouteNode[] nodes = route.ToArray();
-          for ( int i = 0; i < nodes.Length; ++i )
-            m_positions.Add(nodes[ i ].Position);
-        }
-        catch ( System.Exception e ) {
-          Debug.LogException( e );
-        }
-
-        InitMatrices();
-        // TODO This could be optimized by only recalculating it when the wire was altered
-        CalculateDrawInstancedData(Wire);
-        DrawWireInstanced();
-      }
+      return Resources.Load<Material>( "Materials/WireMaterial_01.mat" );
     }
 
-    private void Render( Wire wire )
+    private static Matrix4x4 CalculateCylinderTransform( Vector3 start, Vector3 end, float radius )
     {
-      if ( wire.Native == null ) {
-        if ( m_segmentSpawner != null ) {
-          m_segmentSpawner.Destroy();
-          m_segmentSpawner = null;
-        }
-        return;
-      }
+      CalculateCylinderTransform( start,
+                                  end,
+                                  radius,
+                                  out var position,
+                                  out var rotation,
+                                  out var scale );
+      return Matrix4x4.TRS( position, rotation, scale );
+    }
 
-      if ( m_positions == null ) {
-        m_positions = new List<Vector3>();
-        m_positions.Capacity = 256;
-      }
+    private static void CalculateCylinderTransform( Vector3 start,
+                                                    Vector3 end,
+                                                    float radius,
+                                                    out Vector3 position,
+                                                    out Quaternion rotation,
+                                                    out Vector3 scale )
+    {
+      var dir = end - start;
+      var length = dir.magnitude;
+      position = 0.5f * ( start + end );
+      rotation = Quaternion.FromToRotation( Vector3.up, dir );
+      scale = new Vector3( 2.0f * radius, 0.5f * length, 2.0f * radius );
+    }
+
+    private void RenderRoute()
+    {
+      SynchronizeData( true );
+      Draw();
+    }
+
+    private void SynchronizeData( bool isRoute )
+    {
+      if ( Wire == null )
+        return;
+
+      if ( !isRoute && Wire.Native == null )
+        return;
+
       m_positions.Clear();
 
-      agxWire.RenderIterator it = wire.Native.getRenderBeginIterator();
-      agxWire.RenderIterator endIt = wire.Native.getRenderEndIterator();
-      while ( !it.EqualWith( endIt ) ) {
-        m_positions.Add( it.getWorldPosition().ToHandedVector3() );
-        it.inc();
+      if ( isRoute ) {
+        foreach ( var node in Wire.Route )
+          m_positions.Add( node.Position );
       }
-
-      it.ReturnToPool();
-      endIt.ReturnToPool();
-
-      if (m_renderMode == SegmentRenderMode.GameObject)
-      {
-        m_segmentSpawner.Begin();
-  
-        try
-        {
-          for ( int i = 0; i < m_positions.Count - 1; ++i ) {
-            Vector3 curr        = m_positions[i];
-            Vector3 next        = m_positions[i + 1];
-            Vector3 currToNext  = next - curr;
-            float distance      = currToNext.magnitude;
-            currToNext         /= distance;
-            int numSegments     = Convert.ToInt32(distance * NumberOfSegmentsPerMeter + 0.5f);
-            float dl            = distance / numSegments;
-            for ( int j = 0; j < numSegments; ++j ) {
-              next = curr + dl * currToNext;
-  
-              m_segmentSpawner.CreateSegment(curr, next, wire.Radius);
-              curr = next;
-            }
-          }
+      else {
+        var it = Wire.Native.getRenderBeginIterator();
+        var endIt = Wire.Native.getRenderEndIterator();
+        while ( !it.EqualWith( endIt ) ) {
+          m_positions.Add( it.getWorldPosition().ToHandedVector3() );
+          it.inc();
         }
-        catch (System.Exception e)
-        {
-          Debug.LogException(e);
-        }
-  
-        m_segmentSpawner.End();
-      }
-      else 
-      {
-        CalculateDrawInstancedData(wire);
-        DrawWireInstanced();
-      }
-    }
 
-    private void CalculateDrawInstancedData(Wire wire)
-    {
-      while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count ) {
+        it.ReturnToPool();
+        endIt.ReturnToPool();
+      }
+
+      while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count )
         m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
-      }
 
       m_numCylinders = 0;
 
-      float segmentLength = float.MaxValue;
-      for ( int i = 0; i < m_positions.Count - 1; ++i ) {
-        segmentLength = Mathf.Min(segmentLength, (m_positions[i + 1] - m_positions[i]).sqrMagnitude);
-      }
-      if (segmentLength > 0)
-        segmentLength = Mathf.Sqrt(segmentLength);
-
-      float doubleRadius = wire.Radius * 2.0f;
-      Vector3 sphereRadius = Vector3.one * doubleRadius;
+      float radius = Wire.Radius;
+      var sphereScale = 2.0f * radius * Vector3.one;
       for ( int i = 0; i < m_positions.Count; ++i ) {
-        if (i < m_positions.Count - 1){
-          Vector3 curr        = m_positions[i];
-          Vector3 next        = m_positions[i + 1];
-          Vector3 currToNext  = next - curr;
-          float distance      = currToNext.magnitude;
-          Quaternion rotation = Quaternion.FromToRotation( Vector3.up, currToNext );
-
-          Vector3 cylinderScale = new Vector3(doubleRadius, distance / 2, doubleRadius);
-
+        if ( i > 0 ){
           if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
             m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
 
-          m_segmentCylinderMatrices[m_numCylinders / 1023][m_numCylinders % 1023] = 
-            Matrix4x4.TRS((curr + next) / 2,
-                          rotation,
-                          cylinderScale );
-
+          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = CalculateCylinderTransform( m_positions[ i - 1 ],
+                                                                                                                    m_positions[ i ],
+                                                                                                                    radius );
           m_numCylinders++;
         }
 
-        m_segmentSphereMatrices[i / 1023][i % 1023] = 
-          Matrix4x4.TRS(m_positions[i],
-                        Quaternion.identity,
-                        sphereRadius );
+        m_segmentSphereMatrices[ i / 1023 ][ i % 1023 ] = Matrix4x4.TRS( m_positions[ i ],
+                                                                         Quaternion.identity,
+                                                                         sphereScale );
       }
     }
 
-    private void DrawWireInstanced()
+    private void Draw( Camera camera = null )
     {
+      if ( Wire == null )
+        return;
+
+      // In prefab stage we avoid calls from Update, LateUpdate so that we
+      // don't render the wire in the Game View. Camera is only given as the
+      // Scene View camera when editing prefabs.
+      if ( camera == null && PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+        return;
+
+      if ( !CreateMeshes() )
+        return;
+
+      var forceSynchronize = m_positions.Count > 0 &&
+                             ( m_segmentSphereMatrices.Count == 0 ||
+                               m_segmentCylinderMatrices.Count == 0 );
+      if ( forceSynchronize )
+        SynchronizeData( Wire.State != States.INITIALIZED );
+
       // Spheres
       for ( int i = 0; i < m_positions.Count; i += 1023 ) {
         int count = Mathf.Min( 1023, m_positions.Count - i );
@@ -380,7 +258,9 @@ namespace AGXUnity.Rendering
                                     count,
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
-                                    ReceiveShadows);
+                                    ReceiveShadows,
+                                    0,
+                                    camera );
       }
 
       // Cylinders
@@ -393,54 +273,24 @@ namespace AGXUnity.Rendering
                                     count,
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
-                                    ReceiveShadows);
+                                    ReceiveShadows,
+                                    0,
+                                    camera );
       }
     }
 
-    private void DrawGizmos( bool isSelected )
+    private bool CreateMeshes()
     {
-      if ( Application.isPlaying )
-        return;
+      if ( m_sphereMeshInstance == null )
+        m_sphereMeshInstance = CreateMesh( @"Debug/LowPolySphereRenderer" );
+      if ( m_cylinderMeshInstance == null )
+        m_cylinderMeshInstance = CreateMesh( @"Debug/LowPolyCylinderRenderer" );
 
-      if ( Wire == null || Wire.Route == null || Wire.Route.NumNodes < 2 )
-        return;
-
-      if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
-        return;
-
-      var routePoints = Wire.Route.Select( routePoint => routePoint.Position ).ToArray();
-
-      var defaultColor  = Color.Lerp( Color.black, Color.white, 0.55f );
-      var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
-      m_segmentSpawner?.DrawGizmos( routePoints,
-                                    Wire.Radius,
-                                    isSelected ? selectedColor : defaultColor );
+      return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
     }
 
-    private void OnDrawGizmos()
+    private Mesh CreateMesh( string resource )
     {
-      DrawGizmos( false );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      DrawGizmos( true );
-    }
-
-    public bool CreateMeshes()
-    {
-      if (m_sphereMeshInstance == null)
-        m_sphereMeshInstance = CreateMesh(@"Debug/LowPolySphereRenderer");
-      if (m_cylinderMeshInstance == null)
-        m_cylinderMeshInstance = CreateMesh(@"Debug/LowPolyCylinderRenderer");
-
-      return (m_sphereMeshInstance != null || m_cylinderMeshInstance != null);
-    }
-
-    public Mesh CreateMesh(string resource)
-    {
-      
-
       GameObject tmp = Resources.Load<GameObject>( resource );
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
       MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
@@ -457,8 +307,85 @@ namespace AGXUnity.Rendering
       return mesh;
     }
 
-    private List<Matrix4x4[]> m_segmentSphereMatrices, m_segmentCylinderMatrices;
+    private void InitMatrices()
+    {
+      if ( m_segmentSphereMatrices == null )
+        m_segmentSphereMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
+      if ( m_segmentCylinderMatrices == null )
+        m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
+      if ( m_meshInstanceProperties == null )
+        m_meshInstanceProperties = new MaterialPropertyBlock();
+    }
+
+    /// <summary>
+    /// Currently only used in the Prefab Stage where normal rendering
+    /// is ignored.
+    /// </summary>
+    /// <param name="isSelected">True if the wire is selected.</param>
+    private void DrawGizmos( bool isSelected )
+    {
+      //if ( Application.isPlaying )
+      //  return;
+
+      //if ( Wire == null || Wire.Route == null || Wire.Route.NumNodes < 2 )
+      //  return;
+
+      //if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+      //  return;
+
+      //if ( !CreateMeshes() )
+      //  return;
+
+      //var routePoints = Wire.Route.Select( routePoint => routePoint.Position ).ToArray();
+
+      //var defaultColor  = Color.Lerp( Color.black, Color.white, 0.55f );
+      //var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
+      //Gizmos.color = isSelected ? selectedColor : defaultColor;
+
+      //var radius = Wire.Radius;
+      //var sphereScale = 2.0f * radius * Vector3.one;
+      //Gizmos.DrawWireMesh( m_sphereMeshInstance,
+      //                     0,
+      //                     routePoints[ 0 ],
+      //                     Quaternion.identity,
+      //                     sphereScale );
+      //for ( int i = 1; i < routePoints.Length; ++i ) {
+      //  Gizmos.DrawWireMesh( m_sphereMeshInstance,
+      //                       0,
+      //                       routePoints[ i ],
+      //                       Quaternion.identity,
+      //                       sphereScale );
+      //  CalculateCylinderTransform( routePoints[ i - 1 ],
+      //                              routePoints[ i ],
+      //                              radius,
+      //                              out var position,
+      //                              out var rotation,
+      //                              out var scale );
+      //  Gizmos.DrawWireMesh( m_cylinderMeshInstance,
+      //                       0,
+      //                       position,
+      //                       rotation,
+      //                       scale );
+      //}
+    }
+
+    private void OnDrawGizmos()
+    {
+      DrawGizmos( false );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+      DrawGizmos( true );
+    }
+
+    private Wire m_wire = null;
+    private List<Matrix4x4[]> m_segmentSphereMatrices = new List<Matrix4x4[]>();
+    private List<Matrix4x4[]> m_segmentCylinderMatrices = new List<Matrix4x4[]>();
     private MaterialPropertyBlock m_meshInstanceProperties = null;
-    private Mesh m_sphereMeshInstance = null, m_cylinderMeshInstance = null;
+    private Mesh m_sphereMeshInstance = null;
+    private Mesh m_cylinderMeshInstance = null;
+    private List<Vector3> m_positions = new List<Vector3>();
+    private int m_numCylinders = 0;
   }
 }
