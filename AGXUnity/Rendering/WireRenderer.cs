@@ -86,14 +86,22 @@ namespace AGXUnity.Rendering
       // Used to draw in a prefab stage or when the editor is paused.
       // It's not possible in OnEnable to check if our gameObject is
       // part of a prefab stage.
+#if UNITY_2019_1_OR_NEWER
       SceneView.duringSceneGui += OnSceneView;
+#else
+      SceneView.onSceneGUIDelegate += OnSceneView;
+#endif
 #endif
     }
 
     protected override void OnDisable()
     {
 #if UNITY_EDITOR
+#if UNITY_2019_1_OR_NEWER
       SceneView.duringSceneGui -= OnSceneView;
+#else
+      SceneView.onSceneGUIDelegate -= OnSceneView;
+#endif
 #endif
     }
 
