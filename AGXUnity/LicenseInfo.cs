@@ -249,7 +249,9 @@ namespace AGXUnity
     private static bool ParseDate( ref LicenseInfo info, string dateString )
     {
       try {
-        info.EndDate = DateTime.Parse( dateString );
+        // The license is valid during the "End Date". Add one day
+        // and remove a tick.
+        info.EndDate = DateTime.Parse( dateString ).AddDays( 1.0 ).AddTicks( -1 );
       }
       catch ( FormatException ) {
         if ( dateString.ToLower() == "none" )

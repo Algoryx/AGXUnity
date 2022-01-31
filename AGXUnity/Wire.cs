@@ -334,26 +334,5 @@ namespace AGXUnity
     {
       Route.Clear();
     }
-
-    //private void DrawGizmos( Color color )
-    //{
-    //  if ( Application.isPlaying )
-    //    return;
-
-    //  var nodes = Route.ToArray();
-    //  Gizmos.color = color;
-    //  for ( int i = 1; i < nodes.Length; ++i )
-    //    Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
-    //}
-
-    //private void OnDrawGizmos()
-    //{
-    //  DrawGizmos( Color.red );
-    //}
-
-    //private void OnDrawGizmosSelected()
-    //{
-    //  DrawGizmos( Color.green );
-    //}
   }
 }
