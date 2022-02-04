@@ -88,6 +88,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXHydrodynamics, this ) )
+        return false;
+
       Native = new agxModel.WindAndWaterController();
       GetSimulation().add( Native );
 

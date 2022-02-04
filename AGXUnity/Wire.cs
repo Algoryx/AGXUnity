@@ -244,6 +244,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXWires, this ) )
+        return false;
+
       WireRoute.ValidatedRoute validatedRoute = Route.GetValidated();
       if ( !validatedRoute.Valid ) {
         Debug.LogError( validatedRoute.ErrorString, this );

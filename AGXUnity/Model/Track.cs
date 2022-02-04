@@ -232,6 +232,9 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTracks, this ) )
+        return false;
+
       RemoveInvalidWheels();
 
       if ( m_wheels.Count == 0 ) {
