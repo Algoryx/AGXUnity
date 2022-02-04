@@ -119,6 +119,10 @@ namespace AGXUnity.IO.URDF
           dataDirectory += '/';
       }
 
+      // The Unity URDF importer has a custom Collada importer that
+      // does things to the transforms. If this importer is installed
+      // we're reverting the modifications made.
+      var hasUnityURDFImporter = Options.UnityURDFImporterInstalled;
       var loadedInstances = new List<GameObject>();
       Func<string, ResourceType, Object> resourceLoader = ( resourceFilename, type ) =>
       {
@@ -165,13 +169,20 @@ namespace AGXUnity.IO.URDF
           var colladaInfo = Utils.ParseColladaInfo( resourceFilename );
           var resourceGo = resource as GameObject;
           // Model implementation assumes Z-up, anything other than that
-          // has to be transformed.
-          if ( resourceGo != null && !colladaInfo.IsDefault ) {
+          // has to be transformed. Note that we have to "undo" the transforms
+          // made by the Unity URDF importer Collada processor, if installed.
+          if ( resourceGo != null && ( !colladaInfo.IsDefault || hasUnityURDFImporter ) ) {
             var colladaInstance = Object.Instantiate<GameObject>( resourceGo );
+            var rotationPatch = hasUnityURDFImporter ?
+                                  GetInverseUnityColladaImporterRotation( colladaInfo.UpAxis ) :
+                                  Quaternion.identity;
             if ( colladaInfo.UpAxis == Utils.ColladaInfo.Axis.Y )
-              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 0 ) * colladaInstance.transform.rotation;
+              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 0 ) * rotationPatch * colladaInstance.transform.rotation;
             else if ( colladaInfo.UpAxis == Utils.ColladaInfo.Axis.X )
-              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 90 ) * colladaInstance.transform.rotation;
+              colladaInstance.transform.rotation = Quaternion.Euler( -90, 0, 90 ) * rotationPatch * colladaInstance.transform.rotation;
+            else
+              colladaInstance.transform.rotation = rotationPatch * colladaInstance.transform.rotation;
+
             loadedInstances.Add( colladaInstance );
             resource = colladaInstance;
           }
@@ -180,6 +191,15 @@ namespace AGXUnity.IO.URDF
         return resource;
       };
       return resourceLoader;
+    }
+
+    private static Quaternion GetInverseUnityColladaImporterRotation( Utils.ColladaInfo.Axis axis )
+    {
+      return Quaternion.Inverse( Quaternion.Euler( axis == Utils.ColladaInfo.Axis.X ?
+                                                     new Vector3( -90, 90, 90 ) :
+                                                   axis == Utils.ColladaInfo.Axis.Y ?
+                                                     new Vector3( -90, 90, 0 ) :
+                                                     new Vector3( 0, 90, 0 ) ) );
     }
 
     /// <summary>

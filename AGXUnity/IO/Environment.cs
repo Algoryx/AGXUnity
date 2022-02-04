@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace AGXUnity.IO
 {
@@ -234,5 +236,74 @@ namespace AGXUnity.IO
 
       return canWrite;
     }
+
+    /// <summary>
+    /// Finds if an editor package is installed by parsing Packages/manifest.json.
+    /// This method will always return false in a player, i.e., not in the editor.
+    /// </summary>
+    /// <param name="fullName">Full name of the package, e.g., "com.unity.inputsystem".</param>
+    /// <returns>True if the package is installed, otherwise false.</returns>
+    public static bool IsEditorPackageInstalled( string fullName )
+    {
+      if ( !ParseInstalledEditorPackages() )
+        return false;
+
+      return s_installedEditorPackages.ContainsKey( fullName );
+    }
+
+    /// <summary>
+    /// Find version of an installed editor package, if possible to parse.
+    /// </summary>
+    /// <param name="fullName">Full name of the package, e.g., "com.unity.inputsystem".</param>
+    /// <returns>Version info if the given package is installed and possible to parse, otherwise VersionInfo.Invalid.</returns>
+    public static VersionInfo GetEditorPackageVersion( string fullName )
+    {
+      if ( ParseInstalledEditorPackages() && s_installedEditorPackages.TryGetValue( fullName, out var version ) )
+        return version;
+      return VersionInfo.Invalid;
+    }
+
+    private static bool ParseInstalledEditorPackages()
+    {
+      if ( UnityEngine.Application.isEditor && s_installedEditorPackages == null ) {
+        s_installedEditorPackages = new Dictionary<string, VersionInfo>();
+
+        try {
+          var lines = File.ReadAllText( "Packages/manifest.json" ).Split( new string[] { "\n", "\r\n", "\r" },
+                                                                          StringSplitOptions.RemoveEmptyEntries );
+          foreach ( var line in lines ) {
+            var nameVersion = line.Split( new string[] { ": " }, StringSplitOptions.RemoveEmptyEntries )
+                                  .Select( str => str.Trim( ' ', ',', '\"' ) ).ToArray();
+            if ( nameVersion.Length != 2 )
+              continue;
+            else if ( nameVersion[ 0 ] == "dependencies" )
+              continue;
+
+            // E.g., git checkout package with revision (with version) as given in:
+            //     https://docs.unity3d.com/Manual/upm-git.html#revision
+            var versionStr = nameVersion[ 1 ];
+            var version = VersionInfo.Parse( versionStr );
+            var revStartIndex = -1;
+            var tryParseRevision = !version.IsValid &&
+                                   ( revStartIndex = versionStr.LastIndexOf( '#' ) ) >= 0;
+            if ( tryParseRevision ) {
+              versionStr = versionStr.Substring( revStartIndex + 1,
+                                                 versionStr.Length - ( revStartIndex + 1 ) );
+              if ( versionStr.StartsWith( "v", true, System.Globalization.CultureInfo.InvariantCulture ) )
+                versionStr = versionStr.Remove( 0, 1 );
+              version = VersionInfo.Parse( versionStr );
+            }
+
+            s_installedEditorPackages.Add( nameVersion[ 0 ], version );
+          }
+        }
+        catch ( Exception ) {
+        }
+      }
+
+      return s_installedEditorPackages != null;
+    }
+
+    private static Dictionary<string, VersionInfo> s_installedEditorPackages = null;
   }
 }
