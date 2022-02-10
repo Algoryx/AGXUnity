@@ -72,9 +72,6 @@ namespace AGXUnity
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
-
-        if ( !LicenseManager.LoadFile() )
-          LicenseManager.ActivateEncryptedRuntime( dataPluginsPath );
       }
 
       agx.agxSWIG.setEntityCreationThreadSafe( true );
@@ -99,6 +96,11 @@ namespace AGXUnity
     NativeHandler()
     {
       m_isAgx = new InitShutdownAGXDynamics();
+
+      if ( !Application.isEditor && m_isAgx.Initialized ) {
+        if ( !LicenseManager.LoadFile() )
+          LicenseManager.ActivateEncryptedRuntime( IO.Environment.GetPlayerPluginPath( Application.dataPath ) );
+      }
 
       // The environment probably hasn't been completely configured
       // when inside the editor so it's up to Manager to call
@@ -187,7 +189,7 @@ namespace AGXUnity
         return false;
       }
 
-      return (HasValidLicense = agx.Runtime.instance().verifyAndUnlock( licenseStr ));
+      return LicenseManager.Load( licenseStr );
     }
 
     #region Singleton Stuff
@@ -201,6 +203,8 @@ namespace AGXUnity
         return s_instance;
       }
     }
+
+    public static bool HasInstance => s_instance != null;
     #endregion
 
     private InitShutdownAGXDynamics m_isAgx = null;
