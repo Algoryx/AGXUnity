@@ -23,7 +23,9 @@ namespace AGXUnity
     {
       get
       {
-        return s_instance ?? FindOrCreateInstance();
+        return s_instance != null ?
+                 s_instance :
+                 FindOrCreateInstance();
       }
       private set
       {
