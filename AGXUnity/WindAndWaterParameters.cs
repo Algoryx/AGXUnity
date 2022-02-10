@@ -114,7 +114,9 @@ namespace AGXUnity
       where U : ScriptComponent
       where N : agx.Referenced
     {
-      var manager = WindAndWaterManager.Instance.GetInitialized<WindAndWaterManager>().Native;
+      var manager = WindAndWaterManager.Instance.GetInitialized<WindAndWaterManager>();
+      if ( manager == null )
+        return;
 
       var getOrCreateMethod = FindGetOrCreateMethod( typeof( N ) );
       if ( getOrCreateMethod == null )
@@ -124,7 +126,7 @@ namespace AGXUnity
         if ( obj.GetInitialized<U>() == null )
           continue;
 
-        var parameters = getOrCreateMethod.Invoke( manager, new object[] { nativeGetter( obj ) } ) as T;
+        var parameters = getOrCreateMethod.Invoke( manager.Native, new object[] { nativeGetter( obj ) } ) as T;
         if ( parameters != null )
           m_parameters.Add( parameters );
       }

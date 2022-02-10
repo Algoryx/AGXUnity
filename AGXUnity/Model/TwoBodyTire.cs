@@ -227,10 +227,8 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Tires" ) ) {
-        Debug.LogError( "TwoBodyTire requires a valid license for the AGX Dynamics module: AgX-Tires", this );
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTires, this ) )
         return false;
-      }
 
       if ( TireRigidBody == null || RimRigidBody == null ) {
         Debug.LogError( "TwoBodyTire failed to initialize: Tire or Rim rigid body is null.", this );

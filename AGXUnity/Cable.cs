@@ -373,6 +373,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXCable, this ) )
+        return false;
+
       try {
         if ( Route.NumNodes < 2 )
           throw new Exception( "Invalid number of nodes. Minimum number of route nodes is two." );
