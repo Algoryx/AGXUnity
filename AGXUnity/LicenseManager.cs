@@ -18,12 +18,18 @@ namespace AGXUnity
       get
       {
         if ( !s_licenseInfo.IsParsed )
-          s_licenseInfo = LicenseInfo.Create();
+          LicenseInfo = LicenseInfo.Create();
         return s_licenseInfo;
       }
       private set
       {
         s_licenseInfo = value;
+
+        // We could end up here during instantiation of the
+        // NativeHandler. Only validate license in the native
+        // handler if it has an instance.
+        if ( NativeHandler.HasInstance )
+          NativeHandler.Instance.ValidateLicense();
       }
     }
 
@@ -69,6 +75,10 @@ namespace AGXUnity
     /// </returns>
     public static bool LoadFile()
     {
+      // This is potentially a license unlock by a script. It's not
+      // possible to know if it exists scripts that manually unlocks AGX.
+      var potentialScriptLoaded = LicenseInfo.Create();
+
       Reset();
 
       var licenseFiles = FindLicenseFiles();
@@ -78,6 +88,15 @@ namespace AGXUnity
                        $"License file \"{file}\" found in search from application root." ) )
           return true;
       }
+
+      // Recover the last license if parsed, i.e., there were a license
+      // loaded before calling this method. Note that all license files
+      // (if any) failed to load before this.
+      if ( potentialScriptLoaded.IsParsed ) {
+        LicenseInfo = potentialScriptLoaded;
+        return true;
+      }
+
       return false;
     }
 
@@ -197,7 +216,7 @@ namespace AGXUnity
     {
       var filename = FindRuntimeActivationFiles().FirstOrDefault();
       if ( string.IsNullOrEmpty( filename ) ) {
-        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, license file not found.",
+        IssueLoadWarning( "Unable to activate runtime license, license file not found.",
                           $"Searching all directories under {Application.dataPath} for {s_runtimeActivationExtension} files." );
         return false;
       }
@@ -217,7 +236,7 @@ namespace AGXUnity
     public static bool ActivateEncryptedRuntime( string filename, string targetDirectory )
     {
       if ( string.IsNullOrEmpty( filename ) || !File.Exists( filename ) ) {
-        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, filename not given or doesn't exist.",
+        IssueLoadWarning( "Unable to activate runtime license, filename not given or doesn't exist.",
                           $"Explicit runtime activation with filename: \"{filename}\"" );
         return false;
       }

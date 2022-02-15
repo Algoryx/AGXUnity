@@ -456,7 +456,7 @@ namespace AGXUnityEditor
     public static T GetOrCreateUniqueGameObject<T>()
       where T : ScriptComponent
     {
-      bool hadInstance = UniqueGameObject<T>.HasInstance;
+      bool hadInstance = UniqueGameObject<T>.HasInstanceInScene;
       if ( !hadInstance && AGXUnity.Utils.PrefabUtils.IsEditingPrefab ) {
         Debug.LogWarning( $"Invalid to create {typeof( T ).FullName} while editing prefabs." );
         return null;

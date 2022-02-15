@@ -67,10 +67,8 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-DriveTrain" ) ) {
-        Debug.LogWarning( "GearConstraint requires a valid license for the AGX Dynamics module: AgX-DriveTrain", this );
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXDriveTrain, this ) )
         return false;
-      }
 
       if ( BeginActuatorConstraint?.GetInitialized<Constraint>() == null ) {
         Debug.LogError( "Invalid GearConstraint: Begin actuator constraint is invalid or null.", this );
