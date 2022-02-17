@@ -43,7 +43,9 @@ namespace AGXUnity.Rendering
     [AllowRecursiveEditing]
     public Material Material
     {
-      get { return m_material ?? DefaultMaterial(); }
+      get { return m_material == null ?
+                     m_material = DefaultMaterial() :
+                     m_material; }
       set
       {
         m_material = value ?? DefaultMaterial();
@@ -157,7 +159,7 @@ namespace AGXUnity.Rendering
 
     private static Material DefaultMaterial()
     {
-      return Resources.Load<Material>( "Materials/WireMaterial_01.mat" );
+      return Resources.Load<Material>( "Materials/WireMaterial_01" );
     }
 
     private static Matrix4x4 CalculateCylinderTransform( Vector3 start, Vector3 end, float radius )
