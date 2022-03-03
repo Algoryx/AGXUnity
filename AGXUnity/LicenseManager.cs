@@ -94,7 +94,7 @@ namespace AGXUnity
       // (if any) failed to load before this.
       if ( potentialScriptLoaded.IsParsed ) {
         LicenseInfo = potentialScriptLoaded;
-        return true;
+        return LicenseInfo.IsValid;
       }
 
       return false;
@@ -118,8 +118,15 @@ namespace AGXUnity
     /// <returns>True if successfully loaded and is a valid license, otherwise false.</returns>
     public static bool Load( string licenseContent )
     {
+      var context = "Explicit license content.";
+      // Loading encrypted runtime from script. AGX is writing the generated
+      // file as given in 'context' here, see ActivateEncryptedRuntime.
+      if ( FindLicenseContentType( licenseContent ) == LicenseContentType.EncryptedRuntimeService ) {
+        context = IO.Environment.GetPlayerPluginPath( Application.dataPath ) +
+                  $"/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}";
+      }
       return Load( licenseContent,
-                   "Explicit license content." );
+                   context );
     }
 
     /// <summary>
@@ -536,6 +543,35 @@ namespace AGXUnity
       s_activationTask = null;
     }
 
+    public enum LicenseContentType
+    {
+      Unknown,
+      Service,
+      EncryptedRuntimeService,
+      Legacy,
+      LegacyObfuscated
+    }
+
+    /// <summary>
+    /// Finds license type given file/string content.
+    /// </summary>
+    /// <param name="licenseContent">License file/string content.</param>
+    /// <returns>License content type.</returns>
+    public static LicenseContentType FindLicenseContentType( string licenseContent )
+    {
+      if ( string.IsNullOrEmpty( licenseContent ) )
+        return LicenseContentType.Unknown;
+      else if ( licenseContent.StartsWith( @"<SoftwareKey>" ) )
+        return LicenseContentType.Service;
+      else if ( licenseContent.StartsWith( @"RT=" ) )
+        return LicenseContentType.EncryptedRuntimeService;
+      else if ( licenseContent.StartsWith( @"Key {" ) )
+        return LicenseContentType.Legacy;
+      // Assuming obfuscated if nothing else matches.
+      else
+        return LicenseContentType.LegacyObfuscated;
+    }
+
     /// <summary>
     /// Load text file with context.
     /// </summary>
@@ -604,21 +640,33 @@ namespace AGXUnity
         return false;
       }
 
+      var licenseContentType = FindLicenseContentType( licenseContent );
+      if ( licenseContentType == LicenseContentType.Unknown ) {
+        IssueLoadWarning( $"Unknown license content: \"{licenseContent}\".", context );
+        return false;
+      }
+
       try {
         // Service type.
-        if ( licenseContent.StartsWith( @"<SoftwareKey>" ) ) {
+        if ( licenseContentType == LicenseContentType.Service ) {
           agx.Runtime.instance().loadLicenseString( licenseContent );
           LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
                     context );
         }
         // Runtime license activation.
-        else if ( licenseContent.StartsWith( @"RT=" ) ) {
+        else if ( licenseContentType == LicenseContentType.EncryptedRuntimeService ) {
+          // Temporary fix until activateEncryptedRuntime has been fixed in AGX Dynamics
+          // to support non-ASCII input paths.
+          var cwd = Directory.GetCurrentDirectory();
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cwd );
           agx.Runtime.instance().activateEncryptedRuntime( licenseContent, context );
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( cwd );
+
           LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {agx.Runtime.instance().isValid()}.",
                     context );
         }
         // Legacy type.
-        else if ( licenseContent.StartsWith( @"Key {" ) ) {
+        else if ( licenseContentType == LicenseContentType.Legacy ) {
           agx.Runtime.instance().unlock( licenseContent );
           LoadInfo( $"Loading legacy license successful: {agx.Runtime.instance().isValid()}.",
                     context );

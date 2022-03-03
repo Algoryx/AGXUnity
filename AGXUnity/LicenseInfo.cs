@@ -125,7 +125,7 @@ namespace AGXUnity
           info.Type = LicenseType.Service;
           info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
         }
-        else {
+        else if ( agx.Runtime.instance().hasKey( "License" ) ) {
           info.Type = LicenseType.Legacy;
           info.UniqueId = agx.Runtime.instance().readValue( "License" );
         }
