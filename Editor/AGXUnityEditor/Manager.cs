@@ -392,10 +392,9 @@ namespace AGXUnityEditor
       // Note that UpdateMassProperties is a time consuming operation. Ideally
       // we would like to know if operations has been made that affects the
       // mass properties of bodies.
-      var bodiesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+      var shapesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
                                                                  SelectionMode.Editable )
-                                       .SelectMany( go => go.GetComponentsInChildren<AGXUnity.RigidBody>() );
-      var shapesInSelection = bodiesInSelection.SelectMany( rb => rb.Shapes );
+                                       .SelectMany( go => go.GetComponentsInChildren<AGXUnity.Collide.Shape>() );
       foreach ( var shape in shapesInSelection ) {
         var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
         if ( visual != null )
@@ -410,6 +409,9 @@ namespace AGXUnityEditor
       // until simulation.
       var updateMassProperties = shapesInSelection.Count() < 32;
       if ( updateMassProperties ) {
+        var bodiesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                                   SelectionMode.Editable )
+                                         .SelectMany( go => go.GetComponentsInChildren<AGXUnity.RigidBody>() );
         foreach ( var rb in bodiesInSelection )
           rb.UpdateMassProperties();
       }
