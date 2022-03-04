@@ -573,6 +573,29 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Delete license and its .meta file (if editor and exists).
+    /// </summary>
+    /// <param name="filename">License file to delete.</param>
+    /// <returns>True if successfully deleted, otherwise false.</returns>
+    public static bool DeleteFile( string filename )
+    {
+      try {
+        File.Delete( filename );
+#if UNITY_EDITOR
+        if ( File.Exists( $"{filename}.meta" ) ) {
+          File.Delete( $"{filename}.meta" );
+          UnityEditor.AssetDatabase.Refresh();
+        }
+#endif
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+      }
+
+      return !File.Exists( filename );
+    }
+
+    /// <summary>
     /// Load text file with context.
     /// </summary>
     /// <param name="filename">Filename, including path, to load.</param>
@@ -687,29 +710,6 @@ namespace AGXUnity
       UpdateLicenseInformation();
 
       return LicenseInfo.IsValid;
-    }
-
-    /// <summary>
-    /// Delete license and its .meta file (if editor and exists).
-    /// </summary>
-    /// <param name="filename">License file to delete.</param>
-    /// <returns>True if successfully deleted, otherwise false.</returns>
-    private static bool DeleteFile( string filename )
-    {
-      try {
-        File.Delete( filename );
-#if UNITY_EDITOR
-        if ( File.Exists( $"{filename}.meta" ) ) {
-          File.Delete( $"{filename}.meta" );
-          UnityEditor.AssetDatabase.Refresh();
-        }
-#endif
-      }
-      catch ( Exception e ) {
-        Debug.LogException( e );
-      }
-
-      return !File.Exists( filename );
     }
 
     private static void LoadInfo( string info, string context )
