@@ -95,6 +95,8 @@ namespace AGXUnityEditor
 
       Selection.selectionChanged += OnSelectionChanged;
 
+      DragDropListener.OnPrefabsDroppedInScene += OnPrefabsDroppedInScene;
+
       while ( VisualsParent != null && VisualsParent.transform.childCount > 0 )
         GameObject.DestroyImmediate( VisualsParent.transform.GetChild( 0 ).gameObject );
 
@@ -118,7 +120,8 @@ namespace AGXUnityEditor
       InspectorWindow,
       SceneHierarchyWindow,
       SceneView,
-      GameView
+      GameView,
+      ProjectBrowser
     }
 
     /// <summary>
@@ -385,6 +388,10 @@ namespace AGXUnityEditor
       // their parent is though (since selection is included in undo/redo),
       // so find shapes in children of the selection and access bodies
       // from there as well.
+      //
+      // Note that UpdateMassProperties is a time consuming operation. Ideally
+      // we would like to know if operations has been made that affects the
+      // mass properties of bodies.
       var shapesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
                                                                  SelectionMode.Editable )
                                        .SelectMany( go => go.GetComponentsInChildren<AGXUnity.Collide.Shape>() );
@@ -392,9 +399,20 @@ namespace AGXUnityEditor
         var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
         if ( visual != null )
           visual.OnSizeUpdated();
+      }
 
-        var rb = shape.RigidBody;
-        if ( rb != null )
+      // Looking at the number of shapes to begin with because it can
+      // be one rigid body with many shapes. The thing is that the
+      // undo/redo operation is highly unlikely to be affecting the
+      // mass properties. And note that the mass properties won't be
+      // wrong in the simulation due to this, only displayed wrong
+      // until simulation.
+      var updateMassProperties = shapesInSelection.Count() < 32;
+      if ( updateMassProperties ) {
+        var bodiesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                                   SelectionMode.Editable )
+                                         .SelectMany( go => go.GetComponentsInChildren<AGXUnity.RigidBody>() );
+        foreach ( var rb in bodiesInSelection )
           rb.UpdateMassProperties();
       }
 
@@ -574,21 +592,6 @@ namespace AGXUnityEditor
 
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
-      else if ( Selection.activeGameObject != null ) {
-        var isPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) != PrefabInstanceStatus.NotAPrefab;
-
-        // We want to catch when a prefab has been instantiated in the
-        // scene. Maybe this feature should be explicit, i.e., some
-        // method doing the work.
-        // NOTE: We receive callbacks to OnHierarchyWindowChanged when a
-        //       component is added and when the undo/redo is performed.
-        //       To not screw up the undo/redo history we block this feature
-        //       when undo/redo has been made close in time.
-        // TODO: Make this work - OnHierarchyWindowChanged is not a good place
-        //       to instantiate additional things.
-        if ( isPrefabInstance && ( EditorApplication.timeSinceStartup - s_lastUndoRedoTime ) > 2.0 )
-          AssetPostprocessorHandler.OnPrefabAddedToScene( Selection.activeGameObject );
-      }
 
       m_numScenesLoaded = EditorSceneManager.loadedSceneCount;
     }
@@ -596,7 +599,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Previous selection used to reset used EditorDataEntry entries.
     /// </summary>
-    private static UnityEngine.Object[] m_previousSelection = new UnityEngine.Object[] { };
+    private static Object[] m_previousSelection = new Object[] { };
 
     /// <summary>
     /// Editor data entry for "SelectedInHierarchy" property.
@@ -660,6 +663,27 @@ namespace AGXUnityEditor
       if ( Selection.objects.Length == 0 )
         ToolManager.ReleaseAllRecursiveEditors();
     }
+
+    private static void OnPrefabsDroppedInScene( GameObject[] instances )
+    {
+      var ourInstances = instances.Where( instance =>
+                                            instance != null &&
+                                            ( instance.GetComponentInChildren<AGXUnity.IO.RestoredAGXFile>() != null ||
+                                              instance.GetComponentInChildren<AGXUnity.IO.SavedPrefabLocalData>() != null ) );
+      if ( ourInstances.Count() == 0 )
+        return;
+
+      foreach ( var instance in ourInstances )
+        Undo.ClearUndo( instance );
+
+      Undo.SetCurrentGroupName( "Adding prefab instance(s) to scene." );
+      var groupId = Undo.GetCurrentGroup();
+      foreach ( var instance in ourInstances ) {
+        AssetPostprocessorHandler.OnPrefabAddedToScene( instance );
+      }
+      Undo.CollapseUndoOperations( groupId );
+    }
+
 
     private static void HandleWindowsGUI( SceneView sceneView )
     {

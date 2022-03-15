@@ -244,6 +244,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXWires, this ) )
+        return false;
+
       WireRoute.ValidatedRoute validatedRoute = Route.GetValidated();
       if ( !validatedRoute.Valid ) {
         Debug.LogError( validatedRoute.ErrorString, this );
@@ -334,26 +337,5 @@ namespace AGXUnity
     {
       Route.Clear();
     }
-
-    //private void DrawGizmos( Color color )
-    //{
-    //  if ( Application.isPlaying )
-    //    return;
-
-    //  var nodes = Route.ToArray();
-    //  Gizmos.color = color;
-    //  for ( int i = 1; i < nodes.Length; ++i )
-    //    Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
-    //}
-
-    //private void OnDrawGizmos()
-    //{
-    //  DrawGizmos( Color.red );
-    //}
-
-    //private void OnDrawGizmosSelected()
-    //{
-    //  DrawGizmos( Color.green );
-    //}
   }
 }

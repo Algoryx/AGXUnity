@@ -264,10 +264,8 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Terrain" ) ||
-           !agx.Runtime.instance().isModuleEnabled( "AgX-Granular" ) ) {
-        Debug.LogError( "DeformableTerrain requires a valid license for the AGX Dynamics modules: AgX-Terrain and AgX-Granular", this );
-      }
+      // Only printing the errors if something is wrong.
+      LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
       RemoveInvalidShovels();
 

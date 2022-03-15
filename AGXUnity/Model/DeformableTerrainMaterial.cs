@@ -35,11 +35,12 @@ namespace AGXUnity.Model
                                                                    DefaultTerrainMaterialsPath ) ) {
         var errorMessage = string.Empty;
         if ( Array.IndexOf( GetAvailablePresets(), presetName ) < 0 )
-          errorMessage = $"Unable to find material name {presetName} in the library.";
+          errorMessage = $"AGXUnity.Model.DeformableTerrainMaterial: Unable to find material name {presetName} in the library.";
         else
           errorMessage = terrainMaterial.getLastError();
-        Debug.LogWarning( $"Unable to load preset {presetName}: {errorMessage}" );
+        Debug.LogWarning( $"AGXUnity.Model.DeformableTerrainMaterial: Unable to load preset {presetName}: {errorMessage}" );
       }
+
       return terrainMaterial;
     }
 

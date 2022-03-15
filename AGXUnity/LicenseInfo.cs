@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Linq;
 
+using AGXUnity.Utils;
+
+using Math = System.Math;
+
 namespace AGXUnity
 {
   /// <summary>
@@ -30,6 +34,29 @@ namespace AGXUnity
       AGXWireLink      = 1 << 12,
       AGXWires         = 1 << 13,
       All              = ~0
+    }
+
+    /// <summary>
+    /// Creates a comma separated string with the flagged modules in
+    /// the given <paramref name="modules"/>.
+    /// </summary>
+    /// <param name="modules">Modules to get as string.</param>
+    /// <returns>Comma separated string with the given module names.</returns>
+    public static string GetModuleNames( Module modules )
+    {
+      if ( modules.HasFlag( Module.All ) ) {
+        modules = Module.None;
+        foreach ( Module module in Enum.GetValues( typeof( Module ) ) ) {
+          if ( module == Module.None || module == Module.All )
+            continue;
+          modules |= module;
+        }
+      }
+
+      return string.Join( ", ", modules.ToString()
+                                       .Split( new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries )
+                                       .Where( str => str.StartsWith( "AGX" ) )
+                                       .Select( str => str.SplitCamelCase() ) );
     }
 
     /// <summary>
@@ -98,7 +125,7 @@ namespace AGXUnity
           info.Type = LicenseType.Service;
           info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
         }
-        else {
+        else if ( agx.Runtime.instance().hasKey( "License" ) ) {
           info.Type = LicenseType.Legacy;
           info.UniqueId = agx.Runtime.instance().readValue( "License" );
         }
@@ -160,7 +187,7 @@ namespace AGXUnity
         foreach ( Module eVal in Enum.GetValues( typeof( Module ) ) ) {
           if ( eVal == Module.None || eVal == Module.All )
             continue;
-          allSet = allSet && ( (long)eVal & (long)EnabledModules ) != 0;
+          allSet = allSet && EnabledModules.HasFlag( eVal );
         }
         return allSet;
       }
@@ -239,6 +266,42 @@ namespace AGXUnity
       return Convert.ToInt32( diff.TotalDays + 0.5 ) < days;
     }
 
+    /// <summary>
+    /// Checks if this license is valid and if the given <paramref name="module"/>
+    /// is enabled in the license.
+    /// </summary>
+    /// <param name="module">Module to check.</param>
+    /// <returns>True if this license is valid and the given module is enabled.</returns>
+    /// <seealso cref="HasModuleLogWarn(Module, object)"/>
+    public bool HasModule( Module module )
+    {
+      return IsValid && EnabledModules.HasFlag( module );
+    }
+
+    /// <summary>
+    /// Checks if the license is valid and if the given <paramref name="module"/>
+    /// is enabled in the license. If the license is valid but the module isn't
+    /// in the license, an log error is printed.
+    /// </summary>
+    /// <param name="module">Module to check.</param>
+    /// <param name="context">Caller context.</param>
+    /// <returns>True if the license is valid and the module is enabled in the license - otherwise false.</returns>
+    public bool HasModuleLogError( Module module, UnityEngine.Object context )
+    {
+      var isEnabled = HasModule( module );
+      // Warn when the license is valid but the module isn't in the license.
+      // Invalid/expired licenses results in other errors displayed elsewhere.
+      if ( !isEnabled && IsValid ) {
+        var contextName = context != null ?
+                            context.GetType().FullName :
+                            "Unknown Source";
+        UnityEngine.Debug.LogError( $"{contextName}: Required license module(s) \"{GetModuleNames( module )}\" aren't enabled in the current license.",
+                                    context );
+      }
+
+      return isEnabled;
+    }
+
     public override string ToString()
     {
       return $"Valid: {IsValid}, Valid End Date: {ValidEndDate}, End Date: {EndDate}, " +
@@ -249,7 +312,9 @@ namespace AGXUnity
     private static bool ParseDate( ref LicenseInfo info, string dateString )
     {
       try {
-        info.EndDate = DateTime.Parse( dateString );
+        // The license is valid during the "End Date". Add one day
+        // and remove a tick.
+        info.EndDate = DateTime.Parse( dateString ).AddDays( 1.0 ).AddTicks( -1 );
       }
       catch ( FormatException ) {
         if ( dateString.ToLower() == "none" )
