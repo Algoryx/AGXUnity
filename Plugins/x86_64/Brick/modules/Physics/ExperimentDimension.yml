@@ -8,7 +8,7 @@ ExperimentDimension:
   name:
     .type: String
   targets:
-    .type: List<String>
+    .type: List<Path>
   model:
     .doc: The Component for which the target is relative
     .type: Physics.Component

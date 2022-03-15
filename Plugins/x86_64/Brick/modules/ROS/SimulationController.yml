@@ -9,6 +9,9 @@ SimulationController:
     .type: String
     .doc: Quit the application after a number of seconds by publishing a std_msgs/Float64 message
       to this topic. Publishing a number <= 0 will quit the application immediately.
+  reloadApplicationTopic:
+    .type: String
+    .doc: Reload the simulation by publishing a std_msgs/Bool as true to this topic.
   simulationReadyTopic:
     .type: String
     .doc: Subscribe to this topic to get a std_messages/Bool value of true when a model has

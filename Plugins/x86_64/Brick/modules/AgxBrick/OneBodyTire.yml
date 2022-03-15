@@ -1,0 +1,14 @@
+.format: 4
+
+.import:
+  Physics.Mechanics: [RigidBody]
+
+OneBodyTire:
+  .doc: >
+    An implementation of a tire model with one rigid body as the tire.
+  
+  tireBody:
+    .type: RigidBody
+
+  tireRadius:
+    .type: Real
