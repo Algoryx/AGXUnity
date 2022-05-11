@@ -33,6 +33,22 @@ namespace AGXUnity
       m_ai = null;
     }
 
+    /// <summary>
+    /// This method has to be called before the first call is made to AGX
+    /// Dynamics, otherwise DllNotFoundException will/can be thrown. In
+    /// Windows, <paramref name="agxBinaryDirectory"/> is added to PATH
+    /// for the process.
+    /// </summary>
+    /// <param name="agxBinaryDirectory">Directory, relative or absolute, to the AGX Dynamics libraries.</param>
+    private void RuntimePrepareNativeLibrary( string agxBinaryDirectory )
+    {
+#if UNITY_STANDALONE_LINUX
+      // Nothing has to be made here for Linux.
+#else
+      IO.Environment.AddToPath( agxBinaryDirectory );
+#endif
+    }
+
     private void Configure()
     {
 #if AGXUNITY_UPDATING
@@ -56,7 +72,8 @@ namespace AGXUnity
         var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
         var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
 
-        IO.Environment.AddToPath( dataPluginsPath );
+        // If this fails in some way, agxIO.Environment.instance() will throw.
+        RuntimePrepareNativeLibrary( dataPluginsPath );
 
         var envInstance = agxIO.Environment.instance();
 
