@@ -168,7 +168,8 @@ namespace AGXUnityEditor.IO
         var libsToFind = new string[] { "agxCore", "agxPhysics", "agxSabre" };
         int numFound = 0;
         foreach ( var file in di.EnumerateFiles( $"*{libExtension}" ) ) {
-          if ( Array.FindIndex( libsToFind, name => name == file.Name || $"lib{name}.so" == file.Name ) >= 0 )
+          if ( Array.FindIndex( libsToFind, name => $"{name}{libExtension}" == file.Name ||
+                                                    $"lib{name}{libExtension}" == file.Name ) >= 0 )
             ++numFound;
         }
 
