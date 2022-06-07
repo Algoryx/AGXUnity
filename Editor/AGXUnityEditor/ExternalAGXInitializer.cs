@@ -37,8 +37,19 @@ namespace AGXUnityEditor
 
       Environment.Set( Environment.Variable.AGX_DIR, AGX_DIR );
       Environment.Set( Environment.Variable.AGX_PLUGIN_PATH, AGX_PLUGIN_PATH );
-      foreach ( var path in AGX_BIN_PATH )
-        Environment.AddToPath( path );
+      foreach ( var path in AGX_BIN_PATH ) {
+        var dir = new DirectoryInfo( path );
+        var isValidPath = dir.Exists || dir.Name.StartsWith( "agxTerrain_" );
+        if ( isValidPath ) {
+          if ( dir.Exists )
+            Environment.AddToPath( path );
+        }
+        else {
+          Debug.LogWarning( $"WARNING: AGX binary path \"{path}\" doesn't exist. This could result in DllNotFoundException when calls are made to AGX Dynamics." );
+          Debug.LogWarning( "         Select new AGX Dynamics checkout/install directory using AGXUnity -> Settings -> \"Select AGX Dynamics root folder\" " +
+                            "or delete \"Assets/AGXUnity/Editor/Data/AGXInitData.asset.\"" );
+        }
+      }
 
       // All binaries should be in path, try initialize agx.
       try {
@@ -214,7 +225,8 @@ namespace AGXUnityEditor
         },
         new BinDirData()
         {
-          CMakeKey = "TERRAIN_DEPENDENCY_DATE:STRING="
+          CMakeKey = "TERRAIN_DEPENDENCY_DATE:STRING=",
+          IsOptional = true
         },
         new BinDirData()
         {
@@ -232,7 +244,7 @@ namespace AGXUnityEditor
         }
       }
 
-      if ( !binData.All( data => data.HasValue ) ) {
+      if ( !binData.All( data => data.IsOptional || data.HasValue ) ) {
         foreach ( var data in binData )
           if ( !data.HasValue )
             Debug.LogError( $"{"ERROR".Color( Color.red )}: {data.CMakeKey}null" );
@@ -248,7 +260,8 @@ namespace AGXUnityEditor
       }
 
       binData[ AGX_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agx_dependencies_{binData[ AGX_DEPENDENCIES ].Value}*" ).FirstOrDefault();
-      binData[ AGXTERRAIN_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agxTerrain_dependencies_{binData[ AGXTERRAIN_DEPENDENCIES ].Value}*" ).FirstOrDefault();
+      if ( binData[ AGXTERRAIN_DEPENDENCIES ].HasValue )
+        binData[ AGXTERRAIN_DEPENDENCIES ].Directory = dependenciesDir.GetDirectories( $"agxTerrain_dependencies_{binData[ AGXTERRAIN_DEPENDENCIES ].Value}*" ).FirstOrDefault();
 
       // Handle both absolute and relative CMAKE_INSTALL_PREFIX
       var installPath = binData[ INSTALLED ].Value;
@@ -259,17 +272,19 @@ namespace AGXUnityEditor
                                                             Path.DirectorySeparatorChar +
                                                             installPath );
 
-      if ( binData.Any( data => data.Directory == null || !data.Directory.Exists ) ) {
+      if ( binData.Any( data => !data.IsOptional && ( data.Directory == null || !data.Directory.Exists ) ) ) {
         foreach ( var data in binData )
-          if ( data.Directory == null || !data.Directory.Exists )
+          if ( !data.IsOptional && ( data.Directory == null || !data.Directory.Exists ) )
             Debug.LogError( $"{"ERROR".Color( Color.red )}: Unable to find directory for key {data.CMakeKey}." );
         return false;
       }
 
-      AGX_BIN_PATH    = ( from data in binData
-                          select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
-      AGX_PLUGIN_PATH = $"{AGX_BIN_PATH[ INSTALLED ]}{Path.DirectorySeparatorChar}plugins";
-      AGX_DATA_DIR    = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
+      AGX_BIN_PATH        = ( from data in binData
+                              where data.Directory != null
+                              select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
+      var installedBinDir = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64";
+      AGX_PLUGIN_PATH     = $"{installedBinDir}{Path.DirectorySeparatorChar}plugins";
+      AGX_DATA_DIR        = $"{installedBinDir}{Path.DirectorySeparatorChar}data";
 
       return true;
     }
@@ -280,6 +295,7 @@ namespace AGXUnityEditor
       AGX_DATA_DIR    = $"{AGX_DIR}{Path.DirectorySeparatorChar}data";
       AGX_BIN_PATH    = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" };
       AGX_PLUGIN_PATH = $"{AGX_BIN_PATH[ 0 ]}{Path.DirectorySeparatorChar}plugins";
+
       return true;
     }
 
@@ -288,6 +304,7 @@ namespace AGXUnityEditor
       public string CMakeKey         = string.Empty;
       public string Value            = string.Empty;
       public DirectoryInfo Directory = null;
+      public bool IsOptional         = false;
 
       public bool HasValue { get { return !string.IsNullOrEmpty( Value ); } }
 
