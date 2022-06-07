@@ -309,7 +309,8 @@ namespace AGXUnityEditor.Build
       Debug.Log( "Copying data to: " + GUI.AddColorTag( targetDataDir, Color.green ) );
       if ( !Directory.Exists( targetDataDir ) )
         Directory.CreateDirectory( targetDataDir );
-      CopyDirectory( new DirectoryInfo( agxDynamicsPath + Path.DirectorySeparatorChar + "data" + Path.DirectorySeparatorChar + "TerrainMaterials" ),
+      var terrainMaterialsSourceDirectory = new DirectoryInfo( $"{agxDynamicsPath.Replace( '\\', '/' )}/{AGXUnity.Model.DeformableTerrainMaterial.DefaultTerrainMaterialsPath}" );
+      CopyDirectory( terrainMaterialsSourceDirectory,
                      new DirectoryInfo( targetDataDir + Path.DirectorySeparatorChar + "TerrainMaterials" ) );
 
       foreach ( var modulePath in loadedAgxModulesPaths ) {
