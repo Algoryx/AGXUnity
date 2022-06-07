@@ -796,7 +796,7 @@ namespace AGXUnityEditor
         lastRequestData.Bool = false;
       }
       else {
-        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 10.0f ) {
           lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
           lastRequestData.Bool = true;
 #if UNITY_2019_3_OR_NEWER
@@ -813,7 +813,7 @@ namespace AGXUnityEditor
 
     private static EditorDataEntry GetRequestScriptReloadData()
     {
-      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -1.0f );
+      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -10.0f );
     }
 
     private static bool Equals( byte[] a, byte[] b )
