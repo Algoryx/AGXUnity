@@ -46,7 +46,9 @@ namespace AGXUnity
         Beta = -1,
         Rc = -1
       },
-      GitHash = string.Empty
+      GitHash = string.Empty,
+      Platform = string.Empty,
+      PlatformName = string.Empty
     };
 
     /// <summary>
@@ -68,7 +70,14 @@ namespace AGXUnity
           Debug.LogWarning( $"Unable to parse json:\n{json}" );
         return Invalid;
       }
-      return Parse( packageInfo.version, silent );
+
+      var result = Parse( packageInfo.version, silent );
+      if ( result.IsValid ) {
+        result.Platform = packageInfo.platform;
+        result.PlatformName = packageInfo.platformName;
+      }
+
+      return result;
     }
 
     /// <summary>
@@ -163,6 +172,8 @@ namespace AGXUnity
     public int Patch;
     public ReleaseType Release;
     public string GitHash;
+    public string Platform;
+    public string PlatformName;
 
     public bool IsValid
     {
@@ -284,6 +295,8 @@ namespace AGXUnity
     private class PackageInfo
     {
       public string version = string.Empty;
+      public string platform = "windows";
+      public string platformName = "Microsoft Windows";
     }
 
     private static ReleaseType ParseReleaseType( ref string versionStr )
