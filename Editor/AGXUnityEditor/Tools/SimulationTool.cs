@@ -50,10 +50,12 @@ namespace AGXUnityEditor.Tools
                                                                                              skin.Popup );
 
       if ( prevMode != Simulation.AutoSteppingMode ) {
-        if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate )
+        if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate ) {
+          GetUpdateTimeStepData().Float = Simulation.TimeStep;
           Simulation.TimeStep = Time.fixedDeltaTime;
+        }
         else
-          Simulation.TimeStep = 1.0f / 60.0f;
+          Simulation.TimeStep = GetUpdateTimeStepData().Float;
       }
       
       UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
@@ -161,6 +163,11 @@ namespace AGXUnityEditor.Tools
     private EditorDataEntry GetSaveInitialPathEditorData( string name )
     {
       return EditorData.Instance.GetData( Simulation, name, ( entry ) => entry.String = Application.dataPath );
+    }
+
+    private EditorDataEntry GetUpdateTimeStepData()
+    {
+      return EditorData.Instance.GetData( Simulation, "UpdateTimeStep", entry => entry.Float = 1.0f / 60.0f );
     }
   }
 }
