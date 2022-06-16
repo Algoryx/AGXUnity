@@ -97,10 +97,13 @@ namespace AGXUnity
     {
       m_isAgx = new InitShutdownAGXDynamics();
 
-      if ( !Application.isEditor && m_isAgx.Initialized ) {
-        if ( !LicenseManager.LoadFile() )
-          LicenseManager.ActivateEncryptedRuntime( IO.Environment.GetPlayerPluginPath( Application.dataPath ) );
-      }
+      var searchForLicenses = !Application.isEditor &&
+                              m_isAgx.Initialized &&
+                              // External scripts could load licenses, even before AGX
+                              // has been initialized.
+                              !LicenseManager.UpdateLicenseInformation().IsValid;
+      if ( searchForLicenses && !LicenseManager.LoadFile() )
+        LicenseManager.ActivateEncryptedRuntime( IO.Environment.GetPlayerPluginPath( Application.dataPath ) );
 
       // The environment probably hasn't been completely configured
       // when inside the editor so it's up to Manager to call

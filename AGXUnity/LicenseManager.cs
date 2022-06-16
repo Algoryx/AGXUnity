@@ -269,9 +269,9 @@ namespace AGXUnity
     /// Update license information of the license loaded
     /// into AGX Dynamics.
     /// </summary>
-    public static void UpdateLicenseInformation()
+    public static LicenseInfo UpdateLicenseInformation()
     {
-      LicenseInfo = LicenseInfo.Create();
+      return (LicenseInfo = LicenseInfo.Create());
     }
 
     /// <summary>
