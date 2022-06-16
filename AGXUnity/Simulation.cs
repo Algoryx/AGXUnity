@@ -628,12 +628,20 @@ namespace AGXUnity
                           id =>
                           {
                             // Invalid license if initialized.
-                            if ( NativeHandler.Instance.Initialized && agx.Runtime.instance().getStatus().Length > 0 )
-                              GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: " + agx.Runtime.instance().getStatus(),
+                            if ( NativeHandler.Instance.Initialized ) {
+                              var status = agx.Runtime.instance().getStatus();
+                              // Assume no license file was found if status == "" when the
+                              // license manager resets any state in agx.Runtime.
+                              if ( string.IsNullOrEmpty( status ) )
+                                status = LicenseManager.LicenseInfo.IsParsed && !string.IsNullOrEmpty( LicenseManager.LicenseInfo.Status ) ?
+                                           LicenseManager.LicenseInfo.Status :
+                                           $"No valid license file found under \"{Directory.GetCurrentDirectory()}\".";
+                              GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: " + status,
                                                                     Color.red,
                                                                     18,
                                                                     true ),
                                                Utils.GUI.Skin.label );
+                            }
                             else
                               GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: Errors occurred during initialization of AGX Dynamics.",
                                                                     Color.red,
