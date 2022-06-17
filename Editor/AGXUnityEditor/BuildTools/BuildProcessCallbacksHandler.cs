@@ -96,6 +96,10 @@ namespace AGXUnityEditor.Build
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
+      if ( !Manager.HasPlayerNetCompatibilityIssueError() )
+        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET API compatibility level. " +
+                                                          "AGX Dynamics for Unity won't work in build." );
+
       if ( target != BuildTarget.StandaloneWindows64 && target != BuildTarget.StandaloneWindows ) {
         Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unsupported build target: ",
                                            Color.red ) +

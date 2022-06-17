@@ -319,6 +319,52 @@ namespace AGXUnityEditor
       GameObject.DestroyImmediate( primitive.Node );
     }
 
+    internal static bool HasPlayerNetCompatibilityIssueWarning()
+    {
+      return HasPlayerNetCompatibility( "warning" );
+    }
+
+    internal static bool HasPlayerNetCompatibilityIssueError()
+    {
+      return HasPlayerNetCompatibility( "error" );
+    }
+
+    private static bool HasPlayerNetCompatibility( string infoWarningOrError )
+    {
+      // WARNING INFO:
+      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                       in players with API compatibility @ .NET Standard 2.0.
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+        string prefix = string.Empty;
+        if ( infoWarningOrError == "info" )
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
+        else if ( infoWarningOrError == "warning" )
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow );
+        else
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>ERROR:</b> ", Color.red );
+
+        var message = prefix +
+                      $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
+                      $"<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> {apiCompatibilityLevelName}</b>";
+        if ( infoWarningOrError == "info" )
+          Debug.Log( message );
+        else if ( infoWarningOrError == "warning" )
+          Debug.LogWarning( message );
+        else
+          Debug.LogError( message );
+
+        return false;
+      }
+
+      return true;
+    }
+
     private static string m_currentSceneName = string.Empty;
     private static int m_numScenesLoaded = 0;
     private static bool m_requestSceneViewFocus = false;
@@ -768,20 +814,7 @@ namespace AGXUnityEditor
         return EnvironmentState.Uninitialized;
       }
 
-      // WARNING INFO:
-      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
-      //                       in players with API compatibility @ .NET Standard 2.0.
-      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        var apiCompatibilityLevelName =
-#if UNITY_2021_2_OR_NEWER
-          ".NET Framework";
-#else
-          ".NET 4.x";
-#endif
-        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
-                          $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
-                          $"<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> {apiCompatibilityLevelName}</b>" );
-      }
+      HasPlayerNetCompatibilityIssueWarning();
 
       return EnvironmentState.Initialized;
 #endif
