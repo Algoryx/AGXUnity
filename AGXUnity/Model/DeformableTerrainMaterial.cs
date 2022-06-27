@@ -11,7 +11,32 @@ namespace AGXUnity.Model
     /// with AGX Dynamics.
     /// </summary>
     [HideInInspector]
-    public static string DefaultTerrainMaterialsPath { get { return "data/TerrainMaterials"; } }
+    public static string DefaultTerrainMaterialsPath
+    {
+      get
+      {
+        if ( s_defaultTerrainMaterialsPath == null ) {
+          var terrainMaterialLibraryOptions = new string[]
+          {
+            "data/TerrainMaterials",
+            "data/MaterialLibrary/TerrainMaterials"
+          };
+
+          foreach ( var materialLibraryOption in terrainMaterialLibraryOptions ) {
+            var fileTest = agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).find( $"{materialLibraryOption}/dirt_1.json" );
+            if ( !string.IsNullOrEmpty( fileTest ) ) {
+              s_defaultTerrainMaterialsPath = materialLibraryOption;
+              break;
+            }
+          }
+
+          if ( s_defaultTerrainMaterialsPath == null )
+            s_defaultTerrainMaterialsPath = terrainMaterialLibraryOptions[ 0 ];
+        }
+
+        return s_defaultTerrainMaterialsPath;
+      }
+    }
 
     /// <summary>
     /// Finds available material presets in the current material directory.
@@ -959,5 +984,8 @@ namespace AGXUnity.Model
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;
+
+    [NonSerialized]
+    private static string s_defaultTerrainMaterialsPath = null;
   }
 }

@@ -95,6 +95,10 @@ namespace AGXUnityEditor.Build
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
+      if ( !Manager.HasPlayerNetCompatibilityIssueError() )
+        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET API compatibility level. " +
+                                                          "AGX Dynamics for Unity won't work in build." );
+
       var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
       if ( !nativeIs64Bit ) {
         Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +
@@ -272,7 +276,8 @@ namespace AGXUnityEditor.Build
       Debug.Log( "Copying data to: " + GUI.AddColorTag( targetDataDir, Color.green ) );
       if ( !Directory.Exists( targetDataDir ) )
         Directory.CreateDirectory( targetDataDir );
-      CopyDirectory( new DirectoryInfo( agxDynamicsPath + Path.DirectorySeparatorChar + "data" + Path.DirectorySeparatorChar + "TerrainMaterials" ),
+      var terrainMaterialsSourceDirectory = new DirectoryInfo( $"{agxDynamicsPath.Replace( '\\', '/' )}/{AGXUnity.Model.DeformableTerrainMaterial.DefaultTerrainMaterialsPath}" );
+      CopyDirectory( terrainMaterialsSourceDirectory,
                      new DirectoryInfo( targetDataDir + Path.DirectorySeparatorChar + "TerrainMaterials" ) );
 
       foreach ( var modulePath in loadedAgxModulesPaths ) {
@@ -400,8 +405,8 @@ namespace AGXUnityEditor.Build
       if ( AGXUnity.LicenseManager.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service &&
            !Application.isBatchMode &&
            AskGenerateRuntimeLicense ) {
-        var generateEncryptedRuntimeActivation = EditorUtility.DisplayDialogComplex( "Generate encrypted runtime license?",
-                                                                                     "Open separate window to generate",
+        var generateEncryptedRuntimeActivation = EditorUtility.DisplayDialogComplex( "AGX Dynamics for Unity - Runtime license",
+                                                                                     "Open activation window to generate Runtime license for this build?",
                                                                                      "Yes",
                                                                                      "No",
                                                                                      "Never" );
