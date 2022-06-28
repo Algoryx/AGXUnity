@@ -238,6 +238,19 @@ namespace AGXUnity.IO
     }
 
     /// <summary>
+    /// Command line starting the application.
+    /// </summary>
+    public static CommandLine CommandLine
+    {
+      get
+      {
+        if ( s_commandLine == null )
+          s_commandLine = new CommandLine( System.Environment.GetCommandLineArgs() );
+        return s_commandLine;
+      }
+    }
+
+    /// <summary>
     /// Finds if an editor package is installed by parsing Packages/manifest.json.
     /// This method will always return false in a player, i.e., not in the editor.
     /// </summary>
@@ -304,6 +317,98 @@ namespace AGXUnity.IO
       return s_installedEditorPackages != null;
     }
 
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void OnEditorCLI()
+    {
+      OnCLI();
+    }
+#else
+#if UNITY_2019_1_OR_NEWER
+    [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSplashScreen )]
+#else
+    [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad )]
+#endif
+    private static void OnPlayerCli()
+    {
+      OnCLI();
+    }
+#endif
+
+    private static void OnCLI()
+    {
+      if ( CommandLine.HasArg( CommandLine.Arg.GenerateOfflineActivation ) ) {
+        try {
+          var offlineLicenseIdCode = CommandLine.GetValues( CommandLine.Arg.GenerateOfflineActivation );
+          if ( offlineLicenseIdCode == null || offlineLicenseIdCode.Count < 2 )
+            throw new AGXUnity.Exception( "wrong number of arguments. " +
+                                          "Usage: -generate-offline-activation <license_id> <activation_code> <optional_output_file>" );
+
+          var licenseId = int.Parse( offlineLicenseIdCode[ 0 ] );
+          var activationCode = offlineLicenseIdCode[ 1 ];
+          var file = offlineLicenseIdCode.Count == 3 ?
+                       new FileInfo( offlineLicenseIdCode[ 2 ] ) :
+                       new FileInfo( "license_activation_request.xml" );
+
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Generating offline activation request for license ID {licenseId}, writing result to \"{file.FullName}\"." );
+
+          var nativeHandler = NativeHandler.Instance;
+          if ( !nativeHandler.Initialized )
+            throw new AGXUnity.Exception( "AGX Dynamics initialization failed." );
+
+          LicenseManager.GenerateOfflineActivation( licenseId, activationCode, file.FullName );
+
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Successfully written offline activation file \"{file.FullName}\"." );
+        }
+        catch ( AGXUnity.Exception e ) {
+          UnityEngine.Debug.LogError( $"AGXUnity.CLI: Generating offline activation failed - {e.Message}" );
+        }
+        catch ( System.Exception e ) {
+          UnityEngine.Debug.LogException( e );
+        }
+      }
+
+      if ( CommandLine.HasArg( CommandLine.Arg.CreateOfflineLicense ) ) {
+        try {
+          var offlineLicenseResponse = CommandLine.GetValues( CommandLine.Arg.CreateOfflineLicense );
+          if ( offlineLicenseResponse == null || offlineLicenseResponse.Count == 0 )
+            throw new AGXUnity.Exception( "wrong number of arguments. " +
+                                          "Usage: --create-offline-license <web_response_file> <optional_output_license_file>" );
+
+          var inputResponseFile = new FileInfo( offlineLicenseResponse[ 0 ] );
+          if ( !inputResponseFile.Exists )
+            throw new AGXUnity.Exception( $"input web response file doesn't exist: \"{inputResponseFile.FullName}\"" );
+
+          var outputLicenseFile = offlineLicenseResponse.Count > 1 ?
+                                    new FileInfo( offlineLicenseResponse[ 1 ] ) :
+                                    new FileInfo( $"agx{LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
+          if ( outputLicenseFile.Extension != LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
+            outputLicenseFile = new FileInfo( $"{outputLicenseFile.FullName}{LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
+
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Creating offline license given input \"{inputResponseFile.FullName}\" for " + 
+                                 $"resulting license file \"{outputLicenseFile.FullName}\"." );
+
+          var nativeHandler = NativeHandler.Instance;
+          if ( !nativeHandler.Initialized )
+            throw new AGXUnity.Exception( "AGX Dynamics initialization failed." );
+
+          LicenseManager.CreateOfflineLicense( inputResponseFile.FullName, outputLicenseFile.FullName );
+
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Successfully activated offline license file \"{outputLicenseFile.FullName}\"." );
+        }
+        catch ( AGXUnity.Exception e ) {
+          UnityEngine.Debug.LogError( $"AGXUnity.CLI: Creating offline license failed - {e.Message}" );
+        }
+        catch ( System.Exception e ) {
+          UnityEngine.Debug.LogException( e );
+        }
+      }
+
+      if ( !UnityEngine.Application.isEditor && CommandLine.HasArg( "quit" ) )
+        UnityEngine.Application.Quit( 0 );
+    }
+
     private static Dictionary<string, VersionInfo> s_installedEditorPackages = null;
+    private static CommandLine s_commandLine = null;
   }
 }
