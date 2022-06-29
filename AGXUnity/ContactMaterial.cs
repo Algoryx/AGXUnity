@@ -330,6 +330,33 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Wire friction coefficients of this contact material, used by the contact nodes on a wire.
+    /// The primary (x) friction coefficient is used along the wire and the secondary (y) is
+    /// along the contact edge on the object the wire interacts with.
+    /// </summary>
+    [SerializeField]
+    private Vector2 m_wireFrictionCoefficients = new Vector2( 0.41667f, 0.41667f );
+
+    /// <summary>
+    /// Wire friction coefficients of this contact material, used by the contact nodes on a wire.
+    /// The primary (x) friction coefficient is used along the wire and the secondary (y) is
+    /// along the contact edge on the object the wire interacts with.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public Vector2 WireFrictionCoefficients
+    {
+      get { return m_wireFrictionCoefficients; }
+      set
+      {
+        m_wireFrictionCoefficients = value;
+        if ( Native != null ) {
+          Native.setWireFrictionCoefficient( m_wireFrictionCoefficients.x, agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION );
+          Native.setWireFrictionCoefficient( m_wireFrictionCoefficients.y, agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION );
+        }
+      }
+    }
+
     public ContactMaterial RestoreLocalDataFrom( agx.ContactMaterial contactMaterial )
     {
       YoungsModulus         = Convert.ToSingle( contactMaterial.getYoungsModulus() );
@@ -347,6 +374,8 @@ namespace AGXUnity
       ContactReductionLevel = binResolution == 3 ? ContactReductionLevelType.Minimal :
                               binResolution == 2 ? ContactReductionLevelType.Moderate :
                                                    ContactReductionLevelType.Aggressive;
+      WireFrictionCoefficients = new Vector2( Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
+                                              Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
 
       return this;
     }
