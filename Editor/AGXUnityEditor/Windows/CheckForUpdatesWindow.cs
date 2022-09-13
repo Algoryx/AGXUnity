@@ -37,21 +37,10 @@ namespace AGXUnityEditor.Windows
       }
     }
 
-    private static bool IsStagingMultiPlatformVersion( VersionInfo version )
-    {
-      return version.Major == 4 &&
-             version.Minor == 0 &&
-             version.Patch == 0 &&
-             version.Release.IsBeta;
-    }
-
     private string ServerVersionRequest
     {
       get
       {
-        // TODO: Remove this.
-        if ( IsStagingMultiPlatformVersion( m_currentVersion ) )
-          return $"https://us.download.algoryx.se/AGXUnity/packages/test/latest.php?platform={m_currentVersion.Platform}";
         return $"https://us.download.algoryx.se/AGXUnity/latest.php?platform={m_currentVersion.Platform}";
       }
     }
@@ -60,9 +49,6 @@ namespace AGXUnityEditor.Windows
     {
       get
       {
-        // TODO: Remove this.
-        if ( IsStagingMultiPlatformVersion( m_currentVersion ) )
-          return $"https://us.download.algoryx.se/AGXUnity/packages/test/{m_currentVersion.Platform}/{m_sourceFilename}";
         return $"https://us.download.algoryx.se/AGXUnity/packages/{m_currentVersion.Platform}/{m_sourceFilename}";
       }
     }
