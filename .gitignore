@@ -39,15 +39,22 @@ DeveloperGuide.md.meta
 
 Plugins/x86_64/*.dll
 Plugins/x86_64/*.dll.meta
+Plugins/x86_64/*.so*
+Plugins/x86_64/*.so*.meta
+
 !Plugins/x86_64/agxDotNet.dll
 !Plugins/x86_64/agxDotNet.dll.meta
 !Plugins/x86_64/agxMathDotNet.dll
 !Plugins/x86_64/agxMathDotNet.dll.meta
+
 /**/*.lic*
 /**/*.lfx*
 /**/*.rtlfx*
+
 Plugins/x86_64/agx
 Plugins/x86_64/agx.meta
+
 Editor/Data/Data.asset*
 Editor/Data/Settings.asset*
 Editor/Data/AGXInitData.asset*
+

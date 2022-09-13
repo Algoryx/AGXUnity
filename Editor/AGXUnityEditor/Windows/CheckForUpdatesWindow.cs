@@ -37,6 +37,22 @@ namespace AGXUnityEditor.Windows
       }
     }
 
+    private string ServerVersionRequest
+    {
+      get
+      {
+        return $"https://us.download.algoryx.se/AGXUnity/latest.php?platform={m_currentVersion.Platform}";
+      }
+    }
+
+    private string ServerDownloadRequest
+    {
+      get
+      {
+        return $"https://us.download.algoryx.se/AGXUnity/packages/{m_currentVersion.Platform}/{m_sourceFilename}";
+      }
+    }
+
     private void OnEnable()
     {
       m_status            = Status.Passive;
@@ -71,7 +87,8 @@ namespace AGXUnityEditor.Windows
                                                    newVersionAvailable ?
                                                      Color.Lerp( Color.green, Color.black, 0.35f ) :
                                                      Color.white ),
-                                    InspectorEditor.Skin.Label );
+                                    InspectorEditor.Skin.Label,
+                                    GUILayout.Width( 280 ) );
         GUILayout.FlexibleSpace();
         if ( newVersionAvailable && InspectorGUI.Link( GUI.MakeLabel( "Changelog" ) ) )
           Application.OpenURL( TopMenu.AGXUnityChangelogURL );
@@ -90,7 +107,7 @@ namespace AGXUnityEditor.Windows
                                     InspectorEditor.Skin.TextAreaMiddleCenter );
       }
       else if ( m_status == Status.Passive ) {
-        if ( Web.RequestHandler.Get( @"https://us.download.algoryx.se/AGXUnity/latest.php",
+        if ( Web.RequestHandler.Get( ServerVersionRequest,
                                      OnPackageNameRequest ) )
           m_status = Status.CheckingForUpdate;
       }
@@ -186,7 +203,7 @@ namespace AGXUnityEditor.Windows
           if ( File.Exists( Target ) )
             File.Delete( Target );
 
-          Web.RequestHandler.Get( $"https://us.download.algoryx.se/AGXUnity/packages/{m_sourceFilename}",
+          Web.RequestHandler.Get( ServerDownloadRequest,
                                   new FileInfo( Target ).Directory,
                                   OnDownloadComplete,
                                   OnDownloadProgress );

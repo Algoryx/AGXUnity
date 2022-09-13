@@ -266,6 +266,89 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Generate offline license activation file for this machine given license id,
+    /// activation code and target filename. The target filename can be anything and will
+    /// be a text file which content can be cut and pasted into, or uploaded to:
+    ///     https://secure.softwarekey.com/solo/customers/ManualRequest.aspx
+    /// </summary>
+    /// <param name="licenseId">License id for this machine.</param>
+    /// <param name="licensePassword">License activation code for the given license id.</param>
+    /// <param name="outputFilename">Output filename of the text file containing the necessary information for the manual request.</param>
+    /// <param name="throwOnError">Throw AGXUnity.Exception on errors if true, otherwise rely on the return value.</param>
+    /// <returns>True if offline activation is successful, otherwise false or throw (if error) AGXUnity.Exception if <paramref name="throwOnError"/> = true.</returns>
+    public static bool GenerateOfflineActivation( int licenseId,
+                                                  string licensePassword,
+                                                  string outputFilename,
+                                                  bool throwOnError = true )
+    {
+      var success = false;
+
+      try {
+        var activationText = agx.Runtime.instance().generateOfflineActivationRequest( licenseId, licensePassword );
+        if ( !string.IsNullOrEmpty( agx.Runtime.instance().getStatus() ) )
+          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+
+        File.WriteAllText( outputFilename, activationText );
+
+        success = File.Exists( outputFilename );
+      }
+      catch ( System.Exception e ) {
+        if ( throwOnError )
+          throw;
+
+        success = false;
+
+        Debug.LogError( e.Message );
+      }
+
+      return success;
+    }
+
+    /// <summary>
+    /// Creates a license file <paramref name="licenseFilename"/> given manual request, offline,
+    /// license file or content of the procedure of offline license activation from:
+    ///     https://secure.softwarekey.com/solo/customers/ManualRequest.aspx
+    /// </summary>
+    /// <seealso cref="GenerateOfflineActivation"/>
+    /// <param name="webResponseFilenameOrContent">
+    /// Filename (including path) to offline activation response or the content of the file.
+    /// </param>
+    /// <param name="licenseFilename">The valid, activated license filename (including absolute or relative path).</param>
+    /// <param name="throwOnerror">Throw AGXUnity.Exception on errors if true, otherwise rely on the return value.</param>
+    /// <returns>True if create of offline license is successful, otherwise false or throw (if error) AGXUnity.Exception if <paramref name="throwOnError"/> = true.</returns>
+    public static bool CreateOfflineLicense( string webResponseFilenameOrContent,
+                                             string licenseFilename,
+                                             bool throwOnerror = true )
+    {
+      var success = false;
+
+      try {
+        if ( Path.GetExtension( licenseFilename ) != GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
+          licenseFilename += GetLicenseExtension( LicenseInfo.LicenseType.Service );
+
+        if ( File.Exists( webResponseFilenameOrContent ) )
+          webResponseFilenameOrContent = File.ReadAllText( webResponseFilenameOrContent );
+
+        if ( !agx.Runtime.instance().processOfflineActivationRequest( webResponseFilenameOrContent ) )
+          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+
+        File.WriteAllText( licenseFilename, agx.Runtime.instance().readEncryptedLicense() );
+
+        success = File.Exists( licenseFilename );
+      }
+      catch ( System.Exception e ) {
+        if ( throwOnerror )
+          throw;
+
+        success = false;
+
+        Debug.LogError( e.Message );
+      }
+
+      return success;
+    }
+
+    /// <summary>
     /// Update license information of the license loaded
     /// into AGX Dynamics.
     /// </summary>

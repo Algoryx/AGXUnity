@@ -224,16 +224,17 @@ namespace AGXUnityEditor
       var dataFilesToExclude = new string[]
       {
         EditorDataDirectory + "/Data.asset",
-        EditorDataDirectory + "/Settings.asset"
+        EditorDataDirectory + "/Settings.asset",
+        EditorDataDirectory + "/AGXInitData.asset"
       };
 
       if ( Manager.ConfigureEnvironment() != Manager.EnvironmentState.Initialized ) {
-        Debug.LogError( "Unable to initialize AGX Dynamics - missing dll(s)?" );
+        Debug.LogError( "AGXUnity Build: Unable to initialize AGX Dynamics - missing libraries?" );
         EditorApplication.Exit( 1 );
         return;
       }
 
-      Debug.Log( "Applying package build settings..." );
+      Debug.Log( "AGXUnity Build: Applying package build settings..." );
       foreach ( var excludedFile in dataFilesToExclude ) {
         var fi = new FileInfo( excludedFile );
         var fiMeta = new FileInfo( excludedFile + ".meta" );

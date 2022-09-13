@@ -47,7 +47,6 @@ namespace AGXUnityEditor.Build
     private static List<string> m_ooiDependencies = new List<string>()
     {
       "python[3-9]{1}[0-9]{1}.dll",
-      "tbb.dll" // Unity is using Thread Building Blocks so it won't appear as an AGX dll.
     };
 
     /// <summary>
@@ -100,34 +99,41 @@ namespace AGXUnityEditor.Build
         throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET API compatibility level. " +
                                                           "AGX Dynamics for Unity won't work in build." );
 
-      if ( target != BuildTarget.StandaloneWindows64 && target != BuildTarget.StandaloneWindows ) {
-        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unsupported build target: ",
-                                           Color.red ) +
-                          target.ToString() );
+      var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
+      if ( !nativeIs64Bit ) {
+        Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +
+                          "AGX Dynamics is x86, only x86_64 is supported in builds." );
         return;
       }
 
-      var nativeIsX64 = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
-      if ( (target == BuildTarget.StandaloneWindows64) != nativeIsX64 ) {
-        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - x86/x64 architecture mismatch: ",
-                                           Color.red ) +
-                          "Build target = " +
-                          target.ToString() +
-                          ", AGX Dynamics build: " +
-                          ( nativeIsX64 ? "x64" : "x86" ) );
+      var isValidTarget =
+      #if UNITY_EDITOR_WIN
+        target == BuildTarget.StandaloneWindows64;
+      #else
+        target == BuildTarget.StandaloneLinux64;
+      #endif
+
+      if ( !isValidTarget ) {
+        Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +
+                          $"Unsupported standalone build target {target.ToString().Color( Color.red )}." );
         return;
       }
 
+      PostBuild( target, targetPathFilename );
+    }
+
+    private static void PostBuild( BuildTarget target, string targetPathFilename )
+    {
       var agxDynamicsPath = AGXUnity.IO.Environment.AGXDynamicsPath;
       if ( string.IsNullOrEmpty( agxDynamicsPath ) ) {
-        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX Dynamics directory.",
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics library - unable to find AGX Dynamics directory.",
                                            Color.red ) );
         return;
       }
 
       var agxPluginPath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
       if ( string.IsNullOrEmpty( agxPluginPath ) ) {
-        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics binaries - unable to find AGX_PLUGIN_PATH.", Color.red ) );
+        Debug.LogWarning( GUI.AddColorTag( "Copy AGX Dynamics library - unable to find AGX_PLUGIN_PATH.", Color.red ) );
         return;
       }
 
@@ -147,79 +153,21 @@ namespace AGXUnityEditor.Build
 
 
       if ( IO.Utils.AGXDynamicsInstalledInProject )
-        PostBuildInternal( agxDynamicsPath,
+        PostBuildInternal( target,
+                           agxDynamicsPath,
                            agxPluginPath,
                            targetExecutableFileInfo,
                            targetDataPath );
       else
-        PostBuildExternal( agxDynamicsPath,
+        PostBuildExternal( target,
+                           agxDynamicsPath,
                            agxPluginPath,
                            targetExecutableFileInfo,
                            targetDataPath );
     }
 
-    /// <summary>
-    /// Verifying all dll's in the project are located in the correct
-    /// folder in the final build. If there's a mismatch, we check if
-    /// all or some of the dll's are located in the parent directory and
-    /// copy them to the correct.
-    /// </summary>
-    private static void VerifyBuild( string targetDataPath )
-    {
-      var nativePluginsDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) );
-      if ( !nativePluginsDirectory.Exists ) {
-        Debug.LogWarning( "Build Warning: ".Color( Color.yellow ) +
-                          nativePluginsDirectory.FullName +
-                          " doesn't exist. " +
-                          "This directory is where the AGX Dynamics binaries are expected to be located." );
-        return;
-      }
-
-      // It's not possible to use the PluginImporter during builds.
-      Predicate<FileInfo> isNativePlugin = fi => { return !fi.Name.ToLower().EndsWith( "dotnet.dll" ); };
-      var inProjectDllNames = new HashSet<string>( from dllFile
-                                                   in new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull ).EnumerateFiles( "*.dll" )
-                                                   where isNativePlugin( dllFile )
-                                                   select dllFile.Name );
-      Func<bool> matchingNumProjectDllsWithBuild = () =>
-      {
-        var numMatchingDllsInBuild = nativePluginsDirectory.EnumerateFiles( "*.dll" ).Count( dllFi => inProjectDllNames.Contains( dllFi.Name ) );
-        // The dlls from the projects are all located in the
-        // expected nativePluginsDirectory.
-        return numMatchingDllsInBuild == inProjectDllNames.Count;
-      };
-      if ( matchingNumProjectDllsWithBuild() )
-        return;
-
-      // Check if the missing dlls are located in the parent
-      // directory of nativePluginsDirectory.
-      var nativePluginsParentDirectory = nativePluginsDirectory.Parent;
-      int numMoved = 0;
-      try {
-        foreach ( var dllFi in nativePluginsParentDirectory.EnumerateFiles( "*.dll" ) ) {
-          if ( !inProjectDllNames.Contains( dllFi.Name ) )
-            continue;
-          dllFi.MoveTo( nativePluginsDirectory.FullName +
-                        Path.DirectorySeparatorChar +
-                        dllFi.Name );
-          ++numMoved;
-        }
-      }
-      catch ( Exception e ) {
-        Debug.LogException( e );
-        return;
-      }
-      if ( matchingNumProjectDllsWithBuild() ) {
-        Debug.Log( "Build info: ".Color( Color.green ) +
-                   $"Successfully moved {numMoved} AGX Dynamics binaries to {nativePluginsDirectory.FullName.Replace( '\\', '/' )}" );
-      }
-      else {
-        Debug.LogWarning( "Build warning: ".Color( Color.yellow ) +
-                          "AGX Dynamics binaries mismatch in build vs project. The application may not properly load AGX Dynamics." );
-      }
-    }
-
-    private static void PostBuildInternal( string agxDynamicsPath,
+    private static void PostBuildInternal( BuildTarget target,
+                                           string agxDynamicsPath,
                                            string agxPluginPath,
                                            FileInfo targetExecutableFileInfo,
                                            string targetDataPath )
@@ -230,14 +178,22 @@ namespace AGXUnityEditor.Build
       // dll's are in <project>_Data/Plugins, the dll's wont load.
       //     - Unity 2019.3 and later:   <project>_Data/Plugins/x86_64
       //     - Unity 2019.2 and earlier: <project>_Data/Plugins
+      // Unknown behavior in Linux.
       if ( !Directory.Exists( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) ) )
         Directory.CreateDirectory( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) );
 
-      // Assuming all dlls are present in the plugins directory and that
-      // "Components" are in a folder named "agx" in the plugins directory.
-      // Unity will copy the dlls.
+      // Copying the 'agx' directory from the project to the build. Deleting
+      // agx/Components folder if it exist, the user may have additional data
+      // in agx/data, so that folder isn't deleted.
       var sourceDirectory      = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull + Path.DirectorySeparatorChar + "agx" );
       var destinationDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerAGXRuntimePath( targetDataPath ) );
+      if ( destinationDirectory.Exists ) {
+        var componentsDirectory = new DirectoryInfo( destinationDirectory.FullName +
+                                                     Path.DirectorySeparatorChar +
+                                                     "Components" );
+        if ( componentsDirectory.Exists )
+          componentsDirectory.Delete( true );
+      }
       Debug.Log( GUI.AddColorTag( "Copying AGX runtime data from: " +
                                   IO.Utils.AGXUnityPluginDirectory +
                                   Path.DirectorySeparatorChar +
@@ -250,16 +206,23 @@ namespace AGXUnityEditor.Build
       foreach ( var fi in destinationDirectory.EnumerateFiles( "*.meta", SearchOption.AllDirectories ) )
         fi.Delete();
 
-      VerifyBuild( targetDataPath );
+      VerifyBuild( target, targetDataPath );
 
       CheckGenerateEncryptedRuntime( targetExecutableFileInfo );
     }
 
-    private static void PostBuildExternal( string agxDynamicsPath,
+    private static void PostBuildExternal( BuildTarget target,
+                                           string agxDynamicsPath,
                                            string agxPluginPath,
                                            FileInfo targetExecutableFileInfo,
                                            string targetDataPath )
     {
+      if ( target == BuildTarget.StandaloneLinux64 ) {
+        Debug.LogWarning( "AGXUnity:".Color( Color.yellow ) +
+                          " Builds targeting Linux requires AGX Dynamics libraries in the project." );
+        return;
+      }
+
       // Finding loaded modules/binaries in current process located
       // in current environment AGX Dynamics directory. Additional
       // modules/binaries that are optional, i.e., possibly located
@@ -338,6 +301,103 @@ namespace AGXUnityEditor.Build
       }
 
       CheckGenerateEncryptedRuntime( targetExecutableFileInfo );
+    }
+
+    /// <summary>
+    /// Verifying all AGX Dynamics libraries in the project are located in
+    /// the correct folder in the final build. If there's a mismatch, we check if
+    /// all or some of the libraries are located in the parent directory and
+    /// copy them to the correct.
+    /// </summary>
+    private static void VerifyBuild( BuildTarget target, string targetDataPath )
+    {
+      var nativePluginsDirectory = new DirectoryInfo( AGXUnity.IO.Environment.GetPlayerPluginPath( targetDataPath ) );
+      if ( !nativePluginsDirectory.Exists ) {
+        Debug.LogWarning( "Build Warning: ".Color( Color.yellow ) +
+                          nativePluginsDirectory.FullName +
+                          " doesn't exist. " +
+                          "This directory is where the AGX Dynamics libraries are expected to be located." );
+        return;
+      }
+
+      var nativePluginsParentDirectory = nativePluginsDirectory.Parent;
+      var librarySearchPattern = target == BuildTarget.StandaloneWindows64 ?
+                                   "*.dll" :
+                                   "*.so*";
+      // It's not possible to use the PluginImporter during builds.
+      Predicate<FileInfo> isNativeLibrary = fi => {
+        return !fi.Name.ToLower().EndsWith( "dotnet.dll" ) &&
+               fi.Extension != ".meta";
+      };
+      var inProjectNativeLibraries = new DirectoryInfo( IO.Utils.AGXUnityPluginDirectoryFull ).EnumerateFiles( librarySearchPattern )
+                                                                                              .Where( fi => isNativeLibrary( fi ) ).ToArray();
+      var inProjectLibNames = new HashSet<string>( inProjectNativeLibraries.Select( fi => fi.Name ) );
+
+      // In Linux, Unity tries to copy AGX to <name>_Data/Plugins but only the
+      // symlinks. Copy the actual libraries to the same location and optionally
+      // move them later during this stage.
+      if ( target == BuildTarget.StandaloneLinux64 ) {
+        Debug.Log( "Build info:".Color( Color.green ) +
+                   " Don't mind the 'empty file' errors above (if any), recovering missing libraries and files." );
+        // Until further notice, we assume Unity copied the symlinks to the
+        // Plugins directory (nativePluginsParentDirectory).
+        var linuxTargetDirectory = nativePluginsParentDirectory.EnumerateFiles( "*.so" )
+                                                               .Where( fi => fi.Name.StartsWith( "libagx" ) )
+                                                               .Count() > 2 ?
+                                     nativePluginsParentDirectory :
+                                     nativePluginsDirectory;
+        // Delete the previous AGX libraries if Unity has copied the files to the
+        // Plugins directory, otherwise we won't move the files later in this method.
+        if ( linuxTargetDirectory != nativePluginsDirectory ) {
+          var previousBuildLibsToDelete = nativePluginsDirectory.EnumerateFiles( librarySearchPattern )
+                                                                .Where( fi => inProjectLibNames.Contains( fi.Name ) );
+          foreach ( var libToDelete in previousBuildLibsToDelete )
+            libToDelete.Delete();
+        }
+        foreach ( var libFi in inProjectNativeLibraries ) {
+          if ( libFi.Name.EndsWith( ".so" ) )
+            continue;
+
+          libFi.CopyTo( $"{linuxTargetDirectory.FullName}/{libFi.Name}", true );
+        }
+      }
+
+      Func<bool> matchingNumProjectLibsWithBuild = () =>
+      {
+        var numMatchingLibsInBuild = nativePluginsDirectory.EnumerateFiles( librarySearchPattern )
+                                                           .Count( libFi => inProjectLibNames.Contains( libFi.Name ) );
+        // The libraries from the projects are all located in the
+        // expected nativePluginsDirectory.
+        return numMatchingLibsInBuild == inProjectLibNames.Count;
+      };
+      if ( matchingNumProjectLibsWithBuild() )
+        return;
+
+      // Check if the missing libraries are located in the parent
+      // directory of nativePluginsDirectory.
+      int numMoved = 0;
+      try {
+        foreach ( var libFi in nativePluginsParentDirectory.EnumerateFiles( librarySearchPattern ) ) {
+          if ( !inProjectLibNames.Contains( libFi.Name ) )
+            continue;
+          libFi.MoveTo( nativePluginsDirectory.FullName +
+                        Path.DirectorySeparatorChar +
+                        libFi.Name );
+          ++numMoved;
+        }
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+        return;
+      }
+      if ( matchingNumProjectLibsWithBuild() ) {
+        Debug.Log( "Build info: ".Color( Color.green ) +
+                   $"Successfully moved {numMoved} AGX Dynamics libraries to {nativePluginsDirectory.FullName.Replace( '\\', '/' )}" );
+      }
+      else {
+        Debug.LogWarning( "Build warning: ".Color( Color.yellow ) +
+                          "AGX Dynamics libraries mismatch in build vs project. The application may not properly load AGX Dynamics." );
+      }
     }
 
     private static void CheckGenerateEncryptedRuntime( FileInfo targetExecutableFileInfo )

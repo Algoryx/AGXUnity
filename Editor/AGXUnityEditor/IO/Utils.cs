@@ -159,12 +159,21 @@ namespace AGXUnityEditor.IO
         if ( !di.Exists )
           throw new AGXUnity.Exception( "Unable to find AGXUnity plugins directory: " + di.FullName );
 
-        var dllsToFind = new string[] { "agxCore.dll", "agxPhysics.dll", "agxSabre.dll" };
+        var libExtension =
+#if UNITY_EDITOR_LINUX
+          ".so";
+#else
+          ".dll";
+#endif
+        var libsToFind = new string[] { "agxCore", "agxPhysics", "agxSabre" };
         int numFound = 0;
-        foreach ( var file in di.EnumerateFiles( "*.dll" ) )
-          if ( Array.FindIndex( dllsToFind, name => name == file.Name ) >= 0 )
+        foreach ( var file in di.EnumerateFiles( $"*{libExtension}" ) ) {
+          if ( Array.FindIndex( libsToFind, name => $"{name}{libExtension}" == file.Name ||
+                                                    $"lib{name}{libExtension}" == file.Name ) >= 0 )
             ++numFound;
-        return numFound == dllsToFind.Length;
+        }
+
+        return numFound == libsToFind.Length;
       }
     }
 
@@ -287,7 +296,7 @@ namespace AGXUnityEditor.IO
         if ( Path.GetExtension( assetPath ).ToLower() == fileExtension.ToLower() )
           filesWithCorrectExtension.Add( assetPath );
         else if ( warnAboutDifferentExtensions )
-          filesWithWrongExtension.Add( assetPath );          
+          filesWithWrongExtension.Add( assetPath );
       }
 
       foreach ( var fileWithWrongExtension in filesWithWrongExtension )

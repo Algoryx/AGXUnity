@@ -126,6 +126,7 @@ namespace AGXUnityEditor
 
     public static bool Initialize()
     {
+#if UNITY_EDITOR_WIN
       // Dependencies dir set and we're certain setup_env has been executed.
       if ( Environment.IsSet( Environment.Variable.AGX_DEPENDENCIES_DIR ) )
         return true;
@@ -176,6 +177,11 @@ namespace AGXUnityEditor
       AssetDatabase.SaveAssets();
 
       return success;
+#else
+      // No support for local setup in Linux/OSX and we're reaching this during
+      // package updates. Avoid users to have to answer "No" to local installs.
+      return false;
+#endif
     }
 
     public static void ChangeRootDirectory( DirectoryInfo newAgxDir )
