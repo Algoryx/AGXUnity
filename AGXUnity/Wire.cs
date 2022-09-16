@@ -242,6 +242,12 @@ namespace AGXUnity
       gameObject.SetActive(native.isEnabled());
     }
 
+    protected override void OnEnable()
+    {
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().add( Native );
+    }
+
     protected override bool Initialize()
     {
       if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXWires, this ) )
@@ -303,6 +309,12 @@ namespace AGXUnity
       }
 
       return Native.initialized();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().remove( Native );
     }
 
     protected override void OnDestroy()

@@ -262,6 +262,14 @@ namespace AGXUnity.Model
       WriteTerrainDataOffset( Terrain, -MaximumDepth );
     }
 
+    protected override void OnEnable()
+    {
+      if ( Native != null && !Native.getEnable() ) {
+        Native.setEnable( true );
+        Native.getGeometry().setEnable( true );
+      }
+    }
+
     protected override bool Initialize()
     {
       // Only printing the errors if something is wrong.
@@ -281,6 +289,14 @@ namespace AGXUnity.Model
         GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
 
       return true;
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && Native.getEnable() ) {
+        Native.setEnable( false );
+        Native.getGeometry().setEnable( false );
+      }
     }
 
     protected override void OnDestroy()

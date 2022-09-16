@@ -361,14 +361,10 @@ namespace AGXUnity
       AngularVelocityDamping  = Convert.ToSingle( native.getAngularVelocityDamping().maxComponent() );
     }
 
-    protected override void OnDestroy()
+    protected override void OnEnable()
     {
-      if ( Simulation.HasInstance )
-        GetSimulation().remove( Native );
-
-      Native = null;
-
-      base.OnDestroy();
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().add( Native );
     }
 
     protected override bool Initialize()
@@ -447,6 +443,22 @@ namespace AGXUnity
       SynchronizeProperties();
 
       return true;
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().remove( Native );
+    }
+
+    protected override void OnDestroy()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().remove( Native );
+
+      Native = null;
+
+      base.OnDestroy();
     }
 
     private void Reset()
