@@ -237,9 +237,6 @@ namespace AGXUnity
       Radius                  = System.Convert.ToSingle( native.getRadius() );
       ResolutionPerUnitLength = System.Convert.ToSingle( native.getResolutionPerUnitLength() );
       ScaleConstant           = System.Convert.ToSingle( native.getParameterController().getScaleConstant() );
-
-      // Is the wire enabled/active?
-      gameObject.SetActive(native.isEnabled());
     }
 
     protected override void OnEnable()
@@ -300,7 +297,15 @@ namespace AGXUnity
 
         Native.setName( name );
 
+        // Wires doesn't have setEnable( true/false ) but supports
+        // re-adding to a simulation. I.e., the state of the previously
+        // removed wire will be recovered when the wire is added again.
+        // Initialize the wire (by adding it) and remove the wire if this
+        // component isn't active.
         GetSimulation().add( Native );
+        if ( !isActiveAndEnabled )
+          GetSimulation().remove( Native );
+
         Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
       }
       catch ( System.Exception e ) {

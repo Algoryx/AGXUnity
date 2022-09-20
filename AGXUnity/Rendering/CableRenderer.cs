@@ -108,6 +108,8 @@ namespace AGXUnity.Rendering
         }
         return;
       }
+      else if ( !m_segmentSpawner.IsValid )
+        InitializeRenderer( true );
 
       var it = native.begin();
       var endIt = native.end();
@@ -142,8 +144,11 @@ namespace AGXUnity.Rendering
           Simulation.Instance.StepCallbacks.PostStepForward += Render;
       }
       else {
-        m_segmentSpawner.Destroy();
-        m_segmentSpawner = null;
+        if ( m_segmentSpawner != null ) {
+          m_segmentSpawner.Destroy();
+          m_segmentSpawner = null;
+        }
+
         if ( Simulation.HasInstance && Application.isPlaying )
           Simulation.Instance.StepCallbacks.PostStepForward -= Render;
       }

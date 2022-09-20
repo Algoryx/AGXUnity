@@ -220,12 +220,6 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// True if the game object is active in hierarchy and this component is enabled.
-    /// </summary>
-    [HideInInspector]
-    public bool IsEnabled { get { return gameObject.activeInHierarchy && enabled; } }
-
-    /// <summary>
     /// Array of shapes belonging to this rigid body instance.
     /// </summary>
     [HideInInspector]
@@ -332,7 +326,7 @@ namespace AGXUnity
             if ( geometry == null )
               continue;
 
-            geometry.setEnable( shape.IsEnabled );
+            geometry.setEnable( shape.isActiveAndEnabled );
             if ( shape.Material != null )
               geometry.setMaterial( shape.Material.CreateTemporaryNative() );
 
@@ -366,7 +360,7 @@ namespace AGXUnity
       foreach ( var shape in shapes ) {
         var geometry = shape.CreateTemporaryNative();
 
-        geometry.setEnable( shape.IsEnabled );
+        geometry.setEnable( shape.isActiveAndEnabled );
         if ( shape.Material != null )
           geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
         native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
@@ -440,7 +434,7 @@ namespace AGXUnity
 
       m_rb = new agx.RigidBody();
       m_rb.setName( name );
-      m_rb.setEnable( IsEnabled );
+      m_rb.setEnable( isActiveAndEnabled );
       m_rb.getMassProperties().setAutoGenerateMask( 0u );
 
       SyncNativeTransform( m_rb );
@@ -451,8 +445,7 @@ namespace AGXUnity
 
       UpdateMassProperties();
 
-      if ( IsEnabled )
-        HandleUpdateCallbacks( true );
+      HandleUpdateCallbacks( isActiveAndEnabled );
 
       return true;
     }

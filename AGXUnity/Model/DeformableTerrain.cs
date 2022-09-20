@@ -264,10 +264,7 @@ namespace AGXUnity.Model
 
     protected override void OnEnable()
     {
-      if ( Native != null && !Native.getEnable() ) {
-        Native.setEnable( true );
-        Native.getGeometry().setEnable( true );
-      }
+      SetNativeEnable( true );
     }
 
     protected override bool Initialize()
@@ -288,15 +285,14 @@ namespace AGXUnity.Model
       if ( Simulation.Instance.SolverSettings != null )
         GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
 
+      SetNativeEnable( isActiveAndEnabled );
+
       return true;
     }
 
     protected override void OnDisable()
     {
-      if ( Native != null && Native.getEnable() ) {
-        Native.setEnable( false );
-        Native.getGeometry().setEnable( false );
-      }
+      SetNativeEnable( false );
     }
 
     protected override void OnDestroy()
@@ -316,6 +312,18 @@ namespace AGXUnity.Model
         GUIWindowHandler.Instance.Close( ShowForces );
 
       base.OnDestroy();
+    }
+
+    private void SetNativeEnable( bool enable )
+    {
+      if ( Native == null )
+        return;
+
+      if ( Native.getEnable() == enable )
+        return;
+
+      Native.setEnable( enable );
+      Native.getGeometry().setEnable( enable );
     }
 
     private void InitializeNative()

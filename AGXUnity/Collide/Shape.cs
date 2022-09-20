@@ -150,20 +150,17 @@ namespace AGXUnity.Collide
     {
       get
       {
-        RigidBody rb = RigidBody;
-        return enabled && gameObject.activeInHierarchy && ( rb == null || rb.enabled );
-      }
-    }
+        // If this component is disabled or our game object or any of its
+        // parent(s) game object(s) are disabled, this shape is disabled.
+        if ( !isActiveAndEnabled )
+          return false;
 
-    /// <summary>
-    /// True if the game object this active and this component is enabled.
-    /// </summary>
-    [HideInInspector]
-    public bool IsEnabled
-    {
-      get
-      {
-        return gameObject.activeSelf && enabled;
+        // Assuming shapes are children of rigid bodies, which is per definition.
+        // 'isActiveAndEnabled' above will catch the case where the rigid body
+        // game object is inactive. We only have to check rigid body component
+        // enabled state.
+        var rb = RigidBody;
+        return rb == null || rb.enabled;
       }
     }
 
@@ -253,7 +250,7 @@ namespace AGXUnity.Collide
       if ( !rb.gameObject.HasChild( gameObject ) )
         throw new Exception( "RigidBody not parent to Shape." );
 
-      m_geometry.setEnable( IsEnabled );
+      m_geometry.setEnable( isActiveAndEnabled );
 
       rb.Native.add( m_geometry, GetNativeRigidBodyOffset( rb ) );
 
@@ -318,7 +315,7 @@ namespace AGXUnity.Collide
         return false;
 
       m_geometry.setName( name );
-      m_geometry.setEnable( IsEnabled );
+      m_geometry.setEnable( isActiveAndEnabled );
 
       if ( Material != null )
         m_geometry.setMaterial( m_material.GetInitialized<ShapeMaterial>().Native );
