@@ -27,10 +27,14 @@ namespace AGXUnity
     {
       Native = new agx.ObserverFrame();
 
+      Native.setName(name);
+
       var rb = gameObject.GetInitializedComponentInParent<RigidBody>();
       Native.attachWithWorldTransform( rb != null ? rb.Native : null,
                                        new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
                                                                 transform.position.ToHandedVec3() ) );
+
+      GetSimulation().add(Native);
 
       return true;
     }
