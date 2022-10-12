@@ -11,7 +11,8 @@
                     "id": "8607ec06-2d43-4d5c-8cca-886a93e1d1ed",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Brake",
@@ -19,7 +20,8 @@
                     "id": "854a3dfd-dfff-4232-8213-a88ea3df66df",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Steer",
@@ -27,7 +29,8 @@
                     "id": "d270e7f3-6cd7-462c-b73c-e9375b5a7330",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Elevate",
@@ -35,7 +38,8 @@
                     "id": "16c9244b-26fc-41b4-9410-2802b8d3b3ab",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Tilt",
@@ -43,7 +47,8 @@
                     "id": "3b2813ae-d2fa-465d-892f-ac4b9ec5bdce",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -107,7 +112,7 @@
                     "id": "6e59ebb4-6dac-4408-9c3a-e040f041bf8e",
                     "path": "<Keyboard>/a",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "Invert",
                     "groups": "",
                     "action": "Steer",
                     "isComposite": false,
@@ -118,7 +123,7 @@
                     "id": "bfdaf6d8-6624-4c5f-92a7-aa822960c5b9",
                     "path": "<Keyboard>/d",
                     "interactions": "",
-                    "processors": "Invert",
+                    "processors": "",
                     "groups": "",
                     "action": "Steer",
                     "isComposite": false,
@@ -202,7 +207,8 @@
                     "id": "613a10a0-1ae3-421b-910f-2c38e474e68e",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Brake",
@@ -210,7 +216,8 @@
                     "id": "5d5ed8e0-6d18-4595-b532-5a721dd0fdb2",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Steer",
@@ -218,7 +225,8 @@
                     "id": "f5da6fbb-67bd-449b-a968-0b2e03983112",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Drive",
@@ -226,7 +234,8 @@
                     "id": "8bece246-ff0a-4e5c-bce3-6faeab92c0ad",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Bucket",
@@ -234,7 +243,8 @@
                     "id": "6bb0c0a5-c1d6-4e2f-8fb3-5e27396a0cb9",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Stick",
@@ -242,7 +252,8 @@
                     "id": "3c8f261e-6b86-4a58-a4e6-4b5d1971b5f0",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Boom",
@@ -250,7 +261,8 @@
                     "id": "1a71b492-e6cc-453a-95fb-4e81b42af0e5",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Cabin",
@@ -258,7 +270,8 @@
                     "id": "d18268c2-7518-4080-b9fe-050745bcfc78",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -516,7 +529,8 @@
                     "id": "592be0dc-75b8-43e0-bb80-fb18ffc3b101",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Open",
@@ -524,7 +538,8 @@
                     "id": "1272376c-9b06-4509-9fdd-c4f1f41cdc98",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "RotateWristRight",
@@ -532,7 +547,8 @@
                     "id": "52788b92-0083-4144-9f84-9fb45a00e62c",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "RotateWristLeft",
@@ -540,7 +556,8 @@
                     "id": "4541a65a-e846-4452-873f-4f7ed0834bce",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "UpDown",
@@ -548,7 +565,8 @@
                     "id": "8fc53972-c79c-4d1b-9249-f3890b94f223",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "LeftRight",
@@ -556,7 +574,8 @@
                     "id": "87dc55c0-95fd-435f-a319-6b3ae0ea6162",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "ForwardBackward",
@@ -564,7 +583,8 @@
                     "id": "4515f61e-f3d2-46cf-8cdf-c88807b817a9",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Hinge2",
@@ -572,7 +592,8 @@
                     "id": "14016bed-0ef6-44f7-9bed-3c432924c54d",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Hinge3",
@@ -580,7 +601,8 @@
                     "id": "5e1bd515-cbee-4bc6-a43a-5ad89782f104",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
