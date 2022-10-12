@@ -181,6 +181,11 @@ namespace AGXUnity
       base.OnDestroy();
     }
 
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
+    }
+
     private bool TryInsertAtIndex( int index, T node )
     {
       // According to List documentation having index == m_nodes.Count is

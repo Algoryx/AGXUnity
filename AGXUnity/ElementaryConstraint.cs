@@ -181,5 +181,10 @@ namespace AGXUnity
 
       base.OnDestroy();
     }
+
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
+    }
   }
 }
