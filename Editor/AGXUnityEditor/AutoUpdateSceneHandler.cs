@@ -33,7 +33,12 @@ namespace AGXUnityEditor
     public static bool VerifyPrefabInstance( GameObject instance )
     {
 #if UNITY_2018_3_OR_NEWER
-      var isDisconnected = PrefabUtility.IsDisconnectedFromPrefabAsset( instance );
+      var isDisconnected =
+#if UNITY_2022_1_OR_NEWER
+        false;
+#else
+        PrefabUtility.IsDisconnectedFromPrefabAsset( instance );
+#endif
 
       // Patching the instance when we've a disconnected prefab - otherwise patch
       // the source asset object.
