@@ -197,6 +197,11 @@ namespace AGXUnity
       return true;
     }
 
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
+    }
+
     private AttachmentPair()
     {
     }

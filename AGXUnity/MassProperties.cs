@@ -254,6 +254,11 @@ namespace AGXUnity
       return true;
     }
 
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
+    }
+
     /// <summary>
     /// Finds the native rigid body instance this mass properties belongs to.
     /// </summary>
