@@ -259,7 +259,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void PatchTerrainData()
     {
-      WriteTerrainDataOffset( Terrain, -MaximumDepth );
+      TerrainUtils.WriteTerrainDataOffset( Terrain, -MaximumDepth );
     }
 
     protected override void OnEnable()
@@ -328,7 +328,7 @@ namespace AGXUnity.Model
 
     private void InitializeNative()
     {
-      var nativeHeightData = WriteTerrainDataOffset( Terrain, MaximumDepth );
+      var nativeHeightData = TerrainUtils.WriteTerrainDataOffset( Terrain, MaximumDepth );
 
       transform.position = transform.position + MaximumDepth * Vector3.down;
 
@@ -345,50 +345,6 @@ namespace AGXUnity.Model
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
       GetSimulation().add( Native );
-    }
-
-    /// <summary>
-    /// Writes <paramref name="offset"/> to <paramref name="terrain"/> height data.
-    /// </summary>
-    /// <param name="terrainData">Terrain to modify.</param>
-    /// <param name="offset">Height offset.</param>
-    private static TerrainUtils.NativeHeights WriteTerrainDataOffset( Terrain terrain, float offset )
-    {
-      var terrainData        = terrain.terrainData;
-      var nativeHeightData   = TerrainUtils.FindHeights( terrainData );
-      var tmp                = new float[,] { { 0.0f } };
-      var dataMaxHeight      = terrainData.size.y;
-      var maxClampedHeight   = -1.0f;
-      for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
-        var newHeight = nativeHeightData.Heights[ i ] += offset;
-
-        var vertexX = i % nativeHeightData.ResolutionX;
-        var vertexY = i / nativeHeightData.ResolutionY;
-
-        tmp[ 0, 0 ] = (float)newHeight / terrainData.heightmapScale.y;
-        if ( newHeight > dataMaxHeight )
-          maxClampedHeight = System.Math.Max( maxClampedHeight, (float)newHeight );
-
-        terrainData.SetHeightsDelayLOD( TerrainUtils.TerrainDataResolution( terrainData ) - vertexX - 1,
-                                        TerrainUtils.TerrainDataResolution( terrainData ) - vertexY - 1,
-                                        tmp );
-      }
-
-      if ( maxClampedHeight > 0.0f ) {
-        Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
-                          dataMaxHeight +
-                          " and AGXUnity.Model.DeformableTerrain.MaximumDepth = " +
-                          offset +
-                          ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
-      }
-
-#if UNITY_2019_1_OR_NEWER
-      terrainData.SyncHeightmap();
-#else
-      terrain.ApplyDelayedHeightmapModification();
-#endif
-
-      return nativeHeightData;
     }
 
     private void ResetTerrainDataHeightsAndTransform()
