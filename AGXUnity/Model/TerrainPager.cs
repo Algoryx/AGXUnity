@@ -69,6 +69,30 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeField]
+    private float m_maximumDepth = 20.0f;
+
+    /// <summary>
+    /// Maximum depth, it's not possible to dig deeper than this value.
+    /// This game object will be moved down MaximumDepth and MaximumDepth
+    /// will be added to the heights.
+    /// </summary>
+    [IgnoreSynchronization]
+    [ClampAboveZeroInInspector( true )]
+    public float MaximumDepth
+    {
+      get { return m_maximumDepth; }
+      set
+      {
+        if ( Native != null ) {
+          Debug.LogWarning( "DeformableTerrain MaximumDepth: Value is used during initialization" +
+                            " and cannot be changed when the terrain has been initialized.", this );
+          return;
+        }
+        m_maximumDepth = value;
+      }
+    }
+
     /// <summary>
     /// The size of the underlying AGX Terrain tiles
     /// </summary>
@@ -180,7 +204,32 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
+      // Only printing the errors if something is wrong.
+      LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
+
+      RemoveInvalidShovels();
+
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
+
+      InitializeNative();
+
+      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+
+      // Native terrain may change the number of PPGS iterations to default (25).
+      // Override if we have solver settings set to the simulation.
+      if ( Simulation.Instance.SolverSettings != null )
+        GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
+
+      SetNativeEnable( isActiveAndEnabled );
+
+      return true;
+    }
+
+    private void InitializeNative()
+    {
+      var nativeHeightData = TerrainUtils.WriteTerrainDataOffset( Terrain, MaximumDepth );
+
+      transform.position = transform.position + MaximumDepth * Vector3.down;
 
       if ( TerrainData.size.x != TerrainData.size.z )
         Debug.LogError( "Unity Terrain is not square, this is not supported" );
@@ -194,14 +243,18 @@ namespace AGXUnity.Model
         (uint)TileSize,
         (uint)TileOverlap,
         ElementSize,
-        2,
+        MaximumDepth,
         rootPos.ToHandedVec3(),
         agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ),
-        new agxTerrain.Terrain( 10, 10, 1, 1 ) );
+        new agxTerrain.Terrain( 10, 10, 1, 0.0f ) );
+
 
       // Generate AGX heightmap from the Unity Terrain, add a small size increase to avoid tiles not being loaded due to floating point errors when terrain is perfectly tiled
-      var heights = TerrainUtils.FindHeights( Terrain.terrainData );
-      var hm = new agxCollide.Geometry( new agxCollide.HeightField( (uint)heights.ResolutionX, (uint)heights.ResolutionY, TerrainData.size.x + 0.001, TerrainData.size.z + 0.001, heights.Heights ) );
+      var hm = new agxCollide.Geometry( new agxCollide.HeightField( (uint)nativeHeightData.ResolutionX,
+                                                                    (uint)nativeHeightData.ResolutionY,
+                                                                    TerrainData.size.x + 0.001,
+                                                                    TerrainData.size.z + 0.001,
+                                                                    nativeHeightData.Heights ) );
       hm.setTransform( TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
 
       // Create a data source using the generated heightmap and add it to the pager
@@ -217,11 +270,22 @@ namespace AGXUnity.Model
         Native.add( rb.GetInitialized<RigidBody>().Native, 5, 5 );
 
       GetSimulation().add( Native );
-      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+    }
 
-      Native.setEnable( true );
+    private void SetNativeEnable( bool enable )
+    {
+      if ( Native == null )
+        return;
 
-      return base.Initialize();
+      if ( Native.isEnabled() == enable )
+        return;
+
+      Native.setEnable( enable );
+      foreach (var tile in Native.getActiveTileAttachments() ) {
+        var terr = tile.m_terrainTile;
+        terr.setEnable( enable );
+        terr.getGeometry().setEnable( enable );
+      }
     }
 
     protected override void OnDestroy()
@@ -230,6 +294,7 @@ namespace AGXUnity.Model
         return;
 
       TerrainData.SetHeights( 0, 0, m_initialHeights );
+      transform.position = transform.position + MaximumDepth * Vector3.up;
 
 #if UNITY_EDITOR
       // If the editor is closed during play the modified height
@@ -237,6 +302,24 @@ namespace AGXUnity.Model
       UnityEditor.EditorUtility.SetDirty( TerrainData );
       UnityEditor.AssetDatabase.SaveAssets();
 #endif
+
+      if ( Simulation.HasInstance ) {
+        GetSimulation().remove( Native );
+        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+      }
+      Native = null;
+
+      base.OnDestroy();
+    }
+
+    protected override void OnEnable()
+    {
+      SetNativeEnable( true );
+    }
+
+    protected override void OnDisable()
+    {
+      SetNativeEnable( false );
     }
 
     private void OnPostStepForward()
@@ -246,26 +329,31 @@ namespace AGXUnity.Model
 
     private void UpdateHeights()
     {
-      var terrains = Native.getActiveTerrains();
-      foreach ( var terr in terrains ) {
-        DebugDrawTile( terr );
-        UpdateTerrain( terr );
+      var tiles = Native.getActiveTileAttachments();
+      foreach ( var tile in tiles ) {
+        DebugDrawTile( tile.m_terrainTile );
+        UpdateTerrain( tile );
       }
       TerrainData.SyncHeightmap();
     }
 
-    private void UpdateTerrain( agxTerrain.TerrainRef terrain )
+    private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
     {
+      var terrain = tile.m_terrainTile;
       var modifications = terrain.getModifiedVertices();
 
       if ( modifications.Count == 0 )
         return;
 
+      // We need to fetch the offset of the terrain tile since the TerrainPager
+      // uses the height value of the data source when positioning the tiles.
       var scale = TerrainData.heightmapScale.y;
+      var zOffset = tile.m_zOffset;
       var result = new float[,] { { 0.0f } };
+
       foreach ( var index in modifications ) {
         var ui = AGXIndexToUnity( terrain, index );
-        var h = (float)terrain.getHeight( index );
+        float h = (float)(terrain.getHeight( index ) + zOffset);
 
         result[ 0, 0 ] = h / scale;
 
@@ -305,11 +393,7 @@ namespace AGXUnity.Model
 
     public agx.GranularBodyPtrArray GetParticles()
     {
-      if ( Native == null ) return null;
-      var terrs = Native.getActiveTerrains();
-      if ( terrs.Count == 0 ) return null;
-
-      return terrs[ 0 ].getSoilSimulationInterface().getSoilParticles();
+      return Native?.getSoilSimulationInterface()?.getSoilParticles();
     }
 
     private Terrain m_terrain = null;
