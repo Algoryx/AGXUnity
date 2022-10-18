@@ -188,21 +188,21 @@ namespace AGXUnity.Model
       if (!ValidateParameters())
         Debug.LogWarning("Tile settings used does not fill the Unity terrain");
 
+      Vector3 rootPos = new Vector3(TerrainData.size.x, 0, TerrainData.size.z) + transform.position;
+
       Native = new agxTerrain.TerrainPager(
         (uint)TileSize,
         (uint)TileOverlap,
         ElementSize,
         2,
-        -transform.position.ToHandedVec3(),
+        rootPos.ToHandedVec3(),
         agx.Quat.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()),
         new agxTerrain.Terrain(10, 10, 1, 1));
 
-      // Generate AGX heightmap from the Unity Terrain
+      // Generate AGX heightmap from the Unity Terrain, add a small size increase to avoid tiles not being loaded due to floating point errors when terrain is perfectly tiled
       var heights = TerrainUtils.FindHeights(Terrain.terrainData);
-      var hm = new agxCollide.Geometry(new agxCollide.HeightField((uint)heights.ResolutionX, (uint)heights.ResolutionY, Terrain.terrainData.size.x, Terrain.terrainData.size.z, heights.Heights));
-      hm.setRotation(agx.Quat.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()));
-      Vector3 offset = new(transform.position.x + TerrainData.size.x / 2, transform.position.y, transform.position.z + TerrainData.size.z / 2);
-      hm.setPosition(offset.ToHandedVec3());
+      var hm = new agxCollide.Geometry(new agxCollide.HeightField((uint)heights.ResolutionX, (uint)heights.ResolutionY, TerrainData.size.x+0.001, TerrainData.size.z+0.001, heights.Heights));
+      hm.setTransform(TerrainUtils.CalculateNativeOffset(transform, TerrainData));
 
       // Create a data source using the generated heightmap and add it to the pager
       var tds = new agxTerrain.TerrainRasterizer();
