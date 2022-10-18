@@ -8,9 +8,9 @@ using GUI = AGXUnity.Utils.GUI;
 namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
-  [RequireComponent(typeof( Terrain ))]
+  [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  public class DeformableTerrain : ScriptComponent
+  public class DeformableTerrain : ScriptComponent, Rendering.ITerrainParticleProvider
   {
     /// <summary>
     /// Native deformable terrain instance - accessible after this
@@ -483,6 +483,12 @@ namespace AGXUnity.Model
       GUILayout.Label( Vec3Content( "Deformer force:   ", 1.0E-3 * deformerForce ), m_textLabelStyle );
       GUILayout.Space( 4 );
       GUILayout.Label( Vec3Content( "Contact force:    ", 1.0E-3 * contactForce ), m_textLabelStyle );
+    }
+
+    public agx.GranularBodyPtrArray GetParticles()
+    {
+      if ( Native == null ) return null;
+      return Native.getSoilSimulationInterface().getSoilParticles();
     }
 
     private Terrain m_terrain = null;

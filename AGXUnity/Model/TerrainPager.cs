@@ -7,7 +7,7 @@ namespace AGXUnity.Model
   [AddComponentMenu("AGXUnity/Model/Terrain Pager")]
   [RequireComponent(typeof(Terrain))]
   [DisallowMultipleComponent]
-  public class TerrainPager : ScriptComponent
+  public class TerrainPager : ScriptComponent, Rendering.ITerrainParticleProvider
   {
     /// <summary>
     /// Native TerrainPager instance - accessible after this
@@ -303,6 +303,15 @@ namespace AGXUnity.Model
       Debug.DrawLine(v1, v2);
       Debug.DrawLine(v2, v3);
       Debug.DrawLine(v3, v0);
+    }
+
+    public agx.GranularBodyPtrArray GetParticles()
+    {
+      if (Native == null) return null;
+      var terrs = Native.getActiveTerrains();
+      if (terrs.Count == 0) return null;
+
+      return terrs[0].getSoilSimulationInterface().getSoilParticles();
     }
 
     private Terrain m_terrain = null;
