@@ -1,9 +1,17 @@
 using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  public struct PagingBody<T>
+  {
+    public T body;
+    public float requiredRadius;
+    public float preloadRadius;
+  }
+
   [AddComponentMenu( "AGXUnity/Model/Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
@@ -16,22 +24,22 @@ namespace AGXUnity.Model
     public agxTerrain.TerrainPager Native { get; private set; } = null;
 
     [SerializeField]
-    private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
+    private List<PagingBody<DeformableTerrainShovel>> m_shovels = new();
 
     /// <summary>
     /// Shovels associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
+    public PagingBody<DeformableTerrainShovel>[] Shovels { get { return m_shovels.ToArray(); } }
 
     [SerializeField]
-    private List<RigidBody> m_rigidbodies = new List<RigidBody>();
+    private List<PagingBody<RigidBody>> m_rigidbodies = new();
 
     /// <summary>
     /// Rigidbodies associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public RigidBody[] RigidBodies { get { return m_rigidbodies.ToArray(); } }
+    public PagingBody<RigidBody>[] RigidBodies { get { return m_rigidbodies.ToArray(); } }
 
     /// <summary>
     /// Unity Terrain component.
@@ -116,10 +124,15 @@ namespace AGXUnity.Model
     /// <returns>True if added, false if null or already added</returns>
     public bool Add( DeformableTerrainShovel shovel, float requiredRadius = 10, float preloadRadius = 10 )
     {
-      if ( shovel == null || m_shovels.Contains( shovel ) )
+      PagingBody<DeformableTerrainShovel> body;
+      body.body = shovel;
+      body.requiredRadius = requiredRadius;
+      body.preloadRadius = preloadRadius;
+
+      if ( shovel == null || m_shovels.Contains( body ) )
         return false;
 
-      m_shovels.Add( shovel );
+      m_shovels.Add( body );
 
       // Initialize shovel if we're initialized.
       if ( Native != null )
@@ -135,13 +148,15 @@ namespace AGXUnity.Model
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
     public bool Remove( DeformableTerrainShovel shovel )
     {
-      if ( shovel == null || !m_shovels.Contains( shovel ) )
+      var index = m_shovels.FindIndex( body => body.body == shovel );
+      if ( shovel == null || index == -1 )
         return false;
 
       if ( Native != null )
         Native.remove( shovel.Native );
 
-      return m_shovels.Remove( shovel );
+      m_shovels.RemoveAt( index );
+      return true;
     }
 
     /// <summary>
@@ -153,10 +168,15 @@ namespace AGXUnity.Model
     /// <returns>True if added, false if null or already added</returns>
     public bool Add( RigidBody rigidbody, float requiredRadius = 10, float preloadRadius = 10 )
     {
-      if ( rigidbody == null || m_rigidbodies.Contains( rigidbody ) )
+      PagingBody<RigidBody> body;
+      body.body = rigidbody;
+      body.requiredRadius = requiredRadius;
+      body.preloadRadius = preloadRadius;
+
+      if ( rigidbody == null || m_rigidbodies.Contains( body ) )
         return false;
 
-      m_rigidbodies.Add( rigidbody );
+      m_rigidbodies.Add( body );
 
       // Initialize shovel if we're initialized.
       if ( Native != null )
@@ -172,22 +192,48 @@ namespace AGXUnity.Model
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
     public bool Remove( RigidBody rigidbody )
     {
-      if ( rigidbody == null || !m_rigidbodies.Contains( rigidbody ) )
+      var index = m_rigidbodies.FindIndex( body => body.body == rigidbody );
+      if ( rigidbody == null || index == -1 )
         return false;
 
       if ( Native != null )
         Native.remove( rigidbody.Native );
 
-      return m_rigidbodies.Remove( rigidbody );
+      m_rigidbodies.RemoveAt( index );
+      return true;
+    }
+
+    public Tuple<float, float> GetTileLoadRadius( RigidBody body )
+    {
+      return Tuple.Create( 5.0f, 5.0f );
+      var radii = Native.getTileLoadRadius( body.Native );
+      return Tuple.Create( (float)radii.first, (float)radii.second );
+    }
+
+    public Tuple<float, float> GetTileLoadRadius( DeformableTerrainShovel body )
+    {
+      return GetTileLoadRadius( body.RigidBody );
+    }
+
+    public void SetTileLoadRadius( RigidBody body, float requiredRadius, float preloadRadius )
+    {
+      return;
+      Native.setTileLoadRadiuses( body.Native, requiredRadius, preloadRadius );
+    }
+
+    public void SetTileLoadRadius( DeformableTerrainShovel body, float requiredRadius, float preloadRadius )
+    {
+      SetTileLoadRadius( body.RigidBody, requiredRadius, preloadRadius );
     }
 
     /// <summary>
-    /// Verifies so that all added shovels still exists. Shovels that
+    /// Verifies so that all added bodies still exists. Bodies that
     /// has been deleted are removed.
     /// </summary>
-    public void RemoveInvalidShovels()
+    public void RemoveInvalidBodies()
     {
-      m_shovels.RemoveAll( shovel => shovel == null );
+      m_shovels.RemoveAll( shovel => shovel.body == null );
+      m_rigidbodies.RemoveAll( rb => rb.body == null );
     }
 
     /// <summary>
@@ -207,7 +253,7 @@ namespace AGXUnity.Model
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
-      RemoveInvalidShovels();
+      RemoveInvalidBodies();
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
 
@@ -264,10 +310,10 @@ namespace AGXUnity.Model
 
       // Add Rigidbodies and shovels to pager
       // TODO: Track radii and use the tracked values here
-      foreach ( DeformableTerrainShovel shovel in m_shovels )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native, 5, 5 );
-      foreach ( RigidBody rb in m_rigidbodies )
-        Native.add( rb.GetInitialized<RigidBody>().Native, 5, 5 );
+      foreach ( var shovel in m_shovels )
+        Native.add( shovel.body.GetInitialized<DeformableTerrainShovel>().Native, shovel.requiredRadius, shovel.preloadRadius );
+      foreach ( var rb in m_rigidbodies )
+        Native.add( rb.body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
       GetSimulation().add( Native );
     }
@@ -281,7 +327,7 @@ namespace AGXUnity.Model
         return;
 
       Native.setEnable( enable );
-      foreach (var tile in Native.getActiveTileAttachments() ) {
+      foreach ( var tile in Native.getActiveTileAttachments() ) {
         var terr = tile.m_terrainTile;
         terr.setEnable( enable );
         terr.getGeometry().setEnable( enable );

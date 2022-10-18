@@ -20,7 +20,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      TerrainPager.RemoveInvalidShovels();
+      TerrainPager.RemoveInvalidBodies();
     }
 
     public override void OnPostTargetMembersGUI()
@@ -56,8 +56,19 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.ToolListGUI( this,
                                 TerrainPager.Shovels,
                                 "Shovels",
-                                shovel => TerrainPager.Add( shovel ),
-                                shovel => TerrainPager.Remove( shovel ) );
+                                shovel => TerrainPager.Add( shovel.body, shovel.requiredRadius, shovel.preloadRadius ),
+                                shovel => TerrainPager.Remove( shovel.body ),
+                                null,
+                                (shovel,_) => RadiiEditor(shovel)
+                                );
+    }
+
+    private void RadiiEditor(PagingBody<DeformableTerrainShovel> shovel)
+    {
+      float requiredRadius = EditorGUILayout.FloatField( "Required radius", shovel.requiredRadius);
+      float preloadRadius = EditorGUILayout.FloatField( "Preload radius", shovel.preloadRadius);
+
+      TerrainPager.SetTileLoadRadius( shovel.body, requiredRadius, preloadRadius );
     }
 
     private Tuple<int, int> FindSuitableParameters( int heightmapSize, int overlap, int size )
