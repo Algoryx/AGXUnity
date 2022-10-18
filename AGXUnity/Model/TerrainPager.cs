@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
-  [AddComponentMenu("AGXUnity/Model/Terrain Pager")]
-  [RequireComponent(typeof(Terrain))]
+  [AddComponentMenu( "AGXUnity/Model/Terrain Pager" )]
+  [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
   public class TerrainPager : ScriptComponent, Rendering.ITerrainParticleProvider
   {
@@ -56,7 +56,7 @@ namespace AGXUnity.Model
     /// Unity Terrain heightmap resolution.
     /// </summary>
     [HideInInspector]
-    public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution(TerrainData); } }
+    public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution( TerrainData ); } }
 
     /// <summary>
     /// Size in units which each heightmap texel represent
@@ -65,7 +65,7 @@ namespace AGXUnity.Model
     {
       get
       {
-        return TerrainData.size.x / (TerrainDataResolution - 1);
+        return TerrainData.size.x / ( TerrainDataResolution - 1 );
       }
     }
 
@@ -90,16 +90,16 @@ namespace AGXUnity.Model
     /// <param name="requiredRadius">The radius around the shovel instance where the terrain tiles are required to be loaded.</param>
     /// <param name="preloadRadius">The radius around the shovel instance for which to preload terrain tiles</param>
     /// <returns>True if added, false if null or already added</returns>
-    public bool Add(DeformableTerrainShovel shovel, float requiredRadius = 10, float preloadRadius = 10)
+    public bool Add( DeformableTerrainShovel shovel, float requiredRadius = 10, float preloadRadius = 10 )
     {
-      if (shovel == null || m_shovels.Contains(shovel))
+      if ( shovel == null || m_shovels.Contains( shovel ) )
         return false;
 
-      m_shovels.Add(shovel);
+      m_shovels.Add( shovel );
 
       // Initialize shovel if we're initialized.
-      if (Native != null)
-        Native.add(shovel.GetInitialized<DeformableTerrainShovel>().Native, requiredRadius, preloadRadius);
+      if ( Native != null )
+        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native, requiredRadius, preloadRadius );
 
       return true;
     }
@@ -109,15 +109,15 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="shovel">Shovel instance to remove.</param>
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public bool Remove(DeformableTerrainShovel shovel)
+    public bool Remove( DeformableTerrainShovel shovel )
     {
-      if (shovel == null || !m_shovels.Contains(shovel))
+      if ( shovel == null || !m_shovels.Contains( shovel ) )
         return false;
 
-      if (Native != null)
-        Native.remove(shovel.Native);
+      if ( Native != null )
+        Native.remove( shovel.Native );
 
-      return m_shovels.Remove(shovel);
+      return m_shovels.Remove( shovel );
     }
 
     /// <summary>
@@ -127,16 +127,16 @@ namespace AGXUnity.Model
     /// <param name="requiredRadius">The radius around the rigidbody instance where the terrain tiles are required to be loaded.</param>
     /// <param name="preloadRadius">The radius around the rigidbody instance for which to preload terrain tiles</param>
     /// <returns>True if added, false if null or already added</returns>
-    public bool Add(RigidBody rigidbody, float requiredRadius = 10, float preloadRadius = 10)
+    public bool Add( RigidBody rigidbody, float requiredRadius = 10, float preloadRadius = 10 )
     {
-      if (rigidbody == null || m_rigidbodies.Contains(rigidbody))
+      if ( rigidbody == null || m_rigidbodies.Contains( rigidbody ) )
         return false;
 
-      m_rigidbodies.Add(rigidbody);
+      m_rigidbodies.Add( rigidbody );
 
       // Initialize shovel if we're initialized.
-      if (Native != null)
-        Native.add(rigidbody.GetInitialized<RigidBody>().Native, requiredRadius, preloadRadius);
+      if ( Native != null )
+        Native.add( rigidbody.GetInitialized<RigidBody>().Native, requiredRadius, preloadRadius );
 
       return true;
     }
@@ -146,15 +146,15 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="rigidbody">Rigidbody instance to remove.</param>
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public bool Remove(RigidBody rigidbody)
+    public bool Remove( RigidBody rigidbody )
     {
-      if (rigidbody == null || !m_rigidbodies.Contains(rigidbody))
+      if ( rigidbody == null || !m_rigidbodies.Contains( rigidbody ) )
         return false;
 
-      if (Native != null)
-        Native.remove(rigidbody.Native);
+      if ( Native != null )
+        Native.remove( rigidbody.Native );
 
-      return m_rigidbodies.Remove(rigidbody);
+      return m_rigidbodies.Remove( rigidbody );
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void RemoveInvalidShovels()
     {
-      m_shovels.RemoveAll(shovel => shovel == null);
+      m_shovels.RemoveAll( shovel => shovel == null );
     }
 
     /// <summary>
@@ -174,21 +174,21 @@ namespace AGXUnity.Model
     /// <returns>True if the parameters tile the Unity Terrain</returns>
     public bool ValidateParameters()
     {
-      float r = (float)(TerrainDataResolution - TileOverlap - 1) / (TileSize - TileOverlap - 1);
-      return Mathf.Approximately(r, Mathf.Round(r));
+      float r = (float)( TerrainDataResolution - TileOverlap - 1 ) / ( TileSize - TileOverlap - 1 );
+      return Mathf.Approximately( r, Mathf.Round( r ) );
     }
 
     protected override bool Initialize()
     {
-      m_initialHeights = TerrainData.GetHeights(0, 0, TerrainDataResolution, TerrainDataResolution);
+      m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
 
-      if (TerrainData.size.x != TerrainData.size.z)
-        Debug.LogError("Unity Terrain is not square, this is not supported");
+      if ( TerrainData.size.x != TerrainData.size.z )
+        Debug.LogError( "Unity Terrain is not square, this is not supported" );
 
-      if (!ValidateParameters())
-        Debug.LogWarning("Tile settings used does not fill the Unity terrain");
+      if ( !ValidateParameters() )
+        Debug.LogWarning( "Tile settings used does not fill the Unity terrain" );
 
-      Vector3 rootPos = new Vector3(TerrainData.size.x, 0, TerrainData.size.z) + transform.position;
+      Vector3 rootPos = new Vector3( TerrainData.size.x, 0, TerrainData.size.z ) + transform.position;
 
       Native = new agxTerrain.TerrainPager(
         (uint)TileSize,
@@ -196,45 +196,45 @@ namespace AGXUnity.Model
         ElementSize,
         2,
         rootPos.ToHandedVec3(),
-        agx.Quat.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()),
-        new agxTerrain.Terrain(10, 10, 1, 1));
+        agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ),
+        new agxTerrain.Terrain( 10, 10, 1, 1 ) );
 
       // Generate AGX heightmap from the Unity Terrain, add a small size increase to avoid tiles not being loaded due to floating point errors when terrain is perfectly tiled
-      var heights = TerrainUtils.FindHeights(Terrain.terrainData);
-      var hm = new agxCollide.Geometry(new agxCollide.HeightField((uint)heights.ResolutionX, (uint)heights.ResolutionY, TerrainData.size.x+0.001, TerrainData.size.z+0.001, heights.Heights));
-      hm.setTransform(TerrainUtils.CalculateNativeOffset(transform, TerrainData));
+      var heights = TerrainUtils.FindHeights( Terrain.terrainData );
+      var hm = new agxCollide.Geometry( new agxCollide.HeightField( (uint)heights.ResolutionX, (uint)heights.ResolutionY, TerrainData.size.x + 0.001, TerrainData.size.z + 0.001, heights.Heights ) );
+      hm.setTransform( TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
 
       // Create a data source using the generated heightmap and add it to the pager
       var tds = new agxTerrain.TerrainRasterizer();
-      tds.addSourceGeometry(hm);
-      Native.setTerrainDataSource(tds);
+      tds.addSourceGeometry( hm );
+      Native.setTerrainDataSource( tds );
 
       // Add Rigidbodies and shovels to pager
       // TODO: Track radii and use the tracked values here
-      foreach (DeformableTerrainShovel shovel in m_shovels)
-        Native.add(shovel.GetInitialized<DeformableTerrainShovel>().Native, 5, 5);
-      foreach (RigidBody rb in m_rigidbodies)
-        Native.add(rb.GetInitialized<RigidBody>().Native, 5, 5);
+      foreach ( DeformableTerrainShovel shovel in m_shovels )
+        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native, 5, 5 );
+      foreach ( RigidBody rb in m_rigidbodies )
+        Native.add( rb.GetInitialized<RigidBody>().Native, 5, 5 );
 
-      GetSimulation().add(Native);
+      GetSimulation().add( Native );
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
-      Native.setEnable(true);
+      Native.setEnable( true );
 
       return base.Initialize();
     }
 
     protected override void OnDestroy()
     {
-      if (m_initialHeights == null)
+      if ( m_initialHeights == null )
         return;
 
-      TerrainData.SetHeights(0, 0, m_initialHeights);
+      TerrainData.SetHeights( 0, 0, m_initialHeights );
 
 #if UNITY_EDITOR
       // If the editor is closed during play the modified height
       // data isn't saved, this resolves corrupt heights in such case.
-      UnityEditor.EditorUtility.SetDirty(TerrainData);
+      UnityEditor.EditorUtility.SetDirty( TerrainData );
       UnityEditor.AssetDatabase.SaveAssets();
 #endif
     }
@@ -247,40 +247,38 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var terrains = Native.getActiveTerrains();
-      foreach (var terr in terrains)
-      {
-        DebugDrawTile(terr);
-        UpdateTerrain(terr);
+      foreach ( var terr in terrains ) {
+        DebugDrawTile( terr );
+        UpdateTerrain( terr );
       }
       TerrainData.SyncHeightmap();
     }
 
-    private void UpdateTerrain(agxTerrain.TerrainRef terrain)
+    private void UpdateTerrain( agxTerrain.TerrainRef terrain )
     {
       var modifications = terrain.getModifiedVertices();
 
-      if (modifications.Count == 0)
+      if ( modifications.Count == 0 )
         return;
 
       var scale = TerrainData.heightmapScale.y;
       var result = new float[,] { { 0.0f } };
-      foreach (var index in modifications)
-      {
-        var ui = AGXIndexToUnity(terrain, index);
-        var h = (float)terrain.getHeight(index);
+      foreach ( var index in modifications ) {
+        var ui = AGXIndexToUnity( terrain, index );
+        var h = (float)terrain.getHeight( index );
 
-        result[0, 0] = h / scale;
+        result[ 0, 0 ] = h / scale;
 
-        TerrainData.SetHeightsDelayLOD(ui.x, ui.y, result);
+        TerrainData.SetHeightsDelayLOD( ui.x, ui.y, result );
       }
     }
 
-    private Vector2Int AGXIndexToUnity(agxTerrain.TerrainRef terrain, agx.Vec2i index)
+    private Vector2Int AGXIndexToUnity( agxTerrain.TerrainRef terrain, agx.Vec2i index )
     {
       var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
       var elementsPerTile = TileSize - TileOverlap - 1;
       float tileOffset = elementsPerTile * ElementSize;
-      Vector2Int tileIndex = new(Mathf.FloorToInt(relTilePos.x / tileOffset), Mathf.FloorToInt(relTilePos.z / tileOffset));
+      Vector2Int tileIndex = new( Mathf.FloorToInt( relTilePos.x / tileOffset ), Mathf.FloorToInt( relTilePos.z / tileOffset ) );
       tileIndex *= elementsPerTile;
       tileIndex.x += TileSize - (int)index.x - 1;
       tileIndex.y += TileSize - (int)index.y - 1;
@@ -289,29 +287,29 @@ namespace AGXUnity.Model
 
 
     // Remove this:
-    private void DebugDrawTile(agxTerrain.TerrainRef terr)
+    private void DebugDrawTile( agxTerrain.TerrainRef terr )
     {
       Vector3 basePos = terr.getPosition().ToHandedVector3();
       var size = terr.getSize() / 2;
 
-      Vector3 v0 = basePos + new Vector3((float)size.x, 0.1f, (float)size.y);
-      Vector3 v1 = basePos + new Vector3((float)size.x, 0.1f, (float)-size.y);
-      Vector3 v2 = basePos + new Vector3((float)-size.x, 0.1f, (float)-size.y);
-      Vector3 v3 = basePos + new Vector3((float)-size.x, 0.1f, (float)size.y);
+      Vector3 v0 = basePos + new Vector3( (float)size.x, 0.1f, (float)size.y );
+      Vector3 v1 = basePos + new Vector3( (float)size.x, 0.1f, (float)-size.y );
+      Vector3 v2 = basePos + new Vector3( (float)-size.x, 0.1f, (float)-size.y );
+      Vector3 v3 = basePos + new Vector3( (float)-size.x, 0.1f, (float)size.y );
 
-      Debug.DrawLine(v0, v1);
-      Debug.DrawLine(v1, v2);
-      Debug.DrawLine(v2, v3);
-      Debug.DrawLine(v3, v0);
+      Debug.DrawLine( v0, v1 );
+      Debug.DrawLine( v1, v2 );
+      Debug.DrawLine( v2, v3 );
+      Debug.DrawLine( v3, v0 );
     }
 
     public agx.GranularBodyPtrArray GetParticles()
     {
-      if (Native == null) return null;
+      if ( Native == null ) return null;
       var terrs = Native.getActiveTerrains();
-      if (terrs.Count == 0) return null;
+      if ( terrs.Count == 0 ) return null;
 
-      return terrs[0].getSoilSimulationInterface().getSoilParticles();
+      return terrs[ 0 ].getSoilSimulationInterface().getSoilParticles();
     }
 
     private Terrain m_terrain = null;
