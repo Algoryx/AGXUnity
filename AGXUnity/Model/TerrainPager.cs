@@ -275,30 +275,16 @@ namespace AGXUnity.Model
       }
     }
 
-    private Vector3 IndexToWorldpos(agxTerrain.TerrainRef terrain, agx.Vec2i index)
-    {
-      var pos = terrain.getPosition().ToHandedVector3();
-      var elemSize = terrain.getElementSize();
-      var indexWorldPos = new agx.Vec3(
-        pos.x + (terrain.getResolutionX() / 2 - index.x) * elemSize,
-        pos.y,
-        pos.z + (terrain.getResolutionY() / 2 - index.y) * elemSize);
-      return indexWorldPos.ToVector3();
-    }
-
-    private Vector2Int WorldPosToUnityIndex(Vector3 pos)
-    {
-      Vector3 relPos = pos - transform.position;
-      Vector3 size = Terrain.terrainData.size;
-      Vector3 normRelPos = new Vector3(relPos.x / size.x, relPos.y / size.y, relPos.z / size.z);
-      var utidx = (normRelPos * (TerrainDataResolution - 1));
-      return new(Mathf.RoundToInt(utidx.x), Mathf.RoundToInt(utidx.z));
-    }
-
     private Vector2Int AGXIndexToUnity(agxTerrain.TerrainRef terrain, agx.Vec2i index)
     {
-      Vector3 iwp = IndexToWorldpos(terrain, index);
-      return WorldPosToUnityIndex(iwp);
+      var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
+      var elementsPerTile = TileSize - TileOverlap - 1;
+      float tileOffset = elementsPerTile * ElementSize;
+      Vector2Int tileIndex = new(Mathf.FloorToInt(relTilePos.x / tileOffset), Mathf.FloorToInt(relTilePos.z / tileOffset));
+      tileIndex *= elementsPerTile;
+      tileIndex.x += TileSize - (int)index.x - 1;
+      tileIndex.y += TileSize - (int)index.y - 1;
+      return tileIndex;
     }
 
 
