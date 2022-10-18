@@ -14,6 +14,7 @@ namespace AGXUnity.Rendering
   }
 
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
+  [RequireComponent( typeof( ITerrainParticleProvider ) )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
