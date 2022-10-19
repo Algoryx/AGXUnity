@@ -121,6 +121,10 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.EnabledBlock( !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
         if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
           using ( InspectorGUI.IndentScope.Single ) {
+            if ( GetTargets<AGXUnity.Collide.Mesh>().Any( mesh => PrefabUtils.IsPrefabInstance( mesh ) ) )
+              InspectorGUI.WarningLabel( "WARNING!\n\nEditing mesh Options on a prefab <b>instance</b> may cause the Editor to hang\n" +
+                                         "due to extensive prefab Overrides.\n\nConsider making the changes in the <b>Prefab Stage</b> instead." );
+
             InspectorEditor.DrawMembersGUI( Targets, t => ( t as AGXUnity.Collide.Mesh ).Options );
             var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
                                                                          "Apply",
