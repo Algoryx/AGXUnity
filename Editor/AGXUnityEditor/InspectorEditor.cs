@@ -200,8 +200,15 @@ namespace AGXUnityEditor
       m_numTargetGameObjectsTargetComponents = m_targetGameObjects.Sum( go => go.GetComponents( m_targetType ).Length );
 
       // Entire class/component marked as hidden - enable "hide in inspector".
-      if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
-        this.target.hideFlags |= HideFlags.HideInInspector;
+      // NOTE: This will break Inspector rendering in 2022.1 and later because changing
+      //       hideFlags here results in a destroy of all editors and the editors that
+      //       should be visible are enabled again but never rendered by Unity.
+      // SOLUTION: Add hideFlags |= HideFlags.HideInInspector in Reset method of the class
+      //           that shouldn't be rendered in the Inspector.
+      if ( this.targets.Any( t => !t.hideFlags.HasFlag( HideFlags.HideInInspector ) ) && m_targetType.GetCustomAttribute<HideInInspector>( false ) != null ) {
+        foreach ( var t in this.targets )
+          t.hideFlags |= HideFlags.HideInInspector;
+      }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
     }

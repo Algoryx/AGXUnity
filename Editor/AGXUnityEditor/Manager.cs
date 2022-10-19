@@ -627,9 +627,15 @@ namespace AGXUnityEditor
     private static void OnHierarchyWindowChanged()
     {
       var scene = EditorSceneManager.GetActiveScene();
+      var currNumScenesLoaded =
+#if UNITY_2022_2_OR_NEWER
+                                UnityEngine.SceneManagement.SceneManager.loadedSceneCount;
+#else
+                                EditorSceneManager.loadedSceneCount;
+#endif
       var isSceneLoaded = scene.name != m_currentSceneName ||
                           // Drag drop of scene into hierarchy.
-                          EditorSceneManager.loadedSceneCount > m_numScenesLoaded;
+                          currNumScenesLoaded > m_numScenesLoaded;
 
       if ( isSceneLoaded ) {
         EditorData.Instance.GC();
@@ -639,7 +645,7 @@ namespace AGXUnityEditor
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
 
-      m_numScenesLoaded = EditorSceneManager.loadedSceneCount;
+      m_numScenesLoaded = currNumScenesLoaded;
     }
 
     /// <summary>
