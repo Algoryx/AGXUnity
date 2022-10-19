@@ -388,6 +388,14 @@ namespace AGXUnityEditor.IO
       return node.GameObject.AddComponent<T>();
     }
 
+    private static void NotifyMeshIndexFormat( GameObject context, Mesh[] meshes )
+    {
+      foreach ( var mesh in meshes ) {
+        if ( mesh.indexFormat == UnityEngine.Rendering.IndexFormat.UInt32 )
+          Debug.Log( $"INFO: Index format set to UInt32 for UnityEngine.Mesh in {context.name} containing {mesh.vertexCount} vertices.", context );
+      }
+    }
+
     private bool CreateShape( Node node )
     {
       var nativeGeometry  = m_tree.GetGeometry( node.Parent.Uuid );
@@ -444,8 +452,10 @@ namespace AGXUnityEditor.IO
         var sourceObjects = mesh.SourceObjects;
         var meshes        = MeshSplitter.Split( collisionData.getVertices(),
                                                 collisionData.getIndices(),
-                                                v => meshToLocal.MultiplyPoint3x4( nativeToWorld.preMult( v ).ToHandedVector3() ),
-                                                UInt16.MaxValue ).Meshes;
+                                                v => meshToLocal.MultiplyPoint3x4( nativeToWorld.preMult( v ).ToHandedVector3() ) ).Meshes;
+
+        if ( sourceObjects.Length == 0 )
+          NotifyMeshIndexFormat( node.GameObject, meshes );
 
         // Clearing previous sources.
         mesh.SetSourceObject( null );
@@ -586,6 +596,8 @@ namespace AGXUnityEditor.IO
         }
       }
       else {
+        var isInitialImport = shapeVisual == null;
+
         if ( shapeVisual != null ) {
           UnityEngine.Object.DestroyImmediate( shapeVisual.gameObject, true );
           EditorUtility.SetDirty( FileInfo.PrefabInstance );
@@ -608,7 +620,9 @@ namespace AGXUnityEditor.IO
                                                             } );
         }
 
-        ShapeVisual.CreateRenderData( shape, meshes, material );
+        var go = ShapeVisual.CreateRenderData( shape, meshes, material );
+        if ( isInitialImport )
+          NotifyMeshIndexFormat( go, meshes );
       }
 
       return true;
@@ -999,8 +1013,21 @@ namespace AGXUnityEditor.IO
                                             agxCollide.RenderMaterial nativeMaterial )
     {
       // Material read from a model (re-import) or is newly created, map
-      // instance to the native material hash.
-      if ( material != null && GetMaterial( nativeMaterial ) == null )
+      // instance to the native material hash, if:
+      var addMaterialToLibrary = true &&
+                                 // We have an UnityEngine.Material instance.
+                                 // Newly created or from a previous import.
+                                 material != null &&
+                                 // We don't already have a cached UnityEngine.Material
+                                 // in the library matching the data in the native material.
+                                 GetMaterial( nativeMaterial ) == null &&
+                                 // We know the native material hash doesn't match any
+                                 // UnityEngine.Material in our library, but we have an
+                                 // instance of one. If our library contains this instance,
+                                 // we have to create a new one, i.e., it's now a different
+                                 // material during re-import.
+                                 !m_materialLibrary.ContainsValue( material );
+      if ( addMaterialToLibrary )
         m_materialLibrary.Add( nativeMaterial.getHash(), material );
       return GetMaterial( nativeMaterial );
     }
