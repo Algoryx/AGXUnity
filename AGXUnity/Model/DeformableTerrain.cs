@@ -7,10 +7,19 @@ using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
 {
+  public interface ITerrain
+  {
+    abstract agx.GranularBodyPtrArray GetParticles();
+
+    abstract agxTerrain.TerrainProperties GetProperties();
+
+    void OnPropertiesUpdated() { }
+  }
+
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  public class DeformableTerrain : ScriptComponent, Rendering.ITerrainParticleProvider
+  public class DeformableTerrain : ScriptComponent, ITerrain
   {
     /// <summary>
     /// Native deformable terrain instance - accessible after this
@@ -445,6 +454,11 @@ namespace AGXUnity.Model
     {
       if ( Native == null ) return null;
       return Native.getSoilSimulationInterface().getSoilParticles();
+    }
+
+    public agxTerrain.TerrainProperties GetProperties()
+    {
+      return Native?.getProperties();
     }
 
     private Terrain m_terrain = null;

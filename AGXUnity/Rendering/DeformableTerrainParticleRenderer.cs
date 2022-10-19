@@ -5,16 +5,12 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using AGXUnity.Utils;
+using AGXUnity.Model;
 
 namespace AGXUnity.Rendering
 {
-  public interface ITerrainParticleProvider
-  {
-    abstract agx.GranularBodyPtrArray GetParticles();
-  }
-
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
-  [RequireComponent( typeof( ITerrainParticleProvider ) )]
+  [RequireComponent( typeof( ITerrain ) )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
@@ -29,7 +25,7 @@ namespace AGXUnity.Rendering
       Update
     }
 
-    public ITerrainParticleProvider ParticleProvider { get; private set; } = null;
+    public ITerrain ParticleProvider { get; private set; } = null;
 
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
@@ -84,7 +80,7 @@ namespace AGXUnity.Rendering
 
     protected override bool Initialize()
     {
-      ParticleProvider = GetComponent<ITerrainParticleProvider>();
+      ParticleProvider = GetComponent<ITerrain>();
       if ( ParticleProvider == null)
       {
         Debug.LogError("DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!");

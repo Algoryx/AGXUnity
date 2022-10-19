@@ -24,7 +24,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  public class TerrainPager : ScriptComponent, Rendering.ITerrainParticleProvider
+  public class TerrainPager : ScriptComponent, ITerrain
   {
     /// <summary>
     /// Native TerrainPager instance - accessible after this
@@ -101,6 +101,80 @@ namespace AGXUnity.Model
       get
       {
         return TerrainData.size.x / (TerrainDataResolution - 1);
+      }
+    }
+
+    [SerializeField]
+    private ShapeMaterial m_material = null;
+
+    /// <summary>
+    /// Shape material associated to this terrain.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public ShapeMaterial Material
+    {
+      get { return m_material; }
+      set
+      {
+        m_material = value;
+        if (Native != null) {
+          if (m_material != null && m_material.Native == null)
+            m_material.GetInitialized<ShapeMaterial>();
+          if (m_material != null)
+            Native.getTemplateTerrain().setMaterial( m_material.Native );
+
+          // TODO: When m_material is null here it means "use default" but
+          //       it's currently not possible to understand which parameters
+          //       that has been set in e.g., Terrain::loadLibraryMaterial.
+        }
+      }
+    }
+
+    [SerializeField]
+    private DeformableTerrainMaterial m_terrainMaterial = null;
+
+    /// <summary>
+    /// Terrain material associated to this terrain.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public DeformableTerrainMaterial TerrainMaterial
+    {
+      get { return m_terrainMaterial; }
+      set
+      {
+        m_terrainMaterial = value;
+
+        if (Native != null) {
+          if (m_terrainMaterial != null)
+            Native.getTemplateTerrain().setTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
+          else
+            Native.getTemplateTerrain().setTerrainMaterial( DeformableTerrainMaterial.CreateNative( "dirt_1" ) );
+          Native.applyChangesToTemplateTerrain();
+        }
+      }
+    }
+
+    [SerializeField]
+    private DeformableTerrainProperties m_properties = null;
+
+    /// <summary>
+    /// Terrain properties associated to this terrain.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public DeformableTerrainProperties Properties
+    {
+      get { return m_properties; }
+      set
+      {
+        if (Native != null && m_properties != null)
+          m_properties.Unregister( this );
+
+        m_properties = value;
+
+        if (Native != null && m_properties != null)
+          m_properties.Register( this );
+
+        Native.applyChangesToTemplateTerrain();
       }
     }
 
@@ -505,6 +579,17 @@ namespace AGXUnity.Model
     public agx.GranularBodyPtrArray GetParticles()
     {
       return Native?.getSoilSimulationInterface()?.getSoilParticles();
+    }
+
+    public agxTerrain.TerrainProperties GetProperties()
+    {
+      return Native?.getTemplateTerrain().getProperties();
+    }
+
+    public void OnPropertiesUpdated()
+    {
+      if( Native != null )
+        Native.applyChangesToTemplateTerrain();
     }
 
     private Terrain m_terrain = null;
