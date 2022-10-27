@@ -395,6 +395,8 @@ namespace AGXUnity.Model
 
       RemoveInvalidBodies();
 
+      // Create a new adapter using the terrain attached to this gameobject as the root
+      // This attaches TerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
       m_terrainDataSource = new UnityTerrainAdapter( Terrain, MaximumDepth );
 
       InitializeNative();
@@ -419,7 +421,11 @@ namespace AGXUnity.Model
       if ( !ValidateParameters() )
         Debug.LogWarning( "Tile settings used does not fill the Unity terrain" );
 
-      Vector3 rootPos =  GetComponent<TerrainConnector>().GetOffsetPosition();
+      // Align the paged terrain with the AGX terrain tile
+      Vector3 rootPos =  GetComponent<TerrainConnector>().GetOffsetPosition(); // Place tiles starting at Unity terrain position
+      agx.Quat rootRot =
+          agx.Quat.rotate( Mathf.PI, agx.Vec3.Z_AXIS() )                       // Align AGX terrain X and Y axes to Unity terrain X and Y axes
+        * agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );             // Rotate terrain so that Y is up as in Unity
 
       Native = new agxTerrain.TerrainPager(
         (uint)TileSize,
@@ -427,10 +433,10 @@ namespace AGXUnity.Model
         ElementSize,
         MaximumDepth,
         rootPos.ToHandedVec3(),
-        agx.Quat.rotate( Mathf.PI, agx.Vec3.Z_AXIS() )
-        * agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ),
+        rootRot,
         new agxTerrain.Terrain( 10, 10, 1, 0.0f ) );
 
+      // Set the adapter as the data source for the TerrainPager
       Native.setTerrainDataSource( m_terrainDataSource );
 
       // Add Rigidbodies and shovels to pager
@@ -530,8 +536,6 @@ namespace AGXUnity.Model
       return tileIndex;
     }
 
-
-    // Remove this:
     private void DebugDrawTile( agxTerrain.TerrainPager.TileAttachments terr )
     {
       Vector3 basePos = terr.m_terrainTile.getPosition().ToHandedVector3();
