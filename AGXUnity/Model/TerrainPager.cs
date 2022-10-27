@@ -207,14 +207,14 @@ namespace AGXUnity.Model
     /// </summary>
     [ClampAboveZeroInInspector]
     [field: SerializeField]
-    public int TileSize { get; set; } = 97;
+    public int TileSize { get; set; } = 153;
 
     /// <summary>
     /// The overlap of adjacent AGX Terrain tiles
     /// </summary>
     [ClampAboveZeroInInspector]
     [field: SerializeField]
-    public int TileOverlap { get; set; } = 16;
+    public int TileOverlap { get; set; } = 32;
 
     /// <summary>
     /// Associates the given shovel instance to this terrain.
@@ -223,7 +223,7 @@ namespace AGXUnity.Model
     /// <param name="requiredRadius">The radius around the shovel instance where the terrain tiles are required to be loaded.</param>
     /// <param name="preloadRadius">The radius around the shovel instance for which to preload terrain tiles</param>
     /// <returns>True if added, false if null or already added</returns>
-    public bool Add( DeformableTerrainShovel shovel, float requiredRadius = 10, float preloadRadius = 10 )
+    public bool Add( DeformableTerrainShovel shovel, float requiredRadius = 5, float preloadRadius = 10 )
     {
       if ( shovel == null || m_shovels.Find( pagingShovel => pagingShovel.Body == shovel ) != null )
         return false;
@@ -263,7 +263,7 @@ namespace AGXUnity.Model
     /// <param name="requiredRadius">The radius around the rigidbody instance where the terrain tiles are required to be loaded.</param>
     /// <param name="preloadRadius">The radius around the rigidbody instance for which to preload terrain tiles</param>
     /// <returns>True if added, false if null or already added</returns>
-    public bool Add( RigidBody rigidbody, float requiredRadius = 10, float preloadRadius = 10 )
+    public bool Add( RigidBody rigidbody, float requiredRadius = 5, float preloadRadius = 10 )
     {
       if ( rigidbody == null || m_rigidbodies.Find( pagingRigidBody => pagingRigidBody.Body == rigidbody ) != null )
         return false;
@@ -372,8 +372,8 @@ namespace AGXUnity.Model
     /// </summary>
     public void RemoveInvalidBodies()
     {
-      m_shovels.RemoveAll( shovel => shovel == null );
-      m_rigidbodies.RemoveAll( rb => rb == null );
+      m_shovels.RemoveAll( shovel => shovel.Body == null );
+      m_rigidbodies.RemoveAll( rb => rb.Body == null );
     }
 
     /// <summary>
