@@ -419,7 +419,7 @@ namespace AGXUnity.Model
       if ( !ValidateParameters() )
         Debug.LogWarning( "Tile settings used does not fill the Unity terrain" );
 
-      Vector3 rootPos = new Vector3( TerrainData.size.x, 0, TerrainData.size.z ) + GetComponent<TerrainConnector>().GetOffsetPosition();
+      Vector3 rootPos =  GetComponent<TerrainConnector>().GetOffsetPosition();
 
       Native = new agxTerrain.TerrainPager(
         (uint)TileSize,
@@ -427,7 +427,8 @@ namespace AGXUnity.Model
         ElementSize,
         MaximumDepth,
         rootPos.ToHandedVec3(),
-        agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ),
+        agx.Quat.rotate( Mathf.PI, agx.Vec3.Z_AXIS() )
+        * agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ),
         new agxTerrain.Terrain( 10, 10, 1, 0.0f ) );
 
       Native.setTerrainDataSource( m_terrainDataSource );
@@ -508,25 +509,24 @@ namespace AGXUnity.Model
       var result = new float[,] { { 0.0f } };
 
       foreach ( var index in modifications ) {
-        var ui = AGXIndexToUnity( terrain, index );
+        var gi = GetGlobalIndex( terrain, index );
         float h = (float)(terrain.getHeight( index ) + zOffset);
 
         result[ 0, 0 ] = h / scale;
 
-        m_terrainDataSource.SetUnityHeightDelayed( result, ui );
-        //TerrainData.SetHeightsDelayLOD( ui.x, ui.y, result );
+        m_terrainDataSource.SetUnityHeightDelayed( result, gi );
       }
     }
 
-    private Vector2Int AGXIndexToUnity( agxTerrain.TerrainRef terrain, agx.Vec2i index )
+    private Vector2Int GetGlobalIndex( agxTerrain.TerrainRef terrain, agx.Vec2i index )
     {
       var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
       var elementsPerTile = TileSize - TileOverlap - 1;
       float tileOffset = elementsPerTile * ElementSize;
       Vector2Int tileIndex = new( Mathf.FloorToInt( relTilePos.x / tileOffset ), Mathf.FloorToInt( relTilePos.z / tileOffset ) );
       tileIndex *= elementsPerTile;
-      tileIndex.x += TileSize - (int)index.x - 1;
-      tileIndex.y += TileSize - (int)index.y - 1;
+      tileIndex.x += (int)index.x;
+      tileIndex.y += (int)index.y;
       return tileIndex;
     }
 
