@@ -12,7 +12,7 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof( TerrainPager ) )]
   public class TerrainPagerTool : CustomTargetTool
   {
-    public TerrainPager TerrainPager { get { return Targets[0] as TerrainPager; } }
+    public TerrainPager TerrainPager { get { return Targets[ 0 ] as TerrainPager; } }
 
     public TerrainPagerTool( UnityEngine.Object[] targets )
       : base( targets )
@@ -26,25 +26,25 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
-      if (NumTargets > 1)
+      if ( NumTargets > 1 )
         return;
 
       Undo.RecordObject( TerrainPager, "Recalculate parameters" );
       bool validParams = true;
 
-      if (!TerrainPager.ValidateParameters()) {
+      if ( !TerrainPager.ValidateParameters() ) {
         validParams = false;
         InspectorGUI.WarningLabel( "Current TileSize and TileOverlap parameters does not tile the underlying Unity Terrain" );
       }
 
       // This check is required due to how heightmaps are offset in AGX
-      if (!IsValidSize( TerrainPager.TileSize )) {
+      if ( !IsValidSize( TerrainPager.TileSize ) ) {
         InspectorGUI.WarningLabel( "Current only odd TileSize values are allowed" );
         validParams = false;
       }
 
-      if (!validParams) {
-        if (GUILayout.Button( "Recalculate pager parameters" )) {
+      if ( !validParams ) {
+        if ( GUILayout.Button( "Recalculate pager parameters" ) ) {
           var (overlap, size) = FindSuitableParameters( TerrainPager.TerrainDataResolution, TerrainPager.TileOverlap, TerrainPager.TileSize );
           TerrainPager.TileOverlap = overlap;
           TerrainPager.TileSize = size;
@@ -97,7 +97,7 @@ namespace AGXUnityEditor.Tools
     {
       // Performing same validity check as in ValidateParameters
       float r = (float)( heightmapSize - overlap - 1 ) / (float)( size - overlap - 1 );
-      if (IsInteger( r ) && IsValidSize( size ))
+      if ( IsInteger( r ) && IsValidSize( size ) )
         return Tuple.Create( overlap, size );
 
       int overlap_search_range = 5; // Search for overlaps in the range [overlap, overlap + range)
@@ -109,21 +109,21 @@ namespace AGXUnityEditor.Tools
       // Candidates for a given overlap is created by searching first the rounded R and then by (R+1,R-1), (R+2,R-2) until candidates are found.
       // If both R+n and R-n are valid then both candidates are added
       // The size S is given by reordering the validity formula
-      for (int newOverlap = overlap; newOverlap < overlap + overlap_search_range; newOverlap++) {
+      for ( int newOverlap = overlap; newOverlap < overlap + overlap_search_range; newOverlap++ ) {
         bool added = false;
         float newSize = ( heightmapSize - newOverlap - 1 ) / r + newOverlap + 1;
-        if (IsValidSize( newSize ))
+        if ( IsValidSize( newSize ) )
           candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
 
-        for (int rdiff = 1; !added; rdiff++) {
-          newSize = (heightmapSize - newOverlap - 1) / (r + rdiff) + newOverlap + 1;
-          if (IsValidSize( newSize )) {
+        for ( int rdiff = 1; !added; rdiff++ ) {
+          newSize = ( heightmapSize - newOverlap - 1 ) / ( r + rdiff ) + newOverlap + 1;
+          if ( IsValidSize( newSize ) ) {
             candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
             added = true;
           }
-          if (r - rdiff > 1) {
-            newSize = (heightmapSize - newOverlap - 1) / (r - rdiff) + newOverlap + 1;
-            if (IsValidSize( newSize )) {
+          if ( r - rdiff > 1 ) {
+            newSize = ( heightmapSize - newOverlap - 1 ) / ( r - rdiff ) + newOverlap + 1;
+            if ( IsValidSize( newSize ) ) {
               candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
               added = true;
             }
@@ -145,8 +145,8 @@ namespace AGXUnityEditor.Tools
         .Select( ( c ) => Tuple.Create( c, RMetric( heightmapSize, c.Item1, c.Item2, desiredOverlap, desiredSize ) ) )
         .ToList();
       // Return the item with the lowest metric value
-      cand.Sort( ( c1, c2 ) => (int)(c1.Item2 - c2.Item2) );
-      return cand[0].Item1;
+      cand.Sort( ( c1, c2 ) => (int)( c1.Item2 - c2.Item2 ) );
+      return cand[ 0 ].Item1;
     }
 
     private static float RMetric( int heightmapSize, int overlap, int size, int desiredOverlap, int desiredSize )

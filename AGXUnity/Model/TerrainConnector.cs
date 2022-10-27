@@ -32,9 +32,9 @@ namespace AGXUnity.Model
 
     private void OnDestroy()
     {
-      if(InitialHeights != null ) {
+      if ( InitialHeights != null ) {
         transform.position += MaximumDepth * Vector3.up;
-        Terrain.terrainData.SetHeights( 0, 0, InitialHeights);
+        Terrain.terrainData.SetHeights( 0, 0, InitialHeights );
 
 #if UNITY_EDITOR
         // If the editor is closed during play the modified height
