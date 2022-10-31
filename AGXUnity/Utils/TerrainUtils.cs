@@ -84,18 +84,21 @@ namespace AGXUnity.Utils
       var tmp                = new float[,] { { 0.0f } };
       var dataMaxHeight      = terrainData.size.y;
       var maxClampedHeight   = -1.0f;
+      var resolution         = TerrainDataResolution( terrainData );
+      var scale              = terrainData.heightmapScale.y;
+
       for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
         var newHeight = nativeHeightData.Heights[ i ] += offset;
 
         var vertexX = i % nativeHeightData.ResolutionX;
         var vertexY = i / nativeHeightData.ResolutionY;
 
-        tmp[ 0, 0 ] = (float)newHeight / terrainData.heightmapScale.y;
+        tmp[ 0, 0 ] = (float)newHeight / scale;
         if ( newHeight > dataMaxHeight )
           maxClampedHeight = System.Math.Max( maxClampedHeight, (float)newHeight );
 
-        terrainData.SetHeightsDelayLOD( TerrainDataResolution( terrainData ) - vertexX - 1,
-                                        TerrainDataResolution( terrainData ) - vertexY - 1,
+        terrainData.SetHeightsDelayLOD( resolution - vertexX - 1,
+                                        resolution - vertexY - 1,
                                         tmp );
       }
 
@@ -114,6 +117,47 @@ namespace AGXUnity.Utils
 #endif
 
       return nativeHeightData;
+    }
+
+    /// <summary>
+    /// Writes <paramref name="offset"/> to <paramref name="terrain"/> height data.
+    /// </summary>
+    /// <param name="terrainData">Terrain to modify.</param>
+    /// <param name="offset">Height offset.</param>
+    public static float[,] WriteTerrainDataOffsetRaw( Terrain terrain, float offset )
+    {
+      var terrainData        = terrain.terrainData;
+      var dataMaxHeight      = terrainData.size.y;
+      var maxClampedHeight   = -1.0f;
+      var resolution         = TerrainDataResolution( terrainData );
+      var data               = terrainData.GetHeights(0,0,resolution,resolution);
+      var scale              = terrainData.heightmapScale.y;
+
+      for (int y = 0; y < resolution; y++ ) {
+        for(int x = 0; x < resolution; x++ ) {
+          data[ y, x ] = data[ y, x ] + offset / scale;
+          if ( data[ y, x ] > dataMaxHeight )
+            maxClampedHeight = System.Math.Max( maxClampedHeight, data[ y, x ] );
+        }
+      }
+
+      terrainData.SetHeightsDelayLOD( 0, 0, data );
+
+#if UNITY_2019_1_OR_NEWER
+      terrainData.SyncHeightmap();
+#else
+      terrain.ApplyDelayedHeightmapModification();
+#endif
+
+      if ( maxClampedHeight > 0.0f ) {
+        Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
+                          dataMaxHeight +
+                          " and AGXUnity.Model.DeformableTerrain.MaximumDepth = " +
+                          offset +
+                          ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
+      }
+
+      return data;
     }
   }
 }

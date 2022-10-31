@@ -206,15 +206,41 @@ namespace AGXUnity.Model
     /// The size of the underlying AGX Terrain tiles
     /// </summary>
     [ClampAboveZeroInInspector]
+    [HideInInspector]
     [field: SerializeField]
-    public int TileSize { get; set; } = 153;
+    public float TileSizeMeters { get; set; } = 28.0f;
+    [HideInInspector]
+    public int TileSize
+    {
+      get
+      {
+        var intSize = Mathf.CeilToInt( TileSizeMeters / ElementSize );
+        return intSize + ( ( intSize + 1 ) % 2 );
+      }
+      set
+      {
+        var newCellCount = value + ((value + 1) % 2);
+        TileSizeMeters = ElementSize * newCellCount;
+      }
+    }
 
     /// <summary>
     /// The overlap of adjacent AGX Terrain tiles
     /// </summary>
     [ClampAboveZeroInInspector]
+    [HideInInspector]
     [field: SerializeField]
-    public int TileOverlap { get; set; } = 32;
+    public float TileOverlapMeters { get; set; } = 5.0f;
+    [HideInInspector]
+    public int TileOverlap
+    {
+      get => Mathf.CeilToInt( TileOverlapMeters / ElementSize );
+      set => TileOverlapMeters = ElementSize * value;
+    }
+
+    [HideInInspector]
+    [field: SerializeField]
+    public bool AutoTileOnPlay { get; set; } = true;
 
     /// <summary>
     /// Associates the given shovel instance to this terrain.
@@ -393,6 +419,9 @@ namespace AGXUnity.Model
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
+      if ( AutoTileOnPlay )
+        RecalculateParameters();
+
       RemoveInvalidBodies();
 
       // Create a new adapter using the terrain attached to this gameobject as the root
@@ -534,6 +563,84 @@ namespace AGXUnity.Model
       tileIndex.x += (int)index.x;
       tileIndex.y += (int)index.y;
       return tileIndex;
+    }
+
+    public void RecalculateParameters()
+    {
+      if ( ValidateParameters() )
+        return;
+
+      int overlap_search_range = 5; // Search for overlaps in the range [overlap, overlap + range)
+
+      // Start search from closest integer R-value
+      float r = Mathf.Round((float)( TerrainDataResolution - TileOverlap - 1 ) / ( TileSize - TileOverlap - 1 ));
+
+      List<Tuple<int, int>> candidates = new();
+
+      // Gather up to two candidates for each overlap in [overlap, overlap + range)
+      // Candidates for a given overlap is created by searching first the rounded R and then by (R+1,R-1), (R+2,R-2) until candidates are found.
+      // If both R+n and R-n are valid then both candidates are added
+      // The size S is given by reordering the validity formula
+      for ( int newOverlap = TileOverlap; newOverlap < TileOverlap + overlap_search_range; newOverlap++ ) {
+        bool added = false;
+        float newSize = ( TerrainDataResolution - newOverlap - 1 ) / r + newOverlap + 1;
+        if ( IsValidSize( newSize ) )
+          candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
+
+        for ( int rdiff = 1; !added; rdiff++ ) {
+          newSize = ( TerrainDataResolution - newOverlap - 1 ) / ( r + rdiff ) + newOverlap + 1;
+          if ( IsValidSize( newSize ) ) {
+            candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
+            added = true;
+          }
+          if ( r - rdiff > 1 ) {
+            newSize = ( TerrainDataResolution - newOverlap - 1 ) / ( r - rdiff ) + newOverlap + 1;
+            if ( IsValidSize( newSize ) ) {
+              candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
+              added = true;
+            }
+          }
+        }
+      }
+
+      // Select the best candidate based on some metric
+      var (o, s) = SelectCandidate( candidates, TerrainDataResolution, TileOverlap, TileSize );
+      TileOverlap = o;
+      TileSize = s;
+    }
+
+    private static Tuple<int, int> SelectCandidate( List<Tuple<int, int>> candidates,
+                                                   int heightmapSize,
+                                                   int desiredOverlap,
+                                                   int desiredSize )
+    {
+      // Augument the list with the metric values for each candidate
+      var cand = candidates
+        .Select( ( c ) => Tuple.Create( c, RMetric( heightmapSize, c.Item1, c.Item2, desiredOverlap, desiredSize ) ) )
+        .ToList();
+      // Return the item with the lowest metric value
+      cand.Sort( ( c1, c2 ) => (int)( c1.Item2 - c2.Item2 ) );
+      return cand[ 0 ].Item1;
+    }
+
+    private static float RMetric( int heightmapSize, int overlap, int size, int desiredOverlap, int desiredSize )
+    {
+      // The R-Metric is defined as the difference in non-rounded R-value for the desired parameters and the actual R-Value of the calculated parameters
+      float desiredR = ( ( heightmapSize - desiredOverlap - 1 ) / ( desiredSize - desiredOverlap - 1 ) );
+      float actualR = ( ( heightmapSize - overlap - 1 ) / ( size - overlap - 1 ) );
+      return Mathf.Abs( desiredR - actualR );
+    }
+
+    public static bool IsInteger( float v )
+    {
+      return Mathf.Approximately( v, Mathf.Round( v ) );
+    }
+
+    /// This function ensures sizes are integers and odd as is currently required by AGX
+    /// If the odd requirement is lifted this function can be replaced by IsInteger
+    public static bool IsValidSize( float s )
+    {
+      return IsInteger( s ) && s % 2 == 1;
     }
 
     private void DebugDrawTile( agxTerrain.TerrainPager.TileAttachments terr )

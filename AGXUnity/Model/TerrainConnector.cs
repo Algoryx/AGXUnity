@@ -18,7 +18,7 @@ namespace AGXUnity.Model
         return transform.position;
     }
 
-    public TerrainUtils.NativeHeights WriteTerrainDataOffset()
+    public float[,] WriteTerrainDataOffset()
     {
       if ( float.IsNaN( MaximumDepth ) ) {
         Debug.LogError( "Writing terrain offset without first setting depth!" );
@@ -27,7 +27,7 @@ namespace AGXUnity.Model
       var resolution = TerrainUtils.TerrainDataResolution(Terrain.terrainData);
       InitialHeights = Terrain.terrainData.GetHeights( 0, 0, resolution, resolution );
       transform.position += MaximumDepth * Vector3.down;
-      return TerrainUtils.WriteTerrainDataOffset( Terrain, MaximumDepth );
+      return TerrainUtils.WriteTerrainDataOffsetRaw( Terrain, MaximumDepth );
     }
 
     private void OnDestroy()
