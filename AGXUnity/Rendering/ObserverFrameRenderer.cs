@@ -1,20 +1,27 @@
+using System.ComponentModel;
 using UnityEngine;
 
 namespace AGXUnity.Rendering
 {
+  /// <summary>
+  /// Visualization component for the ObserverFrame Component
+  /// </summary>
   [AddComponentMenu( "AGXUnity/Rendering/Observer Frame Renderer" )]
   [RequireComponent( typeof( AGXUnity.ObserverFrame ) )]
   [ExecuteInEditMode]
   public class ObserverFrameRenderer : ScriptComponent
   {
-    private ObserverFrame Frame { get => gameObject.GetComponent<ObserverFrame>(); }
-
+    /// <summary>
+    /// The ObserverFrame can be visualized using either Unitys gizmos or using plain lines
+    /// </summary>
     public enum DrawMode
     {
       Gizmos,
       Lines
     }
 
+    [Description("Whether to use Unity's gizmos which are pickable and stripped out of builds or " +
+                 "lines which are not pickable and are included in builds")]
     public DrawMode FrameDrawMode;
 
     [ClampAboveZeroInInspector]
@@ -29,7 +36,7 @@ namespace AGXUnity.Rendering
 
     private void DrawLine( Vector3 direction, Color color )
     {
-
+      // Setup line
       if ( FrameDrawMode == DrawMode.Lines ) {
         GL.Begin( GL.LINES );
         GL.Color( new Color( color.r, color.g, color.b, Alpha ) );
@@ -37,6 +44,7 @@ namespace AGXUnity.Rendering
       else
         Gizmos.color = new Color( color.r, color.g, color.b, Alpha );
 
+      // Draw the line with optional segments
       Vector3 pos = transform.position;
       int segments = LineDivisions * 2 - 1;
       for ( int i = 0; i < segments; i += 2 ) {
@@ -55,6 +63,7 @@ namespace AGXUnity.Rendering
 
     private void EnsureMaterial()
     {
+      // Create material used by DrawMode.Lines if it does not exist
       if ( m_lineMaterial == null ) {
         m_lineMaterial = new( Shader.Find( "Hidden/Internal-Colored" ) )
         {
@@ -63,6 +72,8 @@ namespace AGXUnity.Rendering
         m_lineMaterial.SetInt( "_Cull", (int)UnityEngine.Rendering.CullMode.Off );
         m_lineMaterial.SetInt( "_ZWrite", 0 );
       }
+
+      // Use the material
       m_lineMaterial.SetPass( 0 );
     }
 
