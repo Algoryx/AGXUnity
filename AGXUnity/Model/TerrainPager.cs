@@ -523,10 +523,8 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var tiles = Native.getActiveTileAttachments();
-      foreach ( var tile in tiles ) {
-        DebugDrawTile( tile );
+      foreach ( var tile in tiles ) 
         UpdateTerrain( tile );
-      }
       TerrainData.SyncHeightmap();
     }
 
@@ -641,22 +639,6 @@ namespace AGXUnity.Model
     public static bool IsValidSize( float s )
     {
       return IsInteger( s ) && s % 2 == 1;
-    }
-
-    private void DebugDrawTile( agxTerrain.TerrainPager.TileAttachments terr )
-    {
-      Vector3 basePos = terr.m_terrainTile.getPosition().ToHandedVector3();
-      var size = terr.m_terrainTile.getSize() / 2;
-
-      Vector3 v0 = basePos + new Vector3( (float)size.x,  0.1f - basePos.y, (float)size.y );
-      Vector3 v1 = basePos + new Vector3( (float)size.x,  0.1f - basePos.y, (float)-size.y );
-      Vector3 v2 = basePos + new Vector3( (float)-size.x, 0.1f - basePos.y, (float)-size.y );
-      Vector3 v3 = basePos + new Vector3( (float)-size.x, 0.1f - basePos.y, (float)size.y );
-
-      Debug.DrawLine( v0, v1 );
-      Debug.DrawLine( v1, v2 );
-      Debug.DrawLine( v2, v3 );
-      Debug.DrawLine( v3, v0 );
     }
 
     public agx.GranularBodyPtrArray GetParticles()

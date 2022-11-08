@@ -1,5 +1,6 @@
 ﻿using AGXUnity;
 using AGXUnity.Model;
+using AGXUnity.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -95,6 +96,15 @@ namespace AGXUnityEditor.Tools
                                 );
     }
 
+    public override void OnSceneViewGUI( SceneView sceneView )
+    {
+      base.OnSceneViewGUI( sceneView );
+
+      if(TerrainPager.Native != null)
+        foreach(var t in TerrainPager.Native.getActiveTileAttachments() ) 
+          RenderTileAttachmentOutlines( t );
+    }
+
     private void RadiiEditor( DeformableTerrainShovel shovel, int index )
     {
       var pagingShovel = TerrainPager.PagingShovels[index];
@@ -111,6 +121,22 @@ namespace AGXUnityEditor.Tools
       float preloadRadius = EditorGUILayout.FloatField( "Preload radius", pagingRB.preloadRadius);
 
       TerrainPager.SetTileLoadRadius( body, requiredRadius, preloadRadius );
+    }
+
+    private void RenderTileAttachmentOutlines( agxTerrain.TerrainPager.TileAttachments terr )
+    {
+      Vector3 basePos = terr.m_terrainTile.getPosition().ToHandedVector3();
+      var size = terr.m_terrainTile.getSize() / 2;
+
+      Vector3 v0 = basePos + new Vector3( (float)size.x,  0.1f - basePos.y, (float)size.y );
+      Vector3 v1 = basePos + new Vector3( (float)size.x,  0.1f - basePos.y, (float)-size.y );
+      Vector3 v2 = basePos + new Vector3( (float)-size.x, 0.1f - basePos.y, (float)-size.y );
+      Vector3 v3 = basePos + new Vector3( (float)-size.x, 0.1f - basePos.y, (float)size.y );
+
+      Debug.DrawLine( v0, v1 );
+      Debug.DrawLine( v1, v2 );
+      Debug.DrawLine( v2, v3 );
+      Debug.DrawLine( v3, v0 );
     }
   }
 }
