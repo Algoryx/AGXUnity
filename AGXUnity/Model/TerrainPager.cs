@@ -294,7 +294,7 @@ namespace AGXUnity.Model
       if ( rigidbody == null || m_rigidbodies.Find( pagingRigidBody => pagingRigidBody.Body == rigidbody ) != null )
         return false;
 
-      PagingBody<RigidBody> pb = new(rigidbody, requiredRadius, preloadRadius);
+      var pb = new PagingBody<RigidBody>( rigidbody, requiredRadius, preloadRadius );
 
       m_rigidbodies.Add( pb );
 
