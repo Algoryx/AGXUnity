@@ -260,8 +260,10 @@ namespace AGXUnity.Model
 
       foreach ( var hit in hits ) {
         var terrain = hit.collider.gameObject.GetComponent<Terrain>();
-        if ( terrain != null && m_addedTerrains.Contains( terrain ) )
+        if ( terrain != null && m_addedTerrains.Contains( terrain ) ) {
+          raycastResult = hit.point.ToHandedVec3();
           return true;
+        }
       }
 
       return false;
