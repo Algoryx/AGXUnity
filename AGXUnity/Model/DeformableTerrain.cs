@@ -9,11 +9,11 @@ namespace AGXUnity.Model
 {
   public interface ITerrain
   {
-    abstract agx.GranularBodyPtrArray GetParticles();
+    agx.GranularBodyPtrArray GetParticles();
 
-    abstract agxTerrain.TerrainProperties GetProperties();
+    agxTerrain.TerrainProperties GetProperties();
 
-    void OnPropertiesUpdated() { }
+    void OnPropertiesUpdated();
   }
 
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
@@ -459,6 +459,10 @@ namespace AGXUnity.Model
     public agxTerrain.TerrainProperties GetProperties()
     {
       return Native?.getProperties();
+    }
+
+    public void OnPropertiesUpdated()
+    {
     }
 
     private Terrain m_terrain = null;

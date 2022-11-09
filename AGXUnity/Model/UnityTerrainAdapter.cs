@@ -53,8 +53,12 @@ namespace AGXUnity.Model
       m_tileResolution = TerrainUtils.TerrainDataResolution( rootTerrain.terrainData );
       m_maximumDepth = maximumDepth;
 
+#if UNITY_2021_2_OR_NEWER
       // Terrain connect is deferred by default, force terrains to connect here
       UnityEngine.TerrainUtils.TerrainUtility.AutoConnect();
+#else
+      UnityEngine.Experimental.TerrainAPI.TerrainUtility.AutoConnect();
+#endif
 
       var terrainQueue = new Queue<UnityTile>();
 
@@ -68,7 +72,7 @@ namespace AGXUnity.Model
         ProcessTile( tile.tile.topNeighbor, tile.index + new Vector2Int( 0, 1 ), ref terrainQueue );
         ProcessTile( tile.tile.bottomNeighbor, tile.index + new Vector2Int( 0, -1 ), ref terrainQueue );
 
-        terrain = terrainQueue.Count > 0 ? terrainQueue.Dequeue() : null;
+        terrain = terrainQueue.Count > 0 ? terrainQueue.Dequeue() : (UnityTile?)null;
       }
     }
 
