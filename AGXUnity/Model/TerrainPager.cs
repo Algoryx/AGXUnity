@@ -33,7 +33,7 @@ namespace AGXUnity.Model
     public agxTerrain.TerrainPager Native { get; private set; } = null;
 
     [SerializeField]
-    private List<PagingBody<DeformableTerrainShovel>> m_shovels = new();
+    private List<PagingBody<DeformableTerrainShovel>> m_shovels = new List<PagingBody<DeformableTerrainShovel>>();
 
     /// <summary>
     /// Shovels associated to this terrain.
@@ -51,7 +51,7 @@ namespace AGXUnity.Model
     public PagingBody<DeformableTerrainShovel>[] PagingShovels { get { return m_shovels.ToArray(); } }
 
     [SerializeField]
-    private List<PagingBody<RigidBody>> m_rigidbodies = new();
+    private List<PagingBody<RigidBody>> m_rigidbodies = new List<PagingBody<RigidBody>>();
 
     /// <summary>
     /// Rigidbodies associated to this terrain.
@@ -254,7 +254,7 @@ namespace AGXUnity.Model
       if ( shovel == null || m_shovels.Find( pagingShovel => pagingShovel.Body == shovel ) != null )
         return false;
 
-      PagingBody<DeformableTerrainShovel> pb = new(shovel, requiredRadius, preloadRadius);
+      var pb = new PagingBody<DeformableTerrainShovel>( shovel, requiredRadius, preloadRadius);
 
       m_shovels.Add( pb );
 
@@ -556,7 +556,8 @@ namespace AGXUnity.Model
       var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
       var elementsPerTile = TileSize - TileOverlap - 1;
       float tileOffset = elementsPerTile * ElementSize;
-      Vector2Int tileIndex = new( Mathf.FloorToInt( relTilePos.x / tileOffset ), Mathf.FloorToInt( relTilePos.z / tileOffset ) );
+      Vector2Int tileIndex = new Vector2Int( Mathf.FloorToInt( relTilePos.x / tileOffset ),
+                                             Mathf.FloorToInt( relTilePos.z / tileOffset ) );
       tileIndex *= elementsPerTile;
       tileIndex.x += (int)index.x;
       tileIndex.y += (int)index.y;
@@ -573,7 +574,7 @@ namespace AGXUnity.Model
       // Start search from closest integer R-value
       float r = Mathf.Round((float)( TerrainDataResolution - TileOverlap - 1 ) / ( TileSize - TileOverlap - 1 ));
 
-      List<Tuple<int, int>> candidates = new();
+      var candidates = new List<Tuple<int, int>>();
 
       // Gather up to two candidates for each overlap in [overlap, overlap + range)
       // Candidates for a given overlap is created by searching first the rounded R and then by (R+1,R-1), (R+2,R-2) until candidates are found.

@@ -35,10 +35,10 @@ namespace AGXUnity.Model
       public Terrain tile;
     }
 
-    private readonly ConcurrentQueue<UnityTile> m_tilesToLoad = new();
-    private readonly HashSet<Terrain> m_addedTerrains = new();
-    private readonly Dictionary<Vector2Int,Terrain> m_unityTiles = new();
-    private readonly Dictionary<Vector2Int,float[,]> m_unityData = new();
+    private readonly ConcurrentQueue<UnityTile> m_tilesToLoad = new ConcurrentQueue<UnityTile>();
+    private readonly HashSet<Terrain> m_addedTerrains = new HashSet<Terrain>();
+    private readonly Dictionary<Vector2Int,Terrain> m_unityTiles = new Dictionary<Vector2Int, Terrain>();
+    private readonly Dictionary<Vector2Int,float[,]> m_unityData = new Dictionary<Vector2Int, float[,]>();
     private readonly int m_tileResolution;
     private readonly float m_maximumDepth;
 
@@ -56,7 +56,7 @@ namespace AGXUnity.Model
       // Terrain connect is deferred by default, force terrains to connect here
       UnityEngine.TerrainUtils.TerrainUtility.AutoConnect();
 
-      Queue<UnityTile> terrainQueue = new();
+      var terrainQueue = new Queue<UnityTile>();
 
       // Flood fill process all connected tiles
       ProcessTile( rootTerrain, new Vector2Int( 0, 0 ), ref terrainQueue );
@@ -158,7 +158,7 @@ namespace AGXUnity.Model
 
       var elementsPerTile   = resolution - (overlap + 1);
 
-      Vector2Int globalIndex = new(id.x * elementsPerTile, id.y * elementsPerTile);
+      Vector2Int globalIndex = new Vector2Int(id.x * elementsPerTile, id.y * elementsPerTile);
 
       // We cannot get height data in fetch since it will be called in a background thread.
       // Instead, check if data has already been loaded. If not, mark the terrain to be loaded on the main thread and skip fetching tile for now
@@ -174,7 +174,7 @@ namespace AGXUnity.Model
       // Defer load if data is not yet available
       if ( !dataAvailable ) return null;
 
-      agx.RealVector heights = new (resolution*resolution);
+      var heights = new agx.RealVector( resolution * resolution );
 
       for ( int y = 0; y < resolution; y++ ) {
         for ( int x = 0; x < resolution; x++ ) {
@@ -213,8 +213,8 @@ namespace AGXUnity.Model
     /// <returns>The unity tile index for the given global index</returns>
     public Vector2Int GlobalToUnityIndex( Vector2Int globalIndex )
     {
-      return new( (int)Mathf.Floor( (float)globalIndex.x / ( m_tileResolution - 1 ) ),
-                  (int)Mathf.Floor( (float)globalIndex.y / ( m_tileResolution - 1 ) ) );
+      return new Vector2Int( (int)Mathf.Floor( (float)globalIndex.x / ( m_tileResolution - 1 ) ),
+                             (int)Mathf.Floor( (float)globalIndex.y / ( m_tileResolution - 1 ) ) );
     }
 
     // Checks if unity tile data is loaded for the tile at the given index and queues the tile to be loaded if it is not
@@ -223,15 +223,19 @@ namespace AGXUnity.Model
       // Is data loaded?
       if ( !m_unityData.ContainsKey( unityIndex ) ) {
         // Dont queue tiles twice
-        if ( m_tilesToLoad.Where( tile => tile.index == unityIndex ).Count() > 0 ) return false;
+        if ( m_tilesToLoad.Where( tile => tile.index == unityIndex ).Count() > 0 )
+          return false;
+        
         // Dont queue tiles that are not tracked by the adapter
-        if ( !m_unityTiles.ContainsKey( unityIndex ) ) return false;
+        if ( !m_unityTiles.ContainsKey( unityIndex ) )
+          return false;
 
-        m_tilesToLoad.Enqueue( new()
+        m_tilesToLoad.Enqueue( new UnityTile()
         {
           tile = m_unityTiles[ unityIndex ],
           index = unityIndex
         } );
+
         return false;
       }
 
@@ -250,7 +254,7 @@ namespace AGXUnity.Model
     /// <returns>true if the ray intersects the terrain, false otherwise</returns>
     public override bool raycast( agx.Vec3 start, agx.Vec3 end, ref agx.Vec3 raycastResult )
     {
-      Ray ray = new()
+      Ray ray = new Ray()
       {
         direction = (end-start).ToHandedVector3(),
         origin    = start.ToHandedVector3()

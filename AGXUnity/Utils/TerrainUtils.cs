@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+
+using UnityEngine;
 
 namespace AGXUnity.Utils
 {
@@ -158,6 +160,36 @@ namespace AGXUnity.Utils
       }
 
       return data;
+    }
+
+    /// <summary>
+    /// Collects all terrains connected to the given <paramref name="terrain"/>,
+    /// including the given <paramref name="terrain"/>. I.e., if the given terrain
+    /// instance isn't null, the returned array size is >= 1, with the given terrain
+    /// at index 0.
+    /// </summary>
+    /// <param name="terrain">Root terrain instance.</param>
+    /// <returns>
+    /// Array containing all the connected (tiled) terrains (including <paramref name="terrain"/> and index 0).
+    /// </returns>
+    public static Terrain[] CollectTerrains( Terrain terrain )
+    {
+      var terrains = new List<Terrain>();
+      CollectTerrain( terrain, terrains );
+      return terrains.ToArray();
+    }
+
+    private static void CollectTerrain( Terrain neighbor, List<Terrain> terrains )
+    {
+      if ( neighbor == null || terrains.Contains( neighbor ) )
+        return;
+
+      terrains.Add( neighbor );
+
+      CollectTerrain( neighbor.leftNeighbor, terrains );
+      CollectTerrain( neighbor.rightNeighbor, terrains );
+      CollectTerrain( neighbor.topNeighbor, terrains );
+      CollectTerrain( neighbor.bottomNeighbor, terrains );
     }
   }
 }
