@@ -105,22 +105,31 @@ namespace AGXUnityEditor.Tools
           RenderTileAttachmentOutlines( t );
     }
 
-    private void RadiiEditor( DeformableTerrainShovel shovel, int index )
+    private void RadiiEditor<T>( T obj, int index )
+      where T : ScriptComponent
     {
-      var pagingShovel = TerrainPager.PagingShovels[index];
-      float requiredRadius = EditorGUILayout.FloatField( "Required radius", pagingShovel.requiredRadius );
-      float preloadRadius = EditorGUILayout.FloatField( "Preload radius", pagingShovel.preloadRadius );
+      using (InspectorGUI.IndentScope.Single) {
+        GUILayout.Space( 2 );
 
-      TerrainPager.SetTileLoadRadius( shovel, requiredRadius, preloadRadius );
+        PagingBody<T> pagingObject = obj is DeformableTerrainShovel ?
+                                       TerrainPager.PagingShovels[index] as PagingBody<T> :
+                                       TerrainPager.PagingRigidBodies[index] as PagingBody<T> ;
+        float requiredRadius = EditorGUILayout.FloatField( "Required radius", pagingObject.requiredRadius );
+        float preloadRadius = EditorGUILayout.FloatField( "Preload radius", pagingObject.preloadRadius );
+
+        SetTileLoadRadius( obj, requiredRadius, preloadRadius );
+
+        GUILayout.Space( 6 );
+      }
     }
 
-    private void RadiiEditor( RigidBody body, int index )
+    private void SetTileLoadRadius<T>( T obj, float requiredRadius, float preloadRadius )
+      where T : ScriptComponent
     {
-      var pagingRB = TerrainPager.PagingRigidBodies[index];
-      float requiredRadius = EditorGUILayout.FloatField( "Required radius", pagingRB.requiredRadius);
-      float preloadRadius = EditorGUILayout.FloatField( "Preload radius", pagingRB.preloadRadius);
-
-      TerrainPager.SetTileLoadRadius( body, requiredRadius, preloadRadius );
+      if ( obj is DeformableTerrainShovel )
+        TerrainPager.SetTileLoadRadius( obj as DeformableTerrainShovel, requiredRadius, preloadRadius );
+      else
+        TerrainPager.SetTileLoadRadius( obj as RigidBody, requiredRadius, preloadRadius );
     }
 
     private void RenderTileAttachmentOutlines( agxTerrain.TerrainPager.TileAttachments terr )
