@@ -339,18 +339,6 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<AGXUnity.Rendering.DebugRenderManager>().gameObject;
     }
 
-    [MenuItem( "AGXUnity/Managers/Observer Frame Renderer Manager", validate = true )]
-    private static bool ObserverFrameRendererManagerValidate()
-    {
-      return ValidateManager<AGXUnity.Rendering.ObserverFrameRendererManager>();
-    }
-
-    [MenuItem( "AGXUnity/Managers/Observer Frame Renderer Manager" )]
-    public static GameObject ObserverFrameRendererManager()
-    {
-      return Selection.activeGameObject = GetOrCreateUniqueGameObject<AGXUnity.Rendering.ObserverFrameRendererManager>().gameObject;
-    }
-
     [MenuItem( "AGXUnity/Simulation", validate = true )]
     private static bool SimulationValidate()
     {
