@@ -90,6 +90,22 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    public bool CreateOrientedShapeTool
+    {
+      get { return GetChild<CreateOrientedShapeTool>() != null; }
+      set
+      {
+        if ( value && !ShapeCreateTool ) {
+          RemoveAllChildren();
+
+          var shapeCreateTool = new CreateOrientedShapeTool( RigidBody.gameObject );
+          AddChild( shapeCreateTool );
+        }
+        else if ( !value )
+          RemoveChild( GetChild<CreateOrientedShapeTool>() );
+      }
+    }
+
     public bool ConstraintCreateTool
     {
       get { return GetChild<ConstraintCreateTool>() != null; }
@@ -217,6 +233,7 @@ namespace AGXUnityEditor.Tools
       bool toggleConstraintCreate        = false;
       bool toggleDisableCollisions       = false;
       bool toggleRigidBodyVisualCreate   = false;
+      bool toggleCreateOrientedShape     = false;
 
       if ( !IsMultiSelect && ToolsActive ) {
         InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
@@ -235,7 +252,11 @@ namespace AGXUnityEditor.Tools
                                                                       RigidBodyVisualCreateTool,
                                                                       "Create visual representation of each physical shape in this body.",
                                                                       () => toggleRigidBodyVisualCreate = true,
-                                                                      Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) );
+                                                                      Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      CreateOrientedShapeTool,
+                                                                      "Create shape from child visual object.",
+                                                                      () => toggleCreateOrientedShape = true ) );
       }
 
       if ( ConstraintCreateTool ) {
@@ -250,6 +271,9 @@ namespace AGXUnityEditor.Tools
       if ( RigidBodyVisualCreateTool ) {
         GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
       }
+      if ( CreateOrientedShapeTool ) {
+        GetChild<CreateOrientedShapeTool>().OnInspectorGUI();
+      }
 
       EditorGUILayout.LabelField( GUI.MakeLabel( "Mass properties", true ), skin.Label );
       using ( InspectorGUI.IndentScope.Single )
@@ -263,6 +287,8 @@ namespace AGXUnityEditor.Tools
         ShapeCreateTool = !ShapeCreateTool;
       if ( toggleRigidBodyVisualCreate )
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
+      if ( toggleCreateOrientedShape )
+        CreateOrientedShapeTool = !CreateOrientedShapeTool;
     }
 
     public override void OnPostTargetMembersGUI()

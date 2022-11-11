@@ -166,47 +166,20 @@ namespace AGXUnityEditor.Tools
       UpdateVisualPrimitive( vp, shapeInitData, axisData );
 
       if ( m_buttons.Selected.State.CreatePressed ) {
-        var vertices = shapeInitData.Filter.sharedMesh.vertices;
-        agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
-        foreach ( var vert in vertices )
-          agxVerts.Add( vert.ToHandedVec3() );
-
-        agx.AffineMatrix4x4 rot = new();
-
         if ( m_buttons.Selected.State.ShapeType == ShapeType.Box ) {
           CreateShape<Box>( shapeInitData, m_buttons.Selected.State.ShapeAsParent, box =>
           {
-            if( m_buttons.Selected.State.Axis == ShapeInitializationData.Axes.Oriented ){
-              agx.Vec3 extents = new();
-              agxUtil.agxUtilSWIG.computeOrientedBox( agxVerts, ref extents, ref rot );
-              box.HalfExtents = extents.ToVector3();
-
-              shapeInitData.SetPositionRotation( box.gameObject, Vector3.up );
-              box.transform.rotation *= ( new agx.Quat( rot ) ).ToHandedQuaternion();
-            } else {
-              box.HalfExtents = shapeInitData.LocalExtents;
-              shapeInitData.SetPositionRotation( box.gameObject, axisData.Direction );
-            }
+            box.HalfExtents = shapeInitData.LocalExtents;
+            shapeInitData.SetDefaultPositionRotation( box.gameObject );
           } );
         }
         else if ( m_buttons.Selected.State.ShapeType == ShapeType.Cylinder ) {
           CreateShape<Cylinder>( shapeInitData, m_buttons.Selected.State.ShapeAsParent, cylinder =>
           {
-            if ( m_buttons.Selected.State.Axis == ShapeInitializationData.Axes.Oriented ) {
-              agx.Vec2 rh = new();
-              agxUtil.agxUtilSWIG.computeOrientedCylinder( agxVerts, ref rh, ref rot );
-              cylinder.Radius = (float)rh.x;
-              cylinder.Height = (float)rh.y;
+            cylinder.Radius = axisData.Radius;
+            cylinder.Height = axisData.Height;
 
-              shapeInitData.SetPositionRotation( cylinder.gameObject, Vector3.up );
-              cylinder.transform.rotation *= ( new agx.Quat( rot ) ).ToHandedQuaternion();
-            }
-            else {
-              cylinder.Radius = axisData.Radius;
-              cylinder.Height = axisData.Height;
-
-              shapeInitData.SetPositionRotation( cylinder.gameObject, axisData.Direction );
-            }
+            shapeInitData.SetPositionRotation( cylinder.gameObject, axisData.Direction );
           } );
         }
         else if ( m_buttons.Selected.State.ShapeType == ShapeType.HollowCylinder ) {
@@ -245,21 +218,10 @@ namespace AGXUnityEditor.Tools
         else if ( m_buttons.Selected.State.ShapeType == ShapeType.Capsule ) {
           CreateShape<Capsule>( shapeInitData, m_buttons.Selected.State.ShapeAsParent, capsule =>
           {
-            if ( m_buttons.Selected.State.Axis == ShapeInitializationData.Axes.Oriented ) {
-              agx.Vec2 rh = new();
-              agxUtil.agxUtilSWIG.computeOrientedCapsule( agxVerts, ref rh, ref rot );
-              capsule.Radius = (float)rh.x;
-              capsule.Height = (float)rh.y;
+            capsule.Radius = axisData.Radius;
+            capsule.Height = axisData.Height;
 
-              shapeInitData.SetPositionRotation( capsule.gameObject, Vector3.up );
-              capsule.transform.rotation *= ( new agx.Quat( rot ) ).ToHandedQuaternion();
-            }
-            else {
-              capsule.Radius = axisData.Radius;
-              capsule.Height = axisData.Height;
-
-              shapeInitData.SetPositionRotation( capsule.gameObject, axisData.Direction );
-            }
+            shapeInitData.SetPositionRotation( capsule.gameObject, axisData.Direction );
           } );
         }
         else if ( m_buttons.Selected.State.ShapeType == ShapeType.Sphere ) {
