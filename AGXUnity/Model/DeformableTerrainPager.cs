@@ -21,7 +21,7 @@ namespace AGXUnity.Model
     }
   }
 
-  [AddComponentMenu( "AGXUnity/Model/Terrain Pager" )]
+  [AddComponentMenu( "AGXUnity/Model/Deformable Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
   public class DeformableTerrainPager : ScriptComponent, ITerrain

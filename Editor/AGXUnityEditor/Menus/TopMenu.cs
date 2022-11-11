@@ -324,7 +324,7 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Model/Terrain Pager", priority = 50 )]
+    [MenuItem( "AGXUnity/Model/Deformable Terrain Pager", priority = 50 )]
     public static GameObject CreateTerrainPager()
     {
       var terrainData = new TerrainData()
