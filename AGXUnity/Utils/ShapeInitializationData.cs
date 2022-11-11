@@ -13,8 +13,7 @@ namespace AGXUnity.Utils
       Axis_1,
       Axis_2,
       Axis_3,
-      Default,
-      Oriented
+      Default
     }
 
     public class AxisData
@@ -128,7 +127,7 @@ namespace AGXUnity.Utils
       else if ( axis == Axes.Default ) {
         data = new AxisData();
         data.Direction = Vector3.up;
-      } 
+      }
 
       return data;
     }

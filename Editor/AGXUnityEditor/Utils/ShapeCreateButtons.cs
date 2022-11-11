@@ -85,10 +85,6 @@ namespace AGXUnityEditor.Utils
                        State.ShapeType == Tools.ShapeCreateTool.ShapeType.Capsule ||
                        State.ShapeType == Tools.ShapeCreateTool.ShapeType.Sphere;
 
-      bool hasOriented = State.ShapeType == Tools.ShapeCreateTool.ShapeType.Cylinder ||
-                         State.ShapeType == Tools.ShapeCreateTool.ShapeType.Capsule ||
-                         State.ShapeType == Tools.ShapeCreateTool.ShapeType.Box;
-
       OnShapeConfigGUI( hasRadius );
 
       using ( InspectorGUI.IndentScope.Create( 2 ) ) {
@@ -132,19 +128,6 @@ namespace AGXUnityEditor.Utils
                                              {
                                                State.Axis = ShapeInitializationData.Axes.Default;
                                              } );
-        }
-
-        if ( hasOriented ) {
-          rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false, 25.0f ) );
-          rect.width = 105.0f;
-          State.CreatePressed = OnButtonGUI( rect,
-                                             "Create Oriented",
-                                             InspectorGUISkin.ButtonType.Normal,
-                                             current,
-                                             () =>
-                                             {
-                                               State.Axis = ShapeInitializationData.Axes.Oriented;
-                                             } ) || State.CreatePressed;
         }
       }
 
