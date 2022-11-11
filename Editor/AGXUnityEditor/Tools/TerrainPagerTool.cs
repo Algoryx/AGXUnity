@@ -1,8 +1,12 @@
-﻿using AGXUnity;
+﻿using System.Linq;
+
+using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using UnityEditor;
 using UnityEngine;
+
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -23,9 +27,37 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    public override void OnAdd()
+    {
+    }
+
     public override void OnPreTargetMembersGUI()
     {
       TerrainPager.RemoveInvalidBodies();
+
+      if ( GetTargets<TerrainPager>().Any( pager => !TerrainUtils.IsValid( pager ) ) ) {
+        InspectorGUI.WarningLabel( "INVALID CONFIGURATION\n\n" +
+                                   "One or more AGXUnity.Model.DeformableTerrain and/or " +
+                                   "AGXUnity.Model.DeformableTerrainPager component(s) found in " +
+                                   "the connected tiles. <b>A Deformable Terrain Pager has to be unique " +
+                                   "to the UnityEngine.Terrain and its tiles.</b>" );
+
+        if ( !IsMultiSelect ) {
+          var deformableTerrains = ( from terrain in TerrainUtils.CollectTerrains( TerrainPager.Terrain )
+                                     let deformableTerrain = terrain.GetComponent<DeformableTerrain>()
+                                     where deformableTerrain != null
+                                     select deformableTerrain ).ToArray();
+          var deformableTerrainPagers = ( from terrain in TerrainUtils.CollectTerrains( TerrainPager.Terrain )
+                                          let otherPager = terrain.GetComponent<TerrainPager>()
+                                          where otherPager != null && otherPager != TerrainPager
+                                          select otherPager ).Distinct().ToArray();
+
+          InspectorGUI.Separator( 2.0f, 4.0f );
+
+          InvalidTileInstancesGUI( deformableTerrains );
+          InvalidTileInstancesGUI( deformableTerrainPagers );
+        }
+      }
     }
 
     public override void OnPostTargetMembersGUI()
@@ -105,31 +137,65 @@ namespace AGXUnityEditor.Tools
           RenderTileAttachmentOutlines( t );
     }
 
+    private void InvalidTileInstancesGUI<T>( T[] instances )
+      where T : ScriptComponent
+    {
+      if ( instances.Length > 0 ) {
+        GUILayout.Label( GUI.MakeLabel( $"Reduntant {typeof( T ).FullName}(s)", true ), InspectorGUISkin.Instance.LabelMiddleCenter );
+        foreach ( var instance in instances ) {
+          using ( new EditorGUILayout.HorizontalScope() ) {
+            using ( new GUI.BackgroundColorBlock( Color.Lerp( Color.white, Color.red, 0.55f ) ) ) {
+              if ( GUILayout.Button( SelectGameObjectDropdownMenuTool.GetGUIContent( instance.gameObject ),
+                                     InspectorGUISkin.Instance.TextAreaMiddleCenter ) )
+                EditorGUIUtility.PingObject( instance );
+            }
+            if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                      true,
+                                      $"Remove {instance.GetType().FullName} component from game object {instance.name}.",
+                                      GUILayout.Width( EditorGUIUtility.singleLineHeight ) ) ) {
+              if ( EditorUtility.DisplayDialog( $"Remove {instance.GetType().FullName} component?",
+                                                $"Are you sure you want to remove the {instance.GetType().FullName} " +
+                                                $"component from {instance.name}?",
+                                                "Yes",
+                                                "Cancel" ) ) {
+                using ( new Utils.UndoCollapseBlock( "Destroy " + instance.GetType().FullName ) ) {
+                  var renderer = instance.GetComponent<AGXUnity.Rendering.DeformableTerrainParticleRenderer>();
+                  Undo.DestroyObjectImmediate( instance );
+                  // Avoid destroy of renderer belonging to the selected pager if 'instance'
+                  // is a deformable terrain on our pager game object.
+                  if ( renderer != null && renderer.gameObject != TerrainPager.gameObject )
+                    Undo.DestroyObjectImmediate( renderer );
+                }
+                GUIUtility.ExitGUI();
+              }
+            }
+          }
+        }
+
+        InspectorGUI.Separator( 2.0f, 4.0f );
+      }
+    }
+
     private void RadiiEditor<T>( T obj, int index )
       where T : ScriptComponent
     {
       using (InspectorGUI.IndentScope.Single) {
         GUILayout.Space( 2 );
 
-        PagingBody<T> pagingObject = obj is DeformableTerrainShovel ?
+        var isShovel = obj is DeformableTerrainShovel;
+        PagingBody<T> pagingObject = isShovel ?
                                        TerrainPager.PagingShovels[index] as PagingBody<T> :
                                        TerrainPager.PagingRigidBodies[index] as PagingBody<T> ;
         float requiredRadius = EditorGUILayout.FloatField( "Required radius", pagingObject.requiredRadius );
         float preloadRadius = EditorGUILayout.FloatField( "Preload radius", pagingObject.preloadRadius );
 
-        SetTileLoadRadius( obj, requiredRadius, preloadRadius );
+        if ( isShovel )
+          TerrainPager.SetTileLoadRadius( obj as DeformableTerrainShovel, requiredRadius, preloadRadius );
+        else
+          TerrainPager.SetTileLoadRadius( obj as RigidBody, requiredRadius, preloadRadius );
 
         GUILayout.Space( 6 );
       }
-    }
-
-    private void SetTileLoadRadius<T>( T obj, float requiredRadius, float preloadRadius )
-      where T : ScriptComponent
-    {
-      if ( obj is DeformableTerrainShovel )
-        TerrainPager.SetTileLoadRadius( obj as DeformableTerrainShovel, requiredRadius, preloadRadius );
-      else
-        TerrainPager.SetTileLoadRadius( obj as RigidBody, requiredRadius, preloadRadius );
     }
 
     private void RenderTileAttachmentOutlines( agxTerrain.TerrainPager.TileAttachments terr )

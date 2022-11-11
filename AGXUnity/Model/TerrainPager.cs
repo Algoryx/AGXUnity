@@ -428,6 +428,13 @@ namespace AGXUnity.Model
       // This attaches TerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
       m_terrainDataSource = new UnityTerrainAdapter( Terrain, MaximumDepth );
 
+      // Relying on UnityTerrainAdapter "AutoConnect" to connect neighboring tiles.
+      if ( !TerrainUtils.IsValid( pager: this, issueError: true ) ) {
+        m_terrainDataSource.Dispose();
+        m_terrainDataSource = null;
+        return false;
+      }
+
       InitializeNative();
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;

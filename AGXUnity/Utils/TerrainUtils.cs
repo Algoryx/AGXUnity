@@ -163,6 +163,58 @@ namespace AGXUnity.Utils
     }
 
     /// <summary>
+    /// True if a deformable terrain instance is present in any tile (including the root terrain)
+    /// of the given deformable terrain pager.
+    /// </summary>
+    /// <param name="pager">Deformable terrain pager.</param>
+    /// <returns>True if an AGXUnity.Model.DeformableTerrain instance is present in a tile or root of the given pager.</returns>
+    public static bool HasDeformableTerrainInTiles( Model.TerrainPager pager )
+    {
+      return pager != null &&
+             System.Array.Find( CollectTerrains( pager.Terrain ),
+                                terrain =>
+                                  terrain.GetComponent<Model.DeformableTerrain>() != null ) != null;
+    }
+
+    /// <summary>
+    /// True if another deformable terrain pager is present in any tile of the given <paramref name="pager"/>.
+    /// </summary>
+    /// <param name="pager">Deformable terrain pager.</param>
+    /// <returns>True if another AGXUnity.Model.DeformableTerrainPager exists in a tile of the given pager.</returns>
+    public static bool HasDeformableTerrainPagerInTiles( Model.TerrainPager pager )
+    {
+      return pager != null &&
+             System.Array.FindLast( CollectTerrains( pager.Terrain ),
+                                    terrain =>
+                                      terrain.GetComponent<Model.TerrainPager>() != null &&
+                                      terrain.GetComponent<Model.TerrainPager>() != pager );
+    }
+
+    /// <summary>
+    /// True if zero AGXUnity.Model.DeformableTerrain and (other) AGXUnity.Model.DeformableTerrainPager components
+    /// found in any tile(s) controlled by the given <paramref name="pager"/>.
+    /// </summary>
+    /// <param name="pager">Deformable terrain pager to check.</param>
+    /// <param name="issueError">True to log error.</param>
+    /// <returns>True if valid, false if the configuration is invalid.</returns>
+    public static bool IsValid( Model.TerrainPager pager, bool issueError = false )
+    {
+      var hasDeformableTerrainInTiles = HasDeformableTerrainInTiles( pager );
+      var hasDeformableTerrainPagerInTiles = HasDeformableTerrainPagerInTiles( pager );
+      
+      if ( pager != null && hasDeformableTerrainInTiles && issueError )
+        Debug.LogError( $"{pager.GetType().FullName}: Configuration error - one or more AGXUnity.Model.DeformableTerrain components in " +
+                        $"a tile of this deformable terrain pager. Remove any AGXUnity.Model.DeformableTerrain component from the tile(s) " +
+                        $"controlled by this pager.", pager );
+      if ( pager != null && hasDeformableTerrainPagerInTiles && issueError )
+        Debug.LogError( $"{pager.GetType().FullName}: Configuration error - one or more AGXUnity.Model.DeformableTerrainPager components in " +
+                        $"a tile of this deformable terrain pager. Remove any other AGXUnity.Model.DeformableTerrainPager component from the tile(s) " +
+                        $"controlled by this pager.", pager );
+
+      return pager != null && !hasDeformableTerrainInTiles && !hasDeformableTerrainPagerInTiles;
+    }
+
+    /// <summary>
     /// Collects all terrains connected to the given <paramref name="terrain"/>,
     /// including the given <paramref name="terrain"/>. I.e., if the given terrain
     /// instance isn't null, the returned array size is >= 1, with the given terrain
