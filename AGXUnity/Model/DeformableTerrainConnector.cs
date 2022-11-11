@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
-  public class TerrainConnector : MonoBehaviour
+  public class DeformableTerrainConnector : MonoBehaviour
   {
     public float[,] InitialHeights { get; private set; } = null;
     public float MaximumDepth { get; set; } = float.NaN;

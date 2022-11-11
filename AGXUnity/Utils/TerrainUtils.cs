@@ -168,7 +168,7 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="pager">Deformable terrain pager.</param>
     /// <returns>True if an AGXUnity.Model.DeformableTerrain instance is present in a tile or root of the given pager.</returns>
-    public static bool HasDeformableTerrainInTiles( Model.TerrainPager pager )
+    public static bool HasDeformableTerrainInTiles( Model.DeformableTerrainPager pager )
     {
       return pager != null &&
              System.Array.Find( CollectTerrains( pager.Terrain ),
@@ -181,13 +181,13 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="pager">Deformable terrain pager.</param>
     /// <returns>True if another AGXUnity.Model.DeformableTerrainPager exists in a tile of the given pager.</returns>
-    public static bool HasDeformableTerrainPagerInTiles( Model.TerrainPager pager )
+    public static bool HasDeformableTerrainPagerInTiles( Model.DeformableTerrainPager pager )
     {
       return pager != null &&
              System.Array.FindLast( CollectTerrains( pager.Terrain ),
                                     terrain =>
-                                      terrain.GetComponent<Model.TerrainPager>() != null &&
-                                      terrain.GetComponent<Model.TerrainPager>() != pager );
+                                      terrain.GetComponent<Model.DeformableTerrainPager>() != null &&
+                                      terrain.GetComponent<Model.DeformableTerrainPager>() != pager );
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ namespace AGXUnity.Utils
     /// <param name="pager">Deformable terrain pager to check.</param>
     /// <param name="issueError">True to log error.</param>
     /// <returns>True if valid, false if the configuration is invalid.</returns>
-    public static bool IsValid( Model.TerrainPager pager, bool issueError = false )
+    public static bool IsValid( Model.DeformableTerrainPager pager, bool issueError = false )
     {
       var hasDeformableTerrainInTiles = HasDeformableTerrainInTiles( pager );
       var hasDeformableTerrainPagerInTiles = HasDeformableTerrainPagerInTiles( pager );

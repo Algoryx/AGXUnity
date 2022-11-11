@@ -11,10 +11,10 @@ using GUI = AGXUnity.Utils.GUI;
 namespace AGXUnityEditor.Tools
 {
 
-  [CustomTool( typeof( TerrainPager ) )]
-  public class TerrainPagerTool : CustomTargetTool
+  [CustomTool( typeof( DeformableTerrainPager ) )]
+  public class DeformableTerrainPagerTool : CustomTargetTool
   {
-    public TerrainPager TerrainPager { get { return Targets[ 0 ] as TerrainPager; } }
+    public DeformableTerrainPager TerrainPager { get { return Targets[ 0 ] as DeformableTerrainPager; } }
 
     public enum SizeUnit
     {
@@ -22,7 +22,7 @@ namespace AGXUnityEditor.Tools
     };
     public SizeUnit sizeToUse;
 
-    public TerrainPagerTool( UnityEngine.Object[] targets )
+    public DeformableTerrainPagerTool( Object[] targets )
       : base( targets )
     {
     }
@@ -35,7 +35,7 @@ namespace AGXUnityEditor.Tools
     {
       TerrainPager.RemoveInvalidBodies();
 
-      if ( GetTargets<TerrainPager>().Any( pager => !TerrainUtils.IsValid( pager ) ) ) {
+      if ( GetTargets<DeformableTerrainPager>().Any( pager => !TerrainUtils.IsValid( pager ) ) ) {
         InspectorGUI.WarningLabel( "INVALID CONFIGURATION\n\n" +
                                    "One or more AGXUnity.Model.DeformableTerrain and/or " +
                                    "AGXUnity.Model.DeformableTerrainPager component(s) found in " +
@@ -48,7 +48,7 @@ namespace AGXUnityEditor.Tools
                                      where deformableTerrain != null
                                      select deformableTerrain ).ToArray();
           var deformableTerrainPagers = ( from terrain in TerrainUtils.CollectTerrains( TerrainPager.Terrain )
-                                          let otherPager = terrain.GetComponent<TerrainPager>()
+                                          let otherPager = terrain.GetComponent<DeformableTerrainPager>()
                                           where otherPager != null && otherPager != TerrainPager
                                           select otherPager ).Distinct().ToArray();
 
@@ -90,7 +90,7 @@ namespace AGXUnityEditor.Tools
         }
 
         // This check is required due to how heightmaps are offset in AGX
-        if ( !TerrainPager.IsValidSize( TerrainPager.TileSize ) ) {
+        if ( !DeformableTerrainPager.IsValidSize( TerrainPager.TileSize ) ) {
           InspectorGUI.WarningLabel( "Current only odd TileSize values are allowed" );
           validParams = false;
         }

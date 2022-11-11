@@ -8,9 +8,9 @@ namespace AGXUnity.Model
 {
   /// <summary>
   /// The UnityTerrainAdapter is responsible for synchronising terrain data between the Unity Heightmap and the 
-  /// AGX terrains used in the TerrainPager. This puts a few limitations on the TerrainPager:
-  /// 1. The reference position of the native TerrainPager MUST be the same as the position of the root terrain.
-  /// 2. The reference rotation of the native TerrainPager MUST align the index y and x axes of the AGX and Unity terrains
+  /// AGX terrains used in the DeformableTerrainPager. This puts a few limitations on the DeformableTerrainPager:
+  /// 1. The reference position of the native DeformableTerrainPager MUST be the same as the position of the root terrain.
+  /// 2. The reference rotation of the native DeformableTerrainPager MUST align the index y and x axes of the AGX and Unity terrains
   /// 3. The size of each cell must be equal for the AGX and Unity terrains
   /// 
   /// These properties allow for a 'global index' to be calculated from the tile local index of a cell and the tile index, and vice versa
@@ -21,9 +21,9 @@ namespace AGXUnity.Model
   /// This reverse mapping is done in <see cref="GlobalToUnityIndex(Vector2Int)"/>
   /// 
   /// For the Unity --> AGX synchronisation, this class implements agxTerrain.TerrainDataSource
-  /// which provides heightdata for the terrain tiles the TerrainPager requests
+  /// which provides heightdata for the terrain tiles the DeformableTerrainPager requests
   /// 
-  /// Since the TerrainPager will attempt to fetch tiles on a background thread while the unity terrain data is inaccessible,
+  /// Since the DeformableTerrainPager will attempt to fetch tiles on a background thread while the unity terrain data is inaccessible,
   /// the Adapter will instead queue a load and store away the loaded terrain data at the end of the current timestep.
   /// This means that the terrain tile loads will be delayed by one timestep
   /// </summary>
@@ -113,13 +113,13 @@ namespace AGXUnity.Model
 
     /// <summary>
     /// Process the terrain at the given index if it has not yet been proccessed. This the tile to the collections used
-    /// by the adapter and adds the <see cref="TerrainConnector"/> component to the terrain tile gameobject.
+    /// by the adapter and adds the <see cref="DeformableTerrainConnector"/> component to the terrain tile gameobject.
     /// </summary>
     private void ProcessTile( Terrain terr, Vector2Int index, ref Queue<UnityTile> tileQueue )
     {
       if ( terr == null || m_addedTerrains.Contains( terr ) ) return;
 
-      terr.gameObject.AddComponent<TerrainConnector>().MaximumDepth = m_maximumDepth;
+      terr.gameObject.AddComponent<DeformableTerrainConnector>().MaximumDepth = m_maximumDepth;
       m_addedTerrains.Add( terr );
       tileQueue.Enqueue( new UnityTile()
       {
@@ -138,7 +138,7 @@ namespace AGXUnity.Model
         // FIXME: Loading tiles currently takes quite a long time due to the write/read
         // optimally this should happen asynchronously but it is uncertain whether the Unity API allows it.
 
-        float[,] data = tile.tile.gameObject.GetComponent<TerrainConnector>().WriteTerrainDataOffset();
+        float[,] data = tile.tile.gameObject.GetComponent<DeformableTerrainConnector>().WriteTerrainDataOffset();
         int res       = tile.tile.terrainData.heightmapResolution;
         float scale   = tile.tile.terrainData.heightmapScale.y;
 

@@ -24,10 +24,10 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  public class TerrainPager : ScriptComponent, ITerrain
+  public class DeformableTerrainPager : ScriptComponent, ITerrain
   {
     /// <summary>
-    /// Native TerrainPager instance - accessible after this
+    /// Native DeformableTerrainPager instance - accessible after this
     /// component has been initialized and is valid.
     /// </summary>
     public agxTerrain.TerrainPager Native { get; private set; } = null;
@@ -403,7 +403,7 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Checks if the current TerrainPager parameters tile the underlying Unity Terrain
+    /// Checks if the current DeformableTerrainPager parameters tile the underlying Unity Terrain
     /// The amount of tiles R can be calculated as (l - O - 1) / (S - O - 1) where l is heightmap size O is overlap and S is tile size
     /// Parameters are valid if O and S tile l, that is if R is an integer
     /// </summary>
@@ -425,7 +425,7 @@ namespace AGXUnity.Model
       RemoveInvalidBodies();
 
       // Create a new adapter using the terrain attached to this gameobject as the root
-      // This attaches TerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
+      // This attaches DeformableTerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
       m_terrainDataSource = new UnityTerrainAdapter( Terrain, MaximumDepth );
 
       // Relying on UnityTerrainAdapter "AutoConnect" to connect neighboring tiles.
@@ -458,7 +458,7 @@ namespace AGXUnity.Model
         Debug.LogWarning( "Tile settings used does not fill the Unity terrain" );
 
       // Align the paged terrain with the AGX terrain tile
-      Vector3 rootPos =  GetComponent<TerrainConnector>().GetOffsetPosition(); // Place tiles starting at Unity terrain position
+      Vector3 rootPos =  GetComponent<DeformableTerrainConnector>().GetOffsetPosition(); // Place tiles starting at Unity terrain position
       agx.Quat rootRot =
           agx.Quat.rotate( Mathf.PI, agx.Vec3.Z_AXIS() )                       // Align AGX terrain X and Y axes to Unity terrain X and Y axes
         * agx.Quat.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );             // Rotate terrain so that Y is up as in Unity
@@ -472,7 +472,7 @@ namespace AGXUnity.Model
         rootRot,
         new agxTerrain.Terrain( 10, 10, 1, 0.0f ) );
 
-      // Set the adapter as the data source for the TerrainPager
+      // Set the adapter as the data source for the DeformableTerrainPager
       Native.setTerrainDataSource( m_terrainDataSource );
 
       // Add Rigidbodies and shovels to pager
@@ -542,7 +542,7 @@ namespace AGXUnity.Model
       if ( modifications.Count == 0 )
         return;
 
-      // We need to fetch the offset of the terrain tile since the TerrainPager
+      // We need to fetch the offset of the terrain tile since the DeformableTerrainPager
       // uses the height value of the data source when positioning the tiles.
       var scale = TerrainData.heightmapScale.y;
       var zOffset = tile.m_zOffset;

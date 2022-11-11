@@ -20,7 +20,7 @@ namespace AGXUnityEditor.Tools
       bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
       bool hasTrack     = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
       bool hasTerrain   = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null;
-      bool hasPager     = !isNull && gameObject.GetComponent<AGXUnity.Model.TerrainPager>() != null;
+      bool hasPager     = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrainPager>() != null;
 
       string nullTag      = isNull       ? GUI.AddColorTag( "[null]", Color.red ) : "";
       string visualTag    = hasVisual    ? GUI.AddColorTag( "[Visual]", Color.yellow ) : "";

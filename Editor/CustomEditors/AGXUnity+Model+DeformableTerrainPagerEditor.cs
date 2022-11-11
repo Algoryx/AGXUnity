@@ -6,8 +6,8 @@ using UnityEditor;
 
 namespace AGXUnityEditor.Editors
 {
-  [CustomEditor( typeof( AGXUnity.Model.TerrainPager ) )]
+  [CustomEditor( typeof( AGXUnity.Model.DeformableTerrainPager ) )]
   [CanEditMultipleObjects]
-  public class AGXUnityModelTerrainPagerEditor : InspectorEditor
+  public class AGXUnityModelDeformableTerrainPagerEditor : InspectorEditor
   { }
 }

@@ -342,7 +342,7 @@ namespace AGXUnityEditor
       AssetDatabase.CreateAsset( terrainData, terrainDataName );
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
-      go.name = Factory.CreateName<AGXUnity.Model.TerrainPager>();
+      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrainPager>();
       if ( go == null ) {
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
@@ -351,7 +351,7 @@ namespace AGXUnityEditor
       AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
 
       go.transform.position = new Vector3( -60, 0, -60 );
-      go.AddComponent<AGXUnity.Model.TerrainPager>();
+      go.AddComponent<AGXUnity.Model.DeformableTerrainPager>();
 
       Undo.RegisterCreatedObjectUndo( go, "New Terrain Pager" );
 
