@@ -15,37 +15,86 @@ namespace AGXUnityEditor.Tools
   {
     private struct PrimitiveData
     {
+      // These variables are set by the background threads generating the primitives when they are done
       public bool boxReady;
+      public bool capsuleReady;
+      public bool cylinderReady;
+
       public agx.AffineMatrix4x4 boxTransform;
       public agx.Vec3 boxExtents;
 
-      public bool capsuleReady;
       public agx.AffineMatrix4x4 capsuleRotation;
       public agx.Vec2 capsuleRadiusHeight;
 
-      public bool cylinderReady;
       public agx.AffineMatrix4x4 cylinderRotation;
       public agx.Vec2 cylinderRadiusHeight;
     }
 
-    private struct SelectionData
+    private class SelectionData
     {
+      public GameObject GameObject { get; private set; }
       public MeshFilter Filter { get; private set; }
+      public MeshRenderer Renderer { get; private set; }
       public Vector3 LocalExtents { get; private set; }
       public Vector3 WorldCenter { get; private set; }
       public Quaternion Rotation { get; private set; }
 
       public float Radius { get => new Vector2( LocalExtents.MiddleValue(), LocalExtents.MinValue() ).magnitude; }
 
-      public void SetGameObject( GameObject go )
+      public PrimitiveData PrimitiveData;
+
+      // Generating oriented primitives might take some time, to avoid freezing the UI during this time
+      // The work is offloaded on background threads
+      public Thread BoxCreateThread { get; private set; }
+      public Thread CylinderCreateThread { get; private set; }
+      public Thread CapsuleCreateThread { get; private set; }
+
+      public string VisualPrimitiveName;
+      public Color VisualPrimitiveColor { get; set; } = Color.red;
+      public string VisualPrimitiveShader { get; set; } = "standard";
+
+      public SelectionData( GameObject go )
       {
+        GameObject = go;
         Filter = go.GetComponent<MeshFilter>();
         Bounds localBounds = Filter.sharedMesh.bounds;
         LocalExtents = Filter.transform.InverseTransformDirection( Filter.transform.TransformVector( localBounds.extents ) );
         WorldCenter = Filter.transform.TransformPoint( localBounds.center );
         Rotation = Filter.transform.rotation;
-      }
+        PrimitiveData = new PrimitiveData();
 
+        VisualPrimitiveName = "createShapeVisualPrimitive" + go.name;
+
+        var vertices = Filter.sharedMesh.vertices;
+        agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
+        foreach ( var v in vertices )
+          agxVerts.Add( v.ToHandedVec3() );
+
+        PrimitiveData.boxReady = false;
+        PrimitiveData.cylinderReady = false;
+        PrimitiveData.capsuleReady = false;
+
+        BoxCreateThread = new Thread( () =>
+        {
+          agxUtil.agxUtilSWIG.computeOrientedBox( agxVerts, ref PrimitiveData.boxExtents, ref PrimitiveData.boxTransform );
+          PrimitiveData.boxReady = true;
+        } );
+        BoxCreateThread.Start();
+
+        CylinderCreateThread = new Thread( () =>
+        {
+          agxUtil.agxUtilSWIG.computeOrientedCylinder( agxVerts, ref PrimitiveData.cylinderRadiusHeight, ref PrimitiveData.cylinderRotation );
+          PrimitiveData.cylinderReady = true;
+        } );
+        CylinderCreateThread.Start();
+
+        CapsuleCreateThread = new Thread( () =>
+        {
+          agxUtil.agxUtilSWIG.computeOrientedCapsule( agxVerts, ref PrimitiveData.capsuleRadiusHeight, ref PrimitiveData.capsuleRotation );
+          PrimitiveData.capsuleReady = true;
+        } );
+        CapsuleCreateThread.Start();
+      }
     }
 
     public enum ShapeType
@@ -89,26 +138,14 @@ namespace AGXUnityEditor.Tools
     }
 
     private Utils.OrientedShapeCreateButtons m_buttons = new Utils.OrientedShapeCreateButtons();
-    private List<GameObject> m_selection       = new List<GameObject>();
-    private const string m_visualPrimitiveName = "createShapeVisualPrimitive";
-    private PrimitiveData m_primitiveData;
-    private SelectionData m_selectionData;
-    private Color m_preSelectionColor;
-
-    private Thread m_boxCreateThread;
-    private Thread m_cylinderCreateThread;
-    private Thread m_capsuleCreateThread;
+    private List<SelectionData> m_selection            = new List<SelectionData>();
 
     public GameObject Parent { get; private set; }
-    public Color VisualPrimitiveColor { get; set; }
-    public string VisualPrimitiveShader { get; set; }
 
     public CreateOrientedShapeTool( GameObject parent )
       : base( isSingleInstanceTool: true )
     {
       Parent = parent;
-      VisualPrimitiveColor = Color.red;
-      VisualPrimitiveShader = "Standard";
     }
 
     public override void OnAdd()
@@ -122,11 +159,6 @@ namespace AGXUnityEditor.Tools
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
-      if ( Parent == null ) {
-        PerformRemoveFromParent();
-        return;
-      }
-
       if ( HandleKeyEscape( true ) )
         return;
 
@@ -146,16 +178,13 @@ namespace AGXUnityEditor.Tools
       }
 
       // Single selection mode.
-      ClearSelection();
+      if ( !Event.current.shift )
+        ClearSelection();
+
       if ( selected != null ) {
-        m_selection.Add( selected );
-        m_preSelectionColor = selected.GetComponent<MeshRenderer>().sharedMaterial.color;
-        selected.GetComponent<MeshRenderer>().sharedMaterial.color = Color.green;
-        m_selectionData.SetGameObject( selected );
-        // TODO HIGHLIGHT: Add multiple.
-        //SetVisualizedSelection( selected );
+        if ( !m_selection.Exists( s => s.GameObject == selected ) )
+          m_selection.Add( new SelectionData( selected ) );
       }
-      UpdatePrimitiveData();
 
       // TODO GUI: Why? Force inspector update instead?
       EditorUtility.SetDirty( Parent );
@@ -175,72 +204,73 @@ namespace AGXUnityEditor.Tools
       UnityEngine.GUI.enabled = m_selection.Count > 0;
       m_buttons.Update( Event.current, ( type ) =>
         {
-          if ( type == ShapeType.Box ) {
-            CreateShape<Box>( m_selectionData.Filter.transform, box =>
-            {
-              m_boxCreateThread.Join();
-              box.HalfExtents = m_primitiveData.boxExtents.ToVector3();
+          foreach ( var s in m_selection ) {
+            if ( type == ShapeType.Box ) {
+              CreateShape<Box>( s.Filter.transform, box =>
+              {
+                s.BoxCreateThread.Join();
+                box.HalfExtents = s.PrimitiveData.boxExtents.ToVector3();
 
-              box.transform.position = m_selectionData.WorldCenter;
-              box.transform.rotation = m_selectionData.Rotation;
-              box.transform.rotation *= ( new agx.Quat( m_primitiveData.boxTransform ) ).ToHandedQuaternion();
-            } );
-          }
-          else if ( type == ShapeType.Cylinder ) {
-            CreateShape<Cylinder>( m_selectionData.Filter.transform, cylinder =>
-            {
-              m_cylinderCreateThread.Join();
-              cylinder.Radius = (float)m_primitiveData.cylinderRadiusHeight.x;
-              cylinder.Height = (float)m_primitiveData.cylinderRadiusHeight.y;
+                box.transform.position = s.WorldCenter;
+                box.transform.rotation = s.Rotation;
+                box.transform.rotation *= ( new agx.Quat( s.PrimitiveData.boxTransform ) ).ToHandedQuaternion();
+              } );
+            }
+            else if ( type == ShapeType.Cylinder ) {
+              CreateShape<Cylinder>( s.Filter.transform, cylinder =>
+              {
+                s.CylinderCreateThread.Join();
+                cylinder.Radius = (float)s.PrimitiveData.cylinderRadiusHeight.x;
+                cylinder.Height = (float)s.PrimitiveData.cylinderRadiusHeight.y;
 
-              cylinder.transform.position = m_selectionData.WorldCenter;
-              cylinder.transform.rotation = m_selectionData.Rotation;
-              cylinder.transform.rotation *= ( new agx.Quat( m_primitiveData.cylinderRotation ) ).ToHandedQuaternion();
-            } );
-          }
-          else if ( type == ShapeType.Capsule ) {
-            CreateShape<Capsule>( m_selectionData.Filter.transform, capsule =>
-            {
-              m_capsuleCreateThread.Join();
-              capsule.Radius = (float)m_primitiveData.capsuleRadiusHeight.x;
-              capsule.Height = (float)m_primitiveData.capsuleRadiusHeight.y;
+                cylinder.transform.position = s.WorldCenter;
+                cylinder.transform.rotation = s.Rotation;
+                cylinder.transform.rotation *= ( new agx.Quat( s.PrimitiveData.cylinderRotation ) ).ToHandedQuaternion();
+              } );
+            }
+            else if ( type == ShapeType.Capsule ) {
+              CreateShape<Capsule>( s.Filter.transform, capsule =>
+              {
+                s.CapsuleCreateThread.Join();
+                capsule.Radius = (float)s.PrimitiveData.capsuleRadiusHeight.x;
+                capsule.Height = (float)s.PrimitiveData.capsuleRadiusHeight.y;
 
-              capsule.transform.position = m_selectionData.WorldCenter;
-              capsule.transform.rotation = m_selectionData.Rotation;
-              capsule.transform.rotation *= ( new agx.Quat( m_primitiveData.capsuleRotation ) ).ToHandedQuaternion();
-            } );
-          }
-          else if ( type == ShapeType.Sphere ) {
-            CreateShape<Sphere>( m_selectionData.Filter.transform, sphere =>
-            {
-              sphere.Radius = m_selectionData.Radius;
-
-              sphere.transform.position = m_selectionData.WorldCenter;
-              sphere.transform.rotation = m_selectionData.Rotation;
-            } );
-          }
-          else if ( type == ShapeType.Mesh ) {
-            CreateShape<Mesh>( m_selectionData.Filter.transform, mesh =>
-            {
-              mesh.SetSourceObject( m_selectionData.Filter.sharedMesh );
-              // We don't want to set the position given the center of the bounds
-              // since we're one-to-one with the mesh filter.
-              mesh.transform.position = m_selectionData.Filter.transform.position;
-              mesh.transform.rotation = m_selectionData.Filter.transform.rotation;
-            } );
+                capsule.transform.position = s.WorldCenter;
+                capsule.transform.rotation = s.Rotation;
+                capsule.transform.rotation *= ( new agx.Quat( s.PrimitiveData.capsuleRotation ) ).ToHandedQuaternion();
+              } );
+            }
+            else if ( type == ShapeType.Sphere ) {
+              CreateShape<Sphere>( s.Filter.transform, sphere =>
+              {
+                sphere.Radius = s.Radius;
+                sphere.transform.position = s.WorldCenter;
+                sphere.transform.rotation = s.Rotation;
+              } );
+            }
+            else if ( type == ShapeType.Mesh ) {
+              CreateShape<Mesh>( s.Filter.transform, mesh =>
+              {
+                mesh.SetSourceObject( s.Filter.sharedMesh );
+                // We don't want to set the position given the center of the bounds
+                // since we're one-to-one with the mesh filter.
+                mesh.transform.position = s.Filter.transform.position;
+                mesh.transform.rotation = s.Filter.transform.rotation;
+              } );
+            }
           }
 
           Reset();
+          EditorUtility.SetDirty( Parent ); 
         }, ( type ) => previewShape = type );
 
       if ( Event.current.type == EventType.Repaint )
-        UpdateVisualPrimitive( previewShape );
+        foreach ( var s in m_selection )
+          UpdateVisualPrimitive( previewShape, s );
 
       UnityEngine.GUI.enabled = true;
 
       InspectorGUI.OnDropdownToolEnd();
-
-      EditorUtility.SetDirty( Parent );
     }
 
     private string GetCurrentStateInfo()
@@ -260,11 +290,8 @@ namespace AGXUnityEditor.Tools
 
     private void ClearSelection()
     {
-      if ( m_selection.Count > 0 )
-        m_selection[ 0 ].GetComponent<MeshRenderer>().sharedMaterial.color = m_preSelectionColor;
+      m_selection.ForEach( s => RemoveVisualPrimitive( s.VisualPrimitiveName ) );
       m_selection.Clear();
-      // TODO HIGHLIGHT: Fix.
-      //ClearVisualizedSelection();
     }
 
     private bool HandleKeyEscape( bool isSceneViewUpdate )
@@ -288,46 +315,12 @@ namespace AGXUnityEditor.Tools
       return false;
     }
 
-    private void UpdatePrimitiveData()
+    private void UpdateVisualPrimitive( ShapeType? type, SelectionData sel )
     {
-      var vertices = m_selectionData.Filter.sharedMesh.vertices;
-      agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
-      foreach ( var v in vertices )
-        agxVerts.Add( v.ToHandedVec3() );
-
-      m_primitiveData.boxReady = false;
-      m_primitiveData.cylinderReady = false;
-      m_primitiveData.capsuleReady = false;
-
-      m_boxCreateThread = new Thread( () =>
-      {
-        agxUtil.agxUtilSWIG.computeOrientedBox( agxVerts, ref m_primitiveData.boxExtents, ref m_primitiveData.boxTransform );
-        m_primitiveData.boxReady = true;
-      } );
-      m_boxCreateThread.Start();
-
-      m_cylinderCreateThread = new Thread( () =>
-      {
-        agxUtil.agxUtilSWIG.computeOrientedCylinder( agxVerts, ref m_primitiveData.cylinderRadiusHeight, ref m_primitiveData.cylinderRotation );
-        m_primitiveData.cylinderReady = true;
-      } );
-      m_cylinderCreateThread.Start();
-
-      m_capsuleCreateThread= new Thread( () =>
-      {
-        agxUtil.agxUtilSWIG.computeOrientedCapsule( agxVerts, ref m_primitiveData.capsuleRadiusHeight, ref m_primitiveData.capsuleRotation );
-        m_primitiveData.capsuleReady = true;
-      } );
-      m_capsuleCreateThread.Start();
-
-    }
-
-    private void UpdateVisualPrimitive( ShapeType? type )
-    {
-      Utils.VisualPrimitive vp = GetVisualPrimitive( m_visualPrimitiveName );
+      Utils.VisualPrimitive vp = GetVisualPrimitive( (string)sel.VisualPrimitiveName );
 
       if ( type == null ) {
-        RemoveVisualPrimitive( m_visualPrimitiveName );
+        RemoveVisualPrimitive( (string)sel.VisualPrimitiveName );
         return;
       }
 
@@ -335,71 +328,71 @@ namespace AGXUnityEditor.Tools
 
       // Desired type doesn't exist - remove current visual primitive if it exists.
       if ( desiredType == null ) {
-        RemoveVisualPrimitive( m_visualPrimitiveName );
+        RemoveVisualPrimitive( (string)sel.VisualPrimitiveName );
         return;
       }
 
       // New visual primitive type. Remove old one.
       if ( vp != null && vp.GetType() != desiredType ) {
-        RemoveVisualPrimitive( m_visualPrimitiveName );
+        RemoveVisualPrimitive( (string)sel.VisualPrimitiveName );
         vp = null;
       }
 
       // Same type as selected button shape type.
       if ( vp == null ) {
         MethodInfo genericMethod = GetType().GetMethod( "GetOrCreateVisualPrimitive", BindingFlags.NonPublic | BindingFlags.Instance ).MakeGenericMethod( desiredType );
-        vp = (Utils.VisualPrimitive)genericMethod.Invoke( this, new object[] { m_visualPrimitiveName, VisualPrimitiveShader } );
+        vp = (Utils.VisualPrimitive)genericMethod.Invoke( this, new object[] { sel.VisualPrimitiveName, sel.VisualPrimitiveShader } );
       }
 
       if ( vp == null )
         return;
 
       vp.Pickable = false;
-      vp.Color = VisualPrimitiveColor;
+      vp.Color = sel.VisualPrimitiveColor;
 
       vp.Visible = type != null;
       if ( !vp.Visible )
         return;
 
       if ( vp is Utils.VisualPrimitiveMesh ) {
-        vp.Node.transform.localScale = m_selectionData.Filter.transform.lossyScale;
-        vp.Node.transform.position = m_selectionData.Filter.transform.position;
-        vp.Node.transform.rotation = m_selectionData.Filter.transform.rotation;
+        vp.Node.transform.localScale = sel.Filter.transform.lossyScale;
+        vp.Node.transform.position = sel.Filter.transform.position;
+        vp.Node.transform.rotation = sel.Filter.transform.rotation;
       }
       else {
         vp.Node.transform.localScale = Vector3.one;
-        vp.Node.transform.position = m_selectionData.WorldCenter;
-        vp.Node.transform.rotation = m_selectionData.Rotation;
+        vp.Node.transform.position = sel.WorldCenter;
+        vp.Node.transform.rotation = sel.Rotation;
       }
 
       if ( vp is Utils.VisualPrimitiveBox ) {
-        if ( !m_primitiveData.boxReady ) {
-          RemoveVisualPrimitive( m_visualPrimitiveName );
+        if ( !m_selection[ 0 ].PrimitiveData.boxReady ) {
+          RemoveVisualPrimitive( sel.VisualPrimitiveName );
           return;
         }
-        ( vp as Utils.VisualPrimitiveBox ).SetSize( m_primitiveData.boxExtents.ToVector3() );
-        vp.Node.transform.rotation *= new agx.Quat( m_primitiveData.boxTransform ).ToHandedQuaternion();
+        ( vp as Utils.VisualPrimitiveBox ).SetSize( Extensions.ToVector3( sel.PrimitiveData.boxExtents ) );
+        vp.Node.transform.rotation *= new agx.Quat( sel.PrimitiveData.boxTransform ).ToHandedQuaternion();
       }
       else if ( vp is Utils.VisualPrimitiveCylinder ) {
-        if ( !m_primitiveData.cylinderReady ) {
-          RemoveVisualPrimitive( m_visualPrimitiveName );
+        if ( !sel.PrimitiveData.cylinderReady ) {
+          RemoveVisualPrimitive( sel.VisualPrimitiveName );
           return;
         }
-        ( vp as Utils.VisualPrimitiveCylinder ).SetSize( (float)m_primitiveData.cylinderRadiusHeight.x, (float)m_primitiveData.cylinderRadiusHeight.y );
-        vp.Node.transform.rotation *= new agx.Quat( m_primitiveData.cylinderRotation ).ToHandedQuaternion();
+        ( vp as Utils.VisualPrimitiveCylinder ).SetSize( (float)sel.PrimitiveData.cylinderRadiusHeight.x, (float)sel.PrimitiveData.cylinderRadiusHeight.y );
+        vp.Node.transform.rotation *= new agx.Quat( sel.PrimitiveData.cylinderRotation ).ToHandedQuaternion();
       }
       else if ( vp is Utils.VisualPrimitiveCapsule ) {
-        if ( !m_primitiveData.capsuleReady ) {
-          RemoveVisualPrimitive( m_visualPrimitiveName );
+        if ( !sel.PrimitiveData.capsuleReady ) {
+          RemoveVisualPrimitive( sel.VisualPrimitiveName );
           return;
         }
-        ( vp as Utils.VisualPrimitiveCapsule ).SetSize( (float)m_primitiveData.capsuleRadiusHeight.x, (float)m_primitiveData.capsuleRadiusHeight.y );
-        vp.Node.transform.rotation *= new agx.Quat( m_primitiveData.capsuleRotation ).ToHandedQuaternion();
+        ( vp as Utils.VisualPrimitiveCapsule ).SetSize( (float)sel.PrimitiveData.capsuleRadiusHeight.x, (float)sel.PrimitiveData.capsuleRadiusHeight.y );
+        vp.Node.transform.rotation *= new agx.Quat( sel.PrimitiveData.capsuleRotation ).ToHandedQuaternion();
       }
       else if ( vp is Utils.VisualPrimitiveSphere )
-        ( vp as Utils.VisualPrimitiveSphere ).SetSize( m_selectionData.Radius );
+        ( vp as Utils.VisualPrimitiveSphere ).SetSize( sel.Radius );
       else if ( vp is Utils.VisualPrimitiveMesh )
-        ( vp as Utils.VisualPrimitiveMesh ).SetSourceObject( m_selectionData.Filter.sharedMesh );
+        ( vp as Utils.VisualPrimitiveMesh ).SetSourceObject( (UnityEngine.Mesh)sel.Filter.sharedMesh );
     }
   }
 }
