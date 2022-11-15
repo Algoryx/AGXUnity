@@ -66,6 +66,25 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private float m_soilParticleSizeScaling = 1.0f;
+
+    /// <summary>
+    /// Set the scale factor used when resizing the dynamic soil particles. Can be increased to increase performance
+    /// or decreased to yield higher simulation fidelity.
+    /// Default: 1.0
+    /// </summary>
+    [ClampAboveZeroInInspector()]
+    public float SoilParticleSizeScaling
+    {
+      get { return m_soilParticleSizeScaling; }
+      set
+      {
+        m_soilParticleSizeScaling = value;
+        Propagate( properties => properties.setSoilParticleSizeScaling( m_soilParticleSizeScaling ) );
+      }
+    }
+
+    [SerializeField]
     private float m_avalancheDecayFraction = 0.1f;
 
     /// <summary>
