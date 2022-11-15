@@ -995,7 +995,10 @@ namespace AGXUnity
       Gizmos.DrawMesh( GetOrCreateGizmosMesh(),
                        attachmentPair.ReferenceFrame.Position,
                        attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation( Vector3.up, Vector3.forward ),
-                       0.3f * Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position, Camera.current ) * Vector3.one );
+                       0.3f * Utils.Math.Clamp( Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position,
+                                                                                                     Camera.current ),
+                                                0.2f,
+                                                2.0f ) * Vector3.one );
 
       if ( !attachmentPair.Synchronized && selected ) {
         Gizmos.color = Color.red;
