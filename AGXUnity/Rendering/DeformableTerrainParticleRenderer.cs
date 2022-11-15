@@ -10,7 +10,7 @@ using AGXUnity.Model;
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
-  [RequireComponent( typeof( DeformableTerrain ) )]
+  [RequireComponent( typeof( ITerrain ) )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
@@ -25,8 +25,7 @@ namespace AGXUnity.Rendering
       Update
     }
 
-    [HideInInspector]
-    public DeformableTerrain DeformableTerrain { get; private set; } = null;
+    public ITerrain ParticleProvider { get; private set; } = null;
 
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
@@ -39,7 +38,7 @@ namespace AGXUnity.Rendering
       {
         m_renderMode = value;
 
-        if ( !IsSynchronizingProperties && DeformableTerrain != null )
+        if ( !IsSynchronizingProperties && ParticleProvider != null)
           InitializeRenderMode();
       }
     }
@@ -67,7 +66,7 @@ namespace AGXUnity.Rendering
       get { return m_granuleInstance; }
       set
       {
-        var isChangedDuringRuntime = DeformableTerrain != null &&
+        var isChangedDuringRuntime = ParticleProvider != null &&
                                      value != m_granuleInstance;
         if ( isChangedDuringRuntime )
           DestroyAll();
@@ -81,9 +80,12 @@ namespace AGXUnity.Rendering
 
     protected override bool Initialize()
     {
-      DeformableTerrain = GetComponent<DeformableTerrain>();
-      if ( DeformableTerrain == null )
+      ParticleProvider = GetComponent<ITerrain>();
+      if ( ParticleProvider == null)
+      {
+        Debug.LogError("DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!");
         return false;
+      }
 
       if ( !InitializeRenderMode() )
         return false;
@@ -112,7 +114,7 @@ namespace AGXUnity.Rendering
 
     protected override void OnDestroy()
     {
-      DeformableTerrain = null;
+      ParticleProvider = null;
 
       base.OnDestroy();
     }
@@ -233,12 +235,10 @@ namespace AGXUnity.Rendering
 
     private void Synchronize()
     {
-      if ( DeformableTerrain == null || DeformableTerrain.Native == null )
-        return;
+      var granulars = ParticleProvider.GetParticles();
+      if (granulars == null) return;
 
-      var soilSimulation = DeformableTerrain.Native.getSoilSimulationInterface();
-      var granulars      = soilSimulation.getSoilParticles();
-      m_numGranulars     = (int)granulars.size();
+      m_numGranulars = (int)granulars.size();
 
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_meshInstance != null &&

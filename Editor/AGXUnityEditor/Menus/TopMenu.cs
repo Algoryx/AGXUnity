@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
@@ -320,6 +320,40 @@ namespace AGXUnityEditor
       go.AddComponent<AGXUnity.Model.DeformableTerrain>();
 
       Undo.RegisterCreatedObjectUndo( go, "New Deformable Terrain" );
+
+      return Selection.activeGameObject = go;
+    }
+
+    [MenuItem( "AGXUnity/Model/Deformable Terrain Pager", priority = 50 )]
+    public static GameObject CreateTerrainPager()
+    {
+      var terrainData = new TerrainData()
+      {
+        size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
+        heightmapResolution = 517
+      };
+#if UNITY_2018_1_OR_NEWER
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
+#else
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolution );
+#endif
+
+      var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
+      AssetDatabase.CreateAsset( terrainData, terrainDataName );
+
+      var go = Terrain.CreateTerrainGameObject( terrainData );
+      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrainPager>();
+      if ( go == null ) {
+        AssetDatabase.DeleteAsset( terrainDataName );
+        return null;
+      }
+
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
+      go.transform.position = new Vector3( -60, 0, -60 );
+      go.AddComponent<AGXUnity.Model.DeformableTerrainPager>();
+
+      Undo.RegisterCreatedObjectUndo( go, "New Terrain Pager" );
 
       return Selection.activeGameObject = go;
     }
