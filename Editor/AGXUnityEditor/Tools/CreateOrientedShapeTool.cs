@@ -34,7 +34,6 @@ namespace AGXUnityEditor.Tools
     {
       public GameObject GameObject { get; private set; }
       public MeshFilter Filter { get; private set; }
-      public MeshRenderer Renderer { get; private set; }
       public Vector3 LocalExtents { get; private set; }
       public Vector3 WorldCenter { get; private set; }
       public Quaternion Rotation { get; private set; }
@@ -51,7 +50,7 @@ namespace AGXUnityEditor.Tools
 
       public string VisualPrimitiveName;
       public Color VisualPrimitiveColor { get; set; } = Color.red;
-      public string VisualPrimitiveShader { get; set; } = "standard";
+      public string VisualPrimitiveShader { get; set; } = "Diffuse";
 
       public SelectionData( GameObject go )
       {
@@ -74,6 +73,8 @@ namespace AGXUnityEditor.Tools
         PrimitiveData.cylinderReady = false;
         PrimitiveData.capsuleReady = false;
 
+        SceneViewHighlight.Add( go );
+
         BoxCreateThread = new Thread( () =>
         {
           agxUtil.agxUtilSWIG.computeOrientedBox( agxVerts, ref PrimitiveData.boxExtents, ref PrimitiveData.boxTransform );
@@ -94,6 +95,11 @@ namespace AGXUnityEditor.Tools
           PrimitiveData.capsuleReady = true;
         } );
         CapsuleCreateThread.Start();
+      }
+
+      public void Reset()
+      {
+        SceneViewHighlight.Remove( GameObject );
       }
     }
 
@@ -162,6 +168,7 @@ namespace AGXUnityEditor.Tools
       if ( HandleKeyEscape( true ) )
         return;
 
+
       // NOTE: Waiting for mouse click!
       if ( !Manager.HijackLeftMouseClick() )
         return;
@@ -178,12 +185,21 @@ namespace AGXUnityEditor.Tools
       }
 
       // Single selection mode.
-      if ( !Event.current.shift )
+      if ( !(Event.current.shift || Event.current.control) )
         ClearSelection();
 
       if ( selected != null ) {
         if ( !m_selection.Exists( s => s.GameObject == selected ) )
           m_selection.Add( new SelectionData( selected ) );
+        else if ( Event.current.control )
+          m_selection.RemoveAll( s =>
+           {
+             if ( s.GameObject == selected ) {
+               s.Reset();
+               return true;
+             }
+             return false;
+           } );
       }
 
       // TODO GUI: Why? Force inspector update instead?
@@ -261,7 +277,7 @@ namespace AGXUnityEditor.Tools
           }
 
           Reset();
-          EditorUtility.SetDirty( Parent ); 
+          EditorUtility.SetDirty( Parent );
         }, ( type ) => previewShape = type );
 
       if ( Event.current.type == EventType.Repaint )
@@ -290,7 +306,11 @@ namespace AGXUnityEditor.Tools
 
     private void ClearSelection()
     {
-      m_selection.ForEach( s => RemoveVisualPrimitive( s.VisualPrimitiveName ) );
+      m_selection.ForEach( s =>
+      {
+        RemoveVisualPrimitive( s.VisualPrimitiveName );
+        s.Reset(); 
+      } );
       m_selection.Clear();
     }
 
