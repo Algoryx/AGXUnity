@@ -328,7 +328,7 @@ namespace AGXUnity.Model
     /// of the terrain has been created.
     /// </remarks>
     /// <param name="terrain">Terrain instance to synchronize.</param>
-    public void Synchronize( DeformableTerrain terrain )
+    public void Synchronize( ITerrain terrain )
     {
       try {
         m_singleSynchronizeInstance = terrain;
@@ -339,7 +339,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Register( DeformableTerrain terrain )
+    public void Register( ITerrain terrain )
     {
       if ( !m_terrains.Contains( terrain ) )
         m_terrains.Add( terrain );
@@ -351,7 +351,7 @@ namespace AGXUnity.Model
       Synchronize( terrain );
     }
 
-    public void Unregister( DeformableTerrain terrain )
+    public void Unregister( ITerrain terrain )
     {
       m_terrains.Remove( terrain );
     }
@@ -375,20 +375,24 @@ namespace AGXUnity.Model
         return;
 
       if ( m_singleSynchronizeInstance != null ) {
-        if ( m_singleSynchronizeInstance.Native != null )
-          action( m_singleSynchronizeInstance.Native.getProperties() );
+        if ( m_singleSynchronizeInstance.GetProperties() != null) {
+          action( m_singleSynchronizeInstance.GetProperties() );
+          m_singleSynchronizeInstance.OnPropertiesUpdated();
+        }
         return;
       }
 
       foreach ( var terrain in m_terrains )
-        if ( terrain.Native != null )
-          action( terrain.Native.getProperties() );
+        if ( terrain.GetProperties() != null) {
+          action( terrain.GetProperties() );
+          terrain.OnPropertiesUpdated();
+        }
     }
 
     [NonSerialized]
-    private List<DeformableTerrain> m_terrains = new List<DeformableTerrain>();
+    private List<ITerrain> m_terrains = new List<ITerrain>();
 
     [NonSerialized]
-    private DeformableTerrain m_singleSynchronizeInstance = null;
+    private ITerrain m_singleSynchronizeInstance = null;
   }
 }
