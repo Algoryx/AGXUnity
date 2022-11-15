@@ -59,7 +59,7 @@ namespace AGXUnity
     private void DrawLine( Vector3 direction, Color color )
     {
       float Alpha = 1.0f;
-      float Size = 1.0f;
+      float Size = .25f;
       int LineDivisions = 7;
       float width = 1.5f;
 
