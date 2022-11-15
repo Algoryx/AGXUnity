@@ -1234,13 +1234,11 @@ namespace AGXUnityEditor
 
     public static void WarningLabel( string warning )
     {
-      var prevBgc = UnityEngine.GUI.backgroundColor;
-      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
-      EditorGUILayout.LabelField( GUI.MakeLabel( warning,
-                                                 Color.Lerp( Color.red, Color.white, 0.25f ),
-                                                 true ),
-                                  InspectorEditor.Skin.TextAreaMiddleCenter );
-      UnityEngine.GUI.backgroundColor = prevBgc;
+      using ( new GUI.BackgroundColorBlock( Color.Lerp( Color.white, Color.black, 0.55f ) ) )
+        EditorGUILayout.LabelField( GUI.MakeLabel( warning,
+                                                   Color.Lerp( Color.red, Color.white, 0.25f ),
+                                                   true ),
+                                    InspectorEditor.Skin.TextAreaMiddleCenter );
     }
 
     /// <summary>
