@@ -134,7 +134,7 @@ namespace AGXUnity.Model
     /// </summary>
     public void Update()
     {
-      while ( m_tilesToLoad.TryDequeue( out UnityTile tile ) ) {
+      while ( m_tilesToLoad.TryPeek( out UnityTile tile ) ) {
         // FIXME: Loading tiles currently takes quite a long time due to the write/read
         // optimally this should happen asynchronously but it is uncertain whether the Unity API allows it.
 
@@ -146,6 +146,7 @@ namespace AGXUnity.Model
           for ( int x = 0; x < res; x++ )
             data[ y, x ] *= scale;
         m_unityData.Add( tile.index, data );
+        m_tilesToLoad.TryDequeue( out UnityTile _ );
       }
     }
 
