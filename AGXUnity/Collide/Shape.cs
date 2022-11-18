@@ -226,14 +226,14 @@ namespace AGXUnity.Collide
       // If we're on the same level as the rigid body we have by
       // definition no offset to the body.
       if ( rb == null || rb.gameObject == gameObject )
-        return agx.AffineMatrix4x4.identity();
+        return GetNativeGeometryOffset();
 
       // Using the world position of the shape - which includes scaling etc.
       var shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
                                                   transform.position.ToHandedVec3() );
       var rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(),
                                                   rb.transform.position.ToHandedVec3() );
-      return shapeInWorld * rbInWorld.inverse();
+      return GetNativeGeometryOffset() * shapeInWorld * rbInWorld.inverse();
     }
 
     /// <summary>
