@@ -109,6 +109,9 @@ namespace AGXUnity.Model
     [SerializeField]
     private float m_elementSize = 0.2f;
 
+    /// <summary>
+    ///  The size of each underlying tile in the terrain, in meters.
+    /// </summary>
     [ClampAboveZeroInInspector]
     public float ElementSize
     {
@@ -122,6 +125,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private int m_width = 10;
+    /// <summary>
+    /// The width of the terrain in number of elements.
+    /// </summary>
     public int Width
     {
       get => m_width;
@@ -134,6 +140,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private int m_height = 10;
+    /// <summary>
+    /// The height of the terrain in number of elements.
+    /// </summary>
     public int Height
     {
       get => m_height;
@@ -294,6 +303,8 @@ namespace AGXUnity.Model
         TerrainMesh.sharedMesh.name = "Terrain mesh";
         TerrainMesh.sharedMesh.MarkDynamic();
       }
+
+      // Create a grid of vertices matching that of the undelying heightfield.
       var vertices = new Vector3[Width * Height];
       var uvs = new Vector2[Width * Height];
       var indices = new int[ ( Width - 1 ) * 6 * ( Height - 1 ) ];
@@ -342,6 +353,11 @@ namespace AGXUnity.Model
       TerrainMesh.mesh.RecalculateNormals();
     }
 
+    /// <summary>
+    /// Transforms the native terrain to align with unity's coordinates, this operation performs a rotation from the Z-axis to the Y-axis as well
+    /// as a conditional translation to account for positioning differences based on the evenness of the terrain dimensions
+    /// </summary>
+    /// <returns>An affine matrix representing the tranformation to apply to the terrain</returns>
     public override agx.AffineMatrix4x4 GetNativeGeometryOffset()
     {
       double offset = ElementSize*0.5;
