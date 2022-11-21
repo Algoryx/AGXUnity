@@ -124,7 +124,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private int m_width = 10;
+    private int m_width = 21;
     /// <summary>
     /// The width of the terrain in number of elements.
     /// </summary>
@@ -139,7 +139,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private int m_height = 10;
+    private int m_height = 21;
     /// <summary>
     /// The height of the terrain in number of elements.
     /// </summary>
@@ -314,8 +314,8 @@ namespace AGXUnity.Model
           vertices[ y * Width + x ].x = ( x - Width / 2 ) * ElementSize;
           vertices[ y * Width + x ].z = ( y - Height / 2 ) * ElementSize;
 
-          uvs[ y * Width + x ].x = ( x - Width / 2 ) * ElementSize * 0.5f;
-          uvs[ y * Width + x ].y = ( y - Height / 2 ) * ElementSize * 0.5f;
+          uvs[ y * Width + x ].x = ( x - Width / 2 ) * ElementSize;
+          uvs[ y * Width + x ].y = ( y - Height / 2 ) * ElementSize;
 
           if ( x != Width - 1 && y != Height - 1 ) {
             indices[ i++ ] = y * Width + x;
