@@ -96,17 +96,24 @@ namespace AGXUnityEditor.Tools
       var color = Color.gray;
       var scale = 0.35f;
       foreach ( ShapeUtils.Direction dir in System.Enum.GetValues( typeof( ShapeUtils.Direction ) ) ) {
-        var delta = DeltaSliderTool( utils.GetWorldFace( dir ), utils.GetWorldFaceDirection( dir ), color, scale );
+        var delta = DeltaSliderTool( utils.GetWorldFace( dir ),
+                                     utils.GetWorldFaceDirection( dir ),
+                                     color,
+                                     scale );
         if ( delta.magnitude > 1.0E-5f ) {
           var localSizeChange = Shape.transform.InverseTransformDirection( delta );
-          var localPositionDelta = 0.5f * localSizeChange;
-          if ( !symmetricScale && utils.IsHalfSize( dir ) )
+          var isHalfSizeDirection = utils.IsHalfSize( dir );
+          if ( !symmetricScale && isHalfSizeDirection )
             localSizeChange *= 0.5f;
 
-          utils.UpdateSize( localSizeChange, dir );
+          utils.UpdateSize( ref localSizeChange, dir );
 
-          if ( !symmetricScale )
+          if ( !symmetricScale && localSizeChange.magnitude > 1.0E-5f ) {
+            var localPositionDelta = isHalfSizeDirection ?
+                                       localSizeChange :
+                                       0.5f * localSizeChange;
             Shape.transform.position += Shape.transform.TransformDirection( localPositionDelta );
+          }
 
           SizeUpdated = true;
           LastChangeTime = EditorApplication.timeSinceStartup;

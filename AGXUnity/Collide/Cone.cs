@@ -35,7 +35,7 @@ namespace AGXUnity.Collide
       get { return m_topRadius; }
       set
       {
-        m_topRadius = AGXUnity.Utils.Math.ClampAbove(Mathf.Min(m_bottomRadius - MinimumLength, value), MinimumLength );
+        m_topRadius = AGXUnity.Utils.Math.ClampAbove(Mathf.Min(m_bottomRadius - MinimumSize, value), MinimumSize );
 
         if ( Native != null )
           Native.setTopRadius( m_topRadius );
@@ -53,7 +53,7 @@ namespace AGXUnity.Collide
       get { return m_bottomRadius; }
       set
       {
-        m_bottomRadius = AGXUnity.Utils.Math.ClampAbove( Mathf.Max(value, m_topRadius + MinimumLength), MinimumLength );
+        m_bottomRadius = AGXUnity.Utils.Math.ClampAbove( Mathf.Max(value, m_topRadius + MinimumSize), MinimumSize );
 
         if ( Native != null )
           Native.setBottomRadius( m_bottomRadius );
@@ -71,7 +71,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setHeight( m_height );

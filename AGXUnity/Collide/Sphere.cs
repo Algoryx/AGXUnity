@@ -26,7 +26,7 @@ namespace AGXUnity.Collide
       get { return m_radius; }
       set
       {
-        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setRadius( Radius );
