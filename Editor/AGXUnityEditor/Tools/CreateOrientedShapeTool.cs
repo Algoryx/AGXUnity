@@ -277,6 +277,7 @@ namespace AGXUnityEditor.Tools
           }
 
           Reset();
+          PerformRemoveFromParent();
           EditorUtility.SetDirty( Parent );
         }, ( type ) => previewShape = type );
 
