@@ -124,6 +124,22 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private bool m_deformationEnabled = true;
+
+    /// <summary>
+    /// ..
+    /// </summary>
+    public bool DeformationEnabled
+    {
+      get { return m_deformationEnabled; }
+      set
+      {
+        m_deformationEnabled = value;
+        Propagate( properties => properties.setEnableDeformation( m_deformationEnabled ) );
+      }
+    }
+
+    [SerializeField]
     private bool m_createParticlesEnabled = true;
 
     /// <summary>
