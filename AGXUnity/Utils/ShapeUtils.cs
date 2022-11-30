@@ -12,7 +12,7 @@ namespace AGXUnity.Utils
 
     public override Vector3 GetLocalFace( Direction dir )
     {
-      Box box = GetShape<Box>();
+      var box = GetShape<Box>();
       return GetLocalFace( box.HalfExtents, dir );
     }
 
@@ -21,62 +21,64 @@ namespace AGXUnity.Utils
       return true;
     }
 
-    public override void UpdateSize( Vector3 localChange, Direction dir )
+    public override void UpdateSize( ref Vector3 localChange, Direction dir )
     {
-      Box box = GetShape<Box>();
-      box.HalfExtents = box.HalfExtents + Vector3.Scale( GetLocalFaceDirection( dir ), localChange );
+      var box = GetShape<Box>();
+
+      var desiredDelta = Vector3.Scale( GetLocalFaceDirection( dir ), localChange );
+      var oldHalfExtents = box.HalfExtents;
+
+      box.HalfExtents += desiredDelta;
+
+      localChange += GetSign( dir ) * ( box.HalfExtents - ( oldHalfExtents + desiredDelta ) );
     }
   }
 
-  public class CapsuleShapeUtils : ShapeUtils
+  public class CapsuleShapeUtils : RadiusHeightShapeUtils<Capsule>
   {
     public override Vector3 GetLocalFace( Direction dir )
     {
-      Capsule capsule = GetShape<Capsule>();
+      var capsule = GetShape<Capsule>();
       if ( ToPrincipal( dir ) == PrincipalAxis.Y )
         return ( capsule.Radius + 0.5f * capsule.Height ) * GetLocalFaceDirection( dir );
       else
         return capsule.Radius * GetLocalFaceDirection( dir );
     }
-
-    public override bool IsHalfSize( Direction direction )
-    {
-      return ToPrincipal( direction ) != PrincipalAxis.Y;
-    }
-
-    public override void UpdateSize( Vector3 localChange, Direction dir )
-    {
-      Capsule capsule = GetShape<Capsule>();
-      if ( ToPrincipal( dir ) == PrincipalAxis.Y )
-        capsule.Height = capsule.Height + Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
-      else
-        capsule.Radius = capsule.Radius + Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
-    }
   }
 
-  public class CylinderShapeUtils : ShapeUtils
+  public class CylinderShapeUtils : RadiusHeightShapeUtils<Cylinder>
   {
     public override Vector3 GetLocalFace( Direction dir )
     {
-      Cylinder capsule = GetShape<Cylinder>();
+      var cylinder = GetShape<Cylinder>();
       if ( ToPrincipal( dir ) == PrincipalAxis.Y )
-        return 0.5f * capsule.Height * GetLocalFaceDirection( dir );
+        return 0.5f * cylinder.Height * GetLocalFaceDirection( dir );
       else
-        return capsule.Radius * GetLocalFaceDirection( dir );
+        return cylinder.Radius * GetLocalFaceDirection( dir );
     }
+  }
 
+  public abstract class RadiusHeightShapeUtils<T> : ShapeUtils
+    where T : Shape
+  {
     public override bool IsHalfSize( Direction direction )
     {
       return ToPrincipal( direction ) != PrincipalAxis.Y;
     }
 
-    public override void UpdateSize( Vector3 localChange, Direction dir )
+    public override void UpdateSize( ref Vector3 localChange, Direction dir )
     {
-      Cylinder cylinder = GetShape<Cylinder>();
-      if ( ToPrincipal( dir ) == PrincipalAxis.Y )
-        cylinder.Height = cylinder.Height + Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
-      else
-        cylinder.Radius = cylinder.Radius + Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
+      var shape = GetShape<T>();
+
+      var heightOrRadiusProperty = PropertySynchronizer.GetValueProperty<float>( shape,
+                                                                                 IsHalfSize( dir ) ?
+                                                                                   "Radius" :
+                                                                                   "Height" );
+      var desiredDelta = Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
+      var oldValue = heightOrRadiusProperty.Value;
+      heightOrRadiusProperty.Value += desiredDelta;
+
+      localChange += ( heightOrRadiusProperty.Value - ( oldValue + desiredDelta ) ) * GetLocalFaceDirection( dir );
     }
   }
 
@@ -84,7 +86,7 @@ namespace AGXUnity.Utils
   {
     public override Vector3 GetLocalFace( Direction dir )
     {
-      Sphere sphere = GetShape<Sphere>();
+      var sphere = GetShape<Sphere>();
       return sphere.Radius * GetLocalFaceDirection( dir );
     }
 
@@ -93,10 +95,15 @@ namespace AGXUnity.Utils
       return true;
     }
 
-    public override void UpdateSize( Vector3 localChange, Direction dir )
+    public override void UpdateSize( ref Vector3 localChange, Direction dir )
     {
-      Sphere sphere = GetShape<Sphere>();
-      sphere.Radius = sphere.Radius + Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
+      var sphere = GetShape<Sphere>();
+      var desiredDelta = Vector3.Dot( GetLocalFaceDirection( dir ), localChange );
+
+      var oldRadius = sphere.Radius;
+      sphere.Radius += desiredDelta;
+
+      localChange += ( sphere.Radius - ( oldRadius + desiredDelta ) ) * GetLocalFaceDirection( dir );
     }
   }
 
@@ -314,7 +321,7 @@ namespace AGXUnity.Utils
 
     public abstract bool IsHalfSize( Direction direction );
 
-    public abstract void UpdateSize( Vector3 localChange, Direction dir );
+    public abstract void UpdateSize( ref Vector3 localChange, Direction dir );
 
     public static Vector3 GetLocalFaceDirection( Direction direction )
     {

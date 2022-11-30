@@ -27,6 +27,10 @@ namespace AGXUnity.Utils
       private FieldInfo m_field;
       private PropertyInfo m_property;
 
+      public FieldInfo Field { get { return m_field; } }
+
+      public PropertyInfo Property { get { return m_property; } }
+
       /// <summary>
       /// Valid if the set method of the property is accessible.
       /// </summary>
@@ -77,6 +81,35 @@ namespace AGXUnity.Utils
         else if ( !onlyValueTypes && m_property.GetSetMethod() != null && m_property.GetSetMethod().IsPublic )
           m_property.SetValue( destination, m_property.GetValue( source ) );
       }
+    }
+
+    /// <summary>
+    /// Value typed property utility wrapper.
+    /// </summary>
+    /// <typeparam name="T">Property value type.</typeparam>
+    public class ValuePropertyUtil<T>
+      where T : struct
+    {
+      public T Value
+      {
+        get
+        {
+          return (T)m_property.GetValue( m_instance );
+        }
+        set
+        {
+          m_property.SetValue( m_instance, value );
+        }
+      }
+
+      public ValuePropertyUtil( object instance, PropertyInfo property )
+      {
+        m_instance = instance;
+        m_property = property;
+      }
+
+      private object m_instance = null;
+      private PropertyInfo m_property = null;
     }
 
     private static Dictionary<Type, List<FieldPropertyPair>> m_cache = new Dictionary<Type, List<FieldPropertyPair>>();
@@ -162,6 +195,37 @@ namespace AGXUnity.Utils
     public static void SynchronizeGetToSet( object obj )
     {
       Synchronize( obj, GetOrCreateSynchronizedProperties( obj.GetType() ), true );
+    }
+
+    /// <summary>
+    /// Utility wrapper around a property with public get and set and the
+    /// type is a value type.
+    /// </summary>
+    /// <typeparam name="T">Value type of the given property.</typeparam>
+    /// <param name="instance">Instance with property.</param>
+    /// <param name="propertyName">Name of the property.</param>
+    /// <returns>Utility wrapper if the given <paramref name="propertyName"/> property is valid, otherwise null.</returns>
+    public static ValuePropertyUtil<T> GetValueProperty<T>( object instance, string propertyName )
+      where T : struct
+    {
+      if ( instance == null )
+        return null;
+
+      PropertyInfo propertyInfo = null;
+      int pairIndex = GetOrCreateSynchronizedProperties( instance.GetType() ).FindIndex( pair => pair.Property.Name == propertyName );
+      if ( pairIndex >= 0 )
+        propertyInfo = GetOrCreateSynchronizedProperties( instance.GetType() )[ pairIndex ].Property;
+      else
+        propertyInfo = instance.GetType().GetProperty( propertyName );
+
+      var isValidProperty = propertyInfo != null &&
+                            propertyInfo.CanRead &&
+                            propertyInfo.CanWrite &&
+                            propertyInfo.PropertyType.IsValueType;
+      if ( !isValidProperty )
+        return null;
+
+      return new ValuePropertyUtil<T>( instance, propertyInfo );
     }
 
     /// <summary>

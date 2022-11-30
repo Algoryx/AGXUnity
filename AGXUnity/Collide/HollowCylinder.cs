@@ -34,7 +34,7 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_radius- MinimumLength, value), MinimumLength );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_radius- MinimumSize, value), MinimumSize );
 
         if ( Native != null )
           Native.setThickness( m_thickness );
@@ -52,7 +52,7 @@ namespace AGXUnity.Collide
       get { return m_radius; }
       set
       {
-        m_radius = Utils.Math.ClampAbove( value, MinimumLength );
+        m_radius = Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setOuterRadius( m_radius );
@@ -70,7 +70,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setHeight( m_height );
