@@ -72,6 +72,16 @@ namespace AGXUnity
       }
     }
 
+    public enum DamageColorScaleMode {
+      PerFrame,
+      OnOrAboveSetDamage
+    }
+    [Tooltip("Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color")]
+    public DamageColorScaleMode DamageColorMode = DamageColorScaleMode.PerFrame;
+
+    [ClampAboveZeroInInspector]
+    public float SetDamageForMaxColor = 0f;
+
     [System.NonSerialized]
     private agxCable.SegmentDamagePtrVector m_currentDamages;
     public agxCable.SegmentDamagePtrVector CurrentDamages  => m_currentDamages;
@@ -82,10 +92,12 @@ namespace AGXUnity
 
     private float[] m_damageValues = new float[0];
     public float DamageValue(int index) => index < m_damageValues.Length ? m_damageValues[index] : 0;
+    [HideInInspector]
     public int DamageValueCount => m_damageValues.Length;
     
     private float m_maxDamage = 0;
-    public float MaxDamage => m_maxDamage;
+    [HideInInspector]
+    public float MaxDamage => DamageColorMode == DamageColorScaleMode.PerFrame ? m_maxDamage : SetDamageForMaxColor;
 
     protected override bool Initialize()
     {
