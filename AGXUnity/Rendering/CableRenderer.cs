@@ -45,7 +45,7 @@ namespace AGXUnity.Rendering
     public void SetRenderDamages(bool value) => m_renderDamages = value;
 
     private bool m_renderDamages = false, m_previousRenderDamages = false;
-    private Dictionary<int, MeshRenderer> m_segmentRenderers = new Dictionary<int, MeshRenderer>();
+    private Dictionary<int, (MeshRenderer, MeshRenderer)> m_segmentRenderers = new Dictionary<int, (MeshRenderer, MeshRenderer)>();
 
     public void InitializeRenderer( bool destructLast = false )
     {
@@ -140,22 +140,24 @@ namespace AGXUnity.Rendering
           // If using render damage
           if ((m_renderDamages || m_previousRenderDamages)){
             int id = go.GetInstanceID();
-            if (!m_segmentRenderers.ContainsKey(id)){
-              var renderer = go.GetComponentInChildren<MeshRenderer>();
-              m_segmentRenderers.Add(id, renderer); // FIXME Just the first renderer for now
-            }
 
-            MeshRenderer meshRenderer;
-            if (m_segmentRenderers.TryGetValue(id, out meshRenderer) && meshRenderer != null){
+            (MeshRenderer, MeshRenderer) meshRenderers;
+            if (m_segmentRenderers.TryGetValue(id, out meshRenderers) && meshRenderers.Item1 != null){
               if (m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments()){ // TODO do we need the length check?
                 float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
                 block.SetColor("_Color", new Color(t, 1 - t, 0, 1));
-                meshRenderer.SetPropertyBlock(block);
+                meshRenderers.Item1.SetPropertyBlock(block);
+                meshRenderers.Item2.SetPropertyBlock(block);
               }
               else{
                 block.SetColor("_Color", Material.color);
-                meshRenderer.SetPropertyBlock(block);
+                meshRenderers.Item1.SetPropertyBlock(block);
+                meshRenderers.Item2.SetPropertyBlock(block);
               }
+            }
+            else {
+              var renderers = go.GetComponentsInChildren<MeshRenderer>();
+              m_segmentRenderers.Add(id, (renderers[0], renderers[1]));
             }
           }
 
