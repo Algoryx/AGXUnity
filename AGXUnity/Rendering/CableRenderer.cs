@@ -145,7 +145,7 @@ namespace AGXUnity.Rendering
             if (m_segmentRenderers.TryGetValue(id, out meshRenderers) && meshRenderers.Item1 != null){
               if (m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments()){ // TODO do we need the length check?
                 float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
-                block.SetColor("_Color", new Color(t, 1 - t, 0, 1));
+                block.SetColor("_Color", Color.Lerp(CableDamage.MinColor, CableDamage.MaxColor, t));
                 meshRenderers.Item1.SetPropertyBlock(block);
                 meshRenderers.Item2.SetPropertyBlock(block);
               }

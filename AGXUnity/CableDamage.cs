@@ -7,8 +7,8 @@ using AGXUnity.Rendering;
 
 namespace AGXUnity
 {
-  [DisallowMultipleComponent] // TODO not 100 that we want to disallow multiples, depends on usecases etc
-  [RequireComponent(typeof(AGXUnity.Cable))] // TODO other ScriptComponents does this through code instead of Attribute. Is this because RequireComponent will create instance of Cable? Look into how Cable is created from menu
+  [DisallowMultipleComponent]
+  [RequireComponent(typeof(AGXUnity.Cable))]
   public class CableDamage : ScriptComponent
   {
     /// <summary>
@@ -35,6 +35,22 @@ namespace AGXUnity
     public CableRenderer CableRenderer { get { return m_cableRenderer ?? ( m_cableRenderer = GetComponent<CableRenderer>() ); } }
 
     /// <summary>
+    /// Will use the first CableRenderer component instance on this object to render the cable damage if active.
+    /// </summary>
+    [SerializeField]
+    private bool m_renderCableDamage = false;
+    public bool RenderCableDamage {
+      get { return m_renderCableDamage; }
+      set {
+        m_renderCableDamage = value;
+        if (CableRenderer == null)
+          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
+        else
+          CableRenderer.SetRenderDamages(value);
+      }
+    }
+
+    /// <summary>
     /// ScriptableAsset with weights of each of the cable damage components, determining which one contributes how much to the cable damage score
     /// </summary>
     [SerializeField]
@@ -56,28 +72,12 @@ namespace AGXUnity
       }
     }
 
-    /// <summary>
-    /// Will use the first CableRenderer component instance on this object to render the cable damage if active.
-    /// </summary>
-    [SerializeField]
-    private bool m_renderCableDamage = false;
-    public bool RenderCableDamage {
-      get { return m_renderCableDamage; }
-      set {
-        m_renderCableDamage = value;
-        if (CableRenderer == null)
-          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
-        else
-          CableRenderer.SetRenderDamages(value);
-      }
-    }
-
-    public enum DamageColorScaleMode {
-      PerFrame,
-      OnOrAboveSetDamage
+    public enum MaxDamageColorMode {
+      HighestPerFrame,
+      UseSetDamage
     }
     [Tooltip("Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color")]
-    public DamageColorScaleMode DamageColorMode = DamageColorScaleMode.PerFrame;
+    public MaxDamageColorMode DamageColorMode = MaxDamageColorMode.HighestPerFrame;
 
     [ClampAboveZeroInInspector]
     public float SetDamageForMaxColor = 0f;
@@ -97,7 +97,10 @@ namespace AGXUnity
     
     private float m_maxDamage = 0;
     [HideInInspector]
-    public float MaxDamage => DamageColorMode == DamageColorScaleMode.PerFrame ? m_maxDamage : SetDamageForMaxColor;
+    public float MaxDamage => DamageColorMode == MaxDamageColorMode.HighestPerFrame ? m_maxDamage : SetDamageForMaxColor;
+
+    public Color MinColor = Color.green;
+    public Color MaxColor = Color.red;
 
     protected override bool Initialize()
     {
