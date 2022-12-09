@@ -39,15 +39,13 @@ namespace AGXUnity.Rendering
       }
     }
 
+    private CableDamage m_cableDamage = null;
+    private CableDamage CableDamage { get { return m_cableDamage ?? ( m_cableDamage = GetComponent<CableDamage>() ); } }
+
+    public void SetRenderDamages(bool value) => m_renderDamages = value;
+
     private bool m_renderDamages = false, m_previousRenderDamages = false;
-    private float[] m_damageValues;
-    private float m_maxDamage;
-    public void RenderDamages(bool value) => m_renderDamages = value;
-    public void SetDamageValues(float[] values, float maxValue)
-    {
-      m_damageValues = values;
-      m_maxDamage = maxValue;
-    }
+    private Dictionary<int, MeshRenderer> m_segmentRenderers = new Dictionary<int, MeshRenderer>();
 
     public void InitializeRenderer( bool destructLast = false )
     {
@@ -106,8 +104,6 @@ namespace AGXUnity.Rendering
       m_segmentSpawner.End();
     }
 
-    private Dictionary<int, MeshRenderer> m_segmentRenderers = new Dictionary<int, MeshRenderer>();
-
     private void Render()
     {
       if ( m_segmentSpawner == null )
@@ -142,7 +138,7 @@ namespace AGXUnity.Rendering
           var go = m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
 
           // If using render damage
-          if ((m_renderDamages || m_previousRenderDamages) && m_damageValues != null){
+          if ((m_renderDamages || m_previousRenderDamages)){
             int id = go.GetInstanceID();
             if (!m_segmentRenderers.ContainsKey(id)){
               var renderer = go.GetComponentInChildren<MeshRenderer>();
@@ -151,8 +147,8 @@ namespace AGXUnity.Rendering
 
             MeshRenderer meshRenderer;
             if (m_segmentRenderers.TryGetValue(id, out meshRenderer) && meshRenderer != null){
-              if (m_renderDamages && m_damageValues.Length == (int)native.getNumSegments()){
-                float t = m_damageValues[i] / m_maxDamage;
+              if (m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments()){ // TODO do we need the length check?
+                float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
                 block.SetColor("_Color", new Color(t, 1 - t, 0, 1));
                 meshRenderer.SetPropertyBlock(block);
               }

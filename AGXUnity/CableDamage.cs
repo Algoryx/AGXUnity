@@ -68,7 +68,7 @@ namespace AGXUnity
         if (CableRenderer == null)
           Debug.LogWarning("No CableRenderer to use for rendering cable damages");
         else
-          CableRenderer.RenderDamages(value);
+          CableRenderer.SetRenderDamages(value);
       }
     }
 
@@ -80,7 +80,12 @@ namespace AGXUnity
     private agxCable.SegmentDamagePtrVector m_accumulatedDamages;
     public agxCable.SegmentDamagePtrVector AccumulatedDamages => m_accumulatedDamages;
 
-    private float[] m_damageValues = new float[0]; // TODO it wouldn't be too bad to be able to see these in the inspector...
+    private float[] m_damageValues = new float[0];
+    public float DamageValue(int index) => index < m_damageValues.Length ? m_damageValues[index] : 0;
+    public int DamageValueCount => m_damageValues.Length;
+    
+    private float m_maxDamage = 0;
+    public float MaxDamage => m_maxDamage;
 
     protected override bool Initialize()
     {
@@ -97,7 +102,7 @@ namespace AGXUnity
       if ( Properties == null ) 
       {
         Properties = ScriptAsset.Create<CableDamageProperties>();
-        Properties.name = "[Temporary] Cable Damage Properties";
+        Properties.name = "Cable Damage Properties";
       }
 
       return true;
@@ -113,14 +118,12 @@ namespace AGXUnity
         if (m_damageValues.Length != m_currentDamages.Count)
           m_damageValues = new float[m_currentDamages.Count];
 
-        float maxValue = float.MinValue;
+        m_maxDamage = float.MinValue;
         for (int i = 0; i < m_currentDamages.Count; i++){
           float value = (float)m_currentDamages[i].total();
-          maxValue = Mathf.Max(maxValue, value);
+          m_maxDamage = Mathf.Max(m_maxDamage, value);
           m_damageValues[i] = value;
         }
-
-        CableRenderer.SetDamageValues(m_damageValues, maxValue);
       }
     }
 
