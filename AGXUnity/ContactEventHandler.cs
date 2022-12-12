@@ -491,11 +491,19 @@ namespace AGXUnity
         if ( listener.IsRemoved || !listener.OnSeparationEnabled )
           continue;
 
-        var separations = GeometryContactHandler.Native.getSeparations(listener.Filter);
-        foreach ( var sep in separations ) {
-          separationData.Component1 = GetComponent( sep.first );
-          separationData.Component2 = GetComponent( sep.second );
+        
+        GeometryContactHandler.Native.collectSeparations(listener.Filter, m_separations);
+        //foreach ( var sep in m_separations ) {
+        for ( int i = 0; i < m_separations.Count; i++ ) {
+          var sep = m_separations[i];
+          var g1 = sep.first;
+          var g2 = sep.second;
+          separationData.Component1 = GetComponent( g1 );
+          separationData.Component2 = GetComponent( g2 );
           listener.SeparationCallback( separationData );
+          g1.ReturnToPool();
+          g2.ReturnToPool();
+          sep.ReturnToPool();
         }
       }
       OnEndPerformingCallbacks();
@@ -550,6 +558,7 @@ namespace AGXUnity
     private List<ContactListener> m_listenersToRemove = new List<ContactListener>();
 
     private bool m_isPerformingCallbacks = false;
+    private agxCollide.GeometryPairVector m_separations = new agxCollide.GeometryPairVector();
 
     private Dictionary<uint, ScriptComponent> m_uuidComponentTable = new Dictionary<uint, ScriptComponent>();
     private Dictionary<ScriptComponent, uint> m_componentUuidTable = new Dictionary<ScriptComponent, uint>();
