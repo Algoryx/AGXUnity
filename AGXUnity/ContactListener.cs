@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -162,7 +161,7 @@ namespace AGXUnity
                      ( filter != null && filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND && Components.Length < 2 );
 
       if ( removeMe && notifyOnRemove )
-        Debug.Log( $"AGXUnity.ContactListener: Removing contact callback {ContactEventHandler.FindCallbackName( ContactCallback )} due " +
+        Debug.Log( $"AGXUnity.ContactListener: Removing callback {ContactEventHandler.FindCallbackName( ContactCallback )} due " +
                    $"to remove of component {component} with UUID {uuid}." );
 
       return removeMe;

@@ -264,7 +264,7 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Stop listening to contacts for <paramref name="component"/> in
+    /// Stop listening to separations for <paramref name="component"/> in
     /// <paramref name="callbackId"/>.
     /// </summary>
     /// <param name="callbackId">Separation callback identifier.</param>
@@ -464,9 +464,9 @@ namespace AGXUnity
     {
       m_isPerformingCallbacks = false;
 
-      foreach(var listener in m_listenersToRemove ) 
+      foreach ( var listener in m_listenersToRemove )
         Remove( listener );
-      
+
       m_listenersToRemove.Clear();
     }
 
@@ -494,8 +494,8 @@ namespace AGXUnity
       foreach ( var listener in m_listeners ) {
         if ( listener.IsRemoved || !listener.OnSeparationEnabled )
           continue;
-        
-        GeometryContactHandler.Native.collectSeparations(listener.Filter, m_separations);
+
+        GeometryContactHandler.Native.collectSeparations( listener.Filter, m_separations );
         for ( int i = 0; i < m_separations.Count; i++ ) {
           var sep = m_separations[i];
           var g1 = sep.first;
