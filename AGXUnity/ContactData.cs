@@ -400,7 +400,7 @@ namespace AGXUnity
       var c2Name = Component2 != null ?
                      Component2.name + $" <{Component2.GetType().FullName}>" :
                      "null";
-      var result = $"{c1Name} <-/-> {c2Name}:\n";
+      var result = $"{c1Name} <-/-> {c2Name}";
       return result;
     }
 

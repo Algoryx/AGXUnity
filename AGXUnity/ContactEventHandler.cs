@@ -423,6 +423,8 @@ namespace AGXUnity
     {
       GeometryContactHandler.OnInitialize( simulation.Native );
 
+      m_getComponentFunc = GetComponent;
+
       simulation.StepCallbacks.PreStepForward += OnPreStepForward;
       simulation.StepCallbacks._Internal_PrePre += OnPreStep;
       simulation.StepCallbacks._Internal_PrePost += OnPostStep;
@@ -462,7 +464,9 @@ namespace AGXUnity
     {
       m_isPerformingCallbacks = false;
 
-      Remove( listener => m_listenersToRemove.Contains( listener ) );
+      foreach(var listener in m_listenersToRemove ) 
+        Remove( listener );
+      
       m_listenersToRemove.Clear();
     }
 
@@ -490,10 +494,8 @@ namespace AGXUnity
       foreach ( var listener in m_listeners ) {
         if ( listener.IsRemoved || !listener.OnSeparationEnabled )
           continue;
-
         
         GeometryContactHandler.Native.collectSeparations(listener.Filter, m_separations);
-        //foreach ( var sep in m_separations ) {
         for ( int i = 0; i < m_separations.Count; i++ ) {
           var sep = m_separations[i];
           var g1 = sep.first;
@@ -511,7 +513,7 @@ namespace AGXUnity
 
     private void GenerateDataAndExecuteCallbacks( bool hasForce )
     {
-      GeometryContactHandler.GenerateContactData( GetComponent, hasForce );
+      GeometryContactHandler.GenerateContactData( m_getComponentFunc, hasForce );
       if ( GeometryContactHandler.ContactData.Count == 0 )
         return;
 
@@ -557,6 +559,7 @@ namespace AGXUnity
     private List<ContactListener> m_listeners = new List<ContactListener>();
     private List<ContactListener> m_listenersToRemove = new List<ContactListener>();
 
+    private System.Func<agxCollide.Geometry, ScriptComponent> m_getComponentFunc = null;
     private bool m_isPerformingCallbacks = false;
     private agxCollide.GeometryPairVector m_separations = new agxCollide.GeometryPairVector();
 
