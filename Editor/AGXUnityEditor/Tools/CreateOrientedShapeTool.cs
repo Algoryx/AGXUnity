@@ -64,10 +64,11 @@ namespace AGXUnityEditor.Tools
 
         VisualPrimitiveName = "createShapeVisualPrimitive" + go.name;
 
+        agx.Vec3 scale = go.transform.localScale.ToHandedVec3();
         var vertices = Filter.sharedMesh.vertices;
         agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
         foreach ( var v in vertices )
-          agxVerts.Add( v.ToHandedVec3() );
+          agxVerts.Add( agx.Vec3.mul(v.ToHandedVec3(), scale));
 
         PrimitiveData.boxReady = false;
         PrimitiveData.cylinderReady = false;
