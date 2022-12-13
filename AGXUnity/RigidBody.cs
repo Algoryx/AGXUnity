@@ -360,7 +360,9 @@ namespace AGXUnity
       foreach ( var shape in shapes ) {
         var geometry = shape.CreateTemporaryNative();
 
-        geometry.setEnable( shape.isActiveAndEnabled );
+        // shape.isActiveAndEnabled is always false for loaded prefabs.
+        geometry.setEnable( shape.enabled );
+
         if ( shape.Material != null )
           geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
         native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );

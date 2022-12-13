@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
 using UnityEngine;
 using AGXUnity.Utils;
 
@@ -513,7 +515,7 @@ namespace AGXUnity
       {
         var emittedBodies = base.getEmittedBodies();
         foreach ( var instance in emittedBodies ) {
-          var resourceName = instance.getName();
+          var resourceName = PatchEmittedName( instance.get() );
           if ( m_nameResourceTable.TryGetValue( resourceName, out var resource ) ) {
             var visual = Instantiate( resource );
             if ( m_visualRoot != null )
@@ -580,6 +582,21 @@ namespace AGXUnity
         public agx.RigidBody RigidBody;
         public GameObject Visual;
       }
+
+      private string PatchEmittedName( agx.RigidBody rb )
+      {
+        var name = rb.getName();
+        var match = s_emittedNamePatchRegex.Match( name );
+        if ( match.Success ) {
+          // Index 0 is the original name, group index 1 is the name without _emittedNNNN.
+          name = match.Groups[ 1 ].Value;
+          rb.setName( name );
+        }
+
+        return name;
+      }
+
+      private static Regex s_emittedNamePatchRegex = new Regex( @"(.*?)(_emitted\d+)$", RegexOptions.Compiled );
 
       private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
       private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();

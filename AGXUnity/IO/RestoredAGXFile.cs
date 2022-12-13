@@ -67,7 +67,8 @@ namespace AGXUnity.IO
 
     protected override bool Initialize()
     {
-      m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+      if ( CollisionGroupsManager.Instance.GetInitialized<CollisionGroupsManager>() != null )
+        m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
 
       return true;
     }

@@ -20,15 +20,20 @@ namespace AGXUnityEditor
 
     private static void OnUpdate()
     {
-      // Holding assets.
-      if ( DragAndDrop.paths.Length > 0 ) {
-        if ( IsValidDragState( DragAndDrop.visualMode ) ) {
-          if ( s_assetDragData == null )
-            s_assetDragData = PrefabAssetDragData.Create( DragAndDrop.paths );
-        }
-        else
-          s_assetDragData = null;
+      // Not holding assets.
+      if ( DragAndDrop.paths.Length == 0 )
+        return;
+
+      if ( IsValidDragState( DragAndDrop.visualMode ) ) {
+        if ( s_assetDragData == null )
+          s_assetDragData = PrefabAssetDragData.Create( DragAndDrop.paths );
       }
+      // When dropping a prefab directly into the scene view we have that
+      // DragAndDrop.visualMode == DragAndDropVisualMode.None for at least
+      // one OnUpdate call. Defer the reset for some calls to catch the
+      // OnSelectionChanged call.
+      else if ( s_assetDragData != null && s_assetDragData.Value.IsExpired() )
+        s_assetDragData = null;
     }
 
     private static void OnSelectionChanged()
@@ -39,6 +44,7 @@ namespace AGXUnityEditor
                                            s_assetDragData.Value.Prefabs.Contains( PrefabUtility.GetCorrespondingObjectFromSource( selected ) ) ).ToArray();
         if ( selection.Length > 0 )
           OnPrefabsDroppedInScene.Invoke( selection );
+
         s_assetDragData = null;
       }
     }
@@ -64,8 +70,15 @@ namespace AGXUnityEditor
         };
       }
 
+      public bool IsExpired( int maxNumUpdates = 4 )
+      {
+        ++m_invalidDragNumUpdates;
+        return m_invalidDragNumUpdates >= maxNumUpdates;
+      }
+
       public string[] Paths;
       public GameObject[] Prefabs;
+      private int m_invalidDragNumUpdates;
     }
 
     private static PrefabAssetDragData? s_assetDragData = null;

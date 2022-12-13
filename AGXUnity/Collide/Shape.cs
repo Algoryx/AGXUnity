@@ -66,7 +66,7 @@ namespace AGXUnity.Collide
     /// Some value of minimum size of a shape.
     /// </summary>
     [HideInInspector]
-    public float MinimumLength { get { return 1.0E-5f; } }
+    public static float MinimumSize { get { return 1.0E-5f; } }
 
     /// <summary>
     /// Collisions of shape enabled/disabled. Default enabled.

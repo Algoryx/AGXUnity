@@ -24,7 +24,7 @@ namespace AGXUnity.Collide
       get { return m_halfExtents; }
       set
       {
-        m_halfExtents = value.ClampedElementsAbove( MinimumLength );
+        m_halfExtents = value.ClampedElementsAbove( MinimumSize );
 
         if ( Native != null )
           Native.setHalfExtents( m_halfExtents.ToVec3() );
