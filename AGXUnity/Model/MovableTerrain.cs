@@ -330,6 +330,7 @@ namespace AGXUnity.Model
       }
       TerrainMesh.sharedMesh.Clear();
       TerrainMesh.sharedMesh.vertices = vertices;
+      m_terrainVertices = vertices;
       TerrainMesh.sharedMesh.uv = uvs;
       TerrainMesh.sharedMesh.SetIndices( indices, MeshTopology.Triangles, 0 );
       TerrainMesh.sharedMesh.RecalculateNormals();
@@ -340,16 +341,15 @@ namespace AGXUnity.Model
       if ( modifiedVertices.Count == 0 )
         return;
 
-      var vertices = TerrainMesh.mesh.vertices;
-
-      foreach ( var mod in modifiedVertices ) {
+      for (int i = 0; i < modifiedVertices.Count; i++) {
+        var mod = modifiedVertices[i];
         int idx = (int)(mod.y * Width + mod.x) + 1;
 
         float height = (float)Native.getHeight( mod );
-        vertices[ Width * Height - idx ].y = height;
+        m_terrainVertices[ Width * Height - idx ].y = height;
       }
 
-      TerrainMesh.mesh.vertices = vertices;
+      TerrainMesh.mesh.vertices = m_terrainVertices;
       TerrainMesh.mesh.RecalculateNormals();
     }
 
@@ -399,6 +399,7 @@ namespace AGXUnity.Model
     {
     }
 
+    private Vector3[] m_terrainVertices = null;
     private MeshFilter m_terrain = null;
   }
 }

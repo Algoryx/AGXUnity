@@ -492,9 +492,10 @@ namespace AGXUnity.Model
       if ( Native.isEnabled() == enable )
         return;
 
-      Native.setEnable( enable );
-      foreach ( var tile in Native.getActiveTileAttachments() ) {
-        var terr = tile.m_terrainTile;
+      Native.setEnable( enable ); 
+      var tiles = Native.getActiveTileAttachments();
+      for ( int i = 0; i < tiles.Count; i++ ) { 
+        var terr = tiles[i].m_terrainTile;
         terr.setEnable( enable );
         terr.getGeometry().setEnable( enable );
       }
@@ -530,8 +531,8 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var tiles = Native.getActiveTileAttachments();
-      foreach ( var tile in tiles ) 
-        UpdateTerrain( tile );
+      for(int i = 0; i < tiles.Count; i++ )
+        UpdateTerrain( tiles[i] );
       TerrainData.SyncHeightmap();
     }
 
@@ -548,7 +549,8 @@ namespace AGXUnity.Model
       var zOffset = tile.m_zOffset;
       var result = new float[,] { { 0.0f } };
 
-      foreach ( var index in modifications ) {
+      for ( int i = 0; i < modifications.Count; i++ ) {
+        var index = modifications[i];
         var gi = GetGlobalIndex( terrain, index );
         float h = (float)(terrain.getHeight( index ) + zOffset);
 
