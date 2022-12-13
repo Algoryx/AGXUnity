@@ -36,11 +36,33 @@ namespace AGXUnity
     public delegate bool OnContactDelegate( ref ContactData contactData );
 
     /// <summary>
+    /// Signature of the separation callback.
+    /// </summary>
+    /// <param name="separationData">Separation data.</param>
+    public delegate void OnSeparationDelegate( SeparationData contactData );
+
+    /// <summary>
     /// Finds callback name assuming it's one listener per delegate.
     /// </summary>
     /// <param name="callback">Callback.</param>
     /// <returns>namespace(s).ClassName.MethodName</returns>
     public static string FindCallbackName( OnContactDelegate callback )
+    {
+      if ( callback == null || callback.GetInvocationList().Length == 0 )
+        return "null";
+
+      var targetName = callback.GetInvocationList()[ 0 ].Target != null ?
+                         callback.GetInvocationList()[ 0 ].Target.GetType().FullName :
+                         "[static class]";
+      return targetName + "." + callback.GetInvocationList()[ 0 ].Method.Name;
+    }
+
+    /// <summary>
+    /// Finds callback name assuming it's one listener per delegate.
+    /// </summary>
+    /// <param name="callback">Callback.</param>
+    /// <returns>namespace(s).ClassName.MethodName</returns>
+    public static string FindCallbackName( OnSeparationDelegate callback )
     {
       if ( callback == null || callback.GetInvocationList().Length == 0 )
         return "null";
@@ -82,6 +104,7 @@ namespace AGXUnity
                            params ScriptComponent[] components )
     {
       Add( onContact,
+           null,
            components,
            agxSDK.ContactEventListener.ActivationMask.IMPACT |
            agxSDK.ContactEventListener.ActivationMask.CONTACT );
@@ -115,6 +138,7 @@ namespace AGXUnity
                                    params ScriptComponent[] components )
     {
       Add( onContactAndForce,
+           null,
            components,
            agxSDK.ContactEventListener.ActivationMask.IMPACT |
            agxSDK.ContactEventListener.ActivationMask.CONTACT |
@@ -146,8 +170,38 @@ namespace AGXUnity
                          params ScriptComponent[] components )
     {
       Add( onForce,
+           null,
            components,
            agxSDK.ContactEventListener.ActivationMask.POST );
+    }
+
+    /// <summary>
+    /// Register a contact separation callback, invoked after a contact has been broken,
+    /// given zero or more components. If zero components are given, all separations
+    /// in the simulation will be filtered to the callback. If one component is
+    /// given, any object separating from that component will be filtered to the
+    /// callback. If two or more components are given, any separations between the
+    /// given components are filtered to the callback.
+    /// </summary>
+    /// <param name="onSeparation">
+    /// Callback that takes the separation data containing the components/geometries which
+    /// are separating.
+    /// </param>
+    /// <param name="components">
+    /// Components (zero or more) defining which separations that should be passed to
+    /// the given callback. The separation filtering is made given number of components
+    /// passed as:
+    ///     0: All separations in the simulation will be passed to the callback.
+    ///     1: All separations for the given component will be passed to the callback.
+    ///  >= 2: All separations of the any of the components will be passed to the callback.
+    /// </param>
+    public void OnSeparation( OnSeparationDelegate onSeparation,
+                         params ScriptComponent[] components )
+    {
+      Add( null,
+           onSeparation,
+           components,
+           agxSDK.ContactEventListener.ActivationMask.SEPARATION );
     }
 
     /// <summary>
@@ -160,8 +214,8 @@ namespace AGXUnity
       if ( listener == null )
         return false;
 
-      if ( listener.Callback == null ) {
-        Debug.LogError( $"AGXUnity.ContactEventHandler: Invalid contact listener with null callback - ignoring listener." );
+      if ( listener.ContactCallback == null && listener.SeparationCallback == null ) {
+        Debug.LogError( $"AGXUnity.ContactEventHandler: Invalid contact listener with null callbacks - ignoring listener." );
         return false;
       }
 
@@ -178,7 +232,17 @@ namespace AGXUnity
     /// <param name="callback">Callback to remove.</param>
     public void Remove( OnContactDelegate callback )
     {
-      Remove( listener => listener.Callback == callback );
+      Remove( listener => listener.ContactCallback == callback );
+    }
+
+    /// <summary>
+    /// Removes all occurrences of the given callback, i.e., the given callback
+    /// will not receive any more calls.
+    /// </summary>
+    /// <param name="callback">Callback to remove.</param>
+    public void Remove( OnSeparationDelegate callback )
+    {
+      Remove( listener => listener.SeparationCallback == callback );
     }
 
     /// <summary>
@@ -196,7 +260,25 @@ namespace AGXUnity
         return;
       }
 
-      Remove( listener => listener.Callback == callbackId && listener.Remove( uuid, component ) );
+      Remove( listener => listener.ContactCallback == callbackId && listener.Remove( uuid, component ) );
+    }
+
+    /// <summary>
+    /// Stop listening to separations for <paramref name="component"/> in
+    /// <paramref name="callbackId"/>.
+    /// </summary>
+    /// <param name="callbackId">Separation callback identifier.</param>
+    /// <param name="component">Component to remove from contact listener <paramref name="callbackId"/>.</param>
+    public void Remove( OnSeparationDelegate callbackId, ScriptComponent component )
+    {
+      var uuid = GetUuid( component );
+      if ( uuid == 0u ) {
+        Debug.LogWarning( $"AGXUnity.ContactEventHandler: Failed to remove component {component} from " +
+                          $"{FindCallbackName( callbackId )}, native UUID isn't found." );
+        return;
+      }
+
+      Remove( listener => listener.SeparationCallback == callbackId && listener.Remove( uuid, component ) );
     }
 
     /// <summary>
@@ -341,6 +423,8 @@ namespace AGXUnity
     {
       GeometryContactHandler.OnInitialize( simulation.Native );
 
+      m_getComponentFunc = GetComponent;
+
       simulation.StepCallbacks.PreStepForward += OnPreStepForward;
       simulation.StepCallbacks._Internal_PrePre += OnPreStep;
       simulation.StepCallbacks._Internal_PrePost += OnPostStep;
@@ -363,11 +447,12 @@ namespace AGXUnity
       GeometryContactHandler.OnDestroy( simulation.Native );
     }
 
-    private void Add( OnContactDelegate callback,
+    private void Add( OnContactDelegate contactCallback,
+                      OnSeparationDelegate separationCallback,
                       ScriptComponent[] components,
                       agxSDK.ContactEventListener.ActivationMask activationMask )
     {
-      Add( new ContactListener( callback, components, activationMask ) );
+      Add( new ContactListener( contactCallback, separationCallback, components, activationMask ) );
     }
 
     private void OnBeginPerformingCallbacks()
@@ -379,7 +464,9 @@ namespace AGXUnity
     {
       m_isPerformingCallbacks = false;
 
-      Remove( listener => m_listenersToRemove.Contains( listener ) );
+      foreach ( var listener in m_listenersToRemove )
+        Remove( listener );
+
       m_listenersToRemove.Clear();
     }
 
@@ -391,6 +478,7 @@ namespace AGXUnity
 
     private void OnPreStep()
     {
+      TriggerSeparationCallbacks();
       GenerateDataAndExecuteCallbacks( false );
     }
 
@@ -399,9 +487,33 @@ namespace AGXUnity
       GenerateDataAndExecuteCallbacks( true );
     }
 
+    private void TriggerSeparationCallbacks()
+    {
+      OnBeginPerformingCallbacks();
+      SeparationData separationData = new SeparationData();
+      foreach ( var listener in m_listeners ) {
+        if ( listener.IsRemoved || !listener.OnSeparationEnabled )
+          continue;
+
+        GeometryContactHandler.Native.collectSeparations( listener.Filter, m_separations );
+        for ( int i = 0; i < m_separations.Count; i++ ) {
+          var sep = m_separations[i];
+          var g1 = sep.first;
+          var g2 = sep.second;
+          separationData.Component1 = GetComponent( g1 );
+          separationData.Component2 = GetComponent( g2 );
+          listener.SeparationCallback( separationData );
+          g1.ReturnToPool();
+          g2.ReturnToPool();
+          sep.ReturnToPool();
+        }
+      }
+      OnEndPerformingCallbacks();
+    }
+
     private void GenerateDataAndExecuteCallbacks( bool hasForce )
     {
-      GeometryContactHandler.GenerateContactData( GetComponent, hasForce );
+      GeometryContactHandler.GenerateContactData( m_getComponentFunc, hasForce );
       if ( GeometryContactHandler.ContactData.Count == 0 )
         return;
 
@@ -420,7 +532,7 @@ namespace AGXUnity
             break;
 
           ref var contactData = ref GeometryContactHandler.ContactData[ (int)contactIndex ];
-          var hasModifications = listener.Callback( ref contactData );
+          var hasModifications = listener.ContactCallback( ref contactData );
 
           // Ignoring synchronization of any modifications when we are
           // in post, when the changes won't have any effect.
@@ -447,7 +559,9 @@ namespace AGXUnity
     private List<ContactListener> m_listeners = new List<ContactListener>();
     private List<ContactListener> m_listenersToRemove = new List<ContactListener>();
 
+    private System.Func<agxCollide.Geometry, ScriptComponent> m_getComponentFunc = null;
     private bool m_isPerformingCallbacks = false;
+    private agxCollide.GeometryPairVector m_separations = new agxCollide.GeometryPairVector();
 
     private Dictionary<uint, ScriptComponent> m_uuidComponentTable = new Dictionary<uint, ScriptComponent>();
     private Dictionary<ScriptComponent, uint> m_componentUuidTable = new Dictionary<ScriptComponent, uint>();
