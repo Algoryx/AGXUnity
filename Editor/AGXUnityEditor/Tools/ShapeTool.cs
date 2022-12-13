@@ -57,19 +57,19 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public bool ShapeCreateTool
+    public bool CreateOrientedShapeTool
     {
-      get { return GetChild<ShapeCreateTool>() != null; }
+      get { return GetChild<CreateOrientedShapeTool>() != null; }
       set
       {
-        if ( value && !ShapeCreateTool ) {
+        if ( value && !CreateOrientedShapeTool ) {
           RemoveAllChildren();
 
-          var shapeCreateTool = new ShapeCreateTool( Shape.gameObject );
+          var shapeCreateTool = new CreateOrientedShapeTool( Shape.gameObject );
           AddChild( shapeCreateTool );
         }
         else if ( !value )
-          RemoveChild( GetChild<ShapeCreateTool>() );
+          RemoveChild( GetChild<CreateOrientedShapeTool>() );
       }
     }
 
@@ -119,8 +119,8 @@ namespace AGXUnityEditor.Tools
                                                                     () => toggleShapeResizeTool = true,
                                                                     Tools.ShapeResizeTool.SupportsShape( Shape ) ),
                                 InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
-                                                                    ShapeCreateTool,
-                                                                    "Create shape from visual objects",
+                                                                    CreateOrientedShapeTool,
+                                                                    "Create oriented shape from visual objects",
                                                                     () => toggleShapeCreate = true ),
                                 InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
                                                                     DisableCollisionsTool,
@@ -132,8 +132,8 @@ namespace AGXUnityEditor.Tools
                                                                     () => toggleShapeVisualCreate = true,
                                                                     Tools.ShapeVisualCreateTool.CanCreateVisual( Shape ) ) );
 
-      if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI();
+      if ( CreateOrientedShapeTool ) {
+        GetChild<CreateOrientedShapeTool>().OnInspectorGUI();
       }
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
@@ -145,7 +145,7 @@ namespace AGXUnityEditor.Tools
       if ( toggleShapeResizeTool )
         ShapeResizeTool = !ShapeResizeTool;
       if ( toggleShapeCreate )
-        ShapeCreateTool = !ShapeCreateTool;
+        CreateOrientedShapeTool = !CreateOrientedShapeTool;
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
       if ( toggleShapeVisualCreate )

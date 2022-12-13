@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -17,7 +16,12 @@ namespace AGXUnity
     /// <summary>
     /// Callback taking ContactData for a matching component.
     /// </summary>
-    public ContactEventHandler.OnContactDelegate Callback { get; protected set; } = null;
+    public ContactEventHandler.OnContactDelegate ContactCallback { get; protected set; } = null;
+
+    /// <summary>
+    /// Callback taking SeparationData for a matching component.
+    /// </summary>
+    public ContactEventHandler.OnSeparationDelegate SeparationCallback { get; protected set; } = null;
 
     /// <summary>
     /// Native filter matching contacts in the simulation.
@@ -53,21 +57,45 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Construct given callback, components and activation mask. If this listener
+    /// True if this listener is listening to separation events of contacts.
+    /// </summary>
+    public bool OnSeparationEnabled
+    {
+      get
+      {
+        return ( m_activationMask & agxSDK.ContactEventListener.ActivationMask.SEPARATION ) != 0;
+      }
+    }
+
+    /// <summary>
+    /// Construct given callbacks, components and activation mask. If this listener
     /// is listening to OnContact, activation mask should be:
     ///     agxSDK.ContactEventListener.ActivationMask.IMPACT | agxSDK.ContactEventListener.ActivationMask.CONTACT
     /// If this listener is listening to contact forces only, activation mask should be:
     ///     agxSDK.ContactEventListener.ActivationMask.POST
+    /// If this listener is listening to separations only, activation mask should be:
+    ///     agxSDK.ContactEventListener.ActivationMask.SEPARATION
     /// </summary>
-    /// <param name="callback">Callback when a ContactData is available for a matching component.</param>
+    /// <param name="contactCallback">Callback when a ContactData is available for a matching component.</param>
+    /// <param name="separationCallback">Callback when a contact separation is available for a matching component.</param>
     /// <param name="components">Components to match for contacts.</param>
     /// <param name="activationMask">Activation mask.</param>
-    public ContactListener( ContactEventHandler.OnContactDelegate callback,
+    public ContactListener( ContactEventHandler.OnContactDelegate contactCallback,
+                            ContactEventHandler.OnSeparationDelegate separationCallback,
                             ScriptComponent[] components,
                             agxSDK.ContactEventListener.ActivationMask activationMask )
     {
-      Callback = callback ?? throw new ArgumentNullException( "callback" );
       Components = components ?? throw new ArgumentNullException( "components" );
+
+      const int contactMask = agxSDK.ContactEventListener.ActivationMask.ALL - agxSDK.ContactEventListener.ActivationMask.SEPARATION;
+      if ( contactCallback == null && ( (int)activationMask & contactMask ) != 0 )
+        throw new ArgumentNullException( "contactCallback" );
+      ContactCallback = contactCallback;
+
+      if ( separationCallback == null && ( activationMask & agxSDK.ContactEventListener.ActivationMask.SEPARATION ) != 0 )
+        throw new ArgumentNullException( "separationCallback" );
+      SeparationCallback = separationCallback;
+
       m_activationMask = activationMask;
       m_filteringMode = Components.Length == 0 ?
                           agxSDK.UuidHashCollisionFilter.Mode.MATCH_ALL :
@@ -133,7 +161,7 @@ namespace AGXUnity
                      ( filter != null && filter.getMode() == agxSDK.UuidHashCollisionFilter.Mode.MATCH_AND && Components.Length < 2 );
 
       if ( removeMe && notifyOnRemove )
-        Debug.Log( $"AGXUnity.ContactListener: Removing contact callback {ContactEventHandler.FindCallbackName( Callback )} due " +
+        Debug.Log( $"AGXUnity.ContactListener: Removing callback {ContactEventHandler.FindCallbackName( ContactCallback )} due " +
                    $"to remove of component {component} with UUID {uuid}." );
 
       return removeMe;

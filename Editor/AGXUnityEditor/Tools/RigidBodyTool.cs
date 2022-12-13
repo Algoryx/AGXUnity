@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using AGXUnity;
-using AGXUnity.Collide;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -74,19 +73,19 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public bool ShapeCreateTool
+    public bool CreateOrientedShapeTool
     {
-      get { return GetChild<ShapeCreateTool>() != null; }
+      get { return GetChild<CreateOrientedShapeTool>() != null; }
       set
       {
-        if ( value && !ShapeCreateTool ) {
+        if ( value && !CreateOrientedShapeTool ) {
           RemoveAllChildren();
 
-          var shapeCreateTool = new ShapeCreateTool( RigidBody.gameObject );
+          var shapeCreateTool = new CreateOrientedShapeTool( RigidBody.gameObject );
           AddChild( shapeCreateTool );
         }
         else if ( !value )
-          RemoveChild( GetChild<ShapeCreateTool>() );
+          RemoveChild( GetChild<CreateOrientedShapeTool>() );
       }
     }
 
@@ -213,10 +212,10 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      bool toggleShapeCreate             = false;
       bool toggleConstraintCreate        = false;
       bool toggleDisableCollisions       = false;
       bool toggleRigidBodyVisualCreate   = false;
+      bool toggleCreateOrientedShape     = false;
 
       if ( !IsMultiSelect && ToolsActive ) {
         InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateConstraint,
@@ -227,15 +226,15 @@ namespace AGXUnityEditor.Tools
                                                                       DisableCollisionsTool,
                                                                       "Disable collisions against other objects.",
                                                                       () => toggleDisableCollisions = true ),
-                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
-                                                                      ShapeCreateTool,
-                                                                      "Create shape from child visual object.",
-                                                                      () => toggleShapeCreate = true ),
                                   InspectorGUI.ToolButtonData.Create( ToolIcon.CreateVisual,
                                                                       RigidBodyVisualCreateTool,
                                                                       "Create visual representation of each physical shape in this body.",
                                                                       () => toggleRigidBodyVisualCreate = true,
-                                                                      Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ) );
+                                                                      Tools.RigidBodyVisualCreateTool.ValidForNewShapeVisuals( RigidBody ) ),
+                                  InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                      CreateOrientedShapeTool,
+                                                                      "Create shape from child visual object.",
+                                                                      () => toggleCreateOrientedShape = true ) );
       }
 
       if ( ConstraintCreateTool ) {
@@ -244,11 +243,11 @@ namespace AGXUnityEditor.Tools
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
       }
-      if ( ShapeCreateTool ) {
-        GetChild<ShapeCreateTool>().OnInspectorGUI();
-      }
       if ( RigidBodyVisualCreateTool ) {
         GetChild<RigidBodyVisualCreateTool>().OnInspectorGUI();
+      }
+      if ( CreateOrientedShapeTool ) {
+        GetChild<CreateOrientedShapeTool>().OnInspectorGUI();
       }
 
       EditorGUILayout.LabelField( GUI.MakeLabel( "Mass properties", true ), skin.Label );
@@ -259,10 +258,10 @@ namespace AGXUnityEditor.Tools
         ConstraintCreateTool = !ConstraintCreateTool;
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
-      if ( toggleShapeCreate )
-        ShapeCreateTool = !ShapeCreateTool;
       if ( toggleRigidBodyVisualCreate )
         RigidBodyVisualCreateTool = !RigidBodyVisualCreateTool;
+      if ( toggleCreateOrientedShape )
+        CreateOrientedShapeTool = !CreateOrientedShapeTool;
     }
 
     public override void OnPostTargetMembersGUI()
