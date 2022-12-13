@@ -127,7 +127,8 @@ namespace AGXUnity.Model
     private bool m_deformationEnabled = true;
 
     /// <summary>
-    /// ..
+    /// Set whether or not deformations should be enabled for the terrain. 
+    /// This includes digging, avalanching and compaction
     /// </summary>
     public bool DeformationEnabled
     {
