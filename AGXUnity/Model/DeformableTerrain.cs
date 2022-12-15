@@ -85,6 +85,33 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private ShapeMaterial m_particleMaterial = null;
+
+    /// <summary>
+    /// Shape material associated to this terrain.
+    /// </summary>
+    [AllowRecursiveEditing]
+    public ShapeMaterial ParticleMaterial
+    {
+      get { return m_particleMaterial; }
+      set
+      {
+        m_particleMaterial = value;
+        if ( Native != null ) {
+          if ( m_particleMaterial != null && m_particleMaterial.Native == null )
+            m_particleMaterial.GetInitialized<ShapeMaterial>();
+          if ( m_particleMaterial != null )
+            Native.setMaterial( m_particleMaterial.Native, agxTerrain.Terrain.MaterialType.PARTICLE );
+
+          // TODO: When m_material is null here it means "use default" but
+          //       it's currently not possible to understand which parameters
+          //       that has been set in e.g., Terrain::loadLibraryMaterial.
+        }
+      }
+    }
+
+
+    [SerializeField]
     private DeformableTerrainMaterial m_terrainMaterial = null;
 
     /// <summary>
