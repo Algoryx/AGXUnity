@@ -328,7 +328,7 @@ namespace AGXUnity.Model
     /// of the terrain has been created.
     /// </remarks>
     /// <param name="terrain">Terrain instance to synchronize.</param>
-    public void Synchronize( ITerrain terrain )
+    public void Synchronize( DeformableTerrainBase terrain )
     {
       try {
         m_singleSynchronizeInstance = terrain;
@@ -339,7 +339,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Register( ITerrain terrain )
+    public void Register( DeformableTerrainBase terrain )
     {
       if ( !m_terrains.Contains( terrain ) )
         m_terrains.Add( terrain );
@@ -351,7 +351,7 @@ namespace AGXUnity.Model
       Synchronize( terrain );
     }
 
-    public void Unregister( ITerrain terrain )
+    public void Unregister( DeformableTerrainBase terrain )
     {
       m_terrains.Remove( terrain );
     }
@@ -390,9 +390,9 @@ namespace AGXUnity.Model
     }
 
     [NonSerialized]
-    private List<ITerrain> m_terrains = new List<ITerrain>();
+    private List<DeformableTerrainBase> m_terrains = new List<DeformableTerrainBase>();
 
     [NonSerialized]
-    private ITerrain m_singleSynchronizeInstance = null;
+    private DeformableTerrainBase m_singleSynchronizeInstance = null;
   }
 }

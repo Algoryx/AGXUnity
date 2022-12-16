@@ -24,7 +24,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  public class DeformableTerrainPager : ScriptComponent, ITerrain
+  public class DeformableTerrainPager : DeformableTerrainBase
   {
     /// <summary>
     /// Native DeformableTerrainPager instance - accessible after this
@@ -92,141 +92,6 @@ namespace AGXUnity.Model
     /// </summary>
     [HideInInspector]
     public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution( TerrainData ); } }
-
-    /// <summary>
-    /// Size in units which each heightmap texel represent
-    /// </summary>
-    public float ElementSize
-    {
-      get
-      {
-        return TerrainData.size.x / ( TerrainDataResolution - 1 );
-      }
-    }
-
-    [SerializeField]
-    private ShapeMaterial m_material = null;
-
-    /// <summary>
-    /// Shape material associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public ShapeMaterial Material
-    {
-      get { return m_material; }
-      set
-      {
-        m_material = value;
-        if ( Native != null ) {
-          if ( m_material != null && m_material.Native == null )
-            m_material.GetInitialized<ShapeMaterial>();
-          if ( m_material != null )
-            Native.getTemplateTerrain().setMaterial( m_material.Native );
-
-          // TODO: When m_material is null here it means "use default" but
-          //       it's currently not possible to understand which parameters
-          //       that has been set in e.g., Terrain::loadLibraryMaterial.
-        }
-      }
-    }
-
-    [SerializeField]
-    private ShapeMaterial m_particleMaterial = null;
-
-    /// <summary>
-    /// Shape material associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public ShapeMaterial ParticleMaterial
-    {
-      get { return m_particleMaterial; }
-      set
-      {
-        m_particleMaterial = value;
-        if ( Native != null ) {
-          if ( m_particleMaterial != null && m_particleMaterial.Native == null )
-            m_particleMaterial.GetInitialized<ShapeMaterial>();
-          if ( m_particleMaterial != null )
-            Native.getTemplateTerrain().setMaterial( m_particleMaterial.Native, agxTerrain.Terrain.MaterialType.PARTICLE );
-
-          // TODO: When m_material is null here it means "use default" but
-          //       it's currently not possible to understand which parameters
-          //       that has been set in e.g., Terrain::loadLibraryMaterial.
-        }
-      }
-    }
-
-    [SerializeField]
-    private DeformableTerrainMaterial m_terrainMaterial = null;
-
-    /// <summary>
-    /// Terrain material associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public DeformableTerrainMaterial TerrainMaterial
-    {
-      get { return m_terrainMaterial; }
-      set
-      {
-        m_terrainMaterial = value;
-
-        if ( Native != null ) {
-          if ( m_terrainMaterial != null )
-            Native.getTemplateTerrain().setTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
-          else
-            Native.getTemplateTerrain().setTerrainMaterial( DeformableTerrainMaterial.CreateNative( "dirt_1" ) );
-          Native.applyChangesToTemplateTerrain();
-        }
-      }
-    }
-
-    [SerializeField]
-    private DeformableTerrainProperties m_properties = null;
-
-    /// <summary>
-    /// Terrain properties associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public DeformableTerrainProperties Properties
-    {
-      get { return m_properties; }
-      set
-      {
-        if ( Native != null && m_properties != null )
-          m_properties.Unregister( this );
-
-        m_properties = value;
-
-        if ( Native != null && m_properties != null )
-          m_properties.Register( this );
-
-        Native.applyChangesToTemplateTerrain();
-      }
-    }
-
-    [SerializeField]
-    private float m_maximumDepth = 20.0f;
-
-    /// <summary>
-    /// Maximum depth, it's not possible to dig deeper than this value.
-    /// This game object will be moved down MaximumDepth and MaximumDepth
-    /// will be added to the heights.
-    /// </summary>
-    [IgnoreSynchronization]
-    [ClampAboveZeroInInspector( true )]
-    public float MaximumDepth
-    {
-      get { return m_maximumDepth; }
-      set
-      {
-        if ( Native != null ) {
-          Debug.LogWarning( "DeformableTerrain MaximumDepth: Value is used during initialization" +
-                            " and cannot be changed when the terrain has been initialized.", this );
-          return;
-        }
-        m_maximumDepth = value;
-      }
-    }
 
     /// <summary>
     /// The size of the underlying AGX Terrain tiles
@@ -470,7 +335,7 @@ namespace AGXUnity.Model
       if ( Simulation.Instance.SolverSettings != null )
         GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
 
-      SetNativeEnable( isActiveAndEnabled );
+      SetEnable( isActiveAndEnabled );
 
       return true;
     }
@@ -510,22 +375,6 @@ namespace AGXUnity.Model
       GetSimulation().add( Native );
     }
 
-    private void SetNativeEnable( bool enable )
-    {
-      if ( Native == null )
-        return;
-
-      if ( Native.isEnabled() == enable )
-        return;
-
-      Native.setEnable( enable );
-      foreach ( var tile in Native.getActiveTileAttachments() ) {
-        var terr = tile.m_terrainTile;
-        terr.setEnable( enable );
-        terr.getGeometry().setEnable( enable );
-      }
-    }
-
     protected override void OnDestroy()
     {
       if ( Simulation.HasInstance ) {
@@ -537,16 +386,6 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
-    protected override void OnEnable()
-    {
-      SetNativeEnable( true );
-    }
-
-    protected override void OnDisable()
-    {
-      SetNativeEnable( false );
-    }
-
     private void OnPostStepForward()
     {
       m_terrainDataSource.Update();
@@ -556,7 +395,7 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var tiles = Native.getActiveTileAttachments();
-      foreach ( var tile in tiles ) 
+      foreach ( var tile in tiles )
         UpdateTerrain( tile );
       TerrainData.SyncHeightmap();
     }
@@ -658,8 +497,8 @@ namespace AGXUnity.Model
     private static float RMetric( int heightmapSize, int overlap, int size, int desiredOverlap, int desiredSize )
     {
       // The R-Metric is defined as the difference in non-rounded R-value for the desired parameters and the actual R-Value of the calculated parameters
-      float desiredR = ( ( heightmapSize - desiredOverlap - 1 ) / ( desiredSize - desiredOverlap - 1 ) );
-      float actualR = ( ( heightmapSize - overlap - 1 ) / ( size - overlap - 1 ) );
+      float desiredR = ( heightmapSize - desiredOverlap - 1 ) / ( desiredSize - desiredOverlap - 1 );
+      float actualR = ( heightmapSize - overlap - 1 ) / ( size - overlap - 1 );
       return Mathf.Abs( desiredR - actualR );
     }
 
@@ -675,23 +514,43 @@ namespace AGXUnity.Model
       return IsInteger( s ) && s % 2 == 1;
     }
 
-    public agx.GranularBodyPtrArray GetParticles()
-    {
-      return Native?.getSoilSimulationInterface()?.getSoilParticles();
-    }
-
-    public agxTerrain.TerrainProperties GetProperties()
-    {
-      return Native?.getTemplateTerrain().getProperties();
-    }
-
-    public void OnPropertiesUpdated()
-    {
-      if ( Native != null )
-        Native.applyChangesToTemplateTerrain();
-    }
-
     private Terrain m_terrain = null;
     private UnityTerrainAdapter m_terrainDataSource = null;
+
+    // -----------------------------------------------------------------------------------------------------------
+    // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
+    // -----------------------------------------------------------------------------------------------------------
+
+    public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
+    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain().getProperties(); }
+    public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
+    protected override bool IsNativeNull() { return Native == null; }
+    protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
+    {
+      Native?.getTemplateTerrain().setMaterial( material, type );
+      OnPropertiesUpdated();
+    }
+
+    protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { 
+      Native?.getTemplateTerrain().setTerrainMaterial( material );
+      OnPropertiesUpdated();
+    }
+
+    protected override void SetEnable( bool enable )
+    {
+      if ( Native == null )
+        return;
+
+      if ( Native.isEnabled() == enable )
+        return;
+
+      Native.setEnable( enable );
+      foreach ( var tile in Native.getActiveTileAttachments() ) {
+        var terr = tile.m_terrainTile;
+        terr.setEnable( enable );
+        terr.getGeometry().setEnable( enable );
+      }
+    }
   }
 }
