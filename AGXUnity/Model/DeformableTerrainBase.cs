@@ -12,6 +12,7 @@ namespace AGXUnity.Model
     /// Shape material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
+    [HideInInspector]
     public ShapeMaterial Material
     {
       get { return m_material; }
@@ -38,6 +39,7 @@ namespace AGXUnity.Model
     /// Shape material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
+    [HideInInspector]
     public ShapeMaterial ParticleMaterial
     {
       get { return m_particleMaterial; }
@@ -132,6 +134,12 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public float ElementSize { get; }
 
+    /// <summary>
+    /// Shovels associated to this terrain.
+    /// </summary>
+    [HideInInspector]
+    abstract public DeformableTerrainShovel[] Shovels { get; }
+
     protected override void OnEnable()
     {
       SetEnable( true );
@@ -153,9 +161,19 @@ namespace AGXUnity.Model
     abstract public agxTerrain.TerrainProperties GetProperties();
 
     /// <summary>
+    /// Returns the soil simulation interface used by this terrain instance
+    /// </summary>
+    abstract public agxTerrain.SoilSimulationInterface GetSoilSimulationInterface();
+
+    /// <summary>
     /// Callback which should be called when the TerrainProperties of this terrain is updated
     /// </summary>
     virtual public void OnPropertiesUpdated() { }
+
+    abstract public bool Add( DeformableTerrainShovel shovel );
+    abstract public bool Remove( DeformableTerrainShovel shovel );
+    abstract public bool Contains( DeformableTerrainShovel shovel );
+    abstract public void RemoveInvalidShovels();
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

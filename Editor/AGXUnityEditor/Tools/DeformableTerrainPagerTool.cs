@@ -12,7 +12,7 @@ namespace AGXUnityEditor.Tools
 {
 
   [CustomTool( typeof( DeformableTerrainPager ) )]
-  public class DeformableTerrainPagerTool : CustomTargetTool
+  public class DeformableTerrainPagerTool : DeformableTerrainBaseTool
   {
     public DeformableTerrainPager TerrainPager { get { return Targets[ 0 ] as DeformableTerrainPager; } }
 
@@ -27,13 +27,9 @@ namespace AGXUnityEditor.Tools
     {
     }
 
-    public override void OnAdd()
-    {
-    }
-
     public override void OnPreTargetMembersGUI()
     {
-      TerrainPager.RemoveInvalidBodies();
+      TerrainPager.RemoveInvalidShovels();
 
       if ( GetTargets<DeformableTerrainPager>().Any( pager => !TerrainUtils.IsValid( pager ) ) ) {
         InspectorGUI.WarningLabel( "INVALID CONFIGURATION\n\n" +
@@ -102,6 +98,8 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
+
+      RenderMaterialHandles();
 
       EditorGUILayout.Space();
 

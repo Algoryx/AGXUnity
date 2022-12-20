@@ -46,7 +46,7 @@ namespace AGXUnity.Model
     /// Shovels associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
+    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
 
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
@@ -81,7 +81,7 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="shovel">Shovel instance to add.</param>
     /// <returns>True if added, false if null or already added.</returns>
-    public bool Add( DeformableTerrainShovel shovel )
+    public override bool Add( DeformableTerrainShovel shovel )
     {
       if ( shovel == null || m_shovels.Contains( shovel ) )
         return false;
@@ -100,7 +100,7 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="shovel">Shovel instance to remove.</param>
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public bool Remove( DeformableTerrainShovel shovel )
+    public override bool Remove( DeformableTerrainShovel shovel )
     {
       if ( shovel == null || !m_shovels.Contains( shovel ) )
         return false;
@@ -116,7 +116,7 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="shovel">Shovel instance to check.</param>
     /// <returns>True if associated, otherwise false.</returns>
-    public bool Contains( DeformableTerrainShovel shovel )
+    public override bool Contains( DeformableTerrainShovel shovel )
     {
       return shovel != null && m_shovels.Contains( shovel );
     }
@@ -125,7 +125,7 @@ namespace AGXUnity.Model
     /// Verifies so that all added shovels still exists. Shovels that
     /// has been deleted are removed.
     /// </summary>
-    public void RemoveInvalidShovels()
+    public override void RemoveInvalidShovels()
     {
       m_shovels.RemoveAll( shovel => shovel == null );
     }
@@ -323,6 +323,7 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }

@@ -39,7 +39,7 @@ namespace AGXUnity.Model
     /// Shovels associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( shovel => shovel.Body ).ToArray(); } }
+    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( shovel => shovel.Body ).ToArray(); } }
 
     /// <summary>
     /// Shovels along with their respective load radii that are associated with this terrainPager
@@ -133,6 +133,11 @@ namespace AGXUnity.Model
     [field: SerializeField]
     public bool AutoTileOnPlay { get; set; } = true;
 
+    public override bool Add( DeformableTerrainShovel shovel )
+    {
+      return Add( shovel, requiredRadius: default, preloadRadius: default );
+    }
+
     /// <summary>
     /// Associates the given shovel instance to this terrain.
     /// </summary>
@@ -161,7 +166,7 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="shovel">Shovel instance to remove.</param>
     /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public bool Remove( DeformableTerrainShovel shovel )
+    public override bool Remove( DeformableTerrainShovel shovel )
     {
       if ( shovel == null || m_shovels.Find( pagingShovel => pagingShovel.Body == shovel ) == null )
         return false;
@@ -211,6 +216,16 @@ namespace AGXUnity.Model
 
       m_rigidbodies.RemoveAt( m_rigidbodies.FindIndex( pagingRigidBody => pagingRigidBody.Body == rigidbody ) );
       return true;
+    }
+
+    public override bool Contains( DeformableTerrainShovel shovel )
+    {
+      return m_shovels.Find( s => s.Body == shovel ) != null;
+    }
+
+    public bool Contains( RigidBody body)
+    {
+      return m_rigidbodies.Find( rb => rb.Body == body) != null;
     }
 
     /// <summary>
@@ -287,7 +302,7 @@ namespace AGXUnity.Model
     /// Verifies so that all added bodies still exists. Bodies that
     /// has been deleted are removed.
     /// </summary>
-    public void RemoveInvalidBodies()
+    public override void RemoveInvalidShovels()
     {
       m_shovels.RemoveAll( shovel => shovel.Body == null );
       m_rigidbodies.RemoveAll( rb => rb.Body == null );
@@ -313,7 +328,7 @@ namespace AGXUnity.Model
       if ( AutoTileOnPlay )
         RecalculateParameters();
 
-      RemoveInvalidBodies();
+      RemoveInvalidShovels();
 
       // Create a new adapter using the terrain attached to this gameobject as the root
       // This attaches DeformableTerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
@@ -524,6 +539,7 @@ namespace AGXUnity.Model
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain().getProperties(); }
+    public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
