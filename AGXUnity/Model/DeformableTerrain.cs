@@ -42,12 +42,6 @@ namespace AGXUnity.Model
     [SerializeField]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
 
-    /// <summary>
-    /// Shovels associated to this terrain.
-    /// </summary>
-    [HideInInspector]
-    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
-
     [SerializeField]
     private bool m_tempDisplayShovelForces = false;
 
@@ -74,60 +68,6 @@ namespace AGXUnity.Model
         else if ( !m_tempDisplayShovelForces && GUIWindowHandler.HasInstance )
           GUIWindowHandler.Instance.Close( ShowForces );
       }
-    }
-
-    /// <summary>
-    /// Associate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to add.</param>
-    /// <returns>True if added, false if null or already added.</returns>
-    public override bool Add( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || m_shovels.Contains( shovel ) )
-        return false;
-
-      m_shovels.Add( shovel );
-
-      // Initialize shovel if we're initialized.
-      if ( Native != null )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
-
-      return true;
-    }
-
-    /// <summary>
-    /// Disassociate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to remove.</param>
-    /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public override bool Remove( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || !m_shovels.Contains( shovel ) )
-        return false;
-
-      if ( Native != null )
-        Native.remove( shovel.Native );
-
-      return m_shovels.Remove( shovel );
-    }
-
-    /// <summary>
-    /// Find if shovel has been associated to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to check.</param>
-    /// <returns>True if associated, otherwise false.</returns>
-    public override bool Contains( DeformableTerrainShovel shovel )
-    {
-      return shovel != null && m_shovels.Contains( shovel );
-    }
-
-    /// <summary>
-    /// Verifies so that all added shovels still exists. Shovels that
-    /// has been deleted are removed.
-    /// </summary>
-    public override void RemoveInvalidShovels()
-    {
-      m_shovels.RemoveAll( shovel => shovel == null );
     }
 
     /// <summary>
@@ -322,9 +262,46 @@ namespace AGXUnity.Model
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
+    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
+
+    public override bool Add( DeformableTerrainShovel shovel )
+    {
+      if ( shovel == null || m_shovels.Contains( shovel ) )
+        return false;
+
+      m_shovels.Add( shovel );
+
+      // Initialize shovel if we're initialized.
+      if ( Native != null )
+        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
+
+      return true;
+    }
+
+    public override bool Remove( DeformableTerrainShovel shovel )
+    {
+      if ( shovel == null || !m_shovels.Contains( shovel ) )
+        return false;
+
+      if ( Native != null )
+        Native.remove( shovel.Native );
+
+      return m_shovels.Remove( shovel );
+    }
+
+    public override bool Contains( DeformableTerrainShovel shovel ) 
+    { 
+      return shovel != null && m_shovels.Contains( shovel );
+    }
+
+    public override void RemoveInvalidShovels()
+    {
+      m_shovels.RemoveAll( shovel => shovel == null );
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { Native.setTerrainMaterial( material ); }

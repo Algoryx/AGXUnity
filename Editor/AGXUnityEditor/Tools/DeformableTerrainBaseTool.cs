@@ -38,11 +38,11 @@ namespace AGXUnityEditor.Tools
 
     protected void RenderMaterialHandles()
     {
-      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainBaseMaterialHandles" ), GUI.MakeLabel( "Internal material handles" ) ) ) {
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainBaseMaterialHandles" ), GUI.MakeLabel( "Internal Material Handles" ) ) ) {
         EditorGUI.indentLevel = 1;
 
         InspectorGUI.WarningLabel( "The parameters of these materials will be overrwritten depending on the TerrainMaterial set. " +
-                                   "The purpose of these materials are to have a handle to create contact materials between terrain objects and external objects." );
+                                   "The purpose of these materials is to have a handle to create contact materials between terrain objects and external objects." );
 
         Undo.RecordObject( DeformableTerrainBase, "Set Surface Material" );
         var surfaceMatData = EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainSurfaceMaterial" );
