@@ -265,7 +265,7 @@ namespace AGXUnity.Rendering
         }
 
         for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
-          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023, true );
+          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023 );
       }
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
