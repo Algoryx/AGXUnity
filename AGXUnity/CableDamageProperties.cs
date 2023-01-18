@@ -6,7 +6,7 @@ namespace AGXUnity
 {
   public class CableDamageProperties : ScriptAsset
   {
-    private const float defaultValue = 1f;
+    private const float defaultValue = 0f;
 
     [SerializeField]
     private float m_bendDeformation = defaultValue;
