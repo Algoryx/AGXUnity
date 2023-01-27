@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
-  [RequireComponent( typeof( ITerrain ) )]
+  [RequireComponent( typeof( DeformableTerrainBase ) )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
@@ -24,6 +24,9 @@ namespace AGXUnity.Rendering
       Update
     }
 
+    [HideInInspector]
+    public DeformableTerrainBase ParticleProvider { get; private set; } = null;
+
     // Create a union type for matrices to allow for more efficient conversion between AffineMatrix4x4f and Matrix4x4
     [StructLayout( LayoutKind.Explicit )]
     class MatrixUnion
@@ -34,9 +37,6 @@ namespace AGXUnity.Rendering
       [FieldOffset(0)]
       public agx.AffineMatrix4x4f[] agxMats;
     }
-
-    [HideInInspector]
-    public ITerrain ParticleProvider { get; private set; } = null;
 
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
@@ -91,9 +91,10 @@ namespace AGXUnity.Rendering
 
     protected override bool Initialize()
     {
-      ParticleProvider = GetComponent<ITerrain>();
-      if ( ParticleProvider == null ) {
-        Debug.LogError( "DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!" );
+      ParticleProvider = GetComponent<DeformableTerrainBase>();
+      if ( ParticleProvider == null)
+      {
+        Debug.LogError("DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!");
         return false;
       }
 
