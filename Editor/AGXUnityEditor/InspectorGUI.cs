@@ -1660,6 +1660,46 @@ namespace AGXUnityEditor
       return value;
     }
 
+    /// <summary>
+    /// Draws float fields with custom sub-labels
+    /// </summary>
+    /// <param name="label">Label value.</param>
+    /// <param name="subLabels">GUI content .</param>
+    /// <param name="values">Current values.</param>
+    /// <returns>Updated value of the float fields.</returns>
+    public static float[] MultiFloatField(GUIContent label, GUIContent[] subLabels, float[] values)
+    {
+      var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
+      var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
+      var position = EditorGUILayout.GetControlRect( false, rectHeight );
+      EditorGUI.MultiFloatField(position, label, subLabels, values);
+      return values;
+    }
+
+    /// <summary>
+    /// Draws a main label and labels for each entry in a MultiField. Intended to be used to provide column headers for a MultiField.
+    /// </summary>
+    /// <param name="mainLabel">Prefix label GUIContent.</param>
+    /// <param name="subLabels">Column labels GUIContents.</param>
+    public static void MultiFieldColumnLabels(GUIContent mainLabel, GUIContent[] subLabels)
+    {
+      var position = mainLabel != null ? InspectorGUI.MultiFloatFieldPrefixLabel(mainLabel) : EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight );
+
+      float spacingSubLabel = 4; // From EditorGui.cs
+      int count = subLabels.Length;
+      var indentOffset = InspectorGUI.IndentScope.PixelLevel - 2;
+      float fieldWidth = (position.width - (count - 1) * spacingSubLabel - indentOffset) / count;
+      Rect subRect = new Rect(position) {width = fieldWidth, x = position.x + indentOffset};
+      int oldIndentLevel = EditorGUI.indentLevel;
+      EditorGUI.indentLevel = 0;
+      for (int i = 0; i < count; i++)
+      {
+        EditorGUI.LabelField(subRect, subLabels[i]);
+        subRect.x += fieldWidth + spacingSubLabel;
+      }
+      EditorGUI.indentLevel = oldIndentLevel;
+    }
+
     private static GUIStyle s_dropdownToolStyle = null;
 
     private static GUIStyle DropdownToolStyle

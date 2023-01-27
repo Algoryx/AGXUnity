@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using AGXUnity.Utils;
+using System.Collections.Generic;
 
 namespace AGXUnity.Rendering
 {
@@ -37,6 +38,14 @@ namespace AGXUnity.Rendering
         m_segmentSpawner.Material = m_material;
       }
     }
+
+    private CableDamage m_cableDamage = null;
+    private CableDamage CableDamage { get { return m_cableDamage ?? ( m_cableDamage = GetComponent<CableDamage>() ); } }
+
+    public void SetRenderDamages(bool value) => m_renderDamages = value;
+
+    private bool m_renderDamages = false, m_previousRenderDamages = false;
+    private Dictionary<int, (MeshRenderer, MeshRenderer)> m_segmentRenderers = new Dictionary<int, (MeshRenderer, MeshRenderer)>();
 
     public void InitializeRenderer( bool destructLast = false )
     {
@@ -113,6 +122,9 @@ namespace AGXUnity.Rendering
 
       var it = native.begin();
       var endIt = native.end();
+      int i = 0;
+
+      MaterialPropertyBlock block = new MaterialPropertyBlock();
 
       m_segmentSpawner.Begin();
       try {
@@ -122,7 +134,34 @@ namespace AGXUnity.Rendering
                                 it.getBeginPosition().ToHandedVector3();
         while ( !it.EqualWith( endIt ) ) {
           var endPosition = it.getEndPosition().ToHandedVector3();
-          m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
+
+          var go = m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
+
+          // If using render damage
+          if ((m_renderDamages || m_previousRenderDamages)){
+            int id = go.GetInstanceID();
+
+            (MeshRenderer, MeshRenderer) meshRenderers;
+            if (m_segmentRenderers.TryGetValue(id, out meshRenderers) && meshRenderers.Item1 != null){
+              if (m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments()){ // TODO do we need the length check?
+                float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
+                block.SetColor("_Color", Color.Lerp(CableDamage.MinColor, CableDamage.MaxColor, t));
+                meshRenderers.Item1.SetPropertyBlock(block);
+                meshRenderers.Item2.SetPropertyBlock(block);
+              }
+              else{
+                block.SetColor("_Color", Material.color);
+                meshRenderers.Item1.SetPropertyBlock(block);
+                meshRenderers.Item2.SetPropertyBlock(block);
+              }
+            }
+            else {
+              var renderers = go.GetComponentsInChildren<MeshRenderer>();
+              m_segmentRenderers.Add(id, (renderers[0], renderers[1]));
+            }
+          }
+
+          i++;
           prevEndPosition = endPosition;
           it.inc();
         }
@@ -131,6 +170,8 @@ namespace AGXUnity.Rendering
         Debug.LogException( e, this );
       }
       m_segmentSpawner.End();
+
+      m_previousRenderDamages = m_renderDamages;
 
       it.ReturnToPool();
       endIt.ReturnToPool();

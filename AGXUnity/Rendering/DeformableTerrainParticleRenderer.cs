@@ -1,11 +1,10 @@
-﻿using System.ComponentModel;
+﻿using AGXUnity.Model;
+using AGXUnity.Utils;
 using System.Collections.Generic;
-
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
-
-using AGXUnity.Utils;
-using AGXUnity.Model;
 
 namespace AGXUnity.Rendering
 {
@@ -28,10 +27,21 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public DeformableTerrainBase ParticleProvider { get; private set; } = null;
 
+    // Create a union type for matrices to allow for more efficient conversion between AffineMatrix4x4f and Matrix4x4
+    [StructLayout( LayoutKind.Explicit )]
+    class MatrixUnion
+    {
+      [FieldOffset(0)]
+      public Matrix4x4[] unityMats;
+
+      [FieldOffset(0)]
+      public agx.AffineMatrix4x4f[] agxMats;
+    }
+
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
 
-    [Description("Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced.")]
+    [Description( "Render particles using cloned GameObjects or with Graphics.DrawMeshInstanced." )]
     public GranuleRenderMode RenderMode
     {
       get { return m_renderMode; }
@@ -39,7 +49,7 @@ namespace AGXUnity.Rendering
       {
         m_renderMode = value;
 
-        if ( !IsSynchronizingProperties && ParticleProvider != null)
+        if ( !IsSynchronizingProperties && ParticleProvider != null )
           InitializeRenderMode();
       }
     }
@@ -47,8 +57,8 @@ namespace AGXUnity.Rendering
     [SerializeField]
     private SynchronizeMode m_syncMode = SynchronizeMode.PostStepForward;
 
-    [Description("Synchronize granular transforms for rendering when the transforms has been " +
-                 "changed (PostStepForward) or in Update whenever the transforms has been changed.")]
+    [Description( "Synchronize granular transforms for rendering when the transforms has been " +
+                 "changed (PostStepForward) or in Update whenever the transforms has been changed." )]
     public SynchronizeMode SyncMode
     {
       get { return m_syncMode; }
@@ -172,9 +182,9 @@ namespace AGXUnity.Rendering
 
         var renderers = GranuleInstance.GetComponentsInChildren<MeshRenderer>();
         if ( renderers.Length != 1 ) {
-          Debug.LogError("AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
+          Debug.LogError( "AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
                           $"Invalid number of mesh renderers ({renderers.Length}) in GranuleInstance - expecting 1.",
-                          GranuleInstance);
+                          GranuleInstance );
           return false;
         }
 
@@ -182,7 +192,8 @@ namespace AGXUnity.Rendering
         m_shadowCastingMode = renderers[ 0 ].shadowCastingMode;
         m_receiveShadows = renderers[ 0 ].receiveShadows;
         m_meshInstanceMaterial = material;
-        m_granuleMatrices = new List<Matrix4x4[]> { new Matrix4x4[1023] };
+        m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
+        m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
         m_meshInstanceScale = filters[ 0 ].transform.lossyScale;
       }
@@ -194,8 +205,7 @@ namespace AGXUnity.Rendering
 
     private void Update()
     {
-      if ( m_syncMode == SynchronizeMode.Update && m_needsSynchronize )
-      {
+      if ( m_syncMode == SynchronizeMode.Update && m_needsSynchronize ) {
         Synchronize();
         m_needsSynchronize = false;
       }
@@ -211,7 +221,7 @@ namespace AGXUnity.Rendering
         Graphics.DrawMeshInstanced( m_meshInstance,
                                     0,
                                     m_meshInstanceMaterial,
-                                    m_granuleMatrices[ 0 ],
+                                    m_granuleMatrices[ 0 ].unityMats,
                                     m_numGranulars,
                                     m_meshInstanceProperties,
                                     m_shadowCastingMode,
@@ -225,11 +235,11 @@ namespace AGXUnity.Rendering
           Graphics.DrawMeshInstanced( m_meshInstance,
                                       0,
                                       m_meshInstanceMaterial,
-                                      m_granuleMatrices[ i / 1023 ],
+                                      m_granuleMatrices[ i / 1023 ].unityMats,
                                       count,
                                       m_meshInstanceProperties,
                                       m_shadowCastingMode,
-                                      m_receiveShadows);
+                                      m_receiveShadows );
         }
       }
     }
@@ -237,7 +247,7 @@ namespace AGXUnity.Rendering
     private void Synchronize()
     {
       var granulars = ParticleProvider.GetParticles();
-      if (granulars == null) return;
+      if ( granulars == null ) return;
 
       m_numGranulars = (int)granulars.size();
 
@@ -251,35 +261,23 @@ namespace AGXUnity.Rendering
         // Use 1023 as arbitrary block size since that is the
         // amount of particles that can be drawn with DrawMeshInstanced.
         while ( m_numGranulars / 1023 + 1 > m_granuleMatrices.Count ) {
-          m_granuleMatrices.Add(new Matrix4x4[1023]);
+          m_granuleMatrices.Add( new MatrixUnion() );
+          m_granuleMatrices[ ( m_numGranulars / 1023 ) ].unityMats = new Matrix4x4[ 1023 ];
         }
 
-        for ( int arrayIndex = 0; arrayIndex < (m_numGranulars / 1023 + 1); ++arrayIndex ) {
-          Matrix4x4[] matrices = m_granuleMatrices[arrayIndex];
-          int numGranulesInArray = Mathf.Min(1023, m_numGranulars - arrayIndex * 1023);
-          for ( int i = 0; i < numGranulesInArray; ++i ) {
-            var granule = granulars.at((uint)(i + arrayIndex * 1023));
-
-            // Assuming unit size of the instance, scale to diameter of the granule.
-            matrices[i] = Matrix4x4.TRS(granule.position().ToHandedVector3(),
-                                         granule.rotation().ToHandedQuaternion(),
-                                         m_meshInstanceScale * 2.0f * (float)granule.getRadius());
-
-            // Return the proxy class to the pool to avoid garbage.
-            granule.ReturnToPool();
-          }
-        }
+        for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
+          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023 );
       }
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
         // more instances to match numGranulars.
-        if (m_numGranulars > transform.childCount)
-          Create(m_numGranulars - transform.childCount);
+        if ( m_numGranulars > transform.childCount )
+          Create( m_numGranulars - transform.childCount );
         // Less granular instances comparing to last time, destroy.
-        else if (transform.childCount > m_numGranulars)
-          Destroy(transform.childCount - m_numGranulars);
+        else if ( transform.childCount > m_numGranulars )
+          Destroy( transform.childCount - m_numGranulars );
 
-        Debug.Assert(transform.childCount == m_numGranulars);
+        Debug.Assert( transform.childCount == m_numGranulars );
 
         for ( int i = 0; i < m_numGranulars; ++i ) {
           var granule = granulars.at((uint)i);
@@ -337,7 +335,7 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private List<Matrix4x4[]> m_granuleMatrices;
+    private List<MatrixUnion> m_granuleMatrices;
     private int m_numGranulars = 0;
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_meshInstance = null;
