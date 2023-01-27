@@ -329,4 +329,84 @@ namespace AGXUnity
     private HandleRef m_geometry2Handle;
     private agxCollide.Geometry m_geometry2;
   }
+
+  public struct SeparationData
+  {
+    /// <summary>
+    /// First interacting component - null if not found.
+    /// </summary>
+    public ScriptComponent Component1;
+
+    /// <summary>
+    /// Second interacting component - null of not found.
+    /// </summary>
+    public ScriptComponent Component2;
+
+    /// <summary>
+    /// Access to the first geometry in the contact. This geometry
+    /// belongs to Component1.
+    /// </summary>
+    public agxCollide.Geometry Geometry1
+    {
+      get
+      {
+        return m_geometry1 ??
+               ( m_geometry1Handle.Handle == System.IntPtr.Zero ?
+                  null :
+                  m_geometry1 = new agxCollide.Geometry( m_geometry1Handle.Handle, false ) );
+      }
+      set
+      {
+        m_geometry1Handle = agxCollide.Geometry.getCPtr( value );
+        m_geometry1 = null;
+      }
+    }
+
+
+    /// <summary>
+    /// Access to the second geometry in the contact. This geometry
+    /// belongs to Component2.
+    /// </summary>
+    public agxCollide.Geometry Geometry2
+    {
+      get
+      {
+        return m_geometry2 ??
+               ( m_geometry2Handle.Handle == System.IntPtr.Zero ?
+                  null :
+                  m_geometry2 = new agxCollide.Geometry( m_geometry2Handle.Handle, false ) );
+      }
+      set
+      {
+        m_geometry2Handle = agxCollide.Geometry.getCPtr( value );
+        m_geometry2 = null;
+      }
+    }
+
+    /// <summary>
+    /// Invalidates the geometries so that they cannot be accessed any more.
+    /// </summary>
+    public void InvalidateGeometries()
+    {
+      Geometry1 = null;
+      Geometry2 = null;
+    }
+
+    public override string ToString()
+    {
+      var c1Name = Component1 != null ?
+                     Component1.name + $" <{Component1.GetType().FullName}>" :
+                     "null";
+      var c2Name = Component2 != null ?
+                     Component2.name + $" <{Component2.GetType().FullName}>" :
+                     "null";
+      var result = $"{c1Name} <-/-> {c2Name}";
+      return result;
+    }
+
+    private HandleRef m_geometry1Handle;
+    private agxCollide.Geometry m_geometry1;
+    private HandleRef m_geometry2Handle;
+    private agxCollide.Geometry m_geometry2;
+  }
 }

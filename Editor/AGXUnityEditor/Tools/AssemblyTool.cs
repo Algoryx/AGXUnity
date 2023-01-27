@@ -64,12 +64,12 @@ namespace AGXUnityEditor.Tools
     private List<SelectionEntry> m_selection = new List<SelectionEntry>();
     private RigidBodySelection m_rbSelection = null;
 
-    private ShapeCreateTool ShapeCreateTool
+    private CreateOrientedShapeTool CreateOrientedShapeTool
     {
-      get { return GetChild<ShapeCreateTool>(); }
+      get { return GetChild<CreateOrientedShapeTool>(); }
       set
       {
-        RemoveChild( GetChild<ShapeCreateTool>() );
+        RemoveChild( GetChild<CreateOrientedShapeTool>() );
         AddChild( value );
       }
     }
@@ -313,12 +313,12 @@ namespace AGXUnityEditor.Tools
 
     private void HandleModeShapeGUI()
     {
-      if ( ShapeCreateTool == null ) {
+      if ( CreateOrientedShapeTool == null ) {
         ChangeMode( Mode.None );
         return;
       }
 
-      ShapeCreateTool.OnInspectorGUI();
+      CreateOrientedShapeTool.OnInspectorGUI();
     }
 
     private void HandleModeConstraintGUI()
@@ -391,7 +391,7 @@ namespace AGXUnityEditor.Tools
       m_subMode = SubMode.None;
 
       if ( m_mode == Mode.Shape )
-        ShapeCreateTool = new ShapeCreateTool( Assembly.gameObject );
+        CreateOrientedShapeTool = new CreateOrientedShapeTool( Assembly.gameObject );
       else if ( m_mode == Mode.Constraint )
         ConstraintCreateTool = new ConstraintCreateTool( Assembly.gameObject, true );
     }
