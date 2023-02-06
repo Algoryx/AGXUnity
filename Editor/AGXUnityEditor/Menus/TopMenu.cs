@@ -477,14 +477,9 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
-    public static void FocusSettings()
+    public static void OpenSettings()
     {
-      var instance = EditorSettings.Instance;
-      if ( instance == null )
-        return;
-
-      EditorUtility.FocusProjectWindow();
-      Selection.activeObject = instance;
+      SettingsService.OpenProjectSettings( "Project/AGXSettings" );
     }
 
     public static T GetOrCreateUniqueGameObject<T>()

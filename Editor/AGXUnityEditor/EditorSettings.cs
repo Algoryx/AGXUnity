@@ -3,6 +3,7 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 using GUI = AGXUnity.Utils.GUI;
+using System.Collections.Generic;
 
 namespace AGXUnityEditor
 {
@@ -28,9 +29,6 @@ namespace AGXUnityEditor
     public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
-
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
       BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build:</b> Copy AGX Dynamics binaries",
                                                                      false,
@@ -249,6 +247,11 @@ namespace AGXUnityEditor
       Debug.Log( "    - Adding define symbol AGXUNITY_BUILD_PACKAGE." );
       Build.DefineSymbols.Add( "AGXUNITY_BUILD_PACKAGE" );
     }
+
+    internal static SerializedObject GetSerializedSettings()
+    {
+      return new SerializedObject( GetOrCreateInstance() );
+    }
   }
 
   [CustomEditor( typeof( EditorSettings ) )]
@@ -260,6 +263,44 @@ namespace AGXUnityEditor
         return;
 
       EditorSettings.Instance.OnInspectorGUI();
+    }
+  }
+
+  // Register a SettingsProvider using IMGUI for the drawing framework:
+  static class AGXSettingsIMGUIRegister
+  {
+    [SettingsProvider]
+    public static SettingsProvider CreateAGXSettingsProvider()
+    {
+      // First parameter is the path in the Settings window.
+      // Second parameter is the scope of this setting: it only appears in the Project Settings window.
+      var provider = new SettingsProvider("Project/AGXSettings", SettingsScope.Project)
+      {
+        // By default the last token of the path is used as display name if no label is provided.
+        label = "AGX Settings",
+        // Create the SettingsProvider and initialize its drawing (IMGUI) function in place:
+        guiHandler = (searchContext) =>
+        {
+          float oldWidth = EditorGUIUtility.labelWidth;
+          EditorGUIUtility.labelWidth = 250;
+
+          EditorGUILayout.Space();
+
+          using( new GUILayout.HorizontalScope() ) {
+            GUILayout.Space( 10f );
+
+            using( new GUILayout.VerticalScope() )
+              EditorSettings.Instance.OnInspectorGUI();
+          }
+
+          EditorGUIUtility.labelWidth = oldWidth;
+        },
+
+        // Populate the search keywords to enable smart search filtering and label highlighting:
+        keywords = new HashSet<string>(new[] { "Number", "Some String" })
+      };
+
+      return provider;
     }
   }
 }
