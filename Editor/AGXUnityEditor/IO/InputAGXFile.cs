@@ -970,10 +970,32 @@ namespace AGXUnityEditor.IO
       if ( nativeMaterial == null )
         return;
 
+#if AGX_HDRP
+      thisMaterial.shader = Shader.Find( "HDRP/Lit" );
       if ( nativeMaterial.hasDiffuseColor() ) {
         var color = nativeMaterial.getDiffuseColor().ToColor();
         color.a = 1.0f - nativeMaterial.getTransparency();
+        thisMaterial.SetVector( "_BaseColor", color );
+      }
+      if ( nativeMaterial.hasEmissiveColor() )
+        thisMaterial.SetVector( "_EmissiveColor", nativeMaterial.getEmissiveColor().ToColor() );
 
+      thisMaterial.SetFloat( "_Metallic", Mathf.Pow( 0.3f, 2.2f ) );
+      thisMaterial.SetFloat( "_Smoothness", 0.8f );
+
+      if ( nativeMaterial.getTransparency() > 0.0f ) {
+        thisMaterial.SetFloat( "_SurfaceType", 1 );
+        thisMaterial.SetFloat( "_BlendMode", 0 );
+        thisMaterial.SetFloat( "_AlphaCutoffEnable", 0 );
+        thisMaterial.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
+        thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+      }
+
+#else
+      thisMaterial.shader = Shader.Find( "Standard" );
+      if ( nativeMaterial.hasDiffuseColor() ) {
+        var color = nativeMaterial.getDiffuseColor().ToColor();
+        color.a = 1.0f - nativeMaterial.getTransparency();
         thisMaterial.SetVector( "_Color", color );
       }
       if ( nativeMaterial.hasEmissiveColor() )
@@ -984,6 +1006,7 @@ namespace AGXUnityEditor.IO
 
       if ( nativeMaterial.getTransparency() > 0.0f )
         thisMaterial.SetBlendMode( BlendMode.Transparent );
+#endif
     }
 
     private Dictionary<uint, Material> m_materialLibrary = new Dictionary<uint, Material>();
