@@ -2,18 +2,14 @@
 
 namespace AGXUnity.Model
 {
-  public abstract class DeformableTerrainBase : ScriptComponent
+  public abstract class DeformableTerrainBase : Collide.Shape
   {
-
-    [SerializeField]
-    private ShapeMaterial m_material = null;
-
     /// <summary>
     /// Surface shape material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
     [HideInInspector]
-    public ShapeMaterial Material
+    public override ShapeMaterial Material
     {
       get { return m_material; }
       set

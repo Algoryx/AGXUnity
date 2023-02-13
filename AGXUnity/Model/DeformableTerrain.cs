@@ -316,5 +316,15 @@ namespace AGXUnity.Model
       Native.setEnable( enable );
       Native.getGeometry().setEnable( enable );
     }
+
+    protected override agxCollide.Geometry CreateNative()
+    {
+      return null;
+    }
+
+    public override Vector3 GetScale()
+    {
+      return new Vector3( 1, 1, 1 );
+    }
   }
 }

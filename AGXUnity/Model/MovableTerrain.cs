@@ -3,11 +3,17 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  public abstract class MovableAdapter : DeformableTerrainBase
+  {
+    public sealed override float ElementSize { get => ElementSizeGetter; }
+    protected abstract float ElementSizeGetter { get; }
+  }
+
   [AddComponentMenu( "AGXUnity/Model/Movable Terrain" )]
   [RequireComponent( typeof( MeshFilter ) )]
   [RequireComponent( typeof( MeshRenderer ) )]
   [DisallowMultipleComponent]
-  public class MovableTerrain : AGXUnity.Collide.Shape, ITerrain
+  public class MovableTerrain : MovableAdapter
   {
     /// <summary>
     /// Native deformable terrain instance - accessible after this
@@ -31,81 +37,6 @@ namespace AGXUnity.Model
     [SerializeField]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
 
-    /// <summary>
-    /// Shovels associated to this terrain.
-    /// </summary>
-    [HideInInspector]
-    public DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
-
-    [SerializeField]
-    private DeformableTerrainMaterial m_terrainMaterial = null;
-
-    /// <summary>
-    /// Terrain material associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public DeformableTerrainMaterial TerrainMaterial
-    {
-      get { return m_terrainMaterial; }
-      set
-      {
-        m_terrainMaterial = value;
-
-        if ( Native != null ) {
-          if ( m_terrainMaterial != null )
-            Native.setTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
-          else
-            Native.setTerrainMaterial( DeformableTerrainMaterial.CreateNative( "dirt_1" ) );
-        }
-      }
-    }
-
-    [SerializeField]
-    private DeformableTerrainProperties m_properties = null;
-
-    /// <summary>
-    /// Terrain properties associated to this terrain.
-    /// </summary>
-    [AllowRecursiveEditing]
-    public DeformableTerrainProperties Properties
-    {
-      get { return m_properties; }
-      set
-      {
-        if ( Native != null && m_properties != null )
-          m_properties.Unregister( this );
-
-        m_properties = value;
-
-        if ( Native != null && m_properties != null )
-          m_properties.Register( this );
-      }
-    }
-
-    [SerializeField]
-    private float m_maximumDepth = 20.0f;
-
-    /// <summary>
-    /// Maximum depth, it's not possible to dig deeper than this value.
-    /// This game object will be moved down MaximumDepth and MaximumDepth
-    /// will be added to the heights.
-    /// </summary>
-    [IgnoreSynchronization]
-    [ClampAboveZeroInInspector( true )]
-    public float MaximumDepth
-    {
-      get { return m_maximumDepth; }
-      set
-      {
-        if ( Native != null ) {
-          Debug.LogWarning( "DeformableTerrain MaximumDepth: Value is used during initialization" +
-                            " and cannot be changed when the terrain has been initialized.", this );
-          return;
-        }
-        m_maximumDepth = value;
-      }
-    }
-
     [SerializeField]
     private float m_elementSize = 0.2f;
 
@@ -113,7 +44,7 @@ namespace AGXUnity.Model
     ///  The size of each underlying tile in the terrain, in meters.
     /// </summary>
     [ClampAboveZeroInInspector]
-    public float ElementSize
+    public new float ElementSize
     {
       get => m_elementSize;
       set
@@ -151,60 +82,6 @@ namespace AGXUnity.Model
         m_height = value;
         SetupMesh();
       }
-    }
-
-    /// <summary>
-    /// Associate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to add.</param>
-    /// <returns>True if added, false if null or already added.</returns>
-    public bool Add( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || m_shovels.Contains( shovel ) )
-        return false;
-
-      m_shovels.Add( shovel );
-
-      // Initialize shovel if we're initialized.
-      if ( Native != null )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
-
-      return true;
-    }
-
-    /// <summary>
-    /// Disassociate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to remove.</param>
-    /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    public bool Remove( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || !m_shovels.Contains( shovel ) )
-        return false;
-
-      if ( Native != null )
-        Native.remove( shovel.Native );
-
-      return m_shovels.Remove( shovel );
-    }
-
-    /// <summary>
-    /// Find if shovel has been associated to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to check.</param>
-    /// <returns>True if associated, otherwise false.</returns>
-    public bool Contains( DeformableTerrainShovel shovel )
-    {
-      return shovel != null && m_shovels.Contains( shovel );
-    }
-
-    /// <summary>
-    /// Verifies so that all added shovels still exists. Shovels that
-    /// has been deleted are removed.
-    /// </summary>
-    public void RemoveInvalidShovels()
-    {
-      m_shovels.RemoveAll( shovel => shovel == null );
     }
 
     protected override void OnEnable()
@@ -282,7 +159,7 @@ namespace AGXUnity.Model
 
       GetSimulation().add( Native );
 
-      m_geometry = Native.getGeometry();
+      m_geometry = Native.getGeometry(); ;
       SetupMesh();
     }
 
@@ -353,6 +230,69 @@ namespace AGXUnity.Model
       TerrainMesh.mesh.RecalculateNormals();
     }
 
+
+    private Vector3[] m_terrainVertices = null;
+    private MeshFilter m_terrain = null;
+
+    // -----------------------------------------------------------------------------------------------------------
+    // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
+    // -----------------------------------------------------------------------------------------------------------
+    
+    protected override float ElementSizeGetter { get => ElementSize; }
+    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
+    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
+    public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
+
+    public override bool Add( DeformableTerrainShovel shovel )
+    {
+      if ( shovel == null || m_shovels.Contains( shovel ) )
+        return false;
+
+      m_shovels.Add( shovel );
+
+      // Initialize shovel if we're initialized.
+      if ( Native != null )
+        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
+
+      return true;
+    }
+
+    public override bool Remove( DeformableTerrainShovel shovel )
+    {
+      if ( shovel == null || !m_shovels.Contains( shovel ) )
+        return false;
+
+      if ( Native != null )
+        Native.remove( shovel.Native );
+
+      return m_shovels.Remove( shovel );
+    }
+    public override bool Contains( DeformableTerrainShovel shovel )
+    {
+      return shovel != null && m_shovels.Contains( shovel );
+    }
+
+    public override void RemoveInvalidShovels()
+    {
+      m_shovels.RemoveAll( shovel => shovel == null );
+    }
+
+    protected override bool IsNativeNull() { return Native == null; }
+    protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }
+    protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { Native.setTerrainMaterial( material ); }
+    protected override void SetEnable( bool enable )
+    {
+      if ( Native == null )
+        return;
+
+      if ( Native.getEnable() == enable )
+        return;
+
+      Native.setEnable( enable );
+      Native.getGeometry().setEnable( enable );
+    }
+
     /// <summary>
     /// Transforms the native terrain to align with unity's coordinates, this operation performs a rotation from the Z-axis to the Y-axis as well
     /// as a conditional translation to account for positioning differences based on the evenness of the terrain dimensions
@@ -383,23 +323,5 @@ namespace AGXUnity.Model
     {
       return new Vector3( 1, 1, 1 );
     }
-
-    public agx.GranularBodyPtrArray GetParticles()
-    {
-      if ( Native == null ) return null;
-      return Native.getSoilSimulationInterface().getSoilParticles();
-    }
-
-    public agxTerrain.TerrainProperties GetProperties()
-    {
-      return Native?.getProperties();
-    }
-
-    public void OnPropertiesUpdated()
-    {
-    }
-
-    private Vector3[] m_terrainVertices = null;
-    private MeshFilter m_terrain = null;
   }
 }

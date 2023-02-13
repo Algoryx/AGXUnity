@@ -496,7 +496,7 @@ namespace AGXUnity.Model
 
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
     public override DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( shovel => shovel.Body ).ToArray(); } }
-    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain().getProperties(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
@@ -550,6 +550,16 @@ namespace AGXUnity.Model
         terr.setEnable( enable );
         terr.getGeometry().setEnable( enable );
       }
+    }
+
+    protected override agxCollide.Geometry CreateNative()
+    {
+      return null;
+    }
+
+    public override Vector3 GetScale()
+    {
+      return new Vector3( 1, 1, 1 );
     }
   }
 }

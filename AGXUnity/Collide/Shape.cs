@@ -113,13 +113,13 @@ namespace AGXUnity.Collide
     /// Shape material instance paired with property Material.
     /// </summary>
     [SerializeField]
-    private ShapeMaterial m_material = null;
+    protected ShapeMaterial m_material = null;
 
     /// <summary>
     /// Get or set shape material instance.
     /// </summary>
     [AllowRecursiveEditing]
-    public ShapeMaterial Material
+    public virtual ShapeMaterial Material
     {
       get { return m_material; }
       set
