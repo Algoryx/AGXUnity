@@ -484,6 +484,7 @@ namespace AGXUnity
       public EmitEvent( RigidBodyEmitter emitter )
         : base( emitter.Native )
       {
+        m_emitterTag = $"{emitter.Native.getName()}::";
         m_visualRoot = RuntimeObjects.GetOrCreateRoot( emitter );
         var keepAliveGo = new GameObject( $"{m_visualRoot.name}_keepAlive" );
         keepAliveGo.AddComponent<OnSelectionProxy>().Component = emitter;
@@ -588,15 +589,23 @@ namespace AGXUnity
         var name = rb.getName();
         var match = s_emittedNamePatchRegex.Match( name );
         if ( match.Success ) {
-          // Index 0 is the original name, group index 1 is the name without _emittedNNNN.
-          name = match.Groups[ 1 ].Value;
-          rb.setName( name );
+          // Index 0 is the original name. Emitted body name is constructed as:
+          //     (name of emitter)::(name of template)::(number of emitted bodies)
+          // We're matching all string ending with "::N..." where N... is any number,
+          // and our desired template name is found by removing "(name of emitter)::"
+          // from the start. Groups[ 2 ].Value == "::N...".
+          var emitterAndTemplateName = match.Groups[ 1 ].Value;
+          if ( emitterAndTemplateName.Length > m_emitterTag.Length ) {
+            name = emitterAndTemplateName.Substring( m_emitterTag.Length );
+            rb.setName( name );
+          }
         }
 
         return name;
       }
 
-      private static Regex s_emittedNamePatchRegex = new Regex( @"(.*?)(_emitted\d+)$", RegexOptions.Compiled );
+      private static Regex s_emittedNamePatchRegex = new Regex( @"(.*?)(::\d+)$", RegexOptions.Compiled );
+      private string m_emitterTag;
 
       private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
       private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();

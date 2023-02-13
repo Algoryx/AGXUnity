@@ -32,6 +32,12 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<CableProperties>( "cable properties" );
     }
 
+    [MenuItem( "Assets/AGXUnity/Cable Damage Properties", priority = 620 )]
+    public static Object CreateCableDamageProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<CableDamageProperties>( "cable damage properties" );
+    }
+
     [MenuItem( "Assets/AGXUnity/Geometry Contact Merge Split Thresholds", priority = 640 )]
     public static Object CreateGeometryContactMergeSplitThresholds()
     {
