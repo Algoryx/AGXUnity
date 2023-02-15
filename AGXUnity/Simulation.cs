@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
@@ -139,8 +139,8 @@ namespace AGXUnity
     /// <summary>
     /// Get or set solver settings.
     /// </summary>
-    [AllowRecursiveEditing]
     [IgnoreSynchronization]
+    [HideInInspector]
     public SolverSettings SolverSettings
     {
       get { return m_solverSettings; }
@@ -148,9 +148,10 @@ namespace AGXUnity
       {
         if ( m_solverSettings != null ) {
           m_solverSettings.SetSimulation( null );
-          if ( value == null )
-            SolverSettings.AssignDefault( m_simulation );
         }
+
+        if ( value == null )
+          SolverSettings.DefaultResource.SetSimulation( m_simulation );
 
         m_solverSettings = value;
 
@@ -382,13 +383,10 @@ namespace AGXUnity
           TimeStep = Time.fixedDeltaTime;
 
         // Solver settings will assign number of threads.
-        if ( m_solverSettings != null ) {
-          m_solverSettings.SetSimulation( m_simulation );
-          m_solverSettings.GetInitialized<SolverSettings>();
-        }
-        // No solver settings - set the default.
-        else
-          agx.agxSWIG.setNumThreads( Convert.ToUInt32( SolverSettings.DefaultNumberOfThreads ) );
+        var settings = m_solverSettings ?? SolverSettings.DefaultResource;
+        settings.SetSimulation( m_simulation );
+        settings.GetInitialized<SolverSettings>();
+        agx.agxSWIG.setNumThreads( (uint)(settings.NumberOfThreads == 0 ? SolverSettings.DefaultNumberOfThreads : settings.NumberOfThreads ) );
 
         StepCallbacks.OnInitialize( m_simulation );
         ContactCallbacks.OnInitialize( this );

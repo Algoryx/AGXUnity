@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -969,6 +969,7 @@ namespace AGXUnityEditor
         AssetDatabase.CreateFolder( IO.Utils.AGXUnityResourceDirectory, AGXUnity.MergeSplitThresholds.ResourceDirectory );
       GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.GeometryContactMergeSplitThresholds.ResourcePath + ".asset" );
       GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.ConstraintMergeSplitThresholds.ResourcePath + ".asset" );
+      GetOrCreateAsset<AGXUnity.SolverSettings>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.SolverSettings.ResourcePath + ".asset" );
     }
   }
 }

@@ -471,6 +471,95 @@ namespace AGXUnityEditor
       return result;
     }
 
+    public static Object FoldoutSettingsField( GUIContent content,
+                                               ScriptAsset instance,
+                                               ScriptAsset defaultSettings,
+                                               Type instanceType,
+                                               EditorDataEntry foldoutData)
+    {
+      var createNewPressed = false;
+
+      // We're in control of the whole inspector entry.
+      var position = EditorGUILayout.GetControlRect();
+
+      // Foldout hijacks control meaning if we're rendering object field
+      // or button they won't react/work if the foldout is going all the way.
+      // The object field is starting at labelWidth so the foldout is
+      // defined from 0 to labelWidth if we're rendering additional stuff.
+      var oldWidth = position.xMax;
+      position.xMax = EditorGUIUtility.labelWidth;
+
+      var newState = EditorGUI.Foldout( position,
+                                        foldoutData.Bool,
+                                        content,
+                                        true );
+      if ( newState != foldoutData.Bool ) {
+        foldoutData.Bool = newState;
+        UnityEngine.GUI.changed = false;
+      }
+
+      position.xMax = oldWidth;
+
+      // Entry may change, render object field and create-new-button if
+      // the instance type supports it.
+      Object result;
+      var createNewButtonWidth = 18.0f;
+
+      position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
+      position.xMax -= EditorGUIUtility.labelWidth +
+                       createNewButtonWidth -
+                       IndentScope.PixelLevel;
+      result = EditorGUI.ObjectField( position, instance, instanceType, false );
+      var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
+      buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
+
+      createNewPressed = Button( buttonRect,
+                                  MiscIcon.CreateAsset,
+                                  UnityEngine.GUI.enabled,
+                                  "Create new asset." );
+
+      // Remove editor if object field is set to null or another object.
+      if ( instance != result ) {
+        ToolManager.ReleaseRecursiveEditor( instance );
+        foldoutData.Bool = false;
+      }
+
+      // Recursive editor rendered indented with respect to foldout.
+      if ( foldoutData.Bool ) {
+        if ( result == null ) {
+          WarningLabel( "No explicit settings are assigned. Using project settings." , Color.Lerp( Color.yellow, Color.white, 0.25f ) );
+          if(GUILayout.Button( "Open project settings..." ))
+            SettingsService.OpenProjectSettings( "Project/AGXSettings" );
+        }
+        using (new EditorGUI.DisabledScope(result == null))
+          HandleEditorGUI( ToolManager.TryGetOrCreateRecursiveEditor( result ?? defaultSettings ) );
+      }
+
+      if ( createNewPressed ) {
+        var assetName = instanceType.Name.SplitCamelCase().ToLower();
+        var assetExtension = IO.AGXFileInfo.FindAssetExtension( instanceType );
+        var path = EditorUtility.SaveFilePanel( "Create new " + assetName,
+                                                "Assets",
+                                                "new " + assetName + assetExtension,
+                                                assetExtension.TrimStart( '.' ) );
+        if ( path != string.Empty ) {
+          var info = new System.IO.FileInfo( path );
+          var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
+          var newInstance = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
+                               ScriptAsset.Create( instanceType ) as Object :
+                               new Material( Shader.Find( "Standard" ) );
+          newInstance.name = info.Name;
+          AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension != assetExtension ? assetExtension : "" ) );
+          AssetDatabase.SaveAssets();
+          AssetDatabase.Refresh();
+
+          result = newInstance;
+        }
+      }
+
+      return result;
+    }
+
     public static void UnityMaterial( GUIContent objFieldLabel,
                                       Material material,
                                       Action<Material> onMaterialChanged )
@@ -1237,6 +1326,15 @@ namespace AGXUnityEditor
       using ( new GUI.BackgroundColorBlock( Color.Lerp( Color.white, Color.black, 0.55f ) ) )
         EditorGUILayout.LabelField( GUI.MakeLabel( warning,
                                                    Color.Lerp( Color.red, Color.white, 0.25f ),
+                                                   true ),
+                                    InspectorEditor.Skin.TextAreaMiddleCenter );
+    }
+
+    public static void WarningLabel( string warning, Color textColor )
+    {
+      using ( new GUI.BackgroundColorBlock( Color.Lerp( Color.white, Color.black, 0.55f ) ) )
+        EditorGUILayout.LabelField( GUI.MakeLabel( warning,
+                                                   textColor,
                                                    true ),
                                     InspectorEditor.Skin.TextAreaMiddleCenter );
     }

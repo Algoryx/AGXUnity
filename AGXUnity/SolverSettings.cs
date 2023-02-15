@@ -7,6 +7,12 @@ namespace AGXUnity
 {
   public class SolverSettings : ScriptAsset
   {
+    [HideInInspector]
+    public static string ResourcePath { get => @"SolverSettings"; }
+
+    [HideInInspector]
+    public static SolverSettings DefaultResource { get => Resources.Load<SolverSettings>( ResourcePath ); }
+
     /// <summary>
     /// Default number of AGX threads. Assuming processor count includes
     /// hyper threading, default value is number of physical cores minus one
@@ -22,24 +28,25 @@ namespace AGXUnity
     public agxSDK.Simulation SimulationInstance { get; private set; }
 
     [SerializeField]
-    private int m_numberOfThreads = 1;
+    private int m_numberOfThreads = 0;
 
     /// <summary>
-    /// Maximum number of threads used by AGX.
+    /// Maximum number of threads used by AGX. If 0, then the default thread count is used.
     /// </summary>
     /// <remarks>
     /// It's not recommended to assign values larger than the number of physical cores on
     /// the target computer.
     /// </remarks>
     [Description( "Maximum number of threads used by AGX." )]
+    [IgnoreSynchronization]
     public int NumberOfThreads
     {
-      get { return m_numberOfThreads; }
+      get => m_numberOfThreads; 
       set
       {
-        m_numberOfThreads = Math.Max( value, 1 );
+        m_numberOfThreads = Math.Max( value, 0 );
         if ( SimulationInstance != null )
-          agx.agxSWIG.setNumThreads( System.Convert.ToUInt32( m_numberOfThreads ) );
+          agx.agxSWIG.setNumThreads( System.Convert.ToUInt32( m_numberOfThreads == 0 ? DefaultNumberOfThreads : m_numberOfThreads ) );
       }
     }
 

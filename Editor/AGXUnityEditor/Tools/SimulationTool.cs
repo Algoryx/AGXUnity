@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AGXUnity;
 using UnityEngine;
 using UnityEditor;
@@ -90,6 +90,12 @@ namespace AGXUnityEditor.Tools
                                                                                                "call when Update is called > 60 Hz. Default: 0.9." ),
                                                                                 Simulation.UpdateRealTimeCorrectionFactor,
                                                                                 skin.TextField );
+
+      Simulation.SolverSettings = (SolverSettings)InspectorGUI.FoldoutSettingsField( GUI.MakeLabel( "Solver Settings override" ),
+                                                                                     Simulation.SolverSettings,
+                                                                                     SolverSettings.DefaultResource,
+                                                                                     typeof( SolverSettings ),
+                                                                                     EditorData.Instance.GetData( Simulation, "SimulationSolverSettings" ) );
     }
 
     public override void OnPostTargetMembersGUI()
