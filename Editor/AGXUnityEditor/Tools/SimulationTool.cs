@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using AGXUnity;
 using UnityEngine;
 using UnityEditor;
@@ -147,6 +147,15 @@ namespace AGXUnityEditor.Tools
                                                                      "agx",
                                                                      "Path to initial dump (including file name and extension)",
                                                                      fileExtension => fileExtension == ".agx" || fileExtension == ".aagx" );
+
+      Simulation.LogPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "AGX Dynamics log" ),
+                                                         Simulation.LogEnabled,
+                                                         enable => Simulation.LogEnabled = enable,
+                                                         Simulation.LogPath,
+                                                         "AGXDynamicsLog",
+                                                         "txt",
+                                                         "AGX Dynamics log filename",
+                                                         extension => true );
 
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {

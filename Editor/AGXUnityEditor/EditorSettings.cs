@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
@@ -23,9 +23,6 @@ namespace AGXUnityEditor
 
     public bool BuildPlayer_CopyBinaries = true;
 
-    public bool AGXDynamics_LogEnabled = false;
-    public string AGXDynamics_LogPath  = "";
-
     public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
@@ -34,14 +31,6 @@ namespace AGXUnityEditor
                                                                      false,
                                                                      "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
                                                       BuildPlayer_CopyBinaries );
-      AGXDynamics_LogPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "AGX Dynamics log" ),
-                                                         AGXDynamics_LogEnabled,
-                                                         enable => AGXDynamics_LogEnabled = enable,
-                                                         AGXDynamics_LogPath,
-                                                         "AGXDynamicsLog",
-                                                         "txt",
-                                                         "AGX Dynamics log filename",
-                                                         extension => true );
 
       if ( ExternalAGXInitializer.IsApplied ) {
         DirectoryInfo newAgxDir = null;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
@@ -241,6 +241,38 @@ namespace AGXUnity
       set { m_savePreFirstStepPath = value; }
     }
 
+    [SerializeField]
+    private bool m_logEnabled = false;
+    [HideInInspector]
+    public bool LogEnabled
+    {
+      get { return m_logEnabled; }
+      set
+      {
+        m_logEnabled = value;
+        if(m_simulation != null && LogEnabled && !string.IsNullOrEmpty( m_logPath ))
+          agx.Logger.instance().openLogfile( m_logPath.Trim(),
+                                             true,
+                                             true );
+      }
+    }
+
+    [SerializeField]
+    private string m_logPath  = "";
+    [HideInInspector]
+    public string LogPath
+    {
+      get => m_logPath;
+      set
+      {
+        m_logPath = value;
+        if(m_simulation != null && LogEnabled && !string.IsNullOrEmpty(m_logPath))
+          agx.Logger.instance().openLogfile( m_logPath.Trim(),
+                                             true,
+                                             true );
+      }
+    }
+
     /// <summary>
     /// Get the native instance, if not deleted.
     /// </summary>
@@ -360,6 +392,10 @@ namespace AGXUnity
 
         StepCallbacks.OnInitialize( m_simulation );
         ContactCallbacks.OnInitialize( this );
+
+        // Initialize logger if enabled
+        if ( LogEnabled && !string.IsNullOrEmpty( LogPath ) )
+          agx.Logger.instance().openLogfile( LogPath, true, true );
       }
 
       return m_simulation;
