@@ -985,13 +985,32 @@ namespace AGXUnityEditor.IO
 
       if ( nativeMaterial.getTransparency() > 0.0f ) {
         thisMaterial.SetFloat( "_SurfaceType", 1 );
-        thisMaterial.SetFloat( "_BlendMode", 0 );
+        thisMaterial.SetFloat( "_BlendMode", 1 );
         thisMaterial.SetFloat( "_AlphaCutoffEnable", 0 );
         thisMaterial.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
         thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
       }
+#elif AGX_URP
+      thisMaterial.shader = Shader.Find( "Universal Render Pipeline/Lit" );
 
-#else
+      if ( nativeMaterial.hasDiffuseColor() ) {
+        var color = nativeMaterial.getDiffuseColor().ToColor();
+        color.a = 1.0f - nativeMaterial.getTransparency();
+        thisMaterial.SetVector( "_BaseColor", color );
+      }
+      if ( nativeMaterial.hasEmissiveColor() )
+        thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
+
+      thisMaterial.SetFloat( "_Metallic", 0.3f );
+      thisMaterial.SetFloat( "_Smoothness", 0.8f );
+
+      if ( nativeMaterial.getTransparency() > 0.0f ) {
+        thisMaterial.SetFloat( "_Surface", 1 );
+        thisMaterial.SetFloat( "_Blend", 1 );
+        thisMaterial.SetFloat( "_Clip", 0 );
+        thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+      }
+#else 
       thisMaterial.shader = Shader.Find( "Standard" );
       if ( nativeMaterial.hasDiffuseColor() ) {
         var color = nativeMaterial.getDiffuseColor().ToColor();
