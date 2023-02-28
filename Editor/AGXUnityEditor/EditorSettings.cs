@@ -286,7 +286,7 @@ namespace AGXUnityEditor
         },
 
         // Populate the search keywords to enable smart search filtering and label highlighting:
-        keywords = new HashSet<string>(new[] { "Number", "Some String" })
+        keywords = new HashSet<string>(new[] { "AGX Dynamics", "Keybindings", "Rigid body" })
       };
 
       return provider;
