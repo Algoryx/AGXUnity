@@ -243,33 +243,33 @@ namespace AGXUnity
 
     [SerializeField]
     private bool m_logEnabled = false;
+    
     [HideInInspector]
+    [IgnoreSynchronization]
     public bool LogEnabled
     {
       get { return m_logEnabled; }
       set
       {
+        if ( value == m_logEnabled ) return;
         m_logEnabled = value;
-        if(m_simulation != null && LogEnabled && !string.IsNullOrEmpty( m_logPath ))
-          agx.Logger.instance().openLogfile( m_logPath.Trim(),
-                                             true,
-                                             true );
+        OpenLogFileIfEnabled();
       }
     }
 
     [SerializeField]
     private string m_logPath  = "";
+
     [HideInInspector]
+    [IgnoreSynchronization]
     public string LogPath
     {
       get => m_logPath;
       set
       {
+        if ( value == m_logPath ) return;
         m_logPath = value;
-        if(m_simulation != null && LogEnabled && !string.IsNullOrEmpty(m_logPath))
-          agx.Logger.instance().openLogfile( m_logPath.Trim(),
-                                             true,
-                                             true );
+        OpenLogFileIfEnabled();
       }
     }
 
@@ -394,8 +394,7 @@ namespace AGXUnity
         ContactCallbacks.OnInitialize( this );
 
         // Initialize logger if enabled
-        if ( LogEnabled && !string.IsNullOrEmpty( LogPath ) )
-          agx.Logger.instance().openLogfile( LogPath, true, true );
+        OpenLogFileIfEnabled();
       }
 
       return m_simulation;
@@ -524,6 +523,17 @@ namespace AGXUnity
         timer.stop();
         m_statisticsWindowData.ManagedStepForward = Convert.ToSingle( timer.getTime() );
       }
+    }
+
+    private void OpenLogFileIfEnabled()
+    {
+      string logOverride = IO.Environment.GetLogFileOverride();
+      if (logOverride != null )
+        agx.Logger.instance().openLogfile( logOverride, true, true );
+      else if ( m_simulation != null && LogEnabled && !string.IsNullOrEmpty( LogPath ) )
+        agx.Logger.instance().openLogfile( LogPath.Trim(),
+                                           true,
+                                           true );
     }
 
     private class MemoryAllocations

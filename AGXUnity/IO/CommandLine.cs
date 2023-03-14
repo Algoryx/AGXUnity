@@ -23,7 +23,11 @@ namespace AGXUnity.IO
       /// <summary>
       /// -create-offline-license -> create_offline_license
       /// </summary>
-      CreateOfflineLicense
+      CreateOfflineLicense,
+      /// <summary>
+      /// -agx-log-file -> agx_log_file
+      /// </summary>
+      AgxLogFile
     }
 
     /// <summary>

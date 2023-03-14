@@ -276,6 +276,11 @@ namespace AGXUnity.IO
       return VersionInfo.Invalid;
     }
 
+    public static string GetLogFileOverride()
+    {
+      return s_logFileOverride;
+    }
+
     private static bool ParseInstalledEditorPackages()
     {
       if ( UnityEngine.Application.isEditor && s_installedEditorPackages == null ) {
@@ -403,11 +408,29 @@ namespace AGXUnity.IO
           UnityEngine.Debug.LogException( e );
         }
       }
+      if ( CommandLine.HasArg( CommandLine.Arg.AgxLogFile ) ) {
+        try {
+          var logPath = CommandLine.GetValues( CommandLine.Arg.AgxLogFile );
+          if ( logPath == null || logPath.Count != 1 )
+            throw new AGXUnity.Exception( "wrong number of arguments. " +
+                                          "Usage: --agx-log-file <log_file>" );
+
+          s_logFileOverride = Path.GetFullPath( logPath[ 0 ] );
+
+        }
+        catch ( AGXUnity.Exception e ) {
+          UnityEngine.Debug.LogError( $"AGXUnity.CLI: Setting log file failed - {e.Message}" );
+        }
+        catch ( System.Exception e ) {
+          UnityEngine.Debug.LogException( e );
+        }
+      }
 
       if ( !UnityEngine.Application.isEditor && CommandLine.HasArg( "quit" ) )
         UnityEngine.Application.Quit( 0 );
     }
 
+    private static string s_logFileOverride = null;
     private static Dictionary<string, VersionInfo> s_installedEditorPackages = null;
     private static CommandLine s_commandLine = null;
   }
