@@ -343,9 +343,9 @@ namespace AGXUnityEditor.Windows
       AssetDatabase.importPackageCancelled += OnImportPackageCanceled;
       AssetDatabase.importPackageFailed += OnImportPackageFailed;
 
-      RequestHandler.Get( @"http://localhost:8000/MetaGenerator.php",
+      RequestHandler.Get( s_metadataURL,
                           TempDirectory,
-                          OnExamplePage );
+                          OnMetadata );
     }
 
     /// <summary>
@@ -730,7 +730,7 @@ namespace AGXUnityEditor.Windows
     }
 
     /// <summary>
-    /// Callback when the examples.html has been downloaded to the
+    /// Callback when the Metadata.json has been downloaded to the
     /// temporary directory. This method parses the file for download
     /// links and checks the project for installed examples. Last,
     /// this method fires a request for a list of installed packages
@@ -738,7 +738,7 @@ namespace AGXUnityEditor.Windows
     /// </summary>
     /// <param name="file">Downloaded file.</param>
     /// <param name="status">Request status.</param>
-    private static void OnExamplePage( FileInfo file, RequestHandler.Status status )
+    private static void OnMetadata( FileInfo file, RequestHandler.Status status )
     {
       if ( status != RequestHandler.Status.Success )
         return;
@@ -842,6 +842,7 @@ namespace AGXUnityEditor.Windows
       return s_dependencyData.GetValueOrDefault( packageName, DependencyState.Unknown );
     }
 
+    private static string s_metadataURL = @"https://us.download.algoryx.se/AGXUnity/examples/current/ExampleMetadata.json";
     private static ListRequest s_listPackagesRequest = null;
     private static List<AddRequest> s_addPackageRequests = new List<AddRequest>();
     private static List<ExampleData> s_exampleData = new List<ExampleData>();
