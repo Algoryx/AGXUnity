@@ -50,6 +50,9 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.BrandSeparator( 1, 6 );
 
+      EditorGUILayout.LabelField( "Check out the documentation for the examples by clicking the example name in the list.",
+                                  InspectorEditor.Skin.LabelMiddleCenter );
+
       if ( EditorApplication.isPlayingOrWillChangePlaymode )
         ShowNotification( GUI.MakeLabel( "Playing..." ) );
       else if ( ExamplesManager.IsInitializing )
