@@ -839,7 +839,7 @@ namespace AGXUnityEditor.Windows
 
     public static DependencyState GetDependencyState( string packageName )
     {
-      return s_dependencyData.GetValueOrDefault( packageName, DependencyState.Unknown );
+      return s_dependencyData.ContainsKey(packageName) ? s_dependencyData[packageName] : DependencyState.Unknown;
     }
 
     private static string s_metadataURL = @"https://us.download.algoryx.se/AGXUnity/examples/current/ExampleMetadata.json";
