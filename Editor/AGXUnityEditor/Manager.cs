@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -810,11 +810,6 @@ namespace AGXUnityEditor
         AGXUnity.LicenseManager.LoadFile();
 
         AGXUnity.NativeHandler.Instance.ValidateLicense();
-        if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
-             !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
-          agx.Logger.instance().openLogfile( EditorSettings.Instance.AGXDynamics_LogPath.Trim(),
-                                             true,
-                                             true );
       }
       catch ( Exception ) {
         return EnvironmentState.Uninitialized;

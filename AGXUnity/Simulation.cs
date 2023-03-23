@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
@@ -241,6 +241,38 @@ namespace AGXUnity
       set { m_savePreFirstStepPath = value; }
     }
 
+    [SerializeField]
+    private bool m_logEnabled = false;
+    
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public bool LogEnabled
+    {
+      get { return m_logEnabled; }
+      set
+      {
+        if ( value == m_logEnabled ) return;
+        m_logEnabled = value;
+        OpenLogFileIfEnabled();
+      }
+    }
+
+    [SerializeField]
+    private string m_logPath  = "";
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public string LogPath
+    {
+      get => m_logPath;
+      set
+      {
+        if ( value == m_logPath ) return;
+        m_logPath = value;
+        OpenLogFileIfEnabled();
+      }
+    }
+
     /// <summary>
     /// Get the native instance, if not deleted.
     /// </summary>
@@ -360,6 +392,9 @@ namespace AGXUnity
 
         StepCallbacks.OnInitialize( m_simulation );
         ContactCallbacks.OnInitialize( this );
+
+        // Initialize logger if enabled
+        OpenLogFileIfEnabled();
       }
 
       return m_simulation;
@@ -488,6 +523,17 @@ namespace AGXUnity
         timer.stop();
         m_statisticsWindowData.ManagedStepForward = Convert.ToSingle( timer.getTime() );
       }
+    }
+
+    private void OpenLogFileIfEnabled()
+    {
+      string logOverride = IO.Environment.GetLogFileOverride();
+      if (logOverride != null )
+        agx.Logger.instance().openLogfile( logOverride, true, true );
+      else if ( m_simulation != null && LogEnabled && !string.IsNullOrEmpty( LogPath ) )
+        agx.Logger.instance().openLogfile( LogPath.Trim(),
+                                           true,
+                                           true );
     }
 
     private class MemoryAllocations
