@@ -72,6 +72,14 @@ namespace AGXUnity
       }
     }
 
+
+    public enum DamageTypeMode {
+      CurrentDamage,
+      AccumulatedDamage
+    }
+    [Tooltip("Select what type of damage is to be rendered, the current, or the accumulated")]
+    public DamageTypeMode DamageType = DamageTypeMode.CurrentDamage;
+
     public enum MaxDamageColorMode {
       HighestPerFrame,
       UseSetDamage
@@ -128,14 +136,16 @@ namespace AGXUnity
       m_currentDamages = Native.getCurrentDamages();
       m_accumulatedDamages = Native.getAccumulatedDamages();
 
+      int count = DamageType == DamageTypeMode.CurrentDamage ? m_currentDamages.Count : m_accumulatedDamages.Count;
+
       if (RenderCableDamage && CableRenderer)
       {
-        if (m_damageValues.Length != m_currentDamages.Count)
-          m_damageValues = new float[m_currentDamages.Count];
+        if (m_damageValues.Length != count)
+          m_damageValues = new float[count];
 
         m_maxDamage = float.MinValue;
-        for (int i = 0; i < m_currentDamages.Count; i++){
-          float value = (float)m_currentDamages[i].total();
+        for (int i = 0; i < count; i++){
+          float value = DamageType == DamageTypeMode.CurrentDamage ? (float)m_currentDamages[i].total() : (float)m_accumulatedDamages[i].total();
           m_maxDamage = Mathf.Max(m_maxDamage, value);
           m_damageValues[i] = value;
         }
