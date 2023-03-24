@@ -58,6 +58,8 @@ namespace AGXUnityEditor.Tools
       CableDamageProperties.BendThreshold = threshold[0];
       CableDamageProperties.TwistThreshold = threshold[1];
       CableDamageProperties.StretchThreshold = threshold[2];
+
+      GUILayout.Label("Rendering options");
     }
   }
 }
