@@ -15,8 +15,8 @@ namespace AGXUnityEditor.Windows
     public static ExamplesWindow Open()
     {
       return GetWindow<ExamplesWindow>( false,
-                                                "AGX Dynamics for Unity Examples",
-                                                true );
+                                        "AGX Dynamics for Unity Examples",
+                                        true );
     }
 
     private void OnEnable()
@@ -34,6 +34,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnGUI()
     {
+      minSize = new Vector2(400, 0);
       if ( m_exampleNameStyle == null ) {
         m_exampleNameStyle = new GUIStyle( InspectorEditor.Skin.Label );
         m_exampleNameStyle.alignment = TextAnchor.MiddleLeft;
@@ -82,7 +83,7 @@ namespace AGXUnityEditor.Windows
             GUILayout.Label( exampleNameLabel,
                              m_exampleNameStyle,
                              GUILayout.Height( 64 ) );
-
+          
           GUILayout.FlexibleSpace();
 
           var hasUnresolvedIssues = ExamplesManager.HasUnresolvedIssues( data );
@@ -111,75 +112,76 @@ namespace AGXUnityEditor.Windows
                                 // "Load"
                                 data.Status == ExamplesManager.ExampleData.State.Installed
                               );
-          using ( new GUI.EnabledBlock( buttonEnabled ) )
+
           using ( new EditorGUILayout.VerticalScope() ) {
             GUILayout.Space( 0.5f * ( 64 - 18 ) );
-            if ( GUILayout.Button( GUI.MakeLabel( buttonText ),
-                                   InspectorEditor.Skin.Button,
-                                   GUILayout.MinWidth( 120 ),
-                                   GUILayout.Height( 18 ) ) ) {
-              if ( data.Status == ExamplesManager.ExampleData.State.NotInstalled )
-                ExamplesManager.Download( data );
-              else if ( data.Status == ExamplesManager.ExampleData.State.Downloading )
-                ExamplesManager.CancelDownload( data );
-              else if ( data.Status == ExamplesManager.ExampleData.State.Installed ) {
-                if ( !string.IsNullOrEmpty( data.Scene ) )
-                  EditorSceneManager.OpenScene( data.Scene, OpenSceneMode.Single );
-                else
-                  Debug.LogWarning( $"Unable to find .unity scene file for example: {data.Name}" );
-              }
-            }
-          }
+            using ( new EditorGUILayout.HorizontalScope() ) {
+              if ( hasUnresolvedIssues ) {
+                var dependencyContextButtonWidth = 18.0f;
 
-          if ( data != null ) {
-            if ( data.Status == ExamplesManager.ExampleData.State.Downloading ) {
-              hasDownloads = true;
-              var progressRect = GUILayoutUtility.GetLastRect();
-              progressRect.y += 4.0f;
-              progressRect.height = 18.0f;
-              EditorGUI.ProgressBar( progressRect,
-                                     data.DownloadProgress,
-                                     $"Downloading: { (int)( 100.0f * data.DownloadProgress + 0.5f ) }%" );
-            }
-            else if ( hasUnresolvedIssues ) {
-              var dependencyContextButtonWidth = 18.0f;
-              var dependencyContextRect        = GUILayoutUtility.GetLastRect();
-              dependencyContextRect.x -= ( 0.5f * ( dependencyContextButtonWidth ) + 10.0f );
-              dependencyContextRect.y += 0.5f * ( 64 - 18 );
-              dependencyContextRect.width = dependencyContextButtonWidth;
-              dependencyContextRect.height = dependencyContextButtonWidth;
-
-              var hasUnresolvedDependencies  = ExamplesManager.HasUnresolvedDependencies( data );
-              var hasUnresolvedInputSettings = ( data.RequiresLegacyInputManager &&
+                var hasUnresolvedDependencies  = ExamplesManager.HasUnresolvedDependencies( data );
+                var hasUnresolvedInputSettings = ( data.RequiresLegacyInputManager &&
                                                  !ExamplesManager.LegacyInputManagerEnabled ) ||
                                                ( data.Dependencies.Contains( "com.unity.inputsystem" ) &&
                                                  !ExamplesManager.InputSystemEnabled );
-              var contextButton = InspectorGUI.Button( dependencyContextRect,
-                                                       MiscIcon.ContextDropdown,
+
+                var contextButton = InspectorGUI.Button(MiscIcon.ContextDropdown,
                                                        !ExamplesManager.IsInstallingDependencies &&
                                                        !EditorApplication.isPlayingOrWillChangePlaymode,
                                                        ( hasUnresolvedDependencies ?
                                                            "Required dependencies." :
                                                            "Input settings has to be resolved." ),
-                                                       1.1f );
-              if ( contextButton ) {
-                var dependenciesMenu = new GenericMenu();
-                if ( hasUnresolvedDependencies ) {
-                  dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Install dependency..." ) );
-                  dependenciesMenu.AddSeparator( string.Empty );
-                  foreach ( var dependency in data.Dependencies )
-                    dependenciesMenu.AddItem( GUI.MakeLabel( dependency.ToString() ),
+                                                       1.1f,
+                                                       GUILayout.Width(dependencyContextButtonWidth));
+                if ( contextButton ) {
+                  var dependenciesMenu = new GenericMenu();
+                  if ( hasUnresolvedDependencies ) {
+                    dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Install dependency..." ) );
+                    dependenciesMenu.AddSeparator( string.Empty );
+                    foreach ( var dependency in data.Dependencies )
+                      dependenciesMenu.AddItem( GUI.MakeLabel( dependency.ToString() ),
+                                                false,
+                                                () => ExamplesManager.InstallDependency( dependency ) );
+                  }
+                  else {
+                    dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Resolve input settings..." ) );
+                    dependenciesMenu.AddSeparator( string.Empty );
+                    dependenciesMenu.AddItem( GUI.MakeLabel( "Enable both (legacy and new) Input Systems" ),
                                               false,
-                                              () => ExamplesManager.InstallDependency( dependency ) );
+                                              () => ExamplesManager.ResolveInputSystemSettings() );
+                  }
+                  dependenciesMenu.ShowAsContext();
                 }
-                else {
-                  dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Resolve input settings..." ) );
-                  dependenciesMenu.AddSeparator( string.Empty );
-                  dependenciesMenu.AddItem( GUI.MakeLabel( "Enable both (legacy and new) Input Systems" ),
-                                            false,
-                                            () => ExamplesManager.ResolveInputSystemSettings() );
+              }
+              using ( new GUI.EnabledBlock( buttonEnabled ) ) {
+
+                if ( GUILayout.Button( GUI.MakeLabel( buttonText ),
+                                     InspectorEditor.Skin.Button,
+                                     GUILayout.MinWidth( 130 ),
+                                     GUILayout.Height( 18 ) ) ) {
+                  if ( data.Status == ExamplesManager.ExampleData.State.NotInstalled )
+                    ExamplesManager.Download( data );
+                  else if ( data.Status == ExamplesManager.ExampleData.State.Downloading )
+                    ExamplesManager.CancelDownload( data );
+                  else if ( data.Status == ExamplesManager.ExampleData.State.Installed ) {
+                    if ( !string.IsNullOrEmpty( data.Scene ) )
+                      EditorSceneManager.OpenScene( data.Scene, OpenSceneMode.Single );
+                    else
+                      Debug.LogWarning( $"Unable to find .unity scene file for example: {data.Name}" );
+                  }
                 }
-                dependenciesMenu.ShowAsContext();
+
+                if ( data != null ) {
+                  if ( data.Status == ExamplesManager.ExampleData.State.Downloading ) {
+                    hasDownloads = true;
+                    var progressRect = GUILayoutUtility.GetLastRect();
+                    progressRect.y += 4.0f;
+                    progressRect.height = 18.0f;
+                    EditorGUI.ProgressBar( progressRect,
+                                           data.DownloadProgress,
+                                           $"Downloading: { (int)( 100.0f * data.DownloadProgress + 0.5f ) }%" );
+                  }
+                }
               }
             }
           }
