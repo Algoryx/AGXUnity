@@ -92,9 +92,8 @@ namespace AGXUnity.Rendering
     protected override bool Initialize()
     {
       ParticleProvider = GetComponent<DeformableTerrainBase>();
-      if ( ParticleProvider == null)
-      {
-        Debug.LogError("DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!");
+      if ( ParticleProvider == null ) {
+        Debug.LogError( "DeformableTerrainParticleRenderer parent game object '" + gameObject.name + "' has no particle provider!" );
         return false;
       }
 
@@ -246,7 +245,7 @@ namespace AGXUnity.Rendering
 
     private void Synchronize()
     {
-      var granulars = ParticleProvider.GetParticles();
+      var granulars = ParticleProvider?.GetParticles();
       if ( granulars == null ) return;
 
       m_numGranulars = (int)granulars.size();
