@@ -194,7 +194,6 @@ namespace AGXUnity.Rendering
         m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
         m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
-        m_meshInstanceScale = filters[ 0 ].transform.lossyScale;
       }
 
       Synchronize();
@@ -261,7 +260,7 @@ namespace AGXUnity.Rendering
         // amount of particles that can be drawn with DrawMeshInstanced.
         while ( m_numGranulars / 1023 + 1 > m_granuleMatrices.Count ) {
           m_granuleMatrices.Add( new MatrixUnion() );
-          m_granuleMatrices[ ( m_numGranulars / 1023 ) ].unityMats = new Matrix4x4[ 1023 ];
+          m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
         }
 
         for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
@@ -309,7 +308,6 @@ namespace AGXUnity.Rendering
       m_meshInstanceMaterial = null;
       m_granuleMatrices = null;
       m_meshInstanceProperties = null;
-      m_meshInstanceScale = Vector3.one;
     }
 
     private void Destroy( int count )
@@ -340,7 +338,6 @@ namespace AGXUnity.Rendering
     private Mesh m_meshInstance = null;
     private ShadowCastingMode m_shadowCastingMode = ShadowCastingMode.On;
     private bool m_receiveShadows = true;
-    private Vector3 m_meshInstanceScale = Vector3.one;
     private Material m_meshInstanceMaterial = null;
   }
 }
