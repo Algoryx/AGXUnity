@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+﻿using AGXUnity.Collide;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -194,7 +195,8 @@ namespace AGXUnity.Model
       var resX   = TerrainDataResolution;
       var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
-      foreach ( var index in modifiedVertices ) {
+      for (int k = 0; k <  modifiedVertices.Count; k++ ) {
+        var index = modifiedVertices[k];
         var i = (int)index.x;
         var j = (int)index.y;
         var h = (float)Native.getHeight( index );
@@ -263,7 +265,7 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
     public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
-    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
 
@@ -300,6 +302,11 @@ namespace AGXUnity.Model
     public override void RemoveInvalidShovels()
     {
       m_shovels.RemoveAll( shovel => shovel == null );
+    }
+    public override void ConvertToDynamicMassInShape( Shape failureVolume )
+    {
+      if ( !IsNativeNull() )
+        Native.convertToDynamicMassInShape( failureVolume.GetInitialized<Shape>().NativeShape );
     }
 
     protected override bool IsNativeNull() { return Native == null; }
