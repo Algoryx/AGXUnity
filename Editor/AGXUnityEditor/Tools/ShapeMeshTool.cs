@@ -6,6 +6,7 @@ using UnityEditor;
 
 using AGXUnity.Utils;
 using GUI = AGXUnity.Utils.GUI;
+using Unity.Collections;
 
 namespace AGXUnityEditor.Tools
 {
@@ -99,6 +100,43 @@ namespace AGXUnityEditor.Tools
     public override void OnPostTargetMembersGUI()
     {
       base.OnPostTargetMembersGUI();
+
+      foreach(var target in GetTargets<AGXUnity.Collide.Mesh>() ) {
+        if ( target.PrecomputedCollisionMeshes.Length > 0 )
+          continue;
+        bool needsReadonlyMeshes = false;
+
+        foreach ( var mesh in target.SourceObjects )
+          needsReadonlyMeshes |= mesh.isReadable == false;
+
+        if ( needsReadonlyMeshes ) {
+          Debug.LogWarning( $"Mesh component '{target.name}' contains meshes without read/write access, precomputed mesh data will be added for this object." );
+
+          AGXUnity.Collide.CollisionMeshData[] data = new AGXUnity.Collide.CollisionMeshData[target.SourceObjects.Length];
+          var meshDatas = MeshUtility.AcquireReadOnlyMeshData( target.SourceObjects );
+          for(int i = 0; i < target.SourceObjects.Length; i++ ) {
+            data[ i ] = new AGXUnity.Collide.CollisionMeshData();
+
+            var gotVertices = new NativeArray<Vector3>(meshDatas[i].vertexCount, Allocator.TempJob);
+            meshDatas[ i ].GetVertices( gotVertices );
+            data[ i ].Vertices = gotVertices.ToArray();
+            gotVertices.Dispose();
+
+            if( meshDatas[ i ].indexFormat == UnityEngine.Rendering.IndexFormat.UInt16 ) {
+              var indices = meshDatas[ i ].GetIndexData<ushort>();
+              data[ i ].Indices = indices.Select(t => (int)t).ToArray();
+              indices.Dispose();
+            } else {
+              var indices = meshDatas[ i ].GetIndexData<uint>();
+              data[ i ].Indices = indices.Cast<int>().ToArray();
+              indices.Dispose();
+            }
+          }
+          meshDatas.Dispose();
+          target.PrecomputedCollisionMeshes = data;
+          target.OnPrecomputedCollisionMeshDataDirty();
+        }
+      }
 
       MeshOptionsGUI();
 

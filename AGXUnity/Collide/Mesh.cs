@@ -93,6 +93,8 @@ namespace AGXUnity.Collide
       foreach ( var source in sources )
         RemoveSourceObject( source );
 
+      PrecomputedCollisionMeshes = null;
+
       // Returning true if mesh.SetSourceObject( null ) is made to clear source objects.
       return mesh == null || AddSourceObject( mesh );
     }
@@ -107,10 +109,10 @@ namespace AGXUnity.Collide
       if ( mesh == null || m_sourceObjects.Contains( mesh ) )
         return false;
 
-      if ( !mesh.isReadable ) {
-        Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. Ignoring source.", this );
-        return false;
-      }
+      //if ( !mesh.isReadable ) {
+      //  Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. Ignoring source.", this );
+      //  return false;
+      //}
 
       m_sourceObjects.Add( mesh );
 
