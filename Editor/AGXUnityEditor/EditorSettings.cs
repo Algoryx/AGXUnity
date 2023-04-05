@@ -85,6 +85,56 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
+
+
+      // Recommended settings
+      InspectorGUI.Separator( 1, 4 );
+      EditorGUILayout.Space(5);
+      EditorGUILayout.LabelField("<b>Unity Project Settings recommended for AGX</b>");
+      EditorGUILayout.Space();
+
+      var ok = AGXUnity.Utils.GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
+      var note = AGXUnity.Utils.GUI.AddColorTag( "<b>Note</b> ", Color.yellow );
+      var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+
+      var hasPlayerNetCompatibility = PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6;
+      EditorGUILayout.LabelField("<b>Net Compatibility Level</b>");
+      if (hasPlayerNetCompatibility)
+      {
+        EditorGUILayout.LabelField(ok);
+      }
+      else
+      {
+        EditorGUILayout.LabelField(note + "AGX Dynamics for Unity requires .NET API Compatibility Level: " + apiCompatibilityLevelName, skin.LabelWordWrap);
+        if (EditorGUILayout.LinkButton("Click here to update this setting!"))
+        {
+          UnityEditor.PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6);
+          Debug.Log("Updated Unity Player Settings -> Api Compatibility Level to compatible version");
+        }
+      }
+
+      EditorGUILayout.Space();
+
+      EditorGUILayout.LabelField("<b>Maximum Allowed Timestep</b>");
+      var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
+      if (usingRecommendedMaxTimestep)
+      {
+        EditorGUILayout.LabelField(ok);
+      }
+      else
+      {
+        EditorGUILayout.LabelField(note + "It is recommended to use a <b>maximum allowed timestep</b> that is equal to the <b>fixed timestep</b> when using AGXUnity!", skin.LabelWordWrap);
+        if (EditorGUILayout.LinkButton("Click here to update this setting!"))
+        {
+          Time.maximumDeltaTime = Time.fixedDeltaTime;
+          Debug.Log("Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep" + Time.fixedDeltaTime + " seconds");
+        }
+      }
     }
 
     private void HandleKeyHandlerGUI( GUIContent name, Utils.KeyHandler keyHandler )
