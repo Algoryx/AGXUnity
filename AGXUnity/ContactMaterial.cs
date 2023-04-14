@@ -185,7 +185,7 @@ namespace AGXUnity
     /// Restitution of this contact material, paired with property Restitution.
     /// </summary>
     [SerializeField]
-    private float m_restitution = 0.5f;
+    private float m_restitution = 0.0f;
 
     /// <summary>
     /// Get or set restitution of this contact material.
