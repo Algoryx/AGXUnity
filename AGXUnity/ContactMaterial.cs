@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace AGXUnity
@@ -290,10 +290,10 @@ namespace AGXUnity
     /// Contact reduction mode, paired with property ContactReductionMode.
     /// </summary>
     [SerializeField]
-    private ContactReductionType m_contactReductionMode = ContactReductionType.None;
+    private ContactReductionType m_contactReductionMode = ContactReductionType.Geometry;
 
     /// <summary>
-    /// Contact reduction mode, default None (disabled).
+    /// Contact reduction mode, default Geometry.
     /// </summary>
     public ContactReductionType ContactReductionMode
     {
