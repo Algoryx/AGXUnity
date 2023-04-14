@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace AGXUnity
@@ -310,7 +310,7 @@ namespace AGXUnity
     /// Contact reduction level if contact reduction is enabled, paired with property ContactReductionLevel.
     /// </summary>
     [SerializeField]
-    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Moderate;
+    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Minimal;
 
     /// <summary>
     /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
