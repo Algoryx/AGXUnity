@@ -1,9 +1,8 @@
 using AGXUnity.Collide;
-using AGXUnity.Model;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
   [UnityEngine.RequireComponent(typeof(Shape))]
   public class DeformableTerrainFailureVolume : ScriptComponent
