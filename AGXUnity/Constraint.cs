@@ -869,11 +869,6 @@ namespace AGXUnity
 
     protected override void OnDestroy()
     {
-      // Remove old elementary constraint components
-      foreach ( var ec in m_elementaryConstraints )
-        DestroyImmediate( ec );
-      m_elementaryConstraints.Clear();
-
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= OnPreStepForwardUpdate;
         GetSimulation().remove( Native );
