@@ -64,8 +64,8 @@ namespace AGXUnity.Model
       set
       {
         m_volumetricEfficiency = value;
-        if ( Engine != null )
-          Engine.setVolumetricEfficiency( m_volumetricEfficiency );
+        if (Engine != null)
+          Engine.setVolumetricEfficiency(m_volumetricEfficiency);
       }
     }
 
@@ -109,8 +109,8 @@ namespace AGXUnity.Model
       set
       {
         m_throttleBore = value;
-        if ( Engine != null )
-          Engine.setThrottleBore( m_throttleBore );
+        if (Engine != null)
+          Engine.setThrottleBore(m_throttleBore);
       }
     }
 
@@ -360,7 +360,7 @@ namespace AGXUnity.Model
     [HideInInspector]
     public agx.Hinge BrakeHinge { get; private set; } = null;
     public agxPowerLine.PowerLine PowerLine { get; private set; } = null;
-    public agxDriveTrain.CombustionEngine Engine { get; private set; } = null;
+    public agxDriveTrain.deprecatedCombustionEngine Engine { get; private set; } = null;
     public agxDriveTrain.GearBox GearBox { get; private set; } = null;
     public agxDriveTrain.Differential[] Differentials { get; private set; } = new agxDriveTrain.Differential[] { null, null, null };
     public agxDriveTrain.TorqueConverter TorqueConverter { get; private set; } = null;
@@ -415,8 +415,8 @@ namespace AGXUnity.Model
       PowerLine = new agxPowerLine.PowerLine();
       PowerLine.setName( name );
 
-      Engine = new agxDriveTrain.CombustionEngine( InletVolume );
-      Engine.setDischargeCoefficient( 0.2f );
+      Engine = new agxDriveTrain.deprecatedCombustionEngine(InletVolume);
+      Engine.setDischargeCoefficient(0.2f);
 
       TorqueConverter = new agxDriveTrain.TorqueConverter();
       GearBox = new agxDriveTrain.GearBox();
