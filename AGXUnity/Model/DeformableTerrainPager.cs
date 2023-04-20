@@ -1,3 +1,4 @@
+using AGXUnity.Collide;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
@@ -495,8 +496,8 @@ namespace AGXUnity.Model
 
     public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
     public override DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( shovel => shovel.Body ).ToArray(); } }
-    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
-    public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain().getProperties(); }
+    public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
+    public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain()?.getProperties(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
     public override bool Add( DeformableTerrainShovel shovel )
@@ -522,6 +523,15 @@ namespace AGXUnity.Model
     {
       m_shovels.RemoveAll( shovel => shovel.Body == null );
       m_rigidbodies.RemoveAll( rb => rb.Body == null );
+    }
+    public override void ConvertToDynamicMassInShape( Shape failureVolume )
+    {
+      if ( !IsNativeNull() ) {
+        var shape = failureVolume.GetInitialized<Shape>().NativeShape;
+        foreach ( var tile in Native.getActiveTileAttachments() )
+          tile.m_terrainTile.convertToDynamicMassInShape( shape );
+        shape.ReturnToPool();
+      }
     }
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )

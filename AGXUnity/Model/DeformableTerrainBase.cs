@@ -197,6 +197,12 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public void RemoveInvalidShovels();
 
+    /// <summary>
+    /// Converts any part of the terrain that overlaps the provided shape into dynamic mass
+    /// </summary>
+    /// <param name="failureVolume">The shape in which to convert the terrain into dynamic mass</param>
+    abstract public void ConvertToDynamicMassInShape(Collide.Shape failureVolume);
+
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );
     abstract protected void SetTerrainMaterial( agxTerrain.TerrainMaterial material );
