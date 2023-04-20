@@ -64,8 +64,8 @@ namespace AGXUnity.Model
       set
       {
         m_volumetricEfficiency = value;
-        if (Engine != null)
-          Engine.setVolumetricEfficiency(m_volumetricEfficiency);
+        if ( Engine != null )
+          Engine.setVolumetricEfficiency( m_volumetricEfficiency );
       }
     }
 
@@ -109,8 +109,8 @@ namespace AGXUnity.Model
       set
       {
         m_throttleBore = value;
-        if (Engine != null)
-          Engine.setThrottleBore(m_throttleBore);
+        if ( Engine != null )
+          Engine.setThrottleBore( m_throttleBore );
       }
     }
 
@@ -415,8 +415,8 @@ namespace AGXUnity.Model
       PowerLine = new agxPowerLine.PowerLine();
       PowerLine.setName( name );
 
-      Engine = new agxDriveTrain.deprecatedCombustionEngine(InletVolume);
-      Engine.setDischargeCoefficient(0.2f);
+      Engine = new agxDriveTrain.deprecatedCombustionEngine( InletVolume );
+      Engine.setDischargeCoefficient( 0.2f );
 
       TorqueConverter = new agxDriveTrain.TorqueConverter();
       GearBox = new agxDriveTrain.GearBox();
