@@ -1,9 +1,9 @@
 using System;
-using System.IO;
-using UnityEngine;
-using UnityEditor;
-using GUI = AGXUnity.Utils.GUI;
 using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
@@ -52,9 +52,9 @@ namespace AGXUnityEditor
       else if ( !IO.Utils.AGXDynamicsInstalledInProject && ExternalAGXInitializer.UserSaidNo ) {
         var rect     = EditorGUILayout.GetControlRect();
         var orgWidth = rect.width;
-        rect.width   = EditorGUIUtility.labelWidth;
+        rect.width = EditorGUIUtility.labelWidth;
         EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Select AGX Dynamics root folder" ), skin.Label );
-        rect.x    += rect.width;
+        rect.x += rect.width;
         rect.width = orgWidth - EditorGUIUtility.labelWidth;
         if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "AGX Dynamics root directory..." ) ) ) {
           var agxDir = EditorUtility.OpenFolderPanel( "AGX Dynamics root directory",
@@ -84,6 +84,50 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select game object" ), BuiltInToolsTool_SelectGameObjectKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
+      }
+
+
+      // Recommended settings
+      InspectorGUI.Separator( 1, 4 );
+      EditorGUILayout.Space( 5 );
+      EditorGUILayout.LabelField( GUI.AddSizeTag("<b>Unity Project Settings recommended for AGX</b>",15) );
+      EditorGUILayout.Space();
+
+      var ok = GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
+      var note = GUI.AddColorTag( "<b>Note</b> ", Color.yellow );
+      var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+
+      var hasPlayerNetCompatibility = PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) == ApiCompatibilityLevel.NET_4_6;
+      EditorGUILayout.LabelField( "<b>.NET Compatibility Level</b>" );
+      if ( hasPlayerNetCompatibility ) {
+        EditorGUILayout.LabelField( ok );
+      }
+      else {
+        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: " + apiCompatibilityLevelName, skin.LabelWordWrap );
+        if ( EditorGUILayout.LinkButton( "Click here to update this setting!" ) ) {
+          UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
+          Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
+        }
+      }
+
+      EditorGUILayout.Space();
+
+      EditorGUILayout.LabelField( "<b>Maximum Allowed Timestep</b>" );
+      var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
+      if ( usingRecommendedMaxTimestep ) {
+        EditorGUILayout.LabelField( ok );
+      }
+      else {
+        EditorGUILayout.LabelField( note + "It is recommended to use a <b>maximum allowed timestep</b> that is equal to the <b>fixed timestep</b> when using AGXUnity!", skin.LabelWordWrap );
+        if ( EditorGUILayout.LinkButton( "Click here to update this setting!" ) ) {
+          Time.maximumDeltaTime = Time.fixedDeltaTime;
+          Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
+        }
       }
     }
 

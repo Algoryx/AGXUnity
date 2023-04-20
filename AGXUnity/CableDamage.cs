@@ -72,16 +72,6 @@ namespace AGXUnity
       }
     }
 
-    public enum MaxDamageColorMode {
-      HighestPerFrame,
-      UseSetDamage
-    }
-    [Tooltip("Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color")]
-    public MaxDamageColorMode DamageColorMode = MaxDamageColorMode.HighestPerFrame;
-
-    [ClampAboveZeroInInspector]
-    public float SetDamageForMaxColor = 0f;
-
     [System.NonSerialized]
     private agxCable.SegmentDamagePtrVector m_currentDamages;
     public agxCable.SegmentDamagePtrVector CurrentDamages  => m_currentDamages;
@@ -97,10 +87,9 @@ namespace AGXUnity
     
     private float m_maxDamage = 0;
     [HideInInspector]
-    public float MaxDamage => DamageColorMode == MaxDamageColorMode.HighestPerFrame ? m_maxDamage : SetDamageForMaxColor;
-
-    public Color MinColor = Color.green;
-    public Color MaxColor = Color.red;
+    public float MaxDamage => m_properties != null 
+                                ? (m_properties.DamageColorMode == CableDamageProperties.MaxDamageColorMode.HighestPerFrame ? m_maxDamage : m_properties.SetDamageForMaxColor)
+                                : 0;
 
     protected override bool Initialize()
     {
@@ -128,14 +117,22 @@ namespace AGXUnity
       m_currentDamages = Native.getCurrentDamages();
       m_accumulatedDamages = Native.getAccumulatedDamages();
 
+      if (m_properties == null)
+      {
+        Debug.LogError("No CableDamageProperties set!");
+        return;
+      }
+
+      int count = m_properties.DamageType == CableDamageProperties.DamageTypeMode.CurrentDamage ? m_currentDamages.Count : m_accumulatedDamages.Count;
+
       if (RenderCableDamage && CableRenderer)
       {
-        if (m_damageValues.Length != m_currentDamages.Count)
-          m_damageValues = new float[m_currentDamages.Count];
+        if (m_damageValues.Length != count)
+          m_damageValues = new float[count];
 
         m_maxDamage = float.MinValue;
-        for (int i = 0; i < m_currentDamages.Count; i++){
-          float value = (float)m_currentDamages[i].total();
+        for (int i = 0; i < count; i++){
+          float value = m_properties.DamageType == CableDamageProperties.DamageTypeMode.CurrentDamage ? (float)m_currentDamages[i].total() : (float)m_accumulatedDamages[i].total();
           m_maxDamage = Mathf.Max(m_maxDamage, value);
           m_damageValues[i] = value;
         }

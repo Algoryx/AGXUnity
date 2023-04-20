@@ -8,6 +8,27 @@ namespace AGXUnity
   {
     private const float defaultValue = 0f;
 
+    public enum DamageTypeMode {
+      CurrentDamage,
+      AccumulatedDamage
+    }
+    [Tooltip("Select what type of damage is to be rendered, the current, or the accumulated")]
+    public DamageTypeMode DamageType = DamageTypeMode.CurrentDamage;
+
+    public enum MaxDamageColorMode {
+      HighestPerFrame,
+      UseSetDamage
+    }
+    [Tooltip("Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color")]
+    public MaxDamageColorMode DamageColorMode = MaxDamageColorMode.HighestPerFrame;
+
+    [ClampAboveZeroInInspector]
+    public float SetDamageForMaxColor = 0f;
+
+    public Color MinColor = Color.green;
+    public Color MaxColor = Color.red;
+
+
     [SerializeField]
     private float m_bendDeformation = defaultValue;
     [HideInInspector]
