@@ -386,8 +386,7 @@ namespace AGXUnity.Model
       var zOffset = tile.m_zOffset;
       var result = new float[,] { { 0.0f } };
 
-      for ( int k = 0; k < modifications.Count; k++ ) {
-        var index = modifications[k];
+      foreach ( var index in modifications ) {
         var gi = GetGlobalIndex( terrain, index );
         float h = (float)(terrain.getHeight( index ) + zOffset);
 
