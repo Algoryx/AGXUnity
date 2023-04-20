@@ -636,6 +636,9 @@ namespace AGXUnity
       if ( native == null )
         throw new ArgumentNullException( "native", "Native constraint is null." );
 
+      // Remove old elementary constraint components
+      foreach ( var ec in m_elementaryConstraints )
+        DestroyImmediate( ec );
       m_elementaryConstraints.Clear();
 
       for ( uint i = 0; i < native.getNumElementaryConstraints(); ++i ) {
