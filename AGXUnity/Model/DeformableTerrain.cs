@@ -195,8 +195,7 @@ namespace AGXUnity.Model
       var resX   = TerrainDataResolution;
       var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
-      for (int k = 0; k <  modifiedVertices.Count; k++ ) {
-        var index = modifiedVertices[k];
+      foreach ( var index in modifiedVertices ) {
         var i = (int)index.x;
         var j = (int)index.y;
         var h = (float)Native.getHeight( index );
