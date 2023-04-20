@@ -351,7 +351,7 @@ namespace AGXUnityEditor
 
         var message = prefix +
                       $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
-                      $"<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> {apiCompatibilityLevelName}</b>";
+                      $"<b>AGXUnity -> Settings -> .NET Compatibility Level</b>";
         if ( infoWarningOrError == "info" )
           Debug.Log( message );
         else if ( infoWarningOrError == "warning" )

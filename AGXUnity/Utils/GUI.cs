@@ -96,6 +96,11 @@ namespace AGXUnity.Utils
       return @"<color=" + color.ToHexStringRGBA() + @">" + str + @"</color>";
     }
 
+    public static string AddSizeTag( string str, int size)
+    {
+      return $"<size={size}>{str}</size>";
+    }
+
     public static GUIContent MakeLabel( string text, bool bold = false, string toolTip = "" )
     {
       var content   = new GUIContent();

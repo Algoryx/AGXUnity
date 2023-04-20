@@ -185,7 +185,7 @@ namespace AGXUnity
     /// Restitution of this contact material, paired with property Restitution.
     /// </summary>
     [SerializeField]
-    private float m_restitution = 0.5f;
+    private float m_restitution = 0.0f;
 
     /// <summary>
     /// Get or set restitution of this contact material.
@@ -290,10 +290,10 @@ namespace AGXUnity
     /// Contact reduction mode, paired with property ContactReductionMode.
     /// </summary>
     [SerializeField]
-    private ContactReductionType m_contactReductionMode = ContactReductionType.None;
+    private ContactReductionType m_contactReductionMode = ContactReductionType.Geometry;
 
     /// <summary>
-    /// Contact reduction mode, default None (disabled).
+    /// Contact reduction mode, default Geometry.
     /// </summary>
     public ContactReductionType ContactReductionMode
     {
@@ -310,7 +310,7 @@ namespace AGXUnity
     /// Contact reduction level if contact reduction is enabled, paired with property ContactReductionLevel.
     /// </summary>
     [SerializeField]
-    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Moderate;
+    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Minimal;
 
     /// <summary>
     /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
