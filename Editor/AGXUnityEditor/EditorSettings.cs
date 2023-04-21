@@ -90,7 +90,7 @@ namespace AGXUnityEditor
       // Recommended settings
       InspectorGUI.Separator( 1, 4 );
       EditorGUILayout.Space( 5 );
-      EditorGUILayout.LabelField( GUI.AddSizeTag("<b>Unity Project Settings recommended for AGX</b>",15) );
+      EditorGUILayout.LabelField( GUI.AddSizeTag( "<b>Unity Project Settings recommended for AGX</b>", 15 ) );
       EditorGUILayout.Space();
 
       var ok = GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
@@ -109,7 +109,7 @@ namespace AGXUnityEditor
       }
       else {
         EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: " + apiCompatibilityLevelName, skin.LabelWordWrap );
-        if ( EditorGUILayout.LinkButton( "Click here to update this setting!" ) ) {
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
           Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
         }
@@ -124,7 +124,7 @@ namespace AGXUnityEditor
       }
       else {
         EditorGUILayout.LabelField( note + "It is recommended to use a <b>maximum allowed timestep</b> that is equal to the <b>fixed timestep</b> when using AGXUnity!", skin.LabelWordWrap );
-        if ( EditorGUILayout.LinkButton( "Click here to update this setting!" ) ) {
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           Time.maximumDeltaTime = Time.fixedDeltaTime;
           Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
         }
@@ -240,7 +240,7 @@ namespace AGXUnityEditor
       if ( m_instance != null )
         return m_instance;
 
-      return ( m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ) );
+      return (m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ));
     }
 
     [NonSerialized]
