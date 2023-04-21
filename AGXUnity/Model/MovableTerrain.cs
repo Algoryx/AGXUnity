@@ -1,3 +1,4 @@
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,6 +32,20 @@ namespace AGXUnity.Model
         return m_terrain == null ?
                  m_terrain = GetComponent<MeshFilter>() :
                  m_terrain;
+      }
+    }
+
+    public RigidBody RigidBody
+    {
+      get
+      {
+        Component obj = this;
+        while(obj != null ) {
+          var rb = obj.GetComponent<RigidBody>();
+          if ( rb != null ) return rb;
+          obj = obj.transform.parent;
+        }
+        return null;
       }
     }
 
@@ -84,11 +99,6 @@ namespace AGXUnity.Model
       }
     }
 
-    protected override void OnEnable()
-    {
-      SetNativeEnable( true );
-    }
-
     protected override bool Initialize()
     {
       // Only printing the errors if something is wrong.
@@ -105,14 +115,9 @@ namespace AGXUnity.Model
       if ( Simulation.Instance.SolverSettings != null )
         GetSimulation().getSolver().setNumPPGSRestingIterations( (ulong)Simulation.Instance.SolverSettings.PpgsRestingIterations );
 
-      SetNativeEnable( isActiveAndEnabled );
+      SetEnable( isActiveAndEnabled );
 
       return true;
-    }
-
-    protected override void OnDisable()
-    {
-      SetNativeEnable( false );
     }
 
     protected override void OnDestroy()
@@ -129,21 +134,8 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
-    private void SetNativeEnable( bool enable )
-    {
-      if ( Native == null )
-        return;
-
-      if ( Native.getEnable() == enable )
-        return;
-
-      Native.setEnable( enable );
-      Native.getGeometry().setEnable( enable );
-    }
-
     private void InitializeNative()
     {
-
       var heights = new agx.RealVector((int)(Width * Height));
       heights.Set( new double[ Width * Height ] );
 
@@ -159,7 +151,9 @@ namespace AGXUnity.Model
 
       GetSimulation().add( Native );
 
-      m_geometry = Native.getGeometry(); ;
+      var rb = RigidBody;
+      if ( rb != null )
+        RigidBody.GetInitialized<RigidBody>().Native.add( Native.getGeometry(), GetTerrainOffset() );
       SetupMesh();
     }
 
@@ -218,7 +212,7 @@ namespace AGXUnity.Model
       if ( modifiedVertices.Count == 0 )
         return;
 
-      for (int i = 0; i < modifiedVertices.Count; i++) {
+      for ( int i = 0; i < modifiedVertices.Count; i++ ) {
         var mod = modifiedVertices[i];
         int idx = (int)(mod.y * Width + mod.x) + 1;
 
@@ -230,6 +224,24 @@ namespace AGXUnity.Model
       TerrainMesh.mesh.RecalculateNormals();
     }
 
+    private agx.AffineMatrix4x4 GetTerrainOffset()
+    {
+      double offset = ElementSize*0.5;
+      agx.AffineMatrix4x4 terrainOffset =
+        agx.AffineMatrix4x4.translate( new agx.Vec3( Width % 2 == 0 ? offset : 0.0, Height % 2 == 0 ? offset : 0.0, 0.0 ) ) *
+        agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );
+
+      var rb = RigidBody;
+      if ( rb == null )
+        return terrainOffset;
+      // Using the world position of the shape - which includes scaling etc.
+      var shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
+                                                  transform.position.ToHandedVec3() );
+      var rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(),
+                                                  rb.transform.position.ToHandedVec3() );
+      return terrainOffset * shapeInWorld * rbInWorld.inverse();
+    }
+
 
     private Vector3[] m_terrainVertices = null;
     private MeshFilter m_terrain = null;
@@ -237,9 +249,9 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
-    
-    protected override float ElementSizeGetter { get => ElementSize; }
-    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
+
+    protected override float ElementSizeGetter => ElementSize;
+    public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
@@ -278,6 +290,12 @@ namespace AGXUnity.Model
       m_shovels.RemoveAll( shovel => shovel == null );
     }
 
+    public override void ConvertToDynamicMassInShape( Collide.Shape failureVolume )
+    {
+      if ( Native != null )
+        Native.convertToDynamicMassInShape( failureVolume.GetInitialized<Collide.Shape>().NativeShape );
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { Native.setTerrainMaterial( material ); }
@@ -293,35 +311,6 @@ namespace AGXUnity.Model
       Native.getGeometry().setEnable( enable );
     }
 
-    /// <summary>
-    /// Transforms the native terrain to align with unity's coordinates, this operation performs a rotation from the Z-axis to the Y-axis as well
-    /// as a conditional translation to account for positioning differences based on the evenness of the terrain dimensions
-    /// </summary>
-    /// <returns>An affine matrix representing the tranformation to apply to the terrain</returns>
-    public override agx.AffineMatrix4x4 GetNativeGeometryOffset()
-    {
-      double offset = ElementSize*0.5;
-      return
-        agx.AffineMatrix4x4.translate( new agx.Vec3( Width % 2 == 0 ? offset : 0.0, Height % 2 == 0 ? offset : 0.0, 0.0 ) ) *
-        agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );
-    }
 
-    protected override agxCollide.Geometry CreateNative()
-    {
-      var heights = new agx.RealVector(new double[ Width * Height ]);
-      var terr = new agxTerrain.Terrain((uint)Width,
-                                        (uint)Height,
-                                        ElementSize,
-                                        heights,
-                                        false,
-                                        MaximumDepth );
-
-      return terr.getGeometry();
-    }
-
-    public override Vector3 GetScale()
-    {
-      return new Vector3( 1, 1, 1 );
-    }
   }
 }

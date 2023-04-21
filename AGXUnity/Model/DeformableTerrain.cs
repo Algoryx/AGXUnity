@@ -6,7 +6,7 @@ using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
-{ 
+{
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
@@ -262,8 +262,8 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
-    public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
-    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.ToArray(); } }
+    public override float ElementSize => TerrainData.size.x / (TerrainDataResolution - 1);
+    public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
@@ -293,8 +293,8 @@ namespace AGXUnity.Model
       return m_shovels.Remove( shovel );
     }
 
-    public override bool Contains( DeformableTerrainShovel shovel ) 
-    { 
+    public override bool Contains( DeformableTerrainShovel shovel )
+    {
       return shovel != null && m_shovels.Contains( shovel );
     }
 
@@ -321,16 +321,6 @@ namespace AGXUnity.Model
 
       Native.setEnable( enable );
       Native.getGeometry().setEnable( enable );
-    }
-
-    protected override agxCollide.Geometry CreateNative()
-    {
-      return null;
-    }
-
-    public override Vector3 GetScale()
-    {
-      return new Vector3( 1, 1, 1 );
     }
   }
 }

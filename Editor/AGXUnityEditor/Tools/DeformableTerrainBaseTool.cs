@@ -27,7 +27,7 @@ namespace AGXUnityEditor.Tools
 
       RenderMaterialHandles();
 
-        Undo.RecordObject( DeformableTerrainBase, "Shovel add/remove." );
+      Undo.RecordObject( DeformableTerrainBase, "Shovel add/remove." );
 
       InspectorGUI.ToolListGUI( this,
                                 DeformableTerrainBase.Shovels,

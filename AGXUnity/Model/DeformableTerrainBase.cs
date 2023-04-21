@@ -2,14 +2,17 @@
 
 namespace AGXUnity.Model
 {
-  public abstract class DeformableTerrainBase : Collide.Shape
+  public abstract class DeformableTerrainBase : ScriptComponent
   {
+    [SerializeField]
+    private ShapeMaterial m_material = null;
+
     /// <summary>
     /// Surface shape material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
     [HideInInspector]
-    public override ShapeMaterial Material
+    public ShapeMaterial Material
     {
       get { return m_material; }
       set
@@ -197,7 +200,7 @@ namespace AGXUnity.Model
     /// Converts any part of the terrain that overlaps the provided shape into dynamic mass
     /// </summary>
     /// <param name="failureVolume">The shape in which to convert the terrain into dynamic mass</param>
-    abstract public void ConvertToDynamicMassInShape(Collide.Shape failureVolume);
+    abstract public void ConvertToDynamicMassInShape( Collide.Shape failureVolume );
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );
