@@ -710,7 +710,7 @@ namespace AGXUnityEditor.IO
       constraint.AttachmentPair.ConnectedFrame.LocalPosition = nativeConstraint.getAttachment( 1ul ).getFrame().getLocalTranslate().ToHandedVector3();
       constraint.AttachmentPair.ConnectedFrame.LocalRotation = nativeConstraint.getAttachment( 1ul ).getFrame().getLocalRotate().ToHandedQuaternion();
 
-      constraint.AttachmentPair.Synchronized = constraintType != ConstraintType.DistanceJoint;
+      constraint.AttachmentPair.Synchronized = false;
 
       return true;
     }
