@@ -35,6 +35,7 @@ namespace AGXUnity.Model
       }
     }
 
+    [HideInInspector]
     public RigidBody RigidBody
     {
       get
@@ -154,6 +155,9 @@ namespace AGXUnity.Model
       var rb = RigidBody;
       if ( rb != null )
         RigidBody.GetInitialized<RigidBody>().Native.add( Native.getGeometry(), GetTerrainOffset() );
+      else
+        Native.setTransform( GetTerrainOffset() * new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
+                                                                           transform.position.ToHandedVec3() ) );
       SetupMesh();
     }
 
