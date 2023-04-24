@@ -790,7 +790,7 @@ namespace AGXUnity.Model
       get
       {
         return m_temporaryNative != null ?
-                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumDepth() ) :
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumContactDepth() ) :
                  m_maximumContactDepth;
       }
       set
