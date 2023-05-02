@@ -225,10 +225,10 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="callback">Callback with current and next segment point and segment type.</param>
     /// <param name="segmentLength">Desired segment length between curr.Point and next.Point.</param>
-    /// <param name="tolerance">Error tolerance of the actual segment length.</param>
+    /// <param name="tolerance">Error tolerance of the actual segment length as a factor of the total length.</param>
     public void Traverse( Action<SegmentPoint, SegmentPoint, SegmentType> callback,
                           float segmentLength,
-                          float tolerance = 1.0E-5f )
+                          float tolerance = 1.0E-6f )
     {
       if ( segmentLength <= 0.0f )
         return;
@@ -246,7 +246,10 @@ namespace AGXUnity.Utils
         var currT      = prevT + dt;
         var curr       = Evaluate( currT );
         var prevToCurr = Vector3.Distance( prev.Point, curr.Point );
-        while ( prevToCurr > 0.0f && currT < 1.0f + 0.5f * dt && !Math.Equivalent( prevToCurr, segmentLength, tolerance ) ) {
+
+        int maxIterations = 100;
+        int i = 0;
+        while ( prevToCurr > 0.0f && currT < 1.0f + 0.5f * dt && !Math.Equivalent( prevToCurr, segmentLength, tolerance * TotalLength ) && i++ < maxIterations) {
           var overshoot = prevToCurr - segmentLength;
           currT        -= overshoot / totalLength;
           curr          = Evaluate( currT );
