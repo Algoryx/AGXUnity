@@ -1,4 +1,4 @@
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -743,8 +743,8 @@ namespace AGXUnity
         m_instanceData.Add( name, new EmitData
         {
           visuals = vd,
-          RigidBodies = new List<agx.RigidBody>(),
-          mats = new List<Matrix4x4[]>()
+          RigidBodies = new agx.RigidBodyVector(),
+          mats = new List<MatrixUnion>()
         } );
       }
 
@@ -781,20 +781,13 @@ namespace AGXUnity
       public override void SynchronizeVisuals()
       {
         foreach ( var data in m_instanceData.Values ) {
-          while ( data.RigidBodies.Count / 1023 >= data.mats.Count )
-            data.mats.Add( new Matrix4x4[ 1023 ] );
-
-          int i = 0;
-          foreach ( var rb in data.RigidBodies ) {
-            var batch = (i / 1023);
-            data.mats[ batch ][ i % 1023 ] = Matrix4x4.TRS(
-              rb.getPosition().ToHandedVector3(),
-              rb.getRotation().ToHandedQuaternion(),
-              Vector3.one
-            );
-
-            i++;
+          while ( data.RigidBodies.Count / 1023 >= data.mats.Count ) {
+            data.mats.Add( new MatrixUnion() );
+            data.mats[ data.mats.Count - 1 ].unityMatrices = new Matrix4x4[ 1023 ];
           }
+
+          for ( int i = 0; i < data.RigidBodies.Count / 1024 + 1; i++ )
+            data.RigidBodies.populateMatrices( data.mats[ i ].agxMatrices, i * 1023, 1023 );
         }
       }
 
@@ -807,7 +800,7 @@ namespace AGXUnity
                 vis.mesh,
                 0,
                 vis.material,
-                data.mats[ i ],
+                data.mats[ i ].unityMatrices,
                 i == data.mats.Count ? data.RigidBodies.Count % 1024 : 1023,
                 null,
                 UnityEngine.Rendering.ShadowCastingMode.On,
@@ -833,8 +826,8 @@ namespace AGXUnity
       private struct EmitData
       {
         public List<VisualData> visuals;
-        public List<agx.RigidBody> RigidBodies;
-        public List<Matrix4x4[]> mats;
+        public agx.RigidBodyVector RigidBodies;
+        public List<MatrixUnion> mats;
       }
 
       private Dictionary<string, EmitData> m_instanceData = new Dictionary<string, EmitData>();

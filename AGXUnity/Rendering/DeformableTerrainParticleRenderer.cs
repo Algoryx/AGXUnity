@@ -2,7 +2,6 @@
 using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -26,17 +25,6 @@ namespace AGXUnity.Rendering
 
     [HideInInspector]
     public DeformableTerrainBase ParticleProvider { get; private set; } = null;
-
-    // Create a union type for matrices to allow for more efficient conversion between AffineMatrix4x4f and Matrix4x4
-    [StructLayout( LayoutKind.Explicit )]
-    class MatrixUnion
-    {
-      [FieldOffset(0)]
-      public Matrix4x4[] unityMats;
-
-      [FieldOffset(0)]
-      public agx.AffineMatrix4x4f[] agxMats;
-    }
 
     [SerializeField]
     private GranuleRenderMode m_renderMode = GranuleRenderMode.DrawMeshInstanced;
@@ -195,7 +183,7 @@ namespace AGXUnity.Rendering
         m_receiveShadows = renderers[ 0 ].receiveShadows;
         m_meshInstanceMaterial = material;
         m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
-        m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
+        m_granuleMatrices[ 0 ].unityMatrices = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
       }
 
@@ -212,7 +200,7 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private void Render(Camera cam)
+    private void Render( Camera cam )
     {
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_numGranulars > 0 &&
@@ -225,13 +213,13 @@ namespace AGXUnity.Rendering
         Graphics.DrawMeshInstanced( m_meshInstance,
                                     0,
                                     m_meshInstanceMaterial,
-                                    m_granuleMatrices[ 0 ].unityMats,
+                                    m_granuleMatrices[ 0 ].unityMatrices,
                                     m_numGranulars,
                                     m_meshInstanceProperties,
                                     m_shadowCastingMode,
                                     m_receiveShadows,
                                     0,
-                                    cam);
+                                    cam );
       }
       // DrawMeshInstanced only supports up to 1023 meshes for each call,
       // we need to subdivide if we have more particles than that.
@@ -241,7 +229,7 @@ namespace AGXUnity.Rendering
           Graphics.DrawMeshInstanced( m_meshInstance,
                                       0,
                                       m_meshInstanceMaterial,
-                                      m_granuleMatrices[ i / 1023 ].unityMats,
+                                      m_granuleMatrices[ i / 1023 ].unityMatrices,
                                       count,
                                       m_meshInstanceProperties,
                                       m_shadowCastingMode,
@@ -270,11 +258,11 @@ namespace AGXUnity.Rendering
         // amount of particles that can be drawn with DrawMeshInstanced.
         while ( m_numGranulars / 1023 + 1 > m_granuleMatrices.Count ) {
           m_granuleMatrices.Add( new MatrixUnion() );
-          m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
+          m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMatrices = new Matrix4x4[ 1023 ];
         }
 
         for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
-          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023 );
+          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMatrices, arrayIndex * 1023, 1023 );
       }
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
