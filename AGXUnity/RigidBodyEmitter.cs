@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,10 +74,13 @@ namespace AGXUnity
       /// its hierarchy will be used.
       /// </summary>
       /// <returns>Render resource game object if found - otherwise null.</returns>
-      public GameObject FindRenderResource()
+      public GameObject FindRenderResource( RenderMode renderMode )
       {
         if ( RigidBody == null )
           return null;
+
+        if ( renderMode == RenderMode.InstancedMesh )
+          return RigidBody.gameObject;
 
         // Prefer ShapeVisual, additional objects can be placed as
         // children to the ShapeVisual game object.
@@ -307,6 +310,11 @@ namespace AGXUnity
     /// <returns>True if added, false if null or already added.</returns>
     public bool AddTemplate( RigidBody template, float probabilityWeight )
     {
+      if ( Native != null ) {
+        Debug.LogError( "Cannot add templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || ContainsTemplate( template ) )
         return false;
 
@@ -322,6 +330,11 @@ namespace AGXUnity
     /// <returns>True if removed, false if null or not present.</returns>
     public bool RemoveTemplate( RigidBody template )
     {
+      if ( Native != null ) {
+        Debug.LogError( "Cannot remove templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || !ContainsTemplate( template ) )
         return false;
 
@@ -441,7 +454,7 @@ namespace AGXUnity
         m_distributionModels.Add( distributionModel );
 
         m_event.MapResource( entry.RigidBody.name,
-                             entry.FindRenderResource() );
+                             entry.FindRenderResource( TemplateRenderMode ) );
 
         // Handling collision group in the template hierarchy.
         // These components aren't instantiated during emit.
@@ -687,22 +700,49 @@ namespace AGXUnity
         : base( emitter )
       { }
 
+      private Mesh PrepareTemplateMesh( Mesh input, Matrix4x4 visToRB )
+      {
+        var copy = new Mesh();
+        foreach ( var property in typeof( Mesh ).GetProperties() ) {
+          if ( property.GetSetMethod() != null && property.GetGetMethod() != null ) {
+            property.SetValue( copy, property.GetValue( input, null ), null );
+          }
+        }
+
+        Matrix4x4 visToRBNorm = visToRB.inverse.transpose;
+        copy.vertices = copy.vertices.Select( v => visToRB.MultiplyPoint( v ) ).ToArray();
+        copy.normals = copy.normals.Select( n => visToRBNorm.MultiplyPoint( n ) ).ToArray();
+        return copy;
+      }
+
       public override void MapResource( string name, GameObject resource )
       {
         if ( resource == null )
           return;
 
-        var material = resource.GetComponent<MeshRenderer>().sharedMaterial;
+        var rbMatInverse = resource.transform.localToWorldMatrix.inverse;
 
-        if ( !material.enableInstancing )
-          Debug.LogError( "AGXUnity.RigidBodyEmitter: " +
-                          $"The render material for template {name} must have instancing enabled for this render mode to work.",
-                          material );
+        List<VisualData> vd = new List<VisualData>();
+
+        var visuals = resource.GetComponentsInChildren<MeshRenderer>();
+        foreach ( var vis in visuals ) {
+          var material = vis.sharedMaterial;
+
+          if ( !material.enableInstancing )
+            Debug.LogError( "AGXUnity.RigidBodyEmitter: " +
+                            $"The render material for template {name} must have instancing enabled for this render mode to work.",
+                            material );
+
+          vd.Add( new VisualData
+          {
+            material = material,
+            mesh = PrepareTemplateMesh( vis.GetComponent<MeshFilter>().sharedMesh, rbMatInverse * vis.localToWorldMatrix ),
+          } );
+        }
 
         m_instanceData.Add( name, new EmitData
         {
-          mesh = resource.GetComponent<MeshFilter>().sharedMesh,
-          material = material,
+          visuals = vd,
           RigidBodies = new List<agx.RigidBody>(),
           mats = new List<Matrix4x4[]>()
         } );
@@ -762,17 +802,18 @@ namespace AGXUnity
       {
         foreach ( var data in m_instanceData.Values ) {
           for ( int i = 0; i < data.mats.Count; i++ ) {
-            Graphics.DrawMeshInstanced(
-              data.mesh,
-              0,
-              data.material,
-              data.mats[ i ],
-              i == data.mats.Count ? data.RigidBodies.Count % 1024 : 1023,
-              null,
-              UnityEngine.Rendering.ShadowCastingMode.On,
-              true,
-              0,
-              cam );
+            foreach ( var vis in data.visuals )
+              Graphics.DrawMeshInstanced(
+                vis.mesh,
+                0,
+                vis.material,
+                data.mats[ i ],
+                i == data.mats.Count ? data.RigidBodies.Count % 1024 : 1023,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.On,
+                true,
+                0,
+                cam );
           }
         }
       }
@@ -783,10 +824,15 @@ namespace AGXUnity
         base.Dispose( disposing );
       }
 
-      private struct EmitData
+      private struct VisualData
       {
         public Mesh mesh;
         public Material material;
+      }
+
+      private struct EmitData
+      {
+        public List<VisualData> visuals;
         public List<agx.RigidBody> RigidBodies;
         public List<Matrix4x4[]> mats;
       }
