@@ -330,7 +330,7 @@ namespace AGXUnity
     /// <returns>True if removed, false if null or not present.</returns>
     public bool RemoveTemplate( RigidBody template )
     {
-      if(Native != null ) {
+      if ( Native != null ) {
         Debug.LogError( "Cannot remove templates while the simulation is running" );
         return false;
       }
