@@ -6,6 +6,7 @@ namespace AGXUnity
   /// <summary>
   /// Contact material object.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#contact-material" )]
   public class ContactMaterial : ScriptAsset
   {
     public enum ContactReductionType

@@ -13,6 +13,7 @@ namespace AGXUnity
   /// implicitly created when first used.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulation-manager" )]
   public class Simulation : UniqueGameObject<Simulation>
   {
     /// <summary>

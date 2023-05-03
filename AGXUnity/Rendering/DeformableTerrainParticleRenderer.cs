@@ -10,6 +10,7 @@ namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
   [RequireComponent( typeof( DeformableTerrainBase ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rendering-the-particles" )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode

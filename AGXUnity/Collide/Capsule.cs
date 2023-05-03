@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Capsule shape object given radius and height.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Capsule" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#capsule" )]
   public sealed class Capsule : Shape
   {
     #region Serialized Properties

@@ -91,6 +91,7 @@ namespace AGXUnity
   }
 
   [DoNotGenerateCustomEditor]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-properties" )]
   public class CableProperties : ScriptAsset
   {
     public enum Direction

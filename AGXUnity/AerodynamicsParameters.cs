@@ -3,6 +3,7 @@
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Aerodynamics Parameters" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#aerodynamics-parameters" )]
   public class AerodynamicsParameters : WindAndWaterParameters<agxModel.AerodynamicsParameters>
   {
     [SerializeField]

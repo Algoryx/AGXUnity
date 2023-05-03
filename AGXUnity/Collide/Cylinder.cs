@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Cylinder shape object given radius and height.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Cylinder" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cylinder" )]
   public sealed class Cylinder : Shape
   {
     #region Serialized Properties

@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#track-properties" )]
   public class TrackProperties : ScriptAsset
   {
     public agxVehicle.TrackProperties Native { get; private set; }

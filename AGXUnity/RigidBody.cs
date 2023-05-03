@@ -14,6 +14,7 @@ namespace AGXUnity
   [AddComponentMenu( "AGXUnity/Rigid Body" )]
   [DisallowMultipleComponent]
   [RequireComponent( typeof( MassProperties ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body" )]
   public class RigidBody : ScriptComponent
   {
     /// <summary>

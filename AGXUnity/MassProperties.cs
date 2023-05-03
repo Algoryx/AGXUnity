@@ -10,6 +10,7 @@ namespace AGXUnity
   [AddComponentMenu( "" )]
   [HideInInspector]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mass-properties" )]
   public class MassProperties : ScriptComponent
   {
     /// <summary>
