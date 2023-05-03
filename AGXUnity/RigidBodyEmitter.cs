@@ -310,6 +310,11 @@ namespace AGXUnity
     /// <returns>True if added, false if null or already added.</returns>
     public bool AddTemplate( RigidBody template, float probabilityWeight )
     {
+      if ( Native != null ) {
+        Debug.LogError( "Cannot add templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || ContainsTemplate( template ) )
         return false;
 
@@ -325,6 +330,11 @@ namespace AGXUnity
     /// <returns>True if removed, false if null or not present.</returns>
     public bool RemoveTemplate( RigidBody template )
     {
+      if(Native != null ) {
+        Debug.LogError( "Cannot remove templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || !ContainsTemplate( template ) )
         return false;
 
