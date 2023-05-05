@@ -25,6 +25,8 @@ namespace AGXUnityEditor
       var content = new GUIContent();
       content.text = field.Name.SplitCamelCase() + postText;
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
+      if(content.tooltip == null)
+        content.tooltip = field.GetCustomAttribute<TooltipAttribute>( false )?.tooltip;
 
       return content;
     }
