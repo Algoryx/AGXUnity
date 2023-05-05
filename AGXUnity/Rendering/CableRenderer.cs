@@ -228,17 +228,6 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private static Matrix4x4 CalculateCylinderTransform( Vector3 start, Vector3 end, float radius )
-    {
-      CalculateCylinderTransform( start,
-                                  end,
-                                  radius,
-                                  out var position,
-                                  out var rotation,
-                                  out var scale );
-      return Matrix4x4.TRS( position, rotation, scale );
-    }
-
     private static void CalculateCylinderTransform( Vector3 start,
                                                     Vector3 end,
                                                     float radius,
@@ -250,7 +239,7 @@ namespace AGXUnity.Rendering
       var length = dir.magnitude;
       position = 0.5f * ( start + end );
       rotation = Quaternion.FromToRotation( Vector3.up, dir );
-      scale = new Vector3( 2.0f * radius, 0.5f * length, 2.0f * radius );
+      scale = new Vector3( 2.0f * radius, 1f * length, 2.0f * radius );
     }
 
     private void RenderRoute()
@@ -277,7 +266,7 @@ namespace AGXUnity.Rendering
         var it = Cable.Native.begin();
         var endIt = Cable.Native.end();
         while ( !it.EqualWith( endIt ) ) {
-          m_positions.Add( it.getEndPosition().ToHandedVector3() ); // TODO getBeginPosition?
+          m_positions.Add( it.getEndPosition().ToHandedVector3() );
           it.inc();
         }
 
@@ -292,14 +281,20 @@ namespace AGXUnity.Rendering
 
       float radius = Cable.Radius;
       var sphereScale = 2f * radius * Vector3.one;
+      // rotation will be set by cylinder calculation and reused by sphere to align edges, first half sphere need its own calculation
+      var rotation = (m_positions.Count > 1) ? Quaternion.FromToRotation( Vector3.down, m_positions[ 1 ] - m_positions[ 0 ] ) : Quaternion.identity;
       for ( int i = 0; i < m_positions.Count; ++i ) {
         if ( i > 0 ){
           if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
             m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
 
-          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = CalculateCylinderTransform( m_positions[ i - 1 ],
-                                                                                                                    m_positions[ i ],
-                                                                                                                    radius );
+          CalculateCylinderTransform( m_positions[ i - 1 ],
+                                      m_positions[ i ],
+                                      radius,
+                                      out var position,
+                                      out rotation,
+                                      out var scale );
+          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] =  Matrix4x4.TRS( position, rotation, scale );
 
           // If using render damage
           if ((m_renderDamages || m_previousRenderDamages)){
@@ -321,7 +316,7 @@ namespace AGXUnity.Rendering
         }
 
         m_segmentSphereMatrices[ i / 1023 ][ i % 1023 ] = Matrix4x4.TRS( m_positions[ i ],
-                                                                         Quaternion.identity,
+                                                                         rotation,
                                                                          sphereScale );
       }
 
@@ -331,9 +326,9 @@ namespace AGXUnity.Rendering
     private bool CreateMeshes()
     {
       if ( m_sphereMeshInstance == null )
-        m_sphereMeshInstance = CreateMesh( @"Debug/LowPolySphereRenderer" );
+        m_sphereMeshInstance = CreateMesh( @"Cable/HalfSphereRenderer" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = CreateMesh( @"Debug/LowPolyCylinderRenderer" );
+        m_cylinderMeshInstance = CreateMesh( @"Cable/CylinderCapRenderer" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
     }
