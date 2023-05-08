@@ -291,9 +291,7 @@ namespace AGXUnityEditor
     /// <returns>Material asset.</returns>
     public static Material GetOrCreateShapeVisualDefaultMaterial()
     {
-      return GetOrCreateAsset<Material>( IO.Utils.AGXUnityResourceDirectory +
-                                         '/' + AGXUnity.Rendering.ShapeVisual.DefaultMaterialPathResources + ".mat",
-                                         () => AGXUnity.Rendering.ShapeVisual.CreateDefaultMaterial() );
+      return AGXUnity.Rendering.ShapeVisual.CreateDefaultMaterial();
     }
 
     public static void OnVisualPrimitiveNodeCreate( Utils.VisualPrimitive primitive )

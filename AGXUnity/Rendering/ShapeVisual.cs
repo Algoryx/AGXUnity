@@ -97,24 +97,19 @@ namespace AGXUnity.Rendering
     /// <returns>New instance of the default material.</returns>
     public static Material CreateDefaultMaterial()
     {
-      var material = new Material( Shader.Find( "Standard" ) );
+      var builder = new MaterialBuilder();
 
-      material.SetVector( "_Color", Color.Lerp( Color.white, Color.blue, 0.07f ) );
-      material.SetFloat( "_Metallic", 0.3f );
-      material.SetFloat( "_Glossiness", 0.8f );
+      builder.Color( Color.Lerp( Color.white, Color.blue, 0.07f ) );
+      builder.Metallic( 0.3f );
+      builder.Smoothness( 0.8f );
 
-      return material;
+      return builder.Build();
     }
-
-    /// <summary>
-    /// Path to material given Resources.Load.
-    /// </summary>
-    public static string DefaultMaterialPathResources { get { return @"Materials/ShapeVisualDefaultMaterial"; } }
 
     /// <summary>
     /// Default material used.
     /// </summary>
-    public static Material DefaultMaterial { get { return PrefabLoader.Load<Material>( DefaultMaterialPathResources ); } }
+    public static Material DefaultMaterial { get => new MaterialBuilder().Color( new Color( 237.0f / 255.0f, 237.0f / 255.0f, 1.0f, 1.0f ) ).Build(); }
 
     /// <summary>
     /// Assigns material to renderer in <paramref name="go"/>, including all sub-meshes/materials.

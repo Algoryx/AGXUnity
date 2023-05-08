@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace AGXUnity.Utils
 {
@@ -612,8 +612,24 @@ namespace AGXUnity.Utils
     /// https://forum.unity3d.com/threads/standard-material-shader-ignoring-setfloat-property-_mode.344557/#post-2229980
     /// </summary>
     /// <param name="blendMode"></param>
-    public static void SetBlendMode( this Material material, Rendering.BlendMode blendMode )
+    public static void SetBlendMode( this Material material, Rendering.BlendMode blendMode, RenderPipelineDetector.PipelineType pipeline = RenderPipelineDetector.PipelineType.BuiltIn )
     {
+      Action<float,float,float,float> setProperties = ( float surfaceType, float blendMode, float alphaCutoff, float preserve ) =>
+      {
+        if ( pipeline == RenderPipelineDetector.PipelineType.HDRP ) {
+          material.SetFloat( "_SurfaceType", surfaceType );
+          material.SetFloat( "_BlendMode", blendMode );
+          material.SetFloat( "_AlphaCutoffEnable", alphaCutoff );
+          material.SetFloat( "_EnableBlendModePreserveSpecularLighting", preserve );
+        }
+        else if ( pipeline == RenderPipelineDetector.PipelineType.Universal ) {
+          material.SetFloat( "_Surface", surfaceType );
+          material.SetFloat( "_Blend", blendMode );
+          material.SetFloat( "_Clip", alphaCutoff );
+        }
+      };
+
+
       switch ( blendMode ) {
         case Rendering.BlendMode.Opaque:
           material.SetOverrideTag( "RenderType", "" );
@@ -623,6 +639,7 @@ namespace AGXUnity.Utils
           material.DisableKeyword( "_ALPHATEST_ON" );
           material.DisableKeyword( "_ALPHABLEND_ON" );
           material.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
+          setProperties( 0, 0, 0, 1 );
           material.renderQueue = -1;
           break;
         case Rendering.BlendMode.Cutout:
@@ -633,6 +650,7 @@ namespace AGXUnity.Utils
           material.EnableKeyword( "_ALPHATEST_ON" );
           material.DisableKeyword( "_ALPHABLEND_ON" );
           material.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
+          setProperties( 0, 0, 1, 1 );
           material.renderQueue = 2450;
           break;
         case Rendering.BlendMode.Fade:
@@ -643,6 +661,9 @@ namespace AGXUnity.Utils
           material.DisableKeyword( "_ALPHATEST_ON" );
           material.EnableKeyword( "_ALPHABLEND_ON" );
           material.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
+          setProperties( 1, 0, 0, 0 );
+          if ( pipeline == RenderPipelineDetector.PipelineType.HDRP )
+            material.SetFloat( "_TransparentDepthPrepassEnable", 1 );
           material.renderQueue = 3000;
           break;
         case Rendering.BlendMode.Transparent:
@@ -653,6 +674,7 @@ namespace AGXUnity.Utils
           material.DisableKeyword( "_ALPHATEST_ON" );
           material.DisableKeyword( "_ALPHABLEND_ON" );
           material.EnableKeyword( "_ALPHAPREMULTIPLY_ON" );
+          setProperties( 1, 0, 0, 1 );
           material.renderQueue = 3000;
           break;
       }

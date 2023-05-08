@@ -8,7 +8,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Node = AGXUnityEditor.IO.InputAGXFileTreeNode;
-using RPDetector = AGXUnityEditor.Utils.RenderPipelineDetector;
+using RPDetector = AGXUnity.Utils.RenderPipelineDetector;
 using Tree = AGXUnityEditor.IO.InputAGXFileTree;
 
 namespace AGXUnityEditor.IO

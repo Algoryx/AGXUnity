@@ -1,6 +1,6 @@
 ﻿using UnityEngine.Rendering;
 
-namespace AGXUnityEditor.Utils
+namespace AGXUnity.Utils
 {
   public class RenderPipelineDetector
   {
