@@ -20,11 +20,11 @@ namespace AGXUnity.Model
   public class TwoBodyTireProperties : ScriptAsset
   {
     [SerializeField]
-    private float m_radialStiffness = 5.0E3f;
+    private float m_radialStiffness = 5.0E5f;
 
     /// <summary>
     /// Radial stiffness. Affects translation orthogonal to tire rotation axis.
-    /// Default: 5.0E3
+    /// Default: 5.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float RadialStiffness
@@ -58,11 +58,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lateralStiffness = 5.0E3f;
+    private float m_lateralStiffness = 5.0E7f;
 
     /// <summary>
     /// Lateral stiffness. Affects translation in axis of rotation.
-    /// Default: 5.0E3
+    /// Default: 5.0E7
     /// </summary>
     [ClampAboveZeroInInspector]
     public float LateralStiffness
@@ -96,11 +96,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_bendingStiffness = 2.5E3f;
+    private float m_bendingStiffness = 2.5E5f;
 
     /// <summary>
     /// Bending stiffness. Affects rotation orthogonal to axis of rotation.
-    /// Default: 2.5E3
+    /// Default: 2.5E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float BendingStiffness
@@ -134,11 +134,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_torsionalStiffness = 2.5E3f;
+    private float m_torsionalStiffness = 2.5E5f;
 
     /// <summary>
     /// Torsional stiffness. Affects rotation in axis of rotation.
-    /// Default: 2.5E3
+    /// Default: 2.5E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float TorsionalStiffness
