@@ -86,6 +86,8 @@ namespace AGXUnity.Rendering
       m_positions.Clear();
       m_positions.Capacity = 256;
 
+      m_previousRenderDamages = true; // Inits the color vectors
+
       return true;
     }
 
@@ -194,7 +196,7 @@ namespace AGXUnity.Rendering
         int count = Mathf.Min( 1023, m_positions.Count - i );
 
         if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_Color", m_segmentColors[ i / 1023 ]);
+          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
 
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
@@ -212,7 +214,7 @@ namespace AGXUnity.Rendering
       for ( int i = 0; i < m_numCylinders; i += 1023 ) {
 
         if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_Color", m_segmentColors[ i / 1023 ]);
+          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
 
         int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
@@ -297,7 +299,7 @@ namespace AGXUnity.Rendering
           m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] =  Matrix4x4.TRS( position, rotation, scale );
 
           // If using render damage
-          if ((m_renderDamages || m_previousRenderDamages)){
+          if (m_renderDamages || m_previousRenderDamages){
 
             if (m_numCylinders / 1023 + 1 > m_segmentColors.Count)
               m_segmentColors.Add(new Vector4[1023]);
