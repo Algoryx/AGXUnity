@@ -12,6 +12,7 @@ namespace AGXUnity.Model
   /// Conveyor belt model using one or several neighboring AGXUnity.Model.Track
   /// instances constrained to each other.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Model/Conveyor Belt" )]
   [DoNotGenerateCustomEditor]
   [DisallowMultipleComponent]
   public class ConveyorBelt : ScriptComponent

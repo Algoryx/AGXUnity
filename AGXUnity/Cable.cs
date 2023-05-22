@@ -5,6 +5,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Cable" )]
   [RequireComponent( typeof( CableRoute ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable" )]
   public class Cable : ScriptComponent

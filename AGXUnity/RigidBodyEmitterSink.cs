@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Rigid Body Emitter Sink" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sink" )]
   public class RigidBodyEmitterSink : ScriptComponent
   {

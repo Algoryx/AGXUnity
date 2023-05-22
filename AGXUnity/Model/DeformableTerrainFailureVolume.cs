@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Model/Deformable Terrain Failure Volume" )]
   [RequireComponent(typeof(Shape))]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#soil-failure-volumes" )]
   public class DeformableTerrainFailureVolume : ScriptComponent
