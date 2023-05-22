@@ -6,6 +6,7 @@ namespace AGXUnity.Model
 {
   [DoNotGenerateCustomEditor]
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#tire" )]
   public class Tire : ScriptComponent
   {
     /// <summary>

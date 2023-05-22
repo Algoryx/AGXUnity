@@ -8,6 +8,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#license-manager" )]
   public static class LicenseManager
   {
     /// <summary>

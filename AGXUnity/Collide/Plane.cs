@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Infinite plane object - probably not completely working.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Plane" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plane" )]
   public sealed class Plane : Shape
   {
     /// <summary>

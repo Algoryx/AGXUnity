@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace AGXUnity
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-damage-properties" )]
   public class CableDamageProperties : ScriptAsset
   {
     private const float defaultValue = 0f;

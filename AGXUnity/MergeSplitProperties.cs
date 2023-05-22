@@ -5,6 +5,7 @@ using UnityEngine;
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Merge Split Properties" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#merge-split-properties" )]
   public class MergeSplitProperties : ScriptComponent
   {
     [SerializeField]

@@ -16,6 +16,7 @@ namespace AGXUnity
   /// // rb should have a native instance
   /// assert( rb.Native != null );
   /// </example>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#components" )]
   public abstract class ScriptComponent : MonoBehaviour
   {
     public enum States

@@ -5,6 +5,7 @@ using UnityEngine;
 namespace AGXUnity
 {
   [DoNotGenerateCustomEditor]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#merge-split-properties" )]
   public class MergeSplitThresholds : ScriptAsset
   {
     [HideInInspector]

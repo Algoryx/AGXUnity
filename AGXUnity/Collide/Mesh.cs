@@ -13,6 +13,7 @@ namespace AGXUnity.Collide
   /// render data.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Mesh" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mesh" )]
   public sealed class Mesh : Shape
   {
     /// <summary>

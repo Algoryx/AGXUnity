@@ -25,6 +25,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain Pager" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain-pager" )]
   public class DeformableTerrainPager : DeformableTerrainBase
   {
     /// <summary>

@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#solver-settings" )]
   public class SolverSettings : ScriptAsset
   {
     /// <summary>

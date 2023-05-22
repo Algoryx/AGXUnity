@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Truncated right cone shape object given top and bottom radius, plus height.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Cone" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#additional-shapes" )]
   public sealed class Cone : Shape
   {
     #region Serialized Properties

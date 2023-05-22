@@ -23,6 +23,7 @@ namespace AGXUnity
   }
 
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
   public class Constraint : ScriptComponent
   {
     /// <summary>

@@ -6,10 +6,11 @@ using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
-{ 
+{
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain")]
   public class DeformableTerrain : DeformableTerrainBase
   {
     /// <summary>
@@ -76,14 +77,12 @@ namespace AGXUnity.Model
     /// </summary>
     public void ResetHeights()
     {
-      if ( Native != null && Simulation.HasInstance ) {
-        GetSimulation().remove( Native );
-        Native = null;
-      }
-
       ResetTerrainDataHeightsAndTransform();
 
-      InitializeNative();
+      var nativeHeightData = TerrainUtils.WriteTerrainDataOffset( Terrain, MaximumDepth );
+      transform.position = transform.position + MaximumDepth * Vector3.down;
+
+      Native.setHeights( nativeHeightData.Heights );
 
       PropertySynchronizer.Synchronize( this );
     }
@@ -293,8 +292,8 @@ namespace AGXUnity.Model
       return m_shovels.Remove( shovel );
     }
 
-    public override bool Contains( DeformableTerrainShovel shovel ) 
-    { 
+    public override bool Contains( DeformableTerrainShovel shovel )
+    {
       return shovel != null && m_shovels.Contains( shovel );
     }
 

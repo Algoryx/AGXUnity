@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#geometry-contact-merge-split-thresholds" )]
   public class GeometryContactMergeSplitThresholds : MergeSplitThresholds
   {
     [HideInInspector]

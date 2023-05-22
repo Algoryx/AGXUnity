@@ -6,6 +6,7 @@ namespace AGXUnity
 {
   [DoNotGenerateCustomEditor]
   [Obsolete("Use IFrame instead.")]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#frames" )]
   public class Frame : ScriptAsset
   {
     [SerializeField]

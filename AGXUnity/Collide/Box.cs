@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Box shape object given half extents.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Box" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#box" )]
   public sealed class Box : Shape
   {
     #region Serialized Properties
