@@ -16,6 +16,7 @@ namespace AGXUnity.Rendering
   [AddComponentMenu( "AGXUnity/Rendering/Wire Renderer" )]
   [ExecuteInEditMode]
   [RequireComponent( typeof( Wire ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rendering-the-wire" )]
   public class WireRenderer : ScriptComponent
   {
     /// <summary>

@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity.IO
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#agx-dynamics-import" )]
   public class RestoredAssetsRoot : ScriptableObject
   {
     public enum ContainingType

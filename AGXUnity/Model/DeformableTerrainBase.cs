@@ -2,6 +2,7 @@
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
 

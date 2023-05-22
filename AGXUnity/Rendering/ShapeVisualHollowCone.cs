@@ -7,6 +7,7 @@ namespace AGXUnity.Rendering
   /// Shape visual for shape type HollowCone.
   /// </summary>
   [DoNotGenerateCustomEditor]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#create-visual-tool-icon-small-create-visual-tool" )]
   public class ShapeVisualHollowCone : ShapeVisual
   {
     private Mesh m_mesh = null;

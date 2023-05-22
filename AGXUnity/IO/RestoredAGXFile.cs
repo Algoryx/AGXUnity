@@ -29,6 +29,7 @@ namespace AGXUnity.IO
   }
 
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#agx-dynamics-import" )]
   public class RestoredAGXFile : ScriptComponent
   {
     [SerializeField]

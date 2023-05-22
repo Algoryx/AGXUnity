@@ -12,6 +12,7 @@ namespace AGXUnity
   /// </summary>
   [AddComponentMenu( "" )]
   [HideInInspector]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#routing-the-cable" )]
   public class CableRoute : Route<CableRouteNode>
   {
     /// <summary>

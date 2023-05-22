@@ -1,10 +1,12 @@
 using AGXUnity.Collide;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace AGXUnity.Model
 {
-  [UnityEngine.RequireComponent(typeof(Shape))]
+  [RequireComponent(typeof(Shape))]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#soil-failure-volumes" )]
   public class DeformableTerrainFailureVolume : ScriptComponent
   {
     public bool AddAllTerrainsOnStart { get; set; } = true;
