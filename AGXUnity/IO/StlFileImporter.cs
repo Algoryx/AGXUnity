@@ -12,6 +12,7 @@ namespace AGXUnity.IO
   /// <summary>
   /// Read and/or instantiates STL files, binary or ASCII, as meshes/GameoObjects.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#stl-import" )]
   public class StlFileImporter
   {
     /// <summary>

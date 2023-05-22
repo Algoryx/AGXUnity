@@ -7,8 +7,10 @@ using AGXUnity.Rendering;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Cable Damage" )]
   [DisallowMultipleComponent]
   [RequireComponent(typeof(AGXUnity.Cable))]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-damage" )]
   public class CableDamage : ScriptComponent
   {
     /// <summary>

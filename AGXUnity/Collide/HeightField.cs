@@ -9,6 +9,7 @@ namespace AGXUnity.Collide
   [AddComponentMenu( "AGXUnity/Shapes/Height Field" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#height-field" )]
   public sealed class HeightField : Shape
   {
     /// <summary>

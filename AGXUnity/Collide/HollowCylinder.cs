@@ -5,7 +5,8 @@ namespace AGXUnity.Collide
   /// <summary>
   /// Hollow cylinder shape object given radius and height and wall thickness.
   /// </summary>
-  [AddComponentMenu( "AGXUnity/Shapes/HollowCylinder" )]
+  [AddComponentMenu( "AGXUnity/Shapes/Hollow Cylinder" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#additional-shapes" )]
   public sealed class HollowCylinder : Shape
   {
     #region Serialized Properties

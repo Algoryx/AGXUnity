@@ -33,6 +33,7 @@ namespace AGXUnity.Model
   }
 
   [AddComponentMenu( "AGXUnity/Model/Track Wheel" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#track-wheel" )]
   public class TrackWheel : ScriptComponent
   {
     /// <summary>

@@ -16,6 +16,7 @@ namespace AGXUnity
   /// ScriptAssetManager to have a "component like" behavior in the
   /// implementations.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
   public abstract class ScriptAsset : ScriptableObject
   {
     public static T Create<T>() where T : ScriptAsset

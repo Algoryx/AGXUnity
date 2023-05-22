@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain-properties" )]
   public class DeformableTerrainProperties : ScriptAsset
   {
     [SerializeField]

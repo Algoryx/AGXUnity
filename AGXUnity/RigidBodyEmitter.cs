@@ -12,6 +12,8 @@ namespace AGXUnity
   /// the visual representation in the prefab is used for rendering, updating
   /// the transforms given the simulation of the emitted bodies.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Rigid Body Emitter" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body-emitter" )]
   public class RigidBodyEmitter : ScriptComponent
   {
     /// <summary>

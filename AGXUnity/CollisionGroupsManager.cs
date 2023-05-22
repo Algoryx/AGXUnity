@@ -6,6 +6,7 @@ using AGXUnity.Utils;
 namespace AGXUnity
 {
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#collision-groups-manager" )]
   public class CollisionGroupsManager : UniqueGameObject<CollisionGroupsManager>
   {
     /// <summary>

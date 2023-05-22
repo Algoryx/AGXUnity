@@ -6,7 +6,9 @@ namespace AGXUnity
   /// <summary>
   /// Wire object.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Wire" )]
   [RequireComponent( typeof( WireRoute ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wire" )]
   public class Wire : ScriptComponent
   {
     /// <summary>

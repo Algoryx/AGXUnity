@@ -10,6 +10,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain")]
   public class DeformableTerrain : DeformableTerrainBase
   {
     /// <summary>

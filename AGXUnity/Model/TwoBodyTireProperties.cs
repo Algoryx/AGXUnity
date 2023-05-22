@@ -17,6 +17,7 @@ namespace AGXUnity.Model
   /// The unit for the translational damping coefficient is force* time/displacement(if using SI: Ns/m)
   /// The unit for the rotational damping coefficient is torque* time/angular displacement(if using SI: Nms/rad)
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#two-body-tire-properties" )]
   public class TwoBodyTireProperties : ScriptAsset
   {
     [SerializeField]

@@ -11,6 +11,7 @@ namespace AGXUnity.Collide
   /// to a native agxCollide::Geometry and an agxCollide::Shape.
   /// </summary>
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#shapes" )]
   public abstract class Shape : ScriptComponent
   {
     /// <summary>

@@ -5,6 +5,7 @@ namespace AGXUnity
 {
   [AddComponentMenu( "" )]
   [HideInInspector]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
   public class ElectricMotorController : ElementaryConstraintController
   {
     [SerializeField]
