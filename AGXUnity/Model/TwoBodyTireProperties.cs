@@ -20,11 +20,11 @@ namespace AGXUnity.Model
   public class TwoBodyTireProperties : ScriptAsset
   {
     [SerializeField]
-    private float m_radialStiffness = 5.0E3f;
+    private float m_radialStiffness = 3.5E5f;
 
     /// <summary>
     /// Radial stiffness. Affects translation orthogonal to tire rotation axis.
-    /// Default: 5.0E3
+    /// Default: 3.5E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float RadialStiffness
@@ -39,11 +39,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_radialDampingCoefficient = 1.67E4f;
+    private float m_radialDampingCoefficient = 7.0E3f;
 
     /// <summary>
     /// Radial damping coefficient. Affects translation orthogonal to tire rotation axis.
-    /// Default: 1.67E4
+    /// Default: 7.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
     public float RadialDampingCoefficient
@@ -58,11 +58,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lateralStiffness = 5.0E3f;
+    private float m_lateralStiffness = 3.0E5f;
 
     /// <summary>
     /// Lateral stiffness. Affects translation in axis of rotation.
-    /// Default: 5.0E3
+    /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float LateralStiffness
@@ -77,11 +77,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lateralDampingCoefficient = 1.67E6f;
+    private float m_lateralDampingCoefficient = 5.0E3f;
 
     /// <summary>
     /// Lateral damping coefficient. Affects translation in axis of rotation.
-    /// Default: 1.67E6
+    /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
     public float LateralDampingCoefficient
@@ -96,11 +96,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_bendingStiffness = 2.5E3f;
+    private float m_bendingStiffness = 3.0E5f;
 
     /// <summary>
     /// Bending stiffness. Affects rotation orthogonal to axis of rotation.
-    /// Default: 2.5E3
+    /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float BendingStiffness
@@ -115,11 +115,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_bendingDampingCoefficient = 8.33E3f;
+    private float m_bendingDampingCoefficient = 5.0E3f;
 
     /// <summary>
     /// Bending damping coefficient. Affects rotation orthogonal to axis of rotation.
-    /// Default: 8.33E3
+    /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
     public float BendingDampingCoefficient
@@ -134,11 +134,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_torsionalStiffness = 2.5E3f;
+    private float m_torsionalStiffness = 3.0E5f;
 
     /// <summary>
     /// Torsional stiffness. Affects rotation in axis of rotation.
-    /// Default: 2.5E3
+    /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
     public float TorsionalStiffness
@@ -153,11 +153,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_torsionalDampingCoefficient = 8.33E3f;
+    private float m_torsionalDampingCoefficient = 5.0E3f;
 
     /// <summary>
     /// Torsional damping coefficient. Affects rotation in axis of rotation.
-    /// Default: 8.33E3
+    /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
     public float TorsionalDampingCoefficient
