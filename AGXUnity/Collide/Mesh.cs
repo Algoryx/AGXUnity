@@ -254,7 +254,7 @@ namespace AGXUnity.Collide
         var merger = MeshMerger.Merge( transform, meshes );
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              "AGXUnity.Mesh: Trimesh" ),
+                                              gameObject.name),
                       GetNativeGeometryOffset() );
       }
 
