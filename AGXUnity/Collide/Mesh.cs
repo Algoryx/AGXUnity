@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
-using AGXUnity.Utils;
+using System.Linq;
 using UnityEngine;
-
+using CreateOptions = agxCollide.Trimesh.TrimeshOptionsFlags;
 using Random = UnityEngine.Random;
 
 namespace AGXUnity.Collide
@@ -61,6 +61,10 @@ namespace AGXUnity.Collide
 
     [SerializeField]
     private CollisionMeshOptions m_options = new CollisionMeshOptions();
+
+    [SerializeField]
+    private bool m_disableCreateWarnings = false;
+    public bool DisableCreateWarnings { get => m_disableCreateWarnings; set => m_disableCreateWarnings = value; }
 
     /// <summary>
     /// Options for precomputed collision meshes. Default: null, meaning
@@ -220,6 +224,10 @@ namespace AGXUnity.Collide
     /// <returns>Native trimesh.</returns>
     private agxCollide.Geometry Create( UnityEngine.Mesh[] meshes )
     {
+      uint options = (uint)CreateOptions.REMOVE_DUPLICATE_VERTICES;
+      if ( DisableCreateWarnings )
+        options |= (uint)CreateOptions.NO_WARNINGS;
+
       var geometry = new agxCollide.Geometry();
       if ( m_precomputedCollisionMeshes.Count > 0 ) {
         // The vertices are assumed to be stored in local coordinates of the
@@ -238,7 +246,7 @@ namespace AGXUnity.Collide
             continue;
           }
 
-          var shape = collisionMesh.CreateShape( transformer, mode );
+          var shape = collisionMesh.CreateShape( transformer, mode, gameObject.name, options );
           if ( shape == null ) {
             Debug.LogWarning( $"AGXUnity.Collide.Mesh: Precomputed collision mesh at index {i} resulted in an invalid shape.", this );
             continue;
@@ -252,9 +260,11 @@ namespace AGXUnity.Collide
           Debug.LogWarning( "AGXUnity.Mesh: Failed to create shapes from precomputed data - using Trimesh as fallback.", this );
 
         var merger = MeshMerger.Merge( transform, meshes );
+
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              gameObject.name),
+                                              gameObject.name,
+                                              options ),
                       GetNativeGeometryOffset() );
       }
 
