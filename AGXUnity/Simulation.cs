@@ -1,8 +1,9 @@
+using AGXUnity.Utils;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using AGXUnity.Utils;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -274,6 +275,23 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private bool m_logToUnityConsole = false;
+    private agx.LoggerSubscriber m_subscriber;
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public bool LogToUnityConsole
+    {
+      get { return m_logToUnityConsole; }
+      set
+      {
+        if ( value == m_logToUnityConsole ) return;
+        m_logToUnityConsole = value;
+        AddUnityLogCallbackIfEnabled();
+      }
+    }
+
     /// <summary>
     /// Get the native instance, if not deleted.
     /// </summary>
@@ -396,6 +414,7 @@ namespace AGXUnity
 
         // Initialize logger if enabled
         OpenLogFileIfEnabled();
+        AddUnityLogCallbackIfEnabled();
       }
 
       return m_simulation;
@@ -535,6 +554,36 @@ namespace AGXUnity
         agx.Logger.instance().openLogfile( LogPath.Trim(),
                                            true,
                                            true );
+    }
+
+    private void AddUnityLogCallbackIfEnabled()
+    {
+      if ( m_simulation == null )
+        return;
+
+      if ( m_logToUnityConsole ) {
+        m_subscriber = new agx.LoggerSubscriber();
+        StepCallbacks.PostStepForward += PrintLoggerMessages;
+      }
+      else {
+        StepCallbacks.PostStepForward -= PrintLoggerMessages;
+      }
+    }
+
+    private void PrintLoggerMessages()
+    {
+      agx.LoggerSubscriberMessageVector messages = new agx.LoggerSubscriberMessageVector();
+      m_subscriber.getMessages( messages, true );
+
+      Dictionary<int,Action<string>> loggingfuncs = new Dictionary<int, Action<string>> ();
+      loggingfuncs.Add( 1, str => Debug.Log( str ) );
+      loggingfuncs.Add( 2, str => Debug.Log( str ) );
+      loggingfuncs.Add( 4, str => Debug.LogWarning( str ) );
+      loggingfuncs.Add( 8, str => Debug.LogError( str ) );
+
+      foreach ( var message in messages ) {
+        loggingfuncs[ message.first ]( message.second );
+      }
     }
 
     private class MemoryAllocations

@@ -157,6 +157,9 @@ namespace AGXUnityEditor.Tools
                                                          "AGX Dynamics log filename",
                                                          extension => true );
 
+      Simulation.LogToUnityConsole = InspectorGUI.Toggle( GUI.MakeLabel( "Print AGX log in Unity console" ),
+                                                          Simulation.LogToUnityConsole );
+
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
         var rect    = EditorGUILayout.GetControlRect();
