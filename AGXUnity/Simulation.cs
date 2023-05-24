@@ -1,6 +1,5 @@
 using AGXUnity.Utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,6 +8,15 @@ using Debug = UnityEngine.Debug;
 
 namespace AGXUnity
 {
+  public enum LogLevel
+  {
+    Debug = 1,
+    Info = 2,
+    Warning = 4,
+    Error = 8,
+    None = Error + 1
+  };
+
   /// <summary>
   /// Simulation object, either explicitly created and added or
   /// implicitly created when first used.
@@ -245,7 +253,7 @@ namespace AGXUnity
 
     [SerializeField]
     private bool m_logEnabled = false;
-    
+
     [HideInInspector]
     [IgnoreSynchronization]
     public bool LogEnabled
@@ -275,9 +283,10 @@ namespace AGXUnity
       }
     }
 
+    private LogAdapter m_logAdapter = null;
+
     [SerializeField]
     private bool m_logToUnityConsole = false;
-    private agx.LoggerSubscriber m_subscriber;
 
     [HideInInspector]
     [IgnoreSynchronization]
@@ -288,7 +297,32 @@ namespace AGXUnity
       {
         if ( value == m_logToUnityConsole ) return;
         m_logToUnityConsole = value;
-        AddUnityLogCallbackIfEnabled();
+
+        if ( m_simulation == null ) return;
+
+        if ( m_logToUnityConsole )
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel );
+        else {
+          m_logAdapter?.RemoveFromSimulation( this );
+          m_logAdapter = null;
+        }
+      }
+    }
+
+    [SerializeField]
+    private LogLevel m_agxUnityLogLevel = LogLevel.Info;
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public LogLevel AGXUnityLogLevel
+    {
+      get { return m_agxUnityLogLevel; }
+      set
+      {
+        m_agxUnityLogLevel = value;
+
+        if ( m_logAdapter != null )
+          m_logAdapter.LogLevel = value;
       }
     }
 
@@ -314,7 +348,7 @@ namespace AGXUnity
     /// <returns>True if objects were written to file - otherwise false.</returns>
     public bool SaveToNativeFile( string filename )
     {
-      if ( m_simulation == null ) { 
+      if ( m_simulation == null ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: Simulation isn't active.",
                                                  Color.yellow ),
                           this );
@@ -329,7 +363,7 @@ namespace AGXUnity
       }
 
       if ( file.Extension.ToUpper() != ".AGX" && file.Extension.ToUpper() != ".AAGX" ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: File extension {file.Extension} is unknown. " ,
+        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: File extension {file.Extension} is unknown. ",
                                                  Color.yellow ) +
                           "Valid extensions are .agx and .aagx." );
         return false;
@@ -414,7 +448,8 @@ namespace AGXUnity
 
         // Initialize logger if enabled
         OpenLogFileIfEnabled();
-        AddUnityLogCallbackIfEnabled();
+        if ( m_logToUnityConsole )
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel );
       }
 
       return m_simulation;
@@ -548,7 +583,7 @@ namespace AGXUnity
     private void OpenLogFileIfEnabled()
     {
       string logOverride = IO.Environment.GetLogFileOverride();
-      if (logOverride != null )
+      if ( logOverride != null )
         agx.Logger.instance().openLogfile( logOverride, true, true );
       else if ( m_simulation != null && LogEnabled && !string.IsNullOrEmpty( LogPath ) )
         agx.Logger.instance().openLogfile( LogPath.Trim(),
@@ -556,33 +591,50 @@ namespace AGXUnity
                                            true );
     }
 
-    private void AddUnityLogCallbackIfEnabled()
+    private class LogAdapter
     {
-      if ( m_simulation == null )
-        return;
+      private agx.LoggerSubscriber m_subscriber;
+      private agx.LoggerSubscriberMessageVector m_messages;
 
-      if ( m_logToUnityConsole ) {
+      public LogLevel LogLevel { get; set; }
+
+      public LogAdapter( Simulation sim, LogLevel level )
+      {
+        LogLevel = level;
         m_subscriber = new agx.LoggerSubscriber();
-        StepCallbacks.PostStepForward += PrintLoggerMessages;
+        m_messages = new agx.LoggerSubscriberMessageVector();
+        sim.StepCallbacks.PostStepForward += PrintLoggerMessages;
       }
-      else {
-        StepCallbacks.PostStepForward -= PrintLoggerMessages;
+
+      public void RemoveFromSimulation( Simulation sim )
+      {
+        sim.StepCallbacks.PostStepForward -= PrintLoggerMessages;
       }
-    }
 
-    private void PrintLoggerMessages()
-    {
-      agx.LoggerSubscriberMessageVector messages = new agx.LoggerSubscriberMessageVector();
-      m_subscriber.getMessages( messages, true );
+      public void PrintLoggerMessages()
+      {
+        m_subscriber.getMessages( m_messages, true );
+        foreach ( var message in m_messages )
+          Log( message.first, message.second );
+      }
 
-      Dictionary<int,Action<string>> loggingfuncs = new Dictionary<int, Action<string>> ();
-      loggingfuncs.Add( 1, str => Debug.Log( str ) );
-      loggingfuncs.Add( 2, str => Debug.Log( str ) );
-      loggingfuncs.Add( 4, str => Debug.LogWarning( str ) );
-      loggingfuncs.Add( 8, str => Debug.LogError( str ) );
-
-      foreach ( var message in messages ) {
-        loggingfuncs[ message.first ]( message.second );
+      private void Log( int level, string message )
+      {
+        if ( level < (int)LogLevel ) return;
+        switch ( (LogLevel)level ) {
+          case LogLevel.Info:
+          case LogLevel.Debug:
+            Debug.Log( message );
+            break;
+          case LogLevel.Warning:
+            Debug.LogWarning( message );
+            break;
+          case LogLevel.Error:
+            Debug.LogError( message );
+            break;
+          default:
+            break;
+        }
       }
     }
 
