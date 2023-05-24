@@ -1,6 +1,7 @@
 ﻿using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
 using CreateOptions = agxCollide.Trimesh.TrimeshOptionsFlags;
@@ -64,6 +65,8 @@ namespace AGXUnity.Collide
 
     [SerializeField]
     private bool m_disableCreateWarnings = false;
+
+    [Description("Disable warnings in the native log related to the geometry of the collision mesh when creating the native component")]
     public bool DisableCreateWarnings { get => m_disableCreateWarnings; set => m_disableCreateWarnings = value; }
 
     /// <summary>
