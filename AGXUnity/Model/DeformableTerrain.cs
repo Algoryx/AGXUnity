@@ -298,7 +298,7 @@ namespace AGXUnity.Model
       return shovel != null && m_shovels.Contains( shovel );
     }
 
-    public override void RemoveInvalidShovels( bool removeDisabled, bool warn = false )
+    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
     {
       m_shovels.RemoveAll( shovel => shovel == null );
       if ( removeDisabled ) {

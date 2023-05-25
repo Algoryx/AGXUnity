@@ -520,7 +520,7 @@ namespace AGXUnity.Model
     {
       return m_shovels.Find( s => s.Body == shovel ) != null;
     }
-    public override void RemoveInvalidShovels( bool removeDisabled, bool warn = false )
+    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
     {
       m_shovels.RemoveAll( shovel => shovel.Body == null );
       m_rigidbodies.RemoveAll( rb => rb.Body == null );
