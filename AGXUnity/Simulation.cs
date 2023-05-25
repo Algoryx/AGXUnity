@@ -13,8 +13,7 @@ namespace AGXUnity
     Debug = 1,
     Info = 2,
     Warning = 4,
-    Error = 8,
-    None = Error + 1
+    Error = 8
   };
 
   /// <summary>
