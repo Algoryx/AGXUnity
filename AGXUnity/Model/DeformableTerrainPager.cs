@@ -192,9 +192,9 @@ namespace AGXUnity.Model
       return true;
     }
 
-    public bool Contains( RigidBody body)
+    public bool Contains( RigidBody body )
     {
-      return m_rigidbodies.Find( rb => rb.Body == body) != null;
+      return m_rigidbodies.Find( rb => rb.Body == body ) != null;
     }
 
     /// <summary>
@@ -287,7 +287,7 @@ namespace AGXUnity.Model
       if ( AutoTileOnPlay )
         RecalculateParameters();
 
-      RemoveInvalidShovels();
+      RemoveInvalidShovels( true );
 
       // Create a new adapter using the terrain attached to this gameobject as the root
       // This attaches DeformableTerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
@@ -520,10 +520,24 @@ namespace AGXUnity.Model
     {
       return m_shovels.Find( s => s.Body == shovel ) != null;
     }
-    public override void RemoveInvalidShovels()
+    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
     {
       m_shovels.RemoveAll( shovel => shovel.Body == null );
       m_rigidbodies.RemoveAll( rb => rb.Body == null );
+
+      if ( removeDisabled ) {
+        int remShovels = m_shovels.RemoveAll( shovel => !shovel.Body.isActiveAndEnabled );
+        int remRBs = m_rigidbodies.RemoveAll( rb => !rb.Body.isActiveAndEnabled );
+        if(remShovels + remRBs > 0 ) {
+          if ( warn )
+            Debug.LogWarning( $"Removed {remShovels} disabled shovels and {remRBs} disabled rigid bodies from terrain {gameObject.name}." +
+                              " Disabled objects should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
+                              " To fix this warning, please remove any disabled objects from the terrain." );
+          else
+            Debug.Log( $"Removed {remShovels} disabled shovels and {remRBs} disabled rigid bodies from terrain {gameObject.name}." );
+
+        }
+      }
     }
     public override void ConvertToDynamicMassInShape( Shape failureVolume )
     {
@@ -541,7 +555,8 @@ namespace AGXUnity.Model
       OnPropertiesUpdated();
     }
 
-    protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { 
+    protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material )
+    {
       Native?.getTemplateTerrain().setTerrainMaterial( material );
       OnPropertiesUpdated();
     }
