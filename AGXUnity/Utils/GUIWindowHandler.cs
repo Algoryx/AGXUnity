@@ -172,6 +172,8 @@ namespace AGXUnity.Utils
 
     public static bool HasInstance { get { return s_instance != null && Application.isPlaying; } }
 
+    public int NumActiveWindows { get { return m_activeWindows.Count; } }
+
     /// <summary>
     /// Show a new window in scene view given callback (to render GUI), size, position and title.
     /// </summary>
