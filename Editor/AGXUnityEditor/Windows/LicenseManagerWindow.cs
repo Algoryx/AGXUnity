@@ -135,7 +135,7 @@ namespace AGXUnityEditor.Windows
                                                       MiscIcon.Locate,
                                                       UnityEngine.GUI.enabled,
                                                       "Select license file on this computer",
-                                                      1.25f );
+                                                      1.2f );
       if ( selectLicensePressed ) {
         var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
                                                          ".",

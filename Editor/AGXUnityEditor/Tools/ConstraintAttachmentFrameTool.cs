@@ -90,8 +90,7 @@ namespace AGXUnityEditor.Tools
                                                       MiscIcon.SynchEnabled :
                                                       MiscIcon.SynchDisabled,
                                                     true,
-                                                    "Toggle synchronized with reference frame.",
-                                                    1.17f );
+                                                    "Toggle synchronized with reference frame.");
       rect.x    += rect.width + 2.0f;
       rect.width = orgWidth - rect.x;
       rect.y    += buttonHeightOffset;
