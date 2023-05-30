@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -79,7 +79,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Icon scale relative IconButtonSize.
     /// </summary>
-    public static float Scale { get; set; } = 1.0f;
+    public static float Scale { get; internal set; } = 1.0f;
 
     public static Color NormalColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.733333f );
 
@@ -205,6 +205,7 @@ namespace AGXUnityEditor
     /// <returns>Icon rect.</returns>
     public static Rect GetIconRect( Rect buttonRect, float scale )
     {
+      scale *= Scale;
       var diff = buttonRect.width - buttonRect.height;
       if ( diff != 0.0f ) {
         buttonRect.width = buttonRect.height;
@@ -277,7 +278,7 @@ namespace AGXUnityEditor
     }
 
     private static Texture2D[] LoadIconContent<T>( string[] iconFilenames )
-      where T : struct
+      where T : System.Enum
     {
       var enumValues = System.Enum.GetValues( typeof( T ) );
       var enumNames  = System.Enum.GetNames( typeof( T ) );
@@ -285,8 +286,8 @@ namespace AGXUnityEditor
       foreach ( int index in enumValues ) {
         if ( string.IsNullOrEmpty( iconFilenames[ index ] ) ) {
           if ( enumNames[ index ] != "None" )
-            Debug.LogWarning( "Filename for tool icon "
-                              + (ToolIcon)index +
+            Debug.LogWarning( "Filename for icon "
+                              + System.Enum.ToObject(typeof(T),index)+
                               " not given - ignoring icon." );
           else
             icons[ index ] = null;
@@ -296,8 +297,8 @@ namespace AGXUnityEditor
 
         icons[ index ] = GetIcon( iconFilenames[ index ] );
         if ( icons[ index ] == null )
-          Debug.LogWarning( "Unable to load tool icon " +
-                            (ToolIcon)index +
+          Debug.LogWarning( "Unable to load icon " +
+                            System.Enum.ToObject( typeof( T ), index ) +
                             " at: " +
                             Directory + '/' + iconFilenames[ index ] );
       }
