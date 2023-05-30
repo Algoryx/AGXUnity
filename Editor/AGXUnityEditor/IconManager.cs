@@ -79,7 +79,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Icon scale relative IconButtonSize.
     /// </summary>
-    public static float Scale { get; internal set; } = 0.8f;
+    public static float Scale { get; set; } = 1.0f;
 
     public static Color NormalColorDark { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.733333f );
 
@@ -211,17 +211,13 @@ namespace AGXUnityEditor
     /// <returns>Icon rect.</returns>
     public static Rect GetIconRect( Rect buttonRect, float scale )
     {
-      scale *= Scale;
       var diff = buttonRect.width - buttonRect.height;
       if ( diff != 0.0f ) {
         buttonRect.width = buttonRect.height;
         buttonRect.x += 0.5f * diff;
       }
 
-#if UNITY_2019_3_OR_NEWER
-      //buttonRect.y += 1.0f;
-#endif
-
+      buttonRect.x -= 1.0f;
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
       var iconSize   = scale * buttonSize;
       return new Rect( buttonRect.position + 0.5f * ( buttonSize - iconSize ), iconSize );
@@ -233,11 +229,11 @@ namespace AGXUnityEditor
 
       toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "target_point";
       toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "target_edge";
-      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "visual_from_shape";
+      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_visual";
       toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "constraint";
       toolIconFilenames[ (int)ToolIcon.CreateRigidBody ]         = "add";
       toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision";
-      toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_visual";
+      toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "visual_from_shape";
       toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize";
       toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent";
       toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position";
