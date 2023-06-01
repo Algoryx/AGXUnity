@@ -480,6 +480,7 @@ namespace AGXUnityEditor.IO
 
       shape.gameObject.SetActive( nativeGeometry.isEnabled() );
       shape.IsSensor = nativeGeometry.isSensor();
+      shape.EnableMassProperties = nativeGeometry.getEnableMassProperties();
 
       shape.Material = RestoreShapeMaterial( shape.Material,
                                              nativeGeometry.getMaterial(),
