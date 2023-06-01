@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
+using System.ComponentModel;
 
 namespace AGXUnity.Collide
 {
@@ -111,6 +112,27 @@ namespace AGXUnity.Collide
     }
 
     /// <summary>
+    /// Should shape be included in mass properties calculations of the parent Rigid Body?
+    /// </summary>
+    [SerializeField]
+    private bool m_enableMassProperties = true;
+
+    /// <summary>
+    /// Specify whether the shape should be included in the mass properties calculation of the parent Rigid Body.
+    /// </summary>
+    [Description("Toggle whether or not to include this geometry when automatically calculating mass properties.")]
+    public bool EnableMassProperties
+    {
+      get { return m_enableMassProperties; }
+      set
+      {
+        m_enableMassProperties = value;
+        if ( NativeGeometry != null )
+          NativeGeometry.setEnableMassProperties( m_enableMassProperties );
+      }
+    }
+
+    /// <summary>
     /// Shape material instance paired with property Material.
     /// </summary>
     [SerializeField]
@@ -205,7 +227,10 @@ namespace AGXUnity.Collide
     /// <returns>Native shape to be considered temporary (i.e., probably not defined to keep reference to this shape).</returns>
     public virtual agxCollide.Geometry CreateTemporaryNative()
     {
-      return CreateNative();
+      var temp = CreateNative();
+      temp.setEnableMassProperties( m_enableMassProperties );
+      temp.setSensor( m_isSensor );
+      return temp;
     }
 
     /// <summary>

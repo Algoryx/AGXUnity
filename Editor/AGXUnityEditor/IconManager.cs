@@ -81,17 +81,17 @@ namespace AGXUnityEditor
     /// </summary>
     public static float Scale { get; set; } = 1.0f;
 
-    public static Color NormalColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.733333f );
+    public static Color NormalColorDark { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.733333f );
 
-    public static Color ActiveColorDark { get; set; } = new Color( 1.000000f, 0.625469f, 0.119000f, 0.886275f );
+    public static Color ActiveColorDark { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.886275f );
 
-    public static Color DisabledColorDark { get; set; } = new Color( 0.952941f, 0.545098f, 0.000000f, 0.372549f );
+    public static Color DisabledColorDark { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.372549f );
 
-    public static Color NormalColorLight { get; set; } = new Color( 0.920000f, 0.526326f, 0.000000f, 0.847059f );
+    public static Color NormalColorLight { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.847059f );
 
-    public static Color ActiveColorLight { get; set; } = new Color( 1.000000f, 0.773440f, 0.469000f, 1.000000f );
+    public static Color ActiveColorLight { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 1.000000f );
 
-    public static Color DisabledColorLight { get; set; } = new Color( 0.921569f, 0.525490f, 0.000000f, 0.552941f );
+    public static Color DisabledColorLight { get; set; } = new Color( 1.0f, 1.0f, 1.0f, 0.552941f );
 
     public static Color ActiveColor { get { return EditorGUIUtility.isProSkin ? ActiveColorDark : ActiveColorLight; } }
 
@@ -104,17 +104,23 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="name">Name of icon, including path relative to Directory.</param>
     /// <returns>Icon if found, otherwise null.</returns>
-    public static Texture2D GetIcon( string name )
+    public static Texture2D GetIcon( string name, bool lowRes = false )
     {
       if ( name.Length > 3 && name.Substring( name.Length - 4 ).ToLower().EndsWith( ".png" ) )
         name = name.Remove( name.Length - 4 );
+      if ( name.EndsWith( "_64x64" ) )
+        lowRes = false;
+      else if ( name.EndsWith( "_32x32" ) )
+        lowRes = true;
+      name = name.Replace( "_32x32", "" ).Replace( "_64x64", "" );
 
-      var iconIdentifier = Directory + Path.DirectorySeparatorChar + name;
+      var resPart = lowRes ? "32x32" : "64x64";
+      var iconIdentifier = Directory + Path.DirectorySeparatorChar + resPart + Path.DirectorySeparatorChar + name;
       Texture2D icon = null;
       if ( m_iconCache.TryGetValue( iconIdentifier, out icon ) )
         return icon;
 
-      icon = EditorGUIUtility.Load( iconIdentifier + ".png" ) as Texture2D;
+      icon = EditorGUIUtility.Load( iconIdentifier + "_" + resPart + ".png" ) as Texture2D;
       if ( icon != null )
         m_iconCache.Add( iconIdentifier, icon );
 
@@ -211,10 +217,7 @@ namespace AGXUnityEditor
         buttonRect.x += 0.5f * diff;
       }
 
-#if UNITY_2019_3_OR_NEWER
-      //buttonRect.y += 1.0f;
-#endif
-
+      buttonRect.x -= 1.0f;
       var buttonSize = new Vector2( buttonRect.width, buttonRect.height );
       var iconSize   = scale * buttonSize;
       return new Rect( buttonRect.position + 0.5f * ( buttonSize - iconSize ), iconSize );
@@ -224,22 +227,22 @@ namespace AGXUnityEditor
     {
       var toolIconFilenames = CreateNameArray<ToolIcon>();
 
-      toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "find_point_2_icon";
-      toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "find_edge_icon";
-      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_icon";
-      toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "hinge_icon";
-      toolIconFilenames[ (int)ToolIcon.CreateRigidBody ]         = "add_fat_icon";
-      toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision_icon";
-      toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "shape_from_2_icon";
-      toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize_icon";
-      toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent_icon";
-      toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position_icon";
-      toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "visulize_line_2_icon";
-      toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "flip_direction_icon";
-      toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_all_selected_icon";
-      toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_outer_icon";
-      toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_inside_icon";
-      toolIconFilenames[ (int)ToolIcon.FindTrackWheel ]          = "wheel_outer_selected_icon";
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenPoint ] = "target_point";
+      toolIconFilenames[ (int)ToolIcon.FindTransformGivenEdge ]  = "target_edge";
+      toolIconFilenames[ (int)ToolIcon.CreateShapeGivenVisual ]  = "shape_from_visual";
+      toolIconFilenames[ (int)ToolIcon.CreateConstraint ]        = "constraint";
+      toolIconFilenames[ (int)ToolIcon.CreateRigidBody ]         = "add";
+      toolIconFilenames[ (int)ToolIcon.DisableCollisions ]       = "disable_collision";
+      toolIconFilenames[ (int)ToolIcon.CreateVisual ]            = "visual_from_shape";
+      toolIconFilenames[ (int)ToolIcon.ShapeResize ]             = "resize";
+      toolIconFilenames[ (int)ToolIcon.SelectParent ]            = "parent";
+      toolIconFilenames[ (int)ToolIcon.TransformHandle ]         = "position";
+      toolIconFilenames[ (int)ToolIcon.VisualizeLineDirection ]  = "visualize_direction";
+      toolIconFilenames[ (int)ToolIcon.FlipDirection ]           = "flip_direction";
+      toolIconFilenames[ (int)ToolIcon.FindTireRim ]             = "wheel_full";
+      toolIconFilenames[ (int)ToolIcon.FindTire ]                = "wheel_outer";
+      toolIconFilenames[ (int)ToolIcon.FindRim ]                 = "wheel_inner";
+      toolIconFilenames[ (int)ToolIcon.FindTrackWheel ]          = "wheel_full";
       toolIconFilenames[ (int)ToolIcon.None ]                    = string.Empty;
 
       m_toolIcons = LoadIconContent<ToolIcon>( toolIconFilenames );
@@ -249,23 +252,23 @@ namespace AGXUnityEditor
     {
       var miscIconFilenames = CreateNameArray<MiscIcon>();
 
-      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "small_fat_add_left_icon";
-      miscIconFilenames[ (int)MiscIcon.ContextDropdown ]   = "small_add_dots_icon";
-      miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "small_fat_add_left_icon";
-      miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "small_insert_before_2_icon";
-      miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "small_insert_after_2_icon";
-      miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "delete_fat_icon";
-      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "small_sync_icon";
-      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "small_un_sync_icon";
-      miscIconFilenames[ (int)MiscIcon.Update ]            = "small_update_icon";
-      miscIconFilenames[ (int)MiscIcon.ArrowRight ]        = "line_direction_icon";
-      miscIconFilenames[ (int)MiscIcon.Box ]               = "cube_icon";
-      miscIconFilenames[ (int)MiscIcon.Sphere ]            = "sphere_icon";
-      miscIconFilenames[ (int)MiscIcon.Capsule ]           = "capsule_icon";
-      miscIconFilenames[ (int)MiscIcon.Cylinder ]          = "cylinder_icon";
-      miscIconFilenames[ (int)MiscIcon.Mesh ]              = "mesh_icon";
-      miscIconFilenames[ (int)MiscIcon.ResetDefault ]      = "sync_icon";
-      miscIconFilenames[ (int)MiscIcon.Locate ]            = "download_icon";
+      miscIconFilenames[ (int)MiscIcon.CreateAsset ]       = "add";
+      miscIconFilenames[ (int)MiscIcon.ContextDropdown ]   = "three_dots";
+      miscIconFilenames[ (int)MiscIcon.EntryAdd ]          = "add";
+      miscIconFilenames[ (int)MiscIcon.EntryInsertBefore ] = "insert_before";
+      miscIconFilenames[ (int)MiscIcon.EntryInsertAfter ]  = "insert_after";
+      miscIconFilenames[ (int)MiscIcon.EntryRemove ]       = "delete";
+      miscIconFilenames[ (int)MiscIcon.SynchEnabled ]      = "sync";
+      miscIconFilenames[ (int)MiscIcon.SynchDisabled ]     = "unsync";
+      miscIconFilenames[ (int)MiscIcon.Update ]            = "update";
+      miscIconFilenames[ (int)MiscIcon.ArrowRight ]        = "line_direction";
+      miscIconFilenames[ (int)MiscIcon.Box ]               = "box_shape";
+      miscIconFilenames[ (int)MiscIcon.Sphere ]            = "sphere_shape";
+      miscIconFilenames[ (int)MiscIcon.Capsule ]           = "capsule_shape";
+      miscIconFilenames[ (int)MiscIcon.Cylinder ]          = "cylinder_shape";
+      miscIconFilenames[ (int)MiscIcon.Mesh ]              = "mesh";
+      miscIconFilenames[ (int)MiscIcon.ResetDefault ]      = "sync";
+      miscIconFilenames[ (int)MiscIcon.Locate ]            = "folder";
 
       m_miscIcons = LoadIconContent<MiscIcon>( miscIconFilenames );
     }
@@ -277,7 +280,7 @@ namespace AGXUnityEditor
     }
 
     private static Texture2D[] LoadIconContent<T>( string[] iconFilenames )
-      where T : struct
+      where T : System.Enum
     {
       var enumValues = System.Enum.GetValues( typeof( T ) );
       var enumNames  = System.Enum.GetNames( typeof( T ) );
@@ -285,8 +288,8 @@ namespace AGXUnityEditor
       foreach ( int index in enumValues ) {
         if ( string.IsNullOrEmpty( iconFilenames[ index ] ) ) {
           if ( enumNames[ index ] != "None" )
-            Debug.LogWarning( "Filename for tool icon "
-                              + (ToolIcon)index +
+            Debug.LogWarning( "Filename for icon "
+                              + System.Enum.ToObject(typeof(T),index)+
                               " not given - ignoring icon." );
           else
             icons[ index ] = null;
@@ -296,8 +299,8 @@ namespace AGXUnityEditor
 
         icons[ index ] = GetIcon( iconFilenames[ index ] );
         if ( icons[ index ] == null )
-          Debug.LogWarning( "Unable to load tool icon " +
-                            (ToolIcon)index +
+          Debug.LogWarning( "Unable to load icon " +
+                            System.Enum.ToObject( typeof( T ), index ) +
                             " at: " +
                             Directory + '/' + iconFilenames[ index ] );
       }

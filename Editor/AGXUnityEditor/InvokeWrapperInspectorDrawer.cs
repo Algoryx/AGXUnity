@@ -260,11 +260,12 @@ namespace AGXUnityEditor
         throw new NullReferenceException( "Unknown DefaultAndUserValue type: " + typeof( ValueT ).Name );
 
       var updateButtonWidth = 20.0f;
+      var updateButtonWidthAndMargin = updateButtonWidth + 4.0f;
       var rect = EditorGUILayout.GetControlRect();
 
       // Now we know the total width if the Inspector. Remove
       // width of button and right most spacing.
-      rect.xMax -= updateButtonWidth;
+      rect.xMax -= updateButtonWidthAndMargin;
 
       // We don't want the tooltip of the toggle to show when
       // hovering the update button or float field(s) so use
@@ -330,14 +331,13 @@ namespace AGXUnityEditor
 
       rect.x = rect.xMax;
       rect.width = updateButtonWidth;
-      rect.height = EditorGUIUtility.singleLineHeight -
-                                    EditorGUIUtility.standardVerticalSpacing;
+      rect.height = EditorGUIUtility.singleLineHeight;
       result.UpdateDefaultClicked = InspectorGUI.Button( rect,
                                                          MiscIcon.Update,
                                                          instance.UseDefault,
                                                          InspectorEditor.Skin.ButtonRight,
                                                          "Force update of default value.",
-                                                         1.2f );
+                                                         0.9f );
 
       return result;
     }
