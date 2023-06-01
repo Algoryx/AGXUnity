@@ -208,10 +208,12 @@ namespace AGXUnityEditor.Tools
       state.InsertBefore = InspectorGUI.Button( MiscIcon.EntryInsertBefore,
                                                 true,
                                                 "Insert a new node before this node.",
+                                                0.85f,
                                                 GUILayout.Width( 18 ) );
       state.InsertAfter = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
                                                true,
                                                "Insert a new node after this node.",
+                                               0.85f,
                                                GUILayout.Width( 18 ) );
       state.Erase = InspectorGUI.Button( MiscIcon.EntryRemove,
                                          true,
