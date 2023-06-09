@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using agxData;
+using UnityEngine;
 
 namespace AGXUnity.Model
 {
@@ -203,6 +204,12 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="failureVolume">The shape in which to convert the terrain into dynamic mass</param>
     abstract public void ConvertToDynamicMassInShape( Collide.Shape failureVolume );
+
+    abstract public void SetHeights( int xstart, int ystart, float[,] heights );
+    abstract public void SetHeight( int x, int y, float height );
+    abstract public float[,] GetHeights( int xstart, int ystart, int width, int height );
+    abstract public float GetHeight( int x, int y );
+    
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

@@ -319,6 +319,62 @@ namespace AGXUnity.Model
         Native.convertToDynamicMassInShape( failureVolume.GetInitialized<Shape>().NativeShape );
     }
 
+    public override void SetHeights( int xstart, int ystart, float[,] heights )
+    {
+      int height = heights.GetLength(0);
+      int width = heights.GetLength(1);
+      if ( xstart + width >= TerrainDataResolution || xstart < 0 || ystart + height >= TerrainDataResolution || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Provided height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+      agx.RealVector aheights = new agx.RealVector(TerrainDataResolution * TerrainDataResolution);
+
+      for ( int y = 0; y < TerrainDataResolution; y++ ) {
+        var localY = (TerrainDataResolution - 1 - y) - ystart;
+        for ( int x = 0; x < TerrainDataResolution; x++ ) {
+          var localX = (TerrainDataResolution - 1 - x) - xstart;
+          double value;
+          if ( localX < 0 || localX >= width || localY < 0 || localY >= height )
+            value = Native.getHeight( new agx.Vec2i( x, y ) );
+          else
+            value = heights[ localY, localX ] + MaximumDepth;
+          aheights.Add( value );
+        }
+      }
+      // False return of setHeights probably means resolution is wrong
+      Debug.Assert( Native.setHeights( aheights ) );
+
+      UpdateHeights( Native.getModifiedVertices() );
+    }
+    public override void SetHeight( int x, int y, float height )
+    {
+      if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+      agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
+      Native.setHeight( idx, height + MaximumDepth );
+      UpdateHeights( Native.getModifiedVertices() );
+    }
+    public override float[,] GetHeights( int xstart, int ystart, int width, int height )
+    {
+      if(width <= 0 || height <= 0)
+        throw new ArgumentOutOfRangeException( "width, height", $"Width and height ({width} / {height}) must be greater than 0" );
+      if ( xstart + width >= TerrainDataResolution || xstart < 0 || ystart + height >= TerrainDataResolution || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Requested height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+      float [,] heights = new float[height,width];
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x - xstart, TerrainDataResolution - 1 - y - ystart);
+          heights[ y, x ] = (float)Native.getHeight( idx ) - MaximumDepth;
+        }
+      }
+      return heights;
+    }
+    public override float GetHeight( int x, int y )
+    {
+      if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+      agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
+      return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material ) { Native.setTerrainMaterial( material ); }

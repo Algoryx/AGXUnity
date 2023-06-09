@@ -548,6 +548,36 @@ namespace AGXUnity.Model
         shape.ReturnToPool();
       }
     }
+
+    public override void SetHeights( int xstart, int ystart, float[,] heights )
+    {
+      throw new NotImplementedException();
+    }
+    public override void SetHeight( int x, int y, float height )
+    {
+      agx.Vec2i idx = new agx.Vec2i( x, y );
+      throw new NotImplementedException();
+      //Native.set( idx, height );
+    }
+    public override float[,] GetHeights( int xstart, int ystart, int width, int height )
+    {
+      float [,] heights = new float[height,width];
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          agx.Vec2i idx = new agx.Vec2i( x, y );
+          throw new NotImplementedException();
+          //heights[ y, x ] = (float)Native.getHeight( idx ) - MaximumDepth;
+        }
+      }
+      return heights;
+    }
+    public override float GetHeight( int x, int y )
+    {
+      agx.Vec2i idx = new agx.Vec2i( x, y );
+      throw new NotImplementedException();
+      //return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
     {
