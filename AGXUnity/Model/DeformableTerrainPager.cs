@@ -551,6 +551,8 @@ namespace AGXUnity.Model
 
     public override void SetHeights( int xstart, int ystart, float[,] heights )
     {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling SetHeights on an uninitialized DeformableTerrainPager is not supported" );
       SetHeightsInternal( xstart, ystart, heights, false );
     }
 
@@ -561,6 +563,19 @@ namespace AGXUnity.Model
 
       agx.Vec2i idx = new agx.Vec2i( xstart, ystart );
 
+      // General process for setting terrain pager heights uses a recursive approach.
+      // if we can find a pager tile which overlaps the lowest x/y index we can divide the whole patch into three subpatches:
+      // 1. The patch which is the intersection between the whole patch and the found tile.
+      // 2. The patch from the highest x index in the found tile to the highest x index in the whole patch
+      // 3. The remaining patch.
+      // ____________
+      // |   |   3  |
+      // |   |______|
+      // | 2 |   1  |
+      // |___|______|
+
+      // For (1) we can set the heights directly from the tile which contains it and for (2) & (3) we can recursively apply the same
+      // procedure to set the heights.
       bool tileFound = false;
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
@@ -570,11 +585,16 @@ namespace AGXUnity.Model
 
         var tileStart = new agx.Vec2i(idx.x - gi.x, idx.y - gi.y);
         var size = new agx.Vec2i32(Mathf.Min(width, TileSize - (int)tileStart.x), Mathf.Min(height,TileSize - (int)tileStart.y));
+
+        // TODO: Use 2D array segments instead of creating new arrays for each tile
+        // Set heights for (1) directly using the tile
         float[,] thisTile = new float[size.y,size.x];
         for ( int y = 0; y < size.y; y++ )
           for ( int x = 0; x < size.x; x++ )
             thisTile[ y, x ] = heights[ y, x ];
         TerrainSetHeights( tile, (int)tileStart.x, (int)tileStart.y, thisTile );
+
+        // Set heights for (2) recursively
         if ( size.x != width ) {
           float[,] sideTile = new float[height,width - size.x];
           for ( int y = 0; y < height; y++ )
@@ -582,6 +602,8 @@ namespace AGXUnity.Model
               sideTile[ y, x ] = heights[ y, x + size.x ];
           SetHeightsInternal( xstart + size.x, ystart, sideTile, true );
         }
+
+        // Set heights for (3) recursively
         if ( size.y != height ) {
           float[,] topTile = new float[height - size.y,size.x];
           for ( int y = 0; y < height - size.y; y++ )
@@ -602,6 +624,9 @@ namespace AGXUnity.Model
     }
     public override void SetHeight( int x, int y, float height )
     {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling SetHeight on an uninitialized DeformableTerrainPager is not supported" );
+
       agx.Vec2i idx = new agx.Vec2i( x, y );
 
       var tiles = Native.getActiveTileAttachments();
@@ -618,11 +643,28 @@ namespace AGXUnity.Model
     }
     public override float[,] GetHeights( int xstart, int ystart, int width, int height )
     {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling GetHeights on an uninitialized DeformableTerrainPager is not supported" );
+
       if ( width <= 0 || height <= 0 )
         throw new ArgumentOutOfRangeException( "width, height", $"Width and height ({width} / {height}) must be greater than 0" );
       float [,] heights = new float[height,width];
       agx.Vec2i idx = new agx.Vec2i( xstart, ystart );
 
+      // General process for setting terrain pager heights uses a recursive approach.
+      // if we can find a pager tile which overlaps the lowest x/y index we can divide the whole patch into three subpatches:
+      // 1. The patch which is the intersection between the whole patch and the found tile.
+      // 2. The patch from the highest x index in the found tile to the highest x index in the whole patch
+      // 3. The remaining patch.
+      // ____________
+      // |   |   3  |
+      // |   |______|
+      // | 2 |   1  |
+      // |___|______|
+
+      // For (1) we can get the heights directly from the tile which contains it and for (2) & (3) we can recursively apply the same
+      // procedure to get the heights.
+      // When the height arrays for (1), (2) & (3) are all filled we can combine them to yield the total height array.
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
         var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
@@ -631,14 +673,20 @@ namespace AGXUnity.Model
 
         var tileStart = new agx.Vec2i(idx.x - gi.x, idx.y - gi.y);
         var size = new agx.Vec2i32(Mathf.Min(width, TileSize - (int)tileStart.x), Mathf.Min(height,TileSize - (int)tileStart.y));
+
+        // TODO: Use 2D array segments instead of creating new arrays for each tile
+        // Get heights for (1) directly from tile
         float[,] thisTile = TerrainGetHeights(tile, (int)tileStart.x, (int)tileStart.y, size.x, size.y);
         float[,] sideTile = null;
         float[,] topTile = null;
+        // Get heights for (2) recursively
         if ( size.x != width )
           sideTile = GetHeights( xstart + size.x, ystart, width - size.x, height );
+        // Get heights for (3) recursively
         if ( size.y != height )
           topTile = GetHeights( xstart, ystart + size.y, size.x, height - size.y );
 
+        // Combine height-arrays for (1),(2) & (3)
         for ( int y = 0; y < thisTile.GetLength( 0 ); y++ )
           for ( int x = 0; x < thisTile.GetLength( 1 ); x++ )
             heights[ y, x ] = thisTile[ y, x ];
@@ -660,6 +708,9 @@ namespace AGXUnity.Model
     }
     public override float GetHeight( int x, int y )
     {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling GetHeight on an uninitialized DeformableTerrainPager is not supported" );
+
       agx.Vec2i idx = new agx.Vec2i( x, y );
 
       var tiles = Native.getActiveTileAttachments();
