@@ -6,6 +6,7 @@ namespace AGXUnity
   /// <summary>
   /// Shape material script asset.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#shape-material" )]
   public class ShapeMaterial : ScriptAsset
   {
     /// <summary>

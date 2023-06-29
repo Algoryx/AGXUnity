@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "" )]
+  [HideInInspector]
   public class DeformableTerrainConnector : MonoBehaviour
   {
     public float[,] InitialHeights { get; private set; } = null;

@@ -81,6 +81,11 @@ namespace AGXUnityEditor.Windows
                                            "Activating..." :
                                            "Refreshing..." ) );
 
+      if ( !AGXUnity.LicenseManager.LicenseInfo.IsValid ) {
+        EditorGUILayout.HelpBox( "If you have activated your license previously on this machine, consider importing the .lfx file instead of reactivating the license.", MessageType.Info, true );
+        GUILayout.Space( 6 );
+      }
+
       using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !AGXUnity.LicenseManager.IsBusy ) ) {
         for ( int i = 0; i < m_licenseData.Count; ++i ) {
           var data = m_licenseData[ i ];
@@ -129,8 +134,7 @@ namespace AGXUnityEditor.Windows
       var selectLicensePressed = InspectorGUI.Button( selectLicenseRect,
                                                       MiscIcon.Locate,
                                                       UnityEngine.GUI.enabled,
-                                                      "Select license file on this computer",
-                                                      1.25f );
+                                                      "Select license file on this computer");
       if ( selectLicensePressed ) {
         var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
                                                          ".",

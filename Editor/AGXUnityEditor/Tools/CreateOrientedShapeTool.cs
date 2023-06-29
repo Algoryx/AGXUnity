@@ -64,7 +64,7 @@ namespace AGXUnityEditor.Tools
 
         VisualPrimitiveName = "createShapeVisualPrimitive" + go.name;
 
-        agx.Vec3 scale = go.transform.localScale.ToHandedVec3();
+        agx.Vec3 scale = go.transform.localScale.ToVec3();
         var vertices = Filter.sharedMesh.vertices;
         agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
         foreach ( var v in vertices )

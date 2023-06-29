@@ -76,6 +76,7 @@ namespace AGXUnity
   /// Contact material manager which enables the user to manage contact materials.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#contact-material-manager" )]
   public class ContactMaterialManager : UniqueGameObject<ContactMaterialManager>
   {
     [SerializeField]

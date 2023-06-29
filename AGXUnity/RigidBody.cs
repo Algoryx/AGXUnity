@@ -14,6 +14,7 @@ namespace AGXUnity
   [AddComponentMenu( "AGXUnity/Rigid Body" )]
   [DisallowMultipleComponent]
   [RequireComponent( typeof( MassProperties ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body" )]
   public class RigidBody : ScriptComponent
   {
     /// <summary>
@@ -303,6 +304,17 @@ namespace AGXUnity
     public void SyncNativeTransform()
     {
       SyncNativeTransform( m_rb );
+    }
+
+    /// <summary>
+    /// During runtime, the shapes that belongs to this rigid body are cached when
+    /// this instance is initialized. If additional shapes are added after this
+    /// rigid body has been initialized, call this method to update the cache and
+    /// for the newly added shapes to be available using the property Shapes.
+    /// </summary>
+    public void SyncShapesCache()
+    {
+      m_shapesCache = GetShapes();
     }
 
     /// <summary>

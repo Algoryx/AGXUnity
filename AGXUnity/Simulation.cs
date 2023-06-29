@@ -13,6 +13,7 @@ namespace AGXUnity
   /// implicitly created when first used.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulation-manager" )]
   public class Simulation : UniqueGameObject<Simulation>
   {
     /// <summary>
@@ -640,7 +641,16 @@ namespace AGXUnity
                                          GUIStyle style,
                                          bool isHeader = false )
     {
-      var labelStr = Utils.GUI.AddColorTag( name, color ) + time.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms";
+      StatisticsLabel( name, time.current, color, style, isHeader );
+    }
+
+    private static void StatisticsLabel( string name,
+                                         double time,
+                                         Color color,
+                                         GUIStyle style,
+                                         bool isHeader = false )
+    {
+      var labelStr = Utils.GUI.AddColorTag( name, color ) + time.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms";
       GUILayout.Label( Utils.GUI.MakeLabel( labelStr, isHeader ? 14 : 12, isHeader ), style );
     }
 
@@ -734,7 +744,7 @@ namespace AGXUnity
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
-                          StatisticsLabel( "Total time:            ", simTime, simColor, labelStyle, true );
+                          StatisticsLabel( "Total time:            ", simTime.current + lastTime.current, simColor, labelStyle, true );
                           StatisticsLabel( "  - Pre-collide step:      ", preCollideTime, eventColor, labelStyle );
                           StatisticsLabel( "  - Collision detection:   ", spaceTime, spaceColor, labelStyle );
                           StatisticsLabel( "  - Contact event:         ", contactEventsTime, eventColor, labelStyle );

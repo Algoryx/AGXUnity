@@ -7,6 +7,7 @@ namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Shovel" )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#shovel" )]
   public class DeformableTerrainShovel : ScriptComponent
   {
     /// <summary>

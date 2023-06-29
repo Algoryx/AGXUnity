@@ -5,7 +5,9 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Cable" )]
   [RequireComponent( typeof( CableRoute ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable" )]
   public class Cable : ScriptComponent
   {
     /// <summary>
@@ -378,6 +380,14 @@ namespace AGXUnity
 
         agxCable.Cable cable = null;
         if ( RouteAlgorithm == RouteType.Segmenting ) {
+          var minResolutionPerUnitLength = Route.NumNodes / Route.TotalLength;
+          if ( ResolutionPerUnitLength < minResolutionPerUnitLength ) {
+            Debug.LogWarning( $"{GetType().FullName} WARNING: The resolution (per length) {ResolutionPerUnitLength} is too low and won't include " +
+                              $"all {Route.NumNodes} route nodes over length {Route.TotalLength}. Resolution per unit length is changed to minimum: {minResolutionPerUnitLength}",
+                              this );
+            ResolutionPerUnitLength = minResolutionPerUnitLength;
+          }
+
           var result = SynchronizeRoutePointCurve();
           if ( !result.Successful )
             throw new Exception( $"{GetType().FullName} ERROR: Invalid cable route. Unable to initialize cable with " +

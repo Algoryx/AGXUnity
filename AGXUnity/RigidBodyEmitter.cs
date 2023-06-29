@@ -1,12 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-
-using UnityEngine;
 using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace AGXUnity
 {
@@ -15,8 +12,25 @@ namespace AGXUnity
   /// the visual representation in the prefab is used for rendering, updating
   /// the transforms given the simulation of the emitted bodies.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Rigid Body Emitter" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body-emitter" )]
   public class RigidBodyEmitter : ScriptComponent
   {
+    /// <summary>
+    /// The method to use when rendering the emitted rigidbody
+    /// </summary>
+    public enum RenderMode
+    {
+      /// <summary>
+      /// Create proxy GameObjects to render each of the emitted bodies.
+      /// </summary>
+      GameObjects,
+      /// <summary>
+      /// Use the graphics API directly to render the emitted bodies instanced.
+      /// </summary>
+      InstancedMesh
+    }
+
     /// <summary>
     /// Quantity in given context.
     /// </summary>
@@ -62,10 +76,13 @@ namespace AGXUnity
       /// its hierarchy will be used.
       /// </summary>
       /// <returns>Render resource game object if found - otherwise null.</returns>
-      public GameObject FindRenderResource()
+      public GameObject FindRenderResource( RenderMode renderMode )
       {
         if ( RigidBody == null )
           return null;
+
+        if ( renderMode == RenderMode.InstancedMesh )
+          return RigidBody.gameObject;
 
         // Prefer ShapeVisual, additional objects can be placed as
         // children to the ShapeVisual game object.
@@ -267,6 +284,24 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private RenderMode m_renderMode = RenderMode.GameObjects;
+
+    /// <summary>
+    /// The method to use when rendering the emitted rigidbody
+    /// </summary>
+    public RenderMode TemplateRenderMode
+    {
+      get => m_renderMode;
+      set
+      {
+        if ( m_event != null )
+          Debug.LogWarning( "Cannot change render mode when the simualtion is running. Ignoring change..." );
+        else
+          m_renderMode = value;
+      }
+    }
+
     /// <summary>
     /// Add template with given probability weight. <paramref name="template"/> is
     /// assumed to be a prefab and it's probably undefined to have <paramref name="template"/>
@@ -277,6 +312,11 @@ namespace AGXUnity
     /// <returns>True if added, false if null or already added.</returns>
     public bool AddTemplate( RigidBody template, float probabilityWeight )
     {
+      if ( Native != null ) {
+        Debug.LogError( "Cannot add templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || ContainsTemplate( template ) )
         return false;
 
@@ -292,6 +332,11 @@ namespace AGXUnity
     /// <returns>True if removed, false if null or not present.</returns>
     public bool RemoveTemplate( RigidBody template )
     {
+      if ( Native != null ) {
+        Debug.LogError( "Cannot remove templates while the simulation is running" );
+        return false;
+      }
+
       if ( template == null || !ContainsTemplate( template ) )
         return false;
 
@@ -387,7 +432,10 @@ namespace AGXUnity
 
       Native = new agx.RigidBodyEmitter();
       Native.setEnable( isActiveAndEnabled );
-      m_event = new EmitEvent( this );
+      if ( TemplateRenderMode == RenderMode.GameObjects )
+        m_event = new GOEmitRenderer( this );
+      else if ( TemplateRenderMode == RenderMode.InstancedMesh )
+        m_event = new InstancedEmitRenderer( this );
 
       NativeDistributionTable = new agx.Emitter.DistributionTable();
       Native.setDistributionTable( NativeDistributionTable );
@@ -408,7 +456,7 @@ namespace AGXUnity
         m_distributionModels.Add( distributionModel );
 
         m_event.MapResource( entry.RigidBody.name,
-                             entry.FindRenderResource() );
+                             entry.FindRenderResource( TemplateRenderMode ) );
 
         // Handling collision group in the template hierarchy.
         // These components aren't instantiated during emit.
@@ -432,12 +480,15 @@ namespace AGXUnity
 
     protected override void OnEnable()
     {
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
       if ( Native != null )
         Native.setEnable( true );
     }
 
     protected override void OnDisable()
     {
+      Camera.onPreCull -= Render;
       if ( Native != null )
         Native.setEnable( false );
     }
@@ -479,26 +530,78 @@ namespace AGXUnity
       m_event?.SynchronizeVisuals();
     }
 
-    private class EmitEvent : agx.RigidBodyEmitterEmitCache
+    private void Render( Camera cam )
     {
-      public EmitEvent( RigidBodyEmitter emitter )
+      m_event?.Render( cam );
+    }
+
+    private abstract class EmitRenderer : agx.RigidBodyEmitterEmitCache
+    {
+      public EmitRenderer( RigidBodyEmitter emitter )
         : base( emitter.Native )
       {
         m_emitterTag = $"{emitter.Native.getName()}::";
+      }
+
+      protected string PatchEmittedName( agx.RigidBody rb )
+      {
+        if ( m_patchedNames.ContainsKey( rb ) )
+          return m_patchedNames[ rb ];
+        var name = rb.getName();
+        var match = s_emittedNamePatchRegex.Match( name );
+        if ( match.Success ) {
+          // Index 0 is the original name. Emitted body name is constructed as:
+          //     (name of emitter)::(name of template)::(number of emitted bodies)
+          // We're matching all string ending with "::N..." where N... is any number,
+          // and our desired template name is found by removing "(name of emitter)::"
+          // from the start. Groups[ 2 ].Value == "::N...".
+          var emitterAndTemplateName = match.Groups[ 1 ].Value;
+          if ( emitterAndTemplateName.Length > m_emitterTag.Length ) {
+            name = emitterAndTemplateName.Substring( m_emitterTag.Length );
+            rb.setName( name );
+          }
+        }
+
+        m_patchedNames[ rb ] = name;
+        return name;
+      }
+
+      protected override void Dispose( bool disposing )
+      {
+        m_patchedNames.Clear();
+        base.Dispose( disposing );
+      }
+
+      public abstract void MapResource( string name, GameObject resource );
+      public abstract bool TryDestroy( agx.RigidBody instance );
+      public abstract void CreateEmittedVisuals();
+      public abstract void SynchronizeVisuals();
+      public abstract void Render( Camera cam );
+
+      protected static Regex s_emittedNamePatchRegex = new Regex( @"(.*?)(::\d+)$", RegexOptions.Compiled );
+      protected string m_emitterTag;
+      protected Dictionary<agx.RigidBody, string> m_patchedNames = new Dictionary<agx.RigidBody, string>();
+    }
+
+    private class GOEmitRenderer : EmitRenderer
+    {
+      public GOEmitRenderer( RigidBodyEmitter emitter )
+        : base( emitter )
+      {
         m_visualRoot = RuntimeObjects.GetOrCreateRoot( emitter );
         var keepAliveGo = new GameObject( $"{m_visualRoot.name}_keepAlive" );
         keepAliveGo.AddComponent<OnSelectionProxy>().Component = emitter;
         m_visualRoot.AddChild( keepAliveGo );
       }
 
-      public void MapResource( string name, GameObject resource )
+      public override void MapResource( string name, GameObject resource )
       {
         if ( resource == null )
           return;
         m_nameResourceTable.Add( name, resource );
       }
 
-      public bool TryDestroy( agx.RigidBody instance )
+      public override bool TryDestroy( agx.RigidBody instance )
       {
         if ( !m_instanceDataTable.TryGetValue( instance, out var data ) )
           return false;
@@ -512,7 +615,7 @@ namespace AGXUnity
         return true;
       }
 
-      public void CreateEmittedVisuals()
+      public override void CreateEmittedVisuals()
       {
         var emittedBodies = base.getEmittedBodies();
         foreach ( var instance in emittedBodies ) {
@@ -540,7 +643,7 @@ namespace AGXUnity
         base.clear();
       }
 
-      public void SynchronizeVisuals()
+      public override void SynchronizeVisuals()
       {
         List<agx.RigidBody> keysToRemove = null;
         foreach ( var data in m_instanceDataTable.Values ) {
@@ -567,9 +670,13 @@ namespace AGXUnity
         }
       }
 
+      public override void Render( Camera cam )
+      {
+        // Rendering is handled automatically by unity
+      }
+
       protected override void Dispose( bool disposing )
       {
-        m_newInstances.Clear();
         m_instanceDataTable.Clear();
         m_nameResourceTable.Clear();
         if ( m_visualRoot != null )
@@ -584,33 +691,155 @@ namespace AGXUnity
         public GameObject Visual;
       }
 
-      private string PatchEmittedName( agx.RigidBody rb )
+      private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
+      private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();
+      private GameObject m_visualRoot = null;
+    }
+
+    private class InstancedEmitRenderer : EmitRenderer
+    {
+      public InstancedEmitRenderer( RigidBodyEmitter emitter )
+        : base( emitter )
+      { }
+
+      private Mesh PrepareTemplateMesh( Mesh input, Matrix4x4 visToRB )
       {
-        var name = rb.getName();
-        var match = s_emittedNamePatchRegex.Match( name );
-        if ( match.Success ) {
-          // Index 0 is the original name. Emitted body name is constructed as:
-          //     (name of emitter)::(name of template)::(number of emitted bodies)
-          // We're matching all string ending with "::N..." where N... is any number,
-          // and our desired template name is found by removing "(name of emitter)::"
-          // from the start. Groups[ 2 ].Value == "::N...".
-          var emitterAndTemplateName = match.Groups[ 1 ].Value;
-          if ( emitterAndTemplateName.Length > m_emitterTag.Length ) {
-            name = emitterAndTemplateName.Substring( m_emitterTag.Length );
-            rb.setName( name );
+        var copy = new Mesh();
+        foreach ( var property in typeof( Mesh ).GetProperties() ) {
+          if ( property.GetSetMethod() != null && property.GetGetMethod() != null ) {
+            property.SetValue( copy, property.GetValue( input, null ), null );
           }
         }
 
-        return name;
+        Matrix4x4 visToRBNorm = visToRB.inverse.transpose;
+        copy.vertices = copy.vertices.Select( v => visToRB.MultiplyPoint( v ) ).ToArray();
+        copy.normals = copy.normals.Select( n => visToRBNorm.MultiplyPoint( n ) ).ToArray();
+        return copy;
       }
 
-      private static Regex s_emittedNamePatchRegex = new Regex( @"(.*?)(::\d+)$", RegexOptions.Compiled );
-      private string m_emitterTag;
+      public override void MapResource( string name, GameObject resource )
+      {
+        if ( resource == null )
+          return;
 
-      private Dictionary<string, GameObject> m_nameResourceTable = new Dictionary<string, GameObject>();
-      private Dictionary<agx.RigidBody, EmitData> m_instanceDataTable = new Dictionary<agx.RigidBody, EmitData>();
-      private List<agx.RigidBody> m_newInstances = new List<agx.RigidBody>();
-      private GameObject m_visualRoot = null;
+        var rbMatInverse = resource.transform.localToWorldMatrix.inverse;
+
+        List<VisualData> vd = new List<VisualData>();
+
+        var visuals = resource.GetComponentsInChildren<MeshRenderer>();
+        foreach ( var vis in visuals ) {
+          var material = vis.sharedMaterial;
+
+          if ( !material.enableInstancing )
+            Debug.LogError( "AGXUnity.RigidBodyEmitter: " +
+                            $"The render material for template {name} must have instancing enabled for this render mode to work.",
+                            material );
+
+          vd.Add( new VisualData
+          {
+            material = material,
+            mesh = PrepareTemplateMesh( vis.GetComponent<MeshFilter>().sharedMesh, rbMatInverse * vis.localToWorldMatrix ),
+          } );
+        }
+
+        m_instanceData.Add( name, new EmitData
+        {
+          visuals = vd,
+          RigidBodies = new List<agx.RigidBody>(),
+          mats = new List<Matrix4x4[]>()
+        } );
+      }
+
+      public override bool TryDestroy( agx.RigidBody instance )
+      {
+        if ( !m_patchedNames.TryGetValue( instance, out var data ) )
+          return false;
+
+        if ( Simulation.HasInstance && Simulation.Instance.Native != null )
+          Simulation.Instance.Native.remove( instance );
+
+        m_instanceData[ data ].RigidBodies.Remove( instance );
+
+        return true;
+      }
+
+      public override void CreateEmittedVisuals()
+      {
+        var emittedBodies = base.getEmittedBodies();
+        foreach ( var instance in emittedBodies ) {
+          var resourceName = PatchEmittedName( instance.get() );
+          if ( m_instanceData.TryGetValue( resourceName, out var resource ) ) {
+            resource.RigidBodies.Add( instance.get() );
+          }
+          else {
+            Debug.LogWarning( $"AGXUnity.RigidBodyEmitter: No visual resource matched emitted named \"{resourceName}\"." );
+
+            Simulation.Instance.Native.remove( instance.get() );
+          }
+        }
+        base.clear();
+      }
+
+      public override void SynchronizeVisuals()
+      {
+        foreach ( var data in m_instanceData.Values ) {
+          while ( data.RigidBodies.Count / 1023 >= data.mats.Count )
+            data.mats.Add( new Matrix4x4[ 1023 ] );
+
+          int i = 0;
+          foreach ( var rb in data.RigidBodies ) {
+            var batch = (i / 1023);
+            data.mats[ batch ][ i % 1023 ] = Matrix4x4.TRS(
+              rb.getPosition().ToHandedVector3(),
+              rb.getRotation().ToHandedQuaternion(),
+              Vector3.one
+            );
+
+            i++;
+          }
+        }
+      }
+
+      public override void Render( Camera cam )
+      {
+        foreach ( var data in m_instanceData.Values ) {
+          for ( int i = 0; i < data.mats.Count; i++ ) {
+            foreach ( var vis in data.visuals )
+              Graphics.DrawMeshInstanced(
+                vis.mesh,
+                0,
+                vis.material,
+                data.mats[ i ],
+                i == data.mats.Count ? data.RigidBodies.Count % 1024 : 1023,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.On,
+                true,
+                0,
+                cam );
+          }
+        }
+      }
+
+      protected override void Dispose( bool disposing )
+      {
+        m_instanceData.Clear();
+        base.Dispose( disposing );
+      }
+
+      private struct VisualData
+      {
+        public Mesh mesh;
+        public Material material;
+      }
+
+      private struct EmitData
+      {
+        public List<VisualData> visuals;
+        public List<agx.RigidBody> RigidBodies;
+        public List<Matrix4x4[]> mats;
+      }
+
+      private Dictionary<string, EmitData> m_instanceData = new Dictionary<string, EmitData>();
     }
 
     [SerializeField]
@@ -624,7 +853,7 @@ namespace AGXUnity
     private Dictionary<RigidBody, agx.RigidBody> m_preInitializedTemplates = new Dictionary<RigidBody, agx.RigidBody>();
 
     [NonSerialized]
-    private EmitEvent m_event = null;
+    private EmitRenderer m_event = null;
 
     [NonSerialized]
     private List<agx.RigidBodyEmitter.DistributionModel> m_distributionModels = null;

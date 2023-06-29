@@ -10,6 +10,7 @@ namespace AGXUnity
   /// Component holding a list of name tags for collision groups.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Collisions/Collision Groups" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#collision-groups" )]
   public class CollisionGroups : ScriptComponent
   {
     /// <summary>

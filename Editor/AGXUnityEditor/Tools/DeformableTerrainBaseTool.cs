@@ -1,6 +1,7 @@
 ﻿using AGXUnity.Model;
 using UnityEditor;
 using UnityEngine;
+using System.Linq;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -17,7 +18,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      DeformableTerrainBase.RemoveInvalidShovels();
+      DeformableTerrainBase.RemoveInvalidShovels( false );
     }
 
     public override void OnPostTargetMembersGUI()
@@ -34,6 +35,12 @@ namespace AGXUnityEditor.Tools
                                 "Shovels",
                                 shovel => DeformableTerrainBase.Add( shovel ),
                                 shovel => DeformableTerrainBase.Remove( shovel ) );
+
+      if ( DeformableTerrainBase.Shovels.Any( shovel => !shovel.isActiveAndEnabled ) ) {
+        EditorGUILayout.HelpBox( "Terrain contains disabled shovels. This is not supported and they will be removed on play. Disabled shovels must be added manually to the terrain when enabled", MessageType.Warning );
+        if ( GUILayout.Button( "Remove disabled shovels" ) )
+          DeformableTerrainBase.RemoveInvalidShovels( true, false );
+      }
     }
 
     protected void RenderMaterialHandles()

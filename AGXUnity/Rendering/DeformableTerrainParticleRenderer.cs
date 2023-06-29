@@ -10,6 +10,7 @@ namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
   [RequireComponent( typeof( DeformableTerrainBase ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rendering-the-particles" )]
   public class DeformableTerrainParticleRenderer : ScriptComponent
   {
     public enum GranuleRenderMode
@@ -105,6 +106,8 @@ namespace AGXUnity.Rendering
 
     protected override void OnEnable()
     {
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
       Simulation.Instance.StepCallbacks.PostStepForward += PostUpdate;
 
       if ( State == States.INITIALIZED )
@@ -113,6 +116,7 @@ namespace AGXUnity.Rendering
 
     protected override void OnDisable()
     {
+      Camera.onPreCull -= Render;
       // We may not "change GameObject hierarchy" when the actual
       // game object is being destroyed, e.g., when hitting stop.
       if ( gameObject.activeSelf )
@@ -207,7 +211,10 @@ namespace AGXUnity.Rendering
         Synchronize();
         m_needsSynchronize = false;
       }
+    }
 
+    private void Render(Camera cam)
+    {
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_numGranulars > 0 &&
                                     m_meshInstance != null &&
@@ -223,7 +230,9 @@ namespace AGXUnity.Rendering
                                     m_numGranulars,
                                     m_meshInstanceProperties,
                                     m_shadowCastingMode,
-                                    m_receiveShadows );
+                                    m_receiveShadows,
+                                    0,
+                                    cam);
       }
       // DrawMeshInstanced only supports up to 1023 meshes for each call,
       // we need to subdivide if we have more particles than that.
@@ -237,7 +246,9 @@ namespace AGXUnity.Rendering
                                       count,
                                       m_meshInstanceProperties,
                                       m_shadowCastingMode,
-                                      m_receiveShadows );
+                                      m_receiveShadows,
+                                      0,
+                                      cam );
         }
       }
     }

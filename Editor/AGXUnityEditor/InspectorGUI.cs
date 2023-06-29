@@ -25,6 +25,8 @@ namespace AGXUnityEditor
       var content = new GUIContent();
       content.text = field.Name.SplitCamelCase() + postText;
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
+      if(content.tooltip == null)
+        content.tooltip = field.GetCustomAttribute<TooltipAttribute>( false )?.tooltip;
 
       return content;
     }
@@ -420,17 +422,17 @@ namespace AGXUnityEditor
 
         position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
         position.xMax -= EditorGUIUtility.labelWidth +
-                         Convert.ToInt32( supportsCreateAsset ) * createNewButtonWidth -
+                         Convert.ToInt32( supportsCreateAsset ) * (createNewButtonWidth + 2) -
                          IndentScope.PixelLevel;
         result = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
         if ( supportsCreateAsset ) {
           var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
-          buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
           createNewPressed = Button( buttonRect,
                                      MiscIcon.CreateAsset,
                                      UnityEngine.GUI.enabled,
-                                     "Create new asset." );
+                                     "Create new asset.",
+                                     0.9f );
         }
       }
       else
@@ -716,7 +718,7 @@ namespace AGXUnityEditor
 
       if ( texture != null ) {
         using ( IconManager.ForegroundColorBlock( data.IsActive, data.Enabled ) )
-          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 0.8f ), texture );
       }
 
       data.PostRender?.Invoke();

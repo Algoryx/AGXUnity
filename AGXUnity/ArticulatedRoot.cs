@@ -14,6 +14,8 @@ namespace AGXUnity
   /// these transform updates, assuring each parent transform has been
   /// written before its children.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Articulated Root" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#articulated-root" )]
   public class ArticulatedRoot : ScriptComponent
   {
     /// <summary>

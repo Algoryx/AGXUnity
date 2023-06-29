@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Gear Constraint" )]
   public class GearConstraint : ScriptComponent
   {
     [SerializeField]

@@ -11,6 +11,7 @@ namespace AGXUnity
   /// manager is holding the state of the script asset.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
   public class ScriptAssetManager : UniqueGameObject<ScriptAssetManager>
   {
     /// <summary>

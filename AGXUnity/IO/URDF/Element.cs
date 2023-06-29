@@ -7,6 +7,7 @@ namespace AGXUnity.IO.URDF
   /// Base URDF element with either required or optional "name" attribute.
   /// </summary>
   [DoNotGenerateCustomEditor]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#urdf-import" )]
   public class Element : ScriptableObject
   {
     public static T Instantiate<T>()

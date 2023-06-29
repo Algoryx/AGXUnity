@@ -2,6 +2,7 @@
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
     [SerializeField]
@@ -194,7 +195,7 @@ namespace AGXUnity.Model
     /// Verifies so that all added shovels still exists. Shovels that
     /// has been deleted are removed.
     /// </summary>
-    abstract public void RemoveInvalidShovels();
+    abstract public void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false);
 
     /// <summary>
     /// Converts any part of the terrain that overlaps the provided shape into dynamic mass

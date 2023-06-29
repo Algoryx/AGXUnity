@@ -7,6 +7,7 @@ namespace AGXUnity.Model
   /// and the friction directions are updated given the tire frame.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Model/One Body Tire" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#tire" )]
   public class OneBodyTire : Tire
   {
     /// <summary>
