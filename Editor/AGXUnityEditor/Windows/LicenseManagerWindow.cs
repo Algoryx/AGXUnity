@@ -7,6 +7,7 @@ using UnityEditor;
 using AGXUnity.Utils;
 
 using GUI = AGXUnity.Utils.GUI;
+using AGXUnity;
 
 namespace AGXUnityEditor.Windows
 {
@@ -214,6 +215,8 @@ namespace AGXUnityEditor.Windows
 
                                                      UnityEngine.GUI.FocusControl( "" );
                                                    } );
+
+            VSAttribution.SendAttributionEvent( "LicenseActivate", "Algoryx", System.Convert.ToInt32( m_licenseActivateData.Id ).ToString() );
           }
         }
       }
