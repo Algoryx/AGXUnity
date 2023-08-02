@@ -300,7 +300,7 @@ namespace AGXUnity
         if ( m_simulation == null ) return;
 
         if ( m_logToUnityConsole )
-          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel );
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel, DisableMeshCreationWarnings );
         else {
           m_logAdapter?.RemoveFromSimulation( this );
           m_logAdapter = null;
@@ -322,6 +322,26 @@ namespace AGXUnity
 
         if ( m_logAdapter != null )
           m_logAdapter.LogLevel = value;
+      }
+    }
+
+    [SerializeField]
+    private bool m_disableMeshCreationWarnings = false;
+
+    [HideInInspector]
+    public bool DisableMeshCreationWarnings
+    {
+      get
+      {
+        if ( m_logAdapter != null )
+          m_disableMeshCreationWarnings = m_logAdapter.DisableMeshCreationWarnings;
+        return m_disableMeshCreationWarnings;
+      }
+      set
+      {
+        m_disableMeshCreationWarnings = value;
+        if ( m_logAdapter != null )
+          m_logAdapter.DisableMeshCreationWarnings = value;
       }
     }
 
@@ -448,7 +468,7 @@ namespace AGXUnity
         // Initialize logger if enabled
         OpenLogFileIfEnabled();
         if ( m_logToUnityConsole )
-          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel );
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel, DisableMeshCreationWarnings );
       }
 
       return m_simulation;
@@ -596,12 +616,14 @@ namespace AGXUnity
       private agx.LoggerSubscriberMessageVector m_messages;
 
       public LogLevel LogLevel { get; set; }
+      public bool DisableMeshCreationWarnings { get; set; }
 
-      public LogAdapter( Simulation sim, LogLevel level )
+      public LogAdapter( Simulation sim, LogLevel level, bool disableMeshCreateWarnings )
       {
         LogLevel = level;
         m_subscriber = new agx.LoggerSubscriber();
         m_messages = new agx.LoggerSubscriberMessageVector();
+        DisableMeshCreationWarnings = disableMeshCreateWarnings;
         sim.StepCallbacks.PostStepForward += PrintLoggerMessages;
       }
 
@@ -620,6 +642,10 @@ namespace AGXUnity
       private void Log( int level, string message )
       {
         if ( level < (int)LogLevel ) return;
+
+        if ( DisableMeshCreationWarnings && message.StartsWith( "Trimesh creation warnings" ) )
+          return;
+
         switch ( (LogLevel)level ) {
           case LogLevel.Info:
           case LogLevel.Debug:
@@ -670,11 +696,11 @@ namespace AGXUnity
         var value    = Convert.ToSingle( delta );
         if ( absDelta > 512 * 1024 ) {
           suffix = "MB";
-          value  = Convert.ToSingle( delta ) / ( 1024.0f * 1024.0f );
+          value = Convert.ToSingle( delta ) / ( 1024.0f * 1024.0f );
         }
         else if ( absDelta > 512 ) {
           suffix = "KB";
-          value  = Convert.ToSingle( delta ) / 1024.0f;
+          value = Convert.ToSingle( delta ) / 1024.0f;
         }
 
         return string.Format( "{0:0.#} {1}", value, suffix );

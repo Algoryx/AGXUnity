@@ -161,6 +161,11 @@ namespace AGXUnityEditor.Tools
                                                              Simulation.LogToUnityConsole,
                                                              b => Simulation.LogToUnityConsole = b,
                                                              Simulation.AGXUnityLogLevel );
+      using (new UnityEditor.EditorGUI.IndentLevelScope() ) {
+        using ( new GUI.EnabledBlock( Simulation.LogToUnityConsole ) ) {
+          Simulation.DisableMeshCreationWarnings = InspectorGUI.Toggle( GUI.MakeLabel( "Disable mesh creation warnings" ), Simulation.DisableMeshCreationWarnings );
+        }
+      }
 
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {

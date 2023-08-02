@@ -63,12 +63,6 @@ namespace AGXUnity.Collide
     [SerializeField]
     private CollisionMeshOptions m_options = new CollisionMeshOptions();
 
-    [SerializeField]
-    private bool m_disableCreateWarnings = false;
-
-    [Description("Disable warnings in the native log related to the geometry of the collision mesh when creating the native component")]
-    public bool DisableCreateWarnings { get => m_disableCreateWarnings; set => m_disableCreateWarnings = value; }
-
     /// <summary>
     /// Options for precomputed collision meshes. Default: null, meaning
     /// collision mesh data is read from the source objects.
@@ -116,7 +110,7 @@ namespace AGXUnity.Collide
         return false;
 
       if ( !mesh.isReadable ) {
-        Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. Ignoring source.", this );
+        Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. See the mesh documentation for more information. Ignoring source.", this );
         return false;
       }
 
@@ -227,10 +221,6 @@ namespace AGXUnity.Collide
     /// <returns>Native trimesh.</returns>
     private agxCollide.Geometry Create( UnityEngine.Mesh[] meshes )
     {
-      uint options = (uint)CreateOptions.REMOVE_DUPLICATE_VERTICES;
-      if ( DisableCreateWarnings )
-        options |= (uint)CreateOptions.NO_WARNINGS;
-
       var geometry = new agxCollide.Geometry();
       if ( m_precomputedCollisionMeshes.Count > 0 ) {
         // The vertices are assumed to be stored in local coordinates of the
@@ -249,7 +239,7 @@ namespace AGXUnity.Collide
             continue;
           }
 
-          var shape = collisionMesh.CreateShape( transformer, mode, gameObject.name, options );
+          var shape = collisionMesh.CreateShape( transformer, mode, gameObject.name );
           if ( shape == null ) {
             Debug.LogWarning( $"AGXUnity.Collide.Mesh: Precomputed collision mesh at index {i} resulted in an invalid shape.", this );
             continue;
@@ -266,8 +256,7 @@ namespace AGXUnity.Collide
 
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              gameObject.name,
-                                              options ),
+                                              gameObject.name),
                       GetNativeGeometryOffset() );
       }
 
