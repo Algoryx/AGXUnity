@@ -113,15 +113,15 @@ namespace AGXUnityEditor.Tools
       Mesh,
     }
 
-    public static GameObject CreateShape<T>( Transform transform, Action<T> initializeAction ) where T : Shape
+    public static void CreateShape<T>( Transform transform, Func<T,bool> initializeAction ) where T : Shape
     {
       if ( initializeAction == null ) {
         Debug.LogError( "Unable to create shape without an initializeAction." );
-        return null;
+        return;
       }
 
       if ( transform == null )
-        return null;
+        return;
 
       GameObject shapeGameObject = Factory.Create<T>();
 
@@ -129,7 +129,10 @@ namespace AGXUnityEditor.Tools
       if ( AGXUnity.Rendering.DebugRenderManager.HasInstance )
         Undo.AddComponent<AGXUnity.Rendering.ShapeDebugRenderData>( shapeGameObject );
 
-      initializeAction( shapeGameObject.GetComponent<T>() );
+      if(!initializeAction( shapeGameObject.GetComponent<T>() ) ) {
+        Undo.PerformUndo();
+        return;
+      }
 
       Undo.SetTransformParent( shapeGameObject.transform, transform, "Shape as child to visual" );
 
@@ -140,8 +143,6 @@ namespace AGXUnityEditor.Tools
       // If mesh and the mesh should be parent to the filter we have to move the
       // localScale to the shape game object.
       shapeGameObject.transform.localScale = Vector3.one;
-
-      return shapeGameObject;
     }
 
     private Utils.OrientedShapeCreateButtons m_buttons = new Utils.OrientedShapeCreateButtons();
@@ -231,6 +232,7 @@ namespace AGXUnityEditor.Tools
                 box.transform.position = s.WorldCenter;
                 box.transform.rotation = s.Rotation;
                 box.transform.rotation *= ( new agx.Quat( s.PrimitiveData.boxTransform ) ).ToHandedQuaternion();
+                return true;
               } );
             }
             else if ( type == ShapeType.Cylinder ) {
@@ -243,6 +245,7 @@ namespace AGXUnityEditor.Tools
                 cylinder.transform.position = s.WorldCenter;
                 cylinder.transform.rotation = s.Rotation;
                 cylinder.transform.rotation *= ( new agx.Quat( s.PrimitiveData.cylinderRotation ) ).ToHandedQuaternion();
+                return true;
               } );
             }
             else if ( type == ShapeType.Capsule ) {
@@ -255,6 +258,7 @@ namespace AGXUnityEditor.Tools
                 capsule.transform.position = s.WorldCenter;
                 capsule.transform.rotation = s.Rotation;
                 capsule.transform.rotation *= ( new agx.Quat( s.PrimitiveData.capsuleRotation ) ).ToHandedQuaternion();
+                return true;
               } );
             }
             else if ( type == ShapeType.Sphere ) {
@@ -263,16 +267,18 @@ namespace AGXUnityEditor.Tools
                 sphere.Radius = s.Radius;
                 sphere.transform.position = s.WorldCenter;
                 sphere.transform.rotation = s.Rotation;
+                return true;
               } );
             }
             else if ( type == ShapeType.Mesh ) {
               CreateShape<Mesh>( s.Filter.transform, mesh =>
               {
-                mesh.SetSourceObject( s.Filter.sharedMesh );
                 // We don't want to set the position given the center of the bounds
                 // since we're one-to-one with the mesh filter.
                 mesh.transform.position = s.Filter.transform.position;
                 mesh.transform.rotation = s.Filter.transform.rotation;
+
+                return mesh.SetSourceObject( s.Filter.sharedMesh );
               } );
             }
           }
