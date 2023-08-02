@@ -1,11 +1,9 @@
-﻿using System.Linq;
-
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -29,7 +27,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      TerrainPager.RemoveInvalidShovels();
+      TerrainPager.RemoveInvalidShovels( false );
 
       if ( GetTargets<DeformableTerrainPager>().Any( pager => !TerrainUtils.IsValid( pager ) ) ) {
         InspectorGUI.WarningLabel( "INVALID CONFIGURATION\n\n" +
@@ -124,14 +122,20 @@ namespace AGXUnityEditor.Tools
                                 RadiiEditor,
                                 null
                                 );
+
+      if ( TerrainPager.Shovels.Any( shovel => !shovel.isActiveAndEnabled ) || TerrainPager.RigidBodies.Any( rb => !rb.isActiveAndEnabled ) ) {
+        EditorGUILayout.HelpBox( "Terrain contains disabled objects. This is not supported and they will be removed on play. Disabled objects must be added manually to the terrain when enabled", MessageType.Warning );
+        if ( GUILayout.Button( "Remove disabled objects" ) )
+          TerrainPager.RemoveInvalidShovels( true, false );
+      }
     }
 
     public override void OnSceneViewGUI( SceneView sceneView )
     {
       base.OnSceneViewGUI( sceneView );
 
-      if(TerrainPager.Native != null)
-        foreach(var t in TerrainPager.Native.getActiveTileAttachments() ) 
+      if ( TerrainPager.Native != null )
+        foreach ( var t in TerrainPager.Native.getActiveTileAttachments() )
           RenderTileAttachmentOutlines( t );
     }
 
@@ -177,7 +181,7 @@ namespace AGXUnityEditor.Tools
     private void RadiiEditor<T>( T obj, int index )
       where T : ScriptComponent
     {
-      using (InspectorGUI.IndentScope.Single) {
+      using ( InspectorGUI.IndentScope.Single ) {
         GUILayout.Space( 2 );
 
         var isShovel = obj is DeformableTerrainShovel;

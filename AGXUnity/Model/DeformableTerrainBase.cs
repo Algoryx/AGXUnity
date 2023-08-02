@@ -196,13 +196,13 @@ namespace AGXUnity.Model
     /// Verifies so that all added shovels still exists. Shovels that
     /// has been deleted are removed.
     /// </summary>
-    abstract public void RemoveInvalidShovels();
+    abstract public void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false);
 
     /// <summary>
     /// Converts any part of the terrain that overlaps the provided shape into dynamic mass
     /// </summary>
     /// <param name="failureVolume">The shape in which to convert the terrain into dynamic mass</param>
-    abstract public void ConvertToDynamicMassInShape(Collide.Shape failureVolume);
+    abstract public void ConvertToDynamicMassInShape( Collide.Shape failureVolume );
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

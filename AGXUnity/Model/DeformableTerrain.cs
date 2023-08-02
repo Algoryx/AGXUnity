@@ -10,7 +10,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain" )]
   [RequireComponent( typeof( Terrain ) )]
   [DisallowMultipleComponent]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain")]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public class DeformableTerrain : DeformableTerrainBase
   {
     /// <summary>
@@ -103,7 +103,7 @@ namespace AGXUnity.Model
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
-      RemoveInvalidShovels();
+      RemoveInvalidShovels( true, true );
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
 
@@ -154,6 +154,7 @@ namespace AGXUnity.Model
                                        0.0f );
 
       Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
+
 
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
@@ -297,9 +298,20 @@ namespace AGXUnity.Model
       return shovel != null && m_shovels.Contains( shovel );
     }
 
-    public override void RemoveInvalidShovels()
+    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
     {
       m_shovels.RemoveAll( shovel => shovel == null );
+      if ( removeDisabled ) {
+        int removed = m_shovels.RemoveAll( shovel => !shovel.isActiveAndEnabled );
+        if ( removed > 0 ) {
+          if ( warn )
+            Debug.LogWarning( $"Removed {removed} disabled shovels from terrain {gameObject.name}." +
+                              " Disabled shovels should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
+                              " To fix this warning, please remove any disabled shovels from the terrain." );
+          else
+            Debug.Log( $"Removed {removed} disabled shovels from terrain {gameObject.name}." );
+        }
+      }
     }
     public override void ConvertToDynamicMassInShape( Shape failureVolume )
     {

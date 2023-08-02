@@ -307,6 +307,17 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// During runtime, the shapes that belongs to this rigid body are cached when
+    /// this instance is initialized. If additional shapes are added after this
+    /// rigid body has been initialized, call this method to update the cache and
+    /// for the newly added shapes to be available using the property Shapes.
+    /// </summary>
+    public void SyncShapesCache()
+    {
+      m_shapesCache = GetShapes();
+    }
+
+    /// <summary>
     /// Peek at a temporary native instance or the current (if initialized).
     /// </summary>
     /// <param name="callback">Callback with temporary or already initialized native instance. Callback signature ( nativeRb, isTemporary ).</param>

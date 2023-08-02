@@ -61,8 +61,8 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 ### Requirements
 
-+ AGX Dynamics 2.31.0.0 (64-bit) or later (2.29.1.0 in rc/2.3, 2.29.0.0 in rc/2.1, 2.28.1.0 in rc/2.0).
-+ Unity 3D 2018.4 LTS (64-bit) or later. Could work in earlier version but hasn't been tested.
++ AGX Dynamics 2.36.1.0 (64-bit) or later (2.36.0.0 in rc/4.3, 2.35.0.3 in rc/4.2, 2.35.0.2 in rc/4.1, 2.35.0.0 in rc/4.0).
++ Unity 3D 2020.3 LTS (64-bit) or later (Unity 3D 2018.4 LTS (64-bit) prior to rc/4.2).
 + Unity Script Runtime Version .NET 4.x Equivalent.
 + Valid AGX Dynamics license. [Contact us for more information.](https://www.algoryx.se/contact/)
 
@@ -76,10 +76,25 @@ For more information about how to develop new functionality in AGXUnity - [read 
 
 ## Tutorials
 
-[**Modelling a crane :**](https://www.youtube.com/watch?v=YNEDk1417iM)  
-[![](https://img.youtube.com/vi/YNEDk1417iM/1.jpg)](https://www.youtube.com/watch?v=YNEDk1417iM)
+A modern tutorial series is currently being developed and videos are published in a 
+[youtube playlist](https://www.youtube.com/playlist?list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek).
+
+[**Tutorial 1: Introduction**](https://www.youtube.com/watch?v=jCYUDI_PDs4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=1)  
+[![](https://img.youtube.com/vi/jCYUDI_PDs4/2.jpg)](https://www.youtube.com/watch?v=jCYUDI_PDs4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=1)
+
+[**Tutorial 2: RigidBodies and Shapes**](https://www.youtube.com/watch?v=QiG6beV1rr4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=2)  
+[![](https://img.youtube.com/vi/QiG6beV1rr4/2.jpg)](https://www.youtube.com/watch?v=QiG6beV1rr4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=2)
+
+[**Tutorial 3: Physical Materials**](https://www.youtube.com/watch?v=i5rm1Q5rPwE&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=3)  
+[![](https://img.youtube.com/vi/i5rm1Q5rPwE/2.jpg)](https://www.youtube.com/watch?v=i5rm1Q5rPwE&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=3)
+
+[**Tutorial 4: Constraints**](https://www.youtube.com/watch?v=Y9smE0PpdF4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=4)  
+[![](https://img.youtube.com/vi/Y9smE0PpdF4/2.jpg)](https://www.youtube.com/watch?v=Y9smE0PpdF4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=4)
 
 ### Older tutorials
+
+[**Modelling a crane :**](https://www.youtube.com/watch?v=YNEDk1417iM)  
+[![](https://img.youtube.com/vi/YNEDk1417iM/1.jpg)](https://www.youtube.com/watch?v=YNEDk1417iM)
 
 [**Modelling with primitives:**](https://www.youtube.com/watch?v=1ddfgIwAd0U)  
 [![](https://img.youtube.com/vi/1ddfgIwAd0U/1.jpg)](https://www.youtube.com/watch?v=1ddfgIwAd0U)
@@ -98,9 +113,6 @@ For more information about how to develop new functionality in AGXUnity - [read 
 
 [**Modelling a terrain vehicle:**](https://www.youtube.com/watch?v=ku6GyMba9Cw)  
 [![](https://img.youtube.com/vi/ku6GyMba9Cw/1.jpg)](https://www.youtube.com/watch?v=ku6GyMba9Cw)
-
-## Sample scenes
-The project [AGXUnityScenes](https://github.com/Algoryx/AGXUnityScenes) contains a growing list of various demonstration scenes.
 
 ## Binary distribution
 To distribute an Unity3D application together with AGX Dynamics, you need to collect the required runtime files from your AGX installation. These files must match the version of AGX used when building the Unity3D application.

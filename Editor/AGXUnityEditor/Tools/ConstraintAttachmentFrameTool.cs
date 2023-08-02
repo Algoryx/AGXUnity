@@ -82,7 +82,7 @@ namespace AGXUnityEditor.Tools
 
       var buttonWidth        = 1.1f * EditorGUIUtility.singleLineHeight;
       var buttonHeightOffset = 1.0f;
-      rect.x                 = EditorGUIUtility.labelWidth + InspectorGUI.LayoutMagicNumber;
+      rect.x                += EditorGUIUtility.labelWidth;
       rect.y                -= buttonHeightOffset;
       rect.width             = buttonWidth;
       var toggleSynchronized = InspectorGUI.Button( rect,
@@ -91,7 +91,7 @@ namespace AGXUnityEditor.Tools
                                                       MiscIcon.SynchDisabled,
                                                     true,
                                                     "Toggle synchronized with reference frame.",
-                                                    1.17f );
+                                                    0.9f );
       rect.x    += rect.width + 2.0f;
       rect.width = orgWidth - rect.x;
       rect.y    += buttonHeightOffset;
