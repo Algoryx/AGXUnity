@@ -1,6 +1,5 @@
 ﻿using AGXUnity.Collide;
 using AGXUnity.Utils;
-using agxWire;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -350,12 +349,12 @@ namespace AGXUnity.Model
     {
       if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
         throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
-      
+
       if ( Native != null )
         height += MaximumDepth;
 
       agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
-      Native?.setHeight( idx, height);
+      Native?.setHeight( idx, height );
 
       TerrainData.SetHeights( x, y, new float[,] { { height / TerrainData.size.y } } );
     }
@@ -385,7 +384,7 @@ namespace AGXUnity.Model
     {
       if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
         throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
-      
+
       if ( Native == null )
         return TerrainData.GetHeight( x, y );
 
