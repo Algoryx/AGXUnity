@@ -63,6 +63,7 @@ namespace AGXUnity.Collide
     /// no reduction. Any vertex closer than this distance will be merged. 
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
+    [FloatSliderInInspector(0.0001f, 1f)]
     public float MergeNearbyDistance
     {
       get { return m_mergeNearbyDistance; }
