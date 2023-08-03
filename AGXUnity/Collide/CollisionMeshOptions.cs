@@ -46,7 +46,7 @@ namespace AGXUnity.Collide
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
     [InspectorGroupBegin(Name = "Mesh Cleanup")]
-    public bool MeargeNearbyEnabled
+    public bool MergeNearbyEnabled
     {
       get { return m_mergeNearbyEnabled; }
       set

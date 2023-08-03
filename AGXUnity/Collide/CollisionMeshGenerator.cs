@@ -289,7 +289,7 @@ namespace AGXUnity.Collide
       }
 
       // Next, if merge nearby vertices is enabled, do that too:
-      var mergeNearbyEnabled = options != null && options.MeargeNearbyEnabled;
+      var mergeNearbyEnabled = options != null && options.MergeNearbyEnabled;
       orgNumVertices = merger.Vertices.Count;
       if (mergeNearbyEnabled) { 
         merger.MergeNearby(options.MergeNearbyDistance);
