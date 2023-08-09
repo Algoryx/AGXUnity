@@ -41,7 +41,7 @@ namespace AGXUnity.Model
       get
       {
         Component obj = this;
-        while(obj != null ) {
+        while ( obj != null ) {
           var rb = obj.GetComponent<RigidBody>();
           if ( rb != null ) return rb;
           obj = obj.transform.parent;
@@ -52,6 +52,57 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
+
+    [SerializeField]
+    private Vector2 m_sizeMeters = new Vector2(2,2);
+
+    [ClampAboveZeroInInspector]
+    public Vector2 SizeMeters
+    {
+      get => m_sizeMeters;
+      set
+      {
+        m_sizeMeters = value;
+        m_elementSize = m_sizeMeters.x / m_resolution;
+        m_sizeCells.x = m_resolution;
+        m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
+        SetupMesh();
+      }
+    }
+
+    [SerializeField]
+    private int m_resolution = 20;
+
+    /// <summary>
+    ///  The size of each underlying tile in the terrain, in meters.
+    /// </summary>
+    [ClampAboveZeroInInspector]
+    public int Resolution
+    {
+      get => m_resolution;
+      set
+      {
+        m_resolution = value;
+        m_elementSize = m_sizeMeters.x / m_resolution;
+        m_sizeCells.x = Resolution;
+        m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
+        SetupMesh();
+      }
+    }
+
+    [SerializeField]
+    private Vector2Int m_sizeCells = new Vector2Int(21,21);
+
+    [ClampAboveZeroInInspector]
+    public Vector2Int SizeCells
+    {
+      get => m_sizeCells;
+      set 
+      {
+        m_sizeCells = value;
+        SetupMesh();
+      }
+    }
 
     [SerializeField]
     private float m_elementSize = 0.2f;
@@ -66,36 +117,6 @@ namespace AGXUnity.Model
       set
       {
         m_elementSize = value;
-        SetupMesh();
-      }
-    }
-
-    [SerializeField]
-    private int m_width = 21;
-    /// <summary>
-    /// The width of the terrain in number of elements.
-    /// </summary>
-    public int Width
-    {
-      get => m_width;
-      set
-      {
-        m_width = value;
-        SetupMesh();
-      }
-    }
-
-    [SerializeField]
-    private int m_height = 21;
-    /// <summary>
-    /// The height of the terrain in number of elements.
-    /// </summary>
-    public int Height
-    {
-      get => m_height;
-      set
-      {
-        m_height = value;
         SetupMesh();
       }
     }
@@ -137,11 +158,11 @@ namespace AGXUnity.Model
 
     private void InitializeNative()
     {
-      var heights = new agx.RealVector((int)(Width * Height));
-      heights.Set( new double[ Width * Height ] );
+      var heights = new agx.RealVector((int)(SizeCells.x * SizeCells.y));
+      heights.Set( new double[ SizeCells.x * SizeCells.y ] );
 
-      Native = new agxTerrain.Terrain( (uint)Width,
-                                       (uint)Height,
+      Native = new agxTerrain.Terrain( (uint)SizeCells.x,
+                                       (uint)SizeCells.y,
                                        ElementSize,
                                        heights,
                                        false,
@@ -171,7 +192,10 @@ namespace AGXUnity.Model
 
     private void SetupMesh()
     {
-      if ( Width * Height == 0 )
+      int width = SizeCells.x;
+      int height = SizeCells.y;
+
+      if ( width * height == 0 )
         return;
       if ( TerrainMesh.sharedMesh == null ) {
         TerrainMesh.sharedMesh = new Mesh();
@@ -180,26 +204,26 @@ namespace AGXUnity.Model
       }
 
       // Create a grid of vertices matching that of the undelying heightfield.
-      var vertices = new Vector3[Width * Height];
-      var uvs = new Vector2[Width * Height];
-      var indices = new int[ ( Width - 1 ) * 6 * ( Height - 1 ) ];
+      var vertices = new Vector3[width * height];
+      var uvs = new Vector2[width * height];
+      var indices = new int[ ( width - 1 ) * 6 * ( height - 1 ) ];
       int i = 0;
-      for ( var y = 0; y < Height; y++ ) {
-        for ( var x = 0; x < Width; x++ ) {
-          vertices[ y * Width + x ].x = ( x - Width / 2 ) * ElementSize;
-          vertices[ y * Width + x ].z = ( y - Height / 2 ) * ElementSize;
+      for ( var y = 0; y < height; y++ ) {
+        for ( var x = 0; x < width; x++ ) {
+          vertices[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
+          vertices[ y * width + x ].z = ( y - height / 2 ) * ElementSize;
 
-          uvs[ y * Width + x ].x = ( x - Width / 2 ) * ElementSize;
-          uvs[ y * Width + x ].y = ( y - Height / 2 ) * ElementSize;
+          uvs[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
+          uvs[ y * width + x ].y = ( y - height / 2 ) * ElementSize;
 
-          if ( x != Width - 1 && y != Height - 1 ) {
-            indices[ i++ ] = y * Width + x;
-            indices[ i++ ] = ( y + 1 ) * Width + x;
-            indices[ i++ ] = ( y + 1 ) * Width + ( x + 1 );
+          if ( x != width - 1 && y != height - 1 ) {
+            indices[ i++ ] = y * width + x;
+            indices[ i++ ] = ( y + 1 ) * width + x;
+            indices[ i++ ] = ( y + 1 ) * width + ( x + 1 );
 
-            indices[ i++ ] = y * Width + x;
-            indices[ i++ ] = ( y + 1 ) * Width + ( x + 1 );
-            indices[ i++ ] = y * Width + ( x + 1 );
+            indices[ i++ ] = y * width + x;
+            indices[ i++ ] = ( y + 1 ) * width + ( x + 1 );
+            indices[ i++ ] = y * width + ( x + 1 );
           }
         }
       }
@@ -218,10 +242,10 @@ namespace AGXUnity.Model
 
       for ( int i = 0; i < modifiedVertices.Count; i++ ) {
         var mod = modifiedVertices[i];
-        int idx = (int)(mod.y * Width + mod.x) + 1;
+        int idx = (int)(mod.y * SizeCells.x + mod.x) + 1;
 
         float height = (float)Native.getHeight( mod );
-        m_terrainVertices[ Width * Height - idx ].y = height;
+        m_terrainVertices[ SizeCells.x * SizeCells.y - idx ].y = height;
       }
 
       TerrainMesh.mesh.vertices = m_terrainVertices;
@@ -232,7 +256,7 @@ namespace AGXUnity.Model
     {
       double offset = ElementSize*0.5;
       agx.AffineMatrix4x4 terrainOffset =
-        agx.AffineMatrix4x4.translate( new agx.Vec3( Width % 2 == 0 ? offset : 0.0, Height % 2 == 0 ? offset : 0.0, 0.0 ) ) *
+        agx.AffineMatrix4x4.translate( new agx.Vec3( SizeCells.x % 2 == 0 ? offset : 0.0, SizeCells.y % 2 == 0 ? offset : 0.0, 0.0 ) ) *
         agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );
 
       var rb = RigidBody;
