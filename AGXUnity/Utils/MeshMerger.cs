@@ -52,12 +52,6 @@ namespace AGXUnity.Utils
                                            reducedVertices,
                                            reducedIndices,
                                            mergeNearbyDistance);
-      // var before = Vertices.Count;
-      // var after = reducedVertices.Count;
-
-      // float percent = 100*(before - after) / (float)before;
-
-      // Debug.Log(string.Format("Merging from {0} to {1} vertices {2} %", before, after, percent));
 
       m_vertices = reducedVertices;
       m_indices = reducedIndices;
