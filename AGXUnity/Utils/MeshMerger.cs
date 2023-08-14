@@ -40,6 +40,25 @@ namespace AGXUnity.Utils
         m_toWorld = transform.localToWorldMatrix;
     }
 
+    public bool MergeNearby(float mergeNearbyDistance)
+    {
+      if (m_vertices.Count == 0)
+        return false;
+
+      var reducedVertices = new agx.Vec3Vector();
+      var reducedIndices = new agx.UInt32Vector();
+      agxUtil.agxUtilSWIG.mergeDuplicateVertices(Vertices,
+                                           Indices,
+                                           reducedVertices,
+                                           reducedIndices,
+                                           mergeNearbyDistance);
+
+      m_vertices = reducedVertices;
+      m_indices = reducedIndices;
+
+      return true;
+    }
+
     public bool Reduce( float reductionRatio, float reductionAggressiveness )
     {
       if ( m_vertices.Count == 0 )
