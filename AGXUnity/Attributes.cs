@@ -200,4 +200,35 @@ namespace AGXUnity
     {
     }
   }
+
+  /// <summary>
+  /// Attribute for marking methods to be called during the editor update. 
+  /// The containing script still needs to be added to the scene for the method to be picked up
+  /// by the manager, even if the method is static. If the method is static the method will be 
+  /// called once for each instance. To call the static method once for each scene instance,
+  /// set StatticCallMultiple to true in the attribute constructor
+  /// 
+  /// Note that this update is only called in Edit Mode since the regular unity Update signal serves the
+  /// same purpose in play mode. To update in both places, simply add this attribute to the Update method.
+  /// </summary>
+  [AttributeUsage( AttributeTargets.Method, AllowMultiple = false )]
+  public class EditorUpdateAttribute : Attribute
+  {
+    /// <summary>
+    /// Whether or not to call a static method once for each reference to the script in the scene.
+    /// Has no effect if the method is non-static.
+    /// </summary>
+    public bool StaticCallMultiple { get;set; }
+
+    /// <summary>
+    /// Attribute for marking methods to be called during the editor update. 
+    /// The containing script still needs to be added to the scene for the method to be picked up
+    /// by the manager, even if the method is static.
+    /// </summary>
+    /// <param name="StaticCallMultiple">Whether or not to call a static method once for each reference to the script in the scene. Has no effect if the method is non-static.</param>
+    public EditorUpdateAttribute(bool StaticCallMultiple = false) 
+    {
+      this.StaticCallMultiple = StaticCallMultiple;
+    }
+  }
 }
