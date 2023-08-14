@@ -528,7 +528,7 @@ namespace AGXUnity.Model
       if ( removeDisabled ) {
         int remShovels = m_shovels.RemoveAll( shovel => !shovel.Body.isActiveAndEnabled );
         int remRBs = m_rigidbodies.RemoveAll( rb => !rb.Body.isActiveAndEnabled );
-        if(remShovels + remRBs > 0 ) {
+        if ( remShovels + remRBs > 0 ) {
           if ( warn )
             Debug.LogWarning( $"Removed {remShovels} disabled shovels and {remRBs} disabled rigid bodies from terrain {gameObject.name}." +
                               " Disabled objects should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
@@ -548,6 +548,208 @@ namespace AGXUnity.Model
         shape.ReturnToPool();
       }
     }
+
+    public override void SetHeights( int xstart, int ystart, float[,] heights )
+    {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling SetHeights on an uninitialized DeformableTerrainPager is not supported" );
+      SetHeightsInternal( xstart, ystart, heights, false );
+    }
+
+    private void SetHeightsInternal( int xstart, int ystart, float[,] heights, bool recursive )
+    {
+      int height = heights.GetLength(0);
+      int width = heights.GetLength(1);
+
+      agx.Vec2i idx = new agx.Vec2i( xstart, ystart );
+
+      // General process for setting terrain pager heights uses a recursive approach.
+      // if we can find a pager tile which overlaps the lowest x/y index we can divide the whole patch into three subpatches:
+      // 1. The patch which is the intersection between the whole patch and the found tile.
+      // 2. The patch from the highest x index in the found tile to the highest x index in the whole patch
+      // 3. The remaining patch.
+      // ____________
+      // |   |   3  |
+      // |   |______|
+      // | 2 |   1  |
+      // |___|______|
+
+      // For (1) we can set the heights directly from the tile which contains it and for (2) & (3) we can recursively apply the same
+      // procedure to set the heights.
+      bool tileFound = false;
+      var tiles = Native.getActiveTileAttachments();
+      foreach ( var tile in tiles ) {
+        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
+          continue;
+
+        var tileStart = new agx.Vec2i(idx.x - gi.x, idx.y - gi.y);
+        var size = new agx.Vec2i32(Mathf.Min(width, TileSize - (int)tileStart.x), Mathf.Min(height,TileSize - (int)tileStart.y));
+
+        // TODO: Use 2D array segments instead of creating new arrays for each tile
+        // Set heights for (1) directly using the tile
+        float[,] thisTile = new float[size.y,size.x];
+        for ( int y = 0; y < size.y; y++ )
+          for ( int x = 0; x < size.x; x++ )
+            thisTile[ y, x ] = heights[ y, x ];
+        TerrainSetHeights( tile, (int)tileStart.x, (int)tileStart.y, thisTile );
+
+        // Set heights for (2) recursively
+        if ( size.x != width ) {
+          float[,] sideTile = new float[height,width - size.x];
+          for ( int y = 0; y < height; y++ )
+            for ( int x = 0; x < width - size.x; x++ )
+              sideTile[ y, x ] = heights[ y, x + size.x ];
+          SetHeightsInternal( xstart + size.x, ystart, sideTile, true );
+        }
+
+        // Set heights for (3) recursively
+        if ( size.y != height ) {
+          float[,] topTile = new float[height - size.y,size.x];
+          for ( int y = 0; y < height - size.y; y++ )
+            for ( int x = 0; x < size.x; x++ )
+              topTile[ y, x ] = heights[ y + size.y, x ];
+          SetHeightsInternal( xstart, ystart + size.y, topTile, true );
+        }
+
+        tileFound = true;
+        break;
+      }
+
+      if ( !tileFound )
+        throw new ArgumentOutOfRangeException( "", $"Terrain patch at ({xstart}, {ystart}) with size [{width},{height}] contains inactive tiles" );
+
+      if ( !recursive )
+        UpdateHeights();
+    }
+    public override void SetHeight( int x, int y, float height )
+    {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling SetHeight on an uninitialized DeformableTerrainPager is not supported" );
+
+      agx.Vec2i idx = new agx.Vec2i( x, y );
+
+      var tiles = Native.getActiveTileAttachments();
+      foreach ( var tile in tiles ) {
+        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
+          continue;
+
+        tile.m_terrainTile.setHeight( new agx.Vec2i( idx.x - gi.x, idx.y - gi.y ), height - (float)tile.m_zOffset + MaximumDepth );
+        UpdateHeights();
+        return;
+      }
+      throw new ArgumentOutOfRangeException( "(x, y)", $"No active tile corresponds to the global index ({x}, {y})" );
+    }
+    public override float[,] GetHeights( int xstart, int ystart, int width, int height )
+    {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling GetHeights on an uninitialized DeformableTerrainPager is not supported" );
+
+      if ( width <= 0 || height <= 0 )
+        throw new ArgumentOutOfRangeException( "width, height", $"Width and height ({width} / {height}) must be greater than 0" );
+      float [,] heights = new float[height,width];
+      agx.Vec2i idx = new agx.Vec2i( xstart, ystart );
+
+      // General process for setting terrain pager heights uses a recursive approach.
+      // if we can find a pager tile which overlaps the lowest x/y index we can divide the whole patch into three subpatches:
+      // 1. The patch which is the intersection between the whole patch and the found tile.
+      // 2. The patch from the highest x index in the found tile to the highest x index in the whole patch
+      // 3. The remaining patch.
+      // ____________
+      // |   |   3  |
+      // |   |______|
+      // | 2 |   1  |
+      // |___|______|
+
+      // For (1) we can get the heights directly from the tile which contains it and for (2) & (3) we can recursively apply the same
+      // procedure to get the heights.
+      // When the height arrays for (1), (2) & (3) are all filled we can combine them to yield the total height array.
+      var tiles = Native.getActiveTileAttachments();
+      foreach ( var tile in tiles ) {
+        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
+          continue;
+
+        var tileStart = new agx.Vec2i(idx.x - gi.x, idx.y - gi.y);
+        var size = new agx.Vec2i32(Mathf.Min(width, TileSize - (int)tileStart.x), Mathf.Min(height,TileSize - (int)tileStart.y));
+
+        // TODO: Use 2D array segments instead of creating new arrays for each tile
+        // Get heights for (1) directly from tile
+        float[,] thisTile = TerrainGetHeights(tile, (int)tileStart.x, (int)tileStart.y, size.x, size.y);
+        float[,] sideTile = null;
+        float[,] topTile = null;
+        // Get heights for (2) recursively
+        if ( size.x != width )
+          sideTile = GetHeights( xstart + size.x, ystart, width - size.x, height );
+        // Get heights for (3) recursively
+        if ( size.y != height )
+          topTile = GetHeights( xstart, ystart + size.y, size.x, height - size.y );
+
+        // Combine height-arrays for (1),(2) & (3)
+        for ( int y = 0; y < thisTile.GetLength( 0 ); y++ )
+          for ( int x = 0; x < thisTile.GetLength( 1 ); x++ )
+            heights[ y, x ] = thisTile[ y, x ];
+
+        if ( sideTile != null )
+          for ( int y = 0; y < sideTile.GetLength( 0 ); y++ )
+            for ( int x = 0; x < sideTile.GetLength( 1 ); x++ )
+              heights[ y, x + size.x ] = sideTile[ y, x ];
+
+        if ( topTile != null )
+          for ( int y = 0; y < topTile.GetLength( 0 ); y++ )
+            for ( int x = 0; x < topTile.GetLength( 1 ); x++ )
+              heights[ y + size.y, x ] = topTile[ y, x ];
+
+        return heights;
+      }
+
+      throw new ArgumentOutOfRangeException( "", $"Terrain patch at ({xstart}, {ystart}) with size [{width},{height}] contains inactive tiles" );
+    }
+    public override float GetHeight( int x, int y )
+    {
+      if ( Native == null )
+        throw new NotSupportedException( "Calling GetHeight on an uninitialized DeformableTerrainPager is not supported" );
+
+      agx.Vec2i idx = new agx.Vec2i( x, y );
+
+      var tiles = Native.getActiveTileAttachments();
+      foreach ( var tile in tiles ) {
+        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
+          continue;
+
+        return (float)tile.m_terrainTile.getHeight( new agx.Vec2i( idx.x - gi.x, idx.y - gi.y ) ) + (float)tile.m_zOffset - MaximumDepth;
+      }
+      throw new ArgumentOutOfRangeException( "(x, y)", $"No active tile corresponds to the global index ({x}, {y})" );
+    }
+
+    private float[,] TerrainGetHeights( agxTerrain.TerrainPager.TileAttachments tile, int xstart, int ystart, int width, int height )
+    {
+      var terr = tile.m_terrainTile;
+      var offset = tile.m_zOffset;
+      float [,] heights = new float[height,width];
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          agx.Vec2i idx = new agx.Vec2i(xstart + x, ystart + y);
+          heights[ y, x ] = (float)terr.getHeight( idx ) + (float)offset - MaximumDepth;
+        }
+      }
+      return heights;
+    }
+
+    private void TerrainSetHeights( agxTerrain.TerrainPager.TileAttachments tile, int xstart, int ystart, float[,] heights )
+    {
+      var terr = tile.m_terrainTile;
+      var offset = tile.m_zOffset;
+      for ( int y = 0; y < heights.GetLength( 0 ); y++ ) {
+        for ( int x = 0; x < heights.GetLength( 1 ); x++ ) {
+          agx.Vec2i idx = new agx.Vec2i(xstart + x, ystart + y);
+          terr.setHeight( idx, heights[ y, x ] - offset + MaximumDepth );
+        }
+      }
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
     {
