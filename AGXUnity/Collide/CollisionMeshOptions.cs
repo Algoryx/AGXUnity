@@ -42,6 +42,41 @@ namespace AGXUnity.Collide
     }
 
     /// <summary>
+    /// Enable/disable merging of nearby vertices
+    /// Note that Apply has to be called before the change to take effect.
+    /// </summary>
+    [InspectorGroupBegin(Name = "Mesh Cleanup")]
+    public bool MergeNearbyEnabled
+    {
+      get { return m_mergeNearbyEnabled; }
+      set
+      {
+        if (m_mergeNearbyEnabled == value)
+          return;
+
+        m_mergeNearbyEnabled = value;
+      }
+    }
+
+    /// <summary>
+    /// Specify distance used for merging nearby vertices ranging from [0, 1] where 0 is
+    /// no reduction. Any vertex closer than this distance will be merged. 
+    /// Note that Apply has to be called before the change to take effect.
+    /// </summary>
+    [FloatSliderInInspector(0.0001f, 1f)]
+    public float MergeNearbyDistance
+    {
+      get { return m_mergeNearbyDistance; }
+      set
+      {
+        if (Utils.Math.Approximately(m_mergeNearbyDistance, value))
+          return;
+
+        m_mergeNearbyDistance = Utils.Math.Clamp(value, 0, 1);
+      }
+    }
+
+    /// <summary>
     /// Enable/disable triangle reduction of the mesh data.
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
@@ -111,10 +146,12 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Reset all values to default.
     /// </summary>
-    public void ResetToDesfault()
+    public void ResetToDefault()
     {
       m_mode = MeshMode.Trimesh;
       m_reductionEnabled = false;
+      m_mergeNearbyEnabled = false;
+      m_mergeNearbyDistance = 1E-3f;
       m_reductionRatio = 0.5f;
       m_reductionAggressiveness = 7.0f;
       m_elementResolutionPerAxis = 50;
@@ -125,7 +162,13 @@ namespace AGXUnity.Collide
     private MeshMode m_mode = MeshMode.Trimesh;
 
     [SerializeField]
+    private bool m_mergeNearbyEnabled = false;
+
+    [SerializeField]
     private bool m_reductionEnabled = false;
+
+    [SerializeField]
+    private float m_mergeNearbyDistance = 1e-3f;
 
     [SerializeField]
     private float m_reductionRatio = 0.5f;
