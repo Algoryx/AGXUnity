@@ -78,12 +78,18 @@ namespace AGXUnity.Utils
       return true;
     }
 
-    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name)
+    /// <summary>
+    /// Create a plot from two data series.
+    /// </summary>
+    /// <param name="xSeries">agxPlot.Data Series for x-axis.</param>
+    /// <param name="ySeries">agxPlot.Data Series for y-axis.</param>
+    /// <param name="name">Plot name.</param>
+    /// <param name="legend">Legend for what is being plotted.</param>
+    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend)
     {
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
       plotWindow.add(plotCurve);
-
     }
 
     /// <summary>
