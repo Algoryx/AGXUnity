@@ -106,6 +106,11 @@ namespace AGXUnity.Rendering
 
     protected override void OnEnable()
     {
+      // We hook into the rendering process to render even when the application is paused.
+      // For the Built-in render pipeline this is done by adding a callback to the Camera.OnPreCull event which is called for each camera in the scene.
+      // For SRPs such as URP and HDRP the beginCameraRendering event serves a similar purpose.
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
       Camera.onPreCull -= Render;
       Camera.onPreCull += Render;
       Simulation.Instance.StepCallbacks.PostStepForward += PostUpdate;
@@ -117,6 +122,7 @@ namespace AGXUnity.Rendering
     protected override void OnDisable()
     {
       Camera.onPreCull -= Render;
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
       // We may not "change GameObject hierarchy" when the actual
       // game object is being destroyed, e.g., when hitting stop.
       if ( gameObject.activeSelf )
@@ -211,6 +217,11 @@ namespace AGXUnity.Rendering
         Synchronize();
         m_needsSynchronize = false;
       }
+    }
+
+    private void SRPRender( ScriptableRenderContext context, Camera cam )
+    {
+      Render( cam );
     }
 
     private void Render(Camera cam)

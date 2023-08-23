@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace AGXUnity
 {
@@ -480,6 +481,11 @@ namespace AGXUnity
 
     protected override void OnEnable()
     {
+      // We hook into the rendering process to render even when the application is paused.
+      // For the Built-in render pipeline this is done by adding a callback to the Camera.OnPreCull event which is called for each camera in the scene.
+      // For SRPs such as URP and HDRP the beginCameraRendering event serves a similar purpose.
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
       Camera.onPreCull -= Render;
       Camera.onPreCull += Render;
       if ( Native != null )
@@ -488,6 +494,7 @@ namespace AGXUnity
 
     protected override void OnDisable()
     {
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
       Camera.onPreCull -= Render;
       if ( Native != null )
         Native.setEnable( false );
@@ -528,6 +535,11 @@ namespace AGXUnity
     private void SynchronizeVisuals()
     {
       m_event?.SynchronizeVisuals();
+    }
+
+    private void SRPRender( ScriptableRenderContext context, Camera cam )
+    {
+      Render( cam );
     }
 
     private void Render( Camera cam )
