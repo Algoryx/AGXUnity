@@ -52,7 +52,7 @@ namespace AGXUnity
           native.getMassProperties().setMass( m_mass.Value );
           // Explicit inertia tensor and setMass above will rescale
           // the inertia given new mass - assign "back" the user value.
-          if ( !m_inertiaDiagonal.UseDefault )
+          if ( !m_inertiaDiagonal.UseDefault || !m_inertiaOffDiagonal.UseDefault )
             native.getMassProperties().setInertiaTensor( GetInertiaTensor( m_inertiaDiagonal, m_inertiaOffDiagonal ) );
         }
       }
@@ -104,7 +104,21 @@ namespace AGXUnity
     public DefaultAndUserValueVector3 InertiaOffDiagonal
     {
       get { return m_inertiaOffDiagonal; }
-      private set { m_inertiaOffDiagonal = value; }
+      private set { 
+        m_inertiaOffDiagonal = value;
+
+        // If we have UseDefault, the inertia tensor has been
+        // calculated for the native instance during native.updateMassProperties.
+        // To not overwrite the diagonal elements we're not
+        // writing anything back.
+        // NOTE: This has to be revised when we use "update mask" 0.
+        if ( m_inertiaOffDiagonal.UseDefault )
+          return;
+
+        var native = GetNative();
+        if ( native != null )
+          native.getMassProperties().setInertiaTensor( GetInertiaTensor( m_inertiaDiagonal, m_inertiaOffDiagonal ) );
+      }
     }
 
     [SerializeField]
