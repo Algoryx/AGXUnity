@@ -5,6 +5,8 @@ namespace AGXUnity.Model
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
+    public delegate void OnModificationCallback( agxTerrain.Terrain terr, agx.Vec2i agxIndex, Terrain unityTile, Vector2Int unityIndex );
+    public OnModificationCallback onModification;
 
     [SerializeField]
     private ShapeMaterial m_material = null;

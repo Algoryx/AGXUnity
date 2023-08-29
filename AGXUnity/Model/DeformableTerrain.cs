@@ -196,13 +196,13 @@ namespace AGXUnity.Model
       var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
       foreach ( var index in modifiedVertices ) {
-        var i = (int)index.x;
-        var j = (int)index.y;
+        var unityIndex = new Vector2Int((int)(resX - index.x - 1), (int)(resY - index.y - 1));
         var h = (float)Native.getHeight( index );
 
         result[ 0, 0 ] = h / scale;
 
-        TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
+        TerrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
+        onModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
 #if UNITY_2019_1_OR_NEWER
