@@ -111,6 +111,109 @@ namespace AGXUnityEditor
                                          wrapper.Get<Color>( objects[ 0 ] ) );
     }
 
+    [InspectorDrawer( typeof( OptionalOverrideValue<float> ) )]
+    public static object OptionalOverrideFloatDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      return HandleOptionalOverride<float>( objects, wrapper );
+    }
+
+    [InspectorDrawer( typeof( OptionalOverrideValue<Vector3> ) )]
+    public static object OptionalOverrideVector3Drawer( object[] objects, InvokeWrapper wrapper )
+    {
+      return HandleOptionalOverride<Vector3>( objects, wrapper );
+    }
+
+    public static object HandleOptionalOverride<ValueT>( object[] objects, InvokeWrapper wrapper )
+      where ValueT : struct
+    {
+      if ( s_floatFieldMethod == null )
+        s_floatFieldMethod = typeof( EditorGUI ).GetMethod( "FloatField",
+                                                            new[]
+                                                            {
+                                                              typeof( Rect ),
+                                                              typeof( string ),
+                                                              typeof( float )
+                                                            } );
+      if ( s_vector3FieldMethod == null )
+        s_vector3FieldMethod = typeof( EditorGUI ).GetMethod( "Vector3Field",
+                                                              new[]
+                                                              {
+                                                                typeof( Rect ),
+                                                                typeof( string ),
+                                                                typeof( Vector3 )
+                                                              } );
+
+      var method = typeof( ValueT ) == typeof( float ) ?
+                      s_floatFieldMethod :
+                    typeof( ValueT ) == typeof( Vector3 ) ?
+                      s_vector3FieldMethod :
+                      null;
+
+      if ( method == null )
+        throw new NullReferenceException( "Unknown OptionalOverrideValue type: " + typeof( ValueT ).Name );
+
+      var rect = EditorGUILayout.GetControlRect();
+
+      // We don't want the tooltip of the toggle to show when
+      // hovering the update button or float field(s) so use
+      // xMax as label width minus some magic number
+      var widthUntilButton = rect.xMax;
+      rect.xMax = EditorGUIUtility.labelWidth;
+
+      var instance = wrapper.Get<OptionalOverrideValue<ValueT>>( objects[ 0 ] );
+
+      UnityEngine.GUI.changed = false;
+      var hasMixedUseOverride = !CompareMulti<ValueT>( objects,
+                                                       wrapper,
+                                                       other => other.UseOverride == instance.UseOverride );
+      EditorGUI.showMixedValue = hasMixedUseOverride;
+
+      var toggleInput = hasMixedUseOverride ?
+                          false :
+                          instance.UseOverride;
+
+      // During showMixedValue - Toggle will always return true (enabled)
+      // when the user clicks regardless of instance.UseOverride.
+      var toggleOutput = EditorGUI.ToggleLeft( rect,
+                                               GUI.MakeLabel( wrapper.Member.Name.SplitCamelCase(),
+                                                              false,
+                                                              "If checked, the override value will be used. Uncheck to use default." ),
+                                               toggleInput );
+      if ( toggleOutput != toggleInput )
+        instance.UseOverride = toggleOutput;
+
+      // Restore width and calculate new start of the float
+      // field(s). Start is label width but we have to remove
+      // the current indent level since label width is independent
+      // of the indent level. Unsure why we have to add LayoutMagicNumber pixels...
+      // could be float field(s) default minimum label size.
+      rect.xMax = widthUntilButton;
+      rect.xMin = EditorGUIUtility.labelWidth - InspectorGUI.IndentScope.PixelLevel + InspectorGUI.LayoutMagicNumber;
+
+      s_fieldMethodArgs[ 0 ] = rect;
+      s_fieldMethodArgs[ 2 ] = instance.OverrideValue;
+      var newValue = default( ValueT );
+
+      EditorGUI.showMixedValue = !CompareMulti<float>( objects,
+                                                        wrapper,
+                                                        other => instance.OverrideValue.Equals( other.OverrideValue ) );
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
+                                    instance.UseOverride &&
+                                    !hasMixedUseOverride ) ) {
+        EditorGUI.BeginChangeCheck();
+        newValue = (ValueT)method.Invoke( null, s_fieldMethodArgs );
+        if ( EditorGUI.EndChangeCheck() ) {
+          // Validate input here so that, e.g., 0 isn't propagated. It's
+          // not possible to check this in the CopyOp callback.
+          var clampAttribute = wrapper.GetAttribute<ClampAboveZeroInInspector>();
+          if ( clampAttribute == null || clampAttribute.IsValid( newValue ) )
+            instance.OverrideValue = newValue;
+        }
+      }
+
+      return instance;
+    }
+
     [InspectorDrawer( typeof( DefaultAndUserValueFloat ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
     public static object DefaultAndUserValueFloatDrawer( object[] objects, InvokeWrapper wrapper )
@@ -226,6 +329,17 @@ namespace AGXUnityEditor
       var identical = true;
       for ( int i = 1; i < objects.Length; ++i )
         identical = identical && validator( wrapper.Get<DefaultAndUserValue<ValueT>>( objects[ i ] ) );
+      return identical;
+    }
+
+    private static bool CompareMulti<ValueT>( object[] objects,
+                                              InvokeWrapper wrapper,
+                                              Func<OptionalOverrideValue<ValueT>, bool> validator )
+      where ValueT : struct
+    {
+      var identical = true;
+      for ( int i = 1; i < objects.Length; ++i )
+        identical = identical && validator( wrapper.Get<OptionalOverrideValue<ValueT>>( objects[ i ] ) );
       return identical;
     }
 
