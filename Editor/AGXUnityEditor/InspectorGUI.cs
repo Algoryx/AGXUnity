@@ -36,7 +36,7 @@ namespace AGXUnityEditor
       get
       {
 #if UNITY_2019_3_OR_NEWER
-        return 22.0f;
+        return 20.0f;
 #else
         return 14.0f;
 #endif
