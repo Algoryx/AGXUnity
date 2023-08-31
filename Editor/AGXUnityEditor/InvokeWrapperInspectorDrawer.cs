@@ -112,18 +112,35 @@ namespace AGXUnityEditor
     }
 
     [InspectorDrawer( typeof( OptionalOverrideValue<float> ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
     public static object OptionalOverrideFloatDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return HandleOptionalOverride<float>( objects, wrapper );
+      var result = HandleOptionalOverride<float>( objects, wrapper );
+      return result.ContainsChanges ? (object)result : null;
+    }
+
+    public static void OptionalOverrideFloatDrawerCopyOp( object source, object destination )
+    {
+      var s = (OptionalOverrideValueResult)source;
+      var d = destination as OptionalOverrideValue<float>;
+      s.PropagateChanges( d );
     }
 
     [InspectorDrawer( typeof( OptionalOverrideValue<Vector3> ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
     public static object OptionalOverrideVector3Drawer( object[] objects, InvokeWrapper wrapper )
     {
       return HandleOptionalOverride<Vector3>( objects, wrapper );
     }
 
-    public static object HandleOptionalOverride<ValueT>( object[] objects, InvokeWrapper wrapper )
+    public static void OptionalOverrideVector3DrawerCopyOp( object source, object destination )
+    {
+      var s = (OptionalOverrideValueResult)source;
+      var d = destination as OptionalOverrideValue<Vector3>;
+      s.PropagateChanges( d );
+    }
+
+    private static OptionalOverrideValueResult HandleOptionalOverride<ValueT>( object[] objects, InvokeWrapper wrapper )
       where ValueT : struct
     {
       if ( s_floatFieldMethod == null )
@@ -160,6 +177,7 @@ namespace AGXUnityEditor
       var widthUntilButton = rect.xMax;
       rect.xMax = EditorGUIUtility.labelWidth;
 
+      var result = new OptionalOverrideValueResult();
       var instance = wrapper.Get<OptionalOverrideValue<ValueT>>( objects[ 0 ] );
 
       UnityEngine.GUI.changed = false;
@@ -179,8 +197,10 @@ namespace AGXUnityEditor
                                                               false,
                                                               "If checked, the override value will be used. Uncheck to use default." ),
                                                toggleInput );
-      if ( toggleOutput != toggleInput )
-        instance.UseOverride = toggleOutput;
+      if ( toggleOutput != toggleInput ) {
+        result.UseOverrideToggleChanged = true;
+        result.UseOverride = toggleOutput;
+      }
 
       // Restore width and calculate new start of the float
       // field(s). Start is label width but we have to remove
@@ -194,7 +214,7 @@ namespace AGXUnityEditor
       s_fieldMethodArgs[ 2 ] = instance.OverrideValue;
       var newValue = default( ValueT );
 
-      EditorGUI.showMixedValue = !CompareMulti<float>( objects,
+      EditorGUI.showMixedValue = !CompareMulti<ValueT>( objects,
                                                         wrapper,
                                                         other => instance.OverrideValue.Equals( other.OverrideValue ) );
       using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
@@ -207,11 +227,79 @@ namespace AGXUnityEditor
           // not possible to check this in the CopyOp callback.
           var clampAttribute = wrapper.GetAttribute<ClampAboveZeroInInspector>();
           if ( clampAttribute == null || clampAttribute.IsValid( newValue ) )
-            instance.OverrideValue = newValue;
+            result.OnChange<ValueT>(instance.OverrideValue, newValue);
         }
       }
 
-      return instance;
+      return result;
+    }
+
+    private struct OptionalOverrideValueResult
+    {
+      public bool UseOverrideToggleChanged;
+      public bool UseOverride;
+
+      public bool[] ValuesChanged;
+      public float[] Values;
+
+      public void OnChange<ValueT>( object oldValueObject, object newValueObject )
+        where ValueT : struct
+      {
+        if ( typeof( ValueT ) == typeof( float ) ) {
+          ValuesChanged = new bool[] { true };
+          Values = new float[] { (float)newValueObject };
+        }
+        else if ( typeof( ValueT ) == typeof( Vector3 ) ) {
+          var oldValue = (Vector3)oldValueObject;
+          var newValue = (Vector3)newValueObject;
+          ValuesChanged = new bool[] { false, false, false };
+          Values = new float[] { newValue.x, newValue.y, newValue.z };
+          for ( int i = 0; i < 3; ++i )
+            ValuesChanged[ i ] = !oldValue[ i ].Equals( Values[ i ] );
+        }
+      }
+
+      public void PropagateChanges( OptionalOverrideValue<float> destination )
+      {
+        if ( !ContainsChanges )
+          return;
+
+        PropagateChangesT( destination );
+
+        if ( ValuesChanged != null && ValuesChanged[ 0 ] )
+          destination.OverrideValue = Values[ 0 ];
+      }
+
+      public void PropagateChanges( OptionalOverrideValue<Vector3> destination )
+      {
+        if ( !ContainsChanges )
+          return;
+
+        PropagateChangesT( destination );
+
+        if ( ValuesChanged != null && ValuesChanged.Contains( true ) ) {
+          var newValue = new Vector3();
+          for ( int i = 0; i < 3; ++i )
+            newValue[ i ] = ValuesChanged[ i ] ? Values[ i ] : destination.OverrideValue[ i ];
+          destination.OverrideValue = newValue;
+        }
+      }
+
+      private void PropagateChangesT<ValueT>( OptionalOverrideValue<ValueT> destination )
+        where ValueT : struct
+      {
+        if ( UseOverrideToggleChanged )
+          destination.UseOverride = UseOverride;
+      }
+
+      public bool ContainsChanges
+      {
+        get
+        {
+          return UseOverrideToggleChanged ||
+                 ( ValuesChanged != null && ValuesChanged.Contains( true ) );
+        }
+      }
     }
 
     [InspectorDrawer( typeof( DefaultAndUserValueFloat ) )]
