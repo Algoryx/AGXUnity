@@ -219,6 +219,10 @@ namespace AGXUnityEditor.Tools
 
       ShapeType? previewShape = null;
 
+      // EditorGui.EndVertical seems to be called one too many times when a shape is selected.
+      // here we skip the call to DropdownToolEnd() to avoid one call in that case
+      bool selected = false;
+
       UnityEngine.GUI.enabled = m_selection.Count > 0;
       m_buttons.Update( Event.current, ( type ) =>
         {
@@ -283,6 +287,7 @@ namespace AGXUnityEditor.Tools
             }
           }
 
+          selected = true;
           Reset();
           PerformRemoveFromParent();
           EditorUtility.SetDirty( Parent );
@@ -294,7 +299,8 @@ namespace AGXUnityEditor.Tools
 
       UnityEngine.GUI.enabled = true;
 
-      InspectorGUI.OnDropdownToolEnd();
+      if(!selected)
+        InspectorGUI.OnDropdownToolEnd();
     }
 
     private string GetCurrentStateInfo()
