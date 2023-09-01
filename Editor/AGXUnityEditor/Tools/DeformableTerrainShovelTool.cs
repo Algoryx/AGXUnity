@@ -174,6 +174,9 @@ namespace AGXUnityEditor.Tools
         return result;
       if ( Vector3.Dot( result.Edge.Direction, refCamera.transform.forward ) > 0.0 )
         AGXUnity.Utils.Math.Swap( ref result.Edge.Start, ref result.Edge.End );
+      // If a principal axis was picked, move start of direction to center of axis
+      if ( result.Edge.Type == AGXUnity.Edge.EdgeType.Principal )
+        result.Edge.Start = result.Edge.Center;
       result.Edge.End = result.Edge.Start + 0.5f * result.Edge.Direction;
       return result;
     }

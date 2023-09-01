@@ -29,15 +29,18 @@ namespace AGXUnity.Collide
     }
 
     public agxCollide.Mesh CreateShape( Func<Vector3, Vector3> transformer,
-                                        CollisionMeshOptions.MeshMode mode )
+                                        CollisionMeshOptions.MeshMode mode,
+                                        string name = "AGXUnity.Mesh",
+                                        uint optionsmask = (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES)
     {
       // The transformer will return the vertex in left handed frame since
       // it has been scaled.
+      var fullName = $"{name} (Precomputed {mode})";
       var vertices = new agx.Vec3Vector( Vertices.Select( v => transformer( v ).ToHandedVec3() ).ToArray() );
       var indices = new agx.UInt32Vector( Indices.Select( i => (uint)i ).ToArray() );
       return mode == CollisionMeshOptions.MeshMode.Trimesh ?
-               new agxCollide.Trimesh( vertices, indices, "AGXUnity.Mesh: Trimesh" ) :
-               new agxCollide.Convex( vertices, indices, "AGXUnity.Mesh: " + mode.ToString() );
+               new agxCollide.Trimesh( vertices, indices,  fullName, optionsmask ) :
+               new agxCollide.Convex( vertices, indices, fullName, optionsmask );
     }
 
     public UnityEngine.Mesh[] CreateRenderMeshes( Transform transform )
