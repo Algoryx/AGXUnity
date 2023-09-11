@@ -165,6 +165,10 @@ namespace AGXUnityEditor
       //       should be visible are enabled again but never rendered by Unity.
       // SOLUTION: Add hideFlags |= HideFlags.HideInInspector in Reset method of the class
       //           that shouldn't be rendered in the Inspector.
+      // NOTE 2: The above solution does not work when importing prefabs as the act of 
+      //         saving a GameObject to a prefab clears the hideFlags.
+      // SOLUTION: Set the hideFlags on affected components when adding a prefab to the scene
+      //           in AGXUnityEditor.AssetPostprocessorHandler.OnAGXPrefabAdddedToScene
       if ( this.targets.Any( t => !t.hideFlags.HasFlag( HideFlags.HideInInspector ) ) && m_targetType.GetCustomAttribute<HideInInspector>( false ) != null ) {
         foreach ( var t in this.targets )
           t.hideFlags |= HideFlags.HideInInspector;
