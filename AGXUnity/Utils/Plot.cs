@@ -33,13 +33,13 @@ namespace AGXUnity.Utils
     }
 
     /// <summary>
-    /// Path to save file to.
+    /// Full path to save file to.
     /// </summary>
     [SerializeField]
     private string m_filePath = string.Empty;
 
     /// <summary>
-    /// Path to save file to.
+    /// Full path to save file to.
     /// </summary>
     public string FilePath {
       get { return m_filePath; }
@@ -72,8 +72,15 @@ namespace AGXUnity.Utils
       m_plotSystem = GetSimulation().getPlotSystem();
       if (AutomaticallyOpenPlotWindow)
         OpenPlotWindow();
-      if (WritePlotToFile && FilePath != string.Empty)
-        Native.add(new agxPlot.FilePlot(FilePath));
+      if (WritePlotToFile)
+        if (FilePath == string.Empty)
+        {
+          UnityEngine.Debug.LogWarning("WritePlotToFile is set but no path is specified. Proceeding without writing to file");
+        }
+        else
+        {
+          Native.add(new agxPlot.FilePlot(FilePath));
+        }
 
       return true;
     }
@@ -113,12 +120,6 @@ namespace AGXUnity.Utils
     public void OpenPlotWindow()
     {
       Native.add(new agxPlot.WebPlot(true));
-    }
-
-    public void WriteToFile(string path)
-    {
-      agxPlot.FilePlot fp = new agxPlot.FilePlot(path);
-      Native.add(fp);
     }
   };
 

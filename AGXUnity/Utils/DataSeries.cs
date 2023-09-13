@@ -11,6 +11,7 @@ namespace AGXUnity.Utils
     public agxPlot.DataSeries Native { get { return m_dataSeries; } }
     public string Name;
     public string Unit;
+    public GameObject GameObject;
 
     protected override bool Initialize()
     {
