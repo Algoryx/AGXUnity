@@ -3,8 +3,11 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+using System;
+
 namespace AGXUnity.Utils
 {
+  [DisallowMultipleComponent]
   public class Plot : ScriptComponent
   {
     /// <summary>
@@ -77,6 +80,10 @@ namespace AGXUnity.Utils
         {
           UnityEngine.Debug.LogWarning("WritePlotToFile is set but no path is specified. Proceeding without writing to file");
         }
+        else if (System.IO.File.Exists(FilePath))
+        {
+          UnityEngine.Debug.LogWarning("File already exists in specified path. Proceeding without writing to file");
+        }
         else
         {
           Native.add(new agxPlot.FilePlot(FilePath));
@@ -94,7 +101,7 @@ namespace AGXUnity.Utils
     /// <param name="legend">Legend for what is being plotted.</param>
     public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend)
     {
-      agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries);
+      agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries, legend);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
       plotWindow.add(plotCurve);
     }
