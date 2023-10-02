@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Utils;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
@@ -383,6 +384,20 @@ namespace AGXUnityEditor
     public static GameObject Simulation()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Plot", priority = 66 )]
+    public static GameObject Plot()
+    {
+      var PlotObject = new GameObject("PlotObject");
+      PlotObject.AddComponent<AGXUnity.Utils.Plot>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+      var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/Plot.Asset";
+      if (!System.IO.File.Exists("Assets/Plot.Asset"))
+        AssetDatabase.CopyAsset(plotAssetPath, "Assets/Plot.Asset");
+
+      return Selection.activeGameObject = PlotObject.gameObject;
     }
 
     [MenuItem( "AGXUnity/Managers/Collision Groups Manager", validate = true )]

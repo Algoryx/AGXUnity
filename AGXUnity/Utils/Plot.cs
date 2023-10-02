@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-using System;
-
 namespace AGXUnity.Utils
 {
   [DisallowMultipleComponent]
@@ -39,6 +37,7 @@ namespace AGXUnity.Utils
     /// Full path to save file to.
     /// </summary>
     [SerializeField]
+    [Tooltip("Where to save plot data. Root directory is Assets folder.")]
     private string m_filePath = string.Empty;
 
     /// <summary>
@@ -59,6 +58,24 @@ namespace AGXUnity.Utils
     private bool m_AutomaticallyOpenPlotWindow = true;
 
     /// <summary>
+    /// Full path to save file to.
+    /// </summary>
+    public bool ForceFileOverWrite
+    {
+      get { return m_ForceFileOverWrite; }
+      set
+      {
+        m_ForceFileOverWrite = value;
+      }
+    }
+
+    /// <summary>
+    /// Toggle if plot window should open on start.
+    /// </summary>
+    [SerializeField]
+    private bool m_ForceFileOverWrite = false;
+
+    /// <summary>
     /// Toggle if plot window should open on start.
     /// </summary>
     public bool AutomaticallyOpenPlotWindow
@@ -76,18 +93,23 @@ namespace AGXUnity.Utils
       if (AutomaticallyOpenPlotWindow)
         OpenPlotWindow();
       if (WritePlotToFile)
+      {
+        FilePath = Application.dataPath + "/" + FilePath + ".csv";
+
         if (FilePath == string.Empty)
         {
-          UnityEngine.Debug.LogWarning("WritePlotToFile is set but no path is specified. Proceeding without writing to file");
+          UnityEngine.Debug.LogWarning("WritePlotToFile is set but no path is specified. Select path.");
         }
-        else if (System.IO.File.Exists(FilePath))
+
+        if (System.IO.File.Exists(FilePath) && !ForceFileOverWrite)
         {
-          UnityEngine.Debug.LogWarning("File already exists in specified path. Proceeding without writing to file");
+          UnityEngine.Debug.LogWarning("File already exists in specified path and Force File Overwrite is disabled. Proceeding without writing to file");
         }
         else
         {
           Native.add(new agxPlot.FilePlot(FilePath));
         }
+      }
 
       return true;
     }
@@ -113,10 +135,21 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(DataSeries xSeries, DataSeries ySeries, string name, string legend)
+    public void CreatePlot(DataSeries xSeries, DataSeries ySeries, string name, string legend, Vector3? color = null)
     {
+      agx.Vec4 curveColor;
+      System.Random random = new System.Random();
       GetInitialized<AGXUnity.Utils.Plot>();
+      if (color == null)
+      {
+        curveColor = new agx.Vec4(random.Next(0,1), random.Next(0, 1), random.Next(0, 1), 1);
+      }
+      else
+      {
+        curveColor = new agx.Vec4(color.Value[0], color.Value[1], color.Value[2], 1);
+      }
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, ySeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, legend);
+      plotCurve.setColor(curveColor);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
       plotWindow.add(plotCurve);
     }
