@@ -121,9 +121,20 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">agxPlot.Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend)
+    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend, Vector3? color = null)
     {
+      agx.Vec4 curveColor;
+      System.Random random = new System.Random();
+      if (color == null)
+      {
+        curveColor = new agx.Vec4(random.Next(0, 1), random.Next(0, 1), random.Next(0, 1), 1);
+      }
+      else
+      {
+        curveColor = new agx.Vec4(color.Value[0], color.Value[1], color.Value[2], 1);
+      }
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries, legend);
+      plotCurve.setColor(curveColor);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
       plotWindow.add(plotCurve);
     }
