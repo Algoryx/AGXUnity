@@ -1,8 +1,4 @@
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace AGXUnity.Utils
 {
   [DisallowMultipleComponent]
@@ -11,9 +7,7 @@ namespace AGXUnity.Utils
     /// <summary>
     /// Native AGXPlot.System object.
     /// </summary>
-    public agxPlot.System Native { get { return m_plotSystem; } }
-
-    private agxPlot.System m_plotSystem;
+    public agxPlot.System Native { get; private set; } = null;
 
     /// <summary>
     /// Toggle to save plot to file.
@@ -55,7 +49,7 @@ namespace AGXUnity.Utils
     /// Toggle if plot window should open on start.
     /// </summary>
     [SerializeField]
-    private bool m_AutomaticallyOpenPlotWindow = true;
+    private bool m_AutomaticallyOpenPlotWindow = false;
 
     /// <summary>
     /// Full path to save file to.
@@ -89,7 +83,7 @@ namespace AGXUnity.Utils
 
     protected override bool Initialize()
     {
-      m_plotSystem = GetSimulation().getPlotSystem();
+      Native = GetSimulation().getPlotSystem();
       if (AutomaticallyOpenPlotWindow)
         OpenPlotWindow();
       if (WritePlotToFile)
@@ -121,18 +115,11 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">agxPlot.Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend, Vector3? color = null)
+    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend, Color color)
     {
       agx.Vec4 curveColor;
       System.Random random = new System.Random();
-      if (color == null)
-      {
-        curveColor = new agx.Vec4(random.Next(0, 1), random.Next(0, 1), random.Next(0, 1), 1);
-      }
-      else
-      {
-        curveColor = new agx.Vec4(color.Value[0], color.Value[1], color.Value[2], 1);
-      }
+      curveColor = new agx.Vec4(color.r, color.g, color.b, 1);
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries, legend);
       plotCurve.setColor(curveColor);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
@@ -146,19 +133,12 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(DataSeries xSeries, DataSeries ySeries, string name, string legend, Vector3? color = null)
+    public void CreatePlot(DataSeries xSeries, DataSeries ySeries, string name, string legend, Color color)
     {
       agx.Vec4 curveColor;
       System.Random random = new System.Random();
       GetInitialized<AGXUnity.Utils.Plot>();
-      if (color == null)
-      {
-        curveColor = new agx.Vec4(random.Next(0,1), random.Next(0, 1), random.Next(0, 1), 1);
-      }
-      else
-      {
-        curveColor = new agx.Vec4(color.Value[0], color.Value[1], color.Value[2], 1);
-      }
+      curveColor = new agx.Vec4(color.r, color.g, color.b, 1);
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, ySeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, legend);
       plotCurve.setColor(curveColor);
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
@@ -173,24 +153,4 @@ namespace AGXUnity.Utils
       Native.add(new agxPlot.WebPlot(true));
     }
   };
-
-  #if UNITY_EDITOR
-  [CustomEditor(typeof(Plot))]
-  public class PlotEditor : Editor
-  {
-    public override void OnInspectorGUI()
-    {
-      base.DrawDefaultInspector();
-
-      Plot plot = (Plot)target;
-
-      GUILayout.BeginHorizontal();
-      if (GUILayout.Button("Open Plot Window"))
-      {
-        plot.OpenPlotWindow();
-      }
-      GUILayout.EndHorizontal();
-    }
-  }
-  #endif
 }

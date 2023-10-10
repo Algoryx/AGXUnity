@@ -7,23 +7,21 @@ namespace AGXUnity.Utils
 {
   public class DataSeries : ScriptComponent
   {
-    private agxPlot.DataSeries m_dataSeries;
-    public agxPlot.DataSeries Native { get { return m_dataSeries; } }
+    public agxPlot.DataSeries Native { get; private set; } = null;
     public string Name;
     public string Unit;
-    public GameObject GameObject;
 
     protected override bool Initialize()
     {
-      m_dataSeries = new agxPlot.DataSeries(Name);
-      m_dataSeries.setUnit(Unit);
+      Native = new agxPlot.DataSeries(Name);
+      Native.setUnit(Unit);
 
       return true;
     }
 
     public void Write(float value)
     {
-      m_dataSeries.push(value);
+      Native.push(value);
     }
   }
 }
