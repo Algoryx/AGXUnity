@@ -396,7 +396,7 @@ namespace AGXUnityEditor
 
       var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
       var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/TemplatePlot.Asset");
-      AssetDatabase.CopyAsset(plotAssetPath, AssetDatabase.GenerateUniqueAssetPath("Assets/TemplatePlot.Asset"));
+      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
 
 #if USE_VISUAL_SCRIPTING
       AssetDatabase.SaveAssets();
