@@ -7,79 +7,33 @@ namespace AGXUnity.Utils
     /// <summary>
     /// Native AGXPlot.System object.
     /// </summary>
+    [SerializeField]
     public agxPlot.System Native { get; private set; } = null;
 
     /// <summary>
     /// Toggle to save plot to file.
     /// </summary>
-    [SerializeField]
-    private bool m_WritePlotToFile = false;
+    [field: SerializeField]
+    public bool WritePlotToFile { get; set; } = false;
 
-    /// <summary>
-    /// Toggle to save plot to file.
-    /// </summary>
-    public bool WritePlotToFile
-    {
-      get { return m_WritePlotToFile; }
-      set
-      {
-        m_WritePlotToFile = value;
-      }
-    }
 
     /// <summary>
     /// Full path to save file to.
     /// </summary>
-    [SerializeField]
-    [Tooltip("Where to save plot data. Root directory is Assets folder.")]
-    private string m_filePath = string.Empty;
+    [field: SerializeField]
+    public string FilePath { get; set; } = string.Empty;
 
     /// <summary>
     /// Full path to save file to.
     /// </summary>
-    public string FilePath {
-      get { return m_filePath; }
-      set
-      {
-        m_filePath = value;
-      }
-    }
+    [field: SerializeField]
+    public bool ForceFileOverWrite { get; set; } = false;
 
     /// <summary>
     /// Toggle if plot window should open on start.
     /// </summary>
-    [SerializeField]
-    private bool m_AutomaticallyOpenPlotWindow = false;
-
-    /// <summary>
-    /// Full path to save file to.
-    /// </summary>
-    public bool ForceFileOverWrite
-    {
-      get { return m_ForceFileOverWrite; }
-      set
-      {
-        m_ForceFileOverWrite = value;
-      }
-    }
-
-    /// <summary>
-    /// Toggle if plot window should open on start.
-    /// </summary>
-    [SerializeField]
-    private bool m_ForceFileOverWrite = false;
-
-    /// <summary>
-    /// Toggle if plot window should open on start.
-    /// </summary>
-    public bool AutomaticallyOpenPlotWindow
-    {
-      get { return m_AutomaticallyOpenPlotWindow; }
-      set
-      {
-        m_AutomaticallyOpenPlotWindow = value;
-      }
-    }
+    [field: SerializeField]
+    public bool AutomaticallyOpenPlotWindow { get; set; } = false;
 
     protected override bool Initialize()
     {
