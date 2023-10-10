@@ -196,13 +196,53 @@ namespace AGXUnity.Model
     /// Verifies so that all added shovels still exists. Shovels that
     /// has been deleted are removed.
     /// </summary>
-    abstract public void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false);
+    abstract public void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false );
 
     /// <summary>
     /// Converts any part of the terrain that overlaps the provided shape into dynamic mass
     /// </summary>
     /// <param name="failureVolume">The shape in which to convert the terrain into dynamic mass</param>
     abstract public void ConvertToDynamicMassInShape( Collide.Shape failureVolume );
+
+    /// <summary>
+    /// Sets the heights in the terrain starting at the specified terrain indices using Unity's indexing convention.
+    /// This function is meant to mimic <see cref="UnityEngine.TerrainData.SetHeights"/>.
+    /// The width and height of the terrain patch which is set is inferred from the size of the provided heights array.
+    /// </summary>
+    /// <param name="xstart">The x-index at which to start setting the heights.</param>
+    /// <param name="ystart">The y-index at which to start setting the heights.</param>
+    /// <param name="heights">The heights to write into the terrain.</param>
+    abstract public void SetHeights( int xstart, int ystart, float[,] heights );
+
+    /// <summary>
+    /// Sets the height in the terrain at the specified terrain index using Unity's indexing convention.
+    /// This function is meant to mimic <see cref="UnityEngine.TerrainData.SetHeights"/>.
+    /// </summary>
+    /// <param name="x">The x-index at which to set the height.</param>
+    /// <param name="y">The y-index at which to set the height.</param>
+    /// <param name="height">The height to write into the terrain.</param>
+    abstract public void SetHeight( int x, int y, float height );
+
+    /// <summary>
+    /// Gets the heights in the terrain patch starting at the specified terrain indices using Unity's indexing convention
+    /// and covering the specified width and height.
+    /// This function is meant to mimic <see cref="UnityEngine.TerrainData.GetHeights"/>.
+    /// </summary>
+    /// <param name="xstart">The x-index at which to start getting the heights.</param>
+    /// <param name="ystart">The y-index at which to start getting the heights.</param>
+    /// <param name="width">The width of the region for which to get the heights.</param>
+    /// <param name="height">The height of the region for which to get the heights.</param>
+    /// <returns>A 2D array with the specified width and height containing the heights of the terrain in the specified patch.</returns>
+    abstract public float[,] GetHeights( int xstart, int ystart, int width, int height );
+
+    /// <summary>
+    /// Gets the heights in the terrain patch starting at the specified terrain index using Unity's indexing convention.
+    /// This function is meant to mimic <see cref="UnityEngine.TerrainData.GetHeight"/>.
+    /// </summary>
+    /// <param name="x">The x-index at which to get the height.</param>
+    /// <param name="y">The y-index at which to get the height.</param>
+    /// <returns>The height of the terrain at the specified index.</returns>
+    abstract public float GetHeight( int x, int y );
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

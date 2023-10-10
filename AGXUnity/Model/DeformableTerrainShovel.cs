@@ -63,7 +63,7 @@ namespace AGXUnity.Model
       {
         m_cuttingDirection = value ?? new Line();
         if ( m_cuttingDirection.Valid && Native != null )
-          Native.setCuttingDirection( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3() );
+          Native.setCuttingDirection( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3().normal() );
       }
     }
 
@@ -118,7 +118,7 @@ namespace AGXUnity.Model
       Native = new agxTerrain.Shovel( rb,
                                       TopEdge.ToNativeEdge( gameObject ),
                                       CuttingEdge.ToNativeEdge( gameObject ),
-                                      CuttingDirection.CalculateLocalDirection( gameObject ).ToHandedVec3() );
+                                      CuttingDirection.CalculateLocalDirection( gameObject ).ToHandedVec3().normal() );
 
       if ( Settings == null ) {
         Settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();

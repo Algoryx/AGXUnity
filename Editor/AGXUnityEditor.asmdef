@@ -1,7 +1,10 @@
 {
     "name": "AGXUnityEditor",
+    "rootNamespace": "",
     "references": [
-        "AGXUnity"
+        "AGXUnity",
+        "Unity.VisualScripting.Core",
+        "Unity.VisualScripting.Flow"
     ],
     "includePlatforms": [
         "Editor"
@@ -12,5 +15,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [
+        {
+            "name": "com.unity.visualscripting",
+            "expression": "0.0.0",
+            "define": "USE_VISUAL_SCRIPTING"
+        }
+    ],
+    "noEngineReferences": false
 }

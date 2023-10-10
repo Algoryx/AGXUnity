@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AGXUnity;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -154,9 +153,10 @@ namespace AGXUnityEditor.Tools
         StartFrameToolEnable = false;
 
         if ( Mode == ToolMode.Direction ) {
-          Line.End.Position   = Line.End.Position - 2.0f * Line.Length * Line.Direction;
-          Line.Start.Rotation = Quaternion.Euler( -Line.Start.Rotation.eulerAngles );
-          Line.End.Rotation   = Quaternion.Euler( -Line.End.Rotation.eulerAngles );
+          Line.End.Position    = Line.End.Position - 2.0f * Line.Length * Line.Direction;
+          // Rotate frames around local Y axis
+          Line.Start.Rotation *= Quaternion.Euler( new Vector3( 0.0f, 180.0f, 0.0f ) );
+          Line.End.Rotation   *= Quaternion.Euler( new Vector3( 0.0f, 180.0f, 0.0f ) );
         }
         else {
           var tmp    = Line.Start;

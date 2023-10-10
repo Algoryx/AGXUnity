@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Utils;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
@@ -385,6 +386,29 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
     }
 
+    [MenuItem( "AGXUnity/Plot", priority = 66 )]
+    public static GameObject Plot()
+    {
+      var PlotObject = new GameObject("PlotObject");
+      PlotObject.AddComponent<AGXUnity.Utils.Plot>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+
+#if USE_VISUAL_SCRIPTING
+      var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
+      var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
+      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
+
+      AssetDatabase.SaveAssets();
+      AssetDatabase.Refresh();
+
+      var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
+      sm.nest.SwitchToMacro(AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>(targetAssetPath));
+#endif
+
+      return Selection.activeGameObject = PlotObject.gameObject;
+    }
+
     [MenuItem( "AGXUnity/Managers/Collision Groups Manager", validate = true )]
     private static bool CollisionGroupsManagerValidate()
     {
@@ -467,9 +491,9 @@ namespace AGXUnityEditor
       }
       return Selection.activeGameObject = ph.gameObject;
     }
-    #endregion
+#endregion
 
-    #region Utils Settings
+#region Utils Settings
     [MenuItem( "AGXUnity/Utils/Generate Custom Editors", priority = 80 )]
     public static void GenerateEditors()
     {
@@ -503,9 +527,9 @@ namespace AGXUnityEditor
     {
       return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
     }
-    #endregion
+#endregion
 
-    #region Documentation, About and Update
+#region Documentation, About and Update
     [MenuItem( "AGXUnity/AGX Dynamics for Unity Manual", priority = 2001 )]
     public static void AGXDynamicsForUnityManual()
     {
@@ -559,7 +583,7 @@ namespace AGXUnityEditor
     {
       Windows.CheckForUpdatesWindow.Open();
     }
-    #endregion
+#endregion
   }
 }
 

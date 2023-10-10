@@ -1,13 +1,27 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity;
+using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+using System.Reflection;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 
 namespace AGXUnityEditor
 {
   public class AssetPostprocessorHandler : AssetPostprocessor
   {
+    static AssetPostprocessorHandler()
+    {
+      // Cache types which have the HideInInspector attribute for use in OnAGXPrefabAdddedToScene
+      TypesHiddenInInspector = new List<System.Type>();
+      foreach ( var a in System.AppDomain.CurrentDomain.GetAssemblies() )
+        if ( !a.GetName().Name.StartsWith( "Unity" ) && !a.GetName().Name.StartsWith( "System" ) )
+          foreach ( var t in a.DefinedTypes )
+            if ( t.IsSubclassOf( typeof( MonoBehaviour ) ) && t.GetCustomAttribute<HideInInspector>() != null )
+              TypesHiddenInInspector.Add( t );
+    }
+
+    static List<System.Type> TypesHiddenInInspector = new List<System.Type>();
+
     private class CollisionGroupEntryEqualityComparer : IEqualityComparer<CollisionGroupEntry>
     {
       public bool Equals( CollisionGroupEntry cg1, CollisionGroupEntry cg2 )
@@ -108,10 +122,10 @@ namespace AGXUnityEditor
 
       var fileInfo = new IO.AGXFileInfo( instance );
       if ( fileInfo.IsValid && fileInfo.Type == IO.AGXFileInfo.FileType.AGXPrefab )
-        OnAGXPrefabAdddedToScene( instance, fileInfo );
+        OnAGXPrefabAddedToScene( instance, fileInfo );
     }
 
-    private static void OnAGXPrefabAdddedToScene( GameObject instance, IO.AGXFileInfo fileInfo )
+    private static void OnAGXPrefabAddedToScene( GameObject instance, IO.AGXFileInfo fileInfo )
     {
       if ( fileInfo.ExistingPrefab == null ) {
         Debug.LogWarning( "Unable to load parent prefab from file: " + fileInfo.NameWithExtension );
@@ -120,6 +134,18 @@ namespace AGXUnityEditor
 
       Undo.SetCurrentGroupName( "Adding: " + instance.name + " to scene." );
       var grouId = Undo.GetCurrentGroup();
+
+      // As of Unity 2022.1 the inspector breaks when setting hideflags while rendering a custom inspector
+      // To circumvent this the hideflags are also set in the Reset method of the affected classes.
+      // This however is not sufficient when importing .agx files as the agx file importer saves a prefab
+      // which removes hideflags set on the object. (See https://forum.unity.com/threads/is-it-impossible-to-save-component-hideflags-in-a-prefab.976974/)
+      // As an additional workaround we set the hideflags on the affected componentes when adding a prefab
+      // to the scene instead.
+      foreach ( var t in TypesHiddenInInspector ) {
+        var components = instance.GetComponentsInChildren(t);
+        foreach ( var comp in components )
+          comp.hideFlags |= HideFlags.HideInInspector;
+      }
 
       var contactMaterialManager = TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>();
       Undo.RecordObject( contactMaterialManager, "Adding contact materials" );

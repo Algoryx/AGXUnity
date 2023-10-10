@@ -502,6 +502,8 @@ namespace AGXUnity
           var g2 = sep.second;
           separationData.Component1 = GetComponent( g1 );
           separationData.Component2 = GetComponent( g2 );
+          separationData.Geometry1 = g1;
+          separationData.Geometry2 = g2;
           listener.SeparationCallback( separationData );
           g1.ReturnToPool();
           g2.ReturnToPool();
