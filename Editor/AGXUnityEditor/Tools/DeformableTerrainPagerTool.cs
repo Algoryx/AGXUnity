@@ -84,7 +84,7 @@ namespace AGXUnityEditor.Tools
         }
 
         // This check is required due to how heightmaps are offset in AGX
-        if ( !DeformableTerrainPager.IsValidSize( TerrainPager.TileSize ) ) {
+        if ( !DeformableTerrainPager.IsInteger( TerrainPager.TileSize ) ) {
           InspectorGUI.WarningLabel( "Current only odd TileSize values are allowed" );
           validParams = false;
         }
