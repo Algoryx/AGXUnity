@@ -140,17 +140,17 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private OptionalOverrideValue<float> m_bottomContactThreshold = new OptionalOverrideValue<float>(0.02f);
-    public OptionalOverrideValue<float> BottomContactThreshold
+    private OptionalOverrideValue<float> m_contactRegionThreshold = new OptionalOverrideValue<float>(0.02f);
+    public OptionalOverrideValue<float> ContactRegionThreshold
     {
-      get { return m_bottomContactThreshold; }
+      get { return m_contactRegionThreshold; }
       set
       {
-        m_bottomContactThreshold = value;
-        if ( m_bottomContactThreshold.UseOverride )
-          Propagate( shovel => shovel.setBottomContactThreshold( m_bottomContactThreshold.OverrideValue ) );
+        m_contactRegionThreshold = value;
+        if ( m_contactRegionThreshold.UseOverride )
+          Propagate( shovel => shovel.setContactRegionThreshold( m_contactRegionThreshold.OverrideValue ) );
         else
-          Propagate( shovel => shovel.setBottomContactThreshold( shovel.computeDefaultBottomContactThreshold() ) );
+          Propagate( shovel => shovel.setContactRegionThreshold( shovel.computeDefaultContactRegionThreshold() ) );
       }
     }
 
@@ -320,8 +320,8 @@ namespace AGXUnity.Model
     
     public DeformableTerrainShovelSettings()
     {
-      m_bottomContactThreshold.OnOverrideValue += OnBottomContactThresholdOverrideValue;
-      m_bottomContactThreshold.OnUseOverrideToggle += OnBottomContactThresholdUseOverrideToggle;
+      m_contactRegionThreshold.OnOverrideValue += OnBottomContactThresholdOverrideValue;
+      m_contactRegionThreshold.OnUseOverrideToggle += OnBottomContactThresholdUseOverrideToggle;
     }
 
     protected override void Construct()
@@ -335,16 +335,16 @@ namespace AGXUnity.Model
 
     private void OnBottomContactThresholdOverrideValue( float newValue )
     {
-      if ( m_bottomContactThreshold.UseOverride )
-        Propagate( shovel => shovel.setBottomContactThreshold( newValue ) );
+      if ( m_contactRegionThreshold.UseOverride )
+        Propagate( shovel => shovel.setContactRegionThreshold( newValue ) );
     }
     
     private void OnBottomContactThresholdUseOverrideToggle( bool newValue )
     {
       if ( newValue )
-        Propagate( shovel => shovel.setBottomContactThreshold( m_bottomContactThreshold.OverrideValue ) );
+        Propagate( shovel => shovel.setContactRegionThreshold( m_contactRegionThreshold.OverrideValue ) );
       else
-        Propagate( shovel => shovel.setBottomContactThreshold( shovel.computeDefaultBottomContactThreshold() ) );
+        Propagate( shovel => shovel.setContactRegionThreshold( shovel.computeDefaultContactRegionThreshold() ) );
     }
 
     private void Propagate( Action<agxTerrain.Shovel> action )
