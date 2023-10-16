@@ -800,8 +800,10 @@ namespace AGXUnityEditor.Windows
 
       if ( s_listPackagesRequest.IsCompleted ) {
         if ( s_listPackagesRequest.Status == StatusCode.Success ) {
-          foreach ( var package in s_listPackagesRequest.Result )
+          foreach ( var package in s_listPackagesRequest.Result ) {
             s_dependencyData[ package.name ] = DependencyState.Installed;
+            s_dependencyData[ package.name + "@" + package.version ] = DependencyState.Installed;
+          }
         }
         else
           Debug.LogError( s_listPackagesRequest.Error.message );

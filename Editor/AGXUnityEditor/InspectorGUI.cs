@@ -36,7 +36,7 @@ namespace AGXUnityEditor
       get
       {
 #if UNITY_2019_3_OR_NEWER
-        return 22.0f;
+        return 20.0f;
 #else
         return 14.0f;
 #endif
@@ -642,6 +642,39 @@ namespace AGXUnityEditor
               Debug.Log( "Unknown file extension: " + fileInfo.Extension );
           }
         }
+      }
+
+      return currentEntry;
+    }
+
+    public static T ToggleEnum<T>( GUIContent label,
+                                   bool enabled,
+                                   Action<bool> enabledResult,
+                                   T currentEntry) 
+      where T : Enum
+    {
+      var toggleWidth   = 18.0f;
+      var controlRect   = EditorGUILayout.GetControlRect();
+      var totalWidth    = controlRect.width;
+      controlRect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( controlRect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      controlRect.x += EditorGUIUtility.labelWidth - indentOffset;
+      controlRect.width = toggleWidth;
+      enabled = EditorGUI.Toggle( controlRect,
+                                  enabled );
+      enabledResult( enabled );
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        controlRect.x += toggleWidth;
+        controlRect.width = totalWidth -
+                            EditorGUIUtility.labelWidth -
+                            toggleWidth +
+                            indentOffset;
+        currentEntry = (T)EditorGUI.EnumPopup( controlRect,
+                                               currentEntry);
       }
 
       return currentEntry;
