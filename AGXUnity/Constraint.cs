@@ -339,8 +339,10 @@ namespace AGXUnity
       return ( from ec
                in m_elementaryConstraints
                where ec as ElementaryConstraintController == null &&
-                    !ec.NativeName.StartsWith( "F" ) // Ignoring friction controller from versions
-                                                     // it wasn't implemented in.
+                    !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller from versions
+                                                        // it wasn't implemented in.
+                    ec.NativeName != "CL" // Ignoring ConeLimit until it is implemented 
+                                          // TODO: Implement ConeLimit secondary constraint
                select ec ).ToArray();
     }
 
