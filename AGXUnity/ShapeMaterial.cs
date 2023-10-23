@@ -54,6 +54,7 @@ namespace AGXUnity
     /// Default value: 1.0E10
     /// </summary>
     [ClampAboveZeroInInspector]
+    [InspectorGroupBegin(Name = "Wire Properties")]
     public float YoungsWireStretch
     {
       get { return m_youngsWireStretch; }
