@@ -33,8 +33,10 @@ namespace AGXUnityEditor.Tools
         Undo.RecordObject( Sink, "Sink template" );
 
         var sinkAll = InspectorGUI.Toggle( GUI.MakeLabel( "Sink All" ), Sink.SinkAll );
-        if ( sinkAll != Sink.SinkAll )
+        if ( sinkAll != Sink.SinkAll ) {
           Sink.SinkAll = sinkAll;
+          EditorUtility.SetDirty( Sink );
+        }
 
         if ( !Sink.SinkAll ) {
           InspectorGUI.ToolListGUI( this,
