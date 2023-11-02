@@ -254,7 +254,8 @@ namespace AGXUnity.Model
         // Disable the tire rim constraint since agx.TwoBodyTire will
         // create an additional constraint between the tire and the rim
         // with tire properties applied.
-        if ( TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
+        if ( TireRimConstraint.IsEnabled ) {
+          Debug.LogWarning( $"Constraint '{TireRimConstraint.name}' will be replaced by a native constraint part of TwoBodyTire '{name}'. Consider disabling constraint manually.", TireRimConstraint );
           m_tireRimConstraintInitialState = TireRimConstraint.enabled;
           TireRimConstraint.enabled = false;
         }
