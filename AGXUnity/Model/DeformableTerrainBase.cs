@@ -1,7 +1,18 @@
-﻿using UnityEngine;
+﻿using AGXUnity.Collide;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace AGXUnity.Model
 {
+
+  // Unity cannot serialize lists of lists so we declare a wrapper class to enable serialization
+  [System.Serializable]
+  public class MaterialPatchShapes
+  {
+    [SerializeField]public List<Shape> shapes = new List<Shape>();
+  }
+
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
@@ -137,6 +148,16 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public float ElementSize { get; }
 
+    [SerializeField]
+    private List<DeformableTerrainMaterial> m_materials = new List<DeformableTerrainMaterial>();
+
+    public DeformableTerrainMaterial[] Materials { get => m_materials.ToArray(); }
+
+    [SerializeField]
+    private SerializableDictionary<DeformableTerrainMaterial, ShapeMaterial> m_associatedMaterial = new SerializableDictionary<DeformableTerrainMaterial, ShapeMaterial>();
+    [SerializeField]
+    private SerializableDictionary<DeformableTerrainMaterial, MaterialPatchShapes> m_materialShapes = new SerializableDictionary<DeformableTerrainMaterial, MaterialPatchShapes>();
+
     /// <summary>
     /// Shovels associated to this terrain.
     /// </summary>
@@ -151,6 +172,105 @@ namespace AGXUnity.Model
     protected override void OnDisable()
     {
       SetEnable( false );
+    }
+
+    public bool Add( DeformableTerrainMaterial material )
+    {
+      if ( !IsNativeNull() ) {
+        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
+        return false;
+      }
+
+      if ( material == null || m_materials.Contains( material ) )
+        return false;
+
+      m_materials.Add( material );
+      m_materialShapes[ material ] = new MaterialPatchShapes();
+      m_associatedMaterial[ material ] = null;
+
+      return true;
+    }
+
+    public bool Remove( DeformableTerrainMaterial material )
+    {
+      if ( !IsNativeNull() ) {
+        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
+        return false;
+      }
+
+      if ( material == null || !m_materials.Contains( material ) )
+        return false;
+
+      m_materialShapes.Remove( material );
+      m_associatedMaterial.Remove( material );
+
+      return m_materials.Remove( material );
+    }
+
+    public bool Replace( DeformableTerrainMaterial oldMaterial, DeformableTerrainMaterial newMaterial)
+    {
+      if ( !IsNativeNull() ) {
+        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
+        return false;
+      }
+
+      if( m_materials.Contains(newMaterial) ) {
+        Debug.Log( $"Material '{newMaterial.name}' is already present in terrain", this );
+        return false;
+      }
+
+      if ( newMaterial == null || !m_materials.Contains( oldMaterial ) )
+        return false;
+
+      m_materials.Add( newMaterial );
+      m_materialShapes[ newMaterial ] = m_materialShapes[ oldMaterial ];
+      m_materialShapes.Remove( oldMaterial );
+      m_associatedMaterial[ newMaterial ] = m_associatedMaterial[ oldMaterial ];
+      m_associatedMaterial.Remove( oldMaterial );
+
+      return m_materials.Remove( oldMaterial );
+    }
+
+    public ShapeMaterial GetAssociatedMaterial( DeformableTerrainMaterial terrainMat )
+    {
+      return m_associatedMaterial.GetValueOrDefault( terrainMat );
+    }
+
+    public bool SetAssociatedMaterial(DeformableTerrainMaterial terrainMat, ShapeMaterial shapeMat )
+    {
+      if ( !m_associatedMaterial.ContainsKey( terrainMat ) ) {
+        Debug.Log( $"Cannot associate material '{shapeMat.name}' with '{terrainMat.name}' because '{terrainMat.name}' has not been added to the terrain", this );
+        return false;
+      }
+
+      m_associatedMaterial[ terrainMat ] = shapeMat;
+      return true;
+    }
+
+    public List<Shape> GetMaterialShapes( DeformableTerrainMaterial terrainMat )
+    {
+      return m_materialShapes.GetValueOrDefault( terrainMat )?.shapes;
+    }
+
+    public bool AddMaterialShape( DeformableTerrainMaterial terrainMat, Shape shape)
+    {
+      if ( !m_materialShapes.ContainsKey( terrainMat ) ) {
+        Debug.Log( $"Cannot add shape '{shape.name}' of material '{terrainMat.name}' to terrain because '{terrainMat.name}' has not been added to the terrain", this );
+        return false;
+      }
+
+      m_materialShapes[ terrainMat ].shapes.Add(shape);
+      return true;
+    }
+
+    public bool RemoveMaterialShape( DeformableTerrainMaterial terrainMat, Shape shape ) 
+    {
+      if ( !m_materialShapes.ContainsKey( terrainMat ) || !m_materialShapes[terrainMat].shapes.Contains(shape) ) {
+        Debug.Log( $"Cannot remove material shape '{shape.name}' from terrain before it has been added", this );
+        return false;
+      }
+
+      return m_materialShapes[ terrainMat ].shapes.Remove(shape);
     }
 
     /// <summary>

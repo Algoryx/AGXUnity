@@ -347,6 +347,21 @@ namespace AGXUnity.Model
       foreach ( var rb in m_rigidbodies )
         Native.add( rb.Body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
+      foreach ( var patch in Materials ) {
+        patch.GetInitialized<DeformableTerrainMaterial>();
+        Native.getTemplateTerrain().addTerrainMaterial( patch.Native );
+
+        var shapeMat = GetAssociatedMaterial( patch );
+        shapeMat?.GetInitialized<ShapeMaterial>();
+        if ( shapeMat != null )
+          Native.getTemplateTerrain().setAssociatedMaterial( patch.Native, shapeMat.Native );
+
+        var shapes = GetMaterialShapes(patch);
+        if ( shapes != null )
+          foreach ( var shape in shapes )
+            m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, Native.getTemplateTerrain().getMaterialController().getTerrainMaterialIndex( patch.Native ) );
+      }
+
       GetSimulation().add( Native );
     }
 
@@ -377,7 +392,7 @@ namespace AGXUnity.Model
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
     {
-      var terrain = tile.m_terrainTile.get();
+      var terrain = tile.m_terrainTile;
       var modifications = terrain.getModifiedVertices();
       if ( modifications.Count == 0 )
         return;
@@ -389,12 +404,12 @@ namespace AGXUnity.Model
       var result = new float[,] { { 0.0f } };
 
       agx.Vec2i index = new agx.Vec2i(0,0);
-      Vector2Int tileIndex = GetTileIndex(terrain);
+      Vector2Int tileIndex = GetTileIndex(terrain.get());
 
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        onModification?.Invoke( terrain, index, Terrain, unityIndex );
+        onModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
       };
 
 

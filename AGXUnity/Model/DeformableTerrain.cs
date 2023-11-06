@@ -159,6 +159,21 @@ namespace AGXUnity.Model
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
+      foreach ( var patch in Materials ) {
+        patch.GetInitialized<DeformableTerrainMaterial>();
+        Native.addTerrainMaterial( patch.Native );
+        
+        var shapeMat = GetAssociatedMaterial( patch );
+        shapeMat?.GetInitialized<ShapeMaterial>();
+        if ( shapeMat != null )
+          Native.setAssociatedMaterial( patch.Native, shapeMat.Native );
+
+        var shapes = GetMaterialShapes(patch); 
+        if ( shapes != null )
+          foreach ( var shape in shapes )
+            Native.addTerrainMaterial( patch.Native, shape.GetInitialized<Shape>().NativeGeometry );
+      }
+
       GetSimulation().add( Native );
     }
 

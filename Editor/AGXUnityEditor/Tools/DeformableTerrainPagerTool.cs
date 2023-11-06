@@ -123,6 +123,8 @@ namespace AGXUnityEditor.Tools
                                 null
                                 );
 
+      RenderMaterialPatchesGUI();
+
       if ( TerrainPager.Shovels.Any( shovel => !shovel.isActiveAndEnabled ) || TerrainPager.RigidBodies.Any( rb => !rb.isActiveAndEnabled ) ) {
         EditorGUILayout.HelpBox( "Terrain contains disabled objects. This is not supported and they will be removed on play. Disabled objects must be added manually to the terrain when enabled", MessageType.Warning );
         if ( GUILayout.Button( "Remove disabled objects" ) )

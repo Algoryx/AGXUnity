@@ -171,6 +171,7 @@ namespace AGXUnity.Model
       int overlap     = (int)ts.getTileMarginSize();
 
       var elementsPerTile   = resolution - (overlap + 1);
+      Debug.Log( "Fetching" );
 
       Vector2Int globalIndex = new Vector2Int(id.x * elementsPerTile, id.y * elementsPerTile);
 
@@ -187,6 +188,7 @@ namespace AGXUnity.Model
 
       // Defer load if data is not yet available
       if ( !dataAvailable ) return null;
+      Debug.Log( "Verified" );
 
       var heights = new agx.RealVector( resolution * resolution );
 
