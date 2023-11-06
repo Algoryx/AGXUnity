@@ -40,6 +40,10 @@ namespace AGXUnityEditor.Windows
         m_exampleNameStyle.alignment = TextAnchor.MiddleLeft;
       }
 
+      var ExampleRowSize = 64;
+      var ExampleSpacing = 4;
+      var ButtonSize = 20;
+
       using ( GUI.AlignBlock.Center )
         GUILayout.Box( IconManager.GetAGXUnityLogo(),
                        GUI.Skin.customStyles[ 3 ],
@@ -71,18 +75,21 @@ namespace AGXUnityEditor.Windows
       foreach ( var data in ExamplesManager.Examples ) {
 
         using ( new EditorGUILayout.HorizontalScope() ) {
+          var boxStyle = new GUIStyle();
+          boxStyle.margin = new RectOffset(5,5,0,0 );
           GUILayout.Box( data.Thumbnail,
-                         GUILayout.Width( 64 ),
-                         GUILayout.Height( 64 ) );
+                         boxStyle, 
+                         GUILayout.Width( ExampleRowSize ),
+                         GUILayout.Height( ExampleRowSize ));
           var exampleNameLabel = GUI.MakeLabel( $"{data.Name}", true );
           if ( data != null ) {
-            if ( Link( exampleNameLabel, GUILayout.Height( 64 ) ) )
+            if ( Link( exampleNameLabel, GUILayout.Height( ExampleRowSize ) ) )
               Application.OpenURL( data.DocumentationUrl );
           }
           else
             GUILayout.Label( exampleNameLabel,
                              m_exampleNameStyle,
-                             GUILayout.Height( 64 ) );
+                             GUILayout.Height( ExampleRowSize ) );
           
           GUILayout.FlexibleSpace();
 
@@ -114,10 +121,10 @@ namespace AGXUnityEditor.Windows
                               );
 
           using ( new EditorGUILayout.VerticalScope() ) {
-            GUILayout.Space( 0.5f * ( 64 - 18 ) );
+            GUILayout.Space( 0.5f * ( ExampleRowSize - ButtonSize + ExampleSpacing ) );
             using ( new EditorGUILayout.HorizontalScope() ) {
               if ( hasUnresolvedIssues ) {
-                var dependencyContextButtonWidth = 18.0f;
+                var dependencyContextButtonWidth = (float)ButtonSize;
 
                 var hasUnresolvedDependencies  = ExamplesManager.HasUnresolvedDependencies( data );
                 var hasUnresolvedInputSettings = ( data.RequiresLegacyInputManager &&
@@ -125,9 +132,12 @@ namespace AGXUnityEditor.Windows
                                                ( data.Dependencies.Contains( "com.unity.inputsystem" ) &&
                                                  !ExamplesManager.InputSystemEnabled );
 
+                var ctxStyle = new GUIStyle( InspectorGUISkin.Instance.ButtonMiddle );
+                ctxStyle.fixedHeight = ButtonSize;
                 var contextButton = InspectorGUI.Button(MiscIcon.ContextDropdown,
                                                        !ExamplesManager.IsInstallingDependencies &&
                                                        !EditorApplication.isPlayingOrWillChangePlaymode,
+                                                       ctxStyle,
                                                        ( hasUnresolvedDependencies ?
                                                            "Required dependencies." :
                                                            "Input settings has to be resolved." ),
@@ -138,7 +148,7 @@ namespace AGXUnityEditor.Windows
                   if ( hasUnresolvedDependencies ) {
                     dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Install dependency..." ) );
                     dependenciesMenu.AddSeparator( string.Empty );
-                    foreach ( var dependency in data.Dependencies )
+                    foreach ( var dependency in data.Dependencies ) 
                       dependenciesMenu.AddItem( GUI.MakeLabel( dependency.ToString() ),
                                                 false,
                                                 () => ExamplesManager.InstallDependency( dependency ) );
@@ -154,11 +164,11 @@ namespace AGXUnityEditor.Windows
                 }
               }
               using ( new GUI.EnabledBlock( buttonEnabled ) ) {
-
+                var bStyle = new GUIStyle(InspectorEditor.Skin.Button);
+                bStyle.fixedHeight = ButtonSize;
                 if ( GUILayout.Button( GUI.MakeLabel( buttonText ),
-                                     InspectorEditor.Skin.Button,
-                                     GUILayout.MinWidth( 130 ),
-                                     GUILayout.Height( 18 ) ) ) {
+                                     bStyle,
+                                     GUILayout.MinWidth( 130 ) ) ) {
                   if ( data.Status == ExamplesManager.ExampleData.State.NotInstalled )
                     ExamplesManager.Download( data );
                   else if ( data.Status == ExamplesManager.ExampleData.State.Downloading )
@@ -175,8 +185,6 @@ namespace AGXUnityEditor.Windows
                   if ( data.Status == ExamplesManager.ExampleData.State.Downloading ) {
                     hasDownloads = true;
                     var progressRect = GUILayoutUtility.GetLastRect();
-                    progressRect.y += 4.0f;
-                    progressRect.height = 18.0f;
                     EditorGUI.ProgressBar( progressRect,
                                            data.DownloadProgress,
                                            $"Downloading: { (int)( 100.0f * data.DownloadProgress + 0.5f ) }%" );
@@ -186,7 +194,7 @@ namespace AGXUnityEditor.Windows
             }
           }
         }
-        InspectorGUI.Separator();
+        InspectorGUI.Separator(1,ExampleSpacing);
       }
 
       EditorGUILayout.EndScrollView();

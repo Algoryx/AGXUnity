@@ -100,16 +100,8 @@ namespace AGXUnity.Model
     [HideInInspector]
     public int TileSize
     {
-      get
-      {
-        var intSize = Mathf.CeilToInt( TileSizeMeters / ElementSize );
-        return intSize + ( ( intSize + 1 ) % 2 );
-      }
-      set
-      {
-        var newCellCount = value + ((value + 1) % 2);
-        TileSizeMeters = ElementSize * newCellCount;
-      }
+      get => Mathf.CeilToInt( TileSizeMeters / ElementSize );
+      set => TileSizeMeters = ElementSize * value;
     }
 
     /// <summary>
@@ -470,18 +462,18 @@ namespace AGXUnity.Model
       for ( int newOverlap = TileOverlap; newOverlap < TileOverlap + overlap_search_range; newOverlap++ ) {
         bool added = false;
         float newSize = ( TerrainDataResolution - newOverlap - 1 ) / r + newOverlap + 1;
-        if ( IsValidSize( newSize ) )
+        if ( IsInteger( newSize ) )
           candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
 
         for ( int rdiff = 1; !added; rdiff++ ) {
           newSize = ( TerrainDataResolution - newOverlap - 1 ) / ( r + rdiff ) + newOverlap + 1;
-          if ( IsValidSize( newSize ) ) {
+          if ( IsInteger( newSize ) ) {
             candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
             added = true;
           }
           if ( r - rdiff > 1 ) {
             newSize = ( TerrainDataResolution - newOverlap - 1 ) / ( r - rdiff ) + newOverlap + 1;
-            if ( IsValidSize( newSize ) ) {
+            if ( IsInteger( newSize ) ) {
               candidates.Add( Tuple.Create( newOverlap, Mathf.RoundToInt( newSize ) ) );
               added = true;
             }
@@ -520,13 +512,6 @@ namespace AGXUnity.Model
     public static bool IsInteger( float v )
     {
       return Mathf.Approximately( v, Mathf.Round( v ) );
-    }
-
-    /// This function ensures sizes are integers and odd as is currently required by AGX
-    /// If the odd requirement is lifted this function can be replaced by IsInteger
-    public static bool IsValidSize( float s )
-    {
-      return IsInteger( s ) && s % 2 == 1;
     }
 
     private Terrain m_terrain = null;
