@@ -349,9 +349,9 @@ namespace AGXUnity.Model
           Native.getTemplateTerrain().setAssociatedMaterial( patch.Native, shapeMat.Native );
 
         var shapes = GetMaterialShapes(patch);
-        if ( shapes != null )
-          foreach ( var shape in shapes )
-            m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, Native.getTemplateTerrain().getMaterialController().getTerrainMaterialIndex( patch.Native ) );
+        //if ( shapes != null )
+        //  foreach ( var shape in shapes )
+        //    m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, Native.getTemplateTerrain().getMaterialController().getTerrainMaterialIndex( patch.Native ) );
       }
 
       GetSimulation().add( Native );
