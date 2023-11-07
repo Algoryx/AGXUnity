@@ -194,7 +194,7 @@ namespace AGXUnity.Rendering
         int count = Mathf.Min( 1023, m_positions.Count - i );
 
         if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_Color", m_segmentColors[ i / 1023 ]);
+          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
 
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
@@ -212,7 +212,7 @@ namespace AGXUnity.Rendering
       for ( int i = 0; i < m_numCylinders; i += 1023 ) {
 
         if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_Color", m_segmentColors[ i / 1023 ]);
+          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
 
         int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
