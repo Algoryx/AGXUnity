@@ -1801,5 +1801,25 @@ namespace AGXUnityEditor
 
       EditorGUILayout.EndVertical();
     }
+
+    public static Tuple<T1, T2> PairObjectsField<T1, T2>( T1 item1, T2 item2 )
+      where T1 : Object
+      where T2 : Object
+    {
+      var skin = InspectorEditor.Skin;
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        using ( new EditorGUILayout.VerticalScope( GUILayout.Width( 12 ) ) ) {
+          GUILayout.FlexibleSpace();
+          GUILayout.Label( GUI.MakeLabel( "[", 30 ), InspectorEditor.Skin.Label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
+          GUILayout.FlexibleSpace();
+        }
+        using ( new EditorGUILayout.VerticalScope() ) {
+          var o1 = EditorGUILayout.ObjectField( item1, typeof( T1 ), false ) as T1;
+          var o2 = EditorGUILayout.ObjectField( item2, typeof( T2 ), false ) as T2;
+
+          return System.Tuple.Create( o1, o2 );
+        }
+      }
+    }
   }
 }

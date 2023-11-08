@@ -1,23 +1,13 @@
-﻿using AGXUnity.Collide;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
-
-  // Unity cannot serialize lists of lists so we declare a wrapper class to enable serialization
-  [System.Serializable]
-  public class MaterialPatchShapes
-  {
-    [SerializeField]public List<Shape> shapes = new List<Shape>();
-  }
-
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
     public delegate void OnModificationCallback( agxTerrain.Terrain terr, agx.Vec2i agxIndex, Terrain unityTile, Vector2Int unityIndex );
-    public OnModificationCallback onModification;
+    public OnModificationCallback OnModification;
 
     [SerializeField]
     private ShapeMaterial m_material = null;
@@ -74,48 +64,49 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private DeformableTerrainMaterial m_terrainMaterial = null;
+    [FormerlySerializedAs("m_terrainMaterial")]
+    private DeformableTerrainMaterial m_defaultTerrainMaterial = null;
 
     /// <summary>
     /// Terrain material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
-    public DeformableTerrainMaterial TerrainMaterial
+    public DeformableTerrainMaterial DefaultTerrainMaterial
     {
-      get { return m_terrainMaterial; }
+      get { return m_defaultTerrainMaterial; }
       set
       {
-        m_terrainMaterial = value;
+        m_defaultTerrainMaterial = value;
 
         if ( !IsNativeNull() ) {
-          if ( m_terrainMaterial != null )
-            SetTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
+          if ( m_defaultTerrainMaterial != null )
+            SetTerrainMaterial( m_defaultTerrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
           else
             SetTerrainMaterial( DeformableTerrainMaterial.CreateNative( "dirt_1" ) );
-
         }
       }
     }
 
     [SerializeField]
-    private DeformableTerrainProperties m_properties = null;
+    [FormerlySerializedAs("m_properties")]
+    private DeformableTerrainProperties m_terrainProperties = null;
 
     /// <summary>
     /// Terrain properties associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
-    public DeformableTerrainProperties Properties
+    public DeformableTerrainProperties TerrainProperties
     {
-      get { return m_properties; }
+      get { return m_terrainProperties; }
       set
       {
-        if ( !IsNativeNull() && m_properties != null )
-          m_properties.Unregister( this );
+        if ( !IsNativeNull() && m_terrainProperties != null )
+          m_terrainProperties.Unregister( this );
 
-        m_properties = value;
+        m_terrainProperties = value;
 
-        if ( !IsNativeNull() && m_properties != null )
-          m_properties.Register( this );
+        if ( !IsNativeNull() && m_terrainProperties != null )
+          m_terrainProperties.Register( this );
       }
     }
 
@@ -148,16 +139,6 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public float ElementSize { get; }
 
-    [SerializeField]
-    private List<DeformableTerrainMaterial> m_materials = new List<DeformableTerrainMaterial>();
-
-    public DeformableTerrainMaterial[] Materials { get => m_materials.ToArray(); }
-
-    [SerializeField]
-    private SerializableDictionary<DeformableTerrainMaterial, ShapeMaterial> m_associatedMaterial = new SerializableDictionary<DeformableTerrainMaterial, ShapeMaterial>();
-    [SerializeField]
-    private SerializableDictionary<DeformableTerrainMaterial, MaterialPatchShapes> m_materialShapes = new SerializableDictionary<DeformableTerrainMaterial, MaterialPatchShapes>();
-
     /// <summary>
     /// Shovels associated to this terrain.
     /// </summary>
@@ -174,104 +155,7 @@ namespace AGXUnity.Model
       SetEnable( false );
     }
 
-    public bool Add( DeformableTerrainMaterial material )
-    {
-      if ( !IsNativeNull() ) {
-        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
-        return false;
-      }
-
-      if ( material == null || m_materials.Contains( material ) )
-        return false;
-
-      m_materials.Add( material );
-      m_materialShapes[ material ] = new MaterialPatchShapes();
-      m_associatedMaterial[ material ] = null;
-
-      return true;
-    }
-
-    public bool Remove( DeformableTerrainMaterial material )
-    {
-      if ( !IsNativeNull() ) {
-        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
-        return false;
-      }
-
-      if ( material == null || !m_materials.Contains( material ) )
-        return false;
-
-      m_materialShapes.Remove( material );
-      m_associatedMaterial.Remove( material );
-
-      return m_materials.Remove( material );
-    }
-
-    public bool Replace( DeformableTerrainMaterial oldMaterial, DeformableTerrainMaterial newMaterial)
-    {
-      if ( !IsNativeNull() ) {
-        Debug.LogWarning( "Adding material patch during runtime is currently not supported" );
-        return false;
-      }
-
-      if( m_materials.Contains(newMaterial) ) {
-        Debug.Log( $"Material '{newMaterial.name}' is already present in terrain", this );
-        return false;
-      }
-
-      if ( newMaterial == null || !m_materials.Contains( oldMaterial ) )
-        return false;
-
-      m_materials.Add( newMaterial );
-      m_materialShapes[ newMaterial ] = m_materialShapes[ oldMaterial ];
-      m_materialShapes.Remove( oldMaterial );
-      m_associatedMaterial[ newMaterial ] = m_associatedMaterial[ oldMaterial ];
-      m_associatedMaterial.Remove( oldMaterial );
-
-      return m_materials.Remove( oldMaterial );
-    }
-
-    public ShapeMaterial GetAssociatedMaterial( DeformableTerrainMaterial terrainMat )
-    {
-      return m_associatedMaterial.GetValueOrDefault( terrainMat );
-    }
-
-    public bool SetAssociatedMaterial(DeformableTerrainMaterial terrainMat, ShapeMaterial shapeMat )
-    {
-      if ( !m_associatedMaterial.ContainsKey( terrainMat ) ) {
-        Debug.Log( $"Cannot associate material '{shapeMat.name}' with '{terrainMat.name}' because '{terrainMat.name}' has not been added to the terrain", this );
-        return false;
-      }
-
-      m_associatedMaterial[ terrainMat ] = shapeMat;
-      return true;
-    }
-
-    public List<Shape> GetMaterialShapes( DeformableTerrainMaterial terrainMat )
-    {
-      return m_materialShapes.GetValueOrDefault( terrainMat )?.shapes;
-    }
-
-    public bool AddMaterialShape( DeformableTerrainMaterial terrainMat, Shape shape)
-    {
-      if ( !m_materialShapes.ContainsKey( terrainMat ) ) {
-        Debug.Log( $"Cannot add shape '{shape.name}' of material '{terrainMat.name}' to terrain because '{terrainMat.name}' has not been added to the terrain", this );
-        return false;
-      }
-
-      m_materialShapes[ terrainMat ].shapes.Add(shape);
-      return true;
-    }
-
-    public bool RemoveMaterialShape( DeformableTerrainMaterial terrainMat, Shape shape ) 
-    {
-      if ( !m_materialShapes.ContainsKey( terrainMat ) || !m_materialShapes[terrainMat].shapes.Contains(shape) ) {
-        Debug.Log( $"Cannot remove material shape '{shape.name}' from terrain before it has been added", this );
-        return false;
-      }
-
-      return m_materialShapes[ terrainMat ].shapes.Remove(shape);
-    }
+    public TerrainMaterialPatch[] MaterialPatches { get => GetComponentsInChildren<TerrainMaterialPatch>(); }
 
     /// <summary>
     /// Returns an array containing the soil particles used by this terrain
@@ -365,6 +249,13 @@ namespace AGXUnity.Model
     /// <param name="y">The y-index at which to get the height.</param>
     /// <returns>The height of the terrain at the specified index.</returns>
     abstract public float GetHeight( int x, int y );
+
+    /// <summary>
+    ///  Triggers the <see cref="OnModification"/> callback for each terrain cell currently simulated.
+    ///  Note that this function is rather expensive and should only be triggered when delays are acceptable
+    ///  such as during initialization/resets.
+    /// </summary>
+    abstract public void TriggerModifyAllCells();
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

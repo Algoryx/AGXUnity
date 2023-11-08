@@ -38,94 +38,12 @@ namespace AGXUnityEditor.Tools
                     shovel => DeformableTerrainBase.Add( shovel ),
                     shovel => DeformableTerrainBase.Remove( shovel ) );
 
-      RenderMaterialPatchesGUI();
-      
+      ToolArrayGUI( this, DeformableTerrainBase.MaterialPatches, "Material Patches" );
+
       if ( DeformableTerrainBase.Shovels.Any( shovel => !shovel.isActiveAndEnabled ) ) {
         EditorGUILayout.HelpBox( "Terrain contains disabled shovels. This is not supported and they will be removed on play. Disabled shovels must be added manually to the terrain when enabled", MessageType.Warning );
         if ( GUILayout.Button( "Remove disabled shovels" ) )
           DeformableTerrainBase.RemoveInvalidShovels( true, false );
-      }
-    }
-
-    protected void RenderMaterialPatchesGUI()
-    {
-      var items = DeformableTerrainBase.Materials;
-      var displayItemsList = Foldout( GetTargetToolArrayGUIData( Targets[ 0 ], "Materials" ),
-                                      GUI.MakeLabel( $"Materials [{items.Length}]" ) );
-      if ( displayItemsList ) {
-        DeformableTerrainMaterial itemToRemove = null;
-        using ( IndentScope.Single ) {
-          for ( int itemIndex = 0; itemIndex < items.Length; ++itemIndex ) {
-            var item = items[ itemIndex ];
-            bool displayItem;
-            using ( new GUILayout.HorizontalScope() ) {
-              displayItem = Foldout( EditorData.Instance.GetData( Targets[ 0 ], $"Material Patches_{itemIndex}" ),
-                                       GUI.MakeLabel( InspectorEditor.Skin.TagTypename( "Material" ) +
-                                                      ' ' +
-                                                      item.name ) );
-
-              if ( Button( MiscIcon.EntryRemove,
-                             true,
-                             $"Remove {item.name} from Materials.",
-                             GUILayout.Width( 18 ) ) )
-                itemToRemove = item;
-
-              GUILayout.Space( 3.0f );
-            }
-            if ( displayItem ) {
-              using ( IndentScope.Single ) {
-                var newItem = FoldoutObjectField( GUI.MakeLabel( "Terrain Material" ),
-                                                            item,
-                                                            typeof( DeformableTerrainMaterial ),
-                                                            EditorData.Instance.GetData( Targets[ 0 ], $"Material Patches_{itemIndex}_Material" ),
-                                                            false
-                                                           ) as DeformableTerrainMaterial;
-                if ( newItem != item )
-                  DeformableTerrainBase.Replace( item, newItem );
-
-                var materialHandle = DeformableTerrainBase.GetAssociatedMaterial(item);
-                var newMaterialHandle = FoldoutObjectField( GUI.MakeLabel( "Material Handle" ),
-                                                          materialHandle,
-                                                          typeof( ShapeMaterial ),
-                                                          EditorData.Instance.GetData( Targets[ 0 ], $"Material Patches_{itemIndex}_MaterialHandle" ),
-                                                          false
-                                                          ) as ShapeMaterial;
-
-                if ( materialHandle != newMaterialHandle )
-                  DeformableTerrainBase.SetAssociatedMaterial( item, newMaterialHandle );
-
-                foreach(var shape in DeformableTerrainBase.GetMaterialShapes( item ) )
-                  if(shape == null ) {
-                    DeformableTerrainBase.RemoveMaterialShape(item, shape );
-                  }
-
-                ToolListGUI( this,
-                              DeformableTerrainBase.GetMaterialShapes( item ).ToArray(),
-                              $"{item.name} Shapes",
-                              "Shapes",
-                              shape => DeformableTerrainBase.AddMaterialShape( item, shape ),
-                              shape => DeformableTerrainBase.RemoveMaterialShape( item, shape )
-                              );
-              }
-            }
-          }
-
-          DeformableTerrainMaterial itemToAdd = null;
-          GUILayout.Space( 2.0f * EditorGUIUtility.standardVerticalSpacing );
-          using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
-            using ( GUI.AlignBlock.Center )
-              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
-            var rect = EditorGUILayout.GetControlRect();
-            var xMax = rect.xMax;
-            rect.xMax = rect.xMax - EditorGUIUtility.standardVerticalSpacing;
-            itemToAdd = EditorGUI.ObjectField( rect, null, typeof( DeformableTerrainMaterial ), true ) as DeformableTerrainMaterial;
-          }
-
-          if ( itemToAdd != null )
-            DeformableTerrainBase.Add( itemToAdd );
-          if ( itemToRemove != null )
-            DeformableTerrainBase.Remove( itemToRemove );
-        }
       }
     }
 

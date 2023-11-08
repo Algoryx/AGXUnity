@@ -339,20 +339,9 @@ namespace AGXUnity.Model
       foreach ( var rb in m_rigidbodies )
         Native.add( rb.Body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
-      foreach ( var patch in Materials ) {
-        patch.GetInitialized<DeformableTerrainMaterial>();
-        Native.getTemplateTerrain().addTerrainMaterial( patch.Native );
+      if ( MaterialPatches.Length != 0 )
+        Debug.LogWarning( "Nonhomogenous terrain is not yet supported for DeformableTerrainPager.", this );
 
-        var shapeMat = GetAssociatedMaterial( patch );
-        shapeMat?.GetInitialized<ShapeMaterial>();
-        if ( shapeMat != null )
-          Native.getTemplateTerrain().setAssociatedMaterial( patch.Native, shapeMat.Native );
-
-        var shapes = GetMaterialShapes(patch);
-        //if ( shapes != null )
-        //  foreach ( var shape in shapes )
-        //    m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, Native.getTemplateTerrain().getMaterialController().getTerrainMaterialIndex( patch.Native ) );
-      }
 
       GetSimulation().add( Native );
     }
@@ -401,7 +390,7 @@ namespace AGXUnity.Model
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        onModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
+        OnModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
       };
 
 
@@ -774,6 +763,11 @@ namespace AGXUnity.Model
           terr.setHeight( idx, heights[ y, x ] - offset + MaximumDepth );
         }
       }
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      throw new NotImplementedException();
     }
 
     protected override bool IsNativeNull() { return Native == null; }

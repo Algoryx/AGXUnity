@@ -125,8 +125,8 @@ namespace AGXUnity.Model
     {
       ResetTerrainDataHeightsAndTransform();
 
-      if ( Properties != null )
-        Properties.Unregister( this );
+      if ( TerrainProperties != null )
+        TerrainProperties.Unregister( this );
 
       if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
@@ -159,19 +159,21 @@ namespace AGXUnity.Model
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
-      foreach ( var patch in Materials ) {
-        patch.GetInitialized<DeformableTerrainMaterial>();
-        Native.addTerrainMaterial( patch.Native );
+      foreach ( var patch in MaterialPatches) {
+        patch.GetInitialized<TerrainMaterialPatch>();
+        var terrainMat = patch.TerrainMaterial?.GetInitialized<DeformableTerrainMaterial>();
+        if( terrainMat == null ) {
+          Debug.LogWarning( $"Terrain material of patch '{patch.name}' is not set. Ignoring...", patch );
+          continue;
+        }
+        Native.addTerrainMaterial( terrainMat.Native );
         
-        var shapeMat = GetAssociatedMaterial( patch );
-        shapeMat?.GetInitialized<ShapeMaterial>();
+        var shapeMat = patch.MaterialHandle?.GetInitialized<ShapeMaterial>();
         if ( shapeMat != null )
-          Native.setAssociatedMaterial( patch.Native, shapeMat.Native );
+          Native.setAssociatedMaterial( terrainMat.Native, shapeMat.Native );
 
-        var shapes = GetMaterialShapes(patch); 
-        if ( shapes != null )
-          foreach ( var shape in shapes )
-            Native.addTerrainMaterial( patch.Native, shape.GetInitialized<Shape>().NativeGeometry );
+        foreach ( var shape in patch.Shapes )
+          Native.addTerrainMaterial( terrainMat.Native, shape.GetInitialized<Shape>().NativeGeometry );
       }
 
       GetSimulation().add( Native );
@@ -217,7 +219,7 @@ namespace AGXUnity.Model
         result[ 0, 0 ] = h / scale;
 
         TerrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        onModification?.Invoke( Native, index, Terrain, unityIndex );
+        OnModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
 #if UNITY_2019_1_OR_NEWER
@@ -405,6 +407,23 @@ namespace AGXUnity.Model
 
       agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
       return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      var res = TerrainDataResolution;
+      var agxIdx = new agx.Vec2i( 0, 0 );
+      var uTerr = Terrain;
+      var uIdx = new Vector2Int( 0, 0 );
+      for (int y = 0; y < res; y++ ) {
+        agxIdx.y = res - 1 - y;
+        uIdx.y = y;
+        for ( int x = 0; x < res; x++ ) {
+          agxIdx.x = res - 1 - x;
+          uIdx.x = x;
+          OnModification?.Invoke( Native,  agxIdx, uTerr, uIdx);
+        }
+      }
     }
 
     protected override bool IsNativeNull() { return Native == null; }
