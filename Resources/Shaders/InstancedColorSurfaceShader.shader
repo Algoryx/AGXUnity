@@ -43,7 +43,8 @@ Shader "Custom/CableDamageShader"
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
-            fixed4 color = UNITY_ACCESS_INSTANCED_PROP(Props, _InstancedColor);
+            fixed4 color = _Color;
+            color = UNITY_ACCESS_INSTANCED_PROP(Props, _InstancedColor); // Override if there is an instanced prop
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * color;
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
