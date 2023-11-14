@@ -30,6 +30,7 @@ Shader "Custom/CableDamageShader"
 
         half _Glossiness;
         half _Metallic;
+        half _Color;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
