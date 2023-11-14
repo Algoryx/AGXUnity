@@ -1,4 +1,4 @@
-Shader "Custom/CableDamageShader"
+Shader "AGXUnity/CableDamageShader"
 {
     Properties
     {
