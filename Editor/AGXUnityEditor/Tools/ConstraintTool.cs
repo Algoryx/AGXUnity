@@ -193,33 +193,45 @@ namespace AGXUnityEditor.Tools
                                  GUI.MakeLabel( "Controllers", true ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
           foreach ( var refController in ecControllers ) {
+            // Skip Cone Limit friction controllers
+            if ( refController.NativeName.StartsWith( "CL" ) )
+              continue;
+
             var controllerType    = refController.GetControllerType();
             var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
             var controllerName    = ConstraintUtils.FindName( refController );
             if ( controllerName.EndsWith( " Controller" ) )
               controllerName = controllerName.Remove( controllerName.LastIndexOf( " Controller" ) );
+            string nativeTag = GetNativeNameTag(refController.NativeName);
             var controllerLabel   = GUI.MakeLabel( ( controllerType == Constraint.ControllerType.Rotational ?
                                                        GUI.Symbols.CircleArrowAcw.ToString() + " " :
-                                                       GUI.Symbols.ArrowRight.ToString() + " " ) + controllerName, true );
-            if ( !InspectorGUI.Foldout( selected( controllerTypeTag + controllerName ),
+                                                       GUI.Symbols.ArrowRight.ToString() + " " ) +
+                                                    controllerName +
+                                                    nativeTag,
+                                                    true );
+            if ( !InspectorGUI.Foldout( selected( controllerTypeTag + controllerName + refController.NativeName ),
                                         controllerLabel ) ) {
               continue;
             }
 
-            var controllers = ( from constraint
-                                in constraints
-                                from controller
-                                in constraint.GetElementaryConstraintControllers()
-                                where controller.GetType() == refController.GetType() &&
-                                      controller.GetControllerType() == refController.GetControllerType()
-                                select controller ).ToArray();
             using ( InspectorGUI.IndentScope.Single ) {
-              InspectorEditor.DrawMembersGUI( controllers );
-              InspectorEditor.DrawMembersGUI( controllers, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
+              InspectorEditor.DrawMembersGUI( new Object[] { refController } );
+              InspectorEditor.DrawMembersGUI( new Object[] { refController }, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
             }
           }
         }
       }
+    }
+
+    private static string GetNativeNameTag( string nativeName )
+    {
+      if ( nativeName[ 0 ] == 'F' ) {
+        string dimLabel = nativeName[1].ToString();
+        if ( RowLabels.Contains( dimLabel ) )
+          return " " + GUI.AddColorTag( dimLabel, RowColors[ Array.IndexOf( RowLabels, dimLabel ) ] );
+      }
+
+      return "";
     }
 
     private bool ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
