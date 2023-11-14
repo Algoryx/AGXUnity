@@ -9,6 +9,7 @@ namespace AGXUnity.Rendering
   [AddComponentMenu( "AGXUnity/Rendering/Cable Renderer" )]
   [ExecuteInEditMode]
   [RequireComponent( typeof( Cable ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-rendering" )]
   public class CableRenderer : ScriptComponent
   {
     /// <summary>
