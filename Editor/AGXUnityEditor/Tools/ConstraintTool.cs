@@ -213,10 +213,15 @@ namespace AGXUnityEditor.Tools
                                         controllerLabel ) ) {
               continue;
             }
-
+            var controllers = ( from constraint
+                                in constraints
+                                from controller
+                                in constraint.GetElementaryConstraintControllers()
+                                where controller.NativeName == refController.NativeName
+                                select controller ).ToArray();
             using ( InspectorGUI.IndentScope.Single ) {
-              InspectorEditor.DrawMembersGUI( new Object[] { refController } );
-              InspectorEditor.DrawMembersGUI( new Object[] { refController }, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
+              InspectorEditor.DrawMembersGUI( controllers );
+              InspectorEditor.DrawMembersGUI( controllers, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
             }
           }
         }
