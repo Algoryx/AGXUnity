@@ -2,7 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine.Analytics;
 
-namespace AGXUnity
+namespace AGXUnityEditor
 {
 	public static class VSAttribution
 	{

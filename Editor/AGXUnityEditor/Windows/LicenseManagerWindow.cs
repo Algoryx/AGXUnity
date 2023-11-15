@@ -215,7 +215,7 @@ namespace AGXUnityEditor.Windows
                                                      UnityEngine.GUI.FocusControl( "" );
                                                    } );
 
-            AGXUnity.VSAttribution.SendAttributionEvent( "LicenseActivate", "Algoryx", System.Convert.ToInt32( m_licenseActivateData.Id ).ToString() );
+            VSAttribution.SendAttributionEvent( "LicenseActivate", "Algoryx", System.Convert.ToInt32( m_licenseActivateData.Id ).ToString() );
           }
         }
       }
