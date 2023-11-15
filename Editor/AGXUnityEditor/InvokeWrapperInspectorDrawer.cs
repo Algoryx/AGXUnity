@@ -97,6 +97,20 @@ namespace AGXUnityEditor
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
+    [InspectorDrawer( typeof( Vector2Int ) )]
+    public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      return EditorGUILayout.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
+                                       wrapper.Get<Vector2Int>( objects[ 0 ] ) );
+    }
+
+    [InspectorDrawer( typeof( Vector3Int ) )]
+    public static object Vector3IntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      return EditorGUILayout.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
+                                       wrapper.Get<Vector3Int>( objects[ 0 ] ) );
+    }
+
     [InspectorDrawer( typeof( bool ) )]
     public static object BoolDrawer( object[] objects, InvokeWrapper wrapper )
     {

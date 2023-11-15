@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -69,8 +68,10 @@ namespace AGXUnityEditor.Tools
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
-        foreach ( var constraint in constraints )
+        foreach ( var constraint in constraints ) {
           constraint.CollisionsState = collisionsState;
+          EditorUtility.SetDirty( constraint );
+        }
         UnityEngine.GUI.changed = false;
       }
 
@@ -79,8 +80,10 @@ namespace AGXUnityEditor.Tools
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
-        foreach ( var constraint in constraints )
+        foreach ( var constraint in constraints ) {
           constraint.SolveType = solveType;
+          EditorUtility.SetDirty( constraint );
+        }
         UnityEngine.GUI.changed = false;
       }
 
@@ -89,8 +92,10 @@ namespace AGXUnityEditor.Tools
       EditorGUI.showMixedValue = false;
 
       if ( UnityEngine.GUI.changed ) {
-        foreach ( var constraint in constraints )
+        foreach ( var constraint in constraints ) {
           constraint.ConnectedFrameNativeSyncEnabled = frameNativeSync;
+          EditorUtility.SetDirty( constraint );
+        }
         UnityEngine.GUI.changed = false;
       }
 
@@ -109,6 +114,8 @@ namespace AGXUnityEditor.Tools
                                 select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
       Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
+
+      var anyChange = false;
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
@@ -167,13 +174,18 @@ namespace AGXUnityEditor.Tools
                   }
                 }
               }
-
+              anyChange |= UnityEngine.GUI.changed;
               UnityEngine.GUI.changed = false;
               EditorGUI.showMixedValue = false;
             }
           } // For type wrappers.
         } // Indentation.
       } // For Translational, Rotational.
+
+      if ( anyChange ) {
+        foreach ( var constraint in allElementaryConstraints )
+          EditorUtility.SetDirty( constraint );
+      }
 
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
       if ( ecControllers.Length > 0 &&
@@ -203,7 +215,7 @@ namespace AGXUnityEditor.Tools
                                 select controller ).ToArray();
             using ( InspectorGUI.IndentScope.Single ) {
               InspectorEditor.DrawMembersGUI( controllers );
-              InspectorEditor.DrawMembersGUI( controllers, controller => (controller as ElementaryConstraint).RowData[ 0 ] );
+              InspectorEditor.DrawMembersGUI( controllers, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
             }
           }
         }
