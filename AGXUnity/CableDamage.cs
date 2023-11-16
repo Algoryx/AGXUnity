@@ -48,7 +48,7 @@ namespace AGXUnity
         if (CableRenderer == null)
           Debug.LogWarning("No CableRenderer to use for rendering cable damages");
         else
-          CableRenderer.SetRenderDamages(value);
+          CableRenderer.SetRenderDamages(value && m_properties != null);
       }
     }
 
@@ -71,6 +71,11 @@ namespace AGXUnity
 
         if ( Native != null && m_properties != null )
           m_properties.Register( this );
+
+        if (CableRenderer == null)
+          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
+        else
+          CableRenderer.SetRenderDamages(m_properties != null && m_renderCableDamage);
       }
     }
 
@@ -121,7 +126,7 @@ namespace AGXUnity
 
       if (m_properties == null)
       {
-        Debug.LogError("No CableDamageProperties set!");
+        Debug.LogWarning("No CableDamageProperties set - no Cable Damage Calculated!");
         return;
       }
 
