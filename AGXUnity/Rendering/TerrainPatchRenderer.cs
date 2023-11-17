@@ -88,6 +88,7 @@ namespace AGXUnity.Rendering
         return false;
       }
 
+      // Initialize terrain layers: 0 is default, 1+ are mapped.
       m_materialMapping = new Dictionary<agxTerrain.TerrainMaterial, int>();
       var layers = new List<TerrainLayer> { DefaultLayer };
       int idx = 1;
