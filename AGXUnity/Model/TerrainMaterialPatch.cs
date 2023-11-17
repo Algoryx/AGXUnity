@@ -1,4 +1,7 @@
+using AGXUnity.Collide;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.TerrainUtils;
 
 namespace AGXUnity.Model
 {
@@ -20,8 +23,27 @@ namespace AGXUnity.Model
     public DeformableTerrainMaterial TerrainMaterial
     {
       get { return m_terrainMaterial; }
-      // TODO: Handle setting material during runtime properly.
-      set { m_terrainMaterial = value; }
+      set
+      {
+        if ( m_terrainMaterial == value )
+          return;
+
+        var matCount = ParentTerrain.MaterialPatches.Count(p => p.m_terrainMaterial == value );
+        if ( matCount > 0 ) {
+          Debug.LogError( "Another patch with the same material already exist in the terrain!" );
+          return;
+        }
+
+        if ( (bool)ParentTerrain?.ReplaceTerrainMaterial( m_terrainMaterial, value ) )
+          m_terrainMaterial = value;
+      }
+    }
+
+    public void AddShape( Shape shape )
+    {
+      shape.enabled &= !DisableShapes;
+      shape.Visual.GetComponent<MeshRenderer>().enabled &= !DisableVisuals;
+      ParentTerrain?.AddTerrainMaterial( m_terrainMaterial, shape.GetInitialized<Shape>() );
     }
 
 
@@ -35,8 +57,11 @@ namespace AGXUnity.Model
     public ShapeMaterial MaterialHandle
     {
       get { return m_materialHandle; }
-      // TODO: Handle setting material during runtime properly.
-      set { m_materialHandle = value; }
+      set
+      {
+        m_materialHandle = value;
+        ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, value );
+      }
     }
 
     /// <summary>
@@ -56,17 +81,24 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      foreach(var shape in Shapes) {
-        shape.enabled &= !DisableShapes;
-        shape.Visual.GetComponent<MeshRenderer>().enabled &= !DisableVisuals;
-      }
-
+      ParentTerrain?.GetInitialized<DeformableTerrainBase>();
       // Compensate for the parent terrain being shifted down by the MaximumDepth.
-      if(ParentTerrain != null ) 
+      if ( ParentTerrain != null )
         transform.position += Vector3.up * ParentTerrain.MaximumDepth;
 
-      return true;
+      if ( m_terrainMaterial == null ) {
+        Debug.LogWarning( $"Terrain material of patch '{name}' is not set. Ignoring...", this );
+        return false;
+      }
 
+      ParentTerrain?.AddTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>() );
+      if(m_materialHandle != null)
+        ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, m_materialHandle.GetInitialized<ShapeMaterial>());
+
+      foreach ( var shape in Shapes )
+        AddShape( shape );
+
+      return true;
     }
   }
 }

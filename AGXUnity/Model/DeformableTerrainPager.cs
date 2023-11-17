@@ -770,6 +770,21 @@ namespace AGXUnity.Model
       throw new NotImplementedException();
     }
 
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+    }
+
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
     {

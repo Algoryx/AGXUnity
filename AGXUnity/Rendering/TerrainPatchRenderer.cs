@@ -44,6 +44,7 @@ namespace AGXUnity.Rendering
     /// The deafult TerrainLayer to use to render the terrain in cells where no material patch is present
     /// or for patches which does not have an explicitly mapped layer.
     /// </summary>
+    [IgnoreSynchronization]
     public TerrainLayer DefaultLayer
     {
       get => m_defaultLayer;
@@ -63,6 +64,7 @@ namespace AGXUnity.Rendering
     /// Defines a map from DeformableTerrainMaterials to the TerrainLayers used to render patches of the specified terrain material.
     /// </summary>
     [HideInInspector]
+    [IgnoreSynchronization]
     public SerializableDictionary<DeformableTerrainMaterial,TerrainLayer> MaterialRenderMap
     {
       get => m_materialRenderMap;

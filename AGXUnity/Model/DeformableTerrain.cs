@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TerrainUtils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
@@ -158,23 +159,6 @@ namespace AGXUnity.Model
 
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
-
-      foreach ( var patch in MaterialPatches) {
-        patch.GetInitialized<TerrainMaterialPatch>();
-        var terrainMat = patch.TerrainMaterial?.GetInitialized<DeformableTerrainMaterial>();
-        if( terrainMat == null ) {
-          Debug.LogWarning( $"Terrain material of patch '{patch.name}' is not set. Ignoring...", patch );
-          continue;
-        }
-        Native.addTerrainMaterial( terrainMat.Native );
-        
-        var shapeMat = patch.MaterialHandle?.GetInitialized<ShapeMaterial>();
-        if ( shapeMat != null )
-          Native.setAssociatedMaterial( terrainMat.Native, shapeMat.Native );
-
-        foreach ( var shape in patch.Shapes )
-          Native.addTerrainMaterial( terrainMat.Native, shape.GetInitialized<Shape>().NativeGeometry );
-      }
 
       GetSimulation().add( Native );
     }
@@ -424,6 +408,36 @@ namespace AGXUnity.Model
           OnModification?.Invoke( Native,  agxIdx, uTerr, uIdx);
         }
       }
+    }
+
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      if ( Native == null )
+        return true;
+
+      if(oldMat == null || newMat == null ) 
+        return false;
+
+      return Native.exchangeTerrainMaterial(oldMat.Native, newMat.Native);
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      if ( Native == null )
+        return;
+
+      Native.setAssociatedMaterial(terrMat.Native, shapeMat.Native);
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      if ( Native == null )
+        return;
+
+      if(shape == null)
+        Native.addTerrainMaterial( terrMat.Native );
+      else
+        Native.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
     }
 
     protected override bool IsNativeNull() { return Native == null; }

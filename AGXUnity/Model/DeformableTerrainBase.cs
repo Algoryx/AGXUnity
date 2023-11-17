@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using AGXUnity.Collide;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
@@ -256,6 +257,12 @@ namespace AGXUnity.Model
     ///  such as during initialization/resets.
     /// </summary>
     abstract public void TriggerModifyAllCells();
+
+    abstract public bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat );
+
+    abstract public void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat );
+
+    abstract public void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null );
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );
