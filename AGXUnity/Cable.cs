@@ -214,7 +214,7 @@ namespace AGXUnity
     }
 
     private PointCurve m_routePointCurve              = null;
-    private float m_routePointResulutionPerUnitLength = -1.0f;
+    private float m_routePointResolutionPerUnitLength = -1.0f;
     private Vector3[] m_routePointsCache              = new Vector3[] { };
 
     /// <summary>
@@ -269,7 +269,7 @@ namespace AGXUnity
       get
       {
         return m_routePointCurve != null &&
-               Utils.Math.Approximately( m_routePointResulutionPerUnitLength, ResolutionPerUnitLength ) &&
+               Utils.Math.Approximately( m_routePointResolutionPerUnitLength, ResolutionPerUnitLength ) &&
                Route.IsSynchronized( m_routePointCurve, 1.0E-4f );
       }
     }
@@ -542,7 +542,7 @@ namespace AGXUnity
         var numSegments = Mathf.Max( Mathf.CeilToInt( ResolutionPerUnitLength * Route.TotalLength ), 1 );
         var result = m_routePointCurve.FindSegmentLength( numSegments, PointCurve.DefaultErrorFunc, 5.0E-3f, 1.0E-3f );
         if ( result.Successful ) {
-          m_routePointResulutionPerUnitLength = ResolutionPerUnitLength;
+          m_routePointResolutionPerUnitLength = ResolutionPerUnitLength;
           var routePoints = new List<Vector3>();
           m_routePointCurve.Traverse( ( curr, next, type ) =>
           {

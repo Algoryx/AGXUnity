@@ -41,7 +41,7 @@ namespace AGXUnity
     {
       get
       {
-        return ( m_activationMask & agxSDK.ContactEventListener.ActivationMask.CONTACT ) != 0;
+        return ( m_activationMask & agxSDK.ContactEventListener.ActivationMask.CONTACT | agxSDK.ContactEventListener.ActivationMask.IMPACT ) != 0;
       }
     }
 
