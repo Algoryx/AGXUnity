@@ -258,10 +258,27 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public void TriggerModifyAllCells();
 
+    /// <summary>
+    /// Attempts to replace all voxels of the old material with the new material.
+    /// </summary>
+    /// <param name="oldMat">The material to change from</param>
+    /// <param name="newMat">The material to change to</param>
+    /// <returns>True if the replace operation was successful.</returns>
     abstract public bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat );
 
+    /// <summary>
+    /// Sets the shape material associated with the given terrain material.
+    /// </summary>
+    /// <param name="terrMat">The terrain material with which to associate the shape material.</param>
+    /// <param name="shapeMat">The shape material to associated to the provided terrain material.</param>
     abstract public void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat );
 
+    /// <summary>
+    /// Add a terrain material to a terrain and optionally set all voxels in a given shape to the material.
+    /// </summary>
+    /// <param name="terrMat">The material to add to the terrain</param>
+    /// <param name="shape">If null then the terrain material is simply added to the terrain, 
+    /// else the voxels intersecting the shape is set to the provided material.</param>
     abstract public void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null );
 
     abstract protected bool IsNativeNull();

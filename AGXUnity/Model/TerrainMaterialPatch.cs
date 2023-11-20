@@ -39,6 +39,11 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Adds a shape to the terrain patch, assigning the intersecting voxels the patch terrain material.
+    /// Note that this does not apply in the editor where the shape should be copied as a child to the material patch instead.
+    /// </summary>
+    /// <param name="shape">The shape to add to the MaterialPatch.</param>
     public void AddShape( Shape shape )
     {
       shape.enabled &= !DisableShapes;
