@@ -1,10 +1,12 @@
 using AGXUnity.Collide;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.TerrainUtils;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Model/Terrain Material Patch" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#using-different-terrain-materials" )]
   public class TerrainMaterialPatch : ScriptComponent
   {
     /// <summary>

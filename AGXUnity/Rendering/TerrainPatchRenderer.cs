@@ -30,6 +30,8 @@ namespace AGXUnity.Rendering
   }
 
   [RequireComponent( typeof( DeformableTerrainBase ) )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#using-different-terrain-materials" )]
   public class TerrainPatchRenderer : ScriptComponent
   {
     private DeformableTerrainBase terrain;
@@ -117,9 +119,9 @@ namespace AGXUnity.Rendering
 
     protected override void OnDestroy()
     {
-      base.OnDestroy();
-
       m_initialData?.Reset( GetComponent<Terrain>().terrainData );
+
+      base.OnDestroy();
     }
 
     private void PostStep()
