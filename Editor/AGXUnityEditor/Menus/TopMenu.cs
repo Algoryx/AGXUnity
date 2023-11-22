@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Utils;
 
 using Plane = AGXUnity.Collide.Plane;
 using Mesh = AGXUnity.Collide.Mesh;
@@ -324,6 +325,40 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
+    [MenuItem( "AGXUnity/Model/Deformable Terrain Pager", priority = 50 )]
+    public static GameObject CreateTerrainPager()
+    {
+      var terrainData = new TerrainData()
+      {
+        size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
+        heightmapResolution = 517
+      };
+#if UNITY_2018_1_OR_NEWER
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
+#else
+      terrainData.SetDetailResolution( 1024, terrainData.detailResolution );
+#endif
+
+      var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
+      AssetDatabase.CreateAsset( terrainData, terrainDataName );
+
+      var go = Terrain.CreateTerrainGameObject( terrainData );
+      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrainPager>();
+      if ( go == null ) {
+        AssetDatabase.DeleteAsset( terrainDataName );
+        return null;
+      }
+
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
+      go.transform.position = new Vector3( -60, 0, -60 );
+      go.AddComponent<AGXUnity.Model.DeformableTerrainPager>();
+
+      Undo.RegisterCreatedObjectUndo( go, "New Terrain Pager" );
+
+      return Selection.activeGameObject = go;
+    }
+
     [MenuItem( "AGXUnity/Model/Create Cable from Mesh", priority = 80 )]
     public static void CreateCableFromMesh()
     {
@@ -355,6 +390,29 @@ namespace AGXUnityEditor
     public static GameObject Simulation()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Plot", priority = 66 )]
+    public static GameObject Plot()
+    {
+      var PlotObject = new GameObject("PlotObject");
+      PlotObject.AddComponent<AGXUnity.Utils.Plot>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+
+#if USE_VISUAL_SCRIPTING
+      var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
+      var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
+      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
+
+      AssetDatabase.SaveAssets();
+      AssetDatabase.Refresh();
+
+      var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
+      sm.nest.SwitchToMacro(AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>(targetAssetPath));
+#endif
+
+      return Selection.activeGameObject = PlotObject.gameObject;
     }
 
     [MenuItem( "AGXUnity/Managers/Collision Groups Manager", validate = true )]
@@ -439,9 +497,9 @@ namespace AGXUnityEditor
       }
       return Selection.activeGameObject = ph.gameObject;
     }
-    #endregion
+#endregion
 
-    #region Utils Settings
+#region Utils Settings
     [MenuItem( "AGXUnity/Utils/Generate Custom Editors", priority = 80 )]
     public static void GenerateEditors()
     {
@@ -449,27 +507,19 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
-    public static void FocusSettings()
+    public static void OpenSettings()
     {
-      var instance = EditorSettings.Instance;
-      if ( instance == null )
-        return;
-
-      EditorUtility.FocusProjectWindow();
-      Selection.activeObject = instance;
+      SettingsService.OpenProjectSettings( "Project/AGXSettings" );
     }
 
     public static T GetOrCreateUniqueGameObject<T>()
       where T : ScriptComponent
     {
-      bool hadInstance = UniqueGameObject<T>.HasInstance;
+      bool hadInstance = UniqueGameObject<T>.HasInstanceInScene;
       if ( !hadInstance && AGXUnity.Utils.PrefabUtils.IsEditingPrefab ) {
         Debug.LogWarning( $"Invalid to create {typeof( T ).FullName} while editing prefabs." );
         return null;
       }
-
-      if ( UniqueGameObject<T>.Instance == null )
-        UniqueGameObject<T>.ResetDestroyedState();
 
       T obj = UniqueGameObject<T>.Instance;
       if ( !hadInstance && obj != null )
@@ -483,9 +533,9 @@ namespace AGXUnityEditor
     {
       return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
     }
-    #endregion
+#endregion
 
-    #region Documentation, About and Update
+#region Documentation, About and Update
     [MenuItem( "AGXUnity/AGX Dynamics for Unity Manual", priority = 2001 )]
     public static void AGXDynamicsForUnityManual()
     {
@@ -539,7 +589,7 @@ namespace AGXUnityEditor
     {
       Windows.CheckForUpdatesWindow.Open();
     }
-    #endregion
+#endregion
   }
 }
 

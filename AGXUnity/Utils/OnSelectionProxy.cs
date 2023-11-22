@@ -20,5 +20,10 @@ namespace AGXUnity.Utils
       get { return m_component; }
       set { m_component = value; }
     }
+
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
+    }
   }
 }

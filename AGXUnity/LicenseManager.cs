@@ -8,6 +8,7 @@ using AGXUnity.Utils;
 
 namespace AGXUnity
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#license-manager" )]
   public static class LicenseManager
   {
     /// <summary>
@@ -18,12 +19,18 @@ namespace AGXUnity
       get
       {
         if ( !s_licenseInfo.IsParsed )
-          s_licenseInfo = LicenseInfo.Create();
+          LicenseInfo = LicenseInfo.Create();
         return s_licenseInfo;
       }
       private set
       {
         s_licenseInfo = value;
+
+        // We could end up here during instantiation of the
+        // NativeHandler. Only validate license in the native
+        // handler if it has an instance.
+        if ( NativeHandler.HasInstance )
+          NativeHandler.Instance.ValidateLicense();
       }
     }
 
@@ -60,8 +67,8 @@ namespace AGXUnity
 
     /// <summary>
     /// Load license file (service or legacy) located in any directory
-    /// under application/project root. Service (agx.lfx) is searched
-    /// for before legacy (agx.lic).
+    /// under application/project root. Service (*.lfx) is searched
+    /// for before legacy (*.lic). The first valid license found is loaded.
     /// </summary>
     /// <returns>
     /// True if successful, false if license files weren't found
@@ -69,16 +76,29 @@ namespace AGXUnity
     /// </returns>
     public static bool LoadFile()
     {
+      // This is potentially a license unlock by a script. It's not
+      // possible to know if it exists scripts that manually unlocks AGX.
+      var potentialScriptLoaded = LicenseInfo.Create();
+
       Reset();
 
-      var filename = FindLicenseFiles( LicenseInfo.LicenseType.Service ).FirstOrDefault() ??
-                     FindLicenseFiles( LicenseInfo.LicenseType.Legacy ).FirstOrDefault();
+      var licenseFiles = FindLicenseFiles();
+      foreach ( var licenseFile in licenseFiles ) {
+        var file = licenseFile.PrettyPath();
+        if ( LoadFile( file,
+                       $"License file \"{file}\" found in search from application root." ) )
+          return true;
+      }
 
-      if ( string.IsNullOrEmpty( filename ) )
-        return false;
+      // Recover the last license if parsed, i.e., there were a license
+      // loaded before calling this method. Note that all license files
+      // (if any) failed to load before this.
+      if ( potentialScriptLoaded.IsParsed ) {
+        LicenseInfo = potentialScriptLoaded;
+        return LicenseInfo.IsValid;
+      }
 
-      return LoadFile( filename.PrettyPath(),
-                       $"Searching for license service or legacy license file from application root: \"{filename.PrettyPath()}\"." );
+      return false;
     }
 
     /// <summary>
@@ -99,8 +119,15 @@ namespace AGXUnity
     /// <returns>True if successfully loaded and is a valid license, otherwise false.</returns>
     public static bool Load( string licenseContent )
     {
+      var context = "Explicit license content.";
+      // Loading encrypted runtime from script. AGX is writing the generated
+      // file as given in 'context' here, see ActivateEncryptedRuntime.
+      if ( FindLicenseContentType( licenseContent ) == LicenseContentType.EncryptedRuntimeService ) {
+        context = IO.Environment.GetPlayerPluginPath( Application.dataPath ) +
+                  $"/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}";
+      }
       return Load( licenseContent,
-                   "Explicit license content." );
+                   context );
     }
 
     /// <summary>
@@ -197,7 +224,7 @@ namespace AGXUnity
     {
       var filename = FindRuntimeActivationFiles().FirstOrDefault();
       if ( string.IsNullOrEmpty( filename ) ) {
-        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, license file not found.",
+        IssueLoadWarning( "Unable to activate runtime license, license file not found.",
                           $"Searching all directories under {Application.dataPath} for {s_runtimeActivationExtension} files." );
         return false;
       }
@@ -217,7 +244,7 @@ namespace AGXUnity
     public static bool ActivateEncryptedRuntime( string filename, string targetDirectory )
     {
       if ( string.IsNullOrEmpty( filename ) || !File.Exists( filename ) ) {
-        IssueLoadWarning( "AGXUnity.LicenseManager: Unable to activate runtime license, filename not given or doesn't exist.",
+        IssueLoadWarning( "Unable to activate runtime license, filename not given or doesn't exist.",
                           $"Explicit runtime activation with filename: \"{filename}\"" );
         return false;
       }
@@ -240,12 +267,95 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Generate offline license activation file for this machine given license id,
+    /// activation code and target filename. The target filename can be anything and will
+    /// be a text file which content can be cut and pasted into, or uploaded to:
+    ///     https://secure.softwarekey.com/solo/customers/ManualRequest.aspx
+    /// </summary>
+    /// <param name="licenseId">License id for this machine.</param>
+    /// <param name="licensePassword">License activation code for the given license id.</param>
+    /// <param name="outputFilename">Output filename of the text file containing the necessary information for the manual request.</param>
+    /// <param name="throwOnError">Throw AGXUnity.Exception on errors if true, otherwise rely on the return value.</param>
+    /// <returns>True if offline activation is successful, otherwise false or throw (if error) AGXUnity.Exception if <paramref name="throwOnError"/> = true.</returns>
+    public static bool GenerateOfflineActivation( int licenseId,
+                                                  string licensePassword,
+                                                  string outputFilename,
+                                                  bool throwOnError = true )
+    {
+      var success = false;
+
+      try {
+        var activationText = agx.Runtime.instance().generateOfflineActivationRequest( licenseId, licensePassword );
+        if ( !string.IsNullOrEmpty( agx.Runtime.instance().getStatus() ) )
+          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+
+        File.WriteAllText( outputFilename, activationText );
+
+        success = File.Exists( outputFilename );
+      }
+      catch ( System.Exception e ) {
+        if ( throwOnError )
+          throw;
+
+        success = false;
+
+        Debug.LogError( e.Message );
+      }
+
+      return success;
+    }
+
+    /// <summary>
+    /// Creates a license file <paramref name="licenseFilename"/> given manual request, offline,
+    /// license file or content of the procedure of offline license activation from:
+    ///     https://secure.softwarekey.com/solo/customers/ManualRequest.aspx
+    /// </summary>
+    /// <seealso cref="GenerateOfflineActivation"/>
+    /// <param name="webResponseFilenameOrContent">
+    /// Filename (including path) to offline activation response or the content of the file.
+    /// </param>
+    /// <param name="licenseFilename">The valid, activated license filename (including absolute or relative path).</param>
+    /// <param name="throwOnerror">Throw AGXUnity.Exception on errors if true, otherwise rely on the return value.</param>
+    /// <returns>True if create of offline license is successful, otherwise false or throw (if error) AGXUnity.Exception if <paramref name="throwOnError"/> = true.</returns>
+    public static bool CreateOfflineLicense( string webResponseFilenameOrContent,
+                                             string licenseFilename,
+                                             bool throwOnerror = true )
+    {
+      var success = false;
+
+      try {
+        if ( Path.GetExtension( licenseFilename ) != GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
+          licenseFilename += GetLicenseExtension( LicenseInfo.LicenseType.Service );
+
+        if ( File.Exists( webResponseFilenameOrContent ) )
+          webResponseFilenameOrContent = File.ReadAllText( webResponseFilenameOrContent );
+
+        if ( !agx.Runtime.instance().processOfflineActivationRequest( webResponseFilenameOrContent ) )
+          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+
+        File.WriteAllText( licenseFilename, agx.Runtime.instance().readEncryptedLicense() );
+
+        success = File.Exists( licenseFilename );
+      }
+      catch ( System.Exception e ) {
+        if ( throwOnerror )
+          throw;
+
+        success = false;
+
+        Debug.LogError( e.Message );
+      }
+
+      return success;
+    }
+
+    /// <summary>
     /// Update license information of the license loaded
     /// into AGX Dynamics.
     /// </summary>
-    public static void UpdateLicenseInformation()
+    public static LicenseInfo UpdateLicenseInformation()
     {
-      LicenseInfo = LicenseInfo.Create();
+      return (LicenseInfo = LicenseInfo.Create());
     }
 
     /// <summary>
@@ -517,6 +627,58 @@ namespace AGXUnity
       s_activationTask = null;
     }
 
+    public enum LicenseContentType
+    {
+      Unknown,
+      Service,
+      EncryptedRuntimeService,
+      Legacy,
+      LegacyObfuscated
+    }
+
+    /// <summary>
+    /// Finds license type given file/string content.
+    /// </summary>
+    /// <param name="licenseContent">License file/string content.</param>
+    /// <returns>License content type.</returns>
+    public static LicenseContentType FindLicenseContentType( string licenseContent )
+    {
+      if ( string.IsNullOrEmpty( licenseContent ) )
+        return LicenseContentType.Unknown;
+      else if ( licenseContent.StartsWith( @"<SoftwareKey>" ) )
+        return LicenseContentType.Service;
+      else if ( licenseContent.StartsWith( @"RT=" ) )
+        return LicenseContentType.EncryptedRuntimeService;
+      else if ( licenseContent.StartsWith( @"Key {" ) )
+        return LicenseContentType.Legacy;
+      // Assuming obfuscated if nothing else matches.
+      else
+        return LicenseContentType.LegacyObfuscated;
+    }
+
+    /// <summary>
+    /// Delete license and its .meta file (if editor and exists).
+    /// </summary>
+    /// <param name="filename">License file to delete.</param>
+    /// <returns>True if successfully deleted, otherwise false.</returns>
+    public static bool DeleteFile( string filename )
+    {
+      try {
+        File.Delete( filename );
+#if UNITY_EDITOR
+        if ( File.Exists( $"{filename}.meta" ) ) {
+          File.Delete( $"{filename}.meta" );
+          UnityEditor.AssetDatabase.Refresh();
+        }
+#endif
+      }
+      catch ( Exception e ) {
+        Debug.LogException( e );
+      }
+
+      return !File.Exists( filename );
+    }
+
     /// <summary>
     /// Load text file with context.
     /// </summary>
@@ -585,21 +747,33 @@ namespace AGXUnity
         return false;
       }
 
+      var licenseContentType = FindLicenseContentType( licenseContent );
+      if ( licenseContentType == LicenseContentType.Unknown ) {
+        IssueLoadWarning( $"Unknown license content: \"{licenseContent}\".", context );
+        return false;
+      }
+
       try {
         // Service type.
-        if ( licenseContent.StartsWith( @"<SoftwareKey>" ) ) {
+        if ( licenseContentType == LicenseContentType.Service ) {
           agx.Runtime.instance().loadLicenseString( licenseContent );
           LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
                     context );
         }
         // Runtime license activation.
-        else if ( licenseContent.StartsWith( @"RT=" ) ) {
+        else if ( licenseContentType == LicenseContentType.EncryptedRuntimeService ) {
+          // Temporary fix until activateEncryptedRuntime has been fixed in AGX Dynamics
+          // to support non-ASCII input paths.
+          var cwd = Directory.GetCurrentDirectory();
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cwd );
           agx.Runtime.instance().activateEncryptedRuntime( licenseContent, context );
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( cwd );
+
           LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {agx.Runtime.instance().isValid()}.",
                     context );
         }
         // Legacy type.
-        else if ( licenseContent.StartsWith( @"Key {" ) ) {
+        else if ( licenseContentType == LicenseContentType.Legacy ) {
           agx.Runtime.instance().unlock( licenseContent );
           LoadInfo( $"Loading legacy license successful: {agx.Runtime.instance().isValid()}.",
                     context );
@@ -620,29 +794,6 @@ namespace AGXUnity
       UpdateLicenseInformation();
 
       return LicenseInfo.IsValid;
-    }
-
-    /// <summary>
-    /// Delete license and its .meta file (if editor and exists).
-    /// </summary>
-    /// <param name="filename">License file to delete.</param>
-    /// <returns>True if successfully deleted, otherwise false.</returns>
-    private static bool DeleteFile( string filename )
-    {
-      try {
-        File.Delete( filename );
-#if UNITY_EDITOR
-        if ( File.Exists( $"{filename}.meta" ) ) {
-          File.Delete( $"{filename}.meta" );
-          UnityEditor.AssetDatabase.Refresh();
-        }
-#endif
-      }
-      catch ( Exception e ) {
-        Debug.LogException( e );
-      }
-
-      return !File.Exists( filename );
     }
 
     private static void LoadInfo( string info, string context )

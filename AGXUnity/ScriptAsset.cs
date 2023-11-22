@@ -16,16 +16,17 @@ namespace AGXUnity
   /// ScriptAssetManager to have a "component like" behavior in the
   /// implementations.
   /// </summary>
-  public abstract class ScriptAsset : UnityEngine.ScriptableObject
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
+  public abstract class ScriptAsset : ScriptableObject
   {
     public static T Create<T>() where T : ScriptAsset
     {
       return Create( typeof( T ) ) as T;
     }
 
-    public static ScriptAsset Create( System.Type type )
+    public static ScriptAsset Create( Type type )
     {
-      ScriptAsset instance = CreateInstance( type ) as ScriptAsset;
+      var instance = CreateInstance( type ) as ScriptAsset;
       instance.Construct();
 
       return instance;
@@ -40,7 +41,7 @@ namespace AGXUnity
       if ( ScriptAssetManager.Instance == null )
         throw new AGXUnity.Exception( "Script asset manager seems to be destroyed. Is your script trying to access an initialized script asset outside of start/initialize -> destroy?" );
 
-      ScriptAssetManager.InitializationState state = ScriptAssetManager.Instance.Report( this );
+      var state = ScriptAssetManager.Instance.Report( this );
       if ( state == ScriptAssetManager.InitializationState.NotInitialized ) {
         NativeHandler.Instance.MakeMainThread();
 

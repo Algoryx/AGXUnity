@@ -6,86 +6,127 @@ using Scene = UnityEngine.SceneManagement.Scene;
 namespace AGXUnity
 {
   /// <summary>
-  /// Singleton like object that is created when Instance is called
-  /// AND this object hasn't been destroyed in the Unity Engine.
-  /// 
-  /// This means that there can only be one instance of this type in
-  /// a scene and that it is unsafe to use this object in the OnDestroy
-  /// callbacks.
-  /// 
-  /// If this object has been destroyed, Instance will return null!
+  /// Singleton like object that is created when Instance is called.
+  /// It's important that callers to Instance properly checks
+  /// HasInstance and/or IsDestroyed when the caller is being
+  /// destroyed, e.g., during scene unload or from OnDestroy.
   /// </summary>
   /// <typeparam name="T">Type of subclass.</typeparam>
-  public class UniqueGameObject<T> : ScriptComponent where T : ScriptComponent
+  public class UniqueGameObject<T> : ScriptComponent
+    where T : ScriptComponent
   {
-    protected static T m_instance     = null;
-    protected static bool m_destroyed = false;
-
     /// <summary>
-    /// Returns an instance of this object if it hasn't been destroyed
-    /// in the current context (Unity scene).
+    /// Get found instance or finds instance in the current scene or
+    /// creates a new instance in the scene.
     /// </summary>
-    /// <remarks>
-    /// Note that this property may return null, and if it does, one
-    /// probably wouldn't need the object anyway.
-    /// </remarks>
     public static T Instance
     {
       get
       {
-        if ( m_destroyed && !Application.isPlaying )
-          ResetDestroyedState();
-
-        var wasNull = m_instance == null;
-
-        if ( !m_destroyed && m_instance == null && ( m_instance = FindObjectOfType( typeof( T ) ) as T ) == null ) {
-          string name = ( typeof( T ).Namespace != null ? typeof( T ).Namespace + "." : "" ) + typeof( T ).Name;
-          m_instance = ( new GameObject( name ) ).AddComponent<T>();
-          m_instance.transform.hideFlags = HideFlags.NotEditable;
-        }
-
-        // When a scene has been unloaded it's safe to create
-        // an instance of this singleton again.
-        if ( wasNull && m_instance != null )
-          SceneManager.sceneUnloaded += OnSceneUnloaded;
-
-        return m_instance;
+        return s_instance != null ?
+                 s_instance :
+                 FindOrCreateInstance();
+      }
+      private set
+      {
+        s_instance = value;
+        s_wasCreated |= value != null;
       }
     }
 
-    public static bool HasInstance { get { return m_instance != null || (FindObjectOfType( typeof( T ) ) as T ) != null; } }
-
-    public static bool IsDestroyed { get { return m_destroyed; } }
+    /// <summary>
+    /// True if the instance has been found or been created.
+    /// False if destroyed or no one has called Instance.
+    /// </summary>
+    public static bool HasInstance => s_instance != null;
 
     /// <summary>
-    /// Use with care. Reset the internal reset state so this
-    /// object may be created again.
-    /// 
-    /// Only call/use this method when you are in the editor!
+    /// True if this object has been destroyed. Calling Instance
+    /// after this will create a new instance so if IsDestroyed == true,
+    /// don't call Instance from OnDestroy.
     /// </summary>
-    public static void ResetDestroyedState()
+    public static bool IsDestroyed => s_wasCreated && s_instance == null;
+
+    /// <summary>
+    /// True if an instance has been created or there is an instance
+    /// in the loaded scenes. This is used by implicit dependent scripts
+    /// on certain managers, e.g., WindAndWaterParameters shouldn't
+    /// instantiate a dependent WindAndWaterManager if the user hasn't
+    /// explicitly enabled a WindAndWaterManager in a loaded scene.
+    /// </summary>
+    public static bool HasInstanceInScene
     {
-      m_destroyed = false;
+      get
+      {
+        return s_instance != null || ( FindOrCreateInstance( true ) != null );
+      }
     }
 
-    protected override void OnAwake()
+    protected sealed override void OnAwake()
     {
-      m_destroyed = false;
-
-      base.OnAwake();
+      // In adaptive scene loading it's possible that we
+      // have multiple instances of some managers. It's
+      // likely they communicate with the same simulation
+      // instance or may operate separately as long as no
+      // external script depends on calls to Instance.
+      // E.g., ContactMaterialManager and CollisionGroupsManager
+      // may have several instances. Simulation and
+      // ScriptAssetManager may not, so either they has
+      // to be in the main scene or in no scene at all.
+      if ( s_instance == null )
+        Instance = this as T;
     }
 
     protected override void OnDestroy()
     {
-      base.OnDestroy();
+      if ( s_instance == this )
+        Instance = null;
 
-      m_destroyed = true;
+      base.OnDestroy();
+    }
+
+    /// <summary>
+    /// Invalid to call this method if s_instance != null. Finds
+    /// instance in scene or creates a new game object with component T.
+    /// </summary>
+    /// <param name="onlyFind">
+    /// True if only FindObjectOfType should be called and if not found,
+    /// return null. False to find or create a new instance.
+    /// </param>
+    /// <returns>
+    /// Found or new instance. Null if <paramref name="onlyFind"/> == true and
+    /// FindObjectOfType returns null.
+    /// </returns>
+    private static T FindOrCreateInstance( bool onlyFind = false )
+    {
+      if ( s_instance != null )
+        Debug.LogError( $"{s_instance.name}: Invalid to call FindOrCreateInstance called with non-null s_instance." );
+
+      // It's important that the caller knows something in which context
+      // the Instance call is made in so that we're not recreating this
+      // object in, e.g., OnDestroy/Unloading of as scene.
+      s_wasCreated = false;
+
+      Instance = FindObjectOfType<T>();
+      if ( !onlyFind && s_instance == null )
+        Instance = new GameObject( typeof( T ).FullName ).AddComponent<T>();
+
+      if ( s_instance != null ) {
+        s_instance.transform.hideFlags = HideFlags.NotEditable;
+        s_wasCreated = true;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+      }
+
+      return s_instance;
     }
 
     private static void OnSceneUnloaded( Scene scene )
     {
-      ResetDestroyedState();
+      s_wasCreated = false;
       SceneManager.sceneUnloaded -= OnSceneUnloaded;
     }
+
+    private static T s_instance = null;
+    private static bool s_wasCreated = false;
   }
 }

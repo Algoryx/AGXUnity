@@ -16,6 +16,7 @@ namespace AGXUnity
   /// // rb should have a native instance
   /// assert( rb.Native != null );
   /// </example>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#components" )]
   public abstract class ScriptComponent : MonoBehaviour
   {
     public enum States
@@ -42,8 +43,10 @@ namespace AGXUnity
     /// <returns>Native simulation object if not being destructed.</returns>
     public agxSDK.Simulation GetSimulation()
     {
-      Simulation simulation = Simulation.Instance;
-      return simulation ? simulation.Native : null;
+      if ( Simulation.IsDestroyed )
+        return null;
+
+      return Simulation.Instance?.Native;
     }
 
     /// <summary>

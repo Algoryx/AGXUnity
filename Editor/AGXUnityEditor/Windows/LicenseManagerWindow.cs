@@ -81,6 +81,11 @@ namespace AGXUnityEditor.Windows
                                            "Activating..." :
                                            "Refreshing..." ) );
 
+      if ( !AGXUnity.LicenseManager.LicenseInfo.IsValid ) {
+        EditorGUILayout.HelpBox( "If you have activated your license previously on this machine, consider importing the .lfx file instead of reactivating the license.", MessageType.Info, true );
+        GUILayout.Space( 6 );
+      }
+
       using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !AGXUnity.LicenseManager.IsBusy ) ) {
         for ( int i = 0; i < m_licenseData.Count; ++i ) {
           var data = m_licenseData[ i ];
@@ -129,8 +134,7 @@ namespace AGXUnityEditor.Windows
       var selectLicensePressed = InspectorGUI.Button( selectLicenseRect,
                                                       MiscIcon.Locate,
                                                       UnityEngine.GUI.enabled,
-                                                      "Select license file on this computer",
-                                                      1.25f );
+                                                      "Select license file on this computer");
       if ( selectLicensePressed ) {
         var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
                                                          ".",
@@ -163,7 +167,7 @@ namespace AGXUnityEditor.Windows
                                                               InspectorEditor.Skin.TextField );
         if ( m_licenseActivateData.Id.Any( c => !char.IsDigit( c ) ) )
           m_licenseActivateData.Id = new string( m_licenseActivateData.Id.Where( c => char.IsDigit( c ) ).ToArray() );
-        m_licenseActivateData.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Activation Code" ),
+        m_licenseActivateData.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Activation Password" ),
                                                                         m_licenseActivateData.Password );
 
         InspectorGUI.SelectFolder( GUI.MakeLabel( "License File Directory" ),
@@ -240,23 +244,33 @@ namespace AGXUnityEditor.Windows
                                               RefreshLicense( data );
                                             },
                                             UnityEngine.GUI.enabled &&
-                                            data.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service,
+                                            // Until AGX provides information on invalid (expired) licenses, we
+                                            // check the filename. Otherwise data.LicenseInfo.Type == Service would
+                                            // be the correct check here.
+                                            AGXUnity.LicenseManager.GetLicenseType( data.Filename ) == AGXUnity.LicenseInfo.LicenseType.Service,
                                             "Refresh license from server." ),
         InspectorGUI.MiscButtonData.Create( MiscIcon.EntryRemove,
                                             () =>
                                             {
-                                              var deactivateDelete = EditorUtility.DisplayDialog( "Deactivate and erase license.",
-                                                                                                  "Would you like to deactivate the current license " +
-                                                                                                  "and remove the license file from this project?\n\n" +
-                                                                                                  "It's possible to activate the license again in this " +
-                                                                                                  "License Manager and/or download the license file again " +
-                                                                                                  "from the license portal.",
-                                                                                                  "Yes",
-                                                                                                  "Cancel" );
-                                              if ( deactivateDelete ) {
+                                              // 0: Deactivate and Delete
+                                              // 1: Cancel
+                                              // 2: Delete
+                                              var filename = Path.GetFileName( data.Filename );
+                                              var choice = EditorUtility.DisplayDialogComplex( $"Delete or deactivate and delete \"{filename}\"?",
+                                                                                               $"Would you like to delete or deactivate and delete \"{filename}\"?\n\n" +
+                                                                                               $"Deactivating the license will contact the license server and remove " +
+                                                                                               $"the current installation, meaning the license can be activated again on " +
+                                                                                               $"other hardware or on this machine again later using License ID and Password.",
+                                                                                               "Deactivate and Delete", "Cancel", "Delete" );
+                                              var deactivateAndDelete = choice == 0;
+                                              var deleteOnly = choice == 2;
+                                              if ( deactivateAndDelete )
                                                 AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename );
+                                              else if ( deleteOnly )
+                                                AGXUnity.LicenseManager.DeleteFile( data.Filename );
+
+                                              if ( deactivateAndDelete || deleteOnly )
                                                 StartUpdateLicenseInformation();
-                                              }
                                             },
                                             UnityEngine.GUI.enabled,
                                             "Deactivate and erase license file from project." )
@@ -313,9 +327,7 @@ namespace AGXUnityEditor.Windows
           licenseData.Add( new LicenseData()
           {
             Filename = licenseFile,
-            LicenseInfo = valid ?
-                            AGXUnity.LicenseManager.LicenseInfo :
-                            new AGXUnity.LicenseInfo()
+            LicenseInfo = AGXUnity.LicenseManager.LicenseInfo
           } );
         }
 

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using AGXUnity.Model;
+using AGXUnityEditor.Utils;
 
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
@@ -110,17 +111,19 @@ namespace AGXUnityEditor.Tools
 
     private void HandleLineToolInspectorGUI( LineTool lineTool, string name )
     {
-      // If visible, the vertical maker starts under the foldout, otherwise
-      // render the marker through the fouldout label.
-      var isVisible = GetLineToggleData( name ).Bool;
-      var color     = Color.Lerp( lineTool.Color, InspectorGUI.BackgroundColor, 0.25f );
-      using ( new InspectorGUI.VerticalScopeMarker( color ) ) {
-        if ( !InspectorGUI.Foldout( GetLineToggleData( name ),
-                                    GUI.MakeLabel( name, true ) ) )
-          return;
-        //using ( new InspectorGUI.VerticalScopeMarker( color ) )
-        using ( InspectorGUI.IndentScope.Single )
-          lineTool.OnInspectorGUI();
+      using (new DirtyOnLineChangeScope( Shovel, lineTool.Line ) ) {
+        // If visible, the vertical maker starts under the foldout, otherwise
+        // render the marker through the fouldout label.
+        var isVisible = GetLineToggleData( name ).Bool;
+        var color     = Color.Lerp( lineTool.Color, InspectorGUI.BackgroundColor, 0.25f );
+        using ( new InspectorGUI.VerticalScopeMarker( color ) ) {
+          if ( !InspectorGUI.Foldout( GetLineToggleData( name ),
+                                      GUI.MakeLabel( name, true ) ) )
+            return;
+          //using ( new InspectorGUI.VerticalScopeMarker( color ) )
+          using ( InspectorGUI.IndentScope.Single )
+            lineTool.OnInspectorGUI();
+        }
       }
     }
 
@@ -174,6 +177,9 @@ namespace AGXUnityEditor.Tools
         return result;
       if ( Vector3.Dot( result.Edge.Direction, refCamera.transform.forward ) > 0.0 )
         AGXUnity.Utils.Math.Swap( ref result.Edge.Start, ref result.Edge.End );
+      // If a principal axis was picked, move start of direction to center of axis
+      if ( result.Edge.Type == AGXUnity.Edge.EdgeType.Principal )
+        result.Edge.Start = result.Edge.Center;
       result.Edge.End = result.Edge.Start + 0.5f * result.Edge.Direction;
       return result;
     }

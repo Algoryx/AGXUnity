@@ -20,6 +20,7 @@ namespace AGXUnityEditor.Tools
       bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
       bool hasTrack     = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
       bool hasTerrain   = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null;
+      bool hasPager     = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrainPager>() != null;
 
       string nullTag      = isNull       ? GUI.AddColorTag( "[null]", Color.red ) : "";
       string visualTag    = hasVisual    ? GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
@@ -29,10 +30,11 @@ namespace AGXUnityEditor.Tools
       string cableTag     = hasCable     ? GUI.AddColorTag( "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
       string trackTag     = hasTrack     ? GUI.AddColorTag( "[Track]", Color.Lerp( Color.yellow, Color.red, 0.45f ) ) : "";
       string terrainTag   = hasTerrain   ? GUI.AddColorTag( "[Terrain]", Color.Lerp( Color.green, Color.yellow, 0.25f ) ) : "";
+      string pagingTag    = hasPager     ? GUI.AddColorTag( "[PaginTerrain]", Color.Lerp( Color.green, Color.yellow, 0.65f ) ) : "";
 
       string name = isNull ? "World" : gameObject.name;
 
-      return GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag + trackTag + terrainTag );
+      return GUI.MakeLabel( name + " " + nullTag + rigidBodyTag + shapeTag + visualTag + wireTag + cableTag + trackTag + terrainTag + pagingTag );
     }
 
     public class ObjectData

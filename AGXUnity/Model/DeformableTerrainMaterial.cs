@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain-material" )]
   public class DeformableTerrainMaterial : ScriptAsset
   {
     /// <summary>
@@ -11,7 +12,32 @@ namespace AGXUnity.Model
     /// with AGX Dynamics.
     /// </summary>
     [HideInInspector]
-    public static string DefaultTerrainMaterialsPath { get { return "data/TerrainMaterials"; } }
+    public static string DefaultTerrainMaterialsPath
+    {
+      get
+      {
+        if ( s_defaultTerrainMaterialsPath == null ) {
+          var terrainMaterialLibraryOptions = new string[]
+          {
+            "data/TerrainMaterials",
+            "data/MaterialLibrary/TerrainMaterials"
+          };
+
+          foreach ( var materialLibraryOption in terrainMaterialLibraryOptions ) {
+            var fileTest = agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).find( $"{materialLibraryOption}/dirt_1.json" );
+            if ( !string.IsNullOrEmpty( fileTest ) ) {
+              s_defaultTerrainMaterialsPath = materialLibraryOption;
+              break;
+            }
+          }
+
+          if ( s_defaultTerrainMaterialsPath == null )
+            s_defaultTerrainMaterialsPath = terrainMaterialLibraryOptions[ 0 ];
+        }
+
+        return s_defaultTerrainMaterialsPath;
+      }
+    }
 
     /// <summary>
     /// Finds available material presets in the current material directory.
@@ -35,11 +61,12 @@ namespace AGXUnity.Model
                                                                    DefaultTerrainMaterialsPath ) ) {
         var errorMessage = string.Empty;
         if ( Array.IndexOf( GetAvailablePresets(), presetName ) < 0 )
-          errorMessage = $"Unable to find material name {presetName} in the library.";
+          errorMessage = $"AGXUnity.Model.DeformableTerrainMaterial: Unable to find material name {presetName} in the library.";
         else
           errorMessage = terrainMaterial.getLastError();
-        Debug.LogWarning( $"Unable to load preset {presetName}: {errorMessage}" );
+        Debug.LogWarning( $"AGXUnity.Model.DeformableTerrainMaterial: Unable to load preset {presetName}: {errorMessage}" );
       }
+
       return terrainMaterial;
     }
 
@@ -764,7 +791,7 @@ namespace AGXUnity.Model
       get
       {
         return m_temporaryNative != null ?
-                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumDepth() ) :
+                 Convert.ToSingle( m_temporaryNative.getExcavationContactProperties().getMaximumContactDepth() ) :
                  m_maximumContactDepth;
       }
       set
@@ -958,5 +985,8 @@ namespace AGXUnity.Model
     }
 
     private agxTerrain.TerrainMaterial m_temporaryNative = null;
+
+    [NonSerialized]
+    private static string s_defaultTerrainMaterialsPath = null;
   }
 }

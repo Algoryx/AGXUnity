@@ -29,6 +29,7 @@ namespace AGXUnity.IO
   }
 
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#agx-dynamics-import" )]
   public class RestoredAGXFile : ScriptComponent
   {
     [SerializeField]
@@ -67,7 +68,8 @@ namespace AGXUnity.IO
 
     protected override bool Initialize()
     {
-      m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+      if ( CollisionGroupsManager.Instance.GetInitialized<CollisionGroupsManager>() != null )
+        m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
 
       return true;
     }

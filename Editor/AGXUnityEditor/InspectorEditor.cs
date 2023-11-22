@@ -118,52 +118,12 @@ namespace AGXUnityEditor
     /// </summary>
     public bool IsMainEditor { get; private set; } = true;
 
-    private static Texture2D m_icon = null;
-    private static Texture2D m_hideTexture = null;
-
     public sealed override void OnInspectorGUI()
     {
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
       if ( IsMainEditor && !typeof( ScriptableObject ).IsAssignableFrom( target.GetType() ) ) {
-        var controlRect = EditorGUILayout.GetControlRect( false, 0.0f );
-        if ( m_icon == null )
-          m_icon = IconManager.GetIcon( "algoryx_white_shadow_icon" );
-
-        if ( m_icon != null ) {
-          if ( m_hideTexture == null ) {
-#if UNITY_2019_3_OR_NEWER
-            var hideColor = Color.Lerp( InspectorGUI.BackgroundColor, Color.white, 0.03f );
-#else
-            var hideColor = InspectorGUI.BackgroundColor;
-#endif
-
-            m_hideTexture = GUI.CreateColoredTexture( 1, 1, hideColor );
-          }
-
-          var hideRect = new Rect( controlRect.x,
-#if UNITY_2019_3_OR_NEWER
-                                   controlRect.y - 1.25f * EditorGUIUtility.singleLineHeight - 2,
-#else
-                                   controlRect.y - 1.00f * EditorGUIUtility.singleLineHeight - 1,
-#endif
-                                   18,
-                                   EditorGUIUtility.singleLineHeight + 2 );
-          UnityEngine.GUI.DrawTexture( hideRect, m_hideTexture );
-
-          var iconRect = new Rect( hideRect );
-          iconRect.height = 14.0f;
-          iconRect.width = 14.0f;
-#if UNITY_2019_3_OR_NEWER
-          iconRect.y += 2.5f;
-#else
-          iconRect.y += 1.5f;
-#endif
-          iconRect.x += 3.0f;
-          UnityEngine.GUI.DrawTexture( iconRect, m_icon );
-        }
-
         InspectorGUI.BrandSeparator();
       }
 
@@ -200,8 +160,19 @@ namespace AGXUnityEditor
       m_numTargetGameObjectsTargetComponents = m_targetGameObjects.Sum( go => go.GetComponents( m_targetType ).Length );
 
       // Entire class/component marked as hidden - enable "hide in inspector".
-      if ( this.target.GetType().GetCustomAttributes( typeof( HideInInspector ), false ).Length > 0 )
-        this.target.hideFlags |= HideFlags.HideInInspector;
+      // NOTE: This will break Inspector rendering in 2022.1 and later because changing
+      //       hideFlags here results in a destroy of all editors and the editors that
+      //       should be visible are enabled again but never rendered by Unity.
+      // SOLUTION: Add hideFlags |= HideFlags.HideInInspector in Reset method of the class
+      //           that shouldn't be rendered in the Inspector.
+      // NOTE 2: The above solution does not work when importing prefabs as the act of 
+      //         saving a GameObject to a prefab clears the hideFlags.
+      // SOLUTION: Set the hideFlags on affected components when adding a prefab to the scene
+      //           in AGXUnityEditor.AssetPostprocessorHandler.OnAGXPrefabAdddedToScene
+      if ( this.targets.Any( t => !t.hideFlags.HasFlag( HideFlags.HideInInspector ) ) && m_targetType.GetCustomAttribute<HideInInspector>( false ) != null ) {
+        foreach ( var t in this.targets )
+          t.hideFlags |= HideFlags.HideInInspector;
+      }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
     }

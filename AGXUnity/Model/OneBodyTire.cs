@@ -7,6 +7,7 @@ namespace AGXUnity.Model
   /// and the friction directions are updated given the tire frame.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Model/One Body Tire" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#tire" )]
   public class OneBodyTire : Tire
   {
     /// <summary>
@@ -76,10 +77,8 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Tires" ) ) {
-        Debug.LogError( "OneBodyTire requires a valid license for the AGX Dynamics module: AgX-Tires", this );
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTires, this ) )
         return false;
-      }
 
       if ( RigidBody == null ) {
         Debug.LogError( "OneBodyTire failed to initialize: Tire rigid body is null.", this );

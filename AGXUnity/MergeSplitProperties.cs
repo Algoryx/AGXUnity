@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Merge Split Properties" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#merge-split-properties" )]
   public class MergeSplitProperties : ScriptComponent
   {
     [SerializeField]
@@ -91,6 +93,15 @@ namespace AGXUnity
     {
       m_natives.Clear();
 
+      // Two Body tire does not currently handle AMOR very well so we need to avoid enabling merge for constraints which connect a rim and a tire of a TwoBodyTire
+      // This is done by adding Rim/Tire pairs to a list and checking that Reference/Connected object is not a blacklisted pair before enabling merge
+      var blacklist = new List<Tuple<RigidBody, RigidBody>>();
+
+      var tires = GetComponentsInChildren<Model.TwoBodyTire>();
+      foreach ( var tire in tires )
+        if ( tire.GetInitialized<Model.TwoBodyTire>() != null )
+          blacklist.Add( Tuple.Create( tire.TireRigidBody, tire.RimRigidBody ) );
+
       var bodies = GetComponentsInChildren<RigidBody>();
       foreach ( var rb in bodies )
         Add( agxSDK.MergeSplitHandler.getOrCreateProperties( rb.GetInitialized<RigidBody>().Native ) );
@@ -104,8 +115,14 @@ namespace AGXUnity
 
       var constraints = GetComponentsInChildren<Constraint>();
       foreach ( var constraint in constraints )
-        if ( constraint.GetInitialized<Constraint>() != null )
-          Add( agxSDK.MergeSplitHandler.getOrCreateProperties( constraint.Native ) );
+        if ( constraint.GetInitialized<Constraint>() != null ) {
+          var refRB = constraint.AttachmentPair.ReferenceObject.GetComponent<RigidBody>();
+          var conRB = constraint.AttachmentPair.ConnectedObject.GetComponent<RigidBody>();
+          if ( !blacklist.Any( pair =>
+            ( pair.Item1 == refRB && pair.Item2 == conRB ) ||
+            ( pair.Item2 == refRB && pair.Item1 == conRB ) ) )
+            Add( agxSDK.MergeSplitHandler.getOrCreateProperties( constraint.Native ) );
+        }
 
       var wires = GetComponentsInChildren<Wire>();
       foreach ( var wire in wires )
@@ -141,7 +158,7 @@ namespace AGXUnity
 
     private void Add( agxSDK.MergeSplitProperties native )
     {
-      if ( m_natives.Contains( native) ) {
+      if ( m_natives.Contains( native ) ) {
         Debug.Log( "Native MergeSplitProperties already present in native list.", this );
         return;
       }

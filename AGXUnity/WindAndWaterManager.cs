@@ -8,6 +8,7 @@ namespace AGXUnity
   /// and water shapes.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wind-and-water-manager" )]
   public class WindAndWaterManager : UniqueGameObject<WindAndWaterManager>
   {
     /// <summary>
@@ -88,6 +89,9 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXHydrodynamics, this ) )
+        return false;
+
       Native = new agxModel.WindAndWaterController();
       GetSimulation().add( Native );
 

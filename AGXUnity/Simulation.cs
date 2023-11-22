@@ -1,18 +1,27 @@
-﻿using System;
+using AGXUnity.Utils;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using AGXUnity.Utils;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace AGXUnity
 {
+  public enum LogLevel
+  {
+    Debug = 1,
+    Info = 2,
+    Warning = 4,
+    Error = 8
+  };
+
   /// <summary>
   /// Simulation object, either explicitly created and added or
   /// implicitly created when first used.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulation-manager" )]
   public class Simulation : UniqueGameObject<Simulation>
   {
     /// <summary>
@@ -241,6 +250,101 @@ namespace AGXUnity
       set { m_savePreFirstStepPath = value; }
     }
 
+    [SerializeField]
+    private bool m_logEnabled = false;
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public bool LogEnabled
+    {
+      get { return m_logEnabled; }
+      set
+      {
+        if ( value == m_logEnabled ) return;
+        m_logEnabled = value;
+        OpenLogFileIfEnabled();
+      }
+    }
+
+    [SerializeField]
+    private string m_logPath  = "";
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public string LogPath
+    {
+      get => m_logPath;
+      set
+      {
+        if ( value == m_logPath ) return;
+        m_logPath = value;
+        OpenLogFileIfEnabled();
+      }
+    }
+
+    private LogAdapter m_logAdapter = null;
+
+    [SerializeField]
+    private bool m_logToUnityConsole = false;
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public bool LogToUnityConsole
+    {
+      get { return m_logToUnityConsole; }
+      set
+      {
+        if ( value == m_logToUnityConsole ) return;
+        m_logToUnityConsole = value;
+
+        if ( m_simulation == null ) return;
+
+        if ( m_logToUnityConsole )
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel, DisableMeshCreationWarnings );
+        else {
+          m_logAdapter?.RemoveFromSimulation( this );
+          m_logAdapter = null;
+        }
+      }
+    }
+
+    [SerializeField]
+    private LogLevel m_agxUnityLogLevel = LogLevel.Info;
+
+    [HideInInspector]
+    [IgnoreSynchronization]
+    public LogLevel AGXUnityLogLevel
+    {
+      get { return m_agxUnityLogLevel; }
+      set
+      {
+        m_agxUnityLogLevel = value;
+
+        if ( m_logAdapter != null )
+          m_logAdapter.LogLevel = value;
+      }
+    }
+
+    [SerializeField]
+    private bool m_disableMeshCreationWarnings = false;
+
+    [HideInInspector]
+    public bool DisableMeshCreationWarnings
+    {
+      get
+      {
+        if ( m_logAdapter != null )
+          m_disableMeshCreationWarnings = m_logAdapter.DisableMeshCreationWarnings;
+        return m_disableMeshCreationWarnings;
+      }
+      set
+      {
+        m_disableMeshCreationWarnings = value;
+        if ( m_logAdapter != null )
+          m_logAdapter.DisableMeshCreationWarnings = value;
+      }
+    }
+
     /// <summary>
     /// Get the native instance, if not deleted.
     /// </summary>
@@ -263,7 +367,7 @@ namespace AGXUnity
     /// <returns>True if objects were written to file - otherwise false.</returns>
     public bool SaveToNativeFile( string filename )
     {
-      if ( m_simulation == null ) { 
+      if ( m_simulation == null ) {
         Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: Simulation isn't active.",
                                                  Color.yellow ),
                           this );
@@ -278,7 +382,7 @@ namespace AGXUnity
       }
 
       if ( file.Extension.ToUpper() != ".AGX" && file.Extension.ToUpper() != ".AAGX" ) {
-        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: File extension {file.Extension} is unknown. " ,
+        Debug.LogWarning( Utils.GUI.AddColorTag( $"Unable to write {filename}: File extension {file.Extension} is unknown. ",
                                                  Color.yellow ) +
                           "Valid extensions are .agx and .aagx." );
         return false;
@@ -311,7 +415,7 @@ namespace AGXUnity
 
       m_stepForwardTimer = new agx.Timer();
 
-      return base.Initialize();
+      return true;
     }
 
     protected override void OnDestroy()
@@ -360,6 +464,11 @@ namespace AGXUnity
 
         StepCallbacks.OnInitialize( m_simulation );
         ContactCallbacks.OnInitialize( this );
+
+        // Initialize logger if enabled
+        OpenLogFileIfEnabled();
+        if ( m_logToUnityConsole )
+          m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel, DisableMeshCreationWarnings );
       }
 
       return m_simulation;
@@ -490,6 +599,70 @@ namespace AGXUnity
       }
     }
 
+    private void OpenLogFileIfEnabled()
+    {
+      string logOverride = IO.Environment.GetLogFileOverride();
+      if ( logOverride != null )
+        agx.Logger.instance().openLogfile( logOverride, true, true );
+      else if ( m_simulation != null && LogEnabled && !string.IsNullOrEmpty( LogPath ) )
+        agx.Logger.instance().openLogfile( LogPath.Trim(),
+                                           true,
+                                           true );
+    }
+
+    private class LogAdapter
+    {
+      private agx.LoggerSubscriber m_subscriber;
+      private agx.LoggerSubscriberMessageVector m_messages;
+
+      public LogLevel LogLevel { get; set; }
+      public bool DisableMeshCreationWarnings { get; set; }
+
+      public LogAdapter( Simulation sim, LogLevel level, bool disableMeshCreateWarnings )
+      {
+        LogLevel = level;
+        m_subscriber = new agx.LoggerSubscriber();
+        m_messages = new agx.LoggerSubscriberMessageVector();
+        DisableMeshCreationWarnings = disableMeshCreateWarnings;
+        sim.StepCallbacks.PostStepForward += PrintLoggerMessages;
+      }
+
+      public void RemoveFromSimulation( Simulation sim )
+      {
+        sim.StepCallbacks.PostStepForward -= PrintLoggerMessages;
+      }
+
+      public void PrintLoggerMessages()
+      {
+        m_subscriber.getMessages( m_messages, true );
+        foreach ( var message in m_messages )
+          Log( message.first, message.second );
+      }
+
+      private void Log( int level, string message )
+      {
+        if ( level < (int)LogLevel ) return;
+
+        if ( DisableMeshCreationWarnings && message.StartsWith( "Trimesh creation warnings" ) )
+          return;
+
+        switch ( (LogLevel)level ) {
+          case LogLevel.Info:
+          case LogLevel.Debug:
+            Debug.Log( message );
+            break;
+          case LogLevel.Warning:
+            Debug.LogWarning( message );
+            break;
+          case LogLevel.Error:
+            Debug.LogError( message );
+            break;
+          default:
+            break;
+        }
+      }
+    }
+
     private class MemoryAllocations
     {
       public enum Section
@@ -523,11 +696,11 @@ namespace AGXUnity
         var value    = Convert.ToSingle( delta );
         if ( absDelta > 512 * 1024 ) {
           suffix = "MB";
-          value  = Convert.ToSingle( delta ) / ( 1024.0f * 1024.0f );
+          value = Convert.ToSingle( delta ) / ( 1024.0f * 1024.0f );
         }
         else if ( absDelta > 512 ) {
           suffix = "KB";
-          value  = Convert.ToSingle( delta ) / 1024.0f;
+          value = Convert.ToSingle( delta ) / 1024.0f;
         }
 
         return string.Format( "{0:0.#} {1}", value, suffix );
@@ -594,7 +767,16 @@ namespace AGXUnity
                                          GUIStyle style,
                                          bool isHeader = false )
     {
-      var labelStr = Utils.GUI.AddColorTag( name, color ) + time.current.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms";
+      StatisticsLabel( name, time.current, color, style, isHeader );
+    }
+
+    private static void StatisticsLabel( string name,
+                                         double time,
+                                         Color color,
+                                         GUIStyle style,
+                                         bool isHeader = false )
+    {
+      var labelStr = Utils.GUI.AddColorTag( name, color ) + time.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms";
       GUILayout.Label( Utils.GUI.MakeLabel( labelStr, isHeader ? 14 : 12, isHeader ), style );
     }
 
@@ -628,12 +810,20 @@ namespace AGXUnity
                           id =>
                           {
                             // Invalid license if initialized.
-                            if ( NativeHandler.Instance.Initialized && agx.Runtime.instance().getStatus().Length > 0 )
-                              GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: " + agx.Runtime.instance().getStatus(),
+                            if ( NativeHandler.Instance.Initialized ) {
+                              var status = agx.Runtime.instance().getStatus();
+                              // Assume no license file was found if status == "" when the
+                              // license manager resets any state in agx.Runtime.
+                              if ( string.IsNullOrEmpty( status ) )
+                                status = LicenseManager.LicenseInfo.IsParsed && !string.IsNullOrEmpty( LicenseManager.LicenseInfo.Status ) ?
+                                           LicenseManager.LicenseInfo.Status :
+                                           $"No valid license file found under \"{Directory.GetCurrentDirectory()}\".";
+                              GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: " + status,
                                                                     Color.red,
                                                                     18,
                                                                     true ),
                                                Utils.GUI.Skin.label );
+                            }
                             else
                               GUILayout.Label( Utils.GUI.MakeLabel( "AGX Dynamics: Errors occurred during initialization of AGX Dynamics.",
                                                                     Color.red,
@@ -680,7 +870,7 @@ namespace AGXUnity
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
-                          StatisticsLabel( "Total time:            ", simTime, simColor, labelStyle, true );
+                          StatisticsLabel( "Total time:            ", simTime.current + lastTime.current, simColor, labelStyle, true );
                           StatisticsLabel( "  - Pre-collide step:      ", preCollideTime, eventColor, labelStyle );
                           StatisticsLabel( "  - Collision detection:   ", spaceTime, spaceColor, labelStyle );
                           StatisticsLabel( "  - Contact event:         ", contactEventsTime, eventColor, labelStyle );

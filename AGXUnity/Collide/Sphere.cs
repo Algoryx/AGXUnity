@@ -8,6 +8,7 @@ namespace AGXUnity.Collide
   /// Sphere shape object given radius.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Sphere" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sphere" )]
   public sealed class Sphere : Shape
   {
     #region Serialized Properties
@@ -26,7 +27,7 @@ namespace AGXUnity.Collide
       get { return m_radius; }
       set
       {
-        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setRadius( Radius );

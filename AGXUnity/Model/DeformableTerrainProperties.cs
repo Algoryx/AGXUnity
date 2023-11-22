@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain-properties" )]
   public class DeformableTerrainProperties : ScriptAsset
   {
     [SerializeField]
@@ -66,6 +67,25 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private float m_soilParticleSizeScaling = 1.0f;
+
+    /// <summary>
+    /// Set the scale factor used when resizing the dynamic soil particles. Can be increased to increase performance
+    /// or decreased to yield higher simulation fidelity.
+    /// Default: 1.0
+    /// </summary>
+    [ClampAboveZeroInInspector()]
+    public float SoilParticleSizeScaling
+    {
+      get { return m_soilParticleSizeScaling; }
+      set
+      {
+        m_soilParticleSizeScaling = value;
+        Propagate( properties => properties.setSoilParticleSizeScaling( m_soilParticleSizeScaling ) );
+      }
+    }
+
+    [SerializeField]
     private float m_avalancheDecayFraction = 0.1f;
 
     /// <summary>
@@ -101,6 +121,23 @@ namespace AGXUnity.Model
       {
         m_avalancheMaxHeightGrowth = value;
         Propagate( properties => properties.setAvalancheMaxHeightGrowth( m_avalancheMaxHeightGrowth ) );
+      }
+    }
+
+    [SerializeField]
+    private bool m_deformationEnabled = true;
+
+    /// <summary>
+    /// Set whether or not deformations should be enabled for the terrain. 
+    /// This includes digging, avalanching and compaction
+    /// </summary>
+    public bool DeformationEnabled
+    {
+      get { return m_deformationEnabled; }
+      set
+      {
+        m_deformationEnabled = value;
+        Propagate( properties => properties.setEnableDeformation( m_deformationEnabled ) );
       }
     }
 
@@ -309,7 +346,7 @@ namespace AGXUnity.Model
     /// of the terrain has been created.
     /// </remarks>
     /// <param name="terrain">Terrain instance to synchronize.</param>
-    public void Synchronize( DeformableTerrain terrain )
+    public void Synchronize( DeformableTerrainBase terrain )
     {
       try {
         m_singleSynchronizeInstance = terrain;
@@ -320,7 +357,7 @@ namespace AGXUnity.Model
       }
     }
 
-    public void Register( DeformableTerrain terrain )
+    public void Register( DeformableTerrainBase terrain )
     {
       if ( !m_terrains.Contains( terrain ) )
         m_terrains.Add( terrain );
@@ -332,7 +369,7 @@ namespace AGXUnity.Model
       Synchronize( terrain );
     }
 
-    public void Unregister( DeformableTerrain terrain )
+    public void Unregister( DeformableTerrainBase terrain )
     {
       m_terrains.Remove( terrain );
     }
@@ -356,20 +393,24 @@ namespace AGXUnity.Model
         return;
 
       if ( m_singleSynchronizeInstance != null ) {
-        if ( m_singleSynchronizeInstance.Native != null )
-          action( m_singleSynchronizeInstance.Native.getProperties() );
+        if ( m_singleSynchronizeInstance.GetProperties() != null) {
+          action( m_singleSynchronizeInstance.GetProperties() );
+          m_singleSynchronizeInstance.OnPropertiesUpdated();
+        }
         return;
       }
 
       foreach ( var terrain in m_terrains )
-        if ( terrain.Native != null )
-          action( terrain.Native.getProperties() );
+        if ( terrain.GetProperties() != null) {
+          action( terrain.GetProperties() );
+          terrain.OnPropertiesUpdated();
+        }
     }
 
     [NonSerialized]
-    private List<DeformableTerrain> m_terrains = new List<DeformableTerrain>();
+    private List<DeformableTerrainBase> m_terrains = new List<DeformableTerrainBase>();
 
     [NonSerialized]
-    private DeformableTerrain m_singleSynchronizeInstance = null;
+    private DeformableTerrainBase m_singleSynchronizeInstance = null;
   }
 }

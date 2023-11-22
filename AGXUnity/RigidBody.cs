@@ -14,6 +14,7 @@ namespace AGXUnity
   [AddComponentMenu( "AGXUnity/Rigid Body" )]
   [DisallowMultipleComponent]
   [RequireComponent( typeof( MassProperties ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body" )]
   public class RigidBody : ScriptComponent
   {
     /// <summary>
@@ -220,12 +221,6 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// True if the game object is active in hierarchy and this component is enabled.
-    /// </summary>
-    [HideInInspector]
-    public bool IsEnabled { get { return gameObject.activeInHierarchy && enabled; } }
-
-    /// <summary>
     /// Array of shapes belonging to this rigid body instance.
     /// </summary>
     [HideInInspector]
@@ -312,6 +307,17 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// During runtime, the shapes that belongs to this rigid body are cached when
+    /// this instance is initialized. If additional shapes are added after this
+    /// rigid body has been initialized, call this method to update the cache and
+    /// for the newly added shapes to be available using the property Shapes.
+    /// </summary>
+    public void SyncShapesCache()
+    {
+      m_shapesCache = GetShapes();
+    }
+
+    /// <summary>
     /// Peek at a temporary native instance or the current (if initialized).
     /// </summary>
     /// <param name="callback">Callback with temporary or already initialized native instance. Callback signature ( nativeRb, isTemporary ).</param>
@@ -332,7 +338,7 @@ namespace AGXUnity
             if ( geometry == null )
               continue;
 
-            geometry.setEnable( shape.IsEnabled );
+            geometry.setEnable( shape.isActiveAndEnabled );
             if ( shape.Material != null )
               geometry.setMaterial( shape.Material.CreateTemporaryNative() );
 
@@ -366,7 +372,9 @@ namespace AGXUnity
       foreach ( var shape in shapes ) {
         var geometry = shape.CreateTemporaryNative();
 
-        geometry.setEnable( shape.IsEnabled );
+        // shape.isActiveAndEnabled is always false for loaded prefabs.
+        geometry.setEnable( shape.enabled );
+
         if ( shape.Material != null )
           geometry.setMaterial( shape.Material.GetInitialized<ShapeMaterial>().Native );
         native.add( geometry, shape.GetNativeRigidBodyOffset( template ) );
@@ -440,7 +448,7 @@ namespace AGXUnity
 
       m_rb = new agx.RigidBody();
       m_rb.setName( name );
-      m_rb.setEnable( IsEnabled );
+      m_rb.setEnable( isActiveAndEnabled );
       m_rb.getMassProperties().setAutoGenerateMask( 0u );
 
       SyncNativeTransform( m_rb );
@@ -451,8 +459,7 @@ namespace AGXUnity
 
       UpdateMassProperties();
 
-      if ( IsEnabled )
-        HandleUpdateCallbacks( true );
+      HandleUpdateCallbacks( isActiveAndEnabled );
 
       return true;
     }

@@ -6,6 +6,7 @@ namespace AGXUnity
   /// <summary>
   /// Friction model object with friction model type and solve type.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#friction-model" )]
   public class FrictionModel : ScriptAsset
   {
     public enum ESolveType

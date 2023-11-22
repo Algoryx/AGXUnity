@@ -9,6 +9,7 @@ namespace AGXUnity.Model
   /// Assembly object representing a continuous track with a given number of shoes (nodes).
   /// </summary>
   [AddComponentMenu( "AGXUnity/Model/Track" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#track" )]
   public class Track : ScriptComponent
   {
     /// <summary>
@@ -232,6 +233,9 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTracks, this ) )
+        return false;
+
       RemoveInvalidWheels();
 
       if ( m_wheels.Count == 0 ) {

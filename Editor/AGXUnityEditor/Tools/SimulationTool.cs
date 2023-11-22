@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using AGXUnity;
 using UnityEngine;
 using UnityEditor;
@@ -50,10 +50,12 @@ namespace AGXUnityEditor.Tools
                                                                                              skin.Popup );
 
       if ( prevMode != Simulation.AutoSteppingMode ) {
-        if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate )
+        if ( Simulation.AutoSteppingMode == Simulation.AutoSteppingModes.FixedUpdate ) {
+          GetUpdateTimeStepData().Float = Simulation.TimeStep;
           Simulation.TimeStep = Time.fixedDeltaTime;
+        }
         else
-          Simulation.TimeStep = 1.0f / 60.0f;
+          Simulation.TimeStep = GetUpdateTimeStepData().Float;
       }
       
       UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
@@ -146,6 +148,25 @@ namespace AGXUnityEditor.Tools
                                                                      "Path to initial dump (including file name and extension)",
                                                                      fileExtension => fileExtension == ".agx" || fileExtension == ".aagx" );
 
+      Simulation.LogPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "AGX Dynamics log" ),
+                                                         Simulation.LogEnabled,
+                                                         enable => Simulation.LogEnabled = enable,
+                                                         Simulation.LogPath,
+                                                         "AGXDynamicsLog",
+                                                         "txt",
+                                                         "AGX Dynamics log filename",
+                                                         extension => true );
+
+      Simulation.AGXUnityLogLevel = InspectorGUI.ToggleEnum( GUI.MakeLabel( "Print AGX log in Unity console" ),
+                                                             Simulation.LogToUnityConsole,
+                                                             b => Simulation.LogToUnityConsole = b,
+                                                             Simulation.AGXUnityLogLevel );
+      using (new UnityEditor.EditorGUI.IndentLevelScope() ) {
+        using ( new GUI.EnabledBlock( Simulation.LogToUnityConsole ) ) {
+          Simulation.DisableMeshCreationWarnings = InspectorGUI.Toggle( GUI.MakeLabel( "Disable mesh creation warnings" ), Simulation.DisableMeshCreationWarnings );
+        }
+      }
+
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
         var rect    = EditorGUILayout.GetControlRect();
@@ -161,6 +182,11 @@ namespace AGXUnityEditor.Tools
     private EditorDataEntry GetSaveInitialPathEditorData( string name )
     {
       return EditorData.Instance.GetData( Simulation, name, ( entry ) => entry.String = Application.dataPath );
+    }
+
+    private EditorDataEntry GetUpdateTimeStepData()
+    {
+      return EditorData.Instance.GetData( Simulation, "UpdateTimeStep", entry => entry.Float = 1.0f / 60.0f );
     }
   }
 }

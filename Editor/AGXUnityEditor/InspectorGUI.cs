@@ -25,6 +25,8 @@ namespace AGXUnityEditor
       var content = new GUIContent();
       content.text = field.Name.SplitCamelCase() + postText;
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
+      if(content.tooltip == null)
+        content.tooltip = field.GetCustomAttribute<TooltipAttribute>( false )?.tooltip;
 
       return content;
     }
@@ -34,7 +36,7 @@ namespace AGXUnityEditor
       get
       {
 #if UNITY_2019_3_OR_NEWER
-        return 22.0f;
+        return 20.0f;
 #else
         return 14.0f;
 #endif
@@ -420,17 +422,17 @@ namespace AGXUnityEditor
 
         position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
         position.xMax -= EditorGUIUtility.labelWidth +
-                         Convert.ToInt32( supportsCreateAsset ) * createNewButtonWidth -
+                         Convert.ToInt32( supportsCreateAsset ) * (createNewButtonWidth + 2) -
                          IndentScope.PixelLevel;
         result = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
         if ( supportsCreateAsset ) {
           var buttonRect = new Rect( position.xMax + 2, position.y, createNewButtonWidth, EditorGUIUtility.singleLineHeight );
-          buttonRect.xMax = buttonRect.x + createNewButtonWidth - 2;
 
           createNewPressed = Button( buttonRect,
                                      MiscIcon.CreateAsset,
                                      UnityEngine.GUI.enabled,
-                                     "Create new asset." );
+                                     "Create new asset.",
+                                     0.9f );
         }
       }
       else
@@ -645,6 +647,39 @@ namespace AGXUnityEditor
       return currentEntry;
     }
 
+    public static T ToggleEnum<T>( GUIContent label,
+                                   bool enabled,
+                                   Action<bool> enabledResult,
+                                   T currentEntry) 
+      where T : Enum
+    {
+      var toggleWidth   = 18.0f;
+      var controlRect   = EditorGUILayout.GetControlRect();
+      var totalWidth    = controlRect.width;
+      controlRect.width = EditorGUIUtility.labelWidth;
+
+      EditorGUI.PrefixLabel( controlRect, label );
+
+      var indentOffset = IndentScope.PixelLevel - 2;
+
+      controlRect.x += EditorGUIUtility.labelWidth - indentOffset;
+      controlRect.width = toggleWidth;
+      enabled = EditorGUI.Toggle( controlRect,
+                                  enabled );
+      enabledResult( enabled );
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        controlRect.x += toggleWidth;
+        controlRect.width = totalWidth -
+                            EditorGUIUtility.labelWidth -
+                            toggleWidth +
+                            indentOffset;
+        currentEntry = (T)EditorGUI.EnumPopup( controlRect,
+                                               currentEntry);
+      }
+
+      return currentEntry;
+    }
+
     public struct ToolButtonData
     {
       public static ToolButtonData Create( ToolIcon icon,
@@ -716,7 +751,7 @@ namespace AGXUnityEditor
 
       if ( texture != null ) {
         using ( IconManager.ForegroundColorBlock( data.IsActive, data.Enabled ) )
-          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect ), texture );
+          UnityEngine.GUI.DrawTexture( IconManager.GetIconRect( rect, 0.8f ), texture );
       }
 
       data.PostRender?.Invoke();
@@ -1193,7 +1228,12 @@ namespace AGXUnityEditor
                                                                         fieldOkColor ),
                                                    fieldColor ) :
                                   info.IsParsed ?
-                                    GUI.MakeLabel( "Invalid license", fieldErrorColor, false, info.Status ) :
+                                    GUI.MakeLabel( string.IsNullOrEmpty( info.Status ) ?
+                                                     "Invalid license" :
+                                                     info.Status,
+                                                   fieldErrorColor,
+                                                   false,
+                                                   info.Status ) :
                                     GUI.MakeLabel( "License not found", fieldErrorColor ),
                                   InspectorEditor.Skin.Label );
     }
@@ -1229,13 +1269,11 @@ namespace AGXUnityEditor
 
     public static void WarningLabel( string warning )
     {
-      var prevBgc = UnityEngine.GUI.backgroundColor;
-      UnityEngine.GUI.backgroundColor = Color.Lerp( Color.white, Color.black, 0.55f );
-      EditorGUILayout.LabelField( GUI.MakeLabel( warning,
-                                                 Color.Lerp( Color.red, Color.white, 0.25f ),
-                                                 true ),
-                                  InspectorEditor.Skin.TextAreaMiddleCenter );
-      UnityEngine.GUI.backgroundColor = prevBgc;
+      using ( new GUI.BackgroundColorBlock( Color.Lerp( Color.white, Color.black, 0.55f ) ) )
+        EditorGUILayout.LabelField( GUI.MakeLabel( warning,
+                                                   Color.Lerp( Color.red, Color.white, 0.25f ),
+                                                   true ),
+                                    InspectorEditor.Skin.TextAreaMiddleCenter );
     }
 
     /// <summary>
@@ -1655,6 +1693,46 @@ namespace AGXUnityEditor
       if ( EditorGUI.EndChangeCheck() )
         return s_customFloatFieldData[ 0 ];
       return value;
+    }
+
+    /// <summary>
+    /// Draws float fields with custom sub-labels
+    /// </summary>
+    /// <param name="label">Label value.</param>
+    /// <param name="subLabels">GUI content .</param>
+    /// <param name="values">Current values.</param>
+    /// <returns>Updated value of the float fields.</returns>
+    public static float[] MultiFloatField(GUIContent label, GUIContent[] subLabels, float[] values)
+    {
+      var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
+      var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
+      var position = EditorGUILayout.GetControlRect( false, rectHeight );
+      EditorGUI.MultiFloatField(position, label, subLabels, values);
+      return values;
+    }
+
+    /// <summary>
+    /// Draws a main label and labels for each entry in a MultiField. Intended to be used to provide column headers for a MultiField.
+    /// </summary>
+    /// <param name="mainLabel">Prefix label GUIContent.</param>
+    /// <param name="subLabels">Column labels GUIContents.</param>
+    public static void MultiFieldColumnLabels(GUIContent mainLabel, GUIContent[] subLabels)
+    {
+      var position = mainLabel != null ? InspectorGUI.MultiFloatFieldPrefixLabel(mainLabel) : EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight );
+
+      float spacingSubLabel = 4; // From EditorGui.cs
+      int count = subLabels.Length;
+      var indentOffset = InspectorGUI.IndentScope.PixelLevel - 2;
+      float fieldWidth = (position.width - (count - 1) * spacingSubLabel - indentOffset) / count;
+      Rect subRect = new Rect(position) {width = fieldWidth, x = position.x + indentOffset};
+      int oldIndentLevel = EditorGUI.indentLevel;
+      EditorGUI.indentLevel = 0;
+      for (int i = 0; i < count; i++)
+      {
+        EditorGUI.LabelField(subRect, subLabels[i]);
+        subRect.x += fieldWidth + spacingSubLabel;
+      }
+      EditorGUI.indentLevel = oldIndentLevel;
     }
 
     private static GUIStyle s_dropdownToolStyle = null;

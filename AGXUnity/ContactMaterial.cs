@@ -6,6 +6,7 @@ namespace AGXUnity
   /// <summary>
   /// Contact material object.
   /// </summary>
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#contact-material" )]
   public class ContactMaterial : ScriptAsset
   {
     public enum ContactReductionType
@@ -185,7 +186,7 @@ namespace AGXUnity
     /// Restitution of this contact material, paired with property Restitution.
     /// </summary>
     [SerializeField]
-    private float m_restitution = 0.5f;
+    private float m_restitution = 0.0f;
 
     /// <summary>
     /// Get or set restitution of this contact material.
@@ -290,10 +291,10 @@ namespace AGXUnity
     /// Contact reduction mode, paired with property ContactReductionMode.
     /// </summary>
     [SerializeField]
-    private ContactReductionType m_contactReductionMode = ContactReductionType.None;
+    private ContactReductionType m_contactReductionMode = ContactReductionType.Geometry;
 
     /// <summary>
-    /// Contact reduction mode, default None (disabled).
+    /// Contact reduction mode, default Geometry.
     /// </summary>
     public ContactReductionType ContactReductionMode
     {
@@ -310,7 +311,7 @@ namespace AGXUnity
     /// Contact reduction level if contact reduction is enabled, paired with property ContactReductionLevel.
     /// </summary>
     [SerializeField]
-    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Moderate;
+    private ContactReductionLevelType m_contactReductionLevel = ContactReductionLevelType.Minimal;
 
     /// <summary>
     /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
@@ -326,6 +327,33 @@ namespace AGXUnity
                               m_contactReductionLevel == ContactReductionLevelType.Moderate ? 2 :
                                                                                               1;
           Native.setContactReductionBinResolution( Convert.ToByte( binResolution ) );
+        }
+      }
+    }
+
+    /// <summary>
+    /// Wire friction coefficients of this contact material, used by the contact nodes on a wire.
+    /// The primary (x) friction coefficient is used along the wire and the secondary (y) is
+    /// along the contact edge on the object the wire interacts with.
+    /// </summary>
+    [SerializeField]
+    private Vector2 m_wireFrictionCoefficients = new Vector2( 0.41667f, 0.41667f );
+
+    /// <summary>
+    /// Wire friction coefficients of this contact material, used by the contact nodes on a wire.
+    /// The primary (x) friction coefficient is used along the wire and the secondary (y) is
+    /// along the contact edge on the object the wire interacts with.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    public Vector2 WireFrictionCoefficients
+    {
+      get { return m_wireFrictionCoefficients; }
+      set
+      {
+        m_wireFrictionCoefficients = value;
+        if ( Native != null ) {
+          Native.setWireFrictionCoefficient( m_wireFrictionCoefficients.x, agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION );
+          Native.setWireFrictionCoefficient( m_wireFrictionCoefficients.y, agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION );
         }
       }
     }
@@ -347,6 +375,8 @@ namespace AGXUnity
       ContactReductionLevel = binResolution == 3 ? ContactReductionLevelType.Minimal :
                               binResolution == 2 ? ContactReductionLevelType.Moderate :
                                                    ContactReductionLevelType.Aggressive;
+      WireFrictionCoefficients = new Vector2( Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
+                                              Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
 
       return this;
     }

@@ -1,9 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
-using AGXUnity.Utils;
+using System.ComponentModel;
+using System.Linq;
 using UnityEngine;
-
+using CreateOptions = agxCollide.Trimesh.TrimeshOptionsFlags;
 using Random = UnityEngine.Random;
 
 namespace AGXUnity.Collide
@@ -13,6 +14,7 @@ namespace AGXUnity.Collide
   /// render data.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Mesh" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mesh" )]
   public sealed class Mesh : Shape
   {
     /// <summary>
@@ -108,7 +110,7 @@ namespace AGXUnity.Collide
         return false;
 
       if ( !mesh.isReadable ) {
-        Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. Ignoring source.", this );
+        Debug.LogWarning( "Trying to add source mesh: " + mesh.name + ", which vertices/triangles isn't readable. See the mesh documentation for more information. Ignoring source.", this );
         return false;
       }
 
@@ -237,7 +239,7 @@ namespace AGXUnity.Collide
             continue;
           }
 
-          var shape = collisionMesh.CreateShape( transformer, mode );
+          var shape = collisionMesh.CreateShape( transformer, mode, gameObject.name );
           if ( shape == null ) {
             Debug.LogWarning( $"AGXUnity.Collide.Mesh: Precomputed collision mesh at index {i} resulted in an invalid shape.", this );
             continue;
@@ -251,9 +253,10 @@ namespace AGXUnity.Collide
           Debug.LogWarning( "AGXUnity.Mesh: Failed to create shapes from precomputed data - using Trimesh as fallback.", this );
 
         var merger = MeshMerger.Merge( transform, meshes );
+
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              "AGXUnity.Mesh: Trimesh" ),
+                                              gameObject.name),
                       GetNativeGeometryOffset() );
       }
 

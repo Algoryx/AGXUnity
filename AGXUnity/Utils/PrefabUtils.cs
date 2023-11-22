@@ -53,5 +53,22 @@ namespace AGXUnity.Utils
       StageUtility.PlaceGameObjectInCurrentStage( gameObject );
 #endif
     }
+
+    /// <summary>
+    /// Finds if <paramref name="componentOrGameObject"/> is part of a prefab
+    /// instance, i.e., selected in the Hierarchy of a scene. This method
+    /// returns false when the object is selected in the Hierarchy inside
+    /// the Prefab Stage.
+    /// </summary>
+    /// <param name="componentOrGameObject">Component or game object to check.</param>
+    /// <returns>True if the component or game object is part of a prefab instance.</returns>
+    public static bool IsPrefabInstance( Object componentOrGameObject )
+    {
+#if UNITY_EDITOR
+      return UnityEditor.PrefabUtility.GetPrefabInstanceStatus( componentOrGameObject ) == UnityEditor.PrefabInstanceStatus.Connected;
+#else
+      return false;
+#endif
+    }
   }
 }

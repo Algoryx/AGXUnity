@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 using AGXUnity.Utils;
 
@@ -218,15 +219,20 @@ namespace AGXUnity
     {
       if ( ConstraintGameObject == null && m_lineGeometry.isEnabled() ) {
         var geometryContacts = new agxCollide.GeometryContactPtrVector();
-        var numContacts = GetSimulation().getSpace().getGeometryContacts( geometryContacts, m_lineGeometry );
-        if ( numContacts > 0 ) {
+        GetSimulation().getSpace().getGeometryContacts( geometryContacts, m_lineGeometry );
+        var closestGeometryContact = geometryContacts.FirstOrDefault( gc => gc.points().size() > 0 );
+        if ( closestGeometryContact != null ) {
           var ray = m_camera.ScreenPointToRay( Input.mousePosition );
           var rayHandedOrigin = ray.origin.ToHandedVec3();
-          var closestGeometryContact = geometryContacts[ 0 ];
           var closestDistance2 = rayHandedOrigin.distance2( closestGeometryContact.points().at( 0 ).point );
           for ( int i = 1; i < geometryContacts.Count; ++i ) {
             var gc = geometryContacts[ i ];
-            var distance2 = rayHandedOrigin.distance2( gc.points().at( 0 ).point );
+            var points = gc.points();
+            if ( gc == closestGeometryContact || points.size() == 0 )
+              continue;
+
+            var point = points.at( 0u );
+            var distance2 = rayHandedOrigin.distance2( point.point );
             if ( distance2 < closestDistance2 ) {
               closestDistance2 = distance2;
               closestGeometryContact = gc;

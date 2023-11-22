@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Box shape object given half extents.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Box" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#box" )]
   public sealed class Box : Shape
   {
     #region Serialized Properties
@@ -24,7 +25,7 @@ namespace AGXUnity.Collide
       get { return m_halfExtents; }
       set
       {
-        m_halfExtents = value.ClampedElementsAbove( MinimumLength );
+        m_halfExtents = value.ClampedElementsAbove( MinimumSize );
 
         if ( Native != null )
           Native.setHalfExtents( m_halfExtents.ToVec3() );

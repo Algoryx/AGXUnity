@@ -23,6 +23,7 @@ namespace AGXUnity
   }
 
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
   public class Constraint : ScriptComponent
   {
     /// <summary>
@@ -338,8 +339,12 @@ namespace AGXUnity
       return ( from ec
                in m_elementaryConstraints
                where ec as ElementaryConstraintController == null &&
-                    !ec.NativeName.StartsWith( "F" ) // Ignoring friction controller from versions
-                                                     // it wasn't implemented in.
+                    !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller from versions
+                                                        // it wasn't implemented in.
+                    ec.NativeName != "CL" &&  // Ignoring ConeLimit until it is implemented 
+                                              // TODO: Implement ConeLimit secondary constraint
+                    ec.NativeName != "TR"     // Ignoring TwistRange until it is implemented 
+                                              // TODO: Implement ConeLimit secondary constraint
                select ec ).ToArray();
     }
 
@@ -636,6 +641,9 @@ namespace AGXUnity
       if ( native == null )
         throw new ArgumentNullException( "native", "Native constraint is null." );
 
+      // Remove old elementary constraint components
+      foreach ( var ec in m_elementaryConstraints )
+        DestroyImmediate( ec );
       m_elementaryConstraints.Clear();
 
       for ( uint i = 0; i < native.getNumElementaryConstraints(); ++i ) {
@@ -995,7 +1003,10 @@ namespace AGXUnity
       Gizmos.DrawMesh( GetOrCreateGizmosMesh(),
                        attachmentPair.ReferenceFrame.Position,
                        attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation( Vector3.up, Vector3.forward ),
-                       0.3f * Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position, Camera.current ) * Vector3.one );
+                       0.3f * Utils.Math.Clamp( Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position,
+                                                                                                     Camera.current ),
+                                                0.2f,
+                                                2.0f ) * Vector3.one );
 
       if ( !attachmentPair.Synchronized && selected ) {
         Gizmos.color = Color.red;

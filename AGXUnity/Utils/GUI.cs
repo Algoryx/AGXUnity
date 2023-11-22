@@ -59,6 +59,22 @@ namespace AGXUnity.Utils
       }
     }
 
+    public class BackgroundColorBlock : IDisposable
+    {
+      private Color m_prevBackgroundColor = default( Color );
+
+      public BackgroundColorBlock( Color color )
+      {
+        m_prevBackgroundColor = UnityEngine.GUI.backgroundColor;
+        UnityEngine.GUI.backgroundColor = color;
+      }
+
+      public void Dispose()
+      {
+        UnityEngine.GUI.backgroundColor = m_prevBackgroundColor;
+      }
+    }
+
     public class EnabledBlock : IDisposable
     {
       private bool m_prevEnabled = true;
@@ -78,6 +94,11 @@ namespace AGXUnity.Utils
     public static string AddColorTag( string str, Color color )
     {
       return @"<color=" + color.ToHexStringRGBA() + @">" + str + @"</color>";
+    }
+
+    public static string AddSizeTag( string str, int size)
+    {
+      return $"<size={size}>{str}</size>";
     }
 
     public static GUIContent MakeLabel( string text, bool bold = false, string toolTip = "" )

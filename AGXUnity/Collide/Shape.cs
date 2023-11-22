@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using AGXUnity.Utils;
 using UnityEngine;
+using System.ComponentModel;
 
 namespace AGXUnity.Collide
 {
@@ -11,6 +12,7 @@ namespace AGXUnity.Collide
   /// to a native agxCollide::Geometry and an agxCollide::Shape.
   /// </summary>
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#shapes" )]
   public abstract class Shape : ScriptComponent
   {
     /// <summary>
@@ -66,7 +68,7 @@ namespace AGXUnity.Collide
     /// Some value of minimum size of a shape.
     /// </summary>
     [HideInInspector]
-    public float MinimumLength { get { return 1.0E-5f; } }
+    public static float MinimumSize { get { return 1.0E-5f; } }
 
     /// <summary>
     /// Collisions of shape enabled/disabled. Default enabled.
@@ -106,6 +108,27 @@ namespace AGXUnity.Collide
         m_isSensor = value;
         if (NativeGeometry != null)
           NativeGeometry.setSensor(m_isSensor);
+      }
+    }
+
+    /// <summary>
+    /// Should shape be included in mass properties calculations of the parent Rigid Body?
+    /// </summary>
+    [SerializeField]
+    private bool m_enableMassProperties = true;
+
+    /// <summary>
+    /// Specify whether the shape should be included in the mass properties calculation of the parent Rigid Body.
+    /// </summary>
+    [Description("Toggle whether or not to include this geometry when automatically calculating mass properties.")]
+    public bool EnableMassProperties
+    {
+      get { return m_enableMassProperties; }
+      set
+      {
+        m_enableMassProperties = value;
+        if ( NativeGeometry != null )
+          NativeGeometry.setEnableMassProperties( m_enableMassProperties );
       }
     }
 
@@ -150,20 +173,17 @@ namespace AGXUnity.Collide
     {
       get
       {
-        RigidBody rb = RigidBody;
-        return enabled && gameObject.activeInHierarchy && ( rb == null || rb.enabled );
-      }
-    }
+        // If this component is disabled or our game object or any of its
+        // parent(s) game object(s) are disabled, this shape is disabled.
+        if ( !isActiveAndEnabled )
+          return false;
 
-    /// <summary>
-    /// True if the game object this active and this component is enabled.
-    /// </summary>
-    [HideInInspector]
-    public bool IsEnabled
-    {
-      get
-      {
-        return gameObject.activeSelf && enabled;
+        // Assuming shapes are children of rigid bodies, which is per definition.
+        // 'isActiveAndEnabled' above will catch the case where the rigid body
+        // game object is inactive. We only have to check rigid body component
+        // enabled state.
+        var rb = RigidBody;
+        return rb == null || rb.enabled;
       }
     }
 
@@ -207,7 +227,10 @@ namespace AGXUnity.Collide
     /// <returns>Native shape to be considered temporary (i.e., probably not defined to keep reference to this shape).</returns>
     public virtual agxCollide.Geometry CreateTemporaryNative()
     {
-      return CreateNative();
+      var temp = CreateNative();
+      temp.setEnableMassProperties( m_enableMassProperties );
+      temp.setSensor( m_isSensor );
+      return temp;
     }
 
     /// <summary>
@@ -253,7 +276,7 @@ namespace AGXUnity.Collide
       if ( !rb.gameObject.HasChild( gameObject ) )
         throw new Exception( "RigidBody not parent to Shape." );
 
-      m_geometry.setEnable( IsEnabled );
+      m_geometry.setEnable( isActiveAndEnabled );
 
       rb.Native.add( m_geometry, GetNativeRigidBodyOffset( rb ) );
 
@@ -318,7 +341,7 @@ namespace AGXUnity.Collide
         return false;
 
       m_geometry.setName( name );
-      m_geometry.setEnable( IsEnabled );
+      m_geometry.setEnable( isActiveAndEnabled );
 
       if ( Material != null )
         m_geometry.setMaterial( m_material.GetInitialized<ShapeMaterial>().Native );

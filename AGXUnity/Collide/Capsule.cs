@@ -7,6 +7,7 @@ namespace AGXUnity.Collide
   /// Capsule shape object given radius and height.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Shapes/Capsule" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#capsule" )]
   public sealed class Capsule : Shape
   {
     #region Serialized Properties
@@ -30,7 +31,7 @@ namespace AGXUnity.Collide
       get { return m_radius; }
       set
       {
-        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_radius = AGXUnity.Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setRadius( m_radius );
@@ -48,7 +49,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = AGXUnity.Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setHeight( m_height );

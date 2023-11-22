@@ -22,6 +22,7 @@ namespace AGXUnity.Model
   /// Note: This feature requires specific license in AGX Dynamics.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Model/Two Body Tire" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#tire" )]
   public class TwoBodyTire : Tire
   {
     /// <summary>
@@ -227,10 +228,8 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( !agx.Runtime.instance().isModuleEnabled( "AgX-Tires" ) ) {
-        Debug.LogError( "TwoBodyTire requires a valid license for the AGX Dynamics module: AgX-Tires", this );
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTires, this ) )
         return false;
-      }
 
       if ( TireRigidBody == null || RimRigidBody == null ) {
         Debug.LogError( "TwoBodyTire failed to initialize: Tire or Rim rigid body is null.", this );
@@ -255,7 +254,8 @@ namespace AGXUnity.Model
         // Disable the tire rim constraint since agx.TwoBodyTire will
         // create an additional constraint between the tire and the rim
         // with tire properties applied.
-        if ( TireRimConstraint.GetInitialized<Constraint>().IsEnabled ) {
+        if ( TireRimConstraint.IsEnabled ) {
+          Debug.LogWarning( $"Constraint '{TireRimConstraint.name}' will be replaced by a native constraint part of TwoBodyTire '{name}'. Consider disabling constraint manually.", TireRimConstraint );
           m_tireRimConstraintInitialState = TireRimConstraint.enabled;
           TireRimConstraint.enabled = false;
         }

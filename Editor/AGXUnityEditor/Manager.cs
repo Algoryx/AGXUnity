@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -95,6 +95,8 @@ namespace AGXUnityEditor
 
       Selection.selectionChanged += OnSelectionChanged;
 
+      DragDropListener.OnPrefabsDroppedInScene += OnPrefabsDroppedInScene;
+
       while ( VisualsParent != null && VisualsParent.transform.childCount > 0 )
         GameObject.DestroyImmediate( VisualsParent.transform.GetChild( 0 ).gameObject );
 
@@ -118,7 +120,8 @@ namespace AGXUnityEditor
       InspectorWindow,
       SceneHierarchyWindow,
       SceneView,
-      GameView
+      GameView,
+      ProjectBrowser
     }
 
     /// <summary>
@@ -316,6 +319,52 @@ namespace AGXUnityEditor
       GameObject.DestroyImmediate( primitive.Node );
     }
 
+    internal static bool HasPlayerNetCompatibilityIssueWarning()
+    {
+      return HasPlayerNetCompatibility( "warning" );
+    }
+
+    internal static bool HasPlayerNetCompatibilityIssueError()
+    {
+      return HasPlayerNetCompatibility( "error" );
+    }
+
+    private static bool HasPlayerNetCompatibility( string infoWarningOrError )
+    {
+      // WARNING INFO:
+      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
+      //                       in players with API compatibility @ .NET Standard 2.0.
+      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
+        var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+        string prefix = string.Empty;
+        if ( infoWarningOrError == "info" )
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
+        else if ( infoWarningOrError == "warning" )
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow );
+        else
+          prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>ERROR:</b> ", Color.red );
+
+        var message = prefix +
+                      $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
+                      $"<b>AGXUnity -> Settings -> .NET Compatibility Level</b>";
+        if ( infoWarningOrError == "info" )
+          Debug.Log( message );
+        else if ( infoWarningOrError == "warning" )
+          Debug.LogWarning( message );
+        else
+          Debug.LogError( message );
+
+        return false;
+      }
+
+      return true;
+    }
+
     private static string m_currentSceneName = string.Empty;
     private static int m_numScenesLoaded = 0;
     private static bool m_requestSceneViewFocus = false;
@@ -385,6 +434,10 @@ namespace AGXUnityEditor
       // their parent is though (since selection is included in undo/redo),
       // so find shapes in children of the selection and access bodies
       // from there as well.
+      //
+      // Note that UpdateMassProperties is a time consuming operation. Ideally
+      // we would like to know if operations has been made that affects the
+      // mass properties of bodies.
       var shapesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
                                                                  SelectionMode.Editable )
                                        .SelectMany( go => go.GetComponentsInChildren<AGXUnity.Collide.Shape>() );
@@ -392,9 +445,20 @@ namespace AGXUnityEditor
         var visual = AGXUnity.Rendering.ShapeVisual.Find( shape );
         if ( visual != null )
           visual.OnSizeUpdated();
+      }
 
-        var rb = shape.RigidBody;
-        if ( rb != null )
+      // Looking at the number of shapes to begin with because it can
+      // be one rigid body with many shapes. The thing is that the
+      // undo/redo operation is highly unlikely to be affecting the
+      // mass properties. And note that the mass properties won't be
+      // wrong in the simulation due to this, only displayed wrong
+      // until simulation.
+      var updateMassProperties = shapesInSelection.Count() < 32;
+      if ( updateMassProperties ) {
+        var bodiesInSelection = Selection.GetFiltered<GameObject>( SelectionMode.TopLevel |
+                                                                   SelectionMode.Editable )
+                                         .SelectMany( go => go.GetComponentsInChildren<AGXUnity.RigidBody>() );
+        foreach ( var rb in bodiesInSelection )
           rb.UpdateMassProperties();
       }
 
@@ -563,9 +627,15 @@ namespace AGXUnityEditor
     private static void OnHierarchyWindowChanged()
     {
       var scene = EditorSceneManager.GetActiveScene();
+      var currNumScenesLoaded =
+#if UNITY_2022_2_OR_NEWER
+                                UnityEngine.SceneManagement.SceneManager.loadedSceneCount;
+#else
+                                EditorSceneManager.loadedSceneCount;
+#endif
       var isSceneLoaded = scene.name != m_currentSceneName ||
                           // Drag drop of scene into hierarchy.
-                          EditorSceneManager.loadedSceneCount > m_numScenesLoaded;
+                          currNumScenesLoaded > m_numScenesLoaded;
 
       if ( isSceneLoaded ) {
         EditorData.Instance.GC();
@@ -574,29 +644,14 @@ namespace AGXUnityEditor
 
         AutoUpdateSceneHandler.HandleUpdates( scene );
       }
-      else if ( Selection.activeGameObject != null ) {
-        var isPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( Selection.activeGameObject ) != PrefabInstanceStatus.NotAPrefab;
 
-        // We want to catch when a prefab has been instantiated in the
-        // scene. Maybe this feature should be explicit, i.e., some
-        // method doing the work.
-        // NOTE: We receive callbacks to OnHierarchyWindowChanged when a
-        //       component is added and when the undo/redo is performed.
-        //       To not screw up the undo/redo history we block this feature
-        //       when undo/redo has been made close in time.
-        // TODO: Make this work - OnHierarchyWindowChanged is not a good place
-        //       to instantiate additional things.
-        if ( isPrefabInstance && ( EditorApplication.timeSinceStartup - s_lastUndoRedoTime ) > 2.0 )
-          AssetPostprocessorHandler.OnPrefabAddedToScene( Selection.activeGameObject );
-      }
-
-      m_numScenesLoaded = EditorSceneManager.loadedSceneCount;
+      m_numScenesLoaded = currNumScenesLoaded;
     }
 
     /// <summary>
     /// Previous selection used to reset used EditorDataEntry entries.
     /// </summary>
-    private static UnityEngine.Object[] m_previousSelection = new UnityEngine.Object[] { };
+    private static Object[] m_previousSelection = new Object[] { };
 
     /// <summary>
     /// Editor data entry for "SelectedInHierarchy" property.
@@ -661,6 +716,27 @@ namespace AGXUnityEditor
         ToolManager.ReleaseAllRecursiveEditors();
     }
 
+    private static void OnPrefabsDroppedInScene( GameObject[] instances )
+    {
+      var ourInstances = instances.Where( instance =>
+                                            instance != null &&
+                                            ( instance.GetComponentInChildren<AGXUnity.IO.RestoredAGXFile>() != null ||
+                                              instance.GetComponentInChildren<AGXUnity.IO.SavedPrefabLocalData>() != null ) );
+      if ( ourInstances.Count() == 0 )
+        return;
+
+      foreach ( var instance in ourInstances )
+        Undo.ClearUndo( instance );
+
+      Undo.SetCurrentGroupName( "Adding prefab instance(s) to scene." );
+      var groupId = Undo.GetCurrentGroup();
+      foreach ( var instance in ourInstances ) {
+        AssetPostprocessorHandler.OnPrefabAddedToScene( instance );
+      }
+      Undo.CollapseUndoOperations( groupId );
+    }
+
+
     private static void HandleWindowsGUI( SceneView sceneView )
     {
       if ( SceneViewGUIWindowHandler.RenderWindows( Event.current ) )
@@ -681,16 +757,6 @@ namespace AGXUnityEditor
       Debug.LogWarning( "AGX Dynamics for Unity is currently updating..." );
       return EnvironmentState.Updating;
 #else
-      // WARNING INFO:
-      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
-      //                       in players with API compatibility @ .NET Standard 2.0.
-      //     Unity 2017: AGX Dynamics for Unity won't compile due to 
-      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        Debug.LogWarning( AGXUnity.Utils.GUI.AddColorTag( "<b>WARNING:</b> ", Color.yellow ) +
-                          "AGX Dynamics for Unity requires .NET API compatibility level: .NET 4.x.\n" +
-                          "<b>Edit -> Project Settings... -> Player -> Other Settings -> Configuration -> Api Compatibility Level -> .NET 4.x</b>" );
-      }
-
       // Running from within the editor - two options:
       //   1. Unity has been started from an AGX environment => do nothing.
       //   2. AGX Dynamics dll's are present in the plugins directory => setup
@@ -744,19 +810,16 @@ namespace AGXUnityEditor
         AGXUnity.LicenseManager.LoadFile();
 
         AGXUnity.NativeHandler.Instance.ValidateLicense();
-        if ( EditorSettings.Instance.AGXDynamics_LogEnabled &&
-             !string.IsNullOrEmpty( EditorSettings.Instance.AGXDynamics_LogPath.Trim() ) )
-          agx.Logger.instance().openLogfile( EditorSettings.Instance.AGXDynamics_LogPath.Trim(),
-                                             true,
-                                             true );
       }
       catch ( Exception ) {
         return EnvironmentState.Uninitialized;
       }
 
+      HasPlayerNetCompatibilityIssueWarning();
+
       return EnvironmentState.Initialized;
 #endif
-    }
+      }
 
     private static bool HandleScriptReload( bool success )
     {
@@ -767,7 +830,7 @@ namespace AGXUnityEditor
         lastRequestData.Bool = false;
       }
       else {
-        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 1.0f ) {
+        if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 10.0f ) {
           lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
           lastRequestData.Bool = true;
 #if UNITY_2019_3_OR_NEWER
@@ -784,7 +847,7 @@ namespace AGXUnityEditor
 
     private static EditorDataEntry GetRequestScriptReloadData()
     {
-      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -1.0f );
+      return EditorData.Instance.GetStaticData( "Manager.RequestScriptReload", e => e.Float = -10.0f );
     }
 
     private static bool Equals( byte[] a, byte[] b )

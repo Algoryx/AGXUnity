@@ -33,6 +33,22 @@ namespace AGXUnity
       m_ai = null;
     }
 
+    /// <summary>
+    /// This method has to be called before the first call is made to AGX
+    /// Dynamics, otherwise DllNotFoundException will/can be thrown. In
+    /// Windows, <paramref name="agxBinaryDirectory"/> is added to PATH
+    /// for the process.
+    /// </summary>
+    /// <param name="agxBinaryDirectory">Directory, relative or absolute, to the AGX Dynamics libraries.</param>
+    private void RuntimePrepareNativeLibrary( string agxBinaryDirectory )
+    {
+#if UNITY_STANDALONE_LINUX
+      // Nothing has to be made here for Linux.
+#else
+      IO.Environment.AddToPath( agxBinaryDirectory );
+#endif
+    }
+
     private void Configure()
     {
 #if AGXUNITY_UPDATING
@@ -56,7 +72,8 @@ namespace AGXUnity
         var dataPluginsPath    = IO.Environment.GetPlayerPluginPath( dataPath );
         var dataAGXRuntimePath = IO.Environment.GetPlayerAGXRuntimePath( dataPath );
 
-        IO.Environment.AddToPath( dataPluginsPath );
+        // If this fails in some way, agxIO.Environment.instance() will throw.
+        RuntimePrepareNativeLibrary( dataPluginsPath );
 
         var envInstance = agxIO.Environment.instance();
 
@@ -72,9 +89,6 @@ namespace AGXUnity
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
-
-        if ( !LicenseManager.LoadFile() )
-          LicenseManager.ActivateEncryptedRuntime( dataPluginsPath );
       }
 
       agx.agxSWIG.setEntityCreationThreadSafe( true );
@@ -99,6 +113,14 @@ namespace AGXUnity
     NativeHandler()
     {
       m_isAgx = new InitShutdownAGXDynamics();
+
+      var searchForLicenses = !Application.isEditor &&
+                              m_isAgx.Initialized &&
+                              // External scripts could load licenses, even before AGX
+                              // has been initialized.
+                              !LicenseManager.UpdateLicenseInformation().IsValid;
+      if ( searchForLicenses && !LicenseManager.LoadFile() )
+        LicenseManager.ActivateEncryptedRuntime( IO.Environment.GetPlayerPluginPath( Application.dataPath ) );
 
       // The environment probably hasn't been completely configured
       // when inside the editor so it's up to Manager to call
@@ -187,7 +209,7 @@ namespace AGXUnity
         return false;
       }
 
-      return (HasValidLicense = agx.Runtime.instance().verifyAndUnlock( licenseStr ));
+      return LicenseManager.Load( licenseStr );
     }
 
     #region Singleton Stuff
@@ -201,6 +223,8 @@ namespace AGXUnity
         return s_instance;
       }
     }
+
+    public static bool HasInstance => s_instance != null;
     #endregion
 
     private InitShutdownAGXDynamics m_isAgx = null;

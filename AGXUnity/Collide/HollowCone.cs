@@ -5,7 +5,8 @@ namespace AGXUnity.Collide
   /// <summary>
   /// Truncated right cone shape object given top and bottom radius, plus height.
   /// </summary>
-  [AddComponentMenu( "AGXUnity/Shapes/HollowCone" )]
+  [AddComponentMenu( "AGXUnity/Shapes/Hollow Cone" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#additional-shapes" )]
   public sealed class HollowCone : Shape
   {
     #region Serialized Properties
@@ -39,7 +40,7 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumLength, value ), MinimumLength );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumSize, value ), MinimumSize );
 
         if ( Native != null )
           Native.setThickness( m_thickness );
@@ -57,7 +58,7 @@ namespace AGXUnity.Collide
       get { return m_topRadius; }
       set
       {
-        m_topRadius = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumLength, value ), MinimumLength );
+        m_topRadius = Utils.Math.ClampAbove( Mathf.Min( m_bottomRadius - MinimumSize, value ), MinimumSize );
 
         if ( Native != null )
           Native.setTopOuterRadius( m_topRadius );
@@ -75,7 +76,7 @@ namespace AGXUnity.Collide
       get { return m_bottomRadius; }
       set
       {
-        m_bottomRadius = Utils.Math.ClampAbove( Mathf.Max( value, m_topRadius + MinimumLength ), MinimumLength );
+        m_bottomRadius = Utils.Math.ClampAbove( Mathf.Max( value, m_topRadius + MinimumSize ), MinimumSize );
 
         if ( Native != null )
           Native.setBottomOuterRadius( m_bottomRadius );
@@ -93,7 +94,7 @@ namespace AGXUnity.Collide
       get { return m_height; }
       set
       {
-        m_height = Utils.Math.ClampAbove( value, MinimumLength );
+        m_height = Utils.Math.ClampAbove( value, MinimumSize );
 
         if ( Native != null )
           Native.setHeight( m_height );

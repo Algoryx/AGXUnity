@@ -5,6 +5,7 @@ using AGXUnity.Utils;
 namespace AGXUnity
 {
   [Serializable]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#frames" )]
   public class IFrame
   {
     /// <summary>

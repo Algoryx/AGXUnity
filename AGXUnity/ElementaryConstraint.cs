@@ -8,6 +8,7 @@ namespace AGXUnity
   /// </summary>
   [HideInInspector]
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
   public class ElementaryConstraint : ScriptComponent
   {
     /// <summary>
@@ -180,6 +181,11 @@ namespace AGXUnity
       Native = null;
 
       base.OnDestroy();
+    }
+
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
     }
   }
 }

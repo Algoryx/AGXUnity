@@ -1,11 +1,12 @@
 {
     "name": "AGXUnity",
+    "rootNamespace": "",
     "references": [
         "Unity.InputSystem"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor",
+        "LinuxStandalone64",
         "WindowsStandalone64"
     ],
     "excludePlatforms": [],
@@ -13,5 +14,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

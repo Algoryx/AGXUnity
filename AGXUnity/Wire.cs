@@ -6,7 +6,9 @@ namespace AGXUnity
   /// <summary>
   /// Wire object.
   /// </summary>
+  [AddComponentMenu( "AGXUnity/Wire" )]
   [RequireComponent( typeof( WireRoute ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wire" )]
   public class Wire : ScriptComponent
   {
     /// <summary>
@@ -237,13 +239,19 @@ namespace AGXUnity
       Radius                  = System.Convert.ToSingle( native.getRadius() );
       ResolutionPerUnitLength = System.Convert.ToSingle( native.getResolutionPerUnitLength() );
       ScaleConstant           = System.Convert.ToSingle( native.getParameterController().getScaleConstant() );
+    }
 
-      // Is the wire enabled/active?
-      gameObject.SetActive(native.isEnabled());
+    protected override void OnEnable()
+    {
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().add( Native );
     }
 
     protected override bool Initialize()
     {
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXWires, this ) )
+        return false;
+
       WireRoute.ValidatedRoute validatedRoute = Route.GetValidated();
       if ( !validatedRoute.Valid ) {
         Debug.LogError( validatedRoute.ErrorString, this );
@@ -291,7 +299,15 @@ namespace AGXUnity
 
         Native.setName( name );
 
+        // Wires doesn't have setEnable( true/false ) but supports
+        // re-adding to a simulation. I.e., the state of the previously
+        // removed wire will be recovered when the wire is added again.
+        // Initialize the wire (by adding it) and remove the wire if this
+        // component isn't active.
         GetSimulation().add( Native );
+        if ( !isActiveAndEnabled )
+          GetSimulation().remove( Native );
+
         Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
       }
       catch ( System.Exception e ) {
@@ -300,6 +316,12 @@ namespace AGXUnity
       }
 
       return Native.initialized();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().remove( Native );
     }
 
     protected override void OnDestroy()
@@ -334,26 +356,5 @@ namespace AGXUnity
     {
       Route.Clear();
     }
-
-    //private void DrawGizmos( Color color )
-    //{
-    //  if ( Application.isPlaying )
-    //    return;
-
-    //  var nodes = Route.ToArray();
-    //  Gizmos.color = color;
-    //  for ( int i = 1; i < nodes.Length; ++i )
-    //    Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
-    //}
-
-    //private void OnDrawGizmos()
-    //{
-    //  DrawGizmos( Color.red );
-    //}
-
-    //private void OnDrawGizmosSelected()
-    //{
-    //  DrawGizmos( Color.green );
-    //}
   }
 }

@@ -74,6 +74,8 @@ namespace AGXUnity.Rendering
       }
     }
 
+    public bool IsValid => m_parentComponent != null;
+
     public SegmentSpawner( ScriptComponent parentComponent, string prefabObjectPath, string separateFirstObjectPath = "" )
     {
       m_parentComponent = parentComponent;

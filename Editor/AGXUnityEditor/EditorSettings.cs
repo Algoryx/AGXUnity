@@ -1,7 +1,8 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
@@ -22,28 +23,14 @@ namespace AGXUnityEditor
 
     public bool BuildPlayer_CopyBinaries = true;
 
-    public bool AGXDynamics_LogEnabled = false;
-    public string AGXDynamics_LogPath  = "";
-
     public void OnInspectorGUI()
     {
       var skin = InspectorEditor.Skin;
-
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "AGXUnity Editor Settings", 24, true ), skin.Label );
 
       BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build:</b> Copy AGX Dynamics binaries",
                                                                      false,
                                                                      "[Recommended enabled]\nCopy dependent AGX Dynamics binaries to target player directory." ),
                                                       BuildPlayer_CopyBinaries );
-      AGXDynamics_LogPath = InspectorGUI.ToggleSaveFile( GUI.MakeLabel( "AGX Dynamics log" ),
-                                                         AGXDynamics_LogEnabled,
-                                                         enable => AGXDynamics_LogEnabled = enable,
-                                                         AGXDynamics_LogPath,
-                                                         "AGXDynamicsLog",
-                                                         "txt",
-                                                         "AGX Dynamics log filename",
-                                                         extension => true );
 
       if ( ExternalAGXInitializer.IsApplied ) {
         DirectoryInfo newAgxDir = null;
@@ -65,9 +52,9 @@ namespace AGXUnityEditor
       else if ( !IO.Utils.AGXDynamicsInstalledInProject && ExternalAGXInitializer.UserSaidNo ) {
         var rect     = EditorGUILayout.GetControlRect();
         var orgWidth = rect.width;
-        rect.width   = EditorGUIUtility.labelWidth;
+        rect.width = EditorGUIUtility.labelWidth;
         EditorGUI.PrefixLabel( rect, GUI.MakeLabel( "Select AGX Dynamics root folder" ), skin.Label );
-        rect.x    += rect.width;
+        rect.x += rect.width;
         rect.width = orgWidth - EditorGUIUtility.labelWidth;
         if ( UnityEngine.GUI.Button( rect, GUI.MakeLabel( "AGX Dynamics root directory..." ) ) ) {
           var agxDir = EditorUtility.OpenFolderPanel( "AGX Dynamics root directory",
@@ -97,6 +84,50 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select game object" ), BuiltInToolsTool_SelectGameObjectKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Select rigid body game object" ), BuiltInToolsTool_SelectRigidBodyKeyHandler );
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
+      }
+
+
+      // Recommended settings
+      InspectorGUI.Separator( 1, 4 );
+      EditorGUILayout.Space( 5 );
+      EditorGUILayout.LabelField( GUI.AddSizeTag( "<b>Unity Project Settings recommended for AGX</b>", 15 ) );
+      EditorGUILayout.Space();
+
+      var ok = GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
+      var note = GUI.AddColorTag( "<b>Note</b> ", Color.yellow );
+      var apiCompatibilityLevelName =
+#if UNITY_2021_2_OR_NEWER
+          ".NET Framework";
+#else
+          ".NET 4.x";
+#endif
+
+      var hasPlayerNetCompatibility = PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) == ApiCompatibilityLevel.NET_4_6;
+      EditorGUILayout.LabelField( "<b>.NET Compatibility Level</b>" );
+      if ( hasPlayerNetCompatibility ) {
+        EditorGUILayout.LabelField( ok );
+      }
+      else {
+        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: " + apiCompatibilityLevelName, skin.LabelWordWrap );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+          UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
+          Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
+        }
+      }
+
+      EditorGUILayout.Space();
+
+      EditorGUILayout.LabelField( "<b>Maximum Allowed Timestep</b>" );
+      var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
+      if ( usingRecommendedMaxTimestep ) {
+        EditorGUILayout.LabelField( ok );
+      }
+      else {
+        EditorGUILayout.LabelField( note + "It is recommended to use a <b>maximum allowed timestep</b> that is equal to the <b>fixed timestep</b> when using AGXUnity!", skin.LabelWordWrap );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+          Time.maximumDeltaTime = Time.fixedDeltaTime;
+          Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
+        }
       }
     }
 
@@ -209,7 +240,7 @@ namespace AGXUnityEditor
       if ( m_instance != null )
         return m_instance;
 
-      return ( m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ) );
+      return (m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ));
     }
 
     [NonSerialized]
@@ -224,16 +255,17 @@ namespace AGXUnityEditor
       var dataFilesToExclude = new string[]
       {
         EditorDataDirectory + "/Data.asset",
-        EditorDataDirectory + "/Settings.asset"
+        EditorDataDirectory + "/Settings.asset",
+        EditorDataDirectory + "/AGXInitData.asset"
       };
 
       if ( Manager.ConfigureEnvironment() != Manager.EnvironmentState.Initialized ) {
-        Debug.LogError( "Unable to initialize AGX Dynamics - missing dll(s)?" );
+        Debug.LogError( "AGXUnity Build: Unable to initialize AGX Dynamics - missing libraries?" );
         EditorApplication.Exit( 1 );
         return;
       }
 
-      Debug.Log( "Applying package build settings..." );
+      Debug.Log( "AGXUnity Build: Applying package build settings..." );
       foreach ( var excludedFile in dataFilesToExclude ) {
         var fi = new FileInfo( excludedFile );
         var fiMeta = new FileInfo( excludedFile + ".meta" );
@@ -248,6 +280,11 @@ namespace AGXUnityEditor
       Debug.Log( "    - Adding define symbol AGXUNITY_BUILD_PACKAGE." );
       Build.DefineSymbols.Add( "AGXUNITY_BUILD_PACKAGE" );
     }
+
+    internal static SerializedObject GetSerializedSettings()
+    {
+      return new SerializedObject( GetOrCreateInstance() );
+    }
   }
 
   [CustomEditor( typeof( EditorSettings ) )]
@@ -259,6 +296,44 @@ namespace AGXUnityEditor
         return;
 
       EditorSettings.Instance.OnInspectorGUI();
+    }
+  }
+
+  // Register a SettingsProvider using IMGUI for the drawing framework:
+  static class AGXSettingsIMGUIRegister
+  {
+    [SettingsProvider]
+    public static SettingsProvider CreateAGXSettingsProvider()
+    {
+      // First parameter is the path in the Settings window.
+      // Second parameter is the scope of this setting: it only appears in the Project Settings window.
+      var provider = new SettingsProvider("Project/AGXSettings", SettingsScope.Project)
+      {
+        // By default the last token of the path is used as display name if no label is provided.
+        label = "AGX Settings",
+        // Create the SettingsProvider and initialize its drawing (IMGUI) function in place:
+        guiHandler = (searchContext) =>
+        {
+          float oldWidth = EditorGUIUtility.labelWidth;
+          EditorGUIUtility.labelWidth = 250;
+
+          EditorGUILayout.Space();
+
+          using( new GUILayout.HorizontalScope() ) {
+            GUILayout.Space( 10f );
+
+            using( new GUILayout.VerticalScope() )
+              EditorSettings.Instance.OnInspectorGUI();
+          }
+
+          EditorGUIUtility.labelWidth = oldWidth;
+        },
+
+        // Populate the search keywords to enable smart search filtering and label highlighting:
+        keywords = new HashSet<string>(new[] { "AGX Dynamics", "Keybindings", "Rigid body" })
+      };
+
+      return provider;
     }
   }
 }
