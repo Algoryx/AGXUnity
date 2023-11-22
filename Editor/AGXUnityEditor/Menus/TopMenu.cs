@@ -359,12 +359,6 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
-    [MenuItem( "AGXUnity/Model/Create Cable from Mesh", priority = 80 )]
-    public static void CreateCableFromMesh()
-    {
-      Windows.CreateCableFromMeshWindow.Open();
-    }
-
     #endregion
 
     #region Managers
@@ -532,6 +526,12 @@ namespace AGXUnityEditor
       where T : UniqueGameObject<T>
     {
       return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
+    }
+
+    [MenuItem( "AGXUnity/Utils/Create Cable from Mesh", priority = 95 )]
+    public static void CreateCableFromMesh()
+    {
+      Windows.CreateCableFromMeshWindow.Open();
     }
 #endregion
 
