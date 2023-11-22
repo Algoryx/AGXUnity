@@ -110,13 +110,13 @@ namespace AGXUnityEditor.Windows
         return;
       }
 
-      EditorGUILayout.LabelField( "When a MeshFilter is selected, this utility will try to detect appropriate placements for the cable nodes in order to simulate a cable with the same radius and route as the mesh.",
+      EditorGUILayout.LabelField( "When a GameObject with a MeshFilter is set, this utility will try to detect appropriate placements for the cable nodes in order to simulate a cable with the same radius and route as the mesh.",
                                        InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(50) );
 
-      EditorGUILayout.LabelField( "Not guaranteed to work: relies on mesh vertices resembling a cable shape, the cable not too tightly rolled up etc.",
+      EditorGUILayout.LabelField( "Not guaranteed to work: relies on mesh vertices resembling a cable shape. Can't properly handle cable passing by or touching itself.",
                                        InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(40) );
 
-      EditorGUILayout.LabelField( "Select the mesh and press the Auto Enhance buttons a few times, if this doesn't find the cable shape you can try adjusting the guess values manually and then auto enhancing again.",
+      EditorGUILayout.LabelField( "To use, drag a GameObject with a MeshFilter to the MeshFilter field and the utility will try to find the cable shape. If it doesn't, you can try adjusting the guess values and then auto enhancing again. Will be slow for many (>10k) vertices.",
                                        InspectorEditor.Skin.LabelWordWrap, GUILayout.MinHeight(50) );
 
 
