@@ -16,6 +16,7 @@ namespace AGXUnityEditor.Windows
     public ShapeMaterial ShapeMaterial = null;
     public float RadiusGuess = 0.1f;
     public float ResolutionGuess = 10;
+    public float DotProductRequirement = 0;
 
     public float GizmoSize = 0.05f;
 
@@ -142,6 +143,14 @@ namespace AGXUnityEditor.Windows
       {
         m_numEnhancements = 0;
         ResolutionGuess = guess;
+      }
+
+      EditorGUILayout.LabelField( "Straightness requirement", InspectorEditor.Skin.LabelWordWrap);
+      float dotProduct = EditorGUILayout.Slider(DotProductRequirement, -1f, 1f);
+      if (DotProductRequirement != dotProduct)
+      {
+        DotProductRequirement = dotProduct;
+        m_sorted = CheckCable(m_nodePositions);
       }
 
       if (GUILayout.Button("Enhance - Straighter"))
@@ -366,7 +375,7 @@ namespace AGXUnityEditor.Windows
           m_cableLength += dir.magnitude;
           float dot = Vector3.Dot(dir.normalized, previousDir.normalized);
           straightness += dot;
-          if (dot < 0)
+          if (dot < DotProductRequirement)
             sorted = false;
           previousDir = dir;
         }
