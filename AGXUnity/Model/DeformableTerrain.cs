@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TerrainUtils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
@@ -125,8 +126,8 @@ namespace AGXUnity.Model
     {
       ResetTerrainDataHeightsAndTransform();
 
-      if ( Properties != null )
-        Properties.Unregister( this );
+      if ( TerrainProperties != null )
+        TerrainProperties.Unregister( this );
 
       if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
@@ -196,13 +197,13 @@ namespace AGXUnity.Model
       var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
       foreach ( var index in modifiedVertices ) {
-        var i = (int)index.x;
-        var j = (int)index.y;
+        var unityIndex = new Vector2Int((int)(resX - index.x - 1), (int)(resY - index.y - 1));
         var h = (float)Native.getHeight( index );
 
         result[ 0, 0 ] = h / scale;
 
-        TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
+        TerrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
+        OnModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
 #if UNITY_2019_1_OR_NEWER
@@ -390,6 +391,53 @@ namespace AGXUnity.Model
 
       agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
       return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      var res = TerrainDataResolution;
+      var agxIdx = new agx.Vec2i( 0, 0 );
+      var uTerr = Terrain;
+      var uIdx = new Vector2Int( 0, 0 );
+      for (int y = 0; y < res; y++ ) {
+        agxIdx.y = res - 1 - y;
+        uIdx.y = y;
+        for ( int x = 0; x < res; x++ ) {
+          agxIdx.x = res - 1 - x;
+          uIdx.x = x;
+          OnModification?.Invoke( Native,  agxIdx, uTerr, uIdx);
+        }
+      }
+    }
+
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      if ( Native == null )
+        return true;
+
+      if(oldMat == null || newMat == null ) 
+        return false;
+
+      return Native.exchangeTerrainMaterial(oldMat.Native, newMat.Native);
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      if ( Native == null )
+        return;
+
+      Native.setAssociatedMaterial(terrMat.Native, shapeMat.Native);
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      if ( Native == null )
+        return;
+
+      if(shape == null)
+        Native.addTerrainMaterial( terrMat.Native );
+      else
+        Native.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
     }
 
     protected override bool IsNativeNull() { return Native == null; }

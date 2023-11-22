@@ -76,15 +76,17 @@ namespace AGXUnity.Model
       }
     }
 
+    public delegate void UnityModificationCallback( Terrain tile, Vector2Int index );
+
     /// <summary>
-    /// Mirrors <see cref="TerrainData.SetHeightsDelayLOD(int, int, float[,])"/> but additionally performs a mapping from
-    /// a global index to the underlying unity terrain tila and index.
-    /// Note that no bounds checking is performed against the underlying unity tiles, 
-    /// using 1x1 height arrays is recommended.
+    /// Performs a mapping from a global index to the underlying unity terrain tiles and indices and
+    /// calls the provided callback for each tile/index pair.
+    /// Note that each global index might map to up to four unity tiles since the edges of each tile
+    /// are overlapping the neighbouring edges.
     /// </summary>
-    /// <param name="height">A 2D array with the height values to set</param>
-    /// <param name="globalIndex">The global index at which to set the height</param>
-    public void SetUnityHeightDelayed( float[,] height, Vector2Int globalIndex )
+    /// <param name="globalIndex">The global index to remap</param>
+    /// <param name="mod">The callback which to call for each remapped tile/index pair</param>
+    public void OnModification( Vector2Int globalIndex, UnityModificationCallback mod )
     {
       int elemPerTile = m_tileResolution - 1;
       Vector2Int unityTileIndex = GlobalToUnityIndex(globalIndex);
@@ -95,20 +97,27 @@ namespace AGXUnity.Model
       // when the index is on an edge with index 0.
 
       if ( m_unityTiles.ContainsKey( unityTileIndex ) )
-        m_unityTiles[ unityTileIndex ].terrainData.SetHeightsDelayLOD( unityLocalIndex.x, unityLocalIndex.y, height );
+        mod( m_unityTiles[ unityTileIndex ], unityLocalIndex );
 
-      var neighborIndex = unityTileIndex + new Vector2Int( -1, 0 );
+      // Early out if index is not edge index
+      if ( unityLocalIndex.x * unityLocalIndex.y != 0 )
+        return;
+
+      var neighborIndex = unityTileIndex;
+      neighborIndex.x -= 1;
       if ( unityLocalIndex.x == 0 && m_unityTiles.ContainsKey( neighborIndex ) )
-        m_unityTiles[ neighborIndex ].terrainData.SetHeightsDelayLOD( elemPerTile, unityLocalIndex.y, height );
+        mod( m_unityTiles[ neighborIndex ], new Vector2Int( elemPerTile, unityLocalIndex.y ) );
 
-      neighborIndex = unityTileIndex + new Vector2Int( 0, -1 );
+      neighborIndex = unityTileIndex;
+      neighborIndex.y -= 1;
       if ( unityLocalIndex.y == 0 && m_unityTiles.ContainsKey( neighborIndex ) )
-        m_unityTiles[ neighborIndex ].terrainData.SetHeightsDelayLOD( unityLocalIndex.x, elemPerTile, height );
+        mod( m_unityTiles[ neighborIndex ], new Vector2Int( unityLocalIndex.x, elemPerTile ) );
 
-      neighborIndex = unityTileIndex + new Vector2Int( -1, -1 );
+      neighborIndex = unityTileIndex;
+      neighborIndex.x -= 1;
+      neighborIndex.y -= 1;
       if ( unityLocalIndex.y == 0 && unityLocalIndex.x == 0 && m_unityTiles.ContainsKey( neighborIndex ) )
-        m_unityTiles[ neighborIndex ].terrainData.SetHeightsDelayLOD( elemPerTile, elemPerTile, height );
-
+        mod( m_unityTiles[ neighborIndex ], new Vector2Int( elemPerTile, elemPerTile ) );
     }
 
     /// <summary>
@@ -177,7 +186,7 @@ namespace AGXUnity.Model
       dataAvailable &= VerifyAndQueueTileData( GlobalToUnityIndex( globalIndex + new Vector2Int( resolution - 2, resolution - 2 ) ) );
 
       // Defer load if data is not yet available
-      if ( !dataAvailable ) return null;
+      if ( !dataAvailable ) return new agx.RealVector();
 
       var heights = new agx.RealVector( resolution * resolution );
 

@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -338,6 +339,10 @@ namespace AGXUnity.Model
       foreach ( var rb in m_rigidbodies )
         Native.add( rb.Body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
+      if ( MaterialPatches.Length != 0 )
+        Debug.LogWarning( "Nonhomogenous terrain is not yet supported for DeformableTerrainPager.", this );
+
+
       GetSimulation().add( Native );
     }
 
@@ -379,27 +384,52 @@ namespace AGXUnity.Model
       var zOffset = tile.m_zOffset;
       var result = new float[,] { { 0.0f } };
 
-      foreach ( var index in modifications ) {
-        var gi = GetGlobalIndex( terrain, index );
+      agx.Vec2i index = new agx.Vec2i(0,0);
+      Vector2Int tileIndex = GetTileIndex(terrain.get());
+
+      UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
+      {
+        tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
+        OnModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
+      };
+
+
+      foreach ( var index1 in modifications ) {
+        index.set( index1 );
+        var gi = GetGlobalIndexInternal( tileIndex, index);
         float h = (float)(terrain.getHeight( index ) + zOffset);
 
         result[ 0, 0 ] = h / scale;
 
-        m_terrainDataSource.SetUnityHeightDelayed( result, gi );
+        m_terrainDataSource.OnModification( gi, modCallbackFn );
       }
     }
 
-    private Vector2Int GetGlobalIndex( agxTerrain.TerrainRef terrain, agx.Vec2i index )
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private Vector2Int GetTileIndex( agxTerrain.Terrain terrain )
     {
-      var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
       var elementsPerTile = TileSize - TileOverlap - 1;
       float tileOffset = elementsPerTile * ElementSize;
+
+      var relTilePos = terrain.getPosition().ToHandedVector3() - transform.position;
       Vector2Int tileIndex = new Vector2Int( Mathf.FloorToInt( relTilePos.x / tileOffset ),
                                              Mathf.FloorToInt( relTilePos.z / tileOffset ) );
       tileIndex *= elementsPerTile;
+      return tileIndex;
+    }
+
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    private Vector2Int GetGlobalIndexInternal( Vector2Int tileIndex, agx.Vec2i index )
+    {
       tileIndex.x += (int)index.x;
       tileIndex.y += (int)index.y;
       return tileIndex;
+    }
+
+    private Vector2Int GetGlobalIndex( agxTerrain.Terrain terrain, agx.Vec2i index )
+    {
+      var tileIndex = GetTileIndex( terrain );
+      return GetGlobalIndexInternal( tileIndex, index );
     }
 
     public void RecalculateParameters()
@@ -564,7 +594,7 @@ namespace AGXUnity.Model
       bool tileFound = false;
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
-        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        var gi = GetGlobalIndex( tile.m_terrainTile.get(), new agx.Vec2i( 0, 0 ) );
         if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
           continue;
 
@@ -616,7 +646,7 @@ namespace AGXUnity.Model
 
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
-        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        var gi = GetGlobalIndex( tile.m_terrainTile.get(), new agx.Vec2i( 0, 0 ) );
         if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
           continue;
 
@@ -652,7 +682,7 @@ namespace AGXUnity.Model
       // When the height arrays for (1), (2) & (3) are all filled we can combine them to yield the total height array.
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
-        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        var gi = GetGlobalIndex( tile.m_terrainTile.get(), new agx.Vec2i( 0, 0 ) );
         if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
           continue;
 
@@ -700,7 +730,7 @@ namespace AGXUnity.Model
 
       var tiles = Native.getActiveTileAttachments();
       foreach ( var tile in tiles ) {
-        var gi = GetGlobalIndex( tile.m_terrainTile, new agx.Vec2i( 0, 0 ) );
+        var gi = GetGlobalIndex( tile.m_terrainTile.get(), new agx.Vec2i( 0, 0 ) );
         if ( gi.x > idx.x || gi.y > idx.y || gi.x + TileSize <= idx.x || gi.y + TileSize <= idx.y )
           continue;
 
@@ -733,6 +763,26 @@ namespace AGXUnity.Model
           terr.setHeight( idx, heights[ y, x ] - offset + MaximumDepth );
         }
       }
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      throw new NotImplementedException();
+    }
+
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
     }
 
     protected override bool IsNativeNull() { return Native == null; }
