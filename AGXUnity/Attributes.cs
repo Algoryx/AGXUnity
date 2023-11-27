@@ -124,6 +124,10 @@ namespace AGXUnity
         return IsValid( (Vector3)value );
       else if ( type == typeof( Vector2 ) )
         return IsValid( (Vector2)value );
+      else if ( type == typeof( Vector3Int ) )
+        return IsValid( (Vector3Int)value );
+      else if ( type == typeof( Vector2Int ) )
+        return IsValid( (Vector2Int)value );
       else if ( type == typeof( DefaultAndUserValueFloat ) ) {
         DefaultAndUserValueFloat val = (DefaultAndUserValueFloat)value;
         return val.Value > 0 || ( m_acceptZero && val.Value == 0 );
