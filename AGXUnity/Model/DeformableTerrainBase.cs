@@ -1,10 +1,15 @@
-﻿using UnityEngine;
+﻿using AGXUnity.Collide;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain" )]
   public abstract class DeformableTerrainBase : ScriptComponent
   {
+    public delegate void OnModificationCallback( agxTerrain.Terrain terr, agx.Vec2i agxIndex, Terrain unityTile, Vector2Int unityIndex );
+    public OnModificationCallback OnModification;
+
     [SerializeField]
     private ShapeMaterial m_material = null;
 
@@ -60,48 +65,49 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private DeformableTerrainMaterial m_terrainMaterial = null;
+    [FormerlySerializedAs("m_terrainMaterial")]
+    private DeformableTerrainMaterial m_defaultTerrainMaterial = null;
 
     /// <summary>
     /// Terrain material associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
-    public DeformableTerrainMaterial TerrainMaterial
+    public DeformableTerrainMaterial DefaultTerrainMaterial
     {
-      get { return m_terrainMaterial; }
+      get { return m_defaultTerrainMaterial; }
       set
       {
-        m_terrainMaterial = value;
+        m_defaultTerrainMaterial = value;
 
         if ( !IsNativeNull() ) {
-          if ( m_terrainMaterial != null )
-            SetTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
+          if ( m_defaultTerrainMaterial != null )
+            SetTerrainMaterial( m_defaultTerrainMaterial.GetInitialized<DeformableTerrainMaterial>().Native );
           else
             SetTerrainMaterial( DeformableTerrainMaterial.CreateNative( "dirt_1" ) );
-
         }
       }
     }
 
     [SerializeField]
-    private DeformableTerrainProperties m_properties = null;
+    [FormerlySerializedAs("m_properties")]
+    private DeformableTerrainProperties m_terrainProperties = null;
 
     /// <summary>
     /// Terrain properties associated to this terrain.
     /// </summary>
     [AllowRecursiveEditing]
-    public DeformableTerrainProperties Properties
+    public DeformableTerrainProperties TerrainProperties
     {
-      get { return m_properties; }
+      get { return m_terrainProperties; }
       set
       {
-        if ( !IsNativeNull() && m_properties != null )
-          m_properties.Unregister( this );
+        if ( !IsNativeNull() && m_terrainProperties != null )
+          m_terrainProperties.Unregister( this );
 
-        m_properties = value;
+        m_terrainProperties = value;
 
-        if ( !IsNativeNull() && m_properties != null )
-          m_properties.Register( this );
+        if ( !IsNativeNull() && m_terrainProperties != null )
+          m_terrainProperties.Register( this );
       }
     }
 
@@ -149,6 +155,8 @@ namespace AGXUnity.Model
     {
       SetEnable( false );
     }
+
+    public TerrainMaterialPatch[] MaterialPatches { get => GetComponentsInChildren<TerrainMaterialPatch>(); }
 
     /// <summary>
     /// Returns an array containing the soil particles used by this terrain
@@ -242,6 +250,36 @@ namespace AGXUnity.Model
     /// <param name="y">The y-index at which to get the height.</param>
     /// <returns>The height of the terrain at the specified index.</returns>
     abstract public float GetHeight( int x, int y );
+
+    /// <summary>
+    ///  Triggers the <see cref="OnModification"/> callback for each terrain cell currently simulated.
+    ///  Note that this function is rather expensive and should only be triggered when delays are acceptable
+    ///  such as during initialization/resets.
+    /// </summary>
+    abstract public void TriggerModifyAllCells();
+
+    /// <summary>
+    /// Attempts to replace all voxels of the old material with the new material.
+    /// </summary>
+    /// <param name="oldMat">The material to change from</param>
+    /// <param name="newMat">The material to change to</param>
+    /// <returns>True if the replace operation was successful.</returns>
+    abstract public bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat );
+
+    /// <summary>
+    /// Sets the shape material associated with the given terrain material.
+    /// </summary>
+    /// <param name="terrMat">The terrain material with which to associate the shape material.</param>
+    /// <param name="shapeMat">The shape material to associated to the provided terrain material.</param>
+    abstract public void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat );
+
+    /// <summary>
+    /// Add a terrain material to a terrain and optionally set all voxels in a given shape to the material.
+    /// </summary>
+    /// <param name="terrMat">The material to add to the terrain</param>
+    /// <param name="shape">If null then the terrain material is simply added to the terrain, 
+    /// else the voxels intersecting the shape is set to the provided material.</param>
+    abstract public void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null );
 
     abstract protected bool IsNativeNull();
     abstract protected void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type );

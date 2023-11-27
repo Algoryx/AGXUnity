@@ -1,7 +1,9 @@
-﻿using AGXUnity.Model;
+﻿using AGXUnity;
+using AGXUnity.Model;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using System.Linq;
+using static AGXUnityEditor.InspectorGUI;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -30,11 +32,13 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( DeformableTerrainBase, "Shovel add/remove." );
 
-      InspectorGUI.ToolListGUI( this,
-                                DeformableTerrainBase.Shovels,
-                                "Shovels",
-                                shovel => DeformableTerrainBase.Add( shovel ),
-                                shovel => DeformableTerrainBase.Remove( shovel ) );
+      ToolListGUI( this,
+                    DeformableTerrainBase.Shovels,
+                    "Shovels",
+                    shovel => DeformableTerrainBase.Add( shovel ),
+                    shovel => DeformableTerrainBase.Remove( shovel ) );
+
+      ToolArrayGUI( this, DeformableTerrainBase.MaterialPatches, "Material Patches" );
 
       if ( DeformableTerrainBase.Shovels.Any( shovel => !shovel.isActiveAndEnabled ) ) {
         EditorGUILayout.HelpBox( "Terrain contains disabled shovels. This is not supported and they will be removed on play. Disabled shovels must be added manually to the terrain when enabled", MessageType.Warning );
@@ -45,30 +49,30 @@ namespace AGXUnityEditor.Tools
 
     protected void RenderMaterialHandles()
     {
-      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainBaseMaterialHandles" ), GUI.MakeLabel( "Internal Material Handles" ) ) ) {
+      if ( Foldout( EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainBaseMaterialHandles" ), GUI.MakeLabel( "Internal Material Handles" ) ) ) {
         EditorGUI.indentLevel = 1;
 
-        InspectorGUI.WarningLabel( "The parameters of these materials will be overrwritten depending on the TerrainMaterial set. " +
-                                   "The purpose of these materials is to have a handle to create contact materials between terrain objects and external objects." );
+        WarningLabel( "The parameters of these materials will be overrwritten depending on the TerrainMaterial set. " +
+                      "The purpose of these materials is to have a handle to create contact materials between terrain objects and external objects." );
 
         Undo.RecordObject( DeformableTerrainBase, "Set Surface Material" );
         var surfaceMatData = EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainSurfaceMaterial" );
-        var surfaceMatRes = InspectorGUI.FoldoutObjectField( GUI.MakeLabel( "Surface Material" ),
-                                                      DeformableTerrainBase.Material,
-                                                      typeof( AGXUnity.ShapeMaterial ),
-                                                      surfaceMatData,
-                                                      false ) as AGXUnity.ShapeMaterial;
+        var surfaceMatRes = FoldoutObjectField( GUI.MakeLabel( "Surface Material" ),
+                                                DeformableTerrainBase.Material,
+                                                typeof( ShapeMaterial ),
+                                                surfaceMatData,
+                                                false ) as ShapeMaterial;
         if ( surfaceMatRes != DeformableTerrainBase.Material )
           DeformableTerrainBase.Material = surfaceMatRes;
 
 
         Undo.RecordObject( DeformableTerrainBase, "Set Particle Material" );
         var particleMatData = EditorData.Instance.GetData( DeformableTerrainBase, "DeformableTerrainParticleMaterial" );
-        var particleMatRes = InspectorGUI.FoldoutObjectField( GUI.MakeLabel( "Particle Material" ),
-                                                      DeformableTerrainBase.ParticleMaterial,
-                                                      typeof( AGXUnity.ShapeMaterial ),
-                                                      particleMatData,
-                                                      false ) as AGXUnity.ShapeMaterial;
+        var particleMatRes = FoldoutObjectField(  GUI.MakeLabel( "Particle Material" ),
+                                                  DeformableTerrainBase.ParticleMaterial,
+                                                  typeof( ShapeMaterial ),
+                                                  particleMatData,
+                                                  false ) as ShapeMaterial;
 
         if ( particleMatRes != DeformableTerrainBase.ParticleMaterial )
           DeformableTerrainBase.ParticleMaterial = particleMatRes;

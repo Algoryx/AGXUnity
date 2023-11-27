@@ -1,6 +1,10 @@
+using AGXUnity.Collide;
 using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+
+using Mesh = UnityEngine.Mesh;
 
 namespace AGXUnity.Model
 {
@@ -97,7 +101,7 @@ namespace AGXUnity.Model
     public Vector2Int SizeCells
     {
       get => m_sizeCells;
-      set 
+      set
       {
         m_sizeCells = value;
         SetupMesh();
@@ -144,8 +148,8 @@ namespace AGXUnity.Model
 
     protected override void OnDestroy()
     {
-      if ( Properties != null )
-        Properties.Unregister( this );
+      if ( TerrainProperties != null )
+        TerrainProperties.Unregister( this );
 
       if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
@@ -334,6 +338,137 @@ namespace AGXUnity.Model
       if ( Native != null )
         Native.convertToDynamicMassInShape( failureVolume.GetInitialized<Collide.Shape>().NativeShape );
     }
+
+    public override void SetHeights( int xstart, int ystart, float[,] heights )
+    {
+      if ( Native == null ) {
+        Debug.LogWarning( "Setting heights from an uninitialized MovableTerrain is not yet supported." );
+        return;
+      }
+
+      int height = heights.GetLength(0);
+      int width = heights.GetLength(1);
+      int resolutionX = (int)Native.getResolutionX();
+      int resolutionY = (int)Native.getResolutionY();
+
+      if ( xstart + width >= resolutionX || xstart < 0 || ystart + height >= resolutionY || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Provided height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain size ({resolutionX},{resolutionY})" );
+
+      float scale = 1.0f;
+
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          float value = heights[ y, x ];
+          heights[ y, x ] = value / scale;
+
+          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart);
+          Native.setHeight( idx, value );
+        }
+      }
+    }
+    public override void SetHeight( int x, int y, float height )
+    {
+      if ( Native == null ) {
+        Debug.LogWarning( "Setting heights from an uninitialized MovableTerrain is not yet supported." );
+        return;
+      }
+
+      int resolutionX = (int)Native.getResolutionX();
+      int resolutionY = (int)Native.getResolutionY();
+
+      if ( x >= resolutionX || x < 0 || y >= resolutionY || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain size ({resolutionX},{resolutionY})" );
+
+      agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x, resolutionY - 1 - y );
+      Native.setHeight( idx, height );
+    }
+    public override float[,] GetHeights( int xstart, int ystart, int width, int height )
+    {
+      if ( Native == null ) {
+        Debug.LogWarning( "Getting heights from an uninitialized MovableTerrain is not yet supported." );
+        return new float[,] { { 0 } };
+      }
+
+      if ( width <= 0 || height <= 0 )
+        throw new ArgumentOutOfRangeException( "width, height", $"Width and height ({width} / {height}) must be greater than 0" );
+
+      int resolutionX = (int)Native.getResolutionX();
+      int resolutionY = (int)Native.getResolutionY();
+
+      if ( xstart + width >= resolutionX || xstart < 0 || ystart + height >= resolutionY || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Requested height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain size ({resolutionX},{resolutionY})" );
+
+      float [,] heights = new float[height,width];
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart);
+          heights[ y, x ] = (float)Native.getHeight( idx );
+        }
+      }
+      return heights;
+    }
+    public override float GetHeight( int x, int y )
+    {
+      if ( Native == null ) {
+        Debug.LogWarning( "Getting heights from an uninitialized MovableTerrain is not yet supported." );
+        return 0;
+      }
+
+      int resolutionX = (int)Native.getResolutionX();
+      int resolutionY = (int)Native.getResolutionY();
+
+      if ( x >= resolutionX || x < 0 || y >= resolutionY || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain size ({resolutionX},{resolutionY})" );
+
+      agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x, resolutionY - 1 - y );
+      return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      int resX = (int)Native.getResolutionX();
+      int resY = (int)Native.getResolutionY();
+      var agxIdx = new agx.Vec2i( 0, 0 );
+      var uIdx = new Vector2Int(0,0);
+      for ( int y = 0; y < resY; y++ ) {
+        agxIdx.y = resY - 1 - y;
+        for ( int x = 0; x < resX; x++ ) {
+          agxIdx.x = resX - 1 - x;
+          OnModification?.Invoke( Native, agxIdx, null, uIdx );
+        }
+      }
+    }
+
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      if ( Native == null )
+        return true;
+
+      if ( oldMat == null || newMat == null )
+        return false;
+
+      return Native.exchangeTerrainMaterial( oldMat.Native, newMat.Native );
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      if ( Native == null )
+        return;
+
+      Native.setAssociatedMaterial( terrMat.Native, shapeMat.Native );
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      if ( Native == null )
+        return;
+
+      if ( shape == null )
+        Native.addTerrainMaterial( terrMat.Native );
+      else
+        Native.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
+    }
+
 
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type ) { Native.setMaterial( material, type ); }

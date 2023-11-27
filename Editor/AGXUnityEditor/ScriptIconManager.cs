@@ -12,12 +12,12 @@ namespace AGXUnityEditor
     {
       foreach ( var t in Assembly.GetAssembly( typeof( AGXUnity.ScriptComponent ) ).DefinedTypes ) {
         if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) )
-          SetGizmoIconEnabled( t.AsType(), false );
+          SetGizmoIconEnabled( t.AsType(), true, false );
       }
     }
 
     // Script adapted based on: https://answers.unity.com/questions/851470/how-to-hide-gizmos-by-script.html
-    private static void SetGizmoIconEnabled( Type type, bool on )
+    private static void SetGizmoIconEnabled( Type type, bool gizmos, bool icons )
     {
       var annotations = Assembly.GetAssembly(typeof(Editor))?.GetType("UnityEditor.AnnotationUtility");
       const int MONO_BEHAVIOR_CLASS_ID = 114; // https://docs.unity3d.com/Manual/ClassIDReference.html
@@ -40,8 +40,8 @@ namespace AGXUnityEditor
         MethodInfo setIconEnabled = annotations.GetMethod("SetIconEnabled", BindingFlags.Static | BindingFlags.NonPublic);
 
         if ( setIconEnabled == null ) return;
-        setIconEnabled.Invoke( null, new object[] { MONO_BEHAVIOR_CLASS_ID, type.Name, on ? 1 : 0 } );
-        setGizmoEnabled.Invoke( null, new object[] { MONO_BEHAVIOR_CLASS_ID, type.Name, on ? 1 : 0, false } );
+        setIconEnabled.Invoke( null, new object[] { MONO_BEHAVIOR_CLASS_ID, type.Name, icons ? 1 : 0 } );
+        setGizmoEnabled.Invoke( null, new object[] { MONO_BEHAVIOR_CLASS_ID, type.Name, gizmos ? 1 : 0, false } );
       }
     }
   }

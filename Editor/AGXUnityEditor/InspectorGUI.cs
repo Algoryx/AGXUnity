@@ -828,8 +828,22 @@ namespace AGXUnityEditor
                                        T[] availableItemsToAdd = null )
       where T : Object
     {
+      ToolListGUI<T>( context, items, identifier, identifier, onAdd, onRemove, preItemEditor, postItemEditor, availableItemsToAdd );
+    }
+
+    public static void ToolListGUI<T>( Tools.CustomTargetTool context,
+                                     T[] items,
+                                     string identifier,
+                                     string label,
+                                     Action<T> onAdd,
+                                     Action<T> onRemove,
+                                     Action<T, int> preItemEditor = null,
+                                     Action<T, int> postItemEditor = null,
+                                     T[] availableItemsToAdd = null )
+    where T : Object
+    {
       var displayItemsList = Foldout( GetTargetToolArrayGUIData( context.Targets[ 0 ], identifier ),
-                                      GUI.MakeLabel( identifier + $" [{items.Length}]" ) );
+                                      GUI.MakeLabel( label + $" [{items.Length}]" ) );
       var itemTypename = typeof( T ).Name;
       var isAsset = typeof( ScriptableObject ).IsAssignableFrom( typeof( T ) );
       var itemTypenameSplit = itemTypename.SplitCamelCase();
@@ -852,6 +866,7 @@ namespace AGXUnityEditor
                            $"Remove {item.name} from {targetTypename}.",
                            GUILayout.Width( 18 ) ) )
                 itemToRemove = item;
+              GUILayout.Space( 2.0f );
             }
 
             if ( !displayItem ) {
@@ -868,18 +883,22 @@ namespace AGXUnityEditor
           T itemToAdd = null;
           var addButtonPressed = false;
           GUILayout.Space( 2.0f * EditorGUIUtility.standardVerticalSpacing );
-          using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
-            using ( GUI.AlignBlock.Center )
-              GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
-            var buttonWidth = 16.0f;
-            var rect = EditorGUILayout.GetControlRect();
-            var xMax = rect.xMax;
-            rect.xMax = rect.xMax - buttonWidth - EditorGUIUtility.standardVerticalSpacing;
-            itemToAdd = EditorGUI.ObjectField( rect, (Object)null, typeof( T ), true ) as T;
-            rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
-            rect.xMax = xMax;
-            rect.width = buttonWidth;
-            addButtonPressed = Button( rect, MiscIcon.ContextDropdown, UnityEngine.GUI.enabled );
+          using ( new GUILayout.HorizontalScope() ) {
+            GUILayout.Space( 15.0f * EditorGUI.indentLevel );
+            using ( new GUILayout.VerticalScope( FadeNormalBackground( InspectorEditor.Skin.Label, 0.1f ) ) ) {
+              using ( GUI.AlignBlock.Center )
+                GUILayout.Label( GUI.MakeLabel( "Add item", true ), InspectorEditor.Skin.Label );
+              var buttonWidth = 16.0f;
+              var rect = EditorGUILayout.GetControlRect();
+              rect.xMin -= EditorGUI.indentLevel * 15.0f;
+              var xMax = rect.xMax;
+              rect.xMax = rect.xMax - buttonWidth - EditorGUIUtility.standardVerticalSpacing;
+              itemToAdd = EditorGUI.ObjectField( rect, (Object)null, typeof( T ), true ) as T;
+              rect.x = rect.xMax + 1.25f * EditorGUIUtility.standardVerticalSpacing;
+              rect.xMax = xMax;
+              rect.width = buttonWidth;
+              addButtonPressed = Button( rect, MiscIcon.ContextDropdown, UnityEngine.GUI.enabled );
+            }
           }
 
           if ( addButtonPressed ) {
@@ -1781,6 +1800,26 @@ namespace AGXUnityEditor
       EditorGUIUtility.labelWidth += DropdownToolStyle.padding.left;
 
       EditorGUILayout.EndVertical();
+    }
+
+    public static Tuple<T1, T2> PairObjectsField<T1, T2>( T1 item1, T2 item2 )
+      where T1 : Object
+      where T2 : Object
+    {
+      var skin = InspectorEditor.Skin;
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        using ( new EditorGUILayout.VerticalScope( GUILayout.Width( 12 ) ) ) {
+          GUILayout.FlexibleSpace();
+          GUILayout.Label( GUI.MakeLabel( "[", 30 ), InspectorEditor.Skin.Label, GUILayout.Height( 32 ), GUILayout.Width( 12 ) );
+          GUILayout.FlexibleSpace();
+        }
+        using ( new EditorGUILayout.VerticalScope() ) {
+          var o1 = EditorGUILayout.ObjectField( item1, typeof( T1 ), false ) as T1;
+          var o2 = EditorGUILayout.ObjectField( item2, typeof( T2 ), false ) as T2;
+
+          return System.Tuple.Create( o1, o2 );
+        }
+      }
     }
   }
 }
