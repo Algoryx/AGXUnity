@@ -51,18 +51,29 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 1. Drag and drop `AGXUnity-x.y.unitypackage` into the `Assets` folder in Unity.
 2. Copy `agxDotNet.dll` (`<agx_dynamics_install_dir>/bin/x64/agxDotNet.dll`) into AGXUnity plugins folder (`Assets/AGXUnity/Plugins/x86_64`).
-3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent` (Unity 2017.x: `Experimental (.NET 4.6 Equivalent)`). [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
+3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent`. [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
 
 ### From source
 
 1. `git clone https://github.com/Algoryx/AGXUnity.git` in the `Assets` folder of your Unity project.
 2. Copy `agxDotNet.dll` (`<agx_dynamics_install_dir>/bin/x64/agxDotNet.dll`) into AGXUnity plugins folder (`Assets/AGXUnity/Plugins/x86_64`).
-3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent` (Unity 2017.x: `Experimental (.NET 4.6 Equivalent)`). [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
+3. Change Script Runtime Version to .NET 4.x: `Edit -> Project Settings -> Player`. Under `Other Settings` set `Scripting Runtime Version` to `.NET 4.x Equivalent`. [More information.](https://docs.unity3d.com/Manual/ScriptingRuntimeUpgrade.html)
 
 ### Requirements
 
-+ AGX Dynamics 2.36.1.0 (64-bit) or later (2.36.0.0 in rc/4.3, 2.35.0.3 in rc/4.2, 2.35.0.2 in rc/4.1, 2.35.0.0 in rc/4.0).
-+ Unity 3D 2020.3 LTS (64-bit) or later (Unity 3D 2018.4 LTS (64-bit) prior to rc/4.2).
+#### Required versions:
+
+| AGXUnity | Unity Editor | AGX Dynamics |
+| -------- | ------------ |------------- |
+| 4.6      | 2021.2       | 2.37.0.1     |
+| 4.5      | 2020.3 LTS   | 2.36.1.0     |
+| 4.4      | 2020.3 LTS   | 2.36.1.0     |
+| 4.3      | 2020.3 LTS   | 2.36.0.0     |
+| 4.2      | 2018.4 LTS   | 2.35.0.3     |
+| 4.1      | 2018.4 LTS   | 2.35.0.2     |
+| 4.0      | 2018.4 LTS   | 2.35.0.0     |
+
+#### Additional Requirements:
 + Unity Script Runtime Version .NET 4.x Equivalent.
 + Valid AGX Dynamics license. [Contact us for more information.](https://www.algoryx.se/contact/)
 
@@ -90,6 +101,9 @@ A modern tutorial series is currently being developed and videos are published i
 
 [**Tutorial 4: Constraints**](https://www.youtube.com/watch?v=Y9smE0PpdF4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=4)  
 [![](https://img.youtube.com/vi/Y9smE0PpdF4/2.jpg)](https://www.youtube.com/watch?v=Y9smE0PpdF4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=4)
+
+[**Tutorial 5: Modelling a car**](https://www.youtube.com/watch?v=bUTo3REt2f4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=5)  
+[![](https://img.youtube.com/vi/bUTo3REt2f4/2.jpg)](https://www.youtube.com/watch?v=bUTo3REt2f4&list=PLjNYiWVbHKRy2ST-pFYFOxGCTUV7prKek&index=5)
 
 ### Older tutorials
 

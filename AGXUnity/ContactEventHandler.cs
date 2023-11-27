@@ -502,7 +502,14 @@ namespace AGXUnity
           var g2 = sep.second;
           separationData.Component1 = GetComponent( g1 );
           separationData.Component2 = GetComponent( g2 );
-          listener.SeparationCallback( separationData );
+          separationData.Geometry1 = g1;
+          separationData.Geometry2 = g2;
+          try {
+            listener.SeparationCallback( separationData );
+          }
+          catch ( System.Exception e ) {
+            Debug.LogException( e );
+          }
           g1.ReturnToPool();
           g2.ReturnToPool();
           sep.ReturnToPool();
@@ -532,25 +539,31 @@ namespace AGXUnity
             break;
 
           ref var contactData = ref GeometryContactHandler.ContactData[ (int)contactIndex ];
-          var hasModifications = listener.ContactCallback( ref contactData );
 
-          // Ignoring synchronization of any modifications when we are
-          // in post, when the changes won't have any effect.
-          if ( hasForce || !hasModifications )
-            continue;
+          try {
+            bool hasModifications = listener.ContactCallback( ref contactData );
 
-          var gc = GeometryContactHandler.Native.getGeometryContact( contactIndex );
+            // Ignoring synchronization of any modifications when we are
+            // in post, when the changes won't have any effect.
+            if ( hasForce || !hasModifications )
+              continue;
 
-          gc.setEnable( contactData.Enabled );
+            var gc = GeometryContactHandler.Native.getGeometryContact( contactIndex );
 
-          var gcPoints = gc.points();
-          for ( int pointIndex = 0; pointIndex < contactData.Points.Count; ++pointIndex ) {
-            var gcPoint = gcPoints.at( (uint)pointIndex );
-            contactData.Points[ pointIndex ].Synchronize( gcPoint );
-            gcPoint.ReturnToPool();
+            gc.setEnable( contactData.Enabled );
+
+            var gcPoints = gc.points();
+            for ( int pointIndex = 0; pointIndex < contactData.Points.Count; ++pointIndex ) {
+              var gcPoint = gcPoints.at( (uint)pointIndex );
+              contactData.Points[ pointIndex ].Synchronize( gcPoint );
+              gcPoint.ReturnToPool();
+            }
+            gcPoints.ReturnToPool();
+            gc.ReturnToPool();
           }
-          gcPoints.ReturnToPool();
-          gc.ReturnToPool();
+          catch ( System.Exception e ) {
+            Debug.LogException( e );
+          }
         }
       }
       OnEndPerformingCallbacks();

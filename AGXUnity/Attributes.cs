@@ -138,6 +138,10 @@ namespace AGXUnity
       }
       else if ( type == typeof( int ) )
         return (int)value > 0 || ( m_acceptZero && (int)value == 0 );
+      else if ( type == typeof( Vector2Int ) )
+        return IsValid( (Vector2Int)value );
+      else if ( type == typeof( Vector3Int ) )
+        return IsValid( (Vector3Int)value );
       else if ( value is IComparable ) {
         int returnCheck = m_acceptZero ? -1 : 0;
         // CompareTo returns 0 if the values are equal.

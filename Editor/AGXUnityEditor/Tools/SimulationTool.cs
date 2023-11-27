@@ -157,6 +157,16 @@ namespace AGXUnityEditor.Tools
                                                          "AGX Dynamics log filename",
                                                          extension => true );
 
+      Simulation.AGXUnityLogLevel = InspectorGUI.ToggleEnum( GUI.MakeLabel( "Print AGX log in Unity console" ),
+                                                             Simulation.LogToUnityConsole,
+                                                             b => Simulation.LogToUnityConsole = b,
+                                                             Simulation.AGXUnityLogLevel );
+      using (new UnityEditor.EditorGUI.IndentLevelScope() ) {
+        using ( new GUI.EnabledBlock( Simulation.LogToUnityConsole ) ) {
+          Simulation.DisableMeshCreationWarnings = InspectorGUI.Toggle( GUI.MakeLabel( "Disable mesh creation warnings" ), Simulation.DisableMeshCreationWarnings );
+        }
+      }
+
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
         var rect    = EditorGUILayout.GetControlRect();

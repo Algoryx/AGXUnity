@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TerrainUtils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
@@ -125,8 +126,8 @@ namespace AGXUnity.Model
     {
       ResetTerrainDataHeightsAndTransform();
 
-      if ( Properties != null )
-        Properties.Unregister( this );
+      if ( TerrainProperties != null )
+        TerrainProperties.Unregister( this );
 
       if ( Simulation.HasInstance ) {
         GetSimulation().remove( Native );
@@ -196,13 +197,13 @@ namespace AGXUnity.Model
       var resY   = TerrainDataResolution;
       var result = new float[,] { { 0.0f } };
       foreach ( var index in modifiedVertices ) {
-        var i = (int)index.x;
-        var j = (int)index.y;
+        var unityIndex = new Vector2Int((int)(resX - index.x - 1), (int)(resY - index.y - 1));
         var h = (float)Native.getHeight( index );
 
         result[ 0, 0 ] = h / scale;
 
-        TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
+        TerrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
+        OnModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
 #if UNITY_2019_1_OR_NEWER
@@ -317,6 +318,126 @@ namespace AGXUnity.Model
     {
       if ( !IsNativeNull() )
         Native.convertToDynamicMassInShape( failureVolume.GetInitialized<Shape>().NativeShape );
+    }
+
+    public override void SetHeights( int xstart, int ystart, float[,] heights )
+    {
+      int height = heights.GetLength(0);
+      int width = heights.GetLength(1);
+      int resolution = TerrainDataResolution;
+
+      if ( xstart + width >= resolution || xstart < 0 || ystart + height >= resolution || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Provided height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+
+      float scale = TerrainData.size.y;
+      float depthOffset = 0;
+      if ( Native != null )
+        depthOffset = MaximumDepth;
+
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          float value = heights[ y, x ] + depthOffset;
+          heights[ y, x ] = value / scale;
+
+          agx.Vec2i idx = new agx.Vec2i( resolution - 1 - x - xstart, resolution - 1 - y - ystart);
+          Native?.setHeight( idx, value );
+        }
+      }
+
+      TerrainData.SetHeights( xstart, ystart, heights );
+    }
+    public override void SetHeight( int x, int y, float height )
+    {
+      if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+
+      if ( Native != null )
+        height += MaximumDepth;
+
+      agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
+      Native?.setHeight( idx, height );
+
+      TerrainData.SetHeights( x, y, new float[,] { { height / TerrainData.size.y } } );
+    }
+    public override float[,] GetHeights( int xstart, int ystart, int width, int height )
+    {
+      if ( width <= 0 || height <= 0 )
+        throw new ArgumentOutOfRangeException( "width, height", $"Width and height ({width} / {height}) must be greater than 0" );
+
+      int resolution = TerrainDataResolution;
+
+      if ( xstart + width >= resolution || xstart < 0 || ystart + height >= resolution || ystart < 0 )
+        throw new ArgumentOutOfRangeException( "", $"Requested height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+
+      if ( Native == null )
+        return TerrainData.GetHeights( xstart, ystart, width, height );
+
+      float [,] heights = new float[height,width];
+      for ( int y = 0; y < height; y++ ) {
+        for ( int x = 0; x < width; x++ ) {
+          agx.Vec2i idx = new agx.Vec2i( resolution - 1 - x - xstart, resolution - 1 - y - ystart);
+          heights[ y, x ] = (float)Native.getHeight( idx ) - MaximumDepth;
+        }
+      }
+      return heights;
+    }
+    public override float GetHeight( int x, int y )
+    {
+      if ( x >= TerrainDataResolution || x < 0 || y >= TerrainDataResolution || y < 0 )
+        throw new ArgumentOutOfRangeException( "(x, y)", $"Indices ({x},{y}) is outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
+
+      if ( Native == null )
+        return TerrainData.GetHeight( x, y );
+
+      agx.Vec2i idx = new agx.Vec2i( TerrainDataResolution - 1 - x, TerrainDataResolution - 1 - y );
+      return (float)Native.getHeight( idx ) - MaximumDepth;
+    }
+
+    public override void TriggerModifyAllCells()
+    {
+      var res = TerrainDataResolution;
+      var agxIdx = new agx.Vec2i( 0, 0 );
+      var uTerr = Terrain;
+      var uIdx = new Vector2Int( 0, 0 );
+      for (int y = 0; y < res; y++ ) {
+        agxIdx.y = res - 1 - y;
+        uIdx.y = y;
+        for ( int x = 0; x < res; x++ ) {
+          agxIdx.x = res - 1 - x;
+          uIdx.x = x;
+          OnModification?.Invoke( Native,  agxIdx, uTerr, uIdx);
+        }
+      }
+    }
+
+    public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
+    {
+      if ( Native == null )
+        return true;
+
+      if(oldMat == null || newMat == null ) 
+        return false;
+
+      return Native.exchangeTerrainMaterial(oldMat.Native, newMat.Native);
+    }
+
+    public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
+    {
+      if ( Native == null )
+        return;
+
+      Native.setAssociatedMaterial(terrMat.Native, shapeMat.Native);
+    }
+
+    public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
+    {
+      if ( Native == null )
+        return;
+
+      if(shape == null)
+        Native.addTerrainMaterial( terrMat.Native );
+      else
+        Native.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
     }
 
     protected override bool IsNativeNull() { return Native == null; }

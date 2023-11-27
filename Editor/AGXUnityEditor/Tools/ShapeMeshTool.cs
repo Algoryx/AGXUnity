@@ -9,25 +9,25 @@ using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
-  public static class CanceledAsyncCollisionMeshGeneretors
+  public static class CancelledAsyncCollisionMeshGenerators
   {
-    public static void RegisterCanceled( AGXUnity.Collide.CollisionMeshGenerator generator )
+    public static void RegisterCancelled( AGXUnity.Collide.CollisionMeshGenerator generator )
     {
-      if ( generator == null || s_canceledGenerators.Contains( generator ) )
+      if ( generator == null || s_cancelledGenerators.Contains( generator ) )
         return;
 
-      if ( s_canceledGenerators.Count == 0 )
+      if ( s_cancelledGenerators.Count == 0 )
         EditorApplication.update += OnUpdate;
 
-      Debug.Log( $"Registering canceled: {generator.GetHashCode()}" );
-      s_canceledGenerators.Add( generator );
+      Debug.Log( $"Registering cancelled: {generator.GetHashCode()}" );
+      s_cancelledGenerators.Add( generator );
     }
 
     private static void OnUpdate()
     {
-      var generators = s_canceledGenerators.ToArray();
+      var generators = s_cancelledGenerators.ToArray();
       if ( generators.Length == 0 ) {
-        Debug.Log( "Unregister update callback, all canceled tasks has been removed." );
+        Debug.Log( "Unregister update callback, all cancelled tasks has been removed." );
         EditorApplication.update -= OnUpdate;
         return;
       }
@@ -35,13 +35,13 @@ namespace AGXUnityEditor.Tools
       foreach ( var generator in generators ) {
         if ( generator.IsRunning )
           continue;
-        Debug.Log( $"Canceled generator is done - removing {generator.GetHashCode()} from queue." );
+        Debug.Log( $"Cancelled generator is done - removing {generator.GetHashCode()} from queue." );
         generator.Dispose();
-        s_canceledGenerators.Remove( generator );
+        s_cancelledGenerators.Remove( generator );
       }
     }
 
-    private static List<AGXUnity.Collide.CollisionMeshGenerator> s_canceledGenerators = new List<AGXUnity.Collide.CollisionMeshGenerator>();
+    private static List<AGXUnity.Collide.CollisionMeshGenerator> s_cancelledGenerators = new List<AGXUnity.Collide.CollisionMeshGenerator>();
   }
 
   [CustomTool( typeof( AGXUnity.Collide.Mesh ) )]
@@ -121,10 +121,6 @@ namespace AGXUnityEditor.Tools
       using ( new GUI.EnabledBlock( !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
         if ( InspectorGUI.Foldout( GetEditorData( Mesh ), GUI.MakeLabel( "Options" ) ) ) {
           using ( InspectorGUI.IndentScope.Single ) {
-            if ( GetTargets<AGXUnity.Collide.Mesh>().Any( mesh => PrefabUtils.IsPrefabInstance( mesh ) ) )
-              InspectorGUI.WarningLabel( "WARNING!\n\nEditing mesh Options on a prefab <b>instance</b> may cause the Editor to hang\n" +
-                                         "due to extensive prefab Overrides.\n\nConsider making the changes in the <b>Prefab Stage</b> instead." );
-
             InspectorEditor.DrawMembersGUI( Targets, t => ( t as AGXUnity.Collide.Mesh ).Options );
             var applyResetResult = InspectorGUI.PositiveNegativeButtons( UnityEngine.GUI.enabled,
                                                                          "Apply",
@@ -136,20 +132,21 @@ namespace AGXUnityEditor.Tools
               var collisionMeshGenerator = new AGXUnity.Collide.CollisionMeshGenerator();
               var generatorStartTime = EditorApplication.timeSinceStartup;
               collisionMeshGenerator.GenerateAsync( meshes );
-              var isCanceled = false;
-              while ( !isCanceled && collisionMeshGenerator.IsRunning ) {
+              var isCancelled = false;
+
+              while ( !isCancelled && collisionMeshGenerator.IsRunning ) {
                 var progressBarTitle = $"Generating collision meshes: {(int)( EditorApplication.timeSinceStartup - generatorStartTime )} s";
                 var progressBarInfo = string.Empty;
                 var progress = collisionMeshGenerator.Progress;
-                isCanceled = EditorUtility.DisplayCancelableProgressBar( progressBarTitle, progressBarInfo, progress );
-                if ( !isCanceled )
+                isCancelled = EditorUtility.DisplayCancelableProgressBar( progressBarTitle, progressBarInfo, progress );
+                if ( !isCancelled )
                   System.Threading.Thread.Sleep( 50 );
               }
 
               EditorUtility.ClearProgressBar();
 
-              if ( isCanceled )
-                CanceledAsyncCollisionMeshGeneretors.RegisterCanceled( collisionMeshGenerator );
+              if ( isCancelled )
+                CancelledAsyncCollisionMeshGenerators.RegisterCancelled( collisionMeshGenerator );
               else {
                 var results = collisionMeshGenerator.CollectResults();
                 using ( new Utils.UndoCollapseBlock( "Apply collision mesh data" ) ) {
@@ -159,7 +156,7 @@ namespace AGXUnityEditor.Tools
                     result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
                   }
                 }
-
+              
                 var hasPrefabAssetBeenChanged = results.Any( result =>
                                                                PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
                                                                PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );
@@ -189,7 +186,7 @@ namespace AGXUnityEditor.Tools
                   mesh.DestroyCollisionMeshes();
                   if ( mesh.Options != null ) {
                     Undo.RecordObject( mesh, "Resetting mesh options to default" );
-                    mesh.Options.ResetToDesfault();
+                    mesh.Options.ResetToDefault();
                   }
                 }
               }

@@ -288,6 +288,25 @@ namespace AGXUnity.Collide
         return null;
       }
 
+      // Next, if merge nearby vertices is enabled, do that too:
+      var mergeNearbyEnabled = options != null && options.MergeNearbyEnabled;
+      orgNumVertices = merger.Vertices.Count;
+      if (mergeNearbyEnabled) { 
+        merger.MergeNearby(options.MergeNearbyDistance);
+      }
+
+      if (merger.Vertices.Count == 0)
+      {
+        if (mergeNearbyEnabled && orgNumVertices > 0)
+          UnityEngine.Debug.LogWarning($"Merging nearby Vertices reduced a collision mesh from {orgNumVertices} vertices to zero. " +
+                                        "Ignoring collision mesh.", mesh);
+        else
+          UnityEngine.Debug.LogWarning($"Mesh \"{mesh.name}\" doesn't contain any vertices for the collision mesh. " +
+                                        "Ignoring collision mesh.", mesh);
+
+        return null;
+      }
+
       var meshData = new CollisionMeshData();
       meshData.Apply( merger.Vertices, merger.Indices );
 
