@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using UnityEngine;
 
 namespace AGXUnity
@@ -160,6 +159,12 @@ namespace AGXUnity
     }
 
     protected virtual void OnApplicationQuit() { }
+
+    /// <summary>
+    /// This method is called by the <see cref="AGXUnityEditor.EditorUpdateManager"/> class on every editor update.
+    /// Note that this is not called during play.
+    /// </summary>
+    public virtual void EditorUpdate() { }
 
     [NonSerialized]
     private uint m_uuidHash = 0u;
