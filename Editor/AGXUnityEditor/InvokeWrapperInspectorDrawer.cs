@@ -90,20 +90,6 @@ namespace AGXUnityEditor
                                         wrapper.Get<Vector2>( objects[ 0 ] ) );
     }
 
-    [InspectorDrawer( typeof( Vector2Int ) )]
-    public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      return InspectorGUI.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector2Int>( objects[ 0 ] ) );
-    }
-
-    [InspectorDrawer( typeof( Vector3Int ) )]
-    public static object Vector3IntDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      return InspectorGUI.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           wrapper.Get<Vector3Int>( objects[ 0 ] ) );
-    }
-
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
