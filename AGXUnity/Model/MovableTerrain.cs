@@ -125,6 +125,12 @@ namespace AGXUnity.Model
       }
     }
 
+    public override void EditorUpdate()
+    {
+      if(TerrainMesh.sharedMesh == null )
+        SetupMesh();
+    }
+
     protected override bool Initialize()
     {
       // Only printing the errors if something is wrong.
