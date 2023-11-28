@@ -61,36 +61,14 @@ namespace AGXUnity.Model
     private Vector2 m_sizeMeters = new Vector2(2,2);
 
     [ClampAboveZeroInInspector]
+    [HideInInspector]
     public Vector2 SizeMeters
     {
       get => m_sizeMeters;
       set
       {
         m_sizeMeters = value;
-        m_elementSize = m_sizeMeters.x / m_resolution;
-        m_sizeCells.x = m_resolution;
-        m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
-        SetupMesh();
-      }
-    }
-
-    [SerializeField]
-    private int m_resolution = 20;
-
-    /// <summary>
-    ///  The size of each underlying tile in the terrain, in meters.
-    /// </summary>
-    [ClampAboveZeroInInspector]
-    public int Resolution
-    {
-      get => m_resolution;
-      set
-      {
-        m_resolution = value;
-        m_elementSize = m_sizeMeters.x / m_resolution;
-        m_sizeCells.x = Resolution;
-        m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
-        SetupMesh();
+        RecalculateSizes( false );
       }
     }
 
@@ -98,13 +76,25 @@ namespace AGXUnity.Model
     private Vector2Int m_sizeCells = new Vector2Int(21,21);
 
     [ClampAboveZeroInInspector]
+    [HideInInspector]
     public Vector2Int SizeCells
     {
       get => m_sizeCells;
       set
       {
         m_sizeCells = value;
-        SetupMesh();
+        RecalculateSizes( true );
+      }
+    }
+
+    [HideInInspector]
+    public int Resolution
+    {
+      get => m_sizeCells.x;
+      set
+      {
+        m_sizeCells.x = value;
+        RecalculateSizes( false );
       }
     }
 
@@ -114,6 +104,7 @@ namespace AGXUnity.Model
     /// <summary>
     ///  The size of each underlying tile in the terrain, in meters.
     /// </summary>
+    [HideInInspector]
     [ClampAboveZeroInInspector]
     public new float ElementSize
     {
@@ -121,13 +112,26 @@ namespace AGXUnity.Model
       set
       {
         m_elementSize = value;
-        SetupMesh();
+        RecalculateSizes( true );
       }
+    }
+
+    private void RecalculateSizes( bool fromCellCount )
+    {
+      if ( fromCellCount ) {
+        m_sizeMeters.x = m_sizeCells.x * m_elementSize;
+        m_sizeMeters.y = m_sizeCells.y * m_elementSize;
+      }
+      else {
+        m_elementSize = m_sizeMeters.x / m_sizeCells.x;
+        m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
+      }
+      SetupMesh();
     }
 
     public override void EditorUpdate()
     {
-      if(TerrainMesh.sharedMesh == null )
+      if ( TerrainMesh.sharedMesh == null )
         SetupMesh();
     }
 

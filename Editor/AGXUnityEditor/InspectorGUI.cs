@@ -1,13 +1,12 @@
-﻿using System;
+﻿using AGXUnity;
+using AGXUnity.Utils;
+using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.ComponentModel;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
-using AGXUnity.Utils;
-
-using GUI    = AGXUnity.Utils.GUI;
+using UnityEngine;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -25,7 +24,7 @@ namespace AGXUnityEditor
       var content = new GUIContent();
       content.text = field.Name.SplitCamelCase() + postText;
       content.tooltip = field.GetCustomAttribute<DescriptionAttribute>( false )?.Description;
-      if(content.tooltip == null)
+      if ( content.tooltip == null )
         content.tooltip = field.GetCustomAttribute<TooltipAttribute>( false )?.tooltip;
 
       return content;
@@ -422,7 +421,7 @@ namespace AGXUnityEditor
 
         position.x += EditorGUIUtility.labelWidth - IndentScope.PixelLevel;
         position.xMax -= EditorGUIUtility.labelWidth +
-                         Convert.ToInt32( supportsCreateAsset ) * (createNewButtonWidth + 2) -
+                         Convert.ToInt32( supportsCreateAsset ) * ( createNewButtonWidth + 2 ) -
                          IndentScope.PixelLevel;
         result = EditorGUI.ObjectField( position, instance, instanceType, allowSceneObject );
         if ( supportsCreateAsset ) {
@@ -650,7 +649,7 @@ namespace AGXUnityEditor
     public static T ToggleEnum<T>( GUIContent label,
                                    bool enabled,
                                    Action<bool> enabledResult,
-                                   T currentEntry) 
+                                   T currentEntry )
       where T : Enum
     {
       var toggleWidth   = 18.0f;
@@ -674,7 +673,7 @@ namespace AGXUnityEditor
                             toggleWidth +
                             indentOffset;
         currentEntry = (T)EditorGUI.EnumPopup( controlRect,
-                                               currentEntry);
+                                               currentEntry );
       }
 
       return currentEntry;
@@ -1404,11 +1403,11 @@ namespace AGXUnityEditor
       var refFrame = frames[ 0 ];
       var isMultiSelect = frames.Length > 1;
 
-        var frameTool = includeFrameToolIfPresent ?
+      var frameTool = includeFrameToolIfPresent ?
                           Tools.FrameTool.FindActive( refFrame ) :
                           null;
-        if ( frameTool != null )
-          frameTool.ToolsGUI( isMultiSelect );
+      if ( frameTool != null )
+        frameTool.ToolsGUI( isMultiSelect );
 
       using ( IndentScope.Create( indentLevelInc ) ) {
         UnityEngine.GUI.enabled = true;
@@ -1500,7 +1499,7 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="label">Label, no label if null.</param>
     /// <returns>Rect to be used for the EditorGUI.MultiFloatField.</returns>
-    public static Rect MultiFloatFieldPrefixLabel( GUIContent label )
+    public static Rect MultiFieldPrefixLabel( GUIContent label )
     {
       var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
       var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
@@ -1551,7 +1550,7 @@ namespace AGXUnityEditor
         MaxChanged = false
       };
 
-      var position = MultiFloatFieldPrefixLabel( content );
+      var position = MultiFieldPrefixLabel( content );
 
       s_rangeRealContent[ 0 ] = minContent;
       s_rangeRealContent[ 1 ] = maxContent;
@@ -1634,32 +1633,78 @@ namespace AGXUnityEditor
       return value;
     }
 
+    /// <summary>
+    /// Draws Vector2Int field with custom sub-labels (default "X,Y").
+    /// </summary>
+    /// <param name="label">Vector2Int label.</param>
+    /// <param name="value">Current value.</param>
+    /// <param name="subLabels">Comma separated string with name of each element.</param>
+    /// <returns>Updated value of the Vector2Int field.</returns>
+    public static Vector2Int Vector2IntField( GUIContent label, Vector2Int value, string subLabels = "X,Y" )
+    {
+      for ( int i = 0; i < s_multiInt2Values.Length; ++i )
+        s_multiInt2Values[ i ] = value[ i ];
+      Vector234IntFieldEx( label, s_multiInt2Values, subLabels, "X,Y", values =>
+      {
+        for ( int i = 0; i < values.Length; ++i )
+          value[ i ] = values[ i ];
+      } );
+      return value;
+    }
+
+    /// <summary>
+    /// Draws Vector3Int field with custom sub-labels (default "X,Y,Z").
+    /// </summary>
+    /// <param name="label">Vector3Int label.</param>
+    /// <param name="value">Current value.</param>
+    /// <param name="subLabels">Comma separated string with name of each element.</param>
+    /// <returns>Updated value of the Vector3Int field.</returns>
+    public static Vector3Int Vector3IntField( GUIContent label, Vector3Int value, string subLabels = "X,Y,Z" )
+    {
+      for ( int i = 0; i < s_multiInt3Values.Length; ++i )
+        s_multiInt3Values[ i ] = value[ i ];
+      Vector234IntFieldEx( label, s_multiInt3Values, subLabels, "X,Y,Z", values =>
+      {
+        for ( int i = 0; i < values.Length; ++i )
+          value[ i ] = values[ i ];
+      } );
+      return value;
+    }
+
+    internal static GUIContent[] GetMultiFieldLabels( int numValues,
+                                                      string subLabels,
+                                                      string defaultSubLabels )
+    {
+      string[] subs = null;
+      if ( subLabels == defaultSubLabels )
+        subs = numValues == 2 ?
+                 s_multiField2DefaultSubLabels :
+               numValues == 3 ?
+                 s_multiField3DefaultSubLabels :
+                 s_multiField4DefaultSubLabels;
+      else
+        subs = subLabels.Split( ',' );
+      if ( subs.Length != numValues )
+        throw new AGXUnity.Exception( $"Wrong number of sub-labels for vector, expected {numValues} commas, got {subLabels.Length}: '{subLabels}'" );
+      var contents = numValues == 2 ?
+                       s_multiField2Contents :
+                     numValues == 3 ?
+                       s_multiField3Contents :
+                       s_multiField4Contents;
+      for ( int i = 0; i < numValues; ++i )
+        contents[ i ].text = subs[ i ];
+
+      return contents;
+    }
+
     internal static void Vector234FieldEx( GUIContent label,
                                            float[] values,
                                            string subLabels,
                                            string defaultSubLabels,
                                            Action<float[]> onChange )
     {
-      string[] subs = null;
-      if ( subLabels == defaultSubLabels )
-        subs = values.Length == 2 ?
-                 s_multiFloat2DefaultSubLabels :
-               values.Length == 3 ?
-                 s_multiFloat3DefaultSubLabels :
-                 s_multiFloat4DefaultSubLabels;
-      else
-        subs = subLabels.Split( ',' );
-      if ( subs.Length != values.Length )
-        throw new AGXUnity.Exception( $"Wrong number of sub-labels for vector, expected {values.Length} commas, got {subLabels.Length}: '{subLabels}'" );
-      var contents = values.Length == 2 ?
-                       s_multiFloat2Contents :
-                     values.Length == 3 ?
-                       s_multiFloat3Contents :
-                       s_multiFloat4Contents;
-      for ( int i = 0; i < values.Length; ++i )
-        contents[ i ].text = subs[ i ];
-
-      var position = MultiFloatFieldPrefixLabel( label );
+      var contents = GetMultiFieldLabels( values.Length, subLabels, defaultSubLabels );
+      var position = MultiFieldPrefixLabel( label );
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
                                  GUIContent.none,
@@ -1669,45 +1714,64 @@ namespace AGXUnityEditor
         onChange?.Invoke( values );
     }
 
+    internal static void Vector234IntFieldEx( GUIContent label,
+                                             int[] values,
+                                             string subLabels,
+                                             string defaultSubLabels,
+                                             Action<int[]> onChange )
+    {
+      var contents = GetMultiFieldLabels( values.Length, subLabels, defaultSubLabels );
+      var position = MultiFieldPrefixLabel( label );
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.MultiIntField( position,
+                                contents,
+                                values );
+      if ( EditorGUI.EndChangeCheck() )
+        onChange?.Invoke( values );
+    }
+
     private static float[] s_multiFloat2Values = new float[] { 0, 0 };
     private static float[] s_multiFloat3Values = new float[] { 0, 0, 0 };
     private static float[] s_multiFloat4Values = new float[] { 0, 0, 0, 0 };
-    private static readonly string[] s_multiFloat2DefaultSubLabels = new string[] { "X", "Y" };
-    private static readonly string[] s_multiFloat3DefaultSubLabels = new string[] { "X", "Y", "Z" };
-    private static readonly string[] s_multiFloat4DefaultSubLabels = new string[] { "X", "Y", "Z", "W" };
-    private static GUIContent[] s_multiFloat2Contents = new GUIContent[]
+    private static int[] s_multiInt2Values = new int[] { 0, 0 };
+    private static int[] s_multiInt3Values = new int[] { 0, 0, 0 };
+
+    private static readonly string[] s_multiField2DefaultSubLabels = new string[] { "X", "Y" };
+    private static readonly string[] s_multiField3DefaultSubLabels = new string[] { "X", "Y", "Z" };
+    private static readonly string[] s_multiField4DefaultSubLabels = new string[] { "X", "Y", "Z", "W" };
+    private static GUIContent[] s_multiField2Contents = new GUIContent[]
     {
-      new GUIContent( s_multiFloat2DefaultSubLabels[ 0 ] ),
-      new GUIContent( s_multiFloat2DefaultSubLabels[ 1 ] )
+      new GUIContent( s_multiField2DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiField2DefaultSubLabels[ 1 ] )
     };
-    private static GUIContent[] s_multiFloat3Contents = new GUIContent[]
+    private static GUIContent[] s_multiField3Contents = new GUIContent[]
     {
-      new GUIContent( s_multiFloat3DefaultSubLabels[ 0 ] ),
-      new GUIContent( s_multiFloat3DefaultSubLabels[ 1 ] ),
-      new GUIContent( s_multiFloat3DefaultSubLabels[ 2 ] )
+      new GUIContent( s_multiField3DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiField3DefaultSubLabels[ 1 ] ),
+      new GUIContent( s_multiField3DefaultSubLabels[ 2 ] )
     };
-    private static GUIContent[] s_multiFloat4Contents = new GUIContent[]
+    private static GUIContent[] s_multiField4Contents = new GUIContent[]
     {
-      new GUIContent( s_multiFloat4DefaultSubLabels[ 0 ] ),
-      new GUIContent( s_multiFloat4DefaultSubLabels[ 1 ] ),
-      new GUIContent( s_multiFloat4DefaultSubLabels[ 2 ] ),
-      new GUIContent( s_multiFloat4DefaultSubLabels[ 3 ] )
+      new GUIContent( s_multiField4DefaultSubLabels[ 0 ] ),
+      new GUIContent( s_multiField4DefaultSubLabels[ 1 ] ),
+      new GUIContent( s_multiField4DefaultSubLabels[ 2 ] ),
+      new GUIContent( s_multiField4DefaultSubLabels[ 3 ] )
     };
 
-    private static GUIContent[] s_customFloatFieldSubLabelContents = new GUIContent[] { GUIContent.none };
+    private static GUIContent[] s_customFieldSubLabelContents = new GUIContent[] { GUIContent.none };
     private static float[] s_customFloatFieldData = new float[] { 0.0f };
 
     public static float CustomFloatField( GUIContent labelContent, GUIContent fieldContent, float value )
     {
-      var position = MultiFloatFieldPrefixLabel( labelContent );
+      var position = MultiFieldPrefixLabel( labelContent );
 
-      s_customFloatFieldSubLabelContents[ 0 ] = fieldContent;
-      s_customFloatFieldData[ 0 ]             = value;
+      s_customFieldSubLabelContents[ 0 ] = fieldContent;
+      s_customFloatFieldData[ 0 ]        = value;
 
       EditorGUI.BeginChangeCheck();
       EditorGUI.MultiFloatField( position,
                                  GUIContent.none,
-                                 s_customFloatFieldSubLabelContents,
+                                 s_customFieldSubLabelContents,
                                  s_customFloatFieldData );
       if ( EditorGUI.EndChangeCheck() )
         return s_customFloatFieldData[ 0 ];
@@ -1721,12 +1785,12 @@ namespace AGXUnityEditor
     /// <param name="subLabels">GUI content .</param>
     /// <param name="values">Current values.</param>
     /// <returns>Updated value of the float fields.</returns>
-    public static float[] MultiFloatField(GUIContent label, GUIContent[] subLabels, float[] values)
+    public static float[] MultiFloatField( GUIContent label, GUIContent[] subLabels, float[] values )
     {
       var numRectRows = ( EditorGUIUtility.wideMode || label == null ? 1 : 2 );
       var rectHeight = EditorGUIUtility.singleLineHeight * numRectRows;
       var position = EditorGUILayout.GetControlRect( false, rectHeight );
-      EditorGUI.MultiFloatField(position, label, subLabels, values);
+      EditorGUI.MultiFloatField( position, label, subLabels, values );
       return values;
     }
 
@@ -1735,9 +1799,9 @@ namespace AGXUnityEditor
     /// </summary>
     /// <param name="mainLabel">Prefix label GUIContent.</param>
     /// <param name="subLabels">Column labels GUIContents.</param>
-    public static void MultiFieldColumnLabels(GUIContent mainLabel, GUIContent[] subLabels)
+    public static void MultiFieldColumnLabels( GUIContent mainLabel, GUIContent[] subLabels )
     {
-      var position = mainLabel != null ? InspectorGUI.MultiFloatFieldPrefixLabel(mainLabel) : EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight );
+      var position = mainLabel != null ? InspectorGUI.MultiFieldPrefixLabel(mainLabel) : EditorGUILayout.GetControlRect( false, EditorGUIUtility.singleLineHeight );
 
       float spacingSubLabel = 4; // From EditorGui.cs
       int count = subLabels.Length;
@@ -1746,9 +1810,8 @@ namespace AGXUnityEditor
       Rect subRect = new Rect(position) {width = fieldWidth, x = position.x + indentOffset};
       int oldIndentLevel = EditorGUI.indentLevel;
       EditorGUI.indentLevel = 0;
-      for (int i = 0; i < count; i++)
-      {
-        EditorGUI.LabelField(subRect, subLabels[i]);
+      for ( int i = 0; i < count; i++ ) {
+        EditorGUI.LabelField( subRect, subLabels[ i ] );
         subRect.x += fieldWidth + spacingSubLabel;
       }
       EditorGUI.indentLevel = oldIndentLevel;
