@@ -73,7 +73,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private Vector2Int m_sizeCells = new Vector2Int(21,21);
+    private Vector2Int m_sizeCells = new Vector2Int(20,20);
 
     [ClampAboveZeroInInspector]
     [HideInInspector]
@@ -99,7 +99,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_elementSize = 0.2f;
+    private float m_elementSize = 0.1f;
 
     /// <summary>
     ///  The size of each underlying tile in the terrain, in meters.
