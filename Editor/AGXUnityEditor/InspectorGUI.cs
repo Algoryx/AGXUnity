@@ -1425,14 +1425,11 @@ namespace AGXUnityEditor
             frame.SetParent( newParent );
         }
 
-        UnityEngine.GUI.changed = false;
-
         EditorGUI.showMixedValue = frames.Any( frame => !Equals( refFrame.LocalPosition, frame.LocalPosition ) );
         var localPosition = EditorGUILayout.Vector3Field( GUI.MakeLabel( "Local position" ), refFrame.LocalPosition );
-        if ( UnityEngine.GUI.changed ) {
+        if ( refFrame.LocalPosition != localPosition ) {
           foreach ( var frame in frames )
             frame.LocalPosition = localPosition;
-          UnityEngine.GUI.changed = false;
         }
         EditorGUI.showMixedValue = false;
 
@@ -1444,7 +1441,6 @@ namespace AGXUnityEditor
         if ( !Equals( inputEuler, outputEuler ) ) {
           foreach ( var frame in frames )
             frame.LocalRotation = Quaternion.Euler( outputEuler );
-          UnityEngine.GUI.changed = false;
         }
         EditorGUI.showMixedValue = false;
       }
