@@ -83,26 +83,27 @@ namespace AGXUnity.Utils
     {
       var terrainData        = terrain.terrainData;
       var nativeHeightData   = FindHeights( terrainData );
-      var tmp                = new float[,] { { 0.0f } };
       var dataMaxHeight      = terrainData.size.y;
       var maxClampedHeight   = -1.0f;
-      var resolution         = TerrainDataResolution( terrainData );
+      var resolutionX        = nativeHeightData.ResolutionX;
+      var resolutionY        = nativeHeightData.ResolutionY;
       var scale              = terrainData.heightmapScale.y;
 
+      var modHeights = new float[resolutionY, resolutionX];
       for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
+
         var newHeight = nativeHeightData.Heights[ i ] += offset;
 
-        var vertexX = i % nativeHeightData.ResolutionX;
-        var vertexY = i / nativeHeightData.ResolutionY;
+        var vertexX = i % resolutionX;
+        var vertexY = i / resolutionY;
 
-        tmp[ 0, 0 ] = (float)newHeight / scale;
+        modHeights[ resolutionY - vertexY - 1, resolutionX - vertexX - 1 ] = (float)newHeight / scale;
+
         if ( newHeight > dataMaxHeight )
           maxClampedHeight = System.Math.Max( maxClampedHeight, (float)newHeight );
-
-        terrainData.SetHeightsDelayLOD( resolution - vertexX - 1,
-                                        resolution - vertexY - 1,
-                                        tmp );
       }
+
+      terrainData.SetHeights( 0, 0, modHeights );
 
       if ( maxClampedHeight > 0.0f ) {
         Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
@@ -111,12 +112,6 @@ namespace AGXUnity.Utils
                           offset +
                           ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
       }
-
-#if UNITY_2019_1_OR_NEWER
-      terrainData.SyncHeightmap();
-#else
-      terrain.ApplyDelayedHeightmapModification();
-#endif
 
       return nativeHeightData;
     }
@@ -143,13 +138,7 @@ namespace AGXUnity.Utils
         }
       }
 
-      terrainData.SetHeightsDelayLOD( 0, 0, data );
-
-#if UNITY_2019_1_OR_NEWER
-      terrainData.SyncHeightmap();
-#else
-      terrain.ApplyDelayedHeightmapModification();
-#endif
+      terrainData.SetHeights( 0, 0, data );
 
       if ( maxClampedHeight > 0.0f ) {
         Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
