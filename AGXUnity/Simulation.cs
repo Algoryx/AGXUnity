@@ -441,6 +441,8 @@ namespace AGXUnity
     private agxSDK.Simulation GetOrCreateSimulation()
     {
       if ( m_simulation == null ) {
+        Application.logMessageReceived += InterceptAGXException;
+
         NativeHandler.Instance.MakeMainThread();
 
         m_simulation = new agxSDK.Simulation();
@@ -472,6 +474,23 @@ namespace AGXUnity
       }
 
       return m_simulation;
+    }
+
+    private void InterceptAGXException( string condition, string stackTrace, LogType type )
+    {
+      if ( type == LogType.Exception && condition.StartsWith( "ApplicationException" ) ) {
+        Debug.LogError(
+          "AGX threw an exception. Simulation state is likely corrupt, shutting down application. Please refer to the AGX and Unity logs for more information.\n" +
+          "<b>AGX Exception:</b> " + condition + "\n" +
+          "<b>Stack trace:</b> \n" +
+          stackTrace
+        );
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.ExitPlaymode();
+#else
+        Application.Quit();
+#endif
+      }
     }
 
     private void FixedUpdate()
