@@ -41,7 +41,7 @@ namespace AGXUnity
     /// </remarks>
     /// </summary>
     [field: SerializeField]
-    public string Tag { get; set; } = ""
+    public string Tag { get; set; } = "";
 
     /// <summary>
     /// If <paramref name="obj"/> has method "addGroup( UInt32 )" this method
