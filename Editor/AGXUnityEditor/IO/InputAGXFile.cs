@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using AGXUnity.Utils;
 using Node = AGXUnityEditor.IO.InputAGXFileTreeNode;
-using RPDetector = AGXUnityEditor.Utils.RenderPipelineDetector;
 using Tree = AGXUnityEditor.IO.InputAGXFileTree;
 
 namespace AGXUnityEditor.IO
@@ -972,8 +972,8 @@ namespace AGXUnityEditor.IO
       if ( nativeMaterial == null )
         return;
 
-      var renderPipeline = RPDetector.DetectPipeline();
-      if ( renderPipeline == RPDetector.PipelineType.HDRP ) {
+      var renderPipeline = RenderingUtils.DetectPipeline();
+      if ( renderPipeline == RenderingUtils.PipelineType.HDRP ) {
         thisMaterial.shader = Shader.Find( "HDRP/Lit" );
         if ( nativeMaterial.hasDiffuseColor() ) {
           var color = nativeMaterial.getDiffuseColor().ToColor();
@@ -994,7 +994,7 @@ namespace AGXUnityEditor.IO
           thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
       }
-      else if ( renderPipeline == RPDetector.PipelineType.Universal ) {
+      else if ( renderPipeline == RenderingUtils.PipelineType.Universal ) {
 
         thisMaterial.shader = Shader.Find( "Universal Render Pipeline/Lit" );
 
@@ -1017,7 +1017,7 @@ namespace AGXUnityEditor.IO
         }
       }
       else {
-        if ( renderPipeline != RPDetector.PipelineType.BuiltIn )
+        if ( renderPipeline != RenderingUtils.PipelineType.BuiltIn )
           Debug.LogWarning( "Unsupported render pipeline! Imported render materials might not work." );
 
         thisMaterial.shader = Shader.Find( "Standard" );
