@@ -396,6 +396,9 @@ namespace AGXUnity.Rendering
       if ( Cable == null )
         return;
 
+      if (m_meshInstanceProperties == null)
+        m_meshInstanceProperties = new MaterialPropertyBlock();
+
       // In prefab stage we avoid calls from Update, LateUpdate so that we
       // don't render the cable in the Game View. Camera is only given as the
       // Scene View camera when editing prefabs.
@@ -436,7 +439,7 @@ namespace AGXUnity.Rendering
       for ( int i = 0; i < m_numCylinders; i += 1023 ) {
 
         if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
+          m_meshInstanceProperties.SetVectorArray("_InstancedColor",  m_segmentColors[ i / 1023 ]);
 
         int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
@@ -536,15 +539,6 @@ namespace AGXUnity.Rendering
 
       m_previousRenderDamages = m_renderDamages;
     }
-
-//    private void ResetColors()
-//    {
-//      if (m_numCylinders / 1023 + 1 > m_segmentColors.Count)
-//        m_segmentColors.Add(new Vector4[1023]);
-//
-//      for ( int i = 0; i < m_positions.Count; ++i )
-//        m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Material.color;
-//    }
 
     private bool CreateMeshes()
     {
