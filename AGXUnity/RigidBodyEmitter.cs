@@ -539,11 +539,17 @@ namespace AGXUnity
 
     private void SRPRender( ScriptableRenderContext context, Camera cam )
     {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
       Render( cam );
     }
 
     private void Render( Camera cam )
     {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
       m_event?.Render( cam );
     }
 
