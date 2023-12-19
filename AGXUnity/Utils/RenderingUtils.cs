@@ -69,7 +69,10 @@ namespace AGXUnity.Utils
         };
       }
       if ( pipelineType == PipelineType.Universal ) {
-        supportedTags = new string[] { "UniversalRenderPipeline" };
+        supportedTags = new string[] { 
+          "UniversalRenderPipeline",
+          "UniversalPipeline"
+        };
       }
 
       for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {

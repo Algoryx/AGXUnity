@@ -112,6 +112,8 @@ namespace AGXUnity.Rendering
       switch ( RenderingUtils.DetectPipeline() ) {
         case RenderingUtils.PipelineType.HDRP:
           return Resources.Load<Material>( "HDRP/Materials/CableMaterial" );
+        case RenderingUtils.PipelineType.Universal:
+          return Resources.Load<Material>( "URP/Materials/CableMaterial" );
         default:
           return Resources.Load<Material>( "Materials/CableMaterial_01" );
       }
@@ -301,7 +303,7 @@ namespace AGXUnity.Rendering
       var colVar = "";
       if ( pipeline == RenderingUtils.PipelineType.BuiltIn )
         colVar = "_InstancedColor";
-      else if ( pipeline == RenderingUtils.PipelineType.HDRP )
+      else if ( pipeline == RenderingUtils.PipelineType.HDRP || pipeline == RenderingUtils.PipelineType.Universal )
         colVar = "_BaseColor";
 
       MaterialPropertyBlock block = new MaterialPropertyBlock();
@@ -362,6 +364,11 @@ namespace AGXUnity.Rendering
 
       if ( !CreateMeshes() )
         return;
+
+      if ( !Material.enableInstancing ) {
+        Debug.LogError( "Cable Renderer material needs to enable GPU instancing to be drawn with this render mode.", this );
+        return;
+      }
 
       if ( m_renderDamages && RenderingUtils.DetectPipeline() != RenderingUtils.PipelineType.BuiltIn ) {
         Debug.LogWarning( "Cable damage rendering using 'Draw Mesh Instanced' currently only supports the Build-in Render pipeline. Consider swapping to Game Object rendering or disabling cable damage", this );
