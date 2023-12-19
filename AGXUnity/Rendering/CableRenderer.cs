@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Linq;
@@ -149,8 +149,6 @@ namespace AGXUnity.Rendering
                                               @"Cable/CableSegmentBegin" );
         m_segmentSpawner.Material = Material;
         m_segmentSpawner.Initialize( gameObject );
-
-        //ResetColors();
       }
       else if ( InstancedRendering ) 
       {
@@ -530,6 +528,14 @@ namespace AGXUnity.Rendering
           }
           
           m_numCylinders++;
+        } 
+        
+        // Last half sphere needs an additional color, copy last color
+        if(i + 1 == m_positions.Count) {
+          var lastCol = m_segmentColors[ ( m_numCylinders-1 ) / 1023 ][ ( m_numCylinders-1 ) % 1023 ];
+          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
+            m_segmentColors.Add( new Vector4[ 1023 ] );
+          m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = lastCol;
         }
 
         m_segmentSphereMatrices[ i / 1023 ][ i % 1023 ] = Matrix4x4.TRS( m_positions[ i ],
@@ -554,7 +560,6 @@ namespace AGXUnity.Rendering
     {
       GameObject tmp = Resources.Load<GameObject>( resource );
       MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
       CombineInstance[] combine = new CombineInstance[ filters.Length ];
 
       for ( int i = 0; i < filters.Length; ++i ) {
