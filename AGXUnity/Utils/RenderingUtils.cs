@@ -45,12 +45,13 @@ namespace AGXUnity.Utils
     public static bool CameraShouldRender( Camera cam, GameObject allowedPrefabObject = null, bool includeInPreview = false )
     {
       // Only render preview if specified in flag
-      if ( cam.cameraType == CameraType.Preview)
+      if ( cam.cameraType == CameraType.Preview )
         return includeInPreview;
 
       // Render all except SceneView which require additional checks for prefab stage
       if ( cam.cameraType != CameraType.SceneView )
-        return PrefabUtils.IsNonAssetInstance( allowedPrefabObject );
+        return (!PrefabUtils.IsPrefabInstance( allowedPrefabObject ) && !PrefabUtils.IsPartOfEditingPrefab( allowedPrefabObject ) ) ||
+                PrefabUtils.IsNonAssetInstance( allowedPrefabObject );
 
       // Only render in prefab stage if allowed object is present in it.
       if ( PrefabUtils.IsEditingPrefab )
