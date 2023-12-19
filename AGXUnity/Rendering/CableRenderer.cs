@@ -109,7 +109,12 @@ namespace AGXUnity.Rendering
     private static Material DefaultMaterial()
     {
       Debug.Log( "Setting Default material from resources" );
-      return Resources.Load<Material>( "Materials/CableMaterial_01" );
+      switch ( RenderingUtils.DetectPipeline() ) {
+        case RenderingUtils.PipelineType.HDRP:
+          return Resources.Load<Material>( "HDRP/Materials/CableMaterial" );
+        default:
+          return Resources.Load<Material>( "Materials/CableMaterial_01" );
+      }
     }
 
     private CableDamage m_cableDamage = null;
@@ -157,6 +162,15 @@ namespace AGXUnity.Rendering
         InitMatrices();
         m_positions.Clear();
         m_positions.Capacity = 256;
+      }
+    }
+
+    public override void EditorUpdate()
+    {
+      var pipeline = RenderingUtils.DetectPipeline();
+      if ( !Material.SupportsPipeline( pipeline ) ) {
+        Debug.LogWarning( $"Material {Material.name} does not support the current rendering pipeline '{pipeline}'. Reverting to the default material." );
+        Material = DefaultMaterial();
       }
     }
 
@@ -283,6 +297,13 @@ namespace AGXUnity.Rendering
       var endIt = native.end();
       int i = 0;
 
+      var pipeline = RenderingUtils.DetectPipeline();
+      var colVar = "";
+      if ( pipeline == RenderingUtils.PipelineType.BuiltIn )
+        colVar = "_InstancedColor";
+      else if ( pipeline == RenderingUtils.PipelineType.HDRP )
+        colVar = "_BaseColor";
+
       MaterialPropertyBlock block = new MaterialPropertyBlock();
 
       m_segmentSpawner.Begin();
@@ -302,12 +323,12 @@ namespace AGXUnity.Rendering
           if ( m_segmentRenderers.TryGetValue( id, out meshRenderers ) && meshRenderers.Item1 != null ) {
             if ( m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments() ) {
               float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
-              block.SetColor( "_InstancedColor", Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
+              block.SetColor( colVar, Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
               meshRenderers.Item1.SetPropertyBlock( block );
               meshRenderers.Item2.SetPropertyBlock( block );
             }
             else {
-              block.SetColor( "_InstancedColor", Material.color );
+              block.SetColor( colVar, Material.color );
               meshRenderers.Item1.SetPropertyBlock( block );
               meshRenderers.Item2.SetPropertyBlock( block );
             }
@@ -341,6 +362,10 @@ namespace AGXUnity.Rendering
 
       if ( !CreateMeshes() )
         return;
+
+      if ( m_renderDamages && RenderingUtils.DetectPipeline() != RenderingUtils.PipelineType.BuiltIn ) {
+        Debug.LogWarning( "Cable damage rendering using 'Draw Mesh Instanced' currently only supports the Build-in Render pipeline. Consider swapping to Game Object rendering or disabling cable damage", this );
+      }
 
       var forceSynchronize = m_positions.Count > 0 &&
                              ( m_segmentSphereMatrices.Count == 0 ||
@@ -421,7 +446,7 @@ namespace AGXUnity.Rendering
         var endIt = Cable.Native.end();
 
         while ( !it.EqualWith( endIt ) ) {
-          if( it.EqualWith( beginIt ) )
+          if ( it.EqualWith( beginIt ) )
             m_positions.Add( it.getBeginPosition().ToHandedVector3() );
           m_positions.Add( it.getEndPosition().ToHandedVector3() );
           it.inc();
@@ -468,7 +493,7 @@ namespace AGXUnity.Rendering
 
           m_numCylinders++;
         }
-        
+
         // Last half sphere needs an additional color, copy last color
         if ( i + 1 == m_positions.Count ) {
           var lastCol = m_segmentColors[ ( m_numCylinders-1 ) / 1023 ][ ( m_numCylinders-1 ) % 1023 ];

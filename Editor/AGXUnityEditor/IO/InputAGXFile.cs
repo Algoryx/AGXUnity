@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using AGXUnity.Utils;
 using Node = AGXUnityEditor.IO.InputAGXFileTreeNode;
 using Tree = AGXUnityEditor.IO.InputAGXFileTree;
 
