@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Linq;
@@ -172,57 +172,27 @@ namespace AGXUnity.Rendering
 
     protected override void OnEnable()
     {
-      if ( GameObjectRendering )
-        OnEnableDisable( true );
-      else if ( InstancedRendering )
-      {
-#if UNITY_EDITOR
-      // Used to draw in a prefab stage or when the editor is paused.
-      // It's not possible in OnEnable to check if our gameObject is
-      // part of a prefab stage.
-#if UNITY_2019_1_OR_NEWER
-        SceneView.duringSceneGui += OnSceneView;
-#else
-        SceneView.onSceneGUIDelegate += OnSceneView;
-#endif
-#endif
-      }
+      InitializeRenderer( true );
+      if ( Application.isPlaying )
+        Simulation.Instance.StepCallbacks.PostStepForward += RenderGameObjects;
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
     }
 
     protected override void OnDisable()
     {
-      if ( GameObjectRendering )
-        OnEnableDisable( true );
-      else if ( InstancedRendering )
-      {
-#if UNITY_EDITOR
-#if UNITY_2019_1_OR_NEWER
-        SceneView.duringSceneGui -= OnSceneView;
-#else
-        SceneView.onSceneGUIDelegate -= OnSceneView;
-#endif
-#endif
-          }
-    }
-
-    private void OnEnableDisable( bool enable )
-    {
-      if ( enable ) {
-        InitializeRenderer( true );
-        if ( Application.isPlaying )
-          Simulation.Instance.StepCallbacks.PostStepForward += RenderGameObjects;
+      if ( m_segmentSpawner != null ) {
+        m_segmentSpawner.Destroy();
+        m_segmentSpawner = null;
       }
-      else {
-        if ( m_segmentSpawner != null ) {
-          m_segmentSpawner.Destroy();
-          m_segmentSpawner = null;
-        }
 
-        if ( Simulation.HasInstance && Application.isPlaying )
-          Simulation.Instance.StepCallbacks.PostStepForward -= RenderGameObjects;
-      }
+      if ( Simulation.HasInstance && Application.isPlaying )
+        Simulation.Instance.StepCallbacks.PostStepForward -= RenderGameObjects;
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      Camera.onPreCull -= Render;
     }
-
 
     protected override bool Initialize()
     {
@@ -245,37 +215,20 @@ namespace AGXUnity.Rendering
       base.OnDestroy();
     }
 
-#if UNITY_EDITOR
-    // Editing cable prefab in a prefab stage and when the editor is paused
-    // requires Scene View GUI update callback.
-    private void OnSceneView( SceneView sceneView )
+    void SRPRender( ScriptableRenderContext context, Camera cam ) => Render( cam );
+
+    void Render( Camera cam )
     {
-      if (!InstancedRendering)
+      if ( !InstancedRendering ) return;
+      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, true ) )
         return;
 
-      var inPrefabStage = PrefabUtils.IsPartOfEditingPrefab( gameObject );
-      var performDraw = EditorApplication.isPaused || inPrefabStage;
-      if ( !performDraw )
-        return;
-
-      if ( inPrefabStage && m_positions.Count != Cable.Route.NumNodes )
-        SynchronizeDataInstanced( true );
-
-      // In prefab stage we only want to render the cable in the Scene View.
-      // If paused, we want to render the cable as if not paused.
-      var camera = inPrefabStage ?
-                     sceneView.camera :
-                     null;
-      DrawInstanced( camera );
+      DrawInstanced( cam );
     }
-#endif
 
     public void Update()
     {
-      if ( InstancedRendering ){
         SynchronizeDataInstanced( false );
-        DrawInstanced();
-      }
     }
 
     protected void LateUpdate()
@@ -291,7 +244,6 @@ namespace AGXUnity.Rendering
     {
       if ( InstancedRendering ){
         SynchronizeDataInstanced( true );
-        DrawInstanced();
       }
       else if ( GameObjectRendering )
       {
@@ -396,12 +348,6 @@ namespace AGXUnity.Rendering
 
       if (m_meshInstanceProperties == null)
         m_meshInstanceProperties = new MaterialPropertyBlock();
-
-      // In prefab stage we avoid calls from Update, LateUpdate so that we
-      // don't render the cable in the Game View. Camera is only given as the
-      // Scene View camera when editing prefabs.
-      if ( camera == null && PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
-        return;
 
       if ( !CreateMeshes() )
         return;
