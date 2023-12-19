@@ -1,14 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity.Utils;
+using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.Rendering;
-using System.Linq;
-using AGXUnity.Utils;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
-using System.ComponentModel;
 
 namespace AGXUnity.Rendering
 {
@@ -31,7 +25,7 @@ namespace AGXUnity.Rendering
     [SerializeField]
     private SegmentRenderMode m_renderMode = SegmentRenderMode.DrawMeshInstanced;
 
-    [Description("Render particles using GameObjects, or with Graphics.DrawMeshInstanced.")]
+    [Description( "Render particles using GameObjects, or with Graphics.DrawMeshInstanced." )]
     [HideInInspector]
     public SegmentRenderMode RenderMode
     {
@@ -59,7 +53,7 @@ namespace AGXUnity.Rendering
     /// <summary>
     ///True for the cable to receive shadows, false to not receive shadows.
     /// </summary>
-    
+
     [HideInInspector]
     public bool ReceiveShadows = true;
 
@@ -96,14 +90,17 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public Material Material
     {
-      get { return m_material == null ?
+      get
+      {
+        return m_material == null ?
                      m_material = DefaultMaterial() :
-                     m_material; }
+                     m_material;
+      }
       set
       {
         m_material = value ?? DefaultMaterial();
 
-        if (GameObjectRendering && m_segmentSpawner != null)
+        if ( GameObjectRendering && m_segmentSpawner != null )
           m_segmentSpawner.Material = m_material;
       }
     }
@@ -111,16 +108,16 @@ namespace AGXUnity.Rendering
     // TODO previous was elaborate way of spawning segment and looking at that renderers material. Check that this variant is ok
     private static Material DefaultMaterial()
     {
-      Debug.Log("Setting Default material from resources");
+      Debug.Log( "Setting Default material from resources" );
       return Resources.Load<Material>( "Materials/CableMaterial_01" );
     }
 
     private CableDamage m_cableDamage = null;
     private CableDamage CableDamage { get { return m_cableDamage ?? ( m_cableDamage = GetComponent<CableDamage>() ); } }
 
-    public void SetRenderDamages(bool value) => m_renderDamages = value;
+    public void SetRenderDamages( bool value ) => m_renderDamages = value;
 
-    private bool m_renderDamages = false, m_previousRenderDamages = false;
+    private bool m_renderDamages = false;
     private Dictionary<int, (MeshRenderer, MeshRenderer)> m_segmentRenderers = new Dictionary<int, (MeshRenderer, MeshRenderer)>();
 
     public void InitializeRenderer( bool destroyLast = false )
@@ -128,12 +125,10 @@ namespace AGXUnity.Rendering
       if ( GetComponent<CableDamage>() == null ) {
         m_cableDamage = null;
         m_renderDamages = false;
-        m_previousRenderDamages = false;
       }
 
-      if ( destroyLast ){
-        if (m_segmentSpawner != null ) 
-        {
+      if ( destroyLast ) {
+        if ( m_segmentSpawner != null ) {
           m_segmentSpawner.Destroy();
           m_segmentSpawner = null;
         }
@@ -142,18 +137,16 @@ namespace AGXUnity.Rendering
         m_segmentColors = null;
       }
 
-      if ( GameObjectRendering )
-      {
+      if ( GameObjectRendering ) {
         m_segmentSpawner = new SegmentSpawner( Cable,
                                               @"Cable/CableSegment",
                                               @"Cable/CableSegmentBegin" );
         m_segmentSpawner.Material = Material;
         m_segmentSpawner.Initialize( gameObject );
       }
-      else if ( InstancedRendering ) 
-      {
+      else if ( InstancedRendering ) {
         if ( !CreateMeshes() ) {
-          Debug.LogError( "AGXUnity.Rendering.CableRenderer: Problem initializing one or both meshes!", this);
+          Debug.LogError( "AGXUnity.Rendering.CableRenderer: Problem initializing one or both meshes!", this );
         }
 
         if ( !Material.enableInstancing ) {
@@ -164,9 +157,6 @@ namespace AGXUnity.Rendering
         InitMatrices();
         m_positions.Clear();
         m_positions.Capacity = 256;
-
-        if (m_cableDamage != null)
-          m_previousRenderDamages = true; // Inits the color vectors
       }
     }
 
@@ -228,13 +218,13 @@ namespace AGXUnity.Rendering
 
     public void Update()
     {
-        SynchronizeDataInstanced( false );
+      SynchronizeDataInstanced( false );
     }
 
     protected void LateUpdate()
     {
       // Late update from Editor. Exit if the application is running.
-      if ( Application.isPlaying)
+      if ( Application.isPlaying )
         return;
 
       RenderRoute();
@@ -242,11 +232,10 @@ namespace AGXUnity.Rendering
 
     private void RenderRoute()
     {
-      if ( InstancedRendering ){
+      if ( InstancedRendering ) {
         SynchronizeDataInstanced( true );
       }
-      else if ( GameObjectRendering )
-      {
+      else if ( GameObjectRendering ) {
         if ( m_segmentSpawner == null )
           return;
 
@@ -273,6 +262,9 @@ namespace AGXUnity.Rendering
 
     private void RenderGameObjects()
     {
+      if ( !GameObjectRendering )
+        return;
+
       if ( m_segmentSpawner == null )
         return;
 
@@ -307,22 +299,22 @@ namespace AGXUnity.Rendering
           int id = go.GetInstanceID();
 
           (MeshRenderer, MeshRenderer) meshRenderers;
-          if (m_segmentRenderers.TryGetValue(id, out meshRenderers) && meshRenderers.Item1 != null){
-            if (m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments()){
+          if ( m_segmentRenderers.TryGetValue( id, out meshRenderers ) && meshRenderers.Item1 != null ) {
+            if ( m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments() ) {
               float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
-              block.SetColor("_InstancedColor", Color.Lerp(CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t));
-              meshRenderers.Item1.SetPropertyBlock(block);
-              meshRenderers.Item2.SetPropertyBlock(block);
+              block.SetColor( "_InstancedColor", Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
+              meshRenderers.Item1.SetPropertyBlock( block );
+              meshRenderers.Item2.SetPropertyBlock( block );
             }
-            else{
-              block.SetColor("_InstancedColor", Material.color);
-              meshRenderers.Item1.SetPropertyBlock(block);
-              meshRenderers.Item2.SetPropertyBlock(block);
+            else {
+              block.SetColor( "_InstancedColor", Material.color );
+              meshRenderers.Item1.SetPropertyBlock( block );
+              meshRenderers.Item2.SetPropertyBlock( block );
             }
           }
           else {
             var renderers = go.GetComponentsInChildren<MeshRenderer>();
-            m_segmentRenderers.Add(id, (renderers[0], renderers[1]));
+            m_segmentRenderers.Add( id, (renderers[ 0 ], renderers[ 1 ]) );
           }
 
           i++;
@@ -335,8 +327,6 @@ namespace AGXUnity.Rendering
       }
       m_segmentSpawner.End();
 
-      m_previousRenderDamages = m_renderDamages;
-
       it.ReturnToPool();
       endIt.ReturnToPool();
     }
@@ -346,7 +336,7 @@ namespace AGXUnity.Rendering
       if ( Cable == null )
         return;
 
-      if (m_meshInstanceProperties == null)
+      if ( m_meshInstanceProperties == null )
         m_meshInstanceProperties = new MaterialPropertyBlock();
 
       if ( !CreateMeshes() )
@@ -358,14 +348,12 @@ namespace AGXUnity.Rendering
       if ( forceSynchronize )
         SynchronizeDataInstanced( Cable.State != States.INITIALIZED );
 
-
-
       // Spheres
       for ( int i = 0; i < m_positions.Count; i += 1023 ) {
         int count = Mathf.Min( 1023, m_positions.Count - i );
 
-        if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_InstancedColor", m_segmentColors[ i / 1023 ]);
+        if ( m_segmentColors.Count > 0 )
+          m_meshInstanceProperties.SetVectorArray( "_InstancedColor", m_segmentColors[ i / 1023 ] );
 
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
@@ -382,8 +370,8 @@ namespace AGXUnity.Rendering
       // Cylinders
       for ( int i = 0; i < m_numCylinders; i += 1023 ) {
 
-        if (m_segmentColors.Count > 0)
-          m_meshInstanceProperties.SetVectorArray("_InstancedColor",  m_segmentColors[ i / 1023 ]);
+        if ( m_segmentColors.Count > 0 )
+          m_meshInstanceProperties.SetVectorArray( "_InstancedColor", m_segmentColors[ i / 1023 ] );
 
         int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
@@ -415,7 +403,7 @@ namespace AGXUnity.Rendering
 
     private void SynchronizeDataInstanced( bool isRoute )
     {
-      if ( Cable == null )
+      if ( Cable == null || !InstancedRendering )
         return;
 
       if ( !isRoute && Cable.Native == null )
@@ -429,18 +417,23 @@ namespace AGXUnity.Rendering
       }
       else {
         var it = Cable.Native.begin();
+        var beginIt = Cable.Native.begin();
         var endIt = Cable.Native.end();
+
         while ( !it.EqualWith( endIt ) ) {
+          if( it.EqualWith( beginIt ) )
+            m_positions.Add( it.getBeginPosition().ToHandedVector3() );
           m_positions.Add( it.getEndPosition().ToHandedVector3() );
           it.inc();
         }
 
         it.ReturnToPool();
         endIt.ReturnToPool();
+        beginIt.ReturnToPool();
       }
 
       while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count )
-        m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
+        m_segmentSphereMatrices.Add( new Matrix4x4[ 1023 ] );
 
       m_numCylinders = 0;
 
@@ -448,10 +441,10 @@ namespace AGXUnity.Rendering
       var sphereScale = 2f * radius * Vector3.one;
       // rotation will be set by cylinder calculation and reused by sphere to align edges, first half sphere need its own calculation
       var rotation = (m_positions.Count > 1) ? Quaternion.FromToRotation( Vector3.down, m_positions[ 1 ] - m_positions[ 0 ] ) : Quaternion.identity;
-      for ( int i = 0; i < m_positions.Count; ++i ){
-        if ( i > 0 ){
-          if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
-            m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
+      for ( int i = 0; i < m_positions.Count; ++i ) {
+        if ( i > 0 ) {
+          if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
+            m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
 
           CalculateCylinderTransform( m_positions[ i - 1 ],
                                       m_positions[ i ],
@@ -461,23 +454,23 @@ namespace AGXUnity.Rendering
                                       out var scale );
           m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] =  Matrix4x4.TRS( position, rotation, scale );
 
-          if (m_numCylinders / 1023 + 1 > m_segmentColors.Count)
-            m_segmentColors.Add(new Vector4[1023]);
+          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
+            m_segmentColors.Add( new Vector4[ 1023 ] );
 
-          if (m_renderDamages) {
-            float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
+          if ( m_renderDamages ) {
+            float t = CableDamage.DamageValue(i - 1) / CableDamage.MaxDamage;
             var color = Color.Lerp(CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t);
             m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = color;
           }
           else {
             m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Material.color;
           }
-          
+
           m_numCylinders++;
-        } 
+        }
         
         // Last half sphere needs an additional color, copy last color
-        if(i + 1 == m_positions.Count) {
+        if ( i + 1 == m_positions.Count ) {
           var lastCol = m_segmentColors[ ( m_numCylinders-1 ) / 1023 ][ ( m_numCylinders-1 ) % 1023 ];
           if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
             m_segmentColors.Add( new Vector4[ 1023 ] );
@@ -488,8 +481,6 @@ namespace AGXUnity.Rendering
                                                                          rotation,
                                                                          sphereScale );
       }
-
-      m_previousRenderDamages = m_renderDamages;
     }
 
     private bool CreateMeshes()
