@@ -55,6 +55,8 @@ namespace AGXUnity.Utils
     /// <returns>true if the specified pipeline is supported, false otherwise</returns>
     public static bool SupportsPipeline( this Material mat, PipelineType pipelineType )
     {
+      if ( mat.shader.name == "Hidden/InternalErrorShader" )
+        return false;
       if ( pipelineType == PipelineType.Unsupported )
         return false;
       if ( pipelineType == PipelineType.BuiltIn )
@@ -69,7 +71,7 @@ namespace AGXUnity.Utils
         };
       }
       if ( pipelineType == PipelineType.Universal ) {
-        supportedTags = new string[] { 
+        supportedTags = new string[] {
           "UniversalRenderPipeline",
           "UniversalPipeline"
         };
