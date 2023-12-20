@@ -116,6 +116,10 @@ namespace AGXUnity.Model
       }
     }
 
+    [field: SerializeField]
+    [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
+    public bool InvertDepthDirection { get; set; } = false;
+
     private void RecalculateSizes( bool fromCellCount )
     {
       if ( fromCellCount ) {
@@ -173,14 +177,19 @@ namespace AGXUnity.Model
     private void InitializeNative()
     {
       var heights = new agx.RealVector((int)(SizeCells.x * SizeCells.y));
-      heights.Set( new double[ SizeCells.x * SizeCells.y ] );
-
+      var heightArr = new double[ SizeCells.x * SizeCells.y ];
+      var depth = MaximumDepth;
+      if ( InvertDepthDirection ) {
+        depth = 0;
+        Array.Fill( heightArr, MaximumDepth );
+      }
+      heights.Set( heightArr );
       Native = new agxTerrain.Terrain( (uint)SizeCells.x,
                                        (uint)SizeCells.y,
                                        ElementSize,
                                        heights,
                                        false,
-                                       MaximumDepth );
+                                       depth );
 
       foreach ( var shovel in Shovels )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
@@ -222,10 +231,15 @@ namespace AGXUnity.Model
       var uvs = new Vector2[width * height];
       var indices = new int[ ( width - 1 ) * 6 * ( height - 1 ) ];
       int i = 0;
+
+      float terrainHeight = 0;
+      if ( Native != null && InvertDepthDirection )
+        terrainHeight = MaximumDepth;
       for ( var y = 0; y < height; y++ ) {
         for ( var x = 0; x < width; x++ ) {
           vertices[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
           vertices[ y * width + x ].z = ( y - height / 2 ) * ElementSize;
+          vertices[ y * width + x ].y = terrainHeight;
 
           uvs[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
           uvs[ y * width + x ].y = ( y - height / 2 ) * ElementSize;
@@ -284,6 +298,20 @@ namespace AGXUnity.Model
       return terrainOffset * shapeInWorld * rbInWorld.inverse();
     }
 
+    private void OnDrawGizmosSelected()
+    {
+      Vector3 size = new Vector3( ( SizeCells.x - 1 ) * ElementSize, MaximumDepth, ( SizeCells.y - 1 ) * ElementSize);
+      Vector3 pos = new Vector3(
+        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2, 
+        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f, 
+        -( ( SizeCells.y - 1 ) % 2 ) * ElementSize / 2);
+
+      Gizmos.matrix = transform.localToWorldMatrix;
+      Gizmos.color = new Color( 0.5f, 1.0f, 0.5f, 0.5f );
+      Gizmos.DrawCube( pos, size );
+      Gizmos.color = new Color( 0.2f, 0.5f, 0.2f, 1.0f );
+      Gizmos.DrawWireCube( pos, size );
+    }
 
     private Vector3[] m_terrainVertices = null;
     private MeshFilter m_terrain = null;

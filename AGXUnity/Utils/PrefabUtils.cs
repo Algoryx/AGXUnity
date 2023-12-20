@@ -65,7 +65,7 @@ namespace AGXUnity.Utils
     public static bool IsPrefabInstance( Object componentOrGameObject )
     {
 #if UNITY_EDITOR
-      return UnityEditor.PrefabUtility.GetPrefabInstanceStatus( componentOrGameObject ) == UnityEditor.PrefabInstanceStatus.Connected;
+      return componentOrGameObject && UnityEditor.PrefabUtility.GetPrefabInstanceStatus( componentOrGameObject ) == UnityEditor.PrefabInstanceStatus.Connected;
 #else
       return false;
 #endif
