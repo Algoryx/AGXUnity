@@ -169,4 +169,22 @@ namespace AGXUnity
     [NonSerialized]
     private uint m_uuidHash = 0u;
   }
+
+  /// <summary>
+  /// Extension methods for ScriptComponent.
+  /// This is used for template inference in classes that derive from ScriptComponent.
+  /// </summary>
+  public static partial class ScriptComponentExtensions
+  {
+    /// <summary>
+    /// Shorthand for the GetInitialized method which does not require specifying the component type.
+    /// </summary>
+    /// <typeparam name="T">The component type, deduced from instance.</typeparam>
+    /// <param name="inst">Component instance to initialize.</param>
+    /// <returns></returns>
+    public static T GetInitialized<T>( this T inst ) where T : ScriptComponent
+    {
+      return inst.GetInitialized<T>();
+    }
+  }
 }

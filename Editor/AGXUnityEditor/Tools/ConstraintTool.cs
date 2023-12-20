@@ -53,6 +53,11 @@ namespace AGXUnityEditor.Tools
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
+      // Since we set UnityEngine.GUI.Change further down we need to manually set the dirty state if the attachment pairs changed
+      if ( UnityEngine.GUI.changed )
+        foreach ( var constraint in constraints )
+          EditorUtility.SetDirty( constraint.AttachmentPair );
+
       Undo.RecordObjects( constraints, "ConstraintTool" );
 
       UnityEngine.GUI.changed = false;

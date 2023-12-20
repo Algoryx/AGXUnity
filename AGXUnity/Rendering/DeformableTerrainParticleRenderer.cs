@@ -221,11 +221,17 @@ namespace AGXUnity.Rendering
 
     private void SRPRender( ScriptableRenderContext context, Camera cam )
     {
+      if ( !RenderingUtils.CameraShouldRender(cam) ) 
+        return;
+
       Render( cam );
     }
 
     private void Render(Camera cam)
     {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_numGranulars > 0 &&
                                     m_meshInstance != null &&

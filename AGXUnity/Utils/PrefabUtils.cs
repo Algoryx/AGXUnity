@@ -70,5 +70,19 @@ namespace AGXUnity.Utils
       return false;
 #endif
     }
+
+    /// <summary>
+    /// Checks whether or not the object is part of a prefab asset. 
+    /// </summary>
+    /// <param name="componentOrGameObject">Component or game object to check.</param>
+    /// <returns>True if the object is not part of an asset.</returns>
+    public static bool IsNonAssetInstance( Object componentOrGameObject )
+    {
+#if UNITY_EDITOR
+      return componentOrGameObject && UnityEditor.PrefabUtility.IsPartOfNonAssetPrefabInstance( componentOrGameObject );
+#else
+      return false;
+#endif
+    }
   }
 }
