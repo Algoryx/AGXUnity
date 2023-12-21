@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
-
-using GUI    = AGXUnity.Utils.GUI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -100,15 +99,15 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( Vector2Int ) )]
     public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                       wrapper.Get<Vector2Int>( objects[ 0 ] ) );
+      return InspectorGUI.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector2Int>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector3Int ) )]
     public static object Vector3IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                       wrapper.Get<Vector3Int>( objects[ 0 ] ) );
+      return InspectorGUI.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector3Int>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( bool ) )]
@@ -241,7 +240,7 @@ namespace AGXUnityEditor
           // not possible to check this in the CopyOp callback.
           var clampAttribute = wrapper.GetAttribute<ClampAboveZeroInInspector>();
           if ( clampAttribute == null || clampAttribute.IsValid( newValue ) )
-            result.OnChange<ValueT>(instance.OverrideValue, newValue);
+            result.OnChange<ValueT>( instance.OverrideValue, newValue );
         }
       }
 

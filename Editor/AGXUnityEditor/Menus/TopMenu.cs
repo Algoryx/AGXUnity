@@ -359,6 +359,25 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
+    [MenuItem( "AGXUnity/Model/Movable Terrain", priority = 50 )]
+    public static GameObject CreateMovableTerrain()
+    {
+      var go = new GameObject();
+      go.name = Factory.CreateName<AGXUnity.Model.MovableTerrain>();
+
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
+      go.AddComponent<MeshFilter>();
+      var renderer = go.AddComponent<MeshRenderer>();
+      renderer.sharedMaterial = new Material(Shader.Find("Standard"));
+      renderer.sharedMaterial.mainTexture = AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" );
+      go.AddComponent<AGXUnity.Model.MovableTerrain>();
+
+      Undo.RegisterCreatedObjectUndo( go, "New Movable Terrain" );
+
+      return Selection.activeGameObject = go;
+    }
+
     #endregion
 
     #region Managers

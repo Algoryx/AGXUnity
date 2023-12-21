@@ -50,11 +50,11 @@ namespace AGXUnity.Rendering
     public TerrainLayer DefaultLayer
     {
       get => m_defaultLayer;
-      set 
+      set
       {
         if ( m_initialData != null )
           Debug.LogError( "Setting material TerrainLayers during runtime is not supported!" );
-        else 
+        else
           m_defaultLayer = value;
       }
     }
@@ -67,7 +67,7 @@ namespace AGXUnity.Rendering
     /// </summary>
     [HideInInspector]
     [IgnoreSynchronization]
-    public SerializableDictionary<DeformableTerrainMaterial,TerrainLayer> MaterialRenderMap
+    public SerializableDictionary<DeformableTerrainMaterial, TerrainLayer> MaterialRenderMap
     {
       get => m_materialRenderMap;
       set
@@ -82,6 +82,10 @@ namespace AGXUnity.Rendering
     protected override bool Initialize()
     {
       terrain = gameObject.GetInitializedComponent<DeformableTerrainBase>();
+      if ( terrain is MovableTerrain ) {
+        Debug.LogError( "Terrain Patch Renderer does not yet support MovableTerrain!", this );
+        return false;
+      }
       var uTerr = GetComponent<Terrain>();
       var td = uTerr.terrainData;
 
