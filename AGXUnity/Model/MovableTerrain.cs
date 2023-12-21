@@ -117,6 +117,7 @@ namespace AGXUnity.Model
     }
 
     [field: SerializeField]
+    [InspectorPriority(-1)]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
     public bool InvertDepthDirection { get; set; } = false;
 
