@@ -86,6 +86,10 @@ namespace AGXUnity.Rendering
         Debug.LogError( "Terrain Patch Renderer does not yet support MovableTerrain!", this );
         return false;
       }
+
+      foreach (var patch in gameObject.GetComponentsInChildren<TerrainMaterialPatch>() )
+        patch.GetInitialized();
+
       var uTerr = GetComponent<Terrain>();
       var td = uTerr.terrainData;
 
