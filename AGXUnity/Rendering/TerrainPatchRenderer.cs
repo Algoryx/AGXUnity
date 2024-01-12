@@ -87,6 +87,7 @@ namespace AGXUnity.Rendering
         return false;
       }
 
+      // The patches need to be initialized before the initial update pass, otherwise the materials might not yet have been added.
       foreach (var patch in gameObject.GetComponentsInChildren<TerrainMaterialPatch>() )
         patch.GetInitialized();
 
