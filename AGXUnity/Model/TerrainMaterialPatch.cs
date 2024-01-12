@@ -67,7 +67,8 @@ namespace AGXUnity.Model
       set
       {
         m_materialHandle = value;
-        ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, value );
+        if( m_materialHandle != null )
+          ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, value );
       }
     }
 
