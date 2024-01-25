@@ -45,6 +45,45 @@ Shader "AGXUnity/BuiltIn/TerrainPatchDecal"
             return o;
         }
 
+        float4 hash4( float2 p ) { 
+            return frac(sin(float4( 1.0+dot(p,float2(37.0,17.0)), 
+                                    2.0+dot(p,float2(11.0,47.0)),
+                                    3.0+dot(p,float2(41.0,29.0)),
+                                    4.0+dot(p,float2(23.0,31.0))))*103.0); 
+        }
+
+        // Samples a texture with an offset based on a random voronoi region.
+        // Adapted from https://www.shadertoy.com/view/4tsGzf
+        float3 textureNoTile( sampler2D samp, float2 uv, float v )
+        {
+            float2 p = floor( uv );
+            float2 f = frac( uv );
+	
+            // derivatives (for correct mipmapping)
+            float2 dx = ddx( uv );
+            float2 dy = ddy( uv );
+    
+	        float3 va = float3(0.0,0.0,0.0);
+	        float w1 = 0.0;
+            float w2 = 0.0;
+            for( int j=-1; j<=1; j++ )
+            for( int i=-1; i<=1; i++ )
+            {
+                float2 g = float2( float(i),float(j) );
+		        float4 o = hash4( p + g );
+		        float2 r = g - f + o.xy;
+		        float d = dot(r,r);
+                float w = exp(-20.0*d );
+                float3 c = tex2D( samp, uv + v*o.zw, dx, dy ).xyz;
+		        va += w*c;
+		        w1 += w;
+                w2 += w*w;
+            }
+    
+            // normal averaging --> lowers contrasts
+            return va/w1;
+        }
+
         // Calculate normal based on heightmap height differences
         float3 filterNormal(float2 uv, float texelSize)
         {
@@ -118,11 +157,20 @@ Shader "AGXUnity/BuiltIn/TerrainPatchDecal"
             return (ll * bary.x + hh * bary.y + last * bary.z).x;
         }
 
+        fixed4 SampleFunc(sampler2D samp, float2 uv){
+        #ifdef REDUCE_TILING
+            return float4(textureNoTile(samp,uv,0.74f),1.0f);
+        #else
+            return float4(tex2D(samp,uv).rgb,1.0f);
+        #endif
+           
+        }
+
         fixed4 SampleDecal(int index,float2 uv){
-            if(index == 0)      return float4(tex2D(_Decal0,uv).rgb,1.0f);
-            else if(index == 1) return float4(tex2D(_Decal1,uv).rgb,1.0f);
-            else if(index == 2) return float4(tex2D(_Decal2,uv).rgb,1.0f);
-            else                return float4(tex2D(_Decal3,uv).rgb,1.0f);
+            if(index == 0)      return SampleFunc(_Decal0,uv);
+            else if(index == 1) return SampleFunc(_Decal1,uv);
+            else if(index == 2) return SampleFunc(_Decal2,uv);
+            else                return SampleFunc(_Decal3,uv);
         }
 
         // Find the bilinear interpolation of the decal materials at the four closest texel coords.
@@ -218,7 +266,7 @@ Shader "AGXUnity/BuiltIn/TerrainPatchDecal"
             #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
             #pragma multi_compile _ VERTEXLIGHT_ON
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED SHADOWS_SHADOWMASK
-            #pragma shader_feature_local _ _MAPPING_CUBEMAP                       
+            #pragma shader_feature_local _ _MAPPING_CUBEMAP REDUCE_TILING
 
             ENDCG
         }
@@ -234,7 +282,7 @@ Shader "AGXUnity/BuiltIn/TerrainPatchDecal"
             #pragma fragment frag
             #pragma multi_compile_fwdadd_fullshadows nolightmap nodirlightmap nodynlightmap novertexlight
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED SHADOWS_SHADOWMASK SPOT_COOKIE
-            #pragma shader_feature_local _ _MAPPING_CUBEMAP
+            #pragma shader_feature_local _ _MAPPING_CUBEMAP REDUCE_TILING
 
             ENDCG
         }
