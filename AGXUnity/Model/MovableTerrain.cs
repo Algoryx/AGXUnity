@@ -17,6 +17,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Movable Terrain" )]
   [RequireComponent( typeof( MeshFilter ) )]
   [RequireComponent( typeof( MeshRenderer ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#movable-terrain" )]
   [DisallowMultipleComponent]
   public class MovableTerrain : MovableAdapter
   {
