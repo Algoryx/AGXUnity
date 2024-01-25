@@ -50,7 +50,7 @@ float3 CustomLighting(float3 worldPos, float4 clipPos, float3 normal) {
                 half3 vertexLighting = Shade4PointLights(
                 unity_4LightPosX0, unity_4LightPosY0, unity_4LightPosZ0,
                 unity_LightColor[0].rgb, unity_LightColor[1].rgb, unity_LightColor[2].rgb, unity_LightColor[3].rgb,
-                unity_4LightAtten0, fragPosOnSphere, normal);
+                unity_4LightAtten0, worldPos, normal);
 
                 lighting += vertexLighting;
             #endif // VERTEXLIGHT_ON
