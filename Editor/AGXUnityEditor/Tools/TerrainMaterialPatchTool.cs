@@ -1,4 +1,7 @@
+using AGXUnity;
 using AGXUnity.Model;
+using AGXUnity.Rendering;
+using UnityEditor;
 using UnityEngine;
 
 namespace AGXUnityEditor.Tools
@@ -17,6 +20,13 @@ namespace AGXUnityEditor.Tools
     public override void OnPostTargetMembersGUI()
     {
       InspectorGUI.ToolArrayGUI( this, TerrainMaterialPatch.Shapes, "Shapes" );
+      if( TerrainMaterialPatch.RenderTexture != null && 
+          TerrainMaterialPatch.GetComponentInParent<TerrainPatchRenderer>() == null ) {
+        EditorGUILayout.HelpBox( "This patch has an associated Render Texture but the parent terrain does not contain a renderer", MessageType.Warning );
+        if ( GUILayout.Button( AGXUnity.Utils.GUI.MakeLabel( "Add a renderer to parent" ) ) ) {
+          TerrainMaterialPatch.transform.parent.gameObject.AddComponent<TerrainPatchRenderer>();
+        }
+      }
     }
   }
 

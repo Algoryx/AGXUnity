@@ -73,6 +73,14 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeField]
+    private Texture2D m_renderTexture = null;
+
+    public Texture2D RenderTexture { 
+      get => m_renderTexture; 
+      set { m_renderTexture = value; } 
+    }
+
     /// <summary>
     /// Whether to disable collision shapes used to define this patch during initialization.
     /// </summary>
