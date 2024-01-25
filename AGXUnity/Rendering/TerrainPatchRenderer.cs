@@ -2,170 +2,188 @@ using AGXUnity.Model;
 using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace AGXUnity.Rendering
 {
-  /// <summary>
-  /// Wrapper class for storing/resetting initial state of TerrainData.
-  /// This is by no means a complete store/restore, only the parts used by <see cref="TerrainPatchRenderer"/>.
-  /// </summary>
-  class InitialTerrainData
-  {
-    private float[,,] m_alphamaps;
-    private TerrainLayer[] m_layers;
-
-    public InitialTerrainData( TerrainData td )
-    {
-      m_alphamaps = td.GetAlphamaps( 0, 0, td.alphamapWidth, td.alphamapHeight );
-      m_layers = td.terrainLayers;
-    }
-
-    public void Reset( TerrainData td )
-    {
-      if ( td != null ) {
-        td.terrainLayers = m_layers;
-        td.SetAlphamaps( 0, 0, m_alphamaps );
-      }
-    }
-  }
-
   [RequireComponent( typeof( DeformableTerrainBase ) )]
   [DisallowMultipleComponent]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#using-different-terrain-materials" )]
   public class TerrainPatchRenderer : ScriptComponent
   {
-    private DeformableTerrainBase terrain;
-    private float[,,] alphamap;
-    private Dictionary<agxTerrain.TerrainMaterial, int> m_materialMapping;
-    private InitialTerrainData m_initialData;
-
     [SerializeField]
-    private TerrainLayer m_defaultLayer;
+    private SerializableDictionary<DeformableTerrainMaterial,Texture2D> m_explicitMaterialRenderMap = new SerializableDictionary<DeformableTerrainMaterial, Texture2D>();
 
-    /// <summary>
-    /// The deafult TerrainLayer to use to render the terrain in cells where no material patch is present
-    /// or for patches which does not have an explicitly mapped layer.
-    /// </summary>
-    [IgnoreSynchronization]
-    public TerrainLayer DefaultLayer
-    {
-      get => m_defaultLayer;
-      set
-      {
-        if ( m_initialData != null )
-          Debug.LogError( "Setting material TerrainLayers during runtime is not supported!" );
-        else
-          m_defaultLayer = value;
-      }
-    }
-
-    [SerializeField]
-    private SerializableDictionary<DeformableTerrainMaterial,TerrainLayer> m_materialRenderMap = new SerializableDictionary<DeformableTerrainMaterial, TerrainLayer>();
-
-    /// <summary>
-    /// Defines a map from DeformableTerrainMaterials to the TerrainLayers used to render patches of the specified terrain material.
-    /// </summary>
     [HideInInspector]
-    [IgnoreSynchronization]
-    public SerializableDictionary<DeformableTerrainMaterial, TerrainLayer> MaterialRenderMap
+    public SerializableDictionary<DeformableTerrainMaterial, Texture2D> ExplicitMaterialRenderMap => m_explicitMaterialRenderMap;
+
+    public Dictionary<DeformableTerrainMaterial, Texture2D> ImplicitMaterialRenderMap
     {
-      get => m_materialRenderMap;
-      set
+      get
       {
-        if ( m_initialData != null )
-          Debug.LogError( "Setting material TerrainLayers during runtime is not supported!" );
-        else
-          m_materialRenderMap = value;
+        Dictionary<DeformableTerrainMaterial, Texture2D> res = new Dictionary<DeformableTerrainMaterial, Texture2D>();
+        foreach ( var patch in RenderedPatches )
+          if ( patch.TerrainMaterial != null && patch.RenderTexture != null )
+            res[ patch.TerrainMaterial ] = patch.RenderTexture;
+        return res;
       }
     }
+
+    public Dictionary<DeformableTerrainMaterial, Texture2D> MaterialRenderMap
+    {
+      get
+      {
+        var res = ImplicitMaterialRenderMap;
+        foreach ( var (k, v) in ExplicitMaterialRenderMap )
+          res[ k ] = v;
+        return res;
+      }
+    }
+
+    [SerializeField]
+    private bool m_reduceTextureTiling = false;
+
+    public bool ReduceTextureTiling {
+      get => m_reduceTextureTiling;
+      set
+      { 
+        m_reduceTextureTiling = value;
+        if ( m_material != null )
+          m_material.SetKeyword(new LocalKeyword(m_material.shader,"REDUCE_TILING"), value);
+      }
+    }
+
+    public TerrainMaterialPatch[] RenderedPatches => gameObject.GetComponentsInChildren<TerrainMaterialPatch>();
+
+    private Dictionary<agxTerrain.TerrainMaterial, int> m_materialMapping;
+
+    private Terrain m_unityTerrain;
+    private DeformableTerrainBase m_terrain;
+    private Mesh m_mesh = null;
+    private Material m_material;
+
+    private bool m_changed = false;
+    private byte[] m_materialAtlas;
+    private Texture2D m_materialTexture;
 
     protected override bool Initialize()
     {
-      terrain = gameObject.GetInitializedComponent<DeformableTerrainBase>();
-      if ( terrain is MovableTerrain ) {
-        Debug.LogError( "Terrain Patch Renderer does not yet support MovableTerrain!", this );
+      m_terrain = gameObject.GetInitializedComponent<DeformableTerrainBase>();
+      if ( m_terrain is not DeformableTerrain ) {
+        Debug.LogError( "Terrain Patch Renderer currently only supports DeformableTerrain!", this );
         return false;
       }
 
       // The patches need to be initialized before the initial update pass, otherwise the materials might not yet have been added.
-      foreach (var patch in gameObject.GetComponentsInChildren<TerrainMaterialPatch>() )
+      foreach ( var patch in RenderedPatches )
         patch.GetInitialized();
 
-      var uTerr = GetComponent<Terrain>();
-      var td = uTerr.terrainData;
+      m_unityTerrain = GetComponent<UnityEngine.Terrain>();
+      var td = m_unityTerrain.terrainData;
 
-      m_initialData = new InitialTerrainData( td );
+      m_mesh = new Mesh();
+      m_mesh.vertices = new Vector3[ 3 ];
+      m_mesh.triangles = new int[] { 0, 1, 2 };
 
-      if ( DefaultLayer == null ) {
-        Debug.LogError( "No DefaultLayer provided!", this );
-        return false;
-      }
+      m_material = new Material( Shader.Find( "AGXUnity/BuiltIn/TerrainPatchDecal" ) );
 
-      // Initialize terrain layers: 0 is default, 1+ are mapped.
       m_materialMapping = new Dictionary<agxTerrain.TerrainMaterial, int>();
-      var layers = new List<TerrainLayer> { DefaultLayer };
       int idx = 1;
       foreach ( var (mat, tl) in MaterialRenderMap ) {
+        if ( idx == 5 ) {
+          Debug.LogWarning( "The TerrainDecalRenderer currently only supports rendering 4 patch materials. Further materials will not be rendered.", this );
+          break;
+        }
         var terrMat = mat.GetInitialized<DeformableTerrainMaterial>().Native;
         if ( terrMat != null ) {
-          m_materialMapping.Add( mat.GetInitialized<DeformableTerrainMaterial>().Native, idx++ );
-          layers.Add( tl );
+          m_materialMapping.Add( mat.GetInitialized<DeformableTerrainMaterial>().Native, idx );
+          if ( tl == null )
+            Debug.LogWarning( $"Terrain Material '{mat.name}' is mapped to null texture.", this );
+          m_material.SetTexture( $"_Decal{idx-1}", tl );
+          idx++;
         }
       }
-      td.terrainLayers = layers.ToArray();
 
-      alphamap = td.GetAlphamaps( 0, 0, td.alphamapWidth, td.alphamapHeight );
+      var size = td.size;
+      m_mesh.bounds = new Bounds( m_terrain.transform.position + size / 2.0f, size );
+      m_mesh.UploadMeshData( false );
 
-      Simulation.Instance.StepCallbacks.SimulationPost += PostStep;
-      terrain.OnModification += UpdateTextureAt;
+      m_materialAtlas = new byte[ td.heightmapResolution * td.heightmapResolution ];
+      m_materialTexture = new Texture2D( td.heightmapResolution, td.heightmapResolution, TextureFormat.R8, false );
+      m_materialTexture.filterMode = FilterMode.Point;
+      m_materialTexture.anisoLevel = 0;
 
-      terrain.TriggerModifyAllCells();
+      m_material.SetTexture( "_Materials", m_materialTexture );
+      m_material.SetTexture( "_Heightmap", td.heightmapTexture );
+      m_material.SetVector( "_TerrainScale", td.size );
+      m_material.SetVector( "_TerrainPosition", m_terrain.transform.position );
+      m_material.SetFloat( "_TerrainResolution", td.heightmapResolution );
 
-      td.SetAlphamaps( 0, 0, alphamap );
+      m_terrain.OnModification += UpdateTextureAt;
+      m_terrain.TriggerModifyAllCells();
+      PostStep();
+
+      Simulation.Instance.StepCallbacks.PostStepForward += PostStep;
 
       return true;
     }
 
-    protected override void OnDestroy()
-    {
-      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
-
-      base.OnDestroy();
-    }
-
-    private void PostStep()
-    {
-      var td = GetComponent<Terrain>().terrainData;
-
-      td.SetAlphamaps( 0, 0, alphamap );
-    }
-
-    private void UpdateTextureAt( agxTerrain.Terrain aTerr, agx.Vec2i aIdx, Terrain uTerr, Vector2Int uIdx )
+    private void UpdateTextureAt( agxTerrain.Terrain aTerr, agx.Vec2i aIdx, UnityEngine.Terrain uTerr, Vector2Int uIdx )
     {
       var td = uTerr.terrainData;
-      var alphamapRes = td.alphamapResolution;
-      var heightsRes = td.heightmapResolution - 1;
+      var heightsRes = td.heightmapResolution;
 
       var modPos = aTerr.getSurfacePositionWorld( aIdx );
       var mat = aTerr.getTerrainMaterial( modPos );
 
       var index = m_materialMapping.GetValueOrDefault(mat,0);
 
-      var modAlphaX = Mathf.RoundToInt((uIdx.x - 0.5f)/heightsRes * alphamapRes);
-      var modAlphaY = Mathf.RoundToInt((uIdx.y - 0.5f)/heightsRes * alphamapRes);
-      var modAlphaXend = Mathf.RoundToInt((uIdx.x + 0.5f)/heightsRes * alphamapRes);
-      var modAlphaYend = Mathf.RoundToInt((uIdx.y + 0.5f)/heightsRes * alphamapRes);
+      m_materialAtlas[ uIdx.y * heightsRes + uIdx.x ] = (byte)index;
+      m_changed = true;
+    }
 
-      for ( int y = modAlphaY; y < modAlphaYend; y++ ) {
-        if ( y < 0 || y >= alphamapRes )
-          continue;
-        for ( int x = modAlphaX; x < modAlphaXend; x++ ) {
-          if ( x < 0 || x >= alphamapRes )
-            continue;
-          for ( int i = 0; i < MaterialRenderMap.Count + 1; i++ )
-            alphamap[ y, x, i ] = i == index ? 1.0f : 0.0f;
-        }
+    void PostStep()
+    {
+      if ( m_changed ) {
+        m_materialTexture.SetPixelData( m_materialAtlas, 0 );
+        m_materialTexture.Apply( false );
+
+        // Updating terrain heights seems to invalidiate the heightmap texture so we need to reset it here
+        m_material.SetTexture( "_Heightmap", m_unityTerrain.terrainData.heightmapTexture );
       }
+    }
+
+    protected override void OnEnable()
+    {
+      // We hook into the rendering process to render even when the application is paused.
+      // For the Built-in render pipeline this is done by adding a callback to the Camera.OnPreCull event which is called for each camera in the scene.
+      // For SRPs such as URP and HDRP the beginCameraRendering event serves a similar purpose.
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
+    }
+
+    protected override void OnDisable()
+    {
+      Camera.onPreCull -= Render;
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+    }
+
+    private void SRPRender( ScriptableRenderContext context, Camera cam )
+    {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
+      Render( cam );
+    }
+
+    private void Render( Camera cam )
+    {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
+      Graphics.DrawMesh( m_mesh, Matrix4x4.identity, m_material, 0, cam, 0, null, false );
     }
   }
 }

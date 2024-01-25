@@ -378,6 +378,26 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = go;
     }
 
+    [MenuItem( "AGXUnity/Model/Terrain Material Patch", priority = 50 )]
+    public static GameObject CreateTerrainMaterialPatch()
+    {
+      var go = new GameObject();
+      go.name = Factory.CreateName<AGXUnity.Model.TerrainMaterialPatch>();
+
+      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
+
+      go.AddComponent<AGXUnity.Model.TerrainMaterialPatch>();
+
+      var box = Factory.Create<AGXUnity.Collide.Box>();
+      box.transform.SetParent( go.transform, false );
+      box.GetComponent<AGXUnity.Collide.Box>().HalfExtents = new Vector3( 2.5f, 1.0f, 2.5f );
+      AGXUnity.Rendering.ShapeVisual.Create( box.GetComponent<AGXUnity.Collide.Box>() );
+
+      Undo.RegisterCreatedObjectUndo( go, "New Terrain Material Patch" );
+
+      return Selection.activeGameObject = go;
+    }
+
     #endregion
 
     #region Managers

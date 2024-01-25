@@ -21,11 +21,11 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
-      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( TerrainPatchRenderer, "TerrainPatchMaterialMap" ), GUI.MakeLabel( "Material Mapping" ) ) ) {
-        List<System.Tuple<DeformableTerrainMaterial,TerrainLayer>> toSet = new List<System.Tuple<DeformableTerrainMaterial, TerrainLayer>>();
-        List<System.Tuple<DeformableTerrainMaterial,TerrainLayer>> toRemove = new List<System.Tuple<DeformableTerrainMaterial, TerrainLayer>>();
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( TerrainPatchRenderer, "TerrainPatchExplicitMaterialMap" ), GUI.MakeLabel( "Explicit Material Mapping" ) ) ) {
+        List<System.Tuple<DeformableTerrainMaterial,Texture2D>> toSet = new List<System.Tuple<DeformableTerrainMaterial, Texture2D>>();
+        List<System.Tuple<DeformableTerrainMaterial,Texture2D>> toRemove = new List<System.Tuple<DeformableTerrainMaterial, Texture2D>>();
 
-        foreach ( var (k, v) in TerrainPatchRenderer.MaterialRenderMap ) {
+        foreach ( var (k, v) in TerrainPatchRenderer.ExplicitMaterialRenderMap ) {
           using ( new HorizontalScope() ) {
             using ( new VerticalScope( GUILayout.Width( 20 ) ) ) {
               GUILayout.FlexibleSpace();
@@ -39,7 +39,7 @@ namespace AGXUnityEditor.Tools
             if ( news.Item1 == null )
               toRemove.Add( System.Tuple.Create( k, v ) );
             else if ( news.Item1 != k ) {
-              if ( TerrainPatchRenderer.MaterialRenderMap.ContainsKey( news.Item1 ) )
+              if ( TerrainPatchRenderer.ExplicitMaterialRenderMap.ContainsKey( news.Item1 ) )
                 Debug.LogWarning( $"{news.Item1}" );
               else {
                 toSet.Add( news );
@@ -62,12 +62,35 @@ namespace AGXUnityEditor.Tools
         }
 
         if ( itemToAdd )
-          toSet.Add( System.Tuple.Create<DeformableTerrainMaterial, TerrainLayer>( itemToAdd, null ) );
+          toSet.Add( System.Tuple.Create<DeformableTerrainMaterial, Texture2D>( itemToAdd, null ) );
 
         foreach ( var t in toRemove )
-          TerrainPatchRenderer.MaterialRenderMap.Remove( t.Item1 );
+          TerrainPatchRenderer.ExplicitMaterialRenderMap.Remove( t.Item1 );
         foreach ( var t in toSet )
-          TerrainPatchRenderer.MaterialRenderMap[ t.Item1 ] = t.Item2;
+          TerrainPatchRenderer.ExplicitMaterialRenderMap[ t.Item1 ] = t.Item2;
+
+      }
+
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( TerrainPatchRenderer, "TerrainPatchFinalMaterialMap" ), GUI.MakeLabel( "Final Material Mapping" ) ) ) {
+        var map = TerrainPatchRenderer.MaterialRenderMap;
+        using ( new HorizontalScope() ) {
+          GUILayout.FlexibleSpace();
+          using (new VerticalScope() ) {
+            foreach( var mat in map.Keys )
+              GUILayout.Label( mat.name );
+          }
+          GUILayout.FlexibleSpace();
+          using ( new VerticalScope() ) {
+            for ( int i = 0; i < map.Count; i++)
+              GUILayout.Label( GUI.Symbols.ArrowRight.ToString() );
+          }
+          GUILayout.FlexibleSpace();
+          using ( new VerticalScope() ) {
+            foreach ( var tex in map.Values )
+              GUILayout.Label( tex != null ? tex.name : "None" );
+          }
+          GUILayout.FlexibleSpace();
+        }
       }
     }
   }
