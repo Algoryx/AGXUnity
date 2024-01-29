@@ -1,11 +1,11 @@
-using UnityEngine;
-using UnityEditor;
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Model;
 using AGXUnity.Utils;
-
-using Plane = AGXUnity.Collide.Plane;
+using UnityEditor;
+using UnityEngine;
 using Mesh = AGXUnity.Collide.Mesh;
+using Plane = AGXUnity.Collide.Plane;
 
 namespace AGXUnityEditor
 {
@@ -189,110 +189,118 @@ namespace AGXUnityEditor
     #endregion
 
     #region Constraint
-    [MenuItem( "AGXUnity/Constraints/Hinge", priority = 20 )]
-    public static GameObject ConstraintHinge()
+    private static GameObject CreateConstraint( MenuCommand command, ConstraintType type )
     {
-      GameObject go = Factory.Create( ConstraintType.Hinge );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      var parent = command.context as GameObject;
+      var go = Factory.Create( type );
+      if ( go == null )
+        return null;
+
+      if ( parent != null )
+        go.transform.SetParent( parent.transform, false );
+
+      Undo.RegisterCreatedObjectUndo( go, "Constraint" );
+
+      return go;
+    }
+
+    [MenuItem( "AGXUnity/Constraints/Hinge", priority = 20 )]
+    [MenuItem( "GameObject/AGXUnity/Constraints/Hinge", validate = false, priority = 10 )]
+    public static GameObject ConstraintHinge( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.Hinge );
     }
 
     [MenuItem( "AGXUnity/Constraints/Prismatic", priority = 20 )]
-    public static GameObject ConstraintPrismatic()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Prismatic", validate = false, priority = 10 )]
+    public static GameObject ConstraintPrismatic( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.Prismatic );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.Prismatic );
     }
 
     [MenuItem( "AGXUnity/Constraints/Lock Joint", priority = 20 )]
-    public static GameObject ConstraintLockJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Lock Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintLockJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.LockJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.LockJoint );
     }
 
     [MenuItem( "AGXUnity/Constraints/Cylindrical Joint", priority = 20 )]
-    public static GameObject ConstraintCylindricalJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Cylindrical Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintCylindricalJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.CylindricalJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.CylindricalJoint );
     }
 
     [MenuItem( "AGXUnity/Constraints/Ball Joint", priority = 20 )]
-    public static GameObject ConstraintBallJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Ball Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintBallJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.BallJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.BallJoint );
     }
 
     [MenuItem( "AGXUnity/Constraints/Distance Joint", priority = 20 )]
-    public static GameObject ConstraintDistanceJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Distance Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintDistanceJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.DistanceJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.DistanceJoint );
     }
 
     [MenuItem( "AGXUnity/Constraints/Angular Lock Joint", priority = 20 )]
-    public static GameObject ConstraintAngularLockJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Angular Lock Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintAngularLockJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.AngularLockJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.AngularLockJoint );
     }
 
     [MenuItem( "AGXUnity/Constraints/Plane Joint", priority = 20 )]
-    public static GameObject ConstraintPlaneJoint()
+    [MenuItem( "GameObject/AGXUnity/Constraints/Plane Joint", validate = false, priority = 10 )]
+    public static GameObject ConstraintPlaneJoint( MenuCommand command )
     {
-      GameObject go = Factory.Create( ConstraintType.PlaneJoint );
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "constraint" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateConstraint( command, ConstraintType.PlaneJoint );
     }
     #endregion
 
     #region Model
-    [MenuItem( "AGXUnity/Model/Wire", priority = 50 )]
-    public static GameObject WireEmpty()
+    private static GameObject CreateModel<T>( MenuCommand command ) where T : ScriptComponent
     {
-      GameObject go = Factory.Create<Wire>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "New Wire" );
-      return Selection.activeGameObject = go;
+      var go = Factory.Create<T>();
+      if ( go == null )
+        return null;
+
+      var parent = command.context as GameObject;
+      if ( parent != null )
+        go.transform.SetParent( parent.transform, false );
+
+      Undo.RegisterCreatedObjectUndo( go, $"New {typeof( T ).Name}" );
+
+      return go;
+    }
+
+    [MenuItem( "AGXUnity/Model/Wire", priority = 50 )]
+    [MenuItem( "GameObject/AGXUnity/Model/Wire", validate = false, priority = 10 )]
+    public static GameObject WireEmpty( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateModel<Wire>( command );
     }
 
     [MenuItem( "AGXUnity/Model/Cable", priority = 50 )]
-    public static GameObject CableEmpty()
+    [MenuItem( "GameObject/AGXUnity/Model/Cable", validate = false, priority = 10 )]
+    public static GameObject CableEmpty( MenuCommand command )
     {
-      GameObject go = Factory.Create<Cable>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "New Cable" );
-
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateModel<Cable>( command );
     }
 
     [MenuItem( "AGXUnity/Model/Track", priority = 50 )]
-    public static GameObject CreateTrack()
+    [MenuItem( "GameObject/AGXUnity/Model/Track", validate = false, priority = 10 )]
+    public static GameObject CreateTrack( MenuCommand command )
     {
-      var go = Factory.Create<AGXUnity.Model.Track>();
-      if ( go != null )
-        Undo.RegisterCreatedObjectUndo( go, "New Track" );
-      return Selection.activeGameObject = go;
+      return Selection.activeGameObject = CreateModel<Track>( command );
     }
 
     [MenuItem( "AGXUnity/Model/Deformable Terrain", priority = 50 )]
-    public static GameObject CreateDeformableTerrain()
+    [MenuItem( "GameObject/AGXUnity/Model/Deformable Terrain", validate = false, priority = 10 )]
+    public static GameObject CreateDeformableTerrain( MenuCommand command )
     {
       var terrainData = new TerrainData()
       {
@@ -309,7 +317,7 @@ namespace AGXUnityEditor
       AssetDatabase.CreateAsset( terrainData, terrainDataName );
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
-      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrain>();
+      go.name = Factory.CreateName<DeformableTerrain>();
       if ( go == null ) {
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
@@ -318,7 +326,10 @@ namespace AGXUnityEditor
       AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
 
       go.transform.position = new Vector3( -30, 0, -30 );
-      go.AddComponent<AGXUnity.Model.DeformableTerrain>();
+      go.AddComponent<DeformableTerrain>();
+
+      if ( command.context is GameObject ctx )
+        go.transform.SetParent( ctx.transform, false );
 
       Undo.RegisterCreatedObjectUndo( go, "New Deformable Terrain" );
 
@@ -326,7 +337,8 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Model/Deformable Terrain Pager", priority = 50 )]
-    public static GameObject CreateTerrainPager()
+    [MenuItem( "GameObject/AGXUnity/Model/Deformable Terrain Pager", validate = false, priority = 10 )]
+    public static GameObject CreateTerrainPager( MenuCommand command )
     {
       var terrainData = new TerrainData()
       {
@@ -343,8 +355,8 @@ namespace AGXUnityEditor
       AssetDatabase.CreateAsset( terrainData, terrainDataName );
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
-      go.name = Factory.CreateName<AGXUnity.Model.DeformableTerrainPager>();
-      if ( go == null ) {
+      go.name = Factory.CreateName<DeformableTerrainPager>();
+      if ( go == null ) { 
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
       }
@@ -352,7 +364,10 @@ namespace AGXUnityEditor
       AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
 
       go.transform.position = new Vector3( -60, 0, -60 );
-      go.AddComponent<AGXUnity.Model.DeformableTerrainPager>();
+      go.AddComponent<DeformableTerrainPager>();
+
+      if ( command.context is GameObject ctx )
+        go.transform.SetParent( ctx.transform, false );
 
       Undo.RegisterCreatedObjectUndo( go, "New Terrain Pager" );
 
@@ -360,10 +375,11 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Model/Movable Terrain", priority = 50 )]
-    public static GameObject CreateMovableTerrain()
+    [MenuItem( "GameObject/AGXUnity/Model/Movable Terrain", validate = false, priority = 10 )]
+    public static GameObject CreateMovableTerrain( MenuCommand command )
     {
       var go = new GameObject();
-      go.name = Factory.CreateName<AGXUnity.Model.MovableTerrain>();
+      go.name = Factory.CreateName<MovableTerrain>();
 
       AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
 
@@ -373,25 +389,24 @@ namespace AGXUnityEditor
       renderer.sharedMaterial.mainTexture = AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" );
       go.AddComponent<AGXUnity.Model.MovableTerrain>();
 
+      if ( command.context is GameObject ctx )
+        go.transform.SetParent( ctx.transform, false );
+
       Undo.RegisterCreatedObjectUndo( go, "New Movable Terrain" );
 
       return Selection.activeGameObject = go;
     }
 
     [MenuItem( "AGXUnity/Model/Terrain Material Patch", priority = 50 )]
-    public static GameObject CreateTerrainMaterialPatch()
+    [MenuItem( "GameObject/AGXUnity/Model/Terrain Material Patch", validate = false, priority = 10 )]
+    public static GameObject CreateTerrainMaterialPatch( MenuCommand command )
     {
-      var go = new GameObject();
-      go.name = Factory.CreateName<AGXUnity.Model.TerrainMaterialPatch>();
+      var go = CreateModel<TerrainMaterialPatch>(command);
 
-      AGXUnity.Utils.PrefabUtils.PlaceInCurrentStange( go );
-
-      go.AddComponent<AGXUnity.Model.TerrainMaterialPatch>();
-
-      var box = Factory.Create<AGXUnity.Collide.Box>();
+      var box = Factory.Create<Box>();
       box.transform.SetParent( go.transform, false );
-      box.GetComponent<AGXUnity.Collide.Box>().HalfExtents = new Vector3( 2.5f, 1.0f, 2.5f );
-      AGXUnity.Rendering.ShapeVisual.Create( box.GetComponent<AGXUnity.Collide.Box>() );
+      box.GetComponent<Box>().HalfExtents = new Vector3( 2.5f, 1.0f, 2.5f );
+      AGXUnity.Rendering.ShapeVisual.Create( box.GetComponent<Box>() );
 
       Undo.RegisterCreatedObjectUndo( go, "New Terrain Material Patch" );
 
@@ -407,7 +422,7 @@ namespace AGXUnityEditor
       return ValidateManager<AGXUnity.Rendering.DebugRenderManager>();
     }
 
-    [MenuItem( "AGXUnity/Managers/Debug Render Manager" ) ]
+    [MenuItem( "AGXUnity/Managers/Debug Render Manager" )]
     public static GameObject DebugRenderer()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<AGXUnity.Rendering.DebugRenderManager>().gameObject;
@@ -418,7 +433,7 @@ namespace AGXUnityEditor
     {
       return ValidateManager<Simulation>();
     }
-    
+
     [MenuItem( "AGXUnity/Simulation", priority = 66 )]
     public static GameObject Simulation()
     {
@@ -530,9 +545,9 @@ namespace AGXUnityEditor
       }
       return Selection.activeGameObject = ph.gameObject;
     }
-#endregion
+    #endregion
 
-#region Utils Settings
+    #region Utils Settings
     [MenuItem( "AGXUnity/Utils/Generate Custom Editors", priority = 80 )]
     public static void GenerateEditors()
     {
@@ -566,9 +581,9 @@ namespace AGXUnityEditor
     {
       return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
     }
-#endregion
+    #endregion
 
-#region Documentation, About and Update
+    #region Documentation, About and Update
     [MenuItem( "AGXUnity/AGX Dynamics for Unity Manual", priority = 2001 )]
     public static void AGXDynamicsForUnityManual()
     {
@@ -581,19 +596,19 @@ namespace AGXUnityEditor
       Application.OpenURL( AGXDynamicsForUnityExamplesURL );
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics Manual", priority = 2020)]
+    [MenuItem( "AGXUnity/AGX Dynamics Manual", priority = 2020 )]
     public static void AGXManual()
     {
-      Application.OpenURL(AGXUserManualURL);
+      Application.OpenURL( AGXUserManualURL );
     }
 
-    [MenuItem("AGXUnity/AGX Dynamics API Reference", priority = 2021)]
+    [MenuItem( "AGXUnity/AGX Dynamics API Reference", priority = 2021 )]
     public static void AGXAPI()
     {
-      Application.OpenURL(AGXAPIReferenceURL);
+      Application.OpenURL( AGXAPIReferenceURL );
     }
 
-    [MenuItem("AGXUnity/About AGX Dynamics for Unity", priority = 2040)]
+    [MenuItem( "AGXUnity/About AGX Dynamics for Unity", priority = 2040 )]
     public static void AboutWindow()
     {
       Windows.AboutWindow.Open();
@@ -622,7 +637,7 @@ namespace AGXUnityEditor
     {
       Windows.CheckForUpdatesWindow.Open();
     }
-#endregion
+    #endregion
   }
 }
 
