@@ -21,6 +21,12 @@ namespace AGXUnity.Model
   [DisallowMultipleComponent]
   public class MovableTerrain : MovableAdapter
   {
+    // Constructor is used here to override the default value defined in the base class
+    MovableTerrain()
+    {
+      m_maximumDepth = 0.5f;
+    }
+
     /// <summary>
     /// Native deformable terrain instance - accessible after this
     /// component has been initialized and is valid.
@@ -120,7 +126,7 @@ namespace AGXUnity.Model
     [field: SerializeField]
     [InspectorPriority(-1)]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
-    public bool InvertDepthDirection { get; set; } = false;
+    public bool InvertDepthDirection { get; set; } = true;
 
     private void RecalculateSizes( bool fromCellCount )
     {
