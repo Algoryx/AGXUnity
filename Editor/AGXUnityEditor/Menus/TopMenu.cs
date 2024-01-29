@@ -385,9 +385,9 @@ namespace AGXUnityEditor
 
       go.AddComponent<MeshFilter>();
       var renderer = go.AddComponent<MeshRenderer>();
-      renderer.sharedMaterial = new Material(Shader.Find("Standard"));
-      renderer.sharedMaterial.mainTexture = AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" );
-      go.AddComponent<AGXUnity.Model.MovableTerrain>();
+      renderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
+      RenderingUtils.SetMainTexture(renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ));
+      go.AddComponent<MovableTerrain>();
 
       if ( command.context is GameObject ctx )
         go.transform.SetParent( ctx.transform, false );
