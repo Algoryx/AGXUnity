@@ -73,6 +73,15 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeField]
+    private TerrainLayer m_renderLayer = null;
+
+    public TerrainLayer RenderLayer
+    {
+      get => m_renderLayer;
+      set { m_renderLayer = value; }
+    }
+
     /// <summary>
     /// Whether to disable collision shapes used to define this patch during initialization.
     /// </summary>
