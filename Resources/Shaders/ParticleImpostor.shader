@@ -1,4 +1,4 @@
-Shader "Custom/ParticleImpostor"
+Shader "AGXUnity/Terrain Particle Impostor"
 {
     Properties
     {

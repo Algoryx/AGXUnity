@@ -1,4 +1,4 @@
-Shader "Custom/Particle"
+Shader "AGXUnity/Instanced Terrain Particle"
 {
     Properties
     {

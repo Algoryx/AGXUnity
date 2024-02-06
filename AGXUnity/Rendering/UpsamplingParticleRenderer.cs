@@ -64,7 +64,7 @@ namespace AGXUnity.Rendering
 
     [Range(1.0f, 5000.0f)]
     [SerializeField]
-    private float m_upscaling = 1;
+    private float m_upscaling = 100;
 
     public float Upscaling
     {
@@ -72,7 +72,8 @@ namespace AGXUnity.Rendering
       set
       {
         m_upscaling = value;
-        RecalculateFineParticleProperties();
+        if(State == States.INITIALIZED)
+          RecalculateFineParticleProperties();
       }
     }
 
@@ -82,7 +83,7 @@ namespace AGXUnity.Rendering
 
     [ClampAboveZeroInInspector]
     [field: SerializeField]
-    public float EaseStepSize { get; set; } = 0.05f;
+    public float EaseStepSize { get; set; } = 0.1f;
 
     [field: SerializeField]
     public ParticleRenderMode RenderMode { get; set; } = ParticleRenderMode.Impostor;
@@ -251,11 +252,16 @@ namespace AGXUnity.Rendering
       m_moveParticlesShader = Resources.Load<ComputeShader>( "Shaders/Compute/MoveParticles" );
       m_impostorMaterial = new Material(Resources.Load<Shader>( "Shaders/ParticleImpostor" ));
 
-      if(GranuleMaterial == null )
-        GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Particle" ) );
+      if (GranuleMaterial == null ) {
+        var RP = RenderingUtils.DetectPipeline();
+        if (RP == RenderingUtils.PipelineType.BuiltIn)
+          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/InstancedTerrainParticle" ) );
+        else if (RP == RenderingUtils.PipelineType.HDRP )
+          GranuleMaterial = new Material( Resources.Load<Shader>( "HDRP/InstancedTerrainParticle" ) );
+      }
 
       if ( GranuleMesh == null )
-        GranuleMesh = Resources.Load<Mesh>( "Debug/Model/Icosahedron" );
+        GranuleMesh = Resources.Load<Mesh>( "Debug/Models/Icosahedron" );
 
       ParticleProvider.GetInitialized();
       if ( ParticleProvider == null ) {
@@ -385,8 +391,6 @@ namespace AGXUnity.Rendering
         m_numActiveVoxels = GenerateVoxelGrid( coarseParticles, m_activeVoxelIndices, VoxelSize.ValueOrDefault( ParticleProvider.ElementSize ) );
       }
 
-      Debug.Log( VoxelSize.ValueOrDefault( ParticleProvider.ElementSize ) );
-
       for ( int i = 0; i < m_numActiveVoxels; i++ ) {
         m_activeVoxelIndicesUnity[ i ].index.x = (int)m_activeVoxelIndices[ i ].x;
         m_activeVoxelIndicesUnity[ i ].index.y = (int)m_activeVoxelIndices[ i ].y;
@@ -440,6 +444,12 @@ namespace AGXUnity.Rendering
 
     private void Synchronize()
     {
+      var RP = RenderingUtils.DetectPipeline();
+      if(RenderMode != ParticleRenderMode.Mesh && RP != RenderingUtils.PipelineType.BuiltIn) {
+        Debug.LogWarning( "Impostor rendering is currently only supported for the Built-in renderer. Switching to mesh rendering of terrain granules.", this );
+        RenderMode = ParticleRenderMode.Mesh;
+      }
+
       if ( RenderMode != m_persistedRenderMode ) {
         if ( RenderMode == ParticleRenderMode.Impostor )
           m_drawCallArgsBuffer.SetData( new uint[ 6 ] { m_quadMesh.GetIndexCount( 0 ), 0, m_quadMesh.GetIndexStart( 0 ), m_quadMesh.GetBaseVertex( 0 ), 0, 0 } );
@@ -477,10 +487,6 @@ namespace AGXUnity.Rendering
         Graphics.DrawMeshInstancedIndirect( m_quadMesh, 0, m_impostorMaterial, new Bounds( cam.transform.position, Vector3.one ), m_drawCallArgsBuffer, camera: cam);
       }
       else {
-        if ( GranuleMaterial == null ) {
-          GranuleMaterial = new Material( Resources.Load<Shader>( "Particle" ) );
-          GranuleMaterial.enableInstancing = true;
-        }
         GranuleMaterial.SetFloat( "fineRadius", FineParticleRadius );
         GranuleMaterial.SetBuffer( "fineParticles", m_fineParticlesBuffer );
 
