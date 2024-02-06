@@ -33,6 +33,7 @@ Shader "AGXUnity/Instanced Terrain Particle"
         #endif
 
 		float fineRadius;
+        float3 offset;
 
         sampler2D _MainTex;
 
@@ -69,9 +70,10 @@ Shader "AGXUnity/Instanced Terrain Particle"
             float3 data = float3(0.0f,0.0f,0.0f);
             float absEase = 0.0f;
         #endif
+            float3 worldSpaceViewerPos = UNITY_MATRIX_I_V._m03_m13_m23;
 
 			float3 localPosition = v.vertex.xyz * fineRadius * absEase * 2.0f;
-			float3 worldPosition = data.xyz + localPosition;
+			float3 worldPosition = data.xyz + localPosition - offset;
             v.vertex.xyz = worldPosition;
         }
 

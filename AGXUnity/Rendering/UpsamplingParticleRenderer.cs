@@ -72,7 +72,7 @@ namespace AGXUnity.Rendering
       set
       {
         m_upscaling = value;
-        if(State == States.INITIALIZED)
+        if ( State == States.INITIALIZED )
           RecalculateFineParticleProperties();
       }
     }
@@ -250,13 +250,13 @@ namespace AGXUnity.Rendering
     {
       m_particleUpsamplingShader = Resources.Load<ComputeShader>( "Shaders/Compute/ParticleUpsample" );
       m_moveParticlesShader = Resources.Load<ComputeShader>( "Shaders/Compute/MoveParticles" );
-      m_impostorMaterial = new Material(Resources.Load<Shader>( "Shaders/ParticleImpostor" ));
+      m_impostorMaterial = new Material( Resources.Load<Shader>( "Shaders/ParticleImpostor" ) );
 
-      if (GranuleMaterial == null ) {
+      if ( GranuleMaterial == null ) {
         var RP = RenderingUtils.DetectPipeline();
-        if (RP == RenderingUtils.PipelineType.BuiltIn)
+        if ( RP == RenderingUtils.PipelineType.BuiltIn )
           GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/InstancedTerrainParticle" ) );
-        else if (RP == RenderingUtils.PipelineType.HDRP )
+        else if ( RP == RenderingUtils.PipelineType.HDRP )
           GranuleMaterial = new Material( Resources.Load<Shader>( "HDRP/InstancedTerrainParticle" ) );
       }
 
@@ -387,7 +387,7 @@ namespace AGXUnity.Rendering
 
         SetDynamicBuffers();
 
-        
+
         m_numActiveVoxels = GenerateVoxelGrid( coarseParticles, m_activeVoxelIndices, VoxelSize.ValueOrDefault( ParticleProvider.ElementSize ) );
       }
 
@@ -416,7 +416,7 @@ namespace AGXUnity.Rendering
       m_particleUpsamplingShader.SetInt( "numCoarseParticles", m_numCoarseParticles );
 
       m_particleUpsamplingShader.SetInt( "time", (int)System.DateTime.Now.Ticks );
-      m_particleUpsamplingShader.SetFloat( "voxelSize", VoxelSize.ValueOrDefault(ParticleProvider.ElementSize) );
+      m_particleUpsamplingShader.SetFloat( "voxelSize", VoxelSize.ValueOrDefault( ParticleProvider.ElementSize ) );
       m_particleUpsamplingShader.SetFloat( "fineParticleMass", FineParticleMass );
       m_particleUpsamplingShader.SetFloat( "animationSpeed", EaseStepSize );
       m_particleUpsamplingShader.SetFloat( "nominalRadius", m_nominalRadiusCache );
@@ -445,7 +445,7 @@ namespace AGXUnity.Rendering
     private void Synchronize()
     {
       var RP = RenderingUtils.DetectPipeline();
-      if(RenderMode != ParticleRenderMode.Mesh && RP != RenderingUtils.PipelineType.BuiltIn) {
+      if ( RenderMode != ParticleRenderMode.Mesh && RP != RenderingUtils.PipelineType.BuiltIn ) {
         Debug.LogWarning( "Impostor rendering is currently only supported for the Built-in renderer. Switching to mesh rendering of terrain granules.", this );
         RenderMode = ParticleRenderMode.Mesh;
       }
@@ -473,10 +473,16 @@ namespace AGXUnity.Rendering
       Render( cam );
     }
 
-    private void Render(Camera cam)
+    private void Render( Camera cam )
     {
       if ( !RenderingUtils.CameraShouldRender( cam ) )
         return;
+
+      if ( m_numCoarseParticles == 0 )
+        return;
+
+      var agxBounds = ParticleProvider.GetSoilSimulationInterface().getSoilParticleBound();
+      var bound = new Bounds(agxBounds.mid().ToHandedVector3(), agxBounds.size().ToVector3());
 
       if ( m_persistedRenderMode == ParticleRenderMode.Impostor ) {
         m_impostorMaterial.SetFloat( "fineRadius", FineParticleRadius );
@@ -484,13 +490,14 @@ namespace AGXUnity.Rendering
         m_impostorMaterial.SetColor( "_ColorLow", color1 );
         m_impostorMaterial.SetColor( "_ColorHigh", color2 );
 
-        Graphics.DrawMeshInstancedIndirect( m_quadMesh, 0, m_impostorMaterial, new Bounds( cam.transform.position, Vector3.one ), m_drawCallArgsBuffer, camera: cam);
+        Graphics.DrawMeshInstancedIndirect( m_quadMesh, 0, m_impostorMaterial, bound, m_drawCallArgsBuffer, camera: cam );
       }
       else {
         GranuleMaterial.SetFloat( "fineRadius", FineParticleRadius );
         GranuleMaterial.SetBuffer( "fineParticles", m_fineParticlesBuffer );
+        GranuleMaterial.SetVector( "offset", bound.center );
 
-        Graphics.DrawMeshInstancedIndirect( GranuleMesh, 0, GranuleMaterial, new Bounds( cam.transform.position, Vector3.one ), m_drawCallArgsBuffer, camera: cam );
+        Graphics.DrawMeshInstancedIndirect( GranuleMesh, 0, GranuleMaterial, bound, m_drawCallArgsBuffer, camera: cam, castShadows: ShadowCastingMode.On );
       }
     }
   }
