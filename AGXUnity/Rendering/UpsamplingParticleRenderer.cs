@@ -252,13 +252,8 @@ namespace AGXUnity.Rendering
       m_moveParticlesShader = Resources.Load<ComputeShader>( "Shaders/Compute/MoveParticles" );
       m_impostorMaterial = new Material( Resources.Load<Shader>( "Shaders/ParticleImpostor" ) );
 
-      if ( GranuleMaterial == null ) {
-        var RP = RenderingUtils.DetectPipeline();
-        if ( RP == RenderingUtils.PipelineType.BuiltIn )
-          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/InstancedTerrainParticle" ) );
-        else if ( RP == RenderingUtils.PipelineType.HDRP )
-          GranuleMaterial = new Material( Resources.Load<Shader>( "HDRP/InstancedTerrainParticle" ) );
-      }
+      if ( GranuleMaterial == null )
+        GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Instanced Terrain Particle" ) );
 
       if ( GranuleMesh == null )
         GranuleMesh = Resources.Load<Mesh>( "Debug/Models/Icosahedron" );
