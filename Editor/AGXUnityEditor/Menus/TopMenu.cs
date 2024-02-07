@@ -546,6 +546,12 @@ namespace AGXUnityEditor
     {
       return !AGXUnity.Utils.PrefabUtils.IsEditingPrefab;
     }
+
+    [MenuItem( "AGXUnity/Utils/Create Cable from Mesh", priority = 95 )]
+    public static void CreateCableFromMesh()
+    {
+      Windows.CreateCableFromMeshWindow.Open();
+    }
 #endregion
 
 #region Documentation, About and Update
