@@ -7,6 +7,8 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using static agx.agxSWIG.UnityHelpers;
+using static Codice.Client.BaseCommands.Import.Commit;
+using static Codice.CM.Common.CmCallContext;
 
 namespace AGXUnity.Rendering
 {
@@ -252,12 +254,15 @@ namespace AGXUnity.Rendering
       m_moveParticlesShader = Resources.Load<ComputeShader>( "Shaders/Compute/MoveParticles" );
       m_impostorMaterial = new Material( Resources.Load<Shader>( "Shaders/ParticleImpostor" ) );
 
+      var RP = RenderingUtils.DetectPipeline();
       if ( GranuleMaterial == null ) {
-        if ( RenderingUtils.DetectPipeline() == RenderingUtils.PipelineType.BuiltIn )
+        if ( RP == RenderingUtils.PipelineType.BuiltIn )
           GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/InstancedTerrainParticleSurface" ) );
         else
           GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Instanced Terrain Particle" ) );
       }
+      if ( !GranuleMaterial.SupportsPipeline( RP ) )
+        Debug.LogError( "The selected granule material does not support the currently active Rendering Pipeline.Rendering might be incorrect.", this );
 
       if ( GranuleMesh == null )
         GranuleMesh = Resources.Load<Mesh>( "Debug/Models/Icosahedron" );
