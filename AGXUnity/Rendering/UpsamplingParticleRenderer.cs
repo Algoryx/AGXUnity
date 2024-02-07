@@ -7,8 +7,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using static agx.agxSWIG.UnityHelpers;
-using static Codice.Client.BaseCommands.Import.Commit;
-using static Codice.CM.Common.CmCallContext;
 
 namespace AGXUnity.Rendering
 {
@@ -334,6 +332,8 @@ namespace AGXUnity.Rendering
       m_fineParticlesSwapBuffer.Release();
       m_hashTable.Release();
       m_hashTableOccupancy.Release();
+      m_dispatchArgs.Release();
+      m_drawCallArgsBuffer.Release();
 
       m_activeVoxelBuffer.Dispose();
       m_coarseParticlesBuffer.Dispose();
@@ -341,6 +341,8 @@ namespace AGXUnity.Rendering
       m_fineParticlesSwapBuffer.Dispose();
       m_hashTable.Dispose();
       m_hashTableOccupancy.Dispose();
+      m_dispatchArgs.Dispose();
+      m_drawCallArgsBuffer.Dispose();
     }
 
     protected override void OnDisable()
