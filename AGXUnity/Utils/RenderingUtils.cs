@@ -33,6 +33,16 @@ namespace AGXUnity.Utils
       return PipelineType.BuiltIn;
     }
 
+    private static string[] s_supportedHDRP = new string[] {
+      "HDRenderPipeline",
+      "HighDefinitionRenderPipeline"
+    };
+
+    private static string[] s_supportedURP = new string[] {
+      "UniversalRenderPipeline",
+      "UniversalPipeline"
+    };
+
     /// <summary>
     /// Checks whether the material supports a given pipeline type. 
     /// Some assumptions are made here. 
@@ -62,25 +72,20 @@ namespace AGXUnity.Utils
       if ( pipelineType == PipelineType.BuiltIn )
         return true;
 
-      string[] supportedTags = new string[0];
+      var tag = new ShaderTagId( "RenderPipeline" );
       if ( pipelineType == PipelineType.HDRP ) {
-        supportedTags = new string[]
-        {
-          "HDRenderPipeline",
-          "HighDefinitionRenderPipeline"
-        };
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedHDRP.Contains( tagName ) )
+            return true;
+        }
       }
-      if ( pipelineType == PipelineType.Universal ) {
-        supportedTags = new string[] {
-          "UniversalRenderPipeline",
-          "UniversalPipeline"
-        };
-      }
-
-      for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
-        var tagName = mat.shader.FindSubshaderTagValue( i, new ShaderTagId( "RenderPipeline" ) ).name;
-        if ( supportedTags.Contains( tagName ) )
-          return true;
+      else if ( pipelineType == PipelineType.Universal ) {
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedURP.Contains( tagName ) )
+            return true;
+        }
       }
 
       return false;
@@ -138,7 +143,7 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="mat">The material on which to set the main texture</param>
     /// <param name="tex">The texture to set as the main texture</param>
-    public static void SetMainTexture(Material mat, Texture tex )
+    public static void SetMainTexture( Material mat, Texture tex )
     {
       switch ( DetectPipeline() ) {
         case PipelineType.BuiltIn:
@@ -168,6 +173,15 @@ namespace AGXUnity.Utils
         mat.SetVector( "_BaseColor", col );
       else
         mat.SetVector( "_Color", col );
+    }
+
+    public static void SetSmoothness( Material mat, float smoothness )
+    {
+      var pipeline = DetectPipeline();
+      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
+        mat.SetFloat( "_Smoothness", smoothness );
+      else
+        mat.SetFloat( "_Glossiness", smoothness );
     }
   }
 }
