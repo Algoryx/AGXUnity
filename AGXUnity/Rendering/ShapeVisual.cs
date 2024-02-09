@@ -92,6 +92,8 @@ namespace AGXUnity.Rendering
              );
     }
 
+    public static string DefaultMaterialName = "Default Shape Visual";
+
     /// <summary>
     /// Creates default material that should be used by default when the visuals are created.
     /// </summary>
@@ -101,7 +103,7 @@ namespace AGXUnity.Rendering
       var material = RenderingUtils.CreateDefaultMaterial();
       material.hideFlags = HideFlags.NotEditable;
 
-      material.name = "Default Shape Visual";
+      material.name = DefaultMaterialName;
 
       RenderingUtils.SetColor( material, Color.Lerp( Color.white, Color.blue, 0.07f ) );
       material.SetFloat( "_Metallic", 0.3f );
@@ -487,7 +489,7 @@ namespace AGXUnity.Rendering
           var mat = mats[i];
           if ( mat == null ||
                !mat.SupportsPipeline( RP ) ||
-               ( mat != DefaultMaterial && mat.name == "Default Shape Visual" ) ) {
+               ( mat != DefaultMaterial && mat.name == DefaultMaterialName ) ) {
             mats[ i ] = DefaultMaterial;
             changed = true;
           }
