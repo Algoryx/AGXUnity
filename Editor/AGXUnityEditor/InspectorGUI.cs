@@ -507,10 +507,6 @@ namespace AGXUnityEditor
 
     private static void HandleMaterialEditorGUI( MaterialEditor editor )
     {
-      var isBuiltInMaterial = editor.target == null ||
-                              !AssetDatabase.GetAssetPath( editor.target ).StartsWith( "Assets" ) ||
-                              ( editor.target as Material ) == Manager.GetOrCreateShapeVisualDefaultMaterial();
-      using ( new GUI.EnabledBlock( !isBuiltInMaterial ) )
       using ( IndentScope.NoIndent ) {
         editor.DrawHeader();
         editor.OnInspectorGUI();

@@ -285,17 +285,6 @@ namespace AGXUnityEditor
       return null;
     }
 
-    /// <summary>
-    /// Get or create default shape visuals material.
-    /// </summary>
-    /// <returns>Material asset.</returns>
-    public static Material GetOrCreateShapeVisualDefaultMaterial()
-    {
-      return GetOrCreateAsset<Material>( IO.Utils.AGXUnityResourceDirectory +
-                                         '/' + AGXUnity.Rendering.ShapeVisual.DefaultMaterialPathResources + ".mat",
-                                         () => AGXUnity.Rendering.ShapeVisual.CreateDefaultMaterial() );
-    }
-
     public static void OnVisualPrimitiveNodeCreate( Utils.VisualPrimitive primitive )
     {
       if ( primitive == null || primitive.Node == null )
@@ -960,9 +949,6 @@ namespace AGXUnityEditor
       if ( !Directory.Exists( Utils.CustomEditorGenerator.Path ) )
         Directory.CreateDirectory( Utils.CustomEditorGenerator.Path );
       Utils.CustomEditorGenerator.Synchronize();
-
-      // Shape visual material.
-      GetOrCreateShapeVisualDefaultMaterial();
 
       // Merge split thresholds.
       if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.MergeSplitThresholds.ResourceDirectory ) )
