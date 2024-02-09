@@ -1,7 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
@@ -98,24 +98,32 @@ namespace AGXUnity.Rendering
     /// <returns>New instance of the default material.</returns>
     public static Material CreateDefaultMaterial()
     {
-      var material = new Material( Shader.Find( "Standard" ) );
+      var material = RenderingUtils.CreateDefaultMaterial();
+      material.hideFlags = HideFlags.NotEditable;
 
-      material.SetVector( "_Color", Color.Lerp( Color.white, Color.blue, 0.07f ) );
+      material.name = "Default Shape Visual";
+
+      RenderingUtils.SetColor( material, Color.Lerp( Color.white, Color.blue, 0.07f ) );
       material.SetFloat( "_Metallic", 0.3f );
-      material.SetFloat( "_Glossiness", 0.8f );
+      RenderingUtils.SetSmoothness( material, 0.8f );
 
       return material;
     }
 
-    /// <summary>
-    /// Path to material given Resources.Load.
-    /// </summary>
-    public static string DefaultMaterialPathResources { get { return @"Materials/ShapeVisualDefaultMaterial"; } }
+    private static Material s_DefaultMaterial = null;
 
     /// <summary>
     /// Default material used.
     /// </summary>
-    public static Material DefaultMaterial { get { return PrefabLoader.Load<Material>( DefaultMaterialPathResources ); } }
+    public static Material DefaultMaterial
+    {
+      get
+      {
+        if ( s_DefaultMaterial == null || !s_DefaultMaterial.SupportsPipeline( RenderingUtils.DetectPipeline() ) )
+          s_DefaultMaterial = CreateDefaultMaterial();
+        return s_DefaultMaterial;
+      }
+    }
 
     /// <summary>
     /// Assigns material to renderer in <paramref name="go"/>, including all sub-meshes/materials.
@@ -329,7 +337,7 @@ namespace AGXUnity.Rendering
         return null;
 
       for ( int i = 0; i < meshes.Length; ++i )
-        AddChildMesh( shape, 
+        AddChildMesh( shape,
                       parent,
                       meshes[ i ],
                       parent.name + "_" + ( i + 1 ).ToString(),
@@ -448,9 +456,9 @@ namespace AGXUnity.Rendering
         instance = go.AddComponent<ShapeVisualCylinder>();
       else if ( shape is Collide.HollowCylinder )
         instance = go.AddComponent<ShapeVisualHollowCylinder>();
-      else if (shape is Collide.Cone)
+      else if ( shape is Collide.Cone )
         instance = go.AddComponent<ShapeVisualCone>();
-      else if (shape is Collide.HollowCone)
+      else if ( shape is Collide.HollowCone )
         instance = go.AddComponent<ShapeVisualHollowCone>();
       else if ( shape is Collide.Capsule )
         instance = go.AddComponent<ShapeVisualCapsule>();
@@ -467,6 +475,27 @@ namespace AGXUnity.Rendering
       }
 
       return instance;
+    }
+
+    public override void EditorUpdate()
+    {
+      var RP = RenderingUtils.DetectPipeline();
+      foreach ( var renderer in GetComponentsInChildren<MeshRenderer>() ) {
+        var mats = renderer.sharedMaterials;
+        var changed = false;
+        for ( int i = 0; i < mats.Length; i++ ) {
+          var mat = mats[i];
+          if ( mat == null ||
+               !mat.SupportsPipeline( RP ) ||
+               ( mat != DefaultMaterial && mat.name == "Default Shape Visual" ) ) {
+            mats[ i ] = DefaultMaterial;
+            changed = true;
+          }
+        }
+        if ( changed )
+          renderer.sharedMaterials = mats;
+      }
+      base.EditorUpdate();
     }
 
     private Vector3 m_lastLossyScale = Vector3.one;

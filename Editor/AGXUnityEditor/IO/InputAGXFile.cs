@@ -1021,7 +1021,7 @@ namespace AGXUnityEditor.IO
     private Material GetMaterial( agxCollide.RenderMaterial nativeMaterial )
     {
       if ( nativeMaterial == null )
-        return Manager.GetOrCreateShapeVisualDefaultMaterial();
+        return ShapeVisual.DefaultMaterial;
 
       Material material = null;
       m_materialLibrary.TryGetValue( nativeMaterial.getHash(), out material );
