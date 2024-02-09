@@ -33,6 +33,16 @@ namespace AGXUnity.Utils
       return PipelineType.BuiltIn;
     }
 
+    private static string[] s_supportedHDRP = new string[] {
+      "HDRenderPipeline",
+      "HighDefinitionRenderPipeline"
+    };
+
+    private static string[] s_supportedURP = new string[] {
+      "UniversalRenderPipeline",
+      "UniversalPipeline"
+    };
+
     /// <summary>
     /// Checks whether the material supports a given pipeline type. 
     /// Some assumptions are made here. 
@@ -62,25 +72,20 @@ namespace AGXUnity.Utils
       if ( pipelineType == PipelineType.BuiltIn )
         return true;
 
-      string[] supportedTags = new string[0];
+      var tag = new ShaderTagId( "RenderPipeline" );
       if ( pipelineType == PipelineType.HDRP ) {
-        supportedTags = new string[]
-        {
-          "HDRenderPipeline",
-          "HighDefinitionRenderPipeline"
-        };
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedHDRP.Contains( tagName ) )
+            return true;
+        }
       }
-      if ( pipelineType == PipelineType.Universal ) {
-        supportedTags = new string[] {
-          "UniversalRenderPipeline",
-          "UniversalPipeline"
-        };
-      }
-
-      for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
-        var tagName = mat.shader.FindSubshaderTagValue( i, new ShaderTagId( "RenderPipeline" ) ).name;
-        if ( supportedTags.Contains( tagName ) )
-          return true;
+      else if ( pipelineType == PipelineType.Universal ) {
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedURP.Contains( tagName ) )
+            return true;
+        }
       }
 
       return false;
@@ -113,6 +118,71 @@ namespace AGXUnity.Utils
 
       // SceneView is not prefab stage, OK to render.
       return true;
+    }
+
+
+    /// <summary>
+    /// Attempts to create a default lit material with an appropriate shader for the current render pipeline
+    /// </summary>
+    /// <returns>A new material if the current render pipeline is recognized or null otherwise</returns>
+    public static Material CreateDefaultMaterial()
+    {
+      switch ( DetectPipeline() ) {
+        case PipelineType.BuiltIn:
+          return new Material( Shader.Find( "Standard" ) );
+        case PipelineType.HDRP:
+          return new Material( Shader.Find( "HDRP/Lit" ) );
+        case PipelineType.Universal:
+          return new Material( Shader.Find( "Universal Render Pipeline/Lit" ) );
+        default:
+          return null;
+      }
+    }
+
+    /// <summary>
+    /// Attempts to set the main texture property on the given material, respecting the current render pipeline.
+    /// </summary>
+    /// <param name="mat">The material on which to set the main texture</param>
+    /// <param name="tex">The texture to set as the main texture</param>
+    public static void SetMainTexture( Material mat, Texture tex )
+    {
+      switch ( DetectPipeline() ) {
+        case PipelineType.BuiltIn:
+          mat.SetTexture( "_MainTex", tex );
+          break;
+        case PipelineType.HDRP:
+          mat.SetTexture( "_BaseColorMap", tex );
+          break;
+        case PipelineType.Universal:
+          mat.SetTexture( "_BaseMap", tex );
+          break;
+        default:
+          mat.mainTexture = tex;
+          break;
+      }
+    }
+
+    /// <summary>
+    /// Attempts to set the main color property on the given material, respecting the current render pipeline
+    /// </summary>
+    /// <param name="mat">The material on which to set the main color</param>
+    /// <param name="col">The color to set as the main color</param>
+    public static void SetColor( Material mat, Color col )
+    {
+      var pipeline = DetectPipeline();
+      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
+        mat.SetVector( "_BaseColor", col );
+      else
+        mat.SetVector( "_Color", col );
+    }
+
+    public static void SetSmoothness( Material mat, float smoothness )
+    {
+      var pipeline = DetectPipeline();
+      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
+        mat.SetFloat( "_Smoothness", smoothness );
+      else
+        mat.SetFloat( "_Glossiness", smoothness );
     }
   }
 }
