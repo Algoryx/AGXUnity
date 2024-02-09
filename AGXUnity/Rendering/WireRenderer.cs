@@ -298,29 +298,11 @@ namespace AGXUnity.Rendering
     private bool CreateMeshes()
     {
       if ( m_sphereMeshInstance == null )
-        m_sphereMeshInstance = CreateMesh( @"Debug/LowPolySphereRenderer" );
+        m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/LowPolySphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = CreateMesh( @"Debug/LowPolyCylinderRenderer" );
+        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/LowPolyCylinder" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
-    }
-
-    private Mesh CreateMesh( string resource )
-    {
-      GameObject tmp = Resources.Load<GameObject>( resource );
-      MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
-      CombineInstance[] combine = new CombineInstance[ filters.Length ];
-
-      for ( int i = 0; i < filters.Length; ++i ) {
-        combine[ i ].mesh = filters[ i ].sharedMesh;
-        combine[ i ].transform = filters[ i ].transform.localToWorldMatrix;
-      }
-
-      var mesh = new Mesh();
-      mesh.CombineMeshes( combine );
-
-      return mesh;
     }
 
     private void InitMatrices()
