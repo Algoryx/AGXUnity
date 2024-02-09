@@ -18,7 +18,6 @@ namespace AGXUnityEditor
         return;
 
       VerifyOnSelectionTarget( scene );
-      VerifyShapeVisualsMaterial( scene );
       VerifySimulationInstance( scene );
       VerifyCableWireRendering( scene );
       VerifyTerrainMaterials();
@@ -100,27 +99,6 @@ namespace AGXUnityEditor
           foreach ( var instance in data )
             Component.DestroyImmediate( instance );
           data = null;
-        }
-      }
-    }
-
-    /// <summary>
-    /// Shape visual components with sharedMaterial == null are assigned default material.
-    /// </summary>
-    private static void VerifyShapeVisualsMaterial( Scene scene )
-    {
-      var shapeVisuals = Object.FindObjectsOfType<AGXUnity.Rendering.ShapeVisual>();
-      foreach ( var shapeVisual in shapeVisuals ) {
-        var renderers = shapeVisual.GetComponentsInChildren<MeshRenderer>();
-        foreach ( var renderer in renderers ) {
-          if ( renderer.sharedMaterial == null ) {
-            renderer.sharedMaterial = Manager.GetOrCreateShapeVisualDefaultMaterial();
-
-            Debug.Log( "Shape visual with null material. Assigning default.", shapeVisual );
-
-            if ( !EditorApplication.isPlaying )
-              UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
-          }
         }
       }
     }
