@@ -760,7 +760,7 @@ namespace AGXUnity.Model
     private void OnDrawGizmosSelected()
     {
       if ( m_nodeGizmoMesh == null )
-        m_nodeGizmoMesh = Resources.Load<GameObject>( "Debug/BoxRenderer" ).GetComponent<MeshFilter>().sharedMesh;
+        m_nodeGizmoMesh = Resources.GetBuiltinResource<Mesh>( "Cube.fbx" );
       var initialized = m_tracks != null && m_tracks.Length > 0;
       var tracks      = initialized ? m_tracks : FindTracks();
       var color       = Color.black;
