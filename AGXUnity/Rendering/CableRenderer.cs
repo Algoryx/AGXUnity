@@ -92,9 +92,10 @@ namespace AGXUnity.Rendering
     {
       get
       {
-        return m_material == null ?
-                     m_material = DefaultMaterial() :
-                     m_material;
+        if ( m_material == null ||
+          ( m_material.name == DefaultMaterialName && !m_material.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) )
+          m_material = DefaultMaterial();
+        return m_material;
       }
       set
       {
@@ -105,18 +106,24 @@ namespace AGXUnity.Rendering
       }
     }
 
-    // TODO previous was elaborate way of spawning segment and looking at that renderers material. Check that this variant is ok
+    private static string DefaultMaterialName = "Default Cable Material";
+
     private static Material DefaultMaterial()
     {
-      Debug.Log( "Setting Default material from resources" );
-      switch ( RenderingUtils.DetectPipeline() ) {
-        case RenderingUtils.PipelineType.HDRP:
-          return Resources.Load<Material>( "HDRP/Materials/CableMaterial" );
-        case RenderingUtils.PipelineType.Universal:
-          return Resources.Load<Material>( "URP/Materials/CableMaterial" );
-        default:
-          return Resources.Load<Material>( "Materials/CableMaterial_01" );
-      }
+      Material mat;
+      if ( RenderingUtils.DetectPipeline() == RenderingUtils.PipelineType.BuiltIn )
+        mat = new Material( Resources.Load<Shader>( "Shaders/InstancedColorSurfaceShader" ) );
+      else
+        mat = new Material( Resources.Load<Shader>( "Shaders/InstancedCable" ) );
+
+      mat.name = DefaultMaterialName;
+      mat.hideFlags = HideFlags.NotEditable;
+      mat.enableInstancing = true;
+      mat.SetColor( "_Color", new Color( 0.17f, 0.17f, 0.17f ) );
+      RenderingUtils.SetSmoothness( mat, 0.5f );
+      mat.SetFloat( "_Metallic", 0.0f );
+
+      return mat;
     }
 
     private CableDamage m_cableDamage = null;
@@ -164,15 +171,6 @@ namespace AGXUnity.Rendering
         InitMatrices();
         m_positions.Clear();
         m_positions.Capacity = 256;
-      }
-    }
-
-    public override void EditorUpdate()
-    {
-      var pipeline = RenderingUtils.DetectPipeline();
-      if ( !Material.SupportsPipeline( pipeline ) ) {
-        Debug.LogWarning( $"Material {Material.name} does not support the current rendering pipeline '{pipeline}'. Reverting to the default material." );
-        Material = DefaultMaterial();
       }
     }
 
@@ -370,10 +368,6 @@ namespace AGXUnity.Rendering
         return;
       }
 
-      if ( m_renderDamages && RenderingUtils.DetectPipeline() != RenderingUtils.PipelineType.BuiltIn ) {
-        Debug.LogWarning( "Cable damage rendering using 'Draw Mesh Instanced' currently only supports the Build-in Render pipeline. Consider swapping to Game Object rendering or disabling cable damage", this );
-      }
-
       var forceSynchronize = m_positions.Count > 0 &&
                              ( m_segmentSphereMatrices.Count == 0 ||
                                m_segmentCylinderMatrices.Count == 0 );
@@ -385,7 +379,7 @@ namespace AGXUnity.Rendering
         int count = Mathf.Min( 1023, m_positions.Count - i );
 
         if ( m_segmentColors.Count > 0 )
-          m_meshInstanceProperties.SetVectorArray( "_InstancedColor", m_segmentColors[ i / 1023 ] );
+          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors[ i / 1023 ] );
 
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
@@ -403,7 +397,7 @@ namespace AGXUnity.Rendering
       for ( int i = 0; i < m_numCylinders; i += 1023 ) {
 
         if ( m_segmentColors.Count > 0 )
-          m_meshInstanceProperties.SetVectorArray( "_InstancedColor", m_segmentColors[ i / 1023 ] );
+          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors[ i / 1023 ] );
 
         int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
@@ -517,29 +511,14 @@ namespace AGXUnity.Rendering
 
     private bool CreateMeshes()
     {
+      m_cylinderMeshInstance = null;
+      m_sphereMeshInstance = null;
       if ( m_sphereMeshInstance == null )
-        m_sphereMeshInstance = CreateMesh( @"Cable/HalfSphereRenderer" );
+        m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = CreateMesh( @"Cable/CylinderCapRenderer" );
+        m_cylinderMeshInstance = Resources.Load<Mesh>(@"Debug/Models/CylinderCap");
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
-    }
-
-    private Mesh CreateMesh( string resource )
-    {
-      GameObject tmp = Resources.Load<GameObject>( resource );
-      MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      CombineInstance[] combine = new CombineInstance[ filters.Length ];
-
-      for ( int i = 0; i < filters.Length; ++i ) {
-        combine[ i ].mesh = filters[ i ].sharedMesh;
-        combine[ i ].transform = filters[ i ].transform.localToWorldMatrix;
-      }
-
-      var mesh = new Mesh();
-      mesh.CombineMeshes( combine );
-
-      return mesh;
     }
 
     private void InitMatrices()
@@ -552,34 +531,6 @@ namespace AGXUnity.Rendering
         m_segmentColors = new List<Vector4[]> { new Vector4[ 1023 ] };
       if ( m_meshInstanceProperties == null )
         m_meshInstanceProperties = new MaterialPropertyBlock();
-    }
-
-    private void DrawGizmos( bool isSelected )
-    {
-      if ( Application.isPlaying || InstancedRendering )
-        return;
-
-      if ( Cable == null || Cable.Route == null || Cable.Route.NumNodes < 2 )
-        return;
-
-      if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
-        return;
-
-      var defaultColor  = Color.Lerp( Color.black, Color.white, 0.15f );
-      var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
-      m_segmentSpawner?.DrawGizmos( Cable.GetRoutePoints(),
-                                    Cable.Radius,
-                                    isSelected ? selectedColor : defaultColor );
-    }
-
-    private void OnDrawGizmos()
-    {
-      DrawGizmos( false );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      DrawGizmos( true );
     }
   }
 }
