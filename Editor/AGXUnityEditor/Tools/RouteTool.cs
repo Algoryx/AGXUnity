@@ -310,6 +310,7 @@ namespace AGXUnityEditor.Tools
       else if ( listOpNode != null && erasePressed ) {
         Selected = null;
         Route.Remove( listOpNode );
+        EditorUtility.SetDirty( Route );
       }
     }
 
