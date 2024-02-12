@@ -30,22 +30,27 @@ Shader "AGXUnity/CableDamageShader"
 
         half _Glossiness;
         half _Metallic;
-        half _Color;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
         // #pragma instancing_options assumeuniformscaling
         UNITY_INSTANCING_BUFFER_START(Props)
             // put more per-instance properties here
-            UNITY_DEFINE_INSTANCED_PROP(float4, _InstancedColor)
+            UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
         UNITY_INSTANCING_BUFFER_END(Props)
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
-            fixed4 color = _Color;
-            color = UNITY_ACCESS_INSTANCED_PROP(Props, _InstancedColor); // Override if there is an instanced prop
+            float4 color = UNITY_ACCESS_INSTANCED_PROP(Props, _Color); // Override if there is an instanced prop
+            color.rgb = GammaToLinearSpace(color);
+            float yScale = length(float3(unity_ObjectToWorld[0].y, unity_ObjectToWorld[1].y, unity_ObjectToWorld[2].y));
+
+            IN.uv_MainTex.y = 0.5 - IN.uv_MainTex.y;
+            IN.uv_MainTex.y *= yScale;
+
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * color;
+            //c.rgb = worldScale / 2.0f -1.0f;
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
