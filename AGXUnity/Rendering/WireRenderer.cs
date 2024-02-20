@@ -1,4 +1,5 @@
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -146,27 +147,21 @@ namespace AGXUnity.Rendering
         endIt.ReturnToPool();
       }
 
-      while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count )
-        m_segmentSphereMatrices.Add( new Matrix4x4[ 1023 ] );
-
-      m_numCylinders = 0;
+      m_segmentSphereMatrices.Clear();
+      m_segmentCylinderMatrices.Clear();
 
       float radius = Wire.Radius;
       var sphereScale = 2.0f * radius * Vector3.one;
       for ( int i = 0; i < m_positions.Count; ++i ) {
         if ( i > 0 ) {
-          if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
-            m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
-
-          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
-                                                                                                                    m_positions[ i ],
-                                                                                                                    radius );
-          m_numCylinders++;
+          m_segmentCylinderMatrices.Add( SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
+                                                                                    m_positions[ i ],
+                                                                                    radius ) );
         }
 
-        m_segmentSphereMatrices[ i / 1023 ][ i % 1023 ] = Matrix4x4.TRS( m_positions[ i ],
-                                                                         Quaternion.identity,
-                                                                         sphereScale );
+        m_segmentSphereMatrices.Add( Matrix4x4.TRS( m_positions[ i ],
+                                                     Quaternion.identity,
+                                                     sphereScale ) );
       }
     }
 
@@ -187,18 +182,17 @@ namespace AGXUnity.Rendering
         return;
 
       var forceSynchronize = m_positions.Count > 0 &&
-                             ( m_segmentSphereMatrices.Count == 0 ||
-                               m_segmentCylinderMatrices.Count == 0 );
+                             ( m_segmentSphereMatrices.Instances == 0 ||
+                               m_segmentCylinderMatrices.Instances == 0 );
       if ( forceSynchronize )
         SynchronizeData( Wire.State != States.INITIALIZED );
 
       // Spheres
-      for ( int i = 0; i < m_positions.Count; i += 1023 ) {
-        int count = Mathf.Min( 1023, m_positions.Count - i );
+      foreach ( var (mat, count) in m_segmentSphereMatrices.InstanceGroups ) {
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
                                     Material,
-                                    m_segmentSphereMatrices[ i / 1023 ],
+                                    mat,
                                     count,
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
@@ -207,13 +201,11 @@ namespace AGXUnity.Rendering
                                     cam );
       }
 
-      // Cylinders
-      for ( int i = 0; i < m_numCylinders; i += 1023 ) {
-        int count = Mathf.Min( 1023, m_numCylinders - i );
+      foreach ( var (mat, count) in m_segmentCylinderMatrices.InstanceGroups ) {
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
                                     0,
                                     Material,
-                                    m_segmentCylinderMatrices[ i / 1023 ],
+                                    mat,
                                     count,
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
@@ -235,21 +227,18 @@ namespace AGXUnity.Rendering
 
     private void InitMatrices()
     {
-      if ( m_segmentSphereMatrices == null )
-        m_segmentSphereMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
-      if ( m_segmentCylinderMatrices == null )
-        m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
       if ( m_meshInstanceProperties == null )
         m_meshInstanceProperties = new MaterialPropertyBlock();
     }
 
     private Wire m_wire = null;
-    private List<Matrix4x4[]> m_segmentSphereMatrices = new List<Matrix4x4[]>();
-    private List<Matrix4x4[]> m_segmentCylinderMatrices = new List<Matrix4x4[]>();
+
+    private InstanceList<Matrix4x4> m_segmentCylinderMatrices = new InstanceList<Matrix4x4>();
+    private InstanceList<Matrix4x4> m_segmentSphereMatrices = new InstanceList<Matrix4x4>();
+
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_sphereMeshInstance = null;
     private Mesh m_cylinderMeshInstance = null;
     private List<Vector3> m_positions = new List<Vector3>();
-    private int m_numCylinders = 0;
   }
 }

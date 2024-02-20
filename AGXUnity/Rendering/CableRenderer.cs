@@ -1,4 +1,4 @@
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -63,15 +63,14 @@ namespace AGXUnity.Rendering
     [HideInInspector]
     public SegmentSpawner SegmentSpawner { get { return m_segmentSpawner; } }
 
+    private InstanceList<Matrix4x4> m_segmentSphereMatrices = new InstanceList<Matrix4x4>();
+    private InstanceList<Matrix4x4> m_segmentCylinderMatrices = new InstanceList<Matrix4x4>();
+    private InstanceList<Vector4> m_segmentColors = new InstanceList<Vector4>();
 
-    private List<Matrix4x4[]> m_segmentSphereMatrices = new List<Matrix4x4[]>();
-    private List<Matrix4x4[]> m_segmentCylinderMatrices = new List<Matrix4x4[]>();
-    private List<Vector4[]> m_segmentColors = new List<Vector4[]>();
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_sphereMeshInstance = null;
     private Mesh m_cylinderMeshInstance = null;
     private List<Vector3> m_positions = new List<Vector3>();
-    private int m_numCylinders = 0;
 
     [System.NonSerialized]
     private Cable m_cable = null;
@@ -369,23 +368,21 @@ namespace AGXUnity.Rendering
       }
 
       var forceSynchronize = m_positions.Count > 0 &&
-                             ( m_segmentSphereMatrices.Count == 0 ||
-                               m_segmentCylinderMatrices.Count == 0 );
+                            ( m_segmentSphereMatrices.Instances == 0 ||
+                              m_segmentCylinderMatrices.Instances == 0 );
       if ( forceSynchronize )
         SynchronizeDataInstanced( Cable.State != States.INITIALIZED );
 
       // Spheres
-      for ( int i = 0; i < m_positions.Count; i += 1023 ) {
-        int count = Mathf.Min( 1023, m_positions.Count - i );
-
-        if ( m_segmentColors.Count > 0 )
-          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors[ i / 1023 ] );
+      for ( int i = 0; i < m_segmentSphereMatrices.Groups; i++ ) {
+        if ( m_segmentColors.Instances > 0 )
+          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors.Group(i) );
 
         Graphics.DrawMeshInstanced( m_sphereMeshInstance,
                                     0,
                                     Material,
-                                    m_segmentSphereMatrices[ i / 1023 ],
-                                    count,
+                                    m_segmentSphereMatrices.Group(i),
+                                    m_segmentSphereMatrices.NumGroupInstances(i),
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
                                     ReceiveShadows,
@@ -394,17 +391,15 @@ namespace AGXUnity.Rendering
       }
 
       // Cylinders
-      for ( int i = 0; i < m_numCylinders; i += 1023 ) {
+      for ( int i = 0; i < m_segmentCylinderMatrices.Groups; i++ ) {
+        if ( m_segmentColors.Instances > 0 )
+          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors.Group( i ) );
 
-        if ( m_segmentColors.Count > 0 )
-          m_meshInstanceProperties.SetVectorArray( "_Color", m_segmentColors[ i / 1023 ] );
-
-        int count = Mathf.Min( 1023, m_numCylinders - i );
         Graphics.DrawMeshInstanced( m_cylinderMeshInstance,
                                     0,
                                     Material,
-                                    m_segmentCylinderMatrices[ i / 1023 ],
-                                    count,
+                                    m_segmentCylinderMatrices.Group( i ),
+                                    m_segmentCylinderMatrices.NumGroupInstances(i),
                                     m_meshInstanceProperties,
                                     ShadowCastingMode,
                                     ReceiveShadows,
@@ -444,10 +439,9 @@ namespace AGXUnity.Rendering
         beginIt.ReturnToPool();
       }
 
-      while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count )
-        m_segmentSphereMatrices.Add( new Matrix4x4[ 1023 ] );
-
-      m_numCylinders = 0;
+      m_segmentCylinderMatrices.Clear();
+      m_segmentSphereMatrices.Clear();
+      m_segmentColors.Clear();
 
       float radius = Cable.Radius;
       var sphereScale = 2f * radius * Vector3.one;
@@ -455,8 +449,6 @@ namespace AGXUnity.Rendering
       var rotation = (m_positions.Count > 1) ? Quaternion.FromToRotation( Vector3.down, m_positions[ 1 ] - m_positions[ 0 ] ) : Quaternion.identity;
       for ( int i = 0; i < m_positions.Count; ++i ) {
         if ( i > 0 ) {
-          if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
-            m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
 
           SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
                                                   m_positions[ i ],
@@ -464,30 +456,27 @@ namespace AGXUnity.Rendering
                                                   out var position,
                                                   out rotation,
                                                   out var scale );
+          m_segmentCylinderMatrices.Add( Matrix4x4.TRS( position, rotation, scale ) );
 
           if ( m_renderDamages ) {
             float t = CableDamage.DamageValue(i - 1) / CableDamage.MaxDamage;
             var color = Color.Lerp(CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t);
-            m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = color;
+            m_segmentColors.Add( color );
           }
           else {
-            m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Material.color;
+            m_segmentColors.Add( Material.color );
           }
-
-          m_numCylinders++;
         }
 
         // Last half sphere needs an additional color, copy last color
         if ( i + 1 == m_positions.Count ) {
-          var lastCol = m_segmentColors[ ( m_numCylinders-1 ) / 1023 ][ ( m_numCylinders-1 ) % 1023 ];
-          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
-            m_segmentColors.Add( new Vector4[ 1023 ] );
-          m_segmentColors[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = lastCol;
+          var lastCol = m_segmentColors[ m_segmentColors.Instances - 1];
+          m_segmentColors.Add( lastCol );
         }
 
-        m_segmentSphereMatrices[ i / 1023 ][ i % 1023 ] = Matrix4x4.TRS( m_positions[ i ],
-                                                                         rotation,
-                                                                         sphereScale );
+        m_segmentSphereMatrices.Add( Matrix4x4.TRS( m_positions[ i ],
+                                                    rotation,
+                                                    sphereScale ) );
       }
     }
 
@@ -498,19 +487,19 @@ namespace AGXUnity.Rendering
       if ( m_sphereMeshInstance == null )
         m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = Resources.Load<Mesh>(@"Debug/Models/CylinderCap");
+        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/CylinderCap" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
     }
 
     private void InitMatrices()
     {
-      if ( m_segmentSphereMatrices == null )
-        m_segmentSphereMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
       if ( m_segmentCylinderMatrices == null )
-        m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
+        m_segmentCylinderMatrices = new InstanceList<Matrix4x4>();
+      if ( m_segmentSphereMatrices == null )
+        m_segmentSphereMatrices = new InstanceList<Matrix4x4>();
       if ( m_segmentColors == null )
-        m_segmentColors = new List<Vector4[]> { new Vector4[ 1023 ] };
+        m_segmentColors = new InstanceList<Vector4>();
       if ( m_meshInstanceProperties == null )
         m_meshInstanceProperties = new MaterialPropertyBlock();
     }
