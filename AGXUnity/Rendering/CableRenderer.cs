@@ -111,9 +111,9 @@ namespace AGXUnity.Rendering
     {
       Material mat;
       if ( RenderingUtils.DetectPipeline() == RenderingUtils.PipelineType.BuiltIn )
-        mat = new Material( Resources.Load<Shader>( "Shaders/InstancedColorSurfaceShader" ) );
+        mat = new Material( Resources.Load<Shader>( "Shaders/CableAndWire" ) );
       else
-        mat = new Material( Resources.Load<Shader>( "Shaders/InstancedCable" ) );
+        mat = new Material( Resources.Load<Shader>( "Shaders/Cable And Wire" ) );
 
       mat.name = DefaultMaterialName;
       mat.hideFlags = HideFlags.NotEditable;
