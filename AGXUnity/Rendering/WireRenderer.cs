@@ -170,16 +170,11 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private void SRPRender( ScriptableRenderContext _, Camera cam )
-    {
-      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, true ) )
-        return;
-      Render( cam );
-    }
+    private void SRPRender( ScriptableRenderContext _, Camera cam ) => Render( cam );
 
     private void Render( Camera cam )
     {
-      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, true ) )
+      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, false ) )
         return;
 
       if ( !Application.isPlaying )

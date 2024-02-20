@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -224,7 +224,7 @@ namespace AGXUnity.Rendering
     void Render( Camera cam )
     {
       if ( !InstancedRendering ) return;
-      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, true ) )
+      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, false ) )
         return;
 
       DrawInstanced( cam );
