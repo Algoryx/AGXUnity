@@ -1,4 +1,4 @@
-Shader "AGXUnity/CableDamageShader"
+Shader "AGXUnity/Built-In/Cable and Wire"
 {
     Properties
     {
@@ -45,9 +45,11 @@ Shader "AGXUnity/CableDamageShader"
             float4 color = UNITY_ACCESS_INSTANCED_PROP(Props, _Color); // Override if there is an instanced prop
             color.rgb = GammaToLinearSpace(color);
             float yScale = length(float3(unity_ObjectToWorld[0].y, unity_ObjectToWorld[1].y, unity_ObjectToWorld[2].y));
+            float xScale = length(float3(unity_ObjectToWorld[0].x, unity_ObjectToWorld[1].x, unity_ObjectToWorld[2].x));
 
             IN.uv_MainTex.y = 0.5 - IN.uv_MainTex.y;
             IN.uv_MainTex.y *= yScale;
+            IN.uv_MainTex.y /= xScale;
 
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * color;
             //c.rgb = worldScale / 2.0f -1.0f;
