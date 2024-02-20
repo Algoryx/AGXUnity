@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -120,31 +120,6 @@ namespace AGXUnity.Rendering
       return material;
     }
 
-    private static Matrix4x4 CalculateCylinderTransform( Vector3 start, Vector3 end, float radius )
-    {
-      CalculateCylinderTransform( start,
-                                  end,
-                                  radius,
-                                  out var position,
-                                  out var rotation,
-                                  out var scale );
-      return Matrix4x4.TRS( position, rotation, scale );
-    }
-
-    private static void CalculateCylinderTransform( Vector3 start,
-                                                    Vector3 end,
-                                                    float radius,
-                                                    out Vector3 position,
-                                                    out Quaternion rotation,
-                                                    out Vector3 scale )
-    {
-      var dir = end - start;
-      var length = dir.magnitude;
-      position = 0.5f * ( start + end );
-      rotation = Quaternion.FromToRotation( Vector3.up, dir );
-      scale = new Vector3( 2.0f * radius, 0.5f * length, 2.0f * radius );
-    }
-
     private void SynchronizeData( bool isRoute )
     {
       if ( Wire == null )
@@ -183,7 +158,7 @@ namespace AGXUnity.Rendering
           if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
             m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
 
-          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = CalculateCylinderTransform( m_positions[ i - 1 ],
+          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
                                                                                                                     m_positions[ i ],
                                                                                                                     radius );
           m_numCylinders++;
@@ -258,7 +233,7 @@ namespace AGXUnity.Rendering
       if ( m_sphereMeshInstance == null )
         m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/LowPolySphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/LowPolyCylinder" );
+        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/CylinderCap" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
     }
