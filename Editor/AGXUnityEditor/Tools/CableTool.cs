@@ -112,12 +112,11 @@ namespace AGXUnityEditor.Tools
                               ( InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ||
                                 ( wrapper.Member.Name == "PoissonsRatio" && dir == CableProperties.Direction.Twist ) );
             if ( renderFloat ) {
+              EditorGUI.BeginChangeCheck();
               var value = EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
                                                       wrapper.Get<float>( properties[ dir ] ) );
-              if ( UnityEngine.GUI.changed ) {
+              if ( EditorGUI.EndChangeCheck() )
                 changed = new Tuple<PropertyWrapper, CableProperties.Direction, object>( wrapper, dir, value );
-                UnityEngine.GUI.changed = false;
-              }
             }
           }
         }

@@ -193,7 +193,6 @@ namespace AGXUnityEditor
       var result = new OptionalOverrideValueResult();
       var instance = wrapper.Get<OptionalOverrideValue<ValueT>>( objects[ 0 ] );
 
-      UnityEngine.GUI.changed = false;
       var hasMixedUseOverride = !CompareMulti<ValueT>( objects,
                                                        wrapper,
                                                        other => other.UseOverride == instance.UseOverride );
@@ -493,7 +492,6 @@ namespace AGXUnityEditor
       var result = new DefaultAndUserValueResult();
       var instance = wrapper.Get<DefaultAndUserValue<ValueT>>( objects[ 0 ] );
 
-      UnityEngine.GUI.changed = false;
       var hasMixedUseDefault = !CompareMulti<ValueT>( objects,
                                                        wrapper,
                                                        other => other.UseDefault == instance.UseDefault );
@@ -601,20 +599,21 @@ namespace AGXUnityEditor
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( objects[ 0 ] as Object, wrapper.Member.Name ),
                                  InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
+          EditorGUI.BeginChangeCheck();
           data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
                                                                       data.Value.Enabled );
-          data.EnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
+          data.EnabledChanged = EditorGUI.EndChangeCheck();
+
+          EditorGUI.BeginChangeCheck();
           data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
                                                                       data.Value.CreateDynamicMassEnabled );
-          data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
+          data.CreateDynamicMassEnabledChanged = EditorGUI.EndChangeCheck();
+
+          EditorGUI.BeginChangeCheck();
           data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
                                                                       data.Value.ForceFeedbackEnabled );
-          data.ForceFeedbackEnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
+          data.ForceFeedbackEnabledChanged = EditorGUI.EndChangeCheck();
         }
-        UnityEngine.GUI.changed = data.ContainsChanges;
       }
       return data;
     }

@@ -23,24 +23,24 @@ namespace AGXUnityEditor.Tools
 
       EditorGUI.showMixedValue = ShowMixed( ( fm1, fm2 ) => !AGXUnity.Utils.Math.Approximately( fm1.NormalForceMagnitude,
                                                                                                 fm2.NormalForceMagnitude ) );
+      EditorGUI.BeginChangeCheck();
       var normalForce = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Normal Force Magnitude" ),
                                                                FrictionModel.NormalForceMagnitude ),
                                    0.0f );
-      if ( UnityEngine.GUI.changed )
+      if ( EditorGUI.EndChangeCheck() )
         foreach ( var fm in GetTargets<FrictionModel>() )
           fm.NormalForceMagnitude = normalForce;
-      UnityEngine.GUI.changed = false;
 
       EditorGUI.showMixedValue = ShowMixed( ( fm1, fm2 ) => fm1.ScaleNormalForceWithDepth != fm2.ScaleNormalForceWithDepth );
 
+      EditorGUI.BeginChangeCheck();
       var scaleNormalForceWithDepth = InspectorGUI.Toggle( GUI.MakeLabel( "Scale Normal Force With Depth" ),
                                                            FrictionModel.ScaleNormalForceWithDepth );
-      if ( UnityEngine.GUI.changed )
+      if ( EditorGUI.EndChangeCheck() )
         foreach ( var fm in GetTargets<FrictionModel>() )
           fm.ScaleNormalForceWithDepth = scaleNormalForceWithDepth;
 
       EditorGUI.showMixedValue = false;
-      UnityEngine.GUI.changed = false;
     }
 
     private bool ShowMixed( System.Func<FrictionModel, FrictionModel, bool> validator )

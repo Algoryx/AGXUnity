@@ -369,9 +369,6 @@ namespace AGXUnityEditor
                                         content,
                                         true );
 
-      if ( newState != state.Bool )
-        UnityEngine.GUI.changed = false;
-
       if ( onStateChanged != null && newState != state.Bool )
         onStateChanged.Invoke( newState );
 
@@ -404,10 +401,8 @@ namespace AGXUnityEditor
                                           foldoutData.Bool,
                                           content,
                                           true ) && instance != null;
-        if ( newState != foldoutData.Bool ) {
+        if ( newState != foldoutData.Bool )
           foldoutData.Bool = newState;
-          UnityEngine.GUI.changed = false;
-        }
       }
       position.xMax = oldWidth;
 
