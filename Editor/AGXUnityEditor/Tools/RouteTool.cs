@@ -236,6 +236,8 @@ namespace AGXUnityEditor.Tools
 
       Undo.RecordObject( Route, "Route changed" );
 
+      EditorGUI.BeginChangeCheck();
+
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( Parent,
                                                               "Route",
                                                               entry => { entry.Bool = true; } ),
@@ -310,8 +312,9 @@ namespace AGXUnityEditor.Tools
       else if ( listOpNode != null && erasePressed ) {
         Selected = null;
         Route.Remove( listOpNode );
-        EditorUtility.SetDirty( Route );
       }
+      if( EditorGUI.EndChangeCheck() )
+        EditorUtility.SetDirty( Route );
     }
 
     private void CreateRouteNodeTool( NodeT node )

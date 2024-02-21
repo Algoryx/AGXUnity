@@ -53,14 +53,9 @@ namespace AGXUnityEditor.Tools
       // Render AttachmentPair GUI.
       ConstraintAttachmentFrameTool.OnPreTargetMembersGUI();
 
-      // Since we set UnityEngine.GUI.Change further down we need to manually set the dirty state if the attachment pairs changed
-      if ( UnityEngine.GUI.changed )
-        foreach ( var constraint in constraints )
-          EditorUtility.SetDirty( constraint.AttachmentPair );
-
       Undo.RecordObjects( constraints, "ConstraintTool" );
 
-      UnityEngine.GUI.changed = false;
+      EditorGUI.BeginChangeCheck();
 
       // The constraint type is Unknown when, e.g., go.AddComponent<Constraint>()
       // or when the constraint has been reset. If any of the selected constraints
@@ -72,36 +67,35 @@ namespace AGXUnityEditor.Tools
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
       EditorGUI.showMixedValue = false;
 
-      if ( UnityEngine.GUI.changed ) {
+      if ( EditorGUI.EndChangeCheck() ) {
         foreach ( var constraint in constraints ) {
           constraint.CollisionsState = collisionsState;
           EditorUtility.SetDirty( constraint );
         }
-        UnityEngine.GUI.changed = false;
       }
+      EditorGUI.BeginChangeCheck();
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.SolveType != constraint.SolveType );
       var solveType = ConstraintSolveTypeGUI( refConstraint.SolveType );
       EditorGUI.showMixedValue = false;
 
-      if ( UnityEngine.GUI.changed ) {
+      if ( EditorGUI.EndChangeCheck() ) {
         foreach ( var constraint in constraints ) {
           constraint.SolveType = solveType;
           EditorUtility.SetDirty( constraint );
         }
-        UnityEngine.GUI.changed = false;
       }
 
+      EditorGUI.BeginChangeCheck();
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.ConnectedFrameNativeSyncEnabled != constraint.ConnectedFrameNativeSyncEnabled );
       var frameNativeSync = ConstraintConnectedFrameSyncGUI( refConstraint.ConnectedFrameNativeSyncEnabled );
       EditorGUI.showMixedValue = false;
 
-      if ( UnityEngine.GUI.changed ) {
+      if ( EditorGUI.EndChangeCheck() ) {
         foreach ( var constraint in constraints ) {
           constraint.ConnectedFrameNativeSyncEnabled = frameNativeSync;
           EditorUtility.SetDirty( constraint );
         }
-        UnityEngine.GUI.changed = false;
       }
 
       if ( differentTypes ) {
@@ -119,8 +113,6 @@ namespace AGXUnityEditor.Tools
                                 select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
       Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
-
-      var anyChange = false;
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
@@ -146,10 +138,11 @@ namespace AGXUnityEditor.Tools
                 var fieldContent = GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] );
                 if ( wrapper.IsType<float>() ) {
                   EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
+                  EditorGUI.BeginChangeCheck();
                   var value = InspectorGUI.CustomFloatField( labelContent,
                                                              fieldContent,
                                                              wrapper.Get<float>( refTransOrRotRowData[ i ]?.RowData ) );
-                  if ( UnityEngine.GUI.changed ) {
+                  if ( EditorGUI.EndChangeCheck() ) {
                     foreach ( var constraintParser in constraintsParser )
                       wrapper.ConditionalSet( constraintParser[ rowType ][ i ]?.RowData, value );
                   }
@@ -179,18 +172,11 @@ namespace AGXUnityEditor.Tools
                   }
                 }
               }
-              anyChange |= UnityEngine.GUI.changed;
-              UnityEngine.GUI.changed = false;
               EditorGUI.showMixedValue = false;
             }
           } // For type wrappers.
         } // Indentation.
       } // For Translational, Rotational.
-
-      if ( anyChange ) {
-        foreach ( var constraint in allElementaryConstraints )
-          EditorUtility.SetDirty( constraint );
-      }
 
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
       if ( ecControllers.Length > 0 &&

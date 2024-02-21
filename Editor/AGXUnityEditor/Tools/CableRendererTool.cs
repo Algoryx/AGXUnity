@@ -35,28 +35,28 @@ namespace AGXUnityEditor.Tools
             differentModes = true;
 
       EditorGUI.showMixedValue = CRTargets.Any( CR => !Equals( CableRenderer.Material, CR.Material ) );
+      EditorGUI.BeginChangeCheck();
       var material = (Material)EditorGUILayout.ObjectField(GUI.MakeLabel("Render Material"), CableRenderer.Material, typeof(Material), true);
-      if ( UnityEngine.GUI.changed )
+      if ( EditorGUI.EndChangeCheck() )
       {
         foreach (var CR in CRTargets ) {
           EditorUtility.SetDirty( CR );
           CR.Material = material;
         }
-        UnityEngine.GUI.changed = false;
       }
 
       EditorGUI.showMixedValue = CRTargets.Any( CR => !Equals( CableRenderer.RenderMode, CR.RenderMode ) );
+      EditorGUI.BeginChangeCheck();
       var renderMode = (CableRenderer.SegmentRenderMode)EditorGUILayout.EnumPopup( 
                                       GUI.MakeLabel( "Render Mode" ),
                                       CableRenderer.RenderMode,
                                       InspectorEditor.Skin.Popup );
-      if ( UnityEngine.GUI.changed )
+      if ( EditorGUI.EndChangeCheck() )
       {
         foreach (var CR in CRTargets ) {
           EditorUtility.SetDirty( CR );
           CR.RenderMode = renderMode;
         }
-        UnityEngine.GUI.changed = false;
       }
       EditorGUI.showMixedValue = false;
 
@@ -68,29 +68,29 @@ namespace AGXUnityEditor.Tools
         if (CableRenderer.RenderMode == CableRenderer.SegmentRenderMode.DrawMeshInstanced)
         {
           EditorGUI.showMixedValue = CRTargets.Any( CR => !Equals( CableRenderer.ShadowCastingMode, CR.ShadowCastingMode ) );
+          EditorGUI.BeginChangeCheck();
           var castShadows = (UnityEngine.Rendering.ShadowCastingMode)EditorGUILayout.EnumPopup(
                                               GUI.MakeLabel("Shadow Casting Mode"), 
                                               CableRenderer.ShadowCastingMode,
                                               InspectorEditor.Skin.Popup);
-          if ( UnityEngine.GUI.changed )
+          if ( EditorGUI.EndChangeCheck() )
           {
             foreach (var CR in CRTargets ) {
               EditorUtility.SetDirty( CR );
               CR.ShadowCastingMode = castShadows;
             }
-            UnityEngine.GUI.changed = false;
           }
           EditorGUI.showMixedValue = false;
 
           EditorGUI.showMixedValue = CRTargets.Any( CR => !Equals( CableRenderer.ReceiveShadows, CR.ReceiveShadows ) );
+          EditorGUI.BeginChangeCheck();
           var receiveShadows = EditorGUILayout.Toggle(GUI.MakeLabel("Receive Shadows"), CableRenderer.ReceiveShadows );
-          if ( UnityEngine.GUI.changed )
+          if ( EditorGUI.EndChangeCheck() )
           {
             foreach (var CR in CRTargets ) {
               EditorUtility.SetDirty( CR );
               CR.ReceiveShadows = receiveShadows;
             }
-            UnityEngine.GUI.changed = false;
           }
           EditorGUI.showMixedValue = false;
         }
