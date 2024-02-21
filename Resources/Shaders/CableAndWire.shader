@@ -4,8 +4,12 @@ Shader "AGXUnity/Built-In/Cable and Wire"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
-        _Glossiness ("Smoothness", Range(0,1)) = 0.5
+        _Smoothness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
+        [NoScaleOffset][Normal]_NormalMap ("Normals", 2D) = "bump" {}
+        [NoScaleOffset][Gamma]_MetallicMap ("Metallic Map", 2D) = "white" {}
+        [NoScaleOffset]_SmoothnessMap ("Smoothness Map", 2D) = "white" {}
+        [ToggleOff]_InvertSmoothness ("Invert smoothness map", Float) = 0.0
     }
     SubShader
     {
@@ -22,14 +26,19 @@ Shader "AGXUnity/Built-In/Cable and Wire"
         #pragma multi_compile_instancing
 
         sampler2D _MainTex;
+        sampler2D _NormalMap;
+        sampler2D _MetallicMap;
+        sampler2D _SmoothnessMap;
 
         struct Input
         {
             float2 uv_MainTex;
         };
 
-        half _Glossiness;
+        half _Smoothness;
         half _Metallic;
+
+        float _InvertSmoothness;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
@@ -52,11 +61,14 @@ Shader "AGXUnity/Built-In/Cable and Wire"
             IN.uv_MainTex.y /= xScale;
 
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * color;
-            //c.rgb = worldScale / 2.0f -1.0f;
+            o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
-            o.Metallic = _Metallic;
-            o.Smoothness = _Glossiness;
+            o.Metallic = _Metallic * tex2D (_MetallicMap, IN.uv_MainTex);
+            float smooth = tex2D (_SmoothnessMap, IN.uv_MainTex);
+            if(_InvertSmoothness)
+                smooth = 1.0f - smooth;
+            o.Smoothness = _Smoothness * smooth;
             o.Alpha = c.a;
         }
         ENDCG
