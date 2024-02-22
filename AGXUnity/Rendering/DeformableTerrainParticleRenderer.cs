@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+using static agx.agxSWIG.UnityHelpers;
+
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
@@ -292,7 +294,7 @@ namespace AGXUnity.Rendering
         }
 
         for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
-          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023 );
+          PopulateMatrices( granulars, m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023);
       }
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
