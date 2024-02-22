@@ -12,7 +12,7 @@ namespace AGXUnityEditor
     [HideInInspector]
     public static EditorSettings Instance { get { return GetOrCreateInstance(); } }
 
-    public static string EditorDataDirectory { get { return IO.Utils.AGXUnityEditorDirectory + "/Data"; } }
+    public static string EditorDataDirectory => IO.Utils.AGXUnityEditorDataDirectory;
 
     [HideInInspector]
     public static readonly int ToggleButtonSize = 18;
@@ -112,6 +112,7 @@ namespace AGXUnityEditor
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
           Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
+          EditorUtility.SetDirty( this );
         }
       }
 
@@ -127,6 +128,7 @@ namespace AGXUnityEditor
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           Time.maximumDeltaTime = Time.fixedDeltaTime;
           Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
+          EditorUtility.SetDirty( this );
         }
       }
     }
@@ -202,9 +204,9 @@ namespace AGXUnityEditor
 
     public static bool PrepareEditorDataFolder()
     {
-      if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityEditorDirectory + "/Data" ) ) {
-        AssetDatabase.CreateFolder( IO.Utils.AGXUnityEditorDirectory, "Data" );
-        AssetDatabase.SaveAssets();
+      if(!Directory.Exists( IO.Utils.AGXUnityEditorDataDirectory ) ) {
+        Directory.CreateDirectory( IO.Utils.AGXUnityEditorDataDirectory );
+        AssetDatabase.Refresh();
       }
 
       return true;
