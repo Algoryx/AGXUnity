@@ -1,4 +1,5 @@
 using AGXUnity.Collide;
+using AGXUnity.Rendering;
 using System.Linq;
 using UnityEngine;
 
@@ -72,6 +73,15 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeField]
+    private TerrainLayer m_renderLayer = null;
+
+    public TerrainLayer RenderLayer
+    {
+      get => m_renderLayer;
+      set { m_renderLayer = value; }
+    }
+
     /// <summary>
     /// Whether to disable collision shapes used to define this patch during initialization.
     /// </summary>
@@ -83,6 +93,12 @@ namespace AGXUnity.Model
     /// </summary>
     [field: SerializeField]
     public bool DisableVisuals { get; set; } = true;
+
+    /// <summary>
+    /// Whether to set child shape visuals to the default terrain patch shape material
+    /// </summary>
+    [field: SerializeField]
+    public bool OverrideVisuals { get; set; } = true;
 
     // The shapes used to define this patch.
     public Collide.Shape[] Shapes { get => GetComponentsInChildren<Collide.Shape>(); }
@@ -107,6 +123,18 @@ namespace AGXUnity.Model
         AddShape( shape );
 
       return true;
+    }
+
+    private Material m_replaceMat = null;
+
+    public override void EditorUpdate()
+    {
+      if(OverrideVisuals) {
+        if ( m_replaceMat == null )
+          m_replaceMat = Resources.Load<Material>( @"Materials/TerrainPatchShapeMaterial" );
+        foreach( var visual in gameObject.GetComponentsInChildren<ShapeVisual>() )
+          visual.SetMaterial( m_replaceMat );
+      }
     }
   }
 }
