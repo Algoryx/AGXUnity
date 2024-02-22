@@ -112,7 +112,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_maximumDepth = 20.0f;
+    protected float m_maximumDepth = 20.0f;
 
     /// <summary>
     /// Maximum depth, it's not possible to dig deeper than this value.

@@ -6,6 +6,10 @@ using UnityEngine;
 
 using Mesh = UnityEngine.Mesh;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace AGXUnity.Model
 {
   public abstract class MovableAdapter : DeformableTerrainBase
@@ -17,9 +21,16 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Movable Terrain" )]
   [RequireComponent( typeof( MeshFilter ) )]
   [RequireComponent( typeof( MeshRenderer ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#movable-terrain" )]
   [DisallowMultipleComponent]
   public class MovableTerrain : MovableAdapter
   {
+    // Constructor is used here to override the default value defined in the base class
+    MovableTerrain()
+    {
+      m_maximumDepth = 0.5f;
+    }
+
     /// <summary>
     /// Native deformable terrain instance - accessible after this
     /// component has been initialized and is valid.
@@ -27,15 +38,28 @@ namespace AGXUnity.Model
     public agxTerrain.Terrain Native { get; private set; } = null;
 
     /// <summary>
-    /// Unity Terrain component.
+    /// Unity Mesh component.
     /// </summary>
     public MeshFilter TerrainMesh
     {
       get
       {
-        return m_terrain == null ?
-                 m_terrain = GetComponent<MeshFilter>() :
-                 m_terrain;
+        return m_terrainMesh == null ?
+                 m_terrainMesh = GetComponent<MeshFilter>() :
+                 m_terrainMesh;
+      }
+    }
+
+    /// <summary>
+    /// Unity Renderer component.
+    /// </summary>
+    public MeshRenderer TerrainRenderer
+    {
+      get
+      {
+        return m_terrainRenderer == null ?
+                 m_terrainRenderer = GetComponent<MeshRenderer>() :
+                 m_terrainRenderer;
       }
     }
 
@@ -119,7 +143,7 @@ namespace AGXUnity.Model
     [field: SerializeField]
     [InspectorPriority(-1)]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
-    public bool InvertDepthDirection { get; set; } = false;
+    public bool InvertDepthDirection { get; set; } = true;
 
     private void RecalculateSizes( bool fromCellCount )
     {
@@ -138,6 +162,15 @@ namespace AGXUnity.Model
     {
       if ( TerrainMesh.sharedMesh == null )
         SetupMesh();
+
+#if UNITY_EDITOR
+      // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
+      var mat = TerrainRenderer.sharedMaterial;
+      if ( !AssetDatabase.Contains(mat) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
+        TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
+        RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
+      }
+#endif
     }
 
     protected override bool Initialize()
@@ -315,7 +348,8 @@ namespace AGXUnity.Model
     }
 
     private Vector3[] m_terrainVertices = null;
-    private MeshFilter m_terrain = null;
+    private MeshFilter m_terrainMesh = null;
+    private MeshRenderer m_terrainRenderer = null;
 
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
