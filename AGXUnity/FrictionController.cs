@@ -76,6 +76,17 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Convenience method to get current force applied by this controller. 0 if not initialized.
+    /// </summary>
+    public float GetCurrentForce()
+    {
+      if ( Native != null )
+        return (float) agx.FrictionController.safeCast( Native ).getCurrentForce( );
+      else
+        return 0;
+    }
+
     protected override void Construct( agx.ElementaryConstraint tmpEc )
     {
       base.Construct( tmpEc );

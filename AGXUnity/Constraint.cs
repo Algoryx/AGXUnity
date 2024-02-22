@@ -972,35 +972,22 @@ namespace AGXUnity
     }
 
     private static Mesh m_gizmosMesh = null;
-    public static Mesh GetOrCreateGizmosMesh()
+
+    [HideInInspector]
+    public static Mesh GizmosMesh
     {
-      // Unity crashes before first scene view frame has been rendered on startup
-      // if we load resources. Wait some time before we show this gizmo...
-      //if ( !Application.isPlaying && Time.realtimeSinceStartup < 30.0f )
-      //  return null;
-
-      if ( m_gizmosMesh != null )
+      get
+      {
+        if(m_gizmosMesh == null)
+          m_gizmosMesh = Resources.Load<Mesh>( @"Debug/Models/arrow" );
         return m_gizmosMesh;
-
-      GameObject tmp = Resources.Load<GameObject>( @"Debug/ConstraintRenderer" );
-      MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      CombineInstance[] combine = new CombineInstance[ filters.Length ];
-
-      for ( int i = 0; i < filters.Length; ++i ) {
-        combine[ i ].mesh = filters[ i ].sharedMesh;
-        combine[ i ].transform = filters[ i ].transform.localToWorldMatrix;
       }
-
-      m_gizmosMesh = new Mesh();
-      m_gizmosMesh.CombineMeshes( combine );
-
-      return m_gizmosMesh;
     }
 
     private static void DrawGizmos( Color color, AttachmentPair attachmentPair, bool selected )
     {
       Gizmos.color = color;
-      Gizmos.DrawMesh( GetOrCreateGizmosMesh(),
+      Gizmos.DrawMesh( GizmosMesh,
                        attachmentPair.ReferenceFrame.Position,
                        attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation( Vector3.up, Vector3.forward ),
                        0.3f * Utils.Math.Clamp( Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position,
