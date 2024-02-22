@@ -973,6 +973,7 @@ namespace AGXUnity
 
     private static Mesh m_gizmosMesh = null;
 
+    [HideInInspector]
     public static Mesh GizmosMesh
     {
       get
