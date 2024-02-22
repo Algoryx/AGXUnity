@@ -95,10 +95,10 @@ namespace AGXUnityEditor.IO
     {
       get
       {
-        var filePath = GetCurrentFilePath();
+        var filePath = GetCurrentFilePath().Replace('\\','/');
         var assetCtx = filePath.StartsWith( Application.dataPath );
 
-        if( assetCtx ) {
+        if( assetCtx ) { 
           var refScriptFullPath = Application.dataPath + '/' + m_relDataPathDir + '/' + m_refDirectory + '/' + m_refScript;
           if ( m_relDataPathDir != "" && File.Exists( refScriptFullPath ) )
             return "Assets/" + m_relDataPathDir;
