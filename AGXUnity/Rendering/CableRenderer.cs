@@ -419,20 +419,6 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private static void CalculateCylinderTransform( Vector3 start,
-                                                    Vector3 end,
-                                                    float radius,
-                                                    out Vector3 position,
-                                                    out Quaternion rotation,
-                                                    out Vector3 scale )
-    {
-      var dir = end - start;
-      var length = dir.magnitude;
-      position = 0.5f * ( start + end );
-      rotation = Quaternion.FromToRotation( Vector3.up, dir );
-      scale = new Vector3( 2.0f * radius, 1f * length, 2.0f * radius );
-    }
-
     private void SynchronizeDataInstanced( bool isRoute )
     {
       if ( Cable == null || !InstancedRendering )
@@ -478,16 +464,12 @@ namespace AGXUnity.Rendering
           if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
             m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
 
-          CalculateCylinderTransform( m_positions[ i - 1 ],
-                                      m_positions[ i ],
-                                      radius,
-                                      out var position,
-                                      out rotation,
-                                      out var scale );
-          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] =  Matrix4x4.TRS( position, rotation, scale );
-
-          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
-            m_segmentColors.Add( new Vector4[ 1023 ] );
+          SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
+                                                  m_positions[ i ],
+                                                  radius,
+                                                  out var position,
+                                                  out rotation,
+                                                  out var scale );
 
           if ( m_renderDamages ) {
             float t = CableDamage.DamageValue(i - 1) / CableDamage.MaxDamage;
