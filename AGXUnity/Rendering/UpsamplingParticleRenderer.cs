@@ -256,7 +256,9 @@ namespace AGXUnity.Rendering
         if ( RP == RenderingUtils.PipelineType.BuiltIn )
           GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Built-In/UpsampledParticle" ) );
         else
-          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Instanced Terrain Particle" ) );
+          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Shader Graph/Upsampled Particle" ) );
+
+        GranuleMaterial.name = "Default Upsample Material";
       }
       if ( !GranuleMaterial.SupportsPipeline( RP ) )
         Debug.LogError( "The selected granule material does not support the currently active Rendering Pipeline.Rendering might be incorrect.", this );
