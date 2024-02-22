@@ -1,4 +1,4 @@
-Shader "AGXUnity/Terrain Particle Impostor"
+Shader "Hidden/AGXUnity/Built-In/Particle Impostor"
 {
     Properties
     {
@@ -18,7 +18,7 @@ Shader "AGXUnity/Terrain Particle Impostor"
 
         #include "UnityCG.cginc"
         #include "AutoLight.cginc"
-        #include "./Compute/ConstantsAndStructs.cginc"            
+        #include "../Compute/ConstantsAndStructs.cginc"            
 
         #define BOX_CORRECTION 1.5
 

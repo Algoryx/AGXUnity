@@ -1,4 +1,3 @@
-
 using agxTerrain;
 using AGXUnity.Model;
 using AGXUnity.Utils;
@@ -250,12 +249,12 @@ namespace AGXUnity.Rendering
     {
       m_particleUpsamplingShader = Resources.Load<ComputeShader>( "Shaders/Compute/ParticleUpsample" );
       m_moveParticlesShader = Resources.Load<ComputeShader>( "Shaders/Compute/MoveParticles" );
-      m_impostorMaterial = new Material( Resources.Load<Shader>( "Shaders/ParticleImpostor" ) );
+      m_impostorMaterial = new Material( Resources.Load<Shader>( "Shaders/Built-In/ParticleImpostor" ) );
 
       var RP = RenderingUtils.DetectPipeline();
       if ( GranuleMaterial == null ) {
         if ( RP == RenderingUtils.PipelineType.BuiltIn )
-          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/InstancedTerrainParticleSurface" ) );
+          GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Built-In/UpsampledParticle" ) );
         else
           GranuleMaterial = new Material( Resources.Load<Shader>( "Shaders/Instanced Terrain Particle" ) );
       }

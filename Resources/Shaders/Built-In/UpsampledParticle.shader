@@ -1,4 +1,4 @@
-Shader "AGXUnity/Instanced Terrain Particle Surface"
+Shader "AGXUnity/Built-In/Upsampled Particle"
 {
     Properties
     {
