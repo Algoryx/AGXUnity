@@ -183,5 +183,45 @@ namespace AGXUnity.Utils
       else
         mat.SetFloat( "_Glossiness", smoothness );
     }
+
+    public static void EnableTransparency( Material mat, bool enable )
+    {
+      var pipeline = DetectPipeline();
+      switch ( pipeline ) {
+        case PipelineType.BuiltIn:
+          mat.SetBlendMode( enable ? Rendering.BlendMode.Transparent : Rendering.BlendMode.Opaque );
+          break;
+        case PipelineType.HDRP:
+          mat.SetFloat( "_SurfaceType", enable ? 1 : 0 );
+          mat.SetFloat( "_BlendMode", 0 );
+          mat.SetFloat( "_AlphaCutoffEnable", 0 );
+          mat.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
+          mat.SetInt( "_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
+          mat.SetInt( "_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
+          mat.SetInt( "_ZWrite", enable ? 0 : 1 );
+          break;
+        case PipelineType.Universal:
+          mat.SetFloat( "_Surface", enable ? 1 : 0 );
+          mat.SetFloat( "_Blend", 0 );
+          mat.SetFloat( "_Clip", 0 );
+          mat.SetInt( "_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
+          mat.SetInt( "_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
+          if ( enable ) {
+            mat.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
+            mat.EnableKeyword( "_SURFACE_TYPE_TRANSPARENT" );
+          }
+          else {
+            mat.EnableKeyword( "_ALPHAPREMULTIPLY_ON" );
+            mat.DisableKeyword( "_SURFACE_TYPE_TRANSPARENT" );
+          }
+          mat.SetInt( "_ZWrite", enable ? 0 : 1 );
+          mat.SetShaderPassEnabled( "DepthOnly", !enable );
+          mat.SetShaderPassEnabled( "SHADOWCASTER", !enable );
+          break;
+        default:
+          break;
+      }
+      mat.renderQueue = enable ? (int)RenderQueue.Transparent : (int)RenderQueue.Geometry;
+    }
   }
 }

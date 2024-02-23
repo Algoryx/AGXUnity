@@ -656,6 +656,7 @@ namespace AGXUnity.Utils
           material.renderQueue = 3000;
           break;
       }
+      material.SetInt( "_Mode", (int)blendMode );
     }
   }
 }
