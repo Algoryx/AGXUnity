@@ -972,68 +972,37 @@ namespace AGXUnityEditor.IO
         return;
 
       var renderPipeline = RenderingUtils.DetectPipeline();
+      var metallic = 0.3f;
       if ( renderPipeline == RenderingUtils.PipelineType.HDRP ) {
         thisMaterial.shader = Shader.Find( "HDRP/Lit" );
-        if ( nativeMaterial.hasDiffuseColor() ) {
-          var color = nativeMaterial.getDiffuseColor().ToColor();
-          color.a = 1.0f - nativeMaterial.getTransparency();
-          thisMaterial.SetVector( "_BaseColor", color );
-        }
         if ( nativeMaterial.hasEmissiveColor() )
           thisMaterial.SetVector( "_EmissiveColor", nativeMaterial.getEmissiveColor().ToColor() );
 
-        thisMaterial.SetFloat( "_Metallic", Mathf.Pow( 0.3f, 2.2f ) );
-        thisMaterial.SetFloat( "_Smoothness", 0.8f );
-
-        if ( nativeMaterial.getTransparency() > 0.0f ) {
-          thisMaterial.SetFloat( "_SurfaceType", 1 );
-          thisMaterial.SetFloat( "_BlendMode", 1 );
-          thisMaterial.SetFloat( "_AlphaCutoffEnable", 0 );
-          thisMaterial.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
-          thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        }
+        metallic = Mathf.Pow( metallic, 2.2f );
       }
       else if ( renderPipeline == RenderingUtils.PipelineType.Universal ) {
-
         thisMaterial.shader = Shader.Find( "Universal Render Pipeline/Lit" );
-
-        if ( nativeMaterial.hasDiffuseColor() ) {
-          var color = nativeMaterial.getDiffuseColor().ToColor();
-          color.a = 1.0f - nativeMaterial.getTransparency();
-          thisMaterial.SetVector( "_BaseColor", color );
-        }
         if ( nativeMaterial.hasEmissiveColor() )
           thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
-
-        thisMaterial.SetFloat( "_Metallic", 0.3f );
-        thisMaterial.SetFloat( "_Smoothness", 0.8f );
-
-        if ( nativeMaterial.getTransparency() > 0.0f ) {
-          thisMaterial.SetFloat( "_Surface", 1 );
-          thisMaterial.SetFloat( "_Blend", 1 );
-          thisMaterial.SetFloat( "_Clip", 0 );
-          thisMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-        }
       }
       else {
         if ( renderPipeline != RenderingUtils.PipelineType.BuiltIn )
           Debug.LogWarning( "Unsupported render pipeline! Imported render materials might not work." );
 
         thisMaterial.shader = Shader.Find( "Standard" );
-        if ( nativeMaterial.hasDiffuseColor() ) {
-          var color = nativeMaterial.getDiffuseColor().ToColor();
-          color.a = 1.0f - nativeMaterial.getTransparency();
-          thisMaterial.SetVector( "_Color", color );
-        }
         if ( nativeMaterial.hasEmissiveColor() )
           thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
-
-        thisMaterial.SetFloat( "_Metallic", 0.3f );
-        thisMaterial.SetFloat( "_Glossiness", 0.8f );
-
-        if ( nativeMaterial.getTransparency() > 0.0f )
-          thisMaterial.SetBlendMode( BlendMode.Transparent );
       }
+
+      if ( nativeMaterial.hasDiffuseColor() ) {
+        var color = nativeMaterial.getDiffuseColor().ToColor();
+        color.a = 1.0f - nativeMaterial.getTransparency();
+        RenderingUtils.SetColor( thisMaterial, color );
+      }
+      thisMaterial.SetFloat( "_Metallic", metallic );
+      RenderingUtils.SetSmoothness(thisMaterial, 0.8f );
+      if ( nativeMaterial.getTransparency() > 0.0f )
+        RenderingUtils.EnableTransparency( thisMaterial, true );
     }
 
     private Dictionary<uint, Material> m_materialLibrary = new Dictionary<uint, Material>();
