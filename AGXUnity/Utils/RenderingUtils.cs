@@ -175,6 +175,12 @@ namespace AGXUnity.Utils
         mat.SetVector( "_Color", col );
     }
 
+    /// <summary>
+    /// Attempts to set the smoothness on the material, respecting the current render pipeline
+    /// This maps to _Smoothness on SRPs and _Glossiness on Built-in
+    /// </summary>
+    /// <param name="mat">The material on which to set the smoothness</param>
+    /// <param name="smoothness">The smoothness to set on the material</param>
     public static void SetSmoothness( Material mat, float smoothness )
     {
       var pipeline = DetectPipeline();
@@ -184,7 +190,15 @@ namespace AGXUnity.Utils
         mat.SetFloat( "_Glossiness", smoothness );
     }
 
-    public static void EnableTransparency( Material mat, bool enable )
+    /// <summary>
+    /// Attempts to enable transparency on the given material. This process varies quite a bit 
+    /// depending on the active pipeline but generally sets a surface type, blend mode, alpha clipping mode,
+    /// zwrite and render queue.
+    /// In addition to this various shader keywords might be set/unset and/or passes enabled/disabled.
+    /// </summary>
+    /// <param name="mat">The material on which to set transparency</param>
+    /// <param name="enable">Whether to enable or disable transparency</param>
+    public static void SetTransparencyEnabled( Material mat, bool enable )
     {
       var pipeline = DetectPipeline();
       switch ( pipeline ) {

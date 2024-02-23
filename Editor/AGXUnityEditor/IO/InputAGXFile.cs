@@ -1002,7 +1002,7 @@ namespace AGXUnityEditor.IO
       thisMaterial.SetFloat( "_Metallic", metallic );
       RenderingUtils.SetSmoothness(thisMaterial, 0.8f );
       if ( nativeMaterial.getTransparency() > 0.0f )
-        RenderingUtils.EnableTransparency( thisMaterial, true );
+        RenderingUtils.SetTransparencyEnabled( thisMaterial, true );
     }
 
     private Dictionary<uint, Material> m_materialLibrary = new Dictionary<uint, Material>();
