@@ -1,5 +1,6 @@
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
+using AGXUnity.Utils;
 using System.Linq;
 using UnityEngine;
 
@@ -68,7 +69,7 @@ namespace AGXUnity.Model
       set
       {
         m_materialHandle = value;
-        if( m_materialHandle != null )
+        if ( m_materialHandle != null )
           ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, value );
       }
     }
@@ -116,8 +117,8 @@ namespace AGXUnity.Model
       }
 
       ParentTerrain?.AddTerrainMaterial( m_terrainMaterial.GetInitialized<DeformableTerrainMaterial>() );
-      if(m_materialHandle != null)
-        ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, m_materialHandle.GetInitialized<ShapeMaterial>());
+      if ( m_materialHandle != null )
+        ParentTerrain?.SetAssociatedMaterial( m_terrainMaterial, m_materialHandle.GetInitialized<ShapeMaterial>() );
 
       foreach ( var shape in Shapes )
         AddShape( shape );
@@ -125,16 +126,22 @@ namespace AGXUnity.Model
       return true;
     }
 
-    private Material m_replaceMat = null;
+    private static Material s_replaceMat = null;
 
     public override void EditorUpdate()
     {
-      if(OverrideVisuals) {
-        if ( m_replaceMat == null )
-          m_replaceMat = Resources.Load<Material>( @"Materials/TerrainPatchShapeMaterial" );
-        foreach( var visual in gameObject.GetComponentsInChildren<ShapeVisual>() )
-          visual.SetMaterial( m_replaceMat );
+      if ( OverrideVisuals ) {
+        if ( s_replaceMat == null || !s_replaceMat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
+          s_replaceMat = RenderingUtils.CreateDefaultMaterial();
+          s_replaceMat.name = "Terrain Patch Default Material";
+          s_replaceMat.hideFlags = HideFlags.NotEditable; 
+          RenderingUtils.SetSmoothness( s_replaceMat, 0.0f );
+          RenderingUtils.EnableTransparency( s_replaceMat, true );
+          RenderingUtils.SetColor( s_replaceMat, new Color( 0.0f, 1.0f, 0.0f, 0.3f ) );
+        }
+        foreach ( var visual in gameObject.GetComponentsInChildren<ShapeVisual>() )
+          visual.SetMaterial( s_replaceMat );
       }
     }
   }
-}
+} 
