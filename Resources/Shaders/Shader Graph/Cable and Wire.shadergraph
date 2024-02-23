@@ -797,7 +797,7 @@
         },
         "preventRotation": false
     },
-    "m_Path": "AGXUnity/Shader Graphs",
+    "m_Path": "AGXUnity/Shader Graph",
     "m_GraphPrecision": 1,
     "m_PreviewMode": 2,
     "m_OutputNode": {

@@ -112,9 +112,9 @@ namespace AGXUnity.Rendering
     {
       Material mat;
       if ( RenderingUtils.DetectPipeline() == RenderingUtils.PipelineType.BuiltIn )
-        mat = new Material( Resources.Load<Shader>( "Shaders/CableAndWire" ) );
+        mat = new Material( Resources.Load<Shader>( "Shaders/Built-In/CableAndWire" ) );
       else
-        mat = new Material( Resources.Load<Shader>( "Shaders/Cable And Wire" ) );
+        mat = new Material( Resources.Load<Shader>( "Shaders/Shader Graph/Cable And Wire" ) );
 
       mat.name = DefaultMaterialName;
       mat.hideFlags = HideFlags.NotEditable;
