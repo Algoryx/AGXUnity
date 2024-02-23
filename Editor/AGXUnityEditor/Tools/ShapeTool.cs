@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity.Collide;
+﻿using AGXUnity.Collide;
 using AGXUnity.Rendering;
-
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -172,27 +171,29 @@ namespace AGXUnityEditor.Tools
         if ( distinctMaterials.Length == 1 )
           isExtended = ShapeVisualMaterialGUI( "Common Render Material",
                                                distinctMaterials[ 0 ],
-                                               newMaterial => shapeVisual.SetMaterial( newMaterial ) );
+                                               newMaterial => shapeVisual.SetMaterial( newMaterial ),
+                                               shapeVisual );
         else
           isExtended = InspectorGUI.Foldout( EditorData.Instance.GetData( Shape, "Render Materials" ),
                                              GUI.MakeLabel( "Render Materials" ) );
-
         if ( isExtended )
           using ( InspectorGUI.IndentScope.Single )
             for ( int i = 0; i < materials.Length; ++i ) {
               ShapeVisualMaterialGUI( names[ i ],
                                       materials[ i ],
-                                      newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ) );
+                                      newMaterial => shapeVisual.ReplaceMaterial( i, newMaterial ),
+                                      shapeVisual );
             }
       }
       else if ( materials.Length == 1 ) {
         ShapeVisualMaterialGUI( "Render Material",
                                 materials[ 0 ],
-                                newMaterial => shapeVisual.ReplaceMaterial( 0, newMaterial ) );
+                                newMaterial => shapeVisual.ReplaceMaterial( 0, newMaterial ),
+                                shapeVisual );
       }
     }
 
-    private bool ShapeVisualMaterialGUI( string name, Material material, Action<Material> onNewMaterial )
+    private bool ShapeVisualMaterialGUI( string name, Material material, Action<Material> onNewMaterial, ShapeVisual undoRoot )
     {
       var editorData = EditorData.Instance.GetData( Shape, "Visual_" + name );
       var result = InspectorGUI.FoldoutObjectField( GUI.MakeLabel( name ),
@@ -200,8 +201,11 @@ namespace AGXUnityEditor.Tools
                                                     typeof( Material ),
                                                     editorData,
                                                     false ) as Material;
-      if ( result != material )
+      if ( result != material ) {
+        Undo.RecordObjects( undoRoot.GetComponentsInChildren<MeshRenderer>(), "Set shape visual material" );
         onNewMaterial?.Invoke( result );
+        EditorUtility.SetDirty( undoRoot );
+      }
 
       return editorData.Bool;
     }
