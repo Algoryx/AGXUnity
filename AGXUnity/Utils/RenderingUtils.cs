@@ -120,7 +120,6 @@ namespace AGXUnity.Utils
       return true;
     }
 
-
     /// <summary>
     /// Attempts to create a default lit material with an appropriate shader for the current render pipeline
     /// </summary>
