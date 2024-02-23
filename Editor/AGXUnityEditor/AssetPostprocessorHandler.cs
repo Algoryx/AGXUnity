@@ -1,9 +1,11 @@
 ﻿using AGXUnity;
+using AGXUnity.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using static AGXUnityEditor.IO.Utils;
 
 namespace AGXUnityEditor
 {
@@ -37,6 +39,29 @@ namespace AGXUnityEditor
 
     private static bool m_isProcessingPrefabInstance = false;
 
+    private void OnPostprocessPrefab( GameObject gameObject )
+    {
+      // Since AGX materials are stored in the scene (in memory) these material instances cannot be added
+      // to prefabs. This causes the prefab preview to not have the correct materials when rendering.
+      // This adds the relevant materials to prefabs on import to avoid broken previews.
+      var svs = gameObject.GetComponentsInChildren<ShapeVisual>();
+
+      var defaultMat = ShapeVisual.DefaultMaterial;
+      defaultMat.hideFlags |= HideFlags.HideInHierarchy;
+
+      bool addToContext = false;
+      foreach ( var sv in svs ) {
+        foreach ( var mat in sv.GetMaterials() ) {
+          if ( mat == null || mat.name == ShapeVisual.DefaultMaterialName ) {
+            addToContext = true;
+            sv.ReplaceMaterial( null, defaultMat );
+          }
+        }
+      }
+      if ( addToContext )
+        context.AddObjectToAsset( "Shape Visual Default Material", defaultMat );
+    }
+
     /// <summary>
     /// Callback when a prefab is created from a scene game object <paramref name="go"/>,
     /// i.e., drag-dropped from hierarchy to the assets folder.
@@ -48,6 +73,8 @@ namespace AGXUnityEditor
       // this callback.
       if ( m_isProcessingPrefabInstance )
         return;
+
+      
 
       var isAGXPrefab = instance.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null;
 
