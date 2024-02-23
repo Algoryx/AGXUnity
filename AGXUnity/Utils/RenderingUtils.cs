@@ -33,6 +33,16 @@ namespace AGXUnity.Utils
       return PipelineType.BuiltIn;
     }
 
+    private static string[] s_supportedHDRP = new string[] {
+      "HDRenderPipeline",
+      "HighDefinitionRenderPipeline"
+    };
+
+    private static string[] s_supportedURP = new string[] {
+      "UniversalRenderPipeline",
+      "UniversalPipeline"
+    };
+
     /// <summary>
     /// Checks whether the material supports a given pipeline type. 
     /// Some assumptions are made here. 
@@ -62,25 +72,20 @@ namespace AGXUnity.Utils
       if ( pipelineType == PipelineType.BuiltIn )
         return true;
 
-      string[] supportedTags = new string[0];
+      var tag = new ShaderTagId( "RenderPipeline" );
       if ( pipelineType == PipelineType.HDRP ) {
-        supportedTags = new string[]
-        {
-          "HDRenderPipeline",
-          "HighDefinitionRenderPipeline"
-        };
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedHDRP.Contains( tagName ) )
+            return true;
+        }
       }
-      if ( pipelineType == PipelineType.Universal ) {
-        supportedTags = new string[] {
-          "UniversalRenderPipeline",
-          "UniversalPipeline"
-        };
-      }
-
-      for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
-        var tagName = mat.shader.FindSubshaderTagValue( i, new ShaderTagId( "RenderPipeline" ) ).name;
-        if ( supportedTags.Contains( tagName ) )
-          return true;
+      else if ( pipelineType == PipelineType.Universal ) {
+        for ( int i = 0; i < mat.shader.subshaderCount; i++ ) {
+          var tagName = mat.shader.FindSubshaderTagValue( i, tag ).name;
+          if ( s_supportedURP.Contains( tagName ) )
+            return true;
+        }
       }
 
       return false;
@@ -138,7 +143,7 @@ namespace AGXUnity.Utils
     /// </summary>
     /// <param name="mat">The material on which to set the main texture</param>
     /// <param name="tex">The texture to set as the main texture</param>
-    public static void SetMainTexture(Material mat, Texture tex )
+    public static void SetMainTexture( Material mat, Texture tex )
     {
       switch ( DetectPipeline() ) {
         case PipelineType.BuiltIn:
@@ -168,6 +173,69 @@ namespace AGXUnity.Utils
         mat.SetVector( "_BaseColor", col );
       else
         mat.SetVector( "_Color", col );
+    }
+
+    /// <summary>
+    /// Attempts to set the smoothness on the material, respecting the current render pipeline
+    /// This maps to _Smoothness on SRPs and _Glossiness on Built-in
+    /// </summary>
+    /// <param name="mat">The material on which to set the smoothness</param>
+    /// <param name="smoothness">The smoothness to set on the material</param>
+    public static void SetSmoothness( Material mat, float smoothness )
+    {
+      var pipeline = DetectPipeline();
+      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
+        mat.SetFloat( "_Smoothness", smoothness );
+      else
+        mat.SetFloat( "_Glossiness", smoothness );
+    }
+
+    /// <summary>
+    /// Attempts to enable transparency on the given material. This process varies quite a bit 
+    /// depending on the active pipeline but generally sets a surface type, blend mode, alpha clipping mode,
+    /// zwrite and render queue.
+    /// In addition to this various shader keywords might be set/unset and/or passes enabled/disabled.
+    /// </summary>
+    /// <param name="mat">The material on which to set transparency</param>
+    /// <param name="enable">Whether to enable or disable transparency</param>
+    public static void SetTransparencyEnabled( Material mat, bool enable )
+    {
+      var pipeline = DetectPipeline();
+      switch ( pipeline ) {
+        case PipelineType.BuiltIn:
+          mat.SetBlendMode( enable ? Rendering.BlendMode.Transparent : Rendering.BlendMode.Opaque );
+          break;
+        case PipelineType.HDRP:
+          mat.SetFloat( "_SurfaceType", enable ? 1 : 0 );
+          mat.SetFloat( "_BlendMode", 0 );
+          mat.SetFloat( "_AlphaCutoffEnable", 0 );
+          mat.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
+          mat.SetInt( "_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
+          mat.SetInt( "_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
+          mat.SetInt( "_ZWrite", enable ? 0 : 1 );
+          break;
+        case PipelineType.Universal:
+          mat.SetFloat( "_Surface", enable ? 1 : 0 );
+          mat.SetFloat( "_Blend", 0 );
+          mat.SetFloat( "_Clip", 0 );
+          mat.SetInt( "_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
+          mat.SetInt( "_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
+          if ( enable ) {
+            mat.DisableKeyword( "_ALPHAPREMULTIPLY_ON" );
+            mat.EnableKeyword( "_SURFACE_TYPE_TRANSPARENT" );
+          }
+          else {
+            mat.EnableKeyword( "_ALPHAPREMULTIPLY_ON" );
+            mat.DisableKeyword( "_SURFACE_TYPE_TRANSPARENT" );
+          }
+          mat.SetInt( "_ZWrite", enable ? 0 : 1 );
+          mat.SetShaderPassEnabled( "DepthOnly", !enable );
+          mat.SetShaderPassEnabled( "SHADOWCASTER", !enable );
+          break;
+        default:
+          break;
+      }
+      mat.renderQueue = enable ? (int)RenderQueue.Transparent : (int)RenderQueue.Geometry;
     }
   }
 }
