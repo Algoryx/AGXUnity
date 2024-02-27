@@ -554,7 +554,7 @@ namespace AGXUnityEditor
       Utils.CustomEditorGenerator.Generate();
     }
 
-    [MenuItem( "AGXUnity/Utils/Update Rendering Materials", priority = 80 )]
+    [MenuItem( "AGXUnity/Utils/Convert Rendering Materials", priority = 80 )]
     public static void UpdateRenderMaterials()
     {
       Windows.ConvertMaterialsWindow.Open();
