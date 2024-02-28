@@ -358,6 +358,7 @@ namespace AGXUnity.Model
     protected override float ElementSizeGetter => ElementSize;
     public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
+    public override agx.Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
 
