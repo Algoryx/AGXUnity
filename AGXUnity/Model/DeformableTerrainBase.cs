@@ -174,6 +174,11 @@ namespace AGXUnity.Model
     abstract public agxTerrain.SoilSimulationInterface GetSoilSimulationInterface();
 
     /// <summary>
+    /// Returns the UUID of the particle agx.Material used by this terrain.
+    /// </summary>
+    abstract public agx.Uuid GetParticleMaterialUuid();
+
+    /// <summary>
     /// Callback which should be called when the TerrainProperties of this terrain is updated
     /// </summary>
     virtual public void OnPropertiesUpdated() { }
