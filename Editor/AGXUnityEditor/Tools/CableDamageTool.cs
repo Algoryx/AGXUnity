@@ -34,14 +34,37 @@ namespace AGXUnityEditor.Tools
       };
       InspectorGUI.MultiFieldColumnLabels(GUI.MakeLabel( "Movement weights", 12, true ), labels);
 
-      var deformation = InspectorGUI.MultiFloatField(new GUIContent("Deformation"), empty, new float[]{CableDamageProperties.BendDeformation, CableDamageProperties.TwistDeformation, CableDamageProperties.StretchDeformation});
-      var rate =        InspectorGUI.MultiFloatField(new GUIContent("Rate"), empty, new float[]{CableDamageProperties.BendRate, CableDamageProperties.TwistRate, CableDamageProperties.StretchRate});
-      var tension =     InspectorGUI.MultiFloatField(new GUIContent("Tension"), empty, new float[]{CableDamageProperties.BendTension, CableDamageProperties.TwistTension, CableDamageProperties.StretchTension});
+      var deformation = InspectorGUI.MultiFloatField(
+        new GUIContent("Deformation", "The weight of the directional deformations to the overall cable damage calculation"), 
+        empty, 
+        new float[]{CableDamageProperties.BendDeformation, CableDamageProperties.TwistDeformation, CableDamageProperties.StretchDeformation});
+      
+      var rate =        InspectorGUI.MultiFloatField(
+        new GUIContent("Rate", "The weight of the directional rate of deformation to the overall cable damage calculation"), 
+        empty, 
+        new float[]{CableDamageProperties.BendRate, CableDamageProperties.TwistRate, CableDamageProperties.StretchRate});
+      
+      var tension =     InspectorGUI.MultiFloatField(
+        new GUIContent("Tension", "The weight of the directional tensions to the overall cable damage calculation"), 
+        empty, 
+        new float[]{CableDamageProperties.BendTension, CableDamageProperties.TwistTension, CableDamageProperties.StretchTension});
+      
       GUILayout.Space(5);
-      var threshold =   InspectorGUI.MultiFloatField(new GUIContent("Threshold"), empty, new float[]{CableDamageProperties.BendThreshold, CableDamageProperties.TwistThreshold, CableDamageProperties.StretchThreshold});
+      
+      var threshold =   InspectorGUI.MultiFloatField(
+        new GUIContent("Threshold", "The threshold over which the individual directional contributions should be considered for the overall cable damage calculation"), 
+        empty, 
+        new float[]{CableDamageProperties.BendThreshold, CableDamageProperties.TwistThreshold, CableDamageProperties.StretchThreshold});
+      
       GUILayout.Space(10);
-      CableDamageProperties.NormalForce =   EditorGUILayout.FloatField( "Normal Force", CableDamageProperties.NormalForce );
-      CableDamageProperties.FrictionForce = EditorGUILayout.FloatField( "Friction Force", CableDamageProperties.FrictionForce );
+      
+      CableDamageProperties.NormalForce =   EditorGUILayout.FloatField( 
+        new GUIContent("Normal Force", "The weight of the calculated normal force to the overall cable damage calculation"), 
+        CableDamageProperties.NormalForce );
+      
+      CableDamageProperties.FrictionForce = EditorGUILayout.FloatField( 
+        new GUIContent("Friction Force", "The weight of the calculated friction force to the overall cable damage calculation" ), 
+        CableDamageProperties.FrictionForce );
 
       CableDamageProperties.BendDeformation = deformation[0];
       CableDamageProperties.TwistDeformation = deformation[1];
@@ -59,7 +82,9 @@ namespace AGXUnityEditor.Tools
       CableDamageProperties.TwistThreshold = threshold[1];
       CableDamageProperties.StretchThreshold = threshold[2];
 
-      GUILayout.Label("Rendering options");
+      GUILayout.Space( 5 );
+
+      GUILayout.Label("<b>Rendering options</b>", InspectorGUISkin.Instance.Label);
     }
   }
 }
