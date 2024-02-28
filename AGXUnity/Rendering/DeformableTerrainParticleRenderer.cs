@@ -297,6 +297,7 @@ namespace AGXUnity.Rendering
             }
             m_numRendered += PopulateMatricesSelectMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
           }
+          uuid.ReturnToPool();
         } else {
           m_numRendered = numGranulars;
 
