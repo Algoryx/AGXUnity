@@ -298,7 +298,7 @@ namespace AGXUnity.Rendering
               m_granuleMatrices.Add( new MatrixUnion() );
               m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
             }
-            m_numRendered += PopulateMatricesSelectMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
+            m_numRendered += PopulateMatricesFilterByMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
           }
           uuid.ReturnToPool();
         } else {
