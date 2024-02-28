@@ -1,4 +1,5 @@
-﻿using AGXUnity.Collide;
+﻿using agx;
+using AGXUnity.Collide;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
@@ -266,6 +267,7 @@ namespace AGXUnity.Model
     public override float ElementSize => TerrainData.size.x / (TerrainDataResolution - 1);
     public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
+    public override Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
 
