@@ -210,6 +210,9 @@ namespace AGXUnity.Rendering
         m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
         m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
+      } else {
+        if ( FilterParticles )
+          Debug.LogWarning( $"Particle Filtering is only supported when using {GranuleRenderMode.GameObject}!", this );
       }
 
       Synchronize();
@@ -315,15 +318,15 @@ namespace AGXUnity.Rendering
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
         // more instances to match numGranulars.
-        if ( m_numRendered > transform.childCount )
-          Create( m_numRendered - transform.childCount );
+        if ( numGranulars > transform.childCount )
+          Create( numGranulars - transform.childCount );
         // Less granular instances comparing to last time, destroy.
-        else if ( transform.childCount > m_numRendered )
-          Destroy( transform.childCount - m_numRendered );
+        else if ( transform.childCount > numGranulars )
+          Destroy( transform.childCount - numGranulars );
 
-        Debug.Assert( transform.childCount == m_numRendered );
+        Debug.Assert( transform.childCount == numGranulars );
 
-        for ( int i = 0; i < m_numRendered; ++i ) {
+        for ( int i = 0; i < numGranulars; ++i ) {
           var granule = granulars.at((uint)i);
           var instance = transform.GetChild(i);
           instance.position = granule.position().ToHandedVector3();
