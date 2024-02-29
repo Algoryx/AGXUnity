@@ -16,6 +16,7 @@ namespace AGXUnity.Model
     /// Default: 4.0
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum speed (m/s) threshold where soil particles are allowed to merge with the terrain." )]
     public float SoilMergeSpeedThreshold
     {
       get { return m_soilMergeSpeedThreshold; }
@@ -36,6 +37,7 @@ namespace AGXUnity.Model
     /// Default: 9.0
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The merge rate for soil particles into the terrain. The merge rate is defined as the fraction of the current particle mass that should be merged into the terrain for each second." )]
     public float SoilParticleMergeRate
     {
       get { return m_soilParticleMergeRate; }
@@ -56,6 +58,7 @@ namespace AGXUnity.Model
     /// Default: Infinity
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The lifetime (seconds) of created soil particles in the terrain. The particle will be deleted after existing for the specified lifetime." )]
     public float SoilParticleLifeTime
     {
       get { return m_soilParticleLifeTime; }
@@ -75,6 +78,7 @@ namespace AGXUnity.Model
     /// Default: 1.0
     /// </summary>
     [ClampAboveZeroInInspector()]
+    [Tooltip( "The scale factor used when resizing the dynamic soil particles. Can be increased to increase performance or decreased to yield higher simulation fidelity." )]
     public float SoilParticleSizeScaling
     {
       get { return m_soilParticleSizeScaling; }
@@ -95,6 +99,7 @@ namespace AGXUnity.Model
     /// Default: 0.1
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The fraction of the height difference that violates the angle of repose condition that will be transferred in each time step during avalanching." )]
     public float AvalancheDecayFraction
     {
       get { return m_avalancheDecayFraction; }
@@ -114,6 +119,7 @@ namespace AGXUnity.Model
     /// Default: Infinity
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum allowed height (meters) transfer per time step due to avalanching." )]
     public float AvalancheMaxHeightGrowth
     {
       get { return m_avalancheMaxHeightGrowth; }
@@ -131,6 +137,7 @@ namespace AGXUnity.Model
     /// Set whether or not deformations should be enabled for the terrain. 
     /// This includes digging, avalanching and compaction
     /// </summary>
+    [Tooltip( "Whether or not deformations should be enabled for the terrain. This includes digging, avalanching and compaction" )]
     public bool DeformationEnabled
     {
       get { return m_deformationEnabled; }
@@ -149,6 +156,7 @@ namespace AGXUnity.Model
     /// shovel interactions.
     /// Default: enabled
     /// </summary>
+    [Tooltip( "Whether the terrain should create particles or not during shovel interactions." )]
     public bool CreateParticlesEnabled
     {
       get { return m_createParticlesEnabled; }
@@ -167,6 +175,7 @@ namespace AGXUnity.Model
     /// the terrain.
     /// Default: enabled
     /// </summary>
+    [Tooltip( "Whether or not to use the soil compaction calculations in the terrain." )]
     public bool SoilCompactionEnabled
     {
       get { return m_soilCompactionEnabled; }
@@ -184,6 +193,7 @@ namespace AGXUnity.Model
     /// Set if terrain should delete soil particles outside of terrain bounds.
     /// Default: disabled
     /// </summary>
+    [Tooltip( "If terrain should delete soil particles outside of terrain bounds." )]
     public bool DeleteSoilParticlesOutsideBoundsEnabled
     {
       get { return m_deleteSoilParticlesOutsideBoundsEnabled; }
@@ -203,6 +213,7 @@ namespace AGXUnity.Model
     /// and avalanching.
     /// Default: disabled
     /// </summary>
+    [Tooltip( "Whether to fixate the height of the borders in the terrain, i.e, the borders of the terrain are not allowed to change from excavation and avalanching." )]
     public bool LockedBorderEnabled
     {
       get { return m_lockedBorderEnabled; }
@@ -220,6 +231,7 @@ namespace AGXUnity.Model
     /// Set whether to enable avalanching in the terrain.
     /// Default: enabled
     /// </summary>
+    [Tooltip( "Whether to enable avalanching in the terrain." )]
     public bool AvalanchingEnabled
     {
       get { return m_avalanchingEnabled; }
@@ -239,6 +251,7 @@ namespace AGXUnity.Model
     /// during shovel excavation; thus only solid removal will be active.
     /// Default: enabled
     /// </summary>
+    [Tooltip( "Whether dynamic mass should be created during excavation. Setting this to false will prevent the creation of fluid and soil particle mass during shovel excavation; thus only solid removal will be active." )]
     public bool CreateDynamicMassEnabled
     {
       get { return m_createDynamicMassEnabled; }
@@ -259,6 +272,7 @@ namespace AGXUnity.Model
     /// Default: [1.0E-9 1.0E-9 1.0E-9]
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The translational compliance of the soil aggregate lock joint the local constraint dimensions to relax or increase the force feedback interaction from shovel - terrain interaction." )]
     public Vector3 SoilAggregateLockComplianceTranslational
     {
       get { return m_soilAggregateLockComplianceTranslational; }
@@ -284,6 +298,7 @@ namespace AGXUnity.Model
     /// Default: [1.0E-6 1.0E-6 1.0E-6]
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The rotational compliance of the soil aggregate lock joint the local constraint dimensions to relax or increase the force feedback interaction from shovel - terrain interaction." )]
     public Vector3 SoilAggregateLockComplianceRotational
     {
       get { return m_soilAggregateLockComplianceRotational; }
@@ -309,6 +324,7 @@ namespace AGXUnity.Model
     /// Default: 0.0
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Set the penetration force velocity scaling constant. This will scale the penetration force with the shovel velocity squared in the cutting direction according to: ( 1.0 + C * v^2 )" )]
     public float PenetrationForceVelocityScaling
     {
       get { return m_penetrationForceVelocityScaling; }
@@ -327,6 +343,7 @@ namespace AGXUnity.Model
     /// Default: Infinity
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum volume of active zone wedges that should wake particles." )]
     public float MaximumParticleActivationVolume
     {
       get { return m_maximumParticleActivationVolume; }
