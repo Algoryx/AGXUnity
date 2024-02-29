@@ -16,6 +16,8 @@ namespace AGXUnity
     private float m_maxRelativeSpeed = 5.0E-3f;
 
     [ClampAboveZeroInInspector( true )]
+    [InspectorGroupBegin(Name = "Merge conditions", DefaultExpanded = true)]
+    [Tooltip( "When the relative motion between the objects is less than this threshold, the objects may merge." )]
     public float MaxRelativeSpeed
     {
       get { return m_maxRelativeSpeed; }
@@ -31,6 +33,8 @@ namespace AGXUnity
     private float m_maxDesiredSpeedDiff = 1.0E-5f;
 
     [ClampAboveZeroInInspector( true )]
+    [InspectorGroupBegin(Name = "Split conditions", DefaultExpanded = true)]
+    [Tooltip( "When the relative motion between the objects is less than this threshold, the objects may merge." )]
     public float MaxDesiredSpeedDiff
     {
       get { return m_maxDesiredSpeedDiff; }
@@ -46,6 +50,7 @@ namespace AGXUnity
     private float m_maxDesiredLockAngleDiff = 1.0E-5f;
 
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum difference the 'force range'/desired force range parameter in any controller may change without splitting the constrained objects. " )]
     public float MaxDesiredLockAngleDiff
     {
       get { return m_maxDesiredLockAngleDiff; }
@@ -61,6 +66,7 @@ namespace AGXUnity
     private float m_maxDesiredRangeAngleDiff = 1.0E-5f;
 
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum difference the 'position'/desired angle parameter in a lock controller may change without splitting the constrained objects. " )]
     public float MaxDesiredRangeAngleDiff
     {
       get { return m_maxDesiredRangeAngleDiff; }
@@ -76,6 +82,7 @@ namespace AGXUnity
     private float m_maxDesiredForceRangeDiff = 1.0E-1f;
 
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum difference the 'force range'/desired force range parameter in any controller may change without splitting the constrained objects. " )]
     public float MaxDesiredForceRangeDiff
     {
       get { return m_maxDesiredForceRangeDiff; }

@@ -10,6 +10,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private int m_numberOfTeeth = 6;
     [ClampAboveZeroInInspector]
+    [Tooltip("The number of teeth that the shovel has")]
     public int NumberOfTeeth
     {
       get { return m_numberOfTeeth; }
@@ -22,6 +23,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_toothLength = 0.15f;
+
+    [ClampAboveZeroInInspector]
+    [Tooltip("The length of the shovel's teeth")]
     public float ToothLength
     {
       get { return m_toothLength; }
@@ -34,6 +38,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private RangeReal m_toothRadius = new RangeReal( 0.015f, 0.075f );
+
+    [ClampAboveZeroInInspector]
+    [Tooltip("The radius of the shovel's teeth")]
     public RangeReal ToothRadius
     {
       get { return m_toothRadius; }
@@ -50,7 +57,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_noMergeExtensionDistance = 0.5f;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The margin outside the shovel bonding box where soil particle merging is forbidden. " )]
     public float NoMergeExtensionDistance
     {
       get { return m_noMergeExtensionDistance; }
@@ -63,7 +72,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_minimumSubmergedContactLengthFraction = 0.5f;
+
     [FloatSliderInInspector( 0.0f, 1.0f )]
+    [Tooltip( "The minimum submerged cutting edge length fraction that generates submerged cutting. " )]
     public float MinimumSubmergedContactLengthFraction
     {
       get { return m_minimumSubmergedContactLengthFraction; }
@@ -76,7 +87,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_verticalBladeSoilMergeDistance = 0.0f;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The vertical distance under the blade cutting edge that the soil is allowed to instantly merge up to. " )]
     public float VerticalBladeSoilMergeDistance
     {
       get { return m_verticalBladeSoilMergeDistance; }
@@ -89,7 +102,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_secondarySeparationDeadloadLimit = 0.8f;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The dead-load limit where secondary separation will start to active where the forward direction starts to change according to the virtual separation plate created by the material inside the shovel " )]
     public float SecondarySeparationDeadloadLimit
     {
       get { return m_secondarySeparationDeadloadLimit; }
@@ -102,7 +117,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_penetrationDepthThreshold = 0.2f;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The vertical penetration depth threshold for when the shovel tooth for penetration resistance should reach full effectiveness. The penetration depth is defined as the vertical distance between the tip of a shovel tooth and the surface position of the height field. The penetration resistance will increase from a baseline of 10% until maximum effectiveness is reached when the vertical penetration depth of the shovel reaches the specified value." )]
     public float PenetrationDepthThreshold
     {
       get { return m_penetrationDepthThreshold; }
@@ -115,7 +132,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_penetrationForceScaling = 1.0f;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The coefficient for scaling the penetration force that the terrain will give on this shovel." )]
     public float PenetrationForceScaling
     {
       get { return m_penetrationForceScaling; }
@@ -128,7 +147,9 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private float m_maxPenetrationForce = float.PositiveInfinity;
+
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The maximum limit on penetration force (N) that the terrain will generate on this shovel. " )]
     public float MaxPenetrationForce
     {
       get { return m_maxPenetrationForce; }
@@ -141,6 +162,8 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private OptionalOverrideValue<float> m_contactRegionThreshold = new OptionalOverrideValue<float>(0.02f);
+
+    [Tooltip( "Set the starting distance threshold from the shovel planes where regular geometry contacts between the shovel underside and the terrain can be created. Contacts that are not past the distance threshold will be filtered away" )]
     public OptionalOverrideValue<float> ContactRegionThreshold
     {
       get { return m_contactRegionThreshold; }
@@ -156,6 +179,8 @@ namespace AGXUnity.Model
 
     [SerializeField]
     private bool m_removeContacts = false;
+
+    [Tooltip( "Whether shovel <-> terrain contacts should always be removed." )]
     public bool RemoveContacts
     {
       get { return m_removeContacts; }

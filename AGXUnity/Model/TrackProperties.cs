@@ -17,8 +17,9 @@ namespace AGXUnity.Model
     /// hinges between track nodes.
     /// Default: [1.0E-10, 1.0E-10, 1.0E-10]
     /// </summary>
-    [InspectorGroupBegin( Name = "Node Hinge Properties" )]
+    [InspectorGroupBegin( Name = "Node Hinge Properties", DefaultExpanded = true )]
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Compliance for the translational degrees of freedom in the hinges between track nodes. \nX: The axis along the thickness of the track.\nY: The axis along the track.\nZ: The axis along the width of the track." )]
     public Vector3 HingeComplianceTranslational
     {
       get { return m_hingeComplianceTranslational; }
@@ -42,6 +43,7 @@ namespace AGXUnity.Model
     /// Default: [0.04, 0.04, 0.04]
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Damping for the translational degrees of freedom in the hinges between track nodes. \nX: The axis along the thickness of the track.\nY: The axis along the track.\nZ: The axis along the width of the track." )]
     public Vector3 HingeDampingTranslational
     {
       get { return m_hingeDampingTranslational; }
@@ -65,6 +67,7 @@ namespace AGXUnity.Model
     /// Default: [1.0E-10, 1.0E-10]
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Compliance for the rotational degrees of freedom in the hinges between track nodes. \nX: Rotation along the axis orthogonal to the track.\nY: Rotation along the axis of the track." )]
     public Vector2 HingeComplianceRotational
     {
       get { return m_hingeComplianceRotational; }
@@ -87,6 +90,7 @@ namespace AGXUnity.Model
     /// Default: [0.04, 0.04]
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Damping for the rotational degrees of freedom in the hinges between track nodes. \nX: Rotation along the axis orthogonal to the track.\nY: Rotation along the axis of the track." )]
     public Vector2 HingeDampingRotational
     {
       get { return m_hingeDampingRotational; }
@@ -108,6 +112,7 @@ namespace AGXUnity.Model
     /// track nodes to define how the track may bend.
     /// Default: Enabled
     /// </summary>
+    [Tooltip( "True to enable the range in the hinges between the track nodes to define how the track may bend." )]
     public bool HingeRangeEnabled
     {
       get { return m_hingeRangeEnabled; }
@@ -127,6 +132,7 @@ namespace AGXUnity.Model
     /// enabled - given in degrees.
     /// Default: [-120, 20]
     /// </summary>
+    [Tooltip( "Range used if the hinge range between the nodes are enabled - given in degrees." )]
     public RangeReal HingeRangeRange
     {
       get { return m_hingeRangeRange; }
@@ -149,7 +155,8 @@ namespace AGXUnity.Model
     /// time step.
     /// Default: Disabled
     /// </summary>
-    [InspectorGroupBegin( Name = "Merge/Split Properties" )]
+    [InspectorGroupBegin( Name = "Merge/Split Properties", DefaultExpanded = true )]
+    [Tooltip( "When the track has been initialized some nodes are in contact with the wheels. If this flag is true the interacting nodes will be merged to the wheel directly after initialize, if false the nodes will be merged during the first (or later) time step." )]
     public bool OnInitializeMergeNodesToWheelsEnabled
     {
       get { return m_onInitializeMergeNodesToWheelsEnabled; }
@@ -170,6 +177,7 @@ namespace AGXUnity.Model
     /// are used.
     /// Default: Enabled
     /// </summary>
+    [Tooltip( "True to position/transform the track nodes to the surface of the wheels after the track has been initialized.When false, the routing algorithm positions are used." )]
     public bool OnInitializeTransformNodesToWheelsEnabled
     {
       get { return m_onInitializeTransformNodesToWheelsEnabled; }
@@ -188,6 +196,7 @@ namespace AGXUnity.Model
     /// When the nodes are transformed to the wheels, this is the final target overlap.
     /// Default: 1.0E-3
     /// </summary>
+    [Tooltip( "When the nodes are transformed to the wheels, this is the final target overlap" )]
     public float TransformNodesToWheelsOverlap
     {
       get { return m_transformNodesToWheelsOverlap; }
@@ -209,6 +218,7 @@ namespace AGXUnity.Model
     /// projection is negative the node can be considered "wrapped" on the wheel.
     /// Default: -0.1
     /// </summary>
+    [Tooltip( "Threshold when to merge a node to a wheel. Given a reference direction in the track, this value is the projection of the deviation (from the reference direction) of the node direction onto the wheel radial direction vector. I.e., when the projection is negative the node can be considered \"wrapped\" on the wheel." )]
     public float NodesToWheelsMergeThreshold
     {
       get { return m_nodesToWheelsMergeThreshold; }
@@ -230,6 +240,7 @@ namespace AGXUnity.Model
     /// projection is negative the node can be considered "wrapped" on the wheel.
     /// Default: -0.05
     /// </summary>
+    [Tooltip( "Threshold when to split a node from a wheel. Given a reference direction in the track, this value is the projection of the deviation (from the reference direction) of the node direction onto the wheel radial direction vector. I.e., when the projection is negative the node can be considered \"wrapped\" on the wheel." )]
     public float NodesToWheelsSplitThreshold
     {
       get { return m_nodesToWheelsSplitThreshold; }
@@ -250,6 +261,7 @@ namespace AGXUnity.Model
     /// include into this average direction.
     /// Default: 3
     /// </summary>
+    [Tooltip( "Average direction of non-merged nodes entering or exiting a wheel is used as reference direction to split of a merged node. This is the number of nodes to include into this average direction." )]
     [ClampAboveZeroInInspector( true )]
     public int NumNodesIncludedInAverageDirection
     {
@@ -273,6 +285,7 @@ namespace AGXUnity.Model
     /// Default: 100.0
     /// </summary>
     [InspectorGroupBegin( Name = "Stabilizing Properties" )]
+    [Tooltip( "Minimum value of the normal force (the hinge force along the track) used in \"internal\" friction calculations.I.e., when the track is compressed, this value is used with the friction coefficient as a minimum stabilizing compliance. If this value is negative there will be stabilization when the track is compressed." )]
     public float MinStabilizingHingeNormalForce
     {
       get { return m_minStabilizingHingeNormalForce; }
@@ -293,6 +306,7 @@ namespace AGXUnity.Model
     /// Default: 1.0
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Friction parameter of the internal friction in the node hinges. This parameter scales the normal force in the hinge." )]
     public float StabilizingHingeFrictionParameter
     {
       get { return m_stabilizingHingeFrictionParameter; }

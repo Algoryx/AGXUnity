@@ -64,6 +64,7 @@ namespace AGXUnity
     /// this contact material has been initialized.
     /// </summary>
     [AllowRecursiveEditing]
+    [Tooltip("One of the materials for which this ContactMaterial defines contacts")]
     public ShapeMaterial Material1
     {
       get { return m_material1; }
@@ -85,6 +86,7 @@ namespace AGXUnity
     /// this contact material has been initialized.
     /// </summary>
     [AllowRecursiveEditing]
+    [Tooltip( "One of the materials for which this ContactMaterial defines contacts" )]
     public ShapeMaterial Material2
     {
       get { return m_material2; }
@@ -104,6 +106,7 @@ namespace AGXUnity
     /// Get or set friction model coupled to this contact material.
     /// </summary>
     [AllowRecursiveEditing]
+    [Tooltip( "The friction model coupled to this contact material." )]
     public FrictionModel FrictionModel
     {
       get { return m_frictionModel; }
@@ -125,6 +128,7 @@ namespace AGXUnity
     /// Get or set Young's modulus of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "This specifies the stiffness of the contact between the interacting geometries/bodies" )]
     public float YoungsModulus
     {
       get { return m_youngsModulus; }
@@ -146,6 +150,7 @@ namespace AGXUnity
     /// Get or set surface viscosity of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The viscosity of a surface material is the same thing as compliance but for friction in contacts" )]
     public Vector2 SurfaceViscosity
     {
       get { return m_surfaceViscosity; }
@@ -169,6 +174,7 @@ namespace AGXUnity
     /// Get or set friction coefficients of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "The coefficients of friction in the friction frame (default: world frame)" )]
     public Vector2 FrictionCoefficients
     {
       get { return m_frictionCoefficients; }
@@ -192,6 +198,7 @@ namespace AGXUnity
     /// Get or set restitution of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "This defines the \"bounciness\" of a contact." )]
     public float Restitution
     {
       get { return m_restitution; }
@@ -212,6 +219,8 @@ namespace AGXUnity
     /// <summary>
     /// Damping of the contact constraint. Default: 4.5 / 60 = 0.075.
     /// </summary>
+    [ClampAboveZeroInInspector(true)]
+    [Tooltip( "This defines the time it should take for the solver to restore an overlap. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
     public float Damping
     {
       get { return m_damping; }
@@ -233,6 +242,7 @@ namespace AGXUnity
     /// Adhesive force of the contacts with this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Determines a force used for keeping colliding objects together" )]
     public float AdhesiveForce
     {
       get { return m_adhesiveForce; }
@@ -256,6 +266,7 @@ namespace AGXUnity
     /// at higher overlap, the (usual) contact force.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
     public float AdhesiveOverlap
     {
       get { return m_adhesiveOverlap; }
@@ -276,6 +287,7 @@ namespace AGXUnity
     /// <summary>
     /// Enable/disable contact area approach of contacts using this contact material.
     /// </summary>
+    [Tooltip( "If set to “true”, an approximation to the contact area will be geometrically computed for each contact involving this contact material. For each contact, its area will then be evenly distributed between its contact points. The contact compliance will be scaled with the inverse of the area for each contact point." )]
     public bool UseContactArea
     {
       get { return m_useContactArea; }
@@ -296,6 +308,7 @@ namespace AGXUnity
     /// <summary>
     /// Contact reduction mode, default Geometry.
     /// </summary>
+    [Tooltip(" Specifies at which level the contact reduction algorithm should be run. None, Geometry, or Geometry and Rigidbody")]
     public ContactReductionType ContactReductionMode
     {
       get { return m_contactReductionMode; }
@@ -316,6 +329,7 @@ namespace AGXUnity
     /// <summary>
     /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
     /// </summary>
+    [Tooltip( "Contact reduction level when contact reduction is enabled (ContactReductionMode != None)" )]
     public ContactReductionLevelType ContactReductionLevel
     {
       get { return m_contactReductionLevel; }
@@ -345,6 +359,7 @@ namespace AGXUnity
     /// along the contact edge on the object the wire interacts with.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Wire friction coefficients of this contact material, used by the contact nodes on a wire. The primary (x) friction coefficient is used along the wire and the secondary (y) is along the contact edge on the object the wire interacts with." )]
     public Vector2 WireFrictionCoefficients
     {
       get { return m_wireFrictionCoefficients; }

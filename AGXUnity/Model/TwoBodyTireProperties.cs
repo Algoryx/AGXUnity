@@ -28,6 +28,8 @@ namespace AGXUnity.Model
     /// Default: 3.5E5
     /// </summary>
     [ClampAboveZeroInInspector]
+    [InspectorGroupBegin(Name = "Translational", DefaultExpanded = true)]
+    [Tooltip("The translational stiffness of the constraint between the two bodies orthogonal to the axis of rotation")]
     public float RadialStiffness
     {
       get { return m_radialStiffness; }
@@ -47,6 +49,7 @@ namespace AGXUnity.Model
     /// Default: 7.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The translational damping of the constraint between the two bodies orthogonal to the axis of rotation" )]
     public float RadialDampingCoefficient
     {
       get { return m_radialDampingCoefficient; }
@@ -66,6 +69,7 @@ namespace AGXUnity.Model
     /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The translational stiffness of the constraint between the two bodies in the axis of rotation" )]
     public float LateralStiffness
     {
       get { return m_lateralStiffness; }
@@ -85,6 +89,7 @@ namespace AGXUnity.Model
     /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The translational damping of the constraint between the two bodies in the axis of rotation" )]
     public float LateralDampingCoefficient
     {
       get { return m_lateralDampingCoefficient; }
@@ -104,6 +109,8 @@ namespace AGXUnity.Model
     /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
+    [InspectorGroupBegin(Name = "Rotational", DefaultExpanded = true)]
+    [Tooltip("The rotatioal stiffness of the constraint between the two bodies orthogonal to the axis of rotation")]
     public float BendingStiffness
     {
       get { return m_bendingStiffness; }
@@ -123,6 +130,7 @@ namespace AGXUnity.Model
     /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The rotatioal damping of the constraint between the two bodies orthogonal to the axis of rotation" )]
     public float BendingDampingCoefficient
     {
       get { return m_bendingDampingCoefficient; }
@@ -142,6 +150,7 @@ namespace AGXUnity.Model
     /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The rotatioal stiffness of the constraint between the two bodies in the axis of rotation" )]
     public float TorsionalStiffness
     {
       get { return m_torsionalStiffness; }
@@ -161,6 +170,7 @@ namespace AGXUnity.Model
     /// Default: 5.0E3
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The rotatioal damping of the constraint between the two bodies in the axis of rotation" )]
     public float TorsionalDampingCoefficient
     {
       get { return m_torsionalDampingCoefficient; }
