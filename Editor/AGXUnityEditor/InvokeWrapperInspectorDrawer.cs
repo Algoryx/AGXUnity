@@ -92,7 +92,7 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
+      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
