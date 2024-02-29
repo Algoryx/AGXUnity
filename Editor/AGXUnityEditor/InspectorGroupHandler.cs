@@ -47,7 +47,8 @@ namespace AGXUnityEditor
       var groupIdentifier = ( targetInstance != null ? targetInstance.GetType().FullName : "null" ) +
                             "_" + foldoutBeginAttribute.Name;
       Begin( !InspectorGUI.Foldout( EditorData.Instance.GetData( targetInstance as Object,
-                                                                 groupIdentifier ),
+                                                                 groupIdentifier,
+                                                                 ede => ede.Bool = foldoutBeginAttribute.DefaultExpanded ),
                                     GUI.MakeLabel( foldoutBeginAttribute.Name ) ) );
     }
 
