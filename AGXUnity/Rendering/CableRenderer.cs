@@ -471,6 +471,12 @@ namespace AGXUnity.Rendering
                                                   out rotation,
                                                   out var scale );
 
+          
+          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Matrix4x4.TRS( position, rotation, scale );
+
+          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
+            m_segmentColors.Add( new Vector4[ 1023 ] );
+
           if ( m_renderDamages ) {
             float t = CableDamage.DamageValue(i - 1) / CableDamage.MaxDamage;
             var color = Color.Lerp(CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t);
