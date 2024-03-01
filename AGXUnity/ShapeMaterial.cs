@@ -31,6 +31,7 @@ namespace AGXUnity
     /// Default value: 1000.
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip("The density of the material in kg/m^3")]
     public float Density
     {
       get { return m_density; }
@@ -55,6 +56,7 @@ namespace AGXUnity
     /// </summary>
     [ClampAboveZeroInInspector]
     [InspectorGroupBegin(Name = "Wire Properties")]
+    [Tooltip("The compliance of the stretch contstraint when this material is used as a wire")]
     public float YoungsWireStretch
     {
       get { return m_youngsWireStretch; }
@@ -78,6 +80,7 @@ namespace AGXUnity
     /// Default value: 1.0E9
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The compliance of the bend contstraint when this material is used as a wire" )]
     public float YoungsWireBend
     {
       get { return m_youngsWireBend; }
@@ -101,6 +104,7 @@ namespace AGXUnity
     /// Default value: 0.06
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The damping of the stretch contstraint when this material is used as a wire" )]
     public float DampingStretch
     {
       get { return m_dampingStretch; }
@@ -124,6 +128,7 @@ namespace AGXUnity
     /// Default value: 0.12
     /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The damping of the bend contstraint when this material is used as a wire" )]
     public float DampingBend
     {
       get { return m_dampingBend; }

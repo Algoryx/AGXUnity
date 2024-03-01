@@ -1,4 +1,4 @@
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -449,6 +449,9 @@ namespace AGXUnity.Rendering
 
       m_numCylinders = 0;
 
+      if ( m_positions.Count < 2 )
+        return;
+
       float radius = Cable.Radius;
       var sphereScale = 2f * radius * Vector3.one;
       // rotation will be set by cylinder calculation and reused by sphere to align edges, first half sphere need its own calculation
@@ -465,7 +468,11 @@ namespace AGXUnity.Rendering
                                                   out rotation,
                                                   out var scale );
 
+          
           m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Matrix4x4.TRS( position, rotation, scale );
+
+          if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
+            m_segmentColors.Add( new Vector4[ 1023 ] );
 
           if ( m_renderDamages ) {
             float t = CableDamage.DamageValue(i - 1) / CableDamage.MaxDamage;

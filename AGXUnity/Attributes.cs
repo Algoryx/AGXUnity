@@ -97,6 +97,7 @@ namespace AGXUnity
   public class InspectorGroupBeginAttribute : Attribute
   {
     public string Name;
+    public bool DefaultExpanded = false;
   }
 
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]

@@ -116,8 +116,10 @@ namespace AGXUnity
       var constraints = GetComponentsInChildren<Constraint>();
       foreach ( var constraint in constraints )
         if ( constraint.GetInitialized<Constraint>() != null ) {
-          var refRB = constraint.AttachmentPair.ReferenceObject.GetComponent<RigidBody>();
-          var conRB = constraint.AttachmentPair.ConnectedObject.GetComponent<RigidBody>();
+          RigidBody refRB = constraint.AttachmentPair.ReferenceObject.GetComponent<RigidBody>();
+          RigidBody conRB = null;
+          if( constraint.AttachmentPair.ConnectedObject != null) 
+            conRB = constraint.AttachmentPair.ConnectedObject.GetComponent<RigidBody>();
           if ( !blacklist.Any( pair =>
             ( pair.Item1 == refRB && pair.Item2 == conRB ) ||
             ( pair.Item2 == refRB && pair.Item1 == conRB ) ) )

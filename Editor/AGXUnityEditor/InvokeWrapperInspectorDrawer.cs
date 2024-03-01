@@ -92,7 +92,7 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
+      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
@@ -205,9 +205,7 @@ namespace AGXUnityEditor
       // During showMixedValue - Toggle will always return true (enabled)
       // when the user clicks regardless of instance.UseOverride.
       var toggleOutput = EditorGUI.ToggleLeft( rect,
-                                               GUI.MakeLabel( wrapper.Member.Name.SplitCamelCase(),
-                                                              false,
-                                                              "If checked, the override value will be used. Uncheck to use default." ),
+                                               InspectorGUI.MakeLabel( wrapper.Member),
                                                toggleInput );
       if ( toggleOutput != toggleInput ) {
         result.UseOverrideToggleChanged = true;
@@ -600,17 +598,17 @@ namespace AGXUnityEditor
                                  InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
           EditorGUI.BeginChangeCheck();
-          data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
+          data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled", false, "Whether this excavation mode should be enabled, creating dynamic mass and generating force feedback. " ),
                                                                       data.Value.Enabled );
           data.EnabledChanged = EditorGUI.EndChangeCheck();
 
           EditorGUI.BeginChangeCheck();
-          data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
+          data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled", false, "Whether this excavation mode should create dynamic mass. " ),
                                                                       data.Value.CreateDynamicMassEnabled );
           data.CreateDynamicMassEnabledChanged = EditorGUI.EndChangeCheck();
 
           EditorGUI.BeginChangeCheck();
-          data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
+          data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled", false, "Whether this excavation mode should generate force feedback from created aggregates. " ),
                                                                       data.Value.ForceFeedbackEnabled );
           data.ForceFeedbackEnabledChanged = EditorGUI.EndChangeCheck();
         }
