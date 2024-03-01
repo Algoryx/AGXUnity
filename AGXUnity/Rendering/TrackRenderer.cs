@@ -8,6 +8,7 @@ namespace AGXUnity.Rendering
   [AddComponentMenu( "AGXUnity/Rendering/Track Renderer" )]
   [ExecuteInEditMode]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#track-renderer" )]
   public class TrackRenderer : ScriptComponent
   {
     [HideInInspector]
