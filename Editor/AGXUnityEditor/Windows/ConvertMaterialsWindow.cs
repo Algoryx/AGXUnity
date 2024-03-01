@@ -217,9 +217,9 @@ namespace AGXUnityEditor.Windows
 
       // TODO: Replace icons with custom icons
       m_statusIcons = new Texture2D[ 3 ];
-      m_statusIcons[ (int)MaterialStatus.Updatable ] = EditorGUIUtility.FindTexture( "UpArrow" );
-      m_statusIcons[ (int)MaterialStatus.Compatible ] = EditorGUIUtility.FindTexture( "Valid@2x" );
-      m_statusIcons[ (int)MaterialStatus.NotAGXMaterial ] = EditorGUIUtility.FindTexture( "d_Toolbar Minus@2x" );
+      m_statusIcons[ (int)MaterialStatus.Updatable ]      = IconManager.GetIcon( "convertible_material" );
+      m_statusIcons[ (int)MaterialStatus.Compatible ]     = IconManager.GetIcon( "compatible_material" );
+      m_statusIcons[ (int)MaterialStatus.NotAGXMaterial ] = IconManager.GetIcon( "pass" );
 
       GatherMaterials();
 
@@ -265,7 +265,9 @@ namespace AGXUnityEditor.Windows
           image.tintColor = Color.green;
 
         numMats.Add( image );
-        numMats.Add( new Label() { text = $"{m_materials.Where( m => (int)m.Status == i ).Count()}" } );
+        var lab = new Label() { text = $"{m_materials.Where( m => (int)m.Status == i ).Count()}" };
+        lab.style.width = 15;
+        numMats.Add( lab );
       }
       header.Add( numMats );
 
