@@ -455,6 +455,9 @@ namespace AGXUnity.Rendering
 
       m_numCylinders = 0;
 
+      if ( m_positions.Count < 2 )
+        return;
+
       float radius = Cable.Radius;
       var sphereScale = 2f * radius * Vector3.one;
       // rotation will be set by cylinder calculation and reused by sphere to align edges, first half sphere need its own calculation
