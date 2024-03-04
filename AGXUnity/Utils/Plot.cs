@@ -1,7 +1,9 @@
 using UnityEngine;
+
 namespace AGXUnity.Utils
 {
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plotting-and-data-acquisition" )]
   public class Plot : ScriptComponent
   {
     /// <summary>
@@ -38,24 +40,20 @@ namespace AGXUnity.Utils
     protected override bool Initialize()
     {
       Native = GetSimulation().getPlotSystem();
-      if (AutomaticallyOpenPlotWindow)
+      if ( AutomaticallyOpenPlotWindow )
         OpenPlotWindow();
-      if (WritePlotToFile)
-      {
+      if ( WritePlotToFile ) {
         FilePath = Application.dataPath + "/" + FilePath + ".csv";
 
-        if (FilePath == string.Empty)
-        {
-          UnityEngine.Debug.LogWarning("WritePlotToFile is set but no path is specified. Select path.");
+        if ( FilePath == string.Empty ) {
+          UnityEngine.Debug.LogWarning( "WritePlotToFile is set but no path is specified. Select path." );
         }
 
-        if (System.IO.File.Exists(FilePath) && !ForceFileOverWrite)
-        {
-          UnityEngine.Debug.LogWarning("File already exists in specified path and Force File Overwrite is disabled. Proceeding without writing to file");
+        if ( System.IO.File.Exists( FilePath ) && !ForceFileOverWrite ) {
+          UnityEngine.Debug.LogWarning( "File already exists in specified path and Force File Overwrite is disabled. Proceeding without writing to file" );
         }
-        else
-        {
-          Native.add(new agxPlot.FilePlot(FilePath));
+        else {
+          Native.add( new agxPlot.FilePlot( FilePath ) );
         }
       }
 
@@ -69,15 +67,15 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">agxPlot.Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend, Color color)
+    public void CreatePlot( agxPlot.DataSeries xSeries, agxPlot.DataSeries ySeries, string name, string legend, Color color )
     {
       agx.Vec4 curveColor;
       System.Random random = new System.Random();
-      curveColor = new agx.Vec4(color.r, color.g, color.b, 1);
+      curveColor = new agx.Vec4( color.r, color.g, color.b, 1 );
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries, ySeries, legend);
-      plotCurve.setColor(curveColor);
+      plotCurve.setColor( curveColor );
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
-      plotWindow.add(plotCurve);
+      plotWindow.add( plotCurve );
     }
 
     /// <summary>
@@ -87,16 +85,16 @@ namespace AGXUnity.Utils
     /// <param name="ySeries">Data Series for y-axis.</param>
     /// <param name="name">Plot name.</param>
     /// <param name="legend">Legend for what is being plotted.</param>
-    public void CreatePlot(DataSeries xSeries, DataSeries ySeries, string name, string legend, Color color)
+    public void CreatePlot( DataSeries xSeries, DataSeries ySeries, string name, string legend, Color color )
     {
       agx.Vec4 curveColor;
       System.Random random = new System.Random();
       GetInitialized<AGXUnity.Utils.Plot>();
-      curveColor = new agx.Vec4(color.r, color.g, color.b, 1);
+      curveColor = new agx.Vec4( color.r, color.g, color.b, 1 );
       agxPlot.Curve plotCurve = new agxPlot.Curve(xSeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, ySeries.GetInitialized<AGXUnity.Utils.DataSeries>().Native, legend);
-      plotCurve.setColor(curveColor);
+      plotCurve.setColor( curveColor );
       agxPlot.Window plotWindow = Native.getOrCreateWindow(name);
-      plotWindow.add(plotCurve);
+      plotWindow.add( plotCurve );
     }
 
     /// <summary>
@@ -104,7 +102,7 @@ namespace AGXUnity.Utils
     /// </summary>
     public void OpenPlotWindow()
     {
-      Native.add(new agxPlot.WebPlot(true));
+      Native.add( new agxPlot.WebPlot( true ) );
     }
   };
 }

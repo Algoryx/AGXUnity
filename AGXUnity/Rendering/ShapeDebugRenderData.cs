@@ -10,6 +10,7 @@ namespace AGXUnity.Rendering
   /// these objects.
   /// </summary>
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#debug-render-manager" )]
   public class ShapeDebugRenderData : DebugRenderData
   {
     /// <summary>

@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Model/Wheel Loader Input Controller" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wheel-loader-components" )]
   public class WheelLoaderInputController : ScriptComponent
   {
     public enum ActionType
@@ -248,222 +250,221 @@ namespace AGXUnity.Model
 }
 
 #region InputManager.asset
-  /*
+/*
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!13 &1
 InputManager:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Axes:
-  - serializedVersion: 3
-    m_Name: jSteer
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: left
-    altPositiveButton: right
-    gravity: 3
-    dead: 0.3
-    sensitivity: 1
-    snap: 1
-    invert: 0
-    type: 2
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: kSteer
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: left
-    positiveButton: right
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.001
-    sensitivity: 2
-    snap: 1
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: jThrottle
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.05
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 2
-    axis: 9
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: kThrottle
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: up
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.001
-    sensitivity: 2
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: jBrake
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.05
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 2
-    axis: 8
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: kBrake
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: down
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.001
-    sensitivity: 2
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: jElevate
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.3
-    sensitivity: 1
-    snap: 0
-    invert: 1
-    type: 2
-    axis: 1
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: kElevate
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: s
-    positiveButton: w
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.001
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: jTilt
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: 
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.3
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 2
-    axis: 3
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: kTilt
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: a
-    positiveButton: d
-    altNegativeButton: 
-    altPositiveButton: 
-    gravity: 3
-    dead: 0.001
-    sensitivity: 1
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: Enable Debug Button 1
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: left ctrl
-    altNegativeButton: 
-    altPositiveButton: joystick button 8
-    gravity: 0
-    dead: 0
-    sensitivity: 0
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: Enable Debug Button 2
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: backspace
-    altNegativeButton: 
-    altPositiveButton: joystick button 9
-    gravity: 0
-    dead: 0
-    sensitivity: 0
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-  - serializedVersion: 3
-    m_Name: Debug Reset
-    descriptiveName: 
-    descriptiveNegativeName: 
-    negativeButton: 
-    positiveButton: left alt
-    altNegativeButton: 
-    altPositiveButton: joystick button 1
-    gravity: 0
-    dead: 0
-    sensitivity: 0
-    snap: 0
-    invert: 0
-    type: 0
-    axis: 0
-    joyNum: 0
-    */
+m_ObjectHideFlags: 0
+serializedVersion: 2
+m_Axes:
+- serializedVersion: 3
+  m_Name: jSteer
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: 
+  altNegativeButton: left
+  altPositiveButton: right
+  gravity: 3
+  dead: 0.3
+  sensitivity: 1
+  snap: 1
+  invert: 0
+  type: 2
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: kSteer
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: left
+  positiveButton: right
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.001
+  sensitivity: 2
+  snap: 1
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: jThrottle
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: 
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.05
+  sensitivity: 1
+  snap: 0
+  invert: 0
+  type: 2
+  axis: 9
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: kThrottle
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: up
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.001
+  sensitivity: 2
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: jBrake
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: 
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.05
+  sensitivity: 1
+  snap: 0
+  invert: 0
+  type: 2
+  axis: 8
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: kBrake
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: down
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.001
+  sensitivity: 2
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: jElevate
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: 
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.3
+  sensitivity: 1
+  snap: 0
+  invert: 1
+  type: 2
+  axis: 1
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: kElevate
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: s
+  positiveButton: w
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.001
+  sensitivity: 1
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: jTilt
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: 
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.3
+  sensitivity: 1
+  snap: 0
+  invert: 0
+  type: 2
+  axis: 3
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: kTilt
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: a
+  positiveButton: d
+  altNegativeButton: 
+  altPositiveButton: 
+  gravity: 3
+  dead: 0.001
+  sensitivity: 1
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: Enable Debug Button 1
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: left ctrl
+  altNegativeButton: 
+  altPositiveButton: joystick button 8
+  gravity: 0
+  dead: 0
+  sensitivity: 0
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: Enable Debug Button 2
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: backspace
+  altNegativeButton: 
+  altPositiveButton: joystick button 9
+  gravity: 0
+  dead: 0
+  sensitivity: 0
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+- serializedVersion: 3
+  m_Name: Debug Reset
+  descriptiveName: 
+  descriptiveNegativeName: 
+  negativeButton: 
+  positiveButton: left alt
+  altNegativeButton: 
+  altPositiveButton: joystick button 1
+  gravity: 0
+  dead: 0
+  sensitivity: 0
+  snap: 0
+  invert: 0
+  type: 0
+  axis: 0
+  joyNum: 0
+  */
 #endregion
-  

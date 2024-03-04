@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AGXUnity
 {
-  public class Route<T> : ScriptComponent, IEnumerable<T>
+  public abstract class Route<T> : ScriptComponent, IEnumerable<T>
     where T : RouteNode
   {
     public class ValidatedNode

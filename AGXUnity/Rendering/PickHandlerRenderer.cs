@@ -3,6 +3,7 @@
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#editor-settings" )]
   public class PickHandlerRenderer : ScriptComponent
   {
     public GameObject ReferenceSphere { get; private set; }
