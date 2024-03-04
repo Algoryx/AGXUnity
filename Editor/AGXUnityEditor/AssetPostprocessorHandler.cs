@@ -1,4 +1,5 @@
 ﻿using AGXUnity;
+using AGXUnity.Collide;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -55,16 +56,12 @@ namespace AGXUnityEditor
       // when this prefab is added to a scene, the disabled collisions will be
       // added again.
       if ( !isAGXPrefab && CollisionGroupsManager.HasInstance ) {
-#if UNITY_2018_1_OR_NEWER
         var prefab = PrefabUtility.GetCorrespondingObjectFromSource( instance ) as GameObject;
-#else
-        var prefab = PrefabUtility.GetPrefabParent( instance ) as GameObject;
-#endif
         if ( prefab != null ) {
           try {
             m_isProcessingPrefabInstance = true;
 
-            var groups = prefab.GetComponentsInChildren<CollisionGroups>();
+            var groups = prefab.GetComponentsInChildren<CollisionGroups>(); 
             var tags   = ( from componentGroups
                            in groups
                            from tag
@@ -77,27 +74,52 @@ namespace AGXUnityEditor
                                 where !CollisionGroupsManager.Instance.GetEnablePair( tag1.Tag, tag2.Tag )
                                 select new AGXUnity.IO.GroupPair() { First = tag1.Tag, Second = tag2.Tag };
             if ( disabledPairs.Count() > 0 ) {
-#if UNITY_2017_3_OR_NEWER
-#if UNITY_2018_3_OR_NEWER
               var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
               if ( savedData == null ) {
                 savedData = instance.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
                 PrefabUtility.ApplyAddedComponent( savedData, AssetDatabase.GetAssetPath( prefab ), InteractionMode.AutomatedAction );
               }
-#else
-              var savedData = prefab.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
-              if ( savedData == null )
-                savedData = prefab.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
-#endif
-#endif
               foreach ( var disabledPair in disabledPairs )
                 savedData.AddDisabledPair( disabledPair.First, disabledPair.Second );
 
-#if UNITY_2018_3_OR_NEWER
               PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
-#else
-              EditorUtility.SetDirty( prefab );
-#endif
+            }
+          }
+          finally {
+            m_isProcessingPrefabInstance = false;
+          }
+        }
+      }
+
+      if ( !isAGXPrefab && ContactMaterialManager.HasInstance ) {
+        var prefab = PrefabUtility.GetCorrespondingObjectFromSource( instance ) as GameObject;
+        if ( prefab != null ) {
+          try {
+            m_isProcessingPrefabInstance = true;
+
+            var shapes    = prefab.GetComponentsInChildren<Shape>();
+            var materials = ( from shape
+                              in shapes
+                              select shape.Material ).Distinct( );
+            var contactMaterials = from cm
+                                  in ContactMaterialManager.Instance.ContactMaterialEntries
+                                  where materials.Contains(cm.ContactMaterial.Material1)
+                                  where materials.Contains(cm.ContactMaterial.Material2)
+                                  select cm;
+            if ( contactMaterials.Count() > 0 ) {
+              var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
+              if ( savedData == null ) {
+                savedData = instance.AddComponent<AGXUnity.IO.SavedPrefabLocalData>();
+                PrefabUtility.ApplyAddedComponent( savedData, AssetDatabase.GetAssetPath( prefab ), InteractionMode.AutomatedAction );
+              }
+              foreach ( var cm in contactMaterials ) {
+                if ( cm.IsOriented )
+                  Debug.LogWarning( $"Contact Material '{cm.ContactMaterial.name}' is oriented. Saving oriented materials in prefab is not currently supported. Contact material will be ignored." );
+                else
+                  savedData.AddContactMaterial( cm.ContactMaterial );
+              }
+
+              PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
             }
           }
           finally {
@@ -172,13 +194,15 @@ namespace AGXUnityEditor
 
     private static void OnSavedPrefabAddedToScene( GameObject instance, AGXUnity.IO.SavedPrefabLocalData savedPrefabData )
     {
-      if ( savedPrefabData == null || savedPrefabData.DisabledGroups.Length == 0 )
+      if ( savedPrefabData == null || (savedPrefabData.NumSavedDisabledPairs == 0 && savedPrefabData.NumSavedContactMaterials == 0) )
         return;
 
       Undo.SetCurrentGroupName( "Adding prefab data for " + instance.name + " to scene." );
       var grouId = Undo.GetCurrentGroup();
       foreach ( var disabledGroup in savedPrefabData.DisabledGroups )
         TopMenu.GetOrCreateUniqueGameObject<CollisionGroupsManager>().SetEnablePair( disabledGroup.First, disabledGroup.Second, false );
+      foreach ( var contactMaterial in savedPrefabData.ContactMaterials )
+        TopMenu.GetOrCreateUniqueGameObject<ContactMaterialManager>().Add( contactMaterial );
       Undo.CollapseUndoOperations( grouId );
     }
   }
