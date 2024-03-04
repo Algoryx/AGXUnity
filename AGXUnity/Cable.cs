@@ -127,6 +127,10 @@ namespace AGXUnity
       }
     }
 
+    [field: SerializeField]
+    [Tooltip( "By default, a routed cable will try to straighten it self out, i.e. the resting state is a straight, untwisted cable. When enabled, this option rebinds the resting state after the routing algorithm is run so that the cable will attempt to preserve the initial state instead." )]
+    public bool DeformToInitialState { get; set; } = false;
+
     /// <summary>
     /// Shape material of this cable. Default null.
     /// </summary>
@@ -458,6 +462,9 @@ namespace AGXUnity
         Properties.GetInitialized<CableProperties>();
 
       SynchronizeProperties();
+
+      if ( DeformToInitialState )
+        Native.rebind();
 
       return true;
     }

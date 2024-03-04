@@ -366,8 +366,8 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var tiles = Native.getActiveTileAttachments();
-      foreach ( var tile in tiles )
-        UpdateTerrain( tile );
+      for(int i = 0; i < tiles.Count; i++ )
+        UpdateTerrain( tiles[i] );
       TerrainData.SyncHeightmap();
     }
 
@@ -510,9 +510,10 @@ namespace AGXUnity.Model
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
 
-    public override float ElementSize { get => TerrainData.size.x / ( TerrainDataResolution - 1 ); }
-    public override DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( shovel => shovel.Body ).ToArray(); } }
+    public override float ElementSize => TerrainData.size.x / (TerrainDataResolution - 1);
+    public override DeformableTerrainShovel[] Shovels => m_shovels.Select( shovel => shovel.Body ).ToArray(); 
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
+    public override agx.Uuid GetParticleMaterialUuid() => Native?.getTemplateTerrain()?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain()?.getProperties(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
@@ -556,7 +557,7 @@ namespace AGXUnity.Model
     }
     public override void ConvertToDynamicMassInShape( Shape failureVolume )
     {
-      if ( !IsNativeNull() ) {
+      if ( Native != null ) {
         var shape = failureVolume.GetInitialized<Shape>().NativeShape;
         foreach ( var tile in Native.getActiveTileAttachments() )
           tile.m_terrainTile.convertToDynamicMassInShape( shape );
@@ -813,5 +814,6 @@ namespace AGXUnity.Model
         terr.getGeometry().setEnable( enable );
       }
     }
+
   }
 }

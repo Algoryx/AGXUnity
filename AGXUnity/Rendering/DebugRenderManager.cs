@@ -11,6 +11,7 @@ namespace AGXUnity.Rendering
   /// </summary>
   [AddComponentMenu( "" )]
   [ExecuteInEditMode]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#debug-render-manager" )]
   public class DebugRenderManager : UniqueGameObject<DebugRenderManager>
   {
     public struct ContactData

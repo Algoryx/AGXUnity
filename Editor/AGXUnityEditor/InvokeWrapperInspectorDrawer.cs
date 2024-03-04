@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
-
-using GUI    = AGXUnity.Utils.GUI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -93,22 +92,22 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
+      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector2Int ) )]
     public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                       wrapper.Get<Vector2Int>( objects[ 0 ] ) );
+      return InspectorGUI.Vector2IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector2Int>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( Vector3Int ) )]
     public static object Vector3IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ).text,
-                                       wrapper.Get<Vector3Int>( objects[ 0 ] ) );
+      return InspectorGUI.Vector3IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           wrapper.Get<Vector3Int>( objects[ 0 ] ) );
     }
 
     [InspectorDrawer( typeof( bool ) )]
@@ -194,7 +193,6 @@ namespace AGXUnityEditor
       var result = new OptionalOverrideValueResult();
       var instance = wrapper.Get<OptionalOverrideValue<ValueT>>( objects[ 0 ] );
 
-      UnityEngine.GUI.changed = false;
       var hasMixedUseOverride = !CompareMulti<ValueT>( objects,
                                                        wrapper,
                                                        other => other.UseOverride == instance.UseOverride );
@@ -207,9 +205,7 @@ namespace AGXUnityEditor
       // During showMixedValue - Toggle will always return true (enabled)
       // when the user clicks regardless of instance.UseOverride.
       var toggleOutput = EditorGUI.ToggleLeft( rect,
-                                               GUI.MakeLabel( wrapper.Member.Name.SplitCamelCase(),
-                                                              false,
-                                                              "If checked, the override value will be used. Uncheck to use default." ),
+                                               InspectorGUI.MakeLabel( wrapper.Member),
                                                toggleInput );
       if ( toggleOutput != toggleInput ) {
         result.UseOverrideToggleChanged = true;
@@ -241,7 +237,7 @@ namespace AGXUnityEditor
           // not possible to check this in the CopyOp callback.
           var clampAttribute = wrapper.GetAttribute<ClampAboveZeroInInspector>();
           if ( clampAttribute == null || clampAttribute.IsValid( newValue ) )
-            result.OnChange<ValueT>(instance.OverrideValue, newValue);
+            result.OnChange<ValueT>( instance.OverrideValue, newValue );
         }
       }
 
@@ -494,7 +490,6 @@ namespace AGXUnityEditor
       var result = new DefaultAndUserValueResult();
       var instance = wrapper.Get<DefaultAndUserValue<ValueT>>( objects[ 0 ] );
 
-      UnityEngine.GUI.changed = false;
       var hasMixedUseDefault = !CompareMulti<ValueT>( objects,
                                                        wrapper,
                                                        other => other.UseDefault == instance.UseDefault );
@@ -602,20 +597,21 @@ namespace AGXUnityEditor
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( objects[ 0 ] as Object, wrapper.Member.Name ),
                                  InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         using ( InspectorGUI.IndentScope.Single ) {
-          data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled" ),
+          EditorGUI.BeginChangeCheck();
+          data.Value.Enabled = InspectorGUI.Toggle( GUI.MakeLabel( "Enabled", false, "Whether this excavation mode should be enabled, creating dynamic mass and generating force feedback. " ),
                                                                       data.Value.Enabled );
-          data.EnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
-          data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled" ),
+          data.EnabledChanged = EditorGUI.EndChangeCheck();
+
+          EditorGUI.BeginChangeCheck();
+          data.Value.CreateDynamicMassEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Create Dynamic Mass Enabled", false, "Whether this excavation mode should create dynamic mass. " ),
                                                                       data.Value.CreateDynamicMassEnabled );
-          data.CreateDynamicMassEnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
-          data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled" ),
+          data.CreateDynamicMassEnabledChanged = EditorGUI.EndChangeCheck();
+
+          EditorGUI.BeginChangeCheck();
+          data.Value.ForceFeedbackEnabled = InspectorGUI.Toggle( GUI.MakeLabel( "Force Feedback Enabled", false, "Whether this excavation mode should generate force feedback from created aggregates. " ),
                                                                       data.Value.ForceFeedbackEnabled );
-          data.ForceFeedbackEnabledChanged = UnityEngine.GUI.changed;
-          UnityEngine.GUI.changed = false;
+          data.ForceFeedbackEnabledChanged = EditorGUI.EndChangeCheck();
         }
-        UnityEngine.GUI.changed = data.ContainsChanges;
       }
       return data;
     }

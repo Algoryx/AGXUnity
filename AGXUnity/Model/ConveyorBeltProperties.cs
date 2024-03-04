@@ -4,11 +4,13 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#conveyor-belt-properties" )]
   public class ConveyorBeltProperties : ScriptAsset
   {
     [SerializeField]
     private Vector3 m_translationalCompliance = 1.0E-8f * Vector3.one;
 
+    [Tooltip("The translational compliance of the constraint connecting the individual tracks")]
     public Vector3 TranslationalCompliance
     {
       get { return m_translationalCompliance; }
@@ -22,6 +24,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private Vector2 m_rotationalCompliance = 1.0E-8f * Vector2.one;
 
+    [Tooltip( "The rotational compliance of the constraint connecting the individual tracks" )]
     public Vector2 RotationalCompliance
     {
       get { return m_rotationalCompliance; }

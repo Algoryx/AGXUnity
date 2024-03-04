@@ -108,16 +108,17 @@ namespace AGXUnityEditor.Tools
             // Poisson's ratio is only used in the Twist direction and
             // has HideInInspector in CableProperties. Overriding HideInInspector
             // and rendering Poisson's ratio if dir == CableProperties.Direction.Twist.
+            // Similarly the Yield point is ignored in the stretch direction so we hide the inspector
             var renderFloat = wrapper.GetContainingType() == typeof( float ) &&
                               ( InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ||
-                                ( wrapper.Member.Name == "PoissonsRatio" && dir == CableProperties.Direction.Twist ) );
+                              ( wrapper.Member.Name == "PoissonsRatio" && dir == CableProperties.Direction.Twist ) ||
+                              ( wrapper.Member.Name == "YieldPoint" && dir != CableProperties.Direction.Stretch ) );
             if ( renderFloat ) {
+              EditorGUI.BeginChangeCheck();
               var value = EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
                                                       wrapper.Get<float>( properties[ dir ] ) );
-              if ( UnityEngine.GUI.changed ) {
+              if ( EditorGUI.EndChangeCheck() )
                 changed = new Tuple<PropertyWrapper, CableProperties.Direction, object>( wrapper, dir, value );
-                UnityEngine.GUI.changed = false;
-              }
             }
           }
         }

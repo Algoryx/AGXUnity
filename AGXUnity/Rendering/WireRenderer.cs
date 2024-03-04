@@ -1,14 +1,11 @@
-﻿using System;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-using System.ComponentModel;
 using UnityEngine.Rendering;
 
 namespace AGXUnity.Rendering
@@ -44,9 +41,12 @@ namespace AGXUnity.Rendering
     [AllowRecursiveEditing]
     public Material Material
     {
-      get { return m_material == null ?
+      get
+      {
+        return m_material == null ?
                      m_material = DefaultMaterial() :
-                     m_material; }
+                     m_material;
+      }
       set
       {
         m_material = value ?? DefaultMaterial();
@@ -66,7 +66,7 @@ namespace AGXUnity.Rendering
     public bool InitializeRenderer()
     {
       if ( !CreateMeshes() ) {
-        Debug.LogError( "AGXUnity.Rendering.WireRenderer: Problem initializing one or both meshes!", this);
+        Debug.LogError( "AGXUnity.Rendering.WireRenderer: Problem initializing one or both meshes!", this );
         return false;
       }
 
@@ -163,31 +163,6 @@ namespace AGXUnity.Rendering
       return Resources.Load<Material>( "Materials/WireMaterial_01" );
     }
 
-    private static Matrix4x4 CalculateCylinderTransform( Vector3 start, Vector3 end, float radius )
-    {
-      CalculateCylinderTransform( start,
-                                  end,
-                                  radius,
-                                  out var position,
-                                  out var rotation,
-                                  out var scale );
-      return Matrix4x4.TRS( position, rotation, scale );
-    }
-
-    private static void CalculateCylinderTransform( Vector3 start,
-                                                    Vector3 end,
-                                                    float radius,
-                                                    out Vector3 position,
-                                                    out Quaternion rotation,
-                                                    out Vector3 scale )
-    {
-      var dir = end - start;
-      var length = dir.magnitude;
-      position = 0.5f * ( start + end );
-      rotation = Quaternion.FromToRotation( Vector3.up, dir );
-      scale = new Vector3( 2.0f * radius, 0.5f * length, 2.0f * radius );
-    }
-
     private void RenderRoute()
     {
       SynchronizeData( true );
@@ -221,18 +196,18 @@ namespace AGXUnity.Rendering
       }
 
       while ( m_positions.Count / 1023 + 1 > m_segmentSphereMatrices.Count )
-        m_segmentSphereMatrices.Add(new Matrix4x4[1023]);
+        m_segmentSphereMatrices.Add( new Matrix4x4[ 1023 ] );
 
       m_numCylinders = 0;
 
       float radius = Wire.Radius;
       var sphereScale = 2.0f * radius * Vector3.one;
       for ( int i = 0; i < m_positions.Count; ++i ) {
-        if ( i > 0 ){
-          if (m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count)
-            m_segmentCylinderMatrices.Add(new Matrix4x4[1023]);
+        if ( i > 0 ) {
+          if ( m_numCylinders / 1023 + 1 > m_segmentCylinderMatrices.Count )
+            m_segmentCylinderMatrices.Add( new Matrix4x4[ 1023 ] );
 
-          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = CalculateCylinderTransform( m_positions[ i - 1 ],
+          m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = SegmentUtils.CalculateCylinderTransform( m_positions[ i - 1 ],
                                                                                                                     m_positions[ i ],
                                                                                                                     radius );
           m_numCylinders++;
@@ -298,29 +273,11 @@ namespace AGXUnity.Rendering
     private bool CreateMeshes()
     {
       if ( m_sphereMeshInstance == null )
-        m_sphereMeshInstance = CreateMesh( @"Debug/LowPolySphereRenderer" );
+        m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/LowPolySphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = CreateMesh( @"Debug/LowPolyCylinderRenderer" );
+        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/CylinderCap" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
-    }
-
-    private Mesh CreateMesh( string resource )
-    {
-      GameObject tmp = Resources.Load<GameObject>( resource );
-      MeshFilter[] filters = tmp.GetComponentsInChildren<MeshFilter>();
-      MeshRenderer[] renderers = tmp.GetComponentsInChildren<MeshRenderer>();
-      CombineInstance[] combine = new CombineInstance[ filters.Length ];
-
-      for ( int i = 0; i < filters.Length; ++i ) {
-        combine[ i ].mesh = filters[ i ].sharedMesh;
-        combine[ i ].transform = filters[ i ].transform.localToWorldMatrix;
-      }
-
-      var mesh = new Mesh();
-      mesh.CombineMeshes( combine );
-
-      return mesh;
     }
 
     private void InitMatrices()

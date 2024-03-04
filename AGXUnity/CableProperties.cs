@@ -27,6 +27,7 @@ namespace AGXUnity
     [SerializeField]
     private float m_youngsModulus = 1.0E9f;
     [ClampAboveZeroInInspector]
+    [Tooltip("Young's Modulus of the constraint")]
     public float YoungsModulus
     {
       get { return m_youngsModulus; }
@@ -42,6 +43,7 @@ namespace AGXUnity
     private float m_poissonsRatio = 0.333f;
 
     [HideInInspector]
+    [Tooltip( "Ratio of Stress over Strain. Will affect rotational stiffness when twisting." )]
     public float PoissonsRatio
     {
       get
@@ -63,6 +65,8 @@ namespace AGXUnity
     private float m_yieldPoint = float.PositiveInfinity;
 
     [ClampAboveZeroInInspector( true )]
+    [HideInInspector]
+    [Tooltip( "The torque required to permanently deform the cable, i.e., to cause a plastic deformation" )]
     public float YieldPoint
     {
       get { return m_yieldPoint; }
@@ -78,6 +82,7 @@ namespace AGXUnity
     private float m_damping = 2.0f / 50;
 
     [ClampAboveZeroInInspector( true )]
+    [Tooltip("The damping of the constraint")]
     public float Damping
     {
       get { return m_damping; }

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 
 namespace AGXUnityEditor
 {
@@ -53,7 +53,7 @@ namespace AGXUnityEditor
     [MenuItem( "Assets/AGXUnity/Two Body Tire Properties", priority = 660 )]
     public static Object CreateTwoBodyTireProperties()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>("two body tire properties");
+      return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>( "two body tire properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Solver Settings", priority = 680 )]
@@ -90,6 +90,12 @@ namespace AGXUnityEditor
     public static Object CreateTrackInternalMergeProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<TrackInternalMergeProperties>( "track internal merge properties" );
+    }
+
+    [MenuItem( "Assets/AGXUnity/Conveyor Belt Properties", priority = 720 )]
+    public static Object CreateConveyorBeltProperties()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<ConveyorBeltProperties>( "conveyor belt properties" );
     }
 
     [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]

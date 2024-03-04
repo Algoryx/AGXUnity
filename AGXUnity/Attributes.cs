@@ -97,6 +97,7 @@ namespace AGXUnity
   public class InspectorGroupBeginAttribute : Attribute
   {
     public string Name;
+    public bool DefaultExpanded = false;
   }
 
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
@@ -151,6 +152,9 @@ namespace AGXUnity
         return (float)value > 0 || ( m_acceptZero && (float)value == 0 );
       else if ( type == typeof( double ) )
         return (double)value > 0 || ( m_acceptZero && (double)value == 0 );
+      else if ( type.IsGenericType &&
+                type.GetGenericTypeDefinition() == typeof(OptionalOverrideValue<>) )
+        return OptionalOverrideIsValid( value );
       return true;
     }
 
@@ -186,6 +190,17 @@ namespace AGXUnity
     {
       return ( value[ 0 ] > 0 || ( m_acceptZero && value[ 0 ] == 0 ) ) &&
              ( value[ 1 ] > 0 || ( m_acceptZero && value[ 1 ] == 0 ) );
+    }
+
+    public bool OptionalOverrideIsValid( object value )
+    {
+      var wrappedType = value.GetType().GenericTypeArguments[0];
+      var ooType = typeof(OptionalOverrideValue<>).MakeGenericType( wrappedType );
+      var wrappedVal = ooType.GetProperty( "OverrideValue" ).GetValue( value );
+      var validator = this.GetType().GetMethod("IsValid",new Type[] { wrappedType } );
+      if ( validator == null )
+        return true;
+      return (bool)validator.Invoke( this, new object[] { wrappedVal });
     }
   }
 

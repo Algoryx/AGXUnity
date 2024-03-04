@@ -112,7 +112,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_maximumDepth = 20.0f;
+    protected float m_maximumDepth = 20.0f;
 
     /// <summary>
     /// Maximum depth, it's not possible to dig deeper than this value.
@@ -172,6 +172,11 @@ namespace AGXUnity.Model
     /// Returns the soil simulation interface used by this terrain instance
     /// </summary>
     abstract public agxTerrain.SoilSimulationInterface GetSoilSimulationInterface();
+
+    /// <summary>
+    /// Returns the UUID of the particle agx.Material used by this terrain.
+    /// </summary>
+    abstract public agx.Uuid GetParticleMaterialUuid();
 
     /// <summary>
     /// Callback which should be called when the TerrainProperties of this terrain is updated

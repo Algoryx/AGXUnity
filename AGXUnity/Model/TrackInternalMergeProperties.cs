@@ -33,6 +33,7 @@ namespace AGXUnity.Model
     /// Enable/disable merge of nodes to segments in the track.
     /// Default: Disabled
     /// </summary>
+    [Tooltip( "Enable/disable merge of nodes to segments in the track." )]
     public bool MergeEnabled
     {
       get { return m_mergeEnabled; }
@@ -51,6 +52,7 @@ namespace AGXUnity.Model
     /// Default: 3
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Number of nodes in a row that may merge together." )]
     public int NumNodesPerMergeSegment
     {
       get { return m_numNodesPerMergeSegment; }
@@ -67,6 +69,7 @@ namespace AGXUnity.Model
     /// <summary>
     /// Contact reduction level of merged nodes against other objects.
     /// </summary>
+    [Tooltip( "Contact reduction level of merged nodes against other objects." )]
     public ContactReductionMode ContactReduction
     {
       get { return m_contactReduction; }
@@ -85,6 +88,7 @@ namespace AGXUnity.Model
     /// condition (angle close to zero).
     /// Default: Enabled
     /// </summary>
+    [Tooltip( "Enable/disable the usage of hinge lock to reach merge condition (angle close to zero)." )]
     public bool LockToReachMergeConditionEnabled
     {
       get { return m_lockToReachMergeConditionEnabled; }
@@ -103,6 +107,7 @@ namespace AGXUnity.Model
     /// Default: 1.0E-11
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Compliance of the hinge lock used to reach merge condition." )]
     public float LockToReachMergeConditionCompliance
     {
       get { return m_lockToReachMergeConditionCompliance; }
@@ -121,6 +126,7 @@ namespace AGXUnity.Model
     /// Default: 0.06
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Damping of the hinge lock used to reach merge condition." )]
     public float LockToReachMergeConditionDamping
     {
       get { return m_lockToReachMergeConditionDamping; }
@@ -138,7 +144,8 @@ namespace AGXUnity.Model
     /// Maximum angle > 0, in degrees, to trigger merge between nodes. I.e., when
     /// the angle between two nodes less than maxAngleToMerge the nodes will merge.
     /// </summary>
-    [ ClampAboveZeroInInspector( true )]
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Maximum angle, in degrees, to trigger merge between nodes. I.e., when the angle between two nodes less than maxAngleToMerge the nodes will merge." )]
     public float MaxAngleMergeCondition
     {
       get { return m_maxAngleMergeCondition; }

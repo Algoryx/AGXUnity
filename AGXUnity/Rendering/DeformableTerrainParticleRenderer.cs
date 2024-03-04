@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+using static agx.agxSWIG.UnityHelpers;
+
 namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Deformable Terrain Particle Renderer" )]
@@ -89,6 +91,10 @@ namespace AGXUnity.Rendering
           InitializeRenderMode();
       }
     }
+
+    [field: SerializeField]
+    [Tooltip("When enabled, the particles are filtered based on their agx.Material and only those where the material matches the terrain particle material are rendered")]
+    public bool FilterParticles { get; set; } = false;
 
     protected override bool Initialize()
     {
@@ -204,6 +210,9 @@ namespace AGXUnity.Rendering
         m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
         m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
+      } else {
+        if ( FilterParticles )
+          Debug.LogWarning( $"Particle Filtering is only supported when using {GranuleRenderMode.GameObject}!", this );
       }
 
       Synchronize();
@@ -219,37 +228,37 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private void SRPRender( ScriptableRenderContext context, Camera cam )
-    {
-      Render( cam );
-    }
+    private void SRPRender( ScriptableRenderContext _, Camera cam ) => Render( cam );
 
-    private void Render(Camera cam)
+    private void Render( Camera cam )
     {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
-                                    m_numGranulars > 0 &&
+                                    m_numRendered > 0 &&
                                     m_meshInstance != null &&
                                     m_meshInstanceMaterial != null;
       if ( !isValidDrawInstanceMode )
         return;
 
-      if ( m_numGranulars < 1024 ) {
+      if ( m_numRendered < 1024 ) {
         Graphics.DrawMeshInstanced( m_meshInstance,
                                     0,
                                     m_meshInstanceMaterial,
                                     m_granuleMatrices[ 0 ].unityMats,
-                                    m_numGranulars,
+                                    m_numRendered,
                                     m_meshInstanceProperties,
                                     m_shadowCastingMode,
                                     m_receiveShadows,
                                     0,
-                                    cam);
+                                    cam );
       }
       // DrawMeshInstanced only supports up to 1023 meshes for each call,
       // we need to subdivide if we have more particles than that.
       else {
-        for ( int i = 0; i < m_numGranulars; i += 1023 ) {
-          int count = Mathf.Min( 1023, m_numGranulars - i );
+        for ( int i = 0; i < m_numRendered; i += 1023 ) {
+          int count = Mathf.Min( 1023, m_numRendered - i );
           Graphics.DrawMeshInstanced( m_meshInstance,
                                       0,
                                       m_meshInstanceMaterial,
@@ -269,7 +278,7 @@ namespace AGXUnity.Rendering
       var granulars = ParticleProvider?.GetParticles();
       if ( granulars == null ) return;
 
-      m_numGranulars = (int)granulars.size();
+      int numGranulars = (int)granulars.size();
 
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_meshInstance != null &&
@@ -278,28 +287,46 @@ namespace AGXUnity.Rendering
                                       RenderMode == GranuleRenderMode.GameObject &&
                                       GranuleInstance != null;
       if ( isValidDrawInstanceMode ) {
-        // Use 1023 as arbitrary block size since that is the
-        // amount of particles that can be drawn with DrawMeshInstanced.
-        while ( m_numGranulars / 1023 + 1 > m_granuleMatrices.Count ) {
-          m_granuleMatrices.Add( new MatrixUnion() );
-          m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
-        }
 
-        for ( int arrayIndex = 0; arrayIndex < ( m_numGranulars / 1023 + 1 ); ++arrayIndex )
-          granulars.populateMatrices( m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023, 1023 );
+        if ( FilterParticles ) {
+          m_numRendered = 0;
+          int start = 0;
+          int i = 0;
+          var uuid = ParticleProvider.GetParticleMaterialUuid();
+          while ( start != numGranulars ) {
+            if ( i + 1 > m_granuleMatrices.Count ) {
+              m_granuleMatrices.Add( new MatrixUnion() );
+              m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
+            }
+            m_numRendered += PopulateMatricesFilterByMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
+          }
+          uuid.ReturnToPool();
+        } else {
+          m_numRendered = numGranulars;
+
+          // Use 1023 as arbitrary block size since that is the
+          // amount of particles that can be drawn with DrawMeshInstanced.
+          while ( m_numRendered / 1023 + 1 > m_granuleMatrices.Count ) {
+            m_granuleMatrices.Add( new MatrixUnion() );
+            m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
+          }
+
+          for ( int arrayIndex = 0; arrayIndex < ( m_numRendered / 1023 + 1 ); ++arrayIndex )
+            PopulateMatrices( granulars, m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023 );
+        }
       }
       else if ( isValidDrawGameObjectMode ) {
         // More granular instances comparing to last time, create
         // more instances to match numGranulars.
-        if ( m_numGranulars > transform.childCount )
-          Create( m_numGranulars - transform.childCount );
+        if ( numGranulars > transform.childCount )
+          Create( numGranulars - transform.childCount );
         // Less granular instances comparing to last time, destroy.
-        else if ( transform.childCount > m_numGranulars )
-          Destroy( transform.childCount - m_numGranulars );
+        else if ( transform.childCount > numGranulars )
+          Destroy( transform.childCount - numGranulars );
 
-        Debug.Assert( transform.childCount == m_numGranulars );
+        Debug.Assert( transform.childCount == numGranulars );
 
-        for ( int i = 0; i < m_numGranulars; ++i ) {
+        for ( int i = 0; i < numGranulars; ++i ) {
           var granule = granulars.at((uint)i);
           var instance = transform.GetChild(i);
           instance.position = granule.position().ToHandedVector3();
@@ -325,7 +352,7 @@ namespace AGXUnity.Rendering
 
     private void DestroyAll()
     {
-      Destroy( m_numGranulars );
+      Destroy( m_numRendered );
       m_meshInstance = null;
       m_meshInstanceMaterial = null;
       m_granuleMatrices = null;
@@ -355,7 +382,7 @@ namespace AGXUnity.Rendering
     }
 
     private List<MatrixUnion> m_granuleMatrices;
-    private int m_numGranulars = 0;
+    private int m_numRendered = 0;
     private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_meshInstance = null;
     private ShadowCastingMode m_shadowCastingMode = ShadowCastingMode.On;

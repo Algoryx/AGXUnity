@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity;
 
 namespace AGXUnity.Utils
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plotting-and-data-acquisition" )]
   public class DataSeries : ScriptComponent
   {
     public agxPlot.DataSeries Native { get; private set; } = null;
@@ -13,15 +11,15 @@ namespace AGXUnity.Utils
 
     protected override bool Initialize()
     {
-      Native = new agxPlot.DataSeries(Name);
-      Native.setUnit(Unit);
+      Native = new agxPlot.DataSeries( Name );
+      Native.setUnit( Unit );
 
       return true;
     }
 
-    public void Write(float value)
+    public void Write( float value )
     {
-      Native.push(value);
+      Native.push( value );
     }
   }
 }

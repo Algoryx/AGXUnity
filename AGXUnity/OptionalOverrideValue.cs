@@ -53,6 +53,18 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Chooses from the override value or a provided default based on the UseOverride toggle
+    /// </summary>
+    /// <param name="def">The default value to use when not using the override</param>
+    /// <returns>The override value if used or default value otherwise</returns>
+    public T ValueOrDefault(T def )
+    {
+      if ( !UseOverride )
+        return def;
+      else return m_overrideValue;
+    }
+
+    /// <summary>
     /// Callback when the override value is changed.
     /// </summary>
     public Action<T> OnOverrideValue = delegate { };

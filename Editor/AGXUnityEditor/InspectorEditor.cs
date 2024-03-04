@@ -68,7 +68,6 @@ namespace AGXUnityEditor
 
       Undo.RecordObjects( targets, "Inspector" );
 
-      var hasChanges = false;
       InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
       var group = InspectorGroupHandler.Create();
       foreach ( var wrapper in fieldsAndProperties ) {
@@ -83,14 +82,9 @@ namespace AGXUnityEditor
         var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
                               wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
         using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
-          hasChanges = HandleType( wrapper, objects, fallback ) || hasChanges;
+          HandleType( wrapper, objects, fallback );
       }
       group.Dispose();
-
-      if ( hasChanges ) {
-        foreach ( var obj in targets )
-          EditorUtility.SetDirty( obj );
-      }
     }
 
     public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
@@ -129,11 +123,26 @@ namespace AGXUnityEditor
 
       GUILayout.BeginVertical();
 
+      EditorGUI.BeginChangeCheck();
+
       ToolManager.OnPreTargetMembers( this.targets );
 
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
+      
+      // If any changes occured during the editor draw we have to tell unity that the component has changes.
+      // Additionally, some components (such as the Constraint component) modifies other components on the same GameObject.
+      // In this case all compoments have to be manually dirtied. Here, we blanket dirty all compoments on the same GameObject
+      // as the currently edited component.
+      if ( EditorGUI.EndChangeCheck() ) {
+        foreach ( var t in this.targets ){
+          EditorUtility.SetDirty( t );
+          if(t is MonoBehaviour root)
+            foreach( var comp in root.GetComponents<MonoBehaviour>() )
+              EditorUtility.SetDirty(comp);
+        }
+      }
 
       GUILayout.EndVertical();
     }
@@ -228,8 +237,9 @@ namespace AGXUnityEditor
       object value = null;
       bool changed = false;
       if ( drawerInfo.IsValid ) {
+        EditorGUI.BeginChangeCheck();
         value   = drawerInfo.Drawer.Invoke( null, new object[] { objects, wrapper } );
-        changed = UnityEngine.GUI.changed &&
+        changed = EditorGUI.EndChangeCheck() &&
                   ( drawerInfo.IsNullable || value != null );
       }
       // Fallback to Unity types rendered with property drawers.
@@ -253,17 +263,14 @@ namespace AGXUnityEditor
         }
 
         if ( serializedProperty != null ) {
+          EditorGUI.BeginChangeCheck();
           EditorGUILayout.PropertyField( serializedProperty );
-          if ( UnityEngine.GUI.changed && assignSupported ) {
+          if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
             value = serializedProperty.objectReferenceValue;
           }            
         }
       }
-
-      // Reset changed state so that non-edited values
-      // are propagated to other properties.
-      UnityEngine.GUI.changed = false;
 
       EditorGUI.showMixedValue = false;
 

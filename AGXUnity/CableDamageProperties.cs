@@ -24,9 +24,13 @@ namespace AGXUnity
     public MaxDamageColorMode DamageColorMode = MaxDamageColorMode.HighestPerFrame;
 
     [ClampAboveZeroInInspector]
+    [Tooltip("The calculated cable damage for which to use the specified max color")]
     public float SetDamageForMaxColor = 0f;
 
+    [Tooltip("The color applied when there is no calculated cable damage")]
     public Color MinColor = Color.green;
+
+    [Tooltip("The color applied when the calculated cable damage exceeds the \"Set Damage For Max Color\" value")]
     public Color MaxColor = Color.red;
 
 
