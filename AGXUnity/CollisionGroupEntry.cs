@@ -1,6 +1,7 @@
 ﻿using AGXUnity.Utils;
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -22,6 +23,7 @@ namespace AGXUnity
     /// It's not possible to change this property during runtime.
     /// </remarks>
     [field: SerializeField]
+    [field: FormerlySerializedAs("m_propagateToChildren")]
     public bool PropagateToChildren { get; set; } = false;
 
     /// <summary>
@@ -41,6 +43,7 @@ namespace AGXUnity
     /// </remarks>
     /// </summary>
     [field: SerializeField]
+    [field: FormerlySerializedAs( "m_tag" )]
     public string Tag { get; set; } = "";
 
     /// <summary>
