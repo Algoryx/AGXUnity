@@ -4,6 +4,7 @@ using UnityEngine;
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Gear Constraint" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#gear-constraint" )]
   public class GearConstraint : ScriptComponent
   {
     [SerializeField]

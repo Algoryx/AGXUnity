@@ -12,7 +12,7 @@ namespace AGXUnity
   /// destroyed, e.g., during scene unload or from OnDestroy.
   /// </summary>
   /// <typeparam name="T">Type of subclass.</typeparam>
-  public class UniqueGameObject<T> : ScriptComponent
+  public abstract class UniqueGameObject<T> : ScriptComponent
     where T : ScriptComponent
   {
     /// <summary>

@@ -7,6 +7,7 @@ namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Model/Wheel Loader" )]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wheel-loader-components" )]
   public class WheelLoader : ScriptComponent
   {
     public enum DifferentialLocation

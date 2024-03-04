@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Model/Wheel Loader Bucket Tilt Controller" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wheel-loader-components" )]
   public class WheelLoaderBucketTiltController : ScriptComponent
   {
     [HideInInspector]
