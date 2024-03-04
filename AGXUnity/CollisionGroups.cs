@@ -1,8 +1,8 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -40,12 +40,12 @@ namespace AGXUnity
     /// <param name="tag">New group tag.</param>
     /// <param name="propagateToChildren">True if this tag should be propagated to all supported children.</param>
     /// <returns>True if the group was added - otherwise false (e.g., already exists).</returns>
-    public bool AddGroup( string tag, bool propagateToChildren )
+    public bool AddGroup( string tag, bool propagateToChildren, bool forceContactUpdate = false )
     {
       if ( HasGroup( tag ) )
         return false;
 
-      m_groups.Add( new CollisionGroupEntry() { Tag = tag } );
+      m_groups.Add( new CollisionGroupEntry() { Tag = tag, ForceContactUpdate = forceContactUpdate, PropagateToChildren = propagateToChildren } );
 
       if ( State == States.INITIALIZED )
         AddGroup( m_groups.Last(), Find.LeafObjects( gameObject, propagateToChildren ) );
@@ -84,6 +84,24 @@ namespace AGXUnity
         AddGroup( entry, data[ Convert.ToInt32( entry.PropagateToChildren ) ] );
 
       return base.Initialize();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( State != States.INITIALIZED || m_groups.Count == 0 )
+        return;
+
+      var data = new Find.LeafData[] { Find.LeafObjects( gameObject, false ), Find.LeafObjects( gameObject, true ) };
+      foreach ( var entry in m_groups )
+        AddGroup( entry, data[ Convert.ToInt32( entry.PropagateToChildren ) ] );
+    }
+
+    protected override void OnDisable()
+    {
+      // TODO: This only works if the tags are the same as when added.
+      var data = new Find.LeafData[] { Find.LeafObjects( gameObject, false ), Find.LeafObjects( gameObject, true ) };
+      foreach ( var entry in m_groups )
+        RemoveGroup( entry, data[ Convert.ToInt32( entry.PropagateToChildren ) ] );
     }
 
     private void AddGroup( CollisionGroupEntry entry, Find.LeafData data )
