@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using AGXUnityEditor.UIElements;
+using System;
 
 namespace AGXUnityEditor.Windows
 {
@@ -179,8 +180,6 @@ namespace AGXUnityEditor.Windows
       var StatusIcon = new Image( ) { image = m_statusIcons[ (int)mat.Status ] };
       StatusIcon.style.height = 20;
       StatusIcon.style.width = 20;
-      if ( mat.Status == MaterialStatus.Compatible )
-        StatusIcon.tintColor = Color.green;
 
       ve.Add( activeToggle );
       flex.Add( nameLabel );
@@ -257,15 +256,14 @@ namespace AGXUnityEditor.Windows
       numMats.style.flexDirection = FlexDirection.Row;
       numMats.style.alignItems = Align.Center;
       numMats.style.unityTextAlign = TextAnchor.MiddleLeft;
-      for ( int i = 0; i <= 2; i++ ) {
-        var image = new Image() { image = m_statusIcons[ i ] };
+      foreach( var obj in Enum.GetValues( typeof( MaterialStatus ) ) ) {
+        var status = (MaterialStatus)obj;
+        var image = new Image() { image = m_statusIcons[ (int)status ] };
         image.style.width = 20;
         image.style.height = 20;
-        if ( i == (int)MaterialStatus.Compatible )
-          image.tintColor = Color.green;
 
         numMats.Add( image );
-        var lab = new Label() { text = $"{m_materials.Where( m => (int)m.Status == i ).Count()}" };
+        var lab = new Label() { text = $"{m_materials.Where( m => m.Status == status ).Count()}" };
         lab.style.width = 15;
         numMats.Add( lab );
       }
