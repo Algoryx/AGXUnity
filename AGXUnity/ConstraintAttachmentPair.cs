@@ -7,6 +7,7 @@ namespace AGXUnity
   /// Deprecated - use AttachmentPair instead.
   /// </summary>
   [DoNotGenerateCustomEditor]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#frames" )]
   public class ConstraintAttachmentPair : ScriptAsset
   {
 #pragma warning disable 0618
