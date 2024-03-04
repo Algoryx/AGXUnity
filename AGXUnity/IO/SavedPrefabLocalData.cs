@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity.IO
@@ -11,10 +10,18 @@ namespace AGXUnity.IO
     [SerializeField]
     private List<GroupPair> m_disabledGroups = new List<GroupPair>();
 
-    [HideInInspector]
-    public GroupPair[] DisabledGroups { get { return m_disabledGroups.ToArray(); } }
+    [SerializeField]
+    private List<ContactMaterial> m_contactMaterials = new List<ContactMaterial>();
 
-    public int NumSavedDisabledPairs { get { return m_disabledGroups.Count; } }
+    [HideInInspector]
+    public GroupPair[] DisabledGroups => m_disabledGroups.ToArray();
+
+    [HideInInspector]
+    public ContactMaterial[] ContactMaterials => m_contactMaterials.ToArray();
+
+    public int NumSavedDisabledPairs => m_disabledGroups.Count;
+
+    public int NumSavedContactMaterials => m_contactMaterials.Count;
 
     public void AddDisabledPair( string group1, string group2 )
     {
@@ -24,9 +31,18 @@ namespace AGXUnity.IO
       m_disabledGroups.Add( new GroupPair() { First = group1, Second = group2 } );
     }
 
+    public void AddContactMaterial( ContactMaterial contactMaterial )
+    {
+      if ( m_contactMaterials.Contains( contactMaterial ) )
+        return;
+
+      m_contactMaterials.Add( contactMaterial );
+    }
+
     protected override bool Initialize()
     {
       m_disabledGroups.ForEach( gp => CollisionGroupsManager.Instance.SetEnablePair( gp.First, gp.Second, false ) );
+      m_contactMaterials.ForEach( cm => ContactMaterialManager.Instance.Add( cm ) );
 
       return true;
     }
