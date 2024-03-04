@@ -11,6 +11,7 @@ namespace AGXUnity.Rendering
 {
   [AddComponentMenu( "AGXUnity/Upsampling Particle Renderer" )]
   [RequireComponent( typeof( DeformableTerrainBase ) )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#upsampling-particle-renderer" )]
   public class UpsamplingParticleRenderer : ScriptComponent
   {
     private static float PACKING_RATIO = 0.67f;

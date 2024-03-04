@@ -9,6 +9,7 @@ namespace AGXUnity
   /// only created when reading .agx files.
   /// </summary>
   [AddComponentMenu("AGXUnity/Observer Frame")]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#additional-import-components" )]
   public class ObserverFrame : ScriptComponent
   {
     /// <summary>

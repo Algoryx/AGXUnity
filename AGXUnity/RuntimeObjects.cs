@@ -6,6 +6,7 @@ namespace AGXUnity
 {
   [AddComponentMenu( "" )]
   [ExecuteInEditMode]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/scripting.html#runtime-objects" )]
   public class RuntimeObjects : UniqueGameObject<RuntimeObjects>
   {
     private Dictionary<MonoBehaviour, string> m_potentiallyDeletedParents = new Dictionary<MonoBehaviour, string>();

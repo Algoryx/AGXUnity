@@ -95,38 +95,52 @@ namespace AGXUnityEditor
 
       var ok = GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
       var note = GUI.AddColorTag( "<b>Note</b> ", Color.yellow );
-      var apiCompatibilityLevelName =
-#if UNITY_2021_2_OR_NEWER
-          ".NET Framework";
-#else
-          ".NET 4.x";
-#endif
+
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+      EditorGUILayout.LabelField( "<b>.NET Runtime</b>" );
+      if ( hasMonoRuntime )
+        EditorGUILayout.LabelField( ok );
+      else {
+        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET Runtime: Mono", skin.LabelWordWrap );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+          PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x);
+          Debug.Log( "Updated Unity Player Settings -> Scripting Backend to compatible runtime." );
+        }
+      }
 
       var hasPlayerNetCompatibility = PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) == ApiCompatibilityLevel.NET_4_6;
       EditorGUILayout.LabelField( "<b>.NET Compatibility Level</b>" );
-      if ( hasPlayerNetCompatibility ) {
+      if ( hasPlayerNetCompatibility )
         EditorGUILayout.LabelField( ok );
-      }
       else {
-        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: " + apiCompatibilityLevelName, skin.LabelWordWrap );
+        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: .NET Framework", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
           Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
         }
       }
 
-      EditorGUILayout.Space();
-
       EditorGUILayout.LabelField( "<b>Maximum Allowed Timestep</b>" );
       var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
-      if ( usingRecommendedMaxTimestep ) {
+      if ( usingRecommendedMaxTimestep )
         EditorGUILayout.LabelField( ok );
-      }
       else {
         EditorGUILayout.LabelField( note + "It is recommended to use a <b>maximum allowed timestep</b> that is equal to the <b>fixed timestep</b> when using AGXUnity!", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
           Time.maximumDeltaTime = Time.fixedDeltaTime;
           Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
+        }
+      }
+
+      EditorGUILayout.LabelField( "<b>Disable Unity Physics Auto Simulation</b>" );
+      if ( Physics.autoSimulation == false ) {
+        EditorGUILayout.LabelField( ok );
+      }
+      else {
+        EditorGUILayout.LabelField( note + "It is recommended to disable Unity's <b>Physics > Autosimulation</b> option to increase project performance and reduce the risk of mixing physics components.", skin.LabelWordWrap );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+          Physics.autoSimulation = false;
+          Debug.Log( "Disabled Unity's Physics auto simulation" );
         }
       }
     }
@@ -240,7 +254,7 @@ namespace AGXUnityEditor
       if ( m_instance != null )
         return m_instance;
 
-      return (m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ));
+      return ( m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ) );
     }
 
     [NonSerialized]

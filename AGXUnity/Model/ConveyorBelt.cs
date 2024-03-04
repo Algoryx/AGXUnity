@@ -15,6 +15,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Model/Conveyor Belt" )]
   [DoNotGenerateCustomEditor]
   [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#conveyor-belt" )]
   public class ConveyorBelt : ScriptComponent
   {
     [SerializeField]
