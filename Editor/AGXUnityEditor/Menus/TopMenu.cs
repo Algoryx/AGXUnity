@@ -555,7 +555,7 @@ namespace AGXUnityEditor
     }
 
     [MenuItem( "AGXUnity/Utils/Convert Rendering Materials", priority = 80 )]
-    public static void UpdateRenderMaterials()
+    public static void ConvertRenderingMaterials()
     {
       Windows.ConvertMaterialsWindow.Open();
     }
