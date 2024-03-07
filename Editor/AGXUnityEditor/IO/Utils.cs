@@ -75,17 +75,6 @@ namespace AGXUnityEditor.IO
     /// </summary>
     public static string AGXUnityEditorSourceDirectoryFull => GetFullPath(AGXUnityEditorSourceDirectory);
 
-    public static string AGXUnityEditorDataDirectory
-    {
-      get
-      {
-        if ( IsPackageContext )
-          return "Assets/AGXUnityData";
-        else
-          return AGXUnityEditorDirectory + "/Data";
-      }
-    }
-
     /// <summary>
     /// AGXUnity package directory relative Unity project, e.g., Assets/Foo if AGXUnity source
     /// is located in Assets/Foo/AGXUnity, AGXUnityEditor source in Assets/Foo/Editor/AGXUnityEditor

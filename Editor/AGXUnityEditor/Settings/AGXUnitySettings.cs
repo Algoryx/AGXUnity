@@ -52,8 +52,8 @@ public class AGXUnitySettings<T> : ScriptableObject
     catch {
       var prevFile = typeof(T).GetCustomAttribute<PreviousSettingsFile>();
       var created = true;
-      if ( prevFile != null ) {
-        var assetPath = "Assets/AGXUnity/Editor/Data/" + prevFile.FileName;
+      if ( prevFile != null && !AGXUnityEditor.IO.Utils.IsPackageContext ) {
+        var assetPath = AGXUnityEditor.IO.Utils.AGXUnityEditorDirectory + "/Data/" + prevFile.FileName;
         var old = AssetDatabase.LoadAssetAtPath<T>( assetPath );
         if ( old != null ) {
           Debug.Log( $"Converting old asset-settings file '{assetPath}'" );
