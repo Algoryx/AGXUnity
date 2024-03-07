@@ -184,6 +184,10 @@ namespace AGXUnityEditor
       }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
+
+      var ctx = ContextManager.GetCustomContextForType(m_targetType);
+      if ( ctx != null )
+        UnityEditor.EditorTools.ToolManager.SetActiveContext( ctx );
     }
 
     private void OnDisable()
@@ -200,6 +204,8 @@ namespace AGXUnityEditor
       m_targetType = null;
       m_targetGameObjects = null;
       m_numTargetGameObjectsTargetComponents = 0;
+      
+      UnityEditor.EditorTools.ToolManager.SetActiveContext( null );
     }
 
     private bool IsTargetMostProbablyDeleted()

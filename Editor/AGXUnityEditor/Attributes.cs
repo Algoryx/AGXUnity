@@ -29,6 +29,25 @@ namespace AGXUnityEditor
     }
   }
 
+  [AttributeUsage( AttributeTargets.Class, AllowMultiple = false )]
+  public class CustomContextAttribute : Attribute
+  {
+    /// <summary>
+    /// Instance type of the context is implemented for.
+    /// </summary>
+    public Type Type = null;
+
+    /// <summary>
+    /// Construct given instance type the context is implemented for.
+    /// </summary>
+    /// <param name="type">Instance target type.</param>
+    public CustomContextAttribute( Type type )
+    {
+      Type = type;
+    }
+  }
+
+
   /// <summary>
   /// Inspector type drawer attribute for GUI draw methods
   /// handling specific types.
