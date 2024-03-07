@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -7,13 +6,9 @@ using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
-  public class EditorSettings : ScriptableObject
+  [PreviousSettingsFile( FileName = "Settings.asset" )]
+  public class EditorSettings : AGXUnitySettings<EditorSettings>
   {
-    [HideInInspector]
-    public static EditorSettings Instance { get { return GetOrCreateInstance(); } }
-
-    public static string EditorDataDirectory => IO.Utils.AGXUnityEditorDataDirectory;
-
     [HideInInspector]
     public static readonly int ToggleButtonSize = 18;
 
@@ -25,6 +20,7 @@ namespace AGXUnityEditor
 
     public void OnInspectorGUI()
     {
+      EditorGUI.BeginChangeCheck();
       var skin = InspectorEditor.Skin;
 
       BuildPlayer_CopyBinaries = InspectorGUI.Toggle( GUI.MakeLabel( "<b>Build:</b> Copy AGX Dynamics binaries",
@@ -103,7 +99,7 @@ namespace AGXUnityEditor
       else {
         EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET Runtime: Mono", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
-          PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x);
+          PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x );
           Debug.Log( "Updated Unity Player Settings -> Scripting Backend to compatible runtime." );
         }
       }
@@ -145,6 +141,9 @@ namespace AGXUnityEditor
           Debug.Log( "Disabled Unity's Physics auto simulation" );
         }
       }
+
+      if ( EditorGUI.EndChangeCheck() )
+        Instance.Save();
     }
 
     private void HandleKeyHandlerGUI( GUIContent name, Utils.KeyHandler keyHandler )
@@ -216,52 +215,6 @@ namespace AGXUnityEditor
         EditorUtility.SetDirty( this );
     }
 
-    public static bool PrepareEditorDataFolder()
-    {
-      if(!Directory.Exists( IO.Utils.AGXUnityEditorDataDirectory ) ) {
-        Directory.CreateDirectory( IO.Utils.AGXUnityEditorDataDirectory );
-        AssetDatabase.Refresh();
-      }
-
-      return true;
-    }
-
-    public static T GetOrCreateEditorDataFolderFileInstance<T>( string name,
-                                                                Action onCreate = null ) where T : ScriptableObject
-    {
-      if ( !PrepareEditorDataFolder() )
-        return null;
-
-      string settingsPathAndName = EditorDataDirectory + @name;
-      T instance = AssetDatabase.LoadAssetAtPath<T>( settingsPathAndName );
-      if ( instance == null ) {
-        instance = CreateInstance<T>();
-
-        // Don't create Data.asset or Settings.asset during builds.
-        // These files are not removed during update of the package
-        // and must not be included in the package.
-#if !AGXUNITY_BUILD_PACKAGE
-        AssetDatabase.CreateAsset( instance, settingsPathAndName );
-        AssetDatabase.SaveAssets();
-
-        onCreate?.Invoke();
-#endif
-      }
-
-      return instance;
-    }
-
-    private static EditorSettings GetOrCreateInstance()
-    {
-      if ( m_instance != null )
-        return m_instance;
-
-      return ( m_instance = GetOrCreateEditorDataFolderFileInstance<EditorSettings>( "/Settings.asset" ) );
-    }
-
-    [NonSerialized]
-    private static EditorSettings m_instance = null;
-
     /// <summary>
     /// Call from CI when the package is built, avoiding Data.asset
     /// and Settings.asset to be created and included in the package.
@@ -270,9 +223,9 @@ namespace AGXUnityEditor
     {
       var dataFilesToExclude = new string[]
       {
-        EditorDataDirectory + "/Data.asset",
-        EditorDataDirectory + "/Settings.asset",
-        EditorDataDirectory + "/AGXInitData.asset"
+        //EditorDataDirectory + "/Data.asset",
+        //EditorDataDirectory + "/Settings.asset",
+        //EditorDataDirectory + "/AGXInitData.asset"
       };
 
       if ( Manager.ConfigureEnvironment() != Manager.EnvironmentState.Initialized ) {
@@ -296,24 +249,19 @@ namespace AGXUnityEditor
       Debug.Log( "    - Adding define symbol AGXUNITY_BUILD_PACKAGE." );
       Build.DefineSymbols.Add( "AGXUNITY_BUILD_PACKAGE" );
     }
-
-    internal static SerializedObject GetSerializedSettings()
-    {
-      return new SerializedObject( GetOrCreateInstance() );
-    }
   }
 
-  [CustomEditor( typeof( EditorSettings ) )]
-  public class EditorSettingsEditor : Editor
-  {
-    public override void OnInspectorGUI()
-    {
-      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
-        return;
+  //[CustomEditor( typeof( EditorSettings ) )]
+  //public class EditorSettingsEditor : Editor
+  //{
+  //  public override void OnInspectorGUI()
+  //  {
+  //    if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
+  //      return;
 
-      EditorSettings.Instance.OnInspectorGUI();
-    }
-  }
+  //    EditorSettings.Instance.OnInspectorGUI();
+  //  }
+  //}
 
   // Register a SettingsProvider using IMGUI for the drawing framework:
   static class AGXSettingsIMGUIRegister
@@ -321,6 +269,7 @@ namespace AGXUnityEditor
     [SettingsProvider]
     public static SettingsProvider CreateAGXSettingsProvider()
     {
+
       // First parameter is the path in the Settings window.
       // Second parameter is the scope of this setting: it only appears in the Project Settings window.
       var provider = new SettingsProvider("Project/AGXSettings", SettingsScope.Project)

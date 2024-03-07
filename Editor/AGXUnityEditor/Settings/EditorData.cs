@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
 {
-  public class EditorData : ScriptableObject
+  [PreviousSettingsFile( FileName = "Data.asset" )]
+  public class EditorData : AGXUnitySettings<EditorData>
   {
-    public static EditorData Instance { get { return GetOrCreateInstance(); } }
-
     public double SecondsSinceLastGC { get { return EditorApplication.timeSinceStartup - m_lastGC; } }
 
     public int NumEntries { get { return m_data.Count; } }
 
     public int NumCachedEntries { get { return m_dataCache.Count; } }
 
-    public EditorDataEntry GetStaticData( string identifier, Action<EditorDataEntry> onCreate = null )
+    public EditorDataEntry GetStaticData( string identifier, Action<EditorDataEntry> onCreate = null ) 
     {
       return GetData( null, identifier, onCreate );
     }
@@ -65,15 +64,6 @@ namespace AGXUnityEditor
 
     [SerializeField]
     private double m_lastGC = 0.0;
-
-    private static EditorData m_instance = null;
-    private static EditorData GetOrCreateInstance()
-    {
-      if ( m_instance != null )
-        return m_instance;
-
-      return ( m_instance = EditorSettings.GetOrCreateEditorDataFolderFileInstance<EditorData>( "/Data.asset" ) );
-    }
   }
 
   [CustomEditor( typeof( EditorData ) )]
@@ -84,6 +74,7 @@ namespace AGXUnityEditor
       if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
         return;
 
+      EditorGUI.BeginChangeCheck();
       var editorData = this.target as EditorData;
       var skin       = InspectorEditor.Skin;
 
@@ -121,6 +112,8 @@ namespace AGXUnityEditor
       }
 
       EditorUtility.SetDirty( target );
+      if ( EditorGUI.EndChangeCheck() )
+        editorData.Save();
     }
   }
 }

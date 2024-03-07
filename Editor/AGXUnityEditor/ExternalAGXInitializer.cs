@@ -1,16 +1,15 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.IO;
 using System.Linq;
-using AGXUnity.IO;
-using AGXUnity.Utils;
-using UnityEngine;
 using UnityEditor;
-
+using UnityEngine;
 using Environment = AGXUnity.IO.Environment;
 
 namespace AGXUnityEditor
 {
-  public class ExternalAGXInitializer : ScriptableObject
+  [PreviousSettingsFile( FileName = "AGXInitData.asset" )]
+  public class ExternalAGXInitializer : AGXUnitySettings<ExternalAGXInitializer>
   {
     public string AGX_DIR         = string.Empty;
     public string AGX_DATA_DIR    = string.Empty;
@@ -36,7 +35,7 @@ namespace AGXUnityEditor
       IsApplied = true;
 
       Environment.Set( Environment.Variable.AGX_DIR, AGX_DIR );
-      Environment.Set( Environment.Variable.AGX_PLUGIN_PATH, AGX_PLUGIN_PATH );
+      Environment.Set( Environment.Variable.AGX_PLUGIN_PATH, AGX_PLUGIN_PATH ); 
       foreach ( var path in AGX_BIN_PATH ) {
         var dir = new DirectoryInfo( path );
         var isValidPath = dir.Exists || dir.Name.StartsWith( "agxTerrain_" );
@@ -103,25 +102,12 @@ namespace AGXUnityEditor
       return AGXDirectoryType.Unknown;
     }
 
-    public static ExternalAGXInitializer Instance
-    {
-      get
-      {
-        return EditorSettings.GetOrCreateEditorDataFolderFileInstance<ExternalAGXInitializer>( "/AGXInitData.asset",
-                                                                                               () => UserSaidNo = false );
-      }
-    }
+    protected override void OnCreated() => UserSaidNo = false;
 
     public static bool UserSaidNo
     {
-      get
-      {
-        return EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool;
-      }
-      set
-      {
-        EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool = value;
-      }
+      get => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool;
+      set => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool = value;
     }
 
     public static bool Initialize()
@@ -199,7 +185,7 @@ namespace AGXUnityEditor
 
       EditorUtility.SetDirty( Instance );
       AssetDatabase.SaveAssets();
-      
+
       var success = false;
       if ( type == AGXDirectoryType.Checkout )
         success = Instance.InitializeCheckout( newAgxDir.FullName );
