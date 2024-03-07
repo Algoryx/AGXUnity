@@ -1,11 +1,6 @@
 ﻿using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 using UnityEngine.Rendering;
 
 namespace AGXUnity.Rendering
@@ -43,19 +38,15 @@ namespace AGXUnity.Rendering
     {
       get
       {
-        return m_material == null ?
-                     m_material = DefaultMaterial() :
-                     m_material;
+        if ( m_material == null ||
+          ( m_material.name == DefaultMaterialName && !m_material.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) )
+          m_material = DefaultMaterial();
+        return m_material;
       }
       set
       {
         m_material = value ?? DefaultMaterial();
       }
-    }
-
-    public void Update()
-    {
-      Draw();
     }
 
     public void OnPostStepForward( Wire wire )
@@ -85,27 +76,16 @@ namespace AGXUnity.Rendering
 
     protected override void OnEnable()
     {
-#if UNITY_EDITOR
-      // Used to draw in a prefab stage or when the editor is paused.
-      // It's not possible in OnEnable to check if our gameObject is
-      // part of a prefab stage.
-#if UNITY_2019_1_OR_NEWER
-      SceneView.duringSceneGui += OnSceneView;
-#else
-      SceneView.onSceneGUIDelegate += OnSceneView;
-#endif
-#endif
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
     }
 
     protected override void OnDisable()
     {
-#if UNITY_EDITOR
-#if UNITY_2019_1_OR_NEWER
-      SceneView.duringSceneGui -= OnSceneView;
-#else
-      SceneView.onSceneGUIDelegate -= OnSceneView;
-#endif
-#endif
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      Camera.onPreCull -= Render;
     }
 
     protected override bool Initialize()
@@ -123,50 +103,21 @@ namespace AGXUnity.Rendering
       base.OnDestroy();
     }
 
-    /// <summary>
-    /// Catching LateUpdate calls since ExecuteInEditMode attribute.
-    /// </summary>
-    protected void LateUpdate()
-    {
-      // During play we're receiving callbacks from the wire
-      // to OnPostStepForward.
-      if ( Application.isPlaying )
-        return;
-
-      RenderRoute();
-    }
-
-#if UNITY_EDITOR
-    // Editing wire prefab in a prefab stage and when the editor is paused
-    // requires Scene View GUI update callback.
-    private void OnSceneView( SceneView sceneView )
-    {
-      var inPrefabStage = PrefabUtils.IsPartOfEditingPrefab( gameObject );
-      var performDraw = EditorApplication.isPaused || inPrefabStage;
-      if ( !performDraw )
-        return;
-
-      if ( inPrefabStage && m_positions.Count != Wire.Route.NumNodes )
-        SynchronizeData( true );
-
-      // In prefab stage we only want to render the wire in the Scene View.
-      // If paused, we want to render the wire as if not paused.
-      var camera = inPrefabStage ?
-                     sceneView.camera :
-                     null;
-      Draw( camera );
-    }
-#endif
+    private static string DefaultMaterialName = "Default Wire Material";
 
     private static Material DefaultMaterial()
     {
-      return Resources.Load<Material>( "Materials/WireMaterial_01" );
-    }
+      var material = RenderingUtils.CreateDefaultMaterial();
+      material.hideFlags = HideFlags.NotEditable;
 
-    private void RenderRoute()
-    {
-      SynchronizeData( true );
-      Draw();
+      material.name = DefaultMaterialName;
+
+      RenderingUtils.SetColor( material, new Color( 0.55f, 0.55f, 0.55f ) );
+      material.SetFloat( "_Metallic", 0.35f );
+      RenderingUtils.SetSmoothness( material, 0.5f );
+      material.enableInstancing = true;
+
+      return material;
     }
 
     private void SynchronizeData( bool isRoute )
@@ -219,15 +170,17 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private void Draw( Camera camera = null )
+    private void SRPRender( ScriptableRenderContext _, Camera cam ) => Render( cam );
+
+    private void Render( Camera cam )
     {
-      if ( Wire == null )
+      if ( !RenderingUtils.CameraShouldRender( cam, gameObject, false ) )
         return;
 
-      // In prefab stage we avoid calls from Update, LateUpdate so that we
-      // don't render the wire in the Game View. Camera is only given as the
-      // Scene View camera when editing prefabs.
-      if ( camera == null && PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
+      if ( !Application.isPlaying )
+        SynchronizeData( true );
+
+      if ( Wire == null )
         return;
 
       if ( !CreateMeshes() )
@@ -251,7 +204,7 @@ namespace AGXUnity.Rendering
                                     ShadowCastingMode,
                                     ReceiveShadows,
                                     0,
-                                    camera );
+                                    cam );
       }
 
       // Cylinders
@@ -266,7 +219,7 @@ namespace AGXUnity.Rendering
                                     ShadowCastingMode,
                                     ReceiveShadows,
                                     0,
-                                    camera );
+                                    cam );
       }
     }
 
@@ -288,68 +241,6 @@ namespace AGXUnity.Rendering
         m_segmentCylinderMatrices = new List<Matrix4x4[]> { new Matrix4x4[ 1023 ] };
       if ( m_meshInstanceProperties == null )
         m_meshInstanceProperties = new MaterialPropertyBlock();
-    }
-
-    /// <summary>
-    /// Currently only used in the Prefab Stage where normal rendering
-    /// is ignored.
-    /// </summary>
-    /// <param name="isSelected">True if the wire is selected.</param>
-    private void DrawGizmos( bool isSelected )
-    {
-      //if ( Application.isPlaying )
-      //  return;
-
-      //if ( Wire == null || Wire.Route == null || Wire.Route.NumNodes < 2 )
-      //  return;
-
-      //if ( !PrefabUtils.IsPartOfEditingPrefab( gameObject ) )
-      //  return;
-
-      //if ( !CreateMeshes() )
-      //  return;
-
-      //var routePoints = Wire.Route.Select( routePoint => routePoint.Position ).ToArray();
-
-      //var defaultColor  = Color.Lerp( Color.black, Color.white, 0.55f );
-      //var selectedColor = Color.Lerp( defaultColor, Color.green, 0.15f );
-      //Gizmos.color = isSelected ? selectedColor : defaultColor;
-
-      //var radius = Wire.Radius;
-      //var sphereScale = 2.0f * radius * Vector3.one;
-      //Gizmos.DrawWireMesh( m_sphereMeshInstance,
-      //                     0,
-      //                     routePoints[ 0 ],
-      //                     Quaternion.identity,
-      //                     sphereScale );
-      //for ( int i = 1; i < routePoints.Length; ++i ) {
-      //  Gizmos.DrawWireMesh( m_sphereMeshInstance,
-      //                       0,
-      //                       routePoints[ i ],
-      //                       Quaternion.identity,
-      //                       sphereScale );
-      //  CalculateCylinderTransform( routePoints[ i - 1 ],
-      //                              routePoints[ i ],
-      //                              radius,
-      //                              out var position,
-      //                              out var rotation,
-      //                              out var scale );
-      //  Gizmos.DrawWireMesh( m_cylinderMeshInstance,
-      //                       0,
-      //                       position,
-      //                       rotation,
-      //                       scale );
-      //}
-    }
-
-    private void OnDrawGizmos()
-    {
-      DrawGizmos( false );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      DrawGizmos( true );
     }
 
     private Wire m_wire = null;
