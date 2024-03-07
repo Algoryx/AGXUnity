@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+﻿using agxCollide;
+using AGXUnity.Utils;
 using System;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -23,7 +24,7 @@ namespace AGXUnity
     /// It's not possible to change this property during runtime.
     /// </remarks>
     [field: SerializeField]
-    [field: FormerlySerializedAs("m_propagateToChildren")]
+    [field: FormerlySerializedAs( "m_propagateToChildren" )]
     public bool PropagateToChildren { get; set; } = false;
 
     /// <summary>
@@ -56,9 +57,19 @@ namespace AGXUnity
       InvokeIdMethod( "addGroup", obj );
     }
 
+    public void AddTo( Geometry geom )
+    {
+      geom.addGroup( Tag.To32BitFnv1aHash(), ForceContactUpdate );
+    }
+
     public void RemoveFrom( object obj )
     {
       InvokeIdMethod( "removeGroup", obj );
+    }
+
+    public void RemoveFrom( Geometry geom )
+    {
+      geom.removeGroup( Tag.To32BitFnv1aHash(), ForceContactUpdate );
     }
 
     private void InvokeIdMethod( string method, object obj )
@@ -66,10 +77,13 @@ namespace AGXUnity
       if ( obj == null )
         return;
 
-      var m = obj.GetType().GetMethod( method, new Type[] { typeof( UInt32 ), typeof(bool) } );
+      if ( ForceContactUpdate )
+        Debug.LogWarning( $"Native type '{obj.GetType().FullName}' does not support the ForceContactUpdate flag, option will be ignored." );
+
+      var m = obj.GetType().GetMethod( method, new Type[] { typeof( UInt32 ) } );
       if ( m == null )
-        throw new Exception( "Method " + method + " not found in type: " + obj.GetType().FullName );
-      m.Invoke( obj, new object[] { Tag.To32BitFnv1aHash(), ForceContactUpdate } );
+        throw new Exception( "Method " + method + "(uint, bool) not found in type: " + obj.GetType().FullName );
+      m.Invoke( obj, new object[] { Tag.To32BitFnv1aHash() } );
     }
   }
 }
