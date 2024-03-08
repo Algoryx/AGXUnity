@@ -15,7 +15,7 @@ namespace AGXUnityEditor
   public class AGXUnitySettings<T> : ScriptableObject
     where T : AGXUnitySettings<T>
   {
-    public static string s_packageSettingsDirectory => $"ProjectSettings/Packages/{AGXUnityEditor.IO.Utils.PackageName}/";
+    public static string s_packageSettingsDirectory => $"ProjectSettings/Packages/{IO.Utils.PackageName}/";
     public static string s_settingsPath => s_packageSettingsDirectory + typeof( T ).Name + ".json";
 
     private static T s_instance = null;
@@ -34,15 +34,10 @@ namespace AGXUnityEditor
 
     public void Save()
     {
-      if ( m_serializing )
-        return;
-      m_serializing = true;
+      Directory.CreateDirectory( s_packageSettingsDirectory );
       var json = JsonUtility.ToJson( this );
       File.WriteAllText( s_settingsPath, json );
-      m_serializing = false;
     }
-
-    private static bool m_serializing = false;
 
     public static T GetOrCreateInstance()
     {
@@ -54,8 +49,8 @@ namespace AGXUnityEditor
       catch {
         var prevFile = typeof(T).GetCustomAttribute<PreviousSettingsFile>();
         var created = true;
-        if ( prevFile != null && !AGXUnityEditor.IO.Utils.IsPackageContext ) {
-          var assetPath = AGXUnityEditor.IO.Utils.AGXUnityEditorDirectory + "/Data/" + prevFile.FileName;
+        if ( prevFile != null && !IO.Utils.IsPackageContext ) {
+          var assetPath = IO.Utils.AGXUnityEditorDirectory + "/Data/" + prevFile.FileName;
           var old = AssetDatabase.LoadAssetAtPath<T>( assetPath );
           if ( old != null ) {
             Debug.Log( $"Converting old asset-settings file '{assetPath}'" );
