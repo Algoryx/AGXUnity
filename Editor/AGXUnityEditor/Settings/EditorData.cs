@@ -15,7 +15,7 @@ namespace AGXUnityEditor
 
     public int NumCachedEntries { get { return m_dataCache.Count; } }
 
-    public EditorDataEntry GetStaticData( string identifier, Action<EditorDataEntry> onCreate = null ) 
+    public EditorDataEntry GetStaticData( string identifier, Action<EditorDataEntry> onCreate = null )
     {
       return GetData( null, identifier, onCreate );
     }
@@ -58,62 +58,48 @@ namespace AGXUnityEditor
       m_lastGC = EditorApplication.timeSinceStartup;
     }
 
+    public void OnInspectorGUI()
+    {
+      EditorGUI.BeginChangeCheck();
+      var skin       = InspectorEditor.Skin;
+
+      GUILayout.Label( GUI.MakeLabel( "Editor data", 15, true ), skin.Label );
+
+      EditorGUILayout.Space();
+
+      const float firstLabelWidth = 190;
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        TimeSpan span = TimeSpan.FromSeconds( SecondsSinceLastGC );
+        GUILayout.Label( GUI.MakeLabel( "Seconds since last GC:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
+        GUILayout.Label( GUI.MakeLabel( string.Format( "{0:D2}m:{1:D2}s", span.Minutes, span.Seconds ), true ), skin.Label );
+      }
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        GUILayout.Label( GUI.MakeLabel( "Number of data entries:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
+        GUILayout.Label( GUI.MakeLabel( NumEntries.ToString(), true ), skin.Label );
+      }
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        GUILayout.Label( GUI.MakeLabel( "Number of cached data entries:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
+        GUILayout.Label( GUI.MakeLabel( NumCachedEntries.ToString(), true ), skin.Label );
+      }
+
+      EditorGUILayout.Space();
+
+      using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.25f ) ) )
+        if ( GUILayout.Button( GUI.MakeLabel( "Collect garbage" ), skin.Button, GUILayout.Width( 110 ) ) )
+          GC();
+
+      if ( EditorGUI.EndChangeCheck() )
+        Save();
+    }
+
     [SerializeField]
     private List<EditorDataEntry> m_data = new List<EditorDataEntry>();
     private Dictionary<uint, int> m_dataCache = new Dictionary<uint, int>();
 
     [SerializeField]
     private double m_lastGC = 0.0;
-  }
-
-  [CustomEditor( typeof( EditorData ) )]
-  public class EditorDataEditor : Editor
-  {
-    public override void OnInspectorGUI()
-    {
-      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
-        return;
-
-      EditorGUI.BeginChangeCheck();
-      var editorData = this.target as EditorData;
-      var skin       = InspectorEditor.Skin;
-
-      using ( GUI.AlignBlock.Center )
-        GUILayout.Label( GUI.MakeLabel( "Editor data", 18, true ), skin.Label );
-
-      const float firstLabelWidth = 190;
-
-      GUILayout.BeginHorizontal();
-      {
-        TimeSpan span = TimeSpan.FromSeconds( editorData.SecondsSinceLastGC );
-        GUILayout.Label( GUI.MakeLabel( "Seconds since last GC:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
-        GUILayout.Label( GUI.MakeLabel( string.Format( "{0:D2}m:{1:D2}s", span.Minutes, span.Seconds ), true ), skin.Label );
-      }
-      GUILayout.EndHorizontal();
-
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Number of data entries:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
-        GUILayout.Label( GUI.MakeLabel( editorData.NumEntries.ToString(), true ), skin.Label );
-      }
-      GUILayout.EndHorizontal();
-
-      GUILayout.BeginHorizontal();
-      {
-        GUILayout.Label( GUI.MakeLabel( "Number of cached data entries:" ), skin.Label, GUILayout.Width( firstLabelWidth ) );
-        GUILayout.Label( GUI.MakeLabel( editorData.NumCachedEntries.ToString(), true ), skin.Label );
-      }
-      GUILayout.EndHorizontal();
-
-      using ( new GUI.ColorBlock( Color.Lerp( UnityEngine.GUI.color, Color.green, 0.25f ) ) )
-      using ( GUI.AlignBlock.Center ) {
-        if ( GUILayout.Button( GUI.MakeLabel( "Collect garbage" ), skin.Button, GUILayout.Width( 110 ) ) )
-          editorData.GC();
-      }
-
-      EditorUtility.SetDirty( target );
-      if ( EditorGUI.EndChangeCheck() )
-        editorData.Save();
-    }
   }
 }

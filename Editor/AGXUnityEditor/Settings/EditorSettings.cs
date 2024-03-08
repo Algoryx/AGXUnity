@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +19,8 @@ namespace AGXUnityEditor
 
     public void OnInspectorGUI()
     {
+      if ( Utils.KeyHandler.HandleDetectKeyOnGUI( new Object[] { this }, Event.current ) )
+        return;
       EditorGUI.BeginChangeCheck();
       var skin = InspectorEditor.Skin;
 
@@ -221,84 +222,14 @@ namespace AGXUnityEditor
     /// </summary>
     private static void OnBuildPackage()
     {
-      var dataFilesToExclude = new string[]
-      {
-        //EditorDataDirectory + "/Data.asset",
-        //EditorDataDirectory + "/Settings.asset",
-        //EditorDataDirectory + "/AGXInitData.asset"
-      };
-
       if ( Manager.ConfigureEnvironment() != Manager.EnvironmentState.Initialized ) {
         Debug.LogError( "AGXUnity Build: Unable to initialize AGX Dynamics - missing libraries?" );
         EditorApplication.Exit( 1 );
         return;
       }
 
-      Debug.Log( "AGXUnity Build: Applying package build settings..." );
-      foreach ( var excludedFile in dataFilesToExclude ) {
-        var fi = new FileInfo( excludedFile );
-        var fiMeta = new FileInfo( excludedFile + ".meta" );
-        Debug.Log( $"    - Deleting {fi.FullName}, exist = {fi.Exists}." );
-        if ( fi.Exists ) {
-          fi.Delete();
-          if ( fiMeta.Exists )
-            fiMeta.Delete();
-        }
-      }
-
       Debug.Log( "    - Adding define symbol AGXUNITY_BUILD_PACKAGE." );
       Build.DefineSymbols.Add( "AGXUNITY_BUILD_PACKAGE" );
-    }
-  }
-
-  //[CustomEditor( typeof( EditorSettings ) )]
-  //public class EditorSettingsEditor : Editor
-  //{
-  //  public override void OnInspectorGUI()
-  //  {
-  //    if ( Utils.KeyHandler.HandleDetectKeyOnGUI( this.targets, Event.current ) )
-  //      return;
-
-  //    EditorSettings.Instance.OnInspectorGUI();
-  //  }
-  //}
-
-  // Register a SettingsProvider using IMGUI for the drawing framework:
-  static class AGXSettingsIMGUIRegister
-  {
-    [SettingsProvider]
-    public static SettingsProvider CreateAGXSettingsProvider()
-    {
-
-      // First parameter is the path in the Settings window.
-      // Second parameter is the scope of this setting: it only appears in the Project Settings window.
-      var provider = new SettingsProvider("Project/AGXSettings", SettingsScope.Project)
-      {
-        // By default the last token of the path is used as display name if no label is provided.
-        label = "AGX Settings",
-        // Create the SettingsProvider and initialize its drawing (IMGUI) function in place:
-        guiHandler = (searchContext) =>
-        {
-          float oldWidth = EditorGUIUtility.labelWidth;
-          EditorGUIUtility.labelWidth = 250;
-
-          EditorGUILayout.Space();
-
-          using( new GUILayout.HorizontalScope() ) {
-            GUILayout.Space( 10f );
-
-            using( new GUILayout.VerticalScope() )
-              EditorSettings.Instance.OnInspectorGUI();
-          }
-
-          EditorGUIUtility.labelWidth = oldWidth;
-        },
-
-        // Populate the search keywords to enable smart search filtering and label highlighting:
-        keywords = new HashSet<string>(new[] { "AGX Dynamics", "Keybindings", "Rigid body" })
-      };
-
-      return provider;
     }
   }
 }
