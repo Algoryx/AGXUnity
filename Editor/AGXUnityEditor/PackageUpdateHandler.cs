@@ -35,6 +35,11 @@ namespace AGXUnityEditor
         return false;
       }
 
+      if ( IO.Utils.IsPackageContext ) {
+        Debug.LogError( "Error: Package update handler cannot update when AGXUnity is installed in a package context." );
+        return false;
+      }
+
       if ( !EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
                                          $"AGX Dynamics for Unity is about to be updated, make sure all " +
                                          $"File Explorer and/or terminals in {IO.Utils.AGXUnityPackageDirectory} " +
@@ -170,6 +175,8 @@ namespace AGXUnityEditor
         // use AGX Dynamics.
         AssetDatabase.Refresh();
 
+        // TODO: Updating the plugin through the PackageUpdateHadler currently only supports asset context installs.
+        // If we every host build packages in an NPM repo we could simply update through the UPM here instead.
         Debug.Log( $"Starting import of package: {packageName}" );
         AssetDatabase.ImportPackage( packageName, false );
       }
