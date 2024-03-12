@@ -56,35 +56,37 @@ namespace AGXUnityEditor
     {
       targets = targets.Where( obj => obj != null ).ToArray();
 
-      if ( targets.Length == 0 )
-        return;
+      using ( new GUI.EnabledBlock(targets.All(o => (o.hideFlags & HideFlags.NotEditable) == 0)) ) {
+        if ( targets.Length == 0 )
+          return;
 
-      var objects = targets.Select( target => getChildCallback == null ?
-                                      target :
-                                      getChildCallback( target ) )
-                           .Where( obj => obj != null ).ToArray();
-      if ( objects.Length == 0 )
-        return;
+        var objects = targets.Select( target => getChildCallback == null ?
+                                        target :
+                                        getChildCallback( target ) )
+                             .Where( obj => obj != null ).ToArray();
+        if ( objects.Length == 0 )
+          return;
 
-      Undo.RecordObjects( targets, "Inspector" );
+        Undo.RecordObjects( targets, "Inspector" );
 
-      InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
-      var group = InspectorGroupHandler.Create();
-      foreach ( var wrapper in fieldsAndProperties ) {
-        if ( !ShouldBeShownInInspector( wrapper.Member ) )
-          continue;
+        InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
+        var group = InspectorGroupHandler.Create();
+        foreach ( var wrapper in fieldsAndProperties ) {
+          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+            continue;
 
-        group.Update( wrapper, objects[ 0 ] );
+          group.Update( wrapper, objects[ 0 ] );
 
-        if ( group.IsHidden )
-          continue;
+          if ( group.IsHidden )
+            continue;
 
-        var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
-                              wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
-        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
-          HandleType( wrapper, objects, fallback );
+          var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                                wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+          using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+            HandleType( wrapper, objects, fallback );
+        }
+        group.Dispose();
       }
-      group.Dispose();
     }
 
     public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
