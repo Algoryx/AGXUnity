@@ -132,9 +132,19 @@ namespace AGXUnityEditor
       }
 
       EditorGUILayout.LabelField( "<b>Disable Unity Physics Auto Simulation</b>" );
-      if ( Physics.autoSimulation == false ) {
+#if UNITY_2022_2_OR_NEWER
+      if ( Physics.simulationMode == SimulationMode.Script )
         EditorGUILayout.LabelField( ok );
+      else {
+        EditorGUILayout.LabelField( note + "It is recommended to set Unity's <b>Physics > Simulation mode</b> option to <b>Script</b> to increase project performance and reduce the risk of mixing physics components.", skin.LabelWordWrap );
+        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+          Physics.simulationMode = SimulationMode.Script;
+          Debug.Log( "Unity's Physics simulation mode set to <b>Script</b>" );
+        }
       }
+#else
+      if ( Physics.autoSimulation == false )
+        EditorGUILayout.LabelField( ok );
       else {
         EditorGUILayout.LabelField( note + "It is recommended to disable Unity's <b>Physics > Autosimulation</b> option to increase project performance and reduce the risk of mixing physics components.", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
@@ -142,6 +152,7 @@ namespace AGXUnityEditor
           Debug.Log( "Disabled Unity's Physics auto simulation" );
         }
       }
+#endif
 
       if ( EditorGUI.EndChangeCheck() )
         Instance.Save();
