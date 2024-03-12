@@ -81,29 +81,28 @@ namespace AGXUnity.Utils
     /// <param name="offset">Height offset.</param>
     public static NativeHeights WriteTerrainDataOffset( Terrain terrain, float offset )
     {
-      var terrainData        = terrain.terrainData;
-      var nativeHeightData   = FindHeights( terrainData );
-      var dataMaxHeight      = terrainData.size.y;
-      var maxClampedHeight   = -1.0f;
-      var resolutionX        = nativeHeightData.ResolutionX;
-      var resolutionY        = nativeHeightData.ResolutionY;
-      var scale              = terrainData.heightmapScale.y;
+      var terrainData         = terrain.terrainData;
+      var resolutionX         = TerrainDataResolution( terrainData );
+      var resolutionY         = TerrainDataResolution( terrainData );
+      Vector3 scale           = terrainData.heightmapScale;
 
-      var modHeights = new float[resolutionY, resolutionX];
-      for ( int i = 0; i < nativeHeightData.Heights.Count; ++i ) {
+      var agxHeights          = new agx.RealVector( resolutionX * resolutionY );
+      float[,] heights        = terrainData.GetHeights( 0, 0, resolutionX, resolutionY );
+      var dataMaxHeight       = terrainData.size.y;
+      var maxClampedHeight    = -1.0f;
 
-        var newHeight = nativeHeightData.Heights[ i ] += offset;
+      var scaledOffset = offset / scale.y;
 
-        var vertexX = i % resolutionX;
-        var vertexY = i / resolutionY;
-
-        modHeights[ resolutionY - vertexY - 1, resolutionX - vertexX - 1 ] = (float)newHeight / scale;
-
-        if ( newHeight > dataMaxHeight )
-          maxClampedHeight = System.Math.Max( maxClampedHeight, (float)newHeight );
+      for ( int y = resolutionY - 1; y >= 0; --y ) {
+        for ( int x = resolutionX - 1; x >= 0; --x ) {
+          heights[ y, x ] += scaledOffset;
+          agxHeights.Add( heights[ y, x ] * scale.y );
+          if ( heights[ y, x ] > dataMaxHeight )
+            maxClampedHeight = System.Math.Max( maxClampedHeight, (float)heights[ y, x ] );
+        }
       }
 
-      terrainData.SetHeights( 0, 0, modHeights );
+      terrainData.SetHeights( 0, 0, heights );
 
       if ( maxClampedHeight > 0.0f ) {
         Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
@@ -113,7 +112,11 @@ namespace AGXUnity.Utils
                           ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
       }
 
-      return nativeHeightData;
+      return new NativeHeights {
+        ResolutionX = resolutionX,
+        ResolutionY = resolutionY,
+        Heights = agxHeights
+      };
     }
 
     /// <summary>
