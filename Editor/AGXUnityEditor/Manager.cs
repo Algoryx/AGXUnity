@@ -949,12 +949,6 @@ namespace AGXUnityEditor
       if ( !Directory.Exists( Utils.CustomEditorGenerator.Path ) )
         Directory.CreateDirectory( Utils.CustomEditorGenerator.Path );
       Utils.CustomEditorGenerator.Synchronize();
-
-      // Merge split thresholds.
-      if ( !AssetDatabase.IsValidFolder( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.MergeSplitThresholds.ResourceDirectory ) )
-        AssetDatabase.CreateFolder( IO.Utils.AGXUnityResourceDirectory, AGXUnity.MergeSplitThresholds.ResourceDirectory );
-      GetOrCreateAsset<AGXUnity.GeometryContactMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.GeometryContactMergeSplitThresholds.ResourcePath + ".asset" );
-      GetOrCreateAsset<AGXUnity.ConstraintMergeSplitThresholds>( IO.Utils.AGXUnityResourceDirectory + '/' + AGXUnity.ConstraintMergeSplitThresholds.ResourcePath + ".asset" );
     }
   }
 }
