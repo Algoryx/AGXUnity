@@ -45,6 +45,15 @@ namespace AGXUnityEditor
             ExternalAGXInitializer.ChangeRootDirectory( newAgxDir );
           }
         }
+        if ( !ExternalAGXInitializer.AppliedVersionCompatible ) {
+          EditorGUILayout.HelpBox( "The specified AGX Dynamics directory contains an incompatible version of AGX Dynamics. " +
+                                   $"(specified version: {ExternalAGXInitializer.AppliedAGXVersion}, required version: {PackageManifest.Instance.agx})\n" +
+                                   "Using an incompatible version might lead to unexpected behaviour or crashes and should therefore be avoided. " +
+                                   "It is recommended that a compatible AGX Dynamics version is installed and selected from the AGX Installer download site",
+                                   MessageType.Warning );
+          if ( GUILayout.Button( "Open download site" ) )
+            EditorUtility.OpenWithDefaultApp( "https://www.algoryx.se/download/" );
+        }
       }
       else if ( !IO.Utils.AGXDynamicsInstalledInProject && ExternalAGXInitializer.UserSaidNo ) {
         var rect     = EditorGUILayout.GetControlRect();

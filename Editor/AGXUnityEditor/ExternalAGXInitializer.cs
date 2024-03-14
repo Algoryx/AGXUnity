@@ -1,7 +1,8 @@
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using Environment = AGXUnity.IO.Environment;
@@ -16,8 +17,9 @@ namespace AGXUnityEditor
     public string AGX_PLUGIN_PATH = string.Empty;
     public string[] AGX_BIN_PATH  = new string[] { };
 
-    [NonSerialized]
-    public static bool IsApplied = false;
+    public static bool IsApplied { get; private set; } = false;
+
+    public static string AppliedAGXVersion { get; private set; } = string.Empty;
 
     public bool HasData
     {
@@ -72,8 +74,22 @@ namespace AGXUnityEditor
         return false;
       }
 
+      AppliedAGXVersion = Regex.Match( agx.agxSWIG.agxGetVersion( false ), @".*(\d+\.\d+\.\d+\.\d+)" ).Groups[ 1 ].Value;
+
+      if ( AppliedVersionCompatible && IgnoreIncompatibleVersion != PackageManifest.Instance.agx ) {
+        if ( EditorUtility.DisplayDialog( "Incompatible AGX versions",
+                                          $"The AGX version ({AppliedAGXVersion}) specified under AGXUnity > Settings > AGX Dynamics directory does not match the version that AGXUnity was built against ({PackageManifest.Instance.agx}). This might cause incorrect behaviour or crashes. Please select a compatible AGX Dynamics directory.",
+                                          "Open Settings",
+                                          "Ignore" ) )
+          SettingsService.OpenProjectSettings( "Project/AGXSettings" );
+        else
+          IgnoreIncompatibleVersion = PackageManifest.Instance.agx;
+      }
+
       return true;
     }
+
+    public static bool AppliedVersionCompatible => AppliedAGXVersion == PackageManifest.Instance.agx;
 
     public void Clear()
     {
@@ -108,6 +124,12 @@ namespace AGXUnityEditor
     {
       get => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool;
       set => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool = value;
+    }
+
+    public static string IgnoreIncompatibleVersion
+    {
+      get => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_IgnoreIncompatibleVersion" ).String;
+      set => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_IgnoreIncompatibleVersion" ).String = value;
     }
 
     public static bool Initialize()
