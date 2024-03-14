@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System;
 using System.IO;
 using System.Linq;
@@ -159,8 +159,7 @@ namespace AGXUnityEditor
       else
         instance.Clear();
 
-      EditorUtility.SetDirty( instance );
-      AssetDatabase.SaveAssets();
+      Instance.Save();
 
       return success;
 #else
@@ -182,8 +181,7 @@ namespace AGXUnityEditor
         Environment.RemoveFromPath( path );
 
       Instance.Clear();
-
-      EditorUtility.SetDirty( Instance );
+      Instance.Save();
       AssetDatabase.SaveAssets();
 
       var success = false;
@@ -193,9 +191,7 @@ namespace AGXUnityEditor
         success = Instance.InitializeInstalled( newAgxDir.FullName );
 
       if ( success ) {
-        EditorUtility.SetDirty( Instance );
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
+        Instance.Save();
         EditorApplication.OpenProject( Path.Combine( Application.dataPath, ".." ) );
       }
     }
