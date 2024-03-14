@@ -184,8 +184,7 @@ namespace AGXUnityEditor
 
     private void OnValueChanged()
     {
-      // Saves our data file.
-      EditorUtility.SetDirty( EditorData.Instance );
+      EditorData.Instance.Save();
 
       if ( IsStatic )
         return;
