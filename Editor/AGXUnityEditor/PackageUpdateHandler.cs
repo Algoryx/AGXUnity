@@ -16,13 +16,6 @@ namespace AGXUnityEditor
 {
   public static class PackageUpdateHandler
   {
-    public static AGXUnity.VersionInfo FindCurrentVersion()
-    {
-      return AGXUnity.VersionInfo.FromFile( IO.Utils.AGXUnityPackageDirectory +
-                                            Path.DirectorySeparatorChar +
-                                            "package.json" );
-    }
-
     public static bool Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {

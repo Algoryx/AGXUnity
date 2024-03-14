@@ -55,7 +55,7 @@ namespace AGXUnityEditor.Windows
     {
       m_status            = Status.Passive;
       m_serverVersion     = VersionInfo.Invalid;
-      m_currentVersion    = PackageUpdateHandler.FindCurrentVersion();
+      m_currentVersion    = PackageManifest.Instance.GetAGXUnityVersionInfo();
       m_sourceFilename    = string.Empty;
       m_downloadDirectory = Path.GetTempPath();
       m_downloadProgress  = 0.0f;
