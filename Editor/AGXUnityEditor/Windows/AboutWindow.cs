@@ -54,7 +54,7 @@ namespace AGXUnityEditor.Windows
                                         Color.black,
                                         0.25f );
 
-      var versionInfo = PackageUpdateHandler.FindCurrentVersion();
+      var versionInfo = PackageManifest.Instance.GetAGXUnityVersionInfo();
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "Version" ),
                                         ( versionInfo.IsValid ?
                                             versionInfo.VersionString :

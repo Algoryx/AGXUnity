@@ -17,101 +17,65 @@ namespace AGXUnityEditor.IO
     private const string m_refScript = "RigidBody.cs";
     private static string m_relDataPathDir = string.Empty;
 
+    public static string PackageName => "com.algoryx.agxunity";
+
+    public static bool IsPackageContext => AGXUnityPackageDirectory.StartsWith( "Packages" );
+
     /// <summary>
     /// Absolute Unity project directory without trailing /, i.e., add '/Assets/Foo' for
     /// directory Foo in the project default assets folder.
     /// </summary>
-    public static string ProjectDirectory
-    {
-      get
-      {
-        return Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ),
-                                            "/Assets".Length );
-      }
-    }
+    public static string ProjectDirectory =>  Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ), "/Assets".Length );
 
     /// <summary>
     /// Directory of AGXUnity source code, i.e, package directory + /AGXUnity.
     /// </summary>
-    public static string AGXUnitySourceDirectory
-    {
-      get
-      {
-        return AGXUnityPackageDirectory + "/AGXUnity";
-      }
-    }
+    public static string AGXUnitySourceDirectory => AGXUnityPackageDirectory + "/AGXUnity";
 
     /// <summary>
     /// Absolute directory of AGXUnity source code, i.e, full package directory + /AGXUnity.
     /// </summary>
-    public static string AGXUnitySourceDirectoryFull
-    {
-      get { return ProjectDirectory + '/' + AGXUnitySourceDirectory; }
-    }
+    public static string AGXUnitySourceDirectoryFull => GetFullPath( AGXUnitySourceDirectory );
 
     /// <summary>
     /// AGXUnity resources directory, i.e, package directory + /Resources.
     /// </summary>
-    public static string AGXUnityResourceDirectory
-    {
-      get { return AGXUnityPackageDirectory + "/Resources"; }
-    }
+    public static string AGXUnityResourceDirectory => AGXUnityPackageDirectory + "/Resources";
 
     /// <summary>
     /// Absolute directory of AGXUnity resources, i.e., package directory full + /Resources.
     /// </summary>
-    public static string AGXUnityResourceDirectoryFull
-    {
-      get { return ProjectDirectory + '/' + AGXUnityResourceDirectory; }
-    }
+    public static string AGXUnityResourceDirectoryFull => GetFullPath( AGXUnityResourceDirectory );
 
     /// <summary>
     /// Native plugin directory, i.e., package directory + /Plugins/x86_64.
     /// </summary>
-    public static string AGXUnityPluginDirectory
-    {
-      get { return AGXUnityPackageDirectory + "/Plugins/x86_64"; }
-    }
+    public static string AGXUnityPluginDirectory => AGXUnityPackageDirectory + "/Plugins/x86_64";
 
     /// <summary>
     /// Native plugin directory, i.e., package directory full + /Plugins/x86_64.
     /// </summary>
-    public static string AGXUnityPluginDirectoryFull
-    {
-      get { return ProjectDirectory + '/' + AGXUnityPluginDirectory; }
-    }
+    public static string AGXUnityPluginDirectoryFull => GetFullPath( AGXUnityPluginDirectory );
 
     /// <summary>
     /// AGXUnity package editor directory, i.e., package directory + /Editor.
     /// </summary>
-    public static string AGXUnityEditorDirectory
-    {
-      get { return AGXUnityPackageDirectory + "/Editor"; }
-    }
+    public static string AGXUnityEditorDirectory => AGXUnityPackageDirectory + "/Editor";
 
     /// <summary>
     /// Absolute directory of AGXUnity editor, i.e. package directory full + /Editor.
     /// </summary>
-    public static string AGXUnityEditorDirectoryFull
-    {
-      get { return ProjectDirectory + '/' + AGXUnityEditorDirectory; }
-    }
+    public static string AGXUnityEditorDirectoryFull => GetFullPath( AGXUnityEditorDirectory );
 
     /// <summary>
     /// Directory of AGXUnityEditor source code, i.e, package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectory
-    {
-      get { return AGXUnityPackageDirectory + "/Editor/AGXUnityEditor"; }
-    }
+    public static string AGXUnityEditorSourceDirectory => AGXUnityPackageDirectory + "/Editor/AGXUnityEditor";
 
     /// <summary>
     /// Absolute directory of AGXUnityEditor source code, i.e, full package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectoryFull
-    {
-      get { return ProjectDirectory + '/' + AGXUnityEditorSourceDirectory; }
-    }
+    public static string AGXUnityEditorSourceDirectoryFull => GetFullPath(AGXUnityEditorSourceDirectory);
 
     /// <summary>
     /// AGXUnity package directory relative Unity project, e.g., Assets/Foo if AGXUnity source
@@ -122,29 +86,42 @@ namespace AGXUnityEditor.IO
     {
       get
       {
-        var refScriptFullPath = Application.dataPath + '/' + m_relDataPathDir + '/' + m_refDirectory + '/' + m_refScript;
-        if ( m_relDataPathDir != "" && File.Exists( refScriptFullPath ) )
-          return "Assets/" + m_relDataPathDir;
+        var filePath = GetCurrentFilePath().Replace('\\','/');
+        var assetCtx = filePath.StartsWith( Application.dataPath );
 
-        var results = Directory.GetFiles( Application.dataPath, m_refScript, SearchOption.AllDirectories );
-        foreach ( var result in results ) {
-          var file = new FileInfo( result );
-          if ( file.Directory.Name == "AGXUnity" ) {
-            m_relDataPathDir = MakeRelative( file.Directory.Parent.FullName, Application.dataPath ).Remove( 0, "Assets/".Length );
-            break;
+        if( assetCtx ) { 
+          var refScriptFullPath = Application.dataPath + '/' + m_relDataPathDir + '/' + m_refDirectory + '/' + m_refScript;
+          if ( m_relDataPathDir != "" && File.Exists( refScriptFullPath ) )
+            return "Assets/" + m_relDataPathDir;
+
+          var results = Directory.GetFiles( Application.dataPath, m_refScript, SearchOption.AllDirectories );
+          foreach ( var result in results ) {
+            var file = new FileInfo( result );
+            if ( file.Directory.Name == "AGXUnity" ) {
+              m_relDataPathDir = MakeRelative( file.Directory.Parent.FullName, Application.dataPath ).Remove( 0, "Assets/".Length );
+              break;
+            }
           }
-        }
 
-        return "Assets/" + m_relDataPathDir;
+          return "Assets/" + m_relDataPathDir;
+        } else {
+          return "Packages/" + PackageName;
+        }
       }
     }
 
     /// <summary>
     /// Full path to the AGXUnity install directory.
     /// </summary>
-    public static string AGXUnityPackageDirectoryFull
+    public static string AGXUnityPackageDirectoryFull => GetFullPath( AGXUnityPackageDirectory );
+
+    private static string GetCurrentFilePath( [System.Runtime.CompilerServices.CallerFilePath] string fileName = null ) => fileName;
+
+    private static string GetFullPath(string fileName )
     {
-      get { return ProjectDirectory + '/' + AGXUnityPackageDirectory; }
+      if ( fileName.StartsWith( "Package" ) )
+        return Path.GetFullPath(fileName);
+      else return ProjectDirectory + "/" + fileName;
     }
 
     /// <summary>

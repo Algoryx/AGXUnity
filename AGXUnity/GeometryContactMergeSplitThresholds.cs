@@ -4,14 +4,8 @@ using UnityEngine;
 namespace AGXUnity
 {
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#geometry-contact-merge-split-thresholds" )]
-  public class GeometryContactMergeSplitThresholds : MergeSplitThresholds
+  public class GeometryContactMergeSplitThresholds : MergeSplitThresholds<GeometryContactMergeSplitThresholds>
   {
-    [HideInInspector]
-    public static string ResourcePath { get { return ResourceDirectory + @"/DefaultGeometryContactThresholds"; } }
-
-    [HideInInspector]
-    public static GeometryContactMergeSplitThresholds DefaultResource { get { return Resources.Load<GeometryContactMergeSplitThresholds>( ResourcePath ); } }
-
     [SerializeField]
     private float m_maxRelativeNormalSpeed = 0.01f;
 

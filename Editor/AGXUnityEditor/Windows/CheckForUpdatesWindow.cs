@@ -1,9 +1,7 @@
-﻿using System.IO;
-using UnityEngine;
+﻿using AGXUnity;
+using System.IO;
 using UnityEditor;
-
-using AGXUnity;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Windows
@@ -57,7 +55,7 @@ namespace AGXUnityEditor.Windows
     {
       m_status            = Status.Passive;
       m_serverVersion     = VersionInfo.Invalid;
-      m_currentVersion    = PackageUpdateHandler.FindCurrentVersion();
+      m_currentVersion    = PackageManifest.Instance.GetAGXUnityVersionInfo();
       m_sourceFilename    = string.Empty;
       m_downloadDirectory = Path.GetTempPath();
       m_downloadProgress  = 0.0f;
@@ -73,94 +71,101 @@ namespace AGXUnityEditor.Windows
     {
       AboutWindow.AGXDynamicsForUnityLogoGUI();
 
-      EditorGUILayout.LabelField( GUI.MakeLabel( "Current version" ),
-                                  GUI.MakeLabel( m_currentVersion.IsValid ?
-                                                   m_currentVersion.VersionStringShort :
-                                                   "git checkout",
-                                                 Color.white ) );
-      using ( new EditorGUILayout.HorizontalScope() ) {
-        var newVersionAvailable = m_serverVersion.IsValid && m_serverVersion > m_currentVersion;
-        EditorGUILayout.LabelField( GUI.MakeLabel( "Latest version" ),
-                                    GUI.MakeLabel( m_serverVersion.IsValid ?
-                                                     m_serverVersion.VersionStringShort :
-                                                     "...",
-                                                   newVersionAvailable ?
-                                                     Color.Lerp( Color.green, Color.black, 0.35f ) :
-                                                     Color.white ),
-                                    InspectorEditor.Skin.Label,
-                                    GUILayout.Width( 280 ) );
-        GUILayout.FlexibleSpace();
-        if ( newVersionAvailable && InspectorGUI.Link( GUI.MakeLabel( "Changelog" ) ) )
-          Application.OpenURL( TopMenu.AGXUnityChangelogURL );
-        else if ( !newVersionAvailable )
-          GUILayout.Label( "", InspectorEditor.Skin.Label );
-      }
+      using ( new GUI.EnabledBlock( !IO.Utils.IsPackageContext ) ) {
 
-      InspectorGUI.Separator( 1, 4 );
+        EditorGUILayout.LabelField( GUI.MakeLabel( "Current version" ),
+                                    GUI.MakeLabel( m_currentVersion.IsValid ?
+                                                     m_currentVersion.VersionStringShort :
+                                                     "git checkout",
+                                                   Color.white ) );
+        using ( new EditorGUILayout.HorizontalScope() ) {
+          var newVersionAvailable = m_serverVersion.IsValid && m_serverVersion > m_currentVersion;
+          EditorGUILayout.LabelField( GUI.MakeLabel( "Latest version" ),
+                                      GUI.MakeLabel( m_serverVersion.IsValid ?
+                                                       m_serverVersion.VersionStringShort :
+                                                       "...",
+                                                     newVersionAvailable ?
+                                                       Color.Lerp( Color.green, Color.black, 0.35f ) :
+                                                       Color.white ),
+                                      InspectorEditor.Skin.Label,
+                                      GUILayout.Width( 280 ) );
+          GUILayout.FlexibleSpace();
+          if ( newVersionAvailable && InspectorGUI.Link( GUI.MakeLabel( "Changelog" ) ) )
+            Application.OpenURL( TopMenu.AGXUnityChangelogURL );
+          else if ( !newVersionAvailable )
+            GUILayout.Label( "", InspectorEditor.Skin.Label );
+        }
 
-      var isUpToDate = m_currentVersion.IsValid &&
+        InspectorGUI.Separator( 1, 4 );
+
+        var isUpToDate = m_currentVersion.IsValid &&
                        m_serverVersion.IsValid &&
                        m_currentVersion >= m_serverVersion;
-      if ( isUpToDate ) {
-        EditorGUILayout.LabelField( GUI.MakeLabel( "The version of AGX Dynamics for Unity is up to date.",
-                                                   Color.Lerp( Color.green, Color.black, 0.35f ) ),
-                                    InspectorEditor.Skin.TextAreaMiddleCenter );
-      }
-      else if ( m_status == Status.Passive ) {
-        if ( Web.RequestHandler.Get( ServerVersionRequest,
-                                     OnPackageNameRequest ) )
-          m_status = Status.CheckingForUpdate;
-      }
-      else if ( m_status == Status.CheckingForUpdate ) {
-        Repaint();
-      }
-      else {
-        if ( m_serverVersion.IsValid ) {
-          HandleDownloadInstall();
-          if ( m_status == Status.Downloading )
-            Repaint();
+        if ( isUpToDate ) {
+          EditorGUILayout.LabelField( GUI.MakeLabel( "The version of AGX Dynamics for Unity is up to date.",
+                                                     Color.Lerp( Color.green, Color.black, 0.35f ) ),
+                                      InspectorEditor.Skin.TextAreaMiddleCenter );
         }
-      }
+        else if ( m_status == Status.Passive ) {
+          if ( Web.RequestHandler.Get( ServerVersionRequest,
+                                       OnPackageNameRequest ) )
+            m_status = Status.CheckingForUpdate;
+        }
+        else if ( m_status == Status.CheckingForUpdate ) {
+          Repaint();
+        }
+        else {
+          if ( m_serverVersion.IsValid ) {
+            HandleDownloadInstall();
+            if ( m_status == Status.Downloading )
+              Repaint();
+          }
+        }
 
-      var manualPackageButtonSize = new Vector2( 110, EditorGUIUtility.singleLineHeight );
-      var manualPackageRect = new Rect( maxSize - manualPackageButtonSize - new Vector2( 2.0f * EditorGUIUtility.standardVerticalSpacing,
+        if ( IO.Utils.IsPackageContext )
+          using ( new GUI.EnabledBlock( true ) )
+            EditorGUILayout.HelpBox( "The package update utility cannot update packages installed in a package context.", MessageType.Error );
+
+        var manualPackageButtonSize = new Vector2( 110, EditorGUIUtility.singleLineHeight );
+        var manualPackageRect = new Rect( maxSize - manualPackageButtonSize - new Vector2( 2.0f * EditorGUIUtility.standardVerticalSpacing,
                                                                                          2.0f * EditorGUIUtility.standardVerticalSpacing ),
                                         manualPackageButtonSize );
-      var manualSelectPressed = false;
-      using ( new GUI.EnabledBlock( m_status != Status.Installing && m_status != Status.Downloading ) )
-        manualSelectPressed = UnityEngine.GUI.Button( manualPackageRect,
-                                                      GUI.MakeLabel( "Manual select..." ),
-                                                      InspectorEditor.Skin.Button );
-      if ( manualSelectPressed ) {
-        if ( !Directory.Exists( GetManualPackageDirectoryData().String ) )
-          GetManualPackageDirectoryData().String = "Assets";
-        var manualPackageFilename = EditorUtility.OpenFilePanelWithFilters( "AGX Dynamics for Unity package",
+        var manualSelectPressed = false;
+        using ( new GUI.EnabledBlock( m_status != Status.Installing && m_status != Status.Downloading && !IO.Utils.IsPackageContext ) )
+          manualSelectPressed = UnityEngine.GUI.Button( manualPackageRect,
+                                                        GUI.MakeLabel( "Manual select..." ),
+                                                        InspectorEditor.Skin.Button );
+        if ( manualSelectPressed ) {
+          if ( !Directory.Exists( GetManualPackageDirectoryData().String ) )
+            GetManualPackageDirectoryData().String = "Assets";
+          var manualPackageFilename = EditorUtility.OpenFilePanelWithFilters( "AGX Dynamics for Unity package",
                                                                              GetManualPackageDirectoryData().String,
                                                                              new string[]
                                                                              {
                                                                                "AGXUnity package",
                                                                                "*.*.*unitypackage"
                                                                              } );
-        if ( !string.IsNullOrEmpty( manualPackageFilename ) ) {
-          var manualTargetFileInfo = new FileInfo( manualPackageFilename );
-          GetManualPackageDirectoryData().String = manualTargetFileInfo.Directory.FullName;
+          if ( !string.IsNullOrEmpty( manualPackageFilename ) ) {
+            var manualTargetFileInfo = new FileInfo( manualPackageFilename );
+            GetManualPackageDirectoryData().String = manualTargetFileInfo.Directory.FullName;
 
-          if ( !manualTargetFileInfo.Exists )
-            Debug.LogWarning( $"The target package \"{manualTargetFileInfo.FullName}\" doesn't exist. Aborting." );
-          else if ( !VersionInfo.Parse( manualTargetFileInfo.Name ).IsValid )
-            Debug.LogWarning( $"Unable to parse version from package name \"{manualTargetFileInfo.Name}\". Aborting." );
-          else if ( !manualTargetFileInfo.Name.StartsWith( "AGXDynamicsForUnity-" ) )
-            Debug.LogWarning( $"Package name \"{manualTargetFileInfo.Name}\" doesn't seems to be an AGX Dynamics for Unity package. Aborting." );
-          else if ( EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
-                                                 "AGX Dynamics for Unity is about to be updated/downgraded " +
-                                                 "to version " +
-                                                 VersionInfo.Parse( manualTargetFileInfo.Name ).VersionString +
-                                                 ".\n\nDo you want to continue with the update/downgrade?",
-                                                 "Continue",
-                                                 "Cancel" ) ) {
-            Target = manualTargetFileInfo.FullName;
-            m_status = Status.AwaitInstall;
-            InstallTarget();
+            if ( !manualTargetFileInfo.Exists )
+              Debug.LogWarning( $"The target package \"{manualTargetFileInfo.FullName}\" doesn't exist. Aborting." );
+            else if ( !VersionInfo.Parse( manualTargetFileInfo.Name ).IsValid )
+              Debug.LogWarning( $"Unable to parse version from package name \"{manualTargetFileInfo.Name}\". Aborting." );
+            else if ( !manualTargetFileInfo.Name.StartsWith( "AGXDynamicsForUnity-" ) )
+              Debug.LogWarning( $"Package name \"{manualTargetFileInfo.Name}\" doesn't seems to be an AGX Dynamics for Unity package. Aborting." );
+            else if ( EditorUtility.DisplayDialog( "AGX Dynamics for Unity update",
+                                                   "AGX Dynamics for Unity is about to be updated/downgraded " +
+                                                   "to version " +
+                                                   VersionInfo.Parse( manualTargetFileInfo.Name ).VersionString +
+                                                   ".\n\nDo you want to continue with the update/downgrade?",
+                                                   "Continue",
+                                                   "Cancel" ) ) {
+              Target = manualTargetFileInfo.FullName;
+              m_status = Status.AwaitInstall;
+              InstallTarget();
+            }
           }
         }
       }
@@ -187,7 +192,7 @@ namespace AGXUnityEditor.Windows
         EditorGUI.ProgressBar( rect,
                                m_downloadProgress,
                                m_serverVersion.VersionStringShort +
-                                 ( m_status == Status.Downloading ? $": { (int)(100.0f * m_downloadProgress + 0.5f) }%" : "" ) );
+                                 ( m_status == Status.Downloading ? $": {(int)( 100.0f * m_downloadProgress + 0.5f )}%" : "" ) );
 
       if ( m_status == Status.AwaitInstall ) {
         InspectorGUI.Separator( 1, 4 );

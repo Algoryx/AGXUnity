@@ -16,13 +16,6 @@ namespace AGXUnityEditor
 {
   public static class PackageUpdateHandler
   {
-    public static AGXUnity.VersionInfo FindCurrentVersion()
-    {
-      return AGXUnity.VersionInfo.FromFile( IO.Utils.AGXUnityPackageDirectory +
-                                            Path.DirectorySeparatorChar +
-                                            "package.json" );
-    }
-
     public static bool Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {
@@ -32,6 +25,11 @@ namespace AGXUnityEditor
 
       if ( !packageFileInfo.Exists ) {
         Debug.LogError( $"Error: Unable to install package from {packageFileInfo.FullName} - file doesn't exit." );
+        return false;
+      }
+
+      if ( IO.Utils.IsPackageContext ) {
+        Debug.LogError( "Error: Package update handler cannot update when AGXUnity is installed in a package context." );
         return false;
       }
 
@@ -170,6 +168,8 @@ namespace AGXUnityEditor
         // use AGX Dynamics.
         AssetDatabase.Refresh();
 
+        // TODO: Updating the plugin through the PackageUpdateHadler currently only supports asset context installs.
+        // If we every host build packages in an NPM repo we could simply update through the UPM here instead.
         Debug.Log( $"Starting import of package: {packageName}" );
         AssetDatabase.ImportPackage( packageName, false );
       }

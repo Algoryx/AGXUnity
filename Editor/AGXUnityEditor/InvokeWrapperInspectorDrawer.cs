@@ -773,7 +773,7 @@ namespace AGXUnityEditor
       Object valInField = wrapper.Get<Object>( objects[ 0 ] );
       bool recursiveEditing = wrapper.HasAttribute<AllowRecursiveEditing>();
 
-      if ( recursiveEditing ) {
+      if ( recursiveEditing && wrapper.AreValuesEqual( objects ) ) {
         result = InspectorGUI.FoldoutObjectField( InspectorGUI.MakeLabel( wrapper.Member ),
                                                   valInField,
                                                   type,

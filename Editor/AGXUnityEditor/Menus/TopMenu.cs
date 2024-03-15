@@ -635,7 +635,7 @@ namespace AGXUnityEditor
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]
     public static bool CheckForUpdatesWindowValidater()
     {
-      return PackageUpdateHandler.FindCurrentVersion().IsValid;
+      return PackageManifest.Instance.GetAGXUnityVersionInfo().IsValid;
     }
 
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060 )]

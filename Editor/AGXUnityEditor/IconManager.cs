@@ -160,9 +160,9 @@ namespace AGXUnityEditor
     public static Texture2D GetAGXUnityLogo()
     {
       if ( m_logo == null )
-        m_logo = EditorGUIUtility.Load( IO.Utils.AGXUnityEditorDirectory +
+        m_logo = EditorGUIUtility.Load( Directory +
                                         Path.DirectorySeparatorChar +
-                                        "Data" +
+                                        "Logos" +
                                         Path.DirectorySeparatorChar +
                                         ( EditorGUIUtility.isProSkin ?
                                             "agx_for_unity_logo_white.png" :
