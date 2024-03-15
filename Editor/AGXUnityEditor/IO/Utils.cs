@@ -105,7 +105,7 @@ namespace AGXUnityEditor.IO
 
           return "Assets/" + m_relDataPathDir;
         } else {
-          return "Packages/se.algoryx.agxunity";
+          return "Packages/" + PackageName;
         }
       }
     }
