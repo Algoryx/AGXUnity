@@ -1,17 +1,17 @@
 {
-    "name": "se.algoryx.agxunity",
-    "version": "4.7.1-beta.1+5cb7e1e",
+    "name": "com.algoryx.agxunity",
+    "version": "5.0.0-beta.1+f583158",
     "platform": "windows",
     "platformName": "Microsoft Windows",
     "displayName": "AGX Dynamics for Unity",
     "description": "Plugin for the multi-purpose physics simulation engine AGX Dynamics from Algoryx Simulation AB.",
-    "unity": "2018.4",
+    "unity": "2021.2",
     "agx": "2.37.3.0",
     "dependencies": {},
     "keywords": [],
     "author": {
         "name": "Algoryx Simulation AB",
-        "email": "sales@algoryx.se",
-        "url": "https://www.algoryx.se"
+        "email": "sales@algoryx.com",
+        "url": "https://www.algoryx.com"
     }
 }
