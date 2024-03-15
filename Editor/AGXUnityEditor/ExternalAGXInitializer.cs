@@ -76,7 +76,7 @@ namespace AGXUnityEditor
 
       AppliedAGXVersion = Regex.Match( agx.agxSWIG.agxGetVersion( false ), @".*(\d+\.\d+\.\d+\.\d+)" ).Groups[ 1 ].Value;
 
-      if ( AppliedVersionCompatible && IgnoreIncompatibleVersion != PackageManifest.Instance.agx ) {
+      if ( !AppliedVersionCompatible && IgnoreIncompatibleVersion != PackageManifest.Instance.agx ) {
         if ( EditorUtility.DisplayDialog( "Incompatible AGX versions",
                                           $"The AGX version ({AppliedAGXVersion}) specified under AGXUnity > Settings > AGX Dynamics directory does not match the version that AGXUnity was built against ({PackageManifest.Instance.agx}). This might cause incorrect behaviour or crashes. Please select a compatible AGX Dynamics directory.",
                                           "Open Settings",
