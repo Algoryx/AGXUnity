@@ -29,6 +29,13 @@ namespace AGXUnityEditor
 
     public string name, version, agx, unity, description, platformName, platform;
 
-    public VersionInfo GetAGXUnityVersionInfo() => VersionInfo.Parse( version );
+    public VersionInfo GetAGXUnityVersionInfo()
+    {
+      var vi = VersionInfo.Parse( version );
+      vi.Platform = platform;
+      vi.PlatformName = platformName;
+
+      return vi;
+    }
   }
 }
