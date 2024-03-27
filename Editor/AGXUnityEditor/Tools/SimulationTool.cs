@@ -99,7 +99,14 @@ namespace AGXUnityEditor.Tools
       Simulation.DisplayStatistics = InspectorGUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
         using ( InspectorGUI.IndentScope.Single )
+        {
+          Simulation.StatisticsMovingAverageCount = EditorGUILayout.IntField( GUI.MakeLabel( "Moving Average Frame Size",
+                                                                                             false,
+                                                                                             "To smooth out the timing statistics between frames, increase this value to a value larger than 1." ),
+                                                                         Simulation.StatisticsMovingAverageCount,
+                                                                         skin.TextField);
           Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
+        }
       }
 
       InspectorGUI.Separator( 1, 4 );
