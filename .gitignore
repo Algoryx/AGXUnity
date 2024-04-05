@@ -102,3 +102,7 @@ Editor/Data/Data.asset*
 Editor/Data/Settings.asset*
 Editor/Data/AGXInitData.asset*
 
+# Ignore Brick files for now
+/Brick*
+/Plugins/x86_64/Brick*
+
