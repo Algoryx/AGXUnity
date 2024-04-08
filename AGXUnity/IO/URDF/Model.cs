@@ -612,7 +612,7 @@ namespace AGXUnity.IO.URDF
     {
       var rb = GetOrCreateComponent<RigidBody>( gameObject );
       GetOrCreateComponent<ElementComponent>( gameObject ).SetElement( link );
-      if ( link.IsStatic ) {
+      if ( link.IsStatic || link.IsWorld) {
         rb.MotionControl = agx.RigidBody.MotionControl.STATIC;
         return rb;
       }
