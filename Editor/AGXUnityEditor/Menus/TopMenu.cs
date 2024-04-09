@@ -552,6 +552,12 @@ namespace AGXUnityEditor
       Windows.ConvertMaterialsWindow.Open();
     }
 
+    [MenuItem( "AGXUnity/Utils/Convert PhysX components to AGX", priority = 80 )]
+    public static void ConvertPhysXToAGX()
+    {
+      Windows.ConvertPhysXToAGXWindow.Open();
+    }
+
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
     public static void OpenSettings()
     {
