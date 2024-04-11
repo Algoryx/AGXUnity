@@ -1,4 +1,3 @@
-using agx;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
@@ -21,16 +20,16 @@ namespace AGXUnity.IO.BrickIO
     IFrame mapMateConnector( Charges.MateConnector mate_connector )
     {
       var frame = new IFrame();
-      
+
       Brick.Core.Object owner = mate_connector.getOwner();
-      if ( mate_connector is Charges.RedirectedMateConnector redirected)
+      if ( mate_connector is Charges.RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();
 
-      if ( Data.FrameCache.ContainsKey(owner) ) 
-        frame.SetParent(Data.FrameCache[owner]);
+      if ( Data.FrameCache.ContainsKey( owner ) )
+        frame.SetParent( Data.FrameCache[ owner ] );
 
       frame.LocalPosition = mate_connector.position().ToVec3().ToHandedVector3();
-      
+
       var normal_n = mate_connector.normal();
       var main_axis_n = mate_connector.main_axis().normal();
       // Orthonormalize
@@ -66,7 +65,7 @@ namespace AGXUnity.IO.BrickIO
       var frame1 = mate_connector1 == null ? null : mapMateConnector(mate_connector1);
       var frame2 = mate_connector2 == null ? null : mapMateConnector(mate_connector2);
 
-      if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1) {
+      if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1 ) {
         RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
         frame1.SetParent( rb1?.gameObject, false );
       }
@@ -244,9 +243,20 @@ namespace AGXUnity.IO.BrickIO
       mapControllerDeformation( spring.deformation(), agxLock );
     }
 
-    void enableMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
+    void enableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
+    {
+      agxTarSpeed.Compliance = 1e-16f;
+      agxTarSpeed.enabled = true;
+      agxTarSpeed.Speed = 0;
+
+      var torque = Mathf.Clamp((float)motor.default_torque(), (float)motor.min_effort(), (float)motor.max_effort());
+      agxTarSpeed.ForceRange = new RangeReal( torque, torque );
+    }
+
+    void enableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
     {
       agxTarSpeed.Enable = true;
+      agxTarSpeed.Compliance = (float)(motor.gain() > 0.0f ? ( 1.0f / motor.gain() ) : float.MaxValue);
       agxTarSpeed.ForceRange = new RangeReal( (float)motor.min_effort(), (float)motor.max_effort() );
 
       agxTarSpeed.LockAtZeroSpeed = motor.zero_speed_as_spring();
@@ -284,6 +294,19 @@ namespace AGXUnity.IO.BrickIO
       return cGO;
     }
 
+    GameObject mapRotationalRange( Interactions.RotationalRange range, Brick.Physics3D.System system )
+    {
+      var range_hinge = mapInteraction( range, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
+      range_hinge.SetForceRange( new RangeReal( 0, 0 ) );
+
+      enableRangeInteraction( range_hinge.GetController<RangeController>(), range );
+
+      GameObject cGO = range_hinge.gameObject;
+      BrickObject.RegisterGameObject( range.getName(), cGO );
+
+      return cGO;
+    }
+
     GameObject mapTorsionSpring( Interactions.TorsionSpring spring, Brick.Physics3D.System system )
     {
       var spring_hinge = mapInteraction( spring, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
@@ -313,15 +336,29 @@ namespace AGXUnity.IO.BrickIO
     //  return cGO;
     //}
 
+    GameObject mapTorqueMotor( Interactions.TorqueMotor motor, Brick.Physics3D.System system )
+    {
+      var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
+      motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
+
+      var motor_tarSpeed = motor_hinge.GetController<TargetSpeedController>();
+      enableTorqueMotorInteraction( motor_tarSpeed, motor );
+
+      GameObject cGO = motor_hinge.gameObject;
+      BrickObject.RegisterGameObject( motor.getName(), cGO );
+
+      return cGO;
+    }
+
     GameObject mapRotationalVelocityMotor( Interactions.RotationalVelocityMotor motor, Brick.Physics3D.System system )
     {
-      var motor_prismatic = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-      motor_prismatic.SetForceRange( new RangeReal( 0, 0 ) );
+      var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
+      motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
 
-      var motor_tarSpeed = motor_prismatic.GetController<TargetSpeedController>();
-      enableMotorInteraction( motor_tarSpeed, motor );
+      var motor_tarSpeed = motor_hinge.GetController<TargetSpeedController>();
+      enableVelocityMotorInteraction( motor_tarSpeed, motor );
 
-      GameObject cGO = motor_prismatic.gameObject;
+      GameObject cGO = motor_hinge.gameObject;
       BrickObject.RegisterGameObject( motor.getName(), cGO );
 
       return cGO;
@@ -333,7 +370,7 @@ namespace AGXUnity.IO.BrickIO
       motor_prismatic.SetForceRange( new RangeReal( 0, 0 ) );
 
       var motor_tarSpeed = motor_prismatic.GetController<TargetSpeedController>();
-      enableMotorInteraction( motor_tarSpeed, motor );
+      enableVelocityMotorInteraction( motor_tarSpeed, motor );
 
       GameObject cGO = motor_prismatic.gameObject;
       BrickObject.RegisterGameObject( motor.getName(), cGO );
@@ -348,14 +385,12 @@ namespace AGXUnity.IO.BrickIO
         Interactions.Mate mate => MapMate( mate, system ),
         Interactions.LinearRange lr => mapLinearRange( lr, system ),
         Interactions.LinearSpring ls => mapLinearSpring( ls, system ),
-        Interactions.RotationalRange => null,
+        Interactions.RotationalRange rs => mapRotationalRange( rs, system ),
         Interactions.TorsionSpring ts => mapTorsionSpring( ts, system ),
-        Interactions.TorqueMotor => null,
-        // TODO: Readd when drivetrain is implemented.
-        //Brick.Physics1D.Interactions.RotationalVelocityMotor rvm  => mapRotationalVelocityMotor(rvm, system),
+        Interactions.TorqueMotor tm => mapTorqueMotor( tm, system ),
         Interactions.RotationalVelocityMotor rvm => mapRotationalVelocityMotor( rvm, system ),
         Interactions.LinearVelocityMotor lvm => mapLinearVelocityMotor( lvm, system ),
-        _ => null
+        _ => Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter )
       };
     }
   }

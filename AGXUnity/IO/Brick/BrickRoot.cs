@@ -1,4 +1,4 @@
-using Brick.Core.Api;
+using Brick;
 using UnityEngine;
 using Object = Brick.Core.Object;
 
@@ -26,45 +26,18 @@ namespace AGXUnity.IO.BrickIO
     {
       Native = BrickImporter.ParseBrickSource( BrickFile, _report_errors );
 
+      if ( Native == null ) {
+        Debug.LogError( $"Failed to initialize Brick object '{name}'", this );
+        return false;
+      }
+
       return base.Initialize();
     }
 
-    private static Object _report_errors( Object evalTree, BrickContext brick_pub_ctx )
+    private static void _report_errors( Error error )
     {
       UnityBrickErrorFormatter error_formatter = new UnityBrickErrorFormatter();
-      foreach ( var error in brick_pub_ctx.getErrors() )
-        Debug.LogError( error_formatter.format( error ) );
-      if ( evalTree == null && brick_pub_ctx.getErrors().Count == 0 )
-        Debug.LogError( "Evaluation failed, but without any reported errors." );
-      if ( brick_pub_ctx.getErrors().Count != 0 ) {
-        Debug.LogError( "Errors found - ignoring input." );
-        return null;
-      }
-
-      return evalTree;
-    }
-
-    class UnityBrickErrorFormatter : Brick.ErrorFormatter
-    {
-      public override string format( Brick.Error error )
-      {
-        //switch ( error.getErrorCode() ) {
-        //  case AGXBrickError::ModelWasNotSimulatable:
-        //    return formatMessage( "Expected Model to inherit one of Body, Geometry or System", error );
-        //  case AGXBrickError::MissingConnectedBody:
-        //    return formatMessage( "Hinge must have at least one mateconnector belonging to a RigidBody", error );
-        //  case AGXBrickError::AgxIsNotInitialized:
-        //    return formatMessage( "AGX is not initialized, did you forget agxInit?", error );
-        //  case AGXBrickError::InvalidMateConnectorAxis:
-        //    return formatMessage( "main_axis and normal in MateConnector must not be parallel", error );
-        //  case AGXBrickError::PathNotAbsolute:
-        //    return formatMessage( "Path is not absolute", error );
-        //  case AGXBrickError::InvalidObjFile:
-        //    return formatMessage( "Invalid .obj file", error );
-        //  default:
-        return base.format( error );
-        //}
-      }
+      Debug.LogError( error_formatter.format( error ) );
     }
   }
 }

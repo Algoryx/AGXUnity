@@ -1,4 +1,5 @@
 using AGXUnity.Utils;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.BrickIO
@@ -32,6 +33,29 @@ namespace AGXUnity.IO.BrickIO
     {
       transform.localPosition = local_transform.position().ToHandedVector3();
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
+    }
+
+    public static T ReportUnimplemented<T>(Brick.Core.Object obj, Brick.ErrorReporter err )
+      where T : class
+    {
+      var tok = obj.getOwner().getType().getNameToken();
+      err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.Unimplemented, tok.line, tok.column,obj.getType().getOwningDocument().getSourceId() ) );
+      return null;
+    }
+
+    public static void AddChild( GameObject parent, GameObject child, Brick.ErrorReporter err, Brick.Core.Object obj )
+    {
+      if ( child != null )
+        parent.AddChild( child );  
+      else {
+        var tok = obj.getOwner().getType().getNameToken();
+        err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.NullChild, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
+      }
+    }
+
+    public static bool IsRuntimeMapped(Brick.Core.Object obj )
+    {
+      return obj.GetType().Assembly == typeof( Brick.DriveTrain.Gear ).Assembly;
     }
   }
 }

@@ -18,7 +18,7 @@ namespace AGXUnity.IO.BrickIO
       return ImportBrickFile( path, ReportToConsole, onSuccess );
     }
 
-    public static GameObject ImportBrickFile( string path, Func<Object, BrickContext, Object> errorReporter, Action<MapperData> onSuccess = null )
+    public static GameObject ImportBrickFile( string path, Action<Error> errorReporter, Action<MapperData> onSuccess = null )
     {
       var go = new GameObject( "Brick Root" );
       var root = go.AddComponent<BrickRoot>();
@@ -30,6 +30,8 @@ namespace AGXUnity.IO.BrickIO
       if ( loadedModel != null ) {
         var mapper = new BrickUnityMapper();
         mapper.MapObject( loadedModel, root.gameObject );
+        foreach (var error in mapper.Data.ErrorReporter.getErrors() )
+          errorReporter( error );
         onSuccess?.Invoke( mapper.Data );
       }
       else
@@ -63,14 +65,18 @@ namespace AGXUnity.IO.BrickIO
 
     public static BrickContext s_context;
 
-    public static Object ParseBrickSource( string source, Func<Object, BrickContext, Object> errorReporter )
+    public static Object ParseBrickSource( string source, Action<Error> errorReporter )
     {
-      Debug.Log( "Parse" );
       var context = CreateContext();
       s_context = context;
 
       var loadedObj = CoreSwig.loadModelFromFile( source, null, context );
-      loadedObj = errorReporter( loadedObj, context );
+
+      if ( context.hasErrors() ) {
+        loadedObj = null;
+        foreach ( var error in context.getErrors() )
+          errorReporter( error );
+      }
 
       return loadedObj;
     }
@@ -83,17 +89,13 @@ namespace AGXUnity.IO.BrickIO
 
       var imports = doc.findImports();
       return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
-      
+
     }
 
-    private static Object ReportToConsole( Object loadedObj, BrickContext context )
+    private static void ReportToConsole( Error error )
     {
       var ef = new ErrorFormatter();
-      foreach ( var error in context.getErrors() )
-        Debug.LogError( ef.format( error ) );
-      if ( context.hasErrors() )
-        return null;
-      return loadedObj;
+      Debug.LogError( ef.format( error ) );
     }
   }
 }

@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 using AGXUnity.IO.BrickIO;
+using Brick;
 
 namespace AGXUnityEditor.IO.BrickIO
 {
@@ -26,6 +27,7 @@ namespace AGXUnityEditor.IO.BrickIO
 
     public override void OnImportAsset( AssetImportContext ctx )
     {
+      Errors = new List<Error>();
       var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( "Assets/Brick/brick-icon.png" );
 
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) )
@@ -37,19 +39,15 @@ namespace AGXUnityEditor.IO.BrickIO
       ctx.SetMainObject( go );
     }
 
-    public Brick.Core.Object ReportErrors( Brick.Core.Object obj, Brick.Core.Api.BrickContext context )
+    public void ReportErrors( Brick.Error error )
     {
-      var ef = new Brick.ErrorFormatter();
-      foreach ( var error in context.getErrors() )
-        Errors.Add( new Error
-        {
-          message = new string( ef.format( error ).SkipWhile( c => c != ' ' ).Skip( 1 ).ToArray() ),
-          line    = (int)error.getLine(),
-          column  = (int)error.getColumn()
-        } );
-      if ( context.hasErrors() )
-        return null;
-      return obj;
+      var ef = new UnityBrickErrorFormatter();
+      Errors.Add( new Error
+      {
+        message = new string( ef.format( error ).SkipWhile( c => c != ' ' ).Skip( 1 ).ToArray() ),
+        line    = (int)error.getLine(),
+        column  = (int)error.getColumn()
+      } );
     }
   }
 }

@@ -24,6 +24,7 @@ namespace AGXUnity.IO.BrickIO
     {
       Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
+      Data.ErrorReporter = new Brick.ErrorReporter();
 
       MateMapper = new InteractionMapper( Data );
       TrackMapper = new TrackMapper( Data );
@@ -33,7 +34,7 @@ namespace AGXUnity.IO.BrickIO
     {
       Data.RootNode = rootNode;
       if ( obj is Brick.Physics3D.System system )
-        RootNode.AddChild( mapSystem( system ) );
+        Utils.AddChild( RootNode, mapSystem( system ), Data.ErrorReporter, system );
 
       var signals = Data.RootNode.AddComponent<BrickSignals>();
       mapSignals( obj, signals );
@@ -81,10 +82,9 @@ namespace AGXUnity.IO.BrickIO
       }),
         _ => null
       };
-      if ( go == null ) {
-        Debug.LogWarning( $"ContactGeometry type '{geom.GetType()}' is not supported" );
-        return null;
-      }
+      if ( go == null )
+        return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
+
       BrickObject.RegisterGameObject( geom.getName(), go );
 
       ShapeVisual.Create( go.GetComponent<Shape>() ).GetComponent<ShapeVisual>().SetMaterial( VisualMaterial );
@@ -99,16 +99,12 @@ namespace AGXUnity.IO.BrickIO
       BrickObject.RegisterGameObject( body.getName(), rb );
       var rbComp = rb.GetComponent<RigidBody>();
       Utils.mapLocalTransform( rb.transform, body.kinematics().local_transform() );
-      if(rb.transform.position.x == 0 && rb.transform.position.y == 0 && rb.transform.position.z == 0){
-        // TODO: This seems to happen occasionally on importing tracked models
-        Debug.LogWarning( "Error!" );
-      }
 
       rbComp.MassProperties.Mass.UseDefault = false;
       rbComp.MassProperties.Mass.UserValue = (float)body.inertia().mass();
 
       foreach ( var geom in body.getValues<Charges.ContactGeometry>() )
-        rb.AddChild( mapContactGeometry( geom ) );
+        Utils.AddChild( rb, mapContactGeometry( geom ), Data.ErrorReporter, geom );
 
       Data.BodyCache[ body ] = rbComp;
       return rb;
@@ -133,7 +129,7 @@ namespace AGXUnity.IO.BrickIO
       Data.FrameCache[ system ] = s;
 
       foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
-        s.AddChild( mapSystemPass1( subSystem ) );
+        Utils.AddChild( s, mapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
 
       // TODO: Map materials
 
@@ -150,7 +146,7 @@ namespace AGXUnity.IO.BrickIO
       // TODO: Map Physics1D RotationalBodies
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() )
-        s.AddChild( mapBody( body ) );
+        Utils.AddChild( s, mapBody( body ), Data.ErrorReporter, body );
 
       // TODO: Map terrains
     }
@@ -174,7 +170,8 @@ namespace AGXUnity.IO.BrickIO
         mapSystemPass4( subSystem );
 
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
-        s.AddChild( MateMapper.MapInteraction( interaction, system ) );
+        if(!Utils.IsRuntimeMapped( interaction ) )
+          Utils.AddChild( s, MateMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
