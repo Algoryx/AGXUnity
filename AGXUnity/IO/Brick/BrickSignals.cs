@@ -102,6 +102,13 @@ namespace AGXUnity.IO.BrickIO
             var motor = hinge.GetComponent<TargetSpeedController>();
             motor.Speed = -(float)realSig.value();
           }
+          else if ( target is Brick.Physics1D.Signals.RotationalVelocityMotor1DVelocityInput rvm1dvi ) {
+            var motor = Root.FindRuntimeMappedObject( rvm1dvi.motor().getName() );
+            if ( motor is agxDriveTrain.VelocityConstraint vc )
+              vc.setTargetVelocity( (float)realSig.value() );
+            else
+              Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
+          }
           else {
             Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
           }
@@ -134,6 +141,9 @@ namespace AGXUnity.IO.BrickIO
           var rb = go.GetComponent<RigidBody>();
           var pos = rb.LinearVelocity.ToLeftHanded();
           m_outputSignalList.Add( ValueOutputSignal.fromDirectionalVelocity( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbvo ) );
+        }
+        else {
+          Debug.LogWarning( $"Unhandled output type {signal.getType().getName()}" );
         }
       }
     }
