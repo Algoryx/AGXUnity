@@ -77,7 +77,7 @@ namespace AGXUnity.IO.BrickIO
       }
 
       Simulation.Instance.StepCallbacks.SimulationPreCollide += PreCollide;
-      Simulation.Instance.StepCallbacks.PostStepForward += Post;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += Post;
 
       return ok;
     }
