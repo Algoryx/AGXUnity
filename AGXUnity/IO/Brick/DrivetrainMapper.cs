@@ -1,3 +1,4 @@
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -97,7 +98,7 @@ namespace AGXUnity.IO.BrickIO
       agxPowerLine.Unit right_unit = MapperData.UnitCache.GetValueOrDefault(right_shaft,null);
 
       if ( drive_unit == null || left_unit == null || right_unit == null ) {
-        // Todo: Error reporting
+        // TODO: Error reporting
       }
       else {
         agxPowerLine.Side drive_side = drive_shaft.input() == drive_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
@@ -109,6 +110,9 @@ namespace AGXUnity.IO.BrickIO
       }
 
       agx_differential.setName( differential.getName() );
+
+      // TODO: remove lock
+      agx_differential.setLock( true );
 
       return agx_differential;
 
@@ -136,7 +140,7 @@ namespace AGXUnity.IO.BrickIO
       Brick.Physics1D.Charges.MateConnector connector_1d = actuator.connector_1d();
       Brick.Core.Object mate = actuator.mate_3d();
 
-      var agx_constraint = MapperData.Root.FindMappedObject( mate.getName() ).GetComponent<Constraint>();
+      var agx_constraint = MapperData.Root.FindMappedObject( mate.getName() ).GetInitializedComponent<Constraint>();
       if ( agx_constraint == null ) {
         Debug.LogError( $"Missing interaction for actuator: {actuator.getName()}" );
         return;
