@@ -18,7 +18,7 @@ namespace AGXUnity.IO.BrickIO
     public GameObject RootNode => Data.RootNode;
     public Material VisualMaterial => Data.VisualMaterial;
 
-    private InteractionMapper MateMapper { get; set; }
+    private InteractionMapper InteractionMapper { get; set; }
     private TrackMapper TrackMapper { get; set; }
 
     public BrickUnityMapper()
@@ -27,7 +27,7 @@ namespace AGXUnity.IO.BrickIO
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
       Data.ErrorReporter = new Brick.ErrorReporter();
 
-      MateMapper = new InteractionMapper( Data );
+      InteractionMapper = new InteractionMapper( Data );
       TrackMapper = new TrackMapper( Data );
     }
 
@@ -233,7 +233,7 @@ namespace AGXUnity.IO.BrickIO
 
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
         if ( !Utils.IsRuntimeMapped( interaction ) )
-          Utils.AddChild( s, MateMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+          Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
       // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
