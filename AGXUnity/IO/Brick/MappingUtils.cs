@@ -1,4 +1,5 @@
 using AGXUnity.Utils;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -35,18 +36,19 @@ namespace AGXUnity.IO.BrickIO
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
-    public static T ReportUnimplemented<T>(Brick.Core.Object obj, Brick.ErrorReporter err )
+    public static T ReportUnimplemented<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
       where T : class
     {
-      var tok = obj.getOwner().getType().getNameToken();
-      err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.Unimplemented, tok.line, tok.column,obj.getType().getOwningDocument().getSourceId() ) );
+      var member = obj.getOwner().getType().findFirstMember(obj.getName().Substring(obj.getName().LastIndexOf('.') + 1));
+      var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
+      err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.Unimplemented, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
       return null;
     }
 
     public static void AddChild( GameObject parent, GameObject child, Brick.ErrorReporter err, Brick.Core.Object obj )
     {
       if ( child != null )
-        parent.AddChild( child );  
+        parent.AddChild( child );
       else {
         var tok = obj.getOwner().getType().getNameToken();
         err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.NullChild, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );

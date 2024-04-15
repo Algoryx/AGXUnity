@@ -2,6 +2,7 @@ using AGXUnity.Collide;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using System;
+using System.Linq;
 using UnityEngine;
 
 using Bodies = Brick.Physics3D.Bodies;
@@ -35,6 +36,8 @@ namespace AGXUnity.IO.BrickIO
       Data.RootNode = rootNode;
       if ( obj is Brick.Physics3D.System system )
         Utils.AddChild( RootNode, mapSystem( system ), Data.ErrorReporter, system );
+      else if ( obj is Bodies.RigidBody body )
+        Utils.AddChild( RootNode, mapBody( body ), Data.ErrorReporter, body );
 
       var signals = Data.RootNode.AddComponent<BrickSignals>();
       mapSignals( obj, signals );
@@ -64,6 +67,62 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
+    UnityEngine.Mesh AGXMeshToUnityMesh( agxCollide.Trimesh inMesh )
+    {
+      var outMesh = new UnityEngine.Mesh();
+      var md = inMesh.getMeshData();
+      outMesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
+      outMesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+      outMesh.RecalculateBounds();
+      outMesh.RecalculateNormals();
+      return outMesh;
+    }
+
+    GameObject MapExternalTriMesh( Charges.ExternalTriMeshGeometry objGeom )
+    {
+      //std::filesystem::path source_id = m_source_id;
+      string path = objGeom.path();
+      Debug.Log( $"External obj file path: {path}" );
+
+      GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
+      var mesh = go.GetComponent<AGXUnity.Collide.Mesh>();
+
+      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+        // TODO: Error reporting
+        //var name = Brick::Internal::split(obj_geometry.getName(), ".").back();
+        //var member = obj_geometry.getOwner()->getType()->findFirstMember(name);
+        //var token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
+        //m_error_reporter->reportError( StringParameterError::create( AGXBrickError::PathNotAbsolute, token.line, token.column, m_source_id, obj_geometry.path() ) );
+        //geometry = new agxCollide::Geometry();
+      }
+      else {
+#if UNITY_EDITOR
+        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+
+        var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+
+        mesh.AddSourceObject( source );
+        mesh.transform.localScale = objGeom.scale().ToVector3();
+#else
+        var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+        mesh.AddSourceObject( AGXMeshToUnityMesh( source ) );
+#endif
+        //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
+        //if ( mesh == nullptr ) {
+        //  auto name = Brick::Internal::split(obj_geometry.getName(), ".").back();
+        //  auto member = obj_geometry.getOwner()->getType()->findFirstMember(name);
+        //  auto token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
+        //  m_error_reporter->reportError( Error::create( AGXBrickError::InvalidObjFile, token.line, token.column, m_source_id ) );
+        //  geometry = new agxCollide::Geometry();
+        //}
+        //else {
+        //  geometry = new agxCollide::Geometry( mesh );
+        //}
+      }
+
+      return go;
+    }
+
     GameObject mapContactGeometry( Charges.ContactGeometry geom )
     {
       GameObject go = geom switch
@@ -80,6 +139,7 @@ namespace AGXUnity.IO.BrickIO
         ucap.Radius = (float)bcap.radius();
         ucap.Height = (float)bcap.height();
       }),
+        Charges.ExternalTriMeshGeometry etm => MapExternalTriMesh(etm),
         _ => null
       };
       if ( go == null )
@@ -87,7 +147,9 @@ namespace AGXUnity.IO.BrickIO
 
       BrickObject.RegisterGameObject( geom.getName(), go );
 
-      ShapeVisual.Create( go.GetComponent<Shape>() ).GetComponent<ShapeVisual>().SetMaterial( VisualMaterial );
+      var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
+      var visual = visualGO.GetComponent<ShapeVisual>();
+      visual.SetMaterial( VisualMaterial );
       Utils.mapLocalTransform( go.transform, geom.local_transform() );
 
       return go;
