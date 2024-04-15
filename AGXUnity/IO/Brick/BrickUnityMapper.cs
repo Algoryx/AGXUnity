@@ -143,7 +143,7 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
         mapSystemPass2( subSystem );
 
-      // TODO: Map Physics1D RotationalBodies
+      // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() )
         Utils.AddChild( s, mapBody( body ), Data.ErrorReporter, body );
@@ -170,8 +170,10 @@ namespace AGXUnity.IO.BrickIO
         mapSystemPass4( subSystem );
 
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
-        if(!Utils.IsRuntimeMapped( interaction ) )
+        if ( !Utils.IsRuntimeMapped( interaction ) )
           Utils.AddChild( s, MateMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+
+      // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;

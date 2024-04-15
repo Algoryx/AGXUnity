@@ -53,9 +53,20 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    public static bool IsRuntimeMapped(Brick.Core.Object obj )
+    private static HashSet<System.Type> s_rtMapped = new HashSet<System.Type>()
     {
-      return obj.GetType().Assembly == typeof( Brick.DriveTrain.Gear ).Assembly;
+      typeof(Brick.Physics1D.Interactions.RotationalVelocityMotor),
+      typeof(Brick.DriveTrain.Gear),
+      typeof(Brick.DriveTrain.Engine),
+      typeof(Brick.DriveTrain.HingeActuator),
+      typeof(Brick.DriveTrain.PrismaticActuator),
+      typeof(Brick.DriveTrain.Shaft),
+      typeof(Brick.DriveTrain.TorqueMotor)
+    };
+
+    public static bool IsRuntimeMapped( Brick.Core.Object obj )
+    {
+      return s_rtMapped.Contains( obj.GetType() );
     }
   }
 }
