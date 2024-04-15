@@ -30,7 +30,12 @@ namespace AGXUnityEditor.IO.BrickIO
       Errors = new List<Error>();
       var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( "Assets/Brick/brick-icon.png" );
 
-      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) )
+      // Todo: Add support for dependecy-based reimport
+      //foreach ( var dep in dependencies )
+      //  ctx.DependsOnSourceAsset( dep );
+
+      // Todo: Investigate why selecting config.brick files in the project view crashes unity
+      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
         return;
 
       var go = BrickImporter.ImportBrickFile( ctx.assetPath, ReportErrors, data => ctx.AddObjectToAsset( "Default Material", data.VisualMaterial ) );
