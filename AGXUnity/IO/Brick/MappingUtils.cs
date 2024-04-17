@@ -59,7 +59,7 @@ namespace AGXUnity.IO.BrickIO
     {
       typeof(Brick.Physics1D.Interactions.RotationalVelocityMotor),
       typeof(Brick.DriveTrain.Gear),
-      typeof(Brick.DriveTrain.Engine),
+      typeof(Brick.DriveTrain.CombustionEngine),
       typeof(Brick.DriveTrain.HingeActuator),
       typeof(Brick.DriveTrain.PrismaticActuator),
       typeof(Brick.DriveTrain.Shaft),
