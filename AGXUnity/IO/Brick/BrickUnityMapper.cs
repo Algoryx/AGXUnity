@@ -1,6 +1,7 @@
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
+using Brick.Simulation;
 using System;
 using System.Linq;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace AGXUnity.IO.BrickIO
     public GameObject MapObject( Object obj, GameObject rootNode )
     {
       Data.RootNode = rootNode;
+      Data.PrefabLocalData = rootNode.AddComponent<SavedPrefabLocalData>();
       if ( obj is Brick.Physics3D.System system )
         Utils.AddChild( RootNode, mapSystem( system ), Data.ErrorReporter, system );
       else if ( obj is Bodies.RigidBody body )
@@ -67,7 +69,7 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    UnityEngine.Mesh AGXMeshToUnityMesh( agxCollide.Trimesh inMesh )
+    UnityEngine.Mesh AGXMeshToUnityMesh( agxCollide.Mesh inMesh )
     {
       var outMesh = new UnityEngine.Mesh();
       var md = inMesh.getMeshData();
@@ -174,6 +176,53 @@ namespace AGXUnity.IO.BrickIO
       return rb;
     }
 
+    void mapSystemToCollisionGroup( Brick.Physics3D.System system, Brick.Simulation.CollisionGroup collision_group )
+    {
+      if ( Data.SystemCache.ContainsKey( system ) ) {
+        var sysGO = Data.SystemCache[ system ];
+        var cg = sysGO.GetOrCreateComponent<AGXUnity.CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void mapBodyToCollisionGroup( Bodies.Body body, CollisionGroup collision_group )
+    {
+      if ( Data.BodyCache.ContainsKey( body ) ) {
+        var rb = Data.BodyCache[body];
+        var cg = rb.gameObject.GetOrCreateComponent<AGXUnity.CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void mapGeometryToCollisionGroup( Charges.ContactGeometry geometry, CollisionGroup collision_group )
+    {
+      if ( Data.GeometryCache.ContainsKey( geometry ) ) {
+        var shape = Data.GeometryCache[geometry];
+        var cg = shape.gameObject.GetOrCreateComponent<AGXUnity.CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), false );
+      }
+    }
+
+    void mapCollisionGroup( CollisionGroup collision_group )
+    {
+      foreach ( var system in collision_group.systems() )
+        if ( system is Brick.Physics3D.System system3d )
+          mapSystemToCollisionGroup( system3d, collision_group );
+
+      foreach ( var body in collision_group.bodies() )
+        if ( body is Bodies.Body body3d )
+          mapBodyToCollisionGroup( body3d, collision_group );
+
+      foreach ( var geometry in collision_group.geometries() )
+        if ( geometry is Charges.ContactGeometry geometry3d )
+          mapGeometryToCollisionGroup( geometry3d, collision_group );
+    }
+
+    void mapDisabledPair(DisableCollisionPair pair )
+    {
+      Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
+    }
+
     GameObject mapSystem( Brick.Physics3D.System system )
     {
       var s = mapSystemPass1( system );
@@ -239,8 +288,15 @@ namespace AGXUnity.IO.BrickIO
 
       // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
+      foreach ( var collision_group in system.getValues<CollisionGroup>() )
+        mapCollisionGroup( collision_group );
+
+
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      foreach (var disabledPair in system.getValues<Brick.Simulation.DisableCollisionPair>() )
+        mapDisabledPair( disabledPair );
     }
   }
 }

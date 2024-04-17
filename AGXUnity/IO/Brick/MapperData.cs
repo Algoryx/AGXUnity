@@ -10,6 +10,7 @@ namespace AGXUnity.IO.BrickIO
     public Material VisualMaterial { get; set; } = null;
     public ErrorReporter ErrorReporter { get; set; } = null;
 
+    public SavedPrefabLocalData PrefabLocalData { get; set; } = null;
     public BrickAgx.AgxCache AgxCache { get; } = new BrickAgx.AgxCache();
 
     public Dictionary<Brick.Physics.Charges.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<Brick.Physics.Charges.ContactGeometry, Collide.Shape>();
