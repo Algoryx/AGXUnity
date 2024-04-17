@@ -151,7 +151,9 @@ namespace AGXUnity.IO.BrickIO
       var visual = visualGO.GetComponent<ShapeVisual>();
       visual.SetMaterial( VisualMaterial );
       Utils.mapLocalTransform( go.transform, geom.local_transform() );
-
+      var shapeComp = go.GetComponent<Shape>();
+      shapeComp.CollisionsEnabled = geom.enable_collisions();
+      Data.GeometryCache[ geom ] = shapeComp;
       return go;
     }
 
