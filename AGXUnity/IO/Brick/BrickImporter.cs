@@ -57,6 +57,7 @@ namespace AGXUnity.IO.BrickIO
       UrdfSwig.Urdf_register_factories_cs( context );
       VehiclesSwig.Vehicles_register_factories_cs( context );
       VisualsSwig.Visuals_register_factories_cs( context );
+      UrdfSwig.Urdf_register_factories_cs( context );
 
       AgxBrick.register_plugins( context );
 
