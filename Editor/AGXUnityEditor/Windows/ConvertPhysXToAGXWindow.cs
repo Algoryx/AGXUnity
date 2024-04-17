@@ -330,6 +330,11 @@ namespace AGXUnityEditor.Windows
     {
       GatherSceneObjects();
 
+      m_statusIcons = new Texture2D[ 3 ];
+      m_statusIcons[ 0 ] = IconManager.GetIcon( "convertible_material" );
+      m_statusIcons[ 1 ] = IconManager.GetIcon( "compatible_material" );
+      m_statusIcons[ 2 ] = IconManager.GetIcon( "pass" );
+      
       Undo.undoRedoPerformed += () => Repopulate(false);
     }
 
