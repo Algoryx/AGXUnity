@@ -84,6 +84,8 @@ namespace AGXUnityEditor.Windows
       foreach (var type in m_basicColliderTypes)
         m_physXAssets.AddRange(FindColliderAssetData(type, PhysXType.Collider));
 
+      // TODO Need to take care of DeformableTerrainPager before this works as intended
+      /*
       var terrains = FindColliderAssetData(typeof(TerrainCollider), PhysXType.Collider);
       for (int i = terrains.Count; --i >= 0;)
       {
@@ -91,6 +93,7 @@ namespace AGXUnityEditor.Windows
           terrains.RemoveAt(i);
       }
       m_physXAssets.AddRange(terrains);
+      */
 
       m_physXAssets.AddRange(FindRigidbodyData());
 
@@ -334,7 +337,7 @@ namespace AGXUnityEditor.Windows
       m_statusIcons[ 0 ] = IconManager.GetIcon( "convertible_material" );
       m_statusIcons[ 1 ] = IconManager.GetIcon( "compatible_material" );
       m_statusIcons[ 2 ] = IconManager.GetIcon( "pass" );
-      
+
       Undo.undoRedoPerformed += () => Repopulate(false);
     }
 
