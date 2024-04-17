@@ -25,10 +25,10 @@ namespace AGXUnity.IO.BrickIO
 
       root.BrickAssetPath = path;
 
-      var loadedModel = ParseBrickSource(root.BrickFile, errorReporter);
+      var mapper = new BrickUnityMapper();
+      var loadedModel = ParseBrickSource(root.BrickFile, errorReporter, mapper.Data.AgxCache);
 
       if ( loadedModel != null ) {
-        var mapper = new BrickUnityMapper();
         mapper.MapObject( loadedModel, root.gameObject );
         foreach (var error in mapper.Data.ErrorReporter.getErrors() )
           errorReporter( error );
@@ -40,7 +40,7 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    private static BrickContext CreateContext()
+    private static BrickContext CreateContext( BrickAgx.AgxCache cache = null )
     {
       std.StringVector bundle_paths = new std.StringVector { BrickDir + "/AGXUnity/Brick" };
 
@@ -59,16 +59,16 @@ namespace AGXUnity.IO.BrickIO
       VisualsSwig.Visuals_register_factories_cs( context );
       UrdfSwig.Urdf_register_factories_cs( context );
 
-      AgxBrick.register_plugins( context );
+      AgxBrick.register_plugins( context, cache);
 
       return context;
     }
 
     public static BrickContext s_context;
 
-    public static Object ParseBrickSource( string source, Action<Error> errorReporter )
+    public static Object ParseBrickSource( string source, Action<Error> errorReporter, BrickAgx.AgxCache cache = null )
     {
-      var context = CreateContext();
+      var context = CreateContext(cache);
       s_context = context;
 
       var loadedObj = CoreSwig.loadModelFromFile( source, null, context );
