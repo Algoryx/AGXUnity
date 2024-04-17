@@ -60,6 +60,91 @@ namespace AGXUnity.IO.BrickIO
 
     }
 
+    GameObject mapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )
+    {
+      GameObject go = new GameObject();
+
+      var rd      = shape.getRenderData();
+      var meshes  = MeshSplitter.Split( rd.getVertexArray(),
+                                        rd.getIndexArray(),
+                                        v => v.ToHandedVector3()).Meshes;
+
+      var filter = go.AddComponent<MeshFilter>();
+      var renderer = go.AddComponent<MeshRenderer>();
+
+      meshes[ 0 ].name = visual.getName();
+      filter.mesh = meshes[ 0 ];
+      Data.CacheMappedMeshes.Add( meshes[ 0 ] );
+
+      return go;
+    }
+
+    //GameObject mapVisuaExternallTrimesh( Brick.Visuals.Geometries.ExternalTriMeshGeometry mesh )
+    //{
+    //  var go = new GameObject();
+    //  var filter = go.AddComponent<MeshFilter>();
+    //  var renderer = go.AddComponent<MeshRenderer>();
+
+    //  var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+    //                                          collisionData.getIndices(),
+    //                                          v => v.ToHandedVector3()).Meshes;
+    //}
+
+    GameObject mapVisualGeometry( Brick.Visuals.Geometries.Geometry visual )
+    {
+      GameObject go = null;
+      var uuid_annots = visual.getType().findAnnotations("uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
+          if ( shape != null ) {
+            go = mapCachedVisual( shape.first, shape.second, visual );
+
+            if ( go == null ) {
+              Debug.Log( "uh oh" );
+              return null;
+            }
+          }
+        }
+      }
+
+      if ( go == null ) {
+        go = visual switch
+        {
+          Brick.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
+          Brick.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
+          Brick.Visuals.Geometries.ExternalTriMeshGeometry etmg => null,
+          Brick.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
+          _ => null
+        };
+
+        switch ( visual ) {
+          case Brick.Visuals.Geometries.Box box:
+            go.transform.localScale = box.size().ToVector3();
+            break;
+          case Brick.Visuals.Geometries.Cylinder cyl:
+            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height(), (float)cyl.radius() );
+            break;
+          case Brick.Visuals.Geometries.Sphere sphere:
+            go.transform.localScale = Vector3.one * (float)sphere.radius();
+            break;
+          default:
+            break;
+        };
+      }
+
+      if ( go == null )
+        return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
+
+      BrickObject.RegisterGameObject( visual.getName(), go );
+      Utils.mapLocalTransform( go.transform, visual.local_transform() );
+
+      go.GetComponent<MeshRenderer>().material = Data.VisualMaterial;
+
+      return go;
+    }
+
     GameObject CreateShape<UnityType, BrickType>( BrickType brick, Action<BrickType, UnityType> setup )
       where UnityType : Shape
       where BrickType : Charges.ContactGeometry
@@ -200,7 +285,7 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
     
-    GameObject mapContactGeometry( Charges.ContactGeometry geom )
+    GameObject mapContactGeometry( Charges.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
       var uuid_annots = geom.getType().findAnnotations("uuid");
@@ -244,9 +329,12 @@ namespace AGXUnity.IO.BrickIO
 
       BrickObject.RegisterGameObject( geom.getName(), go );
 
-      var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
-      var visual = visualGO.GetComponent<ShapeVisual>();
-      visual.SetMaterial( VisualMaterial );
+      if ( addVisuals ) {
+        var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
+        var visual = visualGO.GetComponent<ShapeVisual>();
+        visual.SetMaterial( VisualMaterial );
+      }
+
       Utils.mapLocalTransform( go.transform, geom.local_transform() );
       var shapeComp = go.GetComponent<Shape>();
       shapeComp.CollisionsEnabled = geom.enable_collisions();
@@ -264,8 +352,22 @@ namespace AGXUnity.IO.BrickIO
       rbComp.MassProperties.Mass.UseDefault = false;
       rbComp.MassProperties.Mass.UserValue = (float)body.inertia().mass();
 
+      bool hasVisuals = false;
+      foreach ( var visual in body.getValues<Brick.Visuals.Geometries.Geometry>() ) {
+        hasVisuals = true;
+        Utils.AddChild( rb, mapVisualGeometry( visual ), Data.ErrorReporter, visual );
+      }
+
       foreach ( var geom in body.getValues<Charges.ContactGeometry>() )
-        Utils.AddChild( rb, mapContactGeometry( geom ), Data.ErrorReporter, geom );
+        Utils.AddChild( rb, mapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
+
+      foreach ( var mc in body.getValues<Charges.MateConnector>() ) {
+        if ( mc.getType().getName() == "ExternalConnector" ) {
+          var mapped = InteractionMapper.MapExternalMateConnector( mc );
+          mapped.GetComponent<ExternalConnector>().ConnectorFrame.SetParent( rb );
+          Utils.AddChild( rb, mapped, Data.ErrorReporter, mc );
+        }
+      }
 
       Data.BodyCache[ body ] = rbComp;
       return rb;
