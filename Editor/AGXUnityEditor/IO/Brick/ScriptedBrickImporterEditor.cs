@@ -73,6 +73,7 @@ namespace AGXUnityEditor.IO.BrickIO
           ve.Add(new Label() { text = dep } );
         }
       }
+      ve.Add( new Label() { text = $"Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
       ve.Add( new IMGUIContainer( () => base.ApplyRevertGUI() ) );
       return ve;
     }

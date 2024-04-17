@@ -25,6 +25,9 @@ namespace AGXUnityEditor.IO.BrickIO
     [SerializeField]
     public List<Error> Errors;
 
+    [field: SerializeField]
+    public float ImportTime { get; set; }
+
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
@@ -34,11 +37,15 @@ namespace AGXUnityEditor.IO.BrickIO
       //foreach ( var dep in dependencies )
       //  ctx.DependsOnSourceAsset( dep );
 
+      ImportTime = 0;
+
       // Todo: Investigate why selecting config.brick files in the project view crashes unity
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
         return;
 
-      var go = BrickImporter.ImportBrickFile( ctx.assetPath, ReportErrors, data => ctx.AddObjectToAsset( "Default Material", data.VisualMaterial ) );
+      var start = System.DateTime.Now;
+      var end = System.DateTime.Now;
+      ImportTime = (float)( end - start ).TotalSeconds;
 
       ctx.AddObjectToAsset( "Root", go, icon );
       ctx.SetMainObject( go );
