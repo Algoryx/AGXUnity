@@ -125,25 +125,120 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
+    private T CreateShapeHelper<T>( ref GameObject go )
+      where T : Shape
+    {
+      go = Factory.Create<T>();
+      return go.GetComponent<T>();
+    }
+
+    GameObject mapCachedShape( agxCollide.Shape shape, Charges.ContactGeometry geom )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      GameObject go = null;
+
+      if ( type == agxCollide.Shape.Type.BOX ) {
+        var box = CreateShapeHelper<Box>(ref go);
+        box.HalfExtents = shape.asBox().getHalfExtents().ToVector3();
+      }
+      else if ( type == agxCollide.Shape.Type.CYLINDER ) {
+        var cylinder    = CreateShapeHelper<Cylinder>(ref go);
+        cylinder.Radius = Convert.ToSingle( shape.asCylinder().getRadius() );
+        cylinder.Height = Convert.ToSingle( shape.asCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
+        var hollowCylinder       = CreateShapeHelper<HollowCylinder>( ref go );
+        hollowCylinder.Thickness = Convert.ToSingle( shape.asHollowCylinder().getThickness() );
+        hollowCylinder.Radius    = Convert.ToSingle( shape.asHollowCylinder().getOuterRadius() );
+        hollowCylinder.Height    = Convert.ToSingle( shape.asHollowCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONE ) {
+        var cone          = CreateShapeHelper < Cone >(ref go);
+        cone.BottomRadius = Convert.ToSingle( shape.asCone().getBottomRadius() );
+        cone.TopRadius    = Convert.ToSingle( shape.asCone().getTopRadius() );
+        cone.Height       = Convert.ToSingle( shape.asCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CONE ) {
+        var hollowCone          = CreateShapeHelper < HollowCone >(ref go);
+        hollowCone.Thickness    = Convert.ToSingle( shape.asHollowCone().getThickness() );
+        hollowCone.BottomRadius = Convert.ToSingle( shape.asHollowCone().getBottomOuterRadius() );
+        hollowCone.TopRadius    = Convert.ToSingle( shape.asHollowCone().getTopOuterRadius() );
+        hollowCone.Height       = Convert.ToSingle( shape.asHollowCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CAPSULE ) {
+        var capsule    = CreateShapeHelper < Capsule >(ref go);
+        capsule.Radius = Convert.ToSingle( shape.asCapsule().getRadius() );
+        capsule.Height = Convert.ToSingle( shape.asCapsule().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.SPHERE ) {
+        var sphere    = CreateShapeHelper < Sphere >(ref go);
+        sphere.Radius = Convert.ToSingle( shape.asSphere().getRadius() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONVEX ||
+                type == agxCollide.Shape.Type.TRIMESH ||
+                type == agxCollide.Shape.Type.HEIGHT_FIELD ) {
+        var mesh          = CreateShapeHelper < Collide.Mesh >(ref go);
+        var collisionData = shape.asMesh().getMeshData();
+        var nativeToWorld = shape.getTransform();
+        var meshToLocal   = mesh.transform.worldToLocalMatrix;
+
+        var sourceObjects = mesh.SourceObjects;
+        var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+                                                collisionData.getIndices(),
+                                                v => v.ToHandedVector3()).Meshes;
+        foreach ( var meshSource in meshes ) {
+          meshSource.name = geom.getName();
+          Data.CacheMappedMeshes.Add( meshSource );
+          mesh.AddSourceObject( meshSource );
+        }
+      }
+      else {
+        Debug.LogWarning( "Unsupported shape type: " + type );
+        return null;
+      }
+
+      return go;
+    }
+    
     GameObject mapContactGeometry( Charges.ContactGeometry geom )
     {
-      GameObject go = geom switch
-      {
-        Charges.Box box => CreateShape<Box,Charges.Box>(box,(bbox,ubox) => ubox.HalfExtents =  bbox.size().ToVector3()/2),
-        Charges.Cylinder cyl => CreateShape<Cylinder,Charges.Cylinder>(cyl,(bcyl,ucyl) =>
-      {
-        ucyl.Radius = (float)bcyl.radius();
-        ucyl.Height = (float)bcyl.height();
-      }),
-        Charges.Sphere sphere => CreateShape<Sphere,Charges.Sphere>(sphere,(bsphere,usphere) => usphere.Radius = (float)bsphere.radius()),
-        Charges.Capsule cap => CreateShape<Capsule,Charges.Capsule>(cap,(bcap,ucap) =>
-      {
-        ucap.Radius = (float)bcap.radius();
-        ucap.Height = (float)bcap.height();
-      }),
-        Charges.ExternalTriMeshGeometry etm => MapExternalTriMesh(etm),
-        _ => null
-      };
+      GameObject go = null;
+      var uuid_annots = geom.getType().findAnnotations("uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeCS( uuid );
+          if ( shape != null ) {
+            go = mapCachedShape( shape, geom );
+
+            if ( go == null ) {
+              Debug.Log( "uh oh" );
+              return null;
+            }
+          }
+        }
+      }
+
+      if ( go == null ) {
+        go = geom switch
+        {
+          Charges.Box box => CreateShape<Box, Charges.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
+          Charges.Cylinder cyl => CreateShape<Cylinder, Charges.Cylinder>( cyl, ( bcyl, ucyl ) =>
+        {
+          ucyl.Radius = (float)bcyl.radius();
+          ucyl.Height = (float)bcyl.height();
+        } ),
+          Charges.Sphere sphere => CreateShape<Sphere, Charges.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
+          Charges.Capsule cap => CreateShape<Capsule, Charges.Capsule>( cap, ( bcap, ucap ) =>
+        {
+          ucap.Radius = (float)bcap.radius();
+          ucap.Height = (float)bcap.height();
+        } ),
+          Charges.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
+          _ => null
+        };
+      }
+
       if ( go == null )
         return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
 

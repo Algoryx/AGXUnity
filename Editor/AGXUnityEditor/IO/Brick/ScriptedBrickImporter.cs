@@ -44,11 +44,20 @@ namespace AGXUnityEditor.IO.BrickIO
         return;
 
       var start = System.DateTime.Now;
+      var go = BrickImporter.ImportBrickFile( ctx.assetPath, ReportErrors, data => OnSuccess(ctx,data) );
       var end = System.DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 
       ctx.AddObjectToAsset( "Root", go, icon );
       ctx.SetMainObject( go );
+    }
+
+    public void OnSuccess( AssetImportContext ctx, MapperData data )
+    {
+      ctx.AddObjectToAsset( "Default Material", data.VisualMaterial );
+      foreach( var mesh in data.CacheMappedMeshes ) {
+        ctx.AddObjectToAsset( mesh.name, mesh );
+      }
     }
 
     public void ReportErrors( Brick.Error error )
