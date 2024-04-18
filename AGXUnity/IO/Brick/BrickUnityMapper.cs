@@ -1,4 +1,5 @@
 using AGXUnity.Collide;
+using AGXUnity.Model;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using Brick.Simulation;
@@ -411,6 +412,16 @@ namespace AGXUnity.IO.BrickIO
       return rb;
     }
 
+    void mapShovel(Brick.Terrain.Shovel shovel )
+    {
+      var body = Data.BodyCache[shovel.body()];
+      var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
+      mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
+      mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
+      mapped.CuttingDirection = Line.Create( body.gameObject, Vector3.zero, shovel.cutting_direction().ToHandedVector3() );
+      mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
+    }
+
     void mapSystemToCollisionGroup( Brick.Physics3D.System system, Brick.Simulation.CollisionGroup collision_group )
     {
       if ( Data.SystemCache.ContainsKey( system ) ) {
@@ -453,7 +464,7 @@ namespace AGXUnity.IO.BrickIO
           mapGeometryToCollisionGroup( geometry3d, collision_group );
     }
 
-    void mapDisabledPair(DisableCollisionPair pair )
+    void mapDisabledPair( DisableCollisionPair pair )
     {
       Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
     }
@@ -521,6 +532,9 @@ namespace AGXUnity.IO.BrickIO
         if ( !Utils.IsRuntimeMapped( interaction ) )
           Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
+      foreach ( var shovel in system.getValues<Brick.Terrain.Shovel>() )
+        mapShovel( shovel );
+
       // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
       foreach ( var collision_group in system.getValues<CollisionGroup>() )
@@ -530,7 +544,7 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-      foreach (var disabledPair in system.getValues<Brick.Simulation.DisableCollisionPair>() )
+      foreach ( var disabledPair in system.getValues<Brick.Simulation.DisableCollisionPair>() )
         mapDisabledPair( disabledPair );
     }
   }
