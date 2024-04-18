@@ -966,45 +966,6 @@ namespace AGXUnityEditor.IO
                                                  } );
     }
 
-    private static void RestoreLocalDataFrom( Material thisMaterial, agxCollide.RenderMaterial nativeMaterial )
-    {
-      if ( nativeMaterial == null )
-        return;
-
-      var renderPipeline = RenderingUtils.DetectPipeline();
-      var metallic = 0.3f;
-      if ( renderPipeline == RenderingUtils.PipelineType.HDRP ) {
-        thisMaterial.shader = Shader.Find( "HDRP/Lit" );
-        if ( nativeMaterial.hasEmissiveColor() )
-          thisMaterial.SetVector( "_EmissiveColor", nativeMaterial.getEmissiveColor().ToColor() );
-
-        metallic = Mathf.Pow( metallic, 2.2f );
-      }
-      else if ( renderPipeline == RenderingUtils.PipelineType.Universal ) {
-        thisMaterial.shader = Shader.Find( "Universal Render Pipeline/Lit" );
-        if ( nativeMaterial.hasEmissiveColor() )
-          thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
-      }
-      else {
-        if ( renderPipeline != RenderingUtils.PipelineType.BuiltIn )
-          Debug.LogWarning( "Unsupported render pipeline! Imported render materials might not work." );
-
-        thisMaterial.shader = Shader.Find( "Standard" );
-        if ( nativeMaterial.hasEmissiveColor() )
-          thisMaterial.SetVector( "_EmissionColor", nativeMaterial.getEmissiveColor().ToColor() );
-      }
-
-      if ( nativeMaterial.hasDiffuseColor() ) {
-        var color = nativeMaterial.getDiffuseColor().ToColor();
-        color.a = 1.0f - nativeMaterial.getTransparency();
-        RenderingUtils.SetColor( thisMaterial, color );
-      }
-      thisMaterial.SetFloat( "_Metallic", metallic );
-      RenderingUtils.SetSmoothness(thisMaterial, 0.8f );
-      if ( nativeMaterial.getTransparency() > 0.0f )
-        RenderingUtils.SetTransparencyEnabled( thisMaterial, true );
-    }
-
     private Dictionary<uint, Material> m_materialLibrary = new Dictionary<uint, Material>();
 
     private Material MaterialFactory( agxCollide.RenderMaterial nativeMaterial )
@@ -1071,7 +1032,7 @@ namespace AGXUnityEditor.IO
 
       return FileInfo.ObjectDb.GetOrCreateMaterial( UpdateMaterialLibrary( material, nativeMaterial ),
                                                     name,
-                                                    m => RestoreLocalDataFrom( m, nativeMaterial ),
+                                                    m => m.RestoreLocalDataFrom( nativeMaterial ),
                                                     () => MaterialFactory( nativeMaterial ) );
     }
 
