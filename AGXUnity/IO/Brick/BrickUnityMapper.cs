@@ -60,23 +60,39 @@ namespace AGXUnity.IO.BrickIO
 
     }
 
-    GameObject mapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )
+    Tuple<GameObject, bool> mapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )
     {
       GameObject go = new GameObject();
 
       var rd      = shape.getRenderData();
-      var meshes  = MeshSplitter.Split( rd.getVertexArray(),
-                                        rd.getIndexArray(),
-                                        v => v.ToHandedVector3()).Meshes;
 
       var filter = go.AddComponent<MeshFilter>();
       var renderer = go.AddComponent<MeshRenderer>();
 
-      meshes[ 0 ].name = visual.getName();
-      filter.mesh = meshes[ 0 ];
-      Data.CacheMappedMeshes.Add( meshes[ 0 ] );
+      renderer.enabled = rd.getShouldRender();
 
-      return go;
+      // TODO: Should these be cached? Can they?
+      var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
+      mesh.name = visual.getName();
+      Data.CacheMappedMeshes.Add( mesh );
+      filter.mesh = mesh;
+
+      var rm = rd.getRenderMaterial();
+      if ( rm != null ) {
+        if ( !Data.MappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
+          mat = new Material( Shader.Find( "Standard" ) );
+          mat.RestoreLocalDataFrom( rm );
+          // TODO: Figure out a better name than the hash
+          mat.name = rm.getHash().ToString();
+          Data.MappedRenderMaterialCache[ rm.getHash() ] = mat;
+          Data.CacheMappedMaterials.Add( mat );
+        }
+
+        renderer.material = mat;
+        return Tuple.Create( go, true );
+      }
+
+      return Tuple.Create( go, false );
     }
 
     //GameObject mapVisuaExternallTrimesh( Brick.Visuals.Geometries.ExternalTriMeshGeometry mesh )
@@ -93,13 +109,14 @@ namespace AGXUnity.IO.BrickIO
     GameObject mapVisualGeometry( Brick.Visuals.Geometries.Geometry visual )
     {
       GameObject go = null;
+      bool cachedMat = false;
       var uuid_annots = visual.getType().findAnnotations("uuid");
       foreach ( var uuid_annot in uuid_annots ) {
         if ( uuid_annot.isString() ) {
           var uuid = uuid_annot.asString();
           var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
           if ( shape != null ) {
-            go = mapCachedVisual( shape.first, shape.second, visual );
+            (go, cachedMat) = mapCachedVisual( shape.first, shape.second, visual );
 
             if ( go == null ) {
               Debug.Log( "uh oh" );
@@ -139,8 +156,8 @@ namespace AGXUnity.IO.BrickIO
 
       BrickObject.RegisterGameObject( visual.getName(), go );
       Utils.mapLocalTransform( go.transform, visual.local_transform() );
-
-      go.GetComponent<MeshRenderer>().material = Data.VisualMaterial;
+      if ( !cachedMat )
+        go.GetComponent<MeshRenderer>().material = Data.VisualMaterial;
 
       return go;
     }
@@ -156,10 +173,27 @@ namespace AGXUnity.IO.BrickIO
 
     UnityEngine.Mesh AGXMeshToUnityMesh( agxCollide.Mesh inMesh )
     {
-      var outMesh = new UnityEngine.Mesh();
       var md = inMesh.getMeshData();
-      outMesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
-      outMesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+      return AGXMeshToUnityMesh(md.getVertices(),md.getIndices());
+    }
+
+    UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices )
+    {
+      var outMesh = new UnityEngine.Mesh();
+      Vector3[] uVertices = new Vector3[vertices.Count];
+      for ( int i = 0; i < vertices.Count; i++ )
+        uVertices[ i ].Set( (float)-vertices[ i ].x, (float)vertices[ i ].y, (float)vertices[ i ].z );
+      outMesh.vertices = uVertices;
+      if(vertices.Count > UInt16.MaxValue)
+        outMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+      
+      int[] uIndices = new int[indices.Count];
+      for(int i = 0; i < indices.Count; i += 3 ) {
+        uIndices[ i ]     = (int)indices[ i ];
+        uIndices[ i + 1 ] = (int)indices[ i + 2 ];
+        uIndices[ i + 2 ] = (int)indices[ i + 1 ];
+      }
+      outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
       outMesh.RecalculateBounds();
       outMesh.RecalculateNormals();
       return outMesh;
@@ -267,15 +301,19 @@ namespace AGXUnity.IO.BrickIO
         var nativeToWorld = shape.getTransform();
         var meshToLocal   = mesh.transform.worldToLocalMatrix;
 
-        var sourceObjects = mesh.SourceObjects;
-        var meshes        = MeshSplitter.Split( collisionData.getVertices(),
-                                                collisionData.getIndices(),
-                                                v => v.ToHandedVector3()).Meshes;
-        foreach ( var meshSource in meshes ) {
-          meshSource.name = geom.getName();
-          Data.CacheMappedMeshes.Add( meshSource );
-          mesh.AddSourceObject( meshSource );
-        }
+        var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
+        meshSource.name = geom.getName();
+        Data.CacheMappedMeshes.Add( meshSource );
+        mesh.AddSourceObject( meshSource );
+
+        //var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+        //                                        collisionData.getIndices(),
+        //                                        v => v.ToHandedVector3()).Meshes;
+        //foreach ( var meshSource in meshes ) {
+        //  meshSource.name = geom.getName();
+        //  Data.CacheMappedMeshes.Add( meshSource );
+        //  mesh.AddSourceObject( meshSource );
+        //}
       }
       else {
         Debug.LogWarning( "Unsupported shape type: " + type );

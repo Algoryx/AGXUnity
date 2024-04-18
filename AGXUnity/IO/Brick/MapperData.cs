@@ -18,6 +18,9 @@ namespace AGXUnity.IO.BrickIO
     public Dictionary<Brick.Physics.System, GameObject> SystemCache { get; } = new Dictionary<Brick.Physics.System, GameObject>();
     public Dictionary<Brick.Core.Object, GameObject> FrameCache { get; } = new Dictionary<Brick.Core.Object, GameObject>();
 
+    public Dictionary<uint, Material> MappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
+
     public List<Mesh> CacheMappedMeshes { get; } = new List<Mesh>();
+    public List<Material> CacheMappedMaterials { get; } = new List<Material>();
   }
 }

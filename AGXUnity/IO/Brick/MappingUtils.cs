@@ -36,6 +36,12 @@ namespace AGXUnity.IO.BrickIO
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
+    public static void mapLocalTransform( Transform transform, Brick.Math.AffineTransform local_transform )
+    {
+      transform.localPosition = local_transform.position().ToHandedVector3();
+      transform.localRotation = local_transform.rotation().ToHandedQuaternion();
+    }
+
     public static T ReportUnimplemented<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
       where T : class
     {
