@@ -130,6 +130,16 @@ namespace AGXUnity.IO.BrickIO
           var constraint = hinge.GetComponent<Constraint>();
           m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( -constraint.GetCurrentSpeed(), havo ) );
         }
+        if ( signal is Signals.PrismaticPositionOutput ppo ) {
+          var prismatic = Root.FindMappedObject( ppo.prismatic().getName() );
+          var constraint = prismatic.GetComponent<Constraint>();
+          m_outputSignalList.Add( ValueOutputSignal.fromDistance( -constraint.GetCurrentAngle(), ppo ) );
+        }
+        else if ( signal is Signals.PrismaticVelocityOutput pvo ) {
+          var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
+          var constraint = prismatic.GetComponent<Constraint>();
+          m_outputSignalList.Add( ValueOutputSignal.fromLinearVelocity( -constraint.GetCurrentSpeed(), pvo ) );
+        }
         else if ( signal is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
