@@ -78,10 +78,6 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var actuator in system.getValues<Brick.DriveTrain.Actuator>() )
         DrivetrainMapper.MapActuator( actuator );
 
-      //for ( auto& pair : system->getEntries<DriveTrain::PrismaticActuator>()) {
-      //  m_mate_actuator_set.insert( pair.second );
-      //}
-
       foreach ( var rvm in system.getValues<Brick.Physics1D.Interactions.RotationalVelocityMotor>() ) {
         var mapped = DrivetrainMapper.Map1dRotationalVelocityMotor( rvm );
         MapperData.RuntimeMap[ rvm.getName() ] = mapped;

@@ -42,12 +42,17 @@ namespace AGXUnity.IO.BrickIO
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
-    public static T ReportUnimplemented<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
-      where T : class
+    public static void Report( this Brick.ErrorReporter err, Brick.Core.Object obj, AgxUnityBrickErrors errorType )
     {
       var member = obj.getOwner().getType().findFirstMember(obj.getName().Substring(obj.getName().LastIndexOf('.') + 1));
       var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
-      err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.Unimplemented, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
+      err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
+    }
+
+    public static T ReportUnimplemented<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
+      where T : class
+    {
+      err.Report( obj, AgxUnityBrickErrors.Unimplemented );
       return null;
     }
 

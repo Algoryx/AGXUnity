@@ -55,9 +55,14 @@ namespace AGXUnityEditor.IO.BrickIO
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
       ctx.AddObjectToAsset( "Default Material", data.VisualMaterial );
-      foreach( var mesh in data.CacheMappedMeshes ) {
+      foreach( var mesh in data.CacheMappedMeshes )
         ctx.AddObjectToAsset( mesh.name, mesh );
-      }
+      foreach ( var mat in data.CacheMappedMaterials)
+        ctx.AddObjectToAsset( mat.name, mat );
+      foreach (var mat in data.MaterialCache.Values )
+        ctx.AddObjectToAsset( mat.name, mat );
+      foreach ( var mat in data.ContactMaterials)
+        ctx.AddObjectToAsset( mat.name, mat );
     }
 
     public void ReportErrors( Brick.Error error )

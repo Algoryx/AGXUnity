@@ -4,7 +4,6 @@ using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using Brick.Simulation;
 using System;
-using System.Linq;
 using UnityEngine;
 
 using Bodies = Brick.Physics3D.Bodies;
@@ -175,7 +174,7 @@ namespace AGXUnity.IO.BrickIO
     UnityEngine.Mesh AGXMeshToUnityMesh( agxCollide.Mesh inMesh )
     {
       var md = inMesh.getMeshData();
-      return AGXMeshToUnityMesh(md.getVertices(),md.getIndices());
+      return AGXMeshToUnityMesh( md.getVertices(), md.getIndices() );
     }
 
     UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices )
@@ -185,11 +184,11 @@ namespace AGXUnity.IO.BrickIO
       for ( int i = 0; i < vertices.Count; i++ )
         uVertices[ i ].Set( (float)-vertices[ i ].x, (float)vertices[ i ].y, (float)vertices[ i ].z );
       outMesh.vertices = uVertices;
-      if(vertices.Count > UInt16.MaxValue)
+      if ( vertices.Count > UInt16.MaxValue )
         outMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-      
+
       int[] uIndices = new int[indices.Count];
-      for(int i = 0; i < indices.Count; i += 3 ) {
+      for ( int i = 0; i < indices.Count; i += 3 ) {
         uIndices[ i ]     = (int)indices[ i ];
         uIndices[ i + 1 ] = (int)indices[ i + 2 ];
         uIndices[ i + 2 ] = (int)indices[ i + 1 ];
@@ -323,7 +322,7 @@ namespace AGXUnity.IO.BrickIO
 
       return go;
     }
-    
+
     GameObject mapContactGeometry( Charges.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
@@ -377,6 +376,11 @@ namespace AGXUnity.IO.BrickIO
       Utils.mapLocalTransform( go.transform, geom.local_transform() );
       var shapeComp = go.GetComponent<Shape>();
       shapeComp.CollisionsEnabled = geom.enable_collisions();
+
+      if ( geom.material().getName() != "Physics.Charges.Material" )
+        if( Data.MaterialCache.TryGetValue(geom.material(),out ShapeMaterial sm) )
+          shapeComp.Material = sm;
+
       Data.GeometryCache[ geom ] = shapeComp;
       return go;
     }
@@ -412,7 +416,18 @@ namespace AGXUnity.IO.BrickIO
       return rb;
     }
 
-    void mapShovel(Brick.Terrain.Shovel shovel )
+    ShapeMaterial mapMaterial( Brick.Physics.Charges.Material material )
+    {
+      var sm = new ShapeMaterial();
+      sm.name = material.getName();
+
+      sm.Density = (float)material.density();
+      // TODO: AGXUnity does not expose Young's modulus in ShapeMaterial
+
+      return sm;
+    }
+
+    void mapShovel( Brick.Terrain.Shovel shovel )
     {
       var body = Data.BodyCache[shovel.body()];
       var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
@@ -422,7 +437,7 @@ namespace AGXUnity.IO.BrickIO
       mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
     }
 
-    void mapSystemToCollisionGroup( Brick.Physics3D.System system, Brick.Simulation.CollisionGroup collision_group )
+    void mapSystemToCollisionGroup( Brick.Physics3D.System system, CollisionGroup collision_group )
     {
       if ( Data.SystemCache.ContainsKey( system ) ) {
         var sysGO = Data.SystemCache[ system ];
@@ -490,7 +505,21 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
         Utils.AddChild( s, mapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
 
-      // TODO: Map materials
+      foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
+        foreach ( var geometry in body.getValues<Charges.ContactGeometry>() ) {
+          if ( !geometry.isDefault("material") && !Data.MaterialCache.ContainsKey( geometry.material() ) ) {
+            Data.MaterialCache[ geometry.material() ] = mapMaterial( geometry.material() );
+          }
+        }
+      }
+      foreach ( var trackSystem in system.getValues<Brick.Vehicles.Tracks.System>() ) {
+        if ( trackSystem.belt().link_description() is Brick.Vehicles.Tracks.BoxLinkDescription desc ) {
+          var mat = desc.contact_geometry().material();
+          if ( !Data.MaterialCache.ContainsKey( mat ) ) {
+            Data.MaterialCache[ mat ] = mapMaterial( mat );
+          }
+        }
+      }
 
       return s;
     }
@@ -531,6 +560,9 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
         if ( !Utils.IsRuntimeMapped( interaction ) )
           Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+
+      foreach ( var contactModel in system.getValues<Brick.Physics.Interactions.SurfaceContact.Model>() )
+        InteractionMapper.MapContactModel( contactModel );
 
       foreach ( var shovel in system.getValues<Brick.Terrain.Shovel>() )
         mapShovel( shovel );
