@@ -784,6 +784,12 @@ namespace AGXUnity.IO.URDF
                                                parent.GetComponent<RigidBody>() );
 
         var constraint = constraintGameObject.GetComponent<Constraint>();
+        
+        // Since URDF does not have a notion of stiffness and assumes a stiff system we set the default stiffness to be slightly higher than the regular default.
+        constraint.SetCompliance( 1e-10f );
+        foreach ( var controller in constraint.GetElementaryConstraintControllers() )
+          controller.Compliance = 1e-10f;
+        
         constraint.CollisionsState = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
         // Note: If this is a mimic joint we're just setting the values,
         //       the actual controllers are disabled.
