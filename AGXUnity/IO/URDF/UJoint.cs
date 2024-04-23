@@ -393,6 +393,8 @@ namespace AGXUnity.IO.URDF
                JointType.Fixed:
              type == "planar" ?
                JointType.Planar :
+             type == "floating" ?
+               JointType.Floating :
                JointType.Unknown;
       if ( Type == JointType.Unknown )
         throw new UrdfIOException( $"{Utils.GetLineInfo( element )}: Unknown joint type '{type}'." );
