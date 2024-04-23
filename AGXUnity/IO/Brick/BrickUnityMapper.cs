@@ -377,6 +377,7 @@ namespace AGXUnity.IO.BrickIO
       var shapeComp = go.GetComponent<Shape>();
       shapeComp.CollisionsEnabled = geom.enable_collisions();
 
+      // TODO: This does not properly check whether it is the default material
       if ( geom.material().getName() != "Physics.Charges.Material" )
         if( Data.MaterialCache.TryGetValue(geom.material(),out ShapeMaterial sm) )
           shapeComp.Material = sm;
