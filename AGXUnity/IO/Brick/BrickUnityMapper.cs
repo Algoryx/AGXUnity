@@ -405,14 +405,6 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var geom in body.getValues<Charges.ContactGeometry>() )
         Utils.AddChild( rb, mapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
 
-      foreach ( var mc in body.getValues<Charges.MateConnector>() ) {
-        if ( mc.getType().getName() == "ExternalConnector" ) {
-          var mapped = InteractionMapper.MapExternalMateConnector( mc );
-          mapped.GetComponent<ExternalConnector>().ConnectorFrame.SetParent( rb );
-          Utils.AddChild( rb, mapped, Data.ErrorReporter, mc );
-        }
-      }
-
       Data.BodyCache[ body ] = rbComp;
       return rb;
     }

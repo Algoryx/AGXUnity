@@ -1,6 +1,7 @@
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using Charges = Brick.Physics3D.Charges;
@@ -412,6 +413,7 @@ namespace AGXUnity.IO.BrickIO
         return;
 
       if ( Data.PrefabLocalData.ContactMaterials.Any( cm => ( cm.Material1 == sm1 && cm.Material2 == sm2 ) || ( cm.Material1 == sm2 && cm.Material2 == sm1 ) ) ) {
+
         Data.ErrorReporter.Report( contactModel, AgxUnityBrickErrors.DuplicateMaterialPairForSurfaceContactModelDefinition );
         return;
       }
