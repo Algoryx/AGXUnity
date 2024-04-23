@@ -86,6 +86,19 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeField]
+    private bool m_autoAddToTerrains = false;
+
+    public bool AutoAddToTerrains { 
+      get => m_autoAddToTerrains; 
+      set
+      {
+        m_autoAddToTerrains = value;
+        if(Native != null && m_autoAddToTerrains)
+          AddToAllTerrains();
+      }
+    }
+
     /// <summary>
     /// Checks if top, cutting edges and cutting direction is valid.
     /// </summary>
@@ -125,7 +138,16 @@ namespace AGXUnity.Model
         Settings.name = "[Temporary]Shovel Settings";
       }
 
+      if ( AutoAddToTerrains )
+        AddToAllTerrains();
+
       return true;
+    }
+
+    private void AddToAllTerrains()
+    {
+      foreach ( var terr in FindObjectsOfType<DeformableTerrainBase>() )
+        terr.Add( this );
     }
 
     protected override void OnDestroy()
