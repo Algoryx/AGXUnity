@@ -200,6 +200,20 @@ namespace AGXUnity
     }
 
     [SerializeField]
+    [Min(1)]
+    private int m_statisticsMovingAverage = 50;
+
+    /// <summary>
+    /// If larger than 1, will use moving average for statistics display by showing average of this number of the last values
+    /// </summary>
+    [HideInInspector]
+    public int StatisticsMovingAverageCount
+    {
+      get { return m_statisticsMovingAverage; }
+      set { m_statisticsMovingAverage = value; }
+    }
+
+    [SerializeField]
     [UnityEngine.Serialization.FormerlySerializedAs( "m_memorySnapEnabled" )]
     bool m_displayMemoryAllocations = false;
 
@@ -816,6 +830,28 @@ namespace AGXUnity
       GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( name, color ), isHeader ? 14 : 12, isHeader ), style );
     }
 
+    private Utils.MovingAverage<double> m_simTime, 
+                                        m_spaceTime,
+                                        m_dynamicsSystemTime, 
+                                        m_preCollideTime,
+                                        m_preTime,
+                                        m_postTime,
+                                        m_lastTime,
+                                        m_contactEventsTime,
+                                        m_managedStepForward;
+    private void InitializeMovingAverages(int size)
+    {
+      m_simTime = new MovingAverage<double>(size);
+      m_spaceTime = new MovingAverage<double>(size);
+      m_dynamicsSystemTime = new MovingAverage<double>(size);
+      m_preCollideTime = new MovingAverage<double>(size);
+      m_preTime = new MovingAverage<double>(size);
+      m_postTime = new MovingAverage<double>(size);
+      m_lastTime = new MovingAverage<double>(size);
+      m_contactEventsTime = new MovingAverage<double>(size);
+      m_managedStepForward = new MovingAverage<double>(size);
+    }
+
     protected void OnGUI()
     {
       if ( m_simulation == null )
@@ -859,6 +895,9 @@ namespace AGXUnity
       if ( m_statisticsWindowData == null )
         return;
 
+      if (m_simTime == null || m_simTime.Size != StatisticsMovingAverageCount)
+        InitializeMovingAverages(StatisticsMovingAverageCount);
+
       var simColor      = Color.Lerp( Color.white, Color.blue, 0.2f );
       var spaceColor    = Color.Lerp( Color.white, Color.green, 0.2f );
       var dynamicsColor = Color.Lerp( Color.white, Color.yellow, 0.2f );
@@ -868,15 +907,16 @@ namespace AGXUnity
 
       var labelStyle         = m_statisticsWindowData.LabelStyle;
       var stats              = agx.Statistics.instance();
-      var simTime            = stats.getTimingInfo( "Simulation", "Step forward time" );
-      var spaceTime          = stats.getTimingInfo( "Simulation", "Collision-detection time" );
-      var dynamicsSystemTime = stats.getTimingInfo( "Simulation", "Dynamics-system time" );
-      var preCollideTime     = stats.getTimingInfo( "Simulation", "Pre-collide event time" );
-      var preTime            = stats.getTimingInfo( "Simulation", "Pre-step event time" );
-      var postTime           = stats.getTimingInfo( "Simulation", "Post-step event time" );
-      var lastTime           = stats.getTimingInfo( "Simulation", "Last-step event time" );
-      var contactEventsTime  = stats.getTimingInfo( "Simulation", "Triggering contact events" );
 
+      m_simTime.Add(           stats.getTimingInfo( "Simulation", "Step forward time" ).current);
+      m_spaceTime.Add(         stats.getTimingInfo( "Simulation", "Collision-detection time" ).current);
+      m_dynamicsSystemTime.Add(stats.getTimingInfo( "Simulation", "Dynamics-system time" ).current);
+      m_preCollideTime.Add(    stats.getTimingInfo( "Simulation", "Pre-collide event time" ).current);
+      m_preTime.Add(           stats.getTimingInfo( "Simulation", "Pre-step event time" ).current);
+      m_postTime.Add(          stats.getTimingInfo( "Simulation", "Post-step event time" ).current);
+      m_lastTime.Add(          stats.getTimingInfo( "Simulation", "Last-step event time" ).current);
+      m_contactEventsTime.Add( stats.getTimingInfo( "Simulation", "Triggering contact events" ).current);
+ 
       var numBodies      = m_system.getRigidBodies().Count;
       var numShapes      = m_space.getGeometries().Count;
       var numConstraints = m_system.getConstraints().Count +
@@ -885,18 +925,20 @@ namespace AGXUnity
                              (int)Native.getParticleSystem().getNumParticles() :
                              0;
 
+      m_managedStepForward.Add(m_statisticsWindowData.ManagedStepForward);
+
       GUILayout.Window( m_statisticsWindowData.Id,
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
                         id =>
                         {
-                          StatisticsLabel( "Total time:            ", simTime.current + lastTime.current, simColor, labelStyle, true );
-                          StatisticsLabel( "  - Pre-collide step:      ", preCollideTime, eventColor, labelStyle );
-                          StatisticsLabel( "  - Collision detection:   ", spaceTime, spaceColor, labelStyle );
-                          StatisticsLabel( "  - Contact event:         ", contactEventsTime, eventColor, labelStyle );
-                          StatisticsLabel( "  - Pre step:              ", preTime, eventColor, labelStyle );
-                          StatisticsLabel( "  - Dynamics solvers:      ", dynamicsSystemTime, dynamicsColor, labelStyle );
-                          StatisticsLabel( "  - Post step:             ", postTime, eventColor, labelStyle );
-                          StatisticsLabel( "  - Last step:             ", lastTime, eventColor, labelStyle );
+                          StatisticsLabel( "Total time:            ", m_simTime.Value + m_lastTime.Value, simColor, labelStyle, true );
+                          StatisticsLabel( "  - Pre-collide step:      ", m_preCollideTime.Value, eventColor, labelStyle );
+                          StatisticsLabel( "  - Collision detection:   ", m_spaceTime.Value, spaceColor, labelStyle );
+                          StatisticsLabel( "  - Contact event:         ", m_contactEventsTime.Value, eventColor, labelStyle );
+                          StatisticsLabel( "  - Pre step:              ", m_preTime.Value, eventColor, labelStyle );
+                          StatisticsLabel( "  - Dynamics solvers:      ", m_dynamicsSystemTime.Value, dynamicsColor, labelStyle );
+                          StatisticsLabel( "  - Post step:             ", m_postTime.Value, eventColor, labelStyle );
+                          StatisticsLabel( "  - Last step:             ", m_lastTime.Value, eventColor, labelStyle );
                           StatisticsLabel( "Data:                  ", dataColor, labelStyle, true );
                           StatisticsLabel( "  - Update frequency:      ", (int)( 1.0f / TimeStep + 0.5f ) + " Hz", dataColor, labelStyle );
                           StatisticsLabel( "  - Number of bodies:      ", numBodies.ToString(), dataColor, labelStyle );
@@ -906,7 +948,7 @@ namespace AGXUnity
                           GUILayout.Space( 12 );
                           StatisticsLabel( "StepForward (managed):", memoryColor, labelStyle, true );
                           StatisticsLabel( "  - Step forward:          ",
-                                           m_statisticsWindowData.ManagedStepForward.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms",
+                                           m_managedStepForward.Value.ToString( "0.00" ).PadLeft( 5, ' ' ) + " ms",
                                            memoryColor,
                                            labelStyle );
                           if ( !DisplayMemoryAllocations )
