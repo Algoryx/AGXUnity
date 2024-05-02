@@ -584,6 +584,9 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
+      if ( StepCallbacks._Internal_BrickSignalPreSync != null )
+        StepCallbacks._Internal_BrickSignalPreSync.Invoke();
+
       if ( StepCallbacks.PreSynchronizeTransforms != null )
         StepCallbacks.PreSynchronizeTransforms.Invoke();
 
@@ -614,6 +617,9 @@ namespace AGXUnity
 
       if ( StepCallbacks.PostSynchronizeTransforms != null )
         StepCallbacks.PostSynchronizeTransforms.Invoke();
+
+      if ( StepCallbacks._Internal_BrickSignalPostSync != null )
+        StepCallbacks._Internal_BrickSignalPostSync.Invoke();
 
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );

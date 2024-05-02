@@ -76,13 +76,13 @@ namespace AGXUnity.IO.BrickIO
           ok = false;
       }
 
-      Simulation.Instance.StepCallbacks.SimulationPreCollide += PreCollide;
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += Post;
+      Simulation.Instance.StepCallbacks._Internal_BrickSignalPreSync += Pre;
+      Simulation.Instance.StepCallbacks._Internal_BrickSignalPostSync += Post;
 
       return ok;
     }
 
-    void PreCollide()
+    void Pre()
     {
       while ( m_inputSignalQueue.TryDequeue( out var inpSig ) ) {
         var target = inpSig.target();

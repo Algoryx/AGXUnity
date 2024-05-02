@@ -69,6 +69,16 @@ namespace AGXUnity
     /// </summary>
     public StepCallbackDef _Internal_PrePost;
 
+    /// <summary>
+    /// Internal callbacks for handing incoming brick signals.
+    /// </summary>
+    public StepCallbackDef _Internal_BrickSignalPreSync;
+
+    /// <summary>
+    /// Internal callbacks for handing outgoing brick signals.
+    /// </summary>
+    public StepCallbackDef _Internal_BrickSignalPostSync;
+
     public void OnInitialize( agxSDK.Simulation simulation )
     {
       m_simulationStepEvents = new SimulationStepEvents( this );
