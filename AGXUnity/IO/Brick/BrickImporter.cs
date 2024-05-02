@@ -13,24 +13,24 @@ namespace AGXUnity.IO.BrickIO
   {
     public static string BrickDir => Application.dataPath + ( Application.isEditor ? "" : "/Brick" );
 
-    public static GameObject ImportBrickFile( string path, Action<MapperData> onSuccess = null )
+    public static GameObject ImportBrickFile( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null )
     {
-      return ImportBrickFile( path, ReportToConsole, onSuccess );
+      return ImportBrickFile( path, ReportToConsole, options, onSuccess );
     }
 
-    public static GameObject ImportBrickFile( string path, Action<Error> errorReporter, Action<MapperData> onSuccess = null )
+    public static GameObject ImportBrickFile( string path, Action<Error> errorReporter, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null )
     {
       var go = new GameObject( "Brick Root" );
       var root = go.AddComponent<BrickRoot>();
 
       root.BrickAssetPath = path;
 
-      var mapper = new BrickUnityMapper();
+      var mapper = new BrickUnityMapper(options);
       var loadedModel = ParseBrickSource(root.BrickFile, errorReporter, mapper.Data.AgxCache);
 
       if ( loadedModel != null ) {
         mapper.MapObject( loadedModel, root.gameObject );
-        foreach (var error in mapper.Data.ErrorReporter.getErrors() )
+        foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
           errorReporter( error );
         onSuccess?.Invoke( mapper.Data );
       }
@@ -59,7 +59,7 @@ namespace AGXUnity.IO.BrickIO
       VisualsSwig.Visuals_register_factories_cs( context );
       UrdfSwig.Urdf_register_factories_cs( context );
 
-      AgxBrick.register_plugins( context, cache);
+      AgxBrick.register_plugins( context, cache );
 
       return context;
     }

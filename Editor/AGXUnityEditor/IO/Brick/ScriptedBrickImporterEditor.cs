@@ -1,7 +1,10 @@
+using AGXUnity;
 using AGXUnity.IO.BrickIO;
 using AGXUnityEditor.UIElements;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -55,6 +58,8 @@ namespace AGXUnityEditor.IO.BrickIO
     {
       var ve = new VisualElement();
       ve.SetPadding( 10, 0, 0, 0 );
+      ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
+      ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
       if ( ScriptedBrickImporter.Errors.Count > 0 ) {
         ve.Add( new Label() { text = $"<b>Errors ({ScriptedBrickImporter.Errors.Count})</b>" } );
         var errors = new VisualElement();

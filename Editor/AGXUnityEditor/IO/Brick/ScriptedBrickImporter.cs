@@ -28,6 +28,9 @@ namespace AGXUnityEditor.IO.BrickIO
     [field: SerializeField]
     public float ImportTime { get; set; }
 
+    public bool HideImportedMeshes = true;
+    public bool HideImportedVisualMaterials = false;
+
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
@@ -44,7 +47,10 @@ namespace AGXUnityEditor.IO.BrickIO
         return;
 
       var start = System.DateTime.Now;
-      var go = BrickImporter.ImportBrickFile( ctx.assetPath, ReportErrors, data => OnSuccess(ctx,data) );
+      var go = BrickImporter.ImportBrickFile( ctx.assetPath, 
+                                              ReportErrors, 
+                                              new MapperOptions(HideImportedMeshes,HideImportedVisualMaterials), 
+                                              data => OnSuccess(ctx,data) );
       var end = System.DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 

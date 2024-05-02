@@ -12,6 +12,18 @@ using Object = Brick.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
+  public struct MapperOptions
+  {
+    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false )
+    {
+      HideMeshesInHierarchy = hideMeshes;
+      HideVisualMaterialsInHierarchy = hideVisuals;
+    }
+
+    public bool HideMeshesInHierarchy;
+    public bool HideVisualMaterialsInHierarchy;
+  }
+
   public class BrickUnityMapper
   {
     public MapperData Data { get; } = new MapperData();
@@ -22,11 +34,15 @@ namespace AGXUnity.IO.BrickIO
     private InteractionMapper InteractionMapper { get; set; }
     private TrackMapper TrackMapper { get; set; }
 
-    public BrickUnityMapper()
+    MapperOptions Options;
+
+    public BrickUnityMapper(MapperOptions options = new MapperOptions())
     {
       Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
       Data.ErrorReporter = new Brick.ErrorReporter();
+
+      Options = options;
 
       InteractionMapper = new InteractionMapper( Data );
       TrackMapper = new TrackMapper( Data );
@@ -73,6 +89,8 @@ namespace AGXUnity.IO.BrickIO
 
       // TODO: Should these be cached? Can they?
       var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
+      if ( Options.HideMeshesInHierarchy )
+        mesh.hideFlags = HideFlags.HideInHierarchy;
       mesh.name = visual.getName();
       Data.CacheMappedMeshes.Add( mesh );
       filter.mesh = mesh;
@@ -84,6 +102,8 @@ namespace AGXUnity.IO.BrickIO
           mat.RestoreLocalDataFrom( rm );
           // TODO: Figure out a better name than the hash
           mat.name = rm.getHash().ToString();
+          if ( Options.HideVisualMaterialsInHierarchy )
+            mat.hideFlags = HideFlags.HideInHierarchy;
           Data.MappedRenderMaterialCache[ rm.getHash() ] = mat;
           Data.CacheMappedMaterials.Add( mat );
         }
@@ -303,6 +323,8 @@ namespace AGXUnity.IO.BrickIO
 
         var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
         meshSource.name = geom.getName();
+        if( Options.HideMeshesInHierarchy )
+          meshSource.hideFlags    = HideFlags.HideInHierarchy;
         Data.CacheMappedMeshes.Add( meshSource );
         mesh.AddSourceObject( meshSource );
 
@@ -379,7 +401,7 @@ namespace AGXUnity.IO.BrickIO
 
       // TODO: This does not properly check whether it is the default material
       if ( geom.material().getName() != "Physics.Charges.Material" )
-        if( Data.MaterialCache.TryGetValue(geom.material(),out ShapeMaterial sm) )
+        if( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
           shapeComp.Material = sm;
 
       Data.GeometryCache[ geom ] = shapeComp;
