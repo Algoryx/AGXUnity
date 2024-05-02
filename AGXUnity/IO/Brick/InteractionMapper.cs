@@ -439,113 +439,110 @@ namespace AGXUnity.IO.BrickIO
         return;
       }
 
-      //// Set the friction
-      //var dry_friction = std.dynamic_pointer_cast<Physics.Interactions.Friction.DefaultDryFriction>(contactModel.friction());
-      //agx.FrictionModelRef fm = null;
-      //if ( dry_friction == null ) {
-      //  var member = contactModel.getType().findFirstMember("friction");
-      //  var token = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().back();
-      //  m_error_reporter.reportError( Error.create( AGXBrickError.InvalidFrictionModel, token.line, token.column, m_source_id ) );
-      //  SPDLOG_ERROR( "AGXBrick only supports DryFriction." );
-      //  return;
-      //}
-      //else {
-      //  var body_oriented_cone = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.BodyOrientedDryConeFriction>(contactModel.friction());
-      //  var geometry_oriented_cone = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.GeometryOrientedDryConeFriction>(contactModel.friction());
-      //  var body_oriented_sb = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.BodyOrientedDryScaleBoxFriction>(contactModel.friction());
-      //  var geometry_oriented_sb = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.GeometryOrientedDryScaleBoxFriction>(contactModel.friction());
-      //  var cone = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryConeFriction>(contactModel.friction());
-      //  var approx_cone = std.dynamic_pointer_cast<Physics.Interactions.Friction.ApproximateDryConeFriction>(contactModel.friction());
-      //  var box = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryBoxFriction>(contactModel.friction());
-      //  var scale_box = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryScaleBoxFriction>(contactModel.friction());
-      //  cm.setFrictionCoefficient( dry_friction.coefficient(), agx.ContactMaterial.FrictionDirection.BOTH_PRIMARY_AND_SECONDARY );
+      // Set the friction
+      if(contactModel.friction() is not Brick.Physics.Interactions.Friction.DefaultDryFriction dryFriction) {
+        Data.ErrorReporter.Report( contactModel.friction(), AgxUnityBrickErrors.UnsupportedFrictionModel );
+        return;
+      }
+      else {
+        cm.FrictionCoefficients = new Vector2( (float)dryFriction.coefficient(), (float)dryFriction.coefficient() );
 
-      //  if ( body_oriented_cone != null ) {
-      //    agx.FrameRef ref_frame = null;
-      //    var it = m_rigidbody_map.find(body_oriented_cone.reference_body());
-      //    if ( it == m_rigidbody_map.end() ) {
-      //      var token = body_oriented_cone.getType().getNameToken();
-      //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
-      //    }
-      //    else {
-      //      ref_frame = it.second.getFrame();
-      //    }
-      //    var boc = new agx.OrientedIterativeProjectedConeFrictionModel(ref_frame,
-      //                                                                      mapVec3(body_oriented_cone.primary_direction()),
-      //                                                                      agx.FrictionModel.DIRECT);
-      //    boc.setEnableDirectExactConeProjection( true );
-      //    fm = boc;
-      //  }
-      //  else if ( geometry_oriented_cone != null ) {
-      //    agx.FrameRef ref_frame = null;
-      //    var it = m_geometry_map.find(geometry_oriented_cone.reference_geometry());
-      //    if ( it == m_geometry_map.end() ) {
-      //      var token = geometry_oriented_cone.getType().getNameToken();
-      //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
-      //    }
-      //    else {
-      //      ref_frame = it.second.getFrame();
-      //    }
-      //    var goc = new agx.OrientedIterativeProjectedConeFrictionModel(ref_frame,
-      //                                                                      mapVec3(geometry_oriented_cone.primary_direction()),
-      //                                                                      agx.FrictionModel.DIRECT);
-      //    goc.setEnableDirectExactConeProjection( true );
-      //    fm = goc;
-      //  }
-      //  else if ( body_oriented_sb != null ) {
-      //    agx.FrameRef ref_frame = null;
-      //    var it = m_rigidbody_map.find(body_oriented_sb.reference_body());
-      //    if ( it == m_rigidbody_map.end() ) {
-      //      var token = body_oriented_sb.getType().getNameToken();
-      //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
-      //    }
-      //    else {
-      //      ref_frame = it.second.getFrame();
-      //    }
-      //    var bosb = new agx.OrientedScaleBoxFrictionModel(ref_frame,
-      //                                                         mapVec3(body_oriented_sb.primary_direction()),
-      //                                                         agx.FrictionModel.DIRECT);
-      //    fm = bosb;
-      //  }
-      //  else if ( geometry_oriented_sb != null ) {
-      //    agx.FrameRef ref_frame = null;
-      //    var it = m_geometry_map.find(geometry_oriented_sb.reference_geometry());
-      //    if ( it == m_geometry_map.end() ) {
-      //      var token = geometry_oriented_sb.getType().getNameToken();
-      //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
-      //    }
-      //    else {
-      //      ref_frame = it.second.getFrame();
-      //    }
-      //    var gosb = new agx.OrientedScaleBoxFrictionModel(ref_frame,
-      //                                                         mapVec3(geometry_oriented_sb.primary_direction()),
-      //                                                         agx.FrictionModel.DIRECT);
-      //    fm = gosb;
-      //  }
-      //  else if ( cone != null ) {
-      //    var pc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.DIRECT);
-      //    pc.setEnableDirectExactConeProjection( true );
-      //    fm = pc;
-      //  }
-      //  else if ( approx_cone != null ) {
-      //    var pc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.DIRECT);
-      //    pc.setEnableDirectExactConeProjection( false );
-      //    fm = pc;
-      //  }
-      //  else if ( box != null ) {
-      //    var bfm = new agx.BoxFrictionModel(agx.FrictionModel.DIRECT);
-      //    fm = bfm;
-      //  }
-      //  else if ( scale_box != null ) {
-      //    var sbfm = new agx.ScaleBoxFrictionModel(agx.FrictionModel.DIRECT);
-      //    fm = sbfm;
-      //  }
-      //  else {
-      //    // Here we choose the AGXBrick DefaultFriction to be a Split solve with the IterativeProjectedConeFriction
-      //    var ipc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.SPLIT);
-      //    fm = ipc;
-      //  }
-      //}
+        // TODO: Map friction model
+        //  var body_oriented_cone = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.BodyOrientedDryConeFriction>(contactModel.friction());
+        //  var geometry_oriented_cone = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.GeometryOrientedDryConeFriction>(contactModel.friction());
+        //  var body_oriented_sb = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.BodyOrientedDryScaleBoxFriction>(contactModel.friction());
+        //  var geometry_oriented_sb = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.GeometryOrientedDryScaleBoxFriction>(contactModel.friction());
+        //  var cone = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryConeFriction>(contactModel.friction());
+        //  var approx_cone = std.dynamic_pointer_cast<Physics.Interactions.Friction.ApproximateDryConeFriction>(contactModel.friction());
+        //  var box = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryBoxFriction>(contactModel.friction());
+        //  var scale_box = std.dynamic_pointer_cast<Physics.Interactions.Friction.DryScaleBoxFriction>(contactModel.friction());
+
+        //  if ( body_oriented_cone != null ) {
+        //    agx.FrameRef ref_frame = null;
+        //    var it = m_rigidbody_map.find(body_oriented_cone.reference_body());
+        //    if ( it == m_rigidbody_map.end() ) {
+        //      var token = body_oriented_cone.getType().getNameToken();
+        //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
+        //    }
+        //    else {
+        //      ref_frame = it.second.getFrame();
+        //    }
+        //    var boc = new agx.OrientedIterativeProjectedConeFrictionModel(ref_frame,
+        //                                                                      mapVec3(body_oriented_cone.primary_direction()),
+        //                                                                      agx.FrictionModel.DIRECT);
+        //    boc.setEnableDirectExactConeProjection( true );
+        //    fm = boc;
+        //  }
+        //  else if ( geometry_oriented_cone != null ) {
+        //    agx.FrameRef ref_frame = null;
+        //    var it = m_geometry_map.find(geometry_oriented_cone.reference_geometry());
+        //    if ( it == m_geometry_map.end() ) {
+        //      var token = geometry_oriented_cone.getType().getNameToken();
+        //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
+        //    }
+        //    else {
+        //      ref_frame = it.second.getFrame();
+        //    }
+        //    var goc = new agx.OrientedIterativeProjectedConeFrictionModel(ref_frame,
+        //                                                                      mapVec3(geometry_oriented_cone.primary_direction()),
+        //                                                                      agx.FrictionModel.DIRECT);
+        //    goc.setEnableDirectExactConeProjection( true );
+        //    fm = goc;
+        //  }
+        //  else if ( body_oriented_sb != null ) {
+        //    agx.FrameRef ref_frame = null;
+        //    var it = m_rigidbody_map.find(body_oriented_sb.reference_body());
+        //    if ( it == m_rigidbody_map.end() ) {
+        //      var token = body_oriented_sb.getType().getNameToken();
+        //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
+        //    }
+        //    else {
+        //      ref_frame = it.second.getFrame();
+        //    }
+        //    var bosb = new agx.OrientedScaleBoxFrictionModel(ref_frame,
+        //                                                         mapVec3(body_oriented_sb.primary_direction()),
+        //                                                         agx.FrictionModel.DIRECT);
+        //    fm = bosb;
+        //  }
+        //  else if ( geometry_oriented_sb != null ) {
+        //    agx.FrameRef ref_frame = null;
+        //    var it = m_geometry_map.find(geometry_oriented_sb.reference_geometry());
+        //    if ( it == m_geometry_map.end() ) {
+        //      var token = geometry_oriented_sb.getType().getNameToken();
+        //      m_error_reporter.reportError( Error.create( AGXBrickError.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
+        //    }
+        //    else {
+        //      ref_frame = it.second.getFrame();
+        //    }
+        //    var gosb = new agx.OrientedScaleBoxFrictionModel(ref_frame,
+        //                                                         mapVec3(geometry_oriented_sb.primary_direction()),
+        //                                                         agx.FrictionModel.DIRECT);
+        //    fm = gosb;
+        //  }
+        //  else if ( cone != null ) {
+        //    var pc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.DIRECT);
+        //    pc.setEnableDirectExactConeProjection( true );
+        //    fm = pc;
+        //  }
+        //  else if ( approx_cone != null ) {
+        //    var pc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.DIRECT);
+        //    pc.setEnableDirectExactConeProjection( false );
+        //    fm = pc;
+        //  }
+        //  else if ( box != null ) {
+        //    var bfm = new agx.BoxFrictionModel(agx.FrictionModel.DIRECT);
+        //    fm = bfm;
+        //  }
+        //  else if ( scale_box != null ) {
+        //    var sbfm = new agx.ScaleBoxFrictionModel(agx.FrictionModel.DIRECT);
+        //    fm = sbfm;
+        //  }
+        //  else {
+        //    // Here we choose the AGXBrick DefaultFriction to be a Split solve with the IterativeProjectedConeFriction
+        //    var ipc = new agx.IterativeProjectedConeFriction(agx.FrictionModel.SPLIT);
+        //    fm = ipc;
+        //  }
+      }
 
       //var oriented_cone = std.dynamic_pointer_cast<Physics3D.Interactions.Friction.DefaultOrientedDryFriction>(contactModel.friction());
       //if ( oriented_cone != null ) {
@@ -553,23 +550,15 @@ namespace AGXUnity.IO.BrickIO
       //}
       //cm.setFrictionModel( fm );
 
-      //double adhesive_force = 0.0;
-      //double slack_distance = 0.0;
-      //var constant_adhesive_force = std.dynamic_pointer_cast<Physics.Interactions.Adhesion.ConstantForceAdhesion>(contactModel.adhesion());
-      //if ( constant_adhesive_force != null ) {
-      //  adhesive_force = constant_adhesive_force.force();
-      //}
-      //var constant_slack_distance = std.dynamic_pointer_cast<Physics.Interactions.Slack.ConstantDistanceSlack>(contactModel.slack());
-      //if ( constant_slack_distance != null ) {
-      //  slack_distance = constant_slack_distance.distance();
-      //}
-      //if ( adhesive_force > 0.0 || slack_distance > 0.0 ) {
-      //  cm.setAdhesion( adhesive_force, slack_distance );
-      //}
+      if ( contactModel.adhesion() is Brick.Physics.Interactions.Adhesion.ConstantForceAdhesion constant_adhesive_force )
+        cm.AdhesiveForce = (float)constant_adhesive_force.force();
+      if ( contactModel.slack() is Brick.Physics.Interactions.Slack.ConstantDistanceSlack constant_slack_distance)
+        cm.AdhesiveOverlap = (float) constant_slack_distance.distance();
 
-      //// Restitution
-      //cm.setTangentialRestitution( contactModel.tangential_restitution() );
-      //cm.setRestitution( contactModel.normal_restitution() );
+      // Restitution
+      cm.Restitution = (float)contactModel.normal_restitution();
+      // TODO: Tangential restitution
+
       Data.PrefabLocalData.AddContactMaterial( cm );
       Data.ContactMaterials.Add( cm );
     }

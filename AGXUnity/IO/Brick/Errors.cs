@@ -8,6 +8,7 @@ namespace AGXUnity.IO.BrickIO
     MissingMaterial = 4,
     DuplicateMaterialPairForSurfaceContactModelDefinition = 5,
     InvalidDefomationType = 6,
+    UnsupportedFrictionModel = 7,
   }
   public class UnityBrickErrorFormatter : Brick.ErrorFormatter
   {
@@ -25,6 +26,7 @@ namespace AGXUnity.IO.BrickIO
         (ulong)AgxUnityBrickErrors.MissingMaterial => formatMessage( "The specified material could not be found", error ),
         (ulong)AgxUnityBrickErrors.DuplicateMaterialPairForSurfaceContactModelDefinition => formatMessage( "The specified material pair appears in more than one SurfaceContact.Model definition", error ),
         (ulong)AgxUnityBrickErrors.InvalidDefomationType => formatMessage( "AGXUnity does not support the specified deformation type", error ),
+        (ulong)AgxUnityBrickErrors.UnsupportedFrictionModel => formatMessage( "AGXUnity only supports dry friction", error ),
         _ => base.format( error )
       };
     }
