@@ -84,13 +84,22 @@ namespace AGXUnity.IO.BrickIO
 
     public static string[] FindDependencies( string source )
     {
-      var context = CreateContext();
-      var ic = BrickContextInternal.fromContext( context );
-      var doc = ic.parseFile( source );
+      // TODO: Explicit dependency check is slow and crashes on build
+      //var context = CreateContext();
+      //var ic = BrickContextInternal.fromContext( context );
+      //var doc = ic.parseFile( source );
 
-      var imports = doc.findImports();
-      return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
+      //var imports = doc.findImports();
+      //return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
 
+      var relativeDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(source)) + "/";
+      var brick = System.IO.File.ReadAllLines( source );
+      return brick
+        .Where( l => l.StartsWith( "import " ) )
+        .Select( l => l.Trim()[ 7.. ] )
+        .Select(l => l.StartsWith('@') ? relativeDir + l[ 2..(l.Length - 1) ]: l[ 1..(l.Length - 1) ] )
+        .Select(l => l.Replace('\\','/'))
+        .ToArray();
     }
 
     private static void ReportToConsole( Error error )
