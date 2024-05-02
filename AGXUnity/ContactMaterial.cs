@@ -455,7 +455,7 @@ namespace AGXUnity
       agx.Material m1 = Material1.GetInitialized<ShapeMaterial>().Native;
       agx.Material m2 = Material2.GetInitialized<ShapeMaterial>().Native;
       agx.ContactMaterial old = GetSimulation().getMaterialManager().getContactMaterial( m1, m2 );
-      if ( old != null ) {
+      if ( old != null && old.isExplicit() ) {
         Debug.LogWarning( name + ": Material manager already contains a contact material with this material pair. Ignoring this contact material.", this );
         return false;
       }
