@@ -42,10 +42,7 @@ namespace AGXUnity.IO.BrickIO
       var new_x = rotation.rotate(Brick.Math.Vec3.X_AXIS());
       var angle = Brick.Physics3D.Snap.Utils.angleBetweenVectors(new_x,normal_n,main_axis_n);
       var rotation_2 = Brick.Math.Quat.angleAxis(angle,main_axis_n);
-      var q1 = rotation.ToHandedQuaternion().ToHandedQuat();
-      var q2 = rotation_2.ToHandedQuaternion().ToHandedQuat();
-
-      frame.LocalRotation = ( q1 * q2 ).ToHandedQuaternion();
+      frame.LocalRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
 
       var collapsedFrame = new IFrame();
       collapsedFrame.LocalPosition = frame.Position;
@@ -56,6 +53,7 @@ namespace AGXUnity.IO.BrickIO
     HingeClass mapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
                                             Brick.Physics3D.System system,
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
+      where HingeClass : class
     {
       Brick.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
       Brick.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
@@ -88,13 +86,7 @@ namespace AGXUnity.IO.BrickIO
 
       // TODO: Error reporting
 
-
-      if ( frame1.Parent && frame2.Parent )
-        return interactionCreator( frame1, frame2 );
-      else if ( frame1.Parent )
-        return interactionCreator( frame1, frame2 );
-      else
-        return interactionCreator( frame2, frame1 );
+      return interactionCreator( frame2, frame1 );
     }
 
     Constraint createConstraint( IFrame f1, IFrame f2, ConstraintType type )

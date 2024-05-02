@@ -519,7 +519,11 @@ namespace AGXUnity.IO.BrickIO
       Utils.mapLocalTransform( s.transform, system.local_transform() );
 
       Data.SystemCache[ system ] = s;
-      Data.FrameCache[ system ] = s;
+      var dummyRB = Factory.Create<RigidBody>();
+      dummyRB.transform.SetParent( s.transform, false );
+      dummyRB.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
+      dummyRB.name = "System Dummy RB";
+      Data.FrameCache[ system ] = dummyRB;
 
       foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
         Utils.AddChild( s, mapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );

@@ -90,7 +90,7 @@ namespace AGXUnity.IO.BrickIO
           if ( target is Signals.TorsionSpringAngleInput tsai ) {
             var hinge = Root.FindMappedObject( tsai.spring().getName() );
             var spring = hinge.GetComponent<LockController>();
-            spring.Position = -(float)realSig.value();
+            spring.Position = (float)realSig.value();
           }
           else if ( target is Signals.LinearVelocityMotorVelocityInput lvmvi ) {
             var prismatic = Root.FindMappedObject( lvmvi.motor().getName() );
@@ -100,7 +100,7 @@ namespace AGXUnity.IO.BrickIO
           else if ( target is Signals.RotationalVelocityMotorVelocityInput rvmvi ) {
             var hinge = Root.FindMappedObject( rvmvi.motor().getName() );
             var motor = hinge.GetComponent<TargetSpeedController>();
-            motor.Speed = -(float)realSig.value();
+            motor.Speed = (float)realSig.value();
           }
           else if ( target is Brick.Physics1D.Signals.RotationalVelocityMotor1DVelocityInput rvm1dvi ) {
             var motor = Root.FindRuntimeMappedObject( rvm1dvi.motor().getName() );
@@ -123,27 +123,27 @@ namespace AGXUnity.IO.BrickIO
         if ( signal is Signals.HingeAngleOutput hao ) {
           var hinge = Root.FindMappedObject( hao.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromAngle( -constraint.GetCurrentAngle(), hao ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromAngle( constraint.GetCurrentAngle(), hao ) );
         }
         else if ( signal is Signals.HingeAngularVelocityOutput havo ) {
           var hinge = Root.FindMappedObject( havo.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( -constraint.GetCurrentSpeed(), havo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( constraint.GetCurrentSpeed(), havo ) );
         }
-        if ( signal is Signals.PrismaticPositionOutput ppo ) {
+        else if ( signal is Signals.PrismaticPositionOutput ppo ) {
           var prismatic = Root.FindMappedObject( ppo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromDistance( -constraint.GetCurrentAngle(), ppo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromDistance( constraint.GetCurrentAngle(), ppo ) );
         }
         else if ( signal is Signals.PrismaticVelocityOutput pvo ) {
           var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromLinearVelocity( -constraint.GetCurrentSpeed(), pvo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromLinearVelocity( constraint.GetCurrentSpeed(), pvo ) );
         }
         else if ( signal is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
-          var pos = rb.transform.localPosition.ToLeftHanded();
+          var pos = rb.Native.getPosition().ToVector3();
           m_outputSignalList.Add( ValueOutputSignal.fromPosition( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbpo ) );
         }
         else if ( signal is Signals.RigidBodyVelocityOutput rbvo ) {
