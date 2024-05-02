@@ -65,12 +65,23 @@ namespace AGXUnityEditor.IO.BrickIO
         foreach ( var error in ScriptedBrickImporter.Errors )
           errors.Add( TableRowUI( error ) );
         ve.Add( errors );
+      } else {
+        ve.Add( new Label() { text = "<b>Import statistics:</b>" } );
+        var statistics = new VisualElement();
+        statistics.SetPadding( 0, 0, 0, 10 );
+        statistics.Add( new Label() { text = $"- Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
+        var assets = AssetDatabase.LoadAllAssetsAtPath(ScriptedBrickImporter.assetPath);
+        statistics.Add( new Label() { text = $"- Imported meshes: {assets.Count( a => a is Mesh )}" } );
+        statistics.Add( new Label() { text = $"- Imported visual materials: {assets.Count( a => a is Material)}" } );
+        statistics.Add( new Label() { text = $"- Imported shape materials: {assets.Count( a => a is ShapeMaterial )}" } );
+        statistics.Add( new Label() { text = $"- Imported Contact materials: {assets.Count( a => a is ContactMaterial)}" } );
+        ve.Add( statistics );
       }
       var deps = BrickImporter.FindDependencies(ScriptedBrickImporter.assetPath);
-      if(deps.Length > 0){
+      if ( deps.Length > 0 ) {
         ve.Add( new Label() { text = $"<b>Dependencies ({deps.Length})</b>" } );
         foreach ( var dep in deps ) {
-          ve.Add(new Label() { text = dep } );
+          ve.Add( new Label() { text = dep } );
         }
       }
       ve.Add( new Label() { text = $"Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
