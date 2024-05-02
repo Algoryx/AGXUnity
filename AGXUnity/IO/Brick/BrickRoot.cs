@@ -16,13 +16,23 @@ namespace AGXUnity.IO.BrickIO
 
     public Object Native { get; private set; }
 
-    private Dictionary<string,object> m_runtimeMap;
+    private Dictionary<string, object> m_runtimeMap;
+    private Dictionary<string, GameObject> m_objectMap;
 
     public GameObject FindMappedObject( string declaration )
     {
-      var relativeDecl = declaration.Replace( '.', '/' );
-      var toFind = gameObject.name + '/' + relativeDecl;
-      return GameObject.Find( toFind );
+      if(Native != null ) {
+        if(m_objectMap.ContainsKey( declaration ))
+          return m_objectMap[ declaration ];
+        else
+          return null;
+      }
+      else {
+        foreach ( var brickObj in GetComponentsInChildren<BrickObject>() )
+          if ( brickObj.SourceDeclarations.Contains( declaration ) )
+            return brickObj.gameObject;
+        return null;
+      }
     }
 
     public object FindRuntimeMappedObject( string declaration )
@@ -38,6 +48,11 @@ namespace AGXUnity.IO.BrickIO
         Debug.LogError( $"Failed to initialize Brick object '{name}'", this );
         return false;
       }
+
+      m_objectMap = new Dictionary<string, GameObject>();
+      foreach ( var brickObj in GetComponentsInChildren<BrickObject>() )
+        foreach (var decl in brickObj.SourceDeclarations )
+          m_objectMap.Add( decl, brickObj.gameObject );
 
       var RTMapper = new RuntimeMapper();
       RTMapper.PerformRuntimeMapping( this );

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace AGXUnity.IO.BrickIO
   public class BrickObject : MonoBehaviour
   {
     [field: SerializeField]
-    public string SourceDeclaration { get; private set; }
+    public List<string> SourceDeclarations { get; private set; } = new List<string>();
 
     public static GameObject CreateGameObject( string name )
     {
@@ -23,7 +24,7 @@ namespace AGXUnity.IO.BrickIO
       go.name = nameShort;
 
       var bo = go.AddComponent<BrickObject>();
-      bo.SourceDeclaration = name;
+      bo.SourceDeclarations.Add(name);
     }
   }
 }
