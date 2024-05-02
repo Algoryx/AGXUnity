@@ -413,12 +413,12 @@ namespace AGXUnity.IO.BrickIO
         return;
 
       if ( Data.PrefabLocalData.ContactMaterials.Any( cm => ( cm.Material1 == sm1 && cm.Material2 == sm2 ) || ( cm.Material1 == sm2 && cm.Material2 == sm1 ) ) ) {
-
         Data.ErrorReporter.Report( contactModel, AgxUnityBrickErrors.DuplicateMaterialPairForSurfaceContactModelDefinition );
         return;
       }
 
-      ContactMaterial cm = new ContactMaterial();
+      ContactMaterial cm = ContactMaterial.CreateInstance<ContactMaterial>(); 
+      cm.name = contactModel.getName();
       cm.Material1 = sm1;
       cm.Material2 = sm2;
 

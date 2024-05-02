@@ -65,8 +65,10 @@ namespace AGXUnityEditor.IO.BrickIO
         ctx.AddObjectToAsset( mesh.name, mesh );
       foreach ( var mat in data.CacheMappedMaterials)
         ctx.AddObjectToAsset( mat.name, mat );
+      ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
       foreach (var mat in data.MaterialCache.Values )
-        ctx.AddObjectToAsset( mat.name, mat );
+        if(mat != data.DefaultMaterial)
+          ctx.AddObjectToAsset( mat.name, mat );
       foreach ( var mat in data.ContactMaterials)
         ctx.AddObjectToAsset( mat.name, mat );
     }

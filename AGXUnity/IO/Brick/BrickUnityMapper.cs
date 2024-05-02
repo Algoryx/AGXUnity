@@ -41,6 +41,9 @@ namespace AGXUnity.IO.BrickIO
       Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
       Data.ErrorReporter = new Brick.ErrorReporter();
+      Data.DefaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
+      Data.DefaultMaterial.Density = 1000;
+      Data.DefaultMaterial.name = "Default";
 
       Options = options;
 
@@ -433,7 +436,7 @@ namespace AGXUnity.IO.BrickIO
 
     ShapeMaterial mapMaterial( Brick.Physics.Charges.Material material )
     {
-      var sm = new ShapeMaterial();
+      var sm = ShapeMaterial.CreateInstance<ShapeMaterial>();
       sm.name = material.getName();
 
       sm.Density = (float)material.density();
@@ -523,9 +526,12 @@ namespace AGXUnity.IO.BrickIO
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
         foreach ( var geometry in body.getValues<Charges.ContactGeometry>() ) {
-          if ( !geometry.isDefault("material") && !Data.MaterialCache.ContainsKey( geometry.material() ) ) {
-            Data.MaterialCache[ geometry.material() ] = mapMaterial( geometry.material() );
+          if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Charges.Material" || !geometry.material().isDefault( "density" ) ) {
+            if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
+              Data.MaterialCache[ geometry.material() ] = mapMaterial( geometry.material() );
           }
+          else
+            Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
         }
       }
       foreach ( var trackSystem in system.getValues<Brick.Vehicles.Tracks.System>() ) {

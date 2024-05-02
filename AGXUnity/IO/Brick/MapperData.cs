@@ -9,6 +9,7 @@ namespace AGXUnity.IO.BrickIO
     public GameObject RootNode { get; set; } = null;
     public Material VisualMaterial { get; set; } = null;
     public ErrorReporter ErrorReporter { get; set; } = null;
+    public ShapeMaterial DefaultMaterial { get; set; } = null;
 
     public SavedPrefabLocalData PrefabLocalData { get; set; } = null;
     public BrickAgx.AgxCache AgxCache { get; } = new BrickAgx.AgxCache();
