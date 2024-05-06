@@ -1,3 +1,4 @@
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -18,12 +19,14 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    public static void RegisterGameObject( string name, GameObject go )
+    public static void RegisterGameObject( string name, GameObject go, bool overrideName = false )
     {
-      var nameShort = name.Split('.').Last();
-      go.name = nameShort;
 
-      var bo = go.AddComponent<BrickObject>();
+      var bo = go.GetOrCreateComponent<BrickObject>();
+      if(bo.SourceDeclarations.Count == 0 || overrideName ) {
+        var nameShort = name.Split('.').Last();
+        go.name = nameShort;
+      }
       bo.SourceDeclarations.Add(name);
     }
   }
