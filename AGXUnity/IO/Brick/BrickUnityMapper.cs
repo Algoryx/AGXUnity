@@ -244,6 +244,14 @@ namespace AGXUnity.IO.BrickIO
         var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
 
         var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+        UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
+
+        var readable = s.FindProperty( "m_IsReadable" );
+        if ( !readable.boolValue ) {
+          Debug.LogWarning( $"Mesh at path '{assetPath}' was not readable. Marking the mesh as readable..." );
+          readable.boolValue = true;
+          s.ApplyModifiedProperties();
+        }
 
         mesh.AddSourceObject( source );
         mesh.transform.localScale = objGeom.scale().ToVector3();

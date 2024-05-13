@@ -1,7 +1,9 @@
 using Brick;
 using Brick.Core.Api;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 using Object = Brick.Core.Object;
@@ -91,13 +93,28 @@ namespace AGXUnity.IO.BrickIO
       //var imports = doc.findImports();
       //return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
 
+      List<string> dependencyExtensions = new List<string>() { "obj" };
+
+      string extRegex = "";
+      foreach ( var ext in dependencyExtensions )
+        extRegex += "|" + ext;
+      extRegex = extRegex[ 1.. ];
+
+      // Check for instances where a string is preceeded by an "import" statement or where the string ends with a known extension supported path.
+      string depRegex = $"(?:import\\s+(@?\".*?\"))|(?:(@?\".*?\\.(?:{extRegex})\"))";
+
+      var reg = new Regex(depRegex);
+
       var relativeDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(source)) + "/";
       var brick = System.IO.File.ReadAllLines( source );
       return brick
-        .Where( l => l.StartsWith( "import " ) )
-        .Select( l => l.Trim()[ 7.. ] )
-        .Select(l => l.StartsWith('@') ? relativeDir + l[ 2..(l.Length - 1) ]: l[ 1..(l.Length - 1) ] )
-        .Select(l => l.Replace('\\','/'))
+        .SelectMany( l => reg.Matches( l ) )
+        .SelectMany( m => m.Groups.Skip( 1 ) )
+        .Where( g => g.Success )
+        .Select( g => g.Value )
+        .Select( i => i.StartsWith( '@' ) ? relativeDir + i[ 2..( i.Length - 1 ) ] : i[ 1..( i.Length - 1 ) ] )
+        .Select( i => i.Replace( '\\', '/' ) )
+        .Distinct()
         .ToArray();
     }
 
