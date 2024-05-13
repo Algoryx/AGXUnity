@@ -49,6 +49,13 @@ namespace AGXUnity.IO.BrickIO
       err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
     }
 
+    public static T? ReportUnimplementedS<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
+      where T : struct
+    {
+      err.Report( obj, AgxUnityBrickErrors.Unimplemented );
+      return null;
+    }
+
     public static T ReportUnimplemented<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
       where T : class
     {

@@ -1,4 +1,5 @@
 using AGXUnity.Utils;
+using Brick.Physics.Charges;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,56 @@ namespace AGXUnity.IO.BrickIO
   public class InteractionMapper
   {
     private MapperData Data;
+
+    enum MappedConstraintType
+    {
+      Ordinary,
+      RotationalTargetSpeed,
+      RotationalRange,
+      RotationalLock,
+      TranslationalTargetSpeed,
+      TranslationalRange,
+      TranslationalLock,
+    };
+
+    public struct ChargeKey
+    {
+      public Charge[] m_charges;
+
+      public static implicit operator ChargeKey( Charge[] charges )
+      {
+        return new ChargeKey() { m_charges = charges };
+      }
+
+      public static implicit operator ChargeKey( std.PhysicsChargesChargeVector charges )
+      {
+        return new ChargeKey() { m_charges = charges.ToArray() };
+      }
+    }
+
+    public class CKEquality : IEqualityComparer<ChargeKey>
+    {
+      public bool Equals( ChargeKey x, ChargeKey y )
+      {
+        if ( x.m_charges.Length != y.m_charges.Length )
+          return false;
+        for ( int i = 0; i < x.m_charges.Length; i++ )
+          if ( x.m_charges[ i ].getName() != y.m_charges[ i ].getName() )
+            return false;
+        return true;
+      }
+
+      public int GetHashCode( ChargeKey obj )
+      {
+        int hash = 0;
+        foreach ( var charge in obj.m_charges )
+          hash ^= charge.GetHashCode();
+        return hash;
+      }
+    }
+
+    private Dictionary<ChargeKey,List<Constraint>> ChargeConstraintsMap = new Dictionary<ChargeKey,List<Constraint>>(new CKEquality());
+    private HashSet<Tuple<Constraint,MappedConstraintType>> UsedConstraintDofs = new HashSet<Tuple<Constraint,MappedConstraintType>>();
 
     public InteractionMapper( MapperData cache )
     {
@@ -40,7 +91,7 @@ namespace AGXUnity.IO.BrickIO
 
       var rotation = Brick.Math.Quat.fromTo(Brick.Math.Vec3.Z_AXIS(), main_axis_n);
       var new_x = rotation.rotate(Brick.Math.Vec3.X_AXIS());
-      var angle = Brick.Physics3D.Snap.Utils.angleBetweenVectors(new_x,normal_n,main_axis_n);
+      var angle = Brick.Math.Vec3.angleBetweenVectors(new_x,normal_n,main_axis_n);
       var rotation_2 = Brick.Math.Quat.angleAxis(angle,main_axis_n);
       frame.LocalRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
 
@@ -51,7 +102,6 @@ namespace AGXUnity.IO.BrickIO
     }
 
     HingeClass mapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
-                                            Brick.Physics3D.System system,
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
       where HingeClass : class
     {
@@ -194,27 +244,21 @@ namespace AGXUnity.IO.BrickIO
 
     public GameObject MapMate( Interactions.Mate mate, Brick.Physics3D.System system )
     {
-      ConstraintType? t = mate switch
-      {
-        Interactions.Cylindrical => ConstraintType.CylindricalJoint,
-        Interactions.Hinge => ConstraintType.Hinge,
-        Interactions.Lock => ConstraintType.LockJoint,
-        Interactions.Prismatic => ConstraintType.Prismatic,
-        _ => null,
-      };
-      if ( t == null ) {
+
+      Constraint agxConstraint = getOrCreateConstraintForInteraction(mate);
+      if ( agxConstraint == null ) {
         Debug.LogWarning( $"Mate type '{mate.GetType()}' is not supported" );
         return null;
       }
 
-      Constraint agxConstraint = mapInteraction( mate, system, ( f1, f2 ) => createConstraint( f1, f2, t.Value ) );
-      GameObject cGO = agxConstraint.gameObject;
-      BrickObject.RegisterGameObject( mate.getName(), cGO );
+      BrickObject.RegisterGameObject( mate.getName(), agxConstraint.gameObject, true );
 
       mapMateDamping( mate.damping(), mate.deformation(), agxConstraint );
       mapMateDeformation( mate.deformation(), agxConstraint );
 
-      return cGO;
+      agxConstraint.SetForceRange( new RangeReal( float.NegativeInfinity, float.PositiveInfinity ) );
+
+      return agxConstraint.gameObject;
     }
 
     void enableRangeInteraction( RangeController agxRange, Interactions.RangeInteraction1DOF range )
@@ -231,6 +275,12 @@ namespace AGXUnity.IO.BrickIO
     {
       agxLock.Enable = true;
       agxLock.ForceRange = new RangeReal( (float)spring.min_effort(), (float)spring.max_effort() );
+      if ( spring is Interactions.TorsionSpring ts )
+        agxLock.Position = (float)ts.angle();
+      else if ( spring is Interactions.LinearSpring ls )
+        agxLock.Position = (float)ls.position();
+      else
+        Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
 
       mapControllerDamping( spring.damping(), spring.deformation(), agxLock );
       mapControllerDeformation( spring.deformation(), agxLock );
@@ -249,7 +299,7 @@ namespace AGXUnity.IO.BrickIO
     void enableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
     {
       agxTarSpeed.Enable = true;
-      agxTarSpeed.Compliance = (float)(motor.gain() > 0.0f ? ( 1.0f / motor.gain() ) : float.MaxValue);
+      agxTarSpeed.Compliance = (float)( motor.gain() > 0.0f ? ( 1.0f / motor.gain() ) : float.MaxValue );
       agxTarSpeed.ForceRange = new RangeReal( (float)motor.min_effort(), (float)motor.max_effort() );
 
       agxTarSpeed.LockAtZeroSpeed = motor.zero_speed_as_spring();
@@ -257,62 +307,6 @@ namespace AGXUnity.IO.BrickIO
 
       mapControllerDamping( motor.zero_speed_spring_damping(), motor.zero_speed_spring_deformation(), agxTarSpeed );
       mapControllerDeformation( motor.zero_speed_spring_deformation(), agxTarSpeed );
-    }
-
-    GameObject mapLinearRange( Interactions.LinearRange range, Brick.Physics3D.System system )
-    {
-      var range_prismatic = mapInteraction( range, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Prismatic ) );
-      range_prismatic.SetForceRange( new RangeReal( 0, 0 ) );
-
-      enableRangeInteraction( range_prismatic.GetController<RangeController>(), range );
-
-      GameObject cGO = range_prismatic.gameObject;
-      BrickObject.RegisterGameObject( range.getName(), cGO );
-
-      return cGO;
-    }
-
-    GameObject mapLinearSpring( Interactions.LinearSpring spring, Brick.Physics3D.System system )
-    {
-      var spring_prismatic = mapInteraction( spring, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Prismatic ) );
-      spring_prismatic.SetForceRange( new RangeReal( 0, 0 ) );
-
-      var spring_lock = spring_prismatic.GetController<LockController>();
-      enableSpringInteraction( spring_lock, spring );
-      spring_lock.Position = (float)spring.position();
-
-      GameObject cGO = spring_prismatic.gameObject;
-      BrickObject.RegisterGameObject( spring.getName(), cGO );
-
-      return cGO;
-    }
-
-    GameObject mapRotationalRange( Interactions.RotationalRange range, Brick.Physics3D.System system )
-    {
-      var range_hinge = mapInteraction( range, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-      range_hinge.SetForceRange( new RangeReal( 0, 0 ) );
-
-      enableRangeInteraction( range_hinge.GetController<RangeController>(), range );
-
-      GameObject cGO = range_hinge.gameObject;
-      BrickObject.RegisterGameObject( range.getName(), cGO );
-
-      return cGO;
-    }
-
-    GameObject mapTorsionSpring( Interactions.TorsionSpring spring, Brick.Physics3D.System system )
-    {
-      var spring_hinge = mapInteraction( spring, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-      spring_hinge.SetForceRange( new RangeReal( 0, 0 ) );
-
-      var spring_lock = spring_hinge.GetController<LockController>();
-      enableSpringInteraction( spring_lock, spring );
-      spring_lock.Position = -(float)spring.angle();
-
-      GameObject cGO = spring_hinge.gameObject;
-      BrickObject.RegisterGameObject( spring.getName(), cGO );
-
-      return cGO;
     }
 
     //GameObject mapRotationalVelocityMotor(Brick.Physics1D.Interactions.RotationalVelocityMotor motor,  Brick.Physics3D.System system )
@@ -329,62 +323,93 @@ namespace AGXUnity.IO.BrickIO
     //  return cGO;
     //}
 
-    GameObject mapTorqueMotor( Interactions.TorqueMotor motor, Brick.Physics3D.System system )
+    Constraint getOrCreateConstraintForInteraction( Brick.Physics.Interactions.Interaction interaction )
     {
-      var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-      motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
+      ConstraintType ?type = interaction switch
+      {
+        // Lock
+        Interactions.Lock => ConstraintType.LockJoint,
+        // Hinge
+        Interactions.Hinge => ConstraintType.Hinge,
+        Interactions.RotationalRange => ConstraintType.Hinge,
+        Interactions.TorsionSpring => ConstraintType.Hinge,
+        Interactions.RotationalVelocityMotor => ConstraintType.Hinge,
+        Interactions.TorqueMotor => ConstraintType.Hinge,
+        // Prismatic
+        Interactions.Prismatic => ConstraintType.Prismatic,
+        Interactions.LinearRange => ConstraintType.Prismatic,
+        Interactions.LinearSpring => ConstraintType.Prismatic,
+        Interactions.LinearVelocityMotor => ConstraintType.Prismatic,
+        // Cylindrical
+        Interactions.Cylindrical => ConstraintType.CylindricalJoint,
+        // Unknown
+        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
+      };
 
-      var motor_tarSpeed = motor_hinge.GetController<TargetSpeedController>();
-      enableTorqueMotorInteraction( motor_tarSpeed, motor );
+      if ( type == null )
+        return null;
 
-      GameObject cGO = motor_hinge.gameObject;
-      BrickObject.RegisterGameObject( motor.getName(), cGO );
+      MappedConstraintType ct = interaction switch
+      {
+        Interactions.Lock => MappedConstraintType.Ordinary,
+        Interactions.Hinge => MappedConstraintType.Ordinary,
+        Interactions.Prismatic => MappedConstraintType.Ordinary,
+        Interactions.Cylindrical => MappedConstraintType.Ordinary,
+        Interactions.RotationalRange => MappedConstraintType.RotationalRange,
+        Interactions.TorsionSpring => MappedConstraintType.RotationalLock,
+        Interactions.RotationalVelocityMotor => MappedConstraintType.RotationalTargetSpeed,
+        Interactions.TorqueMotor => MappedConstraintType.RotationalTargetSpeed,
+        Interactions.LinearRange => MappedConstraintType.TranslationalRange,
+        Interactions.LinearSpring => MappedConstraintType.TranslationalLock,
+        Interactions.LinearVelocityMotor => MappedConstraintType.TranslationalTargetSpeed,
+      };
 
-      return cGO;
-    }
+      if ( !ChargeConstraintsMap.ContainsKey( interaction.charges() ) )
+        ChargeConstraintsMap[ interaction.charges() ] = new List<Constraint>();
 
-    GameObject mapRotationalVelocityMotor( Interactions.RotationalVelocityMotor motor, Brick.Physics3D.System system )
-    {
-      var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-      motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
+      var availableConstraint = ChargeConstraintsMap[ interaction.charges() ]
+        .Where(c => c.Type == type.Value)
+        .Where(c => !UsedConstraintDofs.Contains(Tuple.Create(c,ct)))
+        .FirstOrDefault();
 
-      var motor_tarSpeed = motor_hinge.GetController<TargetSpeedController>();
-      enableVelocityMotorInteraction( motor_tarSpeed, motor );
+      if ( availableConstraint == null ) {
+        availableConstraint = mapInteraction( interaction, ( f1, f2 ) => createConstraint( f1, f2, type.Value ) );
+        availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
+        ChargeConstraintsMap[ interaction.charges() ].Add( availableConstraint );
+      }
+      UsedConstraintDofs.Add( Tuple.Create( availableConstraint, ct ) );
 
-      GameObject cGO = motor_hinge.gameObject;
-      BrickObject.RegisterGameObject( motor.getName(), cGO );
-
-      return cGO;
-    }
-
-    GameObject mapLinearVelocityMotor( Interactions.LinearVelocityMotor motor, Brick.Physics3D.System system )
-    {
-      var motor_prismatic = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Prismatic ) );
-      motor_prismatic.SetForceRange( new RangeReal( 0, 0 ) );
-
-      var motor_tarSpeed = motor_prismatic.GetController<TargetSpeedController>();
-      enableVelocityMotorInteraction( motor_tarSpeed, motor );
-
-      GameObject cGO = motor_prismatic.gameObject;
-      BrickObject.RegisterGameObject( motor.getName(), cGO );
-
-      return cGO;
+      return availableConstraint;
     }
 
     public GameObject MapInteraction( Brick.Physics.Interactions.Interaction interaction, Brick.Physics3D.System system )
     {
-      return interaction switch
-      {
-        Interactions.Mate mate => MapMate( mate, system ),
-        Interactions.LinearRange lr => mapLinearRange( lr, system ),
-        Interactions.LinearSpring ls => mapLinearSpring( ls, system ),
-        Interactions.RotationalRange rs => mapRotationalRange( rs, system ),
-        Interactions.TorsionSpring ts => mapTorsionSpring( ts, system ),
-        Interactions.TorqueMotor tm => mapTorqueMotor( tm, system ),
-        Interactions.RotationalVelocityMotor rvm => mapRotationalVelocityMotor( rvm, system ),
-        Interactions.LinearVelocityMotor lvm => mapLinearVelocityMotor( lvm, system ),
-        _ => Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter )
+      if ( interaction is Interactions.Mate mate )
+        return MapMate( mate, system );
+
+      var constraint = getOrCreateConstraintForInteraction(interaction);
+
+      switch ( interaction ) {
+        case Interactions.RangeInteraction1DOF range:
+          enableRangeInteraction( constraint.GetController<RangeController>(), range );
+          break;
+        case Interactions.SpringInteraction1DOF spring:
+          enableSpringInteraction( constraint.GetController<LockController>(), spring );
+          break;
+        case Interactions.TorqueMotor tm:
+          enableTorqueMotorInteraction( constraint.GetController<TargetSpeedController>(), tm );
+          break;
+        case Interactions.VelocityMotor vm:
+          enableVelocityMotorInteraction( constraint.GetController<TargetSpeedController>(), vm );
+          break;
+        default:
+          Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+          break;
       };
+
+      GameObject cGO = constraint.gameObject;
+      BrickObject.RegisterGameObject( interaction.getName(), cGO );
+      return cGO;
     }
 
     public void MapContactModel( Brick.Physics.Interactions.SurfaceContact.Model contactModel )
@@ -409,7 +434,7 @@ namespace AGXUnity.IO.BrickIO
         return;
       }
 
-      ContactMaterial cm = ContactMaterial.CreateInstance<ContactMaterial>(); 
+      ContactMaterial cm = ContactMaterial.CreateInstance<ContactMaterial>();
       cm.name = contactModel.getName();
       cm.Material1 = sm1;
       cm.Material2 = sm2;
@@ -424,15 +449,15 @@ namespace AGXUnity.IO.BrickIO
         // Set the damping to two times the time step, which is the recommended minimum.
         // Will override any other damping defined
         // TODO: We dont know the timestep at import time so this needs to be revised
-        cm.Damping = (1.0f/50.0f) * 2.0f;
+        cm.Damping = ( 1.0f/50.0f ) * 2.0f;
       }
       else if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.ElasticDeformation elastic ) {
         cm.YoungsModulus = (float)elastic.stiffness();
         var time = mapDamping(contactModel.damping(), contactModel.normal_deformation());
         if ( time.HasValue )
           cm.Damping = time.Value;
-        if ( elastic is Brick.Physics.Interactions.SurfaceContact.PatchElasticity)
-          cm.UseContactArea = true ;
+        if ( elastic is Brick.Physics.Interactions.SurfaceContact.PatchElasticity )
+          cm.UseContactArea = true;
       }
       if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.ElastoPlasticDeformation elastoplastic ) {
         Data.ErrorReporter.Report( elastoplastic, AgxUnityBrickErrors.InvalidDefomationType );
@@ -440,7 +465,7 @@ namespace AGXUnity.IO.BrickIO
       }
 
       // Set the friction
-      if(contactModel.friction() is not Brick.Physics.Interactions.Friction.DefaultDryFriction dryFriction) {
+      if ( contactModel.friction() is not Brick.Physics.Interactions.Friction.DefaultDryFriction dryFriction ) {
         Data.ErrorReporter.Report( contactModel.friction(), AgxUnityBrickErrors.UnsupportedFrictionModel );
         return;
       }
@@ -552,8 +577,8 @@ namespace AGXUnity.IO.BrickIO
 
       if ( contactModel.adhesion() is Brick.Physics.Interactions.Adhesion.ConstantForceAdhesion constant_adhesive_force )
         cm.AdhesiveForce = (float)constant_adhesive_force.force();
-      if ( contactModel.slack() is Brick.Physics.Interactions.Slack.ConstantDistanceSlack constant_slack_distance)
-        cm.AdhesiveOverlap = (float) constant_slack_distance.distance();
+      if ( contactModel.slack() is Brick.Physics.Interactions.Slack.ConstantDistanceSlack constant_slack_distance )
+        cm.AdhesiveOverlap = (float)constant_slack_distance.distance();
 
       // Restitution
       cm.Restitution = (float)contactModel.normal_restitution();
