@@ -138,19 +138,19 @@ namespace AGXUnity.IO.BrickIO
         else if ( signal is Signals.PrismaticVelocityOutput pvo ) {
           var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromLinearVelocity( constraint.GetCurrentSpeed(), pvo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromVelocity1D( constraint.GetCurrentSpeed(), pvo ) );
         }
         else if ( signal is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var pos = rb.Native.getPosition().ToVector3();
-          m_outputSignalList.Add( ValueOutputSignal.fromPosition( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbpo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromPosition3D( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbpo ) );
         }
         else if ( signal is Signals.RigidBodyVelocityOutput rbvo ) {
           var go = Root.FindMappedObject(rbvo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var pos = rb.LinearVelocity.ToLeftHanded();
-          m_outputSignalList.Add( ValueOutputSignal.fromDirectionalVelocity( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbvo ) );
+          m_outputSignalList.Add( ValueOutputSignal.fromVelocity3D( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbvo ) );
         }
         else {
           Debug.LogWarning( $"Unhandled output type {signal.getType().getName()}" );
