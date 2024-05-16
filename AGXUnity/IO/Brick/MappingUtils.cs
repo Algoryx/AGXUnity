@@ -76,10 +76,6 @@ namespace AGXUnity.IO.BrickIO
     {
       if ( child != null )
         parent.AddChild( child );
-      else {
-        var tok = obj.getOwner().getType().getNameToken();
-        err.reportError( Brick.Error.create( (int)AgxUnityBrickErrors.NullChild, tok.line, tok.column, obj.getType().getOwningDocument().getSourceId() ) );
-      }
     }
 
     private static HashSet<System.Type> s_rtMapped = new HashSet<System.Type>()
