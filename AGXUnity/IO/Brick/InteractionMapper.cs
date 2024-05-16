@@ -8,6 +8,8 @@ using UnityEngine;
 using Charges = Brick.Physics3D.Charges;
 using Interactions = Brick.Physics3D.Interactions;
 
+using ChargeKey = std.PhysicsChargesChargeVector;
+
 namespace AGXUnity.IO.BrickIO
 {
   public class InteractionMapper
@@ -25,29 +27,14 @@ namespace AGXUnity.IO.BrickIO
       TranslationalLock,
     };
 
-    public struct ChargeKey
-    {
-      public Charge[] m_charges;
-
-      public static implicit operator ChargeKey( Charge[] charges )
-      {
-        return new ChargeKey() { m_charges = charges };
-      }
-
-      public static implicit operator ChargeKey( std.PhysicsChargesChargeVector charges )
-      {
-        return new ChargeKey() { m_charges = charges.ToArray() };
-      }
-    }
-
     public class CKEquality : IEqualityComparer<ChargeKey>
     {
       public bool Equals( ChargeKey x, ChargeKey y )
       {
-        if ( x.m_charges.Length != y.m_charges.Length )
+        if ( x.Count != y.Count)
           return false;
-        for ( int i = 0; i < x.m_charges.Length; i++ )
-          if ( x.m_charges[ i ].getName() != y.m_charges[ i ].getName() )
+        for ( int i = 0; i < x.Count; i++ )
+          if ( x[ i ].getName() != y[ i ].getName() )
             return false;
         return true;
       }
@@ -55,7 +42,7 @@ namespace AGXUnity.IO.BrickIO
       public int GetHashCode( ChargeKey obj )
       {
         int hash = 0;
-        foreach ( var charge in obj.m_charges )
+        foreach ( var charge in obj )
           hash ^= charge.GetHashCode();
         return hash;
       }
@@ -69,7 +56,7 @@ namespace AGXUnity.IO.BrickIO
       Data = cache;
     }
 
-    IFrame mapMateConnector( Charges.MateConnector mate_connector )
+    IFrame MapMateConnector( Charges.MateConnector mate_connector )
     {
       var frame = new IFrame();
 
@@ -101,18 +88,18 @@ namespace AGXUnity.IO.BrickIO
       return frame;
     }
 
-    HingeClass mapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
+    HingeClass MapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
       where HingeClass : class
     {
-      Brick.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
-      Brick.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
+      Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
+      Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
 
       var mate_connector1 = charge1 == null ? null : charge1 as Charges.MateConnector;
       var mate_connector2 = charge2 == null ? null : charge2 as Charges.MateConnector;
 
-      var frame1 = mate_connector1 == null ? null : mapMateConnector(mate_connector1);
-      var frame2 = mate_connector2 == null ? null : mapMateConnector(mate_connector2);
+      var frame1 = mate_connector1 == null ? null : MapMateConnector(mate_connector1);
+      var frame2 = mate_connector2 == null ? null : MapMateConnector(mate_connector2);
 
       if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1 ) {
         RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
@@ -139,7 +126,7 @@ namespace AGXUnity.IO.BrickIO
       return interactionCreator( frame2, frame1 );
     }
 
-    Constraint createConstraint( IFrame f1, IFrame f2, ConstraintType type )
+    Constraint CreateConstraint( IFrame f1, IFrame f2, ConstraintType type )
     {
       var at1 = ConstraintFrame.CreateLocal(f1.Parent ?? Data.RootNode,f1.LocalPosition,f1.LocalRotation);
       var at2 = ConstraintFrame.CreateLocal(f2.Parent ?? Data.RootNode,f2.LocalPosition,f2.LocalRotation);
@@ -150,7 +137,7 @@ namespace AGXUnity.IO.BrickIO
       return c;
     }
 
-    float? mapDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
+    float? MapDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
     {
       if ( deformation is Brick.Physics.Interactions.Deformation.RigidDeformation )
         return float.Epsilon;
@@ -159,7 +146,7 @@ namespace AGXUnity.IO.BrickIO
       return null;
     }
 
-    float? mapDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
+    float? MapDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
     {
       if ( damping is Brick.Physics.Interactions.Damping.ConstraintRelaxationTimeDamping crtd )
         return (float)crtd.time();
@@ -177,7 +164,7 @@ namespace AGXUnity.IO.BrickIO
       return null;
     }
 
-    Constraint.RotationalDof mapRotationalDOF( string axisName )
+    Constraint.RotationalDof MapRotationalDOF( string axisName )
     {
       return axisName switch
       {
@@ -188,7 +175,7 @@ namespace AGXUnity.IO.BrickIO
       };
     }
 
-    Constraint.TranslationalDof mapTranslationalDOF( string axisName )
+    Constraint.TranslationalDof MapTranslationalDOF( string axisName )
     {
       return axisName switch
       {
@@ -199,44 +186,44 @@ namespace AGXUnity.IO.BrickIO
       };
     }
 
-    void mapMateDamping( Interactions.Damping.DefaultMateDamping damping, Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
+    void MapMateDamping( Interactions.Damping.DefaultMateDamping damping, Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
     {
       foreach ( var (key, damp) in damping.getEntries<Brick.Physics.Interactions.Damping.DefaultDamping>() ) {
         var def = deformation.getDynamic( key ).asObject() as Brick.Physics.Interactions.Deformation.DefaultDeformation;
-        float? mapped = mapDamping(damp, def);
+        float? mapped = MapDamping(damp, def);
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
-          target.SetDamping( mapped.Value, mapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetDamping( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
         else if ( key.StartsWith( "around_" ) )
-          target.SetDamping( mapped.Value, mapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetDamping( mapped.Value, MapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
       }
     }
 
-    void mapMateDeformation( Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
+    void MapMateDeformation( Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
     {
       foreach ( var (key, def) in deformation.getEntries<Brick.Physics.Interactions.Deformation.DefaultDeformation>() ) {
-        float? mapped = mapDeformation(def);
+        float? mapped = MapDeformation(def);
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
-          target.SetCompliance( mapped.Value, mapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetCompliance( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
         else if ( key.StartsWith( "around_" ) )
-          target.SetCompliance( mapped.Value, mapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetCompliance( mapped.Value, MapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
       }
     }
 
-    void mapControllerDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
+    void MapControllerDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
     {
-      float? mapped = mapDamping(damping, deformation);
+      float? mapped = MapDamping(damping, deformation);
       if ( mapped == null )
         return;
       target.Damping = mapped.Value;
     }
 
-    void mapControllerDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
+    void MapControllerDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
     {
-      float? mapped = mapDeformation(deformation);
+      float? mapped = MapDeformation(deformation);
       if ( mapped == null )
         return;
       target.Compliance = mapped.Value;
@@ -253,25 +240,25 @@ namespace AGXUnity.IO.BrickIO
 
       BrickObject.RegisterGameObject( mate.getName(), agxConstraint.gameObject, true );
 
-      mapMateDamping( mate.damping(), mate.deformation(), agxConstraint );
-      mapMateDeformation( mate.deformation(), agxConstraint );
+      MapMateDamping( mate.damping(), mate.deformation(), agxConstraint );
+      MapMateDeformation( mate.deformation(), agxConstraint );
 
       agxConstraint.SetForceRange( new RangeReal( float.NegativeInfinity, float.PositiveInfinity ) );
 
       return agxConstraint.gameObject;
     }
 
-    void enableRangeInteraction( RangeController agxRange, Interactions.RangeInteraction1DOF range )
+    void EnableRangeInteraction( RangeController agxRange, Interactions.RangeInteraction1DOF range )
     {
       agxRange.Enable = true;
       agxRange.Range = new RangeReal( (float)range.start(), (float)range.end() );
       agxRange.ForceRange = new RangeReal( (float)range.min_effort(), (float)range.max_effort() );
 
-      mapControllerDamping( range.damping(), range.deformation(), agxRange );
-      mapControllerDeformation( range.deformation(), agxRange );
+      MapControllerDamping( range.damping(), range.deformation(), agxRange );
+      MapControllerDeformation( range.deformation(), agxRange );
     }
 
-    void enableSpringInteraction( LockController agxLock, Interactions.SpringInteraction1DOF spring )
+    void EnableSpringInteraction( LockController agxLock, Interactions.SpringInteraction1DOF spring )
     {
       agxLock.Enable = true;
       agxLock.ForceRange = new RangeReal( (float)spring.min_effort(), (float)spring.max_effort() );
@@ -282,11 +269,11 @@ namespace AGXUnity.IO.BrickIO
       else
         Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
 
-      mapControllerDamping( spring.damping(), spring.deformation(), agxLock );
-      mapControllerDeformation( spring.deformation(), agxLock );
+      MapControllerDamping( spring.damping(), spring.deformation(), agxLock );
+      MapControllerDeformation( spring.deformation(), agxLock );
     }
 
-    void enableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
+    void EnableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
     {
       agxTarSpeed.Compliance = 1e-16f;
       agxTarSpeed.enabled = true;
@@ -296,7 +283,7 @@ namespace AGXUnity.IO.BrickIO
       agxTarSpeed.ForceRange = new RangeReal( torque, torque );
     }
 
-    void enableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
+    void EnableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
     {
       agxTarSpeed.Enable = true;
       agxTarSpeed.Compliance = (float)( motor.gain() > 0.0f ? ( 1.0f / motor.gain() ) : float.MaxValue );
@@ -305,8 +292,8 @@ namespace AGXUnity.IO.BrickIO
       agxTarSpeed.LockAtZeroSpeed = motor.zero_speed_as_spring();
       agxTarSpeed.Speed = (float)motor.desired_speed();
 
-      mapControllerDamping( motor.zero_speed_spring_damping(), motor.zero_speed_spring_deformation(), agxTarSpeed );
-      mapControllerDeformation( motor.zero_speed_spring_deformation(), agxTarSpeed );
+      MapControllerDamping( motor.zero_speed_spring_damping(), motor.zero_speed_spring_deformation(), agxTarSpeed );
+      MapControllerDeformation( motor.zero_speed_spring_deformation(), agxTarSpeed );
     }
 
     //GameObject mapRotationalVelocityMotor(Brick.Physics1D.Interactions.RotationalVelocityMotor motor,  Brick.Physics3D.System system )
@@ -349,7 +336,7 @@ namespace AGXUnity.IO.BrickIO
       if ( type == null )
         return null;
 
-      MappedConstraintType ct = interaction switch
+      MappedConstraintType? ct = interaction switch
       {
         Interactions.Lock => MappedConstraintType.Ordinary,
         Interactions.Hinge => MappedConstraintType.Ordinary,
@@ -362,22 +349,26 @@ namespace AGXUnity.IO.BrickIO
         Interactions.LinearRange => MappedConstraintType.TranslationalRange,
         Interactions.LinearSpring => MappedConstraintType.TranslationalLock,
         Interactions.LinearVelocityMotor => MappedConstraintType.TranslationalTargetSpeed,
+        _ => Utils.ReportUnimplementedS<MappedConstraintType>( interaction, Data.ErrorReporter )
       };
+
+      if ( ct == null )
+        return null;
 
       if ( !ChargeConstraintsMap.ContainsKey( interaction.charges() ) )
         ChargeConstraintsMap[ interaction.charges() ] = new List<Constraint>();
 
       var availableConstraint = ChargeConstraintsMap[ interaction.charges() ]
         .Where(c => c.Type == type.Value)
-        .Where(c => !UsedConstraintDofs.Contains(Tuple.Create(c,ct)))
+        .Where(c => !UsedConstraintDofs.Contains(Tuple.Create(c,ct.Value)))
         .FirstOrDefault();
 
       if ( availableConstraint == null ) {
-        availableConstraint = mapInteraction( interaction, ( f1, f2 ) => createConstraint( f1, f2, type.Value ) );
+        availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
         availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
         ChargeConstraintsMap[ interaction.charges() ].Add( availableConstraint );
       }
-      UsedConstraintDofs.Add( Tuple.Create( availableConstraint, ct ) );
+      UsedConstraintDofs.Add( Tuple.Create( availableConstraint, ct.Value ) );
 
       return availableConstraint;
     }
@@ -391,16 +382,16 @@ namespace AGXUnity.IO.BrickIO
 
       switch ( interaction ) {
         case Interactions.RangeInteraction1DOF range:
-          enableRangeInteraction( constraint.GetController<RangeController>(), range );
+          EnableRangeInteraction( constraint.GetController<RangeController>(), range );
           break;
         case Interactions.SpringInteraction1DOF spring:
-          enableSpringInteraction( constraint.GetController<LockController>(), spring );
+          EnableSpringInteraction( constraint.GetController<LockController>(), spring );
           break;
         case Interactions.TorqueMotor tm:
-          enableTorqueMotorInteraction( constraint.GetController<TargetSpeedController>(), tm );
+          EnableTorqueMotorInteraction( constraint.GetController<TargetSpeedController>(), tm );
           break;
         case Interactions.VelocityMotor vm:
-          enableVelocityMotorInteraction( constraint.GetController<TargetSpeedController>(), vm );
+          EnableVelocityMotorInteraction( constraint.GetController<TargetSpeedController>(), vm );
           break;
         default:
           Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
@@ -414,17 +405,17 @@ namespace AGXUnity.IO.BrickIO
 
     public void MapContactModel( Brick.Physics.Interactions.SurfaceContact.Model contactModel )
     {
-      var material_1 = contactModel.material_1();
-      var material_2 = contactModel.material_2();
+      var mat1 = contactModel.material_1();
+      var mat2 = contactModel.material_2();
 
-      ShapeMaterial sm1 = material_1 != null ? Data.MaterialCache[material_1] : null;
-      ShapeMaterial sm2 = material_2 != null ? Data.MaterialCache[material_2] : null;
+      ShapeMaterial sm1 = mat1 != null ? Data.MaterialCache[mat1] : null;
+      ShapeMaterial sm2 = mat2 != null ? Data.MaterialCache[mat2] : null;
 
       if ( sm1 == null )
-        Data.ErrorReporter.Report( material_1, AgxUnityBrickErrors.MissingMaterial );
+        Data.ErrorReporter.Report( mat1, AgxUnityBrickErrors.MissingMaterial );
 
       if ( sm2 == null )
-        Data.ErrorReporter.Report( material_2, AgxUnityBrickErrors.MissingMaterial );
+        Data.ErrorReporter.Report( mat2, AgxUnityBrickErrors.MissingMaterial );
 
       if ( sm1  == null || sm2 == null )
         return;
@@ -453,7 +444,7 @@ namespace AGXUnity.IO.BrickIO
       }
       else if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.ElasticDeformation elastic ) {
         cm.YoungsModulus = (float)elastic.stiffness();
-        var time = mapDamping(contactModel.damping(), contactModel.normal_deformation());
+        var time = MapDamping(contactModel.damping(), contactModel.normal_deformation());
         if ( time.HasValue )
           cm.Damping = time.Value;
         if ( elastic is Brick.Physics.Interactions.SurfaceContact.PatchElasticity )

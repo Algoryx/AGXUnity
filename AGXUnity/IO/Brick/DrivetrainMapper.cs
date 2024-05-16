@@ -111,9 +111,6 @@ namespace AGXUnity.IO.BrickIO
 
       agx_differential.setName( differential.getName() );
 
-      // TODO: remove lock
-      agx_differential.setLock( true );
-
       return agx_differential;
 
     }

@@ -93,6 +93,9 @@ namespace AGXUnity.IO.BrickIO
       //var imports = doc.findImports();
       //return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
 
+
+      // TODO: This does not currently handle nested imports handled by plugins. 
+      // i.e. if an imported URDF file in turn import an OBJ file.
       List<string> dependencyExtensions = new List<string>() { "obj" };
 
       string extRegex = "";

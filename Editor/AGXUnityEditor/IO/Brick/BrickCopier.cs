@@ -9,6 +9,12 @@ namespace AGXUnityEditor.IO.BrickIO
 {
   public static class BrickCopier
   {
+    /// <summary>
+    /// Since brick objects require their corresponding source files to be present at runtime to load, 
+    /// the files need to be copied when the application is built. For simplicity, we currently assume in <see cref="BrickRoot"/>
+    /// that the path of the source file relative to the asset root folder is mirrored in the build directory.
+    /// Additionally, dependencies of brick files need to be imported as these are also required to load the brick file.
+    /// </summary>
     [PostProcessBuild( 16 )]
     public static void OnPostProcessBuild( BuildTarget target, string targetPathFilename )
     {

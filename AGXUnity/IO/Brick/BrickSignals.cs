@@ -143,14 +143,14 @@ namespace AGXUnity.IO.BrickIO
         else if ( signal is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
-          var pos = rb.Native.getPosition().ToVector3();
-          m_outputSignalList.Add( ValueOutputSignal.fromPosition3D( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbpo ) );
+          var pos = rb.Native.getPosition();
+          m_outputSignalList.Add( ValueOutputSignal.fromPosition3D( pos.ToBrickVec3(), rbpo ) );
         }
         else if ( signal is Signals.RigidBodyVelocityOutput rbvo ) {
           var go = Root.FindMappedObject(rbvo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
-          var pos = rb.LinearVelocity.ToLeftHanded();
-          m_outputSignalList.Add( ValueOutputSignal.fromVelocity3D( global::Brick.Math.Vec3.fromXYZ( pos.x, pos.y, pos.z ), rbvo ) );
+          var vel = rb.LinearVelocity.ToLeftHanded();
+          m_outputSignalList.Add( ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo ) );
         }
         else {
           Debug.LogWarning( $"Unhandled output type {signal.getType().getName()}" );

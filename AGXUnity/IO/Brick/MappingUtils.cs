@@ -27,10 +27,19 @@ namespace AGXUnity.IO.BrickIO
       return new agx.Quat( quat.x(), quat.y(), quat.z(), quat.w() ).ToHandedQuaternion();
     }
 
+    public static Brick.Math.Vec3 ToBrickVec3( this agx.Vec3 vec3 )
+    {
+      return Brick.Math.Vec3.fromXYZ( vec3.x, vec3.y, vec3.z );
+    }
+
+    public static Brick.Math.Vec3 ToBrickVec3( this Vector3 vec3 )
+    {
+      return Brick.Math.Vec3.fromXYZ( vec3.x, vec3.y, vec3.z );
+    }
   }
   public static class Utils
   {
-    public static void mapLocalTransform( Transform transform, Brick.Physics3D.Transform local_transform )
+    public static void MapLocalTransform( Transform transform, Brick.Physics3D.Transform local_transform )
     {
       transform.localPosition = local_transform.position().ToHandedVector3();
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();

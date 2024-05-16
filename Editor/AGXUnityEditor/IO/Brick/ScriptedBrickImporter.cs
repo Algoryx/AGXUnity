@@ -1,11 +1,10 @@
+using AGXUnity.IO.BrickIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
-using AGXUnity.IO.BrickIO;
-using Brick;
 
 namespace AGXUnityEditor.IO.BrickIO
 {
@@ -36,22 +35,22 @@ namespace AGXUnityEditor.IO.BrickIO
       Errors = new List<Error>();
       var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( "Assets/Brick/brick-icon.png" );
 
-      // Todo: Add support for dependecy-based reimport
+      // TODO: Add support for dependecy-based reimport
       //foreach ( var dep in dependencies )
       //  ctx.DependsOnSourceAsset( dep );
 
       ImportTime = 0;
 
-      // Todo: Investigate why selecting config.brick files in the project view crashes unity
+      // TODO: Investigate why selecting config.brick files in the project view crashes unity
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
         return;
 
-      var start = System.DateTime.Now;
-      var go = BrickImporter.ImportBrickFile( ctx.assetPath, 
-                                              ReportErrors, 
-                                              new MapperOptions(HideImportedMeshes,HideImportedVisualMaterials), 
+      var start = DateTime.Now;
+      var go = BrickImporter.ImportBrickFile( ctx.assetPath,
+                                              ReportErrors,
+                                              new MapperOptions(HideImportedMeshes,HideImportedVisualMaterials),
                                               data => OnSuccess(ctx,data) );
-      var end = System.DateTime.Now;
+      var end = DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 
       ctx.AddObjectToAsset( "Root", go, icon );
@@ -61,15 +60,15 @@ namespace AGXUnityEditor.IO.BrickIO
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
       ctx.AddObjectToAsset( "Default Material", data.VisualMaterial );
-      foreach( var mesh in data.CacheMappedMeshes )
+      foreach ( var mesh in data.CacheMappedMeshes )
         ctx.AddObjectToAsset( mesh.name, mesh );
-      foreach ( var mat in data.CacheMappedMaterials)
+      foreach ( var mat in data.CacheMappedMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
       ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
-      foreach (var mat in data.MaterialCache.Values )
-        if(mat != data.DefaultMaterial)
+      foreach ( var mat in data.MaterialCache.Values )
+        if ( mat != data.DefaultMaterial )
           ctx.AddObjectToAsset( mat.name, mat );
-      foreach ( var mat in data.ContactMaterials)
+      foreach ( var mat in data.ContactMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
     }
 

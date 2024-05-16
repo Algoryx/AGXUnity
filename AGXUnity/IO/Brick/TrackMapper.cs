@@ -29,7 +29,7 @@ public class TrackMapper
     return wheel;
   }
 
-  private TrackNodeVariation mapVariation( CyclicVariation variation )
+  private TrackNodeVariation MapVariation( CyclicVariation variation )
   {
     if ( variation is Tracks::SinusoidalVariation sin )
       return new AGXUnity.Model.SinusoidalVariation( (float)sin.additional_amplitude(), (float)sin.period() );
@@ -91,8 +91,8 @@ public class TrackMapper
       default_width  = (float)box_description.width();
       default_height = (float)box_description.height();
 
-      track.ThicknessVariation = mapVariation( box_description.variation().height_variation() );
-      track.WidthVariation = mapVariation( box_description.variation().width_variation() );
+      track.ThicknessVariation = MapVariation( box_description.variation().height_variation() );
+      track.WidthVariation = MapVariation( box_description.variation().width_variation() );
     }
 
     track.Width = default_width;

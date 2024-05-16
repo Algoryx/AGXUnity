@@ -9,9 +9,19 @@ namespace AGXUnity.IO.BrickIO
   public class BrickRoot : ScriptComponent
   {
 
+    /// <summary>
+    /// By default, objects have no reference to where their correesponding assets are located on disk since assets do not exist outside of the editor.
+    /// Since .brick objects to require a reference to their source files (currently) to load we need to store the path to the corresponding brick file manually
+    /// This is set by the <seealso cref="BrickImporter"/>.
+    /// </summary>
     [field: SerializeField]
     public string BrickAssetPath { get; set; }
 
+    /// <summary>
+    /// In the editor the files will be located in the assets folder (Unless the path is absolute). In this case it is fine loading the path as is.
+    /// However, when the application is built, the brick file is copied to a corresponding directory in the build directory and the path of the
+    /// brick file needs to be updated accordingly.
+    /// </summary>
     public string BrickFile => BrickAssetPath.Replace( "Assets/", BrickImporter.BrickDir + "/" );
 
     public Object Native { get; private set; }
@@ -42,7 +52,7 @@ namespace AGXUnity.IO.BrickIO
 
     protected override bool Initialize()
     {
-      Native = BrickImporter.ParseBrickSource( BrickFile, _report_errors );
+      Native = BrickImporter.ParseBrickSource( BrickFile, ReportError );
 
       if ( Native == null ) {
         Debug.LogError( $"Failed to initialize Brick object '{name}'", this );
@@ -61,7 +71,7 @@ namespace AGXUnity.IO.BrickIO
       return base.Initialize();
     }
 
-    private static void _report_errors( Error error )
+    private static void ReportError( Error error )
     {
       UnityBrickErrorFormatter error_formatter = new UnityBrickErrorFormatter();
       Debug.LogError( error_formatter.format( error ) );
