@@ -1,4 +1,5 @@
 using AGXUnity.Utils;
+using Brick.Physics1D.Charges;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -71,7 +72,7 @@ namespace AGXUnity.IO.BrickIO
       return agx_gear;
     }
 
-    public agxDriveTrain.Differential MapDifferential(Brick.DriveTrain.Differential differential )
+    public agxDriveTrain.Differential MapDifferential( Brick.DriveTrain.Differential differential )
     {
       agxDriveTrain.Differential agx_differential = new agxDriveTrain.Differential();
 
@@ -115,6 +116,54 @@ namespace AGXUnity.IO.BrickIO
 
     }
 
+    public agxDriveTrain.TorqueConverter MapTorqueConverter( Brick.DriveTrain.EmpiricalTorqueConverter tc )
+    {
+      agxDriveTrain.TorqueConverter agx_torque_converter = new agxDriveTrain.TorqueConverter();
+
+      agx_torque_converter.setLockUpTime( tc.lock_up_time() );
+      agx_torque_converter.setOilDensity( tc.oil_density() );
+      agx_torque_converter.setPumpDiameter( tc.diameter() );
+
+      agx_torque_converter.clearEfficiencyTable();
+      agx_torque_converter.clearGeometryFactorTable();
+
+      foreach ( var pair in tc.velocity_ratio_geometry_factor_list() ) {
+        agx_torque_converter.insertGeometryFactorLookupValue( pair.velocity_ratio(), pair.geometry_factor() );
+      }
+
+      foreach ( var pair in tc.velocity_ratio_torque_multiplier_list() ) {
+        // AGX has wrong naming. It is multiplier, not efficiency.
+        agx_torque_converter.insertEfficiencyLookupValue( pair.velocity_ratio(), pair.multiplier() );
+      }
+
+      Brick.Physics.Charges.Charge charge1 = tc.charges().Count >= 1 ? tc.charges()[0] : null;
+      Brick.Physics.Charges.Charge charge2 = tc.charges().Count >= 2 ? tc.charges()[1] : null;
+
+      var pump_connector = charge1 as Brick.Physics1D.Charges.MateConnector;
+      var turbine_connector = charge2 as Brick.Physics1D.Charges.MateConnector;
+
+      var pump_shaft = pump_connector.getOwner() as Brick.DriveTrain.Shaft;
+      var turbine_shaft = turbine_connector.getOwner() as Brick.DriveTrain.Shaft;
+
+      agxPowerLine.Unit pump_unit = pump_shaft == null ? null : MapperData.UnitCache[pump_shaft];
+      agxPowerLine.Unit turbine_unit = turbine_shaft == null ? null : MapperData.UnitCache[turbine_shaft];
+
+      if ( pump_unit == null || turbine_unit == null ) {
+        // TODO: Error reporting
+        //reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
+      }
+      else {
+        agxPowerLine.Side pump_side = pump_shaft.input() == pump_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+        agx_torque_converter.connect( agxPowerLine.Side.INPUT, pump_side, pump_unit );
+        agxPowerLine.Side turbine_side = turbine_shaft.input() == turbine_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+        agx_torque_converter.connect( agxPowerLine.Side.OUTPUT, turbine_side, turbine_unit );
+      }
+
+      agx_torque_converter.setName( tc.getName() );
+
+      return agx_torque_converter;
+    }
+
     public agxDriveTrain.VelocityConstraint Map1dRotationalVelocityMotor( Brick.Physics1D.Interactions.RotationalVelocityMotor motor )
     {
       agxDriveTrain.VelocityConstraint constraint = null;
@@ -132,14 +181,57 @@ namespace AGXUnity.IO.BrickIO
       return constraint;
     }
 
+    public agxDriveTrain.CombustionEngine MapCombustionEngine( Brick.DriveTrain.CombustionEngine engine )
+    {
+      var parameters = new agxDriveTrain.CombustionEngineParameters();
+      parameters.displacementVolume = engine.displacement_volume();
+      parameters.maxTorque = engine.max_torque();
+      parameters.maxTorqueRPM = engine.max_torque_RPM();
+      //parameters.maxPower = engine.max_power();
+      parameters.maxPowerRPM = engine.max_power_RPM();
+      parameters.idleRPM = engine.idle_RPM();
+      parameters.crankShaftInertia = engine.crank_shaft_inertia();
+      agxDriveTrain.CombustionEngine agxEngine = new agxDriveTrain.CombustionEngine(parameters);
+
+      agxEngine.setEnable( true );
+      agxEngine.setThrottle( engine.initial_throttle() );
+      Brick.Physics.Charges.Charge charge = engine.charges().Count >= 1 ? engine.charges()[0] : null;
+
+      var stiff_internal_gear = new agxDriveTrain.Gear(1.0);
+      stiff_internal_gear.connect( agxPowerLine.Side.INPUT, agxPowerLine.Side.OUTPUT, agxEngine );
+
+
+      if ( charge is not MateConnector connector ) {
+        // Error reporting
+        //reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
+      }
+      else {
+        var shaft = connector.getOwner() as Brick.DriveTrain.Shaft;
+
+        agxPowerLine.Unit shaft_unit = shaft == null ? null : MapperData.UnitCache[ shaft ];
+
+        if ( shaft_unit == null ) {
+          // Error reporting
+          // reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
+        }
+        else {
+          stiff_internal_gear.connect( agxPowerLine.Side.OUTPUT, agxPowerLine.Side.INPUT, shaft_unit );
+        }
+      }
+      agxEngine.setName( engine.getName() );
+
+      return agxEngine;
+
+    }
+
     public void MapActuator( Brick.DriveTrain.Actuator actuator )
     {
       Brick.Physics1D.Charges.MateConnector connector_1d = actuator.connector_1d();
       Brick.Core.Object mate = actuator.mate_3d();
 
-      var agx_constraint = MapperData.Root.FindMappedObject( mate.getName() ).GetInitializedComponent<Constraint>();
+      var agx_constraint = MapperData.Root.FindMappedObject( mate.getName() )?.GetInitializedComponent<Constraint>();
       if ( agx_constraint == null ) {
-        Debug.LogError( $"Missing interaction for actuator: {actuator.getName()}" );
+        Debug.LogError( $"Missing interaction for actuator: {actuator.getName()} (interaction: {mate.getName()})" );
         return;
       }
 

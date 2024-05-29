@@ -75,6 +75,18 @@ namespace AGXUnity.IO.BrickIO
         MapperData.PowerLine.add( mapped );
       }
 
+      foreach ( var tc in system.getValues<Brick.DriveTrain.EmpiricalTorqueConverter>()) {
+        var mapped = DrivetrainMapper.MapTorqueConverter( tc );
+        MapperData.RuntimeMap[ tc.getName() ] = mapped;
+        MapperData.PowerLine.add( mapped );
+      }
+
+      foreach ( var engine in system.getValues<Brick.DriveTrain.CombustionEngine>()) {
+        var mapped = DrivetrainMapper.MapCombustionEngine(engine);
+        MapperData.RuntimeMap[ engine.getName() ] = mapped;
+        MapperData.PowerLine.add( mapped );
+      }
+
       foreach ( var actuator in system.getValues<Brick.DriveTrain.Actuator>() )
         DrivetrainMapper.MapActuator( actuator );
 

@@ -109,6 +109,15 @@ namespace AGXUnity.IO.BrickIO
             else
               Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
           }
+          else if ( target is Brick.DriveTrain.Signals.CombustionEngineThrottleInput ceti ) {
+            var engine = Root.FindRuntimeMappedObject( ceti.combustion_engine().getName() );
+            if ( engine is agxDriveTrain.CombustionEngine ce ) {
+              Debug.Log( realSig.value() );
+              ce.setThrottle( realSig.value() );
+            }
+            else
+              Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ceti.combustion_engine().getName()}'" );
+          }
           else {
             Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
           }
@@ -150,7 +159,14 @@ namespace AGXUnity.IO.BrickIO
           var go = Root.FindMappedObject(rbvo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var vel = rb.LinearVelocity.ToLeftHanded();
-          m_outputSignalList.Add( ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo ) );
+          var sig = ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo );
+          m_outputSignalList.Add( sig );
+        }
+        else if ( signal is Brick.Physics1D.Signals.RotationalBodyAngularVelocityOutput rbavo ) {
+          if ( Root.FindRuntimeMappedObject( rbavo.body().getName() ) is not agxPowerLine.Unit rotBod || rotBod.asRotationalUnit() == null )
+            Debug.LogError( $"{rbavo.body().getName()} was not mapped to a powerline unit" );
+          else
+            m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( rotBod.asRotationalUnit().getAngularVelocity(), rbavo ) );
         }
         else {
           Debug.LogWarning( $"Unhandled output type {signal.getType().getName()}" );

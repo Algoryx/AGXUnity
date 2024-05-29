@@ -88,6 +88,7 @@ namespace AGXUnity.IO.BrickIO
       typeof(Brick.DriveTrain.Shaft),
       typeof(Brick.DriveTrain.TorqueMotor),
       typeof(Brick.DriveTrain.Differential),
+      typeof(Brick.DriveTrain.EmpiricalTorqueConverter),
     };
 
     public static bool IsRuntimeMapped( Brick.Core.Object obj )

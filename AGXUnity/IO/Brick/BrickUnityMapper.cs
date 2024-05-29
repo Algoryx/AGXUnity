@@ -36,7 +36,7 @@ namespace AGXUnity.IO.BrickIO
 
     MapperOptions Options;
 
-    public BrickUnityMapper(MapperOptions options = new MapperOptions())
+    public BrickUnityMapper( MapperOptions options = new MapperOptions() )
     {
       Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
@@ -319,7 +319,7 @@ namespace AGXUnity.IO.BrickIO
 
         var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
         meshSource.name = geom.getName();
-        if( Options.HideMeshesInHierarchy )
+        if ( Options.HideMeshesInHierarchy )
           meshSource.hideFlags    = HideFlags.HideInHierarchy;
         Data.CacheMappedMeshes.Add( meshSource );
         mesh.AddSourceObject( meshSource );
@@ -394,14 +394,71 @@ namespace AGXUnity.IO.BrickIO
       Utils.MapLocalTransform( go.transform, geom.local_transform() );
       var shapeComp = go.GetComponent<Shape>();
       shapeComp.CollisionsEnabled = geom.enable_collisions();
+      // TODO: Replace this if this property is added to Brick.
+      // For now, assume that we dont want automatic calculation for disabled geometries
+      //shapeComp.EnableMassProperties = geom.enable_collisions();
 
       // TODO: This does not properly check whether it is the default material
       if ( geom.material().getName() != "Physics.Charges.Material" )
-        if( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
+        if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
           shapeComp.Material = sm;
 
       Data.GeometryCache[ geom ] = shapeComp;
       return go;
+    }
+
+    bool InertiaTensorIsSet( Brick.Math.Matrix3x3 inertia_tensor )
+    {
+      return inertia_tensor.e00() != 0.0
+          || inertia_tensor.e11() != 0.0
+          || inertia_tensor.e22() != 0.0;
+    }
+
+    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, Brick.Physics3D.Transform cm )
+    {
+      if ( inertia.mass() > 0.0 )
+        mp.Mass.UserValue = (float)inertia.mass();
+
+      else if ( inertia.mass() < 0.0 ) {
+        // TODO: Error Reporting
+        //auto token = inertia.getOwner()->getType()->getNameToken();
+        //m_error_reporter->reportError( Error::create( AGXBrickError::NegativeMass, token.line, token.column, m_source_id ) );
+        return false;
+      }
+
+      var cm_transform_is_set =
+           !cm.position().isDefault("x")
+        || !cm.position().isDefault("y")
+        || !cm.position().isDefault("z")
+        || !cm.rotation().isDefault("x")
+        || !cm.rotation().isDefault("y")
+        || !cm.rotation().isDefault("z")
+        || !cm.rotation().isDefault("w");
+
+      if ( cm_transform_is_set ) {
+        mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
+        if ( !cm.rotation().isDefault( "x" )
+          || !cm.rotation().isDefault( "y" )
+          || !cm.rotation().isDefault( "z" )
+          || !cm.rotation().isDefault( "w" ) )
+          // TODO: Proper warning passed to importer
+          Debug.LogWarning( "AGXUnity does not support rotated Center of mass frames" );
+      }
+
+      var inertia_tensor = inertia.tensor();
+      var inertia_tensor_is_set = InertiaTensorIsSet(inertia_tensor);
+      if ( inertia_tensor_is_set ) {
+        mp.InertiaDiagonal.UserValue = new Vector3( (float)inertia_tensor.e00(), (float)inertia_tensor.e11(), (float)inertia_tensor.e22() );
+        mp.InertiaOffDiagonal.UserValue = new Vector3( (float)inertia_tensor.e01(), (float)inertia_tensor.e02(), (float)inertia_tensor.e12() );
+      }
+
+      mp.Mass.UseDefault = inertia.mass() <= 0.0;
+      mp.InertiaDiagonal.UseDefault = !inertia_tensor_is_set;
+      mp.InertiaOffDiagonal.UseDefault = !inertia_tensor_is_set;
+
+      mp.CenterOfMassOffset.UseDefault = !cm_transform_is_set;
+
+      return true;
     }
 
     GameObject MapBody( Bodies.RigidBody body )
@@ -411,8 +468,7 @@ namespace AGXUnity.IO.BrickIO
       var rbComp = rb.GetComponent<RigidBody>();
       Utils.MapLocalTransform( rb.transform, body.kinematics().local_transform() );
 
-      rbComp.MassProperties.Mass.UseDefault = false;
-      rbComp.MassProperties.Mass.UserValue = (float)body.inertia().mass();
+      MapMassProperties( rbComp.MassProperties, body.inertia(), body.kinematics().local_cm_transform() );
 
       bool hasVisuals = false;
       foreach ( var visual in body.getValues<Brick.Visuals.Geometries.Geometry>() ) {
