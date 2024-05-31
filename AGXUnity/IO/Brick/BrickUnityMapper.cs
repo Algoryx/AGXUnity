@@ -636,6 +636,13 @@ namespace AGXUnity.IO.BrickIO
 
       foreach ( var trackSystem in system.getValues<Brick.Vehicles.Tracks.System>() )
         TrackMapper.MapTrackSystem( trackSystem );
+
+      foreach ( var mateConnector in system.getValues<Brick.Physics3D.Charges.MateConnector>() )
+        InteractionMapper.MapMateConnectorInitial( mateConnector, s );
+
+      foreach ( var body in system.getValues<Brick.Physics3D.Bodies.RigidBody>() )
+        foreach ( var mateConnector in body.getValues<Brick.Physics3D.Charges.MateConnector>() )
+          InteractionMapper.MapMateConnectorInitial( mateConnector, Data.BodyCache[ body ].gameObject );
     }
 
     void MapSystemPass4( Brick.Physics3D.System system )

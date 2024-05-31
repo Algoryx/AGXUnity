@@ -1,14 +1,11 @@
-using AGXUnity.Utils;
 using Brick.Physics.Charges;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
+using ChargeKey = std.PhysicsChargesChargeVector;
 using Charges = Brick.Physics3D.Charges;
 using Interactions = Brick.Physics3D.Interactions;
-
-using ChargeKey = std.PhysicsChargesChargeVector;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -31,7 +28,7 @@ namespace AGXUnity.IO.BrickIO
     {
       public bool Equals( ChargeKey x, ChargeKey y )
       {
-        if ( x.Count != y.Count)
+        if ( x.Count != y.Count )
           return false;
         for ( int i = 0; i < x.Count; i++ )
           if ( x[ i ].getName() != y[ i ].getName() )
@@ -50,27 +47,29 @@ namespace AGXUnity.IO.BrickIO
 
     private Dictionary<ChargeKey,List<Constraint>> ChargeConstraintsMap = new Dictionary<ChargeKey,List<Constraint>>(new CKEquality());
     private HashSet<Tuple<Constraint,MappedConstraintType>> UsedConstraintDofs = new HashSet<Tuple<Constraint,MappedConstraintType>>();
+    private Dictionary<Constraint, Brick.Core.Object> ConstraintParents = new Dictionary<Constraint, Brick.Core.Object>();
 
     public InteractionMapper( MapperData cache )
     {
       Data = cache;
     }
 
-    IFrame MapMateConnector( Charges.MateConnector mate_connector )
+    public void MapMateConnectorInitial( Brick.Physics3D.Charges.MateConnector mc, GameObject parent )
     {
-      var frame = new IFrame();
-
-      Brick.Core.Object owner = mate_connector.getOwner();
-      if ( mate_connector is Charges.RedirectedMateConnector redirected )
+      var mcObject = BrickObject.CreateGameObject( mc.getName() );
+      Brick.Core.Object owner = mc.getOwner();
+      if ( mc is Charges.RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();
 
       if ( Data.FrameCache.ContainsKey( owner ) )
-        frame.SetParent( Data.FrameCache[ owner ] );
+        mcObject.transform.SetParent( Data.FrameCache[ owner ].transform );
+      else
+        mcObject.transform.SetParent( parent.transform );
 
-      frame.LocalPosition = mate_connector.position().ToVec3().ToHandedVector3();
+      mcObject.transform.localPosition = mc.position().ToHandedVector3();
 
-      var normal_n = mate_connector.normal();
-      var main_axis_n = mate_connector.main_axis().normal();
+      var normal_n = mc.normal();
+      var main_axis_n = mc.main_axis().normal();
       // Orthonormalize
       normal_n = ( normal_n - main_axis_n * ( normal_n * main_axis_n ) ).normal();
 
@@ -80,12 +79,24 @@ namespace AGXUnity.IO.BrickIO
       var new_x = rotation.rotate(Brick.Math.Vec3.X_AXIS());
       var angle = Brick.Math.Vec3.angleBetweenVectors(new_x,normal_n,main_axis_n);
       var rotation_2 = Brick.Math.Quat.angleAxis(angle,main_axis_n);
-      frame.LocalRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
+      mcObject.transform.localRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
 
-      var collapsedFrame = new IFrame();
-      collapsedFrame.LocalPosition = frame.Position;
-      collapsedFrame.LocalRotation = frame.Rotation;
-      return frame;
+      Data.MateConnectorCache[ mc ] = mcObject;
+    }
+
+    IFrame MapMateConnector( Charges.MateConnector mate_connector )
+    {
+      var frame = new IFrame();
+
+      if ( Data.MateConnectorCache.TryGetValue( mate_connector, out GameObject mapped ) ) {
+        frame.SetParent( mapped, false );
+        return frame;
+      }
+      else {
+        // TODO: Remove Warning
+        Debug.LogWarning( "Mapping MC -> Frame encountered a new MC" );
+        return null;
+      }
     }
 
     HingeClass MapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
