@@ -287,11 +287,21 @@ namespace AGXUnity.IO.BrickIO
     void EnableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
     {
       agxTarSpeed.Compliance = 1e-16f;
-      agxTarSpeed.enabled = true;
+      agxTarSpeed.Enable = true;
       agxTarSpeed.Speed = 0;
 
       var torque = Mathf.Clamp((float)motor.default_torque(), (float)motor.min_effort(), (float)motor.max_effort());
       agxTarSpeed.ForceRange = new RangeReal( torque, torque );
+    }
+
+    void EnableForceMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.ForceMotor motor )
+    {
+      agxTarSpeed.Compliance = 1e-16f;
+      agxTarSpeed.Enable = true;
+      agxTarSpeed.Speed = 0;
+
+      var force = Mathf.Clamp((float)motor.default_force(), (float)motor.min_effort(), (float)motor.max_effort());
+      agxTarSpeed.ForceRange = new RangeReal( force, force );
     }
 
     void EnableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
@@ -338,6 +348,7 @@ namespace AGXUnity.IO.BrickIO
         Interactions.LinearRange => ConstraintType.Prismatic,
         Interactions.LinearSpring => ConstraintType.Prismatic,
         Interactions.LinearVelocityMotor => ConstraintType.Prismatic,
+        Interactions.ForceMotor => ConstraintType.Prismatic,
         // Cylindrical
         Interactions.Cylindrical => ConstraintType.CylindricalJoint,
         // Unknown
@@ -360,6 +371,7 @@ namespace AGXUnity.IO.BrickIO
         Interactions.LinearRange => MappedConstraintType.TranslationalRange,
         Interactions.LinearSpring => MappedConstraintType.TranslationalLock,
         Interactions.LinearVelocityMotor => MappedConstraintType.TranslationalTargetSpeed,
+        Interactions.ForceMotor => MappedConstraintType.TranslationalTargetSpeed,
         _ => Utils.ReportUnimplementedS<MappedConstraintType>( interaction, Data.ErrorReporter )
       };
 
@@ -371,6 +383,7 @@ namespace AGXUnity.IO.BrickIO
 
       var availableConstraint = ChargeConstraintsMap[ interaction.charges() ]
         .Where(c => c.Type == type.Value)
+        .Where(c => ConstraintParents.ContainsKey(c) && ConstraintParents[c] == interaction.getOwner())
         .Where(c => !UsedConstraintDofs.Contains(Tuple.Create(c,ct.Value)))
         .FirstOrDefault();
 
@@ -378,6 +391,7 @@ namespace AGXUnity.IO.BrickIO
         availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
         availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
         ChargeConstraintsMap[ interaction.charges() ].Add( availableConstraint );
+        ConstraintParents.Add( availableConstraint, interaction.getOwner() );
       }
       UsedConstraintDofs.Add( Tuple.Create( availableConstraint, ct.Value ) );
 
@@ -404,9 +418,11 @@ namespace AGXUnity.IO.BrickIO
         case Interactions.VelocityMotor vm:
           EnableVelocityMotorInteraction( constraint.GetController<TargetSpeedController>(), vm );
           break;
-        default:
-          Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+        case Interactions.ForceMotor fm:
+          EnableForceMotorInteraction( constraint.GetController<TargetSpeedController>(), fm );
           break;
+        default:
+          return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
       };
 
       GameObject cGO = constraint.gameObject;
