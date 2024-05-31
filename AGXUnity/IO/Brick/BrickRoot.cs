@@ -52,7 +52,9 @@ namespace AGXUnity.IO.BrickIO
 
     protected override bool Initialize()
     {
-      Native = BrickImporter.ParseBrickSource( BrickFile, ReportError );
+      var importer = new BrickImporter();
+      importer.ErrorReporter = ReportError;
+      Native = importer.ParseBrickSource( BrickFile );
 
       if ( Native == null ) {
         Debug.LogError( $"Failed to initialize Brick object '{name}'", this );

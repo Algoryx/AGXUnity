@@ -10,30 +10,37 @@ using Object = Brick.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
-  public static class BrickImporter
+  public class BrickImporter
   {
     public static string BrickDir => Application.dataPath + ( Application.isEditor ? "" : "/Brick" );
 
     public static GameObject ImportBrickFile( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null )
     {
-      return ImportBrickFile( path, ReportToConsole, options, onSuccess );
+      var importer = new BrickImporter();
+      importer.ErrorReporter = ReportToConsole;
+      importer.SuccessCallback = onSuccess;
+      importer.Options = options;
+      return importer.ImportBrickFile( path );
     }
 
-    public static GameObject ImportBrickFile( string path, Action<Error> errorReporter, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null )
+    public Action<Error> ErrorReporter { get; set; } = null;
+    public Action<MapperData> SuccessCallback { get; set; } = null;
+    public MapperOptions Options { get; set; }
+    public GameObject ImportBrickFile( string path )
     {
       var go = new GameObject( "Brick Root" );
       var root = go.AddComponent<BrickRoot>();
 
       root.BrickAssetPath = path;
 
-      var mapper = new BrickUnityMapper(options);
-      var loadedModel = ParseBrickSource(root.BrickFile, errorReporter, mapper.Data.AgxCache);
+      var mapper = new BrickUnityMapper(Options);
+      var loadedModel = ParseBrickSource(root.BrickFile, mapper.Data.AgxCache);
 
       if ( loadedModel != null ) {
         mapper.MapObject( loadedModel, root.gameObject );
         foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
-          errorReporter( error );
-        onSuccess?.Invoke( mapper.Data );
+          ErrorReporter?.Invoke( error );
+        SuccessCallback?.Invoke( mapper.Data );
       }
       else
         Debug.LogError( $"There were errors importing the brick file '{path}'" );
@@ -41,7 +48,7 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    private static BrickContext CreateContext( BrickAgx.AgxCache cache = null )
+    private BrickContext CreateContext( BrickAgx.AgxCache cache = null )
     {
       std.StringVector bundle_paths = new std.StringVector { BrickDir + "/AGXUnity/Brick" };
 
@@ -65,19 +72,16 @@ namespace AGXUnity.IO.BrickIO
       return context;
     }
 
-    public static BrickContext s_context;
-
-    public static Object ParseBrickSource( string source, Action<Error> errorReporter, BrickAgx.AgxCache cache = null )
+    public Object ParseBrickSource( string source, BrickAgx.AgxCache agxCache = null )
     {
-      var context = CreateContext(cache);
-      s_context = context;
-
-      var loadedObj = CoreSwig.loadModelFromFile( source, null, context );
+      var context = CreateContext(agxCache);
+      Object loadedObj = CoreSwig.loadModelFromFile( source, null, context );
 
       if ( context.hasErrors() ) {
         loadedObj = null;
-        foreach ( var error in context.getErrors() )
-          errorReporter( error );
+        if ( ErrorReporter != null )
+          foreach ( var error in context.getErrors() )
+            ErrorReporter( error );
       }
 
       return loadedObj;

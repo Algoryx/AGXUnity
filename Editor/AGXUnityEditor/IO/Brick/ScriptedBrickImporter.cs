@@ -29,6 +29,7 @@ namespace AGXUnityEditor.IO.BrickIO
 
     public bool HideImportedMeshes = true;
     public bool HideImportedVisualMaterials = false;
+    public bool IgnoreDisabledMeshes = false;
 
     public override void OnImportAsset( AssetImportContext ctx )
     {
@@ -46,10 +47,12 @@ namespace AGXUnityEditor.IO.BrickIO
         return;
 
       var start = DateTime.Now;
-      var go = BrickImporter.ImportBrickFile( ctx.assetPath,
-                                              ReportErrors,
-                                              new MapperOptions(HideImportedMeshes,HideImportedVisualMaterials),
-                                              data => OnSuccess(ctx,data) );
+      var importer = new BrickImporter();
+      importer.ErrorReporter = ReportErrors;
+      importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes );
+      importer.SuccessCallback = data => OnSuccess( ctx, data );
+      
+      var go = importer.ImportBrickFile( ctx.assetPath );
       var end = DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 

@@ -60,6 +60,7 @@ namespace AGXUnityEditor.IO.BrickIO
       ve.SetPadding( 10, 0, 0, 0 );
       ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
       ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
+      ve.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
       if ( ScriptedBrickImporter.Errors.Count > 0 ) {
         ve.Add( new Label() { text = $"<b>Errors ({ScriptedBrickImporter.Errors.Count})</b>" } );
         var errors = new VisualElement();

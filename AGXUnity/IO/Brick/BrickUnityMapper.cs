@@ -14,14 +14,16 @@ namespace AGXUnity.IO.BrickIO
 {
   public struct MapperOptions
   {
-    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false )
+    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false, bool ignoreDisabledMeshes = false )
     {
       HideMeshesInHierarchy = hideMeshes;
       HideVisualMaterialsInHierarchy = hideVisuals;
+      IgnoreDisabledMeshes = ignoreDisabledMeshes;
     }
 
     public bool HideMeshesInHierarchy;
     public bool HideVisualMaterialsInHierarchy;
+    public bool IgnoreDisabledMeshes;
   }
 
   public class BrickUnityMapper
@@ -341,6 +343,14 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
+    private bool ShapeIsMeshType( agxCollide.Shape shape )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      return type == agxCollide.Shape.Type.CONVEX ||
+             type == agxCollide.Shape.Type.TRIMESH ||
+             type == agxCollide.Shape.Type.HEIGHT_FIELD;
+    }
+
     GameObject MapContactGeometry( Charges.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
@@ -350,6 +360,9 @@ namespace AGXUnity.IO.BrickIO
           var uuid = uuid_annot.asString();
           var shape = Data.AgxCache.readCollisionShapeCS( uuid );
           if ( shape != null ) {
+            if ( Options.IgnoreDisabledMeshes && !geom.enable_collisions() && ShapeIsMeshType( shape ) )
+              return null;
+
             go = MapCachedShape( shape, geom );
 
             if ( go == null ) {
