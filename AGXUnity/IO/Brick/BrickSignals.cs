@@ -1,5 +1,6 @@
 using AGXUnity.Utils;
 using Brick.Physics.Signals;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -128,48 +129,59 @@ namespace AGXUnity.IO.BrickIO
     void Post()
     {
       m_outputSignalList.Clear();
-      foreach ( var signal in m_outputs ) {
-        if ( signal is Signals.HingeAngleOutput hao ) {
+      foreach ( var output in m_outputs ) {
+        ValueOutputSignal signal = null;
+        if ( output is Signals.HingeAngleOutput hao ) {
           var hinge = Root.FindMappedObject( hao.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromAngle( constraint.GetCurrentAngle(), hao ) );
+          signal = ValueOutputSignal.fromAngle( constraint.GetCurrentAngle(), hao );
         }
-        else if ( signal is Signals.HingeAngularVelocityOutput havo ) {
+        else if ( output is Signals.HingeAngularVelocityOutput havo ) {
           var hinge = Root.FindMappedObject( havo.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( constraint.GetCurrentSpeed(), havo ) );
+          signal = ValueOutputSignal.fromAngularVelocity( constraint.GetCurrentSpeed(), havo );
         }
-        else if ( signal is Signals.PrismaticPositionOutput ppo ) {
+        else if ( output is Signals.PrismaticPositionOutput ppo ) {
           var prismatic = Root.FindMappedObject( ppo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromDistance( constraint.GetCurrentAngle(), ppo ) );
+          signal = ValueOutputSignal.fromDistance( constraint.GetCurrentAngle(), ppo );
         }
-        else if ( signal is Signals.PrismaticVelocityOutput pvo ) {
+        else if ( output is Signals.PrismaticVelocityOutput pvo ) {
           var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          m_outputSignalList.Add( ValueOutputSignal.fromVelocity1D( constraint.GetCurrentSpeed(), pvo ) );
+          signal = ValueOutputSignal.fromVelocity1D( constraint.GetCurrentSpeed(), pvo );
         }
-        else if ( signal is Signals.RigidBodyPositionOutput rbpo ) {
+        else if ( output is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var pos = rb.Native.getPosition();
-          m_outputSignalList.Add( ValueOutputSignal.fromPosition3D( pos.ToBrickVec3(), rbpo ) );
+          signal = ValueOutputSignal.fromPosition3D( pos.ToBrickVec3(), rbpo );
         }
-        else if ( signal is Signals.RigidBodyVelocityOutput rbvo ) {
+        else if ( output is Signals.RigidBodyVelocityOutput rbvo ) {
           var go = Root.FindMappedObject(rbvo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var vel = rb.LinearVelocity.ToLeftHanded();
-          var sig = ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo );
-          m_outputSignalList.Add( sig );
+          signal = ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo );
         }
-        else if ( signal is Brick.Physics1D.Signals.RotationalBodyAngularVelocityOutput rbavo ) {
+        else if ( output is Signals.RigidBodyRPYOutput rbrpy ) {
+          var go = Root.FindMappedObject(rbrpy.rigid_body().getName());
+          var rb = go.GetComponent<RigidBody>();
+          var vel = rb.Native.getRotation().getAsEulerAngles();
+          signal = ValueOutputSignal.fromRPY( vel.ToBrickVec3(), rbrpy );
+        }
+        else if ( output is Brick.Physics1D.Signals.RotationalBodyAngularVelocityOutput rbavo ) {
           if ( Root.FindRuntimeMappedObject( rbavo.body().getName() ) is not agxPowerLine.Unit rotBod || rotBod.asRotationalUnit() == null )
             Debug.LogError( $"{rbavo.body().getName()} was not mapped to a powerline unit" );
           else
-            m_outputSignalList.Add( ValueOutputSignal.fromAngularVelocity( rotBod.asRotationalUnit().getAngularVelocity(), rbavo ) );
+            signal = ValueOutputSignal.fromAngularVelocity( rotBod.asRotationalUnit().getAngularVelocity(), rbavo );
         }
         else {
-          Debug.LogWarning( $"Unhandled output type {signal.getType().getName()}" );
+          Debug.LogWarning( $"Unhandled output type {output.getType().getName()}" );
+        }
+
+        if ( signal != null ) {
+          m_outputSignalList.Add( signal );
+          m_outputCache[ output.getName() ] = signal;
         }
       }
     }
@@ -177,6 +189,83 @@ namespace AGXUnity.IO.BrickIO
     public void SendInputSignal( InputSignal input )
     {
       m_inputSignalQueue.Enqueue( input );
+    }
+    public Value GetOutputValue( Output output )
+    {
+      return GetOutputValue( output.getName() );
+    }
+
+    public Value GetOutputValue( string outputName )
+    {
+      if ( !m_outputCache.ContainsKey( outputName ) )
+        return null;
+
+      OutputSignal signal = m_outputCache[ outputName ] as ValueOutputSignal;
+
+      if ( signal is not ValueOutputSignal vos )
+        return null;
+
+      return vos.value();
+    }
+
+    public T GetConvertedOutputValue<T>(Output output )
+    {
+      return GetConvertedOutputValue<T>(output.getName());
+    }
+
+    public T GetConvertedOutputValue<T>( string outputName )
+    {
+      if ( !m_outputCache.ContainsKey( outputName ) )
+        throw new ArgumentException( "Specified output does not have a cached value", "outputName" );
+
+      OutputSignal signal = m_outputCache[ outputName ] as ValueOutputSignal;
+
+      bool realTypeRequested = Type.GetTypeCode( typeof( T ) ) switch
+      {
+        TypeCode.Byte => true,
+        TypeCode.SByte => true,
+        TypeCode.UInt16 => true,
+        TypeCode.UInt32 => true,
+        TypeCode.UInt64 => true,
+        TypeCode.Int16 => true,
+        TypeCode.Int32 => true,
+        TypeCode.Int64 => true,
+        TypeCode.Decimal => true,
+        TypeCode.Double => true,
+        TypeCode.Single => true,
+        _ => false
+      };
+
+      if ( signal is not ValueOutputSignal vos ) {
+        throw new ArgumentException( $"Given output '{outputName}' did not send a ValueOutputSignal" );
+      }
+
+      bool vec3TypeRequested =
+           typeof(T) == typeof(Vector3)
+        || typeof(T) == typeof(agx.Vec3)
+        || typeof(T) == typeof(agx.Vec3f)
+        || typeof(T) == typeof(Brick.Math.Vec3);
+
+      var value = vos.value();
+      if ( realTypeRequested ) {
+        if ( value is not RealValue realVal )
+          throw new InvalidCastException( "Cannot convert non-real signal to provided type" );
+        return (T)Convert.ChangeType( realVal.value(), typeof( T ) );
+      }
+      else if ( vec3TypeRequested ) {
+        if ( value is not Vec3Value v3val )
+          throw new InvalidCastException( "Cannot convert non-Vec3 signal to provided type" );
+        if ( typeof( T ) == typeof( Vector3 ) )
+          return (T)(object)v3val.value().ToVector3();
+        else if ( typeof( T ) == typeof( agx.Vec3 ) )
+          return (T)(object)v3val.value().ToVec3();
+        else if ( typeof( T ) == typeof( agx.Vec3f ) )
+          return (T)(object)v3val.value().ToVec3f();
+        else if ( typeof( T ) == typeof( Brick.Math.Vec3 ) )
+          return (T)(object)v3val.value();
+      }
+
+      throw new InvalidCastException( "Could not map signal type to requested type" );
     }
   }
 }
