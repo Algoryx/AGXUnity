@@ -27,6 +27,8 @@ namespace AGXUnity.IO.BrickIO
 
     public BrickRoot Root => GetComponent<BrickRoot>();
 
+    public Dictionary<string, OutputSignal> m_outputCache = new Dictionary<string, OutputSignal>();
+
     public void RegisterSignal( string signal )
     {
       m_signals.Add( signal );
