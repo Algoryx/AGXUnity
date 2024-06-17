@@ -78,8 +78,14 @@ namespace AGXUnityEditor
 
       // If compatibility issues, this method will try to fix them and this manager
       // will probably be loaded again after the fix.
-      if ( m_environmentState == EnvironmentState.Initialized && !VerifyCompatibility() )
+      if ( !VerifyCompatibility() )
         return;
+
+      // Initializes AGX Dynamics. We're trying to be first to do this, preventing:
+      //   - Recursive Serialization is not supported. You can't dereference a PPtr while loading.
+      // when e.g., starting Unity with an empty scene and click on a (agx) restored prefab
+      // in project tab, loading RestoredAGXFile. No clue why this error appears.
+      AGXUnity.NativeHandler.Instance.Register( null );
 
 #if UNITY_2019_1_OR_NEWER
       SceneView.duringSceneGui += OnSceneView;
@@ -904,12 +910,6 @@ namespace AGXUnityEditor
       // Wasn't able to find any installed version of the assembly - it's up to Unity to handle this...
       if ( installedDll == null || !installedDll.Exists )
         return true;
-
-      // Initializes AGX Dynamics. We're trying to be first to do this, preventing:
-      //   - Recursive Serialization is not supported. You can't dereference a PPtr while loading.
-      // when e.g., starting Unity with an empty scene and click on a (agx) restored prefab
-      // in project tab, loading RestoredAGXFile. No clue why this error appears.
-      AGXUnity.NativeHandler.Instance.Register( null );
 
       if ( !currDll.Exists || HasBeenChanged( currDll, installedDll ) ) {
         Debug.Log( $"<color=green>New version of {dotNetAssemblyName} located in: " + installedDll.Directory + ". Copying it to current project.</color>" );
