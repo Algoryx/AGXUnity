@@ -1,12 +1,12 @@
 ﻿using AGXUnity;
-using AGXUnity.Rendering;
 using AGXUnity.Collide;
+using AGXUnity.Rendering;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using static AGXUnityEditor.IO.Utils;
 
 namespace AGXUnityEditor
 {
@@ -38,29 +38,61 @@ namespace AGXUnityEditor
       }
     }
 
+    string m_prefabToFix = "";
+
+    private void UpdatePrefab()
+    {
+      var defaultMat = ShapeVisual.DefaultMaterial;
+
+      // Add or replace default shape material in prefab
+      var objs = AssetDatabase.LoadAllAssetRepresentationsAtPath( m_prefabToFix );
+      foreach ( var obj in objs.Where( o => o is Material && o.name == ShapeVisual.DefaultMaterialName ) )
+        AssetDatabase.RemoveObjectFromAsset( obj );
+      AssetDatabase.AddObjectToAsset( defaultMat, m_prefabToFix );
+
+      var RP = RenderingUtils.DetectPipeline();
+      using ( var editScope = new PrefabUtility.EditPrefabContentsScope( m_prefabToFix ) ) {
+        var svs = editScope.prefabContentsRoot.GetComponentsInChildren<ShapeVisual>();
+        foreach ( var sv in svs )
+          foreach ( var mat in sv.GetMaterials() )
+            if ( mat == null || !mat.SupportsPipeline( RP ) )
+              sv.ReplaceMaterial( mat, defaultMat );
+      }
+      EditorApplication.update -= UpdatePrefab;
+    }
+
     private static bool m_isProcessingPrefabInstance = false;
 
     private void OnPostprocessPrefab( GameObject gameObject )
     {
       // Since AGX materials are stored in the scene (in memory) these material instances cannot be added
-      // to prefabs. This causes the prefab preview to not have the correct materials when rendering.
-      // This adds the relevant materials to prefabs on import to avoid broken previews.
+      // to prefabs. This causes the prefabs to have 'None' materials.
+      // One solution to this is to add the material as a subasset to the prefab.
+      // However, we cant do that here as the prefab might not yet exist.
+      // Instead we queue an editor update callback to do it.
       var svs = gameObject.GetComponentsInChildren<ShapeVisual>();
+      if ( svs.Length == 0 )
+        return;
 
-      var defaultMat = ShapeVisual.DefaultMaterial;
-      defaultMat.hideFlags |= HideFlags.HideInHierarchy;
+      // We queue an update if any material is 'None' or if they have unsupported materials
+      bool needsFixing = false;
+      var RP = RenderingUtils.DetectPipeline();
+      foreach ( var sv in svs )
+        foreach ( var mat in sv.GetMaterials() )
+          needsFixing |= mat == null || !mat.SupportsPipeline( RP );
 
-      bool addToContext = false;
-      foreach ( var sv in svs ) {
-        foreach ( var mat in sv.GetMaterials() ) {
-          if ( mat == null || mat.name == ShapeVisual.DefaultMaterialName ) {
-            addToContext = true;
-            sv.ReplaceMaterial( null, defaultMat );
-          }
-        }
+      if ( needsFixing ) {
+        m_prefabToFix = context.assetPath;
+        EditorApplication.update += UpdatePrefab;
       }
-      if ( addToContext )
-        context.AddObjectToAsset( "Shape Visual Default Material", defaultMat );
+      else {
+        // If no update is needed we set the hideflags of the added material to hide it in the hierarchy. This cant be done in the prefab as the 
+        // prefab code uses the hideflags internally: https://forum.unity.com/threads/prefab-sub-asset-hideflags-dont-persist.1324920/
+        List<Object> objs = new List<Object>();
+        context.GetObjects( objs );
+        foreach ( var item in objs.Where( o => o is Material m && m.name == ShapeVisual.DefaultMaterialName ) )
+          item.hideFlags = HideFlags.HideInHierarchy;
+      }
     }
 
     /// <summary>
@@ -75,8 +107,6 @@ namespace AGXUnityEditor
       if ( m_isProcessingPrefabInstance )
         return;
 
-      
-
       var isAGXPrefab = instance.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null;
 
       // Collect group ids that are disabled in the CollisionGroupsManager so that
@@ -88,7 +118,7 @@ namespace AGXUnityEditor
           try {
             m_isProcessingPrefabInstance = true;
 
-            var groups = prefab.GetComponentsInChildren<CollisionGroups>(); 
+            var groups = prefab.GetComponentsInChildren<CollisionGroups>();
             var tags   = ( from componentGroups
                            in groups
                            from tag
@@ -221,7 +251,7 @@ namespace AGXUnityEditor
 
     private static void OnSavedPrefabAddedToScene( GameObject instance, AGXUnity.IO.SavedPrefabLocalData savedPrefabData )
     {
-      if ( savedPrefabData == null || (savedPrefabData.NumSavedDisabledPairs == 0 && savedPrefabData.NumSavedContactMaterials == 0) )
+      if ( savedPrefabData == null || ( savedPrefabData.NumSavedDisabledPairs == 0 && savedPrefabData.NumSavedContactMaterials == 0 ) )
         return;
 
       Undo.SetCurrentGroupName( "Adding prefab data for " + instance.name + " to scene." );
