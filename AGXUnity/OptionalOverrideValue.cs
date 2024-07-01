@@ -35,8 +35,8 @@ namespace AGXUnity
       get { return m_overrideToggle; }
       set
       {
-        OnUseOverrideToggle( value );
         m_overrideToggle = value;
+        OnUseOverrideToggle( value );
       }
     }
 
@@ -48,8 +48,8 @@ namespace AGXUnity
       get { return m_overrideValue; }
       set
       {
-        OnOverrideValue( value );
         m_overrideValue = value;
+        OnOverrideValue( value );
       }
     }
 
