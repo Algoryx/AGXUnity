@@ -122,6 +122,37 @@ namespace AGXUnity.Model
     [field: SerializeField]
     public bool AutoTileOnPlay { get; set; } = true;
 
+    [SerializeField]
+    private OptionalOverrideValue<int> m_compactionStoreDepth = new OptionalOverrideValue<int>(2, true);
+
+    [InspectorGroupBegin( Name = "Advanced Pager Parameters" )]
+    [InspectorPriority( -1 )]
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "When disabled, the pager does not save compaction when paging out tiles, nor does it sync the compactions between adjacent tiles. " +
+             "As such, this option should only be disabled if the application requires the extra performance from ignoring this sync and is not impacted by discrepencies in compaction. " +
+             "The value specifies to what depth, in voxels beneath the surface, to store the compactions when the tiles are paged out." )]
+    public OptionalOverrideValue<int> CompactionStoreDepth => m_compactionStoreDepth;
+
+    [SerializeField]
+    private string m_fileCacheDirectory = "";
+
+    [DisableInRuntimeInspector]
+    [InspectorPriority( -1 )]
+    [StringAsFilePicker( IsFolder: true )]
+    public string FileCacheDirectory
+    {
+      get => m_fileCacheDirectory;
+      set
+      {
+        m_fileCacheDirectory = value;
+        if ( Native != null ) {
+          if ( !System.IO.Directory.Exists( m_fileCacheDirectory ) )
+            Debug.LogError( $"Terrain pager cache directory '{m_fileCacheDirectory}' does not exist!" );
+          Native.setFileCacheDirectory( m_fileCacheDirectory );
+        }
+      }
+    }
+
     /// <summary>
     /// Associates the given shovel instance to this terrain.
     /// </summary>
@@ -277,6 +308,9 @@ namespace AGXUnity.Model
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
+      m_compactionStoreDepth.OnOverrideValue += ( depth ) => Native.setShouldStoreCompaction( m_compactionStoreDepth.UseOverride, (uint)depth );
+      m_compactionStoreDepth.OnUseOverrideToggle += ( shouldStore ) => Native.setShouldStoreCompaction( shouldStore, (uint)m_compactionStoreDepth.OverrideValue ); ;
+
       if ( AutoTileOnPlay )
         RecalculateParameters();
 
@@ -332,6 +366,7 @@ namespace AGXUnity.Model
 
       // Set the adapter as the data source for the DeformableTerrainPager
       Native.setTerrainDataSource( m_terrainDataSource );
+      Native.setShouldStoreCompaction( m_compactionStoreDepth.UseOverride, (uint)m_compactionStoreDepth.OverrideValue );
 
       // Add Rigidbodies and shovels to pager
       foreach ( var shovel in m_shovels )
@@ -359,6 +394,7 @@ namespace AGXUnity.Model
 
     private void OnPostStepForward()
     {
+      Debug.Log( Native.getShouldStoreCompaction() );
       m_terrainDataSource.Update();
       UpdateHeights();
     }
@@ -366,9 +402,10 @@ namespace AGXUnity.Model
     private void UpdateHeights()
     {
       var tiles = Native.getActiveTileAttachments();
-      for(int i = 0; i < tiles.Count; i++ )
-        UpdateTerrain( tiles[i] );
-      TerrainData.SyncHeightmap();
+      for ( int i = 0; i < tiles.Count; i++ )
+        UpdateTerrain( tiles[ i ] );
+      foreach ( var terr in m_updatedTerrains )
+        terr.terrainData.SyncHeightmap();
     }
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
@@ -391,6 +428,7 @@ namespace AGXUnity.Model
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
         OnModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
+        m_updatedTerrains.Add( tile );
       };
 
 
@@ -505,13 +543,14 @@ namespace AGXUnity.Model
 
     private Terrain m_terrain = null;
     private UnityTerrainAdapter m_terrainDataSource = null;
+    private HashSet<Terrain> m_updatedTerrains = new HashSet<Terrain>();
 
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
 
-    public override float ElementSize => TerrainData.size.x / (TerrainDataResolution - 1);
-    public override DeformableTerrainShovel[] Shovels => m_shovels.Select( shovel => shovel.Body ).ToArray(); 
+    public override float ElementSize => TerrainData.size.x / ( TerrainDataResolution - 1 );
+    public override DeformableTerrainShovel[] Shovels => m_shovels.Select( shovel => shovel.Body ).ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override agx.Uuid GetParticleMaterialUuid() => Native?.getTemplateTerrain()?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain()?.getProperties(); }
