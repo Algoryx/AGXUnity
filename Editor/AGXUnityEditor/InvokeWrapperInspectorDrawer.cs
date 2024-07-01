@@ -1,4 +1,4 @@
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using System;
@@ -674,6 +674,15 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( string ) )]
     public static object StringDrawer( object[] objects, InvokeWrapper wrapper )
     {
+      var filePicker = wrapper.Member.GetCustomAttribute<StringAsFilePicker>();
+      if(filePicker != null ) {
+        string result = wrapper.Get<string>( objects[ 0 ] );
+        if ( filePicker.IsFolder )
+          InspectorGUI.SelectFolder( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), "Select folder", s => result = s );
+        else
+          InspectorGUI.SelectFile( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), wrapper.Get<string>( objects[ 0 ] ), "Select file", s => result = s );
+        return result;
+      }
       return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
                                         wrapper.Get<string>( objects[ 0 ] ),
                                         InspectorEditor.Skin.TextField );
