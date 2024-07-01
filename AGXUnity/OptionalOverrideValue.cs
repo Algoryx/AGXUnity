@@ -13,7 +13,7 @@ namespace AGXUnity
     where T : struct
   {
     [SerializeField]
-    private bool m_overrideToggle = false;
+    private bool m_overrideToggle;
     [SerializeField]
     private T m_overrideValue;
 
@@ -21,9 +21,10 @@ namespace AGXUnity
     /// Construct given the override value.
     /// </summary>
     /// <param name="overrideValue">The value to use when overriding is enabled.</param>
-    public OptionalOverrideValue( T overrideValue )
+    public OptionalOverrideValue( T overrideValue, bool overriden = false )
     {
       m_overrideValue = overrideValue;
+      m_overrideToggle = overriden;
     }
 
     /// <summary>
