@@ -42,7 +42,8 @@ namespace AGXUnityEditor
 
     private void UpdatePrefab()
     {
-      var defaultMat = ShapeVisual.DefaultMaterial;
+      var defaultMat = Object.Instantiate(ShapeVisual.DefaultMaterial);
+      defaultMat.name = ShapeVisual.DefaultMaterialName;
 
       // Add or replace default shape material in prefab
       var objs = AssetDatabase.LoadAllAssetRepresentationsAtPath( m_prefabToFix );
