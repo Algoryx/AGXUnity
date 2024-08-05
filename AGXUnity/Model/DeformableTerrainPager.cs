@@ -376,10 +376,6 @@ namespace AGXUnity.Model
       foreach ( var rb in m_rigidbodies )
         Native.add( rb.Body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
-      if ( MaterialPatches.Length != 0 )
-        Debug.LogWarning( "Nonhomogenous terrain is not yet supported for DeformableTerrainPager.", this );
-
-
       GetSimulation().add( Native );
     }
 
@@ -814,17 +810,38 @@ namespace AGXUnity.Model
 
     public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return true;
+
+      if ( oldMat == null || newMat == null )
+        return false;
+
+      var success = Native.getTemplateTerrain().exchangeTerrainMaterial( oldMat.Native, newMat.Native );
+      Native.applyChangesToTemplateTerrain();
+      return success;
     }
 
     public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return;
+      
+      Native.getTemplateTerrain().setAssociatedMaterial( terrMat.Native, shapeMat.Native );
+      Native.applyChangesToTemplateTerrain();
     }
 
     public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return;
+
+      var template = Native.getTemplateTerrain();
+      template.addTerrainMaterial( terrMat.Native );
+      if(shape != null ) {
+        var idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
+        m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, idx );
+      }
+      Native.applyChangesToTemplateTerrain();
     }
 
     protected override bool IsNativeNull() { return Native == null; }

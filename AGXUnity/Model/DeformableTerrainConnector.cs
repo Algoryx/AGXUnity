@@ -22,6 +22,7 @@ namespace AGXUnity.Model
 
     public float[,] WriteTerrainDataOffset()
     {
+      Terrain.terrainData = Instantiate( Terrain.terrainData );
       if ( float.IsNaN( MaximumDepth ) ) {
         Debug.LogError( "Writing terrain offset without first setting depth!" );
         MaximumDepth = 0;
@@ -37,13 +38,6 @@ namespace AGXUnity.Model
       if ( InitialHeights != null ) {
         transform.position += MaximumDepth * Vector3.up;
         Terrain.terrainData.SetHeights( 0, 0, InitialHeights );
-
-#if UNITY_EDITOR
-        // If the editor is closed during play the modified height
-        // data isn't saved, this resolves corrupt heights in such case.
-        UnityEditor.EditorUtility.SetDirty( Terrain.terrainData );
-        UnityEditor.AssetDatabase.SaveAssets();
-#endif
       }
     }
   }
