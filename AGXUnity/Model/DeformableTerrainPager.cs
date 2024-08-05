@@ -146,6 +146,8 @@ namespace AGXUnity.Model
       {
         m_fileCacheDirectory = value;
         if ( Native != null ) {
+          if ( IsSynchronizingProperties && String.IsNullOrEmpty( m_fileCacheDirectory ) )
+            return;
           if ( !System.IO.Directory.Exists( m_fileCacheDirectory ) )
             Debug.LogError( $"Terrain pager cache directory '{m_fileCacheDirectory}' does not exist!" );
           Native.setFileCacheDirectory( m_fileCacheDirectory );
