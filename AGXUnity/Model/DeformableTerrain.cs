@@ -108,7 +108,7 @@ namespace AGXUnity.Model
       RemoveInvalidShovels( true, true );
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
-
+      Terrain.terrainData = Instantiate( Terrain.terrainData );
       InitializeNative();
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
@@ -171,13 +171,6 @@ namespace AGXUnity.Model
 
       TerrainData.SetHeights( 0, 0, m_initialHeights );
       transform.position = transform.position + MaximumDepth * Vector3.up;
-
-#if UNITY_EDITOR
-      // If the editor is closed during play the modified height
-      // data isn't saved, this resolves corrupt heights in such case.
-      UnityEditor.EditorUtility.SetDirty( TerrainData );
-      UnityEditor.AssetDatabase.SaveAssets();
-#endif
     }
 
     private void OnPostStepForward()

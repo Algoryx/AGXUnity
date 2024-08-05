@@ -7,28 +7,12 @@ using UnityEngine.Serialization;
 
 namespace AGXUnity.Rendering
 {
-  /// <summary>
-  /// Wrapper class for storing/resetting initial state of TerrainData.
-  /// This is by no means a complete store/restore, only the parts used by <see cref="TerrainPatchRenderer"/>.
-  /// </summary>
-  class InitialTerrainData
+  class TileData
   {
-    private float[,,] m_alphamaps;
-    private TerrainLayer[] m_layers;
-
-    public InitialTerrainData( TerrainData td )
-    {
-      m_alphamaps = td.GetAlphamaps( 0, 0, td.alphamapWidth, td.alphamapHeight );
-      m_layers = td.terrainLayers;
-    }
-
-    public void Reset( TerrainData td )
-    {
-      if ( td != null ) {
-        td.terrainLayers = m_layers;
-        td.SetAlphamaps( 0, 0, m_alphamaps );
-      }
-    }
+    public float[,,] alphamap;
+    public Dictionary<agxTerrain.TerrainMaterial, int> m_materialMapping;
+    public int m_layerCount;
+    public int m_defaultLayerIndex;
   }
 
   [RequireComponent( typeof( DeformableTerrainBase ) )]
@@ -37,11 +21,9 @@ namespace AGXUnity.Rendering
   public class TerrainPatchRenderer : ScriptComponent
   {
     private DeformableTerrainBase terrain;
-    private float[,,] alphamap;
-    private Dictionary<agxTerrain.TerrainMaterial, int> m_materialMapping;
-    private InitialTerrainData m_initialData;
-    private int m_layerCount;
-    private int m_defaultLayerIndex;
+
+    private Dictionary<Terrain, TileData> m_perTileData;
+    private List<Terrain> m_shouldUpdate;
 
     [SerializeField]
     private TerrainLayer m_defaultLayer;
@@ -56,7 +38,7 @@ namespace AGXUnity.Rendering
       get => m_defaultLayer;
       set
       {
-        if ( m_initialData != null )
+        if ( State == States.INITIALIZED )
           Debug.LogError( "Setting material TerrainLayers during runtime is not supported!" );
         else
           m_defaultLayer = value;
@@ -77,7 +59,7 @@ namespace AGXUnity.Rendering
       get => m_explicitMaterialRenderMap;
       set
       {
-        if ( m_initialData != null )
+        if ( State == States.INITIALIZED )
           Debug.LogError( "Setting material TerrainLayers during runtime is not supported!" );
         else
           m_explicitMaterialRenderMap = value;
@@ -101,7 +83,7 @@ namespace AGXUnity.Rendering
       get
       {
         var res = ImplicitMaterialRenderMap;
-        foreach ( var (mat, tl) in ExplicitMaterialRenderMap ) 
+        foreach ( var (mat, tl) in ExplicitMaterialRenderMap )
           res[ mat ] = tl;
         return res;
       }
@@ -109,37 +91,18 @@ namespace AGXUnity.Rendering
 
     public TerrainMaterialPatch[] RenderedPatches => gameObject.GetComponentsInChildren<TerrainMaterialPatch>();
 
-    protected override bool Initialize()
+    private void InitializeTile( Terrain tile )
     {
-      terrain = gameObject.GetInitializedComponent<DeformableTerrainBase>();
-      if ( terrain is not DeformableTerrain ) {
-        Debug.LogError( "Terrain Patch Renderer currently only supports DeformableTerrain!", this );
-        return false;
-      }
-
-      // The patches need to be initialized before the initial update pass, otherwise the materials might not yet have been added.
-      foreach ( var patch in RenderedPatches )
-        patch.GetInitialized();
-
-      var uTerr = GetComponent<Terrain>();
-      var td = uTerr.terrainData;
-
-      m_initialData = new InitialTerrainData( td );
+      TileData tileData = new TileData();
+      var td = tile.terrainData;
 
       var layers = td.terrainLayers.ToList();
-      if ( DefaultLayer == null ) {
-        Debug.LogWarning( "No DefaultLayer provided. Using first layer present in terrain.", this );
-        m_defaultLayer = td.terrainLayers[ 0 ];
-        m_defaultLayerIndex = 0;
-      }
-      else {
-        if ( !layers.Contains( DefaultLayer ) )
-          layers.Add( DefaultLayer );
-        m_defaultLayerIndex = layers.IndexOf( DefaultLayer );
-      }
+      if ( !layers.Contains( DefaultLayer ) )
+        layers.Add( DefaultLayer );
+      tileData.m_defaultLayerIndex = layers.IndexOf( DefaultLayer );
 
       // Initialize terrain layers: 0 is default, 1+ are mapped.
-      m_materialMapping = new Dictionary<agxTerrain.TerrainMaterial, int>();
+      tileData.m_materialMapping = new Dictionary<agxTerrain.TerrainMaterial, int>();
       foreach ( var (mat, tl) in MaterialRenderMap ) {
         var terrMat = mat.GetInitialized<DeformableTerrainMaterial>().Native;
         if ( terrMat != null ) {
@@ -150,45 +113,68 @@ namespace AGXUnity.Rendering
 
           if ( !layers.Contains( tl ) )
             layers.Add( tl );
-          m_materialMapping.Add( mat.GetInitialized<DeformableTerrainMaterial>().Native, layers.IndexOf( tl ) );
+          tileData.m_materialMapping.Add( mat.GetInitialized<DeformableTerrainMaterial>().Native, layers.IndexOf( tl ) );
         }
       }
       td.terrainLayers = layers.ToArray();
-      m_layerCount = layers.Count;
+      tileData.m_layerCount = layers.Count;
 
-      alphamap = td.GetAlphamaps( 0, 0, td.alphamapWidth, td.alphamapHeight );
+      tileData.alphamap = td.GetAlphamaps( 0, 0, td.alphamapWidth, td.alphamapHeight );
+
+      m_perTileData.Add( tile, tileData );
+    }
+
+    protected override bool Initialize()
+    {
+      terrain = gameObject.GetInitializedComponent<DeformableTerrainBase>();
+      if ( terrain is MovableTerrain ) {
+        Debug.LogError( "Terrain Patch Renderer does not support MovableTerrain!", this );
+        return false;
+      }
+
+      // The patches need to be initialized before the initial update pass, otherwise the materials might not yet have been added.
+      foreach ( var patch in RenderedPatches )
+        patch.GetInitialized();
+
+      var uTerr = GetComponent<Terrain>();
+      var td = uTerr.terrainData;
+
+      m_perTileData = new Dictionary<Terrain, TileData>();
+      m_shouldUpdate = new List<Terrain>();
+
+      if ( DefaultLayer == null ) {
+        Debug.LogWarning( "No DefaultLayer provided. Using first layer present in terrain.", this );
+        m_defaultLayer = td.terrainLayers[ 0 ];
+      }
 
       Simulation.Instance.StepCallbacks.SimulationPost += PostStep;
       terrain.OnModification += UpdateTextureAt;
 
-      terrain.TriggerModifyAllCells();
-
-      td.SetAlphamaps( 0, 0, alphamap );
+      if ( terrain is DeformableTerrain ) {
+        InitializeTile( uTerr );
+        terrain.TriggerModifyAllCells();
+        td.SetAlphamaps( 0, 0, m_perTileData[ uTerr ].alphamap );
+      }
 
       return true;
     }
 
-    protected override void OnApplicationQuit()
-    {
-      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
-    }
-
-    protected override void OnDestroy()
-    {
-      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
-
-      base.OnDestroy();
-    }
-
     private void PostStep()
     {
-      var td = GetComponent<Terrain>().terrainData;
+      foreach ( var terr in m_shouldUpdate )
+        terr.terrainData.SetAlphamaps( 0, 0, m_perTileData[ terr ].alphamap );
 
-      td.SetAlphamaps( 0, 0, alphamap );
+      m_shouldUpdate.Clear();
     }
 
     private void UpdateTextureAt( agxTerrain.Terrain aTerr, agx.Vec2i aIdx, Terrain uTerr, Vector2Int uIdx )
     {
+      if ( !m_perTileData.ContainsKey( uTerr ) )
+        InitializeTile( uTerr );
+
+      if ( !m_shouldUpdate.Contains( uTerr ) )
+        m_shouldUpdate.Add( uTerr );
+
       var td = uTerr.terrainData;
       var alphamapRes = td.alphamapResolution;
       var heightsRes = td.heightmapResolution - 1;
@@ -196,9 +182,11 @@ namespace AGXUnity.Rendering
       var modPos = aTerr.getSurfacePositionWorld( aIdx );
       var mat = aTerr.getTerrainMaterial( modPos );
 
-      var index = m_materialMapping.GetValueOrDefault(mat,m_defaultLayerIndex);
+      var data = m_perTileData[uTerr];
 
-      if ( index == m_defaultLayerIndex && State != States.INITIALIZED )
+      var index = data.m_materialMapping.GetValueOrDefault(mat,data.m_defaultLayerIndex);
+
+      if ( index == data.m_defaultLayerIndex && State != States.INITIALIZED )
         return;
 
       var modAlphaX = Mathf.RoundToInt((uIdx.x - 0.5f)/heightsRes * alphamapRes);
@@ -212,8 +200,8 @@ namespace AGXUnity.Rendering
         for ( int x = modAlphaX; x < modAlphaXend; x++ ) {
           if ( x < 0 || x >= alphamapRes )
             continue;
-          for ( int i = 0; i < m_layerCount; i++ )
-            alphamap[ y, x, i ] = i == index ? 1.0f : 0.0f;
+          for ( int i = 0; i < data.m_layerCount; i++ )
+            data.alphamap[ y, x, i ] = i == index ? 1.0f : 0.0f;
         }
       }
     }
