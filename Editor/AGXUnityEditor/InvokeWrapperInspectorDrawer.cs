@@ -139,6 +139,21 @@ namespace AGXUnityEditor
       s.PropagateChanges( d );
     }
 
+    [InspectorDrawer( typeof( OptionalOverrideValue<int> ) )]
+    [InspectorDrawerResult( HasCopyOp = true )]
+    public static object OptionalOverrideIntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var result = HandleOptionalOverride<int>( objects, wrapper );
+      return result.ContainsChanges ? (object)result : null;
+    }
+
+    public static void OptionalOverrideIntDrawerCopyOp( object source, object destination )
+    {
+      var s = (OptionalOverrideValueResult)source;
+      var d = destination as OptionalOverrideValue<int>;
+      s.PropagateChanges( d );
+    }
+
     [InspectorDrawer( typeof( OptionalOverrideValue<Vector3> ) )]
     [InspectorDrawerResult( HasCopyOp = true )]
     public static object OptionalOverrideVector3Drawer( object[] objects, InvokeWrapper wrapper )
@@ -172,11 +187,21 @@ namespace AGXUnityEditor
                                                                 typeof( string ),
                                                                 typeof( Vector3 )
                                                               } );
+      if ( s_intFieldMethod == null )
+        s_intFieldMethod = typeof( EditorGUI ).GetMethod( "IntField",
+                                                              new[]
+                                                              {
+                                                                typeof( Rect ),
+                                                                typeof( string ),
+                                                                typeof( int )
+                                                              } );
 
       var method = typeof( ValueT ) == typeof( float ) ?
                       s_floatFieldMethod :
                     typeof( ValueT ) == typeof( Vector3 ) ?
                       s_vector3FieldMethod :
+                    typeof( ValueT ) == typeof( int ) ?
+                      s_intFieldMethod :
                       null;
 
       if ( method == null )
@@ -250,20 +275,24 @@ namespace AGXUnityEditor
       public bool UseOverride;
 
       public bool[] ValuesChanged;
-      public float[] Values;
+      public object[] Values;
 
       public void OnChange<ValueT>( object oldValueObject, object newValueObject )
         where ValueT : struct
       {
         if ( typeof( ValueT ) == typeof( float ) ) {
           ValuesChanged = new bool[] { true };
-          Values = new float[] { (float)newValueObject };
+          Values = new object[] { newValueObject };
+        }
+        else if ( typeof( ValueT ) == typeof( int ) ) {
+          ValuesChanged = new bool[] { true };
+          Values = new object[] { newValueObject };
         }
         else if ( typeof( ValueT ) == typeof( Vector3 ) ) {
           var oldValue = (Vector3)oldValueObject;
           var newValue = (Vector3)newValueObject;
           ValuesChanged = new bool[] { false, false, false };
-          Values = new float[] { newValue.x, newValue.y, newValue.z };
+          Values = new object[] { newValue.x, newValue.y, newValue.z };
           for ( int i = 0; i < 3; ++i )
             ValuesChanged[ i ] = !oldValue[ i ].Equals( Values[ i ] );
         }
@@ -277,7 +306,7 @@ namespace AGXUnityEditor
         PropagateChangesT( destination );
 
         if ( ValuesChanged != null && ValuesChanged[ 0 ] )
-          destination.OverrideValue = Values[ 0 ];
+          destination.OverrideValue = (float)Values[ 0 ];
       }
 
       public void PropagateChanges( OptionalOverrideValue<Vector3> destination )
@@ -290,9 +319,20 @@ namespace AGXUnityEditor
         if ( ValuesChanged != null && ValuesChanged.Contains( true ) ) {
           var newValue = new Vector3();
           for ( int i = 0; i < 3; ++i )
-            newValue[ i ] = ValuesChanged[ i ] ? Values[ i ] : destination.OverrideValue[ i ];
+            newValue[ i ] = ValuesChanged[ i ] ? (float)Values[ i ] : destination.OverrideValue[ i ];
           destination.OverrideValue = newValue;
         }
+      }
+
+      public void PropagateChanges( OptionalOverrideValue<int> destination )
+      {
+        if ( !ContainsChanges )
+          return;
+
+        PropagateChangesT( destination );
+
+        if ( ValuesChanged != null && ValuesChanged[ 0 ] )
+          destination.OverrideValue = (int)Values[ 0 ];
       }
 
       private void PropagateChangesT<ValueT>( OptionalOverrideValue<ValueT> destination )
@@ -344,6 +384,7 @@ namespace AGXUnityEditor
 
     private static MethodInfo s_floatFieldMethod = null;
     private static MethodInfo s_vector3FieldMethod = null;
+    private static MethodInfo s_intFieldMethod = null;
     private static object[] s_fieldMethodArgs = new object[] { null, "", null };
 
     private struct DefaultAndUserValueResult
@@ -633,6 +674,15 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( string ) )]
     public static object StringDrawer( object[] objects, InvokeWrapper wrapper )
     {
+      var filePicker = wrapper.Member.GetCustomAttribute<StringAsFilePicker>();
+      if(filePicker != null ) {
+        string result = wrapper.Get<string>( objects[ 0 ] );
+        if ( filePicker.IsFolder )
+          InspectorGUI.SelectFolder( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), "Select folder", s => result = s );
+        else
+          InspectorGUI.SelectFile( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), wrapper.Get<string>( objects[ 0 ] ), "Select file", s => result = s );
+        return result;
+      }
       return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
                                         wrapper.Get<string>( objects[ 0 ] ),
                                         InspectorEditor.Skin.TextField );

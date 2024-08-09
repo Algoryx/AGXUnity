@@ -16,7 +16,7 @@ namespace AGXUnity
   /// <summary>
   /// Disable changes of field or property in the Inspector during runtime.
   /// </summary>
-  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
   public class DisableInRuntimeInspectorAttribute : Attribute
   {
   }
@@ -153,7 +153,7 @@ namespace AGXUnity
       else if ( type == typeof( double ) )
         return (double)value > 0 || ( m_acceptZero && (double)value == 0 );
       else if ( type.IsGenericType &&
-                type.GetGenericTypeDefinition() == typeof(OptionalOverrideValue<>) )
+                type.GetGenericTypeDefinition() == typeof( OptionalOverrideValue<> ) )
         return OptionalOverrideIsValid( value );
       return true;
     }
@@ -200,11 +200,11 @@ namespace AGXUnity
       var validator = this.GetType().GetMethod("IsValid",new Type[] { wrappedType } );
       if ( validator == null )
         return true;
-      return (bool)validator.Invoke( this, new object[] { wrappedVal });
+      return (bool)validator.Invoke( this, new object[] { wrappedVal } );
     }
   }
 
-  [AttributeUsage( AttributeTargets.Class, AllowMultiple = false)]
+  [AttributeUsage( AttributeTargets.Class, AllowMultiple = false )]
   public class DoNotGenerateCustomEditor : Attribute
   {
     public DoNotGenerateCustomEditor()
@@ -218,5 +218,12 @@ namespace AGXUnity
     public AllowRecursiveEditing()
     {
     }
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class StringAsFilePicker : Attribute
+  {
+    public bool IsFolder { get; private set; }
+    public StringAsFilePicker(bool IsFolder = false) { this.IsFolder = IsFolder; }
   }
 }

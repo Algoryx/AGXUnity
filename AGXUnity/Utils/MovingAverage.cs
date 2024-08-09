@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace AGXUnity.Utils
@@ -9,26 +10,25 @@ namespace AGXUnity.Utils
   {
     private readonly Queue<T> m_samples;
     private readonly int m_frameSize;
-    private T m_accumulatedValue;
+    private double m_accumulatedValue;
 
     public int Size => m_frameSize;
 
-    public MovingAverage(int size)
+    public MovingAverage( int size )
     {
       m_frameSize = size;
-      m_samples = new Queue<T>(size);
+      m_samples = new Queue<T>( size );
     }
 
-    public T Value => (dynamic)m_accumulatedValue / (float)m_samples.Count;
+    public double Value => (double)m_accumulatedValue / m_samples.Count;
 
-    public void Add(dynamic entry)
+    public void Add( T entry )
     {
-      m_accumulatedValue += entry;
-      m_samples.Enqueue(entry);
+      m_accumulatedValue += Convert.ToDouble( entry );
+      m_samples.Enqueue( entry );
 
-      if (m_samples.Count > m_frameSize)
-      {
-        dynamic last = m_samples.Dequeue();
+      if ( m_samples.Count > m_frameSize ) {
+        double last = Convert.ToDouble(m_samples.Dequeue());
         m_accumulatedValue -= last;
       }
     }
