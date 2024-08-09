@@ -84,18 +84,11 @@ namespace AGXUnityEditor.Tools
                                                                 m_createConstraintData.Name,
                                                                 skin.TextField );
 
-
-#if UNITY_2018_1_OR_NEWER
       m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
                                                                                          m_createConstraintData.ConstraintType,
                                                                                          val => (ConstraintType)val != ConstraintType.Unknown,
                                                                                          false,
                                                                                          skin.Popup );
-#else
-      m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
-                                                                                         m_createConstraintData.ConstraintType,
-                                                                                         skin.Popup );
-#endif
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();

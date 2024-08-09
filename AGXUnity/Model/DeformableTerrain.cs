@@ -200,11 +200,7 @@ namespace AGXUnity.Model
         OnModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
-#if UNITY_2019_1_OR_NEWER
       TerrainData.SyncHeightmap();
-#else
-      Terrain.ApplyDelayedHeightmapModification();
-#endif
     }
 
     private GUIStyle m_textLabelStyle = null;

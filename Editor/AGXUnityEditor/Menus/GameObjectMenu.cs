@@ -11,23 +11,18 @@ namespace AGXUnityEditor.Menus
     [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", validate = true )]
     public static bool CreateVisualValidation( MenuCommand command )
     {
-#if UNITY_2019_4_OR_NEWER
       // Issue reported to Unity that command.context == null, making validation
       // impossible so we'll do some additional validations in CreateVisual instead.
+      // Update 2024: Apparently this is by design so we'll leave this in https://issuetracker.unity3d.com/issues/menuitem-validate-function-is-called-twice-and-always-returns-a-null-menucommand-dot-context-first-when-right-clicking-a-gameobject
+
       return true;
-#else
-      return command != null &&
-             command.context != null;
-#endif
     }
 
     [MenuItem( "GameObject/AGXUnity/Create Shape Visual in children", priority = 21 )]
     public static void CreateVisual( MenuCommand command )
     {
-#if UNITY_2019_4_OR_NEWER
       if ( command.context == null )
         return;
-#endif
 
       var go = FindSelectedGivenCommand( command );
       if ( go == null ) {
@@ -86,10 +81,8 @@ namespace AGXUnityEditor.Menus
 
     private static void SaveUrdfs( MenuCommand command, bool asPrefab )
     {
-#if UNITY_2019_4_OR_NEWER
       if ( command.context == null )
         return;
-#endif
       var strContext = asPrefab ? "prefab(s)" : "assets";
       var rootGameObject = FindSelectedGivenCommand( command );
       if ( rootGameObject == null ) {

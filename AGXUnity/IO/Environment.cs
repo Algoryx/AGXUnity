@@ -181,11 +181,7 @@ namespace AGXUnity.IO
     /// <returns>Path to the plugins folder.</returns>
     public static string GetPlayerPluginPath( string dataPath )
     {
-#if UNITY_2019_3_OR_NEWER
       return dataPath + "/Plugins/x86_64";
-#else
-      return dataPath + "/Plugins";
-#endif
     }
 
     /// <summary>
@@ -329,11 +325,7 @@ namespace AGXUnity.IO
       OnCLI();
     }
 #else
-#if UNITY_2019_1_OR_NEWER
     [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSplashScreen )]
-#else
-    [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad )]
-#endif
     private static void OnPlayerCli()
     {
       OnCLI();

@@ -95,9 +95,10 @@ namespace AGXUnityEditor.Build
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
-      if ( !Manager.HasPlayerNetCompatibilityIssueError() )
-        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET API compatibility level. " +
-                                                          "AGX Dynamics for Unity won't work in build." );
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+      if(!hasMonoRuntime)
+          throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
+                                                            "AGX Dynamics for Unity won't work in build." );
 
       var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
       if ( !nativeIs64Bit ) {
