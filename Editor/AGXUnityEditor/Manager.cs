@@ -306,28 +306,20 @@ namespace AGXUnityEditor
       GameObject.DestroyImmediate( primitive.Node );
     }
 
-    internal static bool HasPlayerNetCompatibilityIssueWarning()
+    internal static bool HasNetRuntimeCompatibilityIssueWarning()
     {
-      return HasPlayerNetCompatibility( "warning" );
+      return HasNetRuntimeCompatibility( "warning" );
     }
 
-    internal static bool HasPlayerNetCompatibilityIssueError()
+    internal static bool HasNetRuntimeCompatibilityIssueError()
     {
-      return HasPlayerNetCompatibility( "error" );
+      return HasNetRuntimeCompatibility( "error" );
     }
 
-    private static bool HasPlayerNetCompatibility( string infoWarningOrError )
+    private static bool HasNetRuntimeCompatibility( string infoWarningOrError )
     {
-      // WARNING INFO:
-      //     Unity 2018, 2019: AGX Dynamics for Unity compiles but undefined behavior
-      //                       in players with API compatibility @ .NET Standard 2.0.
-      if ( PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) != ApiCompatibilityLevel.NET_4_6 ) {
-        var apiCompatibilityLevelName =
-#if UNITY_2021_2_OR_NEWER
-          ".NET Framework";
-#else
-          ".NET 4.x";
-#endif
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+      if ( !hasMonoRuntime ) { 
         string prefix = string.Empty;
         if ( infoWarningOrError == "info" )
           prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
@@ -337,8 +329,8 @@ namespace AGXUnityEditor
           prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>ERROR:</b> ", Color.red );
 
         var message = prefix +
-                      $"AGX Dynamics for Unity requires .NET API compatibility level: {apiCompatibilityLevelName}.\n" +
-                      $"<b>AGXUnity -> Settings -> .NET Compatibility Level</b>";
+                      $"AGX Dynamics for Unity requires Mono .NET Runtime: .\n" +
+                      $"<b>AGXUnity -> Settings -> .NET Runtime</b>";
         if ( infoWarningOrError == "info" )
           Debug.Log( message );
         else if ( infoWarningOrError == "warning" )
@@ -799,8 +791,6 @@ namespace AGXUnityEditor
       catch ( Exception ) {
         return EnvironmentState.Uninitialized;
       }
-
-      HasPlayerNetCompatibilityIssueWarning();
 
       return EnvironmentState.Initialized;
 #endif
