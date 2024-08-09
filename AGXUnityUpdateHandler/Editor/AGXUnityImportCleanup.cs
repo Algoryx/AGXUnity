@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEditor;
@@ -54,10 +54,8 @@ namespace AGXUnityUpdate.Detail
                                  ImportAssetOptions.ImportRecursive |
                                  ImportAssetOptions.DontDownloadFromCacheServer |
                                  ImportAssetOptions.ForceSynchronousImport );
-#if UNITY_2020_1_OR_NEWER
       EditorApplication.update += OnEditorUpdate;
       DefineSymbols.Add( OnImportDefineSymbol );
-#endif
     }
 
     private static void OnImportCompleted( string package )
@@ -93,10 +91,8 @@ namespace AGXUnityUpdate.Detail
 
     private static void ShowNotification( string message, double fadeoutWait )
     {
-#if UNITY_2019_1_OR_NEWER
       foreach ( SceneView sceneView in SceneView.sceneViews )
         sceneView.ShowNotification( new GUIContent( message ), fadeoutWait );
-#endif
     }
 
     private static void OnEditorUpdate()

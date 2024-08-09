@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -97,14 +97,6 @@ namespace AGXUnityEditor.IO
       foreach ( var restoredFileInstance in restoredFileInstances ) {
         var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredFileInstance.gameObject ) == PrefabInstanceStatus.Connected &&
                                    PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#else
-        var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
-#if UNITY_2018_1_OR_NEWER
-                                   PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#else
-                                   PrefabUtility.GetPrefabParent( restoredFileInstance.gameObject ) == prefab;
-#endif
-#endif
         if ( !isReadPrefabInstance )
           continue;
 
