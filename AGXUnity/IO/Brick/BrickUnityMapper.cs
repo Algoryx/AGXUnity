@@ -126,7 +126,7 @@ namespace AGXUnity.IO.BrickIO
     {
       GameObject go = null;
       bool cachedMat = false;
-      var uuid_annots = visual.getType().findAnnotations("uuid");
+      var uuid_annots = visual.findAnnotations("uuid");
       foreach ( var uuid_annot in uuid_annots ) {
         if ( uuid_annot.isString() ) {
           var uuid = uuid_annot.asString();
@@ -354,7 +354,7 @@ namespace AGXUnity.IO.BrickIO
     GameObject MapContactGeometry( Charges.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
-      var uuid_annots = geom.getType().findAnnotations("uuid");
+      var uuid_annots = geom.findAnnotations("uuid");
       foreach ( var uuid_annot in uuid_annots ) {
         if ( uuid_annot.isString() ) {
           var uuid = uuid_annot.asString();

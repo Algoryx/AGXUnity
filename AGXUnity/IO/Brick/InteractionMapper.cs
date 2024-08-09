@@ -148,27 +148,27 @@ namespace AGXUnity.IO.BrickIO
       return c;
     }
 
-    float? MapDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
+    public static float? MapFlexibility( Brick.Physics.Interactions.Flexibility.DefaultFlexibility flexibility )
     {
-      if ( deformation is Brick.Physics.Interactions.Deformation.RigidDeformation )
+      if ( flexibility is Brick.Physics.Interactions.Flexibility.Rigid )
         return float.Epsilon;
-      else if ( deformation is Brick.Physics.Interactions.Deformation.ElasticDeformation elastic )
+      else if ( flexibility is Brick.Physics.Interactions.Flexibility.LinearElastic elastic )
         return (float)( 1.0 / elastic.stiffness() );
       return null;
     }
 
-    float? MapDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation )
+    public static float? MapDissipation( Brick.Physics.Interactions.Dissipation.DefaultDissipation dissipation, Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation )
     {
-      if ( damping is Brick.Physics.Interactions.Damping.ConstraintRelaxationTimeDamping crtd )
-        return (float)crtd.time();
+      if ( dissipation is Brick.Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping crtd )
+        return (float)crtd.relaxation_time();
 
-      else if ( damping is Brick.Physics.Interactions.Damping.MechanicalDamping mechanical ) {
-        if ( deformation is Brick.Physics.Interactions.Deformation.ElasticDeformation elastic && elastic.stiffness() != 0.0 )
-          return (float)( mechanical.damping() / elastic.stiffness() );
+      else if ( dissipation is Brick.Physics.Interactions.Dissipation.MechanicalDamping mechanical ) {
+        if ( deformation is Brick.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0 )
+          return (float)( mechanical.damping_constant() / elastic.stiffness() );
         return null;
       }
 
-      var agx_relaxation_time_annotations = damping.getType().findAnnotations("agx_relaxation_time");
+      var agx_relaxation_time_annotations = dissipation.findAnnotations("agx_relaxation_time");
       if ( agx_relaxation_time_annotations.Count == 1 && agx_relaxation_time_annotations[ 0 ].isNumber() )
         return (float)agx_relaxation_time_annotations[ 0 ].asReal();
 
@@ -197,11 +197,11 @@ namespace AGXUnity.IO.BrickIO
       };
     }
 
-    void MapMateDamping( Interactions.Damping.DefaultMateDamping damping, Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
+    void MapMateDissipation( Interactions.Dissipation.DefaultMateDissipation damping, Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
     {
-      foreach ( var (key, damp) in damping.getEntries<Brick.Physics.Interactions.Damping.DefaultDamping>() ) {
-        var def = deformation.getDynamic( key ).asObject() as Brick.Physics.Interactions.Deformation.DefaultDeformation;
-        float? mapped = MapDamping(damp, def);
+      foreach ( var (key, damp) in damping.getEntries<Brick.Physics.Interactions.Dissipation.DefaultDissipation>() ) {
+        var def = deformation.getDynamic( key ).asObject() as Brick.Physics.Interactions.Flexibility.DefaultFlexibility;
+        float? mapped = MapDissipation(damp, def);
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
@@ -211,10 +211,10 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    void MapMateDeformation( Interactions.Deformation.DefaultMateDeformation deformation, Constraint target )
+    void MapMateFlexibility( Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
     {
-      foreach ( var (key, def) in deformation.getEntries<Brick.Physics.Interactions.Deformation.DefaultDeformation>() ) {
-        float? mapped = MapDeformation(def);
+      foreach ( var (key, def) in deformation.getEntries<Brick.Physics.Interactions.Flexibility.DefaultFlexibility>() ) {
+        float? mapped = MapFlexibility(def);
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
@@ -224,17 +224,17 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    void MapControllerDamping( Brick.Physics.Interactions.Damping.DefaultDamping damping, Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
+    void MapControllerDissipation( Brick.Physics.Interactions.Dissipation.DefaultDissipation damping, Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
     {
-      float? mapped = MapDamping(damping, deformation);
+      float? mapped = MapDissipation(damping, deformation);
       if ( mapped == null )
         return;
       target.Damping = mapped.Value;
     }
 
-    void MapControllerDeformation( Brick.Physics.Interactions.Deformation.DefaultDeformation deformation, ElementaryConstraintController target )
+    void MapControllerFlexibility( Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
     {
-      float? mapped = MapDeformation(deformation);
+      float? mapped = MapFlexibility(deformation);
       if ( mapped == null )
         return;
       target.Compliance = mapped.Value;
@@ -251,8 +251,8 @@ namespace AGXUnity.IO.BrickIO
 
       BrickObject.RegisterGameObject( mate.getName(), agxConstraint.gameObject, true );
 
-      MapMateDamping( mate.damping(), mate.deformation(), agxConstraint );
-      MapMateDeformation( mate.deformation(), agxConstraint );
+      MapMateDissipation( mate.dissipation(), mate.flexibility(), agxConstraint );
+      MapMateFlexibility( mate.flexibility(), agxConstraint );
 
       agxConstraint.SetForceRange( new RangeReal( float.NegativeInfinity, float.PositiveInfinity ) );
 
@@ -265,8 +265,8 @@ namespace AGXUnity.IO.BrickIO
       agxRange.Range = new RangeReal( (float)range.start(), (float)range.end() );
       agxRange.ForceRange = new RangeReal( (float)range.min_effort(), (float)range.max_effort() );
 
-      MapControllerDamping( range.damping(), range.deformation(), agxRange );
-      MapControllerDeformation( range.deformation(), agxRange );
+      MapControllerDissipation( range.dissipation(), range.flexibility(), agxRange );
+      MapControllerFlexibility( range.flexibility(), agxRange );
     }
 
     void EnableSpringInteraction( LockController agxLock, Interactions.SpringInteraction1DOF spring )
@@ -280,8 +280,8 @@ namespace AGXUnity.IO.BrickIO
       else
         Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
 
-      MapControllerDamping( spring.damping(), spring.deformation(), agxLock );
-      MapControllerDeformation( spring.deformation(), agxLock );
+      MapControllerDissipation( spring.dissipation(), spring.flexibility(), agxLock );
+      MapControllerFlexibility( spring.flexibility(), agxLock );
     }
 
     void EnableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
@@ -313,8 +313,8 @@ namespace AGXUnity.IO.BrickIO
       agxTarSpeed.LockAtZeroSpeed = motor.zero_speed_as_spring();
       agxTarSpeed.Speed = (float)motor.desired_speed();
 
-      MapControllerDamping( motor.zero_speed_spring_damping(), motor.zero_speed_spring_deformation(), agxTarSpeed );
-      MapControllerDeformation( motor.zero_speed_spring_deformation(), agxTarSpeed );
+      MapControllerDissipation( motor.zero_speed_spring_dissipation(), motor.zero_speed_spring_flexibility(), agxTarSpeed );
+      MapControllerFlexibility( motor.zero_speed_spring_flexibility(), agxTarSpeed );
     }
 
     //GameObject mapRotationalVelocityMotor(Brick.Physics1D.Interactions.RotationalVelocityMotor motor,  Brick.Physics3D.System system )
@@ -461,29 +461,25 @@ namespace AGXUnity.IO.BrickIO
       //var mechanical_damping = std.dynamic_pointer_cast<Physics.Interactions.Damping.MechanicalDamping>(contactModel.damping());
 
       // Set the deformation
-      if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.RigidDeformation rigid ) {
+      if ( contactModel.normal_flexibility() is Brick.Physics.Interactions.Flexibility.Rigid rigid ) {
         // Set the contact as stiff as agx handle
         cm.YoungsModulus = 1e16f;
         // Set the damping to two times the time step, which is the recommended minimum.
         // Will override any other damping defined
         // TODO: We dont know the timestep at import time so this needs to be revised
-        cm.Damping = ( 1.0f/50.0f ) * 2.0f;
+        cm.Damping = ( 1.0f/60.0f ) * 2.0f;
       }
-      else if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.ElasticDeformation elastic ) {
+      else if ( contactModel.normal_flexibility() is Brick.Physics.Interactions.Flexibility.LinearElastic elastic ) {
         cm.YoungsModulus = (float)elastic.stiffness();
-        var time = MapDamping(contactModel.damping(), contactModel.normal_deformation());
+        var time = MapDissipation(contactModel.dissipation(), contactModel.normal_flexibility());
         if ( time.HasValue )
           cm.Damping = time.Value;
         if ( elastic is Brick.Physics.Interactions.SurfaceContact.PatchElasticity )
           cm.UseContactArea = true;
       }
-      if ( contactModel.normal_deformation() is Brick.Physics.Interactions.Deformation.ElastoPlasticDeformation elastoplastic ) {
-        Data.ErrorReporter.Report( elastoplastic, AgxUnityBrickErrors.InvalidDefomationType );
-        return;
-      }
 
       // Set the friction
-      if ( contactModel.friction() is not Brick.Physics.Interactions.Friction.DefaultDryFriction dryFriction ) {
+      if ( contactModel.friction() is not Brick.Physics.Interactions.Dissipation.DefaultDryFriction dryFriction ) {
         Data.ErrorReporter.Report( contactModel.friction(), AgxUnityBrickErrors.UnsupportedFrictionModel );
         return;
       }
@@ -595,7 +591,7 @@ namespace AGXUnity.IO.BrickIO
 
       if ( contactModel.adhesion() is Brick.Physics.Interactions.Adhesion.ConstantForceAdhesion constant_adhesive_force )
         cm.AdhesiveForce = (float)constant_adhesive_force.force();
-      if ( contactModel.slack() is Brick.Physics.Interactions.Slack.ConstantDistanceSlack constant_slack_distance )
+      if ( contactModel.clearance() is Brick.Physics.Interactions.Clearance.ConstantDistanceClearance constant_slack_distance )
         cm.AdhesiveOverlap = (float)constant_slack_distance.distance();
 
       // Restitution

@@ -35,8 +35,12 @@ namespace AGXUnity.IO.BrickIO
       agxDriveTrain.HolonomicGear agx_gear = new agxDriveTrain.HolonomicGear();
 
       agx_gear.setGearRatio( gear.ratio() );
-      agx_gear.setViscousDamping( gear.damping() / gear.stiffness() );
-      agx_gear.setViscousCompliance( 1.0 / gear.stiffness() );
+      var damping = InteractionMapper.MapDissipation( gear.dissipation(), gear.flexibility() );
+      if( damping != null )
+        agx_gear.setViscousDamping( damping.Value );
+      var flexibility = InteractionMapper.MapFlexibility( gear.flexibility() );
+      if( flexibility != null ) 
+        agx_gear.setViscousCompliance( flexibility.Value );
 
       Brick.Physics.Charges.Charge charge1 = gear.charges().Count >= 1 ? gear.charges()[0] : null;
       Brick.Physics.Charges.Charge charge2 = gear.charges().Count >= 2 ? gear.charges()[1] : null;
@@ -236,7 +240,7 @@ namespace AGXUnity.IO.BrickIO
       }
 
       var internal_inertia = 1E-4;
-      var internal_inertia_annotation = actuator.getType().findAnnotations("agx_actuator_internal_inertia");
+      var internal_inertia_annotation = actuator.findAnnotations("agx_actuator_internal_inertia");
       if ( internal_inertia_annotation.Count == 1 && internal_inertia_annotation[ 0 ].isNumber() )
         internal_inertia = internal_inertia_annotation[ 0 ].asReal();
 
