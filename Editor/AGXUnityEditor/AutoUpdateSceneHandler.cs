@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -87,7 +87,11 @@ namespace AGXUnityEditor
     /// </summary>
     private static void VerifyOnSelectionTarget( Scene scene )
     {
+#if UNITY_6000_0_OR_NEWER
+      var shapes = Object.FindObjectsByType<AGXUnity.Collide.Shape>(FindObjectsSortMode.None);
+#else
       var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
+#endif
       foreach ( var shape in shapes ) {
         OnSelectionProxy selectionProxy = shape.GetComponent<OnSelectionProxy>();
         if ( selectionProxy != null && selectionProxy.Target == null )
@@ -105,7 +109,11 @@ namespace AGXUnityEditor
 
     private static void VerifySimulationInstance( Scene scene )
     {
-      var simulation = Object.FindObjectOfType<Simulation>();
+#if UNITY_6000_0_OR_NEWER
+      var simulation = Object.FindAnyObjectByType<Simulation>( FindObjectsInactive.Include );
+#else
+      var simulation = Object.FindObjectOfType<Simulation>(true);
+#endif
       if ( simulation == null )
         return;
 
@@ -134,11 +142,17 @@ namespace AGXUnityEditor
           containsChanges = HandleSegmentSpawner( go ) || containsChanges;
       };
 
+#if UNITY_6000_0_OR_NEWER
+      var cables = Object.FindObjectsByType<Cable>(FindObjectsSortMode.None);
+      var wires  = Object.FindObjectsByType<Wire>(FindObjectsSortMode.None);
+#else
       var cables = Object.FindObjectsOfType<Cable>();
+      var wires  = Object.FindObjectsOfType<Wire>();
+#endif
+
       foreach ( var cable in cables )
         checkGameObject( cable.gameObject );
 
-      var wires  = Object.FindObjectsOfType<Wire>();
       foreach ( var wire in wires )
         checkGameObject( wire.gameObject );
 

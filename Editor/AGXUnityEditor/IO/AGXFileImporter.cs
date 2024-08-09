@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -89,9 +89,12 @@ namespace AGXUnityEditor.IO
       if ( prefab == null )
         return;
 
+#if UNITY_6000_0_OR_NEWER
+      var restoredFileInstances = Object.FindObjectsByType<AGXUnity.IO.RestoredAGXFile>(FindObjectsSortMode.None);
+#else
       var restoredFileInstances = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
+#endif
       foreach ( var restoredFileInstance in restoredFileInstances ) {
-#if UNITY_2018_3_OR_NEWER
         var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredFileInstance.gameObject ) == PrefabInstanceStatus.Connected &&
                                    PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
 #else

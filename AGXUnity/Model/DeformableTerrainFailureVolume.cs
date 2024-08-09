@@ -28,8 +28,13 @@ namespace AGXUnity.Model
 
     protected override bool Initialize()
     {
-      if ( AddAllTerrainsOnStart )
+      if ( AddAllTerrainsOnStart ) {
+#if UNITY_6000_0_OR_NEWER
+        m_terrains.UnionWith( FindObjectsByType<DeformableTerrainBase>(FindObjectsSortMode.None) );
+#else
         m_terrains.UnionWith( FindObjectsOfType<DeformableTerrainBase>() );
+#endif
+      }
       return base.Initialize();
     }
 

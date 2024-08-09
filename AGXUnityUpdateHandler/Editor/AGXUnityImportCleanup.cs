@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEditor;
@@ -151,13 +151,21 @@ namespace AGXUnityUpdate.Detail
                            symbols.Count == 1 ?
                              symbols[ 0 ] :
                              string.Join( ";", symbols );
+#if UNITY_2021_2_OR_NEWER
+        PlayerSettings.SetScriptingDefineSymbols( UnityEditor.Build.NamedBuildTarget.Standalone, symbolsToSet );
+#else 
         PlayerSettings.SetScriptingDefineSymbolsForGroup( BuildTargetGroup.Standalone, symbolsToSet );
+#endif
         AssetDatabase.SaveAssets();
       }
 
       private static List<string> Get()
       {
+#if UNITY_2021_2_OR_NEWER
+        return PlayerSettings.GetScriptingDefineSymbols( UnityEditor.Build.NamedBuildTarget.Standalone ).Split( ';' ).ToList();
+#else
         return PlayerSettings.GetScriptingDefineSymbolsForGroup( BuildTargetGroup.Standalone ).Split( ';' ).ToList();
+#endif
       }
     }
   }
