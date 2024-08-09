@@ -114,19 +114,6 @@ namespace AGXUnityEditor
         }
       }
 
-      var hasPlayerNetCompatibility = PlayerSettings.GetApiCompatibilityLevel( BuildTargetGroup.Standalone ) == ApiCompatibilityLevel.NET_4_6;
-      EditorGUILayout.LabelField( "<b>.NET Compatibility Level</b>" );
-      if ( hasPlayerNetCompatibility )
-        EditorGUILayout.LabelField( ok );
-      else {
-        EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET API Compatibility Level: .NET Framework", skin.LabelWordWrap );
-        if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
-          UnityEditor.PlayerSettings.SetApiCompatibilityLevel( BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6 );
-          Debug.Log( "Updated Unity Player Settings -> Api Compatibility Level to compatible version" );
-          EditorUtility.SetDirty( this );
-        }
-      }
-
       EditorGUILayout.LabelField( "<b>Maximum Allowed Timestep</b>" );
       var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
       if ( usingRecommendedMaxTimestep )
