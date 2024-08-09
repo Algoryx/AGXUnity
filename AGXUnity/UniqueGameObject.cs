@@ -107,7 +107,11 @@ namespace AGXUnity
       // object in, e.g., OnDestroy/Unloading of as scene.
       s_wasCreated = false;
 
-      Instance = FindObjectOfType<T>();
+#if UNITY_6000_0_OR_NEWER
+      Instance = FindAnyObjectByType<T>( FindObjectsInactive.Include );
+#else
+      Instance = FindObjectOfType<T>(true);
+#endif
       if ( !onlyFind && s_instance == null )
         Instance = new GameObject( typeof( T ).FullName ).AddComponent<T>();
 

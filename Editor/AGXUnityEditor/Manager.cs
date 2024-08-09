@@ -87,17 +87,9 @@ namespace AGXUnityEditor
       // in project tab, loading RestoredAGXFile. No clue why this error appears.
       AGXUnity.NativeHandler.Instance.Register( null );
 
-#if UNITY_2019_1_OR_NEWER
       SceneView.duringSceneGui += OnSceneView;
-#else
-      SceneView.onSceneGUIDelegate += OnSceneView;
-#endif
 
-#if UNITY_2018_1_OR_NEWER
       EditorApplication.hierarchyChanged += OnHierarchyWindowChanged;
-#else
-      EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
-#endif
 
       Selection.selectionChanged += OnSelectionChanged;
 
@@ -482,7 +474,11 @@ namespace AGXUnityEditor
 
       // Deleted RigidBody component leaves dangling MassProperties
       // so we've to delete them explicitly.
+#if UNITY_6000_0_OR_NEWER
+      var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
+#else
       var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
+#endif
       foreach ( var mp in mps ) {
         if ( mp.RigidBody == null ) {
           Undo.DestroyObjectImmediate( mp );
@@ -536,9 +532,7 @@ namespace AGXUnityEditor
         EditorData.Instance.GC();
     }
 
-#if UNITY_2020_1_OR_NEWER
     private static double s_lastPickGameObjectTime = 0.0;
-#endif
 
     private static bool TimeToPick()
     {
@@ -548,15 +542,11 @@ namespace AGXUnityEditor
       // and that takes a lot of time (e.g., a scene with many
       // constraints). With this we're only calling PickGameObject
       // in at maximum 10 times per second.
-#if UNITY_2020_1_OR_NEWER
       if ( EditorApplication.timeSinceStartup - s_lastPickGameObjectTime > 0.1 ) {
         s_lastPickGameObjectTime = EditorApplication.timeSinceStartup;
         return true;
       }
       return false;
-#else
-      return true;
-#endif
     }
 
     public static void UpdateMouseOverPrimitives( Event current, bool forced = false )
@@ -828,12 +818,8 @@ namespace AGXUnityEditor
         if ( (float)EditorApplication.timeSinceStartup - lastRequestData.Float > 10.0f ) {
           lastRequestData.Float = (float)EditorApplication.timeSinceStartup;
           lastRequestData.Bool = true;
-#if UNITY_2019_3_OR_NEWER
           Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - requesting Unity to reload assemblies..." );
           EditorUtility.RequestScriptReload();
-#else
-          Debug.LogWarning( "AGX Dynamics binaries aren't properly loaded into Unity - restart Unity manually." );
-#endif
         }
       }
 
@@ -888,7 +874,6 @@ namespace AGXUnityEditor
         result = VerifyDotNetAssemblyCompatibility( dotNetAssemblyName ) &&
                  result;
 
-#if UNITY_2019_4_OR_NEWER
       if ( !result ) {
         var defineSymbol = "AGX_DYNAMICS_UPDATE_REBUILD";
         if ( Build.DefineSymbols.Contains( defineSymbol ) )
@@ -896,7 +881,6 @@ namespace AGXUnityEditor
         else
           Build.DefineSymbols.Add( defineSymbol );
       }
-#endif
 
       return result;
     }

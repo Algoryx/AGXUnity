@@ -54,10 +54,8 @@ namespace AGXUnityUpdate.Detail
                                  ImportAssetOptions.ImportRecursive |
                                  ImportAssetOptions.DontDownloadFromCacheServer |
                                  ImportAssetOptions.ForceSynchronousImport );
-#if UNITY_2020_1_OR_NEWER
       EditorApplication.update += OnEditorUpdate;
       DefineSymbols.Add( OnImportDefineSymbol );
-#endif
     }
 
     private static void OnImportCompleted( string package )
@@ -93,10 +91,8 @@ namespace AGXUnityUpdate.Detail
 
     private static void ShowNotification( string message, double fadeoutWait )
     {
-#if UNITY_2019_1_OR_NEWER
       foreach ( SceneView sceneView in SceneView.sceneViews )
         sceneView.ShowNotification( new GUIContent( message ), fadeoutWait );
-#endif
     }
 
     private static void OnEditorUpdate()
@@ -151,13 +147,21 @@ namespace AGXUnityUpdate.Detail
                            symbols.Count == 1 ?
                              symbols[ 0 ] :
                              string.Join( ";", symbols );
+#if UNITY_2021_2_OR_NEWER
+        PlayerSettings.SetScriptingDefineSymbols( UnityEditor.Build.NamedBuildTarget.Standalone, symbolsToSet );
+#else 
         PlayerSettings.SetScriptingDefineSymbolsForGroup( BuildTargetGroup.Standalone, symbolsToSet );
+#endif
         AssetDatabase.SaveAssets();
       }
 
       private static List<string> Get()
       {
+#if UNITY_2021_2_OR_NEWER
+        return PlayerSettings.GetScriptingDefineSymbols( UnityEditor.Build.NamedBuildTarget.Standalone ).Split( ';' ).ToList();
+#else
         return PlayerSettings.GetScriptingDefineSymbolsForGroup( BuildTargetGroup.Standalone ).Split( ';' ).ToList();
+#endif
       }
     }
   }

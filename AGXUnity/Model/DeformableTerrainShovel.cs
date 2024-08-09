@@ -146,8 +146,13 @@ namespace AGXUnity.Model
 
     private void AddToAllTerrains()
     {
+#if UNITY_6000_0_OR_NEWER
+      foreach ( var terr in FindObjectsByType<DeformableTerrainBase>(FindObjectsSortMode.None) )
+        terr.Add( this );
+#else
       foreach ( var terr in FindObjectsOfType<DeformableTerrainBase>() )
         terr.Add( this );
+#endif
     }
 
     protected override void OnDestroy()
