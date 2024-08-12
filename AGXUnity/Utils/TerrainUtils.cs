@@ -67,11 +67,7 @@ namespace AGXUnity.Utils
 
     public static int TerrainDataResolution( TerrainData terrainData )
     {
-#if UNITY_2019_3_OR_NEWER
       return terrainData.heightmapResolution;
-#else
-      return terrainData.heightmapWidth;
-#endif
     }
 
     /// <summary>

@@ -34,11 +34,7 @@ namespace AGXUnityEditor
     {
       get
       {
-#if UNITY_2019_3_OR_NEWER
         return 20.0f;
-#else
-        return 14.0f;
-#endif
       }
     }
 
@@ -892,9 +888,16 @@ namespace AGXUnityEditor
           }
 
           if ( addButtonPressed ) {
+#if UNITY_6000_0_OR_NEWER
+            var sceneItems = availableItemsToAdd ?? ( isAsset ?
+                                                        IO.Utils.FindAssetsOfType<T>( string.Empty ) :
+                                                        Object.FindObjectsByType<T>(FindObjectsSortMode.None) );
+            
+#else
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                                         Object.FindObjectsOfType<T>() );
+#endif
             var addItemMenu = new GenericMenu();
             addItemMenu.AddDisabledItem( GUI.MakeLabel( itemTypenameSplit +
                                                         "(s) in " +
