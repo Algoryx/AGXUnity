@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.Utils;
 using agxUtil;
+using PlasticGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +54,7 @@ namespace AGXUnityEditor.Tools
     private bool m_useLongestContinuousPathInSkeleton = true;
     private bool m_useFixedRadius = false;
     private bool m_shouldSkeletonise = false;
+    private bool m_userHasEdited = false;
     private float m_fixedRadius = 0;
     private bool m_displayVertexCountWarning = false;
     private SphereSkeletoniser m_skeletoniser = null;
@@ -82,7 +84,7 @@ namespace AGXUnityEditor.Tools
       set 
       {
         if (m_selectedMesh != value)
-        {
+        {         
           DisplayVertexCountWarning = false;
           m_selectedMesh = value;
           //Warning if mesh is very large        
@@ -194,19 +196,15 @@ namespace AGXUnityEditor.Tools
 
       EditorGUILayout.BeginHorizontal();
       EditorGUILayout.PrefixLabel(GUI.MakeLabel("Select from scene"));      
-      if (InspectorGUI.Button(MiscIcon.Mesh, SelectGameObjectTool, ""))
+      if (InspectorGUI.Button(MiscIcon.Mesh, !SelectGameObjectTool, ""))
       {
         SelectGameObjectTool = true;
-      }
-      if (SelectGameObjectTool)
-      {
-        EditorGUILayout.LabelField(AwaitingUserActionDots());
       }
       EditorGUILayout.EndHorizontal();
       InspectorEditor.RequestConstantRepaint = SelectGameObjectTool;
 
       EditorGUILayout.BeginHorizontal();
-      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base mesh"));
+      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base mesh", m_userHasEdited ? Color.red : Color.white, toolTip: "The mesh which is used for generating the initial route. Changing this value regenerates the skeleton, removing any adjustments made."));
       SelectedMesh = (Mesh)EditorGUILayout.ObjectField(m_selectedMesh, typeof(Mesh), true);
       EditorGUILayout.EndHorizontal();
 
@@ -230,7 +228,7 @@ namespace AGXUnityEditor.Tools
       EditorGUILayout.LabelField(m_skeleton != null ? GUI.MakeLabel(m_skeleton.joints.Count.ToString()) : GUI.MakeLabel("-"));
       EditorGUILayout.EndHorizontal();
 
-      var setFactor = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts."), m_aggressiveness);
+      var setFactor = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", m_userHasEdited ? Color.red : Color.white, toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts. Changing this value regenerates the skeleton, removing any adjustments made."), m_aggressiveness);
       if (setFactor != m_aggressiveness)
       {
         m_aggressiveness = setFactor;
@@ -246,9 +244,28 @@ namespace AGXUnityEditor.Tools
 
       if (applyCancelState == InspectorGUI.PositiveNegativeResult.Positive)
       {
-        CreateRoute();        
-
-        PerformRemoveFromParent();
+        if (Route.Any()) //Overwrite
+        {
+          switch (EditorUtility.DisplayDialogComplex("Overwrite", "Applying will overwrite the current route and any node settings. Would you like to transfer node settings to the new route?", "Apply", "Cancel", "Apply w/current node settings"))
+          {
+            case 0: //OK
+              CreateRoute(false);
+              PerformRemoveFromParent();
+              break;
+            case 1: //Cancel
+              break;
+            case 2: //Apply with settings
+              CreateRoute(true);
+              PerformRemoveFromParent();
+              break;
+            default: break;
+          }
+        }
+        else
+        {
+          CreateRoute(false);
+          PerformRemoveFromParent();
+        }                  
       }
       else if (applyCancelState == InspectorGUI.PositiveNegativeResult.Negative)
         PerformRemoveFromParent();
@@ -256,7 +273,7 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.OnDropdownToolEnd();
     }
 
-    private void CreateRoute()
+    private void CreateRoute(bool applyCurrentNodeSettings)
     {
       Undo.SetCurrentGroupName($"Generating route from mesh \"{m_selectedMesh.name}\"");
       var undoGroupId = Undo.GetCurrentGroup();
@@ -273,9 +290,9 @@ namespace AGXUnityEditor.Tools
       {
         avgRadius += (float)currJoint.radius;
         Quaternion localRotation;
-        if (currJoint.adjJoints.Count != 2 && Route.NumNodes > 0)
+        if (currJoint.adjJoints.Count != 2 && nodeList.Count > 0)
         {
-          localRotation = Route[Route.NumNodes - 1].LocalRotation;
+          localRotation = nodeList.Last().LocalRotation;
         }
         else
         {
@@ -286,35 +303,38 @@ namespace AGXUnityEditor.Tools
       }
 
       //If a route already exists then we will attempt to transfer parents and node types to the best of our ability
-      //Starting with the ends of the cable, making sure the ends don't swap
-      NodeT oldFirst = Route.First(), newFirst = nodeList.First(), oldLast = Route.Last(), newLast = nodeList.Last();
-      if( (oldFirst.Position-newFirst.Position).magnitude < (oldFirst.Position-newLast.Position).magnitude )
+      if (Route.Any() && applyCurrentNodeSettings)
       {
-        TransferNodeSettings(oldFirst, newFirst);
-        TransferNodeSettings(oldLast, newLast);
-      }
-      else
-      {
-        TransferNodeSettings(oldFirst, newLast);
-        TransferNodeSettings(oldLast, newFirst);
-      }
-      
-      //Base the transfer on the route which has the least nodes.
-      bool baseOnExistingRoute = nodeList.Count >= Route.NumNodes;
-
-      IEnumerable<NodeT> from, to;      
-      from = baseOnExistingRoute ? Route : nodeList;
-      to = baseOnExistingRoute ? nodeList : Route;
-
-      foreach (var node in from.Skip(1).Take(Route.NumNodes - 2))
-      {
-        //Find the closest node in the node list and transfer the settings
-        var closestNode = to.Aggregate(node, (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
-        if (baseOnExistingRoute)
-          TransferNodeSettings(node, closestNode);
+        //Starting with the ends of the cable, making sure the ends don't swap
+        NodeT oldFirst = Route.First(), newFirst = nodeList.First(), oldLast = Route.Last(), newLast = nodeList.Last();
+        if ((oldFirst.Position - newFirst.Position).magnitude < (oldFirst.Position - newLast.Position).magnitude)
+        {
+          TransferNodeSettings(oldFirst, newFirst);
+          TransferNodeSettings(oldLast, newLast);
+        }
         else
-          TransferNodeSettings(closestNode, node);
-      }
+        {
+          TransferNodeSettings(oldFirst, newLast);
+          TransferNodeSettings(oldLast, newFirst);
+        }
+
+        //Base the transfer on the route which has the least nodes.
+        bool baseOnExistingRoute = nodeList.Count >= Route.NumNodes;
+
+        IEnumerable<NodeT> from, to;
+        from = baseOnExistingRoute ? Route : nodeList;
+        to = baseOnExistingRoute ? nodeList : Route;
+
+        foreach (var node in from.Skip(1).Take(Route.NumNodes - 2))
+        {
+          //Find the closest node in the node list and transfer the settings
+          var closestNode = to.Aggregate(node, (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
+          if (baseOnExistingRoute)
+            TransferNodeSettings(node, closestNode);
+          else
+            TransferNodeSettings(closestNode, node);
+        }
+      }      
 
       Route.Clear();
       foreach(var node in nodeList)
@@ -455,6 +475,7 @@ namespace AGXUnityEditor.Tools
     private void SkeletoniseSelectedMesh()
     {
       m_shouldSkeletonise = false;
+      m_userHasEdited = false;
       GameObject temp = new();
       temp.transform.localScale = m_selectedParent.transform.lossyScale;
       m_mergedSelectedMesh = MeshMerger.Merge(temp.transform, new Mesh[] { m_selectedMesh });
@@ -516,6 +537,7 @@ namespace AGXUnityEditor.Tools
                 if (Handles.Button(midPoint, Quaternion.LookRotation(direction), size, size, Handles.CubeHandleCap))
                 {
                   m_skeletoniser.upscaleEdge(prevJointSkeletoniserIdx, currJointSkeletoniserIdx);
+                  m_userHasEdited = true;
                   UpdateSkeleton();
                 }
               }, edgeCubeColor));
@@ -547,12 +569,17 @@ namespace AGXUnityEditor.Tools
                 {
                   //Remove corresponding vertex from skeletoniser and update skeleton
                   m_skeletoniser.removeVertex(currJointSkeletoniserIdx, false);
+                  m_userHasEdited = true;
                   UpdateSkeleton();
                 }
                 else if (e.control) //Upscale at joint
                 {
                   if (m_skeletoniser.upscaleVertex(currJointSkeletoniserIdx, neighbSkeletoniserIdx1, neighbSkeletoniserIdx2))
+                  {
+                    m_userHasEdited = true;
                     UpdateSkeleton();
+                  }
+                    
                 }
               }
             }, e.shift && m_skeleton.joints.Count > 2 ? removeColor : addColor));
