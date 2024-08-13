@@ -1,20 +1,13 @@
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 using AGXUnity;
 using AGXUnity.Utils;
-using GUI = AGXUnity.Utils.GUI;
-using System.Linq;
 using agxUtil;
-using System.Text;
-using Unity.VisualScripting;
-using static agxUtil.SphereSkeleton;
-using static Codice.Client.BaseCommands.Import.Commit;
 using System;
-using System.Drawing;
-using static UnityEditor.FilePathAttribute;
-using UnityEngine.UIElements;
-using NUnit;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+using static agxUtil.SphereSkeleton;
+using GUI = AGXUnity.Utils.GUI;
 
 
 public static class SphereSkeletonExtenstions
@@ -27,7 +20,7 @@ public static class SphereSkeletonExtenstions
   public static double CurrLength(this SphereSkeleton skeleton)
   {
     double length = 0;
-    foreach(var segment in skeleton.segmentSkeleton())
+    foreach (var segment in skeleton.segmentSkeleton())
     {
       var joint = segment.begin();
       while (!joint.isEnd())
@@ -50,59 +43,83 @@ namespace AGXUnityEditor.Tools
 {
   public class RouteFromMeshTool<NodeT> : Tool where NodeT : RouteNode, new()
   {
-    private GameObject m_selectedMeshObject = null;
+    private GameObject m_selectedParent = null;
     private Mesh m_selectedMesh = null;
     private MeshMerger m_mergedSelectedMesh = null;
-    private SphereSkeleton m_cachedSkeleton = null;
-    private SphereSkeletonVector m_cachedSkeletonSegments = null;
-    private SphereSkeleton m_processedSkeleton = null;
-    private double m_processedSkeletonAvgRadius = 0;
+    private SphereSkeleton m_skeleton = null;
+    private double m_skeletonAvgRadius = 0;
     private float m_aggressiveness = 0;
     private bool m_showPreview = true;
-    private bool m_useLongestContinousPathInSkeleton = true;
+    private bool m_useLongestContinuousPathInSkeleton = true;
     private bool m_useFixedRadius = false;
+    private bool m_shouldSkeletonise = false;
     private float m_fixedRadius = 0;
     private bool m_displayVertexCountWarning = false;
     private SphereSkeletoniser m_skeletoniser = null;
 
+    [HideInInspector]
     public Route<NodeT> Route { get; private set; }
 
-    public bool Preview { get { return m_showPreview; } 
-      set 
-      {        
-        if (!m_showPreview && value && m_cachedSkeleton == null)
+    public bool Preview
+    {
+      get { return m_showPreview; }
+      set
+      {
+        if (!m_showPreview && value && m_skeleton == null)
         {
           SkeletoniseSelectedMesh();
           DisplayVertexCountWarning = false;
         }
         m_showPreview = value;
-      } 
+      }
+    }
+    public Mesh SelectedMesh
+    {
+      get
+      {
+        return m_selectedMesh;
+      }
+      set 
+      {
+        if (m_selectedMesh != value)
+        {
+          DisplayVertexCountWarning = false;
+          m_selectedMesh = value;
+          //Warning if mesh is very large        
+          if (Preview && m_selectedMesh.vertexCount > VERTEX_WARNING_THRESHOLD)
+          {
+            Preview = false;
+            DisplayVertexCountWarning = true;
+          }
+          if (Preview)
+          {
+            m_shouldSkeletonise = true;
+          }
+        }          
+      }
     }
 
     public bool UseLongestPath
     {
-      get { return m_useLongestContinousPathInSkeleton; }
+      get { return m_useLongestContinuousPathInSkeleton; }
       set
-      {   
-        if(m_cachedSkeleton != null)
-        {
-          if (!m_useLongestContinousPathInSkeleton && value)
-          {
-            m_processedSkeleton = agxUtil.agxUtilSWIG.getLongestContinousSkeletonSegment(m_cachedSkeleton);
-          }
-          else if (m_useLongestContinousPathInSkeleton && !value)
-          {
-            m_processedSkeleton = new SphereSkeleton(m_cachedSkeleton);
-          }
-        }        
-        m_useLongestContinousPathInSkeleton = value;
+      {
+        UpdateSkeleton();
+        m_useLongestContinuousPathInSkeleton = value;
       }
     }
 
     public bool UseFixedRadius
     {
       get { return m_useFixedRadius; }
-      set { m_useFixedRadius = value; }
+      set 
+      {
+        if (!value && m_useFixedRadius && m_skeleton != null)
+        {
+          m_fixedRadius = (float)m_skeletonAvgRadius;
+        }
+        m_useFixedRadius = value;
+      }
     }
 
     public bool DisplayVertexCountWarning
@@ -146,22 +163,21 @@ namespace AGXUnityEditor.Tools
 
     public override void OnSceneViewGUI(SceneView sceneView)
     {
-      if(Preview && m_selectedMeshObject != null && m_cachedSkeleton != null)
+      if (Preview && m_skeleton != null)
       {
-        DrawRoutePreview();               
-      }
-
-      InspectorEditor.RequestConstantRepaint = true;
+        if (Event.current.alt) DrawSkeleton();
+        else DrawRoutePreview(sceneView);
+      }    
     }
 
-    private void CreateNode(Vector3 localPosition, Quaternion localRotation)
+    private NodeT CreateNode(Vector3 localPosition, Quaternion localRotation)
     {
-      NodeT node = IFrame.Create<NodeT>(m_selectedMeshObject, localPosition, localRotation);
+      NodeT node = IFrame.Create<NodeT>(m_selectedParent, localPosition, localRotation);
       if (Route is WireRoute)
         (node as WireRouteNode).Type = Wire.NodeType.FreeNode;
       else if (Route is CableRoute)
         (node as CableRouteNode).Type = Cable.NodeType.FreeNode;
-      Route.Add(node);
+      return node;
     }
 
     public void OnInspectorGUI()
@@ -171,112 +187,66 @@ namespace AGXUnityEditor.Tools
       var skin = InspectorEditor.Skin;
       var emptyContent = GUI.MakeLabel(" ");
 
-      if(DisplayVertexCountWarning)
+      if (DisplayVertexCountWarning)
       {
         InspectorGUI.WarningLabel("Route preview has been disabled due to high vertex count of selected mesh. Enabling preview will likely result in long preview times.");
       }
 
       EditorGUILayout.BeginHorizontal();
-      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base Mesh"));
-      m_selectedMeshObject = (GameObject) EditorGUILayout.ObjectField(m_selectedMeshObject, typeof(GameObject), true);      
-      if (InspectorGUI.Button(MiscIcon.Locate, SelectGameObjectTool, ""))
+      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Select from scene"));      
+      if (InspectorGUI.Button(MiscIcon.Mesh, SelectGameObjectTool, ""))
       {
         SelectGameObjectTool = true;
       }
+      if (SelectGameObjectTool)
+      {
+        EditorGUILayout.LabelField(AwaitingUserActionDots());
+      }
+      EditorGUILayout.EndHorizontal();
+      InspectorEditor.RequestConstantRepaint = SelectGameObjectTool;
+
+      EditorGUILayout.BeginHorizontal();
+      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base mesh"));
+      SelectedMesh = (Mesh)EditorGUILayout.ObjectField(m_selectedMesh, typeof(Mesh), true);
       EditorGUILayout.EndHorizontal();
 
-      Preview = InspectorGUI.Toggle(GUI.MakeLabel("Preview"), Preview);
+      EditorGUILayout.BeginHorizontal();
+      EditorGUILayout.PrefixLabel(GUI.MakeLabel("Parent"));
+      m_selectedParent = (GameObject)EditorGUILayout.ObjectField(m_selectedParent, typeof(GameObject), true);
+      EditorGUILayout.EndHorizontal();
+
+      Preview = EditorGUILayout.BeginToggleGroup(GUI.MakeLabel("Preview (?)", toolTip: "Hold keys during preview\nShift: Remove joints\nControl: Add joints\nAlt: Show underlying skeleton"), Preview);
       UseFixedRadius = EditorGUILayout.BeginToggleGroup("Use Fixed Radius", UseFixedRadius);
       EditorGUILayout.BeginHorizontal();
       EditorGUILayout.PrefixLabel(GUI.MakeLabel("Radius"));
       m_fixedRadius = Mathf.Clamp(EditorGUILayout.FloatField(m_fixedRadius), 0, 5);
       EditorGUILayout.EndHorizontal();
       EditorGUILayout.EndToggleGroup();
-
-
+      EditorGUILayout.EndToggleGroup();
+      
 
       EditorGUILayout.BeginHorizontal();
-      EditorGUILayout.LabelField(GUI.MakeLabel("Number of Nodes"));
-      EditorGUILayout.LabelField(m_processedSkeleton != null ? GUI.MakeLabel(m_processedSkeleton.joints.Count.ToString()) : GUI.MakeLabel("-"));
+      EditorGUILayout.LabelField(GUI.MakeLabel("Number of Nodes:"));
+      EditorGUILayout.LabelField(m_skeleton != null ? GUI.MakeLabel(m_skeleton.joints.Count.ToString()) : GUI.MakeLabel("-"));
       EditorGUILayout.EndHorizontal();
-     
-      var setFactor = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Agressiveness"), m_aggressiveness);
-      if(setFactor != m_aggressiveness)
+
+      var setFactor = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts."), m_aggressiveness);
+      if (setFactor != m_aggressiveness)
       {
         m_aggressiveness = setFactor;
-        HandleSelectedObject(m_selectedMeshObject);
+        m_shouldSkeletonise = true;
       }
 
-      UseLongestPath = InspectorGUI.Toggle(GUI.MakeLabel("Longest Continous Path"), UseLongestPath);
+      UseLongestPath = InspectorGUI.Toggle(GUI.MakeLabel("Longest Continous Path", toolTip: "Use the longest continuous path from the produced skeleton instead of the complete skeleton. Useful for omitting larger details in the mesh from the generated route or for reducing artifacts."), UseLongestPath);
 
-      var applyCancelState = InspectorGUI.PositiveNegativeButtons(m_selectedMeshObject != null && m_cachedSkeleton != null && m_processedSkeleton?.joints.Count > 0,
+      var applyCancelState = InspectorGUI.PositiveNegativeButtons(m_selectedParent != null && m_skeleton != null && m_skeleton?.joints.Count > 0,
                                                                    "Apply",
                                                                    "Apply current configuration.",
-                                                                   "Cancel");
+                                                                   "Cancel");      
 
       if (applyCancelState == InspectorGUI.PositiveNegativeResult.Positive)
       {
-
-        Undo.SetCurrentGroupName($"Generating route from mesh \"{m_selectedMesh.name}\"");
-        var undoGroupId = Undo.GetCurrentGroup();
-
-        if (!Preview && m_cachedSkeleton == null)
-          SkeletoniseSelectedMesh();
-
-
-        Route.Clear();        
-        float avgRadius = 0;
-
-        //This is using the dfs iterator
-        //Using cached skeleton, replace the current route with new nodes corresponding to the skeletons joints using the forward edges as direction
-        dfs_iterator currJoint = m_processedSkeleton.begin();
-
-        while (!currJoint.isEnd())
-        {
-          avgRadius += (float)currJoint.radius;
-          Quaternion localRotation;
-          if (currJoint.adjJoints.Count != 2 && Route.NumNodes > 0)
-          {            
-              localRotation = Route[Route.NumNodes - 1].LocalRotation;            
-          }
-          else
-          {
-            localRotation = Quaternion.FromToRotation(Vector3.forward, (currJoint.next_joint().position - currJoint.position).ToHandedVector3());
-          }
-          CreateNode(currJoint.position.ToHandedVector3(), localRotation);
-          currJoint.inc();
-        }
-
-        avgRadius /= Route.NumNodes;
-
-        if (UseFixedRadius)
-          avgRadius = m_fixedRadius;
-
-        if (Route is WireRoute)
-        {
-          Route.gameObject.GetComponent<Wire>().Radius = avgRadius;
-          Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = 0.5f / avgRadius;
-        }
-        else if (Route is CableRoute)
-        {
-          Route.gameObject.GetComponent<Cable>().Radius = avgRadius;
-          Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.5f / avgRadius;
-        }
-        
-        m_cachedSkeleton = null;        
-        m_selectedMesh = null;
-
-  
-        MeshRenderer renderer;
-        if (m_selectedMeshObject.TryGetComponent(out renderer))
-        {
-          Undo.RegisterCompleteObjectUndo(renderer, "Disable mesh renderer");
-          renderer.enabled = false;
-        }
-          
-
-        m_selectedMeshObject = null;
-        Undo.CollapseUndoOperations(undoGroupId);
+        CreateRoute();        
 
         PerformRemoveFromParent();
       }
@@ -286,30 +256,166 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.OnDropdownToolEnd();
     }
 
-    private void updateSkeleton(double miniumumResolution = float.NegativeInfinity)
+    private void CreateRoute()
     {
-        m_cachedSkeleton = m_skeletoniser.getSkeleton(miniumumResolution);
-        m_processedSkeleton = UseLongestPath ? agxUtil.agxUtilSWIG.getLongestContinousSkeletonSegment(m_cachedSkeleton) : new SphereSkeleton(m_cachedSkeleton);
-        m_cachedSkeletonSegments = m_cachedSkeleton.segmentSkeleton();
-        m_processedSkeletonAvgRadius = 0;
-        foreach (var joint in m_processedSkeleton.joints)
+      Undo.SetCurrentGroupName($"Generating route from mesh \"{m_selectedMesh.name}\"");
+      var undoGroupId = Undo.GetCurrentGroup();
+
+      if (!Preview && m_skeleton == null)
+        SkeletoniseSelectedMesh();
+
+      float avgRadius = 0;
+
+      var nodeList = new List<NodeT>();
+      dfs_iterator currJoint = m_skeleton.begin();
+
+      while (!currJoint.isEnd())
+      {
+        avgRadius += (float)currJoint.radius;
+        Quaternion localRotation;
+        if (currJoint.adjJoints.Count != 2 && Route.NumNodes > 0)
         {
-          m_processedSkeletonAvgRadius += joint.radius;
+          localRotation = Route[Route.NumNodes - 1].LocalRotation;
         }
-        m_processedSkeletonAvgRadius /= m_processedSkeleton.joints.Count;
+        else
+        {
+          localRotation = Quaternion.FromToRotation(Vector3.forward, (currJoint.next_joint().position - currJoint.position).ToHandedVector3());
+        }
+        nodeList.Add(CreateNode(currJoint.position.ToHandedVector3(), localRotation));
+        currJoint.inc();
+      }
+
+      //If a route already exists then we will attempt to transfer parents and node types to the best of our ability
+      //Starting with the ends of the cable, making sure the ends don't swap
+      NodeT oldFirst = Route.First(), newFirst = nodeList.First(), oldLast = Route.Last(), newLast = nodeList.Last();
+      if( (oldFirst.Position-newFirst.Position).magnitude < (oldFirst.Position-newLast.Position).magnitude )
+      {
+        TransferNodeSettings(oldFirst, newFirst);
+        TransferNodeSettings(oldLast, newLast);
+      }
+      else
+      {
+        TransferNodeSettings(oldFirst, newLast);
+        TransferNodeSettings(oldLast, newFirst);
+      }
+      
+      //Base the transfer on the route which has the least nodes.
+      bool baseOnExistingRoute = nodeList.Count >= Route.NumNodes;
+
+      IEnumerable<NodeT> from, to;      
+      from = baseOnExistingRoute ? Route : nodeList;
+      to = baseOnExistingRoute ? nodeList : Route;
+
+      foreach (var node in from.Skip(1).Take(Route.NumNodes - 2))
+      {
+        //Find the closest node in the node list and transfer the settings
+        var closestNode = to.Aggregate(node, (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
+        if (baseOnExistingRoute)
+          TransferNodeSettings(node, closestNode);
+        else
+          TransferNodeSettings(closestNode, node);
+      }
+
+      Route.Clear();
+      foreach(var node in nodeList)
+      {
+        Route.Add(node);
+      }
+
+
+      avgRadius /= Route.NumNodes;
+
+      if (UseFixedRadius)
+        avgRadius = m_fixedRadius;
+
+      if (Route is WireRoute)
+      {
+        Route.gameObject.GetComponent<Wire>().Radius = avgRadius;
+        Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = 0.5f / avgRadius;
+      }
+      else if (Route is CableRoute)
+      {
+        Route.gameObject.GetComponent<Cable>().Radius = avgRadius;
+        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.5f / avgRadius;
+      }
+
+      m_skeleton = null;
+      m_selectedMesh = null;
+
+
+      MeshRenderer renderer;
+      if (m_selectedParent.TryGetComponent(out renderer))
+      {
+        Undo.RegisterCompleteObjectUndo(renderer, "Disable mesh renderer");
+        renderer.enabled = false;
+      }
+
+      m_selectedParent = null;
+      Undo.CollapseUndoOperations(undoGroupId);
+    }
+
+    private bool TransferNodeSettings(NodeT from, NodeT to)
+    {
+      to.SetParent(from.Parent);
+      if (Route is WireRoute)
+        (to as WireRouteNode).Type = (from as WireRouteNode).Type;
+      else if (Route is CableRoute)
+        (to as CableRouteNode).Type = (from as CableRouteNode).Type;
+      else
+        return false;
+      return true;
+    }
+
+    private void UpdateSkeleton()
+    {
+      if(m_skeletoniser != null)
+      {
+        m_skeleton = UseLongestPath ? agxUtil.agxUtilSWIG.getLongestContinousSkeletonSegment(m_skeletoniser.getSkeleton()) : m_skeletoniser.getSkeleton();
+        m_skeletonAvgRadius = 0;
+        foreach (var joint in m_skeleton.joints)
+        {
+          m_skeletonAvgRadius += joint.radius;
+        }
+        m_skeletonAvgRadius /= m_skeleton.joints.Count;
+        if (!UseFixedRadius)
+        {
+          m_fixedRadius = (float)m_skeletonAvgRadius;
+        }
+      }      
+    }
+
+    public override void OnAdd()
+    {
+      base.OnAdd();
+      EditorApplication.update += Update;
+    }
+
+    public override void OnRemove()
+    {
+      base.OnRemove();
+      EditorApplication.update -= Update;
+    }
+
+    void Update()
+    {
+      if (m_shouldSkeletonise)
+        SkeletoniseSelectedMesh();
     }
 
     const int VERTEX_WARNING_THRESHOLD = 100_000;
 
     private bool HandleSelectedObject(GameObject selected)
     {
+      m_selectedParent = null;
+      m_selectedMesh = null;
+      m_skeletoniser = null;
       if (!selected)
         return false;
-      DisplayVertexCountWarning = false;
+      DisplayVertexCountWarning = false;      
 
       MeshFilter foundFilter;
 
-      if(!selected.TryGetComponent<MeshFilter>(out foundFilter))
+      if (!selected.TryGetComponent<MeshFilter>(out foundFilter))
       {
         selected.TraverseChildren(delegate (GameObject child)
         {
@@ -323,20 +429,23 @@ namespace AGXUnityEditor.Tools
       if (selected.TryGetComponent<MeshFilter>(out foundFilter))
       {
         var mesh = foundFilter.sharedMesh;
+        if(mesh == null)
+        {
+          return false;
+        }
         //Warning if mesh is very large        
         if (Preview && mesh.vertexCount > VERTEX_WARNING_THRESHOLD)
         {
           Preview = false;
           DisplayVertexCountWarning = true;
-        }        
-        m_selectedMeshObject = selected;
+        }
+        m_selectedParent = selected;
         m_selectedMesh = mesh;
         m_skeletoniser = null;
-        m_cachedSkeleton = null;
-        m_processedSkeleton = null;
+        m_skeleton = null;
         if (Preview)
         {
-          SkeletoniseSelectedMesh();
+          m_shouldSkeletonise = true;
         }
         return true;
       }
@@ -345,15 +454,16 @@ namespace AGXUnityEditor.Tools
 
     private void SkeletoniseSelectedMesh()
     {
+      m_shouldSkeletonise = false;
       GameObject temp = new();
-      temp.transform.localScale = m_selectedMeshObject.transform.lossyScale;
+      temp.transform.localScale = m_selectedParent.transform.lossyScale;
       m_mergedSelectedMesh = MeshMerger.Merge(temp.transform, new Mesh[] { m_selectedMesh });
       UnityEngine.Object.DestroyImmediate(temp);
       m_skeletoniser = new SphereSkeletoniser(m_mergedSelectedMesh.Vertices, m_mergedSelectedMesh.Indices);
       m_skeletoniser.setFaceDevalueFactor(Mathf.Pow(10, m_aggressiveness));
       m_skeletoniser.collapseUntilSkeleton();
 
-      updateSkeleton();
+      UpdateSkeleton();
     }
 
     void LineHandleCap(int controlID, Vector3 position, Quaternion rotation, float thickness, float length, EventType eventType)
@@ -365,103 +475,121 @@ namespace AGXUnityEditor.Tools
       Handles.matrix = originalMatrix;
     }
 
-    private void DrawRoutePreview()
+    private void DrawRoutePreview(SceneView sceneView)
     {
+      //Drawing without depth makes selection hard so a custom z-pass is used by simply sorting the draw calls in this function and otherwise always passing the zTest
+      var drawcalls = new List<Tuple<float, Action, Color>>();
       Event e = Event.current;
-      UnityEngine.Color jointColor, edgeColor;
-      if (e.shift && m_processedSkeleton.joints.Count > 2) jointColor = UnityEngine.Color.red;
-      else if (e.control) jointColor = UnityEngine.Color.green;
-      else jointColor = UnityEngine.Color.blue;
-
-      edgeColor = UnityEngine.Color.blue;
-
-      using (new Handles.DrawingScope(Matrix4x4.Translate(m_selectedMeshObject.transform.position) * Matrix4x4.Rotate(m_selectedMeshObject.transform.rotation)))
+      Color normalColor = Route.Any() ? Color.yellow : Color.blue, removeColor = Color.red, addColor = Color.green, edgeColor = normalColor;
+      Matrix4x4 routeTransform = Matrix4x4.TRS(m_selectedParent.transform.position, m_selectedParent.transform.rotation, Vector3.one);
+      Vector3 cameraPosRouteSpace = routeTransform.inverse * sceneView.camera.transform.position;      
+      using (new Handles.DrawingScope(routeTransform))
       {
-        using (new Handles.DrawingScope(jointColor))
+        float radius = UseFixedRadius ? m_fixedRadius : (float)m_skeletonAvgRadius;
+        float diameter = radius * 2;
+        var currJoint = m_skeleton.begin();
+        SphereSkeleton.Joint prevJoint = null;
+        while (!currJoint.isEnd())
         {
-          float radius = UseFixedRadius ? m_fixedRadius : (float)m_processedSkeletonAvgRadius;
-          float diameter = radius * 2;
-          var currJoint = m_processedSkeleton.begin();
-          SphereSkeleton.Joint prevJoint = null;
-          while (!currJoint.isEnd())
-          {  
-            if(!e.shift && !e.control)
+          float distanceToCamera;
+          Vector3 currPos = currJoint.position.ToHandedVector3();          
+
+          uint currJointSkeletoniserIdx = currJoint.skeletoniserIndex;
+          if (prevJoint != null)
+          {
+            Vector3 prevPos = prevJoint.position.ToHandedVector3();
+            uint prevJointSkeletoniserIdx = prevJoint.skeletoniserIndex;
+            distanceToCamera = Mathf.Min((cameraPosRouteSpace - currJoint.position.ToHandedVector3()).magnitude, (cameraPosRouteSpace - prevJoint.position.ToHandedVector3()).magnitude);
+            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.DrawLine(currPos, prevPos, 3), edgeColor));
+
+            if (e.control)
             {
-              Handles.SphereHandleCap(0, currJoint.position.ToHandedVector3(), Quaternion.identity, diameter, EventType.Repaint);
-            } 
-            else if (Handles.Button(currJoint.position.ToHandedVector3(), Quaternion.identity, diameter, radius, Handles.SphereHandleCap))
-            {
-              if (e.shift && m_processedSkeleton.joints.Count > 2) //Remove joint
+              Vector3 start = prevJoint.position.ToHandedVector3();
+              Vector3 direction = (currJoint.position - prevJoint.position).ToHandedVector3();
+              Vector3 midPoint = start + direction * 0.5f;
+              var edgeCubeColor = addColor * 0.5f;
+              edgeCubeColor.a = 1;
+              float size = Mathf.Clamp(direction.magnitude - 2 * radius, radius / 4, radius);
+              distanceToCamera = (cameraPosRouteSpace - midPoint).magnitude;
+              drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
               {
-                agxUtilSWIG.removeJointFromSkeleton(m_processedSkeleton, currJoint.index, m_mergedSelectedMesh.Vertices);
-                break;
-              } else if (e.control) //Upscale at joint
-              {
-                break;
-              }           
-            }
-
-            if(prevJoint != null)
-            {
-              using (new Handles.DrawingScope(edgeColor))
-              {
-                //if(e.control)
-                //{
-                //  Vector3 start = prevJoint.position.ToHandedVector3();
-                //  Vector3 direction = (currJoint.position - prevJoint.position).ToHandedVector3();
-                //  float length = direction.magnitude;
-
-                //  Vector3 midPoint = start + direction * 0.5f;
-                //  if (Handles.Button(midPoint, Quaternion.LookRotation(direction), diameter / 10, radius / 10, (int controlID, Vector3 position, Quaternion rotation, float size, EventType eventType) =>
-                //  {
-                //    LineHandleCap(controlID, position, rotation, size, length, eventType);
-                //  }))
-                //  {
-                //    Debug.Log("Hej");
-                //  }
-                //} else
-                //{
-                //  Handles.DrawLine(prevJoint.position.ToHandedVector3(), currJoint.position.ToHandedVector3(), 3);
-                //}
-
-                Handles.DrawLine(prevJoint.position.ToHandedVector3(), currJoint.position.ToHandedVector3(), 3);
-
-                if(e.control)
+                if (Handles.Button(midPoint, Quaternion.LookRotation(direction), size, size, Handles.CubeHandleCap))
                 {
-                  Vector3 start = prevJoint.position.ToHandedVector3();
-                  Vector3 direction = (currJoint.position - prevJoint.position).ToHandedVector3();
-                  Vector3 midPoint = start + direction * 0.5f;
-                  
-                  if (Handles.Button(midPoint, Quaternion.LookRotation(direction), radius, radius, Handles.CubeHandleCap))
-                  {
-                    Debug.Log("Hej");
-                  }                  
+                  m_skeletoniser.upscaleEdge(prevJointSkeletoniserIdx, currJointSkeletoniserIdx);
+                  UpdateSkeleton();
+                }
+              }, edgeCubeColor));
+
+            }
+          }
+
+          distanceToCamera = (cameraPosRouteSpace - currJoint.position.ToHandedVector3()).magnitude;
+          if (!e.shift && !e.control || (currJoint.isLeaf() && !e.shift))
+          {
+            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.SphereHandleCap(0, currPos, Quaternion.identity, diameter, EventType.Repaint),  normalColor));
+          }
+          else
+          {
+            uint neighbSkeletoniserIdx1 = 0;
+            uint neighbSkeletoniserIdx2 = 0;
+
+            if (!currJoint.isLeaf())
+            {
+              neighbSkeletoniserIdx1 = m_skeleton.joints[(int)currJoint.adjJoints[0]].skeletoniserIndex;
+              neighbSkeletoniserIdx2 = m_skeleton.joints[(int)currJoint.adjJoints[1]].skeletoniserIndex;
+            }            
+
+            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
+            {
+              if (Handles.Button(currPos, Quaternion.identity, diameter, radius, Handles.SphereHandleCap))
+              {
+                if (e.shift && m_skeleton.joints.Count > 2) //Remove joint
+                {
+                  //Remove corresponding vertex from skeletoniser and update skeleton
+                  m_skeletoniser.removeVertex(currJointSkeletoniserIdx, false);
+                  UpdateSkeleton();
+                }
+                else if (e.control) //Upscale at joint
+                {
+                  if (m_skeletoniser.upscaleVertex(currJointSkeletoniserIdx, neighbSkeletoniserIdx1, neighbSkeletoniserIdx2))
+                    UpdateSkeleton();
                 }
               }
-            }
-            prevJoint = currJoint.deref();
-            currJoint.inc();
-          }                
+            }, e.shift && m_skeleton.joints.Count > 2 ? removeColor : addColor));
+          }
+
+          prevJoint = currJoint.deref();
+          currJoint.inc();
+        }
+
+        drawcalls.Sort((t1, t2) => -t1.Item1.CompareTo(t2.Item1));
+
+        foreach (var drawcall in drawcalls)
+        {
+          using (new Handles.DrawingScope(drawcall.Item3))
+          {
+            drawcall.Item2.Invoke();
+          }
         }
       }
     }
-
+    
     void DrawSkeleton()
     {
-      using (new Handles.DrawingScope(Matrix4x4.Translate(m_selectedMeshObject.transform.position) * Matrix4x4.Rotate(m_selectedMeshObject.transform.rotation)))
+      using (new Handles.DrawingScope(Matrix4x4.Translate(m_selectedParent.transform.position) * Matrix4x4.Rotate(m_selectedParent.transform.rotation)))
       {
-        using (new Handles.DrawingScope(UnityEngine.Color.green))
-        {          
-          foreach(var joint in m_processedSkeleton.joints)
+        using (new Handles.DrawingScope(Color.green))
+        {
+          foreach (var joint in m_skeleton.joints)
           {
             Handles.SphereHandleCap(0, joint.position.ToHandedVector3(), Quaternion.identity, (float)joint.radius * 2, EventType.Repaint);
-            using (new Handles.DrawingScope(UnityEngine.Color.red))
+            using (new Handles.DrawingScope(Color.red))
             {
               foreach (var adjIdx in joint.adjJoints)
               {
-                Handles.DrawLine(m_processedSkeleton.joints[(int)adjIdx].position.ToHandedVector3(), joint.position.ToHandedVector3(), 4);
+                Handles.DrawLine(m_skeleton.joints[(int)adjIdx].position.ToHandedVector3(), joint.position.ToHandedVector3(), 4);
               }
-            }              
+            }
           }
         }
       }
