@@ -5,7 +5,7 @@ namespace AGXUnity
 {
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class ScrewControllerNew : ElementaryConstraintControllerNew
+  public class ScrewController : ElementaryConstraintController
   {
     [SerializeField]
     private float m_lead = 0f;
@@ -38,11 +38,11 @@ namespace AGXUnity
       m_lead = Convert.ToSingle( agx.ScrewController.safeCast( tmpEc ).getLead() );
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_lead = ( source as ScrewControllerNew ).m_lead;
+      m_lead = ( source as ScrewController ).m_lead;
     }
   }
 }

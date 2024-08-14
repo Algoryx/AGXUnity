@@ -8,7 +8,7 @@ namespace AGXUnity
   /// within a given range.
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class RangeControllerNew : ElementaryConstraintControllerNew
+  public class RangeController : ElementaryConstraintController
   {
     /// <summary>
     /// Valid range of the constraint angle. Paired with property Range.
@@ -48,11 +48,11 @@ namespace AGXUnity
       m_range = new RangeReal( agx.RangeController.safeCast( tmpEc ).getRange() );
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_range = new RangeReal( ( source as RangeControllerNew ).m_range );
+      m_range = new RangeReal( ( source as RangeController ).m_range );
     }
   }
 }

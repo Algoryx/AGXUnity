@@ -8,7 +8,7 @@ namespace AGXUnity
   /// </summary>
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class ElementaryConstraintControllerNew : ElementaryConstraintNew
+  public class ElementaryConstraintController : ElementaryConstraint
   {
     /// <summary>
     /// Get/set the compliance of this controller.
@@ -40,7 +40,7 @@ namespace AGXUnity
       set { RowData[ 0 ].ForceRange = value; }
     }
 
-    public T As<T>( Constraint.ControllerType controllerType ) where T : ElementaryConstraintControllerNew
+    public T As<T>( Constraint.ControllerType controllerType ) where T : ElementaryConstraintController
     {
       bool typeMatch = GetType() == typeof( T );
       return typeMatch && IsControllerTypeMatch( controllerType ) ?

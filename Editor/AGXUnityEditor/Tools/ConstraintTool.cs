@@ -115,7 +115,7 @@ namespace AGXUnityEditor.Tools
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
       Undo.RecordObjects( constraints, "ConstraintTool" );
 
-      var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowDataNew>();
+      var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
         if ( !InspectorGUI.Foldout( selected( "ec_" + rowType.ToString() ),
                                     GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
@@ -213,7 +213,7 @@ namespace AGXUnityEditor.Tools
                                 select controller ).ToArray();
             using ( InspectorGUI.IndentScope.Single ) {
               InspectorEditor.DrawMembersGUI( controllers, constraints );
-              InspectorEditor.DrawMembersGUI( controllers, constraints, controller => ( controller as ElementaryConstraintNew ).RowData[ 0 ] );
+              InspectorEditor.DrawMembersGUI( controllers, constraints, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
             }
           }
         }

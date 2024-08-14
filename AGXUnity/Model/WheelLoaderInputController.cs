@@ -144,8 +144,8 @@ namespace AGXUnity.Model
         return false;
       }
 
-      WheelLoader.SteeringHinge.GetController<TargetSpeedControllerNew>().Enable = false;
-      WheelLoader.SteeringHinge.GetController<LockControllerNew>().Enable = true;
+      WheelLoader.SteeringHinge.GetController<TargetSpeedController>().Enable = false;
+      WheelLoader.SteeringHinge.GetController<LockController>().Enable = true;
 
       return true;
     }
@@ -232,8 +232,8 @@ namespace AGXUnity.Model
     private void SetSpeed( Constraint constraint, float speed )
     {
       var motorEnable = !Utils.Math.EqualsZero( speed );
-      var mc = constraint.GetController<TargetSpeedControllerNew>();
-      var lc = constraint.GetController<LockControllerNew>();
+      var mc = constraint.GetController<TargetSpeedController>();
+      var lc = constraint.GetController<LockController>();
       mc.Enable = motorEnable;
       mc.Speed = speed;
       if ( !motorEnable && !lc.Enable )

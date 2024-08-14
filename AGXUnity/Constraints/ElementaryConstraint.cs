@@ -10,19 +10,19 @@ namespace AGXUnity
   /// </summary>
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
-  public class ElementaryConstraintNew : IPropertySynchronizable
+  public class ElementaryConstraint : IPropertySynchronizable
   {
     /// <summary>
     /// Create instance given temporary native elementary constraint.
     /// </summary>
     /// <param name="tmpEc">Temporary elementary constraint.</param>
     /// <returns>New instance, as similar as possible, to the given native elementary constraint.</returns>
-    public static ElementaryConstraintNew Create( GameObject gameObject, agx.ElementaryConstraint tmpEc )
+    public static ElementaryConstraint Create( GameObject gameObject, agx.ElementaryConstraint tmpEc )
     {
       if ( tmpEc == null )
         return null;
 
-      ElementaryConstraintNew elementaryConstraint = null;
+      ElementaryConstraint elementaryConstraint = null;
 
       // It's possible to know the type of controllers. We're basically not
       // interested in knowing the type of the ordinary ones.
@@ -42,11 +42,11 @@ namespace AGXUnity
 
       // This is a controller, instantiate the controller.
       if ( controllerType != null ) {
-        elementaryConstraint = System.Activator.CreateInstance( Type.GetType( "AGXUnity." + controllerType.Name + "New" ) ) as ElementaryConstraintNew;
+        elementaryConstraint = System.Activator.CreateInstance( Type.GetType( "AGXUnity." + controllerType.Name ) ) as ElementaryConstraint;
       }
       // This is an ordinary elementary constraint.
       else
-        elementaryConstraint = new ElementaryConstraintNew();
+        elementaryConstraint = new ElementaryConstraint();
 
       // Copies data from the native instance.
       elementaryConstraint.Construct( tmpEc );
@@ -60,9 +60,9 @@ namespace AGXUnity
     /// </summary>
     /// <param name="gameObject">Game object to add the new version of the elementary constraint to.</param>
     /// <returns>New added elementary constraint instance.</returns>
-    public ElementaryConstraintNew FromLegacy( GameObject gameObject )
+    public ElementaryConstraint FromLegacy( GameObject gameObject )
     {
-      ElementaryConstraintNew target = System.Activator.CreateInstance( GetType() ) as ElementaryConstraintNew;
+      ElementaryConstraint target = System.Activator.CreateInstance( GetType() ) as ElementaryConstraint;
       target.Construct( this );
 
       return target;
@@ -108,7 +108,7 @@ namespace AGXUnity
     /// Data (compliance, damping etc.) for each row in this elementary constraint.
     /// </summary>
     [field: SerializeField]
-    public ElementaryConstraintRowDataNew[] RowData { get; private set; }
+    public ElementaryConstraintRowData[] RowData { get; private set; }
 
     /// <summary>
     /// Native instance of this elementary constraint. Only set when the
@@ -129,7 +129,7 @@ namespace AGXUnity
       return Initialize();
     }
 
-    public void CopyFrom( ElementaryConstraintNew source )
+    public void CopyFrom( ElementaryConstraint source )
     {
       Construct( source );
     }
@@ -138,9 +138,9 @@ namespace AGXUnity
     public void MigrateInternalData(AGXUnity.Deprecated.ElementaryConstraint ec)
     {
       NativeName = ec.NativeName;
-      List<ElementaryConstraintRowDataNew> newRDs = new List<ElementaryConstraintRowDataNew>();
+      List<ElementaryConstraintRowData> newRDs = new List<ElementaryConstraintRowData>();
       foreach ( var row in ec.RowData ) {
-        var newRowData = new ElementaryConstraintRowDataNew(this, row.Row);
+        var newRowData = new ElementaryConstraintRowData(this, row.Row);
         newRowData.Compliance = row.Compliance;
         newRowData.Damping = row.Damping;
         newRowData.ForceRange = row.ForceRange;
@@ -153,18 +153,18 @@ namespace AGXUnity
     {
       NativeName = tmpEc.getName();
       m_enable = tmpEc.getEnable();
-      RowData = new ElementaryConstraintRowDataNew[ tmpEc.getNumRows() ];
+      RowData = new ElementaryConstraintRowData[ tmpEc.getNumRows() ];
       for ( uint i = 0; i < tmpEc.getNumRows(); ++i )
-        RowData[ i ] = new ElementaryConstraintRowDataNew( this, Convert.ToInt32( i ), tmpEc );
+        RowData[ i ] = new ElementaryConstraintRowData( this, Convert.ToInt32( i ), tmpEc );
     }
 
-    protected virtual void Construct( ElementaryConstraintNew source )
+    protected virtual void Construct( ElementaryConstraint source )
     {
       NativeName = source.NativeName;
       m_enable = source.m_enable;
-      RowData = new ElementaryConstraintRowDataNew[ source.NumRows ];
+      RowData = new ElementaryConstraintRowData[ source.NumRows ];
       for ( int i = 0; i < source.NumRows; ++i )
-        RowData[ i ] = new ElementaryConstraintRowDataNew( this, source.RowData[ i ] );
+        RowData[ i ] = new ElementaryConstraintRowData( this, source.RowData[ i ] );
     }
 
     protected bool Initialize()
@@ -173,7 +173,7 @@ namespace AGXUnity
         return false;
 
       // Manually synchronizing data for native row coupling.
-      foreach ( ElementaryConstraintRowDataNew data in RowData ) {
+      foreach ( ElementaryConstraintRowData data in RowData ) {
         data.ElementaryConstraint = this;
         Utils.PropertySynchronizer.Synchronize( data );
       }

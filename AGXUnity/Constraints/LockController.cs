@@ -9,7 +9,7 @@ namespace AGXUnity
   /// </summary>
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class LockControllerNew : ElementaryConstraintControllerNew
+  public class LockController : ElementaryConstraintController
   {
     /// <summary>
     /// Desired position/angle to lock the angle to. Paired with property Position.
@@ -49,11 +49,11 @@ namespace AGXUnity
       m_position = Convert.ToSingle( agx.LockController.safeCast( tmpEc ).getPosition() );
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_position = ( source as LockControllerNew ).m_position;
+      m_position = ( source as LockController ).m_position;
     }
   }
 }

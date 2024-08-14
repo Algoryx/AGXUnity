@@ -8,7 +8,7 @@ namespace AGXUnity
   /// </summary>
   [AddComponentMenu( "" )]
   [Serializable]
-  public class ElementaryConstraintRowDataNew
+  public class ElementaryConstraintRowData
   {
     /// <summary>
     /// Row index in the elementary constraint. This is normally only 0
@@ -39,7 +39,7 @@ namespace AGXUnity
     /// </summary>
     [HideInInspector]
     [field:NonSerialized]
-    public ElementaryConstraintNew ElementaryConstraint { get; internal set; }
+    public ElementaryConstraint ElementaryConstraint { get; internal set; }
 
     /// <summary>
     /// Compliance of this row in the elementary constraint. Paired with property Compliance.
@@ -110,7 +110,7 @@ namespace AGXUnity
     /// <param name="elementaryConstraint">Elementary constraint this row data belongs to.</param>
     /// <param name="row">Row index in the elementary constraint.</param>
     /// <param name="tmpEc">Temporary native instance to copy default values from.</param>
-    public ElementaryConstraintRowDataNew( ElementaryConstraintNew elementaryConstraint, int row, agx.ElementaryConstraint tmpEc = null )
+    public ElementaryConstraintRowData( ElementaryConstraint elementaryConstraint, int row, agx.ElementaryConstraint tmpEc = null )
     {
       ElementaryConstraint = elementaryConstraint;
       m_row = row;
@@ -129,14 +129,14 @@ namespace AGXUnity
     /// </summary>
     /// <param name="elementaryConstraint"></param>
     /// <param name="source"></param>
-    public ElementaryConstraintRowDataNew( ElementaryConstraintNew elementaryConstraint, ElementaryConstraintRowDataNew source )
+    public ElementaryConstraintRowData( ElementaryConstraint elementaryConstraint, ElementaryConstraintRowData source )
     {
       ElementaryConstraint = elementaryConstraint;
       m_row = source.m_row;
       CopyFrom( source );
     }
 
-    public void CopyFrom( ElementaryConstraintRowDataNew source )
+    public void CopyFrom( ElementaryConstraintRowData source )
     {
       m_compliance = source.m_compliance;
       m_damping = source.m_damping;

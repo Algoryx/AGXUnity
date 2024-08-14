@@ -7,11 +7,11 @@ namespace AGXUnity.Utils
   {
     public class ConstraintRow
     {
-      public ElementaryConstraintNew ElementaryConstraint { get; private set; }
+      public ElementaryConstraint ElementaryConstraint { get; private set; }
       public bool Valid { get { return ElementaryConstraint != null && Row >= 0 && Row < ElementaryConstraint.NumRows; } }
-      public ElementaryConstraintRowDataNew RowData { get { return Valid ? ElementaryConstraint.RowData[ Row ] : null; } }
+      public ElementaryConstraintRowData RowData { get { return Valid ? ElementaryConstraint.RowData[ Row ] : null; } }
 
-      public ConstraintRow( ElementaryConstraintNew elementaryConstraint, int row )
+      public ConstraintRow( ElementaryConstraint elementaryConstraint, int row )
       {
         ElementaryConstraint = elementaryConstraint;
         Row = row;
@@ -34,7 +34,7 @@ namespace AGXUnity.Utils
           return null;
 
         ConstraintRowParser constraintRowParser = new ConstraintRowParser();
-        System.Action<ConstraintRow[], ElementaryConstraintNew, int, int> AssignRow = ( rows, ec, constraintRow, localRow ) =>
+        System.Action<ConstraintRow[], ElementaryConstraint, int, int> AssignRow = ( rows, ec, constraintRow, localRow ) =>
         {
           if ( rows[ constraintRow ] != null )
             throw new Exception( "Row index " + constraintRow + " already assigned: " + rows[ constraintRow ].ElementaryConstraint.NativeName );
@@ -42,8 +42,8 @@ namespace AGXUnity.Utils
           rows[ constraintRow ] = new ConstraintRow( ec, localRow );
         };
 
-        ElementaryConstraintNew[] ordinaryElementaryConstraints = constraint.GetOrdinaryElementaryConstraints();
-        foreach ( ElementaryConstraintNew ec in ordinaryElementaryConstraints ) {
+        ElementaryConstraint[] ordinaryElementaryConstraints = constraint.GetOrdinaryElementaryConstraints();
+        foreach ( ElementaryConstraint ec in ordinaryElementaryConstraints ) {
           if ( ec.NumRows > 1 ) {
             // Only rotational QuatLock ("QL") and translational SphericalRel ("SR") with three rows.
             ConstraintRow[] rows = ec.NativeName == "QL" ? constraintRowParser.RotationalRows :
@@ -104,9 +104,9 @@ namespace AGXUnity.Utils
       }
     }
 
-    public static string FindName( ElementaryConstraintControllerNew controller )
+    public static string FindName( ElementaryConstraintController controller )
     {
-      return controller.GetType().Name.Substring(0,controller.GetType().Name.Length - 3).SplitCamelCase();
+      return controller.GetType().Name.SplitCamelCase();
     }
   }
 }

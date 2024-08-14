@@ -5,7 +5,7 @@ namespace AGXUnity
 {
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class FrictionControllerNew : ElementaryConstraintControllerNew
+  public class FrictionController : ElementaryConstraintController
   {
     [SerializeField]
     private float m_frictionCoefficient = 0.4167f;
@@ -94,12 +94,12 @@ namespace AGXUnity
       m_nonLinearDirectSolveEnabled = agx.FrictionController.safeCast( tmpEc ).getEnableNonLinearDirectSolveUpdate();
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_frictionCoefficient = ( source as FrictionControllerNew ).m_frictionCoefficient;
-      m_nonLinearDirectSolveEnabled = ( source as FrictionControllerNew ).m_nonLinearDirectSolveEnabled;
+      m_frictionCoefficient = ( source as FrictionController ).m_frictionCoefficient;
+      m_nonLinearDirectSolveEnabled = ( source as FrictionController ).m_nonLinearDirectSolveEnabled;
     }
   }
 }

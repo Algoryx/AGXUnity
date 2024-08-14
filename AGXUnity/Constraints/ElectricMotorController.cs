@@ -5,7 +5,7 @@ namespace AGXUnity
 {
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class ElectricMotorControllerNew : ElementaryConstraintControllerNew
+  public class ElectricMotorController : ElementaryConstraintController
   {
     [SerializeField]
     private float m_voltage = 0f;
@@ -66,13 +66,13 @@ namespace AGXUnity
       m_torqueConstant = Convert.ToSingle( agx.ElectricMotorController.safeCast( tmpEc ).getTorqueConstant() );
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_voltage = ( source as ElectricMotorControllerNew ).m_voltage;
-      m_armatureResistance = ( source as ElectricMotorControllerNew ).m_armatureResistance;
-      m_torqueConstant = ( source as ElectricMotorControllerNew ).m_torqueConstant;
+      m_voltage = ( source as ElectricMotorController ).m_voltage;
+      m_armatureResistance = ( source as ElectricMotorController ).m_armatureResistance;
+      m_torqueConstant = ( source as ElectricMotorController ).m_torqueConstant;
     }
   }
 }

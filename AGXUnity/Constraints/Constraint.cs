@@ -117,7 +117,7 @@ namespace AGXUnity
     ///                                   values and fields will be copied to this objects
     ///                                   attachment pair.</param>
     /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
-    public static Constraint Create( ConstraintType type, AttachmentPairNew givenAttachmentPair = null )
+    public static Constraint Create( ConstraintType type, AttachmentPair givenAttachmentPair = null )
     {
       var instance = Create( type, new ConstraintFrame(), new ConstraintFrame() );
       if ( instance == null )
@@ -176,20 +176,20 @@ namespace AGXUnity
     /// Paired with property AttachmentPair.
     /// </summary>
     [SerializeField]
-    private AttachmentPairNew m_attachmentPairComponent = null;
+    private AttachmentPair m_attachmentPairComponent = null;
 
     /// <summary>
     /// Attachment pair of this constraint, holding parent objects and transforms.
     /// </summary>
     [HideInInspector]
-    public AttachmentPairNew AttachmentPair
+    public AttachmentPair AttachmentPair
     {
       get
       {
         // Creates attachment pair if it doesn't exist.
         if ( m_attachmentPairComponent == null ) {
           // Will add itself as component to our game object.
-          m_attachmentPairComponent = AttachmentPairNew.Create( gameObject );
+          m_attachmentPairComponent = AttachmentPair.Create( gameObject );
         }
 
         return m_attachmentPairComponent;
@@ -312,24 +312,24 @@ namespace AGXUnity
     /// List of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [SerializeReference]
-    private List<ElementaryConstraintNew> m_elementaryConstraints = new List<ElementaryConstraintNew>();
+    private List<ElementaryConstraint> m_elementaryConstraints = new List<ElementaryConstraint>();
 
     /// <summary>
     /// Array of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [HideInInspector]
-    public ElementaryConstraintNew[] ElementaryConstraints { get { return m_elementaryConstraints.ToArray(); } }
+    public ElementaryConstraint[] ElementaryConstraints { get { return m_elementaryConstraints.ToArray(); } }
 
     /// <summary>
     /// Finds and returns an array of ordinary ElementaryConstraint objects, i.e., the ones
     /// that aren't controllers.
     /// </summary>
     /// <returns>Array of ordinary elementary constraints.</returns>
-    public ElementaryConstraintNew[] GetOrdinaryElementaryConstraints()
+    public ElementaryConstraint[] GetOrdinaryElementaryConstraints()
     {
       return ( from ec
                in m_elementaryConstraints
-               where ec as ElementaryConstraintControllerNew == null &&
+               where ec as ElementaryConstraintController == null &&
                     !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller from versions
                                                         // it wasn't implemented in.
                     ec.NativeName != "CL" &&  // Ignoring ConeLimit until it is implemented 
@@ -343,12 +343,12 @@ namespace AGXUnity
     /// Finds and returns an array of controller elementary constraints, such as motor, lock, range etc.
     /// </summary>
     /// <returns>Array of controllers - if present.</returns>
-    public ElementaryConstraintControllerNew[] GetElementaryConstraintControllers()
+    public ElementaryConstraintController[] GetElementaryConstraintControllers()
     {
       return ( from ec
                in m_elementaryConstraints
-               where ec is ElementaryConstraintControllerNew
-               select ec as ElementaryConstraintControllerNew ).ToArray();
+               where ec is ElementaryConstraintController
+               select ec as ElementaryConstraintController ).ToArray();
     }
 
     /// <summary>
@@ -360,7 +360,7 @@ namespace AGXUnity
     /// <typeparam name="T">Type of the controller.</typeparam>
     /// <param name="controllerType">Working dimension of the controller. Primary for "first".</param>
     /// <returns>Controller of given type and working dimension - if present, otherwise null.</returns>
-    public T GetController<T>( ControllerType controllerType = ControllerType.Primary ) where T : ElementaryConstraintControllerNew
+    public T GetController<T>( ControllerType controllerType = ControllerType.Primary ) where T : ElementaryConstraintController
     {
       var controllers = GetElementaryConstraintControllers();
       for ( int i = 0; i < controllers.Length; ++i ) {
@@ -379,7 +379,7 @@ namespace AGXUnity
     /// <typeparam name="T">Either TranslationalDof or RotationalDof.</typeparam>
     /// <param name="callback">Callback for each valid row data instance.</param>
     /// <param name="value">Enum value X, Y, Z or All.</param>
-    public void TraverseRowData<T>( Action<ElementaryConstraintRowDataNew> callback, T value )
+    public void TraverseRowData<T>( Action<ElementaryConstraintRowData> callback, T value )
       where T : struct
     {
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( this );
@@ -571,7 +571,7 @@ namespace AGXUnity
         }
 
         using ( var nativeHinge = new TemporaryNative( NativeType ) ) {
-          swing = ElementaryConstraintNew.Create( gameObject, nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
+          swing = ElementaryConstraint.Create( gameObject, nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
         }
 
         if ( swing == null ) {
@@ -594,7 +594,7 @@ namespace AGXUnity
     }
 
     [Obsolete]
-    public void MigrateElementaryConstraints( List<ElementaryConstraintNew> newEcs)
+    public void MigrateElementaryConstraints( List<ElementaryConstraint> newEcs)
     {
       m_elementaryConstraints = newEcs;
     }
@@ -618,7 +618,7 @@ namespace AGXUnity
         if ( native.getElementaryConstraint( i ).getName() == "" )
           throw new Exception( "Native elementary constraint doesn't have a name." );
 
-        var ec = ElementaryConstraintNew.Create( gameObject, native.getElementaryConstraint( i ) );
+        var ec = ElementaryConstraint.Create( gameObject, native.getElementaryConstraint( i ) );
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -631,7 +631,7 @@ namespace AGXUnity
         if ( native.getSecondaryConstraint( i ).getName() == "" )
           throw new Exception( "Native secondary constraint doesn't have a name." );
 
-        var sc = ElementaryConstraintNew.Create( gameObject, native.getSecondaryConstraint( i ) );
+        var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -762,7 +762,7 @@ namespace AGXUnity
                                                            } );
 
         // Assigning native elementary constraints to our elementary constraint instances.
-        foreach ( ElementaryConstraintNew ec in ElementaryConstraints )
+        foreach ( ElementaryConstraint ec in ElementaryConstraints )
           if ( !ec.OnConstraintInitialize( this ) )
             throw new Exception( "Unable to initialize elementary constraint: " +
                                  ec.NativeName +
@@ -892,7 +892,7 @@ namespace AGXUnity
     {
       public agx.Constraint Instance { get { return m_native; } }
 
-      public TemporaryNative( Type nativeType, AttachmentPairNew attachmentPair = null )
+      public TemporaryNative( Type nativeType, AttachmentPair attachmentPair = null )
       {
         m_rb1 = new agx.RigidBody();
         m_f1 = new agx.Frame();
@@ -941,7 +941,7 @@ namespace AGXUnity
       }
     }
 
-    private static void DrawGizmos( Color color, AttachmentPairNew attachmentPair, bool selected )
+    private static void DrawGizmos( Color color, AttachmentPair attachmentPair, bool selected )
     {
       Gizmos.color = color;
       Gizmos.DrawMesh( GizmosMesh,

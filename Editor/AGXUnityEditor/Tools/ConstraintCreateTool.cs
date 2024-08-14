@@ -13,7 +13,7 @@ namespace AGXUnityEditor.Tools
     class UndoWrapper : UnityEngine.ScriptableObject
     {
       [SerializeField]
-      public AttachmentPairNew wrapped;
+      public AttachmentPair wrapped;
     }
 
     UndoWrapper TempAttachmentPair;
@@ -47,7 +47,7 @@ namespace AGXUnityEditor.Tools
       m_createConstraintData.CreateInitialState( Parent.name );
       TempAttachmentPair.wrapped = m_createConstraintData.AttachmentPair;
 
-      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPairNew[]
+      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[]
                                                                {
                                                                  m_createConstraintData.AttachmentPair
                                                                },
@@ -175,7 +175,7 @@ namespace AGXUnityEditor.Tools
       }
 
       public string Name                   = string.Empty;
-      public AttachmentPairNew AttachmentPair = null;
+      public AttachmentPair AttachmentPair = null;
       public GameObject TempGameObject     = null;
 
       public void CreateInitialState( string name )
@@ -187,7 +187,7 @@ namespace AGXUnityEditor.Tools
 
         TempGameObject           = new GameObject();
         TempGameObject.hideFlags = HideFlags.HideAndDontSave;
-        AttachmentPair           = AttachmentPairNew.Create( TempGameObject );
+        AttachmentPair           = AttachmentPair.Create( TempGameObject );
         Name                     = Factory.CreateName( name + "_constraint" );
       }
 

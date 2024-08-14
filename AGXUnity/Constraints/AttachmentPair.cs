@@ -11,11 +11,11 @@ namespace AGXUnity
   /// </summary>
   [AddComponentMenu( "" )]
   [Serializable]
-  public class AttachmentPairNew
+  public class AttachmentPair
   {
-    public static AttachmentPairNew Create( GameObject gameObject )
+    public static AttachmentPair Create( GameObject gameObject )
     {
-      AttachmentPairNew instance = new AttachmentPairNew();
+      AttachmentPair instance = new AttachmentPair();
       return instance;
     }
 
@@ -116,7 +116,7 @@ namespace AGXUnity
     /// Copies all values and objects from <paramref name="source"/>.
     /// </summary>
     /// <param name="source">Source</param>
-    public void CopyFrom( AttachmentPairNew source )
+    public void CopyFrom( AttachmentPair source )
     {
       if ( source == null )
         return;

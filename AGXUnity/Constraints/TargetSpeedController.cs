@@ -9,7 +9,7 @@ namespace AGXUnity
   /// </summary>
   [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#controllers" )]
-  public class TargetSpeedControllerNew : ElementaryConstraintControllerNew
+  public class TargetSpeedController : ElementaryConstraintController
   {
     /// <summary>
     /// Desired speed to drive the constraint angle. Paired with property Speed.
@@ -71,12 +71,12 @@ namespace AGXUnity
       m_lockAtZeroSpeed = agx.TargetSpeedController.safeCast( tmpEc ).getLockedAtZeroSpeed();
     }
 
-    protected override void Construct( ElementaryConstraintNew source )
+    protected override void Construct( ElementaryConstraint source )
     {
       base.Construct( source );
 
-      m_speed = ( source as TargetSpeedControllerNew ).m_speed;
-      m_lockAtZeroSpeed = ( source as TargetSpeedControllerNew ).m_lockAtZeroSpeed;
+      m_speed = ( source as TargetSpeedController ).m_speed;
+      m_lockAtZeroSpeed = ( source as TargetSpeedController ).m_lockAtZeroSpeed;
     }
   }
 }

@@ -77,38 +77,38 @@ namespace AGXUnityEditor
 #endif
 #pragma warning disable CS0612 // Type or member is obsolete
       foreach ( var constraint in constraints ) {
-        List<ElementaryConstraintNew> newEcs = new List<ElementaryConstraintNew>();
+        List<ElementaryConstraint> newEcs = new List<ElementaryConstraint>();
         foreach ( var ec in constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) {
           if ( !ShouldPatch )
             return;
-          ElementaryConstraintNew newEc;
+          ElementaryConstraint newEc;
           if ( ec is AGXUnity.Deprecated.TargetSpeedController ts )
-            newEc = new TargetSpeedControllerNew()
+            newEc = new TargetSpeedController()
             {
               LockAtZeroSpeed = ts.LockAtZeroSpeed,
               Speed = ts.Speed
             };
           else if ( ec is AGXUnity.Deprecated.RangeController rc )
-            newEc = new RangeControllerNew() { Range = rc.Range };
+            newEc = new RangeController() { Range = rc.Range };
           else if ( ec is AGXUnity.Deprecated.LockController lc )
-            newEc = new LockControllerNew() { Position = lc.Position };
+            newEc = new LockController() { Position = lc.Position };
           else if ( ec is AGXUnity.Deprecated.ScrewController sc )
-            newEc = new ScrewControllerNew() { Lead = sc.Lead };
+            newEc = new ScrewController() { Lead = sc.Lead };
           else if ( ec is AGXUnity.Deprecated.FrictionController fc )
-            newEc = new FrictionControllerNew()
+            newEc = new FrictionController()
             {
               FrictionCoefficient = fc.FrictionCoefficient,
               NonLinearDirectSolveEnabled = fc.NonLinearDirectSolveEnabled,
             };
           else if ( ec is AGXUnity.Deprecated.ElectricMotorController emc )
-            newEc = new ElectricMotorControllerNew()
+            newEc = new ElectricMotorController()
             {
               Voltage = emc.Voltage,
               ArmatureResistance = emc.ArmatureResistance,
               TorqueConstant = emc.TorqueConstant
             };
           else
-            newEc = new ElementaryConstraintNew();
+            newEc = new ElementaryConstraint();
 
           newEc.Enable = ec.Enable;
 

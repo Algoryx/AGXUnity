@@ -8,7 +8,7 @@ namespace AGXUnityEditor.Tools
 {
   public class ConstraintAttachmentFrameTool : Tool
   {
-    public AttachmentPairNew[] AttachmentPairs { get; private set; }
+    public AttachmentPair[] AttachmentPairs { get; private set; }
 
     public Object[] UndoObjects { get; private set; }
 
@@ -18,7 +18,7 @@ namespace AGXUnityEditor.Tools
 
     public FrameTool ConnectedFrameTool { get; private set; }
 
-    public ConstraintAttachmentFrameTool( AttachmentPairNew[] attachmentPairs,
+    public ConstraintAttachmentFrameTool( AttachmentPair[] attachmentPairs,
                                           Object[] undoObjects,
                                           Object onChangeDirtyTarget = null )
       : base( isSingleInstanceTool: false )

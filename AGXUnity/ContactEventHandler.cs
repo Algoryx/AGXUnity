@@ -581,7 +581,7 @@ namespace AGXUnity
     private HashSet<System.Type> m_incompatibleTypes = new HashSet<System.Type>()
     {
       typeof( Utils.OnSelectionProxy ),
-      typeof( AttachmentPairNew ),
+      typeof( AttachmentPair ),
       typeof( CollisionGroups ),
       typeof( WireRoute ),
       typeof( CableRoute ),
