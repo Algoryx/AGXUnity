@@ -795,7 +795,7 @@ namespace AGXUnity.IO.URDF
         //       the actual controllers are disabled.
         if ( joint.Limit.Enabled ) {
           if ( joint.Limit.RangeEnabled ) {
-            var rangeController = constraint.GetController<RangeController>();
+            var rangeController = constraint.GetController<RangeControllerNew>();
             if ( rangeController != null ) {
               rangeController.Enable = !joint.Mimic.Enabled;
               rangeController.Range = new RangeReal( joint.Limit.Lower, joint.Limit.Upper );
@@ -803,7 +803,7 @@ namespace AGXUnity.IO.URDF
           }
 
           if ( joint.Limit.Effort > 0.0f ) {
-            var targetSpeedController = constraint.GetController<TargetSpeedController>();
+            var targetSpeedController = constraint.GetController<TargetSpeedControllerNew>();
             if ( targetSpeedController != null ) {
               targetSpeedController.Enable = !joint.Mimic.Enabled;
               targetSpeedController.ForceRange = new RangeReal( joint.Limit.Effort );
@@ -813,7 +813,7 @@ namespace AGXUnity.IO.URDF
 
         if ( joint.Dynamics.Enabled ) {
           if ( joint.Dynamics.Friction > 0 ) {
-            var frictionController = constraint.GetController<FrictionController>();
+            var frictionController = constraint.GetController<FrictionControllerNew>();
             if ( frictionController != null ) {
               frictionController.Enable = true;
               frictionController.FrictionCoefficient = 0.0f;

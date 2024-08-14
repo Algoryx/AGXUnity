@@ -89,6 +89,53 @@ namespace AGXUnityEditor
       }
     }
 
+    /// <summary>
+    /// Draw supported member GUI for given targets. This method supports
+    /// non-UnityEngine.Object instances, such as pure Serializable classes,
+    /// that are part of <paramref name="targets"/>. <paramref name="getChildCallback"/>
+    /// is called to access these serializable objects. If <paramref name="getChildCallback"/>
+    /// is null, targets will be rendered.
+    /// </summary>
+    /// <param name="targets">Target UnityEngine.Object instances (used for Undo and SetDirty).</param>
+    /// <param name="getChildCallback">Null and targets will be rendered, otherwise the returned
+    ///                                instance from this callback.</param>
+    public static void DrawMembersGUI( object[] targets,
+                                       Object[] undoObjects,
+                                       Func<object, object> getChildCallback = null,
+                                       bool enabled = true )
+    {
+      targets = targets.Where( obj => obj != null ).ToArray();
+
+      var objects = targets.Select( target => getChildCallback == null ?
+                                        target :
+                                        getChildCallback( target ) )
+                             .Where( obj => obj != null ).ToArray();
+      if ( objects.Length == 0 )
+        return;
+
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        Undo.RecordObjects( undoObjects, "Inspector" );
+
+        InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
+        var group = InspectorGroupHandler.Create();
+        foreach ( var wrapper in fieldsAndProperties ) {
+          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+            continue;
+
+          group.Update( wrapper, objects[ 0 ] );
+
+          if ( group.IsHidden )
+            continue;
+
+          var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                                wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+          using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+            HandleType( wrapper, objects, null );
+        }
+        group.Dispose();
+      }
+    }
+
     public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
     {
       if ( memberInfo == null )

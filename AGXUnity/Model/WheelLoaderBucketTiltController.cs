@@ -167,7 +167,7 @@ namespace AGXUnity.Model
       // Update target angle:
       //   - Driver active.
       //   - Override state active, at least one tracked range is active.
-      if ( tiltPrismatic.GetController<TargetSpeedController>().Enable )
+      if ( tiltPrismatic.GetController<TargetSpeedControllerNew>().Enable )
         TargetAngle = CurrentAngle;
       else {
         var diff = 0.0f;
@@ -175,7 +175,7 @@ namespace AGXUnity.Model
           TargetAngle = CurrentAngle;
         else
           diff = ( CurrentAngle - TargetAngle ) * AngleDiffToTiltDistanceScale;
-        tiltPrismatic.GetController<LockController>().Position = tiltPrismatic.GetCurrentAngle() + diff;
+        tiltPrismatic.GetController<LockControllerNew>().Position = tiltPrismatic.GetCurrentAngle() + diff;
       }
     }
 

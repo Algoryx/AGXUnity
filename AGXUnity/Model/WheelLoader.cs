@@ -431,7 +431,7 @@ namespace AGXUnity.Model
       m_actuators[ (int)WheelLocation.RightRear ]  = new agxPowerLine.RotationalActuator( RightRearHinge.GetInitialized<Constraint>().Native.asHinge() );
 
       foreach ( var wheelHinge in WheelHinges )
-        wheelHinge.GetController<TargetSpeedController>().Enable = false;
+        wheelHinge.GetController<TargetSpeedControllerNew>().Enable = false;
 
       var engineTorqueConverterShaft    = new agxDriveTrain.Shaft();
       var torqueConverterGearBoxShaft   = new agxDriveTrain.Shaft();

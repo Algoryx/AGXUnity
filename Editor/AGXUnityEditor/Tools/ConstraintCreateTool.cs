@@ -10,6 +10,14 @@ namespace AGXUnityEditor.Tools
   {
     public GameObject Parent { get; private set; }
 
+    class UndoWrapper : UnityEngine.ScriptableObject
+    {
+      [SerializeField]
+      public AttachmentPairNew wrapped;
+    }
+
+    UndoWrapper TempAttachmentPair;
+
     public bool MakeConstraintChildToParent { get; set; }
 
     public ConstraintAttachmentFrameTool AttachmentFrameTool
@@ -30,15 +38,20 @@ namespace AGXUnityEditor.Tools
       Parent = parent;
       MakeConstraintChildToParent = makeConstraintChildToParent;
       m_onCreate = onCreate;
+      TempAttachmentPair = ScriptableObject.CreateInstance<UndoWrapper>();
+      TempAttachmentPair.hideFlags = HideFlags.DontSave;
     }
 
     public override void OnAdd()
     {
       m_createConstraintData.CreateInitialState( Parent.name );
-      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[]
+      TempAttachmentPair.wrapped = m_createConstraintData.AttachmentPair;
+
+      AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPairNew[]
                                                                {
                                                                  m_createConstraintData.AttachmentPair
                                                                },
+                                                               new UnityEngine.Object[] { TempAttachmentPair },
                                                                Parent );
       AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = false;
       // Enabling reference frame transform handle when select tool
@@ -162,19 +175,19 @@ namespace AGXUnityEditor.Tools
       }
 
       public string Name                   = string.Empty;
-      public AttachmentPair AttachmentPair = null;
+      public AttachmentPairNew AttachmentPair = null;
       public GameObject TempGameObject     = null;
 
       public void CreateInitialState( string name )
       {
         if ( AttachmentPair != null ) {
-          Debug.LogError( "Attachment pair already created. Make sure to clean any previous state before initializing a new one.", AttachmentPair );
+          Debug.LogError( "Attachment pair already created. Make sure to clean any previous state before initializing a new one." );
           return;
         }
 
         TempGameObject           = new GameObject();
         TempGameObject.hideFlags = HideFlags.HideAndDontSave;
-        AttachmentPair           = AttachmentPair.Create( TempGameObject );
+        AttachmentPair           = AttachmentPairNew.Create( TempGameObject );
         Name                     = Factory.CreateName( name + "_constraint" );
       }
 

@@ -75,7 +75,7 @@ namespace AGXUnity
     /// <param name="constraintType">Constraint type.</param>
     /// <param name="givenAttachmentPair">Optional initial attachment pair. If null, a new one will be created.</param>
     /// <returns>Constraint game object if the configuration is valid.</returns>
-    public static GameObject Create( ConstraintType constraintType, AttachmentPair givenAttachmentPair = null )
+    public static GameObject Create( ConstraintType constraintType, AttachmentPairNew givenAttachmentPair = null )
     {
       var constraint = Constraint.Create( constraintType, givenAttachmentPair );
       if ( constraint == null )

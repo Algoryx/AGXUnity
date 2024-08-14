@@ -2,19 +2,33 @@
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity
+namespace AGXUnity.Deprecated
 {
   /// <summary>
   /// Mass properties of a RigidBody.
   /// </summary>
-  [Serializable]
-  public class MassProperties
+  [AddComponentMenu( "" )]
+  [HideInInspector]
+  [DisallowMultipleComponent]
+  [DoNotGenerateCustomEditor]
+  [Obsolete("Component MassProperties has been deprecated in favor of inline serialized MassProperties")]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mass-properties" )]
+  public class MassProperties : ScriptComponent
   {
+    /// <summary>
+    /// Only caching reference to our body.
+    /// </summary>
+    private RigidBody m_rb = null;
+
     [HideInInspector]
-    [field: SerializeField]
     public RigidBody RigidBody
     {
-      get; private set;
+      get
+      {
+        if ( m_rb == null )
+          m_rb = GetComponent<RigidBody>();
+        return m_rb;
+      }
     }
 
     /// <summary>
@@ -158,9 +172,8 @@ namespace AGXUnity
       }
     }
 
-    public MassProperties(RigidBody parent)
+    public MassProperties()
     {
-      RigidBody = parent;
       // When the user clicks "Update" in the editor we receive
       // a callback to update mass of the body.
       Mass.OnForcedUpdate               += OnForcedMassInertiaUpdate;
@@ -244,6 +257,23 @@ namespace AGXUnity
       InertiaDiagonal.UseDefault = false;
       InertiaOffDiagonal.UseDefault = false;
       CenterOfMassOffset.UseDefault = false;
+    }
+
+    protected override bool Initialize()
+    {
+      if ( RigidBody == null ) {
+        Debug.LogError( "Unable to find RigidBody component.", this );
+        return false;
+      }
+
+      RigidBody.GetInitialized<RigidBody>();
+
+      return true;
+    }
+
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
     }
 
     /// <summary>

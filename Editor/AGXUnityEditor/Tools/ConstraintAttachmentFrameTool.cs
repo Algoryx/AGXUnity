@@ -1,14 +1,16 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using AGXUnity;
+using System.Linq;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
 {
   public class ConstraintAttachmentFrameTool : Tool
   {
-    public AttachmentPair[] AttachmentPairs { get; private set; }
+    public AttachmentPairNew[] AttachmentPairs { get; private set; }
+
+    public Object[] UndoObjects { get; private set; }
 
     public Object OnChangeDirtyTarget { get; private set; }
 
@@ -16,11 +18,13 @@ namespace AGXUnityEditor.Tools
 
     public FrameTool ConnectedFrameTool { get; private set; }
 
-    public ConstraintAttachmentFrameTool( AttachmentPair[] attachmentPairs,
+    public ConstraintAttachmentFrameTool( AttachmentPairNew[] attachmentPairs,
+                                          Object[] undoObjects,
                                           Object onChangeDirtyTarget = null )
       : base( isSingleInstanceTool: false )
     {
       AttachmentPairs = attachmentPairs;
+      UndoObjects = undoObjects;
       OnChangeDirtyTarget = onChangeDirtyTarget;
     }
 
@@ -31,13 +35,13 @@ namespace AGXUnityEditor.Tools
       ReferenceFrameTool = new FrameTool( AttachmentPairs[ 0 ].ReferenceFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
-        UndoRedoRecordObject = AttachmentPairs[ 0 ],
+        UndoRedoRecordObject = UndoObjects[ 0 ],
         IsSingleInstanceTool = false
       };
       ConnectedFrameTool = new FrameTool( AttachmentPairs[ 0 ].ConnectedFrame )
       {
         OnChangeDirtyTarget = OnChangeDirtyTarget,
-        UndoRedoRecordObject = AttachmentPairs[ 0 ],
+        UndoRedoRecordObject = UndoObjects[ 0 ],
         TransformHandleActive = !AttachmentPairs[ 0 ].Synchronized,
         IsSingleInstanceTool = false
       };
@@ -62,7 +66,7 @@ namespace AGXUnityEditor.Tools
     {
       var isMultiSelect = AttachmentPairs.Length > 1;
 
-      Undo.RecordObjects( AttachmentPairs, "Constraint Attachment" );
+      Undo.RecordObjects( UndoObjects, "Constraint Attachment" );
 
       var skin = InspectorEditor.Skin;
       var guiWasEnabled = UnityEngine.GUI.enabled;

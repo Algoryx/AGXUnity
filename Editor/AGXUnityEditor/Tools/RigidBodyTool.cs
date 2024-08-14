@@ -176,7 +176,7 @@ namespace AGXUnityEditor.Tools
         if ( cmTransformToolVisible ) {
           var newPosition = PositionTool( cmPosition, rb.transform.rotation, 0.6f, 1.0f );
           if ( Vector3.SqrMagnitude( cmPosition - newPosition ) > 1.0E-6 ) {
-            Undo.RecordObject( rb.MassProperties, "Center of mass changed" );
+            Undo.RecordObject( rb, "Center of mass changed" );
             cmPosition = newPosition;
             rb.MassProperties.CenterOfMassOffset.UserValue = rb.transform.InverseTransformDirection( newPosition -
                                                                                                      rb.transform.position );
@@ -253,8 +253,10 @@ namespace AGXUnityEditor.Tools
       }
 
       EditorGUILayout.LabelField( GUI.MakeLabel( "Mass properties", true ), skin.Label );
-      using ( InspectorGUI.IndentScope.Single )
-        InspectorEditor.DrawMembersGUI( GetTargets<RigidBody>().Select( rb => rb.MassProperties ).ToArray() );
+      using ( InspectorGUI.IndentScope.Single ) {
+        var targets = GetTargets<RigidBody>();
+        InspectorEditor.DrawMembersGUI( targets.Select( rb => rb.MassProperties ).ToArray(), targets.ToArray() );
+      }
 
       if ( toggleConstraintCreate )
         ConstraintCreateTool = !ConstraintCreateTool;
