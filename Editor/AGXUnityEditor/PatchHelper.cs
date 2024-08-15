@@ -78,45 +78,49 @@ namespace AGXUnityEditor
 #pragma warning disable CS0612 // Type or member is obsolete
       foreach ( var constraint in constraints ) {
         List<ElementaryConstraint> newEcs = new List<ElementaryConstraint>();
-        foreach ( var ec in constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) {
-          if ( !ShouldPatch )
-            return;
-          ElementaryConstraint newEc;
-          if ( ec is AGXUnity.Deprecated.TargetSpeedController ts )
-            newEc = new TargetSpeedController()
-            {
-              LockAtZeroSpeed = ts.LockAtZeroSpeed,
-              Speed = ts.Speed
-            };
-          else if ( ec is AGXUnity.Deprecated.RangeController rc )
-            newEc = new RangeController() { Range = rc.Range };
-          else if ( ec is AGXUnity.Deprecated.LockController lc )
-            newEc = new LockController() { Position = lc.Position };
-          else if ( ec is AGXUnity.Deprecated.ScrewController sc )
-            newEc = new ScrewController() { Lead = sc.Lead };
-          else if ( ec is AGXUnity.Deprecated.FrictionController fc )
-            newEc = new FrictionController()
-            {
-              FrictionCoefficient = fc.FrictionCoefficient,
-              NonLinearDirectSolveEnabled = fc.NonLinearDirectSolveEnabled,
-            };
-          else if ( ec is AGXUnity.Deprecated.ElectricMotorController emc )
-            newEc = new ElectricMotorController()
-            {
-              Voltage = emc.Voltage,
-              ArmatureResistance = emc.ArmatureResistance,
-              TorqueConstant = emc.TorqueConstant
-            };
-          else
-            newEc = new ElementaryConstraint();
+        var oldEcs = constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>();
+        if ( oldEcs.Length > 0 ) {
 
-          newEc.Enable = ec.Enable;
+          foreach ( var ec in oldEcs ) {
+            if ( !ShouldPatch )
+              return;
+            ElementaryConstraint newEc;
+            if ( ec is AGXUnity.Deprecated.TargetSpeedController ts )
+              newEc = new TargetSpeedController()
+              {
+                LockAtZeroSpeed = ts.LockAtZeroSpeed,
+                Speed = ts.Speed
+              };
+            else if ( ec is AGXUnity.Deprecated.RangeController rc )
+              newEc = new RangeController() { Range = rc.Range };
+            else if ( ec is AGXUnity.Deprecated.LockController lc )
+              newEc = new LockController() { Position = lc.Position };
+            else if ( ec is AGXUnity.Deprecated.ScrewController sc )
+              newEc = new ScrewController() { Lead = sc.Lead };
+            else if ( ec is AGXUnity.Deprecated.FrictionController fc )
+              newEc = new FrictionController()
+              {
+                FrictionCoefficient = fc.FrictionCoefficient,
+                NonLinearDirectSolveEnabled = fc.NonLinearDirectSolveEnabled,
+              };
+            else if ( ec is AGXUnity.Deprecated.ElectricMotorController emc )
+              newEc = new ElectricMotorController()
+              {
+                Voltage = emc.Voltage,
+                ArmatureResistance = emc.ArmatureResistance,
+                TorqueConstant = emc.TorqueConstant
+              };
+            else
+              newEc = new ElementaryConstraint();
 
-          newEc.MigrateInternalData( ec );
-          newEcs.Add( newEc );
-          Object.DestroyImmediate( ec );
+            newEc.Enable = ec.Enable;
+
+            newEc.MigrateInternalData( ec );
+            newEcs.Add( newEc );
+            Object.DestroyImmediate( ec );
+          }
+          constraint.MigrateElementaryConstraints( newEcs );
         }
-        constraint.MigrateElementaryConstraints( newEcs );
 
         if ( constraint.TryGetComponent<AGXUnity.Deprecated.AttachmentPair>( out var ap ) ) {
           if ( !ShouldPatch )
