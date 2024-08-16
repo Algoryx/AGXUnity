@@ -446,10 +446,10 @@ namespace AGXUnityEditor.Tools
         from = baseOnExistingRoute ? Route : nodeList;
         to = baseOnExistingRoute ? nodeList : Route;
 
-        foreach (var node in from.Skip(1).Take(Route.NumNodes - 2)) //Skip the ends as they were handled earlier
+        foreach (var node in from.Skip(1).Take(from.Count() - 2)) //Skip the ends as they were handled earlier
         {
           //Find the closest node in the node list and transfer the settings
-          var closestNode = to.Where(n => !used.Contains(n)).Aggregate(node, (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
+          var closestNode = to.Where(n => !used.Contains(n)).Aggregate(to.First(), (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
           used.Add(closestNode);
           if (baseOnExistingRoute)
             TransferNodeSettings(node, closestNode);
@@ -467,13 +467,13 @@ namespace AGXUnityEditor.Tools
       if (Route is WireRoute)
       {
         Route.gameObject.GetComponent<Wire>().Radius = avgRadius;
-        Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = 0.5f / avgRadius;
+        Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = 0.25f / avgRadius;
       }
       else if (Route is CableRoute)
       {
         Route.gameObject.GetComponent<Cable>().Radius = avgRadius;
-        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.5f / avgRadius;
-      }
+        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.25f / avgRadius;
+      }      
 
       //Disable the renderer to signify the conversion
       MeshRenderer renderer;
@@ -481,7 +481,7 @@ namespace AGXUnityEditor.Tools
       {
         Undo.RegisterCompleteObjectUndo(renderer, "Disable mesh renderer");
         renderer.enabled = false;
-      }
+      }      
 
       Undo.CollapseUndoOperations(undoGroupId);
     }
