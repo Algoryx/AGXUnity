@@ -112,19 +112,17 @@ namespace AGXUnity.IO.BrickIO
             else
               Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
           }
-          else if (target is Signals.TorqueMotorTorqueInput tmti)
-          {
+          else if ( target is Signals.TorqueMotorTorqueInput tmti ) {
             var hinge = Root.FindMappedObject(tmti.motor().getName());
             var motor = hinge.GetComponent<TargetSpeedController>();
             var torque = Mathf.Clamp((float)realSig.value(),(float)tmti.motor().min_effort(),(float)tmti.motor().max_effort());
-            motor.ForceRange = new RangeReal(torque, torque);
+            motor.ForceRange = new RangeReal( torque, torque );
           }
-          else if (target is Signals.ForceMotorForceInput fmfi)
-          {
+          else if ( target is Signals.ForceMotorForceInput fmfi ) {
             var prismatic = Root.FindMappedObject(fmfi.motor().getName());
             var motor = prismatic.GetComponent<TargetSpeedController>();
             var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
-            motor.ForceRange = new RangeReal(torque, torque);
+            motor.ForceRange = new RangeReal( torque, torque );
           }
           else if ( target is Brick.DriveTrain.Signals.CombustionEngineThrottleInput ceti ) {
             var engine = Root.FindRuntimeMappedObject( ceti.combustion_engine().getName() );
@@ -223,9 +221,9 @@ namespace AGXUnity.IO.BrickIO
       return vos.value();
     }
 
-    public T GetConvertedOutputValue<T>(Output output )
+    public T GetConvertedOutputValue<T>( Output output )
     {
-      return GetConvertedOutputValue<T>(output.getName());
+      return GetConvertedOutputValue<T>( output.getName() );
     }
 
     public T GetConvertedOutputValue<T>( string outputName )
