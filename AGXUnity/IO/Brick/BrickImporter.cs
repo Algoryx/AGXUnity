@@ -41,6 +41,10 @@ namespace AGXUnity.IO.BrickIO
         foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
           ErrorReporter?.Invoke( error );
         SuccessCallback?.Invoke( mapper.Data );
+        var cachedDocs = mapper.Data.AgxCache.getCachedDocuments();
+        foreach ( var doc in cachedDocs ) {
+          root.AddCachedDocument(doc.first, doc.second);
+        }
       }
       else
         Debug.LogError( $"There were errors importing the brick file '{path}'" );

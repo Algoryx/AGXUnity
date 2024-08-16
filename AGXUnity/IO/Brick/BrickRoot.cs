@@ -29,6 +29,16 @@ namespace AGXUnity.IO.BrickIO
     private Dictionary<string, object> m_runtimeMap;
     private Dictionary<string, GameObject> m_objectMap;
 
+    [SerializeField]
+    private SerializableDictionary<string,string> m_documentCache;
+
+    internal void AddCachedDocument(string docKey, string document )
+    {
+      if(m_documentCache == null)
+        m_documentCache = new SerializableDictionary<string, string>();
+      m_documentCache[docKey] = document;
+    }
+
     public GameObject FindMappedObject( string declaration )
     {
       if(Native != null ) {
@@ -54,7 +64,14 @@ namespace AGXUnity.IO.BrickIO
     {
       var importer = new BrickImporter();
       importer.ErrorReporter = ReportError;
-      Native = importer.ParseBrickSource( BrickFile );
+
+      BrickAgx.AgxCache cache = null;
+      if(m_documentCache != null && m_documentCache.Count > 0 ) {
+        cache = new BrickAgx.AgxCache();
+        foreach ( var (k, s) in m_documentCache )
+          cache.writeDocument( k, s );
+      }
+      Native = importer.ParseBrickSource( BrickFile, cache );
 
       if ( Native == null ) {
         Debug.LogError( $"Failed to initialize Brick object '{name}'", this );
