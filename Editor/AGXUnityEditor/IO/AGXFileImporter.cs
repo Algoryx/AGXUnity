@@ -89,19 +89,14 @@ namespace AGXUnityEditor.IO
       if ( prefab == null )
         return;
 
+#if UNITY_6000_0_OR_NEWER
+      var restoredFileInstances = Object.FindObjectsByType<AGXUnity.IO.RestoredAGXFile>(FindObjectsSortMode.None);
+#else
       var restoredFileInstances = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();
+#endif
       foreach ( var restoredFileInstance in restoredFileInstances ) {
-#if UNITY_2018_3_OR_NEWER
         var isReadPrefabInstance = PrefabUtility.GetPrefabInstanceStatus( restoredFileInstance.gameObject ) == PrefabInstanceStatus.Connected &&
                                    PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#else
-        var isReadPrefabInstance = PrefabUtility.GetPrefabType( restoredFileInstance.gameObject ) == PrefabType.PrefabInstance &&
-#if UNITY_2018_1_OR_NEWER
-                                   PrefabUtility.GetCorrespondingObjectFromSource( restoredFileInstance.gameObject ) == prefab;
-#else
-                                   PrefabUtility.GetPrefabParent( restoredFileInstance.gameObject ) == prefab;
-#endif
-#endif
         if ( !isReadPrefabInstance )
           continue;
 

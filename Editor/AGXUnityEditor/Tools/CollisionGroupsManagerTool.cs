@@ -134,7 +134,12 @@ namespace AGXUnityEditor.Tools
         m_findActiveGroupNameEntry = m_findActiveGroupNameEntry == entry ? null : entry;
 
         if ( m_findActiveGroupNameEntry != null ) {
-          m_groups = ( from cg in Object.FindObjectsOfType<CollisionGroups>()
+#if UNITY_6000_0_OR_NEWER
+          var collisionGroups = Object.FindObjectsByType<CollisionGroups>( FindObjectsSortMode.None );
+#else
+          var collisionGroups = Object.FindObjectsOfType<CollisionGroups>();
+#endif
+          m_groups = ( from cg in collisionGroups
                        from cgEntry in cg.Groups
                        select cgEntry.Tag ).Distinct().ToList();
           m_groups.Sort( new StringLowerComparer() );

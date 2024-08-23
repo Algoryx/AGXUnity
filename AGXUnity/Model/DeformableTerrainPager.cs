@@ -396,7 +396,6 @@ namespace AGXUnity.Model
 
     private void OnPostStepForward()
     {
-      Debug.Log( Native.getShouldStoreCompaction() );
       m_terrainDataSource.Update();
       UpdateHeights();
     }
