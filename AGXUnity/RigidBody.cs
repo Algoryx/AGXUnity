@@ -419,6 +419,7 @@ namespace AGXUnity
       GetSimulation().add( m_rb );
 
       UpdateMassProperties();
+      PropertySynchronizer.Synchronize( MassProperties );
 
       HandleUpdateCallbacks( isActiveAndEnabled );
 

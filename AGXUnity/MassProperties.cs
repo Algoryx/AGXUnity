@@ -8,7 +8,7 @@ namespace AGXUnity
   /// Mass properties of a RigidBody.
   /// </summary>
   [Serializable]
-  public class MassProperties
+  public class MassProperties: IPropertySynchronizable
   {
     [HideInInspector]
     [field: SerializeField]
