@@ -46,7 +46,11 @@ namespace AGXUnityEditor
         s_ScriptComponents = new List<ScriptComponent>();
 
         // Find all ScriptComponents on all GameObjects
+#if UNITY_6000_0_OR_NEWER
+        var objects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+#else
         var objects = FindObjectsOfType<GameObject>();
+#endif
         foreach ( var o in objects ) {
           var scripts = o.GetComponents<ScriptComponent>();
           foreach ( var script in scripts )

@@ -332,7 +332,11 @@ namespace AGXUnity.Model
       var alreadyPresentTrackWheels = roller.GetComponents<TrackWheel>();
       if ( alreadyPresentTrackWheels.Length > 0 ) {
         // Don't think disabled tracks will appear here.
+#if UNITY_6000_0_OR_NEWER
+        var tracks = FindObjectsByType<Track>(FindObjectsSortMode.None);
+#else
         var tracks = FindObjectsOfType<Track>();
+#endif
         if ( tracks.Any( track => alreadyPresentTrackWheels.Any( wheel => track.Contains( wheel ) ) ) ) {
           Debug.LogWarning( $"Roller {roller.name} already has {roller.GetComponents<TrackWheel>().Length} TrackWheel components " +
                              "belonging to other belt/track instances." );

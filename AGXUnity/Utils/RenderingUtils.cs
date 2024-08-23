@@ -20,9 +20,9 @@ namespace AGXUnity.Utils
     /// <returns>An enum representing the render pipeline currently in use</returns>
     public static PipelineType DetectPipeline()
     {
-      if ( GraphicsSettings.renderPipelineAsset != null ) {
+      if ( GraphicsSettings.defaultRenderPipeline != null ) {
         // SRP
-        var srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
+        var srpType = GraphicsSettings.defaultRenderPipeline.GetType().ToString();
         if ( srpType.Contains( "HDRenderPipelineAsset" ) )
           return PipelineType.HDRP;
         else if ( srpType.Contains( "UniversalRenderPipelineAsset" ) || srpType.Contains( "LightweightRenderPipelineAsset" ) )
