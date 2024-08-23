@@ -157,7 +157,7 @@ namespace AGXUnityEditor.Tools
                                                                     DisableCollisionsTool,
                                                                     "Disable collisions against other objects",
                                                                     () => toggleDisableCollisions = true));
-      toolButtonData.Add(InspectorGUI.ToolButtonData.Create(ToolIcon.CreateVisual,
+      toolButtonData.Add(InspectorGUI.ToolButtonData.Create(ToolIcon.CreateShapeGivenVisual,
                                                                     RouteFromMeshTool,
                                                                     "Generate a node route from a visual mesh",
                                                                     () => toggleRouteFromMesh = true));
