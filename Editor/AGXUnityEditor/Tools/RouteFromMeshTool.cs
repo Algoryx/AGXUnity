@@ -1,10 +1,12 @@
 using AGXUnity;
 using AGXUnity.Utils;
 using agxUtil;
+using CodiceApp;
 using PlasticGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
@@ -29,15 +31,69 @@ namespace AGXUnityEditor.Tools
     /// <summary>
     /// The currently selected parent for the route/skeleton
     /// </summary>
-    private GameObject m_selectedParent = null;     
+    private GameObject m_selectedParent = null;
     /// <summary>
     /// The currently cached skeleton. Is updated on skeletonisation or modifications to the structure of the skeleton
     /// </summary>
+    private SphereSkeleton Skeleton
+    {
+      get
+      {
+        if (UseLongestPath)
+          return m_longestSkeleton;
+        return m_skeleton;
+      }
+      set
+      {
+        if (m_skeleton != value)
+        {
+          m_skeleton = value;
+          m_longestSkeleton = value == null ? null : agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeleton);
+          m_skeletonAvgRadius = 0;
+          m_longestSkeletonAvgRadius = 0;
+
+          if (m_skeleton != null)
+          {
+            foreach (var joint in m_skeleton.joints)
+            {
+              m_skeletonAvgRadius += joint.radius;
+            }
+            m_skeletonAvgRadius /= m_skeleton.joints.Count;
+
+
+            foreach (var joint in m_longestSkeleton.joints)
+            {
+              m_longestSkeletonAvgRadius += joint.radius;
+            }
+            m_longestSkeletonAvgRadius /= m_longestSkeleton.joints.Count;
+          }
+
+          if (!UseFixedRadius)
+          {
+            FixedRadius = (float)(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+          }
+        }
+
+      }
+    }
     private SphereSkeleton m_skeleton = null;
+    /// <summary>
+    /// The longest path in the current skeleton. Is updated on skeletonisation or modifications to the structure of the skeleton
+    /// </summary>
+    private SphereSkeleton m_longestSkeleton = null;
     /// <summary>
     /// The average radius of the displayed skeleton.
     /// </summary>
+    public float SkeletonRadius()
+    {
+      return (float)(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+    }
+
     private double m_skeletonAvgRadius = 0;
+    /// <summary>
+    /// The average radius of the longest skeleton path.
+    /// </summary>
+    private double m_longestSkeletonAvgRadius = 0;
 
     private float m_aggressiveness = 0;
     /// <summary>
@@ -45,16 +101,17 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     public float Aggressiveness
     {
-      get {  return m_aggressiveness; } 
-      set 
+      get { return m_aggressiveness; }
+      set
       {
-        if(m_aggressiveness != value)
+        if (m_aggressiveness != value)
         {
           m_aggressiveness = value;
-          SkeletoniseSelectedMesh();
+          if(Preview)
+            SkeletoniseSelectedMesh();
         }
       }
-    }    
+    }
     /// <summary>
     /// Used to warn the user about lost changes.
     /// </summary>
@@ -62,21 +119,21 @@ namespace AGXUnityEditor.Tools
     public bool UserHasEdited
     {
       get { return m_userHasEdited; }
-      set 
-      { 
-        if(!m_userHasEdited && value)
+      set
+      {
+        if (!m_userHasEdited && value)
         {
           InspectorEditor.RequestConstantRepaint = true;
         }
         m_userHasEdited = value;
       }
     }
-    
+
     /// <summary>
     /// The current agx skeletoniser which holds the mesh and carries out the skeletonisation process
     /// </summary>
     private SphereSkeletoniser m_skeletoniser = null;
-    
+
     /// <summary>
     /// The Route object to which the generated route will be written
     /// </summary>
@@ -91,7 +148,7 @@ namespace AGXUnityEditor.Tools
       get { return m_showPreview; }
       set
       {
-        if (!m_showPreview && value && m_skeleton == null)
+        if (m_showPreview != value && Skeleton == null)
         {
           SkeletoniseSelectedMesh();
           DisplayVertexCountWarning = false;
@@ -112,6 +169,7 @@ namespace AGXUnityEditor.Tools
         return Matrix4x4.identity;
     }
 
+    private GameObject m_meshSource = null;
     private Mesh m_selectedMesh = null;
     /// <summary>
     /// The currently selected mesh from which to base the route
@@ -125,13 +183,14 @@ namespace AGXUnityEditor.Tools
         {
           DisplayVertexCountWarning = false;
           m_selectedMesh = value;
+          m_meshSource = null;
 
           if (m_selectedMesh == null)
           {
-            m_skeleton = null;
+            Skeleton = null;
             m_skeletoniser = null;
             return;
-          }            
+          }
 
           //Warning if mesh is very large        
           if (Preview && m_selectedMesh.vertexCount > VERTEX_WARNING_THRESHOLD)
@@ -139,7 +198,7 @@ namespace AGXUnityEditor.Tools
             Preview = false;
             DisplayVertexCountWarning = true;
           }
-          if (Preview)
+          if (Preview && !UserHasEdited)
           {
             SkeletoniseSelectedMesh();
           }
@@ -147,34 +206,63 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    private bool m_useLongestContinuousPathInSkeleton = true;
     /// <summary>
     /// Toggle for fetching only the longest continous path in the skeletoniser instead of the entire skeleton
     /// </summary>
-    private bool m_useLongestContinuousPathInSkeleton = true;
     public bool UseLongestPath
     {
       get { return m_useLongestContinuousPathInSkeleton; }
       set
       {
-        UpdateSkeleton();
-        m_useLongestContinuousPathInSkeleton = value;
+        if (value != m_useLongestContinuousPathInSkeleton)
+        {
+          m_useLongestContinuousPathInSkeleton = value;
+          m_skeletoniser.applyRadius(value ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+        }
       }
     }
+
+    private bool m_showUnderlyingSkeleton = false;
+    private bool m_transferNodeSettings = false;
+
+    private float m_fixedRadius = 0;
     /// <summary>
     /// The exposed manually set radius used for the cable after application and used for the preview of the skeleton/route
     /// </summary>
-    private float m_fixedRadius = 0;
+    public float FixedRadius
+    {
+      get { return m_fixedRadius; }
+      set
+      {
+        if(value != m_fixedRadius)
+        {
+          m_fixedRadius = value;
+          if(UseFixedRadius)
+            m_skeletoniser.applyRadius(m_fixedRadius);
+        }
+      }
+    }
+   
     private bool m_useFixedRadius = false;
     public bool UseFixedRadius
     {
       get { return m_useFixedRadius; }
       set
       {
-        if (!value && m_useFixedRadius && m_skeleton != null)
+        if (value != m_useFixedRadius) 
         {
-          m_fixedRadius = (float)m_skeletonAvgRadius;
-        }
-        m_useFixedRadius = value;
+          m_useFixedRadius = value;
+          if (!value && Skeleton != null)
+          {
+            m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+            FixedRadius = (float)SkeletonRadius();
+          }
+          else if (value)
+          {
+            m_skeletoniser.applyRadius(FixedRadius);
+          }
+        }        
       }
     }
 
@@ -229,10 +317,39 @@ namespace AGXUnityEditor.Tools
     /// <param name="sceneView"></param>
     public override void OnSceneViewGUI(SceneView sceneView)
     {
-      if (Preview && m_skeleton != null)
+      if (Preview && Skeleton != null)
       {
-        if (Event.current.alt && m_skeletoniser != null) DrawSkeleton();
-        else DrawRoutePreview(sceneView);
+        var normalColor = Route.Any() ? Color.yellow : Color.blue;
+        if (Event.current.shift)
+        {
+          DrawRoutePreview(sceneView, jointColor: Color.red, jointClickableHandle: _ => Skeleton.joints.Count > 2, unclickableColor: normalColor, onJointClickCallback: j =>
+          {
+            m_skeletoniser.removeVertex(j.skeletoniserIndex);
+            UserHasEdited = true;
+            UpdateSkeleton();
+          }, edgeColor: normalColor, ignoreFilters: m_showUnderlyingSkeleton);
+        }
+        else if (Event.current.control)
+        {
+          DrawRoutePreview(sceneView, jointColor: Color.green, jointClickableHandle: jIdx => m_skeletoniser.isUpscalePossible(jIdx), unclickableColor: normalColor, onJointClickCallback: j =>
+          {
+            var furthestJoints = j.adjJoints.Select(idx => Skeleton.joints[(int)idx]).OrderBy(j => -j.position.distance(j.position)).Take(2).ToList();
+            if (m_skeletoniser.upscaleVertex(j.skeletoniserIndex, furthestJoints[0].skeletoniserIndex, furthestJoints[furthestJoints.Count - 1].skeletoniserIndex))
+            {
+              UserHasEdited = true;
+              UpdateSkeleton();
+            }
+          }, edgeColor: normalColor, edgeClickableHandle: (j1Idx, j2Idx) => m_skeletoniser.isUpscalePossible(j1Idx, j2Idx), onEdgeClickCallback: (j1Idx, j2Idx) =>
+          {
+            m_skeletoniser.upscaleEdge(j1Idx, j2Idx);
+            UserHasEdited = true;
+            UpdateSkeleton();
+          }, ignoreFilters: m_showUnderlyingSkeleton);
+        }
+        else
+        {
+          DrawRoutePreview(sceneView, jointColor: normalColor, edgeColor: normalColor, ignoreFilters: m_showUnderlyingSkeleton);
+        }
       }
     }
 
@@ -268,103 +385,100 @@ namespace AGXUnityEditor.Tools
         InspectorGUI.WarningLabel("Route preview has been disabled due to high vertex count of selected mesh. Enabling preview will likely result in long preview times.");
       }
 
+      EditorGUILayout.LabelField(GUI.MakeLabel("Route Target", bold: true));
+
       if (GUILayout.Button(SelectGameObjectTool ? "Waiting for selection" + AwaitingUserActionDotsWithPadding() : "Select object in scene", GUILayout.ExpandWidth(false)))
       {
         SelectGameObjectTool = true;
       }
 
-
-      EditorGUILayout.LabelField(GUI.MakeLabel("Generation settings:", toolTip: "Settings used in the generation of the initial route. Changing these will require a regeneration of the route."));      
+      
       InspectorEditor.RequestConstantRepaint = SelectGameObjectTool;
 
       EditorGUI.BeginDisabledGroup(SelectGameObjectTool);
-      EditorGUILayout.BeginHorizontal();
-      if(!UserHasEdited || SelectGameObjectTool)
-        EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base mesh", toolTip: "The mesh which is used for generating the initial route. Changing this value regenerates the skeleton, removing any adjustments made."));
-      else        
-        EditorGUILayout.PrefixLabel(GUI.MakeLabel("Base mesh", Color.yellow, toolTip: "The mesh which is used for generating the initial route. Changing this value regenerates the skeleton, removing any adjustments made."));
+      m_selectedParent = (GameObject)EditorGUILayout.ObjectField(GUI.MakeLabel("Parent", toolTip: "The game object which the routes transform is inherited from. This object will also be the parent of the route nodes unless previous node settings are transferred. Changing this value regenerates the skeleton, removing any adjustments made."), m_selectedParent, typeof(GameObject), true);
+      SelectedMesh = (Mesh)EditorGUILayout.ObjectField(GUI.MakeLabel("Base mesh", toolTip: "The mesh which is used for generating the initial route. Changing this value regenerates the skeleton, removing any adjustments made."), SelectedMesh, typeof(Mesh), true);
 
-      SelectedMesh = (Mesh)EditorGUILayout.ObjectField(SelectedMesh, typeof(Mesh), true);
-      EditorGUILayout.EndHorizontal();
-
-      if (!UserHasEdited || SelectGameObjectTool)
-        Aggressiveness = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts. Changing this value regenerates the skeleton, removing any adjustments made."), Aggressiveness);
-      else
-        Aggressiveness = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", Color.yellow, toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts. Changing this value regenerates the skeleton, removing any adjustments made."), Aggressiveness);
-
-      EditorGUILayout.BeginHorizontal();
-      if (!UserHasEdited || SelectGameObjectTool)
-        EditorGUILayout.PrefixLabel(GUI.MakeLabel("Parent", toolTip: "The game object which the routes transform is inherited from. This object will also be the parent of the route nodes unless previous node settings are transferred. Changing this value regenerates the skeleton, removing any adjustments made."));
-      else
-        EditorGUILayout.PrefixLabel(GUI.MakeLabel("Parent", Color.yellow, toolTip: "The game object which the routes transform is inherited from. This object will also be the parent of the route nodes unless previous node settings are transferred. Changing this value regenerates the skeleton, removing any adjustments made."));
-
-      m_selectedParent = (GameObject)EditorGUILayout.ObjectField(m_selectedParent, typeof(GameObject), true);
-      EditorGUILayout.EndHorizontal();
+      EditorGUILayout.LabelField(GUI.MakeLabel("Route Generation Settings", bold: true));
+      EditorGUI.indentLevel = 1;
+      Aggressiveness = EditorGUILayout.DelayedFloatField(GUI.MakeLabel("Aggressiveness", toolTip: "The amount of priority given to achieving a skeleton structure during the algorithms run. Higher values tend to produce more detailed skeletons but possibly introduce artifacts. Changing this value regenerates the skeleton, removing any adjustments made."), Aggressiveness);
 
       //Settings which do not affect skeletonisation ----------------------------------------------------
       UseLongestPath = InspectorGUI.Toggle(GUI.MakeLabel("Longest Continuous Path", toolTip: "Use the longest continuous path from the produced skeleton instead of the complete skeleton. Useful for omitting larger details in the mesh from the generated route or for reducing artifacts."), UseLongestPath);
-      if (GUILayout.Button("Regenerate", GUILayout.ExpandWidth(false)))
+      uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:"), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
+      if (newNumNodes > Skeleton.joints.Count)
       {
-        SkeletoniseSelectedMesh();
+        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.JOINT, m_longestSkeleton);
+        UserHasEdited = true;
+        UpdateSkeleton();
       }
+      EditorGUILayout.BeginHorizontal();
+      UseFixedRadius = InspectorGUI.Toggle(GUI.MakeLabel("Use Fixed Radius"), UseFixedRadius);
+      FixedRadius = Mathf.Clamp(EditorGUILayout.FloatField(FixedRadius), 0, float.MaxValue);
+      EditorGUILayout.EndHorizontal();
 
-      InspectorGUI.Separator();
-      Preview = EditorGUILayout.BeginToggleGroup(GUI.MakeLabel("Preview/Edit", toolTip: "Preview the route which will be created."), Preview);
+      EditorGUI.indentLevel = 0;
+
+      Preview = EditorGUILayout.BeginToggleGroup(GUI.MakeLabel("Modify Route in Editor", toolTip: "Preview the route which will be created and modify individual joints."), Preview);
       if (Preview)
       {
         EditorGUILayout.BeginVertical();
-        EditorGUILayout.LabelField(GUI.MakeLabel("Shift: Remove joints"));
-        EditorGUILayout.LabelField(GUI.MakeLabel("Control: Add joints"));
-        EditorGUILayout.LabelField(GUI.MakeLabel("Alt: Show underlying skeleton"));
-        EditorGUILayout.EndVertical();    
+        EditorGUILayout.LabelField(GUI.MakeLabel("Shift + Click: Remove joints"));
+        EditorGUILayout.LabelField(GUI.MakeLabel("Control + Click: Add joints"));
+        EditorGUILayout.EndVertical();
       }
-      EditorGUILayout.BeginHorizontal();
-      EditorGUILayout.LabelField(GUI.MakeLabel("Number of Nodes:"), GUILayout.ExpandWidth(false));
-      EditorGUILayout.LabelField(Preview ? GUI.MakeLabel(m_skeleton?.joints.Count.ToString()) : GUI.MakeLabel("-"), GUILayout.ExpandWidth(false));
-      EditorGUILayout.EndHorizontal();
-
-      UseFixedRadius = EditorGUILayout.BeginToggleGroup("Use Fixed Radius", UseFixedRadius);      
-      m_fixedRadius = Mathf.Clamp(EditorGUILayout.FloatField("Radius", m_fixedRadius), 0, 5);      
+      m_showUnderlyingSkeleton = InspectorGUI.Toggle(GUI.MakeLabel("Show underlying skeleton", toolTip: "Display all joints in the skeleton regardless of connectivity. Can be useful for removing disjoint skeletons produced by disjoint parts of the input mesh or for removing artifacts."), m_showUnderlyingSkeleton);
+      if (GUILayout.Button(GUI.MakeLabel("Regenerate"), GUILayout.ExpandWidth(false)))
+      {
+        SkeletoniseSelectedMesh();
+      }
       EditorGUILayout.EndToggleGroup();
-      EditorGUILayout.EndToggleGroup();      
 
-      var applyCancelState = InspectorGUI.PositiveNegativeButtons(m_skeleton != null && m_skeleton?.joints.Count > 0,
-                                                                   "Apply",
-                                                                   "Apply current configuration.",
-                                                                   "Cancel");
+      if (Route.Any())
+      {
+        InspectorGUI.WarningLabel("This component already has a node route. Generating a new route will overwrite existing nodes. Check <b>Approximate Nodes</b> to transfer existing node settings (eg. \"body fixed node\") to the new route. This feature is experimental and may not lead to perfect results.");
+
+        var position = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect(false,
+                                                                             EditorGUIUtility.singleLineHeight +
+                                                                             EditorGUIUtility.standardVerticalSpacing));
+
+        GUIStyle toggleStyle = GUI.Skin.toggle;
+        var toggleWidth = toggleStyle.fixedHeight > 0 ? toggleStyle.fixedHeight : toggleStyle.CalcSize(new GUIContent("")).x;
+
+        var label = GUI.MakeLabel("Approximate existing nodes", toolTip: "Attempt to transfer settings from the existing nodes onto the nodes generated by the tool. Will prioritise preserving special nodes.");
+        var labelSize = GUI.Skin.label.CalcSize(label);
+        labelSize.x += 10;
+
+        var toggleRect = new Rect(position.xMax - labelSize.x - toggleWidth,
+                                  position.y + EditorGUIUtility.standardVerticalSpacing,
+                                   toggleWidth,
+                                   toggleWidth);
+        var labelRect = new Rect(position.xMax - labelSize.x,
+                                   position.y + EditorGUIUtility.standardVerticalSpacing,
+                                   labelSize.x,
+                                   labelSize.y);
+
+        m_transferNodeSettings = UnityEngine.GUI.Toggle(toggleRect, m_transferNodeSettings, emptyContent);
+        UnityEngine.GUI.Label(labelRect, label);
+      }
+
+      var applyCancelState = InspectorGUI.PositiveNegativeButtons(Skeleton != null && Skeleton?.joints.Count > 0,
+                                                                  "Apply",
+                                                                  "Apply current configuration.",
+                                                                  "Cancel");
+
       EditorGUI.EndDisabledGroup();
 
       if (applyCancelState == InspectorGUI.PositiveNegativeResult.Positive)
       {
-        if (Route.Any()) //If there already exists a route on the cable
-        {
-          switch (EditorUtility.DisplayDialogComplex("Overwrite", "Applying will overwrite the current route and any node settings. Would you like to attempt transfer node settings to the new route? This process is not guaranteed to transfer correctly, especially when the number of nodes will differ.", "Apply", "Cancel", "Apply w/current node settings"))
-          {
-            case 0: //OK
-              CreateRoute(false);
-              PerformRemoveFromParent();
-              break;
-            case 1: //Cancel
-              break;
-            case 2: //Apply with settings
-              CreateRoute(true);
-              PerformRemoveFromParent();
-              break;
-            default: break;
-          }
-          GUIUtility.ExitGUI(); //This is needed to avoid errors with unfinished/falsly started groups after dialog
-        }
-        else
-        {
-          CreateRoute(false);
-          PerformRemoveFromParent();
-        }
+        CreateRoute(Route.Any() && m_transferNodeSettings);
+        PerformRemoveFromParent();
       }
       else if (applyCancelState == InspectorGUI.PositiveNegativeResult.Negative)
         PerformRemoveFromParent();
 
       InspectorGUI.OnDropdownToolEnd();
-    }    
+    }
 
     /// <summary>
     /// Uses the current route/skeleton to create nodes in the parent route object
@@ -375,13 +489,13 @@ namespace AGXUnityEditor.Tools
       Undo.SetCurrentGroupName($"Generating route from mesh \"{SelectedMesh.name}\"");
       var undoGroupId = Undo.GetCurrentGroup();
 
-      if (!Preview && m_skeleton == null)
+      if (!Preview && Skeleton == null)
         SkeletoniseSelectedMesh();
 
       float avgRadius = 0;
 
       var nodeList = new List<NodeT>();
-      SphereSkeleton.dfs_iterator currJoint = m_skeleton.begin();
+      SphereSkeleton.dfs_iterator currJoint = Skeleton.begin();
 
       //Iterate and create nodes
       while (!currJoint.isEnd())
@@ -401,7 +515,7 @@ namespace AGXUnityEditor.Tools
       }
 
       if (UseFixedRadius)
-        avgRadius = m_fixedRadius;
+        avgRadius = FixedRadius;
       else
         avgRadius /= nodeList.Count;
 
@@ -443,10 +557,13 @@ namespace AGXUnityEditor.Tools
 
         IEnumerable<NodeT> from, to;
         List<NodeT> used = new();
-        from = baseOnExistingRoute ? Route : nodeList;
-        to = baseOnExistingRoute ? nodeList : Route;
+        //Skip the ends as they were handled earlier
+        from = (baseOnExistingRoute ? Route : nodeList);
+        from = from.Skip(1).Take(from.Count() - 2);
+        to = (baseOnExistingRoute ? nodeList : Route);
+        to = to.Skip(1).Take(to.Count() - 2);
 
-        foreach (var node in from.Skip(1).Take(from.Count() - 2)) //Skip the ends as they were handled earlier
+        foreach (var node in from)
         {
           //Find the closest node in the node list and transfer the settings
           var closestNode = to.Where(n => !used.Contains(n)).Aggregate(to.First(), (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
@@ -473,15 +590,15 @@ namespace AGXUnityEditor.Tools
       {
         Route.gameObject.GetComponent<Cable>().Radius = avgRadius;
         Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.25f / avgRadius;
-      }      
+      }
 
       //Disable the renderer to signify the conversion
       MeshRenderer renderer;
-      if (m_selectedParent != null && m_selectedParent.TryGetComponent(out renderer))
+      if (m_meshSource != null && m_meshSource.TryGetComponent(out renderer))
       {
         Undo.RegisterCompleteObjectUndo(renderer, "Disable mesh renderer");
         renderer.enabled = false;
-      }      
+      }
 
       Undo.CollapseUndoOperations(undoGroupId);
     }
@@ -505,17 +622,7 @@ namespace AGXUnityEditor.Tools
     {
       if (m_skeletoniser != null)
       {
-        m_skeleton = UseLongestPath ? agxUtil.agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeletoniser.getSkeleton()) : m_skeletoniser.getSkeleton();
-        m_skeletonAvgRadius = 0;
-        foreach (var joint in m_skeleton.joints)
-        {
-          m_skeletonAvgRadius += joint.radius;
-        }
-        m_skeletonAvgRadius /= m_skeleton.joints.Count;
-        if (!UseFixedRadius)
-        {
-          m_fixedRadius = (float)m_skeletonAvgRadius;
-        }
+        Skeleton = m_skeletoniser.getSkeleton();
       }
     }
 
@@ -558,8 +665,9 @@ namespace AGXUnityEditor.Tools
           DisplayVertexCountWarning = true;
         }
         SelectedMesh = mesh;
+        m_meshSource = selected;
         m_skeletoniser = null;
-        m_skeleton = null;
+        Skeleton = null;
         if (Preview)
         {
           SkeletoniseSelectedMesh();
@@ -574,7 +682,7 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     private void SkeletoniseSelectedMesh()
     {
-      if(SelectedMesh == null)
+      if (SelectedMesh == null)
         return;
 
       UserHasEdited = false;
@@ -585,7 +693,8 @@ namespace AGXUnityEditor.Tools
       m_skeletoniser = new SphereSkeletoniser(mergedSelectedMesh.Vertices, mergedSelectedMesh.Indices);
       m_skeletoniser.setFaceDevalueFactor(Mathf.Pow(10, Aggressiveness));
       m_skeletoniser.collapseUntilSkeleton();
-
+      UpdateSkeleton();
+      m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
       UpdateSkeleton();
     }
 
@@ -602,139 +711,115 @@ namespace AGXUnityEditor.Tools
     /// Draw the current route/skeleton using handles
     /// </summary>
     /// <param name="sceneView">The scene view that is currently being viewed. Used to determine the camera's position.</param>
-    private void DrawRoutePreview(SceneView sceneView)
+    private void DrawRoutePreview(SceneView sceneView, Color? jointColor = null, Func<uint, bool> jointClickableHandle = null, Color? unclickableColor = null, Action<SphereSkeleton.Joint> onJointClickCallback = null, Color? edgeColor = null, Func<uint, uint, bool> edgeClickableHandle = null, Action<uint, uint> onEdgeClickCallback = null, bool ignoreFilters = false)
     {
+      if (!jointColor.HasValue)
+        jointColor = Color.blue;
+      if (!edgeColor.HasValue)
+        edgeColor = Color.blue;
+
+      bool useLongestPath = UseLongestPath;
+      if (ignoreFilters)
+        UseLongestPath = false;
+
       //Drawing without depth makes selection hard so a custom z-pass is used by simply sorting the draw calls in this function by distance form the camera and otherwise always passing the zTest
       var drawcalls = new List<Tuple<float, Action, Color>>(); //Make sure to provide proper capture for each drawcall!
-      Event e = Event.current;
-      Color normalColor = Route.Any() ? Color.yellow : Color.blue, removeColor = Color.red, addColor = Color.green, edgeColor = normalColor;
       Matrix4x4 skeletonToWorld = SkeletonToWorld();
       Vector3 cameraPosRouteSpace = skeletonToWorld.inverse.MultiplyPoint(sceneView.camera.transform.position);
-      using (new Handles.DrawingScope(skeletonToWorld))
+
+      SphereSkeletonVector skeletonSegments;
+      if (ignoreFilters)
       {
-        float handleRadius = UseFixedRadius ? m_fixedRadius : (float)m_skeletonAvgRadius;
+        skeletonSegments = m_skeleton.segmentSkeleton();
+      }
+      else
+      {
+        skeletonSegments = new SphereSkeletonVector
+        {
+          Skeleton
+        };
+      }
+
+      foreach (var segment in skeletonSegments)
+      {
+
+        float handleRadius = UseFixedRadius ? FixedRadius : SkeletonRadius();
         float handleDiameter = handleRadius * 2;
-        SphereSkeleton.dfs_iterator currDFSJoint = m_skeleton.begin();
+        //Traverse DFS to mimic resulting route
+        SphereSkeleton.dfs_iterator currDFSJoint = segment.begin();
         SphereSkeleton.Joint prevDFSJoint = null;
         while (!currDFSJoint.isEnd())
         {
           float distanceToCamera;
           Vector3 currPos = currDFSJoint.position.ToHandedVector3();
+          uint currDFSJointSkeletoniserIndex = currDFSJoint.skeletoniserIndex;
+          //Show actual edges instead of the DFS path if ignoreFilters is true
+          if (ignoreFilters)
+            prevDFSJoint = currDFSJoint.prev_joint();
 
-          uint currJointSkeletoniserIdx = currDFSJoint.skeletoniserIndex;
           //Draw edge and potentially upscale button for edge
           if (prevDFSJoint != null)
           {
+            uint prevDFSJointSkeletoniserIndex = prevDFSJoint.skeletoniserIndex;
             Vector3 prevPos = prevDFSJoint.position.ToHandedVector3();
-            uint prevJointSkeletoniserIdx = prevDFSJoint.skeletoniserIndex;
             //Make sure edge buttons always draw infront of the edge
             distanceToCamera = Mathf.Max((cameraPosRouteSpace - currPos).magnitude, (cameraPosRouteSpace - prevPos).magnitude);
-            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.DrawLine(currPos, prevPos, 3), edgeColor));
+            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.DrawLine(currPos, prevPos, 3), edgeColor.Value));
 
-            if (e.control && m_skeletoniser.isUpscalePossible(prevJointSkeletoniserIdx, currJointSkeletoniserIdx))
+            if (edgeClickableHandle != null && edgeClickableHandle(prevDFSJointSkeletoniserIndex, currDFSJointSkeletoniserIndex))
             {
-              Vector3 facingDirection = currPos - prevPos;              
+              Vector3 facingDirection = currPos - prevPos;
               Vector3 midPoint = prevPos + facingDirection * 0.5f;
-              //Vector3 directionToCamera = cameraPosRouteSpace - midPoint;
-              var edgeCubeColor = addColor * 0.5f;
+              var edgeCubeColor = jointColor.Value * 0.5f;
               edgeCubeColor.a = 1;
               //Reduce the size of the cube when two joints are very close
-              float size = Mathf.Clamp(facingDirection.magnitude - 2 * handleRadius, handleRadius / 2, handleRadius);                            
+              float size = Mathf.Clamp(facingDirection.magnitude - 2 * handleRadius, handleRadius / 2, handleRadius);
 
               distanceToCamera = (cameraPosRouteSpace - midPoint).magnitude;
               drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
               {
                 if (Handles.Button(midPoint, Quaternion.LookRotation(facingDirection), size, size, Handles.CubeHandleCap))
-                {
-                  m_skeletoniser.upscaleEdge(prevJointSkeletoniserIdx, currJointSkeletoniserIdx);
-                  UserHasEdited = true;
-                  UpdateSkeleton();
-                }
+                  onEdgeClickCallback(prevDFSJointSkeletoniserIndex, currDFSJointSkeletoniserIndex);
               }, edgeCubeColor));
-
             }
           }
-          
+
           distanceToCamera = (cameraPosRouteSpace - currPos).magnitude - handleRadius;
-          //Draw joints normally if no buttons are held or if the current node is ineligible for the current mode
-          if ((!e.shift && !e.control) || /*Ineligible for upscale*/ (e.control && (!m_skeletoniser.isUpscalePossible(currJointSkeletoniserIdx) || currDFSJoint.isLeaf())) || /*Cannot remove past 2 joints*/ (e.shift && m_skeleton.joints.Count <= 2))
+          //Draw joint
+          if (jointClickableHandle != null && jointClickableHandle(currDFSJoint.skeletoniserIndex))
           {
-            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.SphereHandleCap(0, currPos, Quaternion.identity, handleDiameter, EventType.Repaint), normalColor));
-          }
-          else
-          {
-            uint neighbSkeletoniserIdx1 = 0;
-            uint neighbSkeletoniserIdx2 = 0;
-
-            if (e.control)
-            {
-              //Prepare edges for upscale call
-              var closestJoints = currDFSJoint.adjJoints.Select(idx => m_skeleton.joints[(int)idx]).OrderBy(j => j.position.distance(currDFSJoint.position)).Take(2).ToList();
-              neighbSkeletoniserIdx1 = closestJoints[0].skeletoniserIndex;
-              neighbSkeletoniserIdx2 = closestJoints[1].skeletoniserIndex;
-            }
-
+            var jointToAlter = currDFSJoint.deref();
             drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
             {
               if (Handles.Button(currPos, Quaternion.identity, handleDiameter, handleRadius, Handles.SphereHandleCap))
-              {
-                if (e.shift && m_skeleton.joints.Count > 2) //Remove joint
-                {
-                  //Remove corresponding vertex from skeletoniser and update skeleton
-                  m_skeletoniser.removeVertex(currJointSkeletoniserIdx, false);
-                  UserHasEdited = true;
-                  UpdateSkeleton();
-                }
-                else if (e.control) //Upscale at joint
-                {
-                  if (m_skeletoniser.upscaleVertex(currJointSkeletoniserIdx, neighbSkeletoniserIdx1, neighbSkeletoniserIdx2))
-                  {
-                    UserHasEdited = true;
-                    UpdateSkeleton();
-                  }
-
-                }
-              }
-            }, e.control ? addColor : removeColor));
+                onJointClickCallback(jointToAlter);
+            }, jointColor.Value));
           }
-
-          prevDFSJoint = currDFSJoint.deref();          
+          else
+          {
+            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.SphereHandleCap(0, currPos, Quaternion.identity, handleDiameter, EventType.Repaint), unclickableColor.HasValue ? unclickableColor.Value : jointColor.Value));
+          }
+          prevDFSJoint = currDFSJoint.deref();
           currDFSJoint.inc();
         }
+      }
+      //Sort in descending order to draw the furthest objects first
+      drawcalls.Sort((t1, t2) => -t1.Item1.CompareTo(t2.Item1));
 
-        //Sort in descending order to draw the furthest objects first
-        drawcalls.Sort((t1, t2) => -t1.Item1.CompareTo(t2.Item1));
+      if (ignoreFilters)
+        UseLongestPath = useLongestPath;
 
-        foreach (var drawcall in drawcalls)
+      using (new Handles.DrawingScope(skeletonToWorld))
+      {
+        var furthestDistance = drawcalls.First().Item1;
+        for (int i = 0; i < drawcalls.Count; i++)
         {
-          using (new Handles.DrawingScope(drawcall.Item3))
+          var drawcall = drawcalls[i];
+          float shade = 0.4f + (drawcall.Item1 / furthestDistance) * 0.8f;
+          var shadeColor = new Color(shade, shade, shade);
+          using (new Handles.DrawingScope(drawcall.Item3 * shadeColor))
           {
             drawcall.Item2.Invoke();
-          }
-        }
-      }
-    }
-
-    /// <summary>
-    /// Draws the current skeleton without a specific traversal order.
-    /// </summary>
-    void DrawSkeleton()
-    {
-      using (new Handles.DrawingScope(SkeletonToWorld()))
-      {
-        using (new Handles.DrawingScope(Color.green))
-        {
-          var skel = m_skeletoniser.getSkeleton();
-          foreach (var joint in skel.joints)
-          {
-            Handles.SphereHandleCap(0, joint.position.ToHandedVector3(), Quaternion.identity, (float)joint.radius * 2, EventType.Repaint);
-            using (new Handles.DrawingScope(Color.red))
-            {
-              foreach (var adjIdx in joint.adjJoints)
-              {
-                Handles.DrawLine(skel.joints[(int)adjIdx].position.ToHandedVector3(), joint.position.ToHandedVector3(), 4);
-              }
-            }
           }
         }
       }
