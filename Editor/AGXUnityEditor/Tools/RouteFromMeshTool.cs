@@ -2,6 +2,7 @@ using AGXUnity;
 using AGXUnity.Utils;
 using agxUtil;
 using CodiceApp;
+using NUnit.Framework.Interfaces;
 using PlasticGui;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,10 @@ namespace AGXUnityEditor.Tools
   /// A tool for transforming a unity mesh into a AGX cable route. Based on "Sphere-Mesh skeletonisation" by Thiery et. al.
   /// </summary>
   /// <typeparam name="NodeT">The type of node used in the attached route</typeparam>
-  public class RouteFromMeshTool<NodeT> : Tool where NodeT : RouteNode, new()
+  public class RouteFromMeshTool<ParentT, NodeT> : Tool 
+    where ParentT : ScriptComponent
+    where NodeT : RouteNode, 
+    new()
   {
     /// <summary>
     /// The threshhold at which the tool warns about computation times and automatically disables preview
@@ -480,6 +484,88 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.OnDropdownToolEnd();
     }
 
+    void TransferBySpecialNodes(ref List<NodeT> destNodes, float cableRadius, float threshhold)
+    {
+      var specialNodes = Route.Where(n =>
+      {
+        if (n is WireRouteNode)
+          return (n as WireRouteNode).Type != AGXUnity.Wire.NodeType.FreeNode;
+        else if (n is CableRouteNode)
+          return (n as CableRouteNode).Type != AGXUnity.Cable.NodeType.FreeNode;
+        else return false;
+      });
+
+      //Create a sliding window which also has the ends as a prai with themselves
+      var destNodePairs = destNodes.Zip(destNodes.Skip(1), (a, b) => Tuple.Create(a, b)).Prepend(Tuple.Create(destNodes.First(), destNodes.First())).Append(Tuple.Create(destNodes.Last(), destNodes.Last()));
+
+      foreach(var node in specialNodes)
+      {
+        //We try to find a pair of nodes from the destNodes input which produces the least distance. The previous fixed node should most likely lay between those if the user wanted the special nodes to persist in their current locations.
+        var bestPair = destNodePairs.Select((n, i) => new { nodePair = n, idx = i } ).Aggregate((currMin, p) =>
+        {
+          return (currMin == null) || (Vector3.Distance(p.nodePair.Item1.Position, node.Position) + Vector3.Distance(p.nodePair.Item2.Position, node.Position)) < Vector3.Distance(currMin.nodePair.Item1.Position, node.Position) + Vector3.Distance(currMin.nodePair.Item2.Position, node.Position) ? p : currMin;
+        });
+        destNodes.Insert(bestPair.idx, node);
+      }
+      //Merge nodes that are too close to the transferred special nodes
+      destNodes = destNodes.Where(n => specialNodes.Contains(n) || specialNodes.All(sn => Vector3.Distance(n.Position, sn.Position) >= cableRadius * threshhold)).ToList();
+    }
+
+    void TransferSettingsByDistance(IEnumerable<NodeT> destNodes, float cableRadius, float threshhold)
+    {
+      //Starting with the ends of the cable and trying to match them to our best ability
+      NodeT[] oldEnds = { Route.First(), Route.Last() }, newEnds = { destNodes.First(), destNodes.Last() };
+      //If one pair of new and old nodes match very closely then we assume they should still be matched
+      float minDist = float.PositiveInfinity;
+      int minOldEnd = -1, minNewEnd = -1;
+      foreach (var oldEnd in oldEnds.Select((v, i) => new Tuple<NodeT, int>(v, i)))
+      {
+        foreach (var newEnd in newEnds.Select((v, i) => new Tuple<NodeT, int>(v, i)))
+        {
+          var dist = (oldEnd.Item1.Position - newEnd.Item1.Position).magnitude;
+          if (dist < minDist)
+          {
+            minOldEnd = oldEnd.Item2;
+            minNewEnd = newEnd.Item2;
+            minDist = dist;
+          }
+        }
+      }
+
+      if (minDist < threshhold * cableRadius) //If one pair is close enough to assume they want to be considered the same by the user. The other pair is then implied to be a match as well
+      {
+        TransferNodeSettings(oldEnds[minOldEnd], newEnds[minNewEnd]);
+        TransferNodeSettings(oldEnds[(minOldEnd + 1) % 2], newEnds[(minNewEnd + 1) % 2]);
+      }
+      else
+      {
+        TransferNodeSettings(oldEnds[0], newEnds[0]);
+        TransferNodeSettings(oldEnds[1], newEnds[1]);
+      }
+
+      //Base the transfer on the route which has the least nodes. Each leftover node in the route with more nodes is either discarded or created using normal values.
+      bool baseOnExistingRoute = destNodes.Count() >= Route.NumNodes;
+
+      IEnumerable<NodeT> from, to;
+      List<NodeT> used = new();
+      //Skip the ends as they were handled earlier
+      from = (baseOnExistingRoute ? Route : destNodes);
+      from = from.Skip(1).Take(from.Count() - 2);
+      to = (baseOnExistingRoute ? destNodes : Route);
+      to = to.Skip(1).Take(to.Count() - 2);
+
+      foreach (var node in from)
+      {
+        //Find the closest node in the node list and transfer the settings
+        var closestNode = to.Where(n => !used.Contains(n)).Aggregate(to.First(), (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
+        used.Add(closestNode);
+        if (baseOnExistingRoute)
+          TransferNodeSettings(node, closestNode);
+        else
+          TransferNodeSettings(closestNode, node);
+      }
+    }
+
     /// <summary>
     /// Uses the current route/skeleton to create nodes in the parent route object
     /// </summary>
@@ -522,57 +608,8 @@ namespace AGXUnityEditor.Tools
       //If a route already exists then we will attempt to transfer parents and node types to the best of our ability
       if (Route.Any() && applyCurrentNodeSettings)
       {
-        //Starting with the ends of the cable and trying to match them to our best ability
-        NodeT[] oldEnds = { Route.First(), Route.Last() }, newEnds = { nodeList.First(), nodeList.Last() };
-        //If one pair of new and old nodes match very closely then we assume they should still be matched
-        float minDist = float.PositiveInfinity;
-        int minOldEnd = -1, minNewEnd = -1;
-        foreach (var oldEnd in oldEnds.Select((v, i) => new Tuple<NodeT, int>(v, i)))
-        {
-          foreach (var newEnd in newEnds.Select((v, i) => new Tuple<NodeT, int>(v, i)))
-          {
-            var dist = (oldEnd.Item1.Position - newEnd.Item1.Position).magnitude;
-            if (dist < minDist)
-            {
-              minOldEnd = oldEnd.Item2;
-              minNewEnd = newEnd.Item2;
-              minDist = dist;
-            }
-          }
-        }
-
-        if (minDist < NODE_TRANSFER_DISTANCE_THRESHOLD * avgRadius) //If one pair is close enough to assume they want to be considered the same by the user. The other pair is then implied to be a match as well
-        {
-          TransferNodeSettings(oldEnds[minOldEnd], newEnds[minNewEnd]);
-          TransferNodeSettings(oldEnds[(minOldEnd + 1) % 2], newEnds[(minNewEnd + 1) % 2]);
-        }
-        else
-        {
-          TransferNodeSettings(oldEnds[0], newEnds[0]);
-          TransferNodeSettings(oldEnds[1], newEnds[1]);
-        }
-
-        //Base the transfer on the route which has the least nodes. Each leftover node in the route with more nodes is either discarded or created using normal values.
-        bool baseOnExistingRoute = nodeList.Count >= Route.NumNodes;
-
-        IEnumerable<NodeT> from, to;
-        List<NodeT> used = new();
-        //Skip the ends as they were handled earlier
-        from = (baseOnExistingRoute ? Route : nodeList);
-        from = from.Skip(1).Take(from.Count() - 2);
-        to = (baseOnExistingRoute ? nodeList : Route);
-        to = to.Skip(1).Take(to.Count() - 2);
-
-        foreach (var node in from)
-        {
-          //Find the closest node in the node list and transfer the settings
-          var closestNode = to.Where(n => !used.Contains(n)).Aggregate(to.First(), (closest, next) => (next.Position - node.Position).magnitude < (closest.Position - node.Position).magnitude ? next : closest);
-          used.Add(closestNode);
-          if (baseOnExistingRoute)
-            TransferNodeSettings(node, closestNode);
-          else
-            TransferNodeSettings(closestNode, node);
-        }
+        //TransferSettingsByDistance(nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
+        TransferBySpecialNodes(ref nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
       }
 
       Route.Clear();
@@ -599,6 +636,11 @@ namespace AGXUnityEditor.Tools
         Undo.RegisterCompleteObjectUndo(renderer, "Disable mesh renderer");
         renderer.enabled = false;
       }
+
+      //It is possible that the selected node will cause problems so we try to deselect a node in the parent tool
+      //TODO: Check with someone if this is a stupid thing to do
+      var routeTool = GetParent() as RouteTool<ParentT, NodeT>;
+      routeTool.Selected = null;
 
       Undo.CollapseUndoOperations(undoGroupId);
     }

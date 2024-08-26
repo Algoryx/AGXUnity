@@ -81,16 +81,16 @@ namespace AGXUnityEditor.Tools
 
     public bool RouteFromMeshTool
     {
-      get { return GetChild<RouteFromMeshTool<NodeT>>() != null; }
+      get { return GetChild<RouteFromMeshTool<ParentT, NodeT>>() != null; }
       set
       {
         if (value && !RouteFromMeshTool)
         {
-          var tool = new RouteFromMeshTool<NodeT>(Route);
+          var tool = new RouteFromMeshTool<ParentT, NodeT>(Route);
           AddChild(tool);
         }
         else if (!value)
-          RemoveChild(GetChild<RouteFromMeshTool<NodeT>>());
+          RemoveChild(GetChild<RouteFromMeshTool<ParentT, NodeT>>());
       }
     }
 
@@ -170,7 +170,7 @@ namespace AGXUnityEditor.Tools
 
       if (RouteFromMeshTool)
       {
-        GetChild<RouteFromMeshTool<NodeT>>().OnInspectorGUI();
+        GetChild<RouteFromMeshTool<ParentT, NodeT>>().OnInspectorGUI();
       }
 
       if (!EditorApplication.isPlaying)
