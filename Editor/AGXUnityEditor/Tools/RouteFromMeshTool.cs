@@ -409,10 +409,11 @@ namespace AGXUnityEditor.Tools
 
       //Settings which do not affect skeletonisation ----------------------------------------------------
       UseLongestPath = InspectorGUI.Toggle(GUI.MakeLabel("Longest Continuous Path", toolTip: "Use the longest continuous path from the produced skeleton instead of the complete skeleton. Useful for omitting larger details in the mesh from the generated route or for reducing artifacts."), UseLongestPath);
-      uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:"), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
+      uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:", toolTip: "The current number of nodes in the skeleton. This value can be increased to attempt an automatic upscaling to that number of joints."), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
       if (newNumNodes > Skeleton.joints.Count)
       {
-        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.JOINT, m_longestSkeleton);
+        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);
+        m_skeletoniser.consolidateSkeleton(1.5);
         UserHasEdited = true;
         UpdateSkeleton();
       }
@@ -854,11 +855,12 @@ namespace AGXUnityEditor.Tools
 
       using (new Handles.DrawingScope(skeletonToWorld))
       {
-        var furthestDistance = drawcalls.First().Item1;
+        float furthestDistance = drawcalls.First().Item1;
+        float closestDistance = drawcalls.Last().Item1;
         for (int i = 0; i < drawcalls.Count; i++)
         {
           var drawcall = drawcalls[i];
-          float shade = 0.4f + (drawcall.Item1 / furthestDistance) * 0.8f;
+          float shade = 1f - (drawcall.Item1 / furthestDistance) * (0.6f-(closestDistance / furthestDistance / 0.6f));
           var shadeColor = new Color(shade, shade, shade);
           using (new Handles.DrawingScope(drawcall.Item3 * shadeColor))
           {
