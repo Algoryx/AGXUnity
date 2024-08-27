@@ -71,12 +71,14 @@ public class SkinnedCableRenderer : ScriptComponent
     Vector3[] verts = SourceMesh.vertices;
     Vector3[] normals = SourceMesh.normals;
     var objTransform = transform.localToWorldMatrix;
+    Vector3 lastNodePosition = m_Cable.Route.Last().Position;
     Parallel.For( 0, SourceMesh.vertexCount, ( i ) =>
     {
       Vector3 v = verts[i];
-      //Find the bone edge with the lowest perpendicular distance to the vertex and choose the two bones as weighting
-      var idx = -1;
-      float minDist = Mathf.Infinity;
+      //Find the bone edge with the lowest perpendicular distance to the vertex and choose the two bones as weighting.
+      var idx = m_bones.Count-2;
+      //If the last node from the original route happens to be closer than any bone, makes sure the vertex is weighted by the last two segments/bones (this is to avoid artifacts from the cable being shortened by the routign algorithm.      
+      float minDist = Vector3.Distance(lastNodePosition, v);
 
       for ( int j = 0; j < bonePos.Length-1; j++ ) {
         var toBone = bonePos[j] - v;        
