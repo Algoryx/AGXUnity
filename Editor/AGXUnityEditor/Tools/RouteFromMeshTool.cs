@@ -52,32 +52,8 @@ namespace AGXUnityEditor.Tools
         if (m_skeleton != value)
         {
           m_skeleton = value;
-          m_longestSkeleton = value == null ? null : agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeleton);
-          m_skeletonAvgRadius = 0;
-          m_longestSkeletonAvgRadius = 0;
-
-          if (m_skeleton != null)
-          {
-            foreach (var joint in m_skeleton.joints)
-            {
-              m_skeletonAvgRadius += joint.radius;
-            }
-            m_skeletonAvgRadius /= m_skeleton.joints.Count;
-
-
-            foreach (var joint in m_longestSkeleton.joints)
-            {
-              m_longestSkeletonAvgRadius += joint.radius;
-            }
-            m_longestSkeletonAvgRadius /= m_longestSkeleton.joints.Count;
-          }
-
-          if (!UseFixedRadius)
-          {
-            FixedRadius = (float)(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
-          }
+          m_longestSkeleton = value == null ? null : agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeleton);         
         }
-
       }
     }
     private SphereSkeleton m_skeleton = null;
@@ -737,6 +713,32 @@ namespace AGXUnityEditor.Tools
       m_skeletoniser.setFaceDevalueFactor(Mathf.Pow(10, Aggressiveness));
       m_skeletoniser.collapseUntilSkeleton();
       UpdateSkeleton();
+
+      //Calculate radius for restoring radius later
+      m_skeletonAvgRadius = 0;
+      m_longestSkeletonAvgRadius = 0;
+
+      if (m_skeleton != null)
+      {
+        foreach (var joint in m_skeleton.joints)
+        {
+          m_skeletonAvgRadius += joint.radius;
+        }
+        m_skeletonAvgRadius /= m_skeleton.joints.Count;
+
+
+        foreach (var joint in m_longestSkeleton.joints)
+        {
+          m_longestSkeletonAvgRadius += joint.radius;
+        }
+        m_longestSkeletonAvgRadius /= m_longestSkeleton.joints.Count;
+      }
+
+      if (!UseFixedRadius)
+      {
+        FixedRadius = (float)(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+      }
+
       m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
       UpdateSkeleton();
     }
