@@ -455,7 +455,7 @@ namespace AGXUnityEditor.Tools
 
         var toggleRect = new Rect(position.xMax - labelSize.x - toggleWidth,
                                   position.y + EditorGUIUtility.standardVerticalSpacing,
-                                   toggleWidth,
+                                   toggleWidth + labelSize.x,
                                    toggleWidth);
         var labelRect = new Rect(position.xMax - labelSize.x,
                                    position.y + EditorGUIUtility.standardVerticalSpacing,
@@ -782,6 +782,7 @@ namespace AGXUnityEditor.Tools
         };
       }
 
+      //Segment skeleton to draw entire structure when the longest path isn't used. Otherwise DFS will not visit joints is disjoint parts of the skeleton
       foreach (var segment in skeletonSegments)
       {
 
