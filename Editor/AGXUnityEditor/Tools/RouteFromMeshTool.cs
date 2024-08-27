@@ -485,7 +485,7 @@ namespace AGXUnityEditor.Tools
       InspectorGUI.OnDropdownToolEnd();
     }
 
-    void TransferBySpecialNodes(ref List<NodeT> destNodes, float cableRadius, float threshhold)
+    void TransferSettingsBySpecialNodes(ref List<NodeT> destNodes, float cableRadius, float threshhold)
     {
       var specialNodes = Route.Where(n =>
       {
@@ -610,7 +610,7 @@ namespace AGXUnityEditor.Tools
       if (Route.Any() && applyCurrentNodeSettings)
       {
         //TransferSettingsByDistance(nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
-        TransferBySpecialNodes(ref nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
+        TransferSettingsBySpecialNodes(ref nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
       }
 
       Route.Clear();
