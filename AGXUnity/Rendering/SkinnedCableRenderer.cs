@@ -1,3 +1,4 @@
+using agx.extensions;
 using AGXUnity;
 using AGXUnity.Utils;
 using System;
@@ -71,7 +72,7 @@ public class SkinnedCableRenderer : ScriptComponent
     Vector3[] verts = SourceMesh.vertices;
     Vector3[] normals = SourceMesh.normals;
     var objTransform = transform.localToWorldMatrix;
-    Vector3 lastNodePosition = m_Cable.Route.Last().Position;
+    Vector3 lastNodePosition = transform.InverseTransformPoint(m_Cable.Route.Last().Position);
     Parallel.For( 0, SourceMesh.vertexCount, ( i ) =>
     {
       Vector3 v = verts[i];
@@ -82,10 +83,7 @@ public class SkinnedCableRenderer : ScriptComponent
 
       for ( int j = 0; j < bonePos.Length-1; j++ ) {
         var toBone = bonePos[j] - v;        
-        //Weight the distance by the similarity of the distance vector to the vertex anti-normal
         Vector3 vertexNormal = normals[i];
-        float distanceWeight = (Mathf.PI - Mathf.Acos(Vector3.Dot(-vertexNormal.normalized, toBone.normalized))) / Mathf.PI;
-        //float dist = toBone.magnitude - distanceWeight * m_Cable.Radius * 2 ; 
         float dist = perpendicularDistance(v, bonePos[j], bonePos[j+1] - bonePos[j], new Vector2(0,1));
 
         if ( dist < minDist ) {
