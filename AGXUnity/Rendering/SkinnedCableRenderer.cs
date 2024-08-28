@@ -89,6 +89,15 @@ public class SkinnedCableRenderer : ScriptComponent
         if ( dist < minDist ) {
           minDist = dist;
           idx = j;
+        } 
+        else if(j > 0 && Mathf.Abs(dist - minDist) < 0.01 * m_Cable.Radius)
+        {
+          //Compare distances to j-1 and j+1 to find if (j, j+1) is a better choice than (j-1, j)
+          if((bonePos[j + 1] - v).magnitude > (bonePos[j - 1] - v).magnitude)
+          {
+            minDist = dist;
+            idx = j;
+          }
         }
       }      
 
