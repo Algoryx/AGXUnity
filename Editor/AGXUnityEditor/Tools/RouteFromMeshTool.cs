@@ -389,7 +389,7 @@ namespace AGXUnityEditor.Tools
       if (newNumNodes > Skeleton.joints.Count)
       {
         m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);
-        m_skeletoniser.consolidateSkeleton(1.5);
+        m_skeletoniser.consolidateSkeleton();
         UserHasEdited = true;
         UpdateSkeleton();
       }
@@ -559,6 +559,7 @@ namespace AGXUnityEditor.Tools
 
       var nodeList = new List<NodeT>();
       SphereSkeleton.dfs_iterator currJoint = Skeleton.begin();
+      float minDist = float.PositiveInfinity;
 
       //Iterate and create nodes
       while (!currJoint.isEnd())
@@ -571,7 +572,10 @@ namespace AGXUnityEditor.Tools
         }
         else
         {
-          localRotation = Quaternion.FromToRotation(Vector3.forward, (currJoint.next_joint().position - currJoint.position).ToHandedVector3());
+          agx.Vec3 edge = currJoint.next_joint().position - currJoint.position;
+          minDist = Mathf.Min(minDist, (float)edge.length());
+
+          localRotation = Quaternion.FromToRotation(Vector3.forward, edge.ToHandedVector3());
         }
         nodeList.Add(CreateNode(currJoint.position.ToHandedVector3(), localRotation));
         currJoint.inc();
@@ -597,13 +601,13 @@ namespace AGXUnityEditor.Tools
 
       if (Route is WireRoute)
       {
-        Route.gameObject.GetComponent<Wire>().Radius = avgRadius;
-        Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = 0.25f / avgRadius;
+        Route.gameObject.GetComponent<Wire>().Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
+        //Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = Mathf.Max(minDist, 0.5f / avgRadius); //Max reasonable resolution / 2
       }
       else if (Route is CableRoute)
       {
-        Route.gameObject.GetComponent<Cable>().Radius = avgRadius;
-        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = 0.25f / avgRadius;
+        Route.gameObject.GetComponent<Cable>().Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
+        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = Mathf.Max(minDist, 0.5f / avgRadius); //Max reasonable resolution / 2
       }
 
       //Disable the renderer to signify the conversion
