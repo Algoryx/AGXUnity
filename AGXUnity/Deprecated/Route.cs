@@ -1,12 +1,12 @@
-﻿using AGXUnity.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AGXUnity
+namespace AGXUnity.Deprecated
 {
-  [Serializable]
-  public abstract class Route<T> : IEnumerable<T>, IPropertySynchronizable
+  [DoNotGenerateCustomEditor]
+  [Obsolete]
+  public abstract class Route<T> : ScriptComponent, IEnumerable<T>
     where T : RouteNode
   {
     public class ValidatedNode
@@ -31,7 +31,7 @@ namespace AGXUnity
       {
         return GetEnumerator();
       }
-    } 
+    }
 
     public virtual ValidatedRoute GetValidated()
     {
@@ -41,7 +41,7 @@ namespace AGXUnity
 
       return validatedRoute;
     }
-    
+
     /// <summary>
     /// Route node list.
     /// </summary>
@@ -52,13 +52,13 @@ namespace AGXUnity
     /// Callback fired when a node has been added/inserted into this route.
     /// Signature: OnNodeAdded( NodeT addedNode, int indexOfAddedNode ).
     /// </summary>
-    public event Action<T, int> OnNodeAdded;
+    public Action<T, int> OnNodeAdded = delegate { };
 
     /// <summary>
     /// Callback fired when a node has been removed from this route.
     /// Signature: OnNodeRemoved( WireRouteNode removedNode, int indexOfRemovedNode ).
     /// </summary>
-    public event Action<T, int> OnNodeRemoved;
+    public Action<T, int> OnNodeRemoved = delegate { };
 
     /// <summary>
     /// Number of nodes in route.
@@ -154,7 +154,7 @@ namespace AGXUnity
 
       m_nodes.RemoveAt( index );
 
-      OnNodeRemoved?.Invoke( node, index );
+      OnNodeRemoved( node, index );
 
       return true;
     }
@@ -167,12 +167,25 @@ namespace AGXUnity
       m_nodes.Clear();
     }
 
-    public bool Initialize()
+    protected override bool Initialize()
     {
       foreach ( var node in this )
         node.GetInitialized<T>();
 
       return true;
+    }
+
+    protected override void OnDestroy()
+    {
+      foreach ( var node in this )
+        node.OnDestroy();
+
+      base.OnDestroy();
+    }
+
+    protected virtual void Reset()
+    {
+      hideFlags |= HideFlags.HideInInspector;
     }
 
     private bool TryInsertAtIndex( int index, T node )
@@ -184,7 +197,7 @@ namespace AGXUnity
 
       m_nodes.Insert( index, node );
 
-      OnNodeAdded?.Invoke( node, index );
+      OnNodeAdded( node, index );
 
       return true;
     }

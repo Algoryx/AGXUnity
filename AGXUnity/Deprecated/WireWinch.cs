@@ -1,14 +1,25 @@
-﻿using AGXUnity.Utils;
-using System;
+﻿using System;
 using UnityEngine;
 
-namespace AGXUnity
+namespace AGXUnity.Deprecated
 {
-  [Serializable]
-  public class WireWinch : IPropertySynchronizable
+  [AddComponentMenu( "" )]
+  [HideInInspector]
+  [DoNotGenerateCustomEditor]
+  [Obsolete]
+  public class WireWinch : ScriptComponent
   {
     [HideInInspector]
     public agxWire.WireWinchController Native { get; private set; }
+
+    [SerializeField]
+    private Wire m_wire = null;
+    [HideInInspector]
+    public Wire Wire
+    {
+      get { return m_wire; }
+      set { m_wire = value; }
+    }
 
     [SerializeField]
     private float m_speed = 0.0f;
@@ -28,12 +39,7 @@ namespace AGXUnity
     [ClampAboveZeroInInspector( true )]
     public float PulledInLength
     {
-      get
-      {
-        if ( Native != null )
-          m_pulledInLength = Convert.ToSingle( Native.getPulledInWireLength() );
-        return m_pulledInLength;
-      }
+      get { return m_pulledInLength; }
       set
       {
         m_pulledInLength = Mathf.Max( value, 0.0f );
@@ -78,7 +84,7 @@ namespace AGXUnity
       }
     }
 
-    public void RestoreLocalDataFrom( agxWire.WireWinchController native ) 
+    public void RestoreLocalDataFrom( agxWire.WireWinchController native )
     {
       if ( native == null )
         return;
@@ -89,22 +95,23 @@ namespace AGXUnity
       BrakeForceRange = new RangeReal( native.getBrakeForceRange() );
     }
 
-    public bool Initialize( WireRouteNode winchNode )
+    protected override bool Initialize()
     {
-      if ( winchNode == null ) {
-        Debug.LogWarning( "Unable to initialize winch - no winch node assigned." );
-        return false;
-      }
+      Debug.LogWarning( "WireWinch is deprecated and cannot be initialized.", this );
+      return false;
+    }
 
-      RigidBody rb = winchNode.Parent != null ? winchNode.Parent.GetInitializedComponentInParent<RigidBody>() : null;
-      if ( rb == null )
-        Native = new agxWire.WireWinchController( null, winchNode.Position.ToHandedVec3(), ( winchNode.Rotation * Vector3.forward ).ToHandedVec3(), PulledInLength );
-      else
-        Native = new agxWire.WireWinchController( rb.Native, winchNode.CalculateLocalPosition( rb.gameObject ).ToHandedVec3(), ( winchNode.CalculateLocalRotation( rb.gameObject ) * Vector3.forward ).ToHandedVec3() );
+    public void OnPostStepForward( Wire wire )
+    {
+      if ( Native != null )
+        m_pulledInLength = Convert.ToSingle( Native.getPulledInWireLength() );
+    }
 
-      PropertySynchronizer.Synchronize( this );
+    protected override void OnDestroy()
+    {
+      Native = null;
 
-      return true;
+      base.OnDestroy();
     }
   }
 }

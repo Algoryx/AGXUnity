@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity
+namespace AGXUnity.Deprecated
 {
   /// <summary>
   /// Cable route object containing nodes that initializes a cable.
   /// This object is an IEnumerable, add "using System.Linq" to
   /// get a wide range of "features" such as ToArray().
   /// </summary>
-  [Serializable]
+  [AddComponentMenu( "" )]
+  [HideInInspector]
+  [Obsolete]
+  [DoNotGenerateCustomEditor]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#routing-the-cable" )]
   public class CableRoute : Route<CableRouteNode>
   {

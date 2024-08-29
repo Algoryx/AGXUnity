@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using AGXUnity.Utils;
 
-namespace AGXUnity
+namespace AGXUnity.Deprecated
 {
   /// <summary>
   /// Wire route object containing nodes that initializes a wire.
@@ -18,7 +18,10 @@ namespace AGXUnity
   /// var freeNodes = from node in route select node.Type == Wire.NodeType.FreeNode;
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
-  [Serializable]
+  [HideInInspector]
+  [AddComponentMenu( "" )]
+  [DoNotGenerateCustomEditor]
+  [Obsolete]
   public class WireRoute : Route<WireRouteNode>
   {
     /// <summary>
@@ -65,12 +68,24 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Wire this route belongs to.
+    /// </summary>
+    private Wire m_wire = null;
+
+    /// <summary>
     /// Get or set the wire this route belongs to.
     /// </summary>
-    [field: SerializeField]
     public Wire Wire
     {
-      get; private set;
+      get
+      {
+        if ( m_wire == null ) {
+          m_wire = GetComponent<Wire>();
+          foreach ( var node in this )
+            node.Wire = m_wire;
+        }
+        return m_wire;
+      }
     }
 
     /// <summary>
@@ -148,7 +163,7 @@ namespace AGXUnity
         node.LocalPosition = nativeNode.getPosition().ToHandedVector3();
       else
         node.Position = nativeNode.getWorldPosition().ToHandedVector3();
-       
+
       return node;
     }
 
@@ -161,10 +176,8 @@ namespace AGXUnity
       base.Clear();
     }
 
-    internal WireRoute(Wire parent)
+    private WireRoute()
     {
-      Wire = parent;
-
       OnNodeAdded   += this.OnAddedToList;
       OnNodeRemoved += this.OnRemovedFromList;
     }

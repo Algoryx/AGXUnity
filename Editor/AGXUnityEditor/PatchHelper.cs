@@ -32,26 +32,23 @@ namespace AGXUnityEditor
     public static void ApplyPatches()
     {
       // 5.2.0
-      ApplyRemoveMassPropertiesComponent();
+      ApplyRemoveMassPropertiesComponents();
       ApplyRemoveElementaryConstraintComponents();
+      ApplyRemoveRouteComponents();
+      ApplyRemoveWinchNodeComponents();
     }
 
     #region 5.2.0
-    private static void ApplyRemoveMassPropertiesComponent()
+#pragma warning disable CS0618
+#pragma warning disable CS0612 // Type or member is obsolete
+    private static void ApplyRemoveMassPropertiesComponents()
     {
-#if UNITY_6000_0_OR_NEWER
-      var rbs = Object.FindObjectsByType<RigidBody>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-#else
-      var rbs = Object.FindObjectsOfType<RigidBody>(true);
-#endif
+      var rbs = Resources.FindObjectsOfTypeAll<RigidBody>();
 
       foreach ( var rb in rbs ) {
-#pragma warning disable CS0618 // Type or member is obsolete
         var oldMP = rb.GetComponent<AGXUnity.Deprecated.MassProperties>();
-#pragma warning restore CS0618 // Type or member is obsolete
         if ( oldMP != null ) {
-          if ( !ShouldPatch )
-            return;
+          if ( !ShouldPatch ) return;
           rb.MassProperties.Mass = oldMP.Mass;
           rb.MassProperties.InertiaDiagonal = oldMP.InertiaDiagonal;
           rb.MassProperties.InertiaOffDiagonal.UserValue = oldMP.InertiaOffDiagonal.UserValue;
@@ -60,7 +57,7 @@ namespace AGXUnityEditor
           rb.MassProperties.CenterOfMassOffset = oldMP.CenterOfMassOffset;
           rb.MassProperties.MassCoefficients = oldMP.MassCoefficients;
           rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
-          Object.DestroyImmediate( oldMP );
+          Object.DestroyImmediate( oldMP, true );
         }
         EditorUtility.SetDirty( rb );
         EditorUtility.SetDirty( rb.gameObject );
@@ -70,20 +67,14 @@ namespace AGXUnityEditor
 
     private static void ApplyRemoveElementaryConstraintComponents()
     {
-#if UNITY_6000_0_OR_NEWER
-      var constraints = Object.FindObjectsByType<Constraint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-#else
-      var constraints = Object.FindObjectsOfType<Constraint>(true);
-#endif
-#pragma warning disable CS0612 // Type or member is obsolete
+      var constraints = Resources.FindObjectsOfTypeAll<Constraint>();
       foreach ( var constraint in constraints ) {
         List<ElementaryConstraint> newEcs = new List<ElementaryConstraint>();
         var oldEcs = constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>();
         if ( oldEcs.Length > 0 ) {
 
           foreach ( var ec in oldEcs ) {
-            if ( !ShouldPatch )
-              return;
+            if ( !ShouldPatch ) return;
             ElementaryConstraint newEc;
             if ( ec is AGXUnity.Deprecated.TargetSpeedController ts )
               newEc = new TargetSpeedController()
@@ -117,27 +108,80 @@ namespace AGXUnityEditor
 
             newEc.MigrateInternalData( ec );
             newEcs.Add( newEc );
-            Object.DestroyImmediate( ec );
+            Object.DestroyImmediate( ec, true );
           }
           constraint.MigrateElementaryConstraints( newEcs );
         }
 
         if ( constraint.TryGetComponent<AGXUnity.Deprecated.AttachmentPair>( out var ap ) ) {
-          if ( !ShouldPatch )
-            return;
+          if ( !ShouldPatch ) return;
           constraint.AttachmentPair.Synchronized = ap.Synchronized;
           constraint.AttachmentPair.ReferenceFrame = ap.ReferenceFrame;
           constraint.AttachmentPair.ConnectedFrame = ap.ConnectedFrame;
 
-          Object.DestroyImmediate( ap );
+          Object.DestroyImmediate( ap, true );
         }
 
         EditorUtility.SetDirty( constraint );
         EditorUtility.SetDirty( constraint.gameObject );
       }
       AssetDatabase.SaveAssets();
-#pragma warning restore CS0612 // Type or member is obsolete
-      #endregion
     }
+
+    private static void ApplyRemoveRouteComponents()
+    {
+      var wireRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.WireRoute>();
+      var cableRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.CableRoute>();
+
+      foreach ( var route in wireRoutes ) {
+        if ( !ShouldPatch ) return;
+        var go = route.gameObject;
+        var newRoute = route.Wire.Route;
+        foreach ( var node in route )
+          newRoute.Add( node );
+        Object.DestroyImmediate( route, true );
+        EditorUtility.SetDirty( go );
+      }
+
+      foreach ( var route in cableRoutes ) {
+        if ( !ShouldPatch ) return;
+        var go = route.gameObject;
+        var newRoute = route.GetComponent<Cable>().Route;
+        foreach ( var node in route )
+          newRoute.Add( node );
+        Object.DestroyImmediate( route, true );
+        EditorUtility.SetDirty( go );
+      }
+
+      AssetDatabase.SaveAssets();
+    }
+
+    private static void ApplyRemoveWinchNodeComponents()
+    {
+      var wires = Resources.FindObjectsOfTypeAll<Wire>();
+
+      foreach ( var wire in wires ) {
+        foreach ( var node in wire.Route ) {
+          if ( node.Type == Wire.NodeType.WinchNode && node.DeprecatedWinchComponent != null ) {
+            if ( !ShouldPatch ) return;
+            // Force node to create winch object
+            node.Type = node.Type;
+
+            var old = node.DeprecatedWinchComponent;
+            node.Winch.Speed = old.Speed;
+            node.Winch.PulledInLength = old.PulledInLength;
+            node.Winch.ForceRange = old.ForceRange;
+            node.Winch.BrakeForceRange = old.BrakeForceRange;
+
+            Object.DestroyImmediate( old, true );
+            EditorUtility.SetDirty( wire );
+          }
+        }
+      }
+      AssetDatabase.SaveAssets(); 
+    }
+#pragma warning restore CS0618
+#pragma warning restore CS0612 // Type or member is obsolete
+    #endregion
   }
 }

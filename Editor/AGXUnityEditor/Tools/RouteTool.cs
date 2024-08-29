@@ -70,7 +70,7 @@ namespace AGXUnityEditor.Tools
       set
       {
         if ( value && !DisableCollisionsTool ) {
-          var disableCollisionsTool = new DisableCollisionsTool( Parent.gameObject );
+          var disableCollisionsTool = new DisableCollisionsTool( Parent.gameObject ); 
           AddChild( disableCollisionsTool );
         }
         else if ( !value )
@@ -82,7 +82,7 @@ namespace AGXUnityEditor.Tools
       : base( targets )
     {
       Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
-                                                                   System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
+                                                              System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
 
       VisualInSceneView = true;
     }
@@ -234,7 +234,7 @@ namespace AGXUnityEditor.Tools
 
       NodeT listOpNode   = null;
 
-      Undo.RecordObject( Route, "Route changed" );
+      Undo.RecordObject( Parent, "Route changed" );
 
       EditorGUI.BeginChangeCheck();
 
@@ -277,7 +277,7 @@ namespace AGXUnityEditor.Tools
           addNewPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
                                                true,
                                                "Add new node to the route.",
-                                               GUILayout.Width( 18 ) );
+                                               GUILayout.Width( 18 ) ); 
 
           if ( listOpNode == null && addNewPressed )
             listOpNode = Route.LastOrDefault();
@@ -314,14 +314,14 @@ namespace AGXUnityEditor.Tools
         Route.Remove( listOpNode );
       }
       if( EditorGUI.EndChangeCheck() )
-        EditorUtility.SetDirty( Route );
+        EditorUtility.SetDirty( Parent );
     }
 
     private void CreateRouteNodeTool( NodeT node )
     {
       AddChild( new RouteNodeTool( node,
                                    Parent,
-                                   Route,
+                                   Parent,
                                    () => { return Selected; },
                                    ( selected ) => { Selected = selected as NodeT; },
                                    ( n ) => { return Route.Contains( n as NodeT ); },
@@ -331,7 +331,7 @@ namespace AGXUnityEditor.Tools
 
     private EditorDataEntry GetData( NodeT node, string identifier, Action<EditorDataEntry> onCreate = null )
     {
-      return EditorData.Instance.GetData( Route, identifier + "_" + Route.IndexOf( node ), onCreate );
+      return EditorData.Instance.GetData( Parent, identifier + "_" + Route.IndexOf( node ), onCreate );
     }
 
     private EditorDataEntry GetFoldoutData( NodeT node )
