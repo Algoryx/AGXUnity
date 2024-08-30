@@ -386,7 +386,7 @@ namespace AGXUnityEditor.Tools
       //Settings which do not affect skeletonisation ----------------------------------------------------
       UseLongestPath = InspectorGUI.Toggle(GUI.MakeLabel("Longest Continuous Path", toolTip: "Use the longest continuous path from the produced skeleton instead of the complete skeleton. Useful for omitting larger details in the mesh from the generated route or for reducing artifacts."), UseLongestPath);
       uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:", toolTip: "The current number of nodes in the skeleton. This value can be increased to attempt an automatic upscaling to that number of joints."), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
-      if (newNumNodes > Skeleton.joints.Count)
+      if (newNumNodes > Skeleton?.joints.Count)
       {
         m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);
         m_skeletoniser.consolidateSkeleton();
