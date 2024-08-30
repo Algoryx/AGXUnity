@@ -1,7 +1,10 @@
 using AGXUnity;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -43,10 +46,10 @@ namespace AGXUnityEditor
 #pragma warning disable CS0612 // Type or member is obsolete
     private static void ApplyRemoveMassPropertiesComponents()
     {
-      var rbs = Resources.FindObjectsOfTypeAll<RigidBody>();
+      var mps = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.MassProperties>();
 
-      foreach ( var rb in rbs ) {
-        var oldMP = rb.GetComponent<AGXUnity.Deprecated.MassProperties>();
+      foreach ( var oldMP in mps ) {
+        var rb = oldMP.RigidBody;
         if ( oldMP != null ) {
           if ( !ShouldPatch ) return;
           rb.MassProperties.Mass = oldMP.Mass;
@@ -59,6 +62,7 @@ namespace AGXUnityEditor
           rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
           Object.DestroyImmediate( oldMP, true );
         }
+        PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
         EditorUtility.SetDirty( rb );
         EditorUtility.SetDirty( rb.gameObject );
       }
@@ -121,7 +125,7 @@ namespace AGXUnityEditor
 
           Object.DestroyImmediate( ap, true );
         }
-
+        PrefabUtility.RecordPrefabInstancePropertyModifications( constraint );
         EditorUtility.SetDirty( constraint );
         EditorUtility.SetDirty( constraint.gameObject );
       }
@@ -130,27 +134,37 @@ namespace AGXUnityEditor
 
     private static void ApplyRemoveRouteComponents()
     {
-      var wireRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.WireRoute>();
-      var cableRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.CableRoute>();
+      var wireRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.WireRoute>().Select(route => Tuple.Create(route, route.Wire));
+      var cableRoutes = Resources.FindObjectsOfTypeAll<AGXUnity.Deprecated.CableRoute>().Select(route => Tuple.Create(route, route.GetComponent<Cable>()));
 
-      foreach ( var route in wireRoutes ) {
+      foreach ( var (route, wire) in wireRoutes ) {
         if ( !ShouldPatch ) return;
-        var go = route.gameObject;
-        var newRoute = route.Wire.Route;
-        foreach ( var node in route )
-          newRoute.Add( node );
-        Object.DestroyImmediate( route, true );
-        EditorUtility.SetDirty( go );
+        if ( wire != null ) {
+          var go = wire.gameObject;
+          var newRoute = wire.Route;
+          foreach ( var node in route )
+            newRoute.Add( node );
+          Object.DestroyImmediate( route, true );
+          EditorUtility.SetDirty( go );
+          PrefabUtility.RecordPrefabInstancePropertyModifications( wire );
+        }
+        else // The FindObjectOfTypeAll seems to pick up some stray objects that are not linked to any wire. We simply destroy these
+          Object.DestroyImmediate( route, true );
       }
 
-      foreach ( var route in cableRoutes ) {
+      foreach ( var (route, cable) in cableRoutes ) {
         if ( !ShouldPatch ) return;
-        var go = route.gameObject;
-        var newRoute = route.GetComponent<Cable>().Route;
-        foreach ( var node in route )
-          newRoute.Add( node );
-        Object.DestroyImmediate( route, true );
-        EditorUtility.SetDirty( go );
+        if ( cable != null ) {
+          var go = route.gameObject;
+          var newRoute = cable.Route;
+          foreach ( var node in route )
+            newRoute.Add( node );
+          Object.DestroyImmediate( route, true );
+          EditorUtility.SetDirty( go );
+          PrefabUtility.RecordPrefabInstancePropertyModifications( cable );
+        }
+        else
+          Object.DestroyImmediate( route, true );
       }
 
       AssetDatabase.SaveAssets();
@@ -174,11 +188,12 @@ namespace AGXUnityEditor
             node.Winch.BrakeForceRange = old.BrakeForceRange;
 
             Object.DestroyImmediate( old, true );
+            PrefabUtility.RecordPrefabInstancePropertyModifications( wire );
             EditorUtility.SetDirty( wire );
           }
         }
       }
-      AssetDatabase.SaveAssets(); 
+      AssetDatabase.SaveAssets();
     }
 #pragma warning restore CS0618
 #pragma warning restore CS0612 // Type or member is obsolete
