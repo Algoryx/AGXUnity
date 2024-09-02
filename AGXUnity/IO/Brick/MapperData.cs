@@ -1,3 +1,4 @@
+using AGXUnity.Model;
 using Brick;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,5 +27,7 @@ namespace AGXUnity.IO.BrickIO
     public List<ContactMaterial> ContactMaterials { get; } = new List<ContactMaterial>();
     public List<Mesh> CacheMappedMeshes { get; } = new List<Mesh>();
     public List<Material> CacheMappedMaterials { get; } = new List<Material>();
+    public List<TrackProperties> CacheMappedTrackProperties { get; } = new List<TrackProperties>();
+    public List<TrackInternalMergeProperties> CacheMappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
   }
 }

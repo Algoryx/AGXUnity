@@ -17,6 +17,11 @@ namespace AGXUnity.IO.BrickIO
       return new agx.Vec3f( (float)vec3.x() * scale, (float)vec3.y() * scale, (float)vec3.z() * scale );
     }
 
+    public static agx.Quat ToQuat( this Brick.Math.Quat quat )
+    {
+      return new agx.Quat( quat.x(), quat.y(), quat.z(), quat.w() );
+    }
+
     public static Vector3 ToVector3( this Brick.Math.Vec3 vec3, double scale = 1.0 )
     {
       return new Vector3( (float)( vec3.x() * scale ), (float)( vec3.y() * scale ), (float)( vec3.z() * scale ) );

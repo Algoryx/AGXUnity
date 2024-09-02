@@ -58,8 +58,14 @@ public class TrackMapper
         continue;
       }
 
-      var position = wheel.local_transform().position().ToHandedVector3();
-      var rotation = wheel.local_transform().rotation().ToHandedQuaternion();
+      var system_relative_transform = new agx.AffineMatrix4x4();
+      var to_center_axis_transform = new agx.AffineMatrix4x4();
+      to_center_axis_transform.setRotate( new agx.Quat( agx.Vec3.Y_AXIS(), wheel.local_center_axis().ToVec3() ) );
+      system_relative_transform.setTranslate( wheel.local_transform().position().ToVec3() );
+      system_relative_transform.setRotate( wheel.local_transform().rotation().ToQuat() );
+
+      var position = to_center_axis_transform.getTranslate().ToHandedVector3();
+      var rotation = to_center_axis_transform.getRotate().ToHandedQuaternion();
 
       TrackWheelModel? type = wheel switch
       {
@@ -98,92 +104,219 @@ public class TrackMapper
     track.Width = default_width;
     track.Thickness = default_height;
 
-    //// Internal merge properties
-    //auto merge_props = track->getInternalMergeProperties();
-    //// TODO: These should come from an AGX bundle not annotations
-    //auto model_decl = track_system->getType();
-    //auto enable_merge_annots = model_decl->findAnnotations("agx_set_enable_merge");
-    //if ( !enable_merge_annots.empty() ) {
-    //  for ( auto& annot : enable_merge_annots) {
-    //    if ( annot->isTrue() ) {
-    //      merge_props->setEnableMerge( true );
-    //      break;
-    //    }
-    //    if ( annot->isFalse() ) {
-    //      merge_props->setEnableMerge( false );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //auto contact_reduction_annots = model_decl->findAnnotations("agx_set_contact_reduction");
-    //if ( !contact_reduction_annots.empty() ) {
-    //  for ( auto& annot : contact_reduction_annots) {
-    //    if ( annot->isString( "NONE" ) ) {
-    //      merge_props->setContactReduction( agxVehicle::TrackInternalMergeProperties::ContactReduction::NONE );
-    //      break;
-    //    }
-    //    if ( annot->isString( "MINIMAL" ) ) {
-    //      merge_props->setContactReduction( agxVehicle::TrackInternalMergeProperties::ContactReduction::MINIMAL );
-    //      break;
-    //    }
-    //    if ( annot->isString( "MODERATE" ) ) {
-    //      merge_props->setContactReduction( agxVehicle::TrackInternalMergeProperties::ContactReduction::MODERATE );
-    //      break;
-    //    }
-    //    if ( annot->isString( "AGGRESSIVE" ) ) {
-    //      merge_props->setContactReduction( agxVehicle::TrackInternalMergeProperties::ContactReduction::AGGRESSIVE );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //auto enable_lock_to_reach_mc_annots = model_decl->findAnnotations("agx_set_enable_lock_to_reach_merge_condition");
-    //if ( !enable_lock_to_reach_mc_annots.empty() ) {
-    //  for ( auto& annot : enable_lock_to_reach_mc_annots) {
-    //    if ( annot->isTrue() ) {
-    //      merge_props->setEnableLockToReachMergeCondition( true );
-    //      break;
-    //    }
-    //    if ( annot->isFalse() ) {
-    //      merge_props->setEnableLockToReachMergeCondition( false );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //auto set_lock_to_reach_mc_compliance_annots = model_decl->findAnnotations("agx_set_lock_to_reach_merge_condition_compliance");
-    //if ( !set_lock_to_reach_mc_compliance_annots.empty() ) {
-    //  for ( auto& annot : set_lock_to_reach_mc_compliance_annots) {
-    //    if ( annot->isNumber() ) {
-    //      merge_props->setLockToReachMergeConditionCompliance( annot->asReal() );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //auto set_lock_to_reach_mc_damping_annots = model_decl->findAnnotations("agx_set_lock_to_reach_merge_condition_damping");
-    //if ( !set_lock_to_reach_mc_damping_annots.empty() ) {
-    //  for ( auto& annot : set_lock_to_reach_mc_damping_annots) {
-    //    if ( annot->isNumber() ) {
-    //      merge_props->setLockToReachMergeConditionDamping( annot->asReal() );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //auto set_num_nodes_per_ms_annots = model_decl->findAnnotations("agx_set_num_nodes_per_merge_segment");
-    //if ( !set_num_nodes_per_ms_annots.empty() ) {
-    //  for ( auto& annot : set_num_nodes_per_ms_annots) {
-    //    if ( annot->isNumber() ) {
-    //      merge_props->setNumNodesPerMergeSegment( static_cast<agx::UInt>( annot->asReal() ) );
-    //      break;
-    //    }
-    //  }
-    //}
-
-    //return track;
+    MapInternalMergeProperties( system, track );
+    MapTrackProperties( system, track );
 
     return;
+  }
+
+  private void MapInternalMergeProperties( Tracks.System track_system, Track track )
+  {
+    //var merge_props = track.getInternalMergeProperties();
+    var merge_props = ScriptableObject.CreateInstance<TrackInternalMergeProperties>();
+
+    var enable_merge_annots = track_system.findAnnotations("agx_set_enable_merge");
+    if ( enable_merge_annots.Count != 0 ) {
+      foreach ( var annot in enable_merge_annots ) {
+        if ( annot.isTrue() ) {
+          merge_props.MergeEnabled = true;
+          break;
+        }
+        if ( annot.isFalse() ) {
+          merge_props.MergeEnabled = false;
+          break;
+        }
+      }
+    }
+
+    var contact_reduction_annots = track_system.findAnnotations("agx_set_contact_reduction");
+    if ( contact_reduction_annots.Count != 0 ) {
+      foreach ( var annot in contact_reduction_annots ) {
+        if ( annot.isString( "NONE" ) ) {
+          merge_props.ContactReduction = TrackInternalMergeProperties.ContactReductionMode.None;
+          break;
+        }
+        if ( annot.isString( "MINIMAL" ) ) {
+          merge_props.ContactReduction = TrackInternalMergeProperties.ContactReductionMode.Minimal;
+          break;
+        }
+        if ( annot.isString( "MODERATE" ) ) {
+          merge_props.ContactReduction = TrackInternalMergeProperties.ContactReductionMode.Moderate;
+          break;
+        }
+        if ( annot.isString( "AGGRESSIVE" ) ) {
+          merge_props.ContactReduction = TrackInternalMergeProperties.ContactReductionMode.Aggressive;
+          break;
+        }
+      }
+    }
+
+    var enable_lock_to_reach_mc_annots = track_system.findAnnotations("agx_set_enable_lock_to_reach_merge_condition");
+    if ( enable_lock_to_reach_mc_annots.Count != 0 ) {
+      foreach ( var annot in enable_lock_to_reach_mc_annots ) {
+        if ( annot.isTrue() ) {
+          merge_props.LockToReachMergeConditionEnabled = true;
+          break;
+        }
+        if ( annot.isFalse() ) {
+          merge_props.LockToReachMergeConditionEnabled = false;
+          break;
+        }
+      }
+    }
+
+    var set_lock_to_reach_mc_compliance_annots = track_system.findAnnotations("agx_set_lock_to_reach_merge_condition_compliance");
+    if ( set_lock_to_reach_mc_compliance_annots.Count != 0 ) {
+      foreach ( var annot in set_lock_to_reach_mc_compliance_annots ) {
+        if ( annot.isNumber() ) {
+          merge_props.LockToReachMergeConditionCompliance = (float)annot.asReal();
+          break;
+        }
+      }
+    }
+
+    var set_lock_to_reach_mc_relaxation_time = track_system.findAnnotations("agx_set_lock_to_reach_merge_condition_relaxation_time");
+    if ( set_lock_to_reach_mc_relaxation_time.Count != 0 ) {
+      foreach ( var annot in set_lock_to_reach_mc_relaxation_time ) {
+        if ( annot.isNumber() ) {
+          merge_props.LockToReachMergeConditionDamping =(float)annot.asReal();
+          break;
+        }
+      }
+    }
+
+    var set_num_nodes_per_ms_annots = track_system.findAnnotations("agx_set_num_nodes_per_merge_segment");
+    if ( set_num_nodes_per_ms_annots.Count != 0 ) {
+      foreach ( var annot in set_num_nodes_per_ms_annots ) {
+        if ( annot.isNumber() ) {
+          merge_props.NumNodesPerMergeSegment = (int)annot.asReal();
+          break;
+        }
+      }
+    }
+
+    var set_max_angle_merge_condition = track_system.findAnnotations("agx_set_max_angle_merge_condition");
+    if(set_max_angle_merge_condition.Count != 0 ) {
+      foreach(var annot in set_max_angle_merge_condition ) {
+        if ( annot.isNumber() ) {
+          merge_props.MaxAngleMergeCondition = (float)annot.asReal();
+          break;
+        }
+      }
+    }
+
+    merge_props.name = track_system.getName();
+    track.InternalMergeProperties = merge_props;
+    Data.CacheMappedTrackInternalMergeProperties.Add( merge_props );
+  }
+
+  private void MapTrackProperties( Tracks.System track_system, Track track )
+  {
+    //var track_props = track.getProperties();
+    var track_props = ScriptableObject.CreateInstance<TrackProperties>();
+
+    var node_wheel_overlap_annots = track_system.findAnnotations("agx_track_node_wheel_overlap");
+    if ( node_wheel_overlap_annots.Count != 0 ) {
+      if ( node_wheel_overlap_annots[ 0 ].isNumber() ) {
+        track_props.TransformNodesToWheelsOverlap = (float)node_wheel_overlap_annots[ 0 ].asReal();
+      }
+    }
+
+    var track_on_initialize_merge_nodes_to_wheels = track_system.findAnnotations("agx_track_on_initialize_merge_nodes_to_wheels");
+    if ( track_on_initialize_merge_nodes_to_wheels.Count != 0 ) {
+      foreach ( var annot in track_on_initialize_merge_nodes_to_wheels ) {
+        if ( annot.isTrue() ) {
+          track_props.OnInitializeMergeNodesToWheelsEnabled = true;
+          break;
+        }
+        if ( annot.isFalse() ) {
+          track_props.OnInitializeMergeNodesToWheelsEnabled = false;
+          break;
+        }
+      }
+    }
+
+    var track_on_initialize_transform_nodes_to_wheels = track_system.findAnnotations("agx_track_on_initialize_transform_nodes_to_wheels");
+    if ( track_on_initialize_transform_nodes_to_wheels.Count != 0 ) {
+      foreach ( var annot in track_on_initialize_transform_nodes_to_wheels ) {
+        if ( annot.isTrue() ) {
+          track_props.OnInitializeTransformNodesToWheelsEnabled = true;
+          break;
+        }
+        if ( annot.isFalse() ) {
+          track_props.OnInitializeTransformNodesToWheelsEnabled = false;
+          break;
+        }
+      }
+    }
+
+    var track_hinge_range_lower_annots = track_system.findAnnotations("agx_track_hinge_range_lower");
+    var track_hinge_range_upper_annots = track_system.findAnnotations("agx_track_hinge_range_upper");
+    if ( track_hinge_range_lower_annots.Count != 0 || track_hinge_range_upper_annots.Count != 0 ) {
+      track_props.HingeRangeEnabled = true;
+      double min = -Mathf.Infinity;
+      double max = Mathf.Infinity;
+      if ( track_hinge_range_lower_annots[ 0 ].isNumber() ) {
+        min = track_hinge_range_lower_annots[ 0 ].asReal() * 180.0/Mathf.PI;
+      }
+      if ( track_hinge_range_upper_annots[ 0 ].isNumber() ) {
+        max = track_hinge_range_upper_annots[ 0 ].asReal() * 180.0/Mathf.PI;
+      }
+      track_props.HingeRangeRange = new AGXUnity.RangeReal( (float)min, (float)max );
+    }
+
+    var track_hinge_compliance_annots = track_system.findAnnotations("agx_track_hinge_compliance");
+    if ( track_hinge_compliance_annots.Count != 0 ) {
+      if ( track_hinge_compliance_annots[ 0 ].isNumber() ) {
+        track_props.HingeComplianceRotational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+        track_props.HingeComplianceTranslational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+      }
+    }
+
+    var track_hinge_relaxation_time = track_system.findAnnotations("agx_track_hinge_relaxation_time");
+    if ( track_hinge_relaxation_time.Count != 0 ) {
+      if ( track_hinge_relaxation_time[ 0 ].isNumber() ) {
+        track_props.HingeDampingRotational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+        track_props.HingeDampingTranslational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+      }
+    }
+
+    var track_stabilizing_friction_parameter = track_system.findAnnotations("agx_track_stabilizing_friction_parameter");
+    if ( track_stabilizing_friction_parameter.Count != 0 ) {
+      if ( track_stabilizing_friction_parameter[ 0 ].isNumber() ) {
+        track_props.StabilizingHingeFrictionParameter = (float)track_stabilizing_friction_parameter[ 0 ].asReal();
+      }
+    }
+
+    var track_min_stabilizing_normal_force = track_system.findAnnotations("agx_track_min_stabilizing_normal_force");
+    if ( track_min_stabilizing_normal_force.Count != 0 ) {
+      if ( track_min_stabilizing_normal_force[ 0 ].isNumber() ) {
+        track_props.MinStabilizingHingeNormalForce = (float)track_min_stabilizing_normal_force[ 0 ].asReal();
+      }
+    }
+
+    var track_node_wheel_merge_threshold = track_system.findAnnotations("agx_track_node_wheel_merge_threshold");
+    if ( track_node_wheel_merge_threshold.Count != 0 ) {
+      if ( track_node_wheel_merge_threshold[ 0 ].isNumber() ) {
+        track_props.NodesToWheelsMergeThreshold = (float)track_node_wheel_merge_threshold[ 0 ].asReal();
+      }
+    }
+    var track_node_wheel_split_threshold = track_system.findAnnotations("agx_track_node_wheel_split_threshold");
+    if ( track_node_wheel_split_threshold.Count != 0 ) {
+      if ( track_node_wheel_split_threshold[ 0 ].isNumber() ) {
+        track_props.NodesToWheelsSplitThreshold = (float)track_node_wheel_split_threshold[ 0 ].asReal();
+      }
+    }
+
+    var track_num_nodes_in_average_direction = track_system.findAnnotations("agx_track_num_nodes_in_average_direction");
+    if ( track_num_nodes_in_average_direction.Count != 0 ) {
+      if ( track_num_nodes_in_average_direction[ 0 ].isNumber() ) {
+        track_props.NumNodesIncludedInAverageDirection = (int)track_num_nodes_in_average_direction[ 0 ].asReal();
+      }
+    }
+
+    track_props.name = track_system.getName();
+    track.Properties = track_props;
+    Data.CacheMappedTrackProperties.Add( track_props );
   }
 }

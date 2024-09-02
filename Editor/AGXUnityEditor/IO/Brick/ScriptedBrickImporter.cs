@@ -73,6 +73,10 @@ namespace AGXUnityEditor.IO.BrickIO
           ctx.AddObjectToAsset( mat.name, mat );
       foreach ( var mat in data.ContactMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
+      foreach ( var props in data.CacheMappedTrackProperties)
+        ctx.AddObjectToAsset ( props.name, props );
+      foreach (var props in data.CacheMappedTrackInternalMergeProperties)
+        ctx.AddObjectToAsset( props.name, props );
     }
 
     public void ReportErrors( Brick.Error error )

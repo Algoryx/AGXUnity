@@ -621,8 +621,10 @@ namespace AGXUnity.IO.BrickIO
 
       // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
-      foreach ( var body in system.getValues<Bodies.RigidBody>() )
-        Utils.AddChild( s, MapBody( body ), Data.ErrorReporter, body );
+      foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
+        if ( !Data.BodyCache.ContainsKey( body ) )
+          Utils.AddChild( s, MapBody( body ), Data.ErrorReporter, body );
+      }
 
       // TODO: Map terrains
     }

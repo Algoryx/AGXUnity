@@ -56,6 +56,9 @@ namespace AGXUnity.IO.BrickIO
 
     public void MapMateConnectorInitial( Brick.Physics3D.Charges.MateConnector mc, GameObject parent )
     {
+      if ( Data.MateConnectorCache.ContainsKey( mc ) )
+        return;
+
       var mcObject = BrickObject.CreateGameObject( mc.getName() );
       Brick.Core.Object owner = mc.getOwner();
       if ( mc is Charges.RedirectedMateConnector redirected )
