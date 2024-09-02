@@ -58,39 +58,47 @@ namespace AGXUnityEditor.IO.BrickIO
     {
       var ve = new VisualElement();
       ve.SetPadding( 10, 0, 0, 0 );
-      ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
-      ve.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
-      ve.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
-      if ( ScriptedBrickImporter.Errors.Count > 0 ) {
-        ve.Add( new Label() { text = $"<b>Errors ({ScriptedBrickImporter.Errors.Count})</b>" } );
-        var errors = new VisualElement();
-        errors.SetMargin( 5, 0, 0, 0 );
-        errors.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
-        errors.SetBorderRadius( 5 );
-        errors.SetPadding( 5 );
-        foreach ( var error in ScriptedBrickImporter.Errors )
-          errors.Add( TableRowUI( error ) );
-        ve.Add( errors );
-      } else {
-        ve.Add( new Label() { text = "<b>Import statistics:</b>" } );
-        var statistics = new VisualElement();
-        statistics.SetPadding( 0, 0, 0, 10 );
-        statistics.Add( new Label() { text = $"- Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
-        var assets = AssetDatabase.LoadAllAssetsAtPath(ScriptedBrickImporter.assetPath);
-        statistics.Add( new Label() { text = $"- Imported meshes: {assets.Count( a => a is Mesh )}" } );
-        statistics.Add( new Label() { text = $"- Imported visual materials: {assets.Count( a => a is Material)}" } );
-        statistics.Add( new Label() { text = $"- Imported shape materials: {assets.Count( a => a is ShapeMaterial )}" } );
-        statistics.Add( new Label() { text = $"- Imported Contact materials: {assets.Count( a => a is ContactMaterial)}" } );
-        ve.Add( statistics );
+      ve.Add( new PropertyField( serializedObject.FindProperty( "SkipImport" ) ) );
+      var skipImport = serializedObject.FindProperty( "SkipImport" ).boolValue;
+      var skipContainer = new VisualElement();
+      skipContainer.SetEnabled( !skipImport );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
+      if ( !skipImport ) {
+
+        if ( ScriptedBrickImporter.Errors.Count > 0 ) {
+          skipContainer.Add( new Label() { text = $"<b>Errors ({ScriptedBrickImporter.Errors.Count})</b>" } );
+          var errors = new VisualElement();
+          errors.SetMargin( 5, 0, 0, 0 );
+          errors.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
+          errors.SetBorderRadius( 5 );
+          errors.SetPadding( 5 );
+          foreach ( var error in ScriptedBrickImporter.Errors )
+            errors.Add( TableRowUI( error ) );
+          skipContainer.Add( errors );
+        }
+        else {
+          skipContainer.Add( new Label() { text = "<b>Import statistics:</b>" } );
+          var statistics = new VisualElement();
+          statistics.SetPadding( 0, 0, 0, 10 );
+          statistics.Add( new Label() { text = $"- Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
+          var assets = AssetDatabase.LoadAllAssetsAtPath(ScriptedBrickImporter.assetPath);
+          statistics.Add( new Label() { text = $"- Imported meshes: {assets.Count( a => a is Mesh )}" } );
+          statistics.Add( new Label() { text = $"- Imported visual materials: {assets.Count( a => a is Material )}" } );
+          statistics.Add( new Label() { text = $"- Imported shape materials: {assets.Count( a => a is ShapeMaterial )}" } );
+          statistics.Add( new Label() { text = $"- Imported Contact materials: {assets.Count( a => a is ContactMaterial )}" } );
+          skipContainer.Add( statistics );
+        }
       }
       var deps = BrickImporter.FindDependencies(ScriptedBrickImporter.assetPath);
       if ( deps.Length > 0 ) {
-        ve.Add( new Label() { text = $"<b>Dependencies ({deps.Length})</b>" } );
+        skipContainer.Add( new Label() { text = $"<b>Dependencies ({deps.Length})</b>" } );
         foreach ( var dep in deps ) {
-          ve.Add( new Label() { text = dep } );
+          skipContainer.Add( new Label() { text = dep } );
         }
       }
-      ve.Add( new Label() { text = $"Model was imported in {ScriptedBrickImporter.ImportTime:F2}s" } );
+      ve.Add( skipContainer );
       ve.Add( new IMGUIContainer( () => base.ApplyRevertGUI() ) );
       return ve;
     }

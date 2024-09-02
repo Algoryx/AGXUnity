@@ -25,8 +25,9 @@ namespace AGXUnityEditor.IO.BrickIO
     public List<Error> Errors;
 
     [field: SerializeField]
-    public float ImportTime { get; set; }
+    public float ImportTime { get; private set; }
 
+    public bool SkipImport = false;
     public bool HideImportedMeshes = true;
     public bool HideImportedVisualMaterials = false;
     public bool IgnoreDisabledMeshes = false;
@@ -34,13 +35,18 @@ namespace AGXUnityEditor.IO.BrickIO
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
+      ImportTime = 0;
       var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( "Assets/Brick/brick-icon.png" );
+
+      if ( SkipImport ) {
+        ctx.AddObjectToAsset( "Root", new GameObject(), icon );
+        return;
+      }
+
 
       // TODO: Add support for dependecy-based reimport
       //foreach ( var dep in dependencies )
       //  ctx.DependsOnSourceAsset( dep );
-
-      ImportTime = 0;
 
       // TODO: Investigate why selecting config.brick files in the project view crashes unity
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
@@ -54,10 +60,10 @@ namespace AGXUnityEditor.IO.BrickIO
       
       var go = importer.ImportBrickFile( ctx.assetPath );
       var end = DateTime.Now;
-      ImportTime = (float)( end - start ).TotalSeconds;
 
       ctx.AddObjectToAsset( "Root", go, icon );
       ctx.SetMainObject( go );
+      ImportTime = (float)( end - start ).TotalSeconds;
     }
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
