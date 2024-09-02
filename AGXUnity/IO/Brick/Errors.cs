@@ -9,6 +9,7 @@ namespace AGXUnity.IO.BrickIO
     DuplicateMaterialPairForSurfaceContactModelDefinition = 5,
     InvalidDefomationType = 6,
     UnsupportedFrictionModel = 7,
+    RigidBodyOwnerNotSystem = 8,
   }
   public class UnityBrickErrorFormatter : Brick.ErrorFormatter
   {
@@ -27,6 +28,7 @@ namespace AGXUnity.IO.BrickIO
         (ulong)AgxUnityBrickErrors.DuplicateMaterialPairForSurfaceContactModelDefinition => formatMessage( "The specified material pair appears in more than one SurfaceContact.Model definition", error ),
         (ulong)AgxUnityBrickErrors.InvalidDefomationType => formatMessage( "AGXUnity does not support the specified deformation type", error ),
         (ulong)AgxUnityBrickErrors.UnsupportedFrictionModel => formatMessage( "AGXUnity only supports dry friction", error ),
+        (ulong)AgxUnityBrickErrors.RigidBodyOwnerNotSystem => formatMessage( "RigidBody must be owned by a Physics3D.System", error ),
         _ => base.format( error )
       };
     }
