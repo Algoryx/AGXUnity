@@ -507,6 +507,20 @@ namespace AGXUnity.IO.BrickIO
       return sm;
     }
 
+    GameObject MapKinematicLock( Brick.Physics.KinematicLock kinematicLock )
+    {
+      var lockObject = BrickObject.CreateGameObject( kinematicLock.getName() );
+      var lockComponent = lockObject.AddComponent<KinematicLock>();
+
+      foreach(var body in kinematicLock.bodies() ) {
+        Debug.Log( body.getName() );
+        var rb = Data.BodyCache[ body ];
+        lockComponent.Add( rb );
+      }
+
+      return lockObject;
+    }
+
     void MapShovel( Brick.Terrain.Shovel shovel )
     {
       var body = Data.BodyCache[shovel.body()];
@@ -660,6 +674,9 @@ namespace AGXUnity.IO.BrickIO
 
       foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
         MapSystemPass4( subSystem );
+
+      foreach ( var kinematicLock in system.getValues<Brick.Physics.KinematicLock>() )
+        Utils.AddChild(s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock);
 
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
         if ( !Utils.IsRuntimeMapped( interaction ) )
