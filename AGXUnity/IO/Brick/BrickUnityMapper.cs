@@ -513,7 +513,6 @@ namespace AGXUnity.IO.BrickIO
       var lockComponent = lockObject.AddComponent<KinematicLock>();
 
       foreach(var body in kinematicLock.bodies() ) {
-        Debug.Log( body.getName() );
         var rb = Data.BodyCache[ body ];
         lockComponent.Add( rb );
       }
