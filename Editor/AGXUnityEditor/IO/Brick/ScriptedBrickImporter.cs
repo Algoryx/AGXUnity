@@ -16,6 +16,7 @@ namespace AGXUnityEditor.IO.BrickIO
     public struct Error
     {
       public string message;
+      public string document;
       public string Location => $"{line}:{column}";
       public int line;
       public int column;
@@ -91,6 +92,7 @@ namespace AGXUnityEditor.IO.BrickIO
       Errors.Add( new Error
       {
         message = new string( ef.format( error ).SkipWhile( c => c != ' ' ).Skip( 1 ).ToArray() ),
+        document = error.getSourceId(),
         line    = (int)error.getLine(),
         column  = (int)error.getColumn()
       } );

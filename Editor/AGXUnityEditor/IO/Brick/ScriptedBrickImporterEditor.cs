@@ -19,7 +19,7 @@ namespace AGXUnityEditor.IO.BrickIO
     {
       var row = new VisualElement();
       row.SetPadding( 3, 3, 3, 0 );
-      row.RegisterCallback<MouseDownEvent>( mde => IO.Utils.OpenFile( ScriptedBrickImporter, err.line, err.column ) );
+      row.RegisterCallback<MouseDownEvent>( mde => IO.Utils.OpenFile( err.document, err.line, err.column ) );
 
       var flex = new VisualElement();
       flex.style.flexDirection = FlexDirection.Row;

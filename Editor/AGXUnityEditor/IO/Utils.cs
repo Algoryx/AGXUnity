@@ -366,18 +366,17 @@ namespace AGXUnityEditor.IO
     }
 #endif
 
-    public static void OpenFile( UnityEngine.Object obj, int line, int column = 0 )
+    public static void OpenFile( string path, int line, int column = 0 )
     {
       // Something in the implementation of AssetDatabase.OpenAsset does not properly pass the line and column numbers 
       // to VSCode when using it as the external text editor. This is a workaround which checks if the default program 
       // is VSCode and opens it manually if that is the case.
 #if UNITY_EDITOR_WIN
-      var path = AssetDatabase.GetAssetPath( obj );
       var fullPath = System.IO.Path.GetFullPath( path );
       try {
         var extension = System.IO.Path.GetExtension( fullPath );
         var assoc = AssocQueryString( AssocStr.Executable, extension );
-        if ( assoc.EndsWith( "code.exe" ) ) {
+        if ( assoc.ToLower().EndsWith( "code.exe" ) ) {
           using System.Diagnostics.Process fileopener = new System.Diagnostics.Process();
           fileopener.StartInfo.FileName = assoc;
           fileopener.StartInfo.Arguments = "-g \"" + fullPath.Replace( "\\", "/" ) + "\":" + line + ":" + column;
@@ -389,7 +388,7 @@ namespace AGXUnityEditor.IO
       }
       catch ( System.Exception ) { }
 #endif
-      AssetDatabase.OpenAsset( obj, line );
+      UnityEditorInternal.InternalEditorUtility.OpenFileAtLineExternal( path, line, column );
     }
   }
 }
