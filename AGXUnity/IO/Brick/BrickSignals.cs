@@ -112,26 +112,27 @@ namespace AGXUnity.IO.BrickIO
             else
               Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
           }
-          else if ( target is Signals.TorqueMotorTorqueInput tmti ) {
-            var hinge = Root.FindMappedObject(tmti.motor().getName());
-            var motor = hinge.GetComponent<TargetSpeedController>();
-            var torque = Mathf.Clamp((float)realSig.value(),(float)tmti.motor().min_effort(),(float)tmti.motor().max_effort());
-            motor.ForceRange = new RangeReal( torque, torque );
-          }
-          else if ( target is Signals.ForceMotorForceInput fmfi ) {
-            var prismatic = Root.FindMappedObject(fmfi.motor().getName());
-            var motor = prismatic.GetComponent<TargetSpeedController>();
-            var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
-            motor.ForceRange = new RangeReal( torque, torque );
-          }
-          else if ( target is Brick.DriveTrain.Signals.CombustionEngineThrottleInput ceti ) {
-            var engine = Root.FindRuntimeMappedObject( ceti.combustion_engine().getName() );
-            if ( engine is agxDriveTrain.CombustionEngine ce ) {
-              ce.setThrottle( realSig.value() );
-            }
-            else
-              Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ceti.combustion_engine().getName()}'" );
-          }
+          //else if ( target is Torque1DInput t1di ) {
+          //  var source = t1di.source();
+          //  var hinge = Root.FindMappedObject(t1di.source().getName());
+          //  var motor = hinge.GetComponent<TargetSpeedController>();
+          //  var torque = Mathf.Clamp((float)realSig.value(),(float)tmti.motor().min_effort(),(float)tmti.motor().max_effort());
+          //  motor.ForceRange = new RangeReal( torque, torque );
+          //}
+          //else if ( target is Signals.ForceMotorForceInput fmfi ) {
+          //  var prismatic = Root.FindMappedObject(fmfi.motor().getName());
+          //  var motor = prismatic.GetComponent<TargetSpeedController>();
+          //  var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
+          //  motor.ForceRange = new RangeReal( torque, torque );
+          //}
+          //else if ( target is Brick.DriveTrain.Signals.CombustionEngineThrottleInput ceti ) {
+          //  var engine = Root.FindRuntimeMappedObject( ceti.combustion_engine().getName() );
+          //  if ( engine is agxDriveTrain.CombustionEngine ce ) {
+          //    ce.setThrottle( realSig.value() );
+          //  }
+          //  else
+          //    Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ceti.combustion_engine().getName()}'" );
+          //}
           else {
             Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
           }
@@ -147,46 +148,46 @@ namespace AGXUnity.IO.BrickIO
         if ( output is Signals.HingeAngleOutput hao ) {
           var hinge = Root.FindMappedObject( hao.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          signal = ValueOutputSignal.fromAngle( constraint.GetCurrentAngle(), hao );
+          signal = ValueOutputSignal.from_angle( constraint.GetCurrentAngle(), hao );
         }
         else if ( output is Signals.HingeAngularVelocityOutput havo ) {
           var hinge = Root.FindMappedObject( havo.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
-          signal = ValueOutputSignal.fromAngularVelocity( constraint.GetCurrentSpeed(), havo );
+          signal = ValueOutputSignal.from_angular_velocity_1d( constraint.GetCurrentSpeed(), havo );
         }
         else if ( output is Signals.PrismaticPositionOutput ppo ) {
           var prismatic = Root.FindMappedObject( ppo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          signal = ValueOutputSignal.fromDistance( constraint.GetCurrentAngle(), ppo );
+          signal = ValueOutputSignal.from_distance( constraint.GetCurrentAngle(), ppo );
         }
         else if ( output is Signals.PrismaticVelocityOutput pvo ) {
           var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
           var constraint = prismatic.GetComponent<Constraint>();
-          signal = ValueOutputSignal.fromVelocity1D( constraint.GetCurrentSpeed(), pvo );
+          signal = ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), pvo );
         }
         else if ( output is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var pos = rb.Native.getPosition();
-          signal = ValueOutputSignal.fromPosition3D( pos.ToBrickVec3(), rbpo );
+          signal = ValueOutputSignal.from_position_3d( pos.ToBrickVec3(), rbpo );
         }
         else if ( output is Signals.RigidBodyVelocityOutput rbvo ) {
           var go = Root.FindMappedObject(rbvo.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var vel = rb.LinearVelocity.ToLeftHanded();
-          signal = ValueOutputSignal.fromVelocity3D( vel.ToBrickVec3(), rbvo );
+          signal = ValueOutputSignal.from_velocity_3d( vel.ToBrickVec3(), rbvo );
         }
         else if ( output is Signals.RigidBodyRPYOutput rbrpy ) {
           var go = Root.FindMappedObject(rbrpy.rigid_body().getName());
           var rb = go.GetComponent<RigidBody>();
           var vel = rb.Native.getRotation().getAsEulerAngles();
-          signal = ValueOutputSignal.fromRPY( vel.ToBrickVec3(), rbrpy );
+          signal = ValueOutputSignal.from_rpy( vel.ToBrickVec3(), rbrpy );
         }
         else if ( output is Brick.Physics1D.Signals.RotationalBodyAngularVelocityOutput rbavo ) {
           if ( Root.FindRuntimeMappedObject( rbavo.body().getName() ) is not agxPowerLine.Unit rotBod || rotBod.asRotationalUnit() == null )
             Debug.LogError( $"{rbavo.body().getName()} was not mapped to a powerline unit" );
           else
-            signal = ValueOutputSignal.fromAngularVelocity( rotBod.asRotationalUnit().getAngularVelocity(), rbavo );
+            signal = ValueOutputSignal.from_angular_velocity_1d( rotBod.asRotationalUnit().getAngularVelocity(), rbavo );
         }
         else {
           Debug.LogWarning( $"Unhandled output type {output.getType().getName()}" );

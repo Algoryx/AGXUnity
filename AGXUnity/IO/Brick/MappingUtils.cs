@@ -39,12 +39,12 @@ namespace AGXUnity.IO.BrickIO
 
     public static Brick.Math.Vec3 ToBrickVec3( this agx.Vec3 vec3 )
     {
-      return Brick.Math.Vec3.fromXYZ( vec3.x, vec3.y, vec3.z );
+      return Brick.Math.Vec3.from_xyz( vec3.x, vec3.y, vec3.z );
     }
 
     public static Brick.Math.Vec3 ToBrickVec3( this Vector3 vec3 )
     {
-      return Brick.Math.Vec3.fromXYZ( vec3.x, vec3.y, vec3.z );
+      return Brick.Math.Vec3.from_xyz( vec3.x, vec3.y, vec3.z );
     }
   }
   public static class Utils

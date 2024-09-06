@@ -78,10 +78,10 @@ namespace AGXUnity.IO.BrickIO
 
       // TODO: Error reporting
 
-      var rotation = Brick.Math.Quat.fromTo(Brick.Math.Vec3.Z_AXIS(), main_axis_n);
+      var rotation = Brick.Math.Quat.from_to(Brick.Math.Vec3.Z_AXIS(), main_axis_n);
       var new_x = rotation.rotate(Brick.Math.Vec3.X_AXIS());
-      var angle = Brick.Math.Vec3.angleBetweenVectors(new_x,normal_n,main_axis_n);
-      var rotation_2 = Brick.Math.Quat.angleAxis(angle,main_axis_n);
+      var angle = Brick.Math.Vec3.angle_between_vectors(new_x,normal_n,main_axis_n);
+      var rotation_2 = Brick.Math.Quat.angle_axis(angle,main_axis_n);
       mcObject.transform.localRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
 
       Data.MateConnectorCache[ mc ] = mcObject;
