@@ -1,4 +1,5 @@
 using AGXUnity.Utils;
+using Brick.DriveTrain;
 using Brick.Physics.Signals;
 using System;
 using System.Collections.Generic;
@@ -112,27 +113,42 @@ namespace AGXUnity.IO.BrickIO
             else
               Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
           }
-          //else if ( target is Torque1DInput t1di ) {
-          //  var source = t1di.source();
-          //  var hinge = Root.FindMappedObject(t1di.source().getName());
-          //  var motor = hinge.GetComponent<TargetSpeedController>();
-          //  var torque = Mathf.Clamp((float)realSig.value(),(float)tmti.motor().min_effort(),(float)tmti.motor().max_effort());
-          //  motor.ForceRange = new RangeReal( torque, torque );
-          //}
-          //else if ( target is Signals.ForceMotorForceInput fmfi ) {
-          //  var prismatic = Root.FindMappedObject(fmfi.motor().getName());
-          //  var motor = prismatic.GetComponent<TargetSpeedController>();
-          //  var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
-          //  motor.ForceRange = new RangeReal( torque, torque );
-          //}
-          //else if ( target is Brick.DriveTrain.Signals.CombustionEngineThrottleInput ceti ) {
-          //  var engine = Root.FindRuntimeMappedObject( ceti.combustion_engine().getName() );
-          //  if ( engine is agxDriveTrain.CombustionEngine ce ) {
-          //    ce.setThrottle( realSig.value() );
-          //  }
-          //  else
-          //    Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ceti.combustion_engine().getName()}'" );
-          //}
+          else if ( target is Torque1DInput t1di ) {
+            var source = t1di.source();
+            if ( source is Brick.Physics3D.Interactions.TorqueMotor tm ) {
+              var hinge = Root.FindMappedObject(tm.getName());
+              var motor = hinge.GetComponent<TargetSpeedController>();
+              var torque = Mathf.Clamp((float)realSig.value(),(float)tm.min_effort(),(float)tm.max_effort());
+              motor.ForceRange = new RangeReal( torque, torque );
+            }
+            else if ( source is TorqueMotor tm_dt ) {
+              foreach ( var charge in tm_dt.charges() ) {
+                var unit = (agxPowerLine.Unit)Root.FindRuntimeMappedObject(charge.getOwner().getName());
+                var rot_unit = unit.asRotationalUnit();
+                if ( rot_unit != null ) {
+                  var torque = Mathf.Clamp((float)realSig.value(),(float)tm_dt.min_effort(),(float)tm_dt.max_effort());
+                  rot_unit.getRotationalDimension().addLoad( torque );
+                }
+              }
+            }
+          }
+          else if ( target is Signals.ForceMotorForceInput fmfi ) {
+            var prismatic = Root.FindMappedObject(fmfi.motor().getName());
+            var motor = prismatic.GetComponent<TargetSpeedController>();
+            var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
+            motor.ForceRange = new RangeReal( torque, torque );
+          }
+          else if ( target is FractionInput fi ) {
+            var source = fi.source();
+            if(source is CombustionEngine ce ) {
+              var engine = Root.FindRuntimeMappedObject( ce.getName() );
+              if ( engine is agxDriveTrain.CombustionEngine mappedCe ) {
+                mappedCe.setThrottle( realSig.value() );
+              }
+              else
+                Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ce.getName()}'" );
+            }
+          }
           else {
             Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
           }
