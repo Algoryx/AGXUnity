@@ -65,8 +65,8 @@ namespace AGXUnity.IO.BrickIO
     {
       var member = obj.getOwner().getType().findFirstMember(obj.getName().Substring(obj.getName().LastIndexOf('.') + 1));
       var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
-      // TODO: Add source Id in error reporting
-      err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, "" ) );
+      var sourceID = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument().getSourceId() : member.asVarAssignment().getOwningDocument().getSourceId();
+      err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, sourceID ) );
     }
 
     public static T? ReportUnimplementedS<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
