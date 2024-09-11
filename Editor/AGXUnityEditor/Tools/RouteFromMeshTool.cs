@@ -287,7 +287,7 @@ namespace AGXUnityEditor.Tools
       : base(isSingleInstanceTool: true)
     {
       Route = parentRoute;
-      var cableObject = Route.gameObject.transform.parent == null ? Route.gameObject : Route.gameObject.transform.parent.gameObject;
+      var cableObject = Route.gameObject;
       HandleSelectedObject(cableObject);
     }
 
@@ -312,9 +312,8 @@ namespace AGXUnityEditor.Tools
         else if (Event.current.control)
         {
           DrawRoutePreview(sceneView, jointColor: Color.green, jointClickableHandle: jIdx => m_skeletoniser.isUpscalePossible(jIdx), unclickableColor: normalColor, onJointClickCallback: j =>
-          {
-            var furthestJoints = j.adjJoints.Select(idx => Skeleton.joints[(int)idx]).OrderBy(j => -j.position.distance(j.position)).Take(2).ToList();
-            if (m_skeletoniser.upscaleVertex(j.skeletoniserIndex, furthestJoints[0].skeletoniserIndex, furthestJoints[furthestJoints.Count - 1].skeletoniserIndex))
+          {            
+            if (m_skeletoniser.upscaleJoint(j.skeletoniserIndex))
             {
               UserHasEdited = true;
               UpdateSkeleton();
@@ -388,8 +387,7 @@ namespace AGXUnityEditor.Tools
       uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:", toolTip: "The current number of nodes in the skeleton. This value can be increased to attempt an automatic upscaling to that number of joints."), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
       if (newNumNodes > Skeleton?.joints.Count)
       {
-        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);
-        m_skeletoniser.consolidateSkeleton();
+        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);        
         UserHasEdited = true;
         UpdateSkeleton();
       }
@@ -465,11 +463,13 @@ namespace AGXUnityEditor.Tools
     {
       var specialNodes = Route.Where(n =>
       {
+        if (n.Parent != m_selectedParent)
+          return true;
         if (n is WireRouteNode)
           return (n as WireRouteNode).Type != AGXUnity.Wire.NodeType.FreeNode;
-        else if (n is CableRouteNode)
+        if (n is CableRouteNode)
           return (n as CableRouteNode).Type != AGXUnity.Cable.NodeType.FreeNode;
-        else return false;
+        return false;
       });
 
       //Create a sliding window which also has the ends as a prai with themselves
@@ -602,7 +602,6 @@ namespace AGXUnityEditor.Tools
       if (Route is WireRoute)
       {
         Route.gameObject.GetComponent<Wire>().Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
-        //Route.gameObject.GetComponent<Wire>().ResolutionPerUnitLength = Mathf.Max(minDist, 0.5f / avgRadius); //Max reasonable resolution / 2
       }
       else if (Route is CableRoute)
       {
@@ -644,7 +643,9 @@ namespace AGXUnityEditor.Tools
     private void UpdateSkeleton()
     {
       if (m_skeletoniser != null)
-      {
+      {        
+        var skel = UseLongestPath ? agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeletoniser.getSkeleton()) : m_skeletoniser.getSkeleton();
+        m_skeletoniser.consolidateSkeleton(skel, 1);
         Skeleton = m_skeletoniser.getSkeleton();
       }
     }
@@ -745,15 +746,6 @@ namespace AGXUnityEditor.Tools
 
       m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
       UpdateSkeleton();
-    }
-
-    void LineHandleCap(int controlID, Vector3 position, Quaternion rotation, float thickness, float length, EventType eventType)
-    {
-      Vector3 scale = new Vector3(thickness, thickness, length);
-      Matrix4x4 originalMatrix = Handles.matrix;
-      Handles.matrix = Handles.matrix * Matrix4x4.TRS(position, rotation, scale);
-      Handles.CylinderHandleCap(controlID, Vector3.zero, Quaternion.identity, 1.0f, eventType);
-      Handles.matrix = originalMatrix;
     }
 
     /// <summary>
