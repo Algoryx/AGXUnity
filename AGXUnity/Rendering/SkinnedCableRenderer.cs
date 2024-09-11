@@ -64,6 +64,7 @@ namespace AGXUnity.Rendering
         var rot = cableIt.getRigidBody().getRotation().ToHandedQuaternion();
 
         var b = new GameObject("Bone " + i);
+        b.hideFlags = HideFlags.HideInHierarchy;
         b.transform.parent = transform;
         b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), Quaternion.FromToRotation(Vector3.forward, (endPos - startPos).ToHandedVector3()));
         b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), rot);
@@ -82,7 +83,7 @@ namespace AGXUnity.Rendering
       {
         Vector3 v = verts[i];
         //Find the bone edge with the lowest perpendicular distance to the vertex and choose the two bones as weighting.
-        //If the last node from the original route happens to be closer than any bone, makes sure the vertex is weighted by the last two segments/bones (this is to avoid artifacts from the cable being shortened by the routign algorithm).      
+        //If the last node from the original route happens to be closer than any bone, makes sure the vertex is weighted by the last two segments/bones (this is to avoid artifacts from the cable being shortened by the routing algorithm).      
         var idx = m_bones.Count - 2;
         float minDist = Vector3.Distance(lastNodePosition, v);
 
