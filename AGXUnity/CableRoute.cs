@@ -10,8 +10,7 @@ namespace AGXUnity
   /// This object is an IEnumerable, add "using System.Linq" to
   /// get a wide range of "features" such as ToArray().
   /// </summary>
-  [AddComponentMenu( "" )]
-  [HideInInspector]
+  [Serializable]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#routing-the-cable" )]
   public class CableRoute : Route<CableRouteNode>
   {

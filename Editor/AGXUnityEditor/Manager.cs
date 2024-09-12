@@ -110,6 +110,8 @@ namespace AGXUnityEditor
 
       CreateDefaultAssets();
 
+      PatchHelper.ApplyPatches();
+
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
     }
 
@@ -462,22 +464,7 @@ namespace AGXUnityEditor
     /// </summary>
     public static void OnEditorTargetsDeleted()
     {
-      var undoGroupId = Undo.GetCurrentGroup();
-
-      // Deleted RigidBody component leaves dangling MassProperties
-      // so we've to delete them explicitly.
-#if UNITY_6000_0_OR_NEWER
-      var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
-#else
-      var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
-#endif
-      foreach ( var mp in mps ) {
-        if ( mp.RigidBody == null ) {
-          Undo.DestroyObjectImmediate( mp );
-        }
-      }
-
-      Undo.CollapseUndoOperations( undoGroupId );
+      
     }
 
     private static void OnSceneView( SceneView sceneView )

@@ -31,7 +31,8 @@ namespace AGXUnityEditor.Tools
 
     public override void OnAdd()
     {
-      ConstraintAttachmentFrameTool = new ConstraintAttachmentFrameTool( GetTargets<Constraint>().Select( constraint => constraint.AttachmentPair ).ToArray() );
+      var constraints = GetTargets<Constraint>();
+      ConstraintAttachmentFrameTool = new ConstraintAttachmentFrameTool( constraints.Select( constraint => constraint.AttachmentPair ).ToArray(), constraints.ToArray() );
       AddChild( ConstraintAttachmentFrameTool );
     }
 
@@ -112,7 +113,7 @@ namespace AGXUnityEditor.Tools
                                 in constraints
                                 select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
-      Undo.RecordObjects( allElementaryConstraints, "ConstraintTool" );
+      Undo.RecordObjects( constraints, "ConstraintTool" );
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
       foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
@@ -211,8 +212,8 @@ namespace AGXUnityEditor.Tools
                                 where controller.NativeName == refController.NativeName
                                 select controller ).ToArray();
             using ( InspectorGUI.IndentScope.Single ) {
-              InspectorEditor.DrawMembersGUI( controllers );
-              InspectorEditor.DrawMembersGUI( controllers, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
+              InspectorEditor.DrawMembersGUI( controllers, constraints );
+              InspectorEditor.DrawMembersGUI( controllers, constraints, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
             }
           }
         }
@@ -278,12 +279,8 @@ namespace AGXUnityEditor.Tools
             constraint.ChangeType( newType,
                                    createdObject =>
                                    {
-                                     Undo.RegisterCreatedObjectUndo( createdObject, "ElementaryConstraint created." );
-                                   },
-                                   destroyObject =>
-                                   {
-                                     Undo.DestroyObjectImmediate( destroyObject );
-                                   } );
+                                     Undo.RegisterCreatedObjectUndo( constraint, "ElementaryConstraint created." );
+                                   });
           }
           Undo.CollapseUndoOperations( undoIndex );
         }

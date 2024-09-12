@@ -18,8 +18,7 @@ namespace AGXUnity
   /// var freeNodes = from node in route select node.Type == Wire.NodeType.FreeNode;
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
-  [HideInInspector]
-  [AddComponentMenu( "" )]
+  [Serializable]
   public class WireRoute : Route<WireRouteNode>
   {
     /// <summary>
@@ -66,24 +65,12 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Wire this route belongs to.
-    /// </summary>
-    private Wire m_wire = null;
-
-    /// <summary>
     /// Get or set the wire this route belongs to.
     /// </summary>
+    [field: SerializeField]
     public Wire Wire
     {
-      get
-      {
-        if ( m_wire == null ) {
-          m_wire = GetComponent<Wire>();
-          foreach ( var node in this )
-            node.Wire = m_wire;
-        }
-        return m_wire;
-      }
+      get; private set;
     }
 
     /// <summary>
@@ -161,7 +148,7 @@ namespace AGXUnity
         node.LocalPosition = nativeNode.getPosition().ToHandedVector3();
       else
         node.Position = nativeNode.getWorldPosition().ToHandedVector3();
-
+       
       return node;
     }
 
@@ -174,8 +161,10 @@ namespace AGXUnity
       base.Clear();
     }
 
-    private WireRoute()
+    internal WireRoute(Wire parent)
     {
+      Wire = parent;
+
       OnNodeAdded   += this.OnAddedToList;
       OnNodeRemoved += this.OnRemovedFromList;
     }

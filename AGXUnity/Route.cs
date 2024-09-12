@@ -1,10 +1,12 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity
 {
-  public abstract class Route<T> : ScriptComponent, IEnumerable<T>
+  [Serializable]
+  public abstract class Route<T> : IEnumerable<T>, IPropertySynchronizable
     where T : RouteNode
   {
     public class ValidatedNode
@@ -29,7 +31,7 @@ namespace AGXUnity
       {
         return GetEnumerator();
       }
-    }
+    } 
 
     public virtual ValidatedRoute GetValidated()
     {
@@ -39,7 +41,7 @@ namespace AGXUnity
 
       return validatedRoute;
     }
-
+    
     /// <summary>
     /// Route node list.
     /// </summary>
@@ -50,13 +52,13 @@ namespace AGXUnity
     /// Callback fired when a node has been added/inserted into this route.
     /// Signature: OnNodeAdded( NodeT addedNode, int indexOfAddedNode ).
     /// </summary>
-    public Action<T, int> OnNodeAdded = delegate { };
+    public event Action<T, int> OnNodeAdded;
 
     /// <summary>
     /// Callback fired when a node has been removed from this route.
     /// Signature: OnNodeRemoved( WireRouteNode removedNode, int indexOfRemovedNode ).
     /// </summary>
-    public Action<T, int> OnNodeRemoved = delegate { };
+    public event Action<T, int> OnNodeRemoved;
 
     /// <summary>
     /// Number of nodes in route.
@@ -152,7 +154,7 @@ namespace AGXUnity
 
       m_nodes.RemoveAt( index );
 
-      OnNodeRemoved( node, index );
+      OnNodeRemoved?.Invoke( node, index );
 
       return true;
     }
@@ -165,25 +167,12 @@ namespace AGXUnity
       m_nodes.Clear();
     }
 
-    protected override bool Initialize()
+    public bool Initialize()
     {
       foreach ( var node in this )
         node.GetInitialized<T>();
 
       return true;
-    }
-
-    protected override void OnDestroy()
-    {
-      foreach ( var node in this )
-        node.OnDestroy();
-
-      base.OnDestroy();
-    }
-
-    protected virtual void Reset()
-    {
-      hideFlags |= HideFlags.HideInInspector;
     }
 
     private bool TryInsertAtIndex( int index, T node )
@@ -195,7 +184,7 @@ namespace AGXUnity
 
       m_nodes.Insert( index, node );
 
-      OnNodeAdded( node, index );
+      OnNodeAdded?.Invoke( node, index );
 
       return true;
     }
