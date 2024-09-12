@@ -92,17 +92,17 @@ namespace AGXUnity.IO.BrickIO
         if ( inpSig is RealInputSignal realSig && target != null ) {
           if ( target is Signals.TorsionSpringAngleInput tsai ) {
             var hinge = Root.FindMappedObject( tsai.spring().getName() );
-            var spring = hinge.GetComponent<LockController>();
+            var spring = hinge.GetComponent<Constraint>().GetController<LockController>();
             spring.Position = (float)realSig.value();
           }
           else if ( target is Signals.LinearVelocityMotorVelocityInput lvmvi ) {
             var prismatic = Root.FindMappedObject( lvmvi.motor().getName() );
-            var motor = prismatic.GetComponent<TargetSpeedController>();
+            var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
             motor.Speed = (float)realSig.value();
           }
           else if ( target is Signals.RotationalVelocityMotorVelocityInput rvmvi ) {
             var hinge = Root.FindMappedObject( rvmvi.motor().getName() );
-            var motor = hinge.GetComponent<TargetSpeedController>();
+            var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
             motor.Speed = (float)realSig.value();
           }
           else if ( target is Brick.Physics1D.Signals.RotationalVelocityMotor1DVelocityInput rvm1dvi ) {
@@ -116,7 +116,7 @@ namespace AGXUnity.IO.BrickIO
             var source = t1di.source();
             if ( source is Brick.Physics3D.Interactions.TorqueMotor tm ) {
               var hinge = Root.FindMappedObject(tm.getName());
-              var motor = hinge.GetComponent<TargetSpeedController>();
+              var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
               var torque = Mathf.Clamp((float)realSig.value(),(float)tm.min_effort(),(float)tm.max_effort());
               motor.ForceRange = new RangeReal( torque, torque );
             }
@@ -133,7 +133,7 @@ namespace AGXUnity.IO.BrickIO
           }
           else if ( target is Signals.ForceMotorForceInput fmfi ) {
             var prismatic = Root.FindMappedObject(fmfi.motor().getName());
-            var motor = prismatic.GetComponent<TargetSpeedController>();
+            var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
             var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
             motor.ForceRange = new RangeReal( torque, torque );
           }
