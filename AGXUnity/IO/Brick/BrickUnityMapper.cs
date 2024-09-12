@@ -63,22 +63,21 @@ namespace AGXUnity.IO.BrickIO
         Utils.AddChild( RootNode, MapBody( body ), Data.ErrorReporter, body );
 
       var signals = Data.RootNode.AddComponent<BrickSignals>();
-      MapSignals( obj, signals );
+      MapSignals( obj, signals, obj.getName() );
 
       return RootNode;
     }
 
-    private void MapSignals( Object obj, BrickSignals signals )
+    private void MapSignals( Object obj, BrickSignals signals, string prefix = "" )
     {
-      foreach ( var subsystem in obj.getValues<Brick.Physics3D.System>() )
-        MapSignals( subsystem, signals );
+      foreach ( var (name,subsystem) in obj.getEntries<Brick.Physics3D.System>() )
+        MapSignals( subsystem, signals, prefix + "." + name );
 
-      foreach ( var output in obj.getValues<Brick.Physics.Signals.Output>() )
-        signals.RegisterSignal( output.getName() );
+      foreach ( var (name,_) in obj.getEntries<Brick.Physics.Signals.Output>() )
+        signals.RegisterSignal( prefix + "." + name );
 
-      foreach ( var input in obj.getValues<Brick.Physics.Signals.Input>() )
-        signals.RegisterSignal( input.getName() );
-
+      foreach ( var (name,_) in obj.getEntries<Brick.Physics.Signals.Input>() )
+        signals.RegisterSignal( prefix + "." + name );
     }
 
     Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )

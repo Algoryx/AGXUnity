@@ -44,24 +44,14 @@ namespace AGXUnity.IO.BrickIO
 
     private Object InitializeNativeSignal( string signal )
     {
-      var cur = Root.Native;
-      var splitName = signal.Split('.');
-      for ( int i = 1; i < splitName.Length; i++ ) {
-        var child = cur.getDynamic( splitName[ i ] );
-        if ( child.isObject() )
-          cur = child.asObject();
-        else {
-          Debug.LogError( $"{splitName[ i ]} is not an Object!" );
-          return null;
-        }
-      }
-
-      if ( cur.getName() != signal ) {
-        Debug.LogError( $"Could not find signal '{signal}'!" );
+      var relativeSigName = signal.Replace(Root.Native.getName() + ".", "").Trim();
+      var signalObj = Root.Native.getObject(relativeSigName);
+      if ( signalObj != null )
+        return signalObj;
+      else {
+        Debug.LogError( $"{signal} does not exist!" );
         return null;
       }
-
-      return cur;
     }
 
     protected override bool Initialize()
