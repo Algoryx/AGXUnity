@@ -11,7 +11,6 @@ using Signals = Brick.Physics3D.Signals;
 
 namespace AGXUnity.IO.BrickIO
 {
-  [Icon( "Assets/Brick/brick-icon.png" )]
   [RequireComponent( typeof( BrickRoot ) )]
   public class BrickSignals : ScriptComponent
   {

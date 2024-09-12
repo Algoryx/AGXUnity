@@ -5,7 +5,6 @@ using Object = Brick.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
-  [Icon( "Assets/Brick/brick-icon.png" )]
   public class BrickRoot : ScriptComponent
   {
 

@@ -10,9 +10,8 @@ namespace AGXUnityEditor
   {
     static ScriptIconManager()
     {
-      foreach ( var t in Assembly.GetAssembly( typeof( AGXUnity.ScriptComponent ) ).DefinedTypes ) {
-        if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) )
-          SetGizmoIconEnabled( t.AsType(), true, false );
+      foreach ( var t in TypeCache.GetTypesDerivedFrom( typeof( MonoBehaviour ), "AGXUnity" ) ) {
+        SetGizmoIconEnabled( t, true, false );
       }
     }
 

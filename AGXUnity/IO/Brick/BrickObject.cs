@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace AGXUnity.IO.BrickIO
 {
-  [Icon( "Assets/Brick/brick-icon.png" )]
   public class BrickObject : MonoBehaviour
   {
     [field: SerializeField]

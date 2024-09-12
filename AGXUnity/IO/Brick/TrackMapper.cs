@@ -35,8 +35,7 @@ public class TrackMapper
       return new AGXUnity.Model.SinusoidalVariation( (float)sin.additional_amplitude(), (float)sin.period() );
     if ( variation is Tracks::DiscretePulseVariation disc )
       return new AGXUnity.Model.DiscretePulseVariation( (float)disc.additional_amplitude(), (int)disc.discrete_period() );
-
-    Debug.LogWarning( $"Unknown variation type {variation.getType().getName()}: {variation.getName()}" );
+    //Debug.LogWarning( $"Unknown variation type {variation.getType().getName()}: {variation.getName()}" );
     return null;
   }
 
@@ -105,7 +104,7 @@ public class TrackMapper
     track.Thickness = default_height;
 
     MapInternalMergeProperties( system, track );
-    MapTrackProperties( system, track );
+    //MapTrackProperties( system, track );
 
     return;
   }
@@ -205,7 +204,7 @@ public class TrackMapper
       }
     }
 
-    merge_props.name = track_system.getName();
+    merge_props.name = track_system.getName() + "_MP";
     track.InternalMergeProperties = merge_props;
     Data.CacheMappedTrackInternalMergeProperties.Add( merge_props );
   }
@@ -315,7 +314,7 @@ public class TrackMapper
       }
     }
 
-    track_props.name = track_system.getName();
+    track_props.name = track_system.getName() + "_TP";
     track.Properties = track_props;
     Data.CacheMappedTrackProperties.Add( track_props );
   }

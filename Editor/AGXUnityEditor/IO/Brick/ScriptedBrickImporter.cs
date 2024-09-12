@@ -9,7 +9,6 @@ using UnityEngine;
 namespace AGXUnityEditor.IO.BrickIO
 {
   [ScriptedImporter( 0, ".brick" )]
-  [Icon( "Assets/Brick/brick-icon.png" )]
   public class ScriptedBrickImporter : ScriptedImporter
   {
     [Serializable]
@@ -37,7 +36,12 @@ namespace AGXUnityEditor.IO.BrickIO
     {
       Errors = new List<Error>();
       ImportTime = 0;
-      var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( "Assets/Brick/brick-icon.png" );
+      var iconPath =  IO.Utils.AGXUnityEditorDirectory + "/Icons/Logos/brick-icon.png";
+      var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( iconPath );
+
+      // TODO: Investigate why selecting config.brick files in the project view crashes unity
+      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
+        SkipImport = true;
 
       if ( SkipImport ) {
         ctx.AddObjectToAsset( "Root", new GameObject(), icon );
@@ -49,9 +53,6 @@ namespace AGXUnityEditor.IO.BrickIO
       //foreach ( var dep in dependencies )
       //  ctx.DependsOnSourceAsset( dep );
 
-      // TODO: Investigate why selecting config.brick files in the project view crashes unity
-      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.brick" ) )
-        return;
 
       var start = DateTime.Now;
       var importer = new BrickImporter();
