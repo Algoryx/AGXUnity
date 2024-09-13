@@ -225,6 +225,9 @@ namespace AGXUnityEditor.Tools
     }
    
     private bool m_useFixedRadius = false;
+    /// <summary>
+    /// Toggle for using a fixed radius for the joints in the skeletonisation process
+    /// </summary>
     public bool UseFixedRadius
     {
       get { return m_useFixedRadius; }
@@ -472,7 +475,7 @@ namespace AGXUnityEditor.Tools
         return false;
       });
 
-      //Create a sliding window which also has the ends as a prai with themselves
+      //Create a sliding window which also has the ends as a pair with themselves
       var destNodePairs = destNodes.Zip(destNodes.Skip(1), (a, b) => Tuple.Create(a, b)).Prepend(Tuple.Create(destNodes.First(), destNodes.First())).Append(Tuple.Create(destNodes.Last(), destNodes.Last()));
 
       foreach(var node in specialNodes)
