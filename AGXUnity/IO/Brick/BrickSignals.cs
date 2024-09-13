@@ -14,8 +14,46 @@ namespace AGXUnity.IO.BrickIO
   [RequireComponent( typeof( BrickRoot ) )]
   public class BrickSignals : ScriptComponent
   {
+    [Serializable]
+    public struct SignalMetadata : ISerializationCallbackReceiver
+    {
+      [SerializeField]
+      public bool input;
+      
+      public Type type;
+
+      [SerializeField]
+      private string m_serializedType;
+
+      public void OnAfterDeserialize()
+      {
+        if(m_serializedType != null)
+          type = Type.GetType( m_serializedType );
+      }
+
+      public void OnBeforeSerialize()
+      {
+        if ( type == null )
+          m_serializedType = null;
+        else 
+          m_serializedType = type.AssemblyQualifiedName;
+      }
+    }
+
     [SerializeField]
     private List<string> m_signals = new List<string>();
+
+    [HideInInspector]
+    public string[] Signals => m_signals.ToArray();
+
+    [SerializeField]
+    private SerializableDictionary<string, SignalMetadata> m_metadata = new SerializableDictionary<string, SignalMetadata>();
+
+    public SignalMetadata? GetMetadata( string signal ) {
+      if ( !m_metadata.TryGetValue( signal, out var data ) )
+        return null;
+      return data;
+    }
 
     private List<Output> m_outputs = new List<Output>();
     private List<Input> m_inputs = new List<Input>();
@@ -23,15 +61,29 @@ namespace AGXUnity.IO.BrickIO
     private Queue<InputSignal> m_inputSignalQueue = new Queue<InputSignal>();
     private List<OutputSignal> m_outputSignalList = new List<OutputSignal>();
 
+    [HideInInspector]
     public List<OutputSignal> OutputSignals => m_outputSignalList;
 
+    [HideInInspector]
     public BrickRoot Root => GetComponent<BrickRoot>();
 
+    [HideInInspector]
     public Dictionary<string, OutputSignal> m_outputCache = new Dictionary<string, OutputSignal>();
 
-    public void RegisterSignal( string signal )
+    public void RegisterSignal<T>( string signal, T brickSignal )
+      where T : Brick.Core.Object 
     {
+      if( brickSignal is not Output && brickSignal is not Input ) {
+        Debug.LogError( "Provided signal is neither an input nor an output" );
+        return;
+      }
+
       m_signals.Add( signal );
+      m_metadata[ signal ] = new SignalMetadata()
+      {
+        input = brickSignal is Input,
+        type = brickSignal.GetType(),
+      };
     }
 
     public Input FindInputTarget( string name )

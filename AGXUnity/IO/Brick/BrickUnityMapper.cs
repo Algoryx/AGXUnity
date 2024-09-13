@@ -73,11 +73,11 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var (name,subsystem) in obj.getEntries<Brick.Physics3D.System>() )
         MapSignals( subsystem, signals, prefix + "." + name );
 
-      foreach ( var (name,_) in obj.getEntries<Brick.Physics.Signals.Output>() )
-        signals.RegisterSignal( prefix + "." + name );
+      foreach ( var (name,output) in obj.getEntries<Brick.Physics.Signals.Output>() )
+        signals.RegisterSignal( prefix + "." + name, output );
 
-      foreach ( var (name,_) in obj.getEntries<Brick.Physics.Signals.Input>() )
-        signals.RegisterSignal( prefix + "." + name );
+      foreach ( var (name,input) in obj.getEntries<Brick.Physics.Signals.Input>() )
+        signals.RegisterSignal( prefix + "." + name, input );
     }
 
     Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )
@@ -243,7 +243,7 @@ namespace AGXUnity.IO.BrickIO
         mesh.transform.localScale = objGeom.scale().ToVector3();
 #else
         var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-        mesh.AddSourceObject( AGXMeshToUnityMesh( source ) );
+        mesh.AddSourceObject( AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() ) );
 #endif
         //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
         //if ( mesh == nullptr ) {
