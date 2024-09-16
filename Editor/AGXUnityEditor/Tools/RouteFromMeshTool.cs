@@ -1,9 +1,6 @@
 using AGXUnity;
 using AGXUnity.Utils;
 using agxUtil;
-using CodiceApp;
-using NUnit.Framework.Interfaces;
-using PlasticGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
