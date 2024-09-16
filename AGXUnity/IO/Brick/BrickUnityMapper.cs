@@ -170,7 +170,7 @@ namespace AGXUnity.IO.BrickIO
         return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
 
       BrickObject.RegisterGameObject( visual.getName(), go );
-      Utils.mapLocalTransform( go.transform, visual.local_transform() );
+      Utils.MapLocalTransform( go.transform, visual.local_transform() );
       if ( !cachedMat )
         go.GetComponent<MeshRenderer>().material = Data.VisualMaterial;
 
@@ -426,7 +426,7 @@ namespace AGXUnity.IO.BrickIO
           || inertia_tensor.e22() != 0.0;
     }
 
-    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, Brick.Physics3D.Transform cm )
+    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, Brick.Math.AffineTransform cm )
     {
       if ( inertia.mass() > 0.0 )
         mp.Mass.UserValue = (float)inertia.mass();

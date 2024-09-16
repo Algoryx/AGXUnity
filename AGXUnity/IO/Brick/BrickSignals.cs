@@ -19,7 +19,7 @@ namespace AGXUnity.IO.BrickIO
     {
       [SerializeField]
       public bool input;
-      
+
       public Type type;
 
       [SerializeField]
@@ -27,7 +27,7 @@ namespace AGXUnity.IO.BrickIO
 
       public void OnAfterDeserialize()
       {
-        if(m_serializedType != null)
+        if ( m_serializedType != null )
           type = Type.GetType( m_serializedType );
       }
 
@@ -35,7 +35,7 @@ namespace AGXUnity.IO.BrickIO
       {
         if ( type == null )
           m_serializedType = null;
-        else 
+        else
           m_serializedType = type.AssemblyQualifiedName;
       }
     }
@@ -49,7 +49,8 @@ namespace AGXUnity.IO.BrickIO
     [SerializeField]
     private SerializableDictionary<string, SignalMetadata> m_metadata = new SerializableDictionary<string, SignalMetadata>();
 
-    public SignalMetadata? GetMetadata( string signal ) {
+    public SignalMetadata? GetMetadata( string signal )
+    {
       if ( !m_metadata.TryGetValue( signal, out var data ) )
         return null;
       return data;
@@ -71,9 +72,9 @@ namespace AGXUnity.IO.BrickIO
     public Dictionary<string, OutputSignal> m_outputCache = new Dictionary<string, OutputSignal>();
 
     public void RegisterSignal<T>( string signal, T brickSignal )
-      where T : Brick.Core.Object 
+      where T : Brick.Core.Object
     {
-      if( brickSignal is not Output && brickSignal is not Input ) {
+      if ( brickSignal is not Output && brickSignal is not Input ) {
         Debug.LogError( "Provided signal is neither an input nor an output" );
         return;
       }
@@ -181,7 +182,7 @@ namespace AGXUnity.IO.BrickIO
           }
           else if ( target is FractionInput fi ) {
             var source = fi.source();
-            if(source is CombustionEngine ce ) {
+            if ( source is CombustionEngine ce ) {
               var engine = Root.FindRuntimeMappedObject( ce.getName() );
               if ( engine is agxDriveTrain.CombustionEngine mappedCe ) {
                 mappedCe.setThrottle( realSig.value() );
@@ -194,6 +195,29 @@ namespace AGXUnity.IO.BrickIO
             Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
           }
         }
+        else if ( inpSig is IntInputSignal iis ) {
+          if ( target is IntInput intTarget ) {
+            var source = intTarget.source();
+            if ( source is GearBox gearbox ) {
+              if ( Root.FindRuntimeMappedObject( gearbox.getName() ) is not agxDriveTrain.GearBox agxGearbox )
+                Debug.LogError( $"{gearbox.getName()} was not mapped to a powerline unit" );
+              else {
+                var numReverse = gearbox.reverse_gears().Count;
+                var numForward = gearbox.forward_gears().Count;
+                int gear = (int)iis.value();
+                if ( gear < 0 && Mathf.Abs( gear ) > numReverse )
+                  gear = -numReverse;
+                if ( gear > 0 && Mathf.Abs( gear ) > numForward )
+                  gear = numForward;
+
+                var adjustedGear = gear + numReverse;
+                if ( adjustedGear >= agxGearbox.getNumGears() || adjustedGear < 0 )
+                  Debug.LogError( $"Signal had gear {adjustedGear} which is out of range 0 - {agxGearbox.getNumGears()} for agxDriveTrain.GearBox" );
+                agxGearbox.setGear( adjustedGear );
+              }
+            }
+          }
+        }
       }
     }
 
@@ -202,7 +226,20 @@ namespace AGXUnity.IO.BrickIO
       m_outputSignalList.Clear();
       foreach ( var output in m_outputs ) {
         ValueOutputSignal signal = null;
-        if ( output is Signals.HingeAngleOutput hao ) {
+
+        if ( output is IntOutput io ) {
+          var source = io.source();
+          if ( source is GearBox gearbox ) {
+            if ( Root.FindRuntimeMappedObject( gearbox.getName() ) is not agxDriveTrain.GearBox agxGearbox ) {
+              Debug.LogError( $"{gearbox.getName()} was not mapped to a powerline unit" );
+            }
+            else {
+              var num_reverse = gearbox.reverse_gears().Count;
+              signal = ValueOutputSignal.from_int( agxGearbox.getGear() - num_reverse, io );
+            }
+          }
+        }
+        else if ( output is Signals.HingeAngleOutput hao ) {
           var hinge = Root.FindMappedObject( hao.hinge().getName() );
           var constraint = hinge.GetComponent<Constraint>();
           signal = ValueOutputSignal.from_angle( constraint.GetCurrentAngle(), hao );

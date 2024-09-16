@@ -49,13 +49,8 @@ namespace AGXUnity.IO.BrickIO
   }
   public static class Utils
   {
-    public static void MapLocalTransform( Transform transform, Brick.Physics3D.Transform local_transform )
-    {
-      transform.localPosition = local_transform.position().ToHandedVector3();
-      transform.localRotation = local_transform.rotation().ToHandedQuaternion();
-    }
 
-    public static void mapLocalTransform( Transform transform, Brick.Math.AffineTransform local_transform )
+    public static void MapLocalTransform( Transform transform, Brick.Math.AffineTransform local_transform )
     {
       transform.localPosition = local_transform.position().ToHandedVector3();
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
@@ -65,8 +60,9 @@ namespace AGXUnity.IO.BrickIO
     {
       var member = obj.getOwner().getType().findFirstMember(obj.getName().Substring(obj.getName().LastIndexOf('.') + 1));
       var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
-      var sourceID = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument().getSourceId() : member.asVarAssignment().getOwningDocument().getSourceId();
-      err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, sourceID ) );
+      var document = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument() : member.asVarAssignment().getOwningDocument();
+      string sourceID = document?.getSourceId();
+      err.reportError( Brick.Error.create( (ulong)errorType, tok.line, tok.column, sourceID ?? "" ) );
     }
 
     public static T? ReportUnimplementedS<T>( Brick.Core.Object obj, Brick.ErrorReporter err )
@@ -96,6 +92,7 @@ namespace AGXUnity.IO.BrickIO
       typeof(Brick.DriveTrain.CombustionEngine),
       typeof(Brick.DriveTrain.HingeActuator),
       typeof(Brick.DriveTrain.PrismaticActuator),
+      typeof(Brick.DriveTrain.GearBox),
       typeof(Brick.DriveTrain.Shaft),
       typeof(Brick.DriveTrain.TorqueMotor),
       typeof(Brick.DriveTrain.Differential),

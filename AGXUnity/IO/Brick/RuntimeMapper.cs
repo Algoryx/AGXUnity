@@ -69,6 +69,12 @@ namespace AGXUnity.IO.BrickIO
         MapperData.PowerLine.add( mapped );
       }
 
+      foreach ( var gearbox in system.getValues<Brick.DriveTrain.GearBox>() ) {
+        var mapped = DrivetrainMapper.MapGearBox( gearbox );
+        MapperData.RuntimeMap[ gearbox.getName() ] = mapped;
+        MapperData.PowerLine.add( mapped );
+      }
+
       foreach ( var diff in system.getValues<Brick.DriveTrain.Differential>() ) {
         var mapped = DrivetrainMapper.MapDifferential( diff );
         MapperData.RuntimeMap[ diff.getName() ] = mapped;

@@ -1,6 +1,7 @@
 using AGXUnity.Utils;
 using Brick.Physics1D.Charges;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.BrickIO
@@ -30,50 +31,77 @@ namespace AGXUnity.IO.BrickIO
       return rotational_unit;
     }
 
+    public void ConnectDrivetrainInteraction( Brick.Physics.Interactions.Interaction interaction, agxPowerLine.Connector connector )
+    {
+      Brick.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
+      Brick.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
+
+      var input_connector = charge1 as Brick.Physics1D.Charges.MateConnector;
+      var output_connector = charge2 as Brick.Physics1D.Charges.MateConnector;
+
+      var pump_shaft = input_connector.getOwner() as Brick.DriveTrain.Shaft;
+      var turbine_shaft = output_connector.getOwner() as Brick.DriveTrain.Shaft;
+
+      agxPowerLine.Unit pump_unit = pump_shaft == null ? null : MapperData.UnitCache[pump_shaft];
+      agxPowerLine.Unit turbine_unit = turbine_shaft == null ? null : MapperData.UnitCache[turbine_shaft];
+
+      if ( pump_unit == null || turbine_unit == null ) {
+        // TODO: Error reporting
+        //reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
+      }
+      else {
+        agxPowerLine.Side pump_side = pump_shaft.input() == input_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+        connector.connect( agxPowerLine.Side.INPUT, pump_side, pump_unit );
+        agxPowerLine.Side turbine_side = turbine_shaft.input() == output_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+        connector.connect( agxPowerLine.Side.OUTPUT, turbine_side, turbine_unit );
+      }
+    }
+
     public agxPowerLine.RotationalConnector MapGear( Brick.DriveTrain.Gear gear )
     {
       agxDriveTrain.HolonomicGear agx_gear = new agxDriveTrain.HolonomicGear();
 
       agx_gear.setGearRatio( gear.ratio() );
       var damping = InteractionMapper.MapDissipation( gear.dissipation(), gear.flexibility() );
-      if( damping != null )
+      if ( damping != null )
         agx_gear.setViscousDamping( damping.Value );
       var flexibility = InteractionMapper.MapFlexibility( gear.flexibility() );
-      if( flexibility != null ) 
+      if ( flexibility != null )
         agx_gear.setViscousCompliance( flexibility.Value );
 
-      Brick.Physics.Charges.Charge charge1 = gear.charges().Count >= 1 ? gear.charges()[0] : null;
-      Brick.Physics.Charges.Charge charge2 = gear.charges().Count >= 2 ? gear.charges()[1] : null;
-
-      var mc1 = charge1 == null ? null : (charge1 as Brick.Physics1D.Charges.MateConnector);
-      var mc2 = charge2 == null ? null : (charge2 as Brick.Physics1D.Charges.MateConnector);
-
-      agxPowerLine.Unit unit1 = mc1 == null ? null : MapperData.UnitCache[mc1.getOwner()];
-      agxPowerLine.Unit unit2 = mc2 == null ? null : MapperData.UnitCache[mc2.getOwner()];
-
-      if ( unit1 == null && unit2 == null ) {
-        // Todo: Error reporting
-        //reportErrorFromKey( hinge_key, AGXBrickError::MissingConnectedBody, system );
-      }
-
-      if ( unit1 != null && unit2 != null ) {
-        unit1.connect( agx_gear );
-        unit2.connect( agx_gear );
-        agx_gear.connect( unit1 );
-        agx_gear.connect( unit2 );
-      }
-      else if ( unit1 != null ) {
-        unit1.connect( agx_gear );
-        agx_gear.connect( unit1 );
-      }
-      else if ( unit2 != null ) {
-        unit2.connect( agx_gear );
-        agx_gear.connect( unit2 );
-      }
+      ConnectDrivetrainInteraction(gear, agx_gear);
 
       agx_gear.setName( gear.getName() );
 
       return agx_gear;
+    }
+
+    public agxDriveTrain.GearBox MapGearBox( Brick.DriveTrain.GearBox gear_box )
+    {
+      agxDriveTrain.GearBox agx_gear_box = new agxDriveTrain.GearBox();
+      agx.RealVector gears = new agx.RealVector();
+
+      foreach ( var ratio in gear_box.reverse_gears().AsEnumerable().Reverse() )
+        gears.Add( -agx.agxMath.Abs( ratio ) );
+
+      gears.Add( 0 );
+
+      foreach ( var ratio in gear_box.forward_gears() )
+        gears.Add( agx.agxMath.Abs( ratio ) );
+
+      agx_gear_box.setGearRatios( gears );
+
+      var relaxation_time = InteractionMapper.MapDissipation(gear_box.dissipation(), gear_box.flexibility());
+
+      if ( relaxation_time != null ) {
+        agx_gear_box.setDamping( (double)relaxation_time );
+      }
+
+      ConnectDrivetrainInteraction( gear_box, agx_gear_box );
+
+      agx_gear_box.setName( gear_box.getName() );
+
+      return agx_gear_box;
     }
 
     public agxDriveTrain.Differential MapDifferential( Brick.DriveTrain.Differential differential )
@@ -140,28 +168,7 @@ namespace AGXUnity.IO.BrickIO
         agx_torque_converter.insertEfficiencyLookupValue( pair.velocity_ratio(), pair.multiplier() );
       }
 
-      Brick.Physics.Charges.Charge charge1 = tc.charges().Count >= 1 ? tc.charges()[0] : null;
-      Brick.Physics.Charges.Charge charge2 = tc.charges().Count >= 2 ? tc.charges()[1] : null;
-
-      var pump_connector = charge1 as Brick.Physics1D.Charges.MateConnector;
-      var turbine_connector = charge2 as Brick.Physics1D.Charges.MateConnector;
-
-      var pump_shaft = pump_connector.getOwner() as Brick.DriveTrain.Shaft;
-      var turbine_shaft = turbine_connector.getOwner() as Brick.DriveTrain.Shaft;
-
-      agxPowerLine.Unit pump_unit = pump_shaft == null ? null : MapperData.UnitCache[pump_shaft];
-      agxPowerLine.Unit turbine_unit = turbine_shaft == null ? null : MapperData.UnitCache[turbine_shaft];
-
-      if ( pump_unit == null || turbine_unit == null ) {
-        // TODO: Error reporting
-        //reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
-      }
-      else {
-        agxPowerLine.Side pump_side = pump_shaft.input() == pump_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
-        agx_torque_converter.connect( agxPowerLine.Side.INPUT, pump_side, pump_unit );
-        agxPowerLine.Side turbine_side = turbine_shaft.input() == turbine_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
-        agx_torque_converter.connect( agxPowerLine.Side.OUTPUT, turbine_side, turbine_unit );
-      }
+      ConnectDrivetrainInteraction( tc, agx_torque_converter );
 
       agx_torque_converter.setName( tc.getName() );
 
