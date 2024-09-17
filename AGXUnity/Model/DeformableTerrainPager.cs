@@ -407,7 +407,7 @@ namespace AGXUnity.Model
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
     {
-      var terrain = tile.m_terrainTile;
+      var terrain = tile.m_terrainTile.get();
       var modifications = terrain.getModifiedVertices();
       if ( modifications.Count == 0 )
         return;
@@ -419,12 +419,12 @@ namespace AGXUnity.Model
       var result = new float[,] { { 0.0f } };
 
       agx.Vec2i index = new agx.Vec2i(0,0);
-      Vector2Int tileIndex = GetTileIndex(terrain.get());
+      Vector2Int tileIndex = GetTileIndex(terrain);
 
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        OnModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
+        OnModification?.Invoke( terrain, index, Terrain, unityIndex );
         m_updatedTerrains.Add( tile );
       };
 
