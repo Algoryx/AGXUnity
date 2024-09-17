@@ -824,7 +824,7 @@ namespace AGXUnity.Model
     {
       if ( Native == null )
         return;
-      
+
       Native.getTemplateTerrain().setAssociatedMaterial( terrMat.Native, shapeMat.Native );
       Native.applyChangesToTemplateTerrain();
     }
@@ -835,11 +835,14 @@ namespace AGXUnity.Model
         return;
 
       var template = Native.getTemplateTerrain();
-      template.addTerrainMaterial( terrMat.Native );
-      if(shape != null ) {
-        var idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
-        m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, idx );
+      var idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
+      if ( idx == uint.MaxValue ) {
+        template.addTerrainMaterial( terrMat.Native );
+        idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
       }
+      if ( shape != null )
+        m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, idx );
+
       Native.applyChangesToTemplateTerrain();
     }
 
