@@ -2,6 +2,7 @@ using AGXUnity.IO.BrickIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace AGXUnityEditor.IO.BrickIO
     [Serializable]
     public struct Error
     {
+      public string raw;
       public string message;
       public string document;
       public string Location => $"{line}:{column}";
@@ -90,12 +92,15 @@ namespace AGXUnityEditor.IO.BrickIO
     public void ReportErrors( Brick.Error error )
     {
       var ef = new UnityBrickErrorFormatter();
+      var raw = ef.format( error );
+      var m = Regex.Match( raw, ".+:\\d+:\\d+ (.+)" );
       Errors.Add( new Error
       {
-        message = new string( ef.format( error ).SkipWhile( c => c != ' ' ).Skip( 1 ).ToArray() ),
-        document = error.getSourceId(),
-        line    = (int)error.getLine(),
-        column  = (int)error.getColumn()
+        raw       = raw,
+        message   = m.Groups[ 1 ].Value,
+        document  = error.getSourceId(),
+        line      = (int)error.getLine(),
+        column    = (int)error.getColumn()
       } );
     }
   }

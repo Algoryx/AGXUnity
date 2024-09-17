@@ -45,10 +45,29 @@ namespace AGXUnityEditor.IO.BrickIO
       pathLabel.style.unityTextAlign = TextAnchor.MiddleRight;
       pathLabel.style.marginRight = 2;
 
+      var hoverTint = new Color(1,1,1,1);
+      var normalTint = new Color(0.9f,0.9f,0.9f,1.0f);
+      var downTint = new Color(0.8f,0.8f,0.8f,1.0f);
+
+      var CopyIcon = new VisualElement();
+      CopyIcon.style.height = 16;
+      CopyIcon.style.width = 12;
+      CopyIcon.style.backgroundImage = EditorGUIUtility.FindTexture( "Clipboard" );
+      CopyIcon.style.unityBackgroundImageTintColor = normalTint;
+      CopyIcon.RegisterCallback<MouseDownEvent>( mde => {
+        GUIUtility.systemCopyBuffer = err.raw;
+        CopyIcon.style.unityBackgroundImageTintColor = downTint;
+        mde.StopPropagation();
+      } );
+      CopyIcon.RegisterCallback<MouseUpEvent>( mde => CopyIcon.style.unityBackgroundImageTintColor = hoverTint );
+      CopyIcon.RegisterCallback<MouseOverEvent>( mde => CopyIcon.style.unityBackgroundImageTintColor = hoverTint );
+      CopyIcon.RegisterCallback<MouseOutEvent>( mde => CopyIcon.style.unityBackgroundImageTintColor = normalTint );
+
 
       flex.Add( StatusIcon );
       flex.Add( nameLabel );
       flex.Add( pathLabel );
+      flex.Add( CopyIcon );
       row.Add( flex );
 
       return row;
@@ -73,9 +92,18 @@ namespace AGXUnityEditor.IO.BrickIO
           errors.SetMargin( 5, 0, 0, 0 );
           errors.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
           errors.SetBorderRadius( 5 );
-          errors.SetPadding( 5 );
-          foreach ( var error in ScriptedBrickImporter.Errors )
-            errors.Add( TableRowUI( error ) );
+          errors.SetPadding( 5,5,5,15 );
+          ScriptedBrickImporter.Errors.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
+
+          var foldout = new Foldout() { text = ScriptedBrickImporter.Errors[0].document, value = true };
+          for ( int i = 0; i < ScriptedBrickImporter.Errors.Count; i++ ) {
+            if ( foldout.text != ScriptedBrickImporter.Errors[i].document ) {
+              errors.Add( foldout );
+              foldout = new Foldout() { text = ScriptedBrickImporter.Errors[ 0 ].document, value = true };
+            }
+            foldout.Add( TableRowUI( ScriptedBrickImporter.Errors[ i ] ) );
+          }
+          errors.Add( foldout );
           skipContainer.Add( errors );
         }
         else {
