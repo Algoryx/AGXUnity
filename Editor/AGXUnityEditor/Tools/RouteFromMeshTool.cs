@@ -48,7 +48,7 @@ namespace AGXUnityEditor.Tools
         if (m_skeleton != value)
         {
           m_skeleton = value;
-          m_longestSkeleton = value == null ? null : agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeleton);         
+          m_longestSkeleton = value == null ? null : m_skeleton.getLongestContinuousSkeletonSegment();         
         }
       }
     }
@@ -644,7 +644,7 @@ namespace AGXUnityEditor.Tools
     {
       if (m_skeletoniser != null)
       {        
-        var skel = UseLongestPath ? agxUtilSWIG.getLongestContinuousSkeletonSegment(m_skeletoniser.getSkeleton()) : m_skeletoniser.getSkeleton();
+        var skel = UseLongestPath ? m_skeletoniser.getSkeleton().getLongestContinuousSkeletonSegment() : m_skeletoniser.getSkeleton();
         m_skeletoniser.consolidateSkeleton(skel, 1);
         Skeleton = m_skeletoniser.getSkeleton();
       }
