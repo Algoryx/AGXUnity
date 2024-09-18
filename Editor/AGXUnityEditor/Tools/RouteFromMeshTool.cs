@@ -405,7 +405,8 @@ namespace AGXUnityEditor.Tools
         EditorGUILayout.LabelField(GUI.MakeLabel("Control + Click: Add joints"));
         EditorGUILayout.EndVertical();
       }
-      m_showUnderlyingSkeleton = InspectorGUI.Toggle(GUI.MakeLabel("Show underlying skeleton", toolTip: "Display all joints in the skeleton regardless of connectivity. Can be useful for removing disjoint skeletons produced by disjoint parts of the input mesh or for removing artifacts."), m_showUnderlyingSkeleton);
+      //Segmenting the skeleton currently crashes unity so this is disabled for now
+      //m_showUnderlyingSkeleton = InspectorGUI.Toggle(GUI.MakeLabel("Show underlying skeleton", toolTip: "Display all joints in the skeleton regardless of connectivity. Can be useful for removing disjoint skeletons produced by disjoint parts of the input mesh or for removing artifacts."), m_showUnderlyingSkeleton);
       if (GUILayout.Button(GUI.MakeLabel("Regenerate"), GUILayout.ExpandWidth(false)))
       {
         SkeletoniseSelectedMesh();
