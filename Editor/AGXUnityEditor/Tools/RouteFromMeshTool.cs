@@ -1,10 +1,15 @@
 using AGXUnity;
 using AGXUnity.Utils;
 using agxUtil;
+using log4net.Util;
+using Palmmedia.ReportGenerator.Core.Parser.Analysis;
 using System;
 using System.Collections.Generic;
+using System.IO.Pipes;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.Playables;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
@@ -406,7 +411,7 @@ namespace AGXUnityEditor.Tools
         EditorGUILayout.EndVertical();
       }
       //Segmenting the skeleton currently crashes unity so this is disabled for now
-      //m_showUnderlyingSkeleton = InspectorGUI.Toggle(GUI.MakeLabel("Show underlying skeleton", toolTip: "Display all joints in the skeleton regardless of connectivity. Can be useful for removing disjoint skeletons produced by disjoint parts of the input mesh or for removing artifacts."), m_showUnderlyingSkeleton);
+      m_showUnderlyingSkeleton = InspectorGUI.Toggle(GUI.MakeLabel("Show underlying skeleton", toolTip: "Display all joints in the skeleton regardless of connectivity. Can be useful for removing disjoint skeletons produced by disjoint parts of the input mesh or for removing artifacts."), m_showUnderlyingSkeleton);
       if (GUILayout.Button(GUI.MakeLabel("Regenerate"), GUILayout.ExpandWidth(false)))
       {
         SkeletoniseSelectedMesh();
@@ -748,6 +753,16 @@ namespace AGXUnityEditor.Tools
       UpdateSkeleton();
     }
 
+    bool IsMouseOverCircle(Vector3 center, float radius)
+    {
+      return Mathf.Approximately(HandleUtility.DistanceToCircle(center, radius), 0);
+    }
+
+    bool IsMouseOverCube(Vector3 center, Vector3 direction, float size)
+    {
+      return Mathf.Approximately(HandleUtility.DistanceToCube(center, Quaternion.LookRotation(direction), size), 0);
+    }
+
     /// <summary>
     /// Draw the current route/skeleton using handles
     /// </summary>
@@ -759,13 +774,16 @@ namespace AGXUnityEditor.Tools
       if (!edgeColor.HasValue)
         edgeColor = Color.blue;
 
+
       bool useLongestPath = UseLongestPath;
       if (ignoreFilters)
         UseLongestPath = false;
 
       //Drawing without depth makes selection hard so a custom z-pass is used by simply sorting the draw calls in this function by distance form the camera and otherwise always passing the zTest
-      var drawcalls = new List<Tuple<float, Action, Color>>(); //Make sure to provide proper capture for each drawcall!
+      
+      var drawcalls = new List<(float distance, Action drawAction, Color drawColor, int sourceSegment)>(); //Make sure to provide proper capture for each drawcall!
       Matrix4x4 skeletonToWorld = SkeletonToWorld();
+      float handleRadius = UseFixedRadius ? FixedRadius : SkeletonRadius();
       Vector3 cameraPosRouteSpace = skeletonToWorld.inverse.MultiplyPoint(sceneView.camera.transform.position);
 
       SphereSkeletonVector skeletonSegments;
@@ -782,10 +800,12 @@ namespace AGXUnityEditor.Tools
       }
 
       //Segment skeleton to draw entire structure when the longest path isn't used. Otherwise DFS will not visit joints is disjoint parts of the skeleton
-      foreach (var segment in skeletonSegments)
-      {
+      float minDist = float.PositiveInfinity;
+      int hoveredSegment = -1;
+      for (int i = 0; i < skeletonSegments.Count; i++)
+      {        
 
-        float handleRadius = UseFixedRadius ? FixedRadius : SkeletonRadius();
+        var segment = skeletonSegments[i];
         float handleDiameter = handleRadius * 2;
         //Traverse DFS to mimic resulting route
         SphereSkeleton.dfs_iterator currDFSJoint = segment.begin();
@@ -806,7 +826,7 @@ namespace AGXUnityEditor.Tools
             Vector3 prevPos = prevDFSJoint.position.ToHandedVector3();
             //Make sure edge buttons always draw infront of the edge
             distanceToCamera = Mathf.Max((cameraPosRouteSpace - currPos).magnitude, (cameraPosRouteSpace - prevPos).magnitude);
-            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.DrawLine(currPos, prevPos, 3), edgeColor.Value));
+            drawcalls.Add((distanceToCamera, () => Handles.DrawLine(currPos, prevPos, 3), edgeColor.Value, i));
 
             if (edgeClickableHandle != null && edgeClickableHandle(prevDFSJointSkeletoniserIndex, currDFSJointSkeletoniserIndex))
             {
@@ -818,33 +838,47 @@ namespace AGXUnityEditor.Tools
               float size = Mathf.Clamp(facingDirection.magnitude - 2 * handleRadius, handleRadius / 2, handleRadius);
 
               distanceToCamera = (cameraPosRouteSpace - midPoint).magnitude;
-              drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
+              drawcalls.Add((distanceToCamera, () =>
               {
                 if (Handles.Button(midPoint, Quaternion.LookRotation(facingDirection), size, size, Handles.CubeHandleCap))
                   onEdgeClickCallback(prevDFSJointSkeletoniserIndex, currDFSJointSkeletoniserIndex);
-              }, edgeCubeColor));
+              }, edgeCubeColor, i));
+
+              if (ignoreFilters && IsMouseOverCube(skeletonToWorld.MultiplyPoint(midPoint), skeletonToWorld.MultiplyPoint(facingDirection), size) && distanceToCamera < minDist)
+              {
+                minDist = distanceToCamera;
+                hoveredSegment = i;
+              }
             }
           }
 
-          distanceToCamera = (cameraPosRouteSpace - currPos).magnitude - handleRadius;
+          distanceToCamera = (cameraPosRouteSpace - currPos).magnitude - handleRadius;          
           //Draw joint
           if (jointClickableHandle != null && jointClickableHandle(currDFSJoint.skeletoniserIndex))
           {
             var jointToAlter = currDFSJoint.deref();
-            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () =>
+            drawcalls.Add((distanceToCamera, () =>
             {
               if (Handles.Button(currPos, Quaternion.identity, handleDiameter, handleRadius, Handles.SphereHandleCap))
                 onJointClickCallback(jointToAlter);
-            }, jointColor.Value));
+            }, jointColor.Value, i));
           }
           else
           {
-            drawcalls.Add(new Tuple<float, Action, Color>(distanceToCamera, () => Handles.SphereHandleCap(0, currPos, Quaternion.identity, handleDiameter, EventType.Repaint), unclickableColor.HasValue ? unclickableColor.Value : jointColor.Value));
+            drawcalls.Add((distanceToCamera, () => Handles.SphereHandleCap(0, currPos, Quaternion.identity, handleDiameter, EventType.Repaint), unclickableColor.HasValue ? unclickableColor.Value : jointColor.Value, i));
           }
+
+          if (ignoreFilters && IsMouseOverCircle(skeletonToWorld.MultiplyPoint(currPos), handleRadius) && distanceToCamera < minDist)
+          {
+            minDist = distanceToCamera;
+            hoveredSegment = i;
+          }
+
           prevDFSJoint = currDFSJoint.deref();
           currDFSJoint.inc();
         }
       }
+
       //Sort in descending order to draw the furthest objects first
       drawcalls.Sort((t1, t2) => -t1.Item1.CompareTo(t2.Item1));
 
@@ -853,16 +887,17 @@ namespace AGXUnityEditor.Tools
 
       using (new Handles.DrawingScope(skeletonToWorld))
       {
-        float furthestDistance = drawcalls.First().Item1;
-        float closestDistance = drawcalls.Last().Item1;
+        float furthestDistance = drawcalls.First().distance;
+        float closestDistance = drawcalls.Last().distance;
         for (int i = 0; i < drawcalls.Count; i++)
         {
           var drawcall = drawcalls[i];
-          float shade = 1f - (drawcall.Item1 / furthestDistance) * (0.6f-(closestDistance / furthestDistance / 0.6f));
+          bool displayAsHovered = drawcall.sourceSegment == hoveredSegment || hoveredSegment == -1;
+          float shade = displayAsHovered ? 1f - (drawcall.distance / furthestDistance) * (0.6f-(closestDistance / furthestDistance / 0.6f)) : 0.2f;
           var shadeColor = new Color(shade, shade, shade);
-          using (new Handles.DrawingScope(drawcall.Item3 * shadeColor))
+          using (new Handles.DrawingScope(drawcall.drawColor * shadeColor))
           {
-            drawcall.Item2.Invoke();
+            drawcall.drawAction.Invoke();
           }
         }
       }
