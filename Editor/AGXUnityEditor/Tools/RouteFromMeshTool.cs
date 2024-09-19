@@ -753,11 +753,24 @@ namespace AGXUnityEditor.Tools
       UpdateSkeleton();
     }
 
+    /// <summary>
+    /// Checks if the cursor is currently hovering over a circle
+    /// </summary>
+    /// <param name="center">Center of the circle</param>
+    /// <param name="radius">Radius of the circle</param>
+    /// <returns>True if cursor is hovering over the circle</returns>
     bool IsMouseOverCircle(Vector3 center, float radius)
     {
       return Mathf.Approximately(HandleUtility.DistanceToCircle(center, radius), 0);
     }
 
+    /// <summary>
+    /// Checks if the cursor is currently hovering over a cube
+    /// </summary>
+    /// <param name="center">Center of the cube</param>
+    /// <param name="direction">The direction the cube is facing</param>
+    /// <param name="size">The size of the cube</param>
+    /// <returns>True if cursor is hovering over the cube</returns>
     bool IsMouseOverCube(Vector3 center, Vector3 direction, float size)
     {
       return Mathf.Approximately(HandleUtility.DistanceToCube(center, Quaternion.LookRotation(direction), size), 0);
