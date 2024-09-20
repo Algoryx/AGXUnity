@@ -1,4 +1,5 @@
 using AGXUnity;
+using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using agxUtil;
 using System;
@@ -20,13 +21,14 @@ namespace AGXUnityEditor.Tools
     new()
   {
     /// <summary>
-    /// The threshhold at which the tool warns about computation times and automatically disables preview
+    /// Gets the threshhold at which the tool warns about computation times and automatically disables preview
     /// </summary>
-    const int VERTEX_WARNING_THRESHOLD = 100_000;
+    int GetVertexWarningThreshold() { return 100_000; }
+
     /// <summary>
     /// The amount of dsitance in radii which makes the tool consider a created node to be the same conceptual node in a previous route.
     /// </summary>
-    const float NODE_TRANSFER_DISTANCE_THRESHOLD = 2f; //2 radii
+    float GetNodeTransferDistanceRadii() { return 2f; }
 
     /// <summary>
     /// The currently selected parent for the route/skeleton
@@ -169,7 +171,7 @@ namespace AGXUnityEditor.Tools
           }
 
           //Warning if mesh is very large        
-          if (Preview && m_selectedMesh.vertexCount > VERTEX_WARNING_THRESHOLD)
+          if (Preview && m_selectedMesh.vertexCount > GetVertexWarningThreshold())
           {
             Preview = false;
             DisplayVertexCountWarning = true;
@@ -450,6 +452,21 @@ namespace AGXUnityEditor.Tools
 
       if (applyCancelState == InspectorGUI.PositiveNegativeResult.Positive)
       {
+        if (Route is CableRoute)
+        {
+          Cable cable = Route.GetComponent<Cable>();
+          List<Material> materials = new List<Material>();
+          MeshRenderer renderer = m_meshSource.GetComponent<MeshRenderer>();
+          if (renderer != null)
+            renderer.GetSharedMaterials(materials);
+          SkinnedCableRenderer skinnedCableRenderer = cable.GetComponent<SkinnedCableRenderer>();
+          if (skinnedCableRenderer != null)
+            skinnedCableRenderer.SetParameters(m_selectedMesh, materials, m_selectedParent.transform);
+
+          cable.RouteMeshSource = m_selectedMesh;
+          cable.RouteMeshTransform = m_selectedParent.transform;
+          cable.RouteMeshMaterials = materials.ToArray();
+        }          
         CreateRoute(Route.Any() && m_transferNodeSettings);
         PerformRemoveFromParent();
       }
@@ -590,7 +607,7 @@ namespace AGXUnityEditor.Tools
       if (Route.Any() && applyCurrentNodeSettings)
       {
         //TransferSettingsByDistance(nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
-        TransferSettingsBySpecialNodes(ref nodeList, avgRadius, NODE_TRANSFER_DISTANCE_THRESHOLD);
+        TransferSettingsBySpecialNodes(ref nodeList, avgRadius, GetNodeTransferDistanceRadii());
       }
 
       Route.Clear();
@@ -673,8 +690,7 @@ namespace AGXUnityEditor.Tools
             selected = child;
           }
         });
-      }
-
+      }      
       if (selected.TryGetComponent<MeshFilter>(out foundFilter))
       {
         var mesh = foundFilter.sharedMesh;
@@ -683,7 +699,7 @@ namespace AGXUnityEditor.Tools
           return false;
         }
         //Warning if mesh is very large        
-        if (Preview && mesh.vertexCount > VERTEX_WARNING_THRESHOLD)
+        if (Preview && mesh.vertexCount > GetVertexWarningThreshold())
         {
           Preview = false;
           DisplayVertexCountWarning = true;
