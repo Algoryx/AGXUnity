@@ -34,6 +34,7 @@ namespace AGXUnity.Rendering
           //Clear transform when user changes source mesh manually (or programmatically)
           m_sourceMeshTransform = null;
           m_sourceMesh = value;
+          m_initialized = false;
         }        
       }
     }
@@ -46,11 +47,14 @@ namespace AGXUnity.Rendering
 
     private Material m_defaultMaterial;
 
+    private bool m_initialized = false;
+
     public void SetParameters(Mesh mesh, List<Material> materials, Transform transform)
     {
       m_sourceMesh = mesh;
       Materials = materials.ToArray();
       m_sourceMeshTransform = transform;
+      m_initialized = false;
     }
 
     float perpendicularDistance(Vector3 point, Vector3 lineStart, Vector3 lineDirection, Vector2 interval)
@@ -84,16 +88,21 @@ namespace AGXUnity.Rendering
       m_defaultMaterial = new Material(Shader.Find("Standard"));
     }
 
-    // Start is called before the first frame update
+    // OnEnable is called before the first frame update and on enables afterwards
     override protected void OnEnable()
     {
       base.OnEnable();
-      if (!Application.isPlaying || SourceMesh == null)
+
+      if(m_initialized && m_renderer != null)
+        m_renderer.enabled = true;
+
+      if (m_initialized ||  !Application.isPlaying || SourceMesh == null)
         return;
       
       m_Cable = GetComponent<Cable>().GetInitialized();
       if (!gameObject.TryGetComponent<SkinnedMeshRenderer>(out m_renderer))
         m_renderer = gameObject.AddComponent<SkinnedMeshRenderer>();
+
 
       var cableIt = m_Cable.Native.begin();
       var cableEnd = m_Cable.Native.end();
@@ -111,7 +120,6 @@ namespace AGXUnity.Rendering
         var b = new GameObject("Bone " + i);
         b.hideFlags = HideFlags.HideInHierarchy;
         b.transform.parent = GetSourceMeshTransform();
-        b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), Quaternion.FromToRotation(Vector3.forward, (endPos - startPos).ToHandedVector3()));
         b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), rot);
         m_bones.Add(b.transform);
         cableIt.inc();
@@ -179,6 +187,14 @@ namespace AGXUnity.Rendering
       m_renderer.hideFlags = HideFlags.HideInInspector;      
 
       Simulation.Instance.StepCallbacks.PostStepForward += Post;
+      m_initialized = true;
+    }
+
+    protected override void OnDisable()
+    {
+      base.OnDisable();
+      if(m_renderer != null)
+        m_renderer.enabled = false;
     }
 
     // Update is called once per frame
@@ -213,7 +229,8 @@ namespace AGXUnity.Rendering
         var endPos = cableIt.getEndPosition();
 
         var b = m_bones[i];
-        b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), Quaternion.FromToRotation(Vector3.forward, (endPos - startPos).ToHandedVector3()));
+        var rot = cableIt.getRigidBody().getRotation().ToHandedQuaternion();
+        b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), rot);
         cableIt = cableIt.inc();
         bounds.Encapsulate(m_renderer.transform.InverseTransformPoint(b.transform.position));
         i++;
