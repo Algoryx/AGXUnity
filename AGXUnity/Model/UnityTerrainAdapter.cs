@@ -2,6 +2,7 @@ using AGXUnity.Utils;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -225,11 +226,20 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="globalIndex">The global index to convert to a unity tile index</param>
     /// <returns>The unity tile index for the given global index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public Vector2Int GlobalToUnityIndex( Vector2Int globalIndex )
     {
       return new Vector2Int( (int)Mathf.Floor( (float)globalIndex.x / ( m_tileResolution - 1 ) ),
                              (int)Mathf.Floor( (float)globalIndex.y / ( m_tileResolution - 1 ) ) );
     }
+
+    /// <summary>
+    /// Returns the connected Unity terrain at the specified Unity terrain tile index
+    /// </summary>
+    /// <param name="terrainIndex">The Unity terrain tile index to fetch the terrain for.</param>
+    /// <returns>The Unity terrain at the specified tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Terrain GetTerrainAtTerrainIndex( Vector2Int terrainIndex ) => m_unityTiles.GetValueOrDefault(terrainIndex,null);
 
     // Checks if unity tile data is loaded for the tile at the given index and queues the tile to be loaded if it is not
     private bool VerifyAndQueueTileData( Vector2Int unityIndex )
