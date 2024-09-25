@@ -202,11 +202,9 @@ namespace AGXUnity
       set { m_routeAlgorithm = value; }
     }
 
-    //============ Storage for interaction between "RouteFromMeshTool.cs" and "SkinnedCableRenderer.cs" ============
+    //============ Storage for interaction between "RouteFromMeshTool.cs" and "SkinnedCableRenderer.cs" ============    
     [HideInInspector]
     public Mesh RouteMeshSource { get; set; }
-    [HideInInspector]
-    public Transform RouteMeshTransform { get; set; }
     [HideInInspector]
     public Material[] RouteMeshMaterials { get; set; }
     //==============================================================================================================

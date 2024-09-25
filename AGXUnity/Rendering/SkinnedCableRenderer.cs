@@ -20,22 +20,18 @@ namespace AGXUnity.Rendering
     private SkinnedMeshRenderer m_renderer;
 
     [SerializeField]
-    private Transform m_sourceMeshTransform; //Only set when the "Select game object" button in the "Route from mesh" tool is used to create a route
-
-    [SerializeField]
     private Mesh m_sourceMesh;
     public Mesh SourceMesh
     {
       get { return m_sourceMesh; }
       set
       {
-        if(value != m_sourceMesh)
+        if (value != m_sourceMesh)
         {
           //Clear transform when user changes source mesh manually (or programmatically)
-          m_sourceMeshTransform = null;
           m_sourceMesh = value;
           m_initialized = false;
-        }        
+        }
       }
     }
 
@@ -49,11 +45,10 @@ namespace AGXUnity.Rendering
 
     private bool m_initialized = false;
 
-    public void SetParameters(Mesh mesh, List<Material> materials, Transform transform)
+    public void SetParameters(Mesh mesh, List<Material> materials)
     {
       m_sourceMesh = mesh;
       Materials = materials.ToArray();
-      m_sourceMeshTransform = transform;
       m_initialized = false;
     }
 
@@ -70,19 +65,13 @@ namespace AGXUnity.Rendering
         return (point - (lineStart + (t < interval.x ? interval.x : interval.y) * lineDirection)).magnitude;
     }
 
-    private Transform GetSourceMeshTransform()
-    {
-      return m_sourceMeshTransform == null ? transform : m_sourceMeshTransform;
-    }
-
     //Reset is called on componenet add/reset
     private void Reset()
     {
       Cable cable = GetComponent<Cable>();
       if (cable != null)
-      {        
+      {
         m_sourceMesh = cable.RouteMeshSource;
-        m_sourceMeshTransform = cable.RouteMeshTransform;
         Materials = cable.RouteMeshMaterials;
       }
       m_defaultMaterial = new Material(Shader.Find("Standard"));
@@ -93,12 +82,12 @@ namespace AGXUnity.Rendering
     {
       base.OnEnable();
 
-      if(m_initialized && m_renderer != null)
+      if (m_initialized && m_renderer != null)
         m_renderer.enabled = true;
 
-      if (m_initialized ||  !Application.isPlaying || SourceMesh == null)
+      if (m_initialized || !Application.isPlaying || SourceMesh == null)
         return;
-      
+
       m_Cable = GetComponent<Cable>().GetInitialized();
       if (!gameObject.TryGetComponent<SkinnedMeshRenderer>(out m_renderer))
         m_renderer = gameObject.AddComponent<SkinnedMeshRenderer>();
@@ -119,7 +108,7 @@ namespace AGXUnity.Rendering
 
         var b = new GameObject("Bone " + i);
         b.hideFlags = HideFlags.HideInHierarchy;
-        b.transform.parent = GetSourceMeshTransform();
+        b.transform.parent = transform;
         b.transform.SetPositionAndRotation(startPos.ToHandedVector3(), rot);
         m_bones.Add(b.transform);
         cableIt.inc();
@@ -130,8 +119,8 @@ namespace AGXUnity.Rendering
       Vector3[] bonePos = m_bones.Select(b => b.localPosition).ToArray();
       Vector3[] verts = SourceMesh.vertices;
       Vector3[] normals = SourceMesh.normals;
-      var objTransform = GetSourceMeshTransform().localToWorldMatrix;
-      Vector3 lastNodePosition = GetSourceMeshTransform().InverseTransformPoint(m_Cable.Route.Last().Position);
+      var objTransform = transform.localToWorldMatrix;
+      Vector3 lastNodePosition = transform.InverseTransformPoint(m_Cable.Route.Last().Position);
       Parallel.For(0, SourceMesh.vertexCount, (i) =>
       {
         Vector3 v = verts[i];
@@ -174,7 +163,7 @@ namespace AGXUnity.Rendering
       m_skinned.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
       m_skinned.triangles = SourceMesh.triangles;
       m_skinned.boneWeights = boneWeights;
-      m_skinned.bindposes = m_bones.Select(b => b.worldToLocalMatrix * GetSourceMeshTransform().localToWorldMatrix).ToArray();
+      m_skinned.bindposes = m_bones.Select(b => b.worldToLocalMatrix * transform.localToWorldMatrix).ToArray();
 
       m_renderer.bones = m_bones.ToArray();
       m_renderer.quality = SkinQuality.Bone2;
@@ -184,7 +173,7 @@ namespace AGXUnity.Rendering
       else
         m_renderer.materials = Materials.ToArray();
 
-      m_renderer.hideFlags = HideFlags.HideInInspector;      
+      m_renderer.hideFlags = HideFlags.HideInInspector;
 
       Simulation.Instance.StepCallbacks.PostStepForward += Post;
       m_initialized = true;
@@ -193,7 +182,7 @@ namespace AGXUnity.Rendering
     protected override void OnDisable()
     {
       base.OnDisable();
-      if(m_renderer != null)
+      if (m_renderer != null)
         m_renderer.enabled = false;
     }
 
@@ -203,7 +192,7 @@ namespace AGXUnity.Rendering
       if (!Application.isPlaying && SourceMesh != null)
       {
         for (int i = 0; i < SourceMesh.subMeshCount; i++)
-          Graphics.RenderMesh(new RenderParams( i < Materials.Count() ? Materials[i] : m_defaultMaterial), SourceMesh, i, GetSourceMeshTransform().localToWorldMatrix);
+          Graphics.RenderMesh(new RenderParams(i < Materials.Count() ? Materials[i] : m_defaultMaterial), SourceMesh, i, transform.localToWorldMatrix);
       }
     }
 
@@ -213,7 +202,7 @@ namespace AGXUnity.Rendering
         return;
       Gizmos.color = Color.clear;
       if (!Application.isPlaying && SourceMesh != null)
-        Gizmos.DrawMesh(SourceMesh, -1, GetSourceMeshTransform().position, GetSourceMeshTransform().rotation, GetSourceMeshTransform().localScale);
+        Gizmos.DrawMesh(SourceMesh, -1, transform.position, transform.rotation, transform.lossyScale);
     }
 
     void Post()

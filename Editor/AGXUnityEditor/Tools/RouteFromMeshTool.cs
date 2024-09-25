@@ -15,9 +15,9 @@ namespace AGXUnityEditor.Tools
   /// A tool for transforming a unity mesh into a AGX cable route. Based on "Sphere-Mesh skeletonisation" by Thiery et. al.
   /// </summary>
   /// <typeparam name="NodeT">The type of node used in the attached route</typeparam>
-  public class RouteFromMeshTool<ParentT, NodeT> : Tool 
+  public class RouteFromMeshTool<ParentT, NodeT> : Tool
     where ParentT : ScriptComponent
-    where NodeT : RouteNode, 
+    where NodeT : RouteNode,
     new()
   {
     /// <summary>
@@ -50,7 +50,7 @@ namespace AGXUnityEditor.Tools
         if (m_skeleton != value)
         {
           m_skeleton = value;
-          m_longestSkeleton = value == null ? null : m_skeleton.getLongestContinuousSkeletonSegment();         
+          m_longestSkeleton = value == null ? null : m_skeleton.getLongestContinuousSkeletonSegment();
         }
       }
     }
@@ -85,7 +85,7 @@ namespace AGXUnityEditor.Tools
         if (m_aggressiveness != value)
         {
           m_aggressiveness = value;
-          if(Preview)
+          if (Preview)
             SkeletoniseSelectedMesh();
         }
       }
@@ -213,15 +213,15 @@ namespace AGXUnityEditor.Tools
       get { return m_fixedRadius; }
       set
       {
-        if(value != m_fixedRadius)
+        if (value != m_fixedRadius)
         {
           m_fixedRadius = value;
-          if(UseFixedRadius)
+          if (UseFixedRadius)
             m_skeletoniser.applyRadius(m_fixedRadius);
         }
       }
     }
-   
+
     private bool m_useFixedRadius = false;
     /// <summary>
     /// Toggle for using a fixed radius for the joints in the skeletonisation process
@@ -231,7 +231,7 @@ namespace AGXUnityEditor.Tools
       get { return m_useFixedRadius; }
       set
       {
-        if (value != m_useFixedRadius) 
+        if (value != m_useFixedRadius)
         {
           m_useFixedRadius = value;
           if (!value && Skeleton != null)
@@ -243,7 +243,7 @@ namespace AGXUnityEditor.Tools
           {
             m_skeletoniser.applyRadius(FixedRadius);
           }
-        }        
+        }
       }
     }
 
@@ -313,7 +313,7 @@ namespace AGXUnityEditor.Tools
         else if (Event.current.control)
         {
           DrawRoutePreview(sceneView, jointColor: Color.green, jointClickableHandle: jIdx => m_skeletoniser.isUpscalePossible(jIdx), unclickableColor: normalColor, onJointClickCallback: j =>
-          {            
+          {
             if (m_skeletoniser.upscaleJoint(j.skeletoniserIndex))
             {
               UserHasEdited = true;
@@ -335,7 +335,7 @@ namespace AGXUnityEditor.Tools
 
     private NodeT CreateNode(Vector3 localPosition, Quaternion localRotation)
     {
-      NodeT node = IFrame.Create<NodeT>(m_selectedParent, localPosition, localRotation);
+      NodeT node = IFrame.Create<NodeT>(Route.gameObject, localPosition, localRotation);
       if (Route is WireRoute)
         (node as WireRouteNode).Type = Wire.NodeType.FreeNode;
       else if (Route is CableRoute)
@@ -372,7 +372,7 @@ namespace AGXUnityEditor.Tools
         SelectGameObjectTool = true;
       }
 
-      
+
       InspectorEditor.RequestConstantRepaint = SelectGameObjectTool;
 
       EditorGUI.BeginDisabledGroup(SelectGameObjectTool);
@@ -388,7 +388,7 @@ namespace AGXUnityEditor.Tools
       uint newNumNodes = (uint)System.Math.Clamp(EditorGUILayout.DelayedIntField(GUI.MakeLabel("Number of Nodes:", toolTip: "The current number of nodes in the skeleton. This value can be increased to attempt an automatic upscaling to that number of joints."), Preview && Skeleton != null ? Skeleton.joints.Count : 0, GUILayout.ExpandWidth(false)), 0, uint.MaxValue);
       if (newNumNodes > Skeleton?.joints.Count)
       {
-        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);        
+        m_skeletoniser.upscaleSkeleton(newNumNodes - (uint)Skeleton.joints.Count + m_skeletoniser.remainingVertices(), SphereSkeletoniser.UpscalingMethod.BOTH, m_longestSkeleton);
         UserHasEdited = true;
         UpdateSkeleton();
       }
@@ -461,12 +461,15 @@ namespace AGXUnityEditor.Tools
             renderer.GetSharedMaterials(materials);
           SkinnedCableRenderer skinnedCableRenderer = cable.GetComponent<SkinnedCableRenderer>();
           if (skinnedCableRenderer != null)
-            skinnedCableRenderer.SetParameters(m_selectedMesh, materials, m_selectedParent.transform);
+            skinnedCableRenderer.SetParameters(m_selectedMesh, materials);
 
           cable.RouteMeshSource = m_selectedMesh;
-          cable.RouteMeshTransform = m_selectedParent.transform;
           cable.RouteMeshMaterials = materials.ToArray();
-        }          
+
+          cable.transform.SetPositionAndRotation(m_meshSource.transform.position, m_meshSource.transform.rotation);
+          cable.transform.localScale = Vector3.one;
+          cable.transform.localScale = new Vector3(m_meshSource.transform.lossyScale.x / cable.transform.lossyScale.y, m_meshSource.transform.lossyScale.y / cable.transform.lossyScale.z, m_meshSource.transform.lossyScale.z / cable.transform.lossyScale.z);
+        }
         CreateRoute(Route.Any() && m_transferNodeSettings);
         PerformRemoveFromParent();
       }
@@ -492,10 +495,10 @@ namespace AGXUnityEditor.Tools
       //Create a sliding window which also has the ends as a pair with themselves
       var destNodePairs = destNodes.Zip(destNodes.Skip(1), (a, b) => Tuple.Create(a, b)).Prepend(Tuple.Create(destNodes.First(), destNodes.First())).Append(Tuple.Create(destNodes.Last(), destNodes.Last()));
 
-      foreach(var node in specialNodes)
+      foreach (var node in specialNodes)
       {
         //We try to find a pair of nodes from the destNodes input which produces the least distance. The previous fixed node should most likely lay between those if the user wanted the special nodes to persist in their current locations.
-        var bestPair = destNodePairs.Select((n, i) => new { nodePair = n, idx = i } ).Aggregate((currMin, p) =>
+        var bestPair = destNodePairs.Select((n, i) => new { nodePair = n, idx = i }).Aggregate((currMin, p) =>
         {
           return (currMin == null) || (Vector3.Distance(p.nodePair.Item1.Position, node.Position) + Vector3.Distance(p.nodePair.Item2.Position, node.Position)) < Vector3.Distance(currMin.nodePair.Item1.Position, node.Position) + Vector3.Distance(currMin.nodePair.Item2.Position, node.Position) ? p : currMin;
         });
@@ -660,7 +663,7 @@ namespace AGXUnityEditor.Tools
     private void UpdateSkeleton()
     {
       if (m_skeletoniser != null)
-      {        
+      {
         var skel = UseLongestPath ? m_skeletoniser.getSkeleton().getLongestContinuousSkeletonSegment() : m_skeletoniser.getSkeleton();
         m_skeletoniser.consolidateSkeleton(skel, 1);
         Skeleton = m_skeletoniser.getSkeleton();
@@ -690,7 +693,7 @@ namespace AGXUnityEditor.Tools
             selected = child;
           }
         });
-      }      
+      }
       if (selected.TryGetComponent<MeshFilter>(out foundFilter))
       {
         var mesh = foundFilter.sharedMesh;
@@ -804,7 +807,7 @@ namespace AGXUnityEditor.Tools
         UseLongestPath = false;
 
       //Drawing without depth makes selection hard so a custom z-pass is used by simply sorting the draw calls in this function by distance form the camera and otherwise always passing the zTest
-      
+
       var drawcalls = new List<(float distance, Action drawAction, Color drawColor, int sourceSegment)>(); //Make sure to provide proper capture for each drawcall!
       Matrix4x4 skeletonToWorld = SkeletonToWorld();
       float handleRadius = UseFixedRadius ? FixedRadius : SkeletonRadius();
@@ -827,7 +830,7 @@ namespace AGXUnityEditor.Tools
       float minDist = float.PositiveInfinity;
       int hoveredSegment = -1;
       for (int i = 0; i < skeletonSegments.Count; i++)
-      {        
+      {
 
         var segment = skeletonSegments[i];
         float handleDiameter = handleRadius * 2;
@@ -876,7 +879,7 @@ namespace AGXUnityEditor.Tools
             }
           }
 
-          distanceToCamera = (cameraPosRouteSpace - currPos).magnitude - handleRadius;          
+          distanceToCamera = (cameraPosRouteSpace - currPos).magnitude - handleRadius;
           //Draw joint
           if (jointClickableHandle != null && jointClickableHandle(currDFSJoint.skeletoniserIndex))
           {
@@ -917,7 +920,7 @@ namespace AGXUnityEditor.Tools
         {
           var drawcall = drawcalls[i];
           bool displayAsHovered = drawcall.sourceSegment == hoveredSegment || hoveredSegment == -1;
-          float shade = displayAsHovered ? 1f - (drawcall.distance / furthestDistance) * (0.6f-(closestDistance / furthestDistance / 0.6f)) : 0.2f;
+          float shade = displayAsHovered ? 1f - (drawcall.distance / furthestDistance) * (0.6f - (closestDistance / furthestDistance / 0.6f)) : 0.2f;
           var shadeColor = new Color(shade, shade, shade);
           using (new Handles.DrawingScope(drawcall.drawColor * shadeColor))
           {
