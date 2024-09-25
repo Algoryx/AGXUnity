@@ -682,21 +682,12 @@ namespace AGXUnityEditor.Tools
         return false;
       DisplayVertexCountWarning = false;
 
-      MeshFilter foundFilter;
+      selected.TryGetComponent(out MeshFilter foundFilter);
+      selected.TryGetComponent(out SkinnedCableRenderer foundSkinnedCableRenderer);
 
-      if (!selected.TryGetComponent<MeshFilter>(out foundFilter))
+      if (foundFilter != null || foundSkinnedCableRenderer != null)
       {
-        selected.TraverseChildren(delegate (GameObject child)
-        {
-          if (child.TryGetComponent<MeshFilter>(out foundFilter))
-          {
-            selected = child;
-          }
-        });
-      }
-      if (selected.TryGetComponent<MeshFilter>(out foundFilter))
-      {
-        var mesh = foundFilter.sharedMesh;
+        var mesh = (foundSkinnedCableRenderer != null && foundSkinnedCableRenderer.enabled) ? foundSkinnedCableRenderer.SourceMesh : foundFilter.sharedMesh;
         if (mesh == null)
         {
           return false;
