@@ -35,20 +35,40 @@ namespace AGXUnity.Rendering
       }
     }
 
-    public Material[] Materials;
+    [HideInInspector]
+    public Material Material
+    {
+      get {
+        if(SharedMaterial != null)
+        {
+          var copiedMaterial = new Material(SharedMaterial);
+          SharedMaterial = copiedMaterial;
+          return copiedMaterial;
+        }
+        return null;
+      }
+      set
+      {
+        SharedMaterial = value;
+      }
+    }
+
+    public Material SharedMaterial;
 
     private Mesh m_skinned;
 
     private List<Transform> m_bones;
 
+    [SerializeField]
     private Material m_defaultMaterial;
 
+    [SerializeField]
     private bool m_initialized = false;
 
-    public void SetParameters(Mesh mesh, List<Material> materials)
+    public void SetParameters(Mesh mesh, Material sharedMaterial)
     {
       m_sourceMesh = mesh;
-      Materials = materials.ToArray();
+      Material = sharedMaterial;
       m_initialized = false;
     }
 
@@ -72,7 +92,7 @@ namespace AGXUnity.Rendering
       if (cable != null)
       {
         m_sourceMesh = cable.RouteMeshSource;
-        Materials = cable.RouteMeshMaterials;
+        Material = cable.RouteMeshMaterial;
       }
       m_defaultMaterial = new Material(Shader.Find("Standard"));
     }
@@ -168,10 +188,10 @@ namespace AGXUnity.Rendering
       m_renderer.bones = m_bones.ToArray();
       m_renderer.quality = SkinQuality.Bone2;
       m_renderer.sharedMesh = m_skinned;
-      if (!Materials.Any())
+      if (SharedMaterial == null)
         m_renderer.sharedMaterial = m_defaultMaterial;
       else
-        m_renderer.materials = Materials.ToArray();
+        m_renderer.sharedMaterial = SharedMaterial;
 
       m_renderer.hideFlags = HideFlags.HideInInspector;
 
@@ -192,7 +212,7 @@ namespace AGXUnity.Rendering
       if (!Application.isPlaying && SourceMesh != null)
       {
         for (int i = 0; i < SourceMesh.subMeshCount; i++)
-          Graphics.RenderMesh(new RenderParams(i < Materials.Count() ? Materials[i] : m_defaultMaterial), SourceMesh, i, transform.localToWorldMatrix);
+          Graphics.RenderMesh(new RenderParams(SharedMaterial != null ? SharedMaterial : m_defaultMaterial), SourceMesh, i, transform.localToWorldMatrix);
       }
     }
 

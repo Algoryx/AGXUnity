@@ -455,17 +455,19 @@ namespace AGXUnityEditor.Tools
         if (Route is CableRoute)
         {
           Cable cable = Route.GetComponent<Cable>();
-          List<Material> materials = new List<Material>();
+          cable.RouteMeshMaterial = null;
+
           MeshRenderer renderer = m_meshSource.GetComponent<MeshRenderer>();
           if (renderer != null)
-            renderer.GetSharedMaterials(materials);
+            cable.RouteMeshMaterial = renderer.sharedMaterial;
           SkinnedCableRenderer skinnedCableRenderer = cable.GetComponent<SkinnedCableRenderer>();
-          if (skinnedCableRenderer != null)
-            skinnedCableRenderer.SetParameters(m_selectedMesh, materials);
+          if (skinnedCableRenderer != null)          
+            skinnedCableRenderer.SetParameters(m_selectedMesh, cable.RouteMeshMaterial);         
 
           cable.RouteMeshSource = m_selectedMesh;
-          cable.RouteMeshMaterials = materials.ToArray();
+          
 
+          //Set transform of the cables gameobject to make sure the created routes position matches the preview and to make sure the scale of the mesh is correct
           cable.transform.SetPositionAndRotation(m_meshSource.transform.position, m_meshSource.transform.rotation);
           cable.transform.localScale = Vector3.one;
           cable.transform.localScale = new Vector3(m_meshSource.transform.lossyScale.x / cable.transform.lossyScale.y, m_meshSource.transform.lossyScale.y / cable.transform.lossyScale.z, m_meshSource.transform.lossyScale.z / cable.transform.lossyScale.z);
@@ -683,11 +685,13 @@ namespace AGXUnityEditor.Tools
       DisplayVertexCountWarning = false;
 
       selected.TryGetComponent(out MeshFilter foundFilter);
+      selected.TryGetComponent(out MeshRenderer foundMeshRenderer);
       selected.TryGetComponent(out SkinnedCableRenderer foundSkinnedCableRenderer);
 
       if (foundFilter != null || foundSkinnedCableRenderer != null)
       {
-        var mesh = (foundSkinnedCableRenderer != null && foundSkinnedCableRenderer.enabled) ? foundSkinnedCableRenderer.SourceMesh : foundFilter.sharedMesh;
+        bool useSkinnedRenderer = (foundFilter == null || (!foundMeshRenderer?.enabled).GetValueOrDefault(false)) && foundSkinnedCableRenderer != null && foundSkinnedCableRenderer.enabled;
+        var mesh = useSkinnedRenderer ? foundSkinnedCableRenderer.SourceMesh : foundFilter.sharedMesh;
         if (mesh == null)
         {
           return false;
@@ -698,6 +702,7 @@ namespace AGXUnityEditor.Tools
           Preview = false;
           DisplayVertexCountWarning = true;
         }
+
         SelectedMesh = mesh;
         m_meshSource = selected;
         m_skeletoniser = null;
