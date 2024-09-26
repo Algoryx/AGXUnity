@@ -457,9 +457,11 @@ namespace AGXUnityEditor.Tools
           Cable cable = Route.GetComponent<Cable>();
           cable.RouteMeshMaterial = null;
 
-          MeshRenderer renderer = m_meshSource.GetComponent<MeshRenderer>();
-          if (renderer != null)
+          if (m_meshSource.TryGetComponent(out MeshRenderer renderer) && renderer.enabled)
             cable.RouteMeshMaterial = renderer.sharedMaterial;
+          else if (m_meshSource.TryGetComponent(out AGXUnity.Collide.Mesh agxMesh) && agxMesh.enabled && agxMesh.SourceObjects.Length != 0)
+            cable.RouteMeshMaterial = agxMesh.Visual.GetMaterial(agxMesh.SourceObjects[0]);
+
           SkinnedCableRenderer skinnedCableRenderer = cable.GetComponent<SkinnedCableRenderer>();
           if (skinnedCableRenderer != null)          
             skinnedCableRenderer.SetParameters(m_selectedMesh, cable.RouteMeshMaterial);         
@@ -685,13 +687,22 @@ namespace AGXUnityEditor.Tools
       DisplayVertexCountWarning = false;
 
       selected.TryGetComponent(out MeshFilter foundFilter);
+      selected.TryGetComponent(out AGXUnity.Collide.Mesh foundAgxMesh);
       selected.TryGetComponent(out MeshRenderer foundMeshRenderer);
       selected.TryGetComponent(out SkinnedCableRenderer foundSkinnedCableRenderer);
 
-      if (foundFilter != null || foundSkinnedCableRenderer != null)
+      if (foundFilter != null || foundSkinnedCableRenderer != null || foundAgxMesh != null)
       {
-        bool useSkinnedRenderer = (foundFilter == null || (!foundMeshRenderer?.enabled).GetValueOrDefault(false)) && foundSkinnedCableRenderer != null && foundSkinnedCableRenderer.enabled;
-        var mesh = useSkinnedRenderer ? foundSkinnedCableRenderer.SourceMesh : foundFilter.sharedMesh;
+        Mesh mesh = null;
+        if (foundMeshRenderer != null && foundMeshRenderer.enabled && foundFilter != null)
+          mesh = foundFilter.sharedMesh;
+        else if (foundSkinnedCableRenderer != null && foundSkinnedCableRenderer.enabled)
+          mesh = foundSkinnedCableRenderer.SourceMesh;
+        else if (foundAgxMesh != null)
+          mesh = foundAgxMesh.SourceObjects.Length != 0 ? foundAgxMesh.SourceObjects[0] : null;
+        else if(foundFilter != null)
+          mesh = foundFilter.sharedMesh;
+
         if (mesh == null)
         {
           return false;

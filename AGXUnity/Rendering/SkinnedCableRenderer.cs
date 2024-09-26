@@ -3,6 +3,7 @@ using AGXUnity;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -53,7 +54,14 @@ namespace AGXUnity.Rendering
       }
     }
 
+    [HideInInspector]
     public Material SharedMaterial;
+
+    public Material RenderMaterial
+    {
+      get { return SharedMaterial; }
+      set { SharedMaterial = value; }
+    }
 
     private Mesh m_skinned;
 
