@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using UnityEditor;
+using UnityEditor.PackageManager.UI;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
@@ -21,9 +22,10 @@ namespace AGXUnityEditor.Windows
 
     private void OnEnable()
     {
+      ScopedRegistryManager.RequestRegistryListRefresh();
       var thumbnailDirectory = FindThumbnailDirectory();
       ExamplesManager.Initialize();
-      EditorApplication.update += OnUpdate;
+      EditorApplication.update += OnUpdate; 
     }
 
     private void OnDisable()
@@ -34,7 +36,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnGUI()
     {
-      minSize = new Vector2(400, 0);
+      minSize = new Vector2( 400, 0 );
       if ( m_exampleNameStyle == null ) {
         m_exampleNameStyle = new GUIStyle( InspectorEditor.Skin.Label );
         m_exampleNameStyle.alignment = TextAnchor.MiddleLeft;
@@ -76,11 +78,11 @@ namespace AGXUnityEditor.Windows
 
         using ( new EditorGUILayout.HorizontalScope() ) {
           var boxStyle = new GUIStyle();
-          boxStyle.margin = new RectOffset(5,5,0,0 );
+          boxStyle.margin = new RectOffset( 5, 5, 0, 0 );
           GUILayout.Box( data.Thumbnail,
-                         boxStyle, 
+                         boxStyle,
                          GUILayout.Width( ExampleRowSize ),
-                         GUILayout.Height( ExampleRowSize ));
+                         GUILayout.Height( ExampleRowSize ) );
           var exampleNameLabel = GUI.MakeLabel( $"{data.Name}", true );
           if ( data != null ) {
             if ( Link( exampleNameLabel, GUILayout.Height( ExampleRowSize ) ) )
@@ -90,7 +92,7 @@ namespace AGXUnityEditor.Windows
             GUILayout.Label( exampleNameLabel,
                              m_exampleNameStyle,
                              GUILayout.Height( ExampleRowSize ) );
-          
+
           GUILayout.FlexibleSpace();
 
           var hasUnresolvedIssues = ExamplesManager.HasUnresolvedIssues( data );
@@ -126,6 +128,7 @@ namespace AGXUnityEditor.Windows
               if ( hasUnresolvedIssues ) {
                 var dependencyContextButtonWidth = (float)ButtonSize;
 
+                var requiresAGXRegistryAdd     = ( ExamplesManager.RequiresAGXRegistry( data ) && !ExamplesManager.AGXScopedRegistryAdded );
                 var hasUnresolvedDependencies  = ExamplesManager.HasUnresolvedDependencies( data );
                 var hasUnresolvedInputSettings = ( data.RequiresLegacyInputManager &&
                                                  !ExamplesManager.LegacyInputManagerEnabled ) ||
@@ -145,12 +148,19 @@ namespace AGXUnityEditor.Windows
                                                        GUILayout.Width(dependencyContextButtonWidth));
                 if ( contextButton ) {
                   var dependenciesMenu = new GenericMenu();
-                  if ( hasUnresolvedDependencies ) {
+                  if ( requiresAGXRegistryAdd ) {
+                    dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Add AGXUnity Scoped registry..." ) );
+                    dependenciesMenu.AddSeparator( string.Empty );
+                    dependenciesMenu.AddItem( GUI.MakeLabel( "Add AGXUnity Scoped registry" ),
+                                              false,
+                                              () => ExamplesManager.AddAGXUnityScopedRegistry() );
+                  }
+                  else if ( hasUnresolvedDependencies ) {
                     dependenciesMenu.AddDisabledItem( GUI.MakeLabel( "Install dependency..." ) );
                     dependenciesMenu.AddSeparator( string.Empty );
-                    foreach ( var dependency in data.Dependencies ) 
+                    foreach ( var dependency in data.Dependencies )
                       dependenciesMenu.AddItem( GUI.MakeLabel( dependency.ToString() ),
-                                                false,
+                                                ExamplesManager.GetDependencyState( dependency ) == ExamplesManager.DependencyState.Installed,
                                                 () => ExamplesManager.InstallDependency( dependency ) );
                   }
                   else {
@@ -187,14 +197,14 @@ namespace AGXUnityEditor.Windows
                     var progressRect = GUILayoutUtility.GetLastRect();
                     EditorGUI.ProgressBar( progressRect,
                                            data.DownloadProgress,
-                                           $"Downloading: { (int)( 100.0f * data.DownloadProgress + 0.5f ) }%" );
+                                           $"Downloading: {(int)( 100.0f * data.DownloadProgress + 0.5f )}%" );
                   }
                 }
               }
             }
           }
         }
-        InspectorGUI.Separator(1,ExampleSpacing);
+        InspectorGUI.Separator( 1, ExampleSpacing );
       }
 
       EditorGUILayout.EndScrollView();

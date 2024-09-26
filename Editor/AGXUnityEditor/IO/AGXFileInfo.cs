@@ -250,7 +250,11 @@ namespace AGXUnityEditor.IO
         }
       }
 
-      RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
+      if( path.StartsWith( "Packages/" ) ) {
+        RootDirectory = Path.GetDirectoryName( path).Replace( '\\', '/' );
+      } else {
+        RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
+      }
       // If the file is located in the root Assets folder the relative directory
       // is the empty string and Unity requires the relative path to include "Assets".
       if ( RootDirectory == string.Empty )

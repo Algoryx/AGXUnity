@@ -329,6 +329,22 @@ namespace AGXUnityEditor.Windows
       }
     }
 
+    private static bool HasAGXUnityScope( RegistryInfo reg )
+    {
+      var scopesAccessor = typeof(RegistryInfo).GetProperty("scopes", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.GetProperty);
+      var scopes = (string[])scopesAccessor.GetValue(reg);
+      return scopes.Contains( "com.algoryx.agxunity.machines" );
+    }
+
+    public static bool AGXScopedRegistryAdded
+    {
+      get
+      {
+        var infos = ScopedRegistryManager.GetRegistryInfos();
+        return infos != null && infos.Any( HasAGXUnityScope );
+      }
+    }
+
     /// <summary>
     /// Scraps old data and fetch new information about examples
     /// and dependencies.
@@ -362,6 +378,11 @@ namespace AGXUnityEditor.Windows
 
       s_exampleData.Clear();
       s_dependencyData.Clear();
+    }
+
+    public static void AddAGXUnityScopedRegistry()
+    {
+      ScopedRegistryManager.AddOrUpdateScopedRegistry( "AGXUnity Registry", "http://127.0.0.1:4000", new string[] { "com.algoryx.agxunity.machines" } );
     }
 
     /// <summary>
@@ -492,6 +513,7 @@ namespace AGXUnityEditor.Windows
     {
       return HasUnresolvedDependencies( example ) ||
              example == null ||
+             ( RequiresAGXRegistry(example) && !AGXScopedRegistryAdded ) ||
              ( example.RequiresLegacyInputManager && !LegacyInputManagerEnabled ) ||
              ( example.Dependencies.Contains( "com.unity.inputsystem" ) && !InputSystemEnabled );
     }
@@ -507,6 +529,13 @@ namespace AGXUnityEditor.Windows
       return example != null &&
              example.Dependencies.Length > 0 &&
              example.Dependencies.Any( dependency => GetDependencyState( dependency ) != DependencyState.Installed );
+    }
+
+    public static bool RequiresAGXRegistry( ExampleData example )
+    {
+      return example != null &&
+             example.Dependencies.Length > 0 &&
+             example.Dependencies.Any( dependency => dependency.StartsWith("com.algoryx.agxunity.machines") );
     }
 
     /// <summary>
@@ -841,10 +870,10 @@ namespace AGXUnityEditor.Windows
 
     public static DependencyState GetDependencyState( string packageName )
     {
-      return s_dependencyData.ContainsKey(packageName) ? s_dependencyData[packageName] : DependencyState.Unknown;
+      return s_dependencyData.ContainsKey( packageName ) ? s_dependencyData[ packageName ] : DependencyState.Unknown;
     }
 
-    private static string s_metadataURL = @"https://us.download.algoryx.se/AGXUnity/examples/current/ExampleMetadata.json";
+    private static string s_metadataURL = @"file:///C:/Users/Filip/Dev/upm/AGXUnity/build/windows/deploy/public_examples/test/current/ExampleMetadata.json";
     private static ListRequest s_listPackagesRequest = null;
     private static List<AddRequest> s_addPackageRequests = new List<AddRequest>();
     private static List<ExampleData> s_exampleData = new List<ExampleData>();
