@@ -10,14 +10,15 @@ namespace AGXUnityEditor
 
     private static PackageManifest s_instance = null;
 
+    public static string Raw => File.ReadAllText(s_manifestPath);
+
     public static PackageManifest Instance
     {
       get
       {
         if ( s_instance == null ) {
-          var manifestRaw = File.ReadAllText(s_manifestPath);
           try {
-            s_instance = JsonUtility.FromJson<PackageManifest>( manifestRaw );
+            s_instance = JsonUtility.FromJson<PackageManifest>( Raw );
           }
           catch {
             Debug.LogError( "Failed to load package manifest. AGXUnity installation might be corrupt." );

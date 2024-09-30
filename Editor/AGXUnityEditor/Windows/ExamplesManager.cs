@@ -382,7 +382,7 @@ namespace AGXUnityEditor.Windows
 
     public static void AddAGXUnityScopedRegistry()
     {
-      ScopedRegistryManager.AddOrUpdateScopedRegistry( "AGXUnity Registry", "http://127.0.0.1:4000", new string[] { "com.algoryx.agxunity.machines" } );
+      ScopedRegistryManager.AddOrUpdateScopedRegistry( "AGXUnity Registry", "https://registry.npmjs.org", new string[] { "com.algoryx.agxunity.machines" } );
     }
 
     /// <summary>
