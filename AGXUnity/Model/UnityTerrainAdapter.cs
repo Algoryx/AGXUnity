@@ -241,6 +241,14 @@ namespace AGXUnity.Model
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public Terrain GetTerrainAtTerrainIndex( Vector2Int terrainIndex ) => m_unityTiles.GetValueOrDefault(terrainIndex,null);
 
+    /// <summary>
+    /// Whether or not the pager has fetched data from the terrain at the given index.
+    /// </summary>
+    /// <param name="terrainIndex">The terrain index to check</param>
+    /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_unityData.ContainsKey(terrainIndex);
+
     // Checks if unity tile data is loaded for the tile at the given index and queues the tile to be loaded if it is not
     private bool VerifyAndQueueTileData( Vector2Int unityIndex )
     {

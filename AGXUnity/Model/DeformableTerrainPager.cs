@@ -502,6 +502,14 @@ namespace AGXUnity.Model
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public Terrain GetUnityTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.GetTerrainAtTerrainIndex( terrainIndex );
 
+    /// <summary>
+    /// Whether or not the pager has fetched data from the terrain at the given index.
+    /// </summary>
+    /// <param name="terrainIndex">The terrain index to check</param>
+    /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.IsDataFetchedFromTerrain( terrainIndex );
+
     public void RecalculateParameters()
     {
       if ( ValidateParameters() )
