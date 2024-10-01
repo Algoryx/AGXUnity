@@ -66,6 +66,8 @@ namespace AGXUnityEditor
 
     private void OnPostprocessPrefab( GameObject gameObject )
     {
+      if ( context.assetPath.StartsWith( "Packages/" ) )
+        return;
       // Since AGX materials are stored in the scene (in memory) these material instances cannot be added
       // to prefabs. This causes the prefabs to have 'None' materials.
       // One solution to this is to add the material as a subasset to the prefab.
