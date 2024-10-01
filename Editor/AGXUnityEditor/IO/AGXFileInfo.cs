@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 namespace AGXUnityEditor.IO
 {
@@ -81,7 +80,7 @@ namespace AGXUnityEditor.IO
                FileType.AGXPrefab :
                FileType.Unknown;
     }
-    
+
     /// <summary>
     /// True if valid path was given.
     /// </summary>
@@ -250,11 +249,11 @@ namespace AGXUnityEditor.IO
         }
       }
 
-      if( path.StartsWith( "Packages/" ) ) {
-        RootDirectory = Path.GetDirectoryName( path).Replace( '\\', '/' );
-      } else {
+      if ( path.StartsWith( "Packages/" ) )
+        RootDirectory = Path.GetDirectoryName( path ).Replace( '\\', '/' );
+      else
         RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
-      }
+
       // If the file is located in the root Assets folder the relative directory
       // is the empty string and Unity requires the relative path to include "Assets".
       if ( RootDirectory == string.Empty )
