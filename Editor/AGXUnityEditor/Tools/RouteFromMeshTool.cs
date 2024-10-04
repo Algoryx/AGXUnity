@@ -196,7 +196,8 @@ namespace AGXUnityEditor.Tools
         if (value != m_useLongestContinuousPathInSkeleton)
         {
           m_useLongestContinuousPathInSkeleton = value;
-          m_skeletoniser.applyRadius(value ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+          if(m_skeletoniser != null)
+            m_skeletoniser.applyRadius(value ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
         }
       }
     }
@@ -216,7 +217,7 @@ namespace AGXUnityEditor.Tools
         if (value != m_fixedRadius)
         {
           m_fixedRadius = value;
-          if (UseFixedRadius)
+          if (UseFixedRadius && m_skeletoniser != null)
             m_skeletoniser.applyRadius(m_fixedRadius);
         }
       }
@@ -236,10 +237,11 @@ namespace AGXUnityEditor.Tools
           m_useFixedRadius = value;
           if (!value && Skeleton != null)
           {
-            m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
+            if(m_skeletoniser != null)
+              m_skeletoniser.applyRadius(UseLongestPath ? m_longestSkeletonAvgRadius : m_skeletonAvgRadius);
             FixedRadius = (float)SkeletonRadius();
           }
-          else if (value)
+          else if (value && m_skeletoniser != null)
           {
             m_skeletoniser.applyRadius(FixedRadius);
           }
