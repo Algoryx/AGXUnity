@@ -459,7 +459,7 @@ namespace AGXUnityEditor.Tools
           Cable cable = Route.GetComponent<Cable>();
           cable.RouteMeshMaterial = null;
 
-          if (m_meshSource.TryGetComponent(out MeshRenderer renderer) && renderer.enabled)
+          if (m_meshSource != null && m_meshSource.TryGetComponent(out MeshRenderer renderer) && renderer.enabled)
             cable.RouteMeshMaterial = renderer.sharedMaterial;
           else if (m_meshSource.TryGetComponent(out AGXUnity.Collide.Mesh agxMesh) && agxMesh.enabled && agxMesh.SourceObjects.Length != 0)
             cable.RouteMeshMaterial = agxMesh.Visual.GetMaterial(agxMesh.SourceObjects[0]);
