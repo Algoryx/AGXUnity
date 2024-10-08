@@ -1,3 +1,4 @@
+using agxModel;
 using AGXUnity;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
@@ -73,7 +74,7 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     private double m_longestSkeletonAvgRadius = 0;
 
-    private float m_aggressiveness = 0;
+    private float m_aggressiveness = 1;
     /// <summary>
     /// A measure of how aggressive the skeletonisation process should be. Is used to calculate the "face devalue factor" by using it as an exponent.
     /// </summary>
@@ -937,6 +938,87 @@ namespace AGXUnityEditor.Tools
           }
         }
       }
+    }
+
+    [SerializeField]
+    private int m_bundleResolution = 20;
+
+    SphereSkeleton BundleSkeleton(SphereSkeleton sourceSkeleton){
+      var segments = sourceSkeleton.segmentSkeleton();
+
+      List<HermiteSpline> curves = new();
+      List<double> radii = new();
+
+      double averageSegmentLength = 0;
+
+      for (int i = 0; i < segments.Count; i++)
+      {        
+        SphereSkeleton segment = segments[i];
+        HermiteSpline curve = new();       
+        double averageRadius = 0;
+
+        SphereSkeleton.dfs_iterator currDFSJoint = segment.begin();
+
+        while(!currDFSJoint.isEnd())
+        {
+          if(currDFSJoint.prev_joint() != null)
+            averageSegmentLength += currDFSJoint.prev_joint().position.distance(currDFSJoint.position);
+          
+          averageRadius += currDFSJoint.radius;
+          curve.add(currDFSJoint.position, 0.5);
+          currDFSJoint.inc();
+        }
+        radii.Add(averageRadius / segment.joints.Count);
+        curve.updateTangents();
+        curves.Add(curve);
+      }
+
+      averageSegmentLength /= segments.Count;      
+
+      double maxRadius = 0;
+      for (int i = 0; i < curves.Count; i++)
+      {
+        var curve1 = curves[i];
+        var radius1 = radii[i];
+        var point1 = curve1.evaluate(0,0);
+        for(int j = 0; j < curves.Count; j++)
+        {
+          var curve2 = curves[j];
+          var radius2 = radii[j];          
+          var point2 = curve2.evaluate(0,0);
+          maxRadius = Mathf.Max(maxRadius, (point1.distance(point2.) + radius1 + radius2) / 2);
+        }
+      }
+
+      SphereSkeleton newSkeleton = new();
+      for(uint i = 0; i < m_bundleResolution; i++)
+      {
+        SphereSkeleton.Joint joint = new()
+        {
+            index = i,
+            radius = maxRadius
+        };
+        if (i != 0)
+          joint.adjJoints.Add(i-1);
+        if(i != m_bundleResolution-1)
+          joint.adjJoints.Add(i+1);
+
+        float t = (float) i / m_bundleResolution;        
+        agx.Vec3 averagePosition = new agx.Vec3(0,0,0);
+
+        for(int j = 0; j < curves.Count; j++)
+        {
+          var curve = curves[j];
+          uint curvePointIndex = Convert.ToUInt32((t * (curve.getNumPoints() - 1)).;
+          averagePosition += curve.evaluate(curvePointIndex, t);
+        }
+
+        joint.position = averagePosition / curves.Count;
+        joint.skeletoniserIndex = 0; //TODO: Disable preview-operations for bundles skeletons
+        newSkeleton.joints.Add(joint);
+      }
+
+      return newSkeleton;
     }
   }
 }
