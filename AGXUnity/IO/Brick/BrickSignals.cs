@@ -3,6 +3,8 @@ using Brick.DriveTrain;
 using Brick.Physics.Signals;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 using Input = Brick.Physics.Signals.Input;
@@ -14,50 +16,13 @@ namespace AGXUnity.IO.BrickIO
   [RequireComponent( typeof( BrickRoot ) )]
   public class BrickSignals : ScriptComponent
   {
-    [Serializable]
-    public struct SignalMetadata : ISerializationCallbackReceiver
-    {
-      [SerializeField]
-      public bool input;
-
-      public Type type;
-
-      [SerializeField]
-      private string m_serializedType;
-
-      public void OnAfterDeserialize()
-      {
-        if ( m_serializedType != null )
-          type = Type.GetType( m_serializedType );
-      }
-
-      public void OnBeforeSerialize()
-      {
-        if ( type == null )
-          m_serializedType = null;
-        else
-          m_serializedType = type.AssemblyQualifiedName;
-      }
-    }
-
     [SerializeField]
-    private List<string> m_signals = new List<string>();
-
-    [HideInInspector]
-    public string[] Signals => m_signals.ToArray();
-
+    private List<OutputSource> m_outputs = new List<OutputSource>();
     [SerializeField]
-    private SerializableDictionary<string, SignalMetadata> m_metadata = new SerializableDictionary<string, SignalMetadata>();
+    private List<InputTarget> m_inputs = new List<InputTarget>();
 
-    public SignalMetadata? GetMetadata( string signal )
-    {
-      if ( !m_metadata.TryGetValue( signal, out var data ) )
-        return null;
-      return data;
-    }
-
-    private List<Output> m_outputs = new List<Output>();
-    private List<Input> m_inputs = new List<Input>();
+    public OutputSource[] Outputs => m_outputs.ToArray();
+    public InputTarget[] Inputs => m_inputs.ToArray();
 
     private Queue<InputSignal> m_inputSignalQueue = new Queue<InputSignal>();
     private List<OutputSignal> m_outputSignalList = new List<OutputSignal>();
@@ -68,41 +33,33 @@ namespace AGXUnity.IO.BrickIO
     [HideInInspector]
     public BrickRoot Root => GetComponent<BrickRoot>();
 
-    [HideInInspector]
-    public Dictionary<string, OutputSignal> m_outputCache = new Dictionary<string, OutputSignal>();
+    private Dictionary<Output, OutputSignal> m_outputCache = new Dictionary<Output, OutputSignal>();
+    private Dictionary<string, SignalEndpoint> m_declaredNameEndpointMap = new Dictionary<string, SignalEndpoint>();
 
     public void RegisterSignal<T>( string signal, T brickSignal )
       where T : Brick.Core.Object
     {
-      if ( brickSignal is not Output && brickSignal is not Input ) {
+      if ( brickSignal is Output output )
+        m_outputs.Add( new OutputSource( signal, output ) );
+      else if ( brickSignal is Input input )
+        m_inputs.Add( new InputTarget( signal, input ) );
+      else {
         Debug.LogError( "Provided signal is neither an input nor an output" );
         return;
       }
-
-      m_signals.Add( signal );
-      m_metadata[ signal ] = new SignalMetadata()
-      {
-        input = brickSignal is Input,
-        type = brickSignal.GetType(),
-      };
     }
 
-    public Input FindInputTarget( string name )
-    {
-      if ( State != States.INITIALIZED )
-        return null;
+    public InputTarget FindInputTarget( string name ) =>  m_inputs.Find( it => it.Name == name );
+    public OutputSource FindOutputSource( string name ) => m_outputs.Find( os => os.Name == name );
 
-      return InitializeNativeSignal( name ) as Input;
-    }
-
-    private Object InitializeNativeSignal( string signal )
+    internal Object InitializeNativeEndpoint( string endpoint )
     {
-      var relativeSigName = signal.Replace(Root.Native.getName() + ".", "").Trim();
+      var relativeSigName = endpoint.Replace(Root.Native.getName() + ".", "").Trim();
       var signalObj = Root.Native.getObject(relativeSigName);
       if ( signalObj != null )
         return signalObj;
       else {
-        Debug.LogError( $"{signal} does not exist!" );
+        Debug.LogError( $"{endpoint} does not exist!" );
         return null;
       }
     }
@@ -112,14 +69,13 @@ namespace AGXUnity.IO.BrickIO
       Root.GetInitialized();
 
       var ok = true;
-      foreach ( var signal in m_signals ) {
-        var natSig = InitializeNativeSignal(signal);
-        if ( natSig is Output o )
-          m_outputs.Add( o );
-        else if ( natSig is Input i )
-          m_inputs.Add( i );
-        else
-          ok = false;
+      foreach ( var input in m_inputs ) {
+        ok &= input.Initialize( this );
+        m_declaredNameEndpointMap[ input.Name ] = input;
+      }
+      foreach ( var output in m_outputs ) {
+        ok &= output.Initialize( this );
+        m_declaredNameEndpointMap[ output.Name ] = output;
       }
 
       Simulation.Instance.StepCallbacks._Internal_BrickSignalPreSync += Pre;
@@ -224,7 +180,8 @@ namespace AGXUnity.IO.BrickIO
     void Post()
     {
       m_outputSignalList.Clear();
-      foreach ( var output in m_outputs ) {
+      foreach ( var outputSource in m_outputs ) {
+        var output = outputSource.Native;
         ValueOutputSignal signal = null;
 
         if ( output is IntOutput io ) {
@@ -249,15 +206,19 @@ namespace AGXUnity.IO.BrickIO
           var constraint = hinge.GetComponent<Constraint>();
           signal = ValueOutputSignal.from_angular_velocity_1d( constraint.GetCurrentSpeed(), havo );
         }
-        else if ( output is Signals.PrismaticPositionOutput ppo ) {
-          var prismatic = Root.FindMappedObject( ppo.prismatic().getName() );
-          var constraint = prismatic.GetComponent<Constraint>();
-          signal = ValueOutputSignal.from_distance( constraint.GetCurrentAngle(), ppo );
+        else if ( output is Position1DOutput p1do ) {
+          if ( p1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
+            var prismatic = Root.FindMappedObject( sourcePrismatic.getName() );
+            var constraint = prismatic.GetComponent<Constraint>();
+            signal = ValueOutputSignal.from_distance( constraint.GetCurrentAngle(), p1do );
+          }
         }
-        else if ( output is Signals.PrismaticVelocityOutput pvo ) {
-          var prismatic = Root.FindMappedObject( pvo.prismatic().getName() );
-          var constraint = prismatic.GetComponent<Constraint>();
-          signal = ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), pvo );
+        else if ( output is LinearVelocity1DOutput lv1do ) {
+          if ( lv1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
+            var prismatic = Root.FindMappedObject( sourcePrismatic.getName() );
+            var constraint = prismatic.GetComponent<Constraint>();
+            signal = ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), lv1do );
+          }
         }
         else if ( output is Signals.RigidBodyPositionOutput rbpo ) {
           var go = Root.FindMappedObject(rbpo.rigid_body().getName());
@@ -265,11 +226,13 @@ namespace AGXUnity.IO.BrickIO
           var pos = rb.Native.getPosition();
           signal = ValueOutputSignal.from_position_3d( pos.ToBrickVec3(), rbpo );
         }
-        else if ( output is Signals.RigidBodyVelocityOutput rbvo ) {
-          var go = Root.FindMappedObject(rbvo.rigid_body().getName());
-          var rb = go.GetComponent<RigidBody>();
-          var vel = rb.LinearVelocity.ToLeftHanded();
-          signal = ValueOutputSignal.from_velocity_3d( vel.ToBrickVec3(), rbvo );
+        else if ( output is Signals.LinearVelocity3DOutput lv3do ) {
+          if ( lv3do.source() is Brick.Physics3D.Bodies.RigidBody sourceRB ) {
+            var go = Root.FindMappedObject(sourceRB.getName());
+            var rb = go.GetComponent<RigidBody>();
+            var vel = rb.LinearVelocity.ToLeftHanded();
+            signal = ValueOutputSignal.from_velocity_3d( vel.ToBrickVec3(), lv3do );
+          }
         }
         else if ( output is Signals.RigidBodyRPYOutput rbrpy ) {
           var go = Root.FindMappedObject(rbrpy.rigid_body().getName());
@@ -289,7 +252,7 @@ namespace AGXUnity.IO.BrickIO
 
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
-          m_outputCache[ output.getName() ] = signal;
+          m_outputCache[ output ] = signal;
         }
       }
     }
@@ -298,71 +261,46 @@ namespace AGXUnity.IO.BrickIO
     {
       m_inputSignalQueue.Enqueue( input );
     }
+
     public Value GetOutputValue( Output output )
     {
-      return GetOutputValue( output.getName() );
-    }
-
-    public Value GetOutputValue( string outputName )
-    {
-      if ( !m_outputCache.ContainsKey( outputName ) )
+      if ( output == null || !m_outputCache.TryGetValue( output, out var signal ) )
         return null;
-
-      OutputSignal signal = m_outputCache[ outputName ] as ValueOutputSignal;
 
       if ( signal is not ValueOutputSignal vos )
         return null;
 
       return vos.value();
+
+    }
+
+    public Value GetOutputValue( string outputName )
+    {
+      if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var endpoint ) )
+        return null;
+
+      if ( endpoint is not OutputSource os )
+        return null;
+
+      return GetOutputValue( os.Native );
     }
 
     public T GetConvertedOutputValue<T>( Output output )
     {
-      return GetConvertedOutputValue<T>( output.getName() );
-    }
+      if ( !m_outputCache.TryGetValue( output, out var signal ) )
+        throw new ArgumentException( "Specified output does not have a cached value", "output" );
 
-    public T GetConvertedOutputValue<T>( string outputName )
-    {
-      if ( !m_outputCache.ContainsKey( outputName ) )
-        throw new ArgumentException( "Specified output does not have a cached value", "outputName" );
+      if ( signal is not ValueOutputSignal vos )
+        throw new ArgumentException( $"Given output '{output.getName()}' did not send a ValueOutputSignal" );
 
-      OutputSignal signal = m_outputCache[ outputName ] as ValueOutputSignal;
-
-      bool realTypeRequested = Type.GetTypeCode( typeof( T ) ) switch
-      {
-        TypeCode.Byte => true,
-        TypeCode.SByte => true,
-        TypeCode.UInt16 => true,
-        TypeCode.UInt32 => true,
-        TypeCode.UInt64 => true,
-        TypeCode.Int16 => true,
-        TypeCode.Int32 => true,
-        TypeCode.Int64 => true,
-        TypeCode.Decimal => true,
-        TypeCode.Double => true,
-        TypeCode.Single => true,
-        _ => false
-      };
-
-      if ( signal is not ValueOutputSignal vos ) {
-        throw new ArgumentException( $"Given output '{outputName}' did not send a ValueOutputSignal" );
-      }
-
-      bool vec3TypeRequested =
-           typeof(T) == typeof(Vector3)
-        || typeof(T) == typeof(agx.Vec3)
-        || typeof(T) == typeof(agx.Vec3f)
-        || typeof(T) == typeof(Brick.Math.Vec3);
+      if ( !IsValueTypeCompatible<T>( signal.source().type(), true ) )
+        throw new InvalidCastException( $"Cannot convert signal value of type '{signal.source().GetType().Name}' to provided type '{typeof( T ).Name}'" );
 
       var value = vos.value();
-      if ( realTypeRequested ) {
-        if ( value is not RealValue realVal )
-          throw new InvalidCastException( "Cannot convert non-real signal to provided type" );
+
+      if ( value is RealValue realVal )
         return (T)Convert.ChangeType( realVal.value(), typeof( T ) );
-      }
-      else if ( vec3TypeRequested ) {
-        if ( value is not Vec3Value v3val )
-          throw new InvalidCastException( "Cannot convert non-Vec3 signal to provided type" );
+      else if ( value is Vec3Value v3val ) {
         if ( typeof( T ) == typeof( Vector3 ) )
           return (T)(object)v3val.value().ToVector3();
         else if ( typeof( T ) == typeof( agx.Vec3 ) )
@@ -374,6 +312,122 @@ namespace AGXUnity.IO.BrickIO
       }
 
       throw new InvalidCastException( "Could not map signal type to requested type" );
+    }
+
+    public T GetConvertedOutputValue<T>( string outputName )
+    {
+      if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var output ) )
+        throw new ArgumentException( $"Specified output '{outputName}' does not exist", "outputName" );
+      if ( output is not OutputSource os )
+        throw new ArgumentException( $"Specified output '{outputName}' is not an output signal", "outputName" );
+
+      return GetConvertedOutputValue<T>( os.Native );
+    }
+
+    public enum ValueType
+    {
+      Integer,
+      Real,
+      Vec3,
+      Ignored,
+      Unknown
+    }
+
+    public static ValueType GetTypeEnum<T>()
+    {
+      switch ( Type.GetTypeCode( typeof( T ) ) ) {
+        case TypeCode.Byte: return ValueType.Integer;
+        case TypeCode.SByte: return ValueType.Integer;
+        case TypeCode.UInt16: return ValueType.Integer;
+        case TypeCode.UInt32: return ValueType.Integer;
+        case TypeCode.UInt64: return ValueType.Integer;
+        case TypeCode.Int16: return ValueType.Integer;
+        case TypeCode.Int32: return ValueType.Integer;
+        case TypeCode.Int64: return ValueType.Integer;
+        case TypeCode.Decimal: return ValueType.Real;
+        case TypeCode.Double: return ValueType.Real;
+        case TypeCode.Single: return ValueType.Real;
+        default: break;
+      };
+
+      if ( typeof( T ) == typeof( Vector3 )
+        || typeof( T ) == typeof( agx.Vec3 )
+        || typeof( T ) == typeof( agx.Vec3f )
+        || typeof( T ) == typeof( Brick.Math.Vec3 ) )
+        return ValueType.Vec3;
+
+      return ValueType.Unknown;
+    }
+
+    private static ValueType[] s_typeCache;
+
+    internal static ValueType GetBrickTypeEnum( long type )
+    {
+      if ( s_typeCache == null ) {
+
+        var tempIO = new InputOutputType();
+
+        var maxVal = 0L;
+        var methods = typeof( InputOutputType ).GetMethods( BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+        foreach ( var method in methods ) {
+          if ( method.ReturnType == typeof( long ) ) {
+            var val = (long)method.Invoke( tempIO, null );
+            maxVal = System.Math.Max( maxVal, val );
+          }
+        }
+        s_typeCache = new ValueType[ maxVal ];
+        for ( var i = 0; i < maxVal; i++ )
+          s_typeCache[ i ] = ValueType.Unknown;
+
+        s_typeCache[ tempIO.Position1D() - 1 ]            = ValueType.Real;
+        s_typeCache[ tempIO.Position3D() - 1 ]            = ValueType.Vec3;
+        s_typeCache[ tempIO.RPY() - 1 ]                   = ValueType.Vec3;
+        s_typeCache[ tempIO.Angle() - 1 ]                 = ValueType.Real;
+        s_typeCache[ tempIO.Velocity1D() - 1 ]            = ValueType.Real;
+        s_typeCache[ tempIO.Velocity3D() - 1 ]            = ValueType.Vec3;
+        s_typeCache[ tempIO.AngularVelocity1D() - 1 ]     = ValueType.Real;
+        s_typeCache[ tempIO.AngularVelocity3D() - 1 ]     = ValueType.Vec3;
+        s_typeCache[ tempIO.Torque1D() - 1 ]              = ValueType.Real;
+        s_typeCache[ tempIO.Torque3D() - 1 ]              = ValueType.Vec3;
+        s_typeCache[ tempIO.Force1D() - 1 ]               = ValueType.Real;
+        s_typeCache[ tempIO.Force3D() - 1 ]               = ValueType.Vec3;
+        s_typeCache[ tempIO.Acceleration3D() - 1 ]        = ValueType.Vec3;
+        s_typeCache[ tempIO.AngularAcceleration3D() - 1 ] = ValueType.Vec3;
+        s_typeCache[ tempIO.ControlEvent() - 1 ]          = ValueType.Ignored;
+        s_typeCache[ tempIO.Percentage() - 1 ]            = ValueType.Real;
+        s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
+        s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;
+
+        if ( s_typeCache.Contains( ValueType.Unknown ) )
+          Debug.LogWarning( "Brick value type mapping contains unhandled value type(s)" );
+      }
+
+      if ( s_typeCache.Length < type )
+        return ValueType.Unknown;
+      return s_typeCache[ type - 1 ];
+    }
+
+    public static bool IsValueTypeCompatible<T>( long typeCode, bool toCSType )
+    {
+      var requestedType = GetTypeEnum<T>();
+      var endpointType = GetBrickTypeEnum(typeCode);
+
+      if ( requestedType == ValueType.Unknown || requestedType == ValueType.Ignored ) {
+        Debug.LogWarning( $"The requested type {typeof( T ).Name} is not supported" );
+        return false;
+      }
+
+      if ( endpointType == ValueType.Unknown || endpointType == ValueType.Ignored ) {
+        Debug.LogWarning( $"The endpoint value type ({typeCode}) is not handled" );
+        return false;
+      }
+
+      if ( toCSType && requestedType == ValueType.Real )
+        return endpointType == ValueType.Real || endpointType == ValueType.Integer;
+      else if ( !toCSType && endpointType == ValueType.Real )
+        return requestedType == ValueType.Real || requestedType == ValueType.Integer;
+
+      return requestedType == endpointType;
     }
   }
 }

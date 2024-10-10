@@ -16,13 +16,13 @@ public class BrickSignalsTool : CustomTargetTool
     IsSingleInstanceTool = true;
   }
 
-  private void RenderSignalList( IEnumerable<string> signals )
+  private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints )
   {
-    foreach ( var signal in signals ) {
+    foreach ( var endpoint in endpoints ) {
       GUILayout.BeginHorizontal();
-      GUILayout.Label( signal );
+      GUILayout.Label( endpoint.Name );
       GUILayout.FlexibleSpace();
-      GUILayout.Label( BrickSignals.GetMetadata( signal ).Value.type.Name );
+      GUILayout.Label( endpoint.Type.Name );
       GUILayout.EndHorizontal();
     }
   }
@@ -31,8 +31,8 @@ public class BrickSignalsTool : CustomTargetTool
   {
     base.OnPostTargetMembersGUI();
     if ( InspectorGUI.Foldout( EditorData.Instance.GetData( BrickSignals, "input_signal_fouldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", true ) ) )
-      RenderSignalList(BrickSignals.Signals.Where( s => BrickSignals.GetMetadata( s ).Value.input ) ) ;
+      RenderSignalList( BrickSignals.Inputs );
     if ( InspectorGUI.Foldout( EditorData.Instance.GetData( BrickSignals, "output_signal_fouldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Outputs", true ) ) )
-      RenderSignalList( BrickSignals.Signals.Where( s => !BrickSignals.GetMetadata( s ).Value.input ) );
+      RenderSignalList( BrickSignals.Outputs );
   }
 }
