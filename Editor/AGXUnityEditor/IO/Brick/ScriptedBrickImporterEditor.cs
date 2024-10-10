@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.IO.BrickIO;
 using AGXUnityEditor.UIElements;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
@@ -54,7 +55,8 @@ namespace AGXUnityEditor.IO.BrickIO
       CopyIcon.style.width = 12;
       CopyIcon.style.backgroundImage = EditorGUIUtility.FindTexture( "Clipboard" );
       CopyIcon.style.unityBackgroundImageTintColor = normalTint;
-      CopyIcon.RegisterCallback<MouseDownEvent>( mde => {
+      CopyIcon.RegisterCallback<MouseDownEvent>( mde =>
+      {
         GUIUtility.systemCopyBuffer = err.raw;
         CopyIcon.style.unityBackgroundImageTintColor = downTint;
         mde.StopPropagation();
@@ -71,6 +73,15 @@ namespace AGXUnityEditor.IO.BrickIO
       row.Add( flex );
 
       return row;
+    }
+
+    private string GetDocumentPathShort(string documentPath)
+    {
+      var normalizedDoc = documentPath.Replace("\\","/");
+      var normalizedApp = Application.dataPath.Replace("\\","/")+"/";
+      if ( normalizedDoc.StartsWith( normalizedApp ) )
+        return normalizedDoc.Replace( normalizedApp, "" );
+      return normalizedDoc;
     }
 
     public override VisualElement CreateInspectorGUI()
@@ -92,14 +103,15 @@ namespace AGXUnityEditor.IO.BrickIO
           errors.SetMargin( 5, 0, 0, 0 );
           errors.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
           errors.SetBorderRadius( 5 );
-          errors.SetPadding( 5,5,5,15 );
+          errors.SetPadding( 5, 5, 5, 15 );
           ScriptedBrickImporter.Errors.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
 
-          var foldout = new Foldout() { text = ScriptedBrickImporter.Errors[0].document, value = true };
+          var foldout = new Foldout() { text = GetDocumentPathShort(ScriptedBrickImporter.Errors[0].document), value = true };
           for ( int i = 0; i < ScriptedBrickImporter.Errors.Count; i++ ) {
-            if ( foldout.text != ScriptedBrickImporter.Errors[i].document ) {
+            var docShort = GetDocumentPathShort( ScriptedBrickImporter.Errors[ i ].document );
+            if ( foldout.text != docShort ) {
               errors.Add( foldout );
-              foldout = new Foldout() { text = ScriptedBrickImporter.Errors[ 0 ].document, value = true };
+              foldout = new Foldout() { text = docShort, value = true };
             }
             foldout.Add( TableRowUI( ScriptedBrickImporter.Errors[ i ] ) );
           }
