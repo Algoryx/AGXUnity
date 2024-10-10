@@ -70,13 +70,13 @@ namespace AGXUnity.IO.BrickIO
 
     private void MapSignals( Object obj, BrickSignals signals, string prefix = "" )
     {
-      foreach ( var (name,subsystem) in obj.getEntries<Brick.Physics3D.System>() )
+      foreach ( var (name, subsystem) in obj.getEntries<Brick.Physics3D.System>() )
         MapSignals( subsystem, signals, prefix + "." + name );
 
-      foreach ( var (name,output) in obj.getEntries<Brick.Physics.Signals.Output>() )
+      foreach ( var (name, output) in obj.getEntries<Brick.Physics.Signals.Output>() )
         signals.RegisterSignal( prefix + "." + name, output );
 
-      foreach ( var (name,input) in obj.getEntries<Brick.Physics.Signals.Input>() )
+      foreach ( var (name, input) in obj.getEntries<Brick.Physics.Signals.Input>() )
         signals.RegisterSignal( prefix + "." + name, input );
     }
 
@@ -438,21 +438,11 @@ namespace AGXUnity.IO.BrickIO
         return false;
       }
 
-      var cm_transform_is_set =
-           !cm.position().isDefault("x")
-        || !cm.position().isDefault("y")
-        || !cm.position().isDefault("z")
-        || !cm.rotation().isDefault("x")
-        || !cm.rotation().isDefault("y")
-        || !cm.rotation().isDefault("z")
-        || !cm.rotation().isDefault("w");
+      var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
 
       if ( cm_transform_is_set ) {
         mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
-        if ( !cm.rotation().isDefault( "x" )
-          || !cm.rotation().isDefault( "y" )
-          || !cm.rotation().isDefault( "z" )
-          || !cm.rotation().isDefault( "w" ) )
+        if ( !cm.rotation().IsDefault() )
           // TODO: Proper warning passed to importer
           Debug.LogWarning( "AGXUnity does not support rotated Center of mass frames" );
       }
@@ -511,7 +501,7 @@ namespace AGXUnity.IO.BrickIO
       var lockObject = BrickObject.CreateGameObject( kinematicLock.getName() );
       var lockComponent = lockObject.AddComponent<KinematicLock>();
 
-      foreach(var body in kinematicLock.bodies() ) {
+      foreach ( var body in kinematicLock.bodies() ) {
         var rb = Data.BodyCache[ body ];
         lockComponent.Add( rb );
       }
@@ -674,7 +664,7 @@ namespace AGXUnity.IO.BrickIO
         MapSystemPass4( subSystem );
 
       foreach ( var kinematicLock in system.getValues<Brick.Physics.KinematicLock>() )
-        Utils.AddChild(s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock);
+        Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
       foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
         if ( !Utils.IsRuntimeMapped( interaction ) )

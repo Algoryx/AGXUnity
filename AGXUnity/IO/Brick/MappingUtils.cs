@@ -46,6 +46,20 @@ namespace AGXUnity.IO.BrickIO
     {
       return Brick.Math.Vec3.from_xyz( vec3.x, vec3.y, vec3.z );
     }
+
+    public static bool IsDefault( this Brick.Math.Vec3 vec3 )
+    {
+      return
+           ( vec3.isDefault( "x" ) && vec3.isDefault( "y" ) && vec3.isDefault( "z" ) )
+        || vec3.ToVec3().equalsZero();
+    }
+
+    public static bool IsDefault( this Brick.Math.Quat quat )
+    {
+      return
+           ( quat.isDefault( "x" ) && quat.isDefault( "y" ) && quat.isDefault( "z" ) && quat.isDefault( "w" ) )
+        || quat.ToQuat().zeroRotation();
+    }
   }
   public static class Utils
   {
