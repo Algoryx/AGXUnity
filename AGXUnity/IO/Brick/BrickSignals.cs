@@ -1,5 +1,3 @@
-using AGXUnity.Utils;
-using Brick.DriveTrain;
 using Brick.Physics.Signals;
 using System;
 using System.Collections.Generic;
@@ -9,7 +7,6 @@ using UnityEngine;
 
 using Input = Brick.Physics.Signals.Input;
 using Object = Brick.Core.Object;
-using Signals = Brick.Physics3D.Signals;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -49,7 +46,7 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    public InputTarget FindInputTarget( string name ) =>  m_inputs.Find( it => it.Name == name );
+    public InputTarget FindInputTarget( string name ) => m_inputs.Find( it => it.Name == name );
     public OutputSource FindOutputSource( string name ) => m_outputs.Find( os => os.Name == name );
 
     internal Object InitializeNativeEndpoint( string endpoint )
@@ -87,92 +84,10 @@ namespace AGXUnity.IO.BrickIO
     void Pre()
     {
       while ( m_inputSignalQueue.TryDequeue( out var inpSig ) ) {
-        var target = inpSig.target();
-        if ( inpSig is RealInputSignal realSig && target != null ) {
-          if ( target is Signals.TorsionSpringAngleInput tsai ) {
-            var hinge = Root.FindMappedObject( tsai.spring().getName() );
-            var spring = hinge.GetComponent<Constraint>().GetController<LockController>();
-            spring.Position = (float)realSig.value();
-          }
-          else if ( target is Signals.LinearVelocityMotorVelocityInput lvmvi ) {
-            var prismatic = Root.FindMappedObject( lvmvi.motor().getName() );
-            var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
-            motor.Speed = (float)realSig.value();
-          }
-          else if ( target is Signals.RotationalVelocityMotorVelocityInput rvmvi ) {
-            var hinge = Root.FindMappedObject( rvmvi.motor().getName() );
-            var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
-            motor.Speed = (float)realSig.value();
-          }
-          else if ( target is Brick.Physics1D.Signals.RotationalVelocityMotor1DVelocityInput rvm1dvi ) {
-            var motor = Root.FindRuntimeMappedObject( rvm1dvi.motor().getName() );
-            if ( motor is agxDriveTrain.VelocityConstraint vc )
-              vc.setTargetVelocity( (float)realSig.value() );
-            else
-              Debug.LogError( $"Could not find runtime mapped VelocityConstraint for signal target '{rvm1dvi.motor().getName()}'" );
-          }
-          else if ( target is Torque1DInput t1di ) {
-            var source = t1di.source();
-            if ( source is Brick.Physics3D.Interactions.TorqueMotor tm ) {
-              var hinge = Root.FindMappedObject(tm.getName());
-              var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
-              var torque = Mathf.Clamp((float)realSig.value(),(float)tm.min_effort(),(float)tm.max_effort());
-              motor.ForceRange = new RangeReal( torque, torque );
-            }
-            else if ( source is TorqueMotor tm_dt ) {
-              foreach ( var charge in tm_dt.charges() ) {
-                var unit = (agxPowerLine.Unit)Root.FindRuntimeMappedObject(charge.getOwner().getName());
-                var rot_unit = unit.asRotationalUnit();
-                if ( rot_unit != null ) {
-                  var torque = Mathf.Clamp((float)realSig.value(),(float)tm_dt.min_effort(),(float)tm_dt.max_effort());
-                  rot_unit.getRotationalDimension().addLoad( torque );
-                }
-              }
-            }
-          }
-          else if ( target is Signals.ForceMotorForceInput fmfi ) {
-            var prismatic = Root.FindMappedObject(fmfi.motor().getName());
-            var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
-            var torque = Mathf.Clamp((float)realSig.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
-            motor.ForceRange = new RangeReal( torque, torque );
-          }
-          else if ( target is FractionInput fi ) {
-            var source = fi.source();
-            if ( source is CombustionEngine ce ) {
-              var engine = Root.FindRuntimeMappedObject( ce.getName() );
-              if ( engine is agxDriveTrain.CombustionEngine mappedCe ) {
-                mappedCe.setThrottle( realSig.value() );
-              }
-              else
-                Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ce.getName()}'" );
-            }
-          }
-          else {
-            Debug.LogWarning( $"Unhandled input type {target.getType().getName()}" );
-          }
-        }
-        else if ( inpSig is IntInputSignal iis ) {
-          if ( target is IntInput intTarget ) {
-            var source = intTarget.source();
-            if ( source is GearBox gearbox ) {
-              if ( Root.FindRuntimeMappedObject( gearbox.getName() ) is not agxDriveTrain.GearBox agxGearbox )
-                Debug.LogError( $"{gearbox.getName()} was not mapped to a powerline unit" );
-              else {
-                var numReverse = gearbox.reverse_gears().Count;
-                var numForward = gearbox.forward_gears().Count;
-                int gear = (int)iis.value();
-                if ( gear < 0 && Mathf.Abs( gear ) > numReverse )
-                  gear = -numReverse;
-                if ( gear > 0 && Mathf.Abs( gear ) > numForward )
-                  gear = numForward;
-
-                var adjustedGear = gear + numReverse;
-                if ( adjustedGear >= agxGearbox.getNumGears() || adjustedGear < 0 )
-                  Debug.LogError( $"Signal had gear {adjustedGear} which is out of range 0 - {agxGearbox.getNumGears()} for agxDriveTrain.GearBox" );
-                agxGearbox.setGear( adjustedGear );
-              }
-            }
-          }
+        switch ( inpSig ) {
+          case RealInputSignal realSig: InputSignalHandler.HandleRealInputSignal( realSig, Root ); break;
+          case IntInputSignal intSig: InputSignalHandler.HandleIntInputSignal( intSig, Root ); break;
+          default: Debug.LogWarning( $"Unhandled InputSignal type: '{inpSig.GetType().Name}'" ); break;
         }
       }
     }
@@ -181,78 +96,11 @@ namespace AGXUnity.IO.BrickIO
     {
       m_outputSignalList.Clear();
       foreach ( var outputSource in m_outputs ) {
-        var output = outputSource.Native;
-        ValueOutputSignal signal = null;
-
-        if ( output is IntOutput io ) {
-          var source = io.source();
-          if ( source is GearBox gearbox ) {
-            if ( Root.FindRuntimeMappedObject( gearbox.getName() ) is not agxDriveTrain.GearBox agxGearbox ) {
-              Debug.LogError( $"{gearbox.getName()} was not mapped to a powerline unit" );
-            }
-            else {
-              var num_reverse = gearbox.reverse_gears().Count;
-              signal = ValueOutputSignal.from_int( agxGearbox.getGear() - num_reverse, io );
-            }
-          }
-        }
-        else if ( output is Signals.HingeAngleOutput hao ) {
-          var hinge = Root.FindMappedObject( hao.hinge().getName() );
-          var constraint = hinge.GetComponent<Constraint>();
-          signal = ValueOutputSignal.from_angle( constraint.GetCurrentAngle(), hao );
-        }
-        else if ( output is Signals.HingeAngularVelocityOutput havo ) {
-          var hinge = Root.FindMappedObject( havo.hinge().getName() );
-          var constraint = hinge.GetComponent<Constraint>();
-          signal = ValueOutputSignal.from_angular_velocity_1d( constraint.GetCurrentSpeed(), havo );
-        }
-        else if ( output is Position1DOutput p1do ) {
-          if ( p1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
-            var prismatic = Root.FindMappedObject( sourcePrismatic.getName() );
-            var constraint = prismatic.GetComponent<Constraint>();
-            signal = ValueOutputSignal.from_distance( constraint.GetCurrentAngle(), p1do );
-          }
-        }
-        else if ( output is LinearVelocity1DOutput lv1do ) {
-          if ( lv1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
-            var prismatic = Root.FindMappedObject( sourcePrismatic.getName() );
-            var constraint = prismatic.GetComponent<Constraint>();
-            signal = ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), lv1do );
-          }
-        }
-        else if ( output is Signals.RigidBodyPositionOutput rbpo ) {
-          var go = Root.FindMappedObject(rbpo.rigid_body().getName());
-          var rb = go.GetComponent<RigidBody>();
-          var pos = rb.Native.getPosition();
-          signal = ValueOutputSignal.from_position_3d( pos.ToBrickVec3(), rbpo );
-        }
-        else if ( output is Signals.LinearVelocity3DOutput lv3do ) {
-          if ( lv3do.source() is Brick.Physics3D.Bodies.RigidBody sourceRB ) {
-            var go = Root.FindMappedObject(sourceRB.getName());
-            var rb = go.GetComponent<RigidBody>();
-            var vel = rb.LinearVelocity.ToLeftHanded();
-            signal = ValueOutputSignal.from_velocity_3d( vel.ToBrickVec3(), lv3do );
-          }
-        }
-        else if ( output is Signals.RigidBodyRPYOutput rbrpy ) {
-          var go = Root.FindMappedObject(rbrpy.rigid_body().getName());
-          var rb = go.GetComponent<RigidBody>();
-          var vel = rb.Native.getRotation().getAsEulerAngles();
-          signal = ValueOutputSignal.from_rpy( vel.ToBrickVec3(), rbrpy );
-        }
-        else if ( output is Brick.Physics1D.Signals.RotationalBodyAngularVelocityOutput rbavo ) {
-          if ( Root.FindRuntimeMappedObject( rbavo.body().getName() ) is not agxPowerLine.Unit rotBod || rotBod.asRotationalUnit() == null )
-            Debug.LogError( $"{rbavo.body().getName()} was not mapped to a powerline unit" );
-          else
-            signal = ValueOutputSignal.from_angular_velocity_1d( rotBod.asRotationalUnit().getAngularVelocity(), rbavo );
-        }
-        else {
-          Debug.LogWarning( $"Unhandled output type {output.getType().getName()}" );
-        }
+        OutputSignal signal = OutputSignalGenerator.GenerateSignalFrom( outputSource.Native, Root );
 
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
-          m_outputCache[ output ] = signal;
+          m_outputCache[ outputSource.Native ] = signal;
         }
       }
     }
