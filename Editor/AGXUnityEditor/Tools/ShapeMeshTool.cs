@@ -164,7 +164,7 @@ namespace AGXUnityEditor.Tools
                 // We don't have to dirty them all but it's hard to determine where
                 // the instance is located in the hierarchy.
                 if ( hasPrefabAssetBeenChanged ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
                   var allMeshes = Object.FindObjectsByType<AGXUnity.Collide.Mesh>( FindObjectsSortMode.None );
 #else
                   var allMeshes = Object.FindObjectsOfType<AGXUnity.Collide.Mesh>();

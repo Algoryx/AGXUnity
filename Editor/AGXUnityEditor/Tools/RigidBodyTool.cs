@@ -144,7 +144,7 @@ namespace AGXUnityEditor.Tools
     public RigidBodyTool( Object[] targets )
       : base( targets )
     {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var allConstraints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
                              StageUtility.GetCurrentStageHandle().FindComponentsOfType<Constraint>() :
                              Object.FindObjectsByType<Constraint>(FindObjectsSortMode.None);

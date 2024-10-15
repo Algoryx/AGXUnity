@@ -466,7 +466,7 @@ namespace AGXUnityEditor
 
       // Deleted RigidBody component leaves dangling MassProperties
       // so we've to delete them explicitly.
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
 #else
       var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();

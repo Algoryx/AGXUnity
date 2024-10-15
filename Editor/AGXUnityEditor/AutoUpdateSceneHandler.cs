@@ -69,7 +69,7 @@ namespace AGXUnityEditor
     /// </summary>
     private static void VerifyOnSelectionTarget( Scene scene )
     {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var shapes = Object.FindObjectsByType<AGXUnity.Collide.Shape>(FindObjectsSortMode.None);
 #else
       var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
@@ -120,7 +120,7 @@ namespace AGXUnityEditor
           containsChanges = HandleSegmentSpawner( go ) || containsChanges;
       };
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var cables = Object.FindObjectsByType<Cable>(FindObjectsSortMode.None);
       var wires  = Object.FindObjectsByType<Wire>(FindObjectsSortMode.None);
 #else

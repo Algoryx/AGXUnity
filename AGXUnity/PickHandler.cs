@@ -243,7 +243,7 @@ namespace AGXUnity
           var raycastBody = closestGeometryContact.rigidBody( 0 );
           RigidBody body = null;
           if ( raycastBody != null && raycastBody.getMotionControl() == agx.RigidBody.MotionControl.DYNAMICS ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             var bodies = FindObjectsByType<RigidBody>(FindObjectsSortMode.None);
 #else
             var bodies = FindObjectsOfType<RigidBody>();
