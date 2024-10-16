@@ -320,7 +320,11 @@ namespace AGXUnityEditor
 
     private static bool HasNetRuntimeCompatibility( string infoWarningOrError )
     {
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+#endif
       if ( !hasMonoRuntime ) { 
         string prefix = string.Empty;
         if ( infoWarningOrError == "info" )

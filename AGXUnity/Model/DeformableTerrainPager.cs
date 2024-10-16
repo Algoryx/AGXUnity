@@ -407,6 +407,7 @@ namespace AGXUnity.Model
         UpdateTerrain( tiles[ i ] );
       foreach ( var terr in m_updatedTerrains )
         terr.terrainData.SyncHeightmap();
+      m_updatedTerrains.Clear();
     }
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
@@ -465,11 +466,49 @@ namespace AGXUnity.Model
       return tileIndex;
     }
 
-    private Vector2Int GetGlobalIndex( agxTerrain.Terrain terrain, agx.Vec2i index )
+    /// <summary>
+    /// Converts a tile local index to a global index used to index specific cells over the entirety of the pager.
+    /// </summary>
+    /// <param name="terrain">The local agx terrain that the index is relative to</param>
+    /// <param name="index">The local index of the cell</param>
+    /// <returns>A global index referencing the specific local cell</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetGlobalIndex( agxTerrain.Terrain terrain, agx.Vec2i index )
     {
       var tileIndex = GetTileIndex( terrain );
       return GetGlobalIndexInternal( tileIndex, index );
     }
+
+    /// <summary>
+    /// Converts a given global cell index to the corresponding index of the Unity terrain containing that cell.
+    /// </summary>
+    /// <param name="globalIndex">The global cell index to convert</param>
+    /// <returns>The Unity terrain tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetUnityTerrainIndex( Vector2Int globalIndex ) => m_terrainDataSource.GlobalToUnityIndex( globalIndex );
+    /// <summary>
+    /// Converts a given local cell index to the corresponding index of the Unity terrain containing that cell.
+    /// </summary>
+    /// <param name="terrain">The local agx terrain that the index is relative to</param>
+    /// <param name="index">The local index of the cell</param>
+    /// <returns>The Unity terrain tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetUnityTerrainIndex( agxTerrain.Terrain terrain, agx.Vec2i index ) => m_terrainDataSource.GlobalToUnityIndex( GetGlobalIndex( terrain, index ) );
+    /// <summary>
+    /// Gets the Unity terrain at the specified Unity tile index.
+    /// </summary>
+    /// <param name="terrainIndex">The Unity terrain tile index</param>
+    /// <returns>The Unity terrain at the specified tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Terrain GetUnityTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.GetTerrainAtTerrainIndex( terrainIndex );
+
+    /// <summary>
+    /// Whether or not the pager has fetched data from the terrain at the given index.
+    /// </summary>
+    /// <param name="terrainIndex">The terrain index to check</param>
+    /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.IsDataFetchedFromTerrain( terrainIndex );
 
     public void RecalculateParameters()
     {

@@ -95,8 +95,12 @@ namespace AGXUnityEditor.Build
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
-      if(!hasMonoRuntime)
+#endif
+      if (!hasMonoRuntime)
           throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
                                                             "AGX Dynamics for Unity won't work in build." );
 
@@ -108,11 +112,11 @@ namespace AGXUnityEditor.Build
       }
 
       var isValidTarget =
-      #if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN
         target == BuildTarget.StandaloneWindows64;
-      #else
+#else
         target == BuildTarget.StandaloneLinux64;
-      #endif
+#endif
 
       if ( !isValidTarget ) {
         Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +

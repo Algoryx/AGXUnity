@@ -20,13 +20,16 @@ namespace AGXUnity.Model
         return transform.position;
     }
 
-    public float[,] WriteTerrainDataOffset()
+    public float[,] WriteTerrainDataOffset(bool needsReturnData = true)
     {
+      var resolution = TerrainUtils.TerrainDataResolution(Terrain.terrainData);
+      if ( InitialHeights != null )
+        return needsReturnData ? Terrain.terrainData.GetHeights( 0, 0, resolution, resolution ) : null;
+
       if ( float.IsNaN( MaximumDepth ) ) {
         Debug.LogError( "Writing terrain offset without first setting depth!" );
         MaximumDepth = 0;
       }
-      var resolution = TerrainUtils.TerrainDataResolution(Terrain.terrainData);
       InitialHeights = Terrain.terrainData.GetHeights( 0, 0, resolution, resolution );
       transform.position += MaximumDepth * Vector3.down;
       return TerrainUtils.WriteTerrainDataOffsetRaw( Terrain, MaximumDepth );

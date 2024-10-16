@@ -89,7 +89,7 @@ namespace AGXUnityEditor.IO
       if ( prefab == null )
         return;
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var restoredFileInstances = Object.FindObjectsByType<AGXUnity.IO.RestoredAGXFile>(FindObjectsSortMode.None);
 #else
       var restoredFileInstances = Object.FindObjectsOfType<AGXUnity.IO.RestoredAGXFile>();

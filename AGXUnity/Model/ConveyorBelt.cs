@@ -332,7 +332,7 @@ namespace AGXUnity.Model
       var alreadyPresentTrackWheels = roller.GetComponents<TrackWheel>();
       if ( alreadyPresentTrackWheels.Length > 0 ) {
         // Don't think disabled tracks will appear here.
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
         var tracks = FindObjectsByType<Track>(FindObjectsSortMode.None);
 #else
         var tracks = FindObjectsOfType<Track>();

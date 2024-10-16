@@ -888,7 +888,7 @@ namespace AGXUnityEditor
           }
 
           if ( addButtonPressed ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                                         Object.FindObjectsByType<T>(FindObjectsSortMode.None) );

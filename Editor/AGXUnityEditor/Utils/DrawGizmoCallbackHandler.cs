@@ -101,7 +101,7 @@ namespace AGXUnityEditor.Utils
         using ( m_colorHandler.BeginEndScope() ) {
           // Create unique colors for each rigid body in the scene.
           {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             var bodies = UnityEngine.Object.FindObjectsByType<RigidBody>(FindObjectsSortMode.None);
 #else
             var bodies = UnityEngine.Object.FindObjectsOfType<RigidBody>();
