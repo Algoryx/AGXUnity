@@ -95,8 +95,8 @@ namespace AGXUnity.Rendering
 
     override protected bool Initialize()
     {
-      if(gameobject.TryGetComponent<CableDamage>(out var cableDamage) && cableDamage.enabled)
-        Debug.Warning("CableDamage is not supported using SkinnedCableRenderer. Please use the CableRenderer component or a custom renderer if you want to render cable damage");
+      if(gameObject.TryGetComponent<CableDamage>(out var cableDamage) && cableDamage.enabled)
+        Debug.LogWarning("CableDamage is not supported using SkinnedCableRenderer. Please use the CableRenderer component or a custom renderer if you want to render cable damage");
       return true;
     }
 
