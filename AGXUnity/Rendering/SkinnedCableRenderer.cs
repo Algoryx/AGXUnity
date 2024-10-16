@@ -93,6 +93,13 @@ namespace AGXUnity.Rendering
         return (point - (lineStart + (t < interval.x ? interval.x : interval.y) * lineDirection)).magnitude;
     }
 
+    override protected bool Initialize()
+    {
+      if(gameobject.TryGetComponent<CableDamage>(out var cableDamage) && cableDamage.enabled)
+        Debug.Warning("CableDamage is not supported using SkinnedCableRenderer. Please use the CableRenderer component or a custom renderer if you want to render cable damage");
+      return true;
+    }
+
     //Reset is called on componenet add/reset
     private void Reset()
     {
