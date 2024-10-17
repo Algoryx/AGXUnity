@@ -71,6 +71,7 @@ namespace AGXUnity
       All
     }
 
+
     /// <summary>
     /// Create a new constraint given type and constraint frames.
     /// </summary>
@@ -850,8 +851,6 @@ namespace AGXUnity
         Debug.LogException( e, gameObject );
         return false;
       }
-
-
     }
 
     protected override void OnEnable()
@@ -916,8 +915,11 @@ namespace AGXUnity
       //f1.setLocalTranslate( AttachmentPair.ReferenceFrame.CalculateLocalPosition( rb1.gameObject ).ToHandedVec3() );
       //f1.setLocalRotate( AttachmentPair.ReferenceFrame.CalculateLocalRotation( rb1.gameObject ).ToHandedQuat() );
 
+      try {
+
       if ( ConnectedFrameNativeSyncEnabled ) {
         RigidBody rb2 = AttachmentPair.ConnectedObject != null ? AttachmentPair.ConnectedObject.GetComponentInParent<RigidBody>() : null;
+          Debug.Log( Native );
         agx.Frame f2 = Native.getAttachment( 1 ).getFrame();
 
         if ( rb2 != null ) {
@@ -928,6 +930,10 @@ namespace AGXUnity
           f2.setLocalTranslate( AttachmentPair.ConnectedFrame.Position.ToHandedVec3() );
           f2.setLocalRotate( AttachmentPair.ConnectedFrame.Rotation.ToHandedQuat() );
         }
+      }
+      }
+      catch (System.Exception) {
+        Debug.Log( name );
       }
     }
 

@@ -24,6 +24,54 @@ namespace AGXUnity
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulation-manager" )]
   public class Simulation : UniqueGameObject<Simulation>
   {
+    public class TemporarySimulation : IDisposable
+    {
+      private Simulation m_sim;
+      private ScriptComponent[] m_scriptComponents;
+      private bool m_hadSim = false;
+      private bool m_hadScriptAssetManager = false;
+
+      public ScriptComponent[] Components => m_scriptComponents;
+
+
+      public TemporarySimulation()
+      {
+        m_hadSim = Simulation.HasInstance;
+        m_hadScriptAssetManager = ScriptAssetManager.HasInstance;
+
+        m_sim = Simulation.Instance;
+        Debug.Log( "Creating temporary simulation" );
+        m_scriptComponents = FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
+        foreach ( var sc in m_scriptComponents ) {
+          if ( sc.enabled )
+            sc.GetInitialized();
+        }
+      }
+
+      public void Dispose()
+      {
+        var sim = m_sim.m_simulation;
+        if ( !m_hadSim )
+          DestroyImmediate( Simulation.Instance.gameObject );
+
+        if ( !m_hadScriptAssetManager )
+          DestroyImmediate( ScriptAssetManager.Instance.gameObject );
+
+        foreach ( var sc in m_scriptComponents ) {
+          var destroy = sc.GetType().GetMethod( "OnDestroy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public );
+          destroy.Invoke( sc, null );
+
+          typeof( ScriptComponent ).InvokeMember( "State", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty, Type.DefaultBinder, sc, new object[] { States.CONSTRUCTED } );
+
+        }
+        sim.Dispose();
+        m_sim.m_simulation = null;
+
+
+        Debug.Log( "Disposing temporary simulation" );
+      }
+    }
+
     /// <summary>
     /// Native instance.
     /// </summary>
@@ -830,26 +878,26 @@ namespace AGXUnity
       GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( name, color ), isHeader ? 14 : 12, isHeader ), style );
     }
 
-    private Utils.MovingAverage<double> m_simTime, 
+    private Utils.MovingAverage<double> m_simTime,
                                         m_spaceTime,
-                                        m_dynamicsSystemTime, 
+                                        m_dynamicsSystemTime,
                                         m_preCollideTime,
                                         m_preTime,
                                         m_postTime,
                                         m_lastTime,
                                         m_contactEventsTime,
                                         m_managedStepForward;
-    private void InitializeMovingAverages(int size)
+    private void InitializeMovingAverages( int size )
     {
-      m_simTime = new MovingAverage<double>(size);
-      m_spaceTime = new MovingAverage<double>(size);
-      m_dynamicsSystemTime = new MovingAverage<double>(size);
-      m_preCollideTime = new MovingAverage<double>(size);
-      m_preTime = new MovingAverage<double>(size);
-      m_postTime = new MovingAverage<double>(size);
-      m_lastTime = new MovingAverage<double>(size);
-      m_contactEventsTime = new MovingAverage<double>(size);
-      m_managedStepForward = new MovingAverage<double>(size);
+      m_simTime = new MovingAverage<double>( size );
+      m_spaceTime = new MovingAverage<double>( size );
+      m_dynamicsSystemTime = new MovingAverage<double>( size );
+      m_preCollideTime = new MovingAverage<double>( size );
+      m_preTime = new MovingAverage<double>( size );
+      m_postTime = new MovingAverage<double>( size );
+      m_lastTime = new MovingAverage<double>( size );
+      m_contactEventsTime = new MovingAverage<double>( size );
+      m_managedStepForward = new MovingAverage<double>( size );
     }
 
     protected void OnGUI()
@@ -895,8 +943,8 @@ namespace AGXUnity
       if ( m_statisticsWindowData == null )
         return;
 
-      if (m_simTime == null || m_simTime.Size != StatisticsMovingAverageCount)
-        InitializeMovingAverages(StatisticsMovingAverageCount);
+      if ( m_simTime == null || m_simTime.Size != StatisticsMovingAverageCount )
+        InitializeMovingAverages( StatisticsMovingAverageCount );
 
       var simColor      = Color.Lerp( Color.white, Color.blue, 0.2f );
       var spaceColor    = Color.Lerp( Color.white, Color.green, 0.2f );
@@ -908,15 +956,15 @@ namespace AGXUnity
       var labelStyle         = m_statisticsWindowData.LabelStyle;
       var stats              = agx.Statistics.instance();
 
-      m_simTime.Add(           stats.getTimingInfo( "Simulation", "Step forward time" ).current);
-      m_spaceTime.Add(         stats.getTimingInfo( "Simulation", "Collision-detection time" ).current);
-      m_dynamicsSystemTime.Add(stats.getTimingInfo( "Simulation", "Dynamics-system time" ).current);
-      m_preCollideTime.Add(    stats.getTimingInfo( "Simulation", "Pre-collide event time" ).current);
-      m_preTime.Add(           stats.getTimingInfo( "Simulation", "Pre-step event time" ).current);
-      m_postTime.Add(          stats.getTimingInfo( "Simulation", "Post-step event time" ).current);
-      m_lastTime.Add(          stats.getTimingInfo( "Simulation", "Last-step event time" ).current);
-      m_contactEventsTime.Add( stats.getTimingInfo( "Simulation", "Triggering contact events" ).current);
- 
+      m_simTime.Add( stats.getTimingInfo( "Simulation", "Step forward time" ).current );
+      m_spaceTime.Add( stats.getTimingInfo( "Simulation", "Collision-detection time" ).current );
+      m_dynamicsSystemTime.Add( stats.getTimingInfo( "Simulation", "Dynamics-system time" ).current );
+      m_preCollideTime.Add( stats.getTimingInfo( "Simulation", "Pre-collide event time" ).current );
+      m_preTime.Add( stats.getTimingInfo( "Simulation", "Pre-step event time" ).current );
+      m_postTime.Add( stats.getTimingInfo( "Simulation", "Post-step event time" ).current );
+      m_lastTime.Add( stats.getTimingInfo( "Simulation", "Last-step event time" ).current );
+      m_contactEventsTime.Add( stats.getTimingInfo( "Simulation", "Triggering contact events" ).current );
+
       var numBodies      = m_system.getRigidBodies().Count;
       var numShapes      = m_space.getGeometries().Count;
       var numConstraints = m_system.getConstraints().Count +
@@ -925,7 +973,7 @@ namespace AGXUnity
                              (int)Native.getParticleSystem().getNumParticles() :
                              0;
 
-      m_managedStepForward.Add(m_statisticsWindowData.ManagedStepForward);
+      m_managedStepForward.Add( m_statisticsWindowData.ManagedStepForward );
 
       GUILayout.Window( m_statisticsWindowData.Id,
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
