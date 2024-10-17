@@ -975,7 +975,7 @@ namespace AGXUnityEditor.Tools
 
       averageSegmentLength /= segments.Count;      
 
-      double maxRadius = 0;
+      float maxRadius = 0;
       for (int i = 0; i < curves.Count; i++)
       {
         var curve1 = curves[i];
@@ -986,7 +986,7 @@ namespace AGXUnityEditor.Tools
           var curve2 = curves[j];
           var radius2 = radii[j];          
           var point2 = curve2.evaluate(0,0);
-          maxRadius = Mathf.Max(maxRadius, (point1.distance(point2.) + radius1 + radius2) / 2);
+          maxRadius = Mathf.Max(maxRadius, (float)(point1.asVec3().distance(point2.asVec3()) + radius1 + radius2) / 2);
         }
       }
 
@@ -1009,8 +1009,8 @@ namespace AGXUnityEditor.Tools
         for(int j = 0; j < curves.Count; j++)
         {
           var curve = curves[j];
-          uint curvePointIndex = Convert.ToUInt32((t * (curve.getNumPoints() - 1)).;
-          averagePosition += curve.evaluate(curvePointIndex, t);
+          uint curvePointIndex = Convert.ToUInt32(t * (curve.getNumPoints() - 1));
+          averagePosition += curve.evaluate(curvePointIndex, t).asVec3();
         }
 
         joint.position = averagePosition / curves.Count;
