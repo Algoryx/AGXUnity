@@ -39,10 +39,10 @@ namespace AGXUnityEditor.Windows
 
     private Dictionary<string, string> m_SurfaceToSG = new Dictionary<string, string>();
     private Dictionary<string, string> m_SGToSurface = new Dictionary<string, string>();
-    
+
     private MaterialData[] m_materials;
     private Texture2D[] m_statusIcons;
-    
+
     private List<VisualElement> m_tableRows = new List<VisualElement>();
     private MixedToggle m_toggleAll;
 
@@ -57,7 +57,7 @@ namespace AGXUnityEditor.Windows
     // 
     // This method accesses the serialized material directly and attempts to extract the
     // path to the referenced shader.
-    private string GetShaderPath(Material mat)
+    private string GetShaderPath( Material mat )
     {
       // TODO: Add test that this method works properly in various cases.
       var so =  new SerializedObject( mat );
@@ -81,8 +81,7 @@ namespace AGXUnityEditor.Windows
 
       var RP = RenderingUtils.DetectPipeline();
 
-      m_materials = assets.Select( a =>
-      {
+      m_materials = assets.Select( a => {
         var path = AssetDatabase.GUIDToAssetPath( a );
         var mat = AssetDatabase.LoadAssetAtPath<Material>( path );
         var status = MaterialStatus.NotAGXMaterial;
@@ -126,26 +125,23 @@ namespace AGXUnityEditor.Windows
       var RP = RenderingUtils.DetectPipeline();
 
       var row = new VisualElement();
-      row.SetPadding(3,3,3,0);
+      row.SetPadding( 3, 3, 3, 0 );
       var ve = new VisualElement();
 
       ve.SetEnabled( mat.Status == MaterialStatus.Updatable );
       var index = m_tableRows.Count();
-      row.RegisterCallback<MouseDownEvent>( mde =>
-      {
+      row.RegisterCallback<MouseDownEvent>( mde => {
         EditorUtility.FocusProjectWindow();
         Selection.activeObject = mat.Instance;
         m_selectedIndex = index;
 
         UpdateColors();
       } );
-      row.RegisterCallback<MouseOverEvent>( mde =>
-      {
+      row.RegisterCallback<MouseOverEvent>( mde => {
         m_hoverIndex = index;
         UpdateColors();
       } );
-      row.RegisterCallback<MouseOutEvent>( mde =>
-      {
+      row.RegisterCallback<MouseOutEvent>( mde => {
         m_hoverIndex = -1;
         UpdateColors();
       } );
@@ -201,7 +197,7 @@ namespace AGXUnityEditor.Windows
       var shaderPath = IO.Utils.AGXUnityResourceDirectory + "/Shaders/";
 
       // Add convertable shaders to dictionary
-      m_SurfaceToSG.Add( shaderPath + "Built-In/CableAndWire.shader",      shaderPath + "Shader Graph/Cable and Wire.shadergraph" );
+      m_SurfaceToSG.Add( shaderPath + "Built-In/CableAndWire.shader", shaderPath + "Shader Graph/Cable and Wire.shadergraph" );
       m_SurfaceToSG.Add( shaderPath + "Built-In/UpsampledParticle.shader", shaderPath + "Shader Graph/Upsampled Particle.shadergraph" );
 
       // Add reverse mapping 
@@ -211,7 +207,7 @@ namespace AGXUnityEditor.Windows
       // Verify that each of the listed files actually exists
       foreach ( var shader in m_SGToSurface.Keys.Union( m_SurfaceToSG.Keys ) ) {
         var fullPath = System.IO.Path.GetFullPath(shader);
-        Debug.Assert(System.IO.File.Exists( fullPath ));
+        Debug.Assert( System.IO.File.Exists( fullPath ) );
       }
 
       // TODO: Replace icons with custom icons
@@ -222,7 +218,7 @@ namespace AGXUnityEditor.Windows
 
       GatherMaterials();
 
-      Undo.undoRedoPerformed += () => Repopulate(false);
+      Undo.undoRedoPerformed += () => Repopulate( false );
     }
 
     private void CreateGUI()
@@ -256,7 +252,7 @@ namespace AGXUnityEditor.Windows
       numMats.style.flexDirection = FlexDirection.Row;
       numMats.style.alignItems = Align.Center;
       numMats.style.unityTextAlign = TextAnchor.MiddleLeft;
-      foreach( var obj in Enum.GetValues( typeof( MaterialStatus ) ) ) {
+      foreach ( var obj in Enum.GetValues( typeof( MaterialStatus ) ) ) {
         var status = (MaterialStatus)obj;
         var image = new Image() { image = m_statusIcons[ (int)status ] };
         image.style.width = 20;
@@ -291,7 +287,7 @@ namespace AGXUnityEditor.Windows
       var refreshButton = new Button();
       refreshButton.style.width = 40;
       refreshButton.style.marginLeft = 0;
-      refreshButton.clicked += () => Repopulate( );
+      refreshButton.clicked += () => Repopulate();
 
       var refreshIcon =  new Image { image = IconManager.GetIcon( MiscIcon.Update ) };
       refreshIcon.style.flexBasis = 0;
@@ -305,9 +301,9 @@ namespace AGXUnityEditor.Windows
       rootVisualElement.Add( assetConverter );
     }
 
-    private void Repopulate(bool gatherAssets = true)
+    private void Repopulate( bool gatherAssets = true )
     {
-      if(gatherAssets)
+      if ( gatherAssets )
         GatherMaterials();
       m_tableRows.Clear();
       rootVisualElement.Clear();
@@ -316,8 +312,8 @@ namespace AGXUnityEditor.Windows
 
     private void ConvertSelected()
     {
-      using ( new UndoCollapseBlock("Convert AGXUnity Materials") ) {
-        foreach(var mat in m_materials.Where(m => m.Status == MaterialStatus.Updatable ) ) {
+      using ( new UndoCollapseBlock( "Convert AGXUnity Materials" ) ) {
+        foreach ( var mat in m_materials.Where( m => m.Status == MaterialStatus.Updatable ) ) {
           if ( !mat.Convert )
             continue;
 
@@ -347,7 +343,7 @@ namespace AGXUnityEditor.Windows
       }
 
       AssetDatabase.SaveAssets();
-      Repopulate(false);
+      Repopulate( false );
     }
   }
 }

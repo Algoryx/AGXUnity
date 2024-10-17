@@ -32,7 +32,7 @@ namespace AGXUnityEditor.Utils
           UpdateColor();
           Manager.OnVisualPrimitiveNodeCreate( this );
         }
-        
+
         if ( Node != null ) {
           m_visible = newStateIsVisible;
           PropagateActive( Node, m_visible );
@@ -202,26 +202,26 @@ namespace AGXUnityEditor.Utils
 
   public class VisualPrimitiveCone : VisualPrimitive
   {
-    public void SetTransform(Vector3 start, Vector3 end, float radius, bool constantScreenSize = true)
+    public void SetTransform( Vector3 start, Vector3 end, float radius, bool constantScreenSize = true )
     {
-      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform(Node, start, end, radius, constantScreenSize);
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveCone(string shader = "Unlit/Color")
-      : base(AGXUnity.Rendering.Spawner.Primitive.Cone, shader)
+    public VisualPrimitiveCone( string shader = "Unlit/Color" )
+      : base( AGXUnity.Rendering.Spawner.Primitive.Cone, shader )
     {
     }
   }
 
   public class VisualPrimitiveHollowCone : VisualPrimitive
   {
-    public void SetTransform(Vector3 start, Vector3 end, float radius, bool constantScreenSize = true)
+    public void SetTransform( Vector3 start, Vector3 end, float radius, bool constantScreenSize = true )
     {
-      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform(Node, start, end, radius, constantScreenSize);
+      AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveHollowCone(string shader = "Unlit/Color")
-      : base(AGXUnity.Rendering.Spawner.Primitive.HollowCone, shader)
+    public VisualPrimitiveHollowCone( string shader = "Unlit/Color" )
+      : base( AGXUnity.Rendering.Spawner.Primitive.HollowCone, shader )
     {
     }
   }

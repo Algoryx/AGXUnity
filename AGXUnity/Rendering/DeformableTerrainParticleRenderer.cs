@@ -93,7 +93,7 @@ namespace AGXUnity.Rendering
     }
 
     [field: SerializeField]
-    [Tooltip("When enabled, the particles are filtered based on their agx.Material and only those where the material matches the terrain particle material are rendered")]
+    [Tooltip( "When enabled, the particles are filtered based on their agx.Material and only those where the material matches the terrain particle material are rendered" )]
     public bool FilterParticles { get; set; } = false;
 
     protected override bool Initialize()
@@ -210,7 +210,8 @@ namespace AGXUnity.Rendering
         m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
         m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
         m_meshInstanceProperties = new MaterialPropertyBlock();
-      } else {
+      }
+      else {
         if ( FilterParticles )
           Debug.LogWarning( $"Particle Filtering is only supported when using {GranuleRenderMode.GameObject}!", this );
       }
@@ -301,7 +302,8 @@ namespace AGXUnity.Rendering
             m_numRendered += PopulateMatricesFilterByMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
           }
           uuid.ReturnToPool();
-        } else {
+        }
+        else {
           m_numRendered = numGranulars;
 
           // Use 1023 as arbitrary block size since that is the

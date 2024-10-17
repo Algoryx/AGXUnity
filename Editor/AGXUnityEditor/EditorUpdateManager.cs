@@ -24,8 +24,7 @@ namespace AGXUnityEditor
       ObjectFactory.componentWasAdded += RebuildScriptCache;
       EditorApplication.hierarchyChanged += () => RebuildScriptCache();
 
-      EditorApplication.playModeStateChanged += pmsc =>
-      {
+      EditorApplication.playModeStateChanged += pmsc => {
         if ( pmsc == PlayModeStateChange.EnteredEditMode )
           RebuildScriptCache();
 

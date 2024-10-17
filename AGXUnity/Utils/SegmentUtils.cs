@@ -31,12 +31,12 @@ public static class SegmentUtils
   /// <param name="position">The calculated position of the cylinder</param>
   /// <param name="rotation">The calculated rotation of the cylinder</param>
   /// <param name="scale">The calculated scale of the cylinder</param>
-  public static void CalculateCylinderTransform(  Vector3 start,
-                                                  Vector3 end,
-                                                  float radius,
-                                                  out Vector3 position,
-                                                  out Quaternion rotation,
-                                                  out Vector3 scale )
+  public static void CalculateCylinderTransform( Vector3 start,
+                                                 Vector3 end,
+                                                 float radius,
+                                                 out Vector3 position,
+                                                 out Quaternion rotation,
+                                                 out Vector3 scale )
   {
     var dir = end - start;
     var length = dir.magnitude;

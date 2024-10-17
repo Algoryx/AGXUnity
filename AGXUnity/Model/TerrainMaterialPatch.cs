@@ -134,7 +134,7 @@ namespace AGXUnity.Model
         if ( s_replaceMat == null || !s_replaceMat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
           s_replaceMat = RenderingUtils.CreateDefaultMaterial();
           s_replaceMat.name = "Terrain Patch Default Material";
-          s_replaceMat.hideFlags = HideFlags.NotEditable; 
+          s_replaceMat.hideFlags = HideFlags.NotEditable;
           RenderingUtils.SetSmoothness( s_replaceMat, 0.0f );
           RenderingUtils.SetTransparencyEnabled( s_replaceMat, true );
           RenderingUtils.SetColor( s_replaceMat, new Color( 0.0f, 1.0f, 0.0f, 0.3f ) );
@@ -144,4 +144,4 @@ namespace AGXUnity.Model
       }
     }
   }
-} 
+}

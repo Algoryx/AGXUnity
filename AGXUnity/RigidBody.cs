@@ -55,7 +55,7 @@ namespace AGXUnity
     /// Cached mass properties component.
     /// </summary>
     private MassProperties m_massPropertiesComponent = null;
-    
+
     /// <summary>
     /// Cached unity-transform.
     /// </summary>
@@ -246,7 +246,7 @@ namespace AGXUnity
     {
       get
       {
-        return ((State == States.CONSTRUCTED || State == States.DESTROYED) && GetArticulatedRoot() != null) ||
+        return ( ( State == States.CONSTRUCTED || State == States.DESTROYED ) && GetArticulatedRoot() != null ) ||
                m_hasArticulatedRoot;
       }
       private set
@@ -285,8 +285,7 @@ namespace AGXUnity
     /// </summary>
     public void UpdateMassProperties()
     {
-      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) =>
-      {
+      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) => {
         if ( !isTemp ) {
           rb.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
           rb.updateMassProperties();
@@ -443,7 +442,7 @@ namespace AGXUnity
       Shapes             = GetShapes();
       HasArticulatedRoot = GetArticulatedRoot() != null &&
                            GetArticulatedRoot().enabled;
-      
+
       VerifyConfiguration();
 
       m_rb = new agx.RigidBody();

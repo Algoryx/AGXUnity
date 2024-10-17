@@ -98,8 +98,8 @@ namespace AGXUnity.Model
         // i.e., minimum values since we're assuming cylinder-like shape.
         var rotationAxisMaxDirIndex = localRotationAxis.MaxIndex();
         maxRadius = Mathf.Max( maxRadius,
-                               localExtents[ (rotationAxisMaxDirIndex + 1) % 3 ],
-                               localExtents[ (rotationAxisMaxDirIndex + 2) % 3 ] );
+                               localExtents[ ( rotationAxisMaxDirIndex + 1 ) % 3 ],
+                               localExtents[ ( rotationAxisMaxDirIndex + 2 ) % 3 ] );
       }
       return maxRadius;
     }

@@ -382,7 +382,7 @@ namespace AGXUnity.IO
           if ( outputLicenseFile.Extension != LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
             outputLicenseFile = new FileInfo( $"{outputLicenseFile.FullName}{LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
 
-          UnityEngine.Debug.Log( $"AGXUnity.CLI: Creating offline license given input \"{inputResponseFile.FullName}\" for " + 
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Creating offline license given input \"{inputResponseFile.FullName}\" for " +
                                  $"resulting license file \"{outputLicenseFile.FullName}\"." );
 
           var nativeHandler = NativeHandler.Instance;

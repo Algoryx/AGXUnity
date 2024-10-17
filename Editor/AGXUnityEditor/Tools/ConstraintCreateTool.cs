@@ -45,14 +45,8 @@ namespace AGXUnityEditor.Tools
       // is done. When connected frame tool parent is set (first) we
       // still activate the reference frame transform handle since
       // this is the default behavior.
-      AttachmentFrameTool.ReferenceFrameTool.OnToolDoneCallback = tool =>
-      {
-        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
-      };
-      AttachmentFrameTool.ConnectedFrameTool.OnToolDoneCallback = tool =>
-      {
-        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
-      };
+      AttachmentFrameTool.ReferenceFrameTool.OnToolDoneCallback = tool => AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
+      AttachmentFrameTool.ConnectedFrameTool.OnToolDoneCallback = tool => AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
     }
 
     public override void OnRemove()

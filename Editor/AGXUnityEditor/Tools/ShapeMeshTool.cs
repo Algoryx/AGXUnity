@@ -84,8 +84,7 @@ namespace AGXUnityEditor.Tools
       // TODO: Display Dialog if CollisionMeshOptions should be applied
       //       to the new source.
 
-      ShapeMeshSourceGUI( singleSource, newSource =>
-      {
+      ShapeMeshSourceGUI( singleSource, newSource => {
         if ( IsMultiSelect ) {
           foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
             if ( target != null )
@@ -156,7 +155,7 @@ namespace AGXUnityEditor.Tools
                     result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
                   }
                 }
-              
+
                 var hasPrefabAssetBeenChanged = results.Any( result =>
                                                                PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
                                                                PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );

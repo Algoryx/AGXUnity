@@ -151,8 +151,7 @@ namespace AGXUnityEditor.Tools
         groupNameMenu.AddDisabledItem( GUI.MakeLabel( "Groups in scene" ) );
         groupNameMenu.AddSeparator( string.Empty );
         foreach ( var groupName in m_groups )
-          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () =>
-          {
+          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () => {
             m_findActiveGroupNameEntry.Tag = groupName;
             m_findActiveGroupNameEntry = null;
           } );

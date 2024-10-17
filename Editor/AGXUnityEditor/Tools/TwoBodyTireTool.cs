@@ -49,8 +49,8 @@ namespace AGXUnityEditor.Tools
 
     private bool SelectTireAndRimToolEnable
     {
-      get { return GetChild<SelectGameObjectTool>() != null &&
-                   GetChild<SelectGameObjectTool>().OnSelect == OnTireAndRimSelected; }
+      get => GetChild<SelectGameObjectTool>() != null &&
+             GetChild<SelectGameObjectTool>().OnSelect == OnTireAndRimSelected;
       set
       {
         if ( value && !SelectTireAndRimToolEnable )

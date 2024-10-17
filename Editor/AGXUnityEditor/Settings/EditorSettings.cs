@@ -204,19 +204,16 @@ namespace AGXUnityEditor
 
         if ( showDropdownPressed ) {
           GenericMenu menu = new GenericMenu();
-          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () => {
             if ( EditorUtility.DisplayDialog( "Reset to default", "Reset key(s) to default?", "OK", "Cancel" ) )
               keyHandler.ResetToDefault();
           } );
-          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () => {
             keyHandler.Add( KeyCode.None );
           } );
 
           if ( keyHandler.NumKeyCodes > 1 ) {
-            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () =>
-            {
+            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () => {
               if ( EditorUtility.DisplayDialog( "Remove key", "Remove key: " + keyHandler[ keyHandler.NumKeyCodes - 1 ].ToString() + "?", "OK", "Cancel" ) )
                 keyHandler.Remove( keyHandler.NumKeyCodes - 1 );
             } );

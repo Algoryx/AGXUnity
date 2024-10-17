@@ -123,8 +123,7 @@ namespace AGXUnityEditor.Wizards
       if ( windowMethod != null ) {
         GUILayout.Window( m_windowId,
                           m_windowRect,
-                          id =>
-                          {
+                          id => {
                             EventType windowEventType = Event.current.GetTypeForControl( id );
                             windowMethod.Invoke( this, new object[] { windowEventType } );
                           },
@@ -142,7 +141,7 @@ namespace AGXUnityEditor.Wizards
     /// On scene view GUI update, called after each window has been updated.
     /// </summary>
     public virtual void OnSceneViewGUI( SceneView sceneView ) { }
-    
+
     /// <summary>
     /// Renders two buttons named "Previous" and "Next". The
     /// "Previous" button isn't rendered in the first window.

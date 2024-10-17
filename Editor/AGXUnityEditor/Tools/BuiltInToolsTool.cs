@@ -229,8 +229,7 @@ namespace AGXUnityEditor.Tools
                                                            Event.current,
                                                            material =>
                                                              HasShapeMaterialProperty( EditorUtility.InstanceIDToObject( instanceId ) as GameObject, false ),
-                                                           material =>
-                                                           {
+                                                           material => {
                                                              AssignMaterial( EditorUtility.InstanceIDToObject( instanceId ) as GameObject,
                                                                              material );
                                                            } );
@@ -240,14 +239,12 @@ namespace AGXUnityEditor.Tools
     {
       InspectorGUI.HandleSceneViewDragDrop<AGXUnity.ShapeMaterial>( current,
                                                                     go => HasShapeMaterialProperty( go, true ),
-                                                                    ( go, material ) =>
-                                                                    {
+                                                                    ( go, material ) => {
                                                                       var menuTool = new SelectGameObjectDropdownMenuTool()
                                                                       {
                                                                         Target = Manager.MouseOverObject
                                                                       };
-                                                                      menuTool.OnSelect = selected =>
-                                                                      {
+                                                                      menuTool.OnSelect = selected => {
                                                                         AssignMaterial( selected, material );
                                                                       };
                                                                       menuTool.Show();

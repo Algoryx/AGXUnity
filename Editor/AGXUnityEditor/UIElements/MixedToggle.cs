@@ -35,8 +35,7 @@ namespace AGXUnityEditor.UIElements
       showMixedValue = m_controlledToggles.Select( t => t.value ).Distinct().Count() == 2;
       SetValueWithoutNotify( !showMixedValue && toggle.value );
 
-      toggle.RegisterValueChangedCallback( ce =>
-      {
+      toggle.RegisterValueChangedCallback( ce => {
         if ( m_updating )
           return;
         m_updating = true;
@@ -46,8 +45,7 @@ namespace AGXUnityEditor.UIElements
 
         m_updating = false;
       } );
-      this.RegisterValueChangedCallback( ce =>
-      {
+      this.RegisterValueChangedCallback( ce => {
         if ( m_updating )
           return;
         m_updating = true;

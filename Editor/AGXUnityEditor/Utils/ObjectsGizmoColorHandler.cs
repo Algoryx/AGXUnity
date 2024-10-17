@@ -26,15 +26,15 @@ namespace AGXUnityEditor.Utils
       public float DeltaValue;
       public float DeltaAlpha;
 
-      public static HSVDeltaData SelectedRigidBody        { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.2f, DeltaAlpha = 0.1f }; } }
-      public static HSVDeltaData SelectedShape            { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 1f, DeltaAlpha = 0.25f }; } }
-      public static HSVDeltaData SelectedMeshFilter       { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = -0.1f, DeltaValue = 0f, DeltaAlpha = 0f }; } }
+      public static HSVDeltaData SelectedRigidBody => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.2f, DeltaAlpha = 0.1f };
+      public static HSVDeltaData SelectedShape => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 1f, DeltaAlpha = 0.25f };
+      public static HSVDeltaData SelectedMeshFilter => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = -0.1f, DeltaValue = 0f, DeltaAlpha = 0f };
 
-      public static HSVDeltaData ColorizedMeshFilter      { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = -0.1f, DeltaValue = 0f, DeltaAlpha = 0f }; } }
+      public static HSVDeltaData ColorizedMeshFilter => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = -0.1f, DeltaValue = 0f, DeltaAlpha = 0f };
 
-      public static HSVDeltaData HighlightedRigidBodyMax  { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f }; } }
-      public static HSVDeltaData HighlightedShapeMax      { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f }; } }
-      public static HSVDeltaData HighlightedMeshFilterMax { get { return new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f }; } }
+      public static HSVDeltaData HighlightedRigidBodyMax => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f };
+      public static HSVDeltaData HighlightedShapeMax => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f };
+      public static HSVDeltaData HighlightedMeshFilterMax => new HSVDeltaData() { DeltaHue = 0f, DeltaSaturation = 0f, DeltaValue = 0.5f, DeltaAlpha = 0.3f };
     }
 
     private class RigidBodyColorData

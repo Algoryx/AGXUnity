@@ -348,7 +348,7 @@ namespace AGXUnityEditor
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
       go.name = Factory.CreateName<DeformableTerrainPager>();
-      if ( go == null ) { 
+      if ( go == null ) {
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
       }
@@ -378,7 +378,7 @@ namespace AGXUnityEditor
       go.AddComponent<MeshFilter>();
       var renderer = go.AddComponent<MeshRenderer>();
       renderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
-      RenderingUtils.SetMainTexture(renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ));
+      RenderingUtils.SetMainTexture( renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       go.AddComponent<MovableTerrain>();
 
       if ( command.context is GameObject ctx )

@@ -21,8 +21,7 @@ namespace AGXUnityEditor.Utils
       if ( cable.Native != null )
         return;
 
-      cable.TraverseRoutePoints( routePointData =>
-      {
+      cable.TraverseRoutePoints( routePointData => {
         var lineLength = 2.5f * cable.Radius;
 
         Gizmos.color = Color.red;
@@ -46,7 +45,7 @@ namespace AGXUnityEditor.Utils
         return;
 
       var nodes = wire.Route.ToArray();
-      Gizmos.color = (gizmoType & GizmoType.Selected) != 0 ? Color.green : Color.red;
+      Gizmos.color = ( gizmoType & GizmoType.Selected ) != 0 ? Color.green : Color.red;
       for ( int i = 1; i < nodes.Length; ++i )
         Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
     }
@@ -70,8 +69,7 @@ namespace AGXUnityEditor.Utils
       // Active assembly tool has special rendering needs.
       Tools.AssemblyTool assemblyTool = null;
 
-      ToolManager.Traverse<Tool>( activeTool =>
-      {
+      ToolManager.Traverse<Tool>( activeTool => {
         if ( assemblyTool == null && activeTool is Tools.AssemblyTool )
           assemblyTool = activeTool as Tools.AssemblyTool;
 

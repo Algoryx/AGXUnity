@@ -98,7 +98,7 @@ namespace AGXUnity
       m_waterCurrentGenerator = new agxModel.ConstantWaterFlowGenerator( WaterVelocity.ToHandedVec3() );
       m_windGenerator = new agxModel.ConstantWindGenerator( WindVelocity.ToHandedVec3() );
       Native.setWindGenerator( m_windGenerator );
-    
+
       return true;
     }
 

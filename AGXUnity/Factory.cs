@@ -18,7 +18,7 @@ namespace AGXUnity
       int counter = 0;
       string finalName = name;
       while ( GameObject.Find( finalName ) != null )
-        finalName = name + " (" + (++counter) + ")";
+        finalName = name + " (" + ( ++counter ) + ")";
 
       return finalName;
     }

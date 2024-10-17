@@ -25,7 +25,7 @@ namespace AGXUnity
       }
     }
 
-    [InvokableInInspector("Reset to default")]
+    [InvokableInInspector( "Reset to default" )]
     public void OnResetToDefault()
     {
       ResetToDefault();

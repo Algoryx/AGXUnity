@@ -30,8 +30,7 @@ namespace AGXUnityEditor.Tools
           RemoveAllChildren();
 
           var pointTool = new FindPointTool();
-          pointTool.OnPointFound = data =>
-          {
+          pointTool.OnPointFound = data => {
             Undo.RecordObject( RigidBody.transform, "Rigid body transform" );
 
             RigidBody.transform.position = data.RaycastResult.Point;
@@ -56,8 +55,7 @@ namespace AGXUnityEditor.Tools
           RemoveAllChildren();
 
           var edgeTool = new EdgeDetectionTool();
-          edgeTool.OnEdgeFound = data =>
-          {
+          edgeTool.OnEdgeFound = data => {
             Undo.RecordObject( RigidBody.transform, "Rigid body transform" );
 
             RigidBody.transform.position = data.Position;

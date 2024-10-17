@@ -352,8 +352,7 @@ namespace AGXUnity.Model
                              AddComponent<TrackWheel>( roller );
           trackWheel.Configure( roller,
                                 rotationAxisOffset,
-                                (aName, aModel) =>
-                                {
+                                ( aName, aModel ) => {
                                   return ( aModel == TrackWheelModel.Sprocket && aName.StartsWith( "drivtrumma" ) ) ||
                                          ( aModel == TrackWheelModel.Idler && aName.StartsWith( "vandtrumma" ) );
                                 } );
@@ -535,7 +534,7 @@ namespace AGXUnity.Model
         ulong numNodes = m_tracks.First().Native.getNumNodes();
         ulong stride = System.Math.Min( System.Math.Max( (ulong)ConnectingConstraintStride, 1 ),
                                         numNodes );
-        while ( stride > 1 && (numNodes % stride) != 0 )
+        while ( stride > 1 && ( numNodes % stride ) != 0 )
           --stride;
         if ( (int)stride != ConnectingConstraintStride )
           Debug.Log( $"Belt: Connecting constraint stride changed from {ConnectingConstraintStride} to {stride} " +

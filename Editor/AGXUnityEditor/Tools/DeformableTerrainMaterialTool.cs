@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
-  [CustomTool( typeof( DeformableTerrainMaterial ))]
+  [CustomTool( typeof( DeformableTerrainMaterial ) )]
   public class DeformableTerrainMaterialTool : CustomTargetTool
   {
     public DeformableTerrainMaterial Material { get { return Targets[ 0 ] as DeformableTerrainMaterial; } }

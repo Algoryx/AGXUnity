@@ -101,7 +101,7 @@ namespace AGXUnity.Rendering
       get
       {
         var res = ImplicitMaterialRenderMap;
-        foreach ( var (mat, tl) in ExplicitMaterialRenderMap ) 
+        foreach ( var (mat, tl) in ExplicitMaterialRenderMap )
           res[ mat ] = tl;
         return res;
       }

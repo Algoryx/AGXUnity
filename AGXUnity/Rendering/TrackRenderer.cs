@@ -141,10 +141,10 @@ namespace AGXUnity.Rendering
             renderInstance.rotation = node.getRigidBody().getRotation().ToHandedQuaternion();
             renderInstance.position = node.getBeginPosition().ToHandedVector3() +
                                       renderInstance.TransformDirection( 0.5f * (float)node.getLength() * Vector3.forward );
-            if (AutomaticScaling)
+            if ( AutomaticScaling )
               renderInstance.localScale = 2.0f * node.getHalfExtents().ToVector3();
             else
-              renderInstance.localScale = new Vector3(1, 1, 1);
+              renderInstance.localScale = new Vector3( 1, 1, 1 );
           }
         }
         else {

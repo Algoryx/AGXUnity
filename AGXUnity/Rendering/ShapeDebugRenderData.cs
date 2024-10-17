@@ -171,40 +171,33 @@ namespace AGXUnity.Rendering
           m_storedLossyScale = transform.lossyScale;
         }
       }
-      else if (cone != null)
-      {
-        if (m_height != cone.Height || m_topRadius != cone.TopRadius || m_bottomRadius != cone.BottomRadius)
-        {
-          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualCone.GenerateMesh(shape);
+      else if ( cone != null ) {
+        if ( m_height != cone.Height || m_topRadius != cone.TopRadius || m_bottomRadius != cone.BottomRadius ) {
+          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualCone.GenerateMesh( shape );
           m_height = cone.Height;
           m_topRadius = cone.TopRadius;
           m_bottomRadius = cone.BottomRadius;
         }
       }
-      else if (hollowCone != null)
-      {
-        if (m_height != hollowCone.Height || m_topRadius != hollowCone.TopRadius || m_bottomRadius != hollowCone.BottomRadius || m_thickness != hollowCone.Thickness)
-        {
-          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCone.GenerateMesh(shape);
+      else if ( hollowCone != null ) {
+        if ( m_height != hollowCone.Height || m_topRadius != hollowCone.TopRadius || m_bottomRadius != hollowCone.BottomRadius || m_thickness != hollowCone.Thickness ) {
+          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCone.GenerateMesh( shape );
           m_height = hollowCone.Height;
           m_topRadius = hollowCone.TopRadius;
           m_bottomRadius = hollowCone.BottomRadius;
           m_thickness = hollowCone.Thickness;
         }
       }
-      else if (hollowCylinder != null)
-      {
-        if (m_height != hollowCylinder.Height || m_bottomRadius != hollowCylinder.Radius || m_thickness != hollowCylinder.Thickness)
-        {
-          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh(shape);
+      else if ( hollowCylinder != null ) {
+        if ( m_height != hollowCylinder.Height || m_bottomRadius != hollowCylinder.Radius || m_thickness != hollowCylinder.Thickness ) {
+          Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh( shape );
           m_height = hollowCylinder.Height;
           m_bottomRadius = hollowCylinder.Radius;
           m_thickness = hollowCylinder.Thickness;
         }
       }
-      else if (shape is Collide.HollowCylinder)
-      {
-        Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh(shape);
+      else if ( shape is Collide.HollowCylinder ) {
+        Node.GetComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh( shape );
       }
       else if ( shape is Capsule ) {
         Capsule capsule = shape as Capsule;
@@ -231,26 +224,22 @@ namespace AGXUnity.Rendering
         Node = InitializeMesh( mesh );
       else if ( heightField != null )
         Node = InitializeHeightField( heightField );
-      else if (hollowCone != null)
-      {
-        Node = new GameObject(PrefabName);
+      else if ( hollowCone != null ) {
+        Node = new GameObject( PrefabName );
         Node.AddComponent<MeshRenderer>().sharedMaterial = manager.ShapeRenderMaterial;
-        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCone.GenerateMesh(shape);
+        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCone.GenerateMesh( shape );
       }
-      else if (hollowCylinder != null)
-      {
-        Node = new GameObject(PrefabName);
+      else if ( hollowCylinder != null ) {
+        Node = new GameObject( PrefabName );
         Node.AddComponent<MeshRenderer>().sharedMaterial = manager.ShapeRenderMaterial;
-        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh(shape);
+        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualHollowCylinder.GenerateMesh( shape );
       }
-      else if (cone != null)
-      {
-        Node = new GameObject(PrefabName);
+      else if ( cone != null ) {
+        Node = new GameObject( PrefabName );
         Node.AddComponent<MeshRenderer>().sharedMaterial = manager.ShapeRenderMaterial;
-        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualCone.GenerateMesh(shape);
+        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualCone.GenerateMesh( shape );
       }
-      else
-      {
+      else {
         Node = PrefabLoader.Instantiate<GameObject>( PrefabName );
         Node.transform.localScale = GetShape().GetScale();
       }

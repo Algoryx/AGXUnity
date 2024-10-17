@@ -49,7 +49,7 @@ namespace AGXUnity.Rendering
 
       gameObject.hideFlags = hideFlags;
       Utils.SetMaterial( gameObject, shaderName );
-      
+
       return gameObject;
     }
 

@@ -9,7 +9,7 @@ namespace AGXUnity
     [SerializeField]
     private float m_maxRelativeNormalSpeed = 0.01f;
 
-    [InspectorGroupBegin(Name = "Merge conditions", DefaultExpanded = true)]
+    [InspectorGroupBegin( Name = "Merge conditions", DefaultExpanded = true )]
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Maximum speed along a contact normal for a contact to be considered resting." )]
     public float MaxRelativeNormalSpeed
@@ -59,7 +59,7 @@ namespace AGXUnity
     private float m_maxImpactSpeed = 0.01f;
 
     [ClampAboveZeroInInspector( true )]
-    [InspectorGroupBegin(Name = "Split conditions", DefaultExpanded = true)]
+    [InspectorGroupBegin( Name = "Split conditions", DefaultExpanded = true )]
     [Tooltip( "Maximum impact speed (along a contact normal) a merged object can resist without being split. " )]
     public float MaxImpactSpeed
     {
@@ -75,15 +75,15 @@ namespace AGXUnity
     [SerializeField]
     private float m_normalAdhesion = 0.0f;
 
-    [ClampAboveZeroInInspector(true)]
-    [Tooltip("Adhesive force in the normal directions preventing the object to split (if > 0) when the object is subject to external interactions (e.g., constraints).")]
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Adhesive force in the normal directions preventing the object to split (if > 0) when the object is subject to external interactions (e.g., constraints)." )]
     public float NormalAdhesion
     {
       get => m_normalAdhesion;
       set
       {
         m_normalAdhesion = value;
-        if(Native != null)
+        if ( Native != null )
           Native.setNormalAdhesion( value );
       }
     }
@@ -107,7 +107,7 @@ namespace AGXUnity
     [SerializeField]
     private bool m_splitOnLogicalImpact = false;
 
-    [Tooltip("If true, merged bodies will split when objects first collide, else the \"Max Impact speed\" will be used.")]
+    [Tooltip( "If true, merged bodies will split when objects first collide, else the \"Max Impact speed\" will be used." )]
     public bool SplitOnLogicalImpact
     {
       get { return m_splitOnLogicalImpact; }
@@ -129,7 +129,7 @@ namespace AGXUnity
       set
       {
         m_maySplitInGravityField = value;
-        if ( Native != null ) 
+        if ( Native != null )
           Native.setMaySplitInGravityField( value );
       }
     }

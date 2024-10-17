@@ -89,12 +89,13 @@ namespace AGXUnity.Model
     [SerializeField]
     private bool m_autoAddToTerrains = false;
 
-    public bool AutoAddToTerrains { 
-      get => m_autoAddToTerrains; 
+    public bool AutoAddToTerrains
+    {
+      get => m_autoAddToTerrains;
       set
       {
         m_autoAddToTerrains = value;
-        if(Native != null && m_autoAddToTerrains)
+        if ( Native != null && m_autoAddToTerrains )
           AddToAllTerrains();
       }
     }
@@ -147,7 +148,7 @@ namespace AGXUnity.Model
     private void AddToAllTerrains()
     {
 #if UNITY_2022_2_OR_NEWER
-      foreach ( var terr in FindObjectsByType<DeformableTerrainBase>(FindObjectsSortMode.None) )
+      foreach ( var terr in FindObjectsByType<DeformableTerrainBase>( FindObjectsSortMode.None ) )
         terr.Add( this );
 #else
       foreach ( var terr in FindObjectsOfType<DeformableTerrainBase>() )

@@ -83,10 +83,10 @@ namespace AGXUnityEditor.Tools
       };
 
       Handles.color = GetXAxisColor( 0.3f );
-      position      = PlaneHandle( Vector3.right,   Vector3.up,    Vector3.forward );
-      Handles.color = GetYAxisColor( 0.3f );        
-      position      = PlaneHandle( Vector3.up,      Vector3.right, Vector3.forward );
-      Handles.color = GetZAxisColor( 0.3f );        
+      position      = PlaneHandle( Vector3.right, Vector3.up, Vector3.forward );
+      Handles.color = GetYAxisColor( 0.3f );
+      position      = PlaneHandle( Vector3.up, Vector3.right, Vector3.forward );
+      Handles.color = GetZAxisColor( 0.3f );
       position      = PlaneHandle( Vector3.forward, Vector3.right, Vector3.up );
 
       Handles.color = orgColor;

@@ -105,7 +105,7 @@ namespace AGXUnityUpdate.Detail
 
       if ( DefineSymbols.Contains( OnImportDefineSymbol ) )
         DefineSymbols.Remove( OnImportDefineSymbol );
-      else 
+      else
         EditorApplication.update -= OnEditorUpdate;
     }
 

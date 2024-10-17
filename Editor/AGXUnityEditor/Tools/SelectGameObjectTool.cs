@@ -21,8 +21,7 @@ namespace AGXUnityEditor.Tools
     {
       var menuTool = new SelectGameObjectDropdownMenuTool();
       menuTool.RemoveOnClickMiss = false;
-      menuTool.OnSelect = go =>
-      {
+      menuTool.OnSelect = go => {
         OnSelect( go );
         PerformRemoveFromParent();
       };

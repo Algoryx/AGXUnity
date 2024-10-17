@@ -84,7 +84,7 @@ namespace AGXUnityEditor.Tools
             GUILayout.FlexibleSpace();
             using ( new VerticalScope() ) {
               foreach ( var mat in map.Keys )
-                GUILayout.Label(GUI.MakeLabel($"{InspectorEditor.Skin.TagTypename( "TerrainMaterial" )} {mat.name}"), InspectorEditor.Skin.Label );
+                GUILayout.Label( GUI.MakeLabel( $"{InspectorEditor.Skin.TagTypename( "TerrainMaterial" )} {mat.name}" ), InspectorEditor.Skin.Label );
             }
             GUILayout.FlexibleSpace();
             using ( new VerticalScope() ) {
@@ -94,7 +94,7 @@ namespace AGXUnityEditor.Tools
             GUILayout.FlexibleSpace();
             using ( new VerticalScope() ) {
               foreach ( var tex in map.Values )
-                GUILayout.Label( GUI.MakeLabel( $"{InspectorEditor.Skin.TagTypename( "TerrainLayer" )} {(tex != null ? tex.name :" None")}"), InspectorEditor.Skin.Label  );
+                GUILayout.Label( GUI.MakeLabel( $"{InspectorEditor.Skin.TagTypename( "TerrainLayer" )} {( tex != null ? tex.name : " None" )}" ), InspectorEditor.Skin.Label );
             }
             GUILayout.FlexibleSpace();
           }
