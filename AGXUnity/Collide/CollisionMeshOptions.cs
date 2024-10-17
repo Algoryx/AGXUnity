@@ -45,13 +45,13 @@ namespace AGXUnity.Collide
     /// Enable/disable merging of nearby vertices
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
-    [InspectorGroupBegin(Name = "Mesh Cleanup")]
+    [InspectorGroupBegin( Name = "Mesh Cleanup" )]
     public bool MergeNearbyEnabled
     {
       get { return m_mergeNearbyEnabled; }
       set
       {
-        if (m_mergeNearbyEnabled == value)
+        if ( m_mergeNearbyEnabled == value )
           return;
 
         m_mergeNearbyEnabled = value;
@@ -63,16 +63,16 @@ namespace AGXUnity.Collide
     /// no reduction. Any vertex closer than this distance will be merged. 
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
-    [FloatSliderInInspector(0.0001f, 1f)]
+    [FloatSliderInInspector( 0.0001f, 1f )]
     public float MergeNearbyDistance
     {
       get { return m_mergeNearbyDistance; }
       set
       {
-        if (Utils.Math.Approximately(m_mergeNearbyDistance, value))
+        if ( Utils.Math.Approximately( m_mergeNearbyDistance, value ) )
           return;
 
-        m_mergeNearbyDistance = Utils.Math.Clamp(value, 0, 1);
+        m_mergeNearbyDistance = Utils.Math.Clamp( value, 0, 1 );
       }
     }
 
@@ -98,7 +98,7 @@ namespace AGXUnity.Collide
     /// no reduction and 0 is maximum reduction.
     /// Note that Apply has to be called before the change to take effect.
     /// </summary>
-    [FloatSliderInInspector(0.02f, 0.98f)]
+    [FloatSliderInInspector( 0.02f, 0.98f )]
     public float ReductionRatio
     {
       get { return m_reductionRatio; }

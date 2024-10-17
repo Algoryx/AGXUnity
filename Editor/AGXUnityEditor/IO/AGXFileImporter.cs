@@ -1,8 +1,8 @@
-﻿using System.IO;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-using UnityEngine;
+using System.IO;
 using UnityEditor;
-using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnityEditor.IO
 {
@@ -58,7 +58,7 @@ namespace AGXUnityEditor.IO
 
       PropagateChanges( prefab );
 
-      if ( prefab != null && renameRoots && !string.IsNullOrEmpty( dataDirectory) ) {
+      if ( prefab != null && renameRoots && !string.IsNullOrEmpty( dataDirectory ) ) {
         Debug.Log( $"{prefab.name.Color( Color.green )}: Updating main assets and names in " +
                    dataDirectory.Color( Color.gray ) + "." );
         var roots = Utils.FindAssetsOfType<AGXUnity.IO.RestoredAssetsRoot>( dataDirectory );

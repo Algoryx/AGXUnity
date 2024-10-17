@@ -239,7 +239,7 @@ namespace AGXUnity.Model
     /// <param name="terrainIndex">The Unity terrain tile index to fetch the terrain for.</param>
     /// <returns>The Unity terrain at the specified tile index</returns>
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public Terrain GetTerrainAtTerrainIndex( Vector2Int terrainIndex ) => m_unityTiles.GetValueOrDefault(terrainIndex,null);
+    public Terrain GetTerrainAtTerrainIndex( Vector2Int terrainIndex ) => m_unityTiles.GetValueOrDefault( terrainIndex, null );
 
     /// <summary>
     /// Whether or not the pager has fetched data from the terrain at the given index.
@@ -247,7 +247,7 @@ namespace AGXUnity.Model
     /// <param name="terrainIndex">The terrain index to check</param>
     /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
     [MethodImpl( MethodImplOptions.AggressiveInlining )]
-    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_unityData.ContainsKey(terrainIndex);
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_unityData.ContainsKey( terrainIndex );
 
     // Checks if unity tile data is loaded for the tile at the given index and queues the tile to be loaded if it is not
     private bool VerifyAndQueueTileData( Vector2Int unityIndex )
@@ -257,7 +257,7 @@ namespace AGXUnity.Model
         // Dont queue tiles twice
         if ( m_tilesToLoad.Where( tile => tile.index == unityIndex ).Count() > 0 )
           return false;
-        
+
         // Dont queue tiles that are not tracked by the adapter
         if ( !m_unityTiles.ContainsKey( unityIndex ) )
           return false;

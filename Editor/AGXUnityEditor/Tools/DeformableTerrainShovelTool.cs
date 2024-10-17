@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity.Model;
+﻿using AGXUnity.Model;
 using AGXUnityEditor.Utils;
-
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -111,7 +110,7 @@ namespace AGXUnityEditor.Tools
 
     private void HandleLineToolInspectorGUI( LineTool lineTool, string name )
     {
-      using (new DirtyOnLineChangeScope( Shovel, lineTool.Line ) ) {
+      using ( new DirtyOnLineChangeScope( Shovel, lineTool.Line ) ) {
         // If visible, the vertical maker starts under the foldout, otherwise
         // render the marker through the fouldout label.
         var isVisible = GetLineToggleData( name ).Bool;

@@ -38,7 +38,7 @@ namespace AGXUnity
     /// Reference back to the elementary constraint.
     /// </summary>
     [HideInInspector]
-    [field:NonSerialized]
+    [field: NonSerialized]
     public ElementaryConstraint ElementaryConstraint { get; internal set; }
 
     /// <summary>

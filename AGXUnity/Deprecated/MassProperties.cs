@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Deprecated
 {
@@ -11,7 +11,7 @@ namespace AGXUnity.Deprecated
   [HideInInspector]
   [DisallowMultipleComponent]
   [DoNotGenerateCustomEditor]
-  [Obsolete("Component MassProperties has been deprecated in favor of inline serialized MassProperties")]
+  [Obsolete( "Component MassProperties has been deprecated in favor of inline serialized MassProperties" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mass-properties" )]
   public class MassProperties : ScriptComponent
   {
@@ -106,7 +106,8 @@ namespace AGXUnity.Deprecated
     public DefaultAndUserValueVector3 InertiaOffDiagonal
     {
       get { return m_inertiaOffDiagonal; }
-      private set { 
+      private set
+      {
         m_inertiaOffDiagonal = value;
 
         // If we have UseDefault, the inertia tensor has been
@@ -142,7 +143,7 @@ namespace AGXUnity.Deprecated
     private Vector3 m_massCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
 
     [HideInInspector]
-    [ClampAboveZeroInInspector(true)]
+    [ClampAboveZeroInInspector( true )]
     public Vector3 MassCoefficients
     {
       get { return m_massCoefficients; }

@@ -40,7 +40,7 @@ namespace AGXUnity.Deprecated
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.RangeController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.RangeController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }

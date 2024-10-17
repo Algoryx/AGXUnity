@@ -675,7 +675,7 @@ namespace AGXUnityEditor
     public static object StringDrawer( object[] objects, InvokeWrapper wrapper )
     {
       var filePicker = wrapper.Member.GetCustomAttribute<StringAsFilePicker>();
-      if(filePicker != null ) {
+      if ( filePicker != null ) {
         string result = wrapper.Get<string>( objects[ 0 ] );
         if ( filePicker.IsFolder )
           InspectorGUI.SelectFolder( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), "Select folder", s => result = s );

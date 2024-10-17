@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using AGXUnity.Utils;
-using AGXUnity;
 using AGXUnity.Rendering;
+using UnityEngine;
 
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Cable Damage" )]
   [DisallowMultipleComponent]
-  [RequireComponent(typeof(AGXUnity.Cable))]
+  [RequireComponent( typeof( AGXUnity.Cable ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-damage" )]
   public class CableDamage : ScriptComponent
   {
@@ -18,8 +14,8 @@ namespace AGXUnity
     /// </summary>
     public agxCable.CableDamage Native { get; private set; }
 
-     [System.NonSerialized]
-     private Cable m_cable = null;
+    [System.NonSerialized]
+    private Cable m_cable = null;
 
     /// <summary>
     /// The Cable ScriptComponent that this CableDamage follows
@@ -41,14 +37,16 @@ namespace AGXUnity
     /// </summary>
     [SerializeField]
     private bool m_renderCableDamage = false;
-    public bool RenderCableDamage {
+    public bool RenderCableDamage
+    {
       get { return m_renderCableDamage; }
-      set {
+      set
+      {
         m_renderCableDamage = value;
-        if (CableRenderer == null)
-          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
+        if ( CableRenderer == null )
+          Debug.LogWarning( "No CableRenderer to use for rendering cable damages" );
         else
-          CableRenderer.SetRenderDamages(value && m_properties != null);
+          CableRenderer.SetRenderDamages( value && m_properties != null );
       }
     }
 
@@ -72,30 +70,30 @@ namespace AGXUnity
         if ( Native != null && m_properties != null )
           m_properties.Register( this );
 
-        if (CableRenderer == null)
-          Debug.LogWarning("No CableRenderer to use for rendering cable damages");
+        if ( CableRenderer == null )
+          Debug.LogWarning( "No CableRenderer to use for rendering cable damages" );
         else
-          CableRenderer.SetRenderDamages(m_properties != null && m_renderCableDamage);
+          CableRenderer.SetRenderDamages( m_properties != null && m_renderCableDamage );
       }
     }
 
     [System.NonSerialized]
     private agxCable.SegmentDamagePtrVector m_currentDamages;
-    public agxCable.SegmentDamagePtrVector CurrentDamages  => m_currentDamages;
+    public agxCable.SegmentDamagePtrVector CurrentDamages => m_currentDamages;
 
     [System.NonSerialized]
     private agxCable.SegmentDamagePtrVector m_accumulatedDamages;
     public agxCable.SegmentDamagePtrVector AccumulatedDamages => m_accumulatedDamages;
 
-    private float[] m_damageValues = new float[0];
-    public float DamageValue(int index) => index < m_damageValues.Length ? m_damageValues[index] : 0;
+    private float[] m_damageValues = new float[ 0 ];
+    public float DamageValue( int index ) => index < m_damageValues.Length ? m_damageValues[ index ] : 0;
     [HideInInspector]
     public int DamageValueCount => m_damageValues.Length;
-    
+
     private float m_maxDamage = 0;
     [HideInInspector]
-    public float MaxDamage => m_properties != null 
-                                ? (m_properties.DamageColorMode == CableDamageProperties.MaxDamageColorMode.HighestPerFrame ? m_maxDamage : m_properties.SetDamageForMaxColor)
+    public float MaxDamage => m_properties != null
+                                ? ( m_properties.DamageColorMode == CableDamageProperties.MaxDamageColorMode.HighestPerFrame ? m_maxDamage : m_properties.SetDamageForMaxColor )
                                 : 0;
 
     protected override bool Initialize()
@@ -108,10 +106,9 @@ namespace AGXUnity
         return false;
       }
 
-      cable.addComponent(Native);
+      cable.addComponent( Native );
 
-      if ( Properties == null ) 
-      {
+      if ( Properties == null ) {
         Properties = ScriptAsset.Create<CableDamageProperties>();
         Properties.name = "Cable Damage Properties";
       }
@@ -124,24 +121,22 @@ namespace AGXUnity
       m_currentDamages = Native.getCurrentDamages();
       m_accumulatedDamages = Native.getAccumulatedDamages();
 
-      if (m_properties == null)
-      {
-        Debug.LogWarning("No CableDamageProperties set - no Cable Damage Calculated!");
+      if ( m_properties == null ) {
+        Debug.LogWarning( "No CableDamageProperties set - no Cable Damage Calculated!" );
         return;
       }
 
       int count = m_properties.DamageType == CableDamageProperties.DamageTypeMode.CurrentDamage ? m_currentDamages.Count : m_accumulatedDamages.Count;
 
-      if (RenderCableDamage && CableRenderer)
-      {
-        if (m_damageValues.Length != count)
-          m_damageValues = new float[count];
+      if ( RenderCableDamage && CableRenderer ) {
+        if ( m_damageValues.Length != count )
+          m_damageValues = new float[ count ];
 
         m_maxDamage = float.MinValue;
-        for (int i = 0; i < count; i++){
-          float value = m_properties.DamageType == CableDamageProperties.DamageTypeMode.CurrentDamage ? (float)m_currentDamages[i].total() : (float)m_accumulatedDamages[i].total();
-          m_maxDamage = Mathf.Max(m_maxDamage, value);
-          m_damageValues[i] = value;
+        for ( int i = 0; i < count; i++ ) {
+          float value = m_properties.DamageType == CableDamageProperties.DamageTypeMode.CurrentDamage ? (float)m_currentDamages[ i ].total() : (float)m_accumulatedDamages[ i ].total();
+          m_maxDamage = Mathf.Max( m_maxDamage, value );
+          m_damageValues[ i ] = value;
         }
       }
     }

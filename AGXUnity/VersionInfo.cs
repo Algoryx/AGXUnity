@@ -29,7 +29,7 @@ namespace AGXUnity
           return "";
 
         return IsAlpha ? $"-alpha.{Alpha}" :
-               IsBeta  ? $"-beta.{Beta}" :
+               IsBeta ? $"-beta.{Beta}" :
                          $"-rc.{Rc}";
       }
     }
@@ -195,7 +195,7 @@ namespace AGXUnity
       get
       {
         return IsValid ?
-                 $"{VersionStringShort}{ ( !string.IsNullOrEmpty( GitHash ) ? "+" + GitHash : "" ) }" :
+                 $"{VersionStringShort}{( !string.IsNullOrEmpty( GitHash ) ? "+" + GitHash : "" )}" :
                  "";
       }
     }
@@ -240,12 +240,12 @@ namespace AGXUnity
       return 0;
     }
 
-    public static bool operator < ( VersionInfo vi1, VersionInfo vi2 )
+    public static bool operator <( VersionInfo vi1, VersionInfo vi2 )
     {
       return vi1.CompareTo( vi2 ) < 0;
     }
 
-    public static bool operator > ( VersionInfo vi1, VersionInfo vi2 )
+    public static bool operator >( VersionInfo vi1, VersionInfo vi2 )
     {
       return vi1.CompareTo( vi2 ) > 0;
     }
@@ -260,12 +260,12 @@ namespace AGXUnity
       return !( vi1 == vi2 );
     }
 
-    public static bool operator >= ( VersionInfo vi1, VersionInfo vi2 )
+    public static bool operator >=( VersionInfo vi1, VersionInfo vi2 )
     {
       return vi1 > vi2 || vi1 == vi2;
     }
 
-    public static bool operator <= ( VersionInfo vi1, VersionInfo vi2 )
+    public static bool operator <=( VersionInfo vi1, VersionInfo vi2 )
     {
       return vi1 < vi2 || vi1 == vi2;
     }

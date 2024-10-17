@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
@@ -87,7 +86,7 @@ namespace AGXUnityEditor.Build
 
     #region BuildTargetGroup API
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete("The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0")]
+    [Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     public static void Add( string symbol, BuildTargetGroup group )
     {

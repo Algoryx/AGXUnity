@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.IO.URDF
@@ -41,7 +39,7 @@ namespace AGXUnityEditor.IO.URDF
                      $"{AddColor( $"{model.Links.Count()} links", pColor )}, " +
                      $"{AddColor( $"{model.Joints.Count()} joints", pColor )} and " +
                      $"{AddColor( $"{model.Materials.Count()} materials", pColor )} in " +
-                     $"{AddColor( timer.getTime().ToString("0.00"), pColor )} ms." );
+                     $"{AddColor( timer.getTime().ToString( "0.00" ), pColor )} ms." );
 
         // Open "select folder" panel if the model requires resources
         // and no resource loader callback is provided.

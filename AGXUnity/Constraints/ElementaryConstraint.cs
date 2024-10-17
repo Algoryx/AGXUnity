@@ -135,7 +135,7 @@ namespace AGXUnity
     }
 
     [Obsolete]
-    public void MigrateInternalData(AGXUnity.Deprecated.ElementaryConstraint ec)
+    public void MigrateInternalData( AGXUnity.Deprecated.ElementaryConstraint ec )
     {
       NativeName = ec.NativeName;
       List<ElementaryConstraintRowData> newRDs = new List<ElementaryConstraintRowData>();

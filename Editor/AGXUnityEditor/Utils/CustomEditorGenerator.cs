@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity;
+using System;
 using System.IO;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using Assembly = System.Reflection.Assembly;
 
 namespace AGXUnityEditor.Utils
@@ -158,9 +158,6 @@ namespace AGXUnityEditor.Utils
     {
       string classAndFilename = GetClassName( type );
       string csFileContent = @"
-using System;
-using AGXUnity;
-using AGXUnity.Collide;
 using UnityEditor;
 
 namespace AGXUnityEditor.Editors
@@ -169,7 +166,8 @@ namespace AGXUnityEditor.Editors
   [CanEditMultipleObjects]
   public class " + classAndFilename + @"Editor : InspectorEditor
   { }
-}";
+}
+";
       File.WriteAllText( path + GetFilename( type, false ), csFileContent );
     }
   }

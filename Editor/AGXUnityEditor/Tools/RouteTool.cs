@@ -1,8 +1,8 @@
-﻿using System;
+﻿using AGXUnity;
+using System;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -70,7 +70,7 @@ namespace AGXUnityEditor.Tools
       set
       {
         if ( value && !DisableCollisionsTool ) {
-          var disableCollisionsTool = new DisableCollisionsTool( Parent.gameObject ); 
+          var disableCollisionsTool = new DisableCollisionsTool( Parent.gameObject );
           AddChild( disableCollisionsTool );
         }
         else if ( !value )
@@ -199,8 +199,7 @@ namespace AGXUnityEditor.Tools
                                                             SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                                             !validatedNode.Valid,
                                                             validatedNode.ErrorString ),
-                                            newState =>
-                                            {
+                                            newState => {
                                               Selected = newState ? node : null;
                                               EditorUtility.SetDirty( Parent );
                                             } );
@@ -277,7 +276,7 @@ namespace AGXUnityEditor.Tools
           addNewPressed = InspectorGUI.Button( MiscIcon.EntryAdd,
                                                true,
                                                "Add new node to the route.",
-                                               GUILayout.Width( 18 ) ); 
+                                               GUILayout.Width( 18 ) );
 
           if ( listOpNode == null && addNewPressed )
             listOpNode = Route.LastOrDefault();
@@ -313,7 +312,7 @@ namespace AGXUnityEditor.Tools
         Selected = null;
         Route.Remove( listOpNode );
       }
-      if( EditorGUI.EndChangeCheck() )
+      if ( EditorGUI.EndChangeCheck() )
         EditorUtility.SetDirty( Parent );
     }
 

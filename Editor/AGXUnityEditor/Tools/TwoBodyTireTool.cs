@@ -1,11 +1,9 @@
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using UnityEditor.SceneManagement;
 using AGXUnity;
 using AGXUnity.Model;
-
-using GUI = AGXUnity.Utils.GUI;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {
@@ -49,8 +47,8 @@ namespace AGXUnityEditor.Tools
 
     private bool SelectTireAndRimToolEnable
     {
-      get { return GetChild<SelectGameObjectTool>() != null &&
-                   GetChild<SelectGameObjectTool>().OnSelect == OnTireAndRimSelected; }
+      get => GetChild<SelectGameObjectTool>() != null &&
+             GetChild<SelectGameObjectTool>().OnSelect == OnTireAndRimSelected;
       set
       {
         if ( value && !SelectTireAndRimToolEnable )

@@ -149,7 +149,7 @@ namespace AGXUnity.Model
         m_properties = value;
         if ( Native != null ) {
           foreach ( agxVehicle.TrackWheel.Property eValue in typeof( agxVehicle.TrackWheel.Property ).GetEnumValues() )
-            Native.setEnableProperty( eValue, ((int)m_properties & (int)eValue) != 0 );
+            Native.setEnableProperty( eValue, ( (int)m_properties & (int)eValue ) != 0 );
         }
       }
     }

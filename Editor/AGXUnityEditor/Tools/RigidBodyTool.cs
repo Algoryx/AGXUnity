@@ -1,9 +1,9 @@
-﻿using System.Linq;
+﻿using AGXUnity;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -30,8 +30,7 @@ namespace AGXUnityEditor.Tools
           RemoveAllChildren();
 
           var pointTool = new FindPointTool();
-          pointTool.OnPointFound = data =>
-          {
+          pointTool.OnPointFound = data => {
             Undo.RecordObject( RigidBody.transform, "Rigid body transform" );
 
             RigidBody.transform.position = data.RaycastResult.Point;
@@ -56,8 +55,7 @@ namespace AGXUnityEditor.Tools
           RemoveAllChildren();
 
           var edgeTool = new EdgeDetectionTool();
-          edgeTool.OnEdgeFound = data =>
-          {
+          edgeTool.OnEdgeFound = data => {
             Undo.RecordObject( RigidBody.transform, "Rigid body transform" );
 
             RigidBody.transform.position = data.Position;

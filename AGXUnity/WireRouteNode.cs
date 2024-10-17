@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 using UnityEngine.Serialization;
 
 namespace AGXUnity

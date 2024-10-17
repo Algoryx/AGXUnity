@@ -61,7 +61,7 @@ namespace AGXUnity.Deprecated
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.TargetSpeedController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.TargetSpeedController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }

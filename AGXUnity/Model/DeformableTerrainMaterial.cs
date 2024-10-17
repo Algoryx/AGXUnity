@@ -495,7 +495,7 @@ namespace AGXUnity.Model
     /// downward into the soil should stop.
     /// Default: 0.01
     /// </summary>
-    [ ClampAboveZeroInInspector( true )]
+    [ClampAboveZeroInInspector( true )]
     [Tooltip( "Determines the fraction of the surface stress that will determine when to stop propagating stress down into the soil." )]
     public float StressCutOffFraction
     {
@@ -987,7 +987,7 @@ namespace AGXUnity.Model
       SetPresetName( presetName );
       ResetToPresetDefault();
     }
-    
+
     /// <summary>
     /// Reset values to default given current preset.
     /// </summary>

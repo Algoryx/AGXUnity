@@ -29,7 +29,7 @@ namespace AGXUnity.Deprecated
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.ScrewController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.ScrewController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }

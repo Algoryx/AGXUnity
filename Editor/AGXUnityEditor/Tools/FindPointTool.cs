@@ -1,7 +1,6 @@
 ﻿using System;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {
@@ -30,10 +29,7 @@ namespace AGXUnityEditor.Tools
       if ( m_collectedData == null ) {
         if ( GetChild<SelectGameObjectTool>() == null ) {
           SelectGameObjectTool selectGameObjectTool = new SelectGameObjectTool();
-          selectGameObjectTool.OnSelect = go =>
-          {
-            m_collectedData = new CollectedData() { Target = go };
-          };
+          selectGameObjectTool.OnSelect = go => m_collectedData = new CollectedData() { Target = go };
           AddChild( selectGameObjectTool );
         }
       }
@@ -59,8 +55,7 @@ namespace AGXUnityEditor.Tools
                                                            m_collectedData.RaycastResult.Triangle.Normal,
                                                            m_collectedData.RaycastResult.ClosestEdge.Direction );
 
-          directionTool.OnSelect += ( position, rotation ) =>
-          {
+          directionTool.OnSelect += ( position, rotation ) => {
             m_collectedData.Rotation      = rotation;
             m_collectedData.RotationGiven = true;
           };

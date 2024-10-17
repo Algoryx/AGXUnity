@@ -162,10 +162,10 @@ namespace AGXUnityEditor
                               in shapes
                               select shape.Material ).Distinct( );
             var contactMaterials = from cm
-                                  in ContactMaterialManager.Instance.ContactMaterialEntries
-                                  where materials.Contains(cm.ContactMaterial.Material1)
-                                  where materials.Contains(cm.ContactMaterial.Material2)
-                                  select cm;
+                                   in ContactMaterialManager.Instance.ContactMaterialEntries
+                                   where materials.Contains(cm.ContactMaterial.Material1)
+                                   where materials.Contains(cm.ContactMaterial.Material2)
+                                   select cm;
             if ( contactMaterials.Count() > 0 ) {
               var savedData = instance.GetComponent<AGXUnity.IO.SavedPrefabLocalData>();
               if ( savedData == null ) {

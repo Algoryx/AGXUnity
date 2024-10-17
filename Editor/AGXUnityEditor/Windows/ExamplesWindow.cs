@@ -24,7 +24,7 @@ namespace AGXUnityEditor.Windows
       ScopedRegistryManager.RequestRegistryListRefresh();
       var thumbnailDirectory = FindThumbnailDirectory();
       ExamplesManager.Initialize();
-      EditorApplication.update += OnUpdate; 
+      EditorApplication.update += OnUpdate;
     }
 
     private void OnDisable()

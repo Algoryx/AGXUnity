@@ -114,7 +114,7 @@ namespace AGXUnityEditor
         EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET Runtime: Mono", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
 #if UNITY_2023_3_OR_NEWER
-          PlayerSettings.SetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+          PlayerSettings.SetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x );
 #else
           PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x );
 #endif
@@ -204,19 +204,16 @@ namespace AGXUnityEditor
 
         if ( showDropdownPressed ) {
           GenericMenu menu = new GenericMenu();
-          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () => {
             if ( EditorUtility.DisplayDialog( "Reset to default", "Reset key(s) to default?", "OK", "Cancel" ) )
               keyHandler.ResetToDefault();
           } );
-          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () => {
             keyHandler.Add( KeyCode.None );
           } );
 
           if ( keyHandler.NumKeyCodes > 1 ) {
-            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () =>
-            {
+            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () => {
               if ( EditorUtility.DisplayDialog( "Remove key", "Remove key: " + keyHandler[ keyHandler.NumKeyCodes - 1 ].ToString() + "?", "OK", "Cancel" ) )
                 keyHandler.Remove( keyHandler.NumKeyCodes - 1 );
             } );

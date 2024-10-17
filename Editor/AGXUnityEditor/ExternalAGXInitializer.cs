@@ -37,7 +37,7 @@ namespace AGXUnityEditor
       IsApplied = true;
 
       Environment.Set( Environment.Variable.AGX_DIR, AGX_DIR );
-      Environment.Set( Environment.Variable.AGX_PLUGIN_PATH, AGX_PLUGIN_PATH ); 
+      Environment.Set( Environment.Variable.AGX_PLUGIN_PATH, AGX_PLUGIN_PATH );
       foreach ( var path in AGX_BIN_PATH ) {
         var dir = new DirectoryInfo( path );
         var isValidPath = dir.Exists || dir.Name.StartsWith( "agxTerrain_" );

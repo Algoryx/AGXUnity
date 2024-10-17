@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
 using Scene = UnityEngine.SceneManagement.Scene;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace AGXUnity
 {
@@ -110,7 +109,7 @@ namespace AGXUnity
 #if UNITY_6000_0_OR_NEWER
       Instance = FindAnyObjectByType<T>( FindObjectsInactive.Include );
 #else
-      Instance = FindObjectOfType<T>(true);
+      Instance = FindObjectOfType<T>( true );
 #endif
       if ( !onlyFind && s_instance == null )
         Instance = new GameObject( typeof( T ).FullName ).AddComponent<T>();

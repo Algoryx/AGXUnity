@@ -27,7 +27,7 @@ namespace AGXUnity
     [SerializeField]
     private float m_youngsModulus = 1.0E9f;
     [ClampAboveZeroInInspector]
-    [Tooltip("Young's Modulus of the constraint")]
+    [Tooltip( "Young's Modulus of the constraint" )]
     public float YoungsModulus
     {
       get { return m_youngsModulus; }
@@ -82,7 +82,7 @@ namespace AGXUnity
     private float m_damping = 2.0f / 50;
 
     [ClampAboveZeroInInspector( true )]
-    [Tooltip("The damping of the constraint")]
+    [Tooltip( "The damping of the constraint" )]
     public float Damping
     {
       get { return m_damping; }

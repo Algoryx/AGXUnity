@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
-using NodeType = AGXUnityEditor.IO.InputAGXFileTreeNode.NodeType;
 using Node = AGXUnityEditor.IO.InputAGXFileTreeNode;
+using NodeType = AGXUnityEditor.IO.InputAGXFileTreeNode.NodeType;
 
 namespace AGXUnityEditor.IO
 {

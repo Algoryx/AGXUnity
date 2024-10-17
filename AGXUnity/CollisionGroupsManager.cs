@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity.Utils;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -18,7 +18,7 @@ namespace AGXUnity
       int counter = 0;
       string finalName = name;
       while ( GameObject.Find( finalName ) != null )
-        finalName = name + " (" + (++counter) + ")";
+        finalName = name + " (" + ( ++counter ) + ")";
 
       return finalName;
     }
