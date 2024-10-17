@@ -1,11 +1,10 @@
-﻿using System.Linq;
+﻿using AGXUnity.IO.URDF;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-using AGXUnity.IO.URDF;
-
-using Material = AGXUnity.IO.URDF.Material;
+using UnityEngine;
 using Collision = AGXUnity.IO.URDF.Collision;
+using Material = AGXUnity.IO.URDF.Material;
 
 namespace AGXUnityEditor.IO.URDF
 {

@@ -1,7 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Collide
 {

@@ -1,16 +1,14 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
-
-using AGXUnity.Utils;
-
-using GUI = AGXUnity.Utils.GUI;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Build
 {

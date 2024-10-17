@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity.Model;
+﻿using AGXUnity.Model;
 using AGXUnityEditor.Utils;
-
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 

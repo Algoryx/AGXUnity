@@ -891,7 +891,7 @@ namespace AGXUnityEditor
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                                         Object.FindObjectsByType<T>(FindObjectsSortMode.None) );
-            
+
 #else
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :

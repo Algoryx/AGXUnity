@@ -1,10 +1,8 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-
-using AGXUnity.Utils;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools

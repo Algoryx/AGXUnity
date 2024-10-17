@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
-
 using Object = UnityEngine.Object;
 
 namespace AGXUnity.Model

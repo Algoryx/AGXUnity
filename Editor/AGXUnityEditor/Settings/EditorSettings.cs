@@ -114,7 +114,7 @@ namespace AGXUnityEditor
         EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET Runtime: Mono", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
 #if UNITY_2023_3_OR_NEWER
-          PlayerSettings.SetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+          PlayerSettings.SetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x );
 #else
           PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x );
 #endif

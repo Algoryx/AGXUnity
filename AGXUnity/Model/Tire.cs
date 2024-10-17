@@ -1,6 +1,5 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Model
 {

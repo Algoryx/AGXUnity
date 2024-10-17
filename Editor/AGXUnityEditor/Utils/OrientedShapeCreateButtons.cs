@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity.Utils;
-
-using GUI = AGXUnity.Utils.GUI;
+using UnityEngine;
 
 namespace AGXUnityEditor.Utils
 {

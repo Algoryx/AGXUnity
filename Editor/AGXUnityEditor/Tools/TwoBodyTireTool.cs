@@ -1,11 +1,9 @@
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using UnityEditor.SceneManagement;
 using AGXUnity;
 using AGXUnity.Model;
-
-using GUI = AGXUnity.Utils.GUI;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using AGXUnity;
+using AGXUnity.Collide;
+using AGXUnity.Rendering;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
-using AGXUnity;
-using AGXUnity.Rendering;
-using AGXUnity.Collide;
 
 namespace AGXUnityEditor.Utils
 {

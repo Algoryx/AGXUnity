@@ -443,13 +443,13 @@ namespace AGXUnityEditor
 #if USE_VISUAL_SCRIPTING
       var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
       var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
-      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
+      AssetDatabase.CopyAsset( plotAssetPath, targetAssetPath );
 
       AssetDatabase.SaveAssets();
       AssetDatabase.Refresh();
 
       var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
-      sm.nest.SwitchToMacro(AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>(targetAssetPath));
+      sm.nest.SwitchToMacro( AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>( targetAssetPath ) );
 #endif
 
       return Selection.activeGameObject = PlotObject.gameObject;

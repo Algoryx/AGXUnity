@@ -1,11 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
-using AGXUnity.Rendering;
+﻿using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Rendering;
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using Tool = AGXUnityEditor.Tools.Tool;
 
 namespace AGXUnityEditor.Utils

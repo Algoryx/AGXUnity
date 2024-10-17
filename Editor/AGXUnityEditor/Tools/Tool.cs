@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools

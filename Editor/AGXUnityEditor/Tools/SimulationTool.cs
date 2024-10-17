@@ -1,7 +1,6 @@
-using System;
 using AGXUnity;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 

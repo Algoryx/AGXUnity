@@ -1,13 +1,12 @@
-﻿using System;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
+using System;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {

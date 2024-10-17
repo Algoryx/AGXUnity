@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
+﻿using AGXUnity;
 using UnityEditor;
-using AGXUnity;
-using AGXUnity.Utils;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 

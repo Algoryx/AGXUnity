@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using AGXUnity.Collide;
+﻿using AGXUnity.Collide;
 using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnity.Rendering
 {

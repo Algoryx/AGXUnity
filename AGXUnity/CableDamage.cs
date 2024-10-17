@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using AGXUnity.Utils;
-using AGXUnity;
 using AGXUnity.Rendering;
+using UnityEngine;
 
 namespace AGXUnity
 {

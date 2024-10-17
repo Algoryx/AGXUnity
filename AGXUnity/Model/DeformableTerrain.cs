@@ -4,7 +4,6 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.TerrainUtils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model

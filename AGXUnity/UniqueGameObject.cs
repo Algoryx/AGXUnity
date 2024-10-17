@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
 using Scene = UnityEngine.SceneManagement.Scene;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace AGXUnity
 {

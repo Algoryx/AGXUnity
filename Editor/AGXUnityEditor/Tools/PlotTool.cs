@@ -1,5 +1,4 @@
 using UnityEngine;
-using AGXUnity;
 
 
 namespace AGXUnityEditor.Tools

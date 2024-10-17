@@ -1,12 +1,12 @@
 using AGXUnity.Utils;
+using AGXUnityEditor.UIElements;
 using AGXUnityEditor.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using AGXUnityEditor.UIElements;
-using System;
 
 namespace AGXUnityEditor.Windows
 {

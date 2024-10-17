@@ -1,7 +1,5 @@
-﻿using UnityEngine;
-using UnityEditor;
-using AGXUnity;
-
+﻿using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
