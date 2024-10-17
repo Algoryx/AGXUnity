@@ -513,7 +513,7 @@ namespace AGXUnityEditor.Windows
     {
       return HasUnresolvedDependencies( example ) ||
              example == null ||
-             ( RequiresAGXRegistry(example) && !AGXScopedRegistryAdded ) ||
+             ( RequiresAGXRegistry( example ) && !AGXScopedRegistryAdded ) ||
              ( example.RequiresLegacyInputManager && !LegacyInputManagerEnabled ) ||
              ( example.Dependencies.Contains( "com.unity.inputsystem" ) && !InputSystemEnabled );
     }
@@ -535,7 +535,7 @@ namespace AGXUnityEditor.Windows
     {
       return example != null &&
              example.Dependencies.Length > 0 &&
-             example.Dependencies.Any( dependency => dependency.StartsWith("com.algoryx.agxunity.machines") );
+             example.Dependencies.Any( dependency => dependency.StartsWith( "com.algoryx.agxunity.machines" ) );
     }
 
     /// <summary>

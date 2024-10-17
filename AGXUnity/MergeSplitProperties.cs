@@ -118,7 +118,7 @@ namespace AGXUnity
         if ( constraint.GetInitialized<Constraint>() != null ) {
           RigidBody refRB = constraint.AttachmentPair.ReferenceObject.GetComponent<RigidBody>();
           RigidBody conRB = null;
-          if( constraint.AttachmentPair.ConnectedObject != null) 
+          if ( constraint.AttachmentPair.ConnectedObject != null )
             conRB = constraint.AttachmentPair.ConnectedObject.GetComponent<RigidBody>();
           if ( !blacklist.Any( pair =>
             ( pair.Item1 == refRB && pair.Item2 == conRB ) ||

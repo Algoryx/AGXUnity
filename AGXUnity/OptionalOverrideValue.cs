@@ -58,7 +58,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="def">The default value to use when not using the override</param>
     /// <returns>The override value if used or default value otherwise</returns>
-    public T ValueOrDefault(T def )
+    public T ValueOrDefault( T def )
     {
       if ( !UseOverride )
         return def;

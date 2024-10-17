@@ -276,12 +276,10 @@ namespace AGXUnityEditor.Tools
               continue;
 
             constraint.ChangeType( newType,
-                                   createdObject =>
-                                   {
+                                   createdObject => {
                                      Undo.RegisterCreatedObjectUndo( createdObject, "ElementaryConstraint created." );
                                    },
-                                   destroyObject =>
-                                   {
+                                   destroyObject => {
                                      Undo.DestroyObjectImmediate( destroyObject );
                                    } );
           }

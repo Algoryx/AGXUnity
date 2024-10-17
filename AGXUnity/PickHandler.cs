@@ -1,7 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -285,8 +285,7 @@ namespace AGXUnity
         m_lineShape.set( ray.origin.ToHandedVec3(), ray.GetPoint( 5000.0f ).ToHandedVec3() );
         m_lineGeometry.setEnable( true );
 
-        m_mouseButtonState.Use( m_mouseButtonState.ButtonDown, buttonUp =>
-        {
+        m_mouseButtonState.Use( m_mouseButtonState.ButtonDown, buttonUp => {
           if ( ConstraintGameObject != null ) {
             DestroyImmediate( ConstraintGameObject );
             ConstraintGameObject = null;

@@ -1,10 +1,9 @@
-﻿using System;
-using UnityEngine;
+﻿using AGXUnity.Model;
+using System;
 using UnityEditor;
-using AGXUnity.Model;
-
-using Object = UnityEngine.Object;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {

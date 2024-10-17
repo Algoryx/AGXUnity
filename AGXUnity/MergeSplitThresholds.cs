@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
@@ -25,7 +23,7 @@ namespace AGXUnity
       }
     }
 
-    [InvokableInInspector("Reset to default")]
+    [InvokableInInspector( "Reset to default" )]
     public void OnResetToDefault()
     {
       ResetToDefault();

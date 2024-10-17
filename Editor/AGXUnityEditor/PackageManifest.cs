@@ -10,7 +10,7 @@ namespace AGXUnityEditor
 
     private static PackageManifest s_instance = null;
 
-    public static string Raw => File.ReadAllText(s_manifestPath);
+    public static string Raw => File.ReadAllText( s_manifestPath );
 
     public static PackageManifest Instance
     {

@@ -1,7 +1,6 @@
-using System;
 using AGXUnity;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -45,7 +44,7 @@ namespace AGXUnityEditor.Tools
                                                                                                             "Location (in Unity frame loop) where simulation step forward is called.\n\n" +
                                                                                                             "Fixed Update: Called from MonoBehaviour.FixedUpdate with Time.fixedDeltaTime time step size.\n" +
                                                                                                             "Update: Called from MonoBehaviour.Update with arbitrary time step size.\n" +
-                                                                                                            "Disabled: User has to manually invoke Simulation.Instance.DoStep()."),
+                                                                                                            "Disabled: User has to manually invoke Simulation.Instance.DoStep()." ),
                                                                                              Simulation.AutoSteppingMode,
                                                                                              skin.Popup );
 
@@ -57,7 +56,7 @@ namespace AGXUnityEditor.Tools
         else
           Simulation.TimeStep = GetUpdateTimeStepData().Float;
       }
-      
+
       UnityEngine.GUI.enabled = Simulation.AutoSteppingMode != Simulation.AutoSteppingModes.FixedUpdate;
       Simulation.TimeStep = Mathf.Max( EditorGUILayout.FloatField( GUI.MakeLabel( "Time Step",
                                                                                   false,
@@ -98,13 +97,12 @@ namespace AGXUnityEditor.Tools
 
       Simulation.DisplayStatistics = InspectorGUI.Toggle( GUI.MakeLabel( "Display Statistics" ), Simulation.DisplayStatistics );
       if ( Simulation.DisplayStatistics ) {
-        using ( InspectorGUI.IndentScope.Single )
-        {
+        using ( InspectorGUI.IndentScope.Single ) {
           Simulation.StatisticsMovingAverageCount = EditorGUILayout.IntField( GUI.MakeLabel( "Moving Average Frame Size",
                                                                                              false,
                                                                                              "To smooth out the timing statistics between frames, increase this value to a value larger than 1." ),
                                                                          Simulation.StatisticsMovingAverageCount,
-                                                                         skin.TextField);
+                                                                         skin.TextField );
           Simulation.DisplayMemoryAllocations = InspectorGUI.Toggle( GUI.MakeLabel( "Display Memory Allocations" ), Simulation.DisplayMemoryAllocations );
         }
       }
@@ -168,7 +166,7 @@ namespace AGXUnityEditor.Tools
                                                              Simulation.LogToUnityConsole,
                                                              b => Simulation.LogToUnityConsole = b,
                                                              Simulation.AGXUnityLogLevel );
-      using (new UnityEditor.EditorGUI.IndentLevelScope() ) {
+      using ( new UnityEditor.EditorGUI.IndentLevelScope() ) {
         using ( new GUI.EnabledBlock( Simulation.LogToUnityConsole ) ) {
           Simulation.DisableMeshCreationWarnings = InspectorGUI.Toggle( GUI.MakeLabel( "Disable mesh creation warnings" ), Simulation.DisableMeshCreationWarnings );
         }

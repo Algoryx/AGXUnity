@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity;
+using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -151,8 +151,7 @@ namespace AGXUnityEditor.Tools
         groupNameMenu.AddDisabledItem( GUI.MakeLabel( "Groups in scene" ) );
         groupNameMenu.AddSeparator( string.Empty );
         foreach ( var groupName in m_groups )
-          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () =>
-          {
+          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () => {
             m_findActiveGroupNameEntry.Tag = groupName;
             m_findActiveGroupNameEntry = null;
           } );

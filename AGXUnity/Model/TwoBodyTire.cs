@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using UnityEngine;
-using AGXUnity.Utils;
+﻿using UnityEngine;
 
 namespace AGXUnity.Model
 {

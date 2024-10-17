@@ -82,7 +82,7 @@ namespace AGXUnity
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.FrictionController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.FrictionController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }

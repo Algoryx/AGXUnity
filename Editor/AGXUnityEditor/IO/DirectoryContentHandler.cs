@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity.Utils;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
-using UnityEngine;
 using UnityEditor;
-
-using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnityEditor.IO
 {

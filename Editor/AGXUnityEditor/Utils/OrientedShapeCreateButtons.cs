@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity.Utils;
-
-using GUI = AGXUnity.Utils.GUI;
+using UnityEngine;
 
 namespace AGXUnityEditor.Utils
 {
@@ -60,7 +57,7 @@ namespace AGXUnityEditor.Utils
       new OrientedShapeCreateButton( Tools.CreateOrientedShapeTool.ShapeType.Mesh )
     };
 
-    public void Update( Event current, Action<Tools.CreateOrientedShapeTool.ShapeType> onClick, Action<Tools.CreateOrientedShapeTool.ShapeType> onHover)
+    public void Update( Event current, Action<Tools.CreateOrientedShapeTool.ShapeType> onClick, Action<Tools.CreateOrientedShapeTool.ShapeType> onHover )
     {
       var rect = EditorGUI.IndentedRect( EditorGUILayout.GetControlRect( false ) );
       rect.width = 36.0f;
@@ -72,10 +69,10 @@ namespace AGXUnityEditor.Utils
                             button == m_buttons.First(),
                             button == m_buttons.Last() ) )
           onClick( button.ShapeType );
-        if ( UnityEngine.GUI.enabled && 
+        if ( UnityEngine.GUI.enabled &&
              current.type == EventType.Repaint &&
              rect.Contains( current.mousePosition ) )
-          onHover(button.ShapeType);
+          onHover( button.ShapeType );
         rect.x += rect.width;
       }
     }

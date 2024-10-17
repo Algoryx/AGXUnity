@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
@@ -83,10 +82,10 @@ namespace AGXUnityEditor.Tools
       };
 
       Handles.color = GetXAxisColor( 0.3f );
-      position      = PlaneHandle( Vector3.right,   Vector3.up,    Vector3.forward );
-      Handles.color = GetYAxisColor( 0.3f );        
-      position      = PlaneHandle( Vector3.up,      Vector3.right, Vector3.forward );
-      Handles.color = GetZAxisColor( 0.3f );        
+      position      = PlaneHandle( Vector3.right, Vector3.up, Vector3.forward );
+      Handles.color = GetYAxisColor( 0.3f );
+      position      = PlaneHandle( Vector3.up, Vector3.right, Vector3.forward );
+      Handles.color = GetZAxisColor( 0.3f );
       position      = PlaneHandle( Vector3.forward, Vector3.right, Vector3.up );
 
       Handles.color = orgColor;

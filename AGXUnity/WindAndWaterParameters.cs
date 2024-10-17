@@ -1,8 +1,8 @@
-﻿using System;
-using System.Reflection;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {

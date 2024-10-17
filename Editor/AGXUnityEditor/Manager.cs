@@ -1,11 +1,11 @@
+using AGXUnity.Utils;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using AGXUnity.Utils;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -289,7 +289,7 @@ namespace AGXUnityEditor
         return;
 
       // TODO: Fix so that "MouseOver" works for newly created primitives.
-     if ( primitive.Node.transform.parent != VisualsParent )
+      if ( primitive.Node.transform.parent != VisualsParent )
         VisualsParent.AddChild( primitive.Node );
 
       m_visualPrimitives.Add( primitive );
@@ -323,7 +323,7 @@ namespace AGXUnityEditor
 #else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
 #endif
-      if ( !hasMonoRuntime ) { 
+      if ( !hasMonoRuntime ) {
         string prefix = string.Empty;
         if ( infoWarningOrError == "info" )
           prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
@@ -798,7 +798,7 @@ namespace AGXUnityEditor
 
       return EnvironmentState.Initialized;
 #endif
-      }
+    }
 
     private static bool HandleScriptReload( bool success )
     {

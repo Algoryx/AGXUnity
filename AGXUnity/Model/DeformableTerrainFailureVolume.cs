@@ -6,7 +6,7 @@ using UnityEngine;
 namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Model/Deformable Terrain Failure Volume" )]
-  [RequireComponent(typeof(Shape))]
+  [RequireComponent( typeof( Shape ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#soil-failure-volumes" )]
   public class DeformableTerrainFailureVolume : ScriptComponent
   {
@@ -30,7 +30,7 @@ namespace AGXUnity.Model
     {
       if ( AddAllTerrainsOnStart ) {
 #if UNITY_2022_2_OR_NEWER
-        m_terrains.UnionWith( FindObjectsByType<DeformableTerrainBase>(FindObjectsSortMode.None) );
+        m_terrains.UnionWith( FindObjectsByType<DeformableTerrainBase>( FindObjectsSortMode.None ) );
 #else
         m_terrains.UnionWith( FindObjectsOfType<DeformableTerrainBase>() );
 #endif

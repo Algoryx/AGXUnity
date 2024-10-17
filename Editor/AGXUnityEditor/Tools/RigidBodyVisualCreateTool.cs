@@ -1,8 +1,6 @@
-﻿using UnityEngine;
-using UnityEditor;
-using AGXUnity;
-using AGXUnity.Collide;
+﻿using AGXUnity;
 using AGXUnity.Rendering;
+using UnityEditor;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools

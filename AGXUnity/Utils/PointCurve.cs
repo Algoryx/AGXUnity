@@ -249,7 +249,7 @@ namespace AGXUnity.Utils
 
         int maxIterations = 100;
         int i = 0;
-        while ( prevToCurr > 0.0f && currT < 1.0f + 0.5f * dt && !Math.Equivalent( prevToCurr, segmentLength, tolerance * TotalLength ) && i++ < maxIterations) {
+        while ( prevToCurr > 0.0f && currT < 1.0f + 0.5f * dt && !Math.Equivalent( prevToCurr, segmentLength, tolerance * TotalLength ) && i++ < maxIterations ) {
           var overshoot = prevToCurr - segmentLength;
           currT        -= overshoot / totalLength;
           curr          = Evaluate( currT );
@@ -312,7 +312,7 @@ namespace AGXUnity.Utils
         SegmentLength = -1.0f,
         Successful = false
       };
-      
+
       try {
         var done = false;
         while ( !done && result.NumIterations++ < maxNumIterations ) {
@@ -320,18 +320,15 @@ namespace AGXUnity.Utils
           var eCurr = 0.0f;
           var eNext = 0.0f;
 
-          Traverse( ( s1, s2, sType ) =>
-          {
+          Traverse( ( s1, s2, sType ) => {
             ePrev += errorFunc( this, s1, s2, sType );
           }, result.SegmentLength - dl, localTolerance );
 
-          Traverse( ( s1, s2, sType ) =>
-          {
+          Traverse( ( s1, s2, sType ) => {
             eCurr += errorFunc( this, s1, s2, sType );
           }, result.SegmentLength, localTolerance );
 
-          Traverse( ( s1, s2, sType ) =>
-          {
+          Traverse( ( s1, s2, sType ) => {
             eNext += errorFunc( this, s1, s2, sType );
           }, result.SegmentLength + dl, localTolerance );
 
@@ -349,8 +346,7 @@ namespace AGXUnity.Utils
             return bestResult;
 
           result.Error = 0.0f;
-          Traverse( ( s1, s2, sType ) =>
-          {
+          Traverse( ( s1, s2, sType ) => {
             result.Error += errorFunc( this, s1, s2, sType );
           }, result.SegmentLength, localTolerance );
 

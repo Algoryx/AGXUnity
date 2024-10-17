@@ -1,13 +1,12 @@
-﻿using System;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
+using System;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -56,7 +55,7 @@ namespace AGXUnityEditor
     {
       targets = targets.Where( obj => obj != null ).ToArray();
 
-      using ( new GUI.EnabledBlock(targets.All(o => (o.hideFlags & HideFlags.NotEditable) == 0)) ) {
+      using ( new GUI.EnabledBlock( targets.All( o => ( o.hideFlags & HideFlags.NotEditable ) == 0 ) ) ) {
         if ( targets.Length == 0 )
           return;
 
@@ -132,17 +131,17 @@ namespace AGXUnityEditor
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
-      
+
       // If any changes occured during the editor draw we have to tell unity that the component has changes.
       // Additionally, some components (such as the Constraint component) modifies other components on the same GameObject.
       // In this case all compoments have to be manually dirtied. Here, we blanket dirty all compoments on the same GameObject
       // as the currently edited component.
       if ( EditorGUI.EndChangeCheck() ) {
-        foreach ( var t in this.targets ){
+        foreach ( var t in this.targets ) {
           EditorUtility.SetDirty( t );
-          if(t is MonoBehaviour root)
-            foreach( var comp in root.GetComponents<MonoBehaviour>() )
-              EditorUtility.SetDirty(comp);
+          if ( t is MonoBehaviour root )
+            foreach ( var comp in root.GetComponents<MonoBehaviour>() )
+              EditorUtility.SetDirty( comp );
         }
       }
 
@@ -270,7 +269,7 @@ namespace AGXUnityEditor
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
             value = serializedProperty.objectReferenceValue;
-          }            
+          }
         }
       }
 

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -154,9 +154,12 @@ namespace AGXUnity
     /// <returns>ESolveType</returns>
     public static ESolveType Convert( agx.Constraint.SolveType solveType )
     {
-      return solveType == agx.Constraint.SolveType.DIRECT    ? ESolveType.Direct :
-             solveType == agx.Constraint.SolveType.ITERATIVE ? ESolveType.Iterative :
-                                                               ESolveType.DirectAndIterative;
+      return solveType switch
+      {
+        agx.Constraint.SolveType.DIRECT => ESolveType.Direct,
+        agx.Constraint.SolveType.ITERATIVE => ESolveType.Iterative,
+        _ => ESolveType.DirectAndIterative
+      };
     }
 
     /// <summary>
@@ -166,9 +169,12 @@ namespace AGXUnity
     /// <returns>Native solve type.</returns>
     public static agx.Constraint.SolveType Convert( ESolveType solveType )
     {
-      return solveType == ESolveType.Direct    ? agx.Constraint.SolveType.DIRECT :
-             solveType == ESolveType.Iterative ? agx.Constraint.SolveType.ITERATIVE :
-                                                 agx.Constraint.SolveType.DIRECT_AND_ITERATIVE;
+      return solveType switch
+      {
+        ESolveType.Direct => agx.Constraint.SolveType.DIRECT,
+        ESolveType.Iterative => agx.Constraint.SolveType.ITERATIVE,
+        _ => agx.Constraint.SolveType.DIRECT_AND_ITERATIVE
+      };
     }
 
     [UnityEngine.Serialization.FormerlySerializedAs( "m_attachmentPair" )]
@@ -896,7 +902,7 @@ namespace AGXUnity
 
       SynchronizeNativeFramesWithAttachmentPair();
 
-      if (m_isAnimated) {
+      if ( m_isAnimated ) {
         var controllers = GetElementaryConstraintControllers();
         for ( int i = 0; i < controllers.Length; ++i )
           PropertySynchronizer.Synchronize( controllers[ i ] );
@@ -978,7 +984,7 @@ namespace AGXUnity
     {
       get
       {
-        if(m_gizmosMesh == null)
+        if ( m_gizmosMesh == null )
           m_gizmosMesh = Resources.Load<Mesh>( @"Debug/Models/arrow" );
         return m_gizmosMesh;
       }

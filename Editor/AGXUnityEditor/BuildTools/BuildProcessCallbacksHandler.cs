@@ -1,16 +1,14 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
-
-using AGXUnity.Utils;
-
-using GUI   = AGXUnity.Utils.GUI;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Build
 {
@@ -100,9 +98,9 @@ namespace AGXUnityEditor.Build
 #else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
 #endif
-      if (!hasMonoRuntime)
-          throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
-                                                            "AGX Dynamics for Unity won't work in build." );
+      if ( !hasMonoRuntime )
+        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
+                                                          "AGX Dynamics for Unity won't work in build." );
 
       var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
       if ( !nativeIs64Bit ) {

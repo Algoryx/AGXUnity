@@ -20,7 +20,7 @@ namespace AGXUnity.Model
         return transform.position;
     }
 
-    public float[,] WriteTerrainDataOffset(bool needsReturnData = true)
+    public float[,] WriteTerrainDataOffset( bool needsReturnData = true )
     {
       var resolution = TerrainUtils.TerrainDataResolution(Terrain.terrainData);
       if ( InitialHeights != null )
