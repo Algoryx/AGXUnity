@@ -1,8 +1,8 @@
-﻿using System;
+﻿using AGXUnity;
+using System;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 using System.Collections.Generic;
@@ -230,8 +230,7 @@ namespace AGXUnityEditor.Tools
                                                             SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                                             !validatedNode.Valid,
                                                             validatedNode.ErrorString ),
-                                            newState =>
-                                            {
+                                            newState => {
                                               Selected = newState ? node : null;
                                               EditorUtility.SetDirty( Parent );
                                             } );
@@ -344,7 +343,7 @@ namespace AGXUnityEditor.Tools
         Selected = null;
         Route.Remove( listOpNode );
       }
-      if( EditorGUI.EndChangeCheck() )
+      if ( EditorGUI.EndChangeCheck() )
         EditorUtility.SetDirty( Route );
     }
 

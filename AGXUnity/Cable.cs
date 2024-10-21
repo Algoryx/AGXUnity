@@ -1,7 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -157,7 +157,6 @@ namespace AGXUnity
             var currMaterial = Native.getMaterial();
             var currIsDefault = currMaterial != null &&
                                 currMaterial.getName() == "DefaultCableMaterial";
-                                Utils.Math.Approximately( (float)currMaterial.getBulkMaterial().getDensity(), 700.0f );
             if ( currMaterial == null || !currIsDefault ) {
               var defaultMaterial = new agx.Material( "DefaultCableMaterial" );
               defaultMaterial.getBulkMaterial().setDensity( 700.0 );
@@ -223,7 +222,7 @@ namespace AGXUnity
         if ( m_routeComponent == null )
           m_routeComponent = GetComponent<CableRoute>();
         return m_routeComponent;
-      }      
+      }
     }
 
     private PointCurve m_routePointCurve              = null;
@@ -301,8 +300,7 @@ namespace AGXUnity
       if ( !result.Successful )
         return false;
 
-      m_routePointCurve.Traverse( ( curr, next, type ) =>
-      {
+      m_routePointCurve.Traverse( ( curr, next, type ) => {
         var routePointData = new RoutePointData()
         {
           CurrPoint = curr,
@@ -560,8 +558,7 @@ namespace AGXUnity
         if ( result.Successful ) {
           m_routePointResolutionPerUnitLength = ResolutionPerUnitLength;
           var routePoints = new List<Vector3>();
-          m_routePointCurve.Traverse( ( curr, next, type ) =>
-          {
+          m_routePointCurve.Traverse( ( curr, next, type ) => {
             routePoints.Add( curr.Point );
             if ( type == PointCurve.SegmentType.Last && Mathf.Abs( next.Time - 1.0f ) < Mathf.Abs( curr.Time - 1 ) )
               routePoints.Add( next.Point );

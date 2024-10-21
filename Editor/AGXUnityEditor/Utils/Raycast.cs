@@ -1,13 +1,12 @@
-﻿using System;
+﻿using AGXUnity;
+using AGXUnity.Collide;
+using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
-using AGXUnity.Collide;
-using AGXUnity.Utils;
-
+using UnityEngine;
 using Mesh = UnityEngine.Mesh;
 
 // TODO:
@@ -418,19 +417,19 @@ namespace AGXUnityEditor.Utils
                                                           result.Triangle.Vertex3,
                                                           result.Triangle.Vertex1 );
       result.ClosestEdge = d1.Distance < d2.Distance && d1.Distance < d3.Distance ? new Edge()
-                                                                                    {
-                                                                                      Start  = result.Triangle.Vertex1,
-                                                                                      End    = result.Triangle.Vertex2,
-                                                                                      Normal = result.Triangle.Normal,
-                                                                                      Type   = Edge.EdgeType.Triangle
-                                                                                    } :
+      {
+        Start  = result.Triangle.Vertex1,
+        End    = result.Triangle.Vertex2,
+        Normal = result.Triangle.Normal,
+        Type   = Edge.EdgeType.Triangle
+      } :
                            d2.Distance < d1.Distance && d2.Distance < d3.Distance ? new Edge()
-                                                                                    {
-                                                                                      Start  = result.Triangle.Vertex2,
-                                                                                      End    = result.Triangle.Vertex3,
-                                                                                      Normal = result.Triangle.Normal,
-                                                                                      Type   = Edge.EdgeType.Triangle
-                                                                                    } :
+                           {
+                             Start  = result.Triangle.Vertex2,
+                             End    = result.Triangle.Vertex3,
+                             Normal = result.Triangle.Normal,
+                             Type   = Edge.EdgeType.Triangle
+                           } :
                                                                                     new Edge()
                                                                                     {
                                                                                       Start  = result.Triangle.Vertex3,

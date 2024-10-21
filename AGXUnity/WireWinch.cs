@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
-using AGXUnity.Utils;
 using UnityEngine;
 
 namespace AGXUnity

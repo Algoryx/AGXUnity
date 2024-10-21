@@ -1,11 +1,11 @@
+using AGXUnity.Utils;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using AGXUnity.Utils;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -289,7 +289,7 @@ namespace AGXUnityEditor
         return;
 
       // TODO: Fix so that "MouseOver" works for newly created primitives.
-     if ( primitive.Node.transform.parent != VisualsParent )
+      if ( primitive.Node.transform.parent != VisualsParent )
         VisualsParent.AddChild( primitive.Node );
 
       m_visualPrimitives.Add( primitive );
@@ -318,8 +318,12 @@ namespace AGXUnityEditor
 
     private static bool HasNetRuntimeCompatibility( string infoWarningOrError )
     {
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
-      if ( !hasMonoRuntime ) { 
+#endif
+      if ( !hasMonoRuntime ) {
         string prefix = string.Empty;
         if ( infoWarningOrError == "info" )
           prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
@@ -466,7 +470,7 @@ namespace AGXUnityEditor
 
       // Deleted RigidBody component leaves dangling MassProperties
       // so we've to delete them explicitly.
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
 #else
       var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
@@ -794,7 +798,7 @@ namespace AGXUnityEditor
 
       return EnvironmentState.Initialized;
 #endif
-      }
+    }
 
     private static bool HandleScriptReload( bool success )
     {

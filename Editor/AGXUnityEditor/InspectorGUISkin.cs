@@ -1,8 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using UnityEditor;
 using UnityEngine;
-using UnityEditor;
-
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor

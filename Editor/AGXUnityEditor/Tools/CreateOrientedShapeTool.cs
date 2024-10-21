@@ -68,7 +68,7 @@ namespace AGXUnityEditor.Tools
         var vertices = Filter.sharedMesh.vertices;
         agx.Vec3Vector agxVerts = new agx.Vec3Vector(vertices.Length);
         foreach ( var v in vertices )
-          agxVerts.Add( agx.Vec3.mul(v.ToHandedVec3(), scale));
+          agxVerts.Add( agx.Vec3.mul( v.ToHandedVec3(), scale ) );
 
         PrimitiveData.boxReady = false;
         PrimitiveData.cylinderReady = false;
@@ -76,22 +76,19 @@ namespace AGXUnityEditor.Tools
 
         SceneViewHighlight.Add( go );
 
-        BoxCreateThread = new Thread( () =>
-        {
+        BoxCreateThread = new Thread( () => {
           agxUtil.agxUtilSWIG.computeOrientedBox( agxVerts, ref PrimitiveData.boxExtents, ref PrimitiveData.boxTransform );
           PrimitiveData.boxReady = true;
         } );
         BoxCreateThread.Start();
 
-        CylinderCreateThread = new Thread( () =>
-        {
+        CylinderCreateThread = new Thread( () => {
           agxUtil.agxUtilSWIG.computeOrientedCylinder( agxVerts, ref PrimitiveData.cylinderRadiusHeight, ref PrimitiveData.cylinderRotation );
           PrimitiveData.cylinderReady = true;
         } );
         CylinderCreateThread.Start();
 
-        CapsuleCreateThread = new Thread( () =>
-        {
+        CapsuleCreateThread = new Thread( () => {
           agxUtil.agxUtilSWIG.computeOrientedCapsule( agxVerts, ref PrimitiveData.capsuleRadiusHeight, ref PrimitiveData.capsuleRotation );
           PrimitiveData.capsuleReady = true;
         } );
@@ -113,7 +110,7 @@ namespace AGXUnityEditor.Tools
       Mesh,
     }
 
-    public static void CreateShape<T>( Transform transform, Func<T,bool> initializeAction ) where T : Shape
+    public static void CreateShape<T>( Transform transform, Func<T, bool> initializeAction ) where T : Shape
     {
       if ( initializeAction == null ) {
         Debug.LogError( "Unable to create shape without an initializeAction." );
@@ -129,7 +126,7 @@ namespace AGXUnityEditor.Tools
       if ( AGXUnity.Rendering.DebugRenderManager.HasInstance )
         Undo.AddComponent<AGXUnity.Rendering.ShapeDebugRenderData>( shapeGameObject );
 
-      if(!initializeAction( shapeGameObject.GetComponent<T>() ) ) {
+      if ( !initializeAction( shapeGameObject.GetComponent<T>() ) ) {
         Undo.PerformUndo();
         return;
       }
@@ -187,21 +184,20 @@ namespace AGXUnityEditor.Tools
       }
 
       // Single selection mode.
-      if ( !(Event.current.shift || Event.current.control) )
+      if ( !( Event.current.shift || Event.current.control ) )
         ClearSelection();
 
       if ( selected != null ) {
         if ( !m_selection.Exists( s => s.GameObject == selected ) )
           m_selection.Add( new SelectionData( selected ) );
         else if ( Event.current.control )
-          m_selection.RemoveAll( s =>
-           {
-             if ( s.GameObject == selected ) {
-               s.Reset();
-               return true;
-             }
-             return false;
-           } );
+          m_selection.RemoveAll( s => {
+            if ( s.GameObject == selected ) {
+              s.Reset();
+              return true;
+            }
+            return false;
+          } );
       }
 
       // TODO GUI: Why? Force inspector update instead?
@@ -224,74 +220,68 @@ namespace AGXUnityEditor.Tools
       bool selected = false;
 
       UnityEngine.GUI.enabled = m_selection.Count > 0;
-      m_buttons.Update( Event.current, ( type ) =>
-        {
-          foreach ( var s in m_selection ) {
-            if ( type == ShapeType.Box ) {
-              CreateShape<Box>( s.Filter.transform, box =>
-              {
-                s.BoxCreateThread.Join();
-                box.HalfExtents = s.PrimitiveData.boxExtents.ToVector3();
+      m_buttons.Update( Event.current, ( type ) => {
+        foreach ( var s in m_selection ) {
+          if ( type == ShapeType.Box ) {
+            CreateShape<Box>( s.Filter.transform, box => {
+              s.BoxCreateThread.Join();
+              box.HalfExtents = s.PrimitiveData.boxExtents.ToVector3();
 
-                box.transform.position = s.WorldCenter;
-                box.transform.rotation = s.Rotation;
-                box.transform.rotation *= ( new agx.Quat( s.PrimitiveData.boxTransform ) ).ToHandedQuaternion();
-                return true;
-              } );
-            }
-            else if ( type == ShapeType.Cylinder ) {
-              CreateShape<Cylinder>( s.Filter.transform, cylinder =>
-              {
-                s.CylinderCreateThread.Join();
-                cylinder.Radius = (float)s.PrimitiveData.cylinderRadiusHeight.x;
-                cylinder.Height = (float)s.PrimitiveData.cylinderRadiusHeight.y;
-
-                cylinder.transform.position = s.WorldCenter;
-                cylinder.transform.rotation = s.Rotation;
-                cylinder.transform.rotation *= ( new agx.Quat( s.PrimitiveData.cylinderRotation ) ).ToHandedQuaternion();
-                return true;
-              } );
-            }
-            else if ( type == ShapeType.Capsule ) {
-              CreateShape<Capsule>( s.Filter.transform, capsule =>
-              {
-                s.CapsuleCreateThread.Join();
-                capsule.Radius = (float)s.PrimitiveData.capsuleRadiusHeight.x;
-                capsule.Height = (float)s.PrimitiveData.capsuleRadiusHeight.y;
-
-                capsule.transform.position = s.WorldCenter;
-                capsule.transform.rotation = s.Rotation;
-                capsule.transform.rotation *= ( new agx.Quat( s.PrimitiveData.capsuleRotation ) ).ToHandedQuaternion();
-                return true;
-              } );
-            }
-            else if ( type == ShapeType.Sphere ) {
-              CreateShape<Sphere>( s.Filter.transform, sphere =>
-              {
-                sphere.Radius = s.Radius;
-                sphere.transform.position = s.WorldCenter;
-                sphere.transform.rotation = s.Rotation;
-                return true;
-              } );
-            }
-            else if ( type == ShapeType.Mesh ) {
-              CreateShape<Mesh>( s.Filter.transform, mesh =>
-              {
-                // We don't want to set the position given the center of the bounds
-                // since we're one-to-one with the mesh filter.
-                mesh.transform.position = s.Filter.transform.position;
-                mesh.transform.rotation = s.Filter.transform.rotation;
-
-                return mesh.SetSourceObject( s.Filter.sharedMesh );
-              } );
-            }
+              box.transform.position = s.WorldCenter;
+              box.transform.rotation = s.Rotation;
+              box.transform.rotation *= ( new agx.Quat( s.PrimitiveData.boxTransform ) ).ToHandedQuaternion();
+              return true;
+            } );
           }
+          else if ( type == ShapeType.Cylinder ) {
+            CreateShape<Cylinder>( s.Filter.transform, cylinder => {
+              s.CylinderCreateThread.Join();
+              cylinder.Radius = (float)s.PrimitiveData.cylinderRadiusHeight.x;
+              cylinder.Height = (float)s.PrimitiveData.cylinderRadiusHeight.y;
 
-          selected = true;
-          Reset();
-          PerformRemoveFromParent();
-          EditorUtility.SetDirty( Parent );
-        }, ( type ) => previewShape = type );
+              cylinder.transform.position = s.WorldCenter;
+              cylinder.transform.rotation = s.Rotation;
+              cylinder.transform.rotation *= ( new agx.Quat( s.PrimitiveData.cylinderRotation ) ).ToHandedQuaternion();
+              return true;
+            } );
+          }
+          else if ( type == ShapeType.Capsule ) {
+            CreateShape<Capsule>( s.Filter.transform, capsule => {
+              s.CapsuleCreateThread.Join();
+              capsule.Radius = (float)s.PrimitiveData.capsuleRadiusHeight.x;
+              capsule.Height = (float)s.PrimitiveData.capsuleRadiusHeight.y;
+
+              capsule.transform.position = s.WorldCenter;
+              capsule.transform.rotation = s.Rotation;
+              capsule.transform.rotation *= ( new agx.Quat( s.PrimitiveData.capsuleRotation ) ).ToHandedQuaternion();
+              return true;
+            } );
+          }
+          else if ( type == ShapeType.Sphere ) {
+            CreateShape<Sphere>( s.Filter.transform, sphere => {
+              sphere.Radius = s.Radius;
+              sphere.transform.position = s.WorldCenter;
+              sphere.transform.rotation = s.Rotation;
+              return true;
+            } );
+          }
+          else if ( type == ShapeType.Mesh ) {
+            CreateShape<Mesh>( s.Filter.transform, mesh => {
+              // We don't want to set the position given the center of the bounds
+              // since we're one-to-one with the mesh filter.
+              mesh.transform.position = s.Filter.transform.position;
+              mesh.transform.rotation = s.Filter.transform.rotation;
+
+              return mesh.SetSourceObject( s.Filter.sharedMesh );
+            } );
+          }
+        }
+
+        selected = true;
+        Reset();
+        PerformRemoveFromParent();
+        EditorUtility.SetDirty( Parent );
+      }, ( type ) => previewShape = type );
 
       if ( Event.current.type == EventType.Repaint )
         foreach ( var s in m_selection )
@@ -299,7 +289,7 @@ namespace AGXUnityEditor.Tools
 
       UnityEngine.GUI.enabled = true;
 
-      if(!selected)
+      if ( !selected )
         InspectorGUI.OnDropdownToolEnd();
     }
 
@@ -320,10 +310,9 @@ namespace AGXUnityEditor.Tools
 
     private void ClearSelection()
     {
-      m_selection.ForEach( s =>
-      {
+      m_selection.ForEach( s => {
         RemoveVisualPrimitive( s.VisualPrimitiveName );
-        s.Reset(); 
+        s.Reset();
       } );
       m_selection.Clear();
     }

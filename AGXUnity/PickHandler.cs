@@ -1,7 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -243,7 +243,7 @@ namespace AGXUnity
           var raycastBody = closestGeometryContact.rigidBody( 0 );
           RigidBody body = null;
           if ( raycastBody != null && raycastBody.getMotionControl() == agx.RigidBody.MotionControl.DYNAMICS ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             var bodies = FindObjectsByType<RigidBody>(FindObjectsSortMode.None);
 #else
             var bodies = FindObjectsOfType<RigidBody>();
@@ -285,8 +285,7 @@ namespace AGXUnity
         m_lineShape.set( ray.origin.ToHandedVec3(), ray.GetPoint( 5000.0f ).ToHandedVec3() );
         m_lineGeometry.setEnable( true );
 
-        m_mouseButtonState.Use( m_mouseButtonState.ButtonDown, buttonUp =>
-        {
+        m_mouseButtonState.Use( m_mouseButtonState.ButtonDown, buttonUp => {
           if ( ConstraintGameObject != null ) {
             DestroyImmediate( ConstraintGameObject );
             ConstraintGameObject = null;

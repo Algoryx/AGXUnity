@@ -1,8 +1,8 @@
-﻿using System.Linq;
+﻿using AGXUnity.IO;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-using AGXUnity.IO;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.IO
@@ -122,7 +122,7 @@ namespace AGXUnityEditor.IO
 
       data = new DbData() { GameObject = new GameObject(), RefCount = 1 };
       data.GameObject.AddComponent<Uuid>().Native = uuid;
-      
+
       m_gameObjects.Add( uuid, data );
 
       ++m_statistics.NumAddedGameObjects;
@@ -151,8 +151,7 @@ namespace AGXUnityEditor.IO
       return GetOrCreateAsset( current,
                                name,
                                onFirstRef,
-                               () =>
-                               {
+                               () => {
                                  if ( typeof( AGXUnity.ScriptAsset ).IsAssignableFrom( typeof( T ) ) )
                                    return AGXUnity.ScriptAsset.Create( typeof( T ) ) as T;
                                  else

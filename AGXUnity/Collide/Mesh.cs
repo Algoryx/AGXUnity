@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using CreateOptions = agxCollide.Trimesh.TrimeshOptionsFlags;
 using Random = UnityEngine.Random;
 
 namespace AGXUnity.Collide
@@ -255,7 +254,7 @@ namespace AGXUnity.Collide
 
         geometry.add( new agxCollide.Trimesh( merger.Vertices,
                                               merger.Indices,
-                                              gameObject.name),
+                                              gameObject.name ),
                       GetNativeGeometryOffset() );
       }
 

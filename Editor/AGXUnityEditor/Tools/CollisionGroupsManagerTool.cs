@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity;
+using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -134,7 +134,7 @@ namespace AGXUnityEditor.Tools
         m_findActiveGroupNameEntry = m_findActiveGroupNameEntry == entry ? null : entry;
 
         if ( m_findActiveGroupNameEntry != null ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
           var collisionGroups = Object.FindObjectsByType<CollisionGroups>( FindObjectsSortMode.None );
 #else
           var collisionGroups = Object.FindObjectsOfType<CollisionGroups>();
@@ -151,8 +151,7 @@ namespace AGXUnityEditor.Tools
         groupNameMenu.AddDisabledItem( GUI.MakeLabel( "Groups in scene" ) );
         groupNameMenu.AddSeparator( string.Empty );
         foreach ( var groupName in m_groups )
-          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () =>
-          {
+          groupNameMenu.AddItem( GUI.MakeLabel( groupName ), groupName == m_findActiveGroupNameEntry.Tag, () => {
             m_findActiveGroupNameEntry.Tag = groupName;
             m_findActiveGroupNameEntry = null;
           } );

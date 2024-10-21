@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -355,7 +355,7 @@ namespace AGXUnity
     /// </summary>
     public static LicenseInfo UpdateLicenseInformation()
     {
-      return (LicenseInfo = LicenseInfo.Create());
+      return ( LicenseInfo = LicenseInfo.Create() );
     }
 
     /// <summary>
@@ -377,8 +377,7 @@ namespace AGXUnity
       }
 
       var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
-      s_activationTask = Task.Run( () =>
-      {
+      s_activationTask = Task.Run( () => {
         var success = false;
         try {
           success = agx.Runtime.instance().activateAgxLicense( licenseId,
@@ -443,8 +442,7 @@ namespace AGXUnity
         return;
       }
 
-      s_refreshTask = Task.Run( () =>
-      {
+      s_refreshTask = Task.Run( () => {
         var success = false;
         try {
           success = agx.Runtime.instance().loadLicenseFile( filename, true );

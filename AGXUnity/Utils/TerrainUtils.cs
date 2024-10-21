@@ -108,7 +108,8 @@ namespace AGXUnity.Utils
                           ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
       }
 
-      return new NativeHeights {
+      return new NativeHeights
+      {
         ResolutionX = resolutionX,
         ResolutionY = resolutionY,
         Heights = agxHeights
@@ -129,8 +130,8 @@ namespace AGXUnity.Utils
       var data               = terrainData.GetHeights(0,0,resolution,resolution);
       var scale              = terrainData.heightmapScale.y;
 
-      for (int y = 0; y < resolution; y++ ) {
-        for(int x = 0; x < resolution; x++ ) {
+      for ( int y = 0; y < resolution; y++ ) {
+        for ( int x = 0; x < resolution; x++ ) {
           data[ y, x ] = data[ y, x ] + offset / scale;
           if ( data[ y, x ] > dataMaxHeight )
             maxClampedHeight = System.Math.Max( maxClampedHeight, data[ y, x ] );
@@ -189,7 +190,7 @@ namespace AGXUnity.Utils
     {
       var hasDeformableTerrainInTiles = HasDeformableTerrainInTiles( pager );
       var hasDeformableTerrainPagerInTiles = HasDeformableTerrainPagerInTiles( pager );
-      
+
       if ( pager != null && hasDeformableTerrainInTiles && issueError )
         Debug.LogError( $"{pager.GetType().FullName}: Configuration error - one or more AGXUnity.Model.DeformableTerrain components in " +
                         $"a tile of this deformable terrain pager. Remove any AGXUnity.Model.DeformableTerrain component from the tile(s) " +

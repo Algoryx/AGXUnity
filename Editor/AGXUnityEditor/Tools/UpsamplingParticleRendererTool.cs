@@ -22,7 +22,7 @@ namespace AGXUnityEditor.Tools
       if ( NumTargets > 1 )
         return;
 
-      using (new IndentScope() ) {
+      using ( new IndentScope() ) {
         if ( Renderer.RenderMode == UpsamplingParticleRenderer.ParticleRenderMode.Impostor ) {
           using ( new HorizontalScope() ) {
             PrefixLabel( "Color Range" );

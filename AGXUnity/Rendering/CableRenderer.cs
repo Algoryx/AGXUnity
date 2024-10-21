@@ -468,7 +468,7 @@ namespace AGXUnity.Rendering
                                                   out rotation,
                                                   out var scale );
 
-          
+
           m_segmentCylinderMatrices[ m_numCylinders / 1023 ][ m_numCylinders % 1023 ] = Matrix4x4.TRS( position, rotation, scale );
 
           if ( m_numCylinders / 1023 + 1 > m_segmentColors.Count )
@@ -507,7 +507,7 @@ namespace AGXUnity.Rendering
       if ( m_sphereMeshInstance == null )
         m_sphereMeshInstance = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
       if ( m_cylinderMeshInstance == null )
-        m_cylinderMeshInstance = Resources.Load<Mesh>(@"Debug/Models/CylinderCap");
+        m_cylinderMeshInstance = Resources.Load<Mesh>( @"Debug/Models/CylinderCap" );
 
       return m_sphereMeshInstance != null && m_cylinderMeshInstance != null;
     }

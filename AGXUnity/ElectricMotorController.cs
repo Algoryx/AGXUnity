@@ -46,14 +46,14 @@ namespace AGXUnity
           agx.ElectricMotorController.safeCast( Native ).setTorqueConstant( m_torqueConstant );
       }
     }
-    
+
     /// <summary>
     /// Convenience method to get current force applied by this controller. 0 if not initialized.
     /// </summary>
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.ElectricMotorController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.ElectricMotorController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }

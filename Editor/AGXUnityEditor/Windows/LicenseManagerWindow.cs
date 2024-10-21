@@ -1,11 +1,10 @@
-﻿using System.IO;
+﻿using AGXUnity.Utils;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity.Utils;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Windows
@@ -153,7 +152,7 @@ namespace AGXUnityEditor.Windows
             }
             catch ( ExitGUIException ) {
               throw;
-            }            
+            }
             catch ( System.Exception e ) {
               Debug.LogException( e );
             }
@@ -173,8 +172,7 @@ namespace AGXUnityEditor.Windows
         InspectorGUI.SelectFolder( GUI.MakeLabel( "License File Directory" ),
                                    LicenseDirectory,
                                    "License file directory",
-                                   newDirectory =>
-                                   {
+                                   newDirectory => {
                                      newDirectory = newDirectory.PrettyPath();
 
                                      if ( string.IsNullOrEmpty( newDirectory ) )
@@ -203,8 +201,7 @@ namespace AGXUnityEditor.Windows
             AGXUnity.LicenseManager.ActivateAsync( System.Convert.ToInt32( m_licenseActivateData.Id ),
                                                    m_licenseActivateData.Password,
                                                    LicenseDirectory,
-                                                   success =>
-                                                   {
+                                                   success => {
                                                      if ( success )
                                                        m_licenseActivateData = IdPassword.Empty();
                                                      else
@@ -320,8 +317,7 @@ namespace AGXUnityEditor.Windows
 
       var currentLicense = AGXUnity.LicenseManager.LicenseInfo.UniqueId;
       var licenseData = new List<LicenseData>();
-      m_updateLicenseInfoTask = Task.Run( () =>
-      {
+      m_updateLicenseInfoTask = Task.Run( () => {
         foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
           var valid = AGXUnity.LicenseManager.LoadFile( licenseFile );
           licenseData.Add( new LicenseData()
@@ -362,8 +358,7 @@ namespace AGXUnityEditor.Windows
     {
       var prevLicense = m_licenseData.Find( data => data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId );
       AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
-                                            success =>
-                                            {
+                                            success => {
                                               if ( !success )
                                                 Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
 

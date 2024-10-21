@@ -28,8 +28,8 @@ namespace AGXUnity.Model
     /// Default: 3.5E5
     /// </summary>
     [ClampAboveZeroInInspector]
-    [InspectorGroupBegin(Name = "Translational", DefaultExpanded = true)]
-    [Tooltip("The translational stiffness of the constraint between the two bodies orthogonal to the axis of rotation")]
+    [InspectorGroupBegin( Name = "Translational", DefaultExpanded = true )]
+    [Tooltip( "The translational stiffness of the constraint between the two bodies orthogonal to the axis of rotation" )]
     public float RadialStiffness
     {
       get { return m_radialStiffness; }
@@ -109,8 +109,8 @@ namespace AGXUnity.Model
     /// Default: 3.0E5
     /// </summary>
     [ClampAboveZeroInInspector]
-    [InspectorGroupBegin(Name = "Rotational", DefaultExpanded = true)]
-    [Tooltip("The rotatioal stiffness of the constraint between the two bodies orthogonal to the axis of rotation")]
+    [InspectorGroupBegin( Name = "Rotational", DefaultExpanded = true )]
+    [Tooltip( "The rotatioal stiffness of the constraint between the two bodies orthogonal to the axis of rotation" )]
     public float BendingStiffness
     {
       get { return m_bendingStiffness; }

@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 using AGXUnity.Rendering;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 using System.Linq;
 
 namespace AGXUnityEditor

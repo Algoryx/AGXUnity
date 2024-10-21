@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
-
 using Object = UnityEngine.Object;
 
 namespace AGXUnity.Model
@@ -332,7 +331,7 @@ namespace AGXUnity.Model
       var alreadyPresentTrackWheels = roller.GetComponents<TrackWheel>();
       if ( alreadyPresentTrackWheels.Length > 0 ) {
         // Don't think disabled tracks will appear here.
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
         var tracks = FindObjectsByType<Track>(FindObjectsSortMode.None);
 #else
         var tracks = FindObjectsOfType<Track>();
@@ -352,8 +351,7 @@ namespace AGXUnity.Model
                              AddComponent<TrackWheel>( roller );
           trackWheel.Configure( roller,
                                 rotationAxisOffset,
-                                (aName, aModel) =>
-                                {
+                                ( aName, aModel ) => {
                                   return ( aModel == TrackWheelModel.Sprocket && aName.StartsWith( "drivtrumma" ) ) ||
                                          ( aModel == TrackWheelModel.Idler && aName.StartsWith( "vandtrumma" ) );
                                 } );
@@ -535,7 +533,7 @@ namespace AGXUnity.Model
         ulong numNodes = m_tracks.First().Native.getNumNodes();
         ulong stride = System.Math.Min( System.Math.Max( (ulong)ConnectingConstraintStride, 1 ),
                                         numNodes );
-        while ( stride > 1 && (numNodes % stride) != 0 )
+        while ( stride > 1 && ( numNodes % stride ) != 0 )
           --stride;
         if ( (int)stride != ConnectingConstraintStride )
           Debug.Log( $"Belt: Connecting constraint stride changed from {ConnectingConstraintStride} to {stride} " +
