@@ -241,7 +241,6 @@ namespace AGXUnity.IO.BrickIO
         s_typeCache[ tempIO.Force3D() - 1 ]               = ValueType.Vec3;
         s_typeCache[ tempIO.Acceleration3D() - 1 ]        = ValueType.Vec3;
         s_typeCache[ tempIO.AngularAcceleration3D() - 1 ] = ValueType.Vec3;
-        s_typeCache[ tempIO.ControlEvent() - 1 ]          = ValueType.Ignored;
         s_typeCache[ tempIO.Percentage() - 1 ]            = ValueType.Real;
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;

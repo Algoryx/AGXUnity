@@ -19,8 +19,16 @@ namespace AGXUnity.IO.BrickIO
         case ForceMotorForceInput fmfi: HandleForceMotorInput( signal, root, fmfi ); break;
         case FractionInput fi: HandleFractionInput( signal, root, fi ); break;
         case Torque1DInput t1di: HandleTorque1DInput( signal, root, t1di ); break;
+        case LinearSpringPositionInput lspi: HandleLinearSpringPositionInput( signal, root, lspi ); break;
         default: Debug.LogWarning( $"Unhandled RealInputSignal target type '{target.GetType().Name}'" ); break;
       }
+    }
+
+    private static void HandleLinearSpringPositionInput( RealInputSignal signal, BrickRoot root, LinearSpringPositionInput lspi )
+    {
+      var prismatic = root.FindMappedObject( lspi.spring().getName() );
+      var spring = prismatic.GetComponent<Constraint>().GetController<LockController>();
+      spring.Position = (float)signal.value();
     }
 
     private static void HandleTorque1DInput( RealInputSignal signal, BrickRoot root, Torque1DInput t1di )
