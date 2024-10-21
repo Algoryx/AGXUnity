@@ -91,29 +91,28 @@ namespace AGXUnityEditor
     private static RenderData GetRenderData( Transform transform )
     {
       var filters = transform.GetComponents<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix}).ToArray();
-      if ( filters.Length == 0 || transform.GetComponent<SkinnedCableRenderer>() != null) {
+      if ( filters.Length == 0 || transform.GetComponent<SkinnedCableRenderer>() != null ) {
         if ( transform.GetComponent<DebugRenderData>() != null && transform.GetComponent<DebugRenderData>().Node != null )
-          filters = transform.GetComponent<DebugRenderData>().Node.GetComponentsInChildren<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix }).ToArray();
+          filters = transform.GetComponent<DebugRenderData>().Node.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
         else if ( transform.GetComponent<AGXUnity.Collide.Shape>() != null ) {
           var shape = transform.GetComponent<AGXUnity.Collide.Shape>();
           var shapeVisual = ShapeVisual.Find( shape );
           if ( shapeVisual != null )
-            filters = shapeVisual.GetComponentsInChildren<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix }).ToArray();
+            filters = shapeVisual.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
         }
         else if ( transform.GetComponent<AGXUnity.RigidBody>() != null )
-          filters = transform.GetComponentsInChildren<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix }).ToArray();
-        else if ( transform.GetComponent<SkinnedCableRenderer>() != null)
-        {
-          var skinnedCableRenderer = transform.GetComponent<SkinnedCableRenderer>();          
-          if(skinnedCableRenderer.enabled)
-            filters = new MeshFilterData[] { 
-              new MeshFilterData { 
-                sharedMesh = skinnedCableRenderer.SourceMesh, 
-                localToWorldMatrix = Matrix4x4.TRS(skinnedCableRenderer.transform.position, skinnedCableRenderer.transform.rotation, skinnedCableRenderer.transform.localScale) 
+          filters = transform.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
+        else if ( transform.GetComponent<SkinnedCableRenderer>() != null ) {
+          var skinnedCableRenderer = transform.GetComponent<SkinnedCableRenderer>();
+          if ( skinnedCableRenderer.enabled )
+            filters = new MeshFilterData[] {
+              new MeshFilterData {
+                sharedMesh = skinnedCableRenderer.SourceMesh,
+                localToWorldMatrix = Matrix4x4.TRS(skinnedCableRenderer.transform.position, skinnedCableRenderer.transform.rotation, skinnedCableRenderer.transform.localScale)
             } };
           else
-            filters = transform.GetComponentsInChildren<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix }).ToArray();
-        }          
+            filters = transform.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
+        }
       }
       return new RenderData()
       {
