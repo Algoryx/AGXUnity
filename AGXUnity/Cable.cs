@@ -201,6 +201,15 @@ namespace AGXUnity
       set { m_routeAlgorithm = value; }
     }
 
+    //============ Storage for interaction between "RouteFromMeshTool.cs" and "SkinnedCableRenderer.cs" ============    
+    [HideInInspector]
+    [SerializeField]
+    public Mesh RouteMeshSource { get; set; }
+    [HideInInspector]
+    [SerializeField]
+    public Material RouteMeshMaterial { get; set; }
+    //==============================================================================================================
+
     private CableRoute m_routeComponent = null;
     /// <summary>
     /// Get route to initialize this cable.

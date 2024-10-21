@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
+using System.Collections.Generic;
 
 namespace AGXUnityEditor.Tools
 {
@@ -78,8 +79,22 @@ namespace AGXUnityEditor.Tools
       }
     }
 
+    public bool RouteFromMeshTool
+    {
+      get { return GetChild<RouteFromMeshTool<ParentT, NodeT>>() != null; }
+      set
+      {
+        if ( value && !RouteFromMeshTool ) {
+          var tool = new RouteFromMeshTool<ParentT, NodeT>(Route);
+          AddChild( tool );
+        }
+        else if ( !value )
+          RemoveChild( GetChild<RouteFromMeshTool<ParentT, NodeT>>() );
+      }
+    }
+
     public RouteTool( Object[] targets )
-      : base( targets )
+  : base( targets )
     {
       Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
                                                                    System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
@@ -133,15 +148,26 @@ namespace AGXUnityEditor.Tools
       }
 
       bool toggleDisableCollisions = false;
+      bool toggleRouteFromMesh = false;
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
+      var toolButtonData = new List<InspectorGUI.ToolButtonData>();
+      toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
                                                                     DisableCollisionsTool,
                                                                     "Disable collisions against other objects",
                                                                     () => toggleDisableCollisions = true ) );
+      toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                    RouteFromMeshTool,
+                                                                    "Generate a node route from a visual mesh",
+                                                                    () => toggleRouteFromMesh = true ) );
+      InspectorGUI.ToolButtons( toolButtonData.ToArray() );
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
+      }
+
+      if ( RouteFromMeshTool ) {
+        GetChild<RouteFromMeshTool<ParentT, NodeT>>().OnInspectorGUI();
       }
 
       if ( !EditorApplication.isPlaying )
@@ -149,6 +175,8 @@ namespace AGXUnityEditor.Tools
 
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
+      if ( toggleRouteFromMesh )
+        RouteFromMeshTool = !RouteFromMeshTool;
     }
 
     protected virtual string GetNodeTypeString( RouteNode node ) { return string.Empty; }

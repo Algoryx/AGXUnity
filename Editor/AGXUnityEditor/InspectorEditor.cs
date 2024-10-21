@@ -266,6 +266,8 @@ namespace AGXUnityEditor
         if ( serializedProperty != null ) {
           EditorGUI.BeginChangeCheck();
           EditorGUILayout.PropertyField( serializedProperty );
+          if ( serializedProperty.isArray )
+            Debug.LogWarning( "The AGXUnity Inspector wrapper currently does not support editable array types. Consider using List<T> as an alternative." );
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
             value = serializedProperty.objectReferenceValue;
