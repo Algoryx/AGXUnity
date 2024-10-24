@@ -1,8 +1,8 @@
 using AGXUnity.Rendering;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using System.Linq;
 
 namespace AGXUnityEditor
 {
