@@ -108,7 +108,7 @@ namespace AGXUnity.Rendering
 
     private static string DefaultMaterialName = "Default Cable Material";
 
-    private static Material DefaultMaterial()
+    public static Material DefaultMaterial()
     {
       Material mat;
       if ( RenderingUtils.DetectPipeline() == RenderingUtils.PipelineType.BuiltIn )

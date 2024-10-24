@@ -105,7 +105,7 @@ namespace AGXUnity.Rendering
 
     private static string DefaultMaterialName = "Default Wire Material";
 
-    private static Material DefaultMaterial()
+    public static Material DefaultMaterial()
     {
       var material = RenderingUtils.CreateDefaultMaterial();
       material.hideFlags = HideFlags.NotEditable;

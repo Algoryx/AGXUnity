@@ -488,7 +488,7 @@ namespace AGXUnity.Rendering
         for ( int i = 0; i < mats.Length; i++ ) {
           var mat = mats[i];
           if ( mat == null ||
-               ( mat != DefaultMaterial && mat.name == DefaultMaterialName ) ) {
+               ( mat.name == DefaultMaterialName && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) ) {
             mats[ i ] = DefaultMaterial;
             changed = true;
           }

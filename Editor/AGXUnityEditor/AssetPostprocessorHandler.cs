@@ -38,63 +38,75 @@ namespace AGXUnityEditor
       }
     }
 
-    string m_prefabToFix = "";
-
-    private void UpdatePrefab()
+    private Material AddMaterial( Material material )
     {
-      var defaultMat = Object.Instantiate(ShapeVisual.DefaultMaterial);
-      defaultMat.name = ShapeVisual.DefaultMaterialName;
+      var defaultMat = Object.Instantiate(material);
+      defaultMat.name = material.name;
+      defaultMat.hideFlags |= HideFlags.HideInHierarchy;
+      this.context.AddObjectToAsset( defaultMat.name, defaultMat );
 
-      // Add or replace default shape material in prefab
-      var objs = AssetDatabase.LoadAllAssetRepresentationsAtPath( m_prefabToFix );
-      foreach ( var obj in objs.Where( o => o is Material && o.name == ShapeVisual.DefaultMaterialName ) )
-        AssetDatabase.RemoveObjectFromAsset( obj );
-      AssetDatabase.AddObjectToAsset( defaultMat, m_prefabToFix );
-
-      var RP = RenderingUtils.DetectPipeline();
-      using ( var editScope = new PrefabUtility.EditPrefabContentsScope( m_prefabToFix ) ) {
-        var svs = editScope.prefabContentsRoot.GetComponentsInChildren<ShapeVisual>();
-        foreach ( var sv in svs )
-          foreach ( var mat in sv.GetMaterials() )
-            if ( mat == null || !mat.SupportsPipeline( RP ) )
-              sv.ReplaceMaterial( mat, defaultMat );
-      }
-      EditorApplication.update -= UpdatePrefab;
+      return defaultMat;
     }
 
     private static bool m_isProcessingPrefabInstance = false;
+
+    private Material GetMaterialNoReplace( Object renderer )
+    {
+      return (Material)renderer.GetType().GetField( "m_material", BindingFlags.Instance | BindingFlags.NonPublic ).GetValue( renderer );
+    }
+
+    private static bool s_revertPrefabInstance = false;
 
     private void OnPostprocessPrefab( GameObject gameObject )
     {
       if ( context.assetPath.StartsWith( "Packages/" ) )
         return;
+
       // Since AGX materials are stored in the scene (in memory) these material instances cannot be added
       // to prefabs. This causes the prefabs to have 'None' materials.
       // One solution to this is to add the material as a subasset to the prefab.
       // However, we cant do that here as the prefab might not yet exist.
       // Instead we queue an editor update callback to do it.
-      var svs = gameObject.GetComponentsInChildren<ShapeVisual>();
-      if ( svs.Length == 0 )
-        return;
 
       // We queue an update if any material is 'None' or if they have unsupported materials
-      bool needsFixing = false;
       var RP = RenderingUtils.DetectPipeline();
-      foreach ( var sv in svs )
-        foreach ( var mat in sv.GetMaterials() )
-          needsFixing |= mat == null || !mat.SupportsPipeline( RP );
 
-      if ( needsFixing ) {
-        m_prefabToFix = context.assetPath;
-        EditorApplication.update += UpdatePrefab;
+      Material replacementVisualMat = null;
+      Material replacementCableMat  = null;
+      Material replacementWireMat   = null;
+
+      var svs = gameObject.GetComponentsInChildren<ShapeVisual>();
+      foreach ( var sv in svs ) {
+        foreach ( var mat in sv.GetMaterials() ) {
+          if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+            if ( replacementVisualMat == null )
+              replacementVisualMat = AddMaterial( ShapeVisual.DefaultMaterial );
+            sv.ReplaceMaterial( mat, replacementVisualMat );
+            s_revertPrefabInstance = true;
+          }
+        }
       }
-      else {
-        // If no update is needed we set the hideflags of the added material to hide it in the hierarchy. This cant be done in the prefab as the 
-        // prefab code uses the hideflags internally: https://forum.unity.com/threads/prefab-sub-asset-hideflags-dont-persist.1324920/
-        List<Object> objs = new List<Object>();
-        context.GetObjects( objs );
-        foreach ( var item in objs.Where( o => o is Material m && m.name == ShapeVisual.DefaultMaterialName ) )
-          item.hideFlags = HideFlags.HideInHierarchy;
+
+      var cables = gameObject.GetComponentsInChildren<CableRenderer>();
+      foreach ( var cable in cables ) {
+        var mat = GetMaterialNoReplace(cable);
+        if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+          if ( replacementCableMat == null )
+            replacementCableMat = AddMaterial( CableRenderer.DefaultMaterial() ); ;
+          cable.Material = replacementCableMat;
+          s_revertPrefabInstance = true;
+        }
+      }
+
+      var wires = gameObject.GetComponentsInChildren<WireRenderer>();
+      foreach ( var wire in wires ) {
+        var mat = GetMaterialNoReplace(wire);
+        if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+          if ( replacementWireMat == null )
+            replacementWireMat = AddMaterial( WireRenderer.DefaultMaterial() ); ;
+          wire.Material = replacementWireMat;
+          s_revertPrefabInstance = true;
+        }
       }
     }
 
@@ -109,6 +121,11 @@ namespace AGXUnityEditor
       // this callback.
       if ( m_isProcessingPrefabInstance )
         return;
+
+      if ( s_revertPrefabInstance ) {
+        PrefabUtility.RevertPrefabInstance( instance, InteractionMode.AutomatedAction );
+        s_revertPrefabInstance = false;
+      }
 
       var isAGXPrefab = instance.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null;
 
