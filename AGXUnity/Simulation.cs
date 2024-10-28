@@ -375,6 +375,16 @@ namespace AGXUnity
     public ContactEventHandler ContactCallbacks { get; } = new ContactEventHandler();
 
     /// <summary>
+    /// Callback system to run in OnApplicationQuit in order to dispose of Raytrace stuff
+    /// This is needed because the agxSDK::Simulation cleanup() needs to be run after we get rid of our RT references
+    /// </summary>
+    public delegate void RTDisposeCallback();
+    private RTDisposeCallback m_rtDisposeCallback;
+    public void RegisterDisposeCallback(RTDisposeCallback callback) => m_rtDisposeCallback += callback;
+    public void UnRegisterDisposeCallback(RTDisposeCallback callback) => m_rtDisposeCallback -= callback;
+
+
+    /// <summary>
     /// Save current simulation/scene to an AGX native file (.agx or .aagx).
     /// </summary>
     /// <param name="filename">Filename including path.</param>
@@ -435,6 +445,7 @@ namespace AGXUnity
     protected override void OnDestroy()
     {
       base.OnDestroy();
+
       if ( m_simulation != null ) {
         StepCallbacks.OnDestroy( m_simulation );
         ContactCallbacks.OnDestroy( this );
@@ -448,8 +459,14 @@ namespace AGXUnity
     protected override void OnApplicationQuit()
     {
       base.OnApplicationQuit();
+
+      m_rtDisposeCallback?.Invoke();
+
       if ( m_simulation != null )
+      {
+        //m_simulation.setSensorEnvironment(null);
         m_simulation.cleanup();
+      }
     }
 
     private agxSDK.Simulation GetOrCreateSimulation()
