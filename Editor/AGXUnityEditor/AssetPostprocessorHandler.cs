@@ -123,7 +123,25 @@ namespace AGXUnityEditor
         return;
 
       if ( s_revertPrefabInstance ) {
-        PrefabUtility.RevertPrefabInstance( instance, InteractionMode.AutomatedAction );
+        foreach ( var cable in instance.GetComponentsInChildren<CableRenderer>() )
+          if ( cable.Material == CableRenderer.DefaultMaterial() )
+            PrefabUtility.RevertPropertyOverride( new SerializedObject( cable ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
+
+        foreach ( var wire in instance.GetComponentsInChildren<WireRenderer>() )
+          if ( wire.Material == WireRenderer.DefaultMaterial() )
+            PrefabUtility.RevertPropertyOverride( new SerializedObject( wire ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
+
+        var overrides = PrefabUtility.GetPropertyModifications( instance )
+          .Where( mod =>
+            mod.target == null ||
+            mod.target.GetType() != typeof( MeshRenderer ) ||
+            !mod.propertyPath.StartsWith( "m_Materials.Array.data" ) ||
+            mod.objectReference.name != ShapeVisual.DefaultMaterialName
+          )
+          .ToArray();
+
+        PrefabUtility.SetPropertyModifications( instance, overrides );
+
         s_revertPrefabInstance = false;
       }
 
