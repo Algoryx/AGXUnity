@@ -2,9 +2,11 @@ using AGXUnity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -31,29 +33,163 @@ namespace AGXUnityEditor
         return ShouldPatchUserResponse;
       }
     }
+    #region 5.2.0
+#pragma warning disable CS0618
+#pragma warning disable CS0612 // Type or member is obsolete
 
+    public static bool SceneNeedsPatch()
+    {
+      var roots = SceneManager.GetActiveScene().GetRootGameObjects();
 
+      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>() );
+      var attachments = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.AttachmentPair>() );
+      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>() );
+      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>() );
+      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>() );
+      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>() );
+
+      if ( constraints.Count() > 0 )
+        return true;
+      if ( attachments.Count() > 0 )
+        return true;
+      if ( mps.Count() > 0 )
+        return true;
+      if ( cables.Count() > 0 )
+        return true;
+      if ( wires.Count() > 0 )
+        return true;
+      if ( winches.Count() > 0 )
+        return true;
+      return false;
+    }
+
+    [MenuItem( "AGXUnity/Utils/Apply 5.2.0 patch" )]
     public static void ApplyPatches()
     {
-      AssetDatabase.DisallowAutoRefresh();
+      if ( !ShouldPatch )
+        return;
 
-      // 5.2.0
-      ApplyRemoveElementaryConstraintComponents();
-      ApplyRemoveMassPropertiesComponents();
-      ApplyRemoveRouteComponents();
-      ApplyRemoveWinchNodeComponents();
+      try {
+        s_processed.Clear();
 
-      AssetDatabase.AllowAutoRefresh();
+        var prefabs = AssetDatabase.FindAssets( "t:prefab" );
+        for ( int i = 0; i < prefabs.Length; i++ ) {
+          EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Patching prefabs...", (float)i / prefabs.Length );
+          var path = AssetDatabase.GUIDToAssetPath( prefabs[i] );
+          HandlePrefabPath( path );
+        }
 
-      // Save everything if any patch was applied
-      if ( PatchWarningIssued && ShouldPatchUserResponse ) {
-        // Reset user confirmation
-        PatchWarningIssued = false;
+        var scenes = AssetDatabase.FindAssets( "t:scene" );
+        var setup = EditorSceneManager.GetSceneManagerSetup();
+        for ( int i = 0; i < scenes.Length; i++ ) {
+          EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Patching Scenes...", (float)i / scenes.Length );
+          EditorSceneManager.OpenScene( AssetDatabase.GUIDToAssetPath( scenes[ i ] ), OpenSceneMode.Single );
+          PatchScene();
+        }
 
-        AssetDatabase.SaveAssets();
-        // Save the current scenes
-        EditorSceneManager.SaveOpenScenes();
+        for ( int i = 0; i < prefabs.Length; i++ ) {
+          EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Removing old prefab components...", (float)i / prefabs.Length );
+          var path = AssetDatabase.GUIDToAssetPath( prefabs[i] );
+          if ( String.IsNullOrEmpty( path ) )
+            continue;
+
+          using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
+            var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>();
+            var mps         = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>();
+            var cables      = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>();
+            var wires       = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>();
+            var winches     = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>();
+
+            foreach ( var ec in constraints.SelectMany( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) )
+              Object.DestroyImmediate( ec );
+            foreach ( var ap in constraints.Select( c => c.GetComponent<AGXUnity.Deprecated.AttachmentPair>() ) )
+              Object.DestroyImmediate( ap );
+            foreach ( var mp in mps )
+              Object.DestroyImmediate( mp );
+            foreach ( var cable in cables )
+              Object.DestroyImmediate( cable );
+            foreach ( var wire in wires )
+              Object.DestroyImmediate( wire );
+            foreach ( var winch in winches )
+              Object.DestroyImmediate( winch );
+          }
+        }
+
+        EditorUtility.ClearProgressBar();
+        EditorSceneManager.RestoreSceneManagerSetup( setup );
       }
+      catch ( System.Exception e ) {
+        Debug.LogError( "Failed to patch with error" + e.ToString() );
+      }
+    }
+
+    private static HashSet<string> s_processed = new HashSet<string>();
+
+    private static void HandlePrefabPath( string path )
+    {
+      if ( String.IsNullOrEmpty( path ) || s_processed.Contains( path ) )
+        return;
+
+      s_processed.Add( path );
+      using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
+        var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>();
+        var mps = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>();
+        var cables = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>();
+        var wires = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>();
+        var winches = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>();
+
+        if ( mps.Length == 0 && cables.Length == 0 && wires.Length == 0 && !constraints.Any( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>().Length != 0 ) )
+          return;
+
+        foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>() ) {
+          var subPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( s );
+          HandlePrefabPath( subPath );
+        }
+
+        foreach ( var constraint in constraints )
+          MigrateConstraint( constraint );
+        foreach ( var mp in mps )
+          MigrateMassProperties( mp );
+        foreach ( var cable in cables )
+          MigrateCableRoute( cable.GetComponent<Cable>(), cable );
+        foreach ( var wire in wires )
+          MigrateWireRoute( wire.GetComponent<Wire>(), wire );
+      }
+    }
+
+    private static void PatchScene()
+    {
+      var roots = SceneManager.GetActiveScene().GetRootGameObjects();
+
+      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<Constraint>() );
+      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>() );
+      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>() );
+      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>() );
+      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>() );
+
+      foreach ( var constraint in constraints )
+        MigrateConstraint( constraint );
+      foreach ( var mp in mps )
+        MigrateMassProperties( mp );
+      foreach ( var cable in cables )
+        MigrateCableRoute( cable.GetComponent<Cable>(), cable );
+      foreach ( var wire in wires )
+        MigrateWireRoute( wire.GetComponent<Wire>(), wire );
+
+      foreach ( var ec in constraints.SelectMany( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) )
+        Object.DestroyImmediate( ec );
+      foreach ( var ec in constraints.Select( c => c.GetComponent<AGXUnity.Deprecated.AttachmentPair>() ) )
+        Object.DestroyImmediate( ec );
+      foreach ( var mp in mps )
+        Object.DestroyImmediate( mp );
+      foreach ( var cable in cables )
+        Object.DestroyImmediate( cable );
+      foreach ( var wire in wires )
+        Object.DestroyImmediate( wire );
+      foreach ( var winch in winches )
+        Object.DestroyImmediate( winch );
+
+      EditorSceneManager.SaveOpenScenes();
     }
 
     private static void CopyDefaultAndUserValue<T>( DefaultAndUserValue<T> source, DefaultAndUserValue<T> target )
@@ -64,180 +200,123 @@ namespace AGXUnityEditor
       target.UseDefault = source.UseDefault;
     }
 
-    private static T[] FindPrefabDepthOrderedObjects<T>()
-      where T : Object
+    private static void MigrateMassProperties( AGXUnity.Deprecated.MassProperties oldMP )
     {
-      return Resources.FindObjectsOfTypeAll<T>().OrderBy( o => FindPrefabDepth( o ) ).ToArray();
+      var rb = oldMP.RigidBody;
+      if ( oldMP != null ) {
+        if ( !ShouldPatch ) return;
+        CopyDefaultAndUserValue( oldMP.Mass, rb.MassProperties.Mass );
+        CopyDefaultAndUserValue( oldMP.InertiaDiagonal, rb.MassProperties.InertiaDiagonal );
+        CopyDefaultAndUserValue( oldMP.InertiaOffDiagonal, rb.MassProperties.InertiaOffDiagonal );
+        CopyDefaultAndUserValue( oldMP.CenterOfMassOffset, rb.MassProperties.CenterOfMassOffset );
+        rb.MassProperties.MassCoefficients = oldMP.MassCoefficients;
+        rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
+        Object.DestroyImmediate( oldMP, true );
+      }
+      PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
+      EditorUtility.SetDirty( rb );
+      EditorUtility.SetDirty( rb.gameObject );
     }
 
-    #region 5.2.0
-#pragma warning disable CS0618
-#pragma warning disable CS0612 // Type or member is obsolete
-    private static void ApplyRemoveMassPropertiesComponents()
+    static FieldInfo s_ecField = null;
+    private static List<ElementaryConstraint> GetConstraintECs( Constraint constraint )
     {
-      var mps = FindPrefabDepthOrderedObjects<AGXUnity.Deprecated.MassProperties>();
+      if ( s_ecField == null )
+        s_ecField = typeof( Constraint ).GetField( "m_elementaryConstraintsNew", BindingFlags.NonPublic | BindingFlags.Instance );
+      return (List<ElementaryConstraint>)s_ecField.GetValue( constraint );
+    }
 
-      foreach ( var oldMP in mps ) {
-        var rb = oldMP.RigidBody;
-        if ( oldMP != null ) {
+    private static void MigrateConstraint( Constraint constraint )
+    {
+      bool patched = false;
+      List<ElementaryConstraint> newEcs = GetConstraintECs(constraint);
+      var oldEcs = constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>();
+      if ( oldEcs.Length > 0 ) {
+        foreach ( var ec in oldEcs ) {
           if ( !ShouldPatch ) return;
-          CopyDefaultAndUserValue( oldMP.Mass, rb.MassProperties.Mass );
-          CopyDefaultAndUserValue( oldMP.InertiaDiagonal, rb.MassProperties.InertiaDiagonal );
-          CopyDefaultAndUserValue( oldMP.InertiaOffDiagonal, rb.MassProperties.InertiaOffDiagonal );
-          CopyDefaultAndUserValue( oldMP.CenterOfMassOffset, rb.MassProperties.CenterOfMassOffset );
-          rb.MassProperties.MassCoefficients = oldMP.MassCoefficients;
-          rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
-          Object.DestroyImmediate( oldMP, true );
-        }
-        PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
-        EditorUtility.SetDirty( rb );
-        EditorUtility.SetDirty( rb.gameObject );
-      }
-    }
 
-    private static int FindPrefabDepth( Object obj )
-    {
-      int depth = 0;
-      obj = PrefabUtility.GetNearestPrefabInstanceRoot( obj );
-      while ( obj != null && depth < 50 ) {
-        obj = PrefabUtility.GetCorrespondingObjectFromSource( obj );
-        obj = PrefabUtility.GetNearestPrefabInstanceRoot( obj );
-        depth++;
-      }
-      return depth;
-    }
-
-    private static void ApplyRemoveElementaryConstraintComponents()
-    {
-      var constraints = FindPrefabDepthOrderedObjects<Constraint>();
-
-      var ecGetter = typeof( Constraint ).GetField( "m_elementaryConstraintsNew", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance );
-
-      foreach ( var constraint in constraints ) {
-        bool patched = false;
-        if ( PrefabUtility.IsPartOfPrefabInstance( constraint ) )
-          PrefabUtility.MergePrefabInstance( PrefabUtility.GetNearestPrefabInstanceRoot( constraint ) );
-        List<ElementaryConstraint> newEcs = (List<ElementaryConstraint>)ecGetter.GetValue(constraint);
-        var oldEcs = constraint.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>();
-        if ( oldEcs.Length > 0 ) {
-          foreach ( var ec in oldEcs ) {
-            if ( !ShouldPatch ) return;
-
-            ElementaryConstraint newEc = newEcs.FirstOrDefault( existing => existing?.NativeName == ec.NativeName );
-            if ( newEc ==  null ) {
-              newEc = ec switch
-              {
-                AGXUnity.Deprecated.TargetSpeedController ts => new TargetSpeedController(),
-                AGXUnity.Deprecated.RangeController rc => new RangeController(),
-                AGXUnity.Deprecated.LockController lc => new LockController(),
-                AGXUnity.Deprecated.ScrewController sc => new ScrewController(),
-                AGXUnity.Deprecated.FrictionController fc => new FrictionController(),
-                AGXUnity.Deprecated.ElectricMotorController emc => new ElectricMotorController(),
-                _ => new ElementaryConstraint()
-              };
-              newEcs.Add( newEc );
-            }
-
-            switch ( ec ) {
-              case AGXUnity.Deprecated.TargetSpeedController ts:
-                ( newEc as TargetSpeedController ).LockAtZeroSpeed = ts.LockAtZeroSpeed;
-                ( newEc as TargetSpeedController ).Speed = ts.Speed;
-                break;
-              case AGXUnity.Deprecated.RangeController rc: ( newEc as RangeController ).Range = rc.Range; break;
-              case AGXUnity.Deprecated.LockController lc: ( newEc as LockController ).Position = lc.Position; break;
-              case AGXUnity.Deprecated.ScrewController sc: ( newEc as ScrewController ).Lead = sc.Lead; break;
-              case AGXUnity.Deprecated.FrictionController fc:
-                ( newEc as FrictionController ).FrictionCoefficient = fc.FrictionCoefficient;
-                ( newEc as FrictionController ).MinimumStaticFrictionForceRange= fc.MinimumStaticFrictionForceRange;
-                break;
-              case AGXUnity.Deprecated.ElectricMotorController emc:
-                ( newEc as ElectricMotorController ).Voltage = emc.Voltage;
-                ( newEc as ElectricMotorController ).ArmatureResistance = emc.ArmatureResistance;
-                ( newEc as ElectricMotorController ).TorqueConstant = emc.TorqueConstant;
-                break;
-              default: break;
+          ElementaryConstraint newEc = newEcs.FirstOrDefault( existing => existing?.NativeName == ec.NativeName );
+          if ( newEc ==  null ) {
+            newEc = ec switch
+            {
+              AGXUnity.Deprecated.TargetSpeedController ts => new TargetSpeedController(),
+              AGXUnity.Deprecated.RangeController rc => new RangeController(),
+              AGXUnity.Deprecated.LockController lc => new LockController(),
+              AGXUnity.Deprecated.ScrewController sc => new ScrewController(),
+              AGXUnity.Deprecated.FrictionController fc => new FrictionController(),
+              AGXUnity.Deprecated.ElectricMotorController emc => new ElectricMotorController(),
+              _ => new ElementaryConstraint()
             };
-
-            newEc.Enable = ec.Enable;
-
-            newEc.MigrateInternalData( ec );
-            Object.DestroyImmediate( ec, true );
-            patched = true;
+            newEcs.Add( newEc );
           }
-        }
 
-        if ( constraint.TryGetComponent<AGXUnity.Deprecated.AttachmentPair>( out var ap ) ) {
-          if ( !ShouldPatch ) return;
-          constraint.AttachmentPair.Synchronized = ap.Synchronized;
-          constraint.AttachmentPair.ReferenceFrame = ap.ReferenceFrame;
-          constraint.AttachmentPair.ConnectedFrame = ap.ConnectedFrame;
+          switch ( ec ) {
+            case AGXUnity.Deprecated.TargetSpeedController ts:
+              ( newEc as TargetSpeedController ).LockAtZeroSpeed = ts.LockAtZeroSpeed;
+              ( newEc as TargetSpeedController ).Speed = ts.Speed;
+              break;
+            case AGXUnity.Deprecated.RangeController rc: ( newEc as RangeController ).Range = rc.Range; break;
+            case AGXUnity.Deprecated.LockController lc: ( newEc as LockController ).Position = lc.Position; break;
+            case AGXUnity.Deprecated.ScrewController sc: ( newEc as ScrewController ).Lead = sc.Lead; break;
+            case AGXUnity.Deprecated.FrictionController fc:
+              ( newEc as FrictionController ).FrictionCoefficient = fc.FrictionCoefficient;
+              ( newEc as FrictionController ).MinimumStaticFrictionForceRange= fc.MinimumStaticFrictionForceRange;
+              break;
+            case AGXUnity.Deprecated.ElectricMotorController emc:
+              ( newEc as ElectricMotorController ).Voltage = emc.Voltage;
+              ( newEc as ElectricMotorController ).ArmatureResistance = emc.ArmatureResistance;
+              ( newEc as ElectricMotorController ).TorqueConstant = emc.TorqueConstant;
+              break;
+            default: break;
+          };
 
-          Object.DestroyImmediate( ap, true );
+          newEc.Enable = ec.Enable;
+
+          newEc.MigrateInternalData( ec );
           patched = true;
         }
+      }
 
-        if ( patched ) {
-          PrefabUtility.RecordPrefabInstancePropertyModifications( constraint );
-          EditorUtility.SetDirty( constraint );
-          EditorUtility.SetDirty( constraint.gameObject );
-        }
+      if ( constraint.TryGetComponent<AGXUnity.Deprecated.AttachmentPair>( out var ap ) ) {
+        if ( !ShouldPatch ) return;
+        constraint.AttachmentPair.Synchronized = ap.Synchronized;
+        constraint.AttachmentPair.ReferenceFrame = ap.ReferenceFrame;
+        constraint.AttachmentPair.ConnectedFrame = ap.ConnectedFrame;
+        patched = true;
+      }
+
+      if ( patched ) {
+        PrefabUtility.RecordPrefabInstancePropertyModifications( constraint );
+        EditorUtility.SetDirty( constraint );
+        EditorUtility.SetDirty( constraint.gameObject );
       }
     }
 
-    private static void ApplyRemoveRouteComponents()
+    private static void MigrateCableRoute( Cable cable, AGXUnity.Deprecated.CableRoute route )
     {
-      var wireRoutes = FindPrefabDepthOrderedObjects<AGXUnity.Deprecated.WireRoute>().Select(route => Tuple.Create(route, route.Wire));
-      var cableRoutes = FindPrefabDepthOrderedObjects<AGXUnity.Deprecated.CableRoute>().Select(route => Tuple.Create(route, route.GetComponent<Cable>()));
+      if ( !ShouldPatch ) return;
 
-      var found = AssetDatabase.FindAssets("t:CableRoute");
-
-      foreach ( var (route, wire) in wireRoutes ) {
-        if ( !ShouldPatch ) return;
-        //if ( PrefabUtility.IsPartOfPrefabInstance( wire ) )
-        //  PrefabUtility.MergePrefabInstance( PrefabUtility.GetNearestPrefabInstanceRoot( wire ) );
-        if ( wire != null ) {
-          var go = wire.gameObject;
-          var newRoute = wire.Route;
-          newRoute.Clear();
-          foreach ( var node in route )
-            newRoute.Add( node );
-          Object.DestroyImmediate( route, true );
-          EditorUtility.SetDirty( go );
-          EditorUtility.SetDirty( wire );
-          PrefabUtility.RecordPrefabInstancePropertyModifications( wire );
-        }
-        else // The FindObjectOfTypeAll seems to pick up some stray objects that are not linked to any wire. We simply destroy these
-          Object.DestroyImmediate( route, true );
-      }
-
-      foreach ( var (route, cable) in cableRoutes ) {
-        if ( !ShouldPatch ) return;
-        if ( PrefabUtility.IsPartOfPrefabInstance( cable ) ) {
-          var root = PrefabUtility.GetNearestPrefabInstanceRoot( cable );
-          if ( !( PrefabUtility.IsPartOfVariantPrefab( root ) && PrefabUtility.IsPartOfPrefabAsset( root ) ) )
-            PrefabUtility.MergePrefabInstance( root );
-        }
-        if ( cable != null ) {
-          var newRoute = cable.Route;
-          newRoute.Clear();
-          foreach ( var node in route )
-            newRoute.Add( node );
-          Object.DestroyImmediate( route, true );
-          EditorUtility.SetDirty( cable.gameObject );
-          EditorUtility.SetDirty( cable );
-          PrefabUtility.RecordPrefabInstancePropertyModifications( cable );
-        }
-        else
-          Object.DestroyImmediate( route, true );
+      if ( cable != null ) {
+        var newRoute = cable.Route;
+        newRoute.Clear();
+        foreach ( var node in route )
+          newRoute.Add( node );
+        EditorUtility.SetDirty( cable.gameObject );
+        EditorUtility.SetDirty( cable );
+        PrefabUtility.RecordPrefabInstancePropertyModifications( cable );
       }
     }
 
-    private static void ApplyRemoveWinchNodeComponents()
+    private static void MigrateWireRoute( Wire wire, AGXUnity.Deprecated.WireRoute route )
     {
-      var wires = FindPrefabDepthOrderedObjects<Wire>();
 
-      foreach ( var wire in wires ) {
-        foreach ( var node in wire.Route ) {
+      if ( !ShouldPatch ) return;
+      if ( wire != null ) {
+        var go = wire.gameObject;
+        var newRoute = wire.Route;
+        newRoute.Clear();
+        foreach ( var node in route ) {
+          newRoute.Add( node );
           if ( node.Type == Wire.NodeType.WinchNode && node.DeprecatedWinchComponent != null ) {
             if ( !ShouldPatch ) return;
             // Force node to create winch object
@@ -248,12 +327,11 @@ namespace AGXUnityEditor
             node.Winch.PulledInLength = old.PulledInLength;
             node.Winch.ForceRange = old.ForceRange;
             node.Winch.BrakeForceRange = old.BrakeForceRange;
-
-            Object.DestroyImmediate( old, true );
-            PrefabUtility.RecordPrefabInstancePropertyModifications( wire );
-            EditorUtility.SetDirty( wire );
           }
         }
+        EditorUtility.SetDirty( go );
+        EditorUtility.SetDirty( wire );
+        PrefabUtility.RecordPrefabInstancePropertyModifications( wire );
       }
     }
 #pragma warning restore CS0618

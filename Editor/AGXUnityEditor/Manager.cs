@@ -110,8 +110,13 @@ namespace AGXUnityEditor
 
       CreateDefaultAssets();
 
-      EditorApplication.update += PatchOnUpdate;
-      EditorSceneManager.sceneOpened += ( _, _ ) => PatchHelper.ApplyPatches();
+      if ( PatchHelper.SceneNeedsPatch() )
+        EditorApplication.update += PatchOnUpdate;
+
+      EditorSceneManager.sceneOpened += ( _, _ ) => {
+        if ( PatchHelper.SceneNeedsPatch() )
+          EditorApplication.update += PatchOnUpdate;
+      };
 
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
     }
