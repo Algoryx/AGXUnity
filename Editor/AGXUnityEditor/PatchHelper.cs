@@ -33,12 +33,18 @@ namespace AGXUnityEditor
         return ShouldPatchUserResponse;
       }
     }
+
+    private static bool Patching { get; set; } = false;
+
     #region 5.2.0
 #pragma warning disable CS0618
 #pragma warning disable CS0612 // Type or member is obsolete
 
     public static bool SceneNeedsPatch()
     {
+      if ( Patching )
+        return false;
+
       var roots = SceneManager.GetActiveScene().GetRootGameObjects();
 
       var constraints = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>() );
@@ -66,8 +72,10 @@ namespace AGXUnityEditor
     [MenuItem( "AGXUnity/Utils/Apply 5.2.0 patch" )]
     public static void ApplyPatches()
     {
-      if ( !ShouldPatch )
+      if ( !ShouldPatch || Patching )
         return;
+
+      Patching = true;
 
       try {
         s_processed.Clear();
@@ -90,7 +98,7 @@ namespace AGXUnityEditor
         for ( int i = 0; i < prefabs.Length; i++ ) {
           EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Removing old prefab components...", (float)i / prefabs.Length );
           var path = AssetDatabase.GUIDToAssetPath( prefabs[i] );
-          if ( String.IsNullOrEmpty( path ) )
+          if ( String.IsNullOrEmpty( path ) || path.Replace( "\\", "/" ).StartsWith( "Packages/" ) )
             continue;
 
           using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
@@ -115,12 +123,14 @@ namespace AGXUnityEditor
           }
         }
 
-        EditorUtility.ClearProgressBar();
         EditorSceneManager.RestoreSceneManagerSetup( setup );
       }
       catch ( System.Exception e ) {
         Debug.LogError( "Failed to patch with error" + e.ToString() );
       }
+      EditorUtility.ClearProgressBar();
+      PatchWarningIssued = false;
+      Patching = false;
     }
 
     private static HashSet<string> s_processed = new HashSet<string>();
@@ -129,6 +139,11 @@ namespace AGXUnityEditor
     {
       if ( String.IsNullOrEmpty( path ) || s_processed.Contains( path ) )
         return;
+
+      if ( path.Replace( "\\", "/" ).StartsWith( "Packages/" ) ) {
+        Debug.LogWarning( $"Patching  process found immutable dependent asset '{path}'. This asset will not be patched" );
+        return;
+      }
 
       s_processed.Add( path );
       using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
@@ -142,8 +157,10 @@ namespace AGXUnityEditor
           return;
 
         foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>() ) {
-          var subPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( s );
-          HandlePrefabPath( subPath );
+          if ( s != null ) {
+            var subPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( s );
+            HandlePrefabPath( subPath );
+          }
         }
 
         foreach ( var constraint in constraints )
