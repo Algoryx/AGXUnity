@@ -38,30 +38,40 @@ namespace AGXUnityEditor
       }
     }
 
-    private Material AddMaterial( Material material )
+    private static Material AddMaterial( Material material, string asset )
     {
       var defaultMat = Object.Instantiate(material);
       defaultMat.name = material.name;
       defaultMat.hideFlags |= HideFlags.HideInHierarchy;
-      this.context.AddObjectToAsset( defaultMat.name, defaultMat );
+      AssetDatabase.AddObjectToAsset( defaultMat, asset );
 
       return defaultMat;
     }
 
     private static bool m_isProcessingPrefabInstance = false;
 
-    private Material GetMaterialNoReplace( Object renderer )
+    private static Material GetMaterialNoReplace( Object renderer )
     {
       return (Material)renderer.GetType().GetField( "m_material", BindingFlags.Instance | BindingFlags.NonPublic ).GetValue( renderer );
     }
 
-    private static bool s_revertPrefabInstance = false;
-
     private void OnPostprocessPrefab( GameObject gameObject )
     {
-      if ( context.assetPath.StartsWith( "Packages/" ) )
-        return;
+      // HideFlags cannot be set in the asset directly since the prefab system uses them internally
+      // Instead we set them on the imported prefab.
+      List<Object> objList = new List<Object>();
+      context.GetObjects( objList );
+      foreach ( var obj in objList )
+        if ( obj is Material mat && (
+          mat.name == ShapeVisual.DefaultMaterialName ||
+          mat.name == CableRenderer.DefaultMaterial().name ||
+          mat.name == WireRenderer.DefaultMaterial().name ) )
+          mat.hideFlags |= HideFlags.HideInHierarchy;
 
+    }
+
+    private static void PrefabCleanupMaterials( GameObject instance )
+    {
       // Since AGX materials are stored in the scene (in memory) these material instances cannot be added
       // to prefabs. This causes the prefabs to have 'None' materials.
       // One solution to this is to add the material as a subasset to the prefab.
@@ -70,43 +80,72 @@ namespace AGXUnityEditor
 
       // We queue an update if any material is 'None' or if they have unsupported materials
       var RP = RenderingUtils.DetectPipeline();
+      bool changes = false;
 
       Material replacementVisualMat = null;
       Material replacementCableMat  = null;
       Material replacementWireMat   = null;
 
-      var svs = gameObject.GetComponentsInChildren<ShapeVisual>();
+      var mods = PrefabUtility.GetPropertyModifications( instance );
+      PrefabUtility.SetPropertyModifications( instance, new PropertyModification[ 0 ] );
+
+      var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( instance );
+
+      var svs = instance.GetComponentsInChildren<ShapeVisual>();
       foreach ( var sv in svs ) {
         foreach ( var mat in sv.GetMaterials() ) {
-          if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+          if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
             if ( replacementVisualMat == null )
-              replacementVisualMat = AddMaterial( ShapeVisual.DefaultMaterial );
+              replacementVisualMat = AddMaterial( ShapeVisual.DefaultMaterial, path );
             sv.ReplaceMaterial( mat, replacementVisualMat );
-            s_revertPrefabInstance = true;
+            changes = true;
           }
         }
       }
 
-      var cables = gameObject.GetComponentsInChildren<CableRenderer>();
+      var cables = instance.GetComponentsInChildren<CableRenderer>();
       foreach ( var cable in cables ) {
         var mat = GetMaterialNoReplace(cable);
-        if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+        if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
           if ( replacementCableMat == null )
-            replacementCableMat = AddMaterial( CableRenderer.DefaultMaterial() ); ;
+            replacementCableMat = AddMaterial( CableRenderer.DefaultMaterial(), path ); ;
           cable.Material = replacementCableMat;
-          s_revertPrefabInstance = true;
+          changes = true;
         }
       }
 
-      var wires = gameObject.GetComponentsInChildren<WireRenderer>();
+      var wires = instance.GetComponentsInChildren<WireRenderer>();
       foreach ( var wire in wires ) {
         var mat = GetMaterialNoReplace(wire);
-        if ( mat == null || !mat.SupportsPipeline( RP ) ) {
+        if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
           if ( replacementWireMat == null )
-            replacementWireMat = AddMaterial( WireRenderer.DefaultMaterial() ); ;
+            replacementWireMat = AddMaterial( WireRenderer.DefaultMaterial(), path ); ;
           wire.Material = replacementWireMat;
-          s_revertPrefabInstance = true;
+          changes = true;
         }
+      }
+      PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
+      PrefabUtility.SetPropertyModifications( instance, mods );
+
+      if ( changes ) {
+        foreach ( var cable in instance.GetComponentsInChildren<CableRenderer>() )
+          if ( cable.Material == CableRenderer.DefaultMaterial() )
+            PrefabUtility.RevertPropertyOverride( new SerializedObject( cable ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
+
+        foreach ( var wire in instance.GetComponentsInChildren<WireRenderer>() )
+          if ( wire.Material == WireRenderer.DefaultMaterial() )
+            PrefabUtility.RevertPropertyOverride( new SerializedObject( wire ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
+
+        var overrides = PrefabUtility.GetPropertyModifications( instance )
+            .Where( mod =>
+              mod.target == null ||
+              mod.target.GetType() != typeof( MeshRenderer ) ||
+              !mod.propertyPath.StartsWith( "m_Materials.Array.data" ) ||
+              mod.objectReference.name != ShapeVisual.DefaultMaterialName
+            )
+            .ToArray();
+
+        PrefabUtility.SetPropertyModifications( instance, overrides );
       }
     }
 
@@ -122,28 +161,7 @@ namespace AGXUnityEditor
       if ( m_isProcessingPrefabInstance )
         return;
 
-      if ( s_revertPrefabInstance ) {
-        foreach ( var cable in instance.GetComponentsInChildren<CableRenderer>() )
-          if ( cable.Material == CableRenderer.DefaultMaterial() )
-            PrefabUtility.RevertPropertyOverride( new SerializedObject( cable ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
-
-        foreach ( var wire in instance.GetComponentsInChildren<WireRenderer>() )
-          if ( wire.Material == WireRenderer.DefaultMaterial() )
-            PrefabUtility.RevertPropertyOverride( new SerializedObject( wire ).FindProperty( "m_Material" ), InteractionMode.AutomatedAction );
-
-        var overrides = PrefabUtility.GetPropertyModifications( instance )
-          .Where( mod =>
-            mod.target == null ||
-            mod.target.GetType() != typeof( MeshRenderer ) ||
-            !mod.propertyPath.StartsWith( "m_Materials.Array.data" ) ||
-            mod.objectReference.name != ShapeVisual.DefaultMaterialName
-          )
-          .ToArray();
-
-        PrefabUtility.SetPropertyModifications( instance, overrides );
-
-        s_revertPrefabInstance = false;
-      }
+      PrefabCleanupMaterials( instance );
 
       var isAGXPrefab = instance.GetComponent<AGXUnity.IO.RestoredAGXFile>() != null;
 
