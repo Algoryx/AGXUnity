@@ -47,12 +47,12 @@ namespace AGXUnityEditor
 
       var roots = SceneManager.GetActiveScene().GetRootGameObjects();
 
-      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>() );
-      var attachments = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.AttachmentPair>() );
-      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>() );
-      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>() );
-      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>() );
-      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>() );
+      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>(true) );
+      var attachments = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.AttachmentPair>(true) );
+      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true) );
+      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true) );
+      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true) );
+      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>(true) );
 
       if ( constraints.Count() > 0 )
         return true;
@@ -102,11 +102,11 @@ namespace AGXUnityEditor
             continue;
 
           using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
-            var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>();
-            var mps         = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>();
-            var cables      = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>();
-            var wires       = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>();
-            var winches     = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>();
+            var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>(true);
+            var mps         = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true);
+            var cables      = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true);
+            var wires       = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true);
+            var winches     = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>(true);
 
             foreach ( var ec in constraints.SelectMany( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) )
               Object.DestroyImmediate( ec );
@@ -178,11 +178,11 @@ namespace AGXUnityEditor
     {
       var roots = SceneManager.GetActiveScene().GetRootGameObjects();
 
-      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<Constraint>() );
-      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>() );
-      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>() );
-      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>() );
-      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>() );
+      var constraints = roots.SelectMany( r => r.GetComponentsInChildren<Constraint>(true) );
+      var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true) );
+      var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true) );
+      var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true) );
+      var winches     = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>(true) );
 
       foreach ( var constraint in constraints )
         MigrateConstraint( constraint );
