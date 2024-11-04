@@ -86,46 +86,43 @@ namespace AGXUnityEditor
       Material replacementCableMat  = null;
       Material replacementWireMat   = null;
 
-      var mods = PrefabUtility.GetPropertyModifications( instance );
-      PrefabUtility.SetPropertyModifications( instance, new PropertyModification[ 0 ] );
-
       var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( instance );
 
-      var svs = instance.GetComponentsInChildren<ShapeVisual>();
-      foreach ( var sv in svs ) {
-        foreach ( var mat in sv.GetMaterials() ) {
+      using ( var prefab = new PrefabUtility.EditPrefabContentsScope( path ) ) {
+        var svs = prefab.prefabContentsRoot.GetComponentsInChildren<ShapeVisual>();
+        foreach ( var sv in svs ) {
+          foreach ( var mat in sv.GetMaterials() ) {
+            if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
+              if ( replacementVisualMat == null )
+                replacementVisualMat = AddMaterial( ShapeVisual.DefaultMaterial, path );
+              sv.ReplaceMaterial( mat, replacementVisualMat );
+              changes = true;
+            }
+          }
+        }
+
+        var cables = prefab.prefabContentsRoot.GetComponentsInChildren<CableRenderer>();
+        foreach ( var cable in cables ) {
+          var mat = GetMaterialNoReplace(cable);
           if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
-            if ( replacementVisualMat == null )
-              replacementVisualMat = AddMaterial( ShapeVisual.DefaultMaterial, path );
-            sv.ReplaceMaterial( mat, replacementVisualMat );
+            if ( replacementCableMat == null )
+              replacementCableMat = AddMaterial( CableRenderer.DefaultMaterial(), path ); ;
+            cable.Material = replacementCableMat;
+            changes = true;
+          }
+        }
+
+        var wires = prefab.prefabContentsRoot.GetComponentsInChildren<WireRenderer>();
+        foreach ( var wire in wires ) {
+          var mat = GetMaterialNoReplace(wire);
+          if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
+            if ( replacementWireMat == null )
+              replacementWireMat = AddMaterial( WireRenderer.DefaultMaterial(), path ); ;
+            wire.Material = replacementWireMat;
             changes = true;
           }
         }
       }
-
-      var cables = instance.GetComponentsInChildren<CableRenderer>();
-      foreach ( var cable in cables ) {
-        var mat = GetMaterialNoReplace(cable);
-        if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
-          if ( replacementCableMat == null )
-            replacementCableMat = AddMaterial( CableRenderer.DefaultMaterial(), path ); ;
-          cable.Material = replacementCableMat;
-          changes = true;
-        }
-      }
-
-      var wires = instance.GetComponentsInChildren<WireRenderer>();
-      foreach ( var wire in wires ) {
-        var mat = GetMaterialNoReplace(wire);
-        if ( mat == null || !mat.SupportsPipeline( RP ) || !EditorUtility.IsPersistent( mat ) ) {
-          if ( replacementWireMat == null )
-            replacementWireMat = AddMaterial( WireRenderer.DefaultMaterial(), path ); ;
-          wire.Material = replacementWireMat;
-          changes = true;
-        }
-      }
-      PrefabUtility.ApplyPrefabInstance( instance, InteractionMode.AutomatedAction );
-      PrefabUtility.SetPropertyModifications( instance, mods );
 
       if ( changes ) {
         foreach ( var cable in instance.GetComponentsInChildren<CableRenderer>() )
