@@ -219,8 +219,8 @@ namespace AGXUnityEditor
 
     private static void MigrateMassProperties( AGXUnity.Deprecated.MassProperties oldMP )
     {
-      var rb = oldMP.RigidBody;
       if ( oldMP != null ) {
+        var rb = oldMP.RigidBody;
         if ( !ShouldPatch ) return;
         CopyDefaultAndUserValue( oldMP.Mass, rb.MassProperties.Mass );
         CopyDefaultAndUserValue( oldMP.InertiaDiagonal, rb.MassProperties.InertiaDiagonal );
@@ -229,10 +229,10 @@ namespace AGXUnityEditor
         rb.MassProperties.MassCoefficients = oldMP.MassCoefficients;
         rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
         Object.DestroyImmediate( oldMP, true );
+        PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
+        EditorUtility.SetDirty( rb );
+        EditorUtility.SetDirty( rb.gameObject );
       }
-      PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
-      EditorUtility.SetDirty( rb );
-      EditorUtility.SetDirty( rb.gameObject );
     }
 
     static FieldInfo s_ecField = null;
