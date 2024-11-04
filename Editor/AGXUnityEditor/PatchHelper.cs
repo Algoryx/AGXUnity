@@ -72,8 +72,13 @@ namespace AGXUnityEditor
     [MenuItem( "AGXUnity/Utils/Apply 5.2.0 patch" )]
     public static void ApplyPatches()
     {
-      if ( !ShouldPatch || Patching )
+      if ( Patching )
         return;
+
+      if ( !ShouldPatch ) {
+        PatchWarningIssued = false;
+        return;
+      }
 
       Patching = true;
 
@@ -147,16 +152,16 @@ namespace AGXUnityEditor
 
       s_processed.Add( path );
       using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
-        var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>();
-        var mps = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>();
-        var cables = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>();
-        var wires = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>();
-        var winches = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>();
+        var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>(true);
+        var mps = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true);
+        var cables = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true);
+        var wires = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true);
+        var winches = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>(true);
 
         if ( mps.Length == 0 && cables.Length == 0 && wires.Length == 0 && !constraints.Any( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>().Length != 0 ) )
           return;
 
-        foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>() ) {
+        foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>(true) ) {
           if ( s != null ) {
             var subPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( s );
             HandlePrefabPath( subPath );
