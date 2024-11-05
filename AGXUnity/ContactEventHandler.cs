@@ -582,11 +582,7 @@ namespace AGXUnity
     {
       typeof( Utils.OnSelectionProxy ),
       typeof( AttachmentPair ),
-      typeof( MassProperties ),
       typeof( CollisionGroups ),
-      typeof( WireRoute ),
-      typeof( CableRoute ),
-      typeof( WireWinch ),
       typeof( HydrodynamicsParameters ),
       typeof( MergeSplitProperties ),
       typeof( Simulation ),

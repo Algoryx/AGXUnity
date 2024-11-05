@@ -110,7 +110,21 @@ namespace AGXUnityEditor
 
       CreateDefaultAssets();
 
+      if ( PatchHelper.SceneNeedsPatch() )
+        EditorApplication.update += PatchOnUpdate;
+
+      EditorSceneManager.sceneOpened += ( _, _ ) => {
+        if ( PatchHelper.SceneNeedsPatch() )
+          EditorApplication.update += PatchOnUpdate;
+      };
+
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
+    }
+
+    private static void PatchOnUpdate()
+    {
+      PatchHelper.ApplyPatches();
+      EditorApplication.update -= PatchOnUpdate;
     }
 
     public enum EditorWindowType
@@ -382,10 +396,7 @@ namespace AGXUnityEditor
     private static void UndoRedoPerformedCallback()
     {
       // Trigger repaint of inspector GUI for our targets.
-      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
-      foreach ( var target in targets )
-        if ( target != null )
-          EditorUtility.SetDirty( target );
+      UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 
       // Collecting scripts that may require synchronize of
       // data post undo/redo where the private serialized
@@ -448,6 +459,7 @@ namespace AGXUnityEditor
       foreach ( var customTargetTool in ToolManager.ActiveTools )
         customTargetTool.OnUndoRedo();
 
+      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       if ( targets.Count() > 0 )
         SceneView.RepaintAll();
 
@@ -466,22 +478,7 @@ namespace AGXUnityEditor
     /// </summary>
     public static void OnEditorTargetsDeleted()
     {
-      var undoGroupId = Undo.GetCurrentGroup();
 
-      // Deleted RigidBody component leaves dangling MassProperties
-      // so we've to delete them explicitly.
-#if UNITY_2022_2_OR_NEWER
-      var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
-#else
-      var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
-#endif
-      foreach ( var mp in mps ) {
-        if ( mp.RigidBody == null ) {
-          Undo.DestroyObjectImmediate( mp );
-        }
-      }
-
-      Undo.CollapseUndoOperations( undoGroupId );
     }
 
     private static void OnSceneView( SceneView sceneView )

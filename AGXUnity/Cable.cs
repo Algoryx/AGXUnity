@@ -6,7 +6,6 @@ using UnityEngine;
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Cable" )]
-  [RequireComponent( typeof( CableRoute ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable" )]
   public class Cable : ScriptComponent
   {
@@ -210,20 +209,11 @@ namespace AGXUnity
     public Material RouteMeshMaterial { get; set; }
     //==============================================================================================================
 
-    private CableRoute m_routeComponent = null;
     /// <summary>
     /// Get route to initialize this cable.
     /// </summary>
-    [HideInInspector]
-    public CableRoute Route
-    {
-      get
-      {
-        if ( m_routeComponent == null )
-          m_routeComponent = GetComponent<CableRoute>();
-        return m_routeComponent;
-      }
-    }
+    [field: SerializeReference]
+    public CableRoute Route { get; private set; } = new CableRoute();
 
     private PointCurve m_routePointCurve              = null;
     private float m_routePointResolutionPerUnitLength = -1.0f;

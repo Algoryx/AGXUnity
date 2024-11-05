@@ -38,15 +38,18 @@ namespace AGXUnityEditor.Tools
     {
       var skin = InspectorEditor.Skin;
 
-      var beginWinches = GetTargets<Wire, WireWinch>( wire => wire.BeginWinch ).Where( winch => winch != null );
-      var endWinches   = GetTargets<Wire, WireWinch>( wire => wire.EndWinch ).Where( winch => winch != null );
+      var beginWinchWires = GetTargets<Wire>( ).Where( wire => wire.BeginWinch != null );
+      var endWinchWires   = GetTargets<Wire>( ).Where( wire => wire.EndWinch != null );
+
+      var beginWinches = beginWinchWires.Select( wire => wire.BeginWinch );
+      var endWinches = endWinchWires.Select( wire => wire.EndWinch );
 
       if ( beginWinches.Count() > 0 ) {
         GUILayout.Label( GUI.MakeLabel( "Begin winch", true ), skin.Label );
         using ( InspectorGUI.IndentScope.Single ) {
           if ( beginWinches.Count() != NumTargets )
             InspectorGUI.WarningLabel( "Not all selected wires has a begin winch." );
-          InspectorEditor.DrawMembersGUI( beginWinches.ToArray() );
+          InspectorEditor.DrawMembersGUI( beginWinches.ToArray(), beginWinchWires.ToArray() );
         }
       }
       if ( endWinches.Count() > 0 ) {
@@ -54,7 +57,7 @@ namespace AGXUnityEditor.Tools
         using ( InspectorGUI.IndentScope.Single ) {
           if ( endWinches.Count() != NumTargets )
             InspectorGUI.WarningLabel( "Not all selected wires has an end winch." );
-          InspectorEditor.DrawMembersGUI( endWinches.ToArray() );
+          InspectorEditor.DrawMembersGUI( endWinches.ToArray(), endWinchWires.ToArray() );
         }
       }
     }

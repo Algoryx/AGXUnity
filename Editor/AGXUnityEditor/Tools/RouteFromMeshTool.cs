@@ -114,6 +114,11 @@ namespace AGXUnityEditor.Tools
     /// </summary>
     public Route<NodeT> Route { get; private set; }
 
+    /// <summary>
+    /// The Route object to which the generated route will be written
+    /// </summary>
+    public ParentT RouteParent { get; private set; }
+
     private bool m_showPreview = true;
     /// <summary>
     /// If the preivew of the skeleton/route should be visible
@@ -272,12 +277,12 @@ namespace AGXUnityEditor.Tools
     /// Constructor which sets the route object and attempts to set default values to this scripts parent and a mesh on the same object
     /// </summary>
     /// <param name="parentRoute"></param>
-    public RouteFromMeshTool( Route<NodeT> parentRoute )
+    public RouteFromMeshTool( ParentT parent, Route<NodeT> parentRoute )
       : base( isSingleInstanceTool: true )
     {
       Route = parentRoute;
-      var cableObject = Route.gameObject;
-      HandleSelectedObject( cableObject );
+      RouteParent = parent;
+      HandleSelectedObject( RouteParent.gameObject );
     }
 
     /// <summary>
@@ -315,7 +320,7 @@ namespace AGXUnityEditor.Tools
 
     private NodeT CreateNode( Vector3 localPosition, Quaternion localRotation )
     {
-      NodeT node = IFrame.Create<NodeT>(Route.gameObject, localPosition, localRotation);
+      NodeT node = IFrame.Create<NodeT>(RouteParent.gameObject, localPosition, localRotation);
       if ( Route is WireRoute )
         ( node as WireRouteNode ).Type = Wire.NodeType.FreeNode;
       else if ( Route is CableRoute )
@@ -425,8 +430,7 @@ namespace AGXUnityEditor.Tools
       EditorGUI.EndDisabledGroup();
 
       if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
-        if ( Route is CableRoute ) {
-          Cable cable = Route.GetComponent<Cable>();
+        if ( RouteParent is Cable cable ) {
           cable.RouteMeshMaterial = null;
 
           if ( m_meshSource != null && m_meshSource.TryGetComponent( out MeshRenderer renderer ) && renderer.enabled )
@@ -584,12 +588,12 @@ namespace AGXUnityEditor.Tools
         Route.Add( node );
       }
 
-      if ( Route is WireRoute ) {
-        Route.gameObject.GetComponent<Wire>().Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
+      if ( RouteParent is Wire wire ) {
+        wire.Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
       }
-      else if ( Route is CableRoute ) {
-        Route.gameObject.GetComponent<Cable>().Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
-        Route.gameObject.GetComponent<Cable>().ResolutionPerUnitLength = Mathf.Max( minDist, 0.5f / avgRadius ); //Max reasonable resolution / 2
+      else if ( RouteParent is Cable cable ) {
+        cable.Radius = UseFixedRadius ? m_fixedRadius : SkeletonRadius();
+        cable.ResolutionPerUnitLength = Mathf.Max( minDist, 0.5f / avgRadius ); //Max reasonable resolution / 2
       }
 
       //Disable the renderer to signify the conversion
