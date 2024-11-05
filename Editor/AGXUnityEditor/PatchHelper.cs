@@ -85,24 +85,23 @@ namespace AGXUnityEditor
       try {
         s_processed.Clear();
 
-        var prefabs = AssetDatabase.FindAssets( "t:prefab" );
+        var prefabs = AssetDatabase.FindAssets( "t:prefab" ).Select(guid => AssetDatabase.GUIDToAssetPath( guid ) ).ToArray();
         for ( int i = 0; i < prefabs.Length; i++ ) {
           EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Patching prefabs...", (float)i / prefabs.Length );
-          var path = AssetDatabase.GUIDToAssetPath( prefabs[i] );
-          HandlePrefabPath( path );
+          HandlePrefabPath( prefabs[ i ] );
         }
 
-        var scenes = AssetDatabase.FindAssets( "t:scene" );
+        var scenes = AssetDatabase.FindAssets( "t:scene" ).Select(guid => AssetDatabase.GUIDToAssetPath( guid ) ).ToArray();
         var setup = EditorSceneManager.GetSceneManagerSetup();
         for ( int i = 0; i < scenes.Length; i++ ) {
           EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Patching Scenes...", (float)i / scenes.Length );
-          EditorSceneManager.OpenScene( AssetDatabase.GUIDToAssetPath( scenes[ i ] ), OpenSceneMode.Single );
+          EditorSceneManager.OpenScene( scenes[ i ], OpenSceneMode.Single );
           PatchScene();
         }
 
         for ( int i = 0; i < prefabs.Length; i++ ) {
           EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Removing old prefab components...", (float)i / prefabs.Length );
-          var path = AssetDatabase.GUIDToAssetPath( prefabs[i] );
+          var path = prefabs[i];
           if ( String.IsNullOrEmpty( path ) || path.Replace( "\\", "/" ).StartsWith( "Packages/" ) )
             continue;
 
@@ -161,7 +160,7 @@ namespace AGXUnityEditor
         if ( mps.Length == 0 && cables.Length == 0 && wires.Length == 0 && !constraints.Any( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>().Length != 0 ) )
           return;
 
-        foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>(true) ) {
+        foreach ( var s in loaded.prefabContentsRoot.GetComponentsInChildren<ScriptComponent>( true ) ) {
           if ( s != null ) {
             var subPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( s );
             HandlePrefabPath( subPath );
@@ -233,7 +232,6 @@ namespace AGXUnityEditor
         CopyDefaultAndUserValue( oldMP.CenterOfMassOffset, rb.MassProperties.CenterOfMassOffset );
         rb.MassProperties.MassCoefficients = oldMP.MassCoefficients;
         rb.MassProperties.InertiaCoefficients = oldMP.InertiaCoefficients;
-        Object.DestroyImmediate( oldMP, true );
         PrefabUtility.RecordPrefabInstancePropertyModifications( rb );
         EditorUtility.SetDirty( rb );
         EditorUtility.SetDirty( rb.gameObject );
