@@ -106,15 +106,16 @@ namespace AGXUnityEditor
             continue;
 
           using ( var loaded = new PrefabUtility.EditPrefabContentsScope( path ) ) {
-            var constraints = loaded.prefabContentsRoot.GetComponentsInChildren<Constraint>(true);
+            var ecs         = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>(true);
+            var attachments = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.AttachmentPair>(true);
             var mps         = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true);
             var cables      = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true);
             var wires       = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true);
             var winches     = loaded.prefabContentsRoot.GetComponentsInChildren<AGXUnity.Deprecated.WireWinch>(true);
 
-            foreach ( var ec in constraints.SelectMany( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) )
+            foreach ( var ec in ecs )
               Object.DestroyImmediate( ec );
-            foreach ( var ap in constraints.Select( c => c.GetComponent<AGXUnity.Deprecated.AttachmentPair>() ) )
+            foreach ( var ap in attachments )
               Object.DestroyImmediate( ap );
             foreach ( var mp in mps )
               Object.DestroyImmediate( mp );
@@ -183,6 +184,8 @@ namespace AGXUnityEditor
       var roots = SceneManager.GetActiveScene().GetRootGameObjects();
 
       var constraints = roots.SelectMany( r => r.GetComponentsInChildren<Constraint>(true) );
+      var ecs         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.ElementaryConstraint>(true) );
+      var attachments = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.AttachmentPair>(true) );
       var mps         = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.MassProperties>(true) );
       var cables      = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.CableRoute>(true) );
       var wires       = roots.SelectMany( r => r.GetComponentsInChildren<AGXUnity.Deprecated.WireRoute>(true) );
@@ -197,10 +200,10 @@ namespace AGXUnityEditor
       foreach ( var wire in wires )
         MigrateWireRoute( wire.GetComponent<Wire>(), wire );
 
-      foreach ( var ec in constraints.SelectMany( c => c.GetComponents<AGXUnity.Deprecated.ElementaryConstraint>() ) )
+      foreach ( var ec in ecs )
         Object.DestroyImmediate( ec );
-      foreach ( var ec in constraints.Select( c => c.GetComponent<AGXUnity.Deprecated.AttachmentPair>() ) )
-        Object.DestroyImmediate( ec );
+      foreach ( var ap in attachments )
+        Object.DestroyImmediate( ap );
       foreach ( var mp in mps )
         Object.DestroyImmediate( mp );
       foreach ( var cable in cables )
