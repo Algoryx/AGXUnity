@@ -304,6 +304,33 @@ namespace AGXUnity.Model
           Native.getBulkProperties().setSwellFactor( m_swellFactor );
       }
     }
+
+    [SerializeField]
+    private float m_deltaReposeAngle = 0.0f;
+
+    /// <summary>
+    /// The delta repose angle increases the base angle of repose of the material on top of the internal angle of friction. 
+    /// Default: 0.0
+    /// </summary>
+    /// 
+    [Tooltip( "The delta repose angle increases the base angle of repose of the material on top of the internal angle of friction" )]
+    public float DeltaReposeAngle
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( Mathf.Rad2Deg *  m_temporaryNative.getBulkProperties().getDeltaReposeAngle() ) :
+                 m_deltaReposeAngle;
+      }
+      set
+      {
+        m_deltaReposeAngle = value;
+        if ( Native != null )
+          Native.getBulkProperties().setDeltaReposeAngle( m_deltaReposeAngle * Mathf.Deg2Rad );
+      }
+    }
+
+
     #endregion
 
     #region Compaction Properties
