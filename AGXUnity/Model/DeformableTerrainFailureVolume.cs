@@ -47,7 +47,7 @@ namespace AGXUnity.Model
     protected override void OnDisable()
     {
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PreStepForward += TriggerFailure;
+        Simulation.Instance.StepCallbacks.PreStepForward -= TriggerFailure;
       base.OnDisable();
     }
 
