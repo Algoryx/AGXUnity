@@ -65,7 +65,7 @@ namespace AGXUnity.Rendering
       {
         return constantScreenSize ?
                  size * FindConstantScreenSizeScale( position ) :
-                 size;                 
+                 size;
       }
 
       public static Vector3 ConditionalConstantScreenSize( bool constantScreenSize, Vector3 size, Vector3 position )

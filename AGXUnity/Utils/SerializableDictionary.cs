@@ -24,7 +24,7 @@ public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IS
   {
     for ( int i = 0; i < m_keys.Count; i++ ) {
       var k = m_keys[i];
-      var v = m_values[i]; 
+      var v = m_values[i];
 
       this[ k ] = v;
     }

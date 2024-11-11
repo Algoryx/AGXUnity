@@ -1,8 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using UnityEditor;
 using UnityEngine;
-using UnityEditor;
-
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
@@ -58,12 +55,7 @@ namespace AGXUnityEditor
     /// <summary>
     /// Size of toolbar buttons.
     /// </summary>
-    public static Vector2 ToolButtonSize { get; set; } = new Vector2( 24.0f,
-#if UNITY_2019_3_OR_NEWER
-                                                                      18.0f );
-#else
-                                                                      16.0f );
-#endif
+    public static Vector2 ToolButtonSize { get; set; } = new Vector2( 24.0f, 18.0f );
 
     /// <summary>
     /// Button style given button type.

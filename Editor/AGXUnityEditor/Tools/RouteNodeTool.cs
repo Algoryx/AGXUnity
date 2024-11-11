@@ -1,8 +1,7 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
+﻿using AGXUnity;
+using System;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {

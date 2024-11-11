@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 namespace AGXUnityEditor.IO
 {
@@ -81,7 +80,7 @@ namespace AGXUnityEditor.IO
                FileType.AGXPrefab :
                FileType.Unknown;
     }
-    
+
     /// <summary>
     /// True if valid path was given.
     /// </summary>
@@ -163,11 +162,7 @@ namespace AGXUnityEditor.IO
     public AGXFileInfo( GameObject prefabInstance )
     {
       PrefabInstance = prefabInstance;
-#if UNITY_2018_1_OR_NEWER
       Construct( AssetDatabase.GetAssetPath( PrefabUtility.GetCorrespondingObjectFromSource( prefabInstance ) as GameObject ) );
-#else
-      Construct( AssetDatabase.GetAssetPath( PrefabUtility.GetPrefabParent( prefabInstance ) as GameObject ) );
-#endif
     }
 
     public void SetPrefabInstance( GameObject instance )
@@ -217,15 +212,7 @@ namespace AGXUnityEditor.IO
         return null;
       }
 
-#if UNITY_2018_3_OR_NEWER
       return PrefabUtility.SaveAsPrefabAssetAndConnect( PrefabInstance, PrefabPath, InteractionMode.UserAction );
-#else
-      var prefab = ExistingPrefab ?? PrefabUtility.CreateEmptyPrefab( PrefabPath );
-      if ( prefab == null )
-        return null;
-
-      return PrefabUtility.ReplacePrefab( PrefabInstance, prefab, ReplacePrefabOptions.ReplaceNameBased );
-#endif
     }
 
     /// <summary>
@@ -262,7 +249,11 @@ namespace AGXUnityEditor.IO
         }
       }
 
-      RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
+      if ( path.StartsWith( "Packages/" ) )
+        RootDirectory = Path.GetDirectoryName( path ).Replace( '\\', '/' );
+      else
+        RootDirectory = Utils.MakeRelative( m_fileInfo.Directory.FullName, Application.dataPath ).Replace( '\\', '/' );
+
       // If the file is located in the root Assets folder the relative directory
       // is the empty string and Unity requires the relative path to include "Assets".
       if ( RootDirectory == string.Empty )

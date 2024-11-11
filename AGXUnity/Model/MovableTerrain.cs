@@ -141,7 +141,7 @@ namespace AGXUnity.Model
     }
 
     [field: SerializeField]
-    [InspectorPriority(-1)]
+    [InspectorPriority( -1 )]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
     public bool InvertDepthDirection { get; set; } = true;
 
@@ -166,7 +166,7 @@ namespace AGXUnity.Model
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
       var mat = TerrainRenderer.sharedMaterial;
-      if ( !AssetDatabase.Contains(mat) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
+      if ( !AssetDatabase.Contains( mat ) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
         TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
         RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       }
@@ -336,8 +336,8 @@ namespace AGXUnity.Model
     {
       Vector3 size = new Vector3( ( SizeCells.x - 1 ) * ElementSize, MaximumDepth, ( SizeCells.y - 1 ) * ElementSize);
       Vector3 pos = new Vector3(
-        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2, 
-        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f, 
+        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2,
+        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f,
         -( ( SizeCells.y - 1 ) % 2 ) * ElementSize / 2);
 
       Gizmos.matrix = transform.localToWorldMatrix;

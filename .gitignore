@@ -76,11 +76,6 @@ crashlytics-build.properties
 # Additional includes not part of the Unity .gitignore
 # ----------------------------------------------------
 
-# Unity generated meta files for repo docs
-LICENSE.meta
-README.md.meta
-DeveloperGuide.md.meta
-
 # Visual Studio Code cache directory
 .vscode/
 

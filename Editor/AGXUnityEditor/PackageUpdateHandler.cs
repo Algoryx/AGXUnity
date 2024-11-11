@@ -1,27 +1,19 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Collections.Generic;
-
-using UnityEngine;
+using System.IO;
+using System.Linq;
 using UnityEditor;
-
+using UnityEditor.SceneManagement;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
-using Scene = UnityEngine.SceneManagement.Scene;
 using EditorSceneManager = UnityEditor.SceneManagement.EditorSceneManager;
+using Scene = UnityEngine.SceneManagement.Scene;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace AGXUnityEditor
 {
   public static class PackageUpdateHandler
   {
-    public static AGXUnity.VersionInfo FindCurrentVersion()
-    {
-      return AGXUnity.VersionInfo.FromFile( IO.Utils.AGXUnityPackageDirectory +
-                                            Path.DirectorySeparatorChar +
-                                            "package.json" );
-    }
-
     public static bool Install( FileInfo packageFileInfo )
     {
       if ( packageFileInfo == null ) {
@@ -31,6 +23,11 @@ namespace AGXUnityEditor
 
       if ( !packageFileInfo.Exists ) {
         Debug.LogError( $"Error: Unable to install package from {packageFileInfo.FullName} - file doesn't exit." );
+        return false;
+      }
+
+      if ( IO.Utils.IsPackageContext ) {
+        Debug.LogError( "Error: Package update handler cannot update when AGXUnity is installed in a package context." );
         return false;
       }
 
@@ -66,32 +63,26 @@ namespace AGXUnityEditor
           EditorSceneManager.SaveScenes( unsavedScenes );
       }
 
-      EditorSceneManager.NewScene( UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
-                                   UnityEditor.SceneManagement.NewSceneMode.Single );
+      // Using EditorSceneManager.NewScene with the Single mode seems to not save the currently open scene in versions prior to 2021.3
+      // This causes the original scene to be loaded when the project is reopened which in turn causes the agx binaries to load if 
+      // there are any AGXUnity components in the scene. To avoid this issue a new scene can be created after which the loaded scenes are
+      // removed from the scene manager manually.
+#if UNITY_2021_3_OR_NEWER
+      EditorSceneManager.NewScene( NewSceneSetup.EmptyScene,
+                                   NewSceneMode.Single );
+#else
+      Scene newScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+
+      foreach ( var scene in Scenes )
+        if ( scene != newScene )
+          EditorSceneManager.CloseScene( scene, true );
+#endif
 
       Debug.Log( "Preparing native plugins before restart..." );
-#if UNITY_2019_1_OR_NEWER
       foreach ( var nativePlugin in NativePlugins ) {
         nativePlugin.isPreloaded = false;
         nativePlugin.SaveAndReimport();
       }
-#else
-      Debug.Log( $"Removing {IO.Utils.AGXUnityPluginDirectoryFull} from PATH ..." );
-      var notInPathOrRemovedFromPath = !AGXUnity.IO.Environment.IsInPath( IO.Utils.AGXUnityPluginDirectoryFull ) ||
-                                       AGXUnity.IO.Environment.RemoveFromPath( IO.Utils.AGXUnityPluginDirectoryFull );
-      if ( notInPathOrRemovedFromPath )
-        Debug.Log( "    ... success." );
-      else {
-        Debug.LogWarning( "    ...failed. This could cause plugins to be loaded post reload - leading to errors." );
-        return false;
-      }
-
-      foreach ( var nativePlugin in NativePlugins ) {
-        nativePlugin.SetCompatibleWithEditor( false );
-        nativePlugin.SetCompatibleWithAnyPlatform( false );
-        nativePlugin.SaveAndReimport();
-      }
-#endif
 
       Debug.Log( "Preparing AGX Dynamics for Unity before restart..." );
       Build.DefineSymbols.Add( Build.DefineSymbols.ON_AGXUNITY_UPDATE );
@@ -175,6 +166,8 @@ namespace AGXUnityEditor
         // use AGX Dynamics.
         AssetDatabase.Refresh();
 
+        // TODO: Updating the plugin through the PackageUpdateHadler currently only supports asset context installs.
+        // If we every host build packages in an NPM repo we could simply update through the UPM here instead.
         Debug.Log( $"Starting import of package: {packageName}" );
         AssetDatabase.ImportPackage( packageName, false );
       }

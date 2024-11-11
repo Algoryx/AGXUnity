@@ -1,8 +1,8 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-using AGXUnity.Utils;
-using UnityEngine;
 using System.ComponentModel;
+using System.Linq;
+using UnityEngine;
 
 namespace AGXUnity.Collide
 {
@@ -106,8 +106,8 @@ namespace AGXUnity.Collide
       set
       {
         m_isSensor = value;
-        if (NativeGeometry != null)
-          NativeGeometry.setSensor(m_isSensor);
+        if ( NativeGeometry != null )
+          NativeGeometry.setSensor( m_isSensor );
       }
     }
 
@@ -120,7 +120,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Specify whether the shape should be included in the mass properties calculation of the parent Rigid Body.
     /// </summary>
-    [Description("Toggle whether or not to include this geometry when automatically calculating mass properties.")]
+    [Description( "Toggle whether or not to include this geometry when automatically calculating mass properties." )]
     public bool EnableMassProperties
     {
       get { return m_enableMassProperties; }
@@ -334,7 +334,7 @@ namespace AGXUnity.Collide
     protected override bool Initialize()
     {
       m_transform = transform;
-      
+
       m_geometry = CreateNative();
 
       if ( m_geometry == null )

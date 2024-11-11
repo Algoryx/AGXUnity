@@ -25,7 +25,7 @@ namespace AGXUnity.Utils
       }
     }
 
-    public static AverageQuaternion operator+ ( AverageQuaternion aq, Quaternion q )
+    public static AverageQuaternion operator +( AverageQuaternion aq, Quaternion q )
     {
       aq.m_quaternions.Add( q );
       return aq;

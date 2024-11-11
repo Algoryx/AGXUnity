@@ -35,7 +35,7 @@ namespace AGXUnity.Collide
       get { return m_thickness; }
       set
       {
-        m_thickness = Utils.Math.ClampAbove( Mathf.Min(m_radius- MinimumSize, value), MinimumSize );
+        m_thickness = Utils.Math.ClampAbove( Mathf.Min( m_radius- MinimumSize, value ), MinimumSize );
 
         if ( Native != null )
           Native.setThickness( m_thickness );

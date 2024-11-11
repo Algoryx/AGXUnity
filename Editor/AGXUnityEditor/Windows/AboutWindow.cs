@@ -1,8 +1,6 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using AGXUnity.Utils;
 using UnityEditor;
-using AGXUnity.Utils;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Windows
@@ -54,7 +52,7 @@ namespace AGXUnityEditor.Windows
                                         Color.black,
                                         0.25f );
 
-      var versionInfo = PackageUpdateHandler.FindCurrentVersion();
+      var versionInfo = PackageManifest.Instance.GetAGXUnityVersionInfo();
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "Version" ),
                                         ( versionInfo.IsValid ?
                                             versionInfo.VersionString :

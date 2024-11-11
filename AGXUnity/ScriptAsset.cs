@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
 
 namespace AGXUnity
@@ -17,7 +18,7 @@ namespace AGXUnity
   /// implementations.
   /// </summary>
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
-  public abstract class ScriptAsset : ScriptableObject
+  public abstract class ScriptAsset : ScriptableObject, IPropertySynchronizable
   {
     public static T Create<T>() where T : ScriptAsset
     {

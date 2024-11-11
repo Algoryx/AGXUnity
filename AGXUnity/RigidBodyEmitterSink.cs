@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity
@@ -145,7 +144,11 @@ namespace AGXUnity
         return false;
       }
 
-      m_emitters = FindObjectsIncudingDisabledOfType<RigidBodyEmitter>();
+#if UNITY_2022_2_OR_NEWER
+      m_emitters = FindObjectsByType<RigidBodyEmitter>( FindObjectsInactive.Include, FindObjectsSortMode.None );
+#else
+      m_emitters = FindObjectsOfType<RigidBodyEmitter>( true );
+#endif
 
       if ( m_emitters.Length == 0 ) {
         m_emitters = null;
@@ -196,25 +199,6 @@ namespace AGXUnity
       Simulation.Instance.StepCallbacks.SimulationPre += OnPreStep;
 
       return true;
-    }
-
-    public static T[] FindObjectsIncudingDisabledOfType<T>()
-      where T : Component
-    {
-#if UNITY_2020_1_OR_NEWER
-      return FindObjectsOfType<T>( true );
-#else
-      var components = new List<T>();
-      for ( int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; ++i ) {
-        var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt( i );
-        if ( !scene.isLoaded )
-          continue;
-        foreach ( var go in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects() )
-          components.AddRange( go.GetComponentsInChildren<T>( true ) );
-      }
-
-      return components.ToArray();
-#endif
     }
 
     private void Reset()

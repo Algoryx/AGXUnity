@@ -1,8 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using AGXUnity;
+using System;
 using UnityEditor;
-using AGXUnity;
-using GUI = AGXUnity.Utils.GUI;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {
@@ -47,8 +46,7 @@ namespace AGXUnityEditor.Tools
         if ( value && GetChild<SelectGameObjectTool>() == null ) {
           RemoveAllChildren();
           var selectGameObjectTool = new SelectGameObjectTool();
-          selectGameObjectTool.OnSelect += parent =>
-          {
+          selectGameObjectTool.OnSelect += parent => {
             Frame.SetParent( parent );
 
             OnLocalToolDone( selectGameObjectTool );
@@ -71,8 +69,7 @@ namespace AGXUnityEditor.Tools
         if ( value && GetChild<FindPointTool>() == null ) {
           RemoveAllChildren();
           FindPointTool pointTool = new FindPointTool();
-          pointTool.OnPointFound = data =>
-          {
+          pointTool.OnPointFound = data => {
             Frame.SetParent( data.Target );
             Frame.Position = data.RaycastResult.Point;
             Frame.Rotation = data.Rotation;
@@ -97,8 +94,7 @@ namespace AGXUnityEditor.Tools
         if ( value && GetChild<EdgeDetectionTool>() == null ) {
           RemoveAllChildren();
           EdgeDetectionTool edgeTool = new EdgeDetectionTool();
-          edgeTool.OnEdgeFound += data =>
-          {
+          edgeTool.OnEdgeFound += data => {
             Frame.SetParent( data.Target );
             Frame.Position = data.Position;
             Frame.Rotation = data.Rotation;

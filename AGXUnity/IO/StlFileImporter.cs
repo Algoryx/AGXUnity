@@ -1,9 +1,9 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
 
 using Object = UnityEngine.Object;
 
@@ -365,9 +365,7 @@ namespace AGXUnity.IO
         mesh.SetTriangles( meshData.Triangles, 0 );
         mesh.normals = meshData.CalculateNormals();
         mesh.RecalculateTangents();
-#if UNITY_2019_1_OR_NEWER
         mesh.Optimize();
-#endif
 
         meshData.TriangleNormals.Clear();
         meshData.Vertices.Clear();

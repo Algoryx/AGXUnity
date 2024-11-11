@@ -1,10 +1,8 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-
-using AGXUnity.Utils;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -84,8 +82,7 @@ namespace AGXUnityEditor.Tools
       // TODO: Display Dialog if CollisionMeshOptions should be applied
       //       to the new source.
 
-      ShapeMeshSourceGUI( singleSource, newSource =>
-      {
+      ShapeMeshSourceGUI( singleSource, newSource => {
         if ( IsMultiSelect ) {
           foreach ( var target in GetTargets<AGXUnity.Collide.Mesh>() )
             if ( target != null )
@@ -156,7 +153,7 @@ namespace AGXUnityEditor.Tools
                     result.Mesh.PrecomputedCollisionMeshes = result.CollisionMeshes;
                   }
                 }
-              
+
                 var hasPrefabAssetBeenChanged = results.Any( result =>
                                                                PrefabUtility.GetCorrespondingObjectFromOriginalSource( result.Mesh.gameObject ) == null &&
                                                                PrefabUtility.GetPrefabInstanceHandle( result.Mesh.gameObject ) == null );
@@ -164,7 +161,11 @@ namespace AGXUnityEditor.Tools
                 // We don't have to dirty them all but it's hard to determine where
                 // the instance is located in the hierarchy.
                 if ( hasPrefabAssetBeenChanged ) {
+#if UNITY_2022_2_OR_NEWER
+                  var allMeshes = Object.FindObjectsByType<AGXUnity.Collide.Mesh>( FindObjectsSortMode.None );
+#else
                   var allMeshes = Object.FindObjectsOfType<AGXUnity.Collide.Mesh>();
+#endif
                   foreach ( var m in allMeshes )
                     m.OnPrecomputedCollisionMeshDataDirty();
                 }

@@ -149,7 +149,7 @@ namespace AGXUnity.Model
         m_properties = value;
         if ( Native != null ) {
           foreach ( agxVehicle.TrackWheel.Property eValue in typeof( agxVehicle.TrackWheel.Property ).GetEnumValues() )
-            Native.setEnableProperty( eValue, ((int)m_properties & (int)eValue) != 0 );
+            Native.setEnableProperty( eValue, ( (int)m_properties & (int)eValue ) != 0 );
         }
       }
     }
@@ -259,6 +259,20 @@ namespace AGXUnity.Model
     protected override void OnDestroy()
     {
       base.OnDestroy();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && !enabled )
+        Debug.LogWarning( "Disabling an initialized TrackWheel at runtime is not supported" );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Native != null )
+        Debug.LogWarning( "Enabling an initialized TrackWheel at runtime is not supported" );
+      base.OnEnable();
     }
 
     private void Reset()

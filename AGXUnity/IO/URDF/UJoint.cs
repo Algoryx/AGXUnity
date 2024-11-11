@@ -383,17 +383,16 @@ namespace AGXUnity.IO.URDF
 
       base.Read( element, false );
       var type = Utils.ReadString( element, "type", false );
-      Type = type == "revolute" ?
-               JointType.Revolute :
-             type == "continuous" ?
-               JointType.Continuous :
-             type == "prismatic" ?
-               JointType.Prismatic :
-             type == "fixed" ?
-               JointType.Fixed:
-             type == "planar" ?
-               JointType.Planar :
-               JointType.Unknown;
+      Type = type switch
+      {
+        "revolute" => JointType.Revolute,
+        "continuous" => JointType.Continuous,
+        "prismatic" => JointType.Prismatic,
+        "fixed" => JointType.Fixed,
+        "planar" => JointType.Planar,
+        "floating" => JointType.Floating,
+        _ => JointType.Unknown
+      };
       if ( Type == JointType.Unknown )
         throw new UrdfIOException( $"{Utils.GetLineInfo( element )}: Unknown joint type '{type}'." );
 

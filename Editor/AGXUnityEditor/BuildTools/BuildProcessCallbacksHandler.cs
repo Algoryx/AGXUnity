@@ -1,16 +1,14 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
-
-using AGXUnity.Utils;
-
-using GUI   = AGXUnity.Utils.GUI;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
+using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Build
 {
@@ -95,8 +93,13 @@ namespace AGXUnityEditor.Build
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
-      if ( !Manager.HasPlayerNetCompatibilityIssueError() )
-        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET API compatibility level. " +
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+#endif
+      if ( !hasMonoRuntime )
+        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
                                                           "AGX Dynamics for Unity won't work in build." );
 
       var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
@@ -107,11 +110,11 @@ namespace AGXUnityEditor.Build
       }
 
       var isValidTarget =
-      #if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN
         target == BuildTarget.StandaloneWindows64;
-      #else
+#else
         target == BuildTarget.StandaloneLinux64;
-      #endif
+#endif
 
       if ( !isValidTarget ) {
         Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +

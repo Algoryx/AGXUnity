@@ -4,19 +4,13 @@ using UnityEngine;
 namespace AGXUnity
 {
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint-merge-split-thresholds" )]
-  public class ConstraintMergeSplitThresholds : MergeSplitThresholds
+  public class ConstraintMergeSplitThresholds : MergeSplitThresholds<ConstraintMergeSplitThresholds>
   {
-    [HideInInspector]
-    public static string ResourcePath { get { return ResourceDirectory + @"/DefaultConstraintThresholds"; } }
-
-    [HideInInspector]
-    public static ConstraintMergeSplitThresholds DefaultResource { get { return Resources.Load<ConstraintMergeSplitThresholds>( ResourcePath ); } }
-
     [SerializeField]
     private float m_maxRelativeSpeed = 5.0E-3f;
 
     [ClampAboveZeroInInspector( true )]
-    [InspectorGroupBegin(Name = "Merge conditions", DefaultExpanded = true)]
+    [InspectorGroupBegin( Name = "Merge conditions", DefaultExpanded = true )]
     [Tooltip( "When the relative motion between the objects is less than this threshold, the objects may merge." )]
     public float MaxRelativeSpeed
     {
@@ -33,7 +27,7 @@ namespace AGXUnity
     private float m_maxDesiredSpeedDiff = 1.0E-5f;
 
     [ClampAboveZeroInInspector( true )]
-    [InspectorGroupBegin(Name = "Split conditions", DefaultExpanded = true)]
+    [InspectorGroupBegin( Name = "Split conditions", DefaultExpanded = true )]
     [Tooltip( "When the relative motion between the objects is less than this threshold, the objects may merge." )]
     public float MaxDesiredSpeedDiff
     {

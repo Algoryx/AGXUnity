@@ -1,8 +1,7 @@
-﻿using System;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity.Collide;
+﻿using AGXUnity.Collide;
 using AGXUnity.Rendering;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -28,7 +27,7 @@ namespace AGXUnityEditor.Tools
         if ( m_material != null && value == m_material )
           return;
 
-        m_material = value ?? Manager.GetOrCreateShapeVisualDefaultMaterial();
+        m_material = value ?? ShapeVisual.DefaultMaterial;
 
         GetData( DataEntry.Material ).Asset = m_material;
 
@@ -64,7 +63,7 @@ namespace AGXUnityEditor.Tools
         Preview.transform.rotation = Shape.transform.rotation;
       }
 
-      Material = GetData( DataEntry.Material ).Asset as Material ?? Manager.GetOrCreateShapeVisualDefaultMaterial();
+      Material = GetData( DataEntry.Material ).Asset as Material ?? ShapeVisual.DefaultMaterial;
       Name     = GetData( DataEntry.Name ).String;
       if ( Name == "" )
         Name = Shape.name + "_Visual";

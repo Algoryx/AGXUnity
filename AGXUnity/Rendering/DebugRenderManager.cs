@@ -1,7 +1,7 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
@@ -141,11 +141,23 @@ namespace AGXUnity.Rendering
       }
     }
 
+    private static string DefaultMaterialName = "Default Debug Render";
+
     /// <summary>
     /// Material used by the shapes.
     /// </summary>
     [SerializeField]
     private Material m_shapeRenderMaterial = null;
+
+    private static Material CreateDefaultMaterial()
+    {
+      var material = RenderingUtils.CreateDefaultMaterial();
+      material.name = DefaultMaterialName;
+      material.hideFlags = HideFlags.NotEditable;
+      RenderingUtils.SetColor( material, new Color( 172.0f/255, 28.0f/255, 28.0f/255 ) );
+      RenderingUtils.SetSmoothness( material, 0.0f );
+      return material;
+    }
 
     /// <summary>
     /// Instance of shape debug render material used by all debug rendered shapes.
@@ -156,16 +168,19 @@ namespace AGXUnity.Rendering
       get
       {
         if ( m_shapeRenderMaterial == null )
-          m_shapeRenderMaterial = PrefabLoader.Instantiate<Material>( "Materials/DebugRendererMaterial" );
+          m_shapeRenderMaterial = CreateDefaultMaterial();
         return m_shapeRenderMaterial;
       }
       set
       {
         if ( m_shapeRenderMaterial == value )
           return;
-
         m_shapeRenderMaterial = value;
-        var renderers = GetComponentsInChildren<Renderer>();
+
+        if ( m_shapeRenderMaterial == null )
+          m_shapeRenderMaterial = CreateDefaultMaterial();
+
+        var renderers = RuntimeObjects.GetOrCreateRoot(this).GetComponentsInChildren<Renderer>();
         foreach ( var renderer in renderers )
           renderer.sharedMaterial = m_shapeRenderMaterial;
       }
@@ -317,13 +332,23 @@ namespace AGXUnity.Rendering
 
       // Shapes with inactive game objects will be updated below when we're
       // traversing all children.
-      FindObjectsOfType<Collide.Shape>().ToList().ForEach(
+#if UNITY_2022_2_OR_NEWER
+      FindObjectsByType<Collide.Shape>( FindObjectsInactive.Include, FindObjectsSortMode.None ).ToList().ForEach(
         shape => SynchronizeShape( shape )
       );
 
-      FindObjectsOfType<Constraint>().ToList().ForEach(
+      FindObjectsByType<Constraint>( FindObjectsInactive.Include, FindObjectsSortMode.None ).ToList().ForEach(
         constraint => constraint.AttachmentPair.Synchronize()
       );
+#else
+      FindObjectsOfType<Collide.Shape>( true ).ToList().ForEach(
+        shape => SynchronizeShape( shape )
+      );
+
+      FindObjectsOfType<Constraint>( true ).ToList().ForEach(
+        constraint => constraint.AttachmentPair.Synchronize()
+      );
+#endif
 
       List<GameObject> gameObjectsToDestroy = new List<GameObject>();
       foreach ( var node in Children ) {
@@ -334,16 +359,18 @@ namespace AGXUnity.Rendering
 
         if ( proxy.Target == null )
           gameObjectsToDestroy.Add( node );
-        // FindObjectsOfType will not include the Shape if its game object is inactive.
-        // We're handling that shape here instead.
-        else if ( !proxy.Target.activeInHierarchy && proxy.Component is Collide.Shape )
-          SynchronizeShape( proxy.Component as Collide.Shape );
       }
 
       while ( gameObjectsToDestroy.Count > 0 ) {
         DestroyImmediate( gameObjectsToDestroy.Last() );
         gameObjectsToDestroy.RemoveAt( gameObjectsToDestroy.Count - 1 );
       }
+    }
+
+    public override void EditorUpdate()
+    {
+      if ( ShapeRenderMaterial.name == DefaultMaterialName && !ShapeRenderMaterial.SupportsPipeline( RenderingUtils.DetectPipeline() ) )
+        ShapeRenderMaterial = CreateDefaultMaterial();
     }
 
     [HideInInspector]

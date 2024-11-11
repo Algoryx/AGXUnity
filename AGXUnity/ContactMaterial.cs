@@ -64,7 +64,7 @@ namespace AGXUnity
     /// this contact material has been initialized.
     /// </summary>
     [AllowRecursiveEditing]
-    [Tooltip("One of the materials for which this ContactMaterial defines contacts")]
+    [Tooltip( "One of the materials for which this ContactMaterial defines contacts" )]
     public ShapeMaterial Material1
     {
       get { return m_material1; }
@@ -219,7 +219,7 @@ namespace AGXUnity
     /// <summary>
     /// Damping of the contact constraint. Default: 4.5 / 60 = 0.075.
     /// </summary>
-    [ClampAboveZeroInInspector(true)]
+    [ClampAboveZeroInInspector( true )]
     [Tooltip( "This defines the time it should take for the solver to restore an overlap. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
     public float Damping
     {
@@ -308,7 +308,7 @@ namespace AGXUnity
     /// <summary>
     /// Contact reduction mode, default Geometry.
     /// </summary>
-    [Tooltip(" Specifies at which level the contact reduction algorithm should be run. None, Geometry, or Geometry and Rigidbody")]
+    [Tooltip( " Specifies at which level the contact reduction algorithm should be run. None, Geometry, or Geometry and Rigidbody" )]
     public ContactReductionType ContactReductionMode
     {
       get { return m_contactReductionMode; }
@@ -337,9 +337,13 @@ namespace AGXUnity
       {
         m_contactReductionLevel = value;
         if ( Native != null ) {
-          var binResolution = m_contactReductionLevel == ContactReductionLevelType.Minimal  ? 3 :
-                              m_contactReductionLevel == ContactReductionLevelType.Moderate ? 2 :
-                                                                                              1;
+          var binResolution = m_contactReductionLevel switch
+          {
+            ContactReductionLevelType.Minimal => 3,
+            ContactReductionLevelType.Moderate => 2,
+            ContactReductionLevelType.Aggressive => 1,
+            _ => 2
+          };
           Native.setContactReductionBinResolution( Convert.ToByte( binResolution ) );
         }
       }
@@ -387,9 +391,13 @@ namespace AGXUnity
       UseContactArea        = contactMaterial.getUseContactAreaApproach();
       ContactReductionMode  = (ContactReductionType)contactMaterial.getContactReductionMode();
       var binResolution     = Convert.ToInt32( contactMaterial.getContactReductionBinResolution() );
-      ContactReductionLevel = binResolution == 3 ? ContactReductionLevelType.Minimal :
-                              binResolution == 2 ? ContactReductionLevelType.Moderate :
-                                                   ContactReductionLevelType.Aggressive;
+      ContactReductionLevel = binResolution switch
+      {
+        3 => ContactReductionLevelType.Minimal,
+        2 => ContactReductionLevelType.Moderate,
+        1 => ContactReductionLevelType.Aggressive,
+        _ => ContactReductionLevelType.Moderate,
+      };
       WireFrictionCoefficients = new Vector2( Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
                                               Convert.ToSingle( contactMaterial.getWireFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
 
@@ -455,7 +463,7 @@ namespace AGXUnity
       agx.Material m1 = Material1.GetInitialized<ShapeMaterial>().Native;
       agx.Material m2 = Material2.GetInitialized<ShapeMaterial>().Native;
       agx.ContactMaterial old = GetSimulation().getMaterialManager().getContactMaterial( m1, m2 );
-      if ( old != null ) {
+      if ( old != null && old.isExplicit() ) {
         Debug.LogWarning( name + ": Material manager already contains a contact material with this material pair. Ignoring this contact material.", this );
         return false;
       }

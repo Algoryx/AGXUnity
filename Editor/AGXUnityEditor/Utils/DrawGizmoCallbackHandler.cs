@@ -1,11 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
-using AGXUnity.Rendering;
+﻿using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Rendering;
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using Tool = AGXUnityEditor.Tools.Tool;
 
 namespace AGXUnityEditor.Utils
@@ -21,8 +20,7 @@ namespace AGXUnityEditor.Utils
       if ( cable.Native != null )
         return;
 
-      cable.TraverseRoutePoints( routePointData =>
-      {
+      cable.TraverseRoutePoints( routePointData => {
         var lineLength = 2.5f * cable.Radius;
 
         Gizmos.color = Color.red;
@@ -46,7 +44,7 @@ namespace AGXUnityEditor.Utils
         return;
 
       var nodes = wire.Route.ToArray();
-      Gizmos.color = (gizmoType & GizmoType.Selected) != 0 ? Color.green : Color.red;
+      Gizmos.color = ( gizmoType & GizmoType.Selected ) != 0 ? Color.green : Color.red;
       for ( int i = 1; i < nodes.Length; ++i )
         Gizmos.DrawLine( nodes[ i - 1 ].Position, nodes[ i ].Position );
     }
@@ -70,8 +68,7 @@ namespace AGXUnityEditor.Utils
       // Active assembly tool has special rendering needs.
       Tools.AssemblyTool assemblyTool = null;
 
-      ToolManager.Traverse<Tool>( activeTool =>
-      {
+      ToolManager.Traverse<Tool>( activeTool => {
         if ( assemblyTool == null && activeTool is Tools.AssemblyTool )
           assemblyTool = activeTool as Tools.AssemblyTool;
 
@@ -101,7 +98,11 @@ namespace AGXUnityEditor.Utils
         using ( m_colorHandler.BeginEndScope() ) {
           // Create unique colors for each rigid body in the scene.
           {
+#if UNITY_2022_2_OR_NEWER
+            var bodies = UnityEngine.Object.FindObjectsByType<RigidBody>(FindObjectsSortMode.None);
+#else
             var bodies = UnityEngine.Object.FindObjectsOfType<RigidBody>();
+#endif
             Array.Sort( bodies, ( b1, b2 ) => { return b1.GetInstanceID() > b2.GetInstanceID() ? -1 : 1; } );
 
             foreach ( var body in bodies ) {

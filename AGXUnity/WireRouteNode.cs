@@ -1,6 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -74,16 +75,18 @@ namespace AGXUnity
     /// If this route node is a winch, this field is set.
     /// </summary>
     [SerializeField]
-    private WireWinch m_winch = null;
+    [Obsolete]
+    [FormerlySerializedAs("m_winch")]
+    private Deprecated.WireWinch m_deprecatedWinchComponent = null;
+
+    [Obsolete]
+    public Deprecated.WireWinch DeprecatedWinchComponent => m_deprecatedWinchComponent;
 
     /// <summary>
     /// Get winch if assigned from the route.
     /// </summary>
-    public WireWinch Winch { get { return m_winch; } }
-
-    public WireRouteNode()
-    {
-    }
+    [field: SerializeReference]
+    public WireWinch Winch { get; private set; }
 
     /// <summary>
     /// Creates native instance given current properties.
@@ -118,12 +121,12 @@ namespace AGXUnity
       else if ( Type == Wire.NodeType.ContactNode )
         Native = new agxWire.WireContactNode( shape.NativeGeometry, CalculateLocalPosition( shape.gameObject ).ToHandedVec3() );
       else if ( Type == Wire.NodeType.WinchNode ) {
-        if ( m_winch == null )
+        if ( Winch == null )
           throw new AGXUnity.Exception( "No reference to a wire winch component in the winch node." );
 
-        m_winch.GetInitialized<WireWinch>();
+        Winch.Initialize( this );
 
-        Native = m_winch.Native != null ? m_winch.Native.getStopNode() : null;
+        Native = Winch.Native != null ? Winch.Native.getStopNode() : null;
       }
 
       return Native != null;
@@ -142,16 +145,12 @@ namespace AGXUnity
     /// </summary>
     private void OnNodeType()
     {
-      if ( m_winch != null ) {
-        if ( Wire == null || Type != Wire.NodeType.WinchNode ) {
-          ScriptComponent.DestroyImmediate( m_winch );
-          m_winch = null;
-        }
+      if ( Winch != null ) {
+        if ( Wire == null || Type != Wire.NodeType.WinchNode )
+          Winch = null;
       }
-      else if ( Wire != null && Type == Wire.NodeType.WinchNode ) {
-        m_winch = Wire.gameObject.AddComponent<WireWinch>();
-        m_winch.Wire = Wire;
-      }
+      else if ( Wire != null && Type == Wire.NodeType.WinchNode )
+        Winch = new WireWinch();
     }
   }
 }

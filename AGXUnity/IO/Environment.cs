@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 
 namespace AGXUnity.IO
 {
@@ -181,11 +181,7 @@ namespace AGXUnity.IO
     /// <returns>Path to the plugins folder.</returns>
     public static string GetPlayerPluginPath( string dataPath )
     {
-#if UNITY_2019_3_OR_NEWER
       return dataPath + "/Plugins/x86_64";
-#else
-      return dataPath + "/Plugins";
-#endif
     }
 
     /// <summary>
@@ -329,11 +325,7 @@ namespace AGXUnity.IO
       OnCLI();
     }
 #else
-#if UNITY_2019_1_OR_NEWER
     [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSplashScreen )]
-#else
-    [UnityEngine.RuntimeInitializeOnLoadMethod( UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad )]
-#endif
     private static void OnPlayerCli()
     {
       OnCLI();
@@ -390,7 +382,7 @@ namespace AGXUnity.IO
           if ( outputLicenseFile.Extension != LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
             outputLicenseFile = new FileInfo( $"{outputLicenseFile.FullName}{LicenseManager.GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
 
-          UnityEngine.Debug.Log( $"AGXUnity.CLI: Creating offline license given input \"{inputResponseFile.FullName}\" for " + 
+          UnityEngine.Debug.Log( $"AGXUnity.CLI: Creating offline license given input \"{inputResponseFile.FullName}\" for " +
                                  $"resulting license file \"{outputLicenseFile.FullName}\"." );
 
           var nativeHandler = NativeHandler.Instance;

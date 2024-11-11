@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -133,7 +133,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private Vector2 m_gearRatios = new Vector2( -10.0f, 10.0f );
 
-    [InspectorGroupBegin(Name = "Gear Box")]
+    [InspectorGroupBegin( Name = "Gear Box" )]
     public Vector2 GearRatios
     {
       get { return m_gearRatios; }
@@ -301,7 +301,7 @@ namespace AGXUnity.Model
       }
     }
 
-    [InspectorGroupBegin( Name = "Controlled Constraints")]
+    [InspectorGroupBegin( Name = "Controlled Constraints" )]
     [AllowRecursiveEditing]
     public Constraint SteeringHinge
     {
@@ -553,14 +553,14 @@ namespace AGXUnity.Model
     private TwoBodyTire GetOrCreateTireModel( WheelLocation location )
     {
       if ( m_tireModels == null || m_tireModels.Length == 0 ) {
-        m_tireModels = new TwoBodyTire[4] { null, null, null, null };
+        m_tireModels = new TwoBodyTire[ 4 ] { null, null, null, null };
         var tireModels = GetComponents<TwoBodyTire>();
         if ( tireModels.Length == 4 ) {
           foreach ( WheelLocation wl in Enum.GetValues( typeof( WheelLocation ) ) ) {
             var trb = GetOrFindWheel( wl );
             var rrb = FindChild<RigidBody>( wl.ToString() + "Rim" );
             m_tireModels[ (int)wl ] = tireModels.FirstOrDefault( tireModel => tireModel.TireRigidBody == trb &&
-                                                                              tireModel.RimRigidBody == rrb);
+                                                                              tireModel.RimRigidBody == rrb );
           }
         }
         else if ( tireModels.Length != 0 )
@@ -623,7 +623,7 @@ namespace AGXUnity.Model
     }
 
     private agxPowerLine.RotationalActuator[] m_actuators = new agxPowerLine.RotationalActuator[] { null, null, null, null };
- 
+
     private RigidBody[] m_wheelBodies = new RigidBody[] { null, null, null, null };
     private ObserverFrame m_frontBodyObserver = null;
     private RigidBody m_frontBody = null;

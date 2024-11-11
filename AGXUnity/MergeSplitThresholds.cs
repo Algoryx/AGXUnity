@@ -1,17 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace AGXUnity
 {
   [DoNotGenerateCustomEditor]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#merge-split-properties" )]
-  public class MergeSplitThresholds : ScriptAsset
+  public class MergeSplitThresholds<T> : ScriptAsset
+    where T : MergeSplitThresholds<T>
   {
-    [HideInInspector]
-    public static string ResourceDirectory { get { return @"MergeSplit"; } }
+    private static T s_defaultResource;
 
-    [InvokableInInspector("Reset to default")]
+    [HideInInspector]
+    public static T DefaultResource
+    {
+      get
+      {
+        if ( s_defaultResource == null ) {
+          s_defaultResource = CreateInstance<T>();
+          s_defaultResource.hideFlags = HideFlags.NotEditable;
+          s_defaultResource.name = "Default";
+        }
+        return s_defaultResource;
+      }
+    }
+
+    [InvokableInInspector( "Reset to default" )]
     public void OnResetToDefault()
     {
       ResetToDefault();

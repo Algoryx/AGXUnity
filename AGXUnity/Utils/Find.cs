@@ -38,7 +38,7 @@ namespace AGXUnity.Utils
       var cable  = rb != null || shape != null || wire != null ?
                      null :
                      parent.GetComponent<Cable>();
-      
+
       // Possible to have multiple tracks per game object.
       var tracks = rb != null || shape != null || wire != null || cable != null ?
                      null :

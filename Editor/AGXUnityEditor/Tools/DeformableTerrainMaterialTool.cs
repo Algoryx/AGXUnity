@@ -1,15 +1,13 @@
-﻿using System.Linq;
-using UnityEngine;
+﻿using AGXUnity.Model;
+using System.Linq;
 using UnityEditor;
-using AGXUnity;
-using AGXUnity.Model;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
-  [CustomTool( typeof( DeformableTerrainMaterial ))]
+  [CustomTool( typeof( DeformableTerrainMaterial ) )]
   public class DeformableTerrainMaterialTool : CustomTargetTool
   {
     public DeformableTerrainMaterial Material { get { return Targets[ 0 ] as DeformableTerrainMaterial; } }

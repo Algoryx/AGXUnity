@@ -65,6 +65,9 @@ You can find packages in [Releases](https://github.com/Algoryx/AGXUnity/releases
 
 | AGXUnity | Unity Editor | AGX Dynamics |
 | -------- | ------------ |------------- |
+| 5.2      | 2022.3 LTS   | 2.39.0.0     |
+| 5.1      | 2021.2       | 2.37.4.0     |
+| 5.0      | 2021.2       | 2.37.3.0     |
 | 4.7      | 2021.2       | 2.37.1.0     |
 | 4.6      | 2021.2       | 2.37.0.1     |
 | 4.5      | 2020.3 LTS   | 2.36.1.0     |

@@ -307,11 +307,7 @@ namespace AGXUnityEditor
         size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
         heightmapResolution = 257
       };
-#if UNITY_2018_1_OR_NEWER
       terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
-#else
-      terrainData.SetDetailResolution( 1024, terrainData.detailResolution );
-#endif
 
       var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
       AssetDatabase.CreateAsset( terrainData, terrainDataName );
@@ -345,18 +341,14 @@ namespace AGXUnityEditor
         size = new Vector3( 60 / 8.0f, 45, 60 / 8.0f ),
         heightmapResolution = 517
       };
-#if UNITY_2018_1_OR_NEWER
       terrainData.SetDetailResolution( 1024, terrainData.detailResolutionPerPatch );
-#else
-      terrainData.SetDetailResolution( 1024, terrainData.detailResolution );
-#endif
 
       var terrainDataName = AssetDatabase.GenerateUniqueAssetPath( "Assets/New Terrain.asset" );
       AssetDatabase.CreateAsset( terrainData, terrainDataName );
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
       go.name = Factory.CreateName<DeformableTerrainPager>();
-      if ( go == null ) { 
+      if ( go == null ) {
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
       }
@@ -386,7 +378,7 @@ namespace AGXUnityEditor
       go.AddComponent<MeshFilter>();
       var renderer = go.AddComponent<MeshRenderer>();
       renderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
-      RenderingUtils.SetMainTexture(renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ));
+      RenderingUtils.SetMainTexture( renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       go.AddComponent<MovableTerrain>();
 
       if ( command.context is GameObject ctx )
@@ -451,13 +443,13 @@ namespace AGXUnityEditor
 #if USE_VISUAL_SCRIPTING
       var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
       var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
-      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
+      AssetDatabase.CopyAsset( plotAssetPath, targetAssetPath );
 
       AssetDatabase.SaveAssets();
       AssetDatabase.Refresh();
 
       var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
-      sm.nest.SwitchToMacro(AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>(targetAssetPath));
+      sm.nest.SwitchToMacro( AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>( targetAssetPath ) );
 #endif
 
       return Selection.activeGameObject = PlotObject.gameObject;
@@ -554,6 +546,12 @@ namespace AGXUnityEditor
       Utils.CustomEditorGenerator.Generate();
     }
 
+    [MenuItem( "AGXUnity/Utils/Convert Rendering Materials", priority = 80 )]
+    public static void ConvertRenderingMaterials()
+    {
+      Windows.ConvertMaterialsWindow.Open();
+    }
+
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
     public static void OpenSettings()
     {
@@ -629,7 +627,7 @@ namespace AGXUnityEditor
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060, validate = true )]
     public static bool CheckForUpdatesWindowValidater()
     {
-      return PackageUpdateHandler.FindCurrentVersion().IsValid;
+      return PackageManifest.Instance.GetAGXUnityVersionInfo().IsValid;
     }
 
     [MenuItem( "AGXUnity/Check for Updates...", priority = 2060 )]

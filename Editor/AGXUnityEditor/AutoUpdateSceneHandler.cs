@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using AGXUnity;
+using AGXUnity.Utils;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEditor;
-using AGXUnity;
-using AGXUnity.Utils;
 
 namespace AGXUnityEditor
 {
@@ -18,7 +18,6 @@ namespace AGXUnityEditor
         return;
 
       VerifyOnSelectionTarget( scene );
-      VerifyShapeVisualsMaterial( scene );
       VerifySimulationInstance( scene );
       VerifyCableWireRendering( scene );
       VerifyTerrainMaterials();
@@ -32,7 +31,6 @@ namespace AGXUnityEditor
     /// <returns>true if changes were made, otherwise false</returns>
     public static bool VerifyPrefabInstance( GameObject instance )
     {
-#if UNITY_2018_3_OR_NEWER
       var isDisconnected =
 #if UNITY_2022_1_OR_NEWER
         false;
@@ -45,32 +43,15 @@ namespace AGXUnityEditor
       var objectToCheck = isDisconnected ?
                             instance :
                             (GameObject)PrefabUtility.GetCorrespondingObjectFromSource( instance );
-#else
-      var isDisconnected = PrefabUtility.GetPrefabType( instance ) != PrefabType.PrefabInstance;
-      
-      // We're modifying the instance and replacing the prefab in this "old" prefab
-      // work flow.
-      var objectToCheck = instance;
-#endif
 
       if ( !HandleSegmentSpawner( objectToCheck ) )
         return false;
 
       try {
         if ( !isDisconnected ) {
-#if UNITY_2018_3_OR_NEWER
           PrefabUtility.SaveAsPrefabAssetAndConnect( objectToCheck,
                                                      AssetDatabase.GetAssetPath( objectToCheck ),
                                                      InteractionMode.UserAction );
-#else
-          PrefabUtility.ReplacePrefab( objectToCheck,
-#if UNITY_2018_1_OR_NEWER
-                                       (GameObject)PrefabUtility.GetCorrespondingObjectFromSource( instance ),
-#else
-                                       PrefabUtility.GetPrefabParent( instance ),
-#endif
-                                       ReplacePrefabOptions.ConnectToPrefab );
-#endif
         }
       }
       catch ( System.ArgumentException ) {
@@ -88,7 +69,11 @@ namespace AGXUnityEditor
     /// </summary>
     private static void VerifyOnSelectionTarget( Scene scene )
     {
+#if UNITY_2022_2_OR_NEWER
+      var shapes = Object.FindObjectsByType<AGXUnity.Collide.Shape>(FindObjectsSortMode.None);
+#else
       var shapes = Object.FindObjectsOfType<AGXUnity.Collide.Shape>();
+#endif
       foreach ( var shape in shapes ) {
         OnSelectionProxy selectionProxy = shape.GetComponent<OnSelectionProxy>();
         if ( selectionProxy != null && selectionProxy.Target == null )
@@ -104,30 +89,13 @@ namespace AGXUnityEditor
       }
     }
 
-    /// <summary>
-    /// Shape visual components with sharedMaterial == null are assigned default material.
-    /// </summary>
-    private static void VerifyShapeVisualsMaterial( Scene scene )
-    {
-      var shapeVisuals = Object.FindObjectsOfType<AGXUnity.Rendering.ShapeVisual>();
-      foreach ( var shapeVisual in shapeVisuals ) {
-        var renderers = shapeVisual.GetComponentsInChildren<MeshRenderer>();
-        foreach ( var renderer in renderers ) {
-          if ( renderer.sharedMaterial == null ) {
-            renderer.sharedMaterial = Manager.GetOrCreateShapeVisualDefaultMaterial();
-
-            Debug.Log( "Shape visual with null material. Assigning default.", shapeVisual );
-
-            if ( !EditorApplication.isPlaying )
-              UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
-          }
-        }
-      }
-    }
-
     private static void VerifySimulationInstance( Scene scene )
     {
-      var simulation = Object.FindObjectOfType<Simulation>();
+#if UNITY_6000_0_OR_NEWER
+      var simulation = Object.FindAnyObjectByType<Simulation>( FindObjectsInactive.Include );
+#else
+      var simulation = Object.FindObjectOfType<Simulation>(true);
+#endif
       if ( simulation == null )
         return;
 
@@ -145,22 +113,24 @@ namespace AGXUnityEditor
       var containsChanges = false;
       System.Action<GameObject> checkGameObject = go =>
       {
-#if UNITY_2018_3_OR_NEWER
         var root = PrefabUtility.GetOutermostPrefabInstanceRoot( go );
-#else
-        var root = PrefabUtility.FindPrefabRoot( go );
-#endif
         if ( root != null )
           containsChanges = VerifyPrefabInstance( root ) || containsChanges;
         else
           containsChanges = HandleSegmentSpawner( go ) || containsChanges;
       };
 
+#if UNITY_2022_2_OR_NEWER
+      var cables = Object.FindObjectsByType<Cable>(FindObjectsSortMode.None);
+      var wires  = Object.FindObjectsByType<Wire>(FindObjectsSortMode.None);
+#else
       var cables = Object.FindObjectsOfType<Cable>();
+      var wires  = Object.FindObjectsOfType<Wire>();
+#endif
+
       foreach ( var cable in cables )
         checkGameObject( cable.gameObject );
 
-      var wires  = Object.FindObjectsOfType<Wire>();
       foreach ( var wire in wires )
         checkGameObject( wire.gameObject );
 

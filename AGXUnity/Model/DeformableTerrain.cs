@@ -4,7 +4,6 @@ using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.TerrainUtils;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
@@ -207,11 +206,7 @@ namespace AGXUnity.Model
         OnModification?.Invoke( Native, index, Terrain, unityIndex );
       }
 
-#if UNITY_2019_1_OR_NEWER
       TerrainData.SyncHeightmap();
-#else
-      Terrain.ApplyDelayedHeightmapModification();
-#endif
     }
 
     private GUIStyle m_textLabelStyle = null;
@@ -264,7 +259,7 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
-    public override float ElementSize => TerrainData.size.x / (TerrainDataResolution - 1);
+    public override float ElementSize => TerrainData.size.x / ( TerrainDataResolution - 1 );
     public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
@@ -401,13 +396,13 @@ namespace AGXUnity.Model
       var agxIdx = new agx.Vec2i( 0, 0 );
       var uTerr = Terrain;
       var uIdx = new Vector2Int( 0, 0 );
-      for (int y = 0; y < res; y++ ) {
+      for ( int y = 0; y < res; y++ ) {
         agxIdx.y = res - 1 - y;
         uIdx.y = y;
         for ( int x = 0; x < res; x++ ) {
           agxIdx.x = res - 1 - x;
           uIdx.x = x;
-          OnModification?.Invoke( Native,  agxIdx, uTerr, uIdx);
+          OnModification?.Invoke( Native, agxIdx, uTerr, uIdx );
         }
       }
     }
@@ -417,10 +412,10 @@ namespace AGXUnity.Model
       if ( Native == null )
         return true;
 
-      if(oldMat == null || newMat == null ) 
+      if ( oldMat == null || newMat == null )
         return false;
 
-      return Native.exchangeTerrainMaterial(oldMat.Native, newMat.Native);
+      return Native.exchangeTerrainMaterial( oldMat.Native, newMat.Native );
     }
 
     public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
@@ -428,7 +423,7 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      Native.setAssociatedMaterial(terrMat.Native, shapeMat.Native);
+      Native.setAssociatedMaterial( terrMat.Native, shapeMat.Native );
     }
 
     public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
@@ -436,7 +431,7 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      if(shape == null)
+      if ( shape == null )
         Native.addTerrainMaterial( terrMat.Native );
       else
         Native.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );

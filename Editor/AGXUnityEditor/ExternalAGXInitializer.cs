@@ -1,24 +1,25 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.IO;
 using System.Linq;
-using AGXUnity.IO;
-using AGXUnity.Utils;
-using UnityEngine;
+using System.Text.RegularExpressions;
 using UnityEditor;
-
+using UnityEngine;
 using Environment = AGXUnity.IO.Environment;
 
 namespace AGXUnityEditor
 {
-  public class ExternalAGXInitializer : ScriptableObject
+  [PreviousSettingsFile( FileName = "AGXInitData.asset" )]
+  public class ExternalAGXInitializer : AGXUnitySettings<ExternalAGXInitializer>
   {
     public string AGX_DIR         = string.Empty;
     public string AGX_DATA_DIR    = string.Empty;
     public string AGX_PLUGIN_PATH = string.Empty;
     public string[] AGX_BIN_PATH  = new string[] { };
 
-    [NonSerialized]
-    public static bool IsApplied = false;
+    public static bool IsApplied { get; private set; } = false;
+
+    public static string AppliedAGXVersion { get; private set; } = string.Empty;
 
     public bool HasData
     {
@@ -73,8 +74,22 @@ namespace AGXUnityEditor
         return false;
       }
 
+      AppliedAGXVersion = Regex.Match( agx.agxSWIG.agxGetVersion( false ), @".*(\d+\.\d+\.\d+\.\d+)" ).Groups[ 1 ].Value;
+
+      if ( !AppliedVersionCompatible && IgnoreIncompatibleVersion != PackageManifest.Instance.agx ) {
+        if ( EditorUtility.DisplayDialog( "Incompatible AGX versions",
+                                          $"The AGX version ({AppliedAGXVersion}) specified under AGXUnity > Settings > AGX Dynamics directory does not match the version that AGXUnity was built against ({PackageManifest.Instance.agx}). This might cause incorrect behaviour or crashes. Please select a compatible AGX Dynamics directory.",
+                                          "Open Settings",
+                                          "Ignore" ) )
+          SettingsService.OpenProjectSettings( "Project/AGXSettings" );
+        else
+          IgnoreIncompatibleVersion = PackageManifest.Instance.agx;
+      }
+
       return true;
     }
+
+    public static bool AppliedVersionCompatible => AppliedAGXVersion == PackageManifest.Instance.agx;
 
     public void Clear()
     {
@@ -103,25 +118,18 @@ namespace AGXUnityEditor
       return AGXDirectoryType.Unknown;
     }
 
-    public static ExternalAGXInitializer Instance
-    {
-      get
-      {
-        return EditorSettings.GetOrCreateEditorDataFolderFileInstance<ExternalAGXInitializer>( "/AGXInitData.asset",
-                                                                                               () => UserSaidNo = false );
-      }
-    }
+    protected override void OnCreated() => UserSaidNo = false;
 
     public static bool UserSaidNo
     {
-      get
-      {
-        return EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool;
-      }
-      set
-      {
-        EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool = value;
-      }
+      get => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool;
+      set => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_UserSaidNo" ).Bool = value;
+    }
+
+    public static string IgnoreIncompatibleVersion
+    {
+      get => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_IgnoreIncompatibleVersion" ).String;
+      set => EditorData.Instance.GetStaticData( "ExternalAGXInitializer_IgnoreIncompatibleVersion" ).String = value;
     }
 
     public static bool Initialize()
@@ -173,8 +181,7 @@ namespace AGXUnityEditor
       else
         instance.Clear();
 
-      EditorUtility.SetDirty( instance );
-      AssetDatabase.SaveAssets();
+      Instance.Save();
 
       return success;
 #else
@@ -196,10 +203,9 @@ namespace AGXUnityEditor
         Environment.RemoveFromPath( path );
 
       Instance.Clear();
-
-      EditorUtility.SetDirty( Instance );
+      Instance.Save();
       AssetDatabase.SaveAssets();
-      
+
       var success = false;
       if ( type == AGXDirectoryType.Checkout )
         success = Instance.InitializeCheckout( newAgxDir.FullName );
@@ -207,9 +213,7 @@ namespace AGXUnityEditor
         success = Instance.InitializeInstalled( newAgxDir.FullName );
 
       if ( success ) {
-        EditorUtility.SetDirty( Instance );
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
+        Instance.Save();
         EditorApplication.OpenProject( Path.Combine( Application.dataPath, ".." ) );
       }
     }
