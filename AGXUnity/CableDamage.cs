@@ -118,6 +118,9 @@ namespace AGXUnity
 
     void Update()
     {
+      if ( !enabled )
+        return;
+
       m_currentDamages = Native.getCurrentDamages();
       m_accumulatedDamages = Native.getAccumulatedDamages();
 
@@ -153,10 +156,12 @@ namespace AGXUnity
 
     protected override void OnEnable()
     {
+      RenderCableDamage = RenderCableDamage;
     }
 
     protected override void OnDisable()
     {
+      CableRenderer.SetRenderDamages( false );
     }
 
     private void Reset()

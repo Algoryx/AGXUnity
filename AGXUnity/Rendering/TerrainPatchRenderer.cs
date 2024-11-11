@@ -180,6 +180,25 @@ namespace AGXUnity.Rendering
       base.OnDestroy();
     }
 
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost-= PostStep;
+        terrain.OnModification -= UpdateTextureAt;
+      }
+
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost += PostStep;
+        terrain.OnModification += UpdateTextureAt;
+      }
+      base.OnEnable();
+    }
+
     private void PostStep()
     {
       var td = GetComponent<Terrain>().terrainData;

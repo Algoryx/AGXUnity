@@ -285,6 +285,20 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().remove( Native );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance && Native != null )
+        GetSimulation().add( Native );
+      base.OnEnable();
+    }
+
     private bool m_tireRimConstraintInitialState = true;
   }
 }

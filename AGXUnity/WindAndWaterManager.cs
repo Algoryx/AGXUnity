@@ -111,5 +111,19 @@ namespace AGXUnity
 
       base.OnDestroy();
     }
+
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().remove( Native );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().add( Native );
+      base.OnEnable();
+    }
   }
 }

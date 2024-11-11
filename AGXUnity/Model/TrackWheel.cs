@@ -261,6 +261,20 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
+    protected override void OnDisable()
+    {
+      if ( Native != null && !enabled )
+        Debug.LogWarning( "Disabling an initialized TrackWheel at runtime is not supported" );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Native != null )
+        Debug.LogWarning( "Enabling an initialized TrackWheel at runtime is not supported" );
+      base.OnEnable();
+    }
+
     private void Reset()
     {
       // We cannot use this.RigidBody when it used frame parent and

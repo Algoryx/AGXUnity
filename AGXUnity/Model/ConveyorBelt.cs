@@ -616,6 +616,26 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
+    protected override void OnEnable()
+    {
+      foreach ( var track in Tracks )
+        track.enabled = true;
+      base.OnEnable();
+    }
+
+    protected override void OnDisable()
+    {
+      foreach ( var track in Tracks )
+        track.enabled = false;
+      base.OnDisable();
+    }
+
+    public override void EditorUpdate()
+    {
+      foreach ( var track in Tracks )
+        track.enabled = enabled;
+    }
+
     private void SynchronizeNumberOfTracks()
     {
       var tracks = GetComponents<Track>();
@@ -764,6 +784,8 @@ namespace AGXUnity.Model
     {
       if ( m_nodeGizmoMesh == null )
         m_nodeGizmoMesh = Resources.GetBuiltinResource<Mesh>( "Cube.fbx" );
+      if ( !enabled )
+        return;
       var initialized = m_tracks != null && m_tracks.Length > 0;
       var tracks      = initialized ? m_tracks : FindTracks();
       var color       = Color.black;
