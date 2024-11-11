@@ -99,17 +99,21 @@ namespace AGXUnity
 
     protected override void OnEnable()
     {
-      var space = GetSimulation().getSpace();
-      foreach ( var pair in m_disabledPairs )
-        SetEnablePair( pair, false, space );
+      if ( Simulation.HasInstance ) {
+        var space = GetSimulation().getSpace();
+        foreach ( var pair in m_disabledPairs )
+          SetEnablePair( pair, false, space );
+      }
       base.OnEnable();
     }
 
     protected override void OnDisable()
     {
-      var space = GetSimulation().getSpace();
-      foreach ( var pair in m_disabledPairs )
-        SetEnablePair( pair, true, space );
+      if ( Simulation.HasInstance ) {
+        var space = GetSimulation().getSpace();
+        foreach ( var pair in m_disabledPairs )
+          SetEnablePair( pair, true, space );
+      }
       base.OnDisable();
     }
   }
