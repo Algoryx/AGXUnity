@@ -29,7 +29,7 @@ namespace AGXUnityEditor
     }
   }
 
-  [AttributeUsage( AttributeTargets.Class, AllowMultiple = false )]
+  [AttributeUsage( AttributeTargets.Class, AllowMultiple = true )]
   public class CustomContextAttribute : Attribute
   {
     /// <summary>

@@ -1,4 +1,3 @@
-using AGXUnityEditor.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,12 +41,12 @@ namespace AGXUnityEditor
         if ( !typeof( EditorToolContext ).IsAssignableFrom( type ) )
           continue;
 
-        var customCtxAttribute = type.GetCustomAttribute<CustomContextAttribute>( false );
+        var customCtxAttribute = type.GetCustomAttributes<CustomContextAttribute>( false );
         if ( customCtxAttribute == null )
           continue;
 
         // Exact match - break search.
-        if ( customCtxAttribute.Type == targetType ) {
+        if ( customCtxAttribute.Any( attr => attr.Type == targetType ) ) {
           customCtxTypes.Clear();
           customCtxTypes.Add( type );
           break;
@@ -56,7 +55,7 @@ namespace AGXUnityEditor
         // Type of custom tool desired type is assignable from current
         // target type. Store this if an exact match comes later.
         // E.g.: CustomTool( typeof( Shape ) ) and CustomTool( typeof( Box ) ).
-        else if ( customCtxAttribute.Type.IsAssignableFrom( targetType ) )
+        else if ( customCtxAttribute.Any( attr => attr.Type.IsAssignableFrom( targetType ) ) )
           customCtxTypes.Add( type );
       }
 

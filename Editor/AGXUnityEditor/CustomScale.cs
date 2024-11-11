@@ -1,12 +1,17 @@
 using AGXUnity.Collide;
 using AGXUnityEditor;
-using AGXUnityEditor.Utils;
 using System;
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEngine;
 
-[CustomContext( typeof( AGXUnity.Collide.Shape ) )]
+[CustomContext( typeof( AGXUnity.Collide.Box ) )]
+[CustomContext( typeof( AGXUnity.Collide.Capsule ) )]
+[CustomContext( typeof( AGXUnity.Collide.Cylinder ) )]
+[CustomContext( typeof( AGXUnity.Collide.Sphere ) )]
+[CustomContext( typeof( AGXUnity.Collide.Cone ) )]
+[CustomContext( typeof( AGXUnity.Collide.HollowCylinder ) )]
+[CustomContext( typeof( AGXUnity.Collide.HollowCone ) )]
 public class ScaleContext : EditorToolContext
 {
   protected override Type GetEditorToolType( Tool tool )
@@ -90,7 +95,7 @@ class ShapeScaleTool : EditorTool
     cone.TopRadius = Handles.ScaleSlider( cone.TopRadius, pos + transform.up * cone.Height, transform.forward, rot, size, 0.1f );
     Handles.color = s_YAxisColor;
     var newHeight = Handles.ScaleSlider( cone.Height, center, transform.up, rot, size, 0.1f );
-    if(newHeight != cone.Height ) {
+    if ( newHeight != cone.Height ) {
       cone.Height = newHeight;
       transform.position = center - transform.up * cone.Height * 0.5f;
     }
@@ -125,6 +130,43 @@ class ShapeScaleTool : EditorTool
       cyl.Radius = newScale.z;
   }
 
+  private void HandleHollowCone( HollowCone cone )
+  {
+    var size = HandleUtility.GetHandleSize(pos);
+
+    var c = Handles.color;
+
+    var center = pos + transform.up * cone.Height * 0.5f;
+
+    Handles.color = s_ZAxisColor;
+    cone.BottomRadius = Handles.ScaleSlider( cone.BottomRadius, pos, transform.forward, rot, size, 0.1f );
+    Handles.color = s_XAxisColor;
+    cone.TopRadius = Handles.ScaleSlider( cone.TopRadius, pos + transform.up * cone.Height, transform.forward, rot, size, 0.1f );
+    Handles.color = s_YAxisColor;
+    var newHeight = Handles.ScaleSlider( cone.Height, center, transform.up, rot, size, 0.1f );
+    if ( newHeight != cone.Height ) {
+      cone.Height = newHeight;
+      transform.position = center - transform.up * cone.Height * 0.5f;
+    }
+
+    Handles.color = c;
+
+    if ( Event.current.type == EventType.MouseDown ) {
+      m_initialBR = cone.BottomRadius;
+      m_initialTR = cone.TopRadius;
+      m_initialHeight = cone.Height;
+    }
+
+    EditorGUI.BeginChangeCheck();
+    var scale = Handles.ScaleValueHandle( 1.0f, center, rot, size, Handles.CubeHandleCap, 0.1f );
+    if ( EditorGUI.EndChangeCheck() ) {
+      cone.BottomRadius = m_initialBR * scale;
+      cone.TopRadius = m_initialTR * scale;
+      cone.Height = m_initialHeight * scale;
+      transform.position = center - transform.up * cone.Height * 0.5f;
+    }
+  }
+
   public override void OnToolGUI( EditorWindow _ )
   {
     if ( target == null )
@@ -137,17 +179,21 @@ class ShapeScaleTool : EditorTool
     rot = GO.transform.rotation;
 
     var shape = GO.GetComponent<Shape>();
+    if ( shape == null )
+      return;
+
     Undo.RecordObject( shape, "Resize collider" );
-    Undo.RecordObject( transform, "transform");
+    Undo.RecordObject( transform, "transform" );
 
     switch ( shape ) {
-      case Box box:               HandleBox( box );               break;
-      case Capsule cap:           HandleCapsule( cap );           break;
-      case Cylinder cyl:          HandleCylinder( cyl );          break;
-      case Sphere sphere:         HandleSphere( sphere );         break;
-      case Cone cone:             HandleCone( cone );             break;
+      case Box box: HandleBox( box ); break;
+      case Capsule cap: HandleCapsule( cap ); break;
+      case Cylinder cyl: HandleCylinder( cyl ); break;
+      case Sphere sphere: HandleSphere( sphere ); break;
+      case Cone cone: HandleCone( cone ); break;
       case HollowCylinder holCyl: HandleHollowCylinder( holCyl ); break;
+      case HollowCone holCone: HandleHollowCone( holCone ); break;
     }
-    
+
   }
 }
