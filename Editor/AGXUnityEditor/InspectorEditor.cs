@@ -252,7 +252,7 @@ namespace AGXUnityEditor
       m_targetType = null;
       m_targetGameObjects = null;
       m_numTargetGameObjectsTargetComponents = 0;
-      
+
       UnityEditor.EditorTools.ToolManager.SetActiveContext( null );
     }
 
