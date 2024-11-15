@@ -278,11 +278,13 @@ namespace AGXUnityEditor.Tools
           using ( InspectorGUI.IndentScope.Single ) {
             var foldoutState = NodeFoldout( validatedNode );
             if ( foldoutState.Foldout ) {
+              var tool = GetRouteNodeTool( node );
+
+              tool.OnPreTargetMembersGUI();
               OnPreFrameGUI( node );
-
               InspectorGUI.HandleFrame( node, 1 );
-
               OnPostFrameGUI( node );
+              tool.OnPostTargetMembersGUI();
             }
 
             if ( listOpNode == null && foldoutState.ButtonPressed )

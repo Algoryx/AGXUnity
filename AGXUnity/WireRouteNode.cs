@@ -5,6 +5,23 @@ using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
+
+  [Serializable]
+  public class EyeNodeData : IExtraNodeData
+  {
+
+    [field: SerializeField]
+    public Vector2 FrictionCoefficients { get; set; } = new Vector2( 0, 0 );
+
+
+    public virtual bool Initialize( WireRouteNode parent )
+    {
+      parent.Native.getMaterial().setFrictionCoefficient( FrictionCoefficients.x, agxWire.NodeMaterial.Direction.NEGATIVE );
+      parent.Native.getMaterial().setFrictionCoefficient( FrictionCoefficients.y, agxWire.NodeMaterial.Direction.POSITIVE );
+      return true;
+    }
+  }
+
   /// <summary>
   /// Representation of nodes, used while routing.
   /// </summary>
@@ -129,6 +146,9 @@ namespace AGXUnity
         Native = Winch.Native != null ? Winch.Native.getStopNode() : null;
       }
 
+      if ( NodeData != null && Native != null )
+        NodeData.Initialize( this );
+
       return Native != null;
     }
 
@@ -151,6 +171,13 @@ namespace AGXUnity
       }
       else if ( Wire != null && Type == Wire.NodeType.WinchNode )
         Winch = new WireWinch();
+
+      if ( Type == Wire.NodeType.EyeNode ) {
+        if ( NodeData is not EyeNodeData )
+          NodeData = new EyeNodeData();
+      }
+      else
+        NodeData = null;
     }
   }
 }
