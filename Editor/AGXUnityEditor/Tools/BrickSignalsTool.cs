@@ -2,7 +2,6 @@ using AGXUnity.IO.BrickIO;
 using AGXUnityEditor;
 using AGXUnityEditor.Tools;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 [CustomTool( typeof( BrickSignals ) )]

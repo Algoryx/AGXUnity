@@ -60,7 +60,7 @@ namespace AGXUnityEditor.IO.BrickIO
         }
       }
       Debug.Log( $"Copied {num} brick source files to '{brickTarDir}'" );
-      if(copiedDeps.Count > 0)
+      if ( copiedDeps.Count > 0 )
         Debug.Log( $"Copied {copiedDeps.Count} brick dependencies to '{brickTarDir}'" );
     }
 

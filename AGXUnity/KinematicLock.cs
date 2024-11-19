@@ -24,7 +24,7 @@ namespace AGXUnity
     public void Remove( RigidBody body )
     {
       m_lockedBodies.Remove( body );
-      if ( Native != null) {
+      if ( Native != null ) {
         var nativeBody = body.GetInitialized().Native;
         Native.remove( nativeBody );
       }

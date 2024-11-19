@@ -1,7 +1,6 @@
 using AGXUnity;
 using AGXUnity.IO.BrickIO;
 using AGXUnityEditor.UIElements;
-using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
@@ -55,8 +54,7 @@ namespace AGXUnityEditor.IO.BrickIO
       CopyIcon.style.width = 12;
       CopyIcon.style.backgroundImage = EditorGUIUtility.FindTexture( "Clipboard" );
       CopyIcon.style.unityBackgroundImageTintColor = normalTint;
-      CopyIcon.RegisterCallback<MouseDownEvent>( mde =>
-      {
+      CopyIcon.RegisterCallback<MouseDownEvent>( mde => {
         GUIUtility.systemCopyBuffer = err.raw;
         CopyIcon.style.unityBackgroundImageTintColor = downTint;
         mde.StopPropagation();
@@ -75,7 +73,7 @@ namespace AGXUnityEditor.IO.BrickIO
       return row;
     }
 
-    private string GetDocumentPathShort(string documentPath)
+    private string GetDocumentPathShort( string documentPath )
     {
       var normalizedDoc = documentPath.Replace("\\","/");
       var normalizedApp = Application.dataPath.Replace("\\","/")+"/";

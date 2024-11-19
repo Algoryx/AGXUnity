@@ -82,7 +82,8 @@ namespace AGXUnityEditor.Tools
 
     private TrackNodeVariation VariationGUI( string name, TrackNodeVariation variation )
     {
-      var current = variation switch {
+      var current = variation switch
+      {
         SinusoidalVariation => VariationType.Sinusoidal,
         DiscretePulseVariation => VariationType.DiscretePulse,
         _ => VariationType.None
@@ -90,20 +91,21 @@ namespace AGXUnityEditor.Tools
       var next = (VariationType)EditorGUILayout.EnumPopup( name, current );
 
       if ( next != current ) {
-        return next switch {
+        return next switch
+        {
           VariationType.DiscretePulse => new DiscretePulseVariation(),
           VariationType.Sinusoidal => new SinusoidalVariation(),
           _ => null
         };
       }
 
-      if(variation is SinusoidalVariation sin) {
-        sin.Amplitude = Mathf.Max(EditorGUILayout.FloatField( "Amplitude", sin.Amplitude ),0.0f);
-        sin.Period = Mathf.Max(EditorGUILayout.FloatField( "Period", sin.Period ),0.01f);
-      } 
+      if ( variation is SinusoidalVariation sin ) {
+        sin.Amplitude = Mathf.Max( EditorGUILayout.FloatField( "Amplitude", sin.Amplitude ), 0.0f );
+        sin.Period = Mathf.Max( EditorGUILayout.FloatField( "Period", sin.Period ), 0.01f );
+      }
       else if ( variation is DiscretePulseVariation disc ) {
-        disc.Amplitude = Mathf.Max(EditorGUILayout.FloatField( "Amplitude", disc.Amplitude ),0.0f);
-        disc.Period = Mathf.Max(EditorGUILayout.IntField( "Period", disc.Period ),1);
+        disc.Amplitude = Mathf.Max( EditorGUILayout.FloatField( "Amplitude", disc.Amplitude ), 0.0f );
+        disc.Period = Mathf.Max( EditorGUILayout.IntField( "Period", disc.Period ), 1 );
       }
 
       return variation;

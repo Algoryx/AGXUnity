@@ -22,11 +22,11 @@ namespace AGXUnity.IO.BrickIO
     {
 
       var bo = go.GetOrCreateComponent<BrickObject>();
-      if(bo.SourceDeclarations.Count == 0 || overrideName ) {
+      if ( bo.SourceDeclarations.Count == 0 || overrideName ) {
         var nameShort = name.Split('.').Last();
         go.name = nameShort;
       }
-      bo.SourceDeclarations.Add(name);
+      bo.SourceDeclarations.Add( name );
     }
   }
 }

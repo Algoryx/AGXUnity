@@ -1,7 +1,6 @@
+using AGXUnity.IO.BrickIO;
 using UnityEditor;
 using UnityEngine;
-
-using AGXUnity.IO.BrickIO;
 
 namespace AGXUnityEditor.IO.BrickIO
 {
