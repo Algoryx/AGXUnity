@@ -110,6 +110,45 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Create a new constraint given type and constraint frames.
+    /// </summary>
+    /// <param name="type">Constraint type.</param>
+    /// <param name="referenceFrame">Reference frame.</param>
+    /// <param name="connectedFrame">Connected frame.</param>
+    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
+    public static Constraint CreateInplace( ConstraintType type,
+                                             ConstraintFrame referenceFrame,
+                                             ConstraintFrame connectedFrame,
+                                             GameObject obj )
+    {
+      if ( type == ConstraintType.Unknown ) {
+        Debug.LogWarning( "Unable to create constraint - unknown constraint type." );
+        return null;
+      }
+
+      GameObject constraintGameObject = obj;
+      try {
+        Constraint constraint = constraintGameObject.AddComponent<Constraint>();
+        constraint.Type = type;
+
+        constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
+        constraint.AttachmentPair.ConnectedFrame = connectedFrame ?? new ConstraintFrame();
+
+        // Creating a temporary native instance of the constraint, including a rigid body and frames.
+        // Given this native instance we copy the default configuration.
+        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) )
+          constraint.TryAddElementaryConstraints( tmpNative.Instance );
+
+        return constraint;
+      }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
+        DestroyImmediate( constraintGameObject );
+        return null;
+      }
+    }
+
+    /// <summary>
     /// Create a new constraint component given constraint type.
     /// </summary>
     /// <param name="type">Constraint type.</param>

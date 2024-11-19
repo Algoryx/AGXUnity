@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace AGXUnityEditor.UIElements
@@ -93,6 +94,14 @@ namespace AGXUnityEditor.UIElements
     {
       ve.SetBorderColor( color );
       ve.SetBorderWidth( width );
+    }
+
+    public static void SetImage( this Toggle toggle, StyleBackground background )
+    {
+      var check = toggle.ElementAt(0).ElementAt(0);
+      check.style.backgroundImage = background;
+      check.style.unityBackgroundImageTintColor = toggle.value ? Color.white : Color.grey;
+      toggle.RegisterValueChangedCallback( ce => check.style.unityBackgroundImageTintColor = ce.newValue ? Color.white : Color.grey );
     }
   }
 }
