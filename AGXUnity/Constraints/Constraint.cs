@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -154,9 +154,12 @@ namespace AGXUnity
     /// <returns>ESolveType</returns>
     public static ESolveType Convert( agx.Constraint.SolveType solveType )
     {
-      return solveType == agx.Constraint.SolveType.DIRECT    ? ESolveType.Direct :
-             solveType == agx.Constraint.SolveType.ITERATIVE ? ESolveType.Iterative :
-                                                               ESolveType.DirectAndIterative;
+      return solveType switch
+      {
+        agx.Constraint.SolveType.DIRECT => ESolveType.Direct,
+        agx.Constraint.SolveType.ITERATIVE => ESolveType.Iterative,
+        _ => ESolveType.DirectAndIterative
+      };
     }
 
     /// <summary>
@@ -166,9 +169,12 @@ namespace AGXUnity
     /// <returns>Native solve type.</returns>
     public static agx.Constraint.SolveType Convert( ESolveType solveType )
     {
-      return solveType == ESolveType.Direct    ? agx.Constraint.SolveType.DIRECT :
-             solveType == ESolveType.Iterative ? agx.Constraint.SolveType.ITERATIVE :
-                                                 agx.Constraint.SolveType.DIRECT_AND_ITERATIVE;
+      return solveType switch
+      {
+        ESolveType.Direct => agx.Constraint.SolveType.DIRECT,
+        ESolveType.Iterative => agx.Constraint.SolveType.ITERATIVE,
+        _ => agx.Constraint.SolveType.DIRECT_AND_ITERATIVE
+      };
     }
 
     /// <summary>
@@ -312,13 +318,13 @@ namespace AGXUnity
     /// List of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [SerializeReference]
-    private List<ElementaryConstraint> m_elementaryConstraints = new List<ElementaryConstraint>();
+    private List<ElementaryConstraint> m_elementaryConstraintsNew = new List<ElementaryConstraint>();
 
     /// <summary>
     /// Array of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [HideInInspector]
-    public ElementaryConstraint[] ElementaryConstraints { get { return m_elementaryConstraints.ToArray(); } }
+    public ElementaryConstraint[] ElementaryConstraints { get { return m_elementaryConstraintsNew.ToArray(); } }
 
     /// <summary>
     /// Finds and returns an array of ordinary ElementaryConstraint objects, i.e., the ones
@@ -328,7 +334,7 @@ namespace AGXUnity
     public ElementaryConstraint[] GetOrdinaryElementaryConstraints()
     {
       return ( from ec
-               in m_elementaryConstraints
+               in m_elementaryConstraintsNew
                where ec as ElementaryConstraintController == null &&
                     !ec.NativeName.StartsWith( "F" ) && // Ignoring friction controller from versions
                                                         // it wasn't implemented in.
@@ -346,7 +352,7 @@ namespace AGXUnity
     public ElementaryConstraintController[] GetElementaryConstraintControllers()
     {
       return ( from ec
-               in m_elementaryConstraints
+               in m_elementaryConstraintsNew
                where ec is ElementaryConstraintController
                select ec as ElementaryConstraintController ).ToArray();
     }
@@ -557,13 +563,13 @@ namespace AGXUnity
     public bool VerifyImplementation()
     {
       if ( Type == ConstraintType.Hinge ) {
-        var swing = m_elementaryConstraints.FirstOrDefault( ec => ec.NativeName == "SW" );
+        var swing = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "SW" );
         // Already created with swing - hinge is up to date.
         if ( swing != null )
           return false;
 
-        var ecUn = m_elementaryConstraints.FirstOrDefault( ec => ec.NativeName == "D1_UN" );
-        var ecVn = m_elementaryConstraints.FirstOrDefault( ec => ec.NativeName == "D1_VN" );
+        var ecUn = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "D1_UN" );
+        var ecVn = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "D1_VN" );
         // Not swing nor dot1's - this is an unknown configuration.
         if ( ecUn == null || ecVn == null ) {
           Debug.LogWarning( "Trying to patch hinge but the elementary constraint configuration is undefined.", this );
@@ -583,20 +589,14 @@ namespace AGXUnity
         swing.RowData[ 0 ].CopyFrom( ecUn.RowData[ 0 ] );
         swing.RowData[ 1 ].CopyFrom( ecVn.RowData[ 0 ] );
 
-        m_elementaryConstraints.Insert( m_elementaryConstraints.IndexOf( ecUn ), swing );
-        m_elementaryConstraints.Remove( ecUn );
-        m_elementaryConstraints.Remove( ecVn );
+        m_elementaryConstraintsNew.Insert( m_elementaryConstraintsNew.IndexOf( ecUn ), swing );
+        m_elementaryConstraintsNew.Remove( ecUn );
+        m_elementaryConstraintsNew.Remove( ecVn );
 
         return true;
       }
 
       return false;
-    }
-
-    [Obsolete]
-    public void MigrateElementaryConstraints( List<ElementaryConstraint> newEcs)
-    {
-      m_elementaryConstraints = newEcs;
     }
 
     /// <summary>
@@ -612,7 +612,7 @@ namespace AGXUnity
         throw new ArgumentNullException( "native", "Native constraint is null." );
 
       // Remove old elementary constraints
-      m_elementaryConstraints.Clear();
+      m_elementaryConstraintsNew.Clear();
 
       for ( uint i = 0; i < native.getNumElementaryConstraints(); ++i ) {
         if ( native.getElementaryConstraint( i ).getName() == "" )
@@ -624,7 +624,7 @@ namespace AGXUnity
 
         onObjectCreated?.Invoke( ec );
 
-        m_elementaryConstraints.Add( ec );
+        m_elementaryConstraintsNew.Add( ec );
       }
 
       for ( uint i = 0; i < native.getNumSecondaryConstraints(); ++i ) {
@@ -637,7 +637,7 @@ namespace AGXUnity
 
         onObjectCreated?.Invoke( sc );
 
-        m_elementaryConstraints.Add( sc );
+        m_elementaryConstraintsNew.Add( sc );
       }
     }
 
@@ -648,7 +648,7 @@ namespace AGXUnity
     /// <param name="force">Force change, i.e., ignore that this constraint has been initialized.</param>
     public void SetType( ConstraintType type, bool force )
     {
-      if ( !force && m_elementaryConstraints.Count > 0 ) {
+      if ( !force && m_elementaryConstraintsNew.Count > 0 ) {
         Debug.LogWarning( "Not possible to change constraint type when the constraint has been constructed. Ignoring new type.", this );
         return;
       }
@@ -674,7 +674,7 @@ namespace AGXUnity
         return;
       }
 
-      m_elementaryConstraints.Clear();
+      m_elementaryConstraintsNew.Clear();
 
       SetType( type, true );
 
@@ -853,7 +853,7 @@ namespace AGXUnity
 
       SynchronizeNativeFramesWithAttachmentPair();
 
-      if (m_isAnimated) {
+      if ( m_isAnimated ) {
         var controllers = GetElementaryConstraintControllers();
         for ( int i = 0; i < controllers.Length; ++i )
           PropertySynchronizer.Synchronize( controllers[ i ] );
@@ -935,7 +935,7 @@ namespace AGXUnity
     {
       get
       {
-        if(m_gizmosMesh == null)
+        if ( m_gizmosMesh == null )
           m_gizmosMesh = Resources.Load<Mesh>( @"Debug/Models/arrow" );
         return m_gizmosMesh;
       }

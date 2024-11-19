@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -8,7 +8,7 @@ namespace AGXUnity
   /// Mass properties of a RigidBody.
   /// </summary>
   [Serializable]
-  public class MassProperties: IPropertySynchronizable
+  public class MassProperties : IPropertySynchronizable
   {
     [HideInInspector]
     [field: SerializeField]
@@ -92,7 +92,8 @@ namespace AGXUnity
     public DefaultAndUserValueVector3 InertiaOffDiagonal
     {
       get { return m_inertiaOffDiagonal; }
-      private set { 
+      private set
+      {
         m_inertiaOffDiagonal = value;
 
         // If we have UseDefault, the inertia tensor has been
@@ -128,7 +129,7 @@ namespace AGXUnity
     private Vector3 m_massCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
 
     [HideInInspector]
-    [ClampAboveZeroInInspector(true)]
+    [ClampAboveZeroInInspector( true )]
     public Vector3 MassCoefficients
     {
       get { return m_massCoefficients; }
@@ -158,7 +159,7 @@ namespace AGXUnity
       }
     }
 
-    public MassProperties(RigidBody parent)
+    public MassProperties( RigidBody parent )
     {
       RigidBody = parent;
       // When the user clicks "Update" in the editor we receive

@@ -1,16 +1,14 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Collections.Generic;
-
-using UnityEngine;
+using System.IO;
+using System.Linq;
 using UnityEditor;
-
-using Debug = UnityEngine.Debug;
-using SceneManager = UnityEngine.SceneManagement.SceneManager;
-using Scene = UnityEngine.SceneManagement.Scene;
-using EditorSceneManager = UnityEditor.SceneManagement.EditorSceneManager;
 using UnityEditor.SceneManagement;
+using UnityEngine;
+using Debug = UnityEngine.Debug;
+using EditorSceneManager = UnityEditor.SceneManagement.EditorSceneManager;
+using Scene = UnityEngine.SceneManagement.Scene;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace AGXUnityEditor
 {

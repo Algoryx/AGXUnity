@@ -78,7 +78,7 @@ namespace AGXUnity
       }
     }
 
-    public void RestoreLocalDataFrom( agxWire.WireWinchController native ) 
+    public void RestoreLocalDataFrom( agxWire.WireWinchController native )
     {
       if ( native == null )
         return;

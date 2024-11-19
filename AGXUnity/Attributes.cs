@@ -194,10 +194,10 @@ namespace AGXUnity
 
     public bool OptionalOverrideIsValid( object value )
     {
-      var wrappedType = value.GetType().GenericTypeArguments[0];
-      var ooType = typeof(OptionalOverrideValue<>).MakeGenericType( wrappedType );
+      var wrappedType = value.GetType().GenericTypeArguments[ 0 ];
+      var ooType = typeof( OptionalOverrideValue<> ).MakeGenericType( wrappedType );
       var wrappedVal = ooType.GetProperty( "OverrideValue" ).GetValue( value );
-      var validator = this.GetType().GetMethod("IsValid",new Type[] { wrappedType } );
+      var validator = this.GetType().GetMethod( "IsValid", new Type[] { wrappedType } );
       if ( validator == null )
         return true;
       return (bool)validator.Invoke( this, new object[] { wrappedVal } );
@@ -224,6 +224,6 @@ namespace AGXUnity
   public class StringAsFilePicker : Attribute
   {
     public bool IsFolder { get; private set; }
-    public StringAsFilePicker(bool IsFolder = false) { this.IsFolder = IsFolder; }
+    public StringAsFilePicker( bool IsFolder = false ) { this.IsFolder = IsFolder; }
   }
 }

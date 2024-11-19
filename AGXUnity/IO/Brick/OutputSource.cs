@@ -1,6 +1,5 @@
-using Brick.Physics.Signals;
 using System;
-using Output = Brick.Physics.Signals.Output;
+using Output = openplx.Physics.Signals.Output;
 
 namespace AGXUnity.IO.BrickIO
 {

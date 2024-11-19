@@ -1,4 +1,4 @@
-﻿using agx;
+using agx;
 using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;

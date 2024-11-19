@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Object = Brick.Core.Object;
+using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -33,11 +33,11 @@ namespace AGXUnity.IO.BrickIO
 
     private void MapObject( Object obj )
     {
-      if ( obj is Brick.Physics3D.System system )
+      if ( obj is openplx.Physics3D.System system )
         MapSystem( system );
     }
 
-    private void MapSystem( Brick.Physics3D.System system )
+    private void MapSystem( openplx.Physics3D.System system )
     {
       //MapSystemPass1( system );
       MapSystemPass2( system );
@@ -45,12 +45,12 @@ namespace AGXUnity.IO.BrickIO
       MapSystemPass4( system );
     }
 
-    void MapSystemPass2( Brick.Physics3D.System system )
+    void MapSystemPass2( openplx.Physics3D.System system )
     {
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass2( subSystem );
 
-      foreach ( var rotBod in system.getValues<Brick.Physics1D.Bodies.RotationalBody>() ) {
+      foreach ( var rotBod in system.getValues<openplx.Physics1D.Bodies.RotationalBody>() ) {
         var mapped = DrivetrainMapper.MapRotationalBody( rotBod );
         MapperData.UnitCache[ rotBod ] = mapped;
         MapperData.RuntimeMap[ rotBod.getName() ] = mapped;
@@ -58,45 +58,45 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    void MapSystemPass4( Brick.Physics3D.System system )
+    void MapSystemPass4( openplx.Physics3D.System system )
     {
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
-      foreach ( var gear in system.getValues<Brick.DriveTrain.Gear>() ) {
+      foreach ( var gear in system.getValues<openplx.DriveTrain.Gear>() ) {
         var mapped = DrivetrainMapper.MapGear( gear );
         MapperData.RuntimeMap[ gear.getName() ] = mapped;
         MapperData.PowerLine.add( mapped );
       }
 
-      foreach ( var gearbox in system.getValues<Brick.DriveTrain.GearBox>() ) {
+      foreach ( var gearbox in system.getValues<openplx.DriveTrain.GearBox>() ) {
         var mapped = DrivetrainMapper.MapGearBox( gearbox );
         MapperData.RuntimeMap[ gearbox.getName() ] = mapped;
         MapperData.PowerLine.add( mapped );
       }
 
-      foreach ( var diff in system.getValues<Brick.DriveTrain.Differential>() ) {
+      foreach ( var diff in system.getValues<openplx.DriveTrain.Differential>() ) {
         var mapped = DrivetrainMapper.MapDifferential( diff );
         MapperData.RuntimeMap[ diff.getName() ] = mapped;
         MapperData.PowerLine.add( mapped );
       }
 
-      foreach ( var tc in system.getValues<Brick.DriveTrain.EmpiricalTorqueConverter>()) {
+      foreach ( var tc in system.getValues<openplx.DriveTrain.EmpiricalTorqueConverter>() ) {
         var mapped = DrivetrainMapper.MapTorqueConverter( tc );
         MapperData.RuntimeMap[ tc.getName() ] = mapped;
         MapperData.PowerLine.add( mapped );
       }
 
-      foreach ( var engine in system.getValues<Brick.DriveTrain.CombustionEngine>()) {
+      foreach ( var engine in system.getValues<openplx.DriveTrain.CombustionEngine>() ) {
         var mapped = DrivetrainMapper.MapCombustionEngine(engine);
         MapperData.RuntimeMap[ engine.getName() ] = mapped;
         MapperData.PowerLine.add( mapped );
       }
 
-      foreach ( var actuator in system.getValues<Brick.DriveTrain.Actuator>() )
+      foreach ( var actuator in system.getValues<openplx.DriveTrain.Actuator>() )
         DrivetrainMapper.MapActuator( actuator );
 
-      foreach ( var rvm in system.getValues<Brick.Physics1D.Interactions.RotationalVelocityMotor>() ) {
+      foreach ( var rvm in system.getValues<openplx.Physics1D.Interactions.RotationalVelocityMotor>() ) {
         var mapped = DrivetrainMapper.Map1dRotationalVelocityMotor( rvm );
         MapperData.RuntimeMap[ rvm.getName() ] = mapped;
         Simulation.Instance.Native.add( mapped );

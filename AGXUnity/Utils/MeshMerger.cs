@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Utils
@@ -40,18 +39,18 @@ namespace AGXUnity.Utils
         m_toWorld = transform.localToWorldMatrix;
     }
 
-    public bool MergeNearby(float mergeNearbyDistance)
+    public bool MergeNearby( float mergeNearbyDistance )
     {
-      if (m_vertices.Count == 0)
+      if ( m_vertices.Count == 0 )
         return false;
 
       var reducedVertices = new agx.Vec3Vector();
       var reducedIndices = new agx.UInt32Vector();
-      agxUtil.agxUtilSWIG.mergeDuplicateVertices(Vertices,
-                                           Indices,
-                                           reducedVertices,
-                                           reducedIndices,
-                                           mergeNearbyDistance);
+      agxUtil.agxUtilSWIG.mergeDuplicateVertices( Vertices,
+                                                  Indices,
+                                                  reducedVertices,
+                                                  reducedIndices,
+                                                  mergeNearbyDistance );
 
       m_vertices = reducedVertices;
       m_indices = reducedIndices;

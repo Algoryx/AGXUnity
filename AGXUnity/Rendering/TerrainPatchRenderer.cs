@@ -101,7 +101,7 @@ namespace AGXUnity.Rendering
       get
       {
         var res = ImplicitMaterialRenderMap;
-        foreach ( var (mat, tl) in ExplicitMaterialRenderMap ) 
+        foreach ( var (mat, tl) in ExplicitMaterialRenderMap )
           res[ mat ] = tl;
         return res;
       }
@@ -178,6 +178,25 @@ namespace AGXUnity.Rendering
       m_initialData?.Reset( GetComponent<Terrain>().terrainData );
 
       base.OnDestroy();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost-= PostStep;
+        terrain.OnModification -= UpdateTextureAt;
+      }
+
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost += PostStep;
+        terrain.OnModification += UpdateTextureAt;
+      }
+      base.OnEnable();
     }
 
     private void PostStep()

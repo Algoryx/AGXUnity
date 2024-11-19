@@ -1,7 +1,6 @@
 using AGXUnity.IO.BrickIO;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.AssetImporters;
@@ -61,13 +60,18 @@ namespace AGXUnityEditor.IO.BrickIO
       importer.ErrorReporter = ReportErrors;
       importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes );
       importer.SuccessCallback = data => OnSuccess( ctx, data );
-      
-      var go = importer.ImportBrickFile( ctx.assetPath );
-      var end = DateTime.Now;
 
-      ctx.AddObjectToAsset( "Root", go, icon );
-      ctx.SetMainObject( go );
-      ImportTime = (float)( end - start ).TotalSeconds;
+      try {
+        var go = importer.ImportBrickFile( ctx.assetPath );
+        var end = DateTime.Now;
+
+        ctx.AddObjectToAsset( "Root", go, icon );
+        ctx.SetMainObject( go );
+        ImportTime = (float)( end - start ).TotalSeconds;
+      }
+      catch ( Exception e ) {
+        Debug.LogError( "Failed importing file" );
+      }
     }
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
@@ -83,13 +87,13 @@ namespace AGXUnityEditor.IO.BrickIO
           ctx.AddObjectToAsset( mat.name, mat );
       foreach ( var mat in data.ContactMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
-      foreach ( var props in data.CacheMappedTrackProperties)
-        ctx.AddObjectToAsset ( props.name, props );
-      foreach (var props in data.CacheMappedTrackInternalMergeProperties)
+      foreach ( var props in data.CacheMappedTrackProperties )
+        ctx.AddObjectToAsset( props.name, props );
+      foreach ( var props in data.CacheMappedTrackInternalMergeProperties )
         ctx.AddObjectToAsset( props.name, props );
     }
 
-    public void ReportErrors( Brick.Error error )
+    public void ReportErrors( openplx.Error error )
     {
       var ef = new UnityBrickErrorFormatter();
       var raw = ef.format( error );

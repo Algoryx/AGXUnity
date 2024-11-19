@@ -1,7 +1,7 @@
-using Brick;
+using openplx;
 using System.Collections.Generic;
 using UnityEngine;
-using Object = Brick.Core.Object;
+using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -30,8 +30,8 @@ namespace AGXUnity.IO.BrickIO
 
     public GameObject FindMappedObject( string declaration )
     {
-      if(Native != null ) {
-        if(m_objectMap.ContainsKey( declaration ))
+      if ( Native != null ) {
+        if ( m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];
         else
           return null;
@@ -49,6 +49,12 @@ namespace AGXUnity.IO.BrickIO
       return m_runtimeMap.GetValueOrDefault( declaration, null );
     }
 
+    public T FindRuntimeMappedObject<T>( string declaration )
+      where T : class
+    {
+      return m_runtimeMap.GetValueOrDefault( declaration, null ) as T;
+    }
+
     protected override bool Initialize()
     {
       var importer = new BrickImporter();
@@ -62,7 +68,7 @@ namespace AGXUnity.IO.BrickIO
 
       m_objectMap = new Dictionary<string, GameObject>();
       foreach ( var brickObj in GetComponentsInChildren<BrickObject>() )
-        foreach (var decl in brickObj.SourceDeclarations )
+        foreach ( var decl in brickObj.SourceDeclarations )
           m_objectMap.Add( decl, brickObj.gameObject );
 
       var RTMapper = new RuntimeMapper();

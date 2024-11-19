@@ -1,7 +1,4 @@
-﻿using UnityEngine;
-using AGXUnity;
-
-namespace AGXUnity.Utils
+﻿namespace AGXUnity.Utils
 {
   public class ConstraintUtils
   {

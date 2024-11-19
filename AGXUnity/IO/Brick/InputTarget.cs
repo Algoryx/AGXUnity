@@ -1,6 +1,6 @@
-using Brick.Physics.Signals;
+using openplx.Physics.Signals;
 using System;
-using Input = Brick.Physics.Signals.Input;
+using Input = openplx.Physics.Signals.Input;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -25,8 +25,8 @@ namespace AGXUnity.IO.BrickIO
 
     public void SendSignal<T>( T value )
     {
-      if(!IsValueTypeCompatible<T>())
-        throw new InvalidCastException( $"Cannot send value of type '{typeof(T).Name}' to Input of type '{Type.Name}'" );
+      if ( !IsValueTypeCompatible<T>() )
+        throw new InvalidCastException( $"Cannot send value of type '{typeof( T ).Name}' to Input of type '{Type.Name}'" );
 
       InputSignal signal = BrickSignals.GetBrickTypeEnum(ValueTypeCode) switch
       {
@@ -38,7 +38,7 @@ namespace AGXUnity.IO.BrickIO
               typeof( T ) == typeof( UnityEngine.Vector3 ) ? ((UnityEngine.Vector3)(object)value).ToBrickVec3() :
               typeof( T ) == typeof( agx.Vec3 ) ? ((agx.Vec3)(object)value).ToBrickVec3() :
               typeof( T ) == typeof( agx.Vec3f ) ? ((agx.Vec3f)(object)value).ToBrickVec3() :
-              typeof( T ) == typeof( Brick.Math.Vec3 ) ? (Brick.Math.Vec3)(object)value : null
+              typeof( T ) == typeof( openplx.Math.Vec3 ) ? (openplx.Math.Vec3)(object)value : null
             ),
             Native
           ),

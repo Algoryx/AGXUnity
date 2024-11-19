@@ -1,12 +1,12 @@
-using Brick;
-using Brick.Core.Api;
+using openplx;
+using openplx.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-using Object = Brick.Core.Object;
+using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -48,7 +48,7 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    private BrickContext CreateContext( BrickAgx.AgxCache cache = null )
+    private BrickContext CreateContext( agxopenplx.AgxCache cache = null )
     {
       std.StringVector bundle_paths = new std.StringVector { BrickDir + "/AGXUnity/Brick" };
 
@@ -67,12 +67,13 @@ namespace AGXUnity.IO.BrickIO
       VisualsSwig.Visuals_register_factories_cs( context );
       UrdfSwig.Urdf_register_factories_cs( context );
 
-      AgxBrick.register_plugins( context, cache );
+
+      OpenPlxAgx.register_plugins( context, cache );
 
       return context;
     }
 
-    public Object ParseBrickSource( string source, BrickAgx.AgxCache agxCache = null )
+    public Object ParseBrickSource( string source, agxopenplx.AgxCache agxCache = null )
     {
       var context = CreateContext(agxCache);
       Object loadedObj = CoreSwig.loadModelFromFile( source, null, context );

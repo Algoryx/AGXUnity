@@ -30,7 +30,7 @@ namespace AGXUnityEditor
         foreach ( object annotation in (System.Collections.IEnumerable)allA ) {
           Type annotationType = annotation.GetType();
           FieldInfo scriptClassField = annotationType.GetField("scriptClass", BindingFlags.Public | BindingFlags.Instance);
-          if ( (string)( scriptClassField.GetValue( annotation ) ) == type.Name ) 
+          if ( (string)( scriptClassField.GetValue( annotation ) ) == type.Name )
             hasAnnotation = true;
         }
         if ( !hasAnnotation ) return;

@@ -1,11 +1,10 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
-
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -612,7 +611,7 @@ namespace AGXUnity.IO.URDF
     {
       var rb = GetOrCreateComponent<RigidBody>( gameObject );
       GetOrCreateComponent<ElementComponent>( gameObject ).SetElement( link );
-      if ( link.IsStatic || link.IsWorld) {
+      if ( link.IsStatic || link.IsWorld ) {
         rb.MotionControl = agx.RigidBody.MotionControl.STATIC;
         return rb;
       }
@@ -784,12 +783,12 @@ namespace AGXUnity.IO.URDF
                                                parent.GetComponent<RigidBody>() );
 
         var constraint = constraintGameObject.GetComponent<Constraint>();
-        
+
         // Since URDF does not have a notion of stiffness and assumes a stiff system we set the default stiffness to be slightly higher than the regular default.
         constraint.SetCompliance( 1e-10f );
         foreach ( var controller in constraint.GetElementaryConstraintControllers() )
           controller.Compliance = 1e-10f;
-        
+
         constraint.CollisionsState = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
         // Note: If this is a mimic joint we're just setting the values,
         //       the actual controllers are disabled.

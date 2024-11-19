@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using AGXUnity.Utils;
+﻿using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnity
 {
@@ -98,7 +98,7 @@ namespace AGXUnity
       m_waterCurrentGenerator = new agxModel.ConstantWaterFlowGenerator( WaterVelocity.ToHandedVec3() );
       m_windGenerator = new agxModel.ConstantWindGenerator( WindVelocity.ToHandedVec3() );
       Native.setWindGenerator( m_windGenerator );
-    
+
       return true;
     }
 
@@ -110,6 +110,20 @@ namespace AGXUnity
       Native = null;
 
       base.OnDestroy();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().remove( Native );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance )
+        GetSimulation().add( Native );
+      base.OnEnable();
     }
   }
 }

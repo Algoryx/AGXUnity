@@ -1,8 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -148,7 +147,7 @@ namespace AGXUnity
         node.LocalPosition = nativeNode.getPosition().ToHandedVector3();
       else
         node.Position = nativeNode.getWorldPosition().ToHandedVector3();
-       
+
       return node;
     }
 
@@ -161,7 +160,7 @@ namespace AGXUnity
       base.Clear();
     }
 
-    internal WireRoute(Wire parent)
+    internal WireRoute( Wire parent )
     {
       Wire = parent;
 

@@ -11,13 +11,13 @@ namespace AGXUnity.IO.BrickIO
     UnsupportedFrictionModel = 7,
     RigidBodyOwnerNotSystem = 8,
   }
-  public class UnityBrickErrorFormatter : Brick.ErrorFormatter
+  public class UnityBrickErrorFormatter : openplx.ErrorFormatter
   {
-    private string formatMessage( string message, Brick.Error error )
+    private string formatMessage( string message, openplx.Error error )
     {
       return $"{error.getSourceId()}:{error.getLine()}:{error.getColumn()} {message}";
     }
-    public override string format( Brick.Error error )
+    public override string format( openplx.Error error )
     {
       return error.getErrorCode() switch
       {

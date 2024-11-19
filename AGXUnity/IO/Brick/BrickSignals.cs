@@ -1,12 +1,12 @@
-using Brick.Physics.Signals;
+using openplx.Physics.Signals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-using Input = Brick.Physics.Signals.Input;
-using Object = Brick.Core.Object;
+using Input = openplx.Physics.Signals.Input;
+using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -34,7 +34,7 @@ namespace AGXUnity.IO.BrickIO
     private Dictionary<string, SignalEndpoint> m_declaredNameEndpointMap = new Dictionary<string, SignalEndpoint>();
 
     public void RegisterSignal<T>( string signal, T brickSignal )
-      where T : Brick.Core.Object
+      where T : openplx.Core.Object
     {
       if ( brickSignal is Output output )
         m_outputs.Add( new OutputSource( signal, output ) );
@@ -87,6 +87,7 @@ namespace AGXUnity.IO.BrickIO
         switch ( inpSig ) {
           case RealInputSignal realSig: InputSignalHandler.HandleRealInputSignal( realSig, Root ); break;
           case IntInputSignal intSig: InputSignalHandler.HandleIntInputSignal( intSig, Root ); break;
+          case BoolInputSignal boolSig: InputSignalHandler.HandleBoolInputSignal( boolSig, Root ); break;
           default: Debug.LogWarning( $"Unhandled InputSignal type: '{inpSig.GetType().Name}'" ); break;
         }
       }
@@ -155,7 +156,7 @@ namespace AGXUnity.IO.BrickIO
           return (T)(object)v3val.value().ToVec3();
         else if ( typeof( T ) == typeof( agx.Vec3f ) )
           return (T)(object)v3val.value().ToVec3f();
-        else if ( typeof( T ) == typeof( Brick.Math.Vec3 ) )
+        else if ( typeof( T ) == typeof( openplx.Math.Vec3 ) )
           return (T)(object)v3val.value();
       }
 
@@ -201,7 +202,7 @@ namespace AGXUnity.IO.BrickIO
       if ( typeof( T ) == typeof( Vector3 )
         || typeof( T ) == typeof( agx.Vec3 )
         || typeof( T ) == typeof( agx.Vec3f )
-        || typeof( T ) == typeof( Brick.Math.Vec3 ) )
+        || typeof( T ) == typeof( openplx.Math.Vec3 ) )
         return ValueType.Vec3;
 
       return ValueType.Unknown;
@@ -241,6 +242,7 @@ namespace AGXUnity.IO.BrickIO
         s_typeCache[ tempIO.Force3D() - 1 ]               = ValueType.Vec3;
         s_typeCache[ tempIO.Acceleration3D() - 1 ]        = ValueType.Vec3;
         s_typeCache[ tempIO.AngularAcceleration3D() - 1 ] = ValueType.Vec3;
+        s_typeCache[ tempIO.Boolean() - 1 ]               = ValueType.Ignored;
         s_typeCache[ tempIO.Percentage() - 1 ]            = ValueType.Real;
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;

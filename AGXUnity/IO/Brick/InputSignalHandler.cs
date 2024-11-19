@@ -1,13 +1,14 @@
-using Brick.DriveTrain;
-using Brick.Physics.Signals;
-using Brick.Physics1D.Signals;
-using Brick.Physics3D.Signals;
+using openplx.DriveTrain;
+using openplx.Physics.Signals;
+using openplx.Physics1D.Signals;
+using openplx.Physics3D.Signals;
 using UnityEngine;
 
 namespace AGXUnity.IO.BrickIO
 {
   public static class InputSignalHandler
   {
+    #region Real Handling
     public static void HandleRealInputSignal( RealInputSignal signal, BrickRoot root )
     {
       var target = signal.target();
@@ -16,9 +17,9 @@ namespace AGXUnity.IO.BrickIO
         case LinearVelocityMotorVelocityInput lvmvi: HandleLinearVelocityMotorInput( signal, root, lvmvi ); break;
         case RotationalVelocityMotorVelocityInput rvmvi: HandleRotationalVelocityMotorInput( signal, root, rvmvi ); break;
         case RotationalVelocityMotor1DVelocityInput rvm1dvi: HandleRotationalVelocityMotor1DVelocityInput( signal, root, rvm1dvi ); break;
-        case ForceMotorForceInput fmfi: HandleForceMotorInput( signal, root, fmfi ); break;
         case FractionInput fi: HandleFractionInput( signal, root, fi ); break;
         case Torque1DInput t1di: HandleTorque1DInput( signal, root, t1di ); break;
+        case Force1DInput f1di: HandleForce1DInput( signal, root, f1di ); break;
         case LinearSpringPositionInput lspi: HandleLinearSpringPositionInput( signal, root, lspi ); break;
         default: Debug.LogWarning( $"Unhandled RealInputSignal target type '{target.GetType().Name}'" ); break;
       }
@@ -34,7 +35,7 @@ namespace AGXUnity.IO.BrickIO
     private static void HandleTorque1DInput( RealInputSignal signal, BrickRoot root, Torque1DInput t1di )
     {
       var source = t1di.source();
-      if ( source is Brick.Physics3D.Interactions.TorqueMotor tm ) {
+      if ( source is openplx.Physics3D.Interactions.TorqueMotor tm ) {
         var hinge = root.FindMappedObject(tm.getName());
         var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
         var torque = Mathf.Clamp((float)signal.value(),(float)tm.min_effort(),(float)tm.max_effort());
@@ -52,6 +53,19 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
+    private static void HandleForce1DInput( RealInputSignal signal, BrickRoot root, Force1DInput f1di )
+    {
+      var source = f1di.source();
+      if ( source is openplx.Physics3D.Interactions.ForceMotor fm ) {
+        var prismatic = root.FindMappedObject(fm.getName());
+        var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
+        var torque = Mathf.Clamp((float)signal.value(),(float)fm.min_effort(),(float)fm.max_effort());
+        motor.ForceRange = new RangeReal( torque, torque );
+      }
+      else
+        Debug.LogWarning( $"Unhandled input source type '{source.GetType().Name}'" );
+    }
+
     private static void HandleFractionInput( RealInputSignal signal, BrickRoot root, FractionInput fi )
     {
       var source = fi.source();
@@ -63,14 +77,6 @@ namespace AGXUnity.IO.BrickIO
         else
           Debug.LogError( $"Could not find runtime mapped CombustionEngine for signal target '{ce.getName()}'" );
       }
-    }
-
-    private static void HandleForceMotorInput( RealInputSignal signal, BrickRoot root, ForceMotorForceInput fmfi )
-    {
-      var prismatic = root.FindMappedObject(fmfi.motor().getName());
-      var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
-      var torque = Mathf.Clamp((float)signal.value(),(float)fmfi.motor().min_effort(),(float)fmfi.motor().max_effort());
-      motor.ForceRange = new RangeReal( torque, torque );
     }
 
     private static void HandleRotationalVelocityMotor1DVelocityInput( RealInputSignal signal, BrickRoot root, RotationalVelocityMotor1DVelocityInput rvm1dvi )
@@ -102,7 +108,9 @@ namespace AGXUnity.IO.BrickIO
       var spring = hinge.GetComponent<Constraint>().GetController<LockController>();
       spring.Position = (float)signal.value();
     }
+    #endregion
 
+    #region Int Handling
     public static void HandleIntInputSignal( IntInputSignal signal, BrickRoot root )
     {
       var target = signal.target();
@@ -134,5 +142,74 @@ namespace AGXUnity.IO.BrickIO
         }
       }
     }
+    #endregion
+
+    #region Vec3 Handling
+    public static void HandleVec3InputSignal( Vec3InputSignal signal, BrickRoot root )
+    {
+      var target = signal.target();
+      switch ( target ) {
+        case LinearVelocity3DInput lv3di: HandleLinearVelocity3DInput( signal, root, lv3di ); break;
+        case AngularVelocity3DInput av3di: HandleAngularVelocity3DInput( signal, root, av3di ); break;
+        default: Debug.LogWarning( $"Unhandled IntInputSignal target type '{target.GetType().Name}'" ); break;
+      }
+    }
+
+    private static void HandleLinearVelocity3DInput( Vec3InputSignal signal, BrickRoot root, LinearVelocity3DInput lv3di )
+    {
+      var source = lv3di.source();
+      if ( source is openplx.Physics3D.Bodies.RigidBody rb ) {
+        var go = root.FindMappedObject(rb.getName());
+        var body = go.GetComponent<RigidBody>();
+        body.LinearVelocity = signal.value().ToHandedVector3();
+      }
+      else
+        Debug.LogWarning( $"Unhandled LinearVelocity3DInput source type '{source.GetType().Name}'" );
+    }
+
+    private static void HandleAngularVelocity3DInput( Vec3InputSignal signal, BrickRoot root, AngularVelocity3DInput av3di )
+    {
+      var source = av3di.source();
+      if ( source is openplx.Physics3D.Bodies.RigidBody rb ) {
+        var go = root.FindMappedObject(rb.getName());
+        var body = go.GetComponent<RigidBody>();
+        body.AngularVelocity = signal.value().ToHandedVector3();
+      }
+      else
+        Debug.LogWarning( $"Unhandled LinearVelocity3DInput source type '{source.GetType().Name}'" );
+    }
+    #endregion
+
+    #region Bool Handling
+    public static void HandleBoolInputSignal( BoolInputSignal signal, BrickRoot root )
+    {
+      var target = signal.target();
+      switch ( target ) {
+        case BoolInput bi: HandleBoolInput( signal, root, bi ); break;
+        default: Debug.LogWarning( $"Unhandled BoolInputSignal target type '{target.GetType().Name}'" ); break;
+      }
+    }
+
+    private static void HandleBoolInput( BoolInputSignal signal, BrickRoot Root, BoolInput boolTarget )
+    {
+      var source = boolTarget.source();
+      if ( source is AutomaticClutch clutch ) {
+        if ( Root.FindRuntimeMappedObject( clutch.getName() ) is not agxDriveTrain.DryClutch agxClutch )
+          Debug.LogError( $"{clutch.getName()} was not mapped to a powerline unit" );
+        else
+          agxClutch.setEngage( signal.value() );
+      }
+      else if ( source is openplx.Robotics.EndEffectors.VacuumGripper vg )
+        Debug.LogWarning( "Vacuum Grippers are not yet supported by the AGXUnity OpenPLX-bindings" );
+      else if ( source is EmpiricalTorqueConverter torqueConverter ) {
+        if ( Root.FindRuntimeMappedObject( torqueConverter.getName() ) is not agxDriveTrain.TorqueConverter agxTC )
+          Debug.LogError( $"{torqueConverter.getName()} was not mapped to a powerline unit" );
+        else
+          agxTC.enableLockUp( signal.value() );
+      }
+      else
+        Debug.LogWarning( $"Unhandled BoolInput source type '{source.GetType().Name}'" );
+    }
+    #endregion
   }
 }

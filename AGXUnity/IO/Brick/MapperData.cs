@@ -1,5 +1,5 @@
 using AGXUnity.Model;
-using Brick;
+using openplx;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,14 +13,14 @@ namespace AGXUnity.IO.BrickIO
     public ShapeMaterial DefaultMaterial { get; set; } = null;
 
     public SavedPrefabLocalData PrefabLocalData { get; set; } = null;
-    public BrickAgx.AgxCache AgxCache { get; } = new BrickAgx.AgxCache();
+    public agxopenplx.AgxCache AgxCache { get; } = new agxopenplx.AgxCache();
 
-    public Dictionary<Brick.Physics.Charges.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<Brick.Physics.Charges.ContactGeometry, Collide.Shape>();
-    public Dictionary<Brick.Core.Object, RigidBody> BodyCache { get; } = new Dictionary<Brick.Core.Object, RigidBody>();
-    public Dictionary<Brick.Physics.System, GameObject> SystemCache { get; } = new Dictionary<Brick.Physics.System, GameObject>();
-    public Dictionary<Brick.Core.Object, GameObject> FrameCache { get; } = new Dictionary<Brick.Core.Object, GameObject>();
-    public Dictionary<Brick.Physics.Charges.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<Brick.Physics.Charges.Material, ShapeMaterial>();
-    public Dictionary<Brick.Physics3D.Charges.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<Brick.Physics3D.Charges.MateConnector, GameObject>();
+    public Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape>();
+    public Dictionary<openplx.Core.Object, RigidBody> BodyCache { get; } = new Dictionary<openplx.Core.Object, RigidBody>();
+    public Dictionary<openplx.Physics.System, GameObject> SystemCache { get; } = new Dictionary<openplx.Physics.System, GameObject>();
+    public Dictionary<openplx.Core.Object, GameObject> FrameCache { get; } = new Dictionary<openplx.Core.Object, GameObject>();
+    public Dictionary<openplx.Physics.Charges.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Charges.Material, ShapeMaterial>();
+    public Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject>();
 
     public Dictionary<uint, Material> MappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
 

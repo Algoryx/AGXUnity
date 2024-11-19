@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AGXUnity
+﻿namespace AGXUnity
 {
   /// <summary>
   /// Simulation step callback functions.

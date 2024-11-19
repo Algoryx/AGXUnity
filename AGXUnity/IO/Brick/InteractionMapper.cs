@@ -1,11 +1,11 @@
-using Brick.Physics.Charges;
+using openplx.Physics.Charges;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ChargeKey = std.PhysicsChargesChargeVector;
-using Charges = Brick.Physics3D.Charges;
-using Interactions = Brick.Physics3D.Interactions;
+using Charges = openplx.Physics3D.Charges;
+using Interactions = openplx.Physics3D.Interactions;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -47,20 +47,20 @@ namespace AGXUnity.IO.BrickIO
 
     private Dictionary<ChargeKey,List<Constraint>> ChargeConstraintsMap = new Dictionary<ChargeKey,List<Constraint>>(new CKEquality());
     private HashSet<Tuple<Constraint,MappedConstraintType>> UsedConstraintDofs = new HashSet<Tuple<Constraint,MappedConstraintType>>();
-    private Dictionary<Constraint, Brick.Core.Object> ConstraintParents = new Dictionary<Constraint, Brick.Core.Object>();
+    private Dictionary<Constraint, openplx.Core.Object> ConstraintParents = new Dictionary<Constraint, openplx.Core.Object>();
 
     public InteractionMapper( MapperData cache )
     {
       Data = cache;
     }
 
-    public void MapMateConnectorInitial( Brick.Physics3D.Charges.MateConnector mc, GameObject parent )
+    public void MapMateConnectorInitial( openplx.Physics3D.Charges.MateConnector mc, GameObject parent )
     {
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
       var mcObject = BrickObject.CreateGameObject( mc.getName() );
-      Brick.Core.Object owner = mc.getOwner();
+      openplx.Core.Object owner = mc.getOwner();
       if ( mc is Charges.RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();
 
@@ -78,10 +78,10 @@ namespace AGXUnity.IO.BrickIO
 
       // TODO: Error reporting
 
-      var rotation = Brick.Math.Quat.from_to(Brick.Math.Vec3.Z_AXIS(), main_axis_n);
-      var new_x = rotation.rotate(Brick.Math.Vec3.X_AXIS());
-      var angle = Brick.Math.Vec3.angle_between_vectors(new_x,normal_n,main_axis_n);
-      var rotation_2 = Brick.Math.Quat.angle_axis(angle,main_axis_n);
+      var rotation = openplx.Math.Quat.from_to(openplx.Math.Vec3.Z_AXIS(), main_axis_n);
+      var new_x = rotation.rotate(openplx.Math.Vec3.X_AXIS());
+      var angle = openplx.Math.Vec3.angle_between_vectors(new_x,normal_n,main_axis_n);
+      var rotation_2 = openplx.Math.Quat.angle_axis(angle,main_axis_n);
       mcObject.transform.localRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
 
       Data.MateConnectorCache[ mc ] = mcObject;
@@ -102,7 +102,7 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    HingeClass MapInteraction<HingeClass>( Brick.Physics.Interactions.Interaction interaction,
+    HingeClass MapInteraction<HingeClass>( openplx.Physics.Interactions.Interaction interaction,
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
       where HingeClass : class
     {
@@ -117,11 +117,11 @@ namespace AGXUnity.IO.BrickIO
 
       if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1 ) {
         RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
-        frame1.SetParent( rb1?.gameObject, false );
+        frame1.SetParent( rb1?.gameObject, true );
       }
       if ( mate_connector2 is Charges.RedirectedMateConnector redirected_connector2 ) {
         RigidBody rb2 = redirected_connector2.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector2.redirected_parent() ];
-        frame2.SetParent( rb2?.gameObject, false );
+        frame2.SetParent( rb2?.gameObject, true );
       }
 
       if ( frame1.Parent == null ) {
@@ -151,22 +151,22 @@ namespace AGXUnity.IO.BrickIO
       return c;
     }
 
-    public static float? MapFlexibility( Brick.Physics.Interactions.Flexibility.DefaultFlexibility flexibility )
+    public static float? MapFlexibility( openplx.Physics.Interactions.Flexibility.DefaultFlexibility flexibility )
     {
-      if ( flexibility is Brick.Physics.Interactions.Flexibility.Rigid )
+      if ( flexibility is openplx.Physics.Interactions.Flexibility.Rigid )
         return float.Epsilon;
-      else if ( flexibility is Brick.Physics.Interactions.Flexibility.LinearElastic elastic )
+      else if ( flexibility is openplx.Physics.Interactions.Flexibility.LinearElastic elastic )
         return (float)( 1.0 / elastic.stiffness() );
       return null;
     }
 
-    public static float? MapDissipation( Brick.Physics.Interactions.Dissipation.DefaultDissipation dissipation, Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation )
+    public static float? MapDissipation( openplx.Physics.Interactions.Dissipation.DefaultDissipation dissipation, openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation )
     {
-      if ( dissipation is Brick.Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping crtd )
+      if ( dissipation is openplx.Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping crtd )
         return (float)crtd.relaxation_time();
 
-      else if ( dissipation is Brick.Physics.Interactions.Dissipation.MechanicalDamping mechanical ) {
-        if ( deformation is Brick.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0 )
+      else if ( dissipation is openplx.Physics.Interactions.Dissipation.MechanicalDamping mechanical ) {
+        if ( deformation is openplx.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0 )
           return (float)( mechanical.damping_constant() / elastic.stiffness() );
         return null;
       }
@@ -202,8 +202,8 @@ namespace AGXUnity.IO.BrickIO
 
     void MapMateDissipation( Interactions.Dissipation.DefaultMateDissipation damping, Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
     {
-      foreach ( var (key, damp) in damping.getEntries<Brick.Physics.Interactions.Dissipation.DefaultDissipation>() ) {
-        var def = deformation.getDynamic( key ).asObject() as Brick.Physics.Interactions.Flexibility.DefaultFlexibility;
+      foreach ( var (key, damp) in damping.getEntries<openplx.Physics.Interactions.Dissipation.DefaultDissipation>() ) {
+        var def = deformation.getDynamic( key ).asObject() as openplx.Physics.Interactions.Flexibility.DefaultFlexibility;
         float? mapped = MapDissipation(damp, def);
         if ( mapped == null )
           continue;
@@ -216,7 +216,7 @@ namespace AGXUnity.IO.BrickIO
 
     void MapMateFlexibility( Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
     {
-      foreach ( var (key, def) in deformation.getEntries<Brick.Physics.Interactions.Flexibility.DefaultFlexibility>() ) {
+      foreach ( var (key, def) in deformation.getEntries<openplx.Physics.Interactions.Flexibility.DefaultFlexibility>() ) {
         float? mapped = MapFlexibility(def);
         if ( mapped == null )
           continue;
@@ -227,7 +227,7 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    void MapControllerDissipation( Brick.Physics.Interactions.Dissipation.DefaultDissipation damping, Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
+    void MapControllerDissipation( openplx.Physics.Interactions.Dissipation.DefaultDissipation damping, openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
     {
       float? mapped = MapDissipation(damping, deformation);
       if ( mapped == null )
@@ -235,7 +235,7 @@ namespace AGXUnity.IO.BrickIO
       target.Damping = mapped.Value;
     }
 
-    void MapControllerFlexibility( Brick.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
+    void MapControllerFlexibility( openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
     {
       float? mapped = MapFlexibility(deformation);
       if ( mapped == null )
@@ -243,7 +243,7 @@ namespace AGXUnity.IO.BrickIO
       target.Compliance = mapped.Value;
     }
 
-    public GameObject MapMate( Interactions.Mate mate, Brick.Physics3D.System system )
+    public GameObject MapMate( Interactions.Mate mate, openplx.Physics3D.System system )
     {
 
       Constraint agxConstraint = getOrCreateConstraintForInteraction(mate);
@@ -320,7 +320,7 @@ namespace AGXUnity.IO.BrickIO
       MapControllerFlexibility( motor.zero_speed_spring_flexibility(), agxTarSpeed );
     }
 
-    //GameObject mapRotationalVelocityMotor(Brick.Physics1D.Interactions.RotationalVelocityMotor motor,  Brick.Physics3D.System system )
+    //GameObject mapRotationalVelocityMotor(openplx.Physics1D.Interactions.RotationalVelocityMotor motor,  openplx.Physics3D.System system )
     //{
     //  var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
     //  motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
@@ -334,7 +334,7 @@ namespace AGXUnity.IO.BrickIO
     //  return cGO;
     //}
 
-    Constraint getOrCreateConstraintForInteraction( Brick.Physics.Interactions.Interaction interaction )
+    Constraint getOrCreateConstraintForInteraction( openplx.Physics.Interactions.Interaction interaction )
     {
       ConstraintType ?type = interaction switch
       {
@@ -401,7 +401,7 @@ namespace AGXUnity.IO.BrickIO
       return availableConstraint;
     }
 
-    public GameObject MapInteraction( Brick.Physics.Interactions.Interaction interaction, Brick.Physics3D.System system )
+    public GameObject MapInteraction( openplx.Physics.Interactions.Interaction interaction, openplx.Physics3D.System system )
     {
       if ( interaction is Interactions.Mate mate )
         return MapMate( mate, system );
@@ -433,7 +433,7 @@ namespace AGXUnity.IO.BrickIO
       return cGO;
     }
 
-    public void MapContactModel( Brick.Physics.Interactions.SurfaceContact.Model contactModel )
+    public void MapContactModel( openplx.Physics.Interactions.SurfaceContact.Model contactModel )
     {
       var mat1 = contactModel.material_1();
       var mat2 = contactModel.material_2();
@@ -464,7 +464,7 @@ namespace AGXUnity.IO.BrickIO
       //var mechanical_damping = std.dynamic_pointer_cast<Physics.Interactions.Damping.MechanicalDamping>(contactModel.damping());
 
       // Set the deformation
-      if ( contactModel.normal_flexibility() is Brick.Physics.Interactions.Flexibility.Rigid rigid ) {
+      if ( contactModel.normal_flexibility() is openplx.Physics.Interactions.Flexibility.Rigid rigid ) {
         // Set the contact as stiff as agx handle
         cm.YoungsModulus = 1e16f;
         // Set the damping to two times the time step, which is the recommended minimum.
@@ -472,17 +472,17 @@ namespace AGXUnity.IO.BrickIO
         // TODO: We dont know the timestep at import time so this needs to be revised
         cm.Damping = ( 1.0f/60.0f ) * 2.0f;
       }
-      else if ( contactModel.normal_flexibility() is Brick.Physics.Interactions.Flexibility.LinearElastic elastic ) {
+      else if ( contactModel.normal_flexibility() is openplx.Physics.Interactions.Flexibility.LinearElastic elastic ) {
         cm.YoungsModulus = (float)elastic.stiffness();
         var time = MapDissipation(contactModel.dissipation(), contactModel.normal_flexibility());
         if ( time.HasValue )
           cm.Damping = time.Value;
-        if ( elastic is Brick.Physics.Interactions.SurfaceContact.PatchElasticity )
+        if ( elastic is openplx.Physics.Interactions.SurfaceContact.PatchElasticity )
           cm.UseContactArea = true;
       }
 
       // Set the friction
-      if ( contactModel.friction() is not Brick.Physics.Interactions.Dissipation.DefaultDryFriction dryFriction ) {
+      if ( contactModel.friction() is not openplx.Physics.Interactions.Dissipation.DefaultDryFriction dryFriction ) {
         Data.ErrorReporter.Report( contactModel.friction(), AgxUnityBrickErrors.UnsupportedFrictionModel );
         return;
       }
@@ -592,9 +592,9 @@ namespace AGXUnity.IO.BrickIO
       //}
       //cm.setFrictionModel( fm );
 
-      if ( contactModel.adhesion() is Brick.Physics.Interactions.Adhesion.ConstantForceAdhesion constant_adhesive_force )
+      if ( contactModel.adhesion() is openplx.Physics.Interactions.Adhesion.ConstantForceAdhesion constant_adhesive_force )
         cm.AdhesiveForce = (float)constant_adhesive_force.force();
-      if ( contactModel.clearance() is Brick.Physics.Interactions.Clearance.ConstantDistanceClearance constant_slack_distance )
+      if ( contactModel.clearance() is openplx.Physics.Interactions.Clearance.ConstantDistanceClearance constant_slack_distance )
         cm.AdhesiveOverlap = (float)constant_slack_distance.distance();
 
       // Restitution

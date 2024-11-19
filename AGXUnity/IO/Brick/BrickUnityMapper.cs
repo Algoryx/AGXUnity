@@ -2,13 +2,13 @@ using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
-using Brick.Simulation;
+using openplx.Simulation;
 using System;
 using UnityEngine;
 
-using Bodies = Brick.Physics3D.Bodies;
-using Charges = Brick.Physics3D.Charges;
-using Object = Brick.Core.Object;
+using Bodies = openplx.Physics3D.Bodies;
+using Charges = openplx.Physics3D.Charges;
+using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.BrickIO
 {
@@ -42,7 +42,7 @@ namespace AGXUnity.IO.BrickIO
     {
       Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
       Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
-      Data.ErrorReporter = new Brick.ErrorReporter();
+      Data.ErrorReporter = new openplx.ErrorReporter();
       Data.DefaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
       Data.DefaultMaterial.Density = 1000;
       Data.DefaultMaterial.name = "Default";
@@ -57,7 +57,7 @@ namespace AGXUnity.IO.BrickIO
     {
       Data.RootNode = rootNode;
       Data.PrefabLocalData = rootNode.AddComponent<SavedPrefabLocalData>();
-      if ( obj is Brick.Physics3D.System system )
+      if ( obj is openplx.Physics3D.System system )
         Utils.AddChild( RootNode, MapSystem( system ), Data.ErrorReporter, system );
       else if ( obj is Bodies.RigidBody body )
         Utils.AddChild( RootNode, MapBody( body ), Data.ErrorReporter, body );
@@ -70,17 +70,17 @@ namespace AGXUnity.IO.BrickIO
 
     private void MapSignals( Object obj, BrickSignals signals, string prefix = "" )
     {
-      foreach ( var (name, subsystem) in obj.getEntries<Brick.Physics3D.System>() )
+      foreach ( var (name, subsystem) in obj.getEntries<openplx.Physics3D.System>() )
         MapSignals( subsystem, signals, prefix + "." + name );
 
-      foreach ( var (name, output) in obj.getEntries<Brick.Physics.Signals.Output>() )
+      foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
         signals.RegisterSignal( prefix + "." + name, output );
 
-      foreach ( var (name, input) in obj.getEntries<Brick.Physics.Signals.Input>() )
+      foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
         signals.RegisterSignal( prefix + "." + name, input );
     }
 
-    Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, Brick.Visuals.Geometries.Geometry visual )
+    Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
     {
       GameObject go = new GameObject();
 
@@ -121,7 +121,7 @@ namespace AGXUnity.IO.BrickIO
       return Tuple.Create( go, false );
     }
 
-    GameObject MapVisualGeometry( Brick.Visuals.Geometries.Geometry visual )
+    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual )
     {
       GameObject go = null;
       bool cachedMat = false;
@@ -144,21 +144,21 @@ namespace AGXUnity.IO.BrickIO
       if ( go == null ) {
         go = visual switch
         {
-          Brick.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
-          Brick.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
-          Brick.Visuals.Geometries.ExternalTriMeshGeometry etmg => null,
-          Brick.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
+          openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
+          openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
+          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => null,
+          openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
           _ => null
         };
 
         switch ( visual ) {
-          case Brick.Visuals.Geometries.Box box:
+          case openplx.Visuals.Geometries.Box box:
             go.transform.localScale = box.size().ToVector3();
             break;
-          case Brick.Visuals.Geometries.Cylinder cyl:
+          case openplx.Visuals.Geometries.Cylinder cyl:
             go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height(), (float)cyl.radius() );
             break;
-          case Brick.Visuals.Geometries.Sphere sphere:
+          case openplx.Visuals.Geometries.Sphere sphere:
             go.transform.localScale = Vector3.one * (float)sphere.radius();
             break;
           default:
@@ -376,17 +376,15 @@ namespace AGXUnity.IO.BrickIO
         go = geom switch
         {
           Charges.Box box => CreateShape<Box, Charges.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
-          Charges.Cylinder cyl => CreateShape<Cylinder, Charges.Cylinder>( cyl, ( bcyl, ucyl ) =>
-        {
-          ucyl.Radius = (float)bcyl.radius();
-          ucyl.Height = (float)bcyl.height();
-        } ),
+          Charges.Cylinder cyl => CreateShape<Cylinder, Charges.Cylinder>( cyl, ( bcyl, ucyl ) => {
+            ucyl.Radius = (float)bcyl.radius();
+            ucyl.Height = (float)bcyl.height();
+          } ),
           Charges.Sphere sphere => CreateShape<Sphere, Charges.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
-          Charges.Capsule cap => CreateShape<Capsule, Charges.Capsule>( cap, ( bcap, ucap ) =>
-        {
-          ucap.Radius = (float)bcap.radius();
-          ucap.Height = (float)bcap.height();
-        } ),
+          Charges.Capsule cap => CreateShape<Capsule, Charges.Capsule>( cap, ( bcap, ucap ) => {
+            ucap.Radius = (float)bcap.radius();
+            ucap.Height = (float)bcap.height();
+          } ),
           Charges.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
           _ => null
         };
@@ -400,7 +398,8 @@ namespace AGXUnity.IO.BrickIO
       if ( addVisuals ) {
         var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
         var visual = visualGO.GetComponent<ShapeVisual>();
-        visual.SetMaterial( VisualMaterial );
+        if ( visual != null )
+          visual.SetMaterial( VisualMaterial );
       }
 
       Utils.MapLocalTransform( go.transform, geom.local_transform() );
@@ -419,14 +418,14 @@ namespace AGXUnity.IO.BrickIO
       return go;
     }
 
-    bool InertiaTensorIsSet( Brick.Math.Matrix3x3 inertia_tensor )
+    bool InertiaTensorIsSet( openplx.Math.Matrix3x3 inertia_tensor )
     {
       return inertia_tensor.e00() != 0.0
           || inertia_tensor.e11() != 0.0
           || inertia_tensor.e22() != 0.0;
     }
 
-    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, Brick.Math.AffineTransform cm )
+    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, openplx.Math.AffineTransform cm )
     {
       if ( inertia.mass() > 0.0 )
         mp.Mass.UserValue = (float)inertia.mass();
@@ -466,14 +465,17 @@ namespace AGXUnity.IO.BrickIO
     GameObject MapBody( Bodies.RigidBody body )
     {
       GameObject rb = Factory.Create<RigidBody>();
+      Data.FrameCache[ body ] = rb;
       BrickObject.RegisterGameObject( body.getName(), rb );
       var rbComp = rb.GetComponent<RigidBody>();
       Utils.MapLocalTransform( rb.transform, body.kinematics().local_transform() );
 
       MapMassProperties( rbComp.MassProperties, body.inertia(), body.kinematics().local_cm_transform() );
 
+      rbComp.MotionControl = body.is_dynamic() ? agx.RigidBody.MotionControl.DYNAMICS : agx.RigidBody.MotionControl.KINEMATICS;
+
       bool hasVisuals = false;
-      foreach ( var visual in body.getValues<Brick.Visuals.Geometries.Geometry>() ) {
+      foreach ( var visual in body.getValues<openplx.Visuals.Geometries.Geometry>() ) {
         hasVisuals = true;
         Utils.AddChild( rb, MapVisualGeometry( visual ), Data.ErrorReporter, visual );
       }
@@ -485,7 +487,7 @@ namespace AGXUnity.IO.BrickIO
       return rb;
     }
 
-    ShapeMaterial MapMaterial( Brick.Physics.Charges.Material material )
+    ShapeMaterial MapMaterial( openplx.Physics.Charges.Material material )
     {
       var sm = ShapeMaterial.CreateInstance<ShapeMaterial>();
       sm.name = material.getName();
@@ -496,7 +498,7 @@ namespace AGXUnity.IO.BrickIO
       return sm;
     }
 
-    GameObject MapKinematicLock( Brick.Physics.KinematicLock kinematicLock )
+    GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
     {
       var lockObject = BrickObject.CreateGameObject( kinematicLock.getName() );
       var lockComponent = lockObject.AddComponent<KinematicLock>();
@@ -509,7 +511,7 @@ namespace AGXUnity.IO.BrickIO
       return lockObject;
     }
 
-    void MapShovel( Brick.Terrain.Shovel shovel )
+    void MapShovel( openplx.Terrain.Shovel shovel )
     {
       var body = Data.BodyCache[shovel.body()];
       var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
@@ -520,7 +522,7 @@ namespace AGXUnity.IO.BrickIO
       mapped.AutoAddToTerrains = true;
     }
 
-    void MapSystemToCollisionGroup( Brick.Physics3D.System system, CollisionGroup collision_group )
+    void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
     {
       if ( Data.SystemCache.ContainsKey( system ) ) {
         var sysGO = Data.SystemCache[ system ];
@@ -550,7 +552,7 @@ namespace AGXUnity.IO.BrickIO
     void MapCollisionGroup( CollisionGroup collision_group )
     {
       foreach ( var system in collision_group.systems() )
-        if ( system is Brick.Physics3D.System system3d )
+        if ( system is openplx.Physics3D.System system3d )
           MapSystemToCollisionGroup( system3d, collision_group );
 
       foreach ( var body in collision_group.bodies() )
@@ -567,7 +569,7 @@ namespace AGXUnity.IO.BrickIO
       Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
     }
 
-    GameObject MapSystem( Brick.Physics3D.System system )
+    GameObject MapSystem( openplx.Physics3D.System system )
     {
       var s = MapSystemPass1( system );
       MapSystemPass2( system );
@@ -577,7 +579,7 @@ namespace AGXUnity.IO.BrickIO
       return s;
     }
 
-    GameObject MapSystemPass1( Brick.Physics3D.System system )
+    GameObject MapSystemPass1( openplx.Physics3D.System system )
     {
       GameObject s = BrickObject.CreateGameObject(system.getName());
       Utils.MapLocalTransform( s.transform, system.local_transform() );
@@ -589,7 +591,7 @@ namespace AGXUnity.IO.BrickIO
       dummyRB.name = "System Dummy RB";
       Data.FrameCache[ system ] = dummyRB;
 
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
@@ -602,8 +604,8 @@ namespace AGXUnity.IO.BrickIO
             Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
         }
       }
-      foreach ( var trackSystem in system.getValues<Brick.Vehicles.Tracks.System>() ) {
-        if ( trackSystem.belt().link_description() is Brick.Vehicles.Tracks.BoxLinkDescription desc ) {
+      foreach ( var trackSystem in system.getValues<openplx.Vehicles.Tracks.System>() ) {
+        if ( trackSystem.belt().link_description() is openplx.Vehicles.Tracks.BoxLinkDescription desc ) {
           var mat = desc.contact_geometry().material();
           if ( !Data.MaterialCache.ContainsKey( mat ) ) {
             Data.MaterialCache[ mat ] = MapMaterial( mat );
@@ -614,18 +616,18 @@ namespace AGXUnity.IO.BrickIO
       return s;
     }
 
-    void MapSystemPass2( Brick.Physics3D.System system )
+    void MapSystemPass2( openplx.Physics3D.System system )
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass2( subSystem );
 
       // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
-          if ( body.getOwner() is not Brick.Physics3D.System owningSystem ) {
+          if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
             Data.ErrorReporter.Report( body, AgxUnityBrickErrors.RigidBodyOwnerNotSystem );
             continue;
           }
@@ -638,42 +640,42 @@ namespace AGXUnity.IO.BrickIO
       // TODO: Map terrains
     }
 
-    void MapSystemPass3( Brick.Physics3D.System system )
+    void MapSystemPass3( openplx.Physics3D.System system )
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass3( subSystem );
 
-      foreach ( var trackSystem in system.getValues<Brick.Vehicles.Tracks.System>() )
+      foreach ( var trackSystem in system.getValues<openplx.Vehicles.Tracks.System>() )
         TrackMapper.MapTrackSystem( trackSystem );
 
-      foreach ( var mateConnector in system.getValues<Brick.Physics3D.Charges.MateConnector>() )
+      foreach ( var mateConnector in system.getValues<openplx.Physics3D.Charges.MateConnector>() )
         InteractionMapper.MapMateConnectorInitial( mateConnector, s );
 
-      foreach ( var body in system.getValues<Brick.Physics3D.Bodies.RigidBody>() )
-        foreach ( var mateConnector in body.getValues<Brick.Physics3D.Charges.MateConnector>() )
+      foreach ( var body in system.getValues<openplx.Physics3D.Bodies.RigidBody>() )
+        foreach ( var mateConnector in body.getValues<openplx.Physics3D.Charges.MateConnector>() )
           InteractionMapper.MapMateConnectorInitial( mateConnector, Data.BodyCache[ body ].gameObject );
     }
 
-    void MapSystemPass4( Brick.Physics3D.System system )
+    void MapSystemPass4( openplx.Physics3D.System system )
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<Brick.Physics3D.System>() )
+      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
-      foreach ( var kinematicLock in system.getValues<Brick.Physics.KinematicLock>() )
+      foreach ( var kinematicLock in system.getValues<openplx.Physics.KinematicLock>() )
         Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
-      foreach ( var interaction in system.getValues<Brick.Physics.Interactions.Interaction>() )
+      foreach ( var interaction in system.getValues<openplx.Physics.Interactions.Interaction>() )
         if ( !Utils.IsRuntimeMapped( interaction ) )
           Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
-      foreach ( var contactModel in system.getValues<Brick.Physics.Interactions.SurfaceContact.Model>() )
+      foreach ( var contactModel in system.getValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
         InteractionMapper.MapContactModel( contactModel );
 
-      foreach ( var shovel in system.getValues<Brick.Terrain.Shovel>() )
+      foreach ( var shovel in system.getValues<openplx.Terrain.Shovel>() )
         MapShovel( shovel );
 
       // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
@@ -685,7 +687,7 @@ namespace AGXUnity.IO.BrickIO
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-      foreach ( var disabledPair in system.getValues<Brick.Simulation.DisableCollisionPair>() )
+      foreach ( var disabledPair in system.getValues<openplx.Simulation.DisableCollisionPair>() )
         MapDisabledPair( disabledPair );
     }
   }

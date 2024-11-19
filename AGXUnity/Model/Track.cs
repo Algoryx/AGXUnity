@@ -1,4 +1,3 @@
-﻿using AGXUnity.Utils;
 using agxVehicle;
 using System.Collections.Generic;
 using System.Linq;
@@ -323,7 +322,7 @@ namespace AGXUnity.Model
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
 
-      if(WidthVariation != null || ThicknessVariation != null)
+      if ( WidthVariation != null || ThicknessVariation != null )
         Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
 
       if ( isActiveAndEnabled )

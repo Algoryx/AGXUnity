@@ -1,11 +1,10 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-
-using AGXUnity.Utils;
 
 namespace AGXUnity.IO.URDF
 {
@@ -21,9 +20,9 @@ namespace AGXUnity.IO.URDF
     public static string GetLineInfo<T>( T xmlObject )
       where T : XObject
     {
-      if ( xmlObject == null || !((IXmlLineInfo)xmlObject).HasLineInfo() )
+      if ( xmlObject == null || !( (IXmlLineInfo)xmlObject ).HasLineInfo() )
         return "line(unknown)";
-      return $"line({((IXmlLineInfo)xmlObject).LineNumber})";
+      return $"line({( (IXmlLineInfo)xmlObject ).LineNumber})";
     }
 
     /// <summary>
@@ -34,7 +33,7 @@ namespace AGXUnity.IO.URDF
     /// <returns>Line number info string.</returns>
     public static string GetLineInfo( int lineNumber )
     {
-      return $"line({(lineNumber <= 0 ? "unknown" : lineNumber.ToString())})";
+      return $"line({( lineNumber <= 0 ? "unknown" : lineNumber.ToString() )})";
     }
 
     /// <summary>
@@ -54,7 +53,7 @@ namespace AGXUnity.IO.URDF
       var attribute = element?.Attribute( attributeName );
       if ( attribute == null && !optional )
         throw new UrdfIOException( $"{GetLineInfo( element )}: Required attribute '{attributeName}' is missing from " +
-                                 $"'{(element == null ? "null" : element.Name)}'." );
+                                 $"'{( element == null ? "null" : element.Name )}'." );
       return attribute;
     }
 
@@ -209,7 +208,7 @@ namespace AGXUnity.IO.URDF
         using ( var stream = System.IO.File.OpenText( colladaFilename ) ) {
           var line = string.Empty;
           var lineNumber = 0;
-          while ( ++lineNumber <= maxNumLines && (line = stream.ReadLine()) != null ) {
+          while ( ++lineNumber <= maxNumLines && ( line = stream.ReadLine() ) != null ) {
             if ( assetElement == null && line.TrimStart().StartsWith( "<asset>" ) ) {
               assetElement = new List<string>();
               assetElement.Add( line );

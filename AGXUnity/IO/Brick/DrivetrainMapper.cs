@@ -1,5 +1,5 @@
 using AGXUnity.Utils;
-using Brick.Physics1D.Charges;
+using openplx.Physics1D.Charges;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -15,9 +15,9 @@ namespace AGXUnity.IO.BrickIO
       MapperData = data;
     }
 
-    public agxPowerLine.RotationalUnit MapRotationalBody( Brick.Physics1D.Bodies.RotationalBody body )
+    public agxPowerLine.RotationalUnit MapRotationalBody( openplx.Physics1D.Bodies.RotationalBody body )
     {
-      if ( body is Brick.DriveTrain.Shaft shaft ) {
+      if ( body is openplx.DriveTrain.Shaft shaft ) {
         agxDriveTrain.Shaft agx_shaft = new agxDriveTrain.Shaft();
         agx_shaft.setName( body.getName() );
         agx_shaft.setInertia( body.inertia().inertia() );
@@ -31,16 +31,16 @@ namespace AGXUnity.IO.BrickIO
       return rotational_unit;
     }
 
-    public void ConnectDrivetrainInteraction( Brick.Physics.Interactions.Interaction interaction, agxPowerLine.Connector connector )
+    public void ConnectDrivetrainInteraction( openplx.Physics.Interactions.Interaction interaction, agxPowerLine.Connector connector )
     {
-      Brick.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
-      Brick.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
+      openplx.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
+      openplx.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
 
-      var input_connector = charge1 as Brick.Physics1D.Charges.MateConnector;
-      var output_connector = charge2 as Brick.Physics1D.Charges.MateConnector;
+      var input_connector = charge1 as openplx.Physics1D.Charges.MateConnector;
+      var output_connector = charge2 as openplx.Physics1D.Charges.MateConnector;
 
-      var pump_shaft = input_connector.getOwner() as Brick.DriveTrain.Shaft;
-      var turbine_shaft = output_connector.getOwner() as Brick.DriveTrain.Shaft;
+      var pump_shaft = input_connector.getOwner() as openplx.DriveTrain.Shaft;
+      var turbine_shaft = output_connector.getOwner() as openplx.DriveTrain.Shaft;
 
       agxPowerLine.Unit pump_unit = pump_shaft == null ? null : MapperData.UnitCache[pump_shaft];
       agxPowerLine.Unit turbine_unit = turbine_shaft == null ? null : MapperData.UnitCache[turbine_shaft];
@@ -57,26 +57,45 @@ namespace AGXUnity.IO.BrickIO
       }
     }
 
-    public agxPowerLine.RotationalConnector MapGear( Brick.DriveTrain.Gear gear )
+    public agxPowerLine.RotationalConnector MapGear( openplx.DriveTrain.Gear gear )
     {
-      agxDriveTrain.HolonomicGear agx_gear = new agxDriveTrain.HolonomicGear();
+      agxDriveTrain.Gear agx_gear = null;
+      if ( gear is openplx.DriveTrain.ViscousGear viscGear ) {
+        var slipGear = new agxDriveTrain.SlipGear();
+
+        if ( viscGear.dissipation().viscosity() > double.MaxValue )
+          slipGear.setViscousCompliance( 0 );
+        else if ( viscGear.dissipation().viscosity() == 0.0 )
+          slipGear.setViscousCompliance( double.MaxValue );
+        else
+          slipGear.setViscousCompliance( 1.0/viscGear.dissipation().viscosity() );
+
+        agx_gear = slipGear;
+      }
+      else if ( gear is openplx.DriveTrain.FlexibleGear flexGear ) {
+        var holonomicGear = new agxDriveTrain.HolonomicGear();
+        var damping = InteractionMapper.MapDissipation( flexGear.dissipation(), flexGear.flexibility() );
+        if ( damping != null )
+          holonomicGear.setViscousDamping( damping.Value );
+        var flexibility = InteractionMapper.MapFlexibility( flexGear.flexibility() );
+        if ( flexibility != null )
+          holonomicGear.setViscousCompliance( flexibility.Value );
+
+        agx_gear = holonomicGear;
+      }
+      else {
+        // TODO: Error reporting
+        return null;
+      }
 
       agx_gear.setGearRatio( gear.ratio() );
-      var damping = InteractionMapper.MapDissipation( gear.dissipation(), gear.flexibility() );
-      if ( damping != null )
-        agx_gear.setViscousDamping( damping.Value );
-      var flexibility = InteractionMapper.MapFlexibility( gear.flexibility() );
-      if ( flexibility != null )
-        agx_gear.setViscousCompliance( flexibility.Value );
-
-      ConnectDrivetrainInteraction(gear, agx_gear);
-
+      ConnectDrivetrainInteraction( gear, agx_gear );
       agx_gear.setName( gear.getName() );
 
       return agx_gear;
     }
 
-    public agxDriveTrain.GearBox MapGearBox( Brick.DriveTrain.GearBox gear_box )
+    public agxDriveTrain.GearBox MapGearBox( openplx.DriveTrain.GearBox gear_box )
     {
       agxDriveTrain.GearBox agx_gear_box = new agxDriveTrain.GearBox();
       agx.RealVector gears = new agx.RealVector();
@@ -104,28 +123,28 @@ namespace AGXUnity.IO.BrickIO
       return agx_gear_box;
     }
 
-    public agxDriveTrain.Differential MapDifferential( Brick.DriveTrain.Differential differential )
+    public agxDriveTrain.Differential MapDifferential( openplx.DriveTrain.Differential differential )
     {
       agxDriveTrain.Differential agx_differential = new agxDriveTrain.Differential();
 
-      if ( differential is Brick.DriveTrain.TorqueLimitedSlipDifferential lsd ) {
+      if ( differential is openplx.DriveTrain.TorqueLimitedSlipDifferential lsd ) {
         agx_differential.setLock( true );
         agx_differential.setLimitedSlipTorque( lsd.breakaway_torque() );
       }
 
       agx_differential.setGearRatio( differential.gear_ratio() );
 
-      Brick.Physics.Charges.Charge charge1 = differential.charges().Count >= 1 ? differential.charges()[0] : null;
-      Brick.Physics.Charges.Charge charge2 = differential.charges().Count >= 2 ? differential.charges()[1] : null;
-      Brick.Physics.Charges.Charge charge3 = differential.charges().Count >= 3 ? differential.charges()[2] : null;
+      openplx.Physics.Charges.Charge charge1 = differential.charges().Count >= 1 ? differential.charges()[0] : null;
+      openplx.Physics.Charges.Charge charge2 = differential.charges().Count >= 2 ? differential.charges()[1] : null;
+      openplx.Physics.Charges.Charge charge3 = differential.charges().Count >= 3 ? differential.charges()[2] : null;
 
-      var drive_connector = charge1 as Brick.Physics1D.Charges.MateConnector;
-      var left_connector  = charge2 as Brick.Physics1D.Charges.MateConnector;
-      var right_connector = charge3 as Brick.Physics1D.Charges.MateConnector;
+      var drive_connector = charge1 as openplx.Physics1D.Charges.MateConnector;
+      var left_connector  = charge2 as openplx.Physics1D.Charges.MateConnector;
+      var right_connector = charge3 as openplx.Physics1D.Charges.MateConnector;
 
-      var drive_shaft = drive_connector?.getOwner() as Brick.DriveTrain.Shaft;
-      var left_shaft  = left_connector?.getOwner() as Brick.DriveTrain.Shaft;
-      var right_shaft = right_connector?.getOwner() as Brick.DriveTrain.Shaft;
+      var drive_shaft = drive_connector?.getOwner() as openplx.DriveTrain.Shaft;
+      var left_shaft  = left_connector?.getOwner() as openplx.DriveTrain.Shaft;
+      var right_shaft = right_connector?.getOwner() as openplx.DriveTrain.Shaft;
       agxPowerLine.Unit drive_unit = MapperData.UnitCache.GetValueOrDefault(drive_shaft,null);
       agxPowerLine.Unit left_unit  = MapperData.UnitCache.GetValueOrDefault(left_shaft,null);
       agxPowerLine.Unit right_unit = MapperData.UnitCache.GetValueOrDefault(right_shaft,null);
@@ -148,7 +167,7 @@ namespace AGXUnity.IO.BrickIO
 
     }
 
-    public agxDriveTrain.TorqueConverter MapTorqueConverter( Brick.DriveTrain.EmpiricalTorqueConverter tc )
+    public agxDriveTrain.TorqueConverter MapTorqueConverter( openplx.DriveTrain.EmpiricalTorqueConverter tc )
     {
       agxDriveTrain.TorqueConverter agx_torque_converter = new agxDriveTrain.TorqueConverter();
 
@@ -175,7 +194,7 @@ namespace AGXUnity.IO.BrickIO
       return agx_torque_converter;
     }
 
-    public agxDriveTrain.VelocityConstraint Map1dRotationalVelocityMotor( Brick.Physics1D.Interactions.RotationalVelocityMotor motor )
+    public agxDriveTrain.VelocityConstraint Map1dRotationalVelocityMotor( openplx.Physics1D.Interactions.RotationalVelocityMotor motor )
     {
       agxDriveTrain.VelocityConstraint constraint = null;
 
@@ -192,7 +211,7 @@ namespace AGXUnity.IO.BrickIO
       return constraint;
     }
 
-    public agxDriveTrain.CombustionEngine MapCombustionEngine( Brick.DriveTrain.CombustionEngine engine )
+    public agxDriveTrain.CombustionEngine MapCombustionEngine( openplx.DriveTrain.CombustionEngine engine )
     {
       var parameters = new agxDriveTrain.CombustionEngineParameters();
       parameters.displacementVolume = engine.displacement_volume();
@@ -206,7 +225,7 @@ namespace AGXUnity.IO.BrickIO
 
       agxEngine.setEnable( true );
       agxEngine.setThrottle( engine.initial_throttle() );
-      Brick.Physics.Charges.Charge charge = engine.charges().Count >= 1 ? engine.charges()[0] : null;
+      openplx.Physics.Charges.Charge charge = engine.charges().Count >= 1 ? engine.charges()[0] : null;
 
       var stiff_internal_gear = new agxDriveTrain.Gear(1.0);
       stiff_internal_gear.connect( agxPowerLine.Side.INPUT, agxPowerLine.Side.OUTPUT, agxEngine );
@@ -217,7 +236,7 @@ namespace AGXUnity.IO.BrickIO
         //reportErrorFromKey( torque_converter_key, AGXBrickError.MissingConnectedBody, system );
       }
       else {
-        var shaft = connector.getOwner() as Brick.DriveTrain.Shaft;
+        var shaft = connector.getOwner() as openplx.DriveTrain.Shaft;
 
         agxPowerLine.Unit shaft_unit = shaft == null ? null : MapperData.UnitCache[ shaft ];
 
@@ -235,10 +254,10 @@ namespace AGXUnity.IO.BrickIO
 
     }
 
-    public void MapActuator( Brick.DriveTrain.Actuator actuator )
+    public void MapActuator( openplx.DriveTrain.Actuator actuator )
     {
-      Brick.Physics1D.Charges.MateConnector connector_1d = actuator.connector_1d();
-      Brick.Core.Object mate = actuator.mate_3d();
+      openplx.Physics1D.Charges.MateConnector connector_1d = actuator.connector_1d();
+      openplx.Core.Object mate = actuator.mate_3d();
 
       var agx_constraint = MapperData.Root.FindMappedObject( mate.getName() )?.GetInitializedComponent<Constraint>();
       if ( agx_constraint == null ) {
@@ -253,12 +272,12 @@ namespace AGXUnity.IO.BrickIO
 
       // Create agx actuator for this (BRICK) actuator
       agxPowerLine.Actuator axis = null;
-      if ( actuator is Brick.DriveTrain.HingeActuator ha ) {
+      if ( actuator is openplx.DriveTrain.HingeActuator ha ) {
         var rotational_actuator = new agxPowerLine.RotationalActuator(agx_constraint.Native.asConstraint1DOF());
         rotational_actuator.getInputShaft().setInertia( internal_inertia );
         axis = rotational_actuator;
       }
-      else if ( actuator is Brick.DriveTrain.PrismaticActuator pa ) {
+      else if ( actuator is openplx.DriveTrain.PrismaticActuator pa ) {
         var translational_actuator = new agxPowerLine.TranslationalActuator (agx_constraint.Native.asConstraint1DOF());
         translational_actuator.getInputRod().setMass( internal_inertia );
         axis = translational_actuator;

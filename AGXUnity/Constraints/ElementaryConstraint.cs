@@ -1,6 +1,7 @@
 ﻿using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -135,18 +136,24 @@ namespace AGXUnity
     }
 
     [Obsolete]
-    public void MigrateInternalData(AGXUnity.Deprecated.ElementaryConstraint ec)
+    public void MigrateInternalData( AGXUnity.Deprecated.ElementaryConstraint ec )
     {
       NativeName = ec.NativeName;
-      List<ElementaryConstraintRowData> newRDs = new List<ElementaryConstraintRowData>();
+      if ( RowData == null )
+        RowData = new ElementaryConstraintRowData[ 0 ];
+      var newRDs = new List<ElementaryConstraintRowData>();
       foreach ( var row in ec.RowData ) {
-        var newRowData = new ElementaryConstraintRowData(this, row.Row);
+        var newRowData = RowData.FirstOrDefault(r => r.Row == row.Row);
+        if ( newRowData == null ) {
+          newRowData = new ElementaryConstraintRowData( this, row.Row );
+          newRDs.Add( newRowData );
+        }
         newRowData.Compliance = row.Compliance;
         newRowData.Damping = row.Damping;
         newRowData.ForceRange = row.ForceRange;
-        newRDs.Add( newRowData );
       }
-      RowData = newRDs.ToArray();
+      if ( newRDs.Count > 0 )
+        RowData = RowData.Concat( newRDs ).ToArray();
     }
 
     protected virtual void Construct( agx.ElementaryConstraint tmpEc )

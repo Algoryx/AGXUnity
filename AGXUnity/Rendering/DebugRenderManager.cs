@@ -1,7 +1,7 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {
@@ -332,7 +332,7 @@ namespace AGXUnity.Rendering
 
       // Shapes with inactive game objects will be updated below when we're
       // traversing all children.
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       FindObjectsByType<Collide.Shape>( FindObjectsInactive.Include, FindObjectsSortMode.None ).ToList().ForEach(
         shape => SynchronizeShape( shape )
       );

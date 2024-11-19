@@ -1,8 +1,8 @@
 using AGXUnity.Utils;
-using Brick.DriveTrain;
-using Brick.Physics.Signals;
-using Brick.Physics1D.Signals;
-using Brick.Physics3D.Signals;
+using openplx.DriveTrain;
+using openplx.Physics.Signals;
+using openplx.Physics1D.Signals;
+using openplx.Physics3D.Signals;
 using UnityEngine;
 
 namespace AGXUnity.IO.BrickIO
@@ -25,7 +25,7 @@ namespace AGXUnity.IO.BrickIO
         _ => null
       };
 
-      if(signal == null)
+      if ( signal == null )
         Debug.LogWarning( $"Unhandled output of type {output.getType().getName()}" );
 
       return signal;
@@ -33,7 +33,7 @@ namespace AGXUnity.IO.BrickIO
 
     private static ValueOutputSignal GenerateLinearVelocity3DOutputSignal( BrickRoot root, LinearVelocity3DOutput lv3do )
     {
-      if ( lv3do.source() is Brick.Physics3D.Bodies.RigidBody sourceRB ) {
+      if ( lv3do.source() is openplx.Physics3D.Bodies.RigidBody sourceRB ) {
         var go = root.FindMappedObject(sourceRB.getName());
         var rb = go.GetComponent<RigidBody>();
         var vel = rb.LinearVelocity.ToLeftHanded();
@@ -48,7 +48,7 @@ namespace AGXUnity.IO.BrickIO
 
     private static ValueOutputSignal GenerateLinearVelocity1DOutputSignal( BrickRoot root, LinearVelocity1DOutput lv1do )
     {
-      if ( lv1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
+      if ( lv1do.source() is openplx.Physics3D.Interactions.Prismatic sourcePrismatic ) {
         var prismatic = root.FindMappedObject( sourcePrismatic.getName() );
         var constraint = prismatic.GetComponent<Constraint>();
         return ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), lv1do );
@@ -88,7 +88,7 @@ namespace AGXUnity.IO.BrickIO
 
     private static ValueOutputSignal GeneratePosition1DOutputSignal( BrickRoot root, Position1DOutput p1do )
     {
-      if ( p1do.source() is Brick.Physics3D.Interactions.Prismatic sourcePrismatic ) {
+      if ( p1do.source() is openplx.Physics3D.Interactions.Prismatic sourcePrismatic ) {
         var prismatic = root.FindMappedObject( sourcePrismatic.getName() );
         var constraint = prismatic.GetComponent<Constraint>();
         return ValueOutputSignal.from_distance( constraint.GetCurrentAngle(), p1do );

@@ -1,12 +1,11 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity.Utils;
-
+using UnityEngine;
 using Object = UnityEngine.Object;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -27,7 +26,7 @@ namespace AGXUnityEditor.IO
     /// Absolute Unity project directory without trailing /, i.e., add '/Assets/Foo' for
     /// directory Foo in the project default assets folder.
     /// </summary>
-    public static string ProjectDirectory =>  Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ), "/Assets".Length );
+    public static string ProjectDirectory => Application.dataPath.Remove( Application.dataPath.LastIndexOf( "/Assets" ), "/Assets".Length );
 
     /// <summary>
     /// Directory of AGXUnity source code, i.e, package directory + /AGXUnity.
@@ -77,7 +76,7 @@ namespace AGXUnityEditor.IO
     /// <summary>
     /// Absolute directory of AGXUnityEditor source code, i.e, full package directory + /Editor/AGXUnityEditor.
     /// </summary>
-    public static string AGXUnityEditorSourceDirectoryFull => GetFullPath(AGXUnityEditorSourceDirectory);
+    public static string AGXUnityEditorSourceDirectoryFull => GetFullPath( AGXUnityEditorSourceDirectory );
 
     /// <summary>
     /// AGXUnity package directory relative Unity project, e.g., Assets/Foo if AGXUnity source
@@ -91,7 +90,7 @@ namespace AGXUnityEditor.IO
         var filePath = GetCurrentFilePath().Replace('\\','/');
         var assetCtx = filePath.StartsWith( Application.dataPath );
 
-        if( assetCtx ) { 
+        if ( assetCtx ) {
           var refScriptFullPath = Application.dataPath + '/' + m_relDataPathDir + '/' + m_refDirectory + '/' + m_refScript;
           if ( m_relDataPathDir != "" && File.Exists( refScriptFullPath ) )
             return "Assets/" + m_relDataPathDir;
@@ -106,7 +105,8 @@ namespace AGXUnityEditor.IO
           }
 
           return "Assets/" + m_relDataPathDir;
-        } else {
+        }
+        else {
           return "Packages/" + PackageName;
         }
       }
@@ -119,10 +119,10 @@ namespace AGXUnityEditor.IO
 
     private static string GetCurrentFilePath( [System.Runtime.CompilerServices.CallerFilePath] string fileName = null ) => fileName;
 
-    private static string GetFullPath(string fileName )
+    private static string GetFullPath( string fileName )
     {
       if ( fileName.StartsWith( "Package" ) )
-        return Path.GetFullPath(fileName);
+        return Path.GetFullPath( fileName );
       else return ProjectDirectory + "/" + fileName;
     }
 

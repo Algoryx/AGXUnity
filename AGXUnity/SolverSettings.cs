@@ -117,9 +117,12 @@ namespace AGXUnity
     /// <returns>Managed MCP algorithm type.</returns>
     public static McpAlgorithmType Convert( agx.Solver.McpAlgoritmType type )
     {
-      return type == agx.Solver.McpAlgoritmType.BLOCK_PIVOT ? McpAlgorithmType.BlockPivot :
-             type == agx.Solver.McpAlgoritmType.KELLER ?      McpAlgorithmType.Keller :
-                                                              McpAlgorithmType.HybridPivot;
+      return type switch
+      {
+        agx.Solver.McpAlgoritmType.BLOCK_PIVOT => McpAlgorithmType.BlockPivot,
+        agx.Solver.McpAlgoritmType.KELLER => McpAlgorithmType.Keller,
+        _ => McpAlgorithmType.HybridPivot
+      };
     }
 
     /// <summary>
@@ -129,9 +132,12 @@ namespace AGXUnity
     /// <returns>Native MCP algorithm type.</returns>
     public static agx.Solver.McpAlgoritmType Convert( McpAlgorithmType type )
     {
-      return type == McpAlgorithmType.BlockPivot ? agx.Solver.McpAlgoritmType.BLOCK_PIVOT :
-             type == McpAlgorithmType.Keller     ? agx.Solver.McpAlgoritmType.KELLER :
-                                                   agx.Solver.McpAlgoritmType.HYBRID_PIVOT;
+      return type switch
+      {
+        McpAlgorithmType.BlockPivot => agx.Solver.McpAlgoritmType.BLOCK_PIVOT,
+        McpAlgorithmType.Keller => agx.Solver.McpAlgoritmType.KELLER,
+        _ => agx.Solver.McpAlgoritmType.HYBRID_PIVOT
+      };
     }
 
     [SerializeField]

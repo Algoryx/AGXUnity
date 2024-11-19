@@ -102,14 +102,22 @@ namespace AGXUnityEditor
       var ok = GUI.AddColorTag( "<b>OK</b> ", Color.green ) + " <i>Using recommended setting</i>";
       var note = GUI.AddColorTag( "<b>Note</b> ", Color.yellow );
 
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+#endif
       EditorGUILayout.LabelField( "<b>.NET Runtime</b>" );
       if ( hasMonoRuntime )
         EditorGUILayout.LabelField( ok );
       else {
         EditorGUILayout.LabelField( note + "AGX Dynamics for Unity requires .NET Runtime: Mono", skin.LabelWordWrap );
         if ( InspectorGUI.Link( GUI.MakeLabel( "Click here to update this setting!" ) ) ) {
+#if UNITY_2023_3_OR_NEWER
+          PlayerSettings.SetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x );
+#else
           PlayerSettings.SetScriptingBackend( BuildTargetGroup.Standalone, ScriptingImplementation.Mono2x );
+#endif
           Debug.Log( "Updated Unity Player Settings -> Scripting Backend to compatible runtime." );
         }
       }
@@ -196,19 +204,16 @@ namespace AGXUnityEditor
 
         if ( showDropdownPressed ) {
           GenericMenu menu = new GenericMenu();
-          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () => {
             if ( EditorUtility.DisplayDialog( "Reset to default", "Reset key(s) to default?", "OK", "Cancel" ) )
               keyHandler.ResetToDefault();
           } );
-          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () =>
-          {
+          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () => {
             keyHandler.Add( KeyCode.None );
           } );
 
           if ( keyHandler.NumKeyCodes > 1 ) {
-            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () =>
-            {
+            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () => {
               if ( EditorUtility.DisplayDialog( "Remove key", "Remove key: " + keyHandler[ keyHandler.NumKeyCodes - 1 ].ToString() + "?", "OK", "Cancel" ) )
                 keyHandler.Remove( keyHandler.NumKeyCodes - 1 );
             } );

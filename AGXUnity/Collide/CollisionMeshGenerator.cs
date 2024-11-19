@@ -176,8 +176,7 @@ namespace AGXUnity.Collide
       var totNumVertices = mergers.Sum( merger => merger.Vertices.Count );
       Progress = 0.0f;
       var numProcessedVertices = 0;
-      return Task.Run( () =>
-      {
+      return Task.Run( () => {
         var results = new Result[ meshes.Length ];
 
         NativeHandler.Instance.RegisterCurrentThread();
@@ -291,18 +290,17 @@ namespace AGXUnity.Collide
       // Next, if merge nearby vertices is enabled, do that too:
       var mergeNearbyEnabled = options != null && options.MergeNearbyEnabled;
       orgNumVertices = merger.Vertices.Count;
-      if (mergeNearbyEnabled) { 
-        merger.MergeNearby(options.MergeNearbyDistance);
+      if ( mergeNearbyEnabled ) {
+        merger.MergeNearby( options.MergeNearbyDistance );
       }
 
-      if (merger.Vertices.Count == 0)
-      {
-        if (mergeNearbyEnabled && orgNumVertices > 0)
-          UnityEngine.Debug.LogWarning($"Merging nearby Vertices reduced a collision mesh from {orgNumVertices} vertices to zero. " +
-                                        "Ignoring collision mesh.", mesh);
+      if ( merger.Vertices.Count == 0 ) {
+        if ( mergeNearbyEnabled && orgNumVertices > 0 )
+          UnityEngine.Debug.LogWarning( $"Merging nearby Vertices reduced a collision mesh from {orgNumVertices} vertices to zero. " +
+                                        "Ignoring collision mesh.", mesh );
         else
-          UnityEngine.Debug.LogWarning($"Mesh \"{mesh.name}\" doesn't contain any vertices for the collision mesh. " +
-                                        "Ignoring collision mesh.", mesh);
+          UnityEngine.Debug.LogWarning( $"Mesh \"{mesh.name}\" doesn't contain any vertices for the collision mesh. " +
+                                        "Ignoring collision mesh.", mesh );
 
         return null;
       }

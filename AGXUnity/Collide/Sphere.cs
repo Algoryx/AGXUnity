@@ -1,6 +1,4 @@
-﻿using System;
-using UnityEngine;
-using AGXUnity.Utils;
+﻿using UnityEngine;
 
 namespace AGXUnity.Collide
 {

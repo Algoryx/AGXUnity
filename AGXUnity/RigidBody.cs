@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
+﻿using AGXUnity.Collide;
 using AGXUnity.Utils;
-using AGXUnity.Collide;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -222,7 +222,7 @@ namespace AGXUnity
     {
       get
       {
-        return ((State == States.CONSTRUCTED || State == States.DESTROYED) && GetArticulatedRoot() != null) ||
+        return ( ( State == States.CONSTRUCTED || State == States.DESTROYED ) && GetArticulatedRoot() != null ) ||
                m_hasArticulatedRoot;
       }
       private set
@@ -261,8 +261,7 @@ namespace AGXUnity
     /// </summary>
     public void UpdateMassProperties()
     {
-      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) =>
-      {
+      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) => {
         if ( !isTemp ) {
           rb.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
           rb.updateMassProperties();
@@ -404,7 +403,7 @@ namespace AGXUnity
       Shapes             = GetShapes();
       HasArticulatedRoot = GetArticulatedRoot() != null &&
                            GetArticulatedRoot().enabled;
-      
+
       VerifyConfiguration();
 
       m_rb = new agx.RigidBody();

@@ -31,7 +31,7 @@ namespace AGXUnity
       {
         return GetEnumerator();
       }
-    } 
+    }
 
     public virtual ValidatedRoute GetValidated()
     {
@@ -41,7 +41,7 @@ namespace AGXUnity
 
       return validatedRoute;
     }
-    
+
     /// <summary>
     /// Route node list.
     /// </summary>

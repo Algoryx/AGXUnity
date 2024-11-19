@@ -15,30 +15,47 @@ namespace AGXUnity
       set
       {
         m_aerodynamicsEnabled = value;
-        if ( m_objects != null && WindAndWaterManager.HasInstance ) {
-          var manager = WindAndWaterManager.Instance.GetInitialized<WindAndWaterManager>().Native;
-          foreach ( var shape in m_objects.Shapes ) {
-            if ( shape.GetInitialized<Collide.Shape>() == null )
-              continue;
+        SetEnableAerodynamics( m_aerodynamicsEnabled );
+      }
+    }
 
-            manager.setEnableAerodynamics( shape.NativeGeometry, m_aerodynamicsEnabled );
-          }
+    private void SetEnableAerodynamics( bool enable )
+    {
+      if ( m_objects != null && WindAndWaterManager.HasInstance ) {
+        var manager = WindAndWaterManager.Instance.GetInitialized<WindAndWaterManager>().Native;
+        foreach ( var shape in m_objects.Shapes ) {
+          if ( shape.GetInitialized<Collide.Shape>() == null )
+            continue;
 
-          foreach ( var wire in m_objects.Wires ) {
-            if ( wire.GetInitialized<Wire>() == null )
-              continue;
+          manager.setEnableAerodynamics( shape.NativeGeometry, enable );
+        }
 
-            manager.setEnableAerodynamics( wire.Native, m_aerodynamicsEnabled );
-          }
+        foreach ( var wire in m_objects.Wires ) {
+          if ( wire.GetInitialized<Wire>() == null )
+            continue;
 
-          foreach ( var cable in m_objects.Cables ) {
-            if ( cable.GetInitialized<Cable>() == null )
-              continue;
+          manager.setEnableAerodynamics( wire.Native, enable );
+        }
 
-            manager.setEnableAerodynamics( cable.Native, m_aerodynamicsEnabled );
-          }
+        foreach ( var cable in m_objects.Cables ) {
+          if ( cable.GetInitialized<Cable>() == null )
+            continue;
+
+          manager.setEnableAerodynamics( cable.Native, enable );
         }
       }
+    }
+
+    protected override void OnDisable()
+    {
+      SetEnableAerodynamics( false );
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      SetEnableAerodynamics( m_aerodynamicsEnabled );
+      base.OnEnable();
     }
   }
 }

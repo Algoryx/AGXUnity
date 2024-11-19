@@ -67,7 +67,7 @@ namespace AGXUnityEditor.Tools
       var lineVisualRadius   = 0.005f;
       var sphereVisualRadius = 1.5f * lineVisualRadius;
       var renderOnSceneView  = !ConfigurationToolActive() &&
-                                Line.Valid && ( 
+                                Line.Valid && (
                                !EditorApplication.isPlaying ||
                                 EditorApplication.isPaused );
       var startEnabled = renderOnSceneView && GetFrameToggleEnable( StartFrameNameId );
@@ -199,7 +199,9 @@ namespace AGXUnityEditor.Tools
       if ( Mode != ToolMode.Direction || !Line.Valid )
         return;
 
+      Line.End.SetParent( Line.Start.Parent );
       Line.End.Position = Line.Start.Position + Line.Start.Rotation * Vector3.back;
+      Line.End.Rotation = Line.Start.Rotation;
     }
 
     private bool ConfigurationToolActive()

@@ -279,8 +279,7 @@ namespace AGXUnity.Model
       set
       {
         m_soilAggregateLockComplianceTranslational = value;
-        Propagate( properties =>
-        {
+        Propagate( properties => {
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceTranslational.x, 0 );
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceTranslational.y, 1 );
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceTranslational.z, 2 );
@@ -305,8 +304,7 @@ namespace AGXUnity.Model
       set
       {
         m_soilAggregateLockComplianceRotational = value;
-        Propagate( properties =>
-        {
+        Propagate( properties => {
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceRotational.x, 3 );
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceRotational.y, 4 );
           properties.setSoilAggregateLockCompliance( m_soilAggregateLockComplianceRotational.z, 5 );
@@ -410,7 +408,7 @@ namespace AGXUnity.Model
         return;
 
       if ( m_singleSynchronizeInstance != null ) {
-        if ( m_singleSynchronizeInstance.GetProperties() != null) {
+        if ( m_singleSynchronizeInstance.GetProperties() != null ) {
           action( m_singleSynchronizeInstance.GetProperties() );
           m_singleSynchronizeInstance.OnPropertiesUpdated();
         }
@@ -418,7 +416,7 @@ namespace AGXUnity.Model
       }
 
       foreach ( var terrain in m_terrains )
-        if ( terrain.GetProperties() != null) {
+        if ( terrain.GetProperties() != null ) {
           action( terrain.GetProperties() );
           terrain.OnPropertiesUpdated();
         }

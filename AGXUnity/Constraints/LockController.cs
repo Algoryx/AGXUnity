@@ -37,7 +37,7 @@ namespace AGXUnity
     public float GetCurrentForce()
     {
       if ( Native != null )
-        return (float) agx.LockController.safeCast( Native ).getCurrentForce( );
+        return (float)agx.LockController.safeCast( Native ).getCurrentForce();
       else
         return 0;
     }
