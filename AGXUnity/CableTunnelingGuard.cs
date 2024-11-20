@@ -71,7 +71,7 @@ namespace AGXUnity
         m_mesh = new Mesh();
       if ( m_pointCurveCache != null && m_pointCurveCache.Length >= 2 ) {
         double segmentLength = ( Cable.GetRoutePoints()[ 0 ]-Cable.GetRoutePoints()[ 1 ] ).magnitude;
-        var meshData = agxUtil.PrimitiveMeshGenerator.createCapsule(Cable.Radius * m_hullScale, segmentLength, 1f).getMeshData();
+        var meshData = agxUtil.PrimitiveMeshGenerator.createCapsule(Cable.Radius * m_hullScale, segmentLength, 0.5f).getMeshData();
         m_mesh.vertices = meshData.getVertices().Select( x => x.ToHandedVector3() ).ToArray();
         m_mesh.triangles = meshData.getIndices().Select( x => (int)x ).ToArray();
 
@@ -316,7 +316,7 @@ namespace AGXUnity
       }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
       //if(m_mesh != null ) {
       //  var color = Color.Lerp( Color.yellow, Color.red, 0.5f );
@@ -324,7 +324,7 @@ namespace AGXUnity
       //  Gizmos.color = color;
       //  Gizmos.DrawWireMesh( m_mesh, Vector3.zero);
       //}
-      if ( m_pointCurveCache != null && m_pointCurveCache.Length != 0 ) {
+      if ( enabled && m_pointCurveCache != null && m_pointCurveCache.Length != 0 ) {
         var color = Color.Lerp( Color.yellow, Color.red, 0.5f );
         color.a = 0.01f;
         Gizmos.color = color;
