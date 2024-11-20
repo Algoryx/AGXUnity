@@ -1,3 +1,6 @@
+using AGXUnity.Utils;
+using System;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -22,6 +25,11 @@ namespace AGXUnity
     [HideInInspector]
     public Cable Cable { get { return m_cable ??= GetComponent<Cable>(); } }
 
+    /// <summary>
+    /// The mesh which is used to visualise a hull
+    /// </summary>
+    private Mesh m_mesh = null;
+
     [SerializeField]
     private double m_hullScale = 4;
 
@@ -30,10 +38,33 @@ namespace AGXUnity
       get { return m_hullScale; }
       set
       {
-        m_hullScale = value;
+        if(m_hullScale != value)
+        {          
+          UpdateRenderingMesh();
+        }
+
+        m_hullScale = value;            
         if ( Native != null ) {
           Native.setHullScale( m_hullScale );
         }
+      }
+    }
+
+    private void UpdateRenderingMesh()
+    {
+      if ( Cable.GetRoutePoints().Length >= 2 )
+      {
+        double segmentLength = (Cable.GetRoutePoints()[0]-Cable.GetRoutePoints()[1]).magnitude;
+        var meshData = agxUtil.PrimitiveMeshGenerator.createCapsule(Cable.Radius * m_hullScale, segmentLength).getMeshData();
+        m_mesh = new Mesh();
+
+        m_mesh.vertices = meshData.getVertices().Select(x => x.ToHandedVector3()).ToArray();
+        m_mesh.triangles = meshData.getIndices().Select(x => (int)x).ToArray();
+
+        m_mesh.name = "CableTunnelingGuard - Hull mesh";
+        m_mesh.RecalculateBounds();
+        m_mesh.RecalculateNormals();
+        m_mesh.RecalculateTangents();
       }
     }
 
@@ -151,6 +182,23 @@ namespace AGXUnity
     {
       if ( GetComponent<Cable>() == null )
         Debug.LogError( "Component: CableDamage requires Cable component.", this );
+    }
+
+    protected void LateUpdate()
+    {
+      // Late update from Editor. Exit if the application is running.
+      if ( Application.isPlaying )
+        return;
+
+      
+    }
+
+    private void OnDrawGizmos()
+    {
+      foreach(var point in Cable.GetRoutePoints())
+      {
+        Gizmos.DrawWireMesh(m_mesh, point);
+      }
     }
   }
 
