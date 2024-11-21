@@ -46,14 +46,14 @@ namespace AGXUnity.Utils
         return capsule.Radius * GetLocalFaceDirection( dir );
     }
 
-    public static UnityEngine.Mesh CreateCapsuleMesh(float radius, float height, float resolution, UnityEngine.Mesh destination = null)
+    public static UnityEngine.Mesh CreateCapsuleMesh( float radius, float height, float resolution, UnityEngine.Mesh destination = null )
     {
       destination ??= new UnityEngine.Mesh();
 
       radius = Mathf.Max( 0, radius );
       height = Mathf.Max( 0, height );
 
-      agxCollide.MeshData meshData = agxUtil.PrimitiveMeshGenerator.createCapsule( radius, height, resolution ).getMeshData();      
+      agxCollide.MeshData meshData = agxUtil.PrimitiveMeshGenerator.createCapsule( radius, height, resolution ).getMeshData();
       int[] triangles = meshData.getIndices().Select(triangle => (int)triangle).ToArray();
 
       // Flip winding order

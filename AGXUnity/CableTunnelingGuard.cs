@@ -168,7 +168,7 @@ namespace AGXUnity
         //m_mesh = combinedMesh;
         #endregion
       }
-      }
+    }
 
     [SerializeField]
     private double m_angleThreshold = 90.0 * 0.9;
