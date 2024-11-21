@@ -220,6 +220,7 @@ namespace AGXUnity.Rendering
       Cone cone                     = shape as Cone;
       HollowCone hollowCone         = shape as HollowCone;
       HollowCylinder hollowCylinder = shape as HollowCylinder;
+      Capsule capsule               = shape as Capsule;
       if ( mesh != null )
         Node = InitializeMesh( mesh );
       else if ( heightField != null )
@@ -238,6 +239,11 @@ namespace AGXUnity.Rendering
         Node = new GameObject( PrefabName );
         Node.AddComponent<MeshRenderer>().sharedMaterial = manager.ShapeRenderMaterial;
         Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualCone.GenerateMesh( shape );
+      }
+      else if ( capsule != null ) {
+        Node = new GameObject( PrefabName );
+        Node.AddComponent<MeshRenderer>().sharedMaterial = manager.ShapeRenderMaterial;
+        Node.AddComponent<MeshFilter>().sharedMesh = ShapeVisualCapsule.GenerateMesh( shape );
       }
       else {
         Node = PrefabLoader.Instantiate<GameObject>( PrefabName );
