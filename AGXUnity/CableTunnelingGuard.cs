@@ -9,7 +9,7 @@ namespace AGXUnity
   [AddComponentMenu( "AGXUnity/Cable Tunneling Guard" )]
   [DisallowMultipleComponent]
   [RequireComponent( typeof( AGXUnity.Cable ) )]
-  //[HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-tunneling-guard" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable-tunneling-guard" )]
   [ExecuteInEditMode]
   public class CableTunnelingGuard : ScriptComponent
   {
@@ -41,10 +41,10 @@ namespace AGXUnity
       set
       {
         if ( m_hullScale != value ) {
+          m_hullScale = value;
           UpdateRenderingMesh();
         }
 
-        m_hullScale = value;
         if ( Native != null ) {
           Native.setHullScale( m_hullScale );
         }
@@ -70,15 +70,8 @@ namespace AGXUnity
       if ( m_mesh == null )
         m_mesh = new Mesh();
       if ( m_pointCurveCache != null && m_pointCurveCache.Length >= 2 ) {
-        double segmentLength = ( Cable.GetRoutePoints()[ 0 ]-Cable.GetRoutePoints()[ 1 ] ).magnitude;
-        var meshData = agxUtil.PrimitiveMeshGenerator.createCapsule(Cable.Radius * m_hullScale, segmentLength, 0.5f).getMeshData();
-        m_mesh.vertices = meshData.getVertices().Select( x => x.ToHandedVector3() ).ToArray();
-        m_mesh.triangles = meshData.getIndices().Select( x => (int)x ).ToArray();
-
-        m_mesh.name = "CableTunnelingGuard - Hull mesh";
-        m_mesh.RecalculateBounds();
-        m_mesh.RecalculateNormals();
-        m_mesh.RecalculateTangents();
+        float segmentLength = ( Cable.GetRoutePoints()[ 0 ]-Cable.GetRoutePoints()[ 1 ] ).magnitude;
+        CapsuleShapeUtils.CreateCapsuleMesh( Cable.Radius * (float)m_hullScale, segmentLength, 0.7f, m_mesh );
 
         #region boolean_mesh_generatino
         //double segmentLength = (Cable.GetRoutePoints()[0]-Cable.GetRoutePoints()[1]).magnitude;

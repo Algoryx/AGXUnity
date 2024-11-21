@@ -1,4 +1,5 @@
 ﻿using AGXUnity.Collide;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Utils
@@ -43,6 +44,30 @@ namespace AGXUnity.Utils
         return ( capsule.Radius + 0.5f * capsule.Height ) * GetLocalFaceDirection( dir );
       else
         return capsule.Radius * GetLocalFaceDirection( dir );
+    }
+
+    public static UnityEngine.Mesh CreateCapsuleMesh(float radius, float height, float resolution, UnityEngine.Mesh destination = null)
+    {
+      destination ??= new UnityEngine.Mesh();
+
+      radius = Mathf.Max( 0, radius );
+      height = Mathf.Max( 0, height );
+
+      agxCollide.MeshData meshData = agxUtil.PrimitiveMeshGenerator.createCapsule( radius, height, resolution ).getMeshData();      
+      int[] triangles = meshData.getIndices().Select(triangle => (int)triangle).ToArray();
+
+      // Flip winding order
+      for ( int i = 0; i < triangles.Length; i+=3 )
+        (triangles[ i+2 ], triangles[ i+1 ]) = (triangles[ i+1 ], triangles[ i+2 ]);
+
+      destination.SetTriangles( triangles, 0, calculateBounds: false );
+
+      destination.SetVertices( meshData.getVertices().Select( v => v.ToHandedVector3() ).ToArray() );
+
+      destination.RecalculateNormals();
+      destination.RecalculateTangents();
+
+      return destination;
     }
   }
 
