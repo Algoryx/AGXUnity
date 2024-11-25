@@ -63,6 +63,11 @@ namespace AGXUnity
       }
     }
 
+    // See documentation / tutorials for a more detailed description of the native parameters
+
+    /// <summary>
+    /// The angle to cable ends at which and approaching contact is accepted
+    /// </summary>
     [SerializeField]
     private double m_angleThreshold = 90.0 * 0.9;
 
@@ -78,6 +83,10 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// A parameter which controls how far the estimated penetration depth must be at the enxt step to attempt to
+    /// prevent a tunneling occurence
+    /// </summary>
     [SerializeField]
     private double m_leniency = 0;
 
@@ -93,6 +102,10 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// The amount of steps for which the component will continue adding contacts to the solver after a contact has
+    /// been predicted.
+    /// </summary>
     [SerializeField]
     private uint m_debounceSteps = 0;
 
@@ -108,6 +121,10 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// When set to true the component will not attempt any predictions and will always add the contacts it encounters 
+    /// through the hulls to the solver
+    /// </summary>
     [SerializeField]
     private bool m_alwaysAdd = false;
 
@@ -123,6 +140,9 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// When true the component will predict tunneling with its own segments as well
+    /// </summary>
     [SerializeField]
     private bool m_enableSelfInteraction = true;
 
@@ -204,9 +224,8 @@ namespace AGXUnity
 
       if ( enabled )
       {
-        var color = Color.Lerp( Color.yellow, Color.red, 0.5f );
-        color.a = 0.01f;
-        Gizmos.color = color;
+        // Algoryx orange
+        Gizmos.color = new Color32(0xF3, 0x8B, 0x00, 0xF);     
         if (Application.isPlaying && Cable?.Native != null)
         {
           foreach ( var segment in Cable.Native.getSegments()) {
