@@ -121,6 +121,9 @@ namespace AGXUnity.Rendering
         if ( Node == null )
           return;
 
+        Node.layer = manager.gameObject.layer;
+        Node.TraverseChildren( x => x.layer = manager.gameObject.layer );
+
         // Node created - set properties and extra components.
         if ( nodeCreated ) {
           Node.hideFlags           = HideFlags.DontSave;
