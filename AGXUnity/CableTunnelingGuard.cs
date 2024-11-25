@@ -76,7 +76,7 @@ namespace AGXUnity
       get { return m_angleThreshold; }
       set
       {
-        m_angleThreshold = System.Math.Clamp(value, 0, 90);
+        m_angleThreshold = System.Math.Clamp( value, 0, 90 );
         if ( Native != null ) {
           Native.setAngleThreshold( m_angleThreshold / 180.0 * Mathf.PI );
         }
@@ -160,7 +160,7 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
-      Native = new agxCable.CableTunnelingGuard(m_hullScale);
+      Native = new agxCable.CableTunnelingGuard( m_hullScale );
 
       var cable = Cable?.GetInitialized<Cable>()?.Native;
       if ( cable == null ) {
@@ -222,19 +222,17 @@ namespace AGXUnity
         UpdateRenderingMesh();
       }
 
-      if ( enabled )
-      {
+      if ( enabled ) {
         // Algoryx orange
-        Gizmos.color = new Color32(0xF3, 0x8B, 0x00, 0xF);     
-        if (Application.isPlaying && Cable?.Native != null)
-        {
-          foreach ( var segment in Cable.Native.getSegments()) {
+        Gizmos.color = new Color32( 0xF3, 0x8B, 0x00, 0xF );
+        if ( Application.isPlaying && Cable?.Native != null ) {
+          foreach ( var segment in Cable.Native.getSegments() ) {
             Vector3 direction = (segment.getEndPosition() - segment.getBeginPosition()).ToHandedVector3();
             Vector3 center = segment.getCenterPosition().ToHandedVector3();
             Gizmos.DrawWireMesh( m_mesh, center, Quaternion.FromToRotation( Vector3.up, direction ) );
           }
-        } 
-        else if ( m_pointCurveCache != null && m_pointCurveCache.Length != 0 ) {          
+        }
+        else if ( m_pointCurveCache != null && m_pointCurveCache.Length != 0 ) {
           Vector3 prevPoint = m_pointCurveCache[0];
           foreach ( var point in m_pointCurveCache.Skip( 1 ) ) {
             Vector3 direction = point-prevPoint;
