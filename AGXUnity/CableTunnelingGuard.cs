@@ -140,6 +140,8 @@ namespace AGXUnity
 
     protected override bool Initialize()
     {
+      Native = new agxCable.CableTunnelingGuard(m_hullScale);
+
       var cable = Cable?.GetInitialized<Cable>()?.Native;
       if ( cable == null ) {
         Debug.LogWarning( "Unable to find Cable component for CableTunnelingGuard - cable tunneling guard instance ignored.", this );
@@ -209,7 +211,7 @@ namespace AGXUnity
         {
           foreach ( var segment in Cable.Native.getSegments()) {
             Vector3 direction = (segment.getEndPosition() - segment.getBeginPosition()).ToHandedVector3();
-            Vector3 center = segment.getCenterPosition().ToHandedVector3()
+            Vector3 center = segment.getCenterPosition().ToHandedVector3();
             Gizmos.DrawWireMesh( m_mesh, center, Quaternion.FromToRotation( Vector3.up, direction ) );
           }
         } 
