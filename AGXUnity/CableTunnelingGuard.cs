@@ -76,7 +76,7 @@ namespace AGXUnity
       get { return m_angleThreshold; }
       set
       {
-        m_angleThreshold = value;
+        m_angleThreshold = System.Math.Clamp(value, 0, 90);
         if ( Native != null ) {
           Native.setAngleThreshold( m_angleThreshold / 180.0 * Mathf.PI );
         }
