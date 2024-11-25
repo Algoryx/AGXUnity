@@ -54,15 +54,16 @@ namespace AGXUnity.Utils
       height = Mathf.Max( 0, height );
 
       agxCollide.MeshData meshData = agxUtil.PrimitiveMeshGenerator.createCapsule( radius, height, resolution ).getMeshData();
-      int[] triangles = meshData.getIndices().Select(triangle => (int)triangle).ToArray();
+      int[] triangles = new int[meshData.getNumTriangles()];
+      var agxIndices = meshData.getIndices();
 
       // Flip winding order
       for ( int i = 0; i < triangles.Length; i+=3 )
-        (triangles[ i+2 ], triangles[ i+1 ]) = (triangles[ i+1 ], triangles[ i+2 ]);
+        (triangles[ i+2 ], triangles[ i+1 ]) = ((int)agxIndices[ i+1 ], (int)agxIndices[ i+2 ]);
 
-      destination.SetTriangles( triangles, 0, calculateBounds: false );
 
       destination.SetVertices( meshData.getVertices().Select( v => v.ToHandedVector3() ).ToArray() );
+      destination.SetTriangles( triangles, 0, calculateBounds: false );
 
       destination.RecalculateNormals();
       destination.RecalculateTangents();
