@@ -232,6 +232,10 @@ namespace AGXUnityEditor
       }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
+
+      var ctx = ContextManager.GetCustomContextForType(m_targetType);
+      if ( ctx != null )
+        UnityEditor.EditorTools.ToolManager.SetActiveContext( ctx );
     }
 
     private void OnDisable()
@@ -248,6 +252,8 @@ namespace AGXUnityEditor
       m_targetType = null;
       m_targetGameObjects = null;
       m_numTargetGameObjectsTargetComponents = 0;
+
+      UnityEditor.EditorTools.ToolManager.SetActiveContext( null );
     }
 
     private bool IsTargetMostProbablyDeleted()
@@ -317,7 +323,7 @@ namespace AGXUnityEditor
             Debug.LogWarning( "The AGXUnity Inspector wrapper currently does not support editable array types. Consider using List<T> as an alternative." );
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
-            value = serializedProperty.objectReferenceValue;
+            value = serializedProperty.boxedValue;
           }
         }
       }

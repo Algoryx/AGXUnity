@@ -79,6 +79,17 @@ namespace AGXUnityEditor.Tools
       Visual.SetTransform( Node.Position, Node.Rotation, radius, true, 1.2f * m_radius(), Mathf.Max( 1.5f * m_radius(), 0.25f ) );
     }
 
+    public override void OnPostTargetMembersGUI()
+    {
+      if ( Node.NodeData is EyeNodeData end ) {
+        EditorGUILayout.LabelField( "<b>Eye Node Data</b>", InspectorGUISkin.Instance.Label );
+        using ( new InspectorGUI.IndentScope() ) {
+          end.FrictionCoefficients = InspectorGUI.Vector2Field( AGXUnity.Utils.GUI.MakeLabel( "Friction Coefficients" ), end.FrictionCoefficients, "F,B" );
+        }
+      }
+      base.OnPostTargetMembersGUI();
+    }
+
     private void OnClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )
     {
       Selected = true;
