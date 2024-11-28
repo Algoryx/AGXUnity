@@ -68,14 +68,14 @@
     public StepCallbackDef _Internal_PrePost;
 
     /// <summary>
-    /// Internal callbacks for handing incoming brick signals.
+    /// Internal callbacks for handing incoming OpenPLX signals.
     /// </summary>
-    public StepCallbackDef _Internal_BrickSignalPreSync;
+    public StepCallbackDef _Internal_OpenPLXSignalPreSync;
 
     /// <summary>
-    /// Internal callbacks for handing outgoing brick signals.
+    /// Internal callbacks for handing outgoing OpenPLX signals.
     /// </summary>
-    public StepCallbackDef _Internal_BrickSignalPostSync;
+    public StepCallbackDef _Internal_OpenPLXSignalPostSync;
 
     public void OnInitialize( agxSDK.Simulation simulation )
     {
