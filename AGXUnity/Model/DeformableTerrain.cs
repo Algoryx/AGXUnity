@@ -366,10 +366,19 @@ namespace AGXUnity.Model
       if ( xstart + width >= resolution || xstart < 0 || ystart + height >= resolution || ystart < 0 )
         throw new ArgumentOutOfRangeException( "", $"Requested height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain bounds [0,{TerrainDataResolution - 1}]" );
 
-      if ( Native == null )
-        return TerrainData.GetHeights( xstart, ystart, width, height );
+      float scale = TerrainData.size.y;
+      float [,] heights;
+      if ( Native == null ) {
+        heights = TerrainData.GetHeights( xstart, ystart, width, height );
+        for ( int y = 0; y < height; y++ ) {
+          for ( int x = 0; x < width; x++ ) {
+            heights[ y, x ] = heights[ y, x ] * scale;
+          }
+        }
+        return heights;
+      }
 
-      float [,] heights = new float[height,width];
+      heights = new float[ height, width ];
       for ( int y = 0; y < height; y++ ) {
         for ( int x = 0; x < width; x++ ) {
           agx.Vec2i idx = new agx.Vec2i( resolution - 1 - x - xstart, resolution - 1 - y - ystart);
