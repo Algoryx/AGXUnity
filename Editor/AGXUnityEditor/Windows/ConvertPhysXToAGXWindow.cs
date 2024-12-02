@@ -1,4 +1,3 @@
-using AGXUnity.Utils;
 using AGXUnityEditor.Utils;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +6,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using AGXUnityEditor.UIElements;
 using System;
-using agxPowerLine;
-using AGXUnity.Model;
-using UnityEditor.VersionControl;
-using agx;
-using System.Collections;
 
 namespace AGXUnityEditor.Windows
 {
@@ -37,11 +31,29 @@ namespace AGXUnityEditor.Windows
       public bool Updatable;
       public bool Convert;
       public GameObject gameObject;
-      //public string Path;
       public Type type;
       public List<AssetData> dependentAssets;
       public bool rootAsset; // Used by nested RBs
       public PhysXType physXType;
+    }
+
+    private class PrefabData : ScriptableObject
+    {
+      public string Name;
+      public string Path;
+      public int ConvertibleCount;
+      public bool Convert;
+
+      // Factory method to create an instance of PrefabData
+      public static PrefabData CreateInstance( string name, string path, int convertibleCount, bool selected = false )
+      {
+        var instance = ScriptableObject.CreateInstance<PrefabData>();
+        instance.Name = name;
+        instance.Path = path;
+        instance.ConvertibleCount = convertibleCount;
+        instance.Convert = selected;
+        return instance;
+      }
     }
 
     public static ConvertPhysXToAGXWindow Open()
@@ -60,7 +72,8 @@ namespace AGXUnityEditor.Windows
     private int m_hoverIndex = -1;
 
     private List<VisualElement> m_tableRows = new List<VisualElement>();
-    private MixedToggle m_toggleAll;
+    private MixedToggle m_toggleAllSceneObjects;
+    private MixedToggle m_toggleAllPrefabObjects;
 
     private Type[] m_basicColliderTypes = new Type[]{
                                     typeof(BoxCollider),
@@ -79,10 +92,16 @@ namespace AGXUnityEditor.Windows
     private List<AssetData> m_physXAssets;
     private void GatherSceneObjects()
     {
-      //var assets = AssetDatabase.FindAssets( "t:Material", null );
-      m_physXAssets = new List<AssetData>();
-      foreach (var type in m_basicColliderTypes)
-        m_physXAssets.AddRange(FindColliderAssetData(type, PhysXType.Collider));
+      m_physXAssets = GatherObjects();
+
+      SortAssets();
+    }
+
+    private List<AssetData> GatherObjects( GameObject prefabObject = null )
+    {
+      var convertibleObjects = new List<AssetData>();
+      foreach ( var type in m_basicColliderTypes )
+        convertibleObjects.AddRange( FindColliderAssetData( type, PhysXType.Collider, prefabObject ) );
 
       // TODO Need to take care of DeformableTerrainPager before this works as intended
       /*
@@ -95,25 +114,50 @@ namespace AGXUnityEditor.Windows
       m_physXAssets.AddRange(terrains);
       */
 
-      m_physXAssets.AddRange(FindRigidbodyData());
+      convertibleObjects.AddRange( FindRigidbodyData( prefabObject ) );
 
-      //m_physXObjects.AddRange(FindAssetData(typeof(Constraint)));
-
-      SortAssets();
+      return convertibleObjects;
     }
 
     private void SortAssets()
     {
-      switch (m_sortType)
-      {
-        case SortType.Name: 
-          m_physXAssets.Sort( ( n1, n2 ) =>  n1.gameObject.name.CompareTo(n2.gameObject.name ));
+      switch ( m_sortType ) {
+        case SortType.Name:
+          m_physXAssets.Sort( ( n1, n2 ) => n1.gameObject.name.CompareTo( n2.gameObject.name ) );
           break;
-        
+
         case SortType.Type:
           // This is default
           break;
       }
+    }
+
+    private List<PrefabData> m_prefabPhysXAssets;
+    private void GatherPrefabData()
+    {
+      m_prefabPhysXAssets = new List<PrefabData>();
+
+      string[] prefabPaths = AssetDatabase.FindAssets("t:Prefab")
+                                        .Select(AssetDatabase.GUIDToAssetPath)
+                                        .ToArray();
+
+      foreach ( var prefabPath in prefabPaths ) {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if ( prefab == null )
+          continue;
+
+        int count = 0;
+        count += prefab.GetComponentsInChildren<Collider>( true ).Length;
+        count += prefab.GetComponentsInChildren<Rigidbody>( true ).Length;
+        count += prefab.GetComponentsInChildren<Joint>( true ).Length;
+
+        if ( count > 0 ) {
+          var prefabData = PrefabData.CreateInstance(prefab.name, prefabPath, count);
+          m_prefabPhysXAssets.Add( prefabData );
+        }
+      }
+
+      m_prefabPhysXAssets = m_prefabPhysXAssets.OrderBy( p => p.Name ).ToList();
     }
 
     private class RBList
@@ -127,14 +171,21 @@ namespace AGXUnityEditor.Windows
     // Get RBs. We need to keep track of:
     // - Which RBs have children but are not themselves children of RBs
     // - Which colliders belong to this RB (and not to a child RB)
-    private List<AssetData> FindRigidbodyData()
+    private List<AssetData> FindRigidbodyData( GameObject prefabObject = null )
     {
+      bool sceneMode = prefabObject == null;
+
+      UnityEngine.Object[] components;
+      if ( sceneMode ) {
 #if UNITY_2023_1_OR_NEWER
-      var components = FindObjectsByType(typeof(Rigidbody), FindObjectsInactive.Include, FindObjectsSortMode.None);
+        components = FindObjectsByType( typeof( Rigidbody ), FindObjectsInactive.Include, FindObjectsSortMode.None );
 #else
-      var components = FindObjectsOfType(typeof(RigidBody), true);
+        components = FindObjectsOfType(typeof(RigidBody), true);
 #endif
-      
+      }
+      else {
+        components = prefabObject.GetComponentsInChildren<Rigidbody>( true );
+      }
 
       var allRBs = components.Select( rb =>
       {
@@ -159,61 +210,54 @@ namespace AGXUnityEditor.Windows
 
       // Find root RBs
       var rbsThatAreRBChildren = new List<Rigidbody>();
-      foreach (var rb in allRBs)
-      {
-        if (rb.rbChildren.Count > 0)
-        {
+      foreach ( var rb in allRBs ) {
+        if ( rb.rbChildren.Count > 0 ) {
           rb.root = true;
-          rbsThatAreRBChildren.AddRange(rb.rbChildren);
+          rbsThatAreRBChildren.AddRange( rb.rbChildren );
         }
       }
-      foreach (var rb in allRBs)
-      {
-        if (rbsThatAreRBChildren.Contains(rb.rigidbody))
+      foreach ( var rb in allRBs ) {
+        if ( rbsThatAreRBChildren.Contains( rb.rigidbody ) )
           rb.root = false;
       }
 
-      return allRBs.Select( rb =>
-      {
+      return allRBs.Select( rb => {
         var data = CreateInstance<AssetData>();
-        data.Convert = false;
-        data.type = typeof(Rigidbody);
+        data.Convert = !sceneMode;
+        data.type = typeof( Rigidbody );
         data.physXType = PhysXType.RigidBody;
         data.gameObject = rb.rigidbody.gameObject;
         data.Updatable = true;
         data.rootAsset = rb.root;
 
         // AssetData for colliders in RB
-        data.dependentAssets = FindColliderAssetDataInGameObjects(rb.ownChildren);
+        data.dependentAssets = FindColliderAssetDataInGameObjects( rb.ownChildren, !sceneMode );
 
         return data;
       } ).ToList();
     }
 
-    private List<AssetData> FindColliderAssetDataInGameObjects(List<Transform> transforms)
+    private List<AssetData> FindColliderAssetDataInGameObjects( List<Transform> transforms, bool convert )
     {
       var physXAssets = new List<AssetData>();
-      foreach (var type in m_basicColliderTypes)
-      {
+      foreach ( var type in m_basicColliderTypes ) {
         List<GameObject> colliders = new List<GameObject>();
-        foreach (var t in transforms)
-        {
+        foreach ( var t in transforms ) {
           var components = t.GetComponents(type);
-          foreach (var c in components)
-            colliders.Add(c.gameObject);
+          foreach ( var c in components )
+            colliders.Add( c.gameObject );
         }
         physXAssets.AddRange(
-          colliders.Select( a =>
-          {
+          colliders.Select( a => {
             var data = CreateInstance<AssetData>();
-            data.Convert = false;
+            data.Convert = convert;
             data.type = type;
             data.physXType = PhysXType.Collider;
             data.gameObject = a;
-            data.Updatable = type != typeof(WheelCollider);
+            data.Updatable = type != typeof( WheelCollider );
 
             return data;
-          } ).ToList());
+          } ).ToList() );
       }
 
       // Debug.Log("Number of assetDatas: " + physXAssets.Count);
@@ -221,29 +265,35 @@ namespace AGXUnityEditor.Windows
       return physXAssets;
     }
 
-    private List<AssetData> FindColliderAssetData(Type type, PhysXType physXType)
+    private List<AssetData> FindColliderAssetData( Type type, PhysXType physXType, GameObject prefabObject = null )
     {
+      bool sceneMode = prefabObject == null;
+
+      UnityEngine.Object[] components;
+      if ( sceneMode ) {
 #if UNITY_2023_1_OR_NEWER
-      var components = FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None);
+        components = FindObjectsByType( type, FindObjectsInactive.Include, FindObjectsSortMode.None );
 #else
-      var components = FindObjectsOfType(type, true);
+        components = FindObjectsOfType(type, true);
 #endif
+      }
+      else {
+        components = prefabObject.GetComponentsInChildren( type, true );
+      }
 
-      return components.Where( o => ((Collider)o).attachedRigidbody == null )
-                       .Select( o =>
-      {
-        var data = CreateInstance<AssetData>();
-        data.Convert = false;
-        data.type = type;
-        data.physXType = physXType;
-        data.gameObject = ((UnityEngine.Component)o).gameObject;
-        data.Updatable = type != typeof(WheelCollider);
+      return components.Where( o => ( (Collider)o ).attachedRigidbody == null )
+                       .Select( o => {
+                         var data = CreateInstance<AssetData>();
+                         data.Convert = !sceneMode;
+                         data.type = type;
+                         data.physXType = physXType;
+                         data.gameObject = ( (UnityEngine.Component)o ).gameObject;
+                         data.Updatable = type != typeof( WheelCollider );
 
-        return data;
-      } ).ToList();
+                         return data;
+                       } ).ToList();
     }
 
-    // TODO: Replace hover/select coloring with proper USS styling
     private void UpdateColors()
     {
       for ( int i = 0; i < m_tableRows.Count(); i++ ) {
@@ -262,41 +312,66 @@ namespace AGXUnityEditor.Windows
       }
     }
 
-    private VisualElement TableRowUI( AssetData asset )
+    private void OnEnable()
     {
+      GatherSceneObjects();
 
+      m_statusIcons = new Texture2D[ 3 ];
+      m_statusIcons[ 0 ] = IconManager.GetIcon( "convertible_material" );
+      m_statusIcons[ 1 ] = IconManager.GetIcon( "compatible_material" );
+      m_statusIcons[ 2 ] = IconManager.GetIcon( "pass" );
+
+      Undo.undoRedoPerformed += () => Repopulate( false );
+      EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+    }
+
+    private void OnDisable()
+    {
+      Undo.undoRedoPerformed -= () => Repopulate( false );
+      EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+    }
+
+    private void OnPlayModeStateChanged( PlayModeStateChange state )
+    {
+      if ( state == PlayModeStateChange.EnteredPlayMode || state == PlayModeStateChange.ExitingPlayMode ) {
+        Repaint();
+      }
+
+      if ( state == PlayModeStateChange.ExitingPlayMode ) {
+        Repopulate(); // Rebuild UI and data when leaving Play mode
+      }
+    }
+
+    private VisualElement CreateSceneRowUI( AssetData asset )
+    {
       var row = new VisualElement();
-      row.SetPadding(3,3,3,0);
-            var ve = new VisualElement();
+      row.SetPadding( 3, 3, 3, 0 );
 
-      ve.SetEnabled( asset.Updatable );
+      row.SetEnabled( asset.Updatable );
       var index = m_tableRows.Count();
-      row.RegisterCallback<MouseDownEvent>( mde =>
-      {
+      row.RegisterCallback<MouseDownEvent>( mde => {
         EditorUtility.FocusProjectWindow();
         Selection.activeObject = asset.gameObject;
         m_selectedIndex = index;
 
         UpdateColors();
       } );
-      row.RegisterCallback<MouseOverEvent>( mde =>
-      {
+      row.RegisterCallback<MouseOverEvent>( mde => {
         m_hoverIndex = index;
         UpdateColors();
       } );
-      row.RegisterCallback<MouseOutEvent>( mde =>
-      {
+      row.RegisterCallback<MouseOutEvent>( mde => {
         m_hoverIndex = -1;
         UpdateColors();
       } );
-      ve.style.flexDirection = FlexDirection.Row;
+      row.style.flexDirection = FlexDirection.Row;
 
-      var activeToggle = new Toggle() { value = asset.Convert  };
-      activeToggle.RegisterValueChangedCallback( ce => asset.Convert = ce.newValue );
-      activeToggle.style.width = 20;
-      activeToggle.SetMargin( 0, 0, 0, StyleKeyword.Null );
-      if ( asset.Updatable)
-        m_toggleAll.AddControlledToggle( activeToggle );
+      var toggleConversion = new Toggle() { value = asset.Convert  };
+      toggleConversion.RegisterValueChangedCallback( ce => asset.Convert = ce.newValue );
+      toggleConversion.style.width = 20;
+      toggleConversion.SetMargin( 0, 0, 0, StyleKeyword.Null );
+      if ( asset.Updatable )
+        m_toggleAllSceneObjects.AddControlledToggle( toggleConversion );
 
       var flex = new VisualElement();
       flex.style.flexDirection = FlexDirection.Row;
@@ -316,81 +391,166 @@ namespace AGXUnityEditor.Windows
       TypeIcon.style.width = 20;
 
       Label componentLabel = null;
-      if (asset.dependentAssets == null)
+      if ( asset.dependentAssets == null )
         componentLabel = new Label( asset.type.ToString() );
       else
-        componentLabel = new Label( asset.type.ToString() + " - Colliders: " + asset.dependentAssets.Count);
+        componentLabel = new Label( asset.type.ToString() + " - Colliders: " + asset.dependentAssets.Count );
       componentLabel.style.flexGrow = 0.6f;
       componentLabel.style.flexBasis = 0;
       componentLabel.style.overflow = Overflow.Hidden;
       nameLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
       componentLabel.style.marginRight = 2;
 
-      ve.Add( activeToggle );
+      row.Add( toggleConversion );
       flex.Add( nameLabel );
       flex.Add( TypeIcon );
       flex.Add( componentLabel );
-      ve.Add( flex );
-      row.Add( ve );
+      row.Add( flex );
 
       m_tableRows.Add( row );
 
       return row;
     }
 
-    private void OnEnable()
+    private VisualElement CreatePrefabRowUI( PrefabData prefabData )
     {
-      GatherSceneObjects();
+      int rowIndex = m_tableRows.Count; // Keep track of row index for alternating colors
+      var row = new VisualElement();
+      row.style.flexDirection = FlexDirection.Row;
+      row.style.justifyContent = Justify.SpaceBetween;
+      row.SetPadding( 3, 3, 3, 0 );
 
-      m_statusIcons = new Texture2D[ 3 ];
-      m_statusIcons[ 0 ] = IconManager.GetIcon( "convertible_material" );
-      m_statusIcons[ 1 ] = IconManager.GetIcon( "compatible_material" );
-      m_statusIcons[ 2 ] = IconManager.GetIcon( "pass" );
+      var index = m_tableRows.Count();
+      row.RegisterCallback<MouseOverEvent>( _ => {
+        m_hoverIndex = index;
+        UpdateColors();
+      } );
+      row.RegisterCallback<MouseOutEvent>( _ => {
+        m_hoverIndex = -1;
+        UpdateColors();
+      } );
+      row.RegisterCallback<MouseDownEvent>( _ => {
+        m_selectedIndex = index;
+        var prefabAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(prefabData.Path);
+        if ( prefabAsset != null ) {
+          EditorGUIUtility.PingObject( prefabAsset );
+        }
+      } );
 
-      Undo.undoRedoPerformed += () => Repopulate(false);
+      var toggleConversion = new Toggle { value = prefabData.Convert };
+      toggleConversion.style.width = 20;
+      toggleConversion.SetMargin( 0, 5, 0, StyleKeyword.Null );
+      toggleConversion.RegisterValueChangedCallback( ce => prefabData.Convert = ce.newValue );
+      m_toggleAllPrefabObjects.AddControlledToggle( toggleConversion );
+
+      var nameLabel = new Label(prefabData.Name);
+      nameLabel.style.flexGrow = 0.3f;
+      nameLabel.style.flexBasis = 0;
+      nameLabel.style.overflow = Overflow.Hidden;
+      nameLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+      nameLabel.style.marginRight = 5;
+
+      var pathLabel = new Label(prefabData.Path);
+      pathLabel.style.flexGrow = 0.4f;
+      pathLabel.style.flexBasis = 0;
+      pathLabel.style.overflow = Overflow.Hidden;
+      pathLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+      pathLabel.style.marginRight = 5;
+
+      var countLabel = new Label($"Components: {prefabData.ConvertibleCount}");
+      countLabel.style.flexGrow = 0.2f;
+      countLabel.style.flexBasis = 0;
+      countLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+
+      row.Add( toggleConversion );
+      row.Add( nameLabel );
+      row.Add( pathLabel );
+      row.Add( countLabel );
+
+      // Keep track of rows for further updates
+      m_tableRows.Add( row );
+
+      return row;
     }
 
     private void CreateGUI()
     {
       rootVisualElement.SetPadding( 19, 15, 15, 15 );
 
-      var RPLabel = new Label( $"This utility attempts to convert PhysX Components to corresponding AGX Components." );
-      RPLabel.style.marginBottom = 15;
+      var RPLabel = new Label($"This utility attempts to convert PhysX Components to corresponding AGX Components.");
+      RPLabel.style.marginBottom = 5;
       rootVisualElement.Add( RPLabel );
 
-      // TODO starting here with just colliders, moving on from there to RBs. Think about how the different lists will look
-      var assetConverter = new VisualElement();
-      assetConverter.style.height = 600;
-      assetConverter.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
-      assetConverter.SetBorderRadius( 5 );
-      assetConverter.SetPadding( 5 );
+      // Actions for both boxes
+      var footer = new VisualElement();
+      footer.style.flexDirection = FlexDirection.Row;
+      footer.style.justifyContent = Justify.SpaceBetween;
+      footer.style.marginBottom = 10;
+      footer.style.flexShrink = 0;
+
+      var convertButton = new Button() { text = "Convert Selected" };
+      convertButton.clicked += ConvertSelected;
+
+      var refreshButton = new Button();
+      refreshButton.style.width = 40;
+      refreshButton.style.marginLeft = 0;
+      refreshButton.clicked += () => Repopulate();
+
+      var refreshIcon =  new Image { image = IconManager.GetIcon( MiscIcon.Update ) };
+      refreshIcon.style.flexBasis = 0;
+      refreshIcon.style.flexGrow = 1;
+      refreshButton.Add( refreshIcon );
+
+      footer.Add( refreshButton );
+      footer.Add( convertButton );
+      rootVisualElement.Add( footer );
+
+
+      // Scene Object Converter Box
+      var sceneConverter = CreateSceneObjectBox();
+      rootVisualElement.Add( sceneConverter );
+
+      // Prefab Converter Box
+      var prefabConverter = CreatePrefabObjectBox();
+      rootVisualElement.Add( prefabConverter );
+    }
+
+
+    private VisualElement CreateSceneObjectBox()
+    {
+      var sceneBox = new VisualElement();
+
+      sceneBox.style.height = 300;
+      sceneBox.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
+      sceneBox.SetBorderRadius( 5 );
+      sceneBox.SetPadding( 5 );
 
       var description = new Label( "PhysXObjects in Scene. GameObjects with multiple matching Components can appear on multiple lines." );
       description.style.whiteSpace = WhiteSpace.Normal;
       description.style.marginBottom = 10;
-      assetConverter.Add( description );
+      sceneBox.Add( description );
 
-//      var sortMenu = EditorGUILayout.EnumFlagsField( AGXUnity.Utils.GUI.MakeLabel( "Properties" ),
-//                                                                                   m_sortType,
-//                                                                                   InspectorEditor.Skin.Popup );
-//      var sortMenu = new EnumField("Test", m_sortType);
-//      sortMenu.
-//      //sortMenu.style.marginBottom = 15;
-//      rootVisualElement.Add( sortMenu );
+      //      var sortMenu = EditorGUILayout.EnumFlagsField( AGXUnity.Utils.GUI.MakeLabel( "Properties" ),
+      //                                                                                   m_sortType,
+      //                                                                                   InspectorEditor.Skin.Popup );
+      //      var sortMenu = new EnumField("Test", m_sortType);
+      //      sortMenu.
+      //      //sortMenu.style.marginBottom = 15;
+      //      sceneBox.Add( sortMenu );
 
       var header = new VisualElement();
       header.style.flexDirection = FlexDirection.Row;
       header.style.justifyContent = Justify.SpaceBetween;
       header.style.flexShrink = 0;
-      m_toggleAll = new MixedToggle();
-      header.Add( m_toggleAll );
+      m_toggleAllSceneObjects = new MixedToggle();
+      header.Add( m_toggleAllSceneObjects );
 
       var numAssets = new VisualElement();
       numAssets.style.flexDirection = FlexDirection.Row;
       numAssets.style.alignItems = Align.Center;
       numAssets.style.unityTextAlign = TextAnchor.MiddleLeft;
-  
-      numAssets.Add(new Label() { text = "Upgradable assets: " });
+
+      numAssets.Add( new Label() { text = "Upgradable assets: " } );
 
       var image = new Image() { image = m_statusIcons[ 0 ] };
       image.style.width = 20;
@@ -402,79 +562,156 @@ namespace AGXUnityEditor.Windows
       numAssets.Add( lab );
       header.Add( numAssets );
 
-      var scroll = new ScrollView();
-
+      // Create table rows
+      var scrolledTable = new ScrollView();
       foreach ( var asset in m_physXAssets )
-        scroll.Add( TableRowUI( asset ) );
-
+        scrolledTable.Add( CreateSceneRowUI( asset ) );
       UpdateColors();
 
-      assetConverter.Add( header );
-      assetConverter.Add( scroll );
+      sceneBox.Add( header );
+      sceneBox.Add( scrolledTable );
 
-      var footer = new VisualElement();
-      footer.style.flexDirection = FlexDirection.Row;
-      footer.style.justifyContent = Justify.SpaceBetween;
-      footer.style.marginTop = 10;
-      footer.style.flexShrink = 0;
-
-      var convertButton = new Button() { text = "Convert Selected" };
-      convertButton.clicked += ConvertSelected;
-
-      var refreshButton = new Button();
-      refreshButton.style.width = 40;
-      refreshButton.style.marginLeft = 0;
-      refreshButton.clicked += () => Repopulate( );
-
-      var refreshIcon =  new Image { image = IconManager.GetIcon( MiscIcon.Update ) };
-      refreshIcon.style.flexBasis = 0;
-      refreshIcon.style.flexGrow = 1;
-      refreshButton.Add( refreshIcon );
-
-      footer.Add( refreshButton );
-      footer.Add( convertButton );
-      assetConverter.Add( footer );
-
-      rootVisualElement.Add( assetConverter );
+      return sceneBox;
     }
 
-    private void Repopulate(bool gatherAssets = true)
+    private VisualElement CreatePrefabObjectBox()
     {
+      var prefabBox = new VisualElement();
+      prefabBox.style.height = 300;
+      prefabBox.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
+      prefabBox.SetBorderRadius( 5 );
+      prefabBox.SetPadding( 5 );
+
+      if ( EditorApplication.isPlayingOrWillChangePlaymode ) {
+        var warningLabel = new Label("Prefab conversion not available in Play mode.");
+        warningLabel.style.color = Color.red;
+        warningLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        warningLabel.style.marginTop = 10;
+        warningLabel.style.marginBottom = 10;
+        prefabBox.Add( warningLabel );
+        return prefabBox; // Return early since prefab conversion is disabled in Play mode
+      }
+
+      var description = new Label("PhysXObjects in Prefabs. Lists prefabs with convertible components. Note: You cannot undo this convert action!");
+      description.style.whiteSpace = WhiteSpace.Normal;
+      description.style.marginBottom = 10;
+      prefabBox.Add( description );
+
+
+      var header = new VisualElement();
+      header.style.flexDirection = FlexDirection.Row;
+      header.style.justifyContent = Justify.SpaceBetween;
+      header.style.flexShrink = 0;
+      header.style.overflow = Overflow.Hidden;
+
+      m_toggleAllPrefabObjects = new MixedToggle();
+      m_toggleAllPrefabObjects.style.flexGrow = 0;
+      m_toggleAllPrefabObjects.style.flexShrink = 0;
+      header.Add( m_toggleAllPrefabObjects );
+
+      var numAssets = new VisualElement();
+      numAssets.style.flexDirection = FlexDirection.Row;
+      numAssets.style.alignItems = Align.Center;
+      numAssets.style.unityTextAlign = TextAnchor.MiddleLeft;
+      numAssets.style.flexGrow = 1; // Allows this section to take up remaining space
+      numAssets.style.justifyContent = Justify.FlexEnd;
+      numAssets.Add( new Label() { text = "Upgradable prefabs: " } );
+
+      var image = new Image() { image = m_statusIcons[ 0 ] };
+      image.style.width = 20;
+      image.style.height = 20;
+      image.style.marginLeft = 5;
+      image.style.marginRight = 5;
+      numAssets.Add( image );
+
+      var label = new Label() { text = $" {m_prefabPhysXAssets.Count}" };
+      label.style.flexGrow = 0; // Fixed size for label
+      label.style.flexShrink = 0;
+      numAssets.Add( label );
+
+      header.Add( numAssets );
+
+      prefabBox.Add( header );
+
+      var scrolledTable = new ScrollView();
+      foreach ( var prefabData in m_prefabPhysXAssets ) // Populate rows with prefabs
+        scrolledTable.Add( CreatePrefabRowUI( prefabData ) );
+
+      prefabBox.Add( scrolledTable );
+      return prefabBox;
+    }
+
+    private void Repopulate( bool gatherAssets = true )
+    {
+      // TODO gatherassets? probably remove the option
       GatherSceneObjects();
+      GatherPrefabData();
       m_tableRows.Clear();
 
       rootVisualElement.Clear();
       CreateGUI();
     }
 
+    private void ConvertObjects( List<AssetData> assets )
+    {
+      foreach ( var asset in assets ) { // .Where(m => m.Status == MaterialStatus.Updatable )
+        if ( !asset.Convert )
+          continue;
+
+        Debug.Log( $"Asset: {asset.gameObject.name}, type: {asset.type}" );
+
+        if ( asset.physXType == PhysXType.Collider )
+          ConvertCollider( asset );
+
+        if ( asset.physXType == PhysXType.RigidBody ) {
+          ConvertRigidbody( asset );
+          foreach ( var dependentCollider in asset.dependentAssets )
+            ConvertCollider( dependentCollider );
+        }
+
+        // TODO maybe remove these
+        EditorUtility.SetDirty( asset );
+        //EditorUtility.SetDirty( asset.gameObject.GetComponent( asset.type ) );
+      }
+    }
+
     private void ConvertSelected()
     {
-      using ( new UndoCollapseBlock("Convert Selected PhysX Assets") ) {
-        foreach(var asset in m_physXAssets ) { // .Where(m => m.Status == MaterialStatus.Updatable )
-          if ( !asset.Convert )
+      using ( new UndoCollapseBlock( "Convert Selected PhysX Assets" ) ) {
+        ConvertObjects( m_physXAssets );
+      }
+
+      // TODO: possibly remove Undo, it won't work
+      using ( new UndoCollapseBlock( "Convert Selected Prefab Assets" ) ) {
+        foreach ( var prefab in m_prefabPhysXAssets ) {
+          if ( !prefab.Convert )
             continue;
 
-          if (asset.physXType == PhysXType.Collider)
-            ConvertCollider(asset);
+          //GameObject prefabObject = AssetDatabase.LoadAssetAtPath<GameObject>(prefab.Path);
+          GameObject prefabObject = PrefabUtility.LoadPrefabContents(prefab.Path);
+          if ( prefabObject == null )
+            continue;
 
-          if (asset.physXType == PhysXType.RigidBody)
-          {
-            ConvertRigidbody(asset);
-            foreach (var dependentCollider in asset.dependentAssets)
-              ConvertCollider(dependentCollider);
+          var objects = GatherObjects(prefabObject);
+          try {
+            ConvertObjects( objects );
+
+            PrefabUtility.SaveAsPrefabAsset(prefabObject, prefab.Path);
+          }
+          finally {
+            // Ensure the prefab contents are unloaded from memory
+            PrefabUtility.UnloadPrefabContents( prefabObject );
           }
 
-//          EditorUtility.SetDirty( asset );
-//          EditorUtility.SetDirty( asset.gameObject.GetComponent(asset.type) );
+          Debug.Log( $"Converted asset: {prefab.Name}, objects: {objects.Count}" );
         }
       }
 
       AssetDatabase.SaveAssets();
-      Repopulate(false);
+      Repopulate( false );
     }
 
-
-    private void ConvertRigidbody(AssetData asset)
+    private void ConvertRigidbody( AssetData asset )
     {
       var physXRb = asset.gameObject.GetComponent<Rigidbody>();
       var agxRB = Undo.AddComponent<AGXUnity.RigidBody>(asset.gameObject);
@@ -489,38 +726,36 @@ namespace AGXUnityEditor.Windows
       var linearVelocityDamping = physXRb.drag;
       var angularVelocityDamping = physXRb.angularDrag;
 #endif
-      agxRB.LinearVelocityDamping = new Vector3(linearVelocityDamping, linearVelocityDamping, linearVelocityDamping);
-      agxRB.AngularVelocityDamping = new Vector3(angularVelocityDamping, angularVelocityDamping, angularVelocityDamping);
+      agxRB.LinearVelocityDamping = new Vector3( linearVelocityDamping, linearVelocityDamping, linearVelocityDamping );
+      agxRB.AngularVelocityDamping = new Vector3( angularVelocityDamping, angularVelocityDamping, angularVelocityDamping );
 
-      if (!physXRb.automaticCenterOfMass)
-      {
+      if ( !physXRb.automaticCenterOfMass ) {
         agxRB.MassProperties.CenterOfMassOffset.UseDefault = false;
         agxRB.MassProperties.CenterOfMassOffset.Value = physXRb.centerOfMass;
       }
 
-      if (!physXRb.automaticInertiaTensor)
-      {
+      if ( !physXRb.automaticInertiaTensor ) {
         agxRB.MassProperties.InertiaDiagonal.UseDefault = false;
         agxRB.MassProperties.InertiaDiagonal.Value = physXRb.centerOfMass;
       }
 
-      if (physXRb.isKinematic)
+      if ( physXRb.isKinematic )
         agxRB.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-      if (asset.rootAsset)
+      if ( asset.rootAsset )
         asset.gameObject.AddComponent<AGXUnity.ArticulatedRoot>();
 
-      Undo.DestroyObjectImmediate(physXRb);
+      Undo.DestroyObjectImmediate( physXRb );
     }
 
-    private void ConvertCollider(AssetData asset)
+    private void ConvertCollider( AssetData asset )
     {
       // We need to create a child gameObject with the AGX collider to account for the "Center" property
       var newObject = new GameObject();
 
-      Undo.RegisterCreatedObjectUndo(newObject, newObject.name);
+      Undo.RegisterCreatedObjectUndo( newObject, newObject.name );
       newObject.transform.parent = asset.gameObject.transform;
-      
+
       newObject.transform.localRotation = Quaternion.identity;
       newObject.transform.localScale = Vector3.one; // AGX colliders ignore transform scale, except MeshColliders
 
@@ -528,9 +763,9 @@ namespace AGXUnityEditor.Windows
 
       var localScale = asset.gameObject.transform.localScale;
 
-      switch (asset.type.ToString()) // Can't switch on type, workaround with strings
+      switch ( asset.type.ToString() ) // Can't switch on type, workaround with strings
       {
-        case "UnityEngine.SphereCollider": 
+        case "UnityEngine.SphereCollider":
           var physXSphere = asset.gameObject.GetComponent<SphereCollider>();
           var agxSphere = Undo.AddComponent<AGXUnity.Collide.Sphere>(newObject);
 
@@ -538,33 +773,33 @@ namespace AGXUnityEditor.Windows
           newObject.transform.localPosition = physXSphere.center;
 
           // SphereCollider radius is old radius times largest of absolute value of localScale axes
-          agxSphere.Radius = physXSphere.radius * Mathf.Max(new float[]{
-                                                    Mathf.Abs(localScale.x), 
+          agxSphere.Radius = physXSphere.radius * Mathf.Max( new float[]{
+                                                    Mathf.Abs(localScale.x),
                                                     Mathf.Abs(localScale.y),
-                                                    Mathf.Abs(localScale.z)});
+                                                    Mathf.Abs(localScale.z)} );
 
           agxSphere.IsSensor = physXSphere.isTrigger;
 
-          Undo.DestroyObjectImmediate(physXSphere);
+          Undo.DestroyObjectImmediate( physXSphere );
           break;
 
-        case "UnityEngine.BoxCollider": 
+        case "UnityEngine.BoxCollider":
           var physXBox = asset.gameObject.GetComponent<BoxCollider>();
           var agxBox = Undo.AddComponent<AGXUnity.Collide.Box>(newObject);
 
           newObject.name = "AGXUnity.Collide.Box";
           newObject.transform.localPosition = physXBox.center;
 
-          agxBox.HalfExtents = new Vector3(physXBox.size.x / 2f * Mathf.Abs(localScale.x),
-                                           physXBox.size.y / 2f * Mathf.Abs(localScale.y),
-                                           physXBox.size.z / 2f * Mathf.Abs(localScale.z));
-          
+          agxBox.HalfExtents = new Vector3( physXBox.size.x / 2f * Mathf.Abs( localScale.x ),
+                                           physXBox.size.y / 2f * Mathf.Abs( localScale.y ),
+                                           physXBox.size.z / 2f * Mathf.Abs( localScale.z ) );
+
           agxBox.IsSensor = physXBox.isTrigger;
 
-          Undo.DestroyObjectImmediate(physXBox);
-          break;        
+          Undo.DestroyObjectImmediate( physXBox );
+          break;
 
-        case "UnityEngine.CapsuleCollider": 
+        case "UnityEngine.CapsuleCollider":
           var physXCapsule = asset.gameObject.GetComponent<CapsuleCollider>();
           var agxCapsule = Undo.AddComponent<AGXUnity.Collide.Capsule>(newObject);
 
@@ -574,34 +809,34 @@ namespace AGXUnityEditor.Windows
           // Capsule radius is old radius times abs largest xz-localScale axis. PhysX capsule height is including caps, agx is without
           newObject.transform.localScale = Vector3.one;
           var radius = physXCapsule.radius * Mathf.Max(new float[]{
-                                                      Mathf.Abs(localScale.x), 
+                                                      Mathf.Abs(localScale.x),
                                                       Mathf.Abs(localScale.z)});
           agxCapsule.Radius = radius;
-          agxCapsule.Height = (physXCapsule.height - radius * 2) * Mathf.Abs(localScale.y);
+          agxCapsule.Height = ( physXCapsule.height - radius * 2 ) * Mathf.Abs( localScale.y );
 
           agxCapsule.IsSensor = physXCapsule.isTrigger;
 
-          Undo.DestroyObjectImmediate(physXCapsule);
-          break;        
+          Undo.DestroyObjectImmediate( physXCapsule );
+          break;
 
-        case "UnityEngine.MeshCollider": 
+        case "UnityEngine.MeshCollider":
           var physXMesh = asset.gameObject.GetComponent<MeshCollider>();
           var agxMesh = Undo.AddComponent<AGXUnity.Collide.Mesh>(newObject);
 
           newObject.name = "AGXUnity.Collide.Mesh";
           newObject.transform.localPosition = Vector3.zero;
 
-          agxMesh.AddSourceObject(physXMesh.sharedMesh);
+          agxMesh.AddSourceObject( physXMesh.sharedMesh );
 
           agxMesh.IsSensor = physXMesh.isTrigger;
 
-          Undo.DestroyObjectImmediate(physXMesh);
+          Undo.DestroyObjectImmediate( physXMesh );
           break;
 
-        case "UnityEngine.TerrainCollider": 
-          Undo.DestroyObjectImmediate(newObject);
-          Undo.AddComponent<AGXUnity.Model.DeformableTerrain>(asset.gameObject);
-        break;
+        case "UnityEngine.TerrainCollider":
+          Undo.DestroyObjectImmediate( newObject );
+          Undo.AddComponent<AGXUnity.Model.DeformableTerrain>( asset.gameObject );
+          break;
       }
     }
   }
