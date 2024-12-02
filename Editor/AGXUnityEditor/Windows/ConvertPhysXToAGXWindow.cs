@@ -129,7 +129,12 @@ namespace AGXUnityEditor.Windows
     // - Which colliders belong to this RB (and not to a child RB)
     private List<AssetData> FindRigidbodyData()
     {
-      var components = FindObjectsOfType(typeof(Rigidbody), true);
+#if UNITY_2023_1_OR_NEWER
+      var components = FindObjectsByType(typeof(Rigidbody), FindObjectsInactive.Include, FindObjectsSortMode.None);
+#else
+      var components = FindObjectsOfType(typeof(RigidBody), true);
+#endif
+      
 
       var allRBs = components.Select( rb =>
       {
@@ -218,7 +223,11 @@ namespace AGXUnityEditor.Windows
 
     private List<AssetData> FindColliderAssetData(Type type, PhysXType physXType)
     {
+#if UNITY_2023_1_OR_NEWER
+      var components = FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None);
+#else
       var components = FindObjectsOfType(type, true);
+#endif
 
       return components.Where( o => ((Collider)o).attachedRigidbody == null )
                        .Select( o =>
@@ -473,8 +482,15 @@ namespace AGXUnityEditor.Windows
       agxRB.MassProperties.Mass.UseDefault = false;
       agxRB.MassProperties.Mass.Value = physXRb.mass;
 
-      agxRB.LinearVelocityDamping = new Vector3(physXRb.drag, physXRb.drag, physXRb.drag);
-      agxRB.AngularVelocityDamping = new Vector3(physXRb.angularDrag, physXRb.angularDrag, physXRb.angularDrag);
+#if UNITY_6000_0_OR_NEWER
+      var linearVelocityDamping = physXRb.linearDamping;
+      var angularVelocityDamping = physXRb.angularDamping;
+#else
+      var linearVelocityDamping = physXRb.drag;
+      var angularVelocityDamping = physXRb.angularDrag;
+#endif
+      agxRB.LinearVelocityDamping = new Vector3(linearVelocityDamping, linearVelocityDamping, linearVelocityDamping);
+      agxRB.AngularVelocityDamping = new Vector3(angularVelocityDamping, angularVelocityDamping, angularVelocityDamping);
 
       if (!physXRb.automaticCenterOfMass)
       {
