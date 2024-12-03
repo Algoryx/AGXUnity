@@ -15,7 +15,8 @@ namespace AGXUnityEditor.Windows
     {
       Collider,
       RigidBody,
-      Constraint
+      Constraint,
+      PhysicsMaterial
     }
 
     private enum SortType
@@ -43,15 +44,17 @@ namespace AGXUnityEditor.Windows
       public string Path;
       public int ConvertibleCount;
       public bool Convert;
+      public bool Updatable;
 
       // Factory method to create an instance of PrefabData
-      public static PrefabData CreateInstance( string name, string path, int convertibleCount, bool selected = false )
+      public static PrefabData CreateInstance( string name, string path, int convertibleCount, bool selected = false, bool updatable = true )
       {
         var instance = ScriptableObject.CreateInstance<PrefabData>();
         instance.Name = name;
         instance.Path = path;
         instance.ConvertibleCount = convertibleCount;
         instance.Convert = selected;
+        instance.Updatable = updatable;
         return instance;
       }
     }
@@ -157,6 +160,29 @@ namespace AGXUnityEditor.Windows
         }
       }
 
+      // The aptly named Physic Material apparently changed its name to the less Danish-English Physics Material
+#if UNITY_6000_0_OR_NEWER
+      string[] pmPaths = AssetDatabase.FindAssets("t:PhysicsMaterial")
+                                        .Select(AssetDatabase.GUIDToAssetPath)
+                                        .ToArray();
+      foreach ( var pmPath in pmPaths ) {
+        PhysicsMaterial physicMaterial = AssetDatabase.LoadAssetAtPath<PhysicsMaterial>(pmPath);
+
+        var prefabData = PrefabData.CreateInstance(physicMaterial.name, pmPath, 1, updatable: false);
+        m_prefabPhysXAssets.Add( prefabData );
+      }
+#else
+      string[] pmPaths = AssetDatabase.FindAssets("t:PhysicMaterial")
+                                        .Select(AssetDatabase.GUIDToAssetPath)
+                                        .ToArray();
+      foreach ( var pmPath in pmPaths ) {
+        PhysicsMaterial physicMaterial = AssetDatabase.LoadAssetAtPath<PhysicMaterial>(pmPath);
+
+        var prefabData = PrefabData.CreateInstance(physicMaterial.name, pmPath, 1, updatable: false);
+        m_prefabPhysXAssets.Add( prefabData );
+      }
+#endif
+
       m_prefabPhysXAssets = m_prefabPhysXAssets.OrderBy( p => p.Name ).ToList();
     }
 
@@ -260,8 +286,6 @@ namespace AGXUnityEditor.Windows
           } ).ToList() );
       }
 
-      // Debug.Log("Number of assetDatas: " + physXAssets.Count);
-
       return physXAssets;
     }
 
@@ -346,8 +370,8 @@ namespace AGXUnityEditor.Windows
     {
       var row = new VisualElement();
       row.SetPadding( 3, 3, 3, 0 );
-
       row.SetEnabled( asset.Updatable );
+
       var index = m_tableRows.Count();
       row.RegisterCallback<MouseDownEvent>( mde => {
         EditorUtility.FocusProjectWindow();
@@ -414,11 +438,12 @@ namespace AGXUnityEditor.Windows
 
     private VisualElement CreatePrefabRowUI( PrefabData prefabData )
     {
-      int rowIndex = m_tableRows.Count; // Keep track of row index for alternating colors
+      int rowIndex = m_tableRows.Count;
       var row = new VisualElement();
       row.style.flexDirection = FlexDirection.Row;
       row.style.justifyContent = Justify.SpaceBetween;
       row.SetPadding( 3, 3, 3, 0 );
+      row.SetEnabled( prefabData.Updatable );
 
       var index = m_tableRows.Count();
       row.RegisterCallback<MouseOverEvent>( _ => {
@@ -441,7 +466,8 @@ namespace AGXUnityEditor.Windows
       toggleConversion.style.width = 20;
       toggleConversion.SetMargin( 0, 5, 0, StyleKeyword.Null );
       toggleConversion.RegisterValueChangedCallback( ce => prefabData.Convert = ce.newValue );
-      m_toggleAllPrefabObjects.AddControlledToggle( toggleConversion );
+      if ( prefabData.Updatable )
+        m_toggleAllPrefabObjects.AddControlledToggle( toggleConversion );
 
       var nameLabel = new Label(prefabData.Name);
       nameLabel.style.flexGrow = 0.3f;
@@ -467,7 +493,6 @@ namespace AGXUnityEditor.Windows
       row.Add( pathLabel );
       row.Add( countLabel );
 
-      // Keep track of rows for further updates
       m_tableRows.Add( row );
 
       return row;
@@ -529,14 +554,6 @@ namespace AGXUnityEditor.Windows
       description.style.whiteSpace = WhiteSpace.Normal;
       description.style.marginBottom = 10;
       sceneBox.Add( description );
-
-      //      var sortMenu = EditorGUILayout.EnumFlagsField( AGXUnity.Utils.GUI.MakeLabel( "Properties" ),
-      //                                                                                   m_sortType,
-      //                                                                                   InspectorEditor.Skin.Popup );
-      //      var sortMenu = new EnumField("Test", m_sortType);
-      //      sortMenu.
-      //      //sortMenu.style.marginBottom = 15;
-      //      sceneBox.Add( sortMenu );
 
       var header = new VisualElement();
       header.style.flexDirection = FlexDirection.Row;
@@ -613,7 +630,7 @@ namespace AGXUnityEditor.Windows
       numAssets.style.flexDirection = FlexDirection.Row;
       numAssets.style.alignItems = Align.Center;
       numAssets.style.unityTextAlign = TextAnchor.MiddleLeft;
-      numAssets.style.flexGrow = 1; // Allows this section to take up remaining space
+      numAssets.style.flexGrow = 1;
       numAssets.style.justifyContent = Justify.FlexEnd;
       numAssets.Add( new Label() { text = "Upgradable prefabs: " } );
 
@@ -624,8 +641,8 @@ namespace AGXUnityEditor.Windows
       image.style.marginRight = 5;
       numAssets.Add( image );
 
-      var label = new Label() { text = $" {m_prefabPhysXAssets.Count}" };
-      label.style.flexGrow = 0; // Fixed size for label
+      var label = new Label() { text = $" {(m_prefabPhysXAssets != null ? m_prefabPhysXAssets.Where( a => a.Updatable).Count() : 0)}" };
+      label.style.flexGrow = 0; 
       label.style.flexShrink = 0;
       numAssets.Add( label );
 
@@ -643,7 +660,6 @@ namespace AGXUnityEditor.Windows
 
     private void Repopulate( bool gatherAssets = true )
     {
-      // TODO gatherassets? probably remove the option
       GatherSceneObjects();
       GatherPrefabData();
       m_tableRows.Clear();
@@ -654,7 +670,7 @@ namespace AGXUnityEditor.Windows
 
     private void ConvertObjects( List<AssetData> assets )
     {
-      foreach ( var asset in assets ) { // .Where(m => m.Status == MaterialStatus.Updatable )
+      foreach ( var asset in assets ) {
         if ( !asset.Convert )
           continue;
 
@@ -667,9 +683,7 @@ namespace AGXUnityEditor.Windows
             ConvertCollider( dependentCollider );
         }
 
-        // TODO maybe remove these
         EditorUtility.SetDirty( asset );
-        //EditorUtility.SetDirty( asset.gameObject.GetComponent( asset.type ) );
       }
     }
 
@@ -696,7 +710,6 @@ namespace AGXUnityEditor.Windows
             PrefabUtility.SaveAsPrefabAsset(prefabObject, prefab.Path);
           }
           finally {
-            // Ensure the prefab contents are unloaded from memory
             PrefabUtility.UnloadPrefabContents( prefabObject );
           }
 
