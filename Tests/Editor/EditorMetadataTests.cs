@@ -3,16 +3,17 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 using Assembly = System.Reflection.Assembly;
 
 namespace AGXUnityTesting
 {
-  public class HelpURLTest
+  public class EditorMetadataTests
   {
     [Test]
-    public void HelpURLTestSimplePasses()
+    public void ScriptsHaveHelpURLs()
     {
       var asm = Assembly.GetAssembly(typeof(RigidBody));
       List<Type> missing = new List<Type>();
@@ -36,6 +37,26 @@ namespace AGXUnityTesting
         }
         Assert.Fail( errStr );
       }
+    }
+
+    private void CheckScriptIconsInDirectory( string path )
+    {
+      if ( System.IO.Directory.Exists( path ) ) {
+        foreach ( var subfile in System.IO.Directory.EnumerateFiles( path ) )
+          CheckScriptIconsInDirectory( subfile );
+      }
+      else if ( path.EndsWith( ".cs" ) ) {
+        var mi = AssetImporter.GetAtPath( path ) as MonoImporter;
+        Assert.NotNull( mi.GetIcon(), $"Script file '{path}' has no icon" );
+      }
+
+    }
+
+    [Test]
+    public void ScriptsHaveIcons()
+    {
+      var sourceDir = AGXUnityEditor.IO.Utils.AGXUnitySourceDirectory;
+      CheckScriptIconsInDirectory( sourceDir );
     }
   }
 }
