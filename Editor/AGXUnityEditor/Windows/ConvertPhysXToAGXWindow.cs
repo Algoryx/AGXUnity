@@ -658,8 +658,6 @@ namespace AGXUnityEditor.Windows
         if ( !asset.Convert )
           continue;
 
-        Debug.Log( $"Asset: {asset.gameObject.name}, type: {asset.type}" );
-
         if ( asset.physXType == PhysXType.Collider )
           ConvertCollider( asset );
 
@@ -687,7 +685,6 @@ namespace AGXUnityEditor.Windows
           if ( !prefab.Convert )
             continue;
 
-          //GameObject prefabObject = AssetDatabase.LoadAssetAtPath<GameObject>(prefab.Path);
           GameObject prefabObject = PrefabUtility.LoadPrefabContents(prefab.Path);
           if ( prefabObject == null )
             continue;
@@ -703,7 +700,7 @@ namespace AGXUnityEditor.Windows
             PrefabUtility.UnloadPrefabContents( prefabObject );
           }
 
-          Debug.Log( $"Converted asset: {prefab.Name}, objects: {objects.Count}" );
+          Debug.Log( $"Converted prefab: {prefab.Name}, objects: {objects.Count}" );
         }
       }
 
@@ -761,7 +758,7 @@ namespace AGXUnityEditor.Windows
 
       newObject.isStatic = asset.gameObject.isStatic;
 
-      var localScale = asset.gameObject.transform.localScale;
+      var colliderScale = asset.gameObject.transform.lossyScale;
 
       switch ( asset.type.ToString() ) // Can't switch on type, workaround with strings
       {
@@ -774,9 +771,9 @@ namespace AGXUnityEditor.Windows
 
           // SphereCollider radius is old radius times largest of absolute value of localScale axes
           agxSphere.Radius = physXSphere.radius * Mathf.Max( new float[]{
-                                                    Mathf.Abs(localScale.x),
-                                                    Mathf.Abs(localScale.y),
-                                                    Mathf.Abs(localScale.z)} );
+                                                    Mathf.Abs(colliderScale.x),
+                                                    Mathf.Abs(colliderScale.y),
+                                                    Mathf.Abs(colliderScale.z)} );
 
           agxSphere.IsSensor = physXSphere.isTrigger;
 
@@ -790,9 +787,9 @@ namespace AGXUnityEditor.Windows
           newObject.name = "AGXUnity.Collide.Box";
           newObject.transform.localPosition = physXBox.center;
 
-          agxBox.HalfExtents = new Vector3( physXBox.size.x / 2f * Mathf.Abs( localScale.x ),
-                                           physXBox.size.y / 2f * Mathf.Abs( localScale.y ),
-                                           physXBox.size.z / 2f * Mathf.Abs( localScale.z ) );
+          agxBox.HalfExtents = new Vector3( physXBox.size.x / 2f * Mathf.Abs( colliderScale.x ),
+                                           physXBox.size.y / 2f * Mathf.Abs( colliderScale.y ),
+                                           physXBox.size.z / 2f * Mathf.Abs( colliderScale.z ) );
 
           agxBox.IsSensor = physXBox.isTrigger;
 
@@ -809,10 +806,10 @@ namespace AGXUnityEditor.Windows
           // Capsule radius is old radius times abs largest xz-localScale axis. PhysX capsule height is including caps, agx is without
           newObject.transform.localScale = Vector3.one;
           var radius = physXCapsule.radius * Mathf.Max(new float[]{
-                                                      Mathf.Abs(localScale.x),
-                                                      Mathf.Abs(localScale.z)});
+                                                      Mathf.Abs(colliderScale.x),
+                                                      Mathf.Abs(colliderScale.z)});
           agxCapsule.Radius = radius;
-          agxCapsule.Height = ( physXCapsule.height - radius * 2 ) * Mathf.Abs( localScale.y );
+          agxCapsule.Height = ( physXCapsule.height - radius * 2 ) * Mathf.Abs( colliderScale.y );
 
           agxCapsule.IsSensor = physXCapsule.isTrigger;
 
