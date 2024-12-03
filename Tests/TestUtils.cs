@@ -2,6 +2,10 @@
 #define TEST_REALTIME_SYNC
 #endif
 
+#if TEST_NO_REALTIME_SYNC
+#undef TEST_REALTIME_SYNC
+#endif
+
 using AGXUnity;
 using System.Collections;
 using UnityEngine;
@@ -12,19 +16,19 @@ namespace AGXUnityTesting
   {
     public static IEnumerator WaitUntilLoaded()
     {
-      if ( Application.isPlaying )
+      if ( !Application.isPlaying )
         Debug.LogError( "TestUtils are not supported in edit-mode" );
       else {
         yield return new WaitForEndOfFrame();
 #if !TEST_REALTIME_SYNC
-    Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
+        Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
 #endif
       }
     }
 
     public static IEnumerator SimulateTo( float time )
     {
-      if ( Application.isPlaying )
+      if ( !Application.isPlaying )
         Debug.LogError( "TestUtils are not supported in edit-mode" );
       else {
         yield return WaitUntilLoaded();
@@ -32,7 +36,7 @@ namespace AGXUnityTesting
 #if TEST_REALTIME_SYNC
           yield return new WaitForFixedUpdate();
 #else
-      Simulation.Instance.DoStep();
+          Simulation.Instance.DoStep();
 #endif
         }
       }
@@ -40,7 +44,7 @@ namespace AGXUnityTesting
 
     public static IEnumerator SimulateSeconds( float time )
     {
-      if ( Application.isPlaying )
+      if ( !Application.isPlaying )
         Debug.LogError( "TestUtils are not supported in edit-mode" );
       else {
         yield return WaitUntilLoaded();
@@ -49,7 +53,7 @@ namespace AGXUnityTesting
 #if TEST_REALTIME_SYNC
           yield return new WaitForFixedUpdate();
 #else
-      Simulation.Instance.DoStep();
+          Simulation.Instance.DoStep();
 #endif
         }
       }
