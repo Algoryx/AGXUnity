@@ -106,16 +106,26 @@ namespace AGXUnityEditor.Windows
       foreach ( var type in m_basicColliderTypes )
         convertibleObjects.AddRange( FindColliderAssetData( type, PhysXType.Collider, prefabObject ) );
 
-      // TODO Need to take care of DeformableTerrainPager before this works as intended
-      /*
-      var terrains = FindColliderAssetData(typeof(TerrainCollider), PhysXType.Collider);
-      for (int i = terrains.Count; --i >= 0;)
+#if UNITY_2023_1_OR_NEWER
+      bool foundTerrainPager = FindObjectsByType( typeof( AGXUnity.Model.DeformableTerrainPager ), FindObjectsInactive.Include, FindObjectsSortMode.None ).Length > 0;
+#else
+      bool foundTerrainPager = FindObjectsOfType( typeof( AGXUnity.Model.DeformableTerrainPager ), true ).Length > 0;
+#endif
+
+      if (foundTerrainPager)
       {
-        if (terrains[i].gameObject.GetComponent<DeformableTerrain>() != null)
-          terrains.RemoveAt(i);
+        Debug.Log("Found at least one Deformable Terrain Pager, assuming Terrain Colliders to be part of that system. If there are separate terrains that should have Terrain Colliders, add manually.");
       }
-      m_physXAssets.AddRange(terrains);
-      */
+      else
+      {
+        var terrains = FindColliderAssetData(typeof(TerrainCollider), PhysXType.Collider);
+        for (int i = terrains.Count; --i >= 0;)
+        {
+          if (terrains[i].gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null)
+            terrains.RemoveAt(i);
+        }
+        convertibleObjects.AddRange(terrains);
+      }
 
       convertibleObjects.AddRange( FindRigidbodyData( prefabObject ) );
 
