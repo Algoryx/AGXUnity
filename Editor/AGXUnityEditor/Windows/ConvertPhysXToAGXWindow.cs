@@ -65,6 +65,7 @@ namespace AGXUnityEditor.Windows
       var window = GetWindow<ConvertPhysXToAGXWindow>( false,
                                                       "Convert Components from PhysX to AGX",
                                                       true );
+      window.Repopulate();
       return window;
     }
 
@@ -106,6 +107,9 @@ namespace AGXUnityEditor.Windows
       foreach ( var type in m_basicColliderTypes )
         convertibleObjects.AddRange( FindColliderAssetData( type, PhysXType.Collider, prefabObject ) );
 
+      foreach ( var type in m_constraintTypes )
+        convertibleObjects.AddRange( FindConstraintAssetData( type, PhysXType.Constraint, prefabObject ) );
+
 #if UNITY_2023_1_OR_NEWER
       bool foundTerrainPager = FindObjectsByType( typeof( AGXUnity.Model.DeformableTerrainPager ), FindObjectsInactive.Include, FindObjectsSortMode.None ).Length > 0;
 #else
@@ -114,7 +118,7 @@ namespace AGXUnityEditor.Windows
 
       if (foundTerrainPager)
       {
-        Debug.Log("Found at least one Deformable Terrain Pager, assuming Terrain Colliders to be part of that system. If there are separate terrains that should have Terrain Colliders, add manually.");
+        Debug.Log("Convert PhysX to AGX Tool: Found at least one Deformable Terrain Pager, assuming Terrain Colliders to be part of that system. If there are separate terrains that should have Terrain Colliders, add manually.");
       }
       else
       {
@@ -323,6 +327,34 @@ namespace AGXUnityEditor.Windows
                          data.physXType = physXType;
                          data.gameObject = ( (UnityEngine.Component)o ).gameObject;
                          data.Updatable = type != typeof( WheelCollider );
+
+                         return data;
+                       } ).ToList();
+    }
+
+    private List<AssetData> FindConstraintAssetData( Type type, PhysXType physXType, GameObject prefabObject = null )
+    {
+      bool sceneMode = prefabObject == null;
+
+      UnityEngine.Object[] components;
+      if ( sceneMode ) {
+#if UNITY_2023_1_OR_NEWER
+        components = FindObjectsByType( type, FindObjectsInactive.Include, FindObjectsSortMode.None );
+#else
+        components = FindObjectsOfType( type, true );
+#endif
+      }
+      else {
+        components = prefabObject.GetComponentsInChildren( type, true );
+      }
+
+      return components.Select( o => {
+                         var data = CreateInstance<AssetData>();
+                         data.Convert = false;
+                         data.type = type;
+                         data.physXType = physXType;
+                         data.gameObject = ( (UnityEngine.Component)o ).gameObject;
+                         data.Updatable = false;
 
                          return data;
                        } ).ToList();
@@ -703,7 +735,6 @@ namespace AGXUnityEditor.Windows
         ConvertObjects( m_physXAssets );
       }
 
-      // TODO: possibly remove Undo, it won't work
       using ( new UndoCollapseBlock( "Convert Selected Prefab Assets" ) ) {
         foreach ( var prefab in m_prefabPhysXAssets ) {
           if ( !prefab.Convert )
@@ -855,7 +886,12 @@ namespace AGXUnityEditor.Windows
 
         case "UnityEngine.TerrainCollider":
           Undo.DestroyObjectImmediate( newObject );
-          Undo.AddComponent<AGXUnity.Model.DeformableTerrain>( asset.gameObject );
+          var terrain = asset.gameObject.GetComponent<Terrain>();
+          if (terrain.leftNeighbor != null || terrain.rightNeighbor != null || 
+                terrain.topNeighbor != null || terrain.bottomNeighbor != null)
+            Undo.AddComponent<AGXUnity.Model.DeformableTerrainPager>( asset.gameObject );
+          else
+            Undo.AddComponent<AGXUnity.Model.DeformableTerrain>( asset.gameObject );
           break;
       }
     }
