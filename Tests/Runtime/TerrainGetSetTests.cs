@@ -1,10 +1,11 @@
 using AGXUnity.Model;
+
 using NUnit.Framework;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace AGXUnityTesting
+namespace AGXUnityTesting.Runtime
 {
   public class TerrainGetSetTests
   {

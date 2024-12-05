@@ -11,7 +11,6 @@ using UnityEngine.TestTools;
 public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildCleanup
 {
   const string CLI_ARG = "onlyBuildTestsTo";
-  private static bool s_RunningPlayerTests;
 
   public BuildPlayerOptions ModifyOptions( BuildPlayerOptions playerOptions )
   {
@@ -24,8 +23,6 @@ public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildClean
       if ( !string.IsNullOrEmpty( fileName ) )
         buildLocation = Path.Combine( buildLocation, fileName );
       playerOptions.locationPathName = buildLocation;
-
-      s_RunningPlayerTests = true;
     }
 
     var scenes = playerOptions.scenes.Where( s => s.StartsWith("Assets/InitTestScene"));
@@ -36,8 +33,7 @@ public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildClean
 
   public void Cleanup()
   {
-    if ( Environment.CommandLine.HasArg( CLI_ARG ) ) {
+    if ( Environment.CommandLine.HasArg( CLI_ARG ) )
       EditorApplication.Exit( 0 );
-    }
   }
 }
