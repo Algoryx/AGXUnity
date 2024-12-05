@@ -1,11 +1,12 @@
 {
-    "name": "AGXUnityTests",
+    "name": "AGXUnity.Tests",
     "rootNamespace": "",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "AGXUnity",
         "TestingCommon"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [
         "Editor",
@@ -15,13 +16,7 @@
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
     "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
     "versionDefines": [],
     "noEngineReferences": false
 }
