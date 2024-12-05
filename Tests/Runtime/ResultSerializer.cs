@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestRunner;
 
 [assembly: TestRunCallback( typeof( ResultSerializer ) )]
+
 public class ResultSerializer : ITestRunCallback
 {
   public void RunStarted( ITest testsToRun ) { }
@@ -15,14 +16,12 @@ public class ResultSerializer : ITestRunCallback
   public void RunFinished( ITestResult testResults )
   {
     if ( Environment.CommandLine.HasArg( "testResults" ) ) {
-      if ( !testResults.Test.IsSuite ) {
-        var path = Environment.CommandLine.GetValues( "testResults" )?[ 0 ] ?? "results.xml";
-        var fullPath = Path.GetFullPath(path);
-        using ( var xmlWriter = XmlWriter.Create( fullPath, new XmlWriterSettings { Indent = true } ) )
-          WriteResultsToXml( testResults, xmlWriter );
+      var path = Environment.CommandLine.GetValues( "testResults" )?[ 0 ] ?? "results.xml";
+      var fullPath = Path.GetFullPath(path);
+      using ( var xmlWriter = XmlWriter.Create( fullPath, new XmlWriterSettings { Indent = true } ) )
+        WriteResultsToXml( testResults, xmlWriter );
 
-        System.Console.WriteLine( $"\n Test results written to: {fullPath}\n" );
-      }
+      System.Console.WriteLine( $"\n Test results written to: {fullPath}\n" );
     }
     Application.Quit( testResults.FailCount > 0 ? 1 : 0 );
   }
