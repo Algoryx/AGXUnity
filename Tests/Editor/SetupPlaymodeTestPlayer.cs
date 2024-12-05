@@ -35,8 +35,7 @@ public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildClean
   public void Cleanup()
   {
     if ( s_RunningPlayerTests ) {
-      // Exit the Editor on the next update, allowing for other PostBuildCleanup steps to run.
-      EditorApplication.update += () => { EditorApplication.Exit( 0 ); };
+      EditorApplication.Exit( 0 );
     }
   }
 }
