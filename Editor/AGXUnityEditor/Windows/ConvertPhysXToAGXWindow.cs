@@ -544,7 +544,11 @@ namespace AGXUnityEditor.Windows
     {
       rootVisualElement.SetPadding( 19, 15, 15, 15 );
 
-      var RPLabel = new Label($"This utility attempts to convert PhysX Components to corresponding AGX Components.");
+      var RPLabel = new Label($"Convenience utility attempting to convert simple PhysX assets to corresponding AGX assets. Intended for colliders and rigid bodies. Refresh the view after the scene changes.");
+      RPLabel.style.whiteSpace = WhiteSpace.Normal; // Enables text wrapping
+      RPLabel.style.flexGrow = 1; // Ensures the label grows with its container
+      RPLabel.style.flexShrink = 1; // Allows it to shrink if needed
+      RPLabel.style.overflow = Overflow.Hidden; // Prevents text from overflowing the container
       RPLabel.style.marginBottom = 5;
       rootVisualElement.Add( RPLabel );
 
@@ -592,7 +596,7 @@ namespace AGXUnityEditor.Windows
       sceneBox.SetBorderRadius( 5 );
       sceneBox.SetPadding( 5 );
 
-      var description = new Label( "PhysXObjects in Scene. GameObjects with multiple matching Components can appear on multiple lines." );
+      var description = new Label( "PhysX GameObjects in the open main scene. GameObjects with multiple matching Components can appear on multiple lines." );
       description.style.whiteSpace = WhiteSpace.Normal;
       description.style.marginBottom = 10;
       sceneBox.Add( description );
@@ -608,12 +612,14 @@ namespace AGXUnityEditor.Windows
       numAssets.style.flexDirection = FlexDirection.Row;
       numAssets.style.alignItems = Align.Center;
       numAssets.style.unityTextAlign = TextAnchor.MiddleLeft;
-
+      numAssets.style.flexGrow = 1;
+      numAssets.style.justifyContent = Justify.FlexEnd;
       numAssets.Add( new Label() { text = "Upgradable assets: " } );
 
       var image = new Image() { image = m_statusIcons[ 0 ] };
       image.style.width = 20;
       image.style.height = 20;
+      image.style.marginLeft = 5;
       numAssets.Add( image );
 
       var lab = new Label() { text = $" {(m_physXAssets != null ? m_physXAssets.Where( a => a.Updatable).Count() : 0)}" };
@@ -651,7 +657,7 @@ namespace AGXUnityEditor.Windows
         return prefabBox; // Return early since prefab conversion is disabled in Play mode
       }
 
-      var description = new Label("PhysXObjects in Prefabs. Lists prefabs with convertible components. Note: You cannot undo this convert action!");
+      var description = new Label("Prefabs containing PhysX eligible components. Note: Conversion on prefabs cannot be undone!");
       description.style.whiteSpace = WhiteSpace.Normal;
       description.style.marginBottom = 10;
       prefabBox.Add( description );
@@ -680,7 +686,6 @@ namespace AGXUnityEditor.Windows
       image.style.width = 20;
       image.style.height = 20;
       image.style.marginLeft = 5;
-      image.style.marginRight = 5;
       numAssets.Add( image );
 
       var label = new Label() { text = $" {(m_prefabPhysXAssets != null ? m_prefabPhysXAssets.Where( a => a.Updatable).Count() : 0)}" };
@@ -693,8 +698,9 @@ namespace AGXUnityEditor.Windows
       prefabBox.Add( header );
 
       var scrolledTable = new ScrollView();
-      foreach ( var prefabData in m_prefabPhysXAssets ) // Populate rows with prefabs
-        scrolledTable.Add( CreatePrefabRowUI( prefabData ) );
+      if (m_prefabPhysXAssets != null)
+        foreach ( var prefabData in m_prefabPhysXAssets ) // Populate rows with prefabs
+          scrolledTable.Add( CreatePrefabRowUI( prefabData ) );
 
       prefabBox.Add( scrolledTable );
       return prefabBox;
@@ -713,7 +719,7 @@ namespace AGXUnityEditor.Windows
     private void ConvertObjects( List<AssetData> assets )
     {
       foreach ( var asset in assets ) {
-        if ( !asset.Convert )
+        if ( !asset.Convert || !asset.Updatable )
           continue;
 
         if ( asset.physXType == PhysXType.Collider )
@@ -872,12 +878,24 @@ namespace AGXUnityEditor.Windows
 
         case "UnityEngine.MeshCollider":
           var physXMesh = asset.gameObject.GetComponent<MeshCollider>();
-          var agxMesh = Undo.AddComponent<AGXUnity.Collide.Mesh>(newObject);
+          var agxMesh = Undo.AddComponent<AGXUnity.Collide.Mesh>(newObject);//
 
           newObject.name = "AGXUnity.Collide.Mesh";
           newObject.transform.localPosition = Vector3.zero;
 
-          agxMesh.AddSourceObject( physXMesh.sharedMesh );
+          if (physXMesh.sharedMesh.isReadable)
+          {
+            agxMesh.AddSourceObject( physXMesh.sharedMesh );
+          }
+          else
+          {
+            Mesh readableMesh = new Mesh();
+            readableMesh.vertices = physXMesh.sharedMesh.vertices;
+            readableMesh.triangles = physXMesh.sharedMesh.triangles;
+            agxMesh.AddSourceObject( readableMesh );
+            
+            Undo.RegisterCompleteObjectUndo(readableMesh, "Create Readable Mesh");
+          }
 
           agxMesh.IsSensor = physXMesh.isTrigger;
 
