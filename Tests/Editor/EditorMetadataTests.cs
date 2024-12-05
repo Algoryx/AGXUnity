@@ -8,7 +8,7 @@ using UnityEngine;
 
 using Assembly = System.Reflection.Assembly;
 
-namespace AGXUnityTesting
+namespace AGXUnityTesting.Editor
 {
   public class EditorMetadataTests
   {

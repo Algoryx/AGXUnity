@@ -4,7 +4,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace AGXUnityTesting
+namespace AGXUnityTesting.Runtime
 {
   public class WireCutMergeTests
   {

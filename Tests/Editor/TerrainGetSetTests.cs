@@ -2,7 +2,7 @@ using AGXUnity.Model;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace AGXUnityTesting
+namespace AGXUnityTesting.Editor
 {
   public class TerrainGetSetTests
   {
