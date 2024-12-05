@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.TestTools;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 [assembly: TestPlayerBuildModifier( typeof( SetupPlaymodeTestPlayer ) )]
@@ -37,9 +36,7 @@ public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildClean
 
   public void Cleanup()
   {
-    Debug.Log( "In Cleanup" );
     if ( Environment.CommandLine.HasArg( CLI_ARG ) ) {
-      Debug.Log( "Exiting" );
       EditorApplication.Exit( 0 );
     }
   }
