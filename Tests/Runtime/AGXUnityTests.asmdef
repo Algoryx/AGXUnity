@@ -16,6 +16,11 @@
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
+    "precompiledReferences": [
+        "openplx.dll",
+        "agxDotNet.dll",
+        "agxMathDotNet.dll"
+    ],
     "autoReferenced": false,
     "versionDefines": [],
     "noEngineReferences": false
