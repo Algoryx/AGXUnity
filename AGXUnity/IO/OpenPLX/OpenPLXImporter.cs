@@ -28,7 +28,7 @@ namespace AGXUnity.IO.OpenPLX
     public MapperOptions Options { get; set; }
     public GameObject ImportOpenPLXFile( string path )
     {
-      var go = new GameObject( "OpenPLX Root" );
+      var go = new GameObject( System.IO.Path.GetFileNameWithoutExtension(path) );
       var root = go.AddComponent<OpenPLXRoot>();
 
       root.OpenPLXAssetPath = path;
