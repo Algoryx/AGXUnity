@@ -81,8 +81,20 @@ namespace AGXUnity.IO.OpenPLX
       return ok;
     }
 
+    protected override void OnDestroy()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPreSync -= Pre;
+        Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPostSync -= Post;
+      }
+    }
+
     void Pre()
     {
+      if ( !isActiveAndEnabled ) {
+        m_inputSignalQueue.Clear();
+        return;
+      }
       while ( m_inputSignalQueue.TryDequeue( out var inpSig ) ) {
         switch ( inpSig ) {
           case RealInputSignal realSig: InputSignalHandler.HandleRealInputSignal( realSig, Root ); break;
@@ -96,6 +108,8 @@ namespace AGXUnity.IO.OpenPLX
     void Post()
     {
       m_outputSignalList.Clear();
+      if ( !isActiveAndEnabled )
+        return;
       foreach ( var outputSource in m_outputs ) {
         OutputSignal signal = OutputSignalGenerator.GenerateSignalFrom( outputSource.Native, Root );
 
