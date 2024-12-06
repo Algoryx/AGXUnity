@@ -1,0 +1,22 @@
+{
+    "name": "AGXUnity.Tests",
+    "rootNamespace": "",
+    "references": [
+        "AGXUnity",
+        "TestingCommon"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "LinuxStandalone64",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "autoReferenced": false,
+    "versionDefines": [],
+    "noEngineReferences": false
+}
