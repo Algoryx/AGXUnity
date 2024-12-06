@@ -3,6 +3,7 @@ using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using Mesh = AGXUnity.Collide.Mesh;
 using Plane = AGXUnity.Collide.Plane;
@@ -26,9 +27,16 @@ namespace AGXUnityEditor
         return null;
 
       var parent = command.context as GameObject;
+      var views = SceneView.sceneViews;
       if ( parent != null )
         go.transform.SetParent( parent.transform, false );
-
+      else if (SceneView.sceneViews.Count > 0)
+      {
+        var view = SceneView.sceneViews[0] as SceneView;
+        if (view != null)
+          view.MoveToView(go.transform);
+      }
+      
       AGXUnity.Rendering.ShapeVisual.Create( go.GetComponent<T>() );
 
       Undo.RegisterCreatedObjectUndo( go, "shape" );
@@ -550,6 +558,12 @@ namespace AGXUnityEditor
     public static void ConvertRenderingMaterials()
     {
       Windows.ConvertMaterialsWindow.Open();
+    }
+
+    [MenuItem( "AGXUnity/Utils/Convert PhysX components to AGX", priority = 80 )]
+    public static void ConvertPhysXToAGX()
+    {
+      Windows.ConvertPhysXToAGXWindow.Open();
     }
 
     [MenuItem( "AGXUnity/Settings...", priority = 81 )]
