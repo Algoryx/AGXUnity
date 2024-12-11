@@ -323,7 +323,7 @@ namespace AGXUnityEditor
             Debug.LogWarning( "The AGXUnity Inspector wrapper currently does not support editable array types. Consider using List<T> as an alternative." );
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
-            value = serializedProperty.objectReferenceValue;
+            value = serializedProperty.boxedValue;
           }
         }
       }

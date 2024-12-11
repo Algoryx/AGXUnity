@@ -88,6 +88,9 @@ namespace AGXUnityEditor
 
       var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot( instance );
 
+      if ( string.IsNullOrEmpty( path ) || PrefabUtility.IsPartOfImmutablePrefab( instance ) )
+        return;
+
       using ( var prefab = new PrefabUtility.EditPrefabContentsScope( path ) ) {
         var svs = prefab.prefabContentsRoot.GetComponentsInChildren<ShapeVisual>();
         foreach ( var sv in svs ) {

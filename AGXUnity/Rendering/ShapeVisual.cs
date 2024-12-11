@@ -400,7 +400,7 @@ namespace AGXUnity.Rendering
     {
       GameObject go = null;
       try {
-        go = isRenderData || shape is Collide.Mesh || shape is Collide.HollowCylinder || shape is Collide.Cone || shape is Collide.HollowCone ?
+        go = isRenderData || shape is Collide.Mesh || shape is Collide.HollowCylinder || shape is Collide.Cone || shape is Collide.HollowCone || shape is Collide.Capsule ?
                new GameObject( "" ) :
                PrefabLoader.Instantiate<GameObject>( @"Debug/" + shape.GetType().Name + "Renderer" );
 
