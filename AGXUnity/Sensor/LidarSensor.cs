@@ -9,6 +9,7 @@ using agxCollide;
 using UnityEngine.Rendering;
 using agxModel;
 using UnityEditor;
+using AGXUnity.Rendering;
 
 namespace AGXUnity.Sensor
 {
@@ -234,6 +235,8 @@ namespace AGXUnity.Sensor
     private void UpdateLidarProperties()
     {
       // TODO only update stuff that we want overridable with this lidar... But have to decide on that interface
+
+      
     }
   }
 }
