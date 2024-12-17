@@ -95,6 +95,11 @@ namespace AGXUnity.Sensor
     public GaussianFunctionSettings RayAngleGaussianNoiseSettings = new GaussianFunctionSettings();
     // TODO check type of above, custom editor usw
 
+    /**
+	  * Discard rays reaching max range or not.
+	  */
+    public bool SetEnableRemoveRayMisses = true;
+
     private RtOutputVec4f m_rtOutput = null;
 
     private SensorEnvironment m_sensorEnvironment = null;
@@ -137,7 +142,7 @@ namespace AGXUnity.Sensor
 
       Native = new Lidar(null, model); // Note: Use default position in order to have the rays be created 
       UpdateTransform();
-      //Native.getOutputHandler().setEnableRemoveRayMisses(true);
+      Native.getOutputHandler().setEnableRemoveRayMisses(SetEnableRemoveRayMisses);
 
       // TODO Temp way of defining output
       m_rtOutput = new RtOutputVec4f();
@@ -158,7 +163,7 @@ namespace AGXUnity.Sensor
         Simulation.Instance.StepCallbacks.PostStepForward -= ProcessOutput;
       }
 
-      m_rtOutput.Dispose();
+      m_rtOutput?.Dispose();
       m_rtOutput = null;
 
       Native = null;
