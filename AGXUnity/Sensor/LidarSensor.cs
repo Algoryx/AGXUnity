@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using AGXUnity.Utils;
 using System.Linq;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace AGXUnity.Sensor
   /// <summary>
   /// WIP component for lidar sensor
   /// </summary>
+  [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
   public class LidarSensor : ScriptComponent
@@ -119,6 +121,19 @@ namespace AGXUnity.Sensor
     LidarPointCloudRenderer m_pointCloudRenderer = null;
     protected override bool Initialize()
     {
+      // This is included to let new lidars be created during runtime
+      if (m_sensorEnvironment == null)
+      {
+        var m_sensorEnvironment = FindObjectOfType<SensorEnvironment>(true);
+        if (m_sensorEnvironment != null)
+        {
+          Debug.Log("Trying");
+          m_sensorEnvironment.RegisterLidarSensor(this);
+        }
+        else
+          Debug.LogWarning("No SensorEnvironment found, lidar will be inactive");
+      }
+
       return true;
     }
 
@@ -154,6 +169,16 @@ namespace AGXUnity.Sensor
       Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
 
       return true;
+    }
+
+    protected override void OnEnable()
+    {
+      Native?.setEnable(true);
+    }
+
+    protected override void OnDisable()
+    {
+      Native?.setEnable(false);
     }
 
     protected override void OnDestroy()

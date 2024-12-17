@@ -32,23 +32,16 @@ namespace AGXUnity.Sensor
     // TODO if we want to ignore invisible objects, how to deal with enabling / disabling during runtime? Or new ones spawned??
     //public bool IgnoreInvisibleObjects = true;
 
-
-    /**
-    * List of all Lidar Sensor Components that should be active in the simulation.
-    * Any Lidar Sensor Components that should be active has to be added by the user to this Array.
-    */
-    public List<LidarSensor> LidarSensors;
-
-
     public bool DebugLogOnAdd = false;
 
-    private Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new Dictionary<UnityEngine.Mesh, RtShape>();
-    private Dictionary<UnityEngine.MeshFilter, RtShapeInstance> m_rtShapeInstances = new Dictionary<UnityEngine.MeshFilter, RtShapeInstance>();
-
-    private List<agxTerrain.Terrain> deformableTerrains = new List<agxTerrain.Terrain>();
-    private List<agxTerrain.TerrainPager> deformableTerrainPagers = new List<agxTerrain.TerrainPager>();
-    private List<agxWire.Wire> wires = new List<agxWire.Wire>();
-    private List<agxCable.Cable> cables = new List<agxCable.Cable>();
+    // Internal lists
+    private readonly Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new();
+    private readonly Dictionary<UnityEngine.MeshFilter, RtShapeInstance> m_rtShapeInstances = new();
+    private readonly List<LidarSensor> m_lidars = new();
+    private readonly List<agxTerrain.Terrain> m_deformableTerrains = new();
+    private readonly List<agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
+    private readonly List<agxWire.Wire> m_wires = new();
+    private readonly List<agxCable.Cable> m_cables = new();
 
     /**
      * The Ambient material used by the Sensor Environment.
@@ -118,7 +111,7 @@ namespace AGXUnity.Sensor
     {
       if (scriptComponent == null || GetNative(scriptComponent) == null)
       {
-        Debug.LogWarning("Problem...: " + (GetNative(scriptComponent) == null));
+        Debug.LogWarning("Problem getting native instance of AGX model!");
         return false;
       }
 
@@ -128,25 +121,25 @@ namespace AGXUnity.Sensor
         case agxTerrain.Terrain dt:
           added = Native.add(dt);
           RtSurfaceMaterial.set(dt, m_rtDefaultSurfaceMaterial);
-          deformableTerrains.Add(dt);
+          m_deformableTerrains.Add(dt);
           break;
 
         case agxTerrain.TerrainPager dtp:
           added = Native.add(dtp);
           RtSurfaceMaterial.set(dtp, m_rtDefaultSurfaceMaterial);
-          deformableTerrainPagers.Add(dtp);
+          m_deformableTerrainPagers.Add(dtp);
           break;
 
         case agxWire.Wire w:
           added = Native.add(w);
           RtSurfaceMaterial.set(w, m_rtDefaultSurfaceMaterial);
-          wires.Add(w);
+          m_wires.Add(w);
           break;
 
         case agxCable.Cable c:
           added = Native.add(c);
           RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
-          cables.Add(c);
+          m_cables.Add(c);
           break;
 
         default:
@@ -162,12 +155,11 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    private List<T> FindValidComponents<T>() where T : UnityEngine.Component
+    private List<T> FindValidComponents<T>(bool includeInactive = false) where T : UnityEngine.Component
     {
-      return FindObjectsOfType<T>(true)
+      return FindObjectsOfType<T>(includeInactive)
           .Where(component =>
               component.gameObject.scene.IsValid() &&
-              component.gameObject.activeInHierarchy &&
               component.gameObject.transform.root.gameObject.scene == component.gameObject.scene)
           .ToList();
     }
@@ -175,48 +167,29 @@ namespace AGXUnity.Sensor
     protected override bool Initialize()
     {
       var simulation = GetSimulation();
-      simulation.setPreIntegratePositions(true); // From Python, don't think this is needed
+      simulation.setPreIntegratePositions(true); // From Python, check if this is needed
 
       // TODO: temp material stuff
       m_rtLambertianOpaqueMaterialInstance = RtMaterialInstance.create(RtMaterialHandle.Type.OPAQUE_LAMBERTIAN);
       m_rtDefaultSurfaceMaterial = RtLambertianOpaqueMaterial.create();
 
+      // Check ray trace device compatibility // TODO activate on setting
+      //Debug.Log("isRaytraceSupported: " + RtConfig.isRaytraceSupported());
+      //Debug.Log("verifyRaytraceSupported: " + RtConfig.verifyRaytraceSupported());
+      //Debug.Log("listRaytraceDevices:" + RtConfig.listRaytraceDevices().Count());
+      //if (RtConfig.getRaytraceDevice() != simulation.RayTraceDeviceIndex) // TODO From Unreal
 
       // In order to properly dispose of Raytrace stuff (before cleanup()) we need to register this callback
       Simulation.Instance.RegisterDisposeCallback(DisposeRT);
 
       Native = agxSensor.Environment.getOrCreate(simulation);
 
-      if (Native == null)
-      {
-        // TODO error message, or remove this check
-        Debug.LogWarning("No native yet");
-        return false;
-      }
-
-      // TODO in Unreal there seem to be a property on the Simulation thing that can choose the raytrace device... Choose what to do with that
-      //if (RtConfig.getRaytraceDevice() != simulation.RayTraceDeviceIndex)
-      {
-
-      }
-
-
       RegisterAllMeshfilters();
 
-      // TODO for now the list of lidars is public but maybe we should auto-add them
-      //RegisterAllLidarSensors();
-      foreach (var lidar in LidarSensors)
+      var lidars = FindValidComponents<LidarSensor>(true);
+      foreach (var lidar in lidars)
       {
-        if (!lidar.InitializeLidar(this, GenerateOutputID()))
-        {
-          Debug.LogWarning("Lidar not initialized");
-          continue;
-        }
-
-        if (!Native.add(lidar.Native))
-          Debug.LogWarning($"Lidar '{lidar.name}' not added properly!");
-        else if (DebugLogOnAdd)
-          Debug.Log($"Sensor Environment '{name}' added Lidar '{lidar.name}'.");
+        RegisterLidarSensor(lidar);
       }
 
       // TODO determine how these types will be found and added / removed, for now just at init
@@ -233,14 +206,26 @@ namespace AGXUnity.Sensor
       foreach (Cable c in cables)
         AddAGXModel(c.GetInitialized<Cable>());
 
-      //Debug.Log("Lidar Sensor Count: " + LidarSensors.Count);
-      //Debug.Log("isRaytraceSupported: " + RtConfig.isRaytraceSupported());
-      //Debug.Log("verifyRaytraceSupported: " + RtConfig.verifyRaytraceSupported());
-      //Debug.Log("listRaytraceDevices:" + RtConfig.listRaytraceDevices().Count());
-      //Debug.Log("m_rtShapes: " + m_rtShapes.Count);
-      //Debug.Log("m_rtShapeInstances: " + m_rtShapeInstances.Count);
-
       return true;
+    }
+
+    public void RegisterLidarSensor(LidarSensor lidar)
+    {
+      if (m_lidars.Contains(lidar))
+        return;
+
+      if (!lidar.InitializeLidar(this, GenerateOutputID()))
+      {
+        Debug.LogWarning("Could not initialize lidar");
+        return;
+      }
+
+      if (!Native.add(lidar.Native))
+        Debug.LogWarning($"Lidar '{lidar.name}' not added to SensorEnvironment properly!");
+      else if (DebugLogOnAdd)
+        Debug.Log($"Sensor Environment '{name}' added Lidar '{lidar.name}'.");
+
+      m_lidars.Add(lidar);
     }
 
     public void RegisterAllMeshfilters()
@@ -277,9 +262,8 @@ namespace AGXUnity.Sensor
 
     private void UpdateLidars()
     {
-      foreach (var lidar in LidarSensors)
+      foreach (var lidar in m_lidars)
       {
-        //TODO could have entire method to subtract from this list but just skip invalid / disabled for now
         if (lidar == null || lidar.Native == null || !lidar.isActiveAndEnabled)
           continue;
 
@@ -292,14 +276,20 @@ namespace AGXUnity.Sensor
       foreach (var shapeInstance in m_rtShapeInstances)
       {
         var mesh = shapeInstance.Key;
-        if (mesh == null || !mesh.gameObject.activeSelf)
+        if (mesh == null)
+        {
+          m_rtShapeInstances.Remove(shapeInstance.Key);
           continue;
+        }
 
+        if (!mesh.gameObject.activeSelf)
+          continue;
+        
         shapeInstance.Value.setTransform(
           new AffineMatrix4x4(
             mesh.transform.rotation.ToHandedQuat(),
             mesh.transform.position.ToHandedVec3()),
-          mesh.transform.lossyScale.ToHandedVec3()); //TODO verify global scale and not local
+          mesh.transform.lossyScale.ToHandedVec3());
       }
     }
 
@@ -309,43 +299,44 @@ namespace AGXUnity.Sensor
 
     protected override void OnDisable()
     {
+      Debug.LogWarning("Disabling the SensorEnvironment Component is currently unsupported!");
     }
 
     public void DisposeRT()
     {
       // TODO maybe lidars should have their own delegates
-      foreach (var lidar in LidarSensors)
+      foreach (var lidar in m_lidars)
       {
         if (lidar.Native != null)
           Native.remove(lidar.Native);
       }
 
-      foreach (var dt in deformableTerrains)
+      foreach (var dt in m_deformableTerrains)
         Native.remove(dt);
-      deformableTerrains.Clear();
+      m_deformableTerrains.Clear();
 
-      foreach (var dtp in deformableTerrainPagers)
+      foreach (var dtp in m_deformableTerrainPagers)
         Native.remove(dtp);
-      deformableTerrainPagers.Clear();
+      m_deformableTerrainPagers.Clear();
 
-      foreach (var w in wires)
+      foreach (var w in m_wires)
         Native.remove(w);
-      wires.Clear();
+      m_wires.Clear();
 
-      foreach (var c in cables)
+      foreach (var c in m_cables)
         Native.remove(c);
-      cables.Clear();
+      m_cables.Clear();
 
       foreach (var rtShapeInstance in m_rtShapeInstances)
       {
         rtShapeInstance.Value.Dispose();
       }
-      m_rtShapeInstances = null;
+      m_rtShapeInstances.Clear();
       foreach (var rtShape in m_rtShapes)
       {
         rtShape.Value.Dispose();
       }
-      m_rtShapes = null;
+      m_rtShapes.Clear();
 
       m_rtDefaultSurfaceMaterial.Dispose();
       m_rtDefaultSurfaceMaterial = null;
@@ -362,22 +353,5 @@ namespace AGXUnity.Sensor
 
       base.OnDestroy();
     }
-
-    /*
-    X bool AddLidar(UAGX_LidarSensorComponent* Lidar);
-    bool AddMesh(UStaticMeshComponent* Mesh, int32 LOD = -1);
-    bool AddAGXMesh(UAGX_SimpleMeshComponent* Mesh);
-    bool AddInstancedMesh(UInstancedStaticMeshComponent* Mesh, int32 LOD = -1);
-    bool AddInstancedMeshInstance(UInstancedStaticMeshComponent* Mesh, int32 Index, int32 LOD = -1);
-    bool AddTerrain(AAGX_Terrain* Terrain);
-    bool AddWire(UAGX_WireComponent* Wire);
-    bool RemoveLidar(UAGX_LidarSensorComponent* Lidar);
-    bool RemoveMesh(UStaticMeshComponent* Mesh);
-    bool RemoveInstancedMesh(UInstancedStaticMeshComponent* Mesh);
-    bool RemoveInstancedMeshInstance(UInstancedStaticMeshComponent* Mesh, int32 Index);
-    bool RemoveTerrain(AAGX_Terrain* Terrain);
-    bool RemoveWire(UAGX_WireComponent* Wire);
-
-        */
   }
 }
