@@ -5,15 +5,14 @@ using UnityEngine.Rendering;
 public class LidarPointCloudRenderer : MonoBehaviour
 {
   public Mesh QuadMesh; // Assign a quad mesh
-  public Color StartColor = Color.red; // Start color for intensity lerp
-  public Color EndColor = Color.blue; // End color for intensity lerp
+  public Color StartColor = new Color(0.8f, 0.5f, 0); // Orange
+  public Color EndColor = new Color(0.8f, 0.1f, 0); // Dark red
   public float PointSize = 0.02f;
 
   private int m_pointCount = 0;
   private Material m_pointCloudMaterialInstance; // Instance of the material for this renderer
   private ComputeBuffer m_instanceBuffer; // Stores particle data
   private ComputeBuffer m_argsBuffer; // Stores arguments for the draw call
-
 
 
   struct PointData
@@ -96,7 +95,7 @@ public class LidarPointCloudRenderer : MonoBehaviour
     m_instanceBuffer.SetData(points);
   }
 
-  private void LateUpdate()
+  protected void LateUpdate()
   {
     if (m_pointCount == 0)
       return;
@@ -113,7 +112,7 @@ public class LidarPointCloudRenderer : MonoBehaviour
     );
   }
 
-  private void OnDestroy()
+  protected void OnDestroy()
   {
     if (m_instanceBuffer != null) m_instanceBuffer.Release();
     if (m_argsBuffer != null) m_argsBuffer.Release();
