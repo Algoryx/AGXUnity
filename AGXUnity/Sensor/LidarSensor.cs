@@ -13,12 +13,6 @@ using AGXUnity.Rendering;
 
 namespace AGXUnity.Sensor
 {
-  /// <summary>
-  /// WIP component for lidar sensor
-  /// </summary>
-  //  [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
-  //  TODO [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
-
   public enum LidarModelPreset
   {
     NONE,
@@ -28,14 +22,17 @@ namespace AGXUnity.Sensor
     LidarModelOusterOS2
   }
 
+  /// <summary>
+  /// WIP component for lidar sensor
+  /// </summary>
+  [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
   public class LidarSensor : ScriptComponent
   {
     /// <summary>
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public Lidar Native { get; private set; } = null;
-
-    // TODO Skipped: LidarModelParameters, OnFetchRayTransforms, OnFetchNextPatternInterval, Niagara (particle systems??)
 
     /**
     * The Model, or preset, of this Lidar.
@@ -102,9 +99,7 @@ namespace AGXUnity.Sensor
 
     private SensorEnvironment m_sensorEnvironment = null;
 
-    public bool VisualizePoints;
-
-    private uint m_outputID = 1;
+    private uint m_outputID = 0; // Must be greater than 0 to be valid
 
     private static Quaternion m_agxToUnityRotation = Quaternion.Euler(90, 0, 0);
 
@@ -114,24 +109,27 @@ namespace AGXUnity.Sensor
                           new AffineMatrix4x4(
                             (m_agxToUnityRotation * transform.rotation).ToHandedQuat(),
                             transform.position.ToHandedVec3())));
-      //Native.getFrame().setTranslate(transform.position.ToHandedVec3());
-      //Native.getFrame().setRotate(transform.rotation.ToHandedQuat());
-      //Native.getFrame().setRotate(new agx.Quat()); // new agx.Quat(new EulerAngles(transform.rotation.eulerAngles.ToVec3())) 
     }
 
     LidarPointCloudRenderer m_pointCloudRenderer = null;
     protected override bool Initialize()
     {
-      // TODO remove when renderer is removed
-      m_pointCloudRenderer = GetComponent<LidarPointCloudRenderer>();
-
       return true;
+    }
+
+    public void RegisterRenderer()
+    {
+      if (m_pointCloudRenderer == null)
+        m_pointCloudRenderer = GetComponent<LidarPointCloudRenderer>();
     }
 
     public bool InitializeLidar(SensorEnvironment sensorEnvironment, uint uniqueId)
     {
       m_sensorEnvironment = sensorEnvironment;
       m_outputID = uniqueId;
+
+      if (m_outputID < 1)
+        Debug.LogError("Output ID can't be 0");
 
       var model = CreateLidarModel(LidarModelPreset);
       if (model == null)
@@ -176,27 +174,8 @@ namespace AGXUnity.Sensor
       if (m_rtOutput != null && m_rtOutput.hasUnreadData())
       {
         var view = m_rtOutput.view();
-        if (m_pointCloudRenderer != null && VisualizePoints)
+        if (m_pointCloudRenderer != null)
           m_pointCloudRenderer.SetData(view);
-      }
-    }
-
-    void OnDrawGizmos()
-    {
-      if (Native == null || m_rtOutput == null || !Application.isPlaying)
-        return;
-
-      //REMOVE ME
-      if (VisualizePoints && false)
-      {
-        var view = m_rtOutput.view();
-        // TODO this should be a shader
-        for (uint i = 0; i < view.size(); i++)
-        {
-          Gizmos.color = new Color(view.getitem(i).z, 1 - view.getitem(i).z, 0);
-          var point = m_agxToUnityRotation * view.getitem(i).asVec3f().ToHandedVector3();
-          Gizmos.DrawSphere(transform.TransformPoint(point), 0.01f);
-        }
       }
     }
 

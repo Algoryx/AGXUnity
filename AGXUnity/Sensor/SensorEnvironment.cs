@@ -16,8 +16,8 @@ namespace AGXUnity.Sensor
   /// <summary>
   /// WIP component for streaming data to agx sensor environment
   /// </summary>
-//  [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
-//  TODO [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
+  [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
     // TODO possible choice on what to stream
@@ -59,6 +59,15 @@ namespace AGXUnity.Sensor
     //TODO temporary solution, fix materials
     private RtMaterialInstance m_rtLambertianOpaqueMaterialInstance;
     private RtSurfaceMaterial m_rtDefaultSurfaceMaterial;
+
+    private uint m_currentOutputID = 1;
+
+    // Always use this method in order to have each lider use a unique output id
+    private uint GenerateOutputID()
+    {
+      return m_currentOutputID++;
+    }
+
 
     RtShape CreateShape(UnityEngine.Mesh mesh)
     {
@@ -196,10 +205,9 @@ namespace AGXUnity.Sensor
 
       // TODO for now the list of lidars is public but maybe we should auto-add them
       //RegisterAllLidarSensors();
-      uint uniqueId = 1;
       foreach (var lidar in LidarSensors)
       {
-        if (!lidar.InitializeLidar(this, uniqueId++))
+        if (!lidar.InitializeLidar(this, GenerateOutputID()))
         {
           Debug.LogWarning("Lidar not initialized");
           continue;

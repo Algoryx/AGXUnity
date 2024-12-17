@@ -1,19 +1,20 @@
 using AGXUnity.Sensor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace AGXUnity.Rendering
 {
-  [AddComponentMenu("AGXUnity/Rendering/Cable Renderer")]
+  [AddComponentMenu("AGXUnity/Rendering/Lidar Point Cloud Renderer")]
   [RequireComponent(typeof(LidarSensor))]
   [HelpURL("https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors")]
   public class LidarPointCloudRenderer : ScriptComponent
   {
-    public Mesh QuadMesh; // Assign a quad mesh
     public Color StartColor = new Color(0.8f, 0.5f, 0); // Orange
     public Color EndColor = new Color(0.8f, 0.1f, 0); // Dark red
     public float PointSize = 0.02f;
 
+    private Mesh m_pointMesh;
     private int m_pointCount = 0;
     private Material m_pointCloudMaterialInstance; // Instance of the material for this renderer
     private ComputeBuffer m_instanceBuffer; // Stores particle data
@@ -28,7 +29,13 @@ namespace AGXUnity.Rendering
 
     protected override bool Initialize()
     {
-      //m_particleMaterialInstance = Instantiate(particleMaterialTemplate);
+      // Used when adding component at runtime
+      if (GetComponent<LidarSensor>())
+        GetComponent<LidarSensor>().RegisterRenderer();
+
+      // Use quad mesh for rendering
+      m_pointMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+
       try
       {
         m_pointCloudMaterialInstance = new Material(Resources.Load<Shader>("Shaders/Built-In/PointCloudShader"));
@@ -66,10 +73,10 @@ namespace AGXUnity.Rendering
 
       // Create args buffer (indirect draw arguments)
       uint[] args = new uint[5];
-      args[0] = (uint)QuadMesh.GetIndexCount(0); // Index count per instance
+      args[0] = (uint)m_pointMesh.GetIndexCount(0); // Index count per instance
       args[1] = (uint)m_pointCount; // Number of instances
-      args[2] = (uint)QuadMesh.GetIndexStart(0); // Start index location
-      args[3] = (uint)QuadMesh.GetBaseVertex(0); // Base vertex location
+      args[2] = (uint)m_pointMesh.GetIndexStart(0); // Start index location
+      args[3] = (uint)m_pointMesh.GetBaseVertex(0); // Base vertex location
       args[4] = 0; // Padding
 
       if (m_argsBuffer != null)
@@ -119,7 +126,7 @@ namespace AGXUnity.Rendering
       m_pointCloudMaterialInstance.SetMatrix("_ObjectToWorld", transform.localToWorldMatrix);
 
       Graphics.DrawMeshInstancedIndirect(
-        QuadMesh,
+        m_pointMesh,
         0,
         m_pointCloudMaterialInstance,
         new Bounds(Vector3.zero, Vector3.one * 50f), // A large enough bounds to enclose all points
@@ -127,8 +134,10 @@ namespace AGXUnity.Rendering
       );
     }
 
-    protected void OnDestroy()
+    protected override void OnDestroy()
     {
+      base.OnDestroy();
+
       if (m_instanceBuffer != null) m_instanceBuffer.Release();
       if (m_argsBuffer != null) m_argsBuffer.Release();
       if (m_pointCloudMaterialInstance != null) Destroy(m_pointCloudMaterialInstance);
