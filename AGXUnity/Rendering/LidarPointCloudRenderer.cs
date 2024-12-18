@@ -1,3 +1,4 @@
+using System.Linq;
 using agxHydraulics;
 using AGXUnity.Sensor;
 using UnityEditor;
@@ -17,11 +18,11 @@ namespace AGXUnity.Rendering
     public float PointSize = 0.02f;
 
     private Mesh m_pointMesh;
-    private int m_pointCount = 0;
     private Material m_pointCloudMaterialInstance;
     private ComputeBuffer m_instanceBuffer;
     private ComputeBuffer m_argsBuffer;
-
+    private PointData[] m_pointArray;
+    
 
     struct PointData
     {
@@ -62,16 +63,14 @@ namespace AGXUnity.Rendering
       if (m_instanceBuffer != null)
         m_instanceBuffer.Release();
 
-      m_pointCount = count;
-
-      m_instanceBuffer = new ComputeBuffer(m_pointCount, sizeof(float) * 4, ComputeBufferType.Structured);
-      PointData[] points = new PointData[m_pointCount];
+      m_instanceBuffer = new ComputeBuffer(count, sizeof(float) * 4, ComputeBufferType.Structured);
+      PointData[] points = new PointData[count];
 
       m_instanceBuffer.SetData(points);
 
       uint[] args = new uint[5];
       args[0] = (uint)m_pointMesh.GetIndexCount(0); // Index count per instance
-      args[1] = (uint)m_pointCount; // Number of instances
+      args[1] = (uint)count; // Number of instances
       args[2] = (uint)m_pointMesh.GetIndexStart(0); // Start index location
       args[3] = (uint)m_pointMesh.GetBaseVertex(0); // Base vertex location
       args[4] = 0; // Padding
@@ -92,30 +91,31 @@ namespace AGXUnity.Rendering
       if (count == 0)
         return;
 
-      if (count > m_pointCount)
+      if (m_pointArray == null || count > m_pointArray.Count())
+      {
         InitializeBuffers(count);
-
-      PointData[] points = new PointData[m_pointCount];
+        m_pointArray = new PointData[count];
+      }
 
       for (int i = 0; i < count; i++)
       {
         var point = lidarPoints[i];
-        points[i].position = new Vector3(point.x, point.y, point.z);
-        points[i].intensity = point.w;
+        m_pointArray[i].position = new Vector3(point.x, point.y, point.z);
+        m_pointArray[i].intensity = point.w;
       }
 
-      for (int i = count; i < m_pointCount; i++)
+      for (int i = count; i < m_pointArray.Count(); i++)
       {
-        points[i].position = Vector3.zero;
-        points[i].intensity = 0.0f;
+        m_pointArray[i].position = Vector3.zero;
+        m_pointArray[i].intensity = 0.0f;
       }
 
-      m_instanceBuffer.SetData(points);
+      m_instanceBuffer.SetData(m_pointArray);
     }
 
     protected void LateUpdate()
     {
-      if (m_pointCount == 0)
+      if (m_pointArray.Count() == 0)
         return;
 
       m_pointCloudMaterialInstance.SetFloat("_PointSize", PointSize);
