@@ -49,6 +49,7 @@ namespace AGXUnity.Sensor
     private readonly List<agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
     private readonly List<agxWire.Wire> m_wires = new();
     private readonly List<agxCable.Cable> m_cables = new();
+    private readonly Dictionary<ScriptComponent, bool> m_agxComponents = new();
 
     /**
      * The Ambient material used by the Sensor Environment.
@@ -92,7 +93,7 @@ namespace AGXUnity.Sensor
     {
       if (!m_meshFilters.Contains(meshFilter))
         m_meshFilters.Add(meshFilter);
-      
+
       if (m_rtShapeInstances.ContainsKey(meshFilter))
         return;
 
@@ -159,52 +160,76 @@ namespace AGXUnity.Sensor
       return shapeInstance;
     }
 
-    private object GetNative<T>(T scriptComponent) => scriptComponent.GetType().GetProperty("Native")?.GetValue(scriptComponent, null);
-    public bool AddAGXModel<T>(T scriptComponent) where T : class
+    public bool AddAGXModel(ScriptComponent scriptComponent)
     {
-      if (scriptComponent == null || GetNative(scriptComponent) == null)
-      {
-        Debug.LogWarning("Problem getting native instance of AGX model!");
+      if (scriptComponent == null)
         return false;
-      }
 
       bool added = false;
-      switch (GetNative(scriptComponent))
+      if (scriptComponent is DeformableTerrain dt)
       {
-        case agxTerrain.Terrain dt:
-          added = Native.add(dt);
-          RtSurfaceMaterial.set(dt, m_rtDefaultSurfaceMaterial);
-          m_deformableTerrains.Add(dt);
-          break;
-
-        case agxTerrain.TerrainPager dtp:
-          added = Native.add(dtp);
-          RtSurfaceMaterial.set(dtp, m_rtDefaultSurfaceMaterial);
-          m_deformableTerrainPagers.Add(dtp);
-          break;
-
-        case agxWire.Wire w:
-          added = Native.add(w);
-          RtSurfaceMaterial.set(w, m_rtDefaultSurfaceMaterial);
-          m_wires.Add(w);
-          break;
-
-        case agxCable.Cable c:
-          added = Native.add(c);
-          RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
-          m_cables.Add(c);
-          break;
-
-        default:
-          Debug.LogWarning("AGX type not handled by this method - for colliders, register the visual mesh instead");
-          break;
+        var c = dt.Native;
+        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        added = Native.add(c);
+      }
+      else if (scriptComponent is DeformableTerrainPager dtp)
+      {
+        var c = dtp.Native;
+        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        added = Native.add(c);
+      }
+      else if (scriptComponent is Wire w)
+      {
+        var c = w.Native;
+        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        added = Native.add(c);
+      }
+      else if (scriptComponent is Cable ca)
+      {
+        var c = ca.Native;
+        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        added = Native.add(c);
+      }
+      else
+      {
+        Debug.LogWarning("AGX type not handled by this method. Hint: for colliders, register the visual mesh instead");
       }
 
-      if (!added)
-        Debug.LogWarning($"Could not add {scriptComponent.GetType()} model in object '{scriptComponent.GetType().GetProperty("name")?.GetValue(scriptComponent, null)}'!");
-      else if (DebugLogOnAdd)
+      if (DebugLogOnAdd)
         Debug.Log($"Sensor Environment '{name}' added {scriptComponent.GetType()} in object '{scriptComponent.GetType().GetProperty("name")?.GetValue(scriptComponent, null)}'.");
 
+      return true;
+    }
+
+    public bool RemoveAGXModel(ScriptComponent scriptComponent)
+    {
+      if (scriptComponent == null)
+        return false;
+
+      if (scriptComponent is DeformableTerrain dt)
+      {
+        var c = dt.Native;
+        Native.remove(c);
+      }
+      else if (scriptComponent is DeformableTerrainPager dtp)
+      {
+        var c = dtp.Native;
+        Native.remove(c);
+      }
+      else if (scriptComponent is Wire w)
+      {
+        var c = w.Native;
+        Native.remove(c);
+      }
+      else if (scriptComponent is Cable ca)
+      {
+        var c = ca.Native;
+        Native.remove(c);
+      }
+      else
+      {
+        Debug.LogWarning("AGX type not handled by this method");
+      }
       return true;
     }
 
@@ -241,10 +266,15 @@ namespace AGXUnity.Sensor
       FindValidComponents<LidarSensor>(true).ForEach(RegisterLidarSensor);
       FindValidComponents<MeshFilter>(true).ForEach(RegisterMeshfilter);
 
-      FindValidComponents<DeformableTerrain>(true).ForEach(c => AddAGXModel(c.GetInitialized<DeformableTerrain>()));
-      FindValidComponents<DeformableTerrainPager>(true).ForEach(c => AddAGXModel(c.GetInitialized<DeformableTerrainPager>()));
-      FindValidComponents<Wire>(true).ForEach(c => AddAGXModel(c.GetInitialized<Wire>()));
-      FindValidComponents<Cable>(true).ForEach(c => AddAGXModel(c.GetInitialized<Cable>()));
+      FindValidComponents<DeformableTerrain>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
+      FindValidComponents<DeformableTerrainPager>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
+      FindValidComponents<Wire>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
+      FindValidComponents<Cable>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
+
+      foreach (var component in m_agxComponents)
+      {
+        AddAGXModel(component.Key.GetInitialized());
+      }
 
       return true;
     }
@@ -256,19 +286,51 @@ namespace AGXUnity.Sensor
 
       UpdateLidars();
       UpdateShapeInstances();
+      UpdateAGXComponents();
     }
 
     private void UpdateLidars()
     {
-      foreach (var lidar in m_lidars)
+      for (int i = m_lidars.Count - 1; i >= 0; i--)
       {
-        if (lidar == null || lidar.Native == null)
+        LidarSensor lidar = m_lidars[i];
+        if (lidar == null)
+        {
+          m_lidars.RemoveAt(i);
           continue;
+        }
 
         lidar.UpdateTransform();
       }
     }
 
+    private void UpdateAGXComponents()
+    {
+      for (int i = m_agxComponents.Count - 1; i >= 0; i--)
+      {
+        // Deleted objects
+        var entry = m_agxComponents.ElementAt(i);
+        var component = entry.Key;
+        if (component == null)
+        {
+          m_agxComponents.Remove(component);
+          continue;
+        }
+
+        // Update object visibility
+        bool currentlyVisible = component.gameObject.activeInHierarchy || DisabledObjectsVisibleToSensors;
+        bool previouslyVisible = entry.Value;
+        if (currentlyVisible != previouslyVisible)
+        {
+          if (currentlyVisible)
+            AddAGXModel(component);
+          else
+            RemoveAGXModel(component);
+          m_agxComponents[component] = currentlyVisible;
+        }
+        
+      }
+    }
 
     private void RemoveInstance(MeshFilter meshFilter)
     {
