@@ -16,8 +16,8 @@ namespace AGXUnity.Sensor
   /// <summary>
   /// WIP component for streaming data to agx sensor environment
   /// </summary>
-  [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
+  [AddComponentMenu("AGXUnity/Sensors/Sensor Environment")]
+  [HelpURL("https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors")]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
     // TODO possible choice on what to stream
@@ -61,8 +61,49 @@ namespace AGXUnity.Sensor
       return m_currentOutputID++;
     }
 
+    public void RegisterLidarSensor(LidarSensor lidar)
+    {
+      if (m_lidars.Contains(lidar))
+        return;
 
-    RtShape CreateShape(UnityEngine.Mesh mesh)
+      if (!lidar.InitializeLidar(this, GenerateOutputID()))
+      {
+        Debug.LogWarning("Could not initialize lidar");
+        return;
+      }
+
+      if (!Native.add(lidar.Native))
+        Debug.LogWarning($"Lidar '{lidar.name}' not added to SensorEnvironment properly!");
+      else if (DebugLogOnAdd)
+        Debug.Log($"Sensor Environment '{name}' added Lidar '{lidar.name}'.");
+
+      m_lidars.Add(lidar);
+    }
+
+    // Call this when adding MeshFilters during runtime from custom script
+    public void RegisterMeshfilter(MeshFilter meshFilter)
+    {
+      UnityEngine.Mesh mesh = meshFilter.sharedMesh;
+      bool newMesh = false;
+
+      if (!m_rtShapes.TryGetValue(mesh, out RtShape rtShape))
+      {
+        rtShape = CreateShape(mesh);
+        m_rtShapes[mesh] = rtShape;
+        newMesh = true;
+      }
+
+      m_rtShapeInstances[meshFilter] = CreateShapeInstance(
+        rtShape,
+        meshFilter.transform.rotation,
+        meshFilter.transform.position,
+        meshFilter.transform.lossyScale);
+
+      if (DebugLogOnAdd)
+        Debug.Log($"SensorEnvironment '{name}' added shapeInstance for mesh on '{meshFilter.gameObject.name}', added shape: {newMesh}");
+    }
+
+    private RtShape CreateShape(UnityEngine.Mesh mesh)
     {
       Profiler.BeginSample("CreateShape");
 
@@ -87,9 +128,8 @@ namespace AGXUnity.Sensor
       return rtShape;
     }
 
-
     private int m_entityId = 0;
-    RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale)
+    private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale)
     {
       Profiler.BeginSample("CreateShapeInstance");
       RtInstanceData data = new RtInstanceData(m_rtLambertianOpaqueMaterialInstance, (RtEntityId)(++m_entityId));
@@ -107,7 +147,7 @@ namespace AGXUnity.Sensor
     }
 
     private object GetNative<T>(T scriptComponent) => scriptComponent.GetType().GetProperty("Native")?.GetValue(scriptComponent, null);
-    private bool AddAGXModel<T>(T scriptComponent) where T : class
+    public bool AddAGXModel<T>(T scriptComponent) where T : class
     {
       if (scriptComponent == null || GetNative(scriptComponent) == null)
       {
@@ -143,7 +183,7 @@ namespace AGXUnity.Sensor
           break;
 
         default:
-          Debug.LogWarning("Unknown type");
+          Debug.LogWarning("AGX type not handled by this method - for colliders, register the visual mesh instead");
           break;
       }
 
@@ -169,6 +209,9 @@ namespace AGXUnity.Sensor
       var simulation = GetSimulation();
       simulation.setPreIntegratePositions(true); // From Python, check if this is needed
 
+      // In order to properly dispose of Raytrace stuff (before cleanup()) we need to register this callback
+      Simulation.Instance.RegisterDisposeCallback(DisposeRT);
+
       // TODO: temp material stuff
       m_rtLambertianOpaqueMaterialInstance = RtMaterialInstance.create(RtMaterialHandle.Type.OPAQUE_LAMBERTIAN);
       m_rtDefaultSurfaceMaterial = RtLambertianOpaqueMaterial.create();
@@ -179,76 +222,18 @@ namespace AGXUnity.Sensor
       //Debug.Log("listRaytraceDevices:" + RtConfig.listRaytraceDevices().Count());
       //if (RtConfig.getRaytraceDevice() != simulation.RayTraceDeviceIndex) // TODO From Unreal
 
-      // In order to properly dispose of Raytrace stuff (before cleanup()) we need to register this callback
-      Simulation.Instance.RegisterDisposeCallback(DisposeRT);
 
       Native = agxSensor.Environment.getOrCreate(simulation);
 
-      RegisterAllMeshfilters();
+      FindValidComponents<LidarSensor>(true).ForEach(RegisterLidarSensor);
+      FindValidComponents<MeshFilter>(true).ForEach(RegisterMeshfilter);
 
-      var lidars = FindValidComponents<LidarSensor>(true);
-      foreach (var lidar in lidars)
-      {
-        RegisterLidarSensor(lidar);
-      }
-
-      // TODO determine how these types will be found and added / removed, for now just at init
-      var deformableTerrains = FindValidComponents<DeformableTerrain>();
-      foreach (DeformableTerrain dt in deformableTerrains)
-        AddAGXModel(dt.GetInitialized<DeformableTerrain>());
-      var deformableTerrainPagers = FindValidComponents<DeformableTerrainPager>();
-      foreach (DeformableTerrainPager dtp in deformableTerrainPagers)
-        AddAGXModel(dtp.GetInitialized<DeformableTerrainPager>());
-      var wires = FindValidComponents<Wire>();
-      foreach (Wire w in wires)
-        AddAGXModel(w.GetInitialized<Wire>());
-      var cables = FindValidComponents<Cable>();
-      foreach (Cable c in cables)
-        AddAGXModel(c.GetInitialized<Cable>());
+      FindValidComponents<DeformableTerrain>(true).ForEach(c => AddAGXModel(c.GetInitialized<DeformableTerrain>()));
+      FindValidComponents<DeformableTerrainPager>(true).ForEach(c => AddAGXModel(c.GetInitialized<DeformableTerrainPager>()));
+      FindValidComponents<Wire>(true).ForEach(c => AddAGXModel(c.GetInitialized<Wire>()));
+      FindValidComponents<Cable>(true).ForEach(c => AddAGXModel(c.GetInitialized<Cable>()));
 
       return true;
-    }
-
-    public void RegisterLidarSensor(LidarSensor lidar)
-    {
-      if (m_lidars.Contains(lidar))
-        return;
-
-      if (!lidar.InitializeLidar(this, GenerateOutputID()))
-      {
-        Debug.LogWarning("Could not initialize lidar");
-        return;
-      }
-
-      if (!Native.add(lidar.Native))
-        Debug.LogWarning($"Lidar '{lidar.name}' not added to SensorEnvironment properly!");
-      else if (DebugLogOnAdd)
-        Debug.Log($"Sensor Environment '{name}' added Lidar '{lidar.name}'.");
-
-      m_lidars.Add(lidar);
-    }
-
-    public void RegisterAllMeshfilters()
-    {
-      var filters = FindValidComponents<MeshFilter>();
-
-      RtShape rtShape = null;
-      foreach (var meshFilter in filters)
-      {
-        UnityEngine.Mesh mesh = meshFilter.sharedMesh;
-
-        if (!m_rtShapes.TryGetValue(mesh, out rtShape))
-        {
-          rtShape = CreateShape(mesh);
-          m_rtShapes[mesh] = rtShape;
-        }
-
-        m_rtShapeInstances[meshFilter] = CreateShapeInstance(
-          rtShape,
-          meshFilter.transform.rotation,
-          meshFilter.transform.position,
-          meshFilter.transform.lossyScale);
-      }
     }
 
     public void FixedUpdate()
@@ -279,12 +264,16 @@ namespace AGXUnity.Sensor
         if (mesh == null)
         {
           m_rtShapeInstances.Remove(shapeInstance.Key);
+          // TODO this removes from list but not from lidar?
           continue;
         }
 
-        if (!mesh.gameObject.activeSelf)
+        if (!mesh.gameObject.activeSelf) // TODO or component not active
+        {
+          // TODO what to do with invisible mesh
           continue;
-        
+        }
+
         shapeInstance.Value.setTransform(
           new AffineMatrix4x4(
             mesh.transform.rotation.ToHandedQuat(),
