@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System;
 using UnityEngine.Profiling;
 using AGXUnity.Model;
+using System.ComponentModel.Design;
 
 namespace AGXUnity.Sensor
 {
@@ -29,12 +30,18 @@ namespace AGXUnity.Sensor
     /// </summary>
     public agxSensor.Environment Native { get; private set; } = null;
 
-    // TODO if we want to ignore invisible objects, how to deal with enabling / disabling during runtime? Or new ones spawned??
-    //public bool IgnoreInvisibleObjects = true;
+    /// <summary>
+    /// Keeping track of invisible objects is extra work, which can be skipped for performance reasons
+    /// </summary>
+    public bool DisabledObjectsVisibleToSensors = false;
 
+    /// <summary>
+    /// Show log messages on each thing added to the sensor environment
+    /// </summary>
     public bool DebugLogOnAdd = false;
 
     // Internal lists
+    private readonly List<MeshFilter> m_meshFilters = new();
     private readonly Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new();
     private readonly Dictionary<UnityEngine.MeshFilter, RtShapeInstance> m_rtShapeInstances = new();
     private readonly List<LidarSensor> m_lidars = new();
@@ -83,6 +90,12 @@ namespace AGXUnity.Sensor
     // Call this when adding MeshFilters during runtime from custom script
     public void RegisterMeshfilter(MeshFilter meshFilter)
     {
+      if (!m_meshFilters.Contains(meshFilter))
+        m_meshFilters.Add(meshFilter);
+      
+      if (m_rtShapeInstances.ContainsKey(meshFilter))
+        return;
+
       UnityEngine.Mesh mesh = meshFilter.sharedMesh;
       bool newMesh = false;
 
@@ -249,36 +262,55 @@ namespace AGXUnity.Sensor
     {
       foreach (var lidar in m_lidars)
       {
-        if (lidar == null || lidar.Native == null || !lidar.isActiveAndEnabled)
+        if (lidar == null || lidar.Native == null)
           continue;
 
         lidar.UpdateTransform();
       }
     }
 
+
+    private void RemoveInstance(MeshFilter meshFilter)
+    {
+      var instance = m_rtShapeInstances[meshFilter];
+      instance.Dispose();
+      m_rtShapeInstances.Remove(meshFilter);
+    }
     private void UpdateShapeInstances()
     {
+      // Walk through registered meshes and remove deleted from list plus optionally handle disabled meshes
+      for (int i = m_meshFilters.Count - 1; i >= 0; i--)
+      {
+        var meshFilter = m_meshFilters[i];
+
+        if (meshFilter == null)
+        {
+          m_meshFilters.RemoveAt(i);
+          continue;
+        }
+
+        // Handle invisible objects
+        if (!DisabledObjectsVisibleToSensors)
+        {
+          bool visible = meshFilter.gameObject.activeInHierarchy;
+          bool containsKey = m_rtShapeInstances.ContainsKey(meshFilter);
+
+          if (visible && !containsKey)
+            RegisterMeshfilter(meshFilter);
+          else if (!visible && containsKey)
+            RemoveInstance(meshFilter);
+        }
+      }
+
       foreach (var shapeInstance in m_rtShapeInstances)
       {
-        var mesh = shapeInstance.Key;
-        if (mesh == null)
-        {
-          m_rtShapeInstances.Remove(shapeInstance.Key);
-          // TODO this removes from list but not from lidar?
-          continue;
-        }
-
-        if (!mesh.gameObject.activeSelf) // TODO or component not active
-        {
-          // TODO what to do with invisible mesh
-          continue;
-        }
+        var meshFilter = shapeInstance.Key;
 
         shapeInstance.Value.setTransform(
-          new AffineMatrix4x4(
-            mesh.transform.rotation.ToHandedQuat(),
-            mesh.transform.position.ToHandedVec3()),
-          mesh.transform.lossyScale.ToHandedVec3());
+            new AffineMatrix4x4(
+                meshFilter.transform.rotation.ToHandedQuat(),
+                meshFilter.transform.position.ToHandedVec3()),
+                meshFilter.transform.lossyScale.ToHandedVec3());
       }
     }
 
@@ -286,9 +318,9 @@ namespace AGXUnity.Sensor
     {
     }
 
+    // Note that disabling this component does not stop the sensor simulation
     protected override void OnDisable()
     {
-      Debug.LogWarning("Disabling the SensorEnvironment Component is currently unsupported!");
     }
 
     public void DisposeRT()
@@ -326,6 +358,7 @@ namespace AGXUnity.Sensor
         rtShape.Value.Dispose();
       }
       m_rtShapes.Clear();
+      m_meshFilters.Clear();
 
       m_rtDefaultSurfaceMaterial.Dispose();
       m_rtDefaultSurfaceMaterial = null;
