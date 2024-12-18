@@ -168,6 +168,13 @@ namespace AGXUnity.Sensor
 
       Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
 
+      //if (m_pointCloudRenderer != null)
+      //{
+      //  LidarRayRange test;
+      //  m_pointCloudRenderer.SetMaxRange(Native.getModel().getRayRange().);
+      //  Debug.Log("Maxrange");
+      //}
+
       return true;
     }
 

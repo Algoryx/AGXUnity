@@ -18,13 +18,13 @@ Shader "AGXUnity/Built-In/PointCloudShader"
       #pragma multi_compile_instancing
       #include "UnityCG.cginc"
 
-      struct ParticleData
+      struct PointData
       {
         float3 position;
         float intensity;
       };
 
-      StructuredBuffer<ParticleData> particleBuffer;
+      StructuredBuffer<PointData> pointBuffer;
 
       float _PointSize;
       float4 _MainTex_ST;
@@ -42,24 +42,24 @@ Shader "AGXUnity/Built-In/PointCloudShader"
       {
         float2 uv : TEXCOORD0;
         float4 vertex : SV_Position;
-        float4 color : COLOR0;
+        float4 color : COLOR0; 
       };
 
       v2f vert(appdata v, uint instanceID : SV_InstanceID)
       {
         v2f o;
 
-        // Fetch particle data from the buffer
-        ParticleData particle = particleBuffer[instanceID];
+        // Fetch point data from the buffer
+        PointData hit = pointBuffer[instanceID];
 
         // Apply global transformation: rotate 90 degrees around X-axis and invert X-axis
         float3 rotatedPosition = float3(
-          -particle.position.x, // Invert X-axis
-          -particle.position.z,  // Rotate around X-axis
-          particle.position.y  // Rotate around X-axis
+          -hit.position.x, // Invert X-axis
+          -hit.position.z,  // Rotate around X-axis
+          hit.position.y  // Rotate around X-axis
         );
 
-        // Transform particle position to world space
+        // Transform point position to world space
         float4 localPosition = float4(rotatedPosition, 1.0);
         float4 worldPosition = mul(_ObjectToWorld, localPosition);
 
@@ -72,8 +72,8 @@ Shader "AGXUnity/Built-In/PointCloudShader"
         o.vertex = UnityObjectToClipPos(worldPosition + float4(quadVertex, 0.0));
 
         o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-        //o.color = float4(particle.intensity, 1 - particle.intensity, 0, 1);
-        o.color = lerp(_ColorStart, _ColorEnd, saturate(particle.intensity));
+        //o.color = float4(hit.intensity, 1 - hit.intensity, 0, 1);
+        o.color = lerp(_ColorStart, _ColorEnd, saturate(hit.intensity));
         return o;
       }
 
