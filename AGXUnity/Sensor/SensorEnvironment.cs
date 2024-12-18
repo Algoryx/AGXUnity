@@ -204,7 +204,10 @@ namespace AGXUnity.Sensor
     public bool RemoveAGXModel(ScriptComponent scriptComponent)
     {
       if (scriptComponent == null)
+      {
+        Debug.Log("Component was null - Could not remove from sensor environment!");
         return false;
+      }
 
       if (scriptComponent is DeformableTerrain dt)
       {
@@ -260,7 +263,6 @@ namespace AGXUnity.Sensor
       //Debug.Log("listRaytraceDevices:" + RtConfig.listRaytraceDevices().Count());
       //if (RtConfig.getRaytraceDevice() != simulation.RayTraceDeviceIndex) // TODO From Unreal
 
-
       Native = agxSensor.Environment.getOrCreate(simulation);
 
       FindValidComponents<LidarSensor>(true).ForEach(RegisterLidarSensor);
@@ -271,9 +273,10 @@ namespace AGXUnity.Sensor
       FindValidComponents<Wire>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
       FindValidComponents<Cable>(true).ForEach(c => m_agxComponents.Add(c, c.gameObject.activeInHierarchy));
 
-      foreach (var component in m_agxComponents)
+      foreach (var entry in m_agxComponents)
       {
-        AddAGXModel(component.Key.GetInitialized());
+        if (entry.Value)
+          AddAGXModel(entry.Key.GetInitialized());
       }
 
       return true;
@@ -313,6 +316,7 @@ namespace AGXUnity.Sensor
         var component = entry.Key;
         if (component == null)
         {
+          RemoveAGXModel(component);
           m_agxComponents.Remove(component);
           continue;
         }
