@@ -106,7 +106,7 @@ namespace AGXUnity.Sensor
         newMesh = true;
       }
 
-      var lidarSurfaceMaterial = GetComponent<LidarSurfaceMaterial>();
+      var lidarSurfaceMaterial = meshFilter.gameObject.GetInitializedComponent<LidarSurfaceMaterial>();
 
       m_rtShapeInstances[meshFilter] = CreateShapeInstance(
         rtShape,
@@ -146,13 +146,12 @@ namespace AGXUnity.Sensor
 
     private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale, LidarSurfaceMaterial lidarSurfaceMaterial)
     {
+      RtMaterialInstance rtMaterialInstance = null;
+      if (lidarSurfaceMaterial != null)
+        rtMaterialInstance = lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.GetRtMaterialInstance();
+
       Profiler.BeginSample("CreateShapeInstance");
-//      RtInstanceData data = new RtInstanceData(
-//        (lidarSurfaceMaterial != null) ? 
-//          lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.RtMaterialInstance : 
-//          m_rtDefaultSurfaceMaterial.ToMaterialInstance(), 
-//        (RtEntityId)(++m_currentEntityId));
-      RtInstanceData data = new RtInstanceData( RtMaterialInstance.create(RtMaterialHandle.Type.OPAQUE_LAMBERTIAN), (RtEntityId)(++m_currentEntityId));
+      RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? m_rtDefaultSurfaceMaterial.ToMaterialInstance(), (RtEntityId)(++m_currentEntityId));
       RtShapeInstance shapeInstance = RtShapeInstance.create(Native.getScene(), rtShape, data);
 
       shapeInstance.setTransform(
@@ -171,29 +170,34 @@ namespace AGXUnity.Sensor
       if (scriptComponent == null)
         return false;
 
+      var lidarSurfaceMaterial = scriptComponent.gameObject.GetInitializedComponent<LidarSurfaceMaterial>();
+      RtSurfaceMaterial rtMaterial = m_rtDefaultSurfaceMaterial;
+      if (lidarSurfaceMaterial != null && lidarSurfaceMaterial.LidarSurfaceMaterialDefinition != null)
+        rtMaterial = lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.GetRtMaterial();
+
       bool added = false;
       if (scriptComponent is DeformableTerrain dt)
       {
         var c = dt.Native;
-        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        RtSurfaceMaterial.set(c, rtMaterial);
         added = Native.add(c);
       }
       else if (scriptComponent is DeformableTerrainPager dtp)
       {
         var c = dtp.Native;
-        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        RtSurfaceMaterial.set(c, rtMaterial);
         added = Native.add(c);
       }
       else if (scriptComponent is Wire w)
       {
         var c = w.Native;
-        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        RtSurfaceMaterial.set(c, rtMaterial);
         added = Native.add(c);
       }
       else if (scriptComponent is Cable ca)
       {
         var c = ca.Native;
-        RtSurfaceMaterial.set(c, m_rtDefaultSurfaceMaterial);
+        RtSurfaceMaterial.set(c, rtMaterial);
         added = Native.add(c);
       }
       else

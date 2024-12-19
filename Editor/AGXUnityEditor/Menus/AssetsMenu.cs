@@ -100,11 +100,19 @@ namespace AGXUnityEditor
     }
 
 
-    [MenuItem( "Assets/AGXUnity/Lidar Material - lambertian opaque", priority = 740 )]
-    public static Object CreateLidarLambertianOpaqueMaterial()
+    [MenuItem( "Assets/AGXUnity/Lidar Material - Lambertian opaque", priority = 740 )]
+    public static Object CreateLidarSurfaceMaterialLambertianOpaque()
     {
-      return Selection.activeObject = Utils.AssetFactory.Create<LidarLambertianOpaqueMaterial>( "lidar lambertian opaque material" );
+      return Selection.activeObject = Utils.AssetFactory.Create<LidarSurfaceMaterialLambertianOpaque>( "lidar lambertian opaque material" );
     }
+
+
+    [MenuItem( "Assets/AGXUnity/Lidar Material - Ggx Oren Nayar", priority = 740 )]
+    public static Object CreateLidarSurfaceMaterialGgxAndOrenNayar()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<LidarSurfaceMaterialGgxAndOrenNayar>( "lidar ggx oren nayar material" );
+    }
+
 
     [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]
     public static bool IsUrdfSelected()

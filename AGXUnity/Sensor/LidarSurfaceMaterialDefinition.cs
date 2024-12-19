@@ -7,13 +7,11 @@ using agx;
 
 namespace AGXUnity.Sensor
 {
-  [Serializable]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
+  [HelpURL("https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors")]
   public abstract class LidarSurfaceMaterialDefinition : ScriptAsset
   {
-    [NonSerialized]
-    protected RtSurfaceMaterial m_material = null;
-
-    public RtMaterialInstance RtMaterialInstance => m_material?.ToMaterialInstance();
+    abstract public RtMaterialInstance GetRtMaterialInstance();
+    abstract public RtSurfaceMaterial GetRtMaterial();
+    abstract public void Init();
   }
 }
