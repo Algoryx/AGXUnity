@@ -1,5 +1,6 @@
 ﻿using AGXUnity;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -96,6 +97,13 @@ namespace AGXUnityEditor
     public static Object CreateConveyorBeltProperties()
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ConveyorBeltProperties>( "conveyor belt properties" );
+    }
+
+
+    [MenuItem( "Assets/AGXUnity/Lidar Material - lambertian opaque", priority = 740 )]
+    public static Object CreateLidarLambertianOpaqueMaterial()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<LidarLambertianOpaqueMaterial>( "lidar lambertian opaque material" );
     }
 
     [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]

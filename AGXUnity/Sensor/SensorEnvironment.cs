@@ -58,12 +58,11 @@ namespace AGXUnity.Sensor
     //	public LidarAmbientMaterial AmbientMaterial = null;
 
     //TODO temporary solution, fix materials
-    private RtMaterialInstance m_rtLambertianOpaqueMaterialInstance;
     private RtSurfaceMaterial m_rtDefaultSurfaceMaterial;
-
     private uint m_currentOutputID = 1;
+    private int m_currentEntityId = 0;
 
-    // Always use this method in order to have each lider use a unique output id
+    // Always use this method in order to have each lidar use a unique output id
     private uint GenerateOutputID()
     {
       return m_currentOutputID++;
@@ -107,11 +106,14 @@ namespace AGXUnity.Sensor
         newMesh = true;
       }
 
+      var lidarSurfaceMaterial = GetComponent<LidarSurfaceMaterial>();
+
       m_rtShapeInstances[meshFilter] = CreateShapeInstance(
         rtShape,
         meshFilter.transform.rotation,
         meshFilter.transform.position,
-        meshFilter.transform.lossyScale);
+        meshFilter.transform.lossyScale,
+        lidarSurfaceMaterial);
 
       if (DebugLogOnAdd)
         Debug.Log($"SensorEnvironment '{name}' added shapeInstance for mesh on '{meshFilter.gameObject.name}', added shape: {newMesh}");
@@ -142,11 +144,15 @@ namespace AGXUnity.Sensor
       return rtShape;
     }
 
-    private int m_entityId = 0;
-    private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale)
+    private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale, LidarSurfaceMaterial lidarSurfaceMaterial)
     {
       Profiler.BeginSample("CreateShapeInstance");
-      RtInstanceData data = new RtInstanceData(m_rtLambertianOpaqueMaterialInstance, (RtEntityId)(++m_entityId));
+//      RtInstanceData data = new RtInstanceData(
+//        (lidarSurfaceMaterial != null) ? 
+//          lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.RtMaterialInstance : 
+//          m_rtDefaultSurfaceMaterial.ToMaterialInstance(), 
+//        (RtEntityId)(++m_currentEntityId));
+      RtInstanceData data = new RtInstanceData( RtMaterialInstance.create(RtMaterialHandle.Type.OPAQUE_LAMBERTIAN), (RtEntityId)(++m_currentEntityId));
       RtShapeInstance shapeInstance = RtShapeInstance.create(Native.getScene(), rtShape, data);
 
       shapeInstance.setTransform(
@@ -253,8 +259,7 @@ namespace AGXUnity.Sensor
       // In order to properly dispose of Raytrace stuff (before cleanup()) we need to register this callback
       Simulation.Instance.RegisterDisposeCallback(DisposeRT);
 
-      // TODO: temp material stuff
-      m_rtLambertianOpaqueMaterialInstance = RtMaterialInstance.create(RtMaterialHandle.Type.OPAQUE_LAMBERTIAN);
+      // Default material
       m_rtDefaultSurfaceMaterial = RtLambertianOpaqueMaterial.create();
 
       // Check ray trace device compatibility // TODO activate on setting
@@ -342,6 +347,7 @@ namespace AGXUnity.Sensor
       instance.Dispose();
       m_rtShapeInstances.Remove(meshFilter);
     }
+
     private void UpdateShapeInstances()
     {
       // Walk through registered meshes and remove deleted from list plus optionally handle disabled meshes
@@ -428,8 +434,6 @@ namespace AGXUnity.Sensor
 
       m_rtDefaultSurfaceMaterial.Dispose();
       m_rtDefaultSurfaceMaterial = null;
-      m_rtLambertianOpaqueMaterialInstance.Dispose();
-      m_rtLambertianOpaqueMaterialInstance = null;
 
       Native = null;
     }

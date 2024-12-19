@@ -141,6 +141,11 @@ namespace AGXUnity.Sensor
     {
       if (m_pointCloudRenderer == null)
         m_pointCloudRenderer = GetComponent<LidarPointCloudRenderer>();
+
+      if (m_pointCloudRenderer != null && Native != null)
+        m_pointCloudRenderer.SetMaxRange(Native.getModel().getRayRange().getRange().upper());
+      else
+        Debug.LogWarning("Either this method wasn't called from the right location or the lidar isn't initialized!");
     }
 
     public bool InitializeLidar(SensorEnvironment sensorEnvironment, uint uniqueId)
@@ -167,13 +172,6 @@ namespace AGXUnity.Sensor
       Native.getOutputHandler().add(m_outputID, m_rtOutput);
 
       Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
-
-      //if (m_pointCloudRenderer != null)
-      //{
-      //  LidarRayRange test;
-      //  m_pointCloudRenderer.SetMaxRange(Native.getModel().getRayRange().);
-      //  Debug.Log("Maxrange");
-      //}
 
       return true;
     }
