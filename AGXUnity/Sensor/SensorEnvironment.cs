@@ -106,14 +106,14 @@ namespace AGXUnity.Sensor
         newMesh = true;
       }
 
-      var lidarSurfaceMaterial = meshFilter.gameObject.GetInitializedComponent<LidarSurfaceMaterial>();
+      var lidarSurfaceMaterialContainer = meshFilter.gameObject.GetComponent<LidarSurfaceMaterialContainer>();
 
       m_rtShapeInstances[meshFilter] = CreateShapeInstance(
         rtShape,
         meshFilter.transform.rotation,
         meshFilter.transform.position,
         meshFilter.transform.lossyScale,
-        lidarSurfaceMaterial);
+        lidarSurfaceMaterialContainer);
 
       if (DebugLogOnAdd)
         Debug.Log($"SensorEnvironment '{name}' added shapeInstance for mesh on '{meshFilter.gameObject.name}', added shape: {newMesh}");
@@ -144,11 +144,11 @@ namespace AGXUnity.Sensor
       return rtShape;
     }
 
-    private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale, LidarSurfaceMaterial lidarSurfaceMaterial)
+    private RtShapeInstance CreateShapeInstance(RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale, LidarSurfaceMaterialContainer lidarSurfaceMaterialContainer)
     {
       RtMaterialInstance rtMaterialInstance = null;
-      if (lidarSurfaceMaterial != null)
-        rtMaterialInstance = lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.GetRtMaterialInstance();
+      if (lidarSurfaceMaterialContainer != null)
+        rtMaterialInstance = lidarSurfaceMaterialContainer.LidarSurfaceMaterialDefinition.GetRtMaterialInstance();
 
       Profiler.BeginSample("CreateShapeInstance");
       RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? m_rtDefaultSurfaceMaterial.ToMaterialInstance(), (RtEntityId)(++m_currentEntityId));
@@ -170,10 +170,10 @@ namespace AGXUnity.Sensor
       if (scriptComponent == null)
         return false;
 
-      var lidarSurfaceMaterial = scriptComponent.gameObject.GetInitializedComponent<LidarSurfaceMaterial>();
+      var lidarSurfaceMaterialContainer = scriptComponent.gameObject.GetComponent<LidarSurfaceMaterialContainer>();
       RtSurfaceMaterial rtMaterial = m_rtDefaultSurfaceMaterial;
-      if (lidarSurfaceMaterial != null && lidarSurfaceMaterial.LidarSurfaceMaterialDefinition != null)
-        rtMaterial = lidarSurfaceMaterial.LidarSurfaceMaterialDefinition.GetRtMaterial();
+      if (lidarSurfaceMaterialContainer != null && lidarSurfaceMaterialContainer.LidarSurfaceMaterialDefinition != null)
+        rtMaterial = lidarSurfaceMaterialContainer.LidarSurfaceMaterialDefinition.GetRtMaterial();
 
       bool added = false;
       if (scriptComponent is DeformableTerrain dt)
@@ -274,6 +274,11 @@ namespace AGXUnity.Sensor
 
       Native = agxSensor.Environment.getOrCreate(simulation);
 
+      // We need to initialize the surface materials
+      var surfaceMaterials = FindObjectsOfType<LidarSurfaceMaterial>(true);
+      foreach (var sm in surfaceMaterials)
+        sm.Init();
+
       FindValidComponents<LidarSensor>(true).ForEach(RegisterLidarSensor);
       FindValidComponents<MeshFilter>(true).ForEach(RegisterMeshfilter);
 
@@ -341,7 +346,7 @@ namespace AGXUnity.Sensor
             RemoveAGXModel(component);
           m_agxComponents[component] = currentlyVisible;
         }
-        
+
       }
     }
 
