@@ -1,6 +1,6 @@
 ﻿using System;
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace AGXUnity
 {
@@ -9,28 +9,30 @@ namespace AGXUnity
   {
     private const float defaultValue = 0f;
 
-    public enum DamageTypeMode {
+    public enum DamageTypeMode
+    {
       CurrentDamage,
       AccumulatedDamage
     }
-    [Tooltip("Select what type of damage is to be rendered, the current, or the accumulated")]
+    [Tooltip( "Select what type of damage is to be rendered, the current, or the accumulated" )]
     public DamageTypeMode DamageType = DamageTypeMode.CurrentDamage;
 
-    public enum MaxDamageColorMode {
+    public enum MaxDamageColorMode
+    {
       HighestPerFrame,
       UseSetDamage
     }
-    [Tooltip("Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color")]
+    [Tooltip( "Select how to set the range of the color scale: min to max color each frame, or use set damage value for max color" )]
     public MaxDamageColorMode DamageColorMode = MaxDamageColorMode.HighestPerFrame;
 
     [ClampAboveZeroInInspector]
-    [Tooltip("The calculated cable damage for which to use the specified max color")]
+    [Tooltip( "The calculated cable damage for which to use the specified max color" )]
     public float SetDamageForMaxColor = 0f;
 
-    [Tooltip("The color applied when there is no calculated cable damage")]
+    [Tooltip( "The color applied when there is no calculated cable damage" )]
     public Color MinColor = Color.green;
 
-    [Tooltip("The color applied when the calculated cable damage exceeds the \"Set Damage For Max Color\" value")]
+    [Tooltip( "The color applied when the calculated cable damage exceeds the \"Set Damage For Max Color\" value" )]
     public Color MaxColor = Color.red;
 
 

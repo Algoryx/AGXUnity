@@ -400,7 +400,7 @@ namespace AGXUnity.Rendering
     {
       GameObject go = null;
       try {
-        go = isRenderData || shape is Collide.Mesh || shape is Collide.HollowCylinder || shape is Collide.Cone || shape is Collide.HollowCone ?
+        go = isRenderData || shape is Collide.Mesh || shape is Collide.HollowCylinder || shape is Collide.Cone || shape is Collide.HollowCone || shape is Collide.Capsule ?
                new GameObject( "" ) :
                PrefabLoader.Instantiate<GameObject>( @"Debug/" + shape.GetType().Name + "Renderer" );
 
@@ -488,7 +488,7 @@ namespace AGXUnity.Rendering
         for ( int i = 0; i < mats.Length; i++ ) {
           var mat = mats[i];
           if ( mat == null ||
-               ( mat != DefaultMaterial && mat.name == DefaultMaterialName ) ) {
+               ( mat.name == DefaultMaterialName && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) ) {
             mats[ i ] = DefaultMaterial;
             changed = true;
           }

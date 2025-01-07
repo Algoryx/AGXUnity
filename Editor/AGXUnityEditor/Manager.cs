@@ -1,11 +1,11 @@
+using AGXUnity.Utils;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using AGXUnity.Utils;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
@@ -110,7 +110,21 @@ namespace AGXUnityEditor
 
       CreateDefaultAssets();
 
+      if ( PatchHelper.SceneNeedsPatch() )
+        EditorApplication.update += PatchOnUpdate;
+
+      EditorSceneManager.sceneOpened += ( _, _ ) => {
+        if ( PatchHelper.SceneNeedsPatch() )
+          EditorApplication.update += PatchOnUpdate;
+      };
+
       PrefabUtility.prefabInstanceUpdated += AssetPostprocessorHandler.OnPrefabCreatedFromScene;
+    }
+
+    private static void PatchOnUpdate()
+    {
+      PatchHelper.ApplyPatches();
+      EditorApplication.update -= PatchOnUpdate;
     }
 
     public enum EditorWindowType
@@ -289,7 +303,7 @@ namespace AGXUnityEditor
         return;
 
       // TODO: Fix so that "MouseOver" works for newly created primitives.
-     if ( primitive.Node.transform.parent != VisualsParent )
+      if ( primitive.Node.transform.parent != VisualsParent )
         VisualsParent.AddChild( primitive.Node );
 
       m_visualPrimitives.Add( primitive );
@@ -318,8 +332,12 @@ namespace AGXUnityEditor
 
     private static bool HasNetRuntimeCompatibility( string infoWarningOrError )
     {
+#if UNITY_2023_3_OR_NEWER
+      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+#else
       var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
-      if ( !hasMonoRuntime ) { 
+#endif
+      if ( !hasMonoRuntime ) {
         string prefix = string.Empty;
         if ( infoWarningOrError == "info" )
           prefix = AGXUnity.Utils.GUI.AddColorTag( "<b>INFO:</b> ", Color.white );
@@ -378,10 +396,7 @@ namespace AGXUnityEditor
     private static void UndoRedoPerformedCallback()
     {
       // Trigger repaint of inspector GUI for our targets.
-      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
-      foreach ( var target in targets )
-        if ( target != null )
-          EditorUtility.SetDirty( target );
+      UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 
       // Collecting scripts that may require synchronize of
       // data post undo/redo where the private serialized
@@ -444,6 +459,7 @@ namespace AGXUnityEditor
       foreach ( var customTargetTool in ToolManager.ActiveTools )
         customTargetTool.OnUndoRedo();
 
+      var targets = ToolManager.ActiveTools.SelectMany( tool => tool.Targets );
       if ( targets.Count() > 0 )
         SceneView.RepaintAll();
 
@@ -462,22 +478,7 @@ namespace AGXUnityEditor
     /// </summary>
     public static void OnEditorTargetsDeleted()
     {
-      var undoGroupId = Undo.GetCurrentGroup();
 
-      // Deleted RigidBody component leaves dangling MassProperties
-      // so we've to delete them explicitly.
-#if UNITY_6000_0_OR_NEWER
-      var mps = Object.FindObjectsByType<AGXUnity.MassProperties>(FindObjectsSortMode.None);
-#else
-      var mps = Object.FindObjectsOfType<AGXUnity.MassProperties>();
-#endif
-      foreach ( var mp in mps ) {
-        if ( mp.RigidBody == null ) {
-          Undo.DestroyObjectImmediate( mp );
-        }
-      }
-
-      Undo.CollapseUndoOperations( undoGroupId );
     }
 
     private static void OnSceneView( SceneView sceneView )
@@ -794,7 +795,7 @@ namespace AGXUnityEditor
 
       return EnvironmentState.Initialized;
 #endif
-      }
+    }
 
     private static bool HandleScriptReload( bool success )
     {

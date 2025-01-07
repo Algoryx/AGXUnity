@@ -23,7 +23,7 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPostTargetMembersGUI()
     {
-      if ( !ContactMaterialManager.HasInstanceInScene || Targets.Cast<ContactMaterial>().Any(cm => !ContactMaterialManager.Instance.ContactMaterials.Contains( cm ) ) ) {
+      if ( !ContactMaterialManager.HasInstanceInScene || Targets.Cast<ContactMaterial>().Any( cm => !ContactMaterialManager.Instance.ContactMaterials.Contains( cm ) ) ) {
         InspectorGUI.Separator( 1, 16 );
         var enabled = UnityEngine.GUI.enabled;
         if ( !ContactMaterialManager.HasInstanceInScene ) {

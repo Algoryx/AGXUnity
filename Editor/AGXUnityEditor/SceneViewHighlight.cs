@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 using AGXUnity.Rendering;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace AGXUnityEditor
 {
@@ -41,7 +42,7 @@ namespace AGXUnityEditor
       var maxColor = new Color( 1, 1, 1, s_globalAlpha );
       foreach ( var filter in renderData.MeshFilters ) {
         Gizmos.color = s_timeInterpolator.Lerp( renderData.Color, maxColor );
-        Gizmos.matrix = filter.transform.localToWorldMatrix;
+        Gizmos.matrix = filter.localToWorldMatrix;
         Gizmos.DrawWireMesh( filter.sharedMesh );
       }
     }
@@ -89,18 +90,29 @@ namespace AGXUnityEditor
 
     private static RenderData GetRenderData( Transform transform )
     {
-      var filters = transform.GetComponents<MeshFilter>();
-      if ( filters.Length == 0 ) {
+      var filters = transform.GetComponents<MeshFilter>().Select(f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix}).ToArray();
+      if ( filters.Length == 0 || transform.GetComponent<SkinnedCableRenderer>() != null ) {
         if ( transform.GetComponent<DebugRenderData>() != null && transform.GetComponent<DebugRenderData>().Node != null )
-          filters = transform.GetComponent<DebugRenderData>().Node.GetComponentsInChildren<MeshFilter>();
+          filters = transform.GetComponent<DebugRenderData>().Node.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
         else if ( transform.GetComponent<AGXUnity.Collide.Shape>() != null ) {
           var shape = transform.GetComponent<AGXUnity.Collide.Shape>();
           var shapeVisual = ShapeVisual.Find( shape );
           if ( shapeVisual != null )
-            filters = shapeVisual.GetComponentsInChildren<MeshFilter>();
+            filters = shapeVisual.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
         }
         else if ( transform.GetComponent<AGXUnity.RigidBody>() != null )
-          filters = transform.GetComponentsInChildren<MeshFilter>();
+          filters = transform.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
+        else if ( transform.GetComponent<SkinnedCableRenderer>() != null ) {
+          var skinnedCableRenderer = transform.GetComponent<SkinnedCableRenderer>();
+          if ( skinnedCableRenderer.enabled )
+            filters = new MeshFilterData[] {
+              new MeshFilterData {
+                sharedMesh = skinnedCableRenderer.SourceMesh,
+                localToWorldMatrix = Matrix4x4.TRS(skinnedCableRenderer.transform.position, skinnedCableRenderer.transform.rotation, skinnedCableRenderer.transform.localScale)
+            } };
+          else
+            filters = transform.GetComponentsInChildren<MeshFilter>().Select( f => new MeshFilterData { sharedMesh = f.sharedMesh, localToWorldMatrix = f.transform.localToWorldMatrix } ).ToArray();
+        }
       }
       return new RenderData()
       {
@@ -109,10 +121,16 @@ namespace AGXUnityEditor
       };
     }
 
+    private struct MeshFilterData
+    {
+      public Mesh sharedMesh;
+      public Matrix4x4 localToWorldMatrix;
+    }
+
     private struct RenderData
     {
       public Color Color;
-      public MeshFilter[] MeshFilters;
+      public MeshFilterData[] MeshFilters;
     }
 
     static SceneViewHighlight()

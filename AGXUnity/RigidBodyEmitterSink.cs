@@ -144,10 +144,10 @@ namespace AGXUnity
         return false;
       }
 
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
       m_emitters = FindObjectsByType<RigidBodyEmitter>( FindObjectsInactive.Include, FindObjectsSortMode.None );
 #else
-      m_emitters = FindObjectsOfType<RigidBodyEmitter>(true);
+      m_emitters = FindObjectsOfType<RigidBodyEmitter>( true );
 #endif
 
       if ( m_emitters.Length == 0 ) {

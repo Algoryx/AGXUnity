@@ -33,7 +33,7 @@ public static class ScopedRegistryManager
     var client = container.GetType().GetMethod( "Resolve", BindingFlags.Public | BindingFlags.Instance ).MakeGenericMethod( new System.Type[] { clientType } ).Invoke( container, new object[] {} );
 
     var infos = GetRegistryInfos();
-    if(infos.Any(info => info.name == name ) ) {
+    if ( infos.Any( info => info.name == name ) ) {
       var updateMethod = clientType.GetMethod(
         "UpdateRegistry",
         BindingFlags.Instance | BindingFlags.Public,
@@ -41,7 +41,8 @@ public static class ScopedRegistryManager
         new System.Type[] { typeof( string ), typeof( string ), typeof( string ), typeof( string[] ) },
         null );
       updateMethod.Invoke( client, new object[] { (object)name, (object)name, (object)url, (object)scopes } );
-    } else {
+    }
+    else {
       var addMethod = clientType.GetMethod(
         "AddRegistry",
         BindingFlags.Instance | BindingFlags.Public,

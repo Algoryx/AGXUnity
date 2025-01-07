@@ -1,9 +1,8 @@
-﻿using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor
@@ -289,7 +288,7 @@ namespace AGXUnityEditor
         if ( string.IsNullOrEmpty( iconFilenames[ index ] ) ) {
           if ( enumNames[ index ] != "None" )
             Debug.LogWarning( "Filename for icon "
-                              + System.Enum.ToObject(typeof(T),index)+
+                              + System.Enum.ToObject( typeof( T ), index )+
                               " not given - ignoring icon." );
           else
             icons[ index ] = null;
@@ -358,12 +357,12 @@ namespace AGXUnityEditor
         if ( fi.Extension.ToLower() == ".png" )
           m_iconNames.Add( Path.GetFileNameWithoutExtension( fi.Name ) );
 
-      GetEditorData( "NormalColorDark",   entry => entry.Color = IconManager.NormalColorDark );
-      GetEditorData( "ActiveColorDark",   entry => entry.Color = IconManager.ActiveColorDark );
+      GetEditorData( "NormalColorDark", entry => entry.Color = IconManager.NormalColorDark );
+      GetEditorData( "ActiveColorDark", entry => entry.Color = IconManager.ActiveColorDark );
       GetEditorData( "DisabledColorDark", entry => entry.Color = IconManager.DisabledColorDark );
 
-      GetEditorData( "NormalColorLight",   entry => entry.Color = IconManager.NormalColorLight );
-      GetEditorData( "ActiveColorLight",   entry => entry.Color = IconManager.ActiveColorLight );
+      GetEditorData( "NormalColorLight", entry => entry.Color = IconManager.NormalColorLight );
+      GetEditorData( "ActiveColorLight", entry => entry.Color = IconManager.ActiveColorLight );
       GetEditorData( "DisabledColorLight", entry => entry.Color = IconManager.DisabledColorLight );
     }
 
@@ -399,7 +398,7 @@ namespace AGXUnityEditor
                                           GUILayout.Width( 24 ) );
       }
 
-      EditorGUILayout.LabelField( GUI.MakeLabel( "Number of icons" ), 
+      EditorGUILayout.LabelField( GUI.MakeLabel( "Number of icons" ),
                                   GUI.MakeLabel( m_iconNames.Count.ToString() ),
                                   InspectorGUISkin.Instance.Label );
       IconManager.Scale = editorData.Float = Mathf.Clamp( EditorGUILayout.Slider( GUI.MakeLabel( "Scale" ),
@@ -421,7 +420,7 @@ namespace AGXUnityEditor
       InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, true, false );
       InspectorGUI.BrandSeparator( 1, 6 );
-      RenderButtons( editorData.Vector2, true, true);
+      RenderButtons( editorData.Vector2, true, true );
       InspectorGUI.BrandSeparator( 1, 6 );
       RenderButtons( editorData.Vector2, false, false );
       InspectorGUI.BrandSeparator( 1, 6 );
@@ -582,8 +581,7 @@ namespace AGXUnityEditor
 
     private EditorDataEntry GetEditorData()
     {
-      return EditorData.Instance.GetStaticData( "IconManager", entry =>
-      {
+      return EditorData.Instance.GetStaticData( "IconManager", entry => {
         entry.Float = IconManager.Scale;
         entry.String = IconManager.Directory;
         entry.Vector2 = InspectorGUISkin.ToolButtonSize;

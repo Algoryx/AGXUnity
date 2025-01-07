@@ -7,7 +7,6 @@ namespace AGXUnity
   /// Wire object.
   /// </summary>
   [AddComponentMenu( "AGXUnity/Wire" )]
-  [RequireComponent( typeof( WireRoute ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wire" )]
   public class Wire : ScriptComponent
   {
@@ -187,23 +186,10 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Route to initialize this wire.
-    /// </summary>
-    private WireRoute m_route = null;
-
-    /// <summary>
     /// Get route to initialize this wire.
     /// </summary>
-    [HideInInspector]
-    public WireRoute Route
-    {
-      get
-      {
-        if ( m_route == null )
-          m_route = GetComponent<WireRoute>();
-        return m_route;
-      }
-    }
+    [field: SerializeReference]
+    public WireRoute Route { get; private set; }
 
     /// <summary>
     /// Winch at begin of this wire if exists.
@@ -225,6 +211,7 @@ namespace AGXUnity
 
     public Wire()
     {
+      Route = new WireRoute( this );
     }
 
     /// <summary>
@@ -344,12 +331,6 @@ namespace AGXUnity
 
       if ( m_renderer != null )
         m_renderer.OnPostStepForward( this );
-
-      if ( BeginWinch != null )
-        BeginWinch.OnPostStepForward( this );
-
-      if ( EndWinch != null )
-        EndWinch.OnPostStepForward( this );
     }
 
     private void Reset()

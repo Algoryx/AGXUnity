@@ -10,7 +10,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private Vector3 m_translationalCompliance = 1.0E-8f * Vector3.one;
 
-    [Tooltip("The translational compliance of the constraint connecting the individual tracks")]
+    [Tooltip( "The translational compliance of the constraint connecting the individual tracks" )]
     public Vector3 TranslationalCompliance
     {
       get { return m_translationalCompliance; }

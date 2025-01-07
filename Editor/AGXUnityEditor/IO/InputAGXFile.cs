@@ -107,7 +107,7 @@ namespace AGXUnityEditor.IO
                                                                        ss => ss.RestoreLocalDataFrom( Simulation ) );
 
         foreach ( var root in m_tree.Roots ) {
-          subProgress.Tick( $"Generating: {(string.IsNullOrEmpty( root.Name ) ? root.Type.ToString().SplitCamelCase() : root.Name)}" );
+          subProgress.Tick( $"Generating: {( string.IsNullOrEmpty( root.Name ) ? root.Type.ToString().SplitCamelCase() : root.Name )}" );
           Generate( root );
           subProgress.Tack();
         }
@@ -207,7 +207,7 @@ namespace AGXUnityEditor.IO
           node.GameObject.transform.position = nativeRb.getPosition().ToHandedVector3();
           node.GameObject.transform.rotation = nativeRb.getRotation().ToHandedQuaternion();
 
-          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );          
+          node.GameObject.GetOrCreateComponent<RigidBody>().RestoreLocalDataFrom( nativeRb );
 
           break;
         case Node.NodeType.Geometry:
@@ -417,20 +417,18 @@ namespace AGXUnityEditor.IO
         hollowCylinder.Radius    = Convert.ToSingle( nativeShape.asHollowCylinder().getOuterRadius() );
         hollowCylinder.Height    = Convert.ToSingle( nativeShape.asHollowCylinder().getHeight() );
       }
-      else if (nativeShapeType == agxCollide.Shape.Type.CONE)
-      {
+      else if ( nativeShapeType == agxCollide.Shape.Type.CONE ) {
         var cone          = GetOrCreateShape<AGXUnity.Collide.Cone>( node );
-        cone.BottomRadius = Convert.ToSingle(nativeShape.asCone().getBottomRadius());
-        cone.TopRadius    = Convert.ToSingle(nativeShape.asCone().getTopRadius());
-        cone.Height       = Convert.ToSingle(nativeShape.asCone().getHeight());
+        cone.BottomRadius = Convert.ToSingle( nativeShape.asCone().getBottomRadius() );
+        cone.TopRadius    = Convert.ToSingle( nativeShape.asCone().getTopRadius() );
+        cone.Height       = Convert.ToSingle( nativeShape.asCone().getHeight() );
       }
-      else if (nativeShapeType == agxCollide.Shape.Type.HOLLOW_CONE)
-      {
+      else if ( nativeShapeType == agxCollide.Shape.Type.HOLLOW_CONE ) {
         var hollowCone          = GetOrCreateShape<AGXUnity.Collide.HollowCone>( node );
-        hollowCone.Thickness    = Convert.ToSingle(nativeShape.asHollowCone().getThickness());
-        hollowCone.BottomRadius = Convert.ToSingle(nativeShape.asHollowCone().getBottomOuterRadius());
-        hollowCone.TopRadius    = Convert.ToSingle(nativeShape.asHollowCone().getTopOuterRadius());
-        hollowCone.Height       = Convert.ToSingle(nativeShape.asHollowCone().getHeight());
+        hollowCone.Thickness    = Convert.ToSingle( nativeShape.asHollowCone().getThickness() );
+        hollowCone.BottomRadius = Convert.ToSingle( nativeShape.asHollowCone().getBottomOuterRadius() );
+        hollowCone.TopRadius    = Convert.ToSingle( nativeShape.asHollowCone().getTopOuterRadius() );
+        hollowCone.Height       = Convert.ToSingle( nativeShape.asHollowCone().getHeight() );
       }
       else if ( nativeShapeType == agxCollide.Shape.Type.CAPSULE ) {
         var capsule    = GetOrCreateShape<AGXUnity.Collide.Capsule>( node );
@@ -583,8 +581,7 @@ namespace AGXUnityEditor.IO
           // assign them again to the ShapeVisuals.
           FileInfo.ObjectDb.GetOrCreateAsset( currentMeshes[ i ],
                                               $"{shape.name}_Visual_Mesh_{i}",
-                                              m =>
-                                              {
+                                              m => {
                                                 m.Clear();
                                                 EditorUtility.CopySerialized( meshes[ i ], m );
                                               } );
@@ -614,8 +611,7 @@ namespace AGXUnityEditor.IO
         for ( int i = 0; i < meshes.Length; ++i ) {
           meshes[ i ] = FileInfo.ObjectDb.GetOrCreateAsset( i < currentMeshes.Length ? currentMeshes[ i ] : null,
                                                             $"{shape.name}_Visual_Mesh_{i}",
-                                                            m =>
-                                                            {
+                                                            m => {
                                                               m.Clear();
                                                               EditorUtility.CopySerialized( meshes[ i ], m );
                                                             } );
@@ -661,7 +657,7 @@ namespace AGXUnityEditor.IO
       // Somewhat strange though: Why is not only the Constraint component disabled?
       // For RigidBody component, only that component is disabled, but the below code disables the whole constraint GameObject.
       // Works for now
-      constraint.gameObject.SetActive(nativeConstraint.isEnabled());
+      constraint.gameObject.SetActive( nativeConstraint.isEnabled() );
 
       constraint.SetType( constraintType, true );
 
@@ -860,17 +856,16 @@ namespace AGXUnityEditor.IO
 
       for ( var it = nativeCable.getSegments().begin(); !it.EqualWith( nativeCable.getSegments().end() ); it.inc() ) {
         var segment = it.get();
-        route.Add( segment, attachment =>
-                            {
-                              if ( attachment == null || attachment.getRigidBody() == null )
-                                return FileInfo.PrefabInstance;
-                              var rbNode = m_tree.GetNode( attachment.getRigidBody().getUuid() );
-                              if ( rbNode == null ) {
-                                Debug.LogWarning( "Unable to find rigid body in cable attachment." );
-                                return FileInfo.PrefabInstance;
-                              }
-                              return rbNode.GameObject;
-                            } );
+        route.Add( segment, attachment => {
+          if ( attachment == null || attachment.getRigidBody() == null )
+            return FileInfo.PrefabInstance;
+          var rbNode = m_tree.GetNode( attachment.getRigidBody().getUuid() );
+          if ( rbNode == null ) {
+            Debug.LogWarning( "Unable to find rigid body in cable attachment." );
+            return FileInfo.PrefabInstance;
+          }
+          return rbNode.GameObject;
+        } );
       }
 
       cable.Material = RestoreShapeMaterial( cable.Material,
@@ -957,8 +952,7 @@ namespace AGXUnityEditor.IO
       return FileInfo.ObjectDb.GetOrCreateAsset( shapeMaterialToUse,
                                                  FindName( material.getName(),
                                                            materialNode.Type.ToString() ),
-                                                 m =>
-                                                 {
+                                                 m => {
                                                    m.RestoreLocalDataFrom( material );
                                                    // If node.Asset == null, assigning it here
                                                    // in first ref to the material.
@@ -1000,7 +994,7 @@ namespace AGXUnityEditor.IO
         RenderingUtils.SetColor( thisMaterial, color );
       }
       thisMaterial.SetFloat( "_Metallic", metallic );
-      RenderingUtils.SetSmoothness(thisMaterial, 0.8f );
+      RenderingUtils.SetSmoothness( thisMaterial, 0.8f );
       if ( nativeMaterial.getTransparency() > 0.0f )
         RenderingUtils.SetTransparencyEnabled( thisMaterial, true );
     }

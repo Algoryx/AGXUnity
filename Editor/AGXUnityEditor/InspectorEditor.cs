@@ -1,13 +1,12 @@
-﻿using System;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
+using System;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -56,7 +55,7 @@ namespace AGXUnityEditor
     {
       targets = targets.Where( obj => obj != null ).ToArray();
 
-      using ( new GUI.EnabledBlock(targets.All(o => (o.hideFlags & HideFlags.NotEditable) == 0)) ) {
+      using ( new GUI.EnabledBlock( targets.All( o => ( o.hideFlags & HideFlags.NotEditable ) == 0 ) ) ) {
         if ( targets.Length == 0 )
           return;
 
@@ -84,6 +83,53 @@ namespace AGXUnityEditor
                                 wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
           using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
             HandleType( wrapper, objects, fallback );
+        }
+        group.Dispose();
+      }
+    }
+
+    /// <summary>
+    /// Draw supported member GUI for given targets. This method supports
+    /// non-UnityEngine.Object instances, such as pure Serializable classes,
+    /// that are part of <paramref name="targets"/>. <paramref name="getChildCallback"/>
+    /// is called to access these serializable objects. If <paramref name="getChildCallback"/>
+    /// is null, targets will be rendered.
+    /// </summary>
+    /// <param name="targets">Target UnityEngine.Object instances (used for Undo and SetDirty).</param>
+    /// <param name="getChildCallback">Null and targets will be rendered, otherwise the returned
+    ///                                instance from this callback.</param>
+    public static void DrawMembersGUI( object[] targets,
+                                       Object[] undoObjects,
+                                       Func<object, object> getChildCallback = null,
+                                       bool enabled = true )
+    {
+      targets = targets.Where( obj => obj != null ).ToArray();
+
+      var objects = targets.Select( target => getChildCallback == null ?
+                                        target :
+                                        getChildCallback( target ) )
+                             .Where( obj => obj != null ).ToArray();
+      if ( objects.Length == 0 )
+        return;
+
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        Undo.RecordObjects( undoObjects, "Inspector" );
+
+        InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
+        var group = InspectorGroupHandler.Create();
+        foreach ( var wrapper in fieldsAndProperties ) {
+          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+            continue;
+
+          group.Update( wrapper, objects[ 0 ] );
+
+          if ( group.IsHidden )
+            continue;
+
+          var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                                wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+          using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+            HandleType( wrapper, objects, null );
         }
         group.Dispose();
       }
@@ -132,17 +178,17 @@ namespace AGXUnityEditor
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
-      
+
       // If any changes occured during the editor draw we have to tell unity that the component has changes.
       // Additionally, some components (such as the Constraint component) modifies other components on the same GameObject.
       // In this case all compoments have to be manually dirtied. Here, we blanket dirty all compoments on the same GameObject
       // as the currently edited component.
       if ( EditorGUI.EndChangeCheck() ) {
-        foreach ( var t in this.targets ){
+        foreach ( var t in this.targets ) {
           EditorUtility.SetDirty( t );
-          if(t is MonoBehaviour root)
-            foreach( var comp in root.GetComponents<MonoBehaviour>() )
-              EditorUtility.SetDirty(comp);
+          if ( t is MonoBehaviour root )
+            foreach ( var comp in root.GetComponents<MonoBehaviour>() )
+              EditorUtility.SetDirty( comp );
         }
       }
 
@@ -186,6 +232,10 @@ namespace AGXUnityEditor
       }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
+
+      var ctx = ContextManager.GetCustomContextForType(m_targetType);
+      if ( ctx != null )
+        UnityEditor.EditorTools.ToolManager.SetActiveContext( ctx );
     }
 
     private void OnDisable()
@@ -202,6 +252,8 @@ namespace AGXUnityEditor
       m_targetType = null;
       m_targetGameObjects = null;
       m_numTargetGameObjectsTargetComponents = 0;
+
+      UnityEditor.EditorTools.ToolManager.SetActiveContext( null );
     }
 
     private bool IsTargetMostProbablyDeleted()
@@ -267,10 +319,12 @@ namespace AGXUnityEditor
         if ( serializedProperty != null ) {
           EditorGUI.BeginChangeCheck();
           EditorGUILayout.PropertyField( serializedProperty );
+          if ( serializedProperty.isArray )
+            Debug.LogWarning( "The AGXUnity Inspector wrapper currently does not support editable array types. Consider using List<T> as an alternative." );
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
-            value = serializedProperty.objectReferenceValue;
-          }            
+            value = serializedProperty.boxedValue;
+          }
         }
       }
 

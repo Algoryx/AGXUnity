@@ -87,7 +87,7 @@ namespace AGXUnityEditor.Build
 
     #region BuildTargetGroup API
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete("The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0")]
+    [System.Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     public static void Add( string symbol, BuildTargetGroup group )
     {
@@ -100,7 +100,7 @@ namespace AGXUnityEditor.Build
     }
 
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
+    [System.Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     public static void Remove( string symbol, BuildTargetGroup group )
     {
@@ -113,7 +113,7 @@ namespace AGXUnityEditor.Build
     }
 
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
+    [System.Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     public static bool Contains( string symbol, BuildTargetGroup group )
     {
@@ -121,7 +121,7 @@ namespace AGXUnityEditor.Build
     }
 
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
+    [System.Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     private static List<string> GetSymbolsList( BuildTargetGroup group )
     {
@@ -129,7 +129,7 @@ namespace AGXUnityEditor.Build
     }
 
 #if UNITY_6000_0_OR_NEWER
-    [Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
+    [System.Obsolete( "The BuildTargetGroup API has been deprecated in favor of the NamedBuildTarget API as of Unity 6.0" )]
 #endif
     private static void SetSymbols( List<string> symbols, BuildTargetGroup group )
     {

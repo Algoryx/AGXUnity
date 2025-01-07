@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
 
 namespace AGXUnity
@@ -16,7 +17,7 @@ namespace AGXUnity
   /// assert( rb.Native != null );
   /// </example>
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#components" )]
-  public abstract class ScriptComponent : MonoBehaviour
+  public abstract class ScriptComponent : MonoBehaviour, IPropertySynchronizable
   {
     public enum States
     {

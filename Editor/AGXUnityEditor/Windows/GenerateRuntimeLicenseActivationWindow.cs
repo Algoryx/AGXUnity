@@ -1,10 +1,8 @@
-﻿using System.IO;
+﻿using AGXUnity.Utils;
+using System.IO;
 using System.Linq;
-using UnityEngine;
 using UnityEditor;
-
-using AGXUnity.Utils;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Windows
@@ -104,8 +102,7 @@ namespace AGXUnityEditor.Windows
       InspectorGUI.SelectFolder( GUI.MakeLabel( "Build directory" ),
                                  BuildDirectory,
                                  "Build directory",
-                                 newBuildDirectory =>
-                                 {
+                                 newBuildDirectory => {
                                    if ( !Directory.Exists( newBuildDirectory ) ) {
                                      Debug.LogWarning( $"Ignoring given build path {newBuildDirectory} doesn't exist." );
                                      return;
@@ -119,10 +116,7 @@ namespace AGXUnityEditor.Windows
                                ReferenceFileInBuild,
                                "Select reference file in build",
                                BuildDirectory,
-                               newFilename =>
-                               {
-                                 ReferenceFileInBuild = newFilename;
-                               } );
+                               newFilename => ReferenceFileInBuild = newFilename );
 
       m_idPassword.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Runtime License Id" ),
                                                    m_idPassword.Id,

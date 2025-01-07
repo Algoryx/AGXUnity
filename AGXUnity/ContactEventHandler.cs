@@ -497,7 +497,7 @@ namespace AGXUnity
 
         GeometryContactHandler.Native.collectSeparations( listener.Filter, m_separations );
         for ( int i = 0; i < m_separations.Count; i++ ) {
-          var sep = m_separations[i];
+          var sep = m_separations[ i ];
           var g1 = sep.first;
           var g2 = sep.second;
           separationData.Component1 = GetComponent( g1 );
@@ -582,11 +582,7 @@ namespace AGXUnity
     {
       typeof( Utils.OnSelectionProxy ),
       typeof( AttachmentPair ),
-      typeof( MassProperties ),
       typeof( CollisionGroups ),
-      typeof( WireRoute ),
-      typeof( CableRoute ),
-      typeof( WireWinch ),
       typeof( HydrodynamicsParameters ),
       typeof( MergeSplitProperties ),
       typeof( Simulation ),

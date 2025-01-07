@@ -1,7 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using AGXUnity;
+using System;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnityEditor.Tools
@@ -9,6 +9,14 @@ namespace AGXUnityEditor.Tools
   public class ConstraintCreateTool : Tool
   {
     public GameObject Parent { get; private set; }
+
+    class UndoWrapper : UnityEngine.ScriptableObject
+    {
+      [SerializeField]
+      public AttachmentPair wrapped;
+    }
+
+    UndoWrapper TempAttachmentPair;
 
     public bool MakeConstraintChildToParent { get; set; }
 
@@ -30,29 +38,28 @@ namespace AGXUnityEditor.Tools
       Parent = parent;
       MakeConstraintChildToParent = makeConstraintChildToParent;
       m_onCreate = onCreate;
+      TempAttachmentPair = ScriptableObject.CreateInstance<UndoWrapper>();
+      TempAttachmentPair.hideFlags = HideFlags.DontSave;
     }
 
     public override void OnAdd()
     {
       m_createConstraintData.CreateInitialState( Parent.name );
+      TempAttachmentPair.wrapped = m_createConstraintData.AttachmentPair;
+
       AttachmentFrameTool = new ConstraintAttachmentFrameTool( new AttachmentPair[]
                                                                {
                                                                  m_createConstraintData.AttachmentPair
                                                                },
+                                                               new UnityEngine.Object[] { TempAttachmentPair },
                                                                Parent );
       AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = false;
       // Enabling reference frame transform handle when select tool
       // is done. When connected frame tool parent is set (first) we
       // still activate the reference frame transform handle since
       // this is the default behavior.
-      AttachmentFrameTool.ReferenceFrameTool.OnToolDoneCallback = tool =>
-      {
-        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
-      };
-      AttachmentFrameTool.ConnectedFrameTool.OnToolDoneCallback = tool =>
-      {
-        AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
-      };
+      AttachmentFrameTool.ReferenceFrameTool.OnToolDoneCallback = tool => AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
+      AttachmentFrameTool.ConnectedFrameTool.OnToolDoneCallback = tool => AttachmentFrameTool.ReferenceFrameTool.TransformHandleActive = true;
     }
 
     public override void OnRemove()
@@ -168,7 +175,7 @@ namespace AGXUnityEditor.Tools
       public void CreateInitialState( string name )
       {
         if ( AttachmentPair != null ) {
-          Debug.LogError( "Attachment pair already created. Make sure to clean any previous state before initializing a new one.", AttachmentPair );
+          Debug.LogError( "Attachment pair already created. Make sure to clean any previous state before initializing a new one." );
           return;
         }
 

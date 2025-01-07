@@ -1,10 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Collide;
+using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using AGXUnity.Collide;
-using AGXUnity.Utils;
 
 namespace AGXUnityEditor.Tools
 {
@@ -44,7 +44,7 @@ namespace AGXUnityEditor.Tools
       public GameObject Target;
       public AGXUnity.Edge Edge;
     }
-    
+
     /// <summary>
     /// Callback when all data has been collected.
     /// </summary>
@@ -77,10 +77,7 @@ namespace AGXUnityEditor.Tools
       if ( m_collectedData == null ) {
         if ( GetChild<SelectGameObjectTool>() == null ) {
           SelectGameObjectTool selectGameObjectTool = new SelectGameObjectTool();
-          selectGameObjectTool.OnSelect = go =>
-          {
-            m_collectedData = new CollectedData() { Target = go };
-          };
+          selectGameObjectTool.OnSelect = go => m_collectedData = new CollectedData() { Target = go };
           AddChild( selectGameObjectTool );
         }
       }
@@ -131,8 +128,7 @@ namespace AGXUnityEditor.Tools
           DirectionTool directionTool = new DirectionTool( m_collectedData.PointOnEdge,
                                                            m_collectedData.SelectedEdge.Direction,
                                                            m_collectedData.SelectedEdge.Normal );
-          directionTool.OnSelect += ( position, rotation ) =>
-          {
+          directionTool.OnSelect += ( position, rotation ) => {
             m_collectedData.DirectionRotation = rotation;
             m_collectedData.DirectionGiven = true;
           };

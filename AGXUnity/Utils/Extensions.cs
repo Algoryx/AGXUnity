@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace AGXUnity.Utils
 {
@@ -100,9 +100,9 @@ namespace AGXUnity.Utils
     /// Initializes all ScriptComponents that are children of the specified gameObject.
     /// </summary>
     /// <param name="gameObject">The root of the tree to initialize</param>
-    public static void InitializeAll(this GameObject gameObject, bool includeInactive = false )
+    public static void InitializeAll( this GameObject gameObject, bool includeInactive = false )
     {
-      foreach ( var script in gameObject.GetComponentsInChildren<ScriptComponent>(includeInactive) )
+      foreach ( var script in gameObject.GetComponentsInChildren<ScriptComponent>( includeInactive ) )
         script.GetInitialized();
     }
 

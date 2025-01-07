@@ -1,32 +1,20 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
   /// <summary>
   /// Mass properties of a RigidBody.
   /// </summary>
-  [AddComponentMenu( "" )]
-  [HideInInspector]
-  [DisallowMultipleComponent]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#mass-properties" )]
-  public class MassProperties : ScriptComponent
+  [Serializable]
+  public class MassProperties : IPropertySynchronizable
   {
-    /// <summary>
-    /// Only caching reference to our body.
-    /// </summary>
-    private RigidBody m_rb = null;
-
     [HideInInspector]
+    [field: SerializeField]
     public RigidBody RigidBody
     {
-      get
-      {
-        if ( m_rb == null )
-          m_rb = GetComponent<RigidBody>();
-        return m_rb;
-      }
+      get; private set;
     }
 
     /// <summary>
@@ -104,7 +92,8 @@ namespace AGXUnity
     public DefaultAndUserValueVector3 InertiaOffDiagonal
     {
       get { return m_inertiaOffDiagonal; }
-      private set { 
+      private set
+      {
         m_inertiaOffDiagonal = value;
 
         // If we have UseDefault, the inertia tensor has been
@@ -140,7 +129,7 @@ namespace AGXUnity
     private Vector3 m_massCoefficients = new Vector3( 0.0f, 0.0f, 0.0f );
 
     [HideInInspector]
-    [ClampAboveZeroInInspector(true)]
+    [ClampAboveZeroInInspector( true )]
     public Vector3 MassCoefficients
     {
       get { return m_massCoefficients; }
@@ -170,8 +159,9 @@ namespace AGXUnity
       }
     }
 
-    public MassProperties()
+    public MassProperties( RigidBody parent )
     {
+      RigidBody = parent;
       // When the user clicks "Update" in the editor we receive
       // a callback to update mass of the body.
       Mass.OnForcedUpdate               += OnForcedMassInertiaUpdate;
@@ -255,23 +245,6 @@ namespace AGXUnity
       InertiaDiagonal.UseDefault = false;
       InertiaOffDiagonal.UseDefault = false;
       CenterOfMassOffset.UseDefault = false;
-    }
-
-    protected override bool Initialize()
-    {
-      if ( RigidBody == null ) {
-        Debug.LogError( "Unable to find RigidBody component.", this );
-        return false;
-      }
-
-      RigidBody.GetInitialized<RigidBody>();
-
-      return true;
-    }
-
-    protected virtual void Reset()
-    {
-      hideFlags |= HideFlags.HideInInspector;
     }
 
     /// <summary>
