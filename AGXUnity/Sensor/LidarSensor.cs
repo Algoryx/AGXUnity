@@ -1,16 +1,9 @@
-using System.Collections;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using AGXUnity.Utils;
-using System.Linq;
-using System.Collections.Generic;
-using agxSensor;
 using agx;
-using agxCollide;
-using UnityEngine.Rendering;
 using agxModel;
-using UnityEditor;
+using agxSensor;
 using AGXUnity.Rendering;
+using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
@@ -104,92 +97,73 @@ namespace AGXUnity.Sensor
 
     private RtOutputVec4f m_rtOutput = null;
 
-    private SensorEnvironment m_sensorEnvironment = null;
-
     private uint m_outputID = 0; // Must be greater than 0 to be valid
 
     private static Quaternion m_agxToUnityRotation = Quaternion.Euler(90, 0, 0);
 
     public void UpdateTransform()
     {
-      Native.setFrame(new agx.Frame(
+      Native.setFrame( new agx.Frame(
                           new AffineMatrix4x4(
-                            (m_agxToUnityRotation * transform.rotation).ToHandedQuat(),
-                            transform.position.ToHandedVec3())));
+                            ( m_agxToUnityRotation * transform.rotation ).ToHandedQuat(),
+                            transform.position.ToHandedVec3() ) ) );
     }
 
     LidarPointCloudRenderer m_pointCloudRenderer = null;
     protected override bool Initialize()
     {
-      // This is included to let new lidars be created during runtime
-      if (m_sensorEnvironment == null)
-      {
-        var m_sensorEnvironment = FindObjectOfType<SensorEnvironment>(true);
-        if (m_sensorEnvironment != null)
-        {
-          Debug.Log("Trying");
-          m_sensorEnvironment.RegisterLidarSensor(this);
-        }
-        else
-          Debug.LogWarning("No SensorEnvironment found, lidar will be inactive");
-      }
+      SensorEnvironment.Instance.GetInitialized();
+      m_outputID = SensorEnvironment.Instance.GenerateOutputID();
+
+      if ( m_outputID < 1 )
+        Debug.LogError( "Output ID can't be 0" );
+
+      var model = CreateLidarModel(LidarModelPreset);
+      if ( model == null )
+        return false;
+
+      Native = new Lidar( null, model ); // Note: Use default position in order to have the rays be created 
+      Native.getOutputHandler().setEnableRemoveRayMisses( SetEnableRemoveRayMisses );
+
+      // TODO Temp way of defining output
+      m_rtOutput = new RtOutputVec4f();
+      m_rtOutput.add( RtOutput.Field.XYZ_VEC3_F32 );
+      m_rtOutput.add( RtOutput.Field.INTENSITY_F32 );
+
+      Native.getOutputHandler().add( m_outputID, m_rtOutput );
+
+      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
+      Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
+
+      SensorEnvironment.Instance.RegisterLidarSensor( this );
 
       return true;
     }
 
     public void RegisterRenderer()
     {
-      if (m_pointCloudRenderer == null)
+      if ( m_pointCloudRenderer == null )
         m_pointCloudRenderer = GetComponent<LidarPointCloudRenderer>();
 
-      if (m_pointCloudRenderer != null && Native != null)
-        m_pointCloudRenderer.SetMaxRange(Native.getModel().getRayRange().getRange().upper());
+      if ( m_pointCloudRenderer != null && Native != null )
+        m_pointCloudRenderer.SetMaxRange( Native.getModel().getRayRange().getRange().upper() );
       else
-        Debug.LogWarning("Either this method wasn't called from the right location or the lidar isn't initialized!");
-    }
-
-    public bool InitializeLidar(SensorEnvironment sensorEnvironment, uint uniqueId)
-    {
-      m_sensorEnvironment = sensorEnvironment;
-      m_outputID = uniqueId;
-
-      if (m_outputID < 1)
-        Debug.LogError("Output ID can't be 0");
-
-      var model = CreateLidarModel(LidarModelPreset);
-      if (model == null)
-        return false;
-
-      Native = new Lidar(null, model); // Note: Use default position in order to have the rays be created 
-      UpdateTransform();
-      Native.getOutputHandler().setEnableRemoveRayMisses(SetEnableRemoveRayMisses);
-
-      // TODO Temp way of defining output
-      m_rtOutput = new RtOutputVec4f();
-      m_rtOutput.add(RtOutput.Field.XYZ_VEC3_F32);
-      m_rtOutput.add(RtOutput.Field.INTENSITY_F32);
-
-      Native.getOutputHandler().add(m_outputID, m_rtOutput);
-
-      Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
-
-      return true;
+        Debug.LogWarning( "Either this method wasn't called from the right location or the lidar isn't initialized!" );
     }
 
     protected override void OnEnable()
     {
-      Native?.setEnable(true);
+      Native?.setEnable( true );
     }
 
     protected override void OnDisable()
     {
-      Native?.setEnable(false);
+      Native?.setEnable( false );
     }
 
     protected override void OnDestroy()
     {
-      if (Simulation.HasInstance)
-      {
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostStepForward -= ProcessOutput;
       }
 
@@ -203,25 +177,23 @@ namespace AGXUnity.Sensor
 
     private void ProcessOutput()
     {
-      if (Native == null)
+      if ( Native == null )
         return;
 
-      if (m_rtOutput != null && m_rtOutput.hasUnreadData())
-      {
+      if ( m_rtOutput != null && m_rtOutput.hasUnreadData() ) {
         var view = m_rtOutput.view();
-        if (m_pointCloudRenderer != null)
-          m_pointCloudRenderer.SetData(view);
+        if ( m_pointCloudRenderer != null )
+          m_pointCloudRenderer.SetData( view );
       }
     }
 
-    private LidarModel CreateLidarModel(LidarModelPreset preset)
+    private LidarModel CreateLidarModel( LidarModelPreset preset )
     {
       LidarModel lidarModel = null;
 
-      switch (preset)
-      {
+      switch ( preset ) {
         case LidarModelPreset.LidarModelGeneric360HorizontalSweep:
-          lidarModel = new LidarModelGeneric360HorizontalSweep(10f); // TODO Default frequency for now, implement lidar settings
+          lidarModel = new LidarModelGeneric360HorizontalSweep( 10f ); // TODO Default frequency for now, implement lidar settings
           break;
 
         case LidarModelPreset.LidarModelOusterOS0:
@@ -238,7 +210,7 @@ namespace AGXUnity.Sensor
 
         case LidarModelPreset.NONE:
         default:
-          Debug.LogWarning("No valid LidarModelPreset selected!");
+          Debug.LogWarning( "No valid LidarModelPreset selected!" );
           break;
       }
 
@@ -250,7 +222,7 @@ namespace AGXUnity.Sensor
     {
       // TODO only update stuff that we want overridable with this lidar... But have to decide on that interface
 
-      
+
     }
   }
 }
