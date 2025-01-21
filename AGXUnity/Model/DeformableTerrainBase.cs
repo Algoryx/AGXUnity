@@ -140,12 +140,6 @@ namespace AGXUnity.Model
     /// </summary>
     abstract public float ElementSize { get; }
 
-    /// <summary>
-    /// Shovels associated to this terrain.
-    /// </summary>
-    [HideInInspector]
-    abstract public DeformableTerrainShovel[] Shovels { get; }
-
     protected override void OnEnable()
     {
       SetEnable( true );
@@ -182,33 +176,6 @@ namespace AGXUnity.Model
     /// Callback which should be called when the TerrainProperties of this terrain is updated
     /// </summary>
     virtual public void OnPropertiesUpdated() { }
-
-    /// <summary>
-    /// Associate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to add.</param>
-    /// <returns>True if added, false if null or already added.</returns>
-    abstract public bool Add( DeformableTerrainShovel shovel );
-
-    /// <summary>
-    /// Disassociate shovel instance to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to remove.</param>
-    /// <returns>True if removed, false if null or not associated to this terrain.</returns>
-    abstract public bool Remove( DeformableTerrainShovel shovel );
-
-    /// <summary>
-    /// Find if shovel has been associated to this terrain.
-    /// </summary>
-    /// <param name="shovel">Shovel instance to check.</param>
-    /// <returns>True if associated, otherwise false.</returns>
-    abstract public bool Contains( DeformableTerrainShovel shovel );
-
-    /// <summary>
-    /// Verifies so that all added shovels still exists. Shovels that
-    /// has been deleted are removed.
-    /// </summary>
-    abstract public void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false );
 
     /// <summary>
     /// Converts any part of the terrain that overlaps the provided shape into dynamic mass
