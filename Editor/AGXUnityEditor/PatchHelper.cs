@@ -91,7 +91,7 @@ namespace AGXUnityEditor
           HandlePrefabPath( prefabs[ i ] );
         }
 
-        var scenes = AssetDatabase.FindAssets( "t:scene" ).Select(guid => AssetDatabase.GUIDToAssetPath( guid ) ).ToArray();
+        var scenes = AssetDatabase.FindAssets( "t:scene" ).Select(guid => AssetDatabase.GUIDToAssetPath( guid ) ).Where(p => !p.StartsWith("Packages")).ToArray();
         var setup = EditorSceneManager.GetSceneManagerSetup();
         for ( int i = 0; i < scenes.Length; i++ ) {
           EditorUtility.DisplayProgressBar( "Patching objects to 5.2.0", "Patching Scenes...", (float)i / scenes.Length );
