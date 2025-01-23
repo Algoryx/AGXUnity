@@ -40,7 +40,6 @@ namespace AGXUnity.Sensor
     private readonly List<MeshFilter> m_meshFilters = new();
     private readonly Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new();
     private readonly Dictionary<UnityEngine.MeshFilter, RtShapeInstance> m_rtShapeInstances = new();
-    private readonly List<LidarSensor> m_lidars = new();
     private readonly List<agxTerrain.Terrain> m_deformableTerrains = new();
     private readonly List<agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
     private readonly List<agxWire.Wire> m_wires = new();
@@ -78,24 +77,6 @@ namespace AGXUnity.Sensor
     public uint GenerateOutputID()
     {
       return m_currentOutputID++;
-    }
-
-    public void RegisterLidarSensor( LidarSensor lidar )
-    {
-      if ( m_lidars.Contains( lidar ) )
-        return;
-
-      //if ( !lidar.InitializeLidar( this, GenerateOutputID() ) ) {
-      //  Debug.LogWarning( "Could not initialize lidar" );
-      //  return;
-      //}
-
-      if ( !Native.add( lidar.Native ) )
-        Debug.LogWarning( $"Lidar '{lidar.name}' not added to SensorEnvironment properly!" );
-      else if ( DebugLogOnAdd )
-        Debug.Log( $"Sensor Environment '{name}' added Lidar '{lidar.name}'." );
-
-      m_lidars.Add( lidar );
     }
 
     // Call this when adding MeshFilters during runtime from custom script
@@ -334,20 +315,9 @@ namespace AGXUnity.Sensor
       if ( Native == null )
         return;
 
-      UpdateLidars();
+      
       UpdateShapeInstances();
       UpdateAGXComponents();
-    }
-
-    private void UpdateLidars()
-    {
-      for ( int i = m_lidars.Count - 1; i >= 0; i-- ) {
-        LidarSensor lidar = m_lidars[i];
-        if ( lidar == null ) {
-          m_lidars.RemoveAt( i );
-          continue;
-        }
-      }
     }
 
     private void UpdateAGXComponents()
@@ -429,12 +399,6 @@ namespace AGXUnity.Sensor
 
     public void DisposeRT()
     {
-      // TODO maybe lidars should have their own delegates
-      foreach ( var lidar in m_lidars ) {
-        if ( lidar.Native != null )
-          Native.remove( lidar.Native );
-      }
-
       foreach ( var dt in m_deformableTerrains )
         Native.remove( dt );
       m_deformableTerrains.Clear();

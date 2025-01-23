@@ -113,10 +113,6 @@ namespace AGXUnity.Sensor
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
-      m_outputID = SensorEnvironment.Instance.GenerateOutputID();
-
-      if ( m_outputID < 1 )
-        Debug.LogError( "Output ID can't be 0" );
 
       var model = CreateLidarModel(LidarModelPreset);
       if ( model == null )
@@ -135,7 +131,7 @@ namespace AGXUnity.Sensor
       Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
       Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
 
-      SensorEnvironment.Instance.RegisterLidarSensor( this );
+      SensorEnvironment.Instance.Native.add( Native );
 
       return true;
     }
@@ -163,8 +159,12 @@ namespace AGXUnity.Sensor
 
     protected override void OnDestroy()
     {
+      if ( SensorEnvironment.HasInstance ) {
+        SensorEnvironment.Instance.Native?.remove( Native );
+      }
+
       if ( Simulation.HasInstance ) {
-        Simulation.Instance.StepCallbacks.PostStepForward -= ProcessOutput;
+        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateTransform;
       }
 
       m_rtOutput?.Dispose();
