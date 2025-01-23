@@ -271,7 +271,11 @@ namespace AGXUnity.Sensor
 
     private List<T> FindValidComponents<T>( bool includeInactive = false ) where T : UnityEngine.Component
     {
+#if UNITY_2022_2_OR_NEWER
+      return FindObjectsByType<T>( FindObjectsSortMode.None )
+#else
       return FindObjectsOfType<T>( includeInactive )
+#endif
           .Where( component =>
               component.gameObject.scene.IsValid() &&
               component.gameObject.transform.root.gameObject.scene == component.gameObject.scene )
@@ -301,7 +305,11 @@ namespace AGXUnity.Sensor
       }
 
       // We need to initialize the surface materials
+#if UNITY_2022_2_OR_NEWER
+      var surfaceMaterials = FindObjectsByType<LidarSurfaceMaterial>( FindObjectsSortMode.None );
+#else
       var surfaceMaterials = FindObjectsOfType<LidarSurfaceMaterial>(true);
+#endif
       foreach ( var sm in surfaceMaterials )
         sm.Init();
 
