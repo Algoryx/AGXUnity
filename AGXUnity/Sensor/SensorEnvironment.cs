@@ -220,6 +220,16 @@ namespace AGXUnity.Sensor
         RtSurfaceMaterial.set( c, rtMaterial );
         added = Native.add( c );
       }
+      else if ( scriptComponent is Track track ) {
+        var t = track.Native;
+        RtSurfaceMaterial.set( t, rtMaterial );
+        added = Native.add( t );
+      }
+      else if ( scriptComponent is HeightField hf ) {
+        var h = hf.Native;
+        RtSurfaceMaterial.set( h, rtMaterial );
+        added = Native.add( h );
+      }
       else {
         Debug.LogWarning( "AGX type not handled by this method. Hint: for colliders, register the visual mesh instead" );
       }
