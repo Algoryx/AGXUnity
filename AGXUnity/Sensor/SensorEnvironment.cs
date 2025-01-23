@@ -109,11 +109,18 @@ namespace AGXUnity.Sensor
       UnityEngine.Mesh mesh = meshFilter.sharedMesh;
       bool newMesh = false;
 
+      if ( mesh == null )
+        return;
+
       if ( !m_rtShapes.TryGetValue( mesh, out RtShape rtShape ) ) {
         rtShape = CreateShape( mesh );
         m_rtShapes[ mesh ] = rtShape;
         newMesh = true;
+        if ( rtShape == null )
+          Debug.LogWarning( $"Failed to create RtShape for mesh '{mesh.name}'" );
       }
+      if ( rtShape == null )
+        return;
 
       var lidarSurfaceMaterialContainer = meshFilter.gameObject.GetComponent<LidarSurfaceMaterialContainer>();
 
