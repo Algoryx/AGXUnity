@@ -1,8 +1,9 @@
 using agx;
 using agxModel;
 using agxSensor;
-using AGXUnity.Rendering;
 using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AGXUnity.Sensor
@@ -106,6 +107,9 @@ namespace AGXUnity.Sensor
       }
     }
 
+    [SerializeField]
+    private List<LidarOutput> m_outputs = new List<LidarOutput>();
+
     public void UpdateTransform()
     {
       Native.setFrame( new agx.Frame(
@@ -126,30 +130,14 @@ namespace AGXUnity.Sensor
       Native = new Lidar( null, model ); // Note: Use default position in order to have the rays be created 
       Native.getOutputHandler().setEnableRemoveRayMisses( SetEnableRemoveRayMisses );
 
-      // TODO Temp way of defining output
-      m_rtOutput = new RtOutputVec4f();
-      m_rtOutput.add( RtOutput.Field.XYZ_VEC3_F32 );
-      m_rtOutput.add( RtOutput.Field.INTENSITY_F32 );
-
-      Native.getOutputHandler().add( m_outputID, m_rtOutput );
+      foreach ( var output in m_outputs )
+        output.Initialize( this );
 
       Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
-      Simulation.Instance.StepCallbacks.PostStepForward += ProcessOutput;
 
       SensorEnvironment.Instance.Native.add( Native );
 
       return true;
-    }
-
-    public void RegisterRenderer()
-    {
-      if ( m_pointCloudRenderer == null )
-        m_pointCloudRenderer = GetComponent<LidarPointCloudRenderer>();
-
-      if ( m_pointCloudRenderer != null && Native != null )
-        m_pointCloudRenderer.SetMaxRange( Native.getModel().getRayRange().getRange().upper() );
-      else
-        Debug.LogWarning( "Either this method wasn't called from the right location or the lidar isn't initialized!" );
     }
 
     protected override void OnEnable()
@@ -162,6 +150,21 @@ namespace AGXUnity.Sensor
       Native?.setEnable( false );
     }
 
+    public void Add( LidarOutput output )
+    {
+      if ( !m_outputs.Contains( output ) )
+        m_outputs.Add( output );
+      if ( Native != null )
+        output.Initialize( this );
+    }
+
+    public void Remove( LidarOutput output )
+    {
+      if ( m_outputs.Contains( output ) )
+        m_outputs.Remove( output );
+      if ( Native != null )
+        Native.getOutputHandler().removeChild( output.Native );
+    }
     protected override void OnDestroy()
     {
       if ( SensorEnvironment.HasInstance ) {
@@ -172,24 +175,7 @@ namespace AGXUnity.Sensor
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateTransform;
       }
 
-      m_rtOutput?.Dispose();
-      m_rtOutput = null;
-
-      Native = null;
-
       base.OnDestroy();
-    }
-
-    private void ProcessOutput()
-    {
-      if ( Native == null )
-        return;
-
-      if ( m_rtOutput != null && m_rtOutput.hasUnreadData() ) {
-        var view = m_rtOutput.view();
-        if ( m_pointCloudRenderer != null )
-          m_pointCloudRenderer.SetData( view );
-      }
     }
 
     private LidarModel CreateLidarModel( LidarModelPreset preset )

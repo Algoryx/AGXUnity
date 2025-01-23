@@ -1,6 +1,7 @@
 using AGXUnity.Sensor;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace AGXUnity.Rendering
 {
@@ -10,16 +11,72 @@ namespace AGXUnity.Rendering
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
   public class LidarPointCloudRenderer : ScriptComponent
   {
-    public Color LowIntensityColor = new Color(0.8f, 0.5f, 0); // Orange
-    public Color HighIntensityColor = new Color(0.8f, 0.1f, 0); // Dark red
-    public float PointSize = 0.02f;
+    [SerializeField]
+    private Color m_lowIntensityColor = new Color(0.8f, 0.5f, 0); // Orange
+    public Color LowIntensityColor
+    {
+      get => m_lowIntensityColor;
+      set
+      {
+        m_lowIntensityColor = value;
+        if ( m_pointCloudMaterialInstance != null )
+          m_pointCloudMaterialInstance.SetColor( "_ColorStart", m_lowIntensityColor );
+      }
+    }
+
+    [SerializeField]
+    private Color m_highIntensityColor = new Color(0.8f, 0.1f, 0); // Dark red
+    public Color HighIntensityColor
+    {
+      get => m_highIntensityColor;
+      set
+      {
+        m_highIntensityColor = value;
+        if ( m_pointCloudMaterialInstance != null )
+          m_pointCloudMaterialInstance.SetColor( "_ColorEnd", m_highIntensityColor );
+      }
+    }
+
+    [SerializeField]
+    private float m_pointSize = 0.02f;
+    [ClampAboveZeroInInspector]
+    public float PointSize
+    {
+      get => m_pointSize;
+      set
+      {
+        m_pointSize = value;
+        if ( m_pointCloudMaterialInstance != null )
+          m_pointCloudMaterialInstance.SetFloat( "_PointSize", m_pointSize );
+      }
+    }
+
+    [SerializeField]
+    private int m_preservedDatas = 0;
+    [ClampAboveZeroInInspector( true )]
+    public int PreserveDataSets
+    {
+      get => m_preservedDatas;
+      set
+      {
+        var old = m_preservedDatas;
+        m_preservedDatas = value;
+        if ( value != old )
+          ResizeBufferPool();
+      }
+    }
 
     private Mesh m_pointMesh;
     private Material m_pointCloudMaterialInstance;
-    private ComputeBuffer m_instanceBuffer;
-    private ComputeBuffer m_argsBuffer;
-    private PointData[] m_pointArray;
+    private ComputeBuffer[] m_instanceBuffers;
+    private ComputeBuffer[] m_argsBuffers;
+    private MaterialPropertyBlock[] m_propertyBlocks;
+    private int m_currentIndex = 0;
+    private agx.Vec4f[] m_pointArray;
+    private uint[] m_indirectArgs = new uint[5];
 
+    private LidarSensor m_sensor;
+    private LidarOutput m_output;
 
     struct PointData
     {
@@ -27,15 +84,9 @@ namespace AGXUnity.Rendering
       public float intensity;
     }
 
-    private float m_maxRange = 50f;
-    public void SetMaxRange( float range ) => m_maxRange = range;
-
     protected override bool Initialize()
     {
-      if ( GetComponent<LidarSensor>() )
-        GetComponent<LidarSensor>().RegisterRenderer();
-      else
-        Debug.LogError( "Could not find LidarSensor Component!" );
+      m_sensor = GetComponent<LidarSensor>().GetInitialized();
 
       // Use quad mesh for rendering
       m_pointMesh = Resources.GetBuiltinResource<Mesh>( "Quad.fbx" );
@@ -44,91 +95,135 @@ namespace AGXUnity.Rendering
         m_pointCloudMaterialInstance = new Material( Resources.Load<Shader>( "Shaders/Built-In/PointCloudShader" ) );
         m_pointCloudMaterialInstance.SetColor( "_ColorStart", LowIntensityColor );
         m_pointCloudMaterialInstance.SetColor( "_ColorEnd", HighIntensityColor );
+        m_pointCloudMaterialInstance.SetFloat( "_PointSize", PointSize );
       }
       catch {
         Debug.LogError( "Couldn't load point cloud material!" );
         return false;
       }
 
+      m_indirectArgs[ 0 ] = (uint)m_pointMesh.GetIndexCount( 0 ); // Index count per instance
+      m_indirectArgs[ 1 ] = (uint)0; // Number of instances
+      m_indirectArgs[ 2 ] = (uint)m_pointMesh.GetIndexStart( 0 ); // Start index location
+      m_indirectArgs[ 3 ] = (uint)m_pointMesh.GetBaseVertex( 0 ); // Base vertex location
+      m_indirectArgs[ 4 ] = 0; // Padding
+
+      ResizeBufferPool();
+
+      m_output = new LidarOutput();
+      m_output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      m_output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+
+      m_sensor.Add( m_output );
+
+      Simulation.Instance.StepCallbacks.PostStepForward += UpdatePoints;
+
       return true;
     }
 
-    private void InitializeBuffers( int count )
+    private void ResizeBufferPool()
     {
-      if ( m_instanceBuffer != null )
-        m_instanceBuffer.Release();
+      var oldInstances = m_instanceBuffers;
+      var oldArgs = m_argsBuffers;
+      var oldMPBs = m_propertyBlocks;
 
-      m_instanceBuffer = new ComputeBuffer( count, sizeof( float ) * 4, ComputeBufferType.Structured );
-      PointData[] points = new PointData[count];
+      m_instanceBuffers = new ComputeBuffer[ PreserveDataSets + 1 ];
+      m_argsBuffers = new ComputeBuffer[ PreserveDataSets + 1 ];
+      m_propertyBlocks = new MaterialPropertyBlock[ PreserveDataSets + 1 ];
 
-      m_instanceBuffer.SetData( points );
+      int oldCount = oldInstances?.Length ?? 0;
+      int newCount = PreserveDataSets + 1;
 
-      uint[] args = new uint[5];
-      args[ 0 ] = (uint)m_pointMesh.GetIndexCount( 0 ); // Index count per instance
-      args[ 1 ] = (uint)count; // Number of instances
-      args[ 2 ] = (uint)m_pointMesh.GetIndexStart( 0 ); // Start index location
-      args[ 3 ] = (uint)m_pointMesh.GetBaseVertex( 0 ); // Base vertex location
-      args[ 4 ] = 0; // Padding
+      if ( oldInstances != null ) {
+        int i1 = m_currentIndex + oldCount;
 
-      if ( m_argsBuffer != null )
-        m_argsBuffer.Release();
-      m_argsBuffer = new ComputeBuffer( 1, args.Length * sizeof( uint ), ComputeBufferType.IndirectArguments );
-      m_argsBuffer.SetData( args );
+        for ( int i2 = 0; i2 < Mathf.Min( oldCount, newCount ); i2++, i1-- ) {
+          m_instanceBuffers[ i2 ] = oldInstances[ i1 % oldCount ];
+          m_argsBuffers[ i2 ] = oldArgs[ i1 % oldCount ];
+          m_propertyBlocks[ i2 ] = oldMPBs[ i1 % oldCount ];
+        }
+      }
 
-      m_pointCloudMaterialInstance.SetBuffer( "pointBuffer", m_instanceBuffer );
-      m_pointCloudMaterialInstance.SetFloat( "_PointSize", PointSize );
+      m_indirectArgs[ 1 ] = 0;
+      for ( int i = oldCount; i < newCount; i++ ) {
+        m_argsBuffers[ i ] = new ComputeBuffer( 1, m_indirectArgs.Length * sizeof( uint ), ComputeBufferType.IndirectArguments );
+        m_argsBuffers[ i ].SetData( m_indirectArgs );
+        m_propertyBlocks[ i ] = new MaterialPropertyBlock();
+      }
+      m_currentIndex = 0;
     }
 
-    public void SetData( agxSensor.RtVec4fView lidarPoints )
+    private ComputeBuffer EnsureBuffer( ComputeBuffer current, int count )
     {
-      int count = (int)lidarPoints.size();
-
-      if ( count == 0 )
-        return;
-
-      if ( m_pointArray == null || count > m_pointArray.Count() ) {
-        InitializeBuffers( count );
-        m_pointArray = new PointData[ count ];
+      if ( current != null ) {
+        if ( current.count > count )
+          return current;
+        current.Release();
       }
 
-      for ( int i = 0; i < count; i++ ) {
-        var point = lidarPoints[i];
-        m_pointArray[ i ].position = new Vector3( point.x, point.y, point.z );
-        m_pointArray[ i ].intensity = point.w;
-      }
-
-      for ( int i = count; i < m_pointArray.Count(); i++ ) {
-        m_pointArray[ i ].position = Vector3.zero;
-        m_pointArray[ i ].intensity = 0.0f;
-      }
-
-      m_instanceBuffer.SetData( m_pointArray );
+      return new ComputeBuffer( count, sizeof( float ) * 4, ComputeBufferType.Structured );
     }
 
-    protected void LateUpdate()
+    public void UpdatePoints()
+    {
+      Profiler.BeginSample( "UpdatePoints" );
+
+      m_pointArray = m_output.Native.View<agx.Vec4f>( out uint count, m_pointArray );
+
+      //foreach ( var p in m_pointArray )
+      //  Debug.Log( p.w );
+
+      m_instanceBuffers[ m_currentIndex ] = EnsureBuffer( m_instanceBuffers[ m_currentIndex ], Mathf.Max( (int)count, 1 ) );
+
+      m_indirectArgs[ 1 ] = count;
+
+      m_instanceBuffers[ m_currentIndex ].SetData( m_pointArray, 0, 0, (int)count );
+      m_argsBuffers[ m_currentIndex ].SetData( m_indirectArgs );
+
+      var mat = transform.localToWorldMatrix;
+      m_propertyBlocks[ m_currentIndex ].SetMatrix( "_ObjectToWorld", mat );
+
+      m_currentIndex = ( m_currentIndex + 1 ) % ( PreserveDataSets + 1 );
+      Profiler.EndSample();
+    }
+
+    protected void Update()
     {
       if ( m_pointArray == null ||  m_pointArray.Count() == 0 )
         return;
 
-      m_pointCloudMaterialInstance.SetFloat( "_PointSize", PointSize );
-      m_pointCloudMaterialInstance.SetMatrix( "_ObjectToWorld", Matrix4x4.Rotate( transform.rotation ) );
-
-      Graphics.DrawMeshInstancedIndirect(
-        m_pointMesh,
-        0,
-        m_pointCloudMaterialInstance,
-        new Bounds( transform.position, Vector3.one * m_maxRange * 2f ),
-        m_argsBuffer
-      );
+      for ( int i = 0; i < PreserveDataSets + 1; i++ ) {
+        if ( m_instanceBuffers[ i ] == null )
+          continue;
+        var mpb = m_propertyBlocks[i];
+        mpb.SetBuffer( "pointBuffer", m_instanceBuffers[ i ] );
+        Graphics.DrawMeshInstancedIndirect(
+          m_pointMesh,
+          0,
+          m_pointCloudMaterialInstance,
+          new Bounds( transform.position, Vector3.one * Mathf.Min( m_sensor.LidarRange.Max * 2f, float.MaxValue ) ),
+          m_argsBuffers[ i ],
+          0,
+          mpb,
+          UnityEngine.Rendering.ShadowCastingMode.Off,
+          false
+        );
+      }
     }
 
     protected override void OnDestroy()
     {
-      base.OnDestroy();
+      if ( Simulation.HasInstance )
+        Simulation.Instance.StepCallbacks.PostStepForward -= UpdatePoints;
 
-      if ( m_instanceBuffer != null ) m_instanceBuffer.Release();
-      if ( m_argsBuffer != null ) m_argsBuffer.Release();
+      if ( m_instanceBuffers != null )
+        foreach ( var ib in m_instanceBuffers )
+          ib?.Release();
+      if ( m_argsBuffers != null )
+        foreach ( var ab in m_argsBuffers )
+          ab?.Release();
       if ( m_pointCloudMaterialInstance != null ) Destroy( m_pointCloudMaterialInstance );
+      base.OnDestroy();
     }
   }
 }
