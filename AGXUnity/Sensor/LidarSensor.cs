@@ -93,13 +93,18 @@ namespace AGXUnity.Sensor
     /**
 	  * Discard rays reaching max range or not.
 	  */
-    public bool SetEnableRemoveRayMisses = true;
+    private bool m_setEnableRemoveRayMisses = true;
 
-    private RtOutputVec4f m_rtOutput = null;
-
-    private uint m_outputID = 0; // Must be greater than 0 to be valid
-
-    private static Quaternion m_agxToUnityRotation = Quaternion.Euler(90, 0, 0);
+    public bool SetEnableRemoveRayMisses
+    {
+      get => m_setEnableRemoveRayMisses;
+      set
+      {
+        m_setEnableRemoveRayMisses = value;
+        if ( Native != null )
+          Native.getOutputHandler().setEnableRemoveRayMisses( value );
+      }
+    }
 
     public void UpdateTransform()
     {
