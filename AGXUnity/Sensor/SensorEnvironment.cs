@@ -239,8 +239,8 @@ namespace AGXUnity.Sensor
 
     protected override bool Initialize()
     {
-      //if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXSensor, this ) )
-      //  return false;
+      if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXSensor, this ) )
+        return false;
 
       var simulation = GetSimulation();
       simulation.setPreIntegratePositions( true ); // From Python, check if this is needed
