@@ -8,6 +8,26 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
+  public interface IModelData { }
+
+  [Serializable]
+  public class OusterData : IModelData
+  {
+    public LidarModelOusterOS.ChannelCount ChannelCount = LidarModelOusterOS.ChannelCount.ch_32;
+    public LidarModelOusterOS.BeamSpacing BeamSpacing = LidarModelOusterOS.BeamSpacing.Uniform;
+    public LidarModelOusterOS.LidarMode LidarMode = LidarModelOusterOS.LidarMode.Mode_512x20;
+  }
+
+  [Serializable]
+  public class GenericSweepData : IModelData
+  {
+    public float Frequency = 10.0f;
+    public float HorizontalFoV = 360.0f;
+    public float VerticalFoV = 35.0f;
+    public float HorizontalResolution = 0.5f;
+    public float VerticalResolution = 0.5f;
+  }
+
   public enum LidarModelPreset
   {
     NONE,
@@ -34,7 +54,29 @@ namespace AGXUnity.Sensor
     * The Model, or preset, of this Lidar.
     * Changing this will assign Model specific properties to this Lidar.
     */
-    public LidarModelPreset LidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
+    [SerializeField]
+    private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
+
+    public LidarModelPreset LidarModelPreset
+    {
+      get => m_lidarModelPreset;
+      set
+      {
+        m_lidarModelPreset = value;
+        ModelData = value switch
+        {
+          LidarModelPreset.LidarModelOusterOS0 => new OusterData(),
+          LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
+          LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
+          LidarModelPreset.LidarModelGeneric360HorizontalSweep => new GenericSweepData(),
+          LidarModelPreset.NONE => null,
+        };
+      }
+    }
+
+
+    [field: SerializeReference]
+    public IModelData ModelData { get; private set; } = new OusterData();
 
     /**
     * The minimum and maximum range of the Lidar Sensor [m].
@@ -183,19 +225,27 @@ namespace AGXUnity.Sensor
 
       switch ( preset ) {
         case LidarModelPreset.LidarModelGeneric360HorizontalSweep:
-          lidarModel = new LidarModelGeneric360HorizontalSweep( 10f ); // TODO Default frequency for now, implement lidar settings
+          GenericSweepData sweepData = ModelData as GenericSweepData;
+          lidarModel = new LidarModelHorizontalSweep(
+            Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV ),
+            Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution ),
+            sweepData.Frequency
+          ); // TODO Default frequency for now, implement lidar settings
           break;
 
         case LidarModelPreset.LidarModelOusterOS0:
-          lidarModel = new LidarModelOusterOS0();
+          OusterData ousterData = ModelData as OusterData;
+          lidarModel = new LidarModelOusterOS0( ousterData.ChannelCount, ousterData.BeamSpacing, ousterData.LidarMode );
           break;
 
         case LidarModelPreset.LidarModelOusterOS1:
-          lidarModel = new LidarModelOusterOS1();
+          ousterData = ModelData as OusterData;
+          lidarModel = new LidarModelOusterOS1( ousterData.ChannelCount, ousterData.BeamSpacing, ousterData.LidarMode );
           break;
 
         case LidarModelPreset.LidarModelOusterOS2:
-          lidarModel = new LidarModelOusterOS2();
+          ousterData = ModelData as OusterData;
+          lidarModel = new LidarModelOusterOS2( ousterData.ChannelCount, ousterData.BeamSpacing, ousterData.LidarMode );
           break;
 
         case LidarModelPreset.NONE:

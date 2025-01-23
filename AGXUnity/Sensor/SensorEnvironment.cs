@@ -294,20 +294,21 @@ namespace AGXUnity.Sensor
 
       FindValidComponents<MeshFilter>( true ).ForEach( RegisterMeshfilter );
 
-      FindValidComponents<DeformableTerrain>( true ).ForEach( c => m_agxComponents.Add( c, c.gameObject.activeInHierarchy ) );
-      FindValidComponents<DeformableTerrainPager>( true ).ForEach( c => m_agxComponents.Add( c, c.gameObject.activeInHierarchy ) );
-      FindValidComponents<Wire>( true ).ForEach( c => m_agxComponents.Add( c, c.gameObject.activeInHierarchy ) );
-      FindValidComponents<Cable>( true ).ForEach( c => m_agxComponents.Add( c, c.gameObject.activeInHierarchy ) );
+      FindValidComponents<DeformableTerrain>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
+      FindValidComponents<HeightField>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
+      FindValidComponents<DeformableTerrainPager>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
+      FindValidComponents<Wire>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
+      FindValidComponents<Cable>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
+      FindValidComponents<Track>( true ).ForEach( c => m_agxComponents.TryAdd( c, false ) );
 
-      foreach ( var entry in m_agxComponents ) {
-        if ( entry.Value )
-          AddAGXModel( entry.Key.GetInitialized() );
-      }
+      UpdateEnvironment()
+
+      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateEnvironment;
 
       return true;
     }
 
-    public void FixedUpdate()
+    public void UpdateEnvironment()
     {
       if ( Native == null )
         return;
