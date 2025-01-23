@@ -1,5 +1,6 @@
 using agx;
 using agxSensor;
+using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using System.Collections.Generic;
@@ -390,6 +391,7 @@ namespace AGXUnity.Sensor
 
         if ( meshFilter == null ) {
           m_meshFilters.RemoveAt( i );
+          RemoveInstance( meshFilter );
           continue;
         }
 
@@ -450,16 +452,16 @@ namespace AGXUnity.Sensor
       m_cables.Clear();
 
       foreach ( var rtShapeInstance in m_rtShapeInstances ) {
-        rtShapeInstance.Value.Dispose();
+        rtShapeInstance.Value?.Dispose();
       }
       m_rtShapeInstances.Clear();
       foreach ( var rtShape in m_rtShapes ) {
-        rtShape.Value.Dispose();
+        rtShape.Value?.Dispose();
       }
       m_rtShapes.Clear();
       m_meshFilters.Clear();
 
-      m_rtDefaultSurfaceMaterial.Dispose();
+      m_rtDefaultSurfaceMaterial?.Dispose();
       m_rtDefaultSurfaceMaterial = null;
 
       Native = null;
