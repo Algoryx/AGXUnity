@@ -113,6 +113,12 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<LidarSurfaceMaterialGgxAndOrenNayar>( "lidar ggx oren nayar material" );
     }
 
+    [MenuItem( "Assets/AGXUnity/Sensor Ambient Material", priority = 740 )]
+    public static Object CreateSensorAmbientMaterial()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<AmbientMaterial>( "Sensor Ambient Material" );
+    }
+
 
     [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]
     public static bool IsUrdfSelected()

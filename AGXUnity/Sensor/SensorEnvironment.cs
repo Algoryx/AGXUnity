@@ -50,7 +50,23 @@ namespace AGXUnity.Sensor
      * The Ambient material used by the Sensor Environment.
      * This is used to simulate atmospheric effects on the Lidar laser rays, such as rain or fog.
      */
-    //	public LidarAmbientMaterial AmbientMaterial = null;
+    [SerializeField]
+    private AmbientMaterial m_ambientMaterial = null;
+
+    public AmbientMaterial AmbientMaterial
+    {
+      get => m_ambientMaterial;
+      set
+      {
+        m_ambientMaterial = value;
+        if ( Native != null ) {
+          var nativeMat = m_ambientMaterial?.GetInitialized<AmbientMaterial>()?.Native.ToMaterialInstance();
+          if ( nativeMat == null )
+            nativeMat = new RtMaterialInstance(); // Create a null instance to set unset the ambient mat
+          Native.getScene().setMaterial( nativeMat );
+        }
+      }
+    }
 
     //TODO temporary solution, fix materials
     private RtSurfaceMaterial m_rtDefaultSurfaceMaterial;
@@ -251,13 +267,13 @@ namespace AGXUnity.Sensor
       // Default material
       m_rtDefaultSurfaceMaterial = RtLambertianOpaqueMaterial.create();
 
-      // Check ray trace device compatibility // TODO activate on setting
-      //Debug.Log("isRaytraceSupported: " + RtConfig.isRaytraceSupported());
-      //Debug.Log("verifyRaytraceSupported: " + RtConfig.verifyRaytraceSupported());
-      //Debug.Log("listRaytraceDevices:" + RtConfig.listRaytraceDevices().Count());
-      //if (RtConfig.getRaytraceDevice() != simulation.RayTraceDeviceIndex) // TODO From Unreal
-
       Native = agxSensor.Environment.getOrCreate( simulation );
+
+      if ( AmbientMaterial != null ) {
+        var ambMat = AmbientMaterial.GetInitialized<AmbientMaterial>().Native;
+
+        Native.getScene().setMaterial( ambMat.ToMaterialInstance() );
+      }
 
       // We need to initialize the surface materials
       var surfaceMaterials = FindObjectsOfType<LidarSurfaceMaterial>(true);
