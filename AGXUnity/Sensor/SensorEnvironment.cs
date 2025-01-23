@@ -141,19 +141,27 @@ namespace AGXUnity.Sensor
 
       var meshTriangles = mesh.triangles;
       var meshVertices = mesh.vertices;
+      var meshNormals = mesh.normals;
 
       int tris = meshTriangles.Length;
       int verts = meshVertices.Length;
+      int norms = meshNormals.Length;
 
       UInt32Vector indices = new UInt32Vector(tris);
       Vec3Vector vertices = new Vec3Vector(verts);
+      Vec3Vector normals = new Vec3Vector(norms);
 
-      for ( int i = 0; i < tris; i++ )
+      for ( int i = 0; i < tris; i+= 3 ) {
         indices.Add( (uint)meshTriangles[ i ] );
+        indices.Add( (uint)meshTriangles[ i +2 ] );
+        indices.Add( (uint)meshTriangles[ i +1 ] );
+      }
       for ( int i = 0; i < verts; i++ )
         vertices.Add( meshVertices[ i ].ToVec3() );
+      for ( int i = 0; i < norms; i++ )
+        normals.Add( meshNormals[ i ].ToVec3() );
 
-      var rtShape = RtShape.create(vertices, indices);
+      var rtShape = RtShape.create(vertices, indices, normals);
 
       Profiler.EndSample();
 
