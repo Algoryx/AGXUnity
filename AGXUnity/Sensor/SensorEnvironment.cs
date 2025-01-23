@@ -432,7 +432,7 @@ namespace AGXUnity.Sensor
     protected override void OnDestroy()
     {
       if ( Simulation.HasInstance )
-        Simulation.Instance.UnRegisterDisposeCallback( DisposeRT );
+        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateEnvironment;
 
       base.OnDestroy();
     }
