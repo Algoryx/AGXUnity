@@ -23,7 +23,7 @@ namespace AGXUnity.Sensor
       CreateContainer( gameObject );
 
       if ( LidarSurfaceMaterialDefinition != null )
-        LidarSurfaceMaterialDefinition.Init();
+        LidarSurfaceMaterialDefinition.GetInitialized<LidarSurfaceMaterialDefinition>();
     }
 
     protected override bool Initialize()

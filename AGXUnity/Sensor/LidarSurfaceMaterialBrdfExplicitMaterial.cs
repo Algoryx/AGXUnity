@@ -1,9 +1,5 @@
-using System;
-using UnityEngine;
-using System.Collections.Generic;
-using AGXUnity;
 using agxSensor;
-using agx;
+using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
@@ -27,13 +23,8 @@ namespace AGXUnity.Sensor
 
     protected override bool Initialize()
     {
+      m_material = RtBrdfExplicitMaterial.create();
       return true;
     }
-
-    public override void Init()
-    {
-      m_material = RtBrdfExplicitMaterial.create();
-    }
-
   }
 }
