@@ -228,7 +228,7 @@ namespace AGXUnityEditor
     {
       if ( oldMP != null ) {
         var rb = oldMP.RigidBody;
-        if ( !ShouldPatch ) return;
+        if ( rb == null || !ShouldPatch ) return;
         CopyDefaultAndUserValue( oldMP.Mass, rb.MassProperties.Mass );
         CopyDefaultAndUserValue( oldMP.InertiaDiagonal, rb.MassProperties.InertiaDiagonal );
         CopyDefaultAndUserValue( oldMP.InertiaOffDiagonal, rb.MassProperties.InertiaOffDiagonal );
