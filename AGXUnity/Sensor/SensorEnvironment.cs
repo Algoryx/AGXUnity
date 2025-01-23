@@ -269,11 +269,8 @@ namespace AGXUnity.Sensor
       if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXSensor, this ) )
         return false;
 
-      var simulation = GetSimulation();
+      var simulation = Simulation.Instance.GetInitialized().Native;
       simulation.setPreIntegratePositions( true ); // From Python, check if this is needed
-
-      // In order to properly dispose of Raytrace stuff (before cleanup()) we need to register this callback
-      Simulation.Instance.RegisterDisposeCallback( DisposeRT );
 
       // Default material
       m_rtDefaultSurfaceMaterial = RtLambertianOpaqueMaterial.create();
