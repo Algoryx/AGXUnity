@@ -1,23 +1,15 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using AGXUnity;
-using UnityEditor;
-using AGXUnity.Sensor;
-using agxWire;
 using AGXUnity.Utils;
-using System;
+using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
   public class LidarSurfaceMaterial : ScriptComponent
   {
     public bool PropagateToChildrenRecusively = false;
-    public bool PropagateToSiblings = false;
 
     public LidarSurfaceMaterialDefinition LidarSurfaceMaterialDefinition = null;
 
-    private void CreateContainer(GameObject gameObject)
+    private void CreateContainer( GameObject gameObject )
     {
       var component = gameObject.GetOrCreateComponent<LidarSurfaceMaterialContainer>();
       component.LidarSurfaceMaterialDefinition = this.LidarSurfaceMaterialDefinition;
@@ -25,18 +17,12 @@ namespace AGXUnity.Sensor
 
     public void Init()
     {
-      if (PropagateToChildrenRecusively)
-        gameObject.TraverseChildren(CreateContainer);
+      if ( PropagateToChildrenRecusively )
+        gameObject.TraverseChildren( CreateContainer );
 
-      if (PropagateToSiblings && transform.parent != null)
-      {
-        foreach (Transform sibling in transform.parent)
-          CreateContainer(sibling.gameObject);
-      }
-      else
-        CreateContainer(gameObject);
+      CreateContainer( gameObject );
 
-      if (LidarSurfaceMaterialDefinition != null)
+      if ( LidarSurfaceMaterialDefinition != null )
         LidarSurfaceMaterialDefinition.Init();
     }
 
