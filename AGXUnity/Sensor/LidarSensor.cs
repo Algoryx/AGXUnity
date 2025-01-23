@@ -114,11 +114,10 @@ namespace AGXUnity.Sensor
     {
       Native.setFrame( new agx.Frame(
                           new AffineMatrix4x4(
-                            ( m_agxToUnityRotation * transform.rotation ).ToHandedQuat(),
+                            ( transform.rotation ).ToHandedQuat(),
                             transform.position.ToHandedVec3() ) ) );
     }
 
-    LidarPointCloudRenderer m_pointCloudRenderer = null;
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
