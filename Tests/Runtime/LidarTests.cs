@@ -207,7 +207,7 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 0.2f );
 
       output.Native.View<DataValid>( out uint count );
-      Assert.Greater( count, 0 );
+      Assert.NotZero( count );
 
       SensorEnvironment.Instance.AmbientMaterial = null;
 
@@ -245,7 +245,7 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 0.2f );
 
       output.Native.View<DataValid>( out uint count );
-      Assert.Greater( count, 0 );
+      Assert.NotZero( count );
 
       lidarComp.SetEnableRemoveRayMisses = true;
 
@@ -336,9 +336,265 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 0.2f );
 
       output.Native.View<DataValid>( out uint count );
-      Assert.Greater( count, 0 );
+      Assert.NotZero( count );
 
       GameObject.Destroy( box );
+    }
+
+    [UnityTest]
+    public IEnumerator TestAddMeshNonAGXAfterInitialization()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+      box.transform.localPosition = new Vector3( 0, 5, -3 );
+      SensorEnvironment.Instance.RegisterCreatedObject( box );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( box );
+    }
+
+    [UnityTest]
+    public IEnumerator TestRemoveMesh()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( box );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out count );
+      Assert.Zero( count );
+    }
+
+
+
+    [UnityTest]
+    public IEnumerator TestDisableEnableMesh()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      box.SetActive( false );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out count );
+      Assert.Zero( count );
+
+      box.SetActive( true );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+      output.Native.View<DataValid>( out count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( box );
+    }
+
+    [UnityTest]
+    public IEnumerator TestAddCableAfterInitialization()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var cable = new GameObject();
+      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      var cableComp = cable.AddComponent<Cable>();
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
+      cable.AddComponent<CableRenderer>();
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( cable );
+    }
+
+    [UnityTest]
+    public IEnumerator TestRemoveCable()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var cable = new GameObject();
+      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      var cableComp = cable.AddComponent<Cable>();
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
+      cable.AddComponent<CableRenderer>();
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( cable );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out count );
+      Assert.Zero( count );
+    }
+
+
+
+    [UnityTest]
+    public IEnumerator TestDisableEnableCable()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position += Vector3.up * 5;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      var modelData = ( lidarComp.ModelData as GenericSweepData );
+      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
+      modelData.HorizontalResolution = 2;
+      modelData.VerticalResolution = 2;
+
+      var output = new LidarOutput();
+      output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
+      output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarRender.GetInitialized();
+
+      var cable = new GameObject();
+      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      var cableComp = cable.AddComponent<Cable>();
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
+      cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
+      cable.AddComponent<CableRenderer>();
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out uint count );
+      Assert.NotZero( count );
+
+      cable.SetActive( false );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out count );
+      Assert.Zero( count );
+
+      cable.SetActive( true );
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
+
+      output.Native.View<DataValid>( out count );
+      Assert.NotZero( count );
+
+      GameObject.Destroy( cable );
     }
   }
 }
