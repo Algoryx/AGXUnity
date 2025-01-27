@@ -1,4 +1,3 @@
-using AGXUnity.Utils;
 using UnityEngine;
 
 namespace AGXUnity.Sensor
@@ -9,31 +8,26 @@ namespace AGXUnity.Sensor
 
     public LidarSurfaceMaterialDefinition LidarSurfaceMaterialDefinition = null;
 
-    private void CreateContainer( GameObject gameObject )
-    {
-      var component = gameObject.GetOrCreateComponent<LidarSurfaceMaterialContainer>();
-      component.LidarSurfaceMaterialDefinition = this.LidarSurfaceMaterialDefinition;
-    }
-
-    public void Init()
-    {
-      if ( PropagateToChildrenRecusively )
-        gameObject.TraverseChildren( CreateContainer );
-
-      CreateContainer( gameObject );
-
-      if ( LidarSurfaceMaterialDefinition != null )
-        LidarSurfaceMaterialDefinition.GetInitialized<LidarSurfaceMaterialDefinition>();
-    }
-
     protected override bool Initialize()
     {
+      if ( LidarSurfaceMaterialDefinition != null )
+        LidarSurfaceMaterialDefinition.GetInitialized<LidarSurfaceMaterialDefinition>();
       return true;
     }
-  }
 
-  internal class LidarSurfaceMaterialContainer : MonoBehaviour
-  {
-    public LidarSurfaceMaterialDefinition LidarSurfaceMaterialDefinition = null;
+    public static LidarSurfaceMaterialDefinition FindClosestMaterial( GameObject target )
+    {
+      var current = target;
+
+      while ( current != null ) {
+        if ( current.TryGetComponent<LidarSurfaceMaterial>( out var mat ) ) {
+          mat.GetInitialized<LidarSurfaceMaterial>();
+          if ( current == target || mat.PropagateToChildrenRecusively )
+            return mat.LidarSurfaceMaterialDefinition;
+        }
+        current = current.transform?.parent?.gameObject;
+      }
+      return null;
+    }
   }
 }
