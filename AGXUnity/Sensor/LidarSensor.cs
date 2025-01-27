@@ -69,7 +69,7 @@ namespace AGXUnity.Sensor
           LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
           LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
           LidarModelPreset.LidarModelGeneric360HorizontalSweep => new GenericSweepData(),
-          LidarModelPreset.NONE => null,
+          _ => null,
         };
       }
     }
