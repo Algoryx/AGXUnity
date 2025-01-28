@@ -2,9 +2,7 @@
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
-using GUI = AGXUnity.Utils.GUI;
 
 namespace AGXUnity.Model
 {
@@ -42,37 +40,6 @@ namespace AGXUnity.Model
     [HideInInspector]
     public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution( TerrainData ); } }
 
-    [SerializeField]
-    private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
-
-    [SerializeField]
-    private bool m_tempDisplayShovelForces = false;
-
-    [HideInInspector]
-    public bool TempDisplayShovelForces
-    {
-      get { return m_tempDisplayShovelForces; }
-      set
-      {
-        m_tempDisplayShovelForces = value;
-
-        if ( !Application.isPlaying )
-          return;
-
-        if ( m_tempDisplayShovelForces &&
-             Shovels.Length > 0 &&
-             GUIWindowHandler.Instance.GetWindowData( ShowForces ) == null ) {
-          var windowSize = new Vector2( 750, 125 );
-          GUIWindowHandler.Instance.Show( ShowForces,
-                                          windowSize,
-                                          new Vector2( Screen.width - windowSize.x - 20, 20 ),
-                                          "Shovel forces" );
-        }
-        else if ( !m_tempDisplayShovelForces && GUIWindowHandler.HasInstance )
-          GUIWindowHandler.Instance.Close( ShowForces );
-      }
-    }
-
     /// <summary>
     /// Resets heights of the Unity terrain and recreate native instance.
     /// </summary>
@@ -104,8 +71,6 @@ namespace AGXUnity.Model
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
-      RemoveInvalidShovels( true, true );
-
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
 
       InitializeNative();
@@ -135,9 +100,6 @@ namespace AGXUnity.Model
       }
       Native = null;
 
-      if ( GUIWindowHandler.HasInstance )
-        GUIWindowHandler.Instance.Close( ShowForces );
-
       base.OnDestroy();
     }
 
@@ -155,10 +117,6 @@ namespace AGXUnity.Model
                                        0.0f );
 
       Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
-
-
-      foreach ( var shovel in Shovels )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
 
       GetSimulation().add( Native );
     }
@@ -209,50 +167,6 @@ namespace AGXUnity.Model
       TerrainData.SyncHeightmap();
     }
 
-    private GUIStyle m_textLabelStyle = null;
-    private void ShowForces( EventType eventType )
-    {
-      if ( m_textLabelStyle == null ) {
-        m_textLabelStyle = new GUIStyle( GUI.Skin.label );
-        m_textLabelStyle.alignment = TextAnchor.MiddleLeft;
-
-        var fonts = Font.GetOSInstalledFontNames();
-        foreach ( var font in fonts ) {
-          if ( font == "Consolas" ) {
-            m_textLabelStyle.font = Font.CreateDynamicFontFromOSFont( font, 24 );
-            break;
-          }
-        }
-      }
-
-      var textColor = Color.Lerp( Color.black, Color.white, 1.0f );
-      var valueColor = Color.Lerp( Color.green, Color.white, 0.45f );
-      Func<string, agx.Vec3, GUIContent> Vec3Content = ( name, v ) =>
-      {
-        return GUI.MakeLabel( string.Format( "{0} [{1}, {2}, {3}] kN",
-                                             GUI.AddColorTag( name, textColor ),
-                                             GUI.AddColorTag( v.x.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
-                                             GUI.AddColorTag( v.y.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ),
-                                             GUI.AddColorTag( v.z.ToString( "0.00" ).PadLeft( 7, ' ' ), valueColor ) ) );
-      };
-
-      var shovel = m_shovels[ 0 ].Native;
-      var penetrationForce = new agx.Vec3();
-      var penetrationTorque = new agx.Vec3();
-      Native.getPenetrationForce( shovel, ref penetrationForce, ref penetrationTorque );
-      var separationForce = -Native.getSeparationContactForce( shovel );
-      var deformerForce = -Native.getDeformationContactForce( shovel );
-      var contactForce = -Native.getContactForce( shovel );
-
-      GUILayout.Label( Vec3Content( "Penetration force:", 1.0E-3 * penetrationForce ), m_textLabelStyle );
-      GUILayout.Space( 4 );
-      GUILayout.Label( Vec3Content( "Separation force: ", 1.0E-3 * separationForce ), m_textLabelStyle );
-      GUILayout.Space( 4 );
-      GUILayout.Label( Vec3Content( "Deformer force:   ", 1.0E-3 * deformerForce ), m_textLabelStyle );
-      GUILayout.Space( 4 );
-      GUILayout.Label( Vec3Content( "Contact force:    ", 1.0E-3 * contactForce ), m_textLabelStyle );
-    }
-
     private Terrain m_terrain = null;
     private float[,] m_initialHeights = null;
 
@@ -260,57 +174,11 @@ namespace AGXUnity.Model
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
     public override float ElementSize => TerrainData.size.x / ( TerrainDataResolution - 1 );
-    public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
 
-    public override bool Add( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || m_shovels.Contains( shovel ) )
-        return false;
-
-      m_shovels.Add( shovel );
-
-      // Initialize shovel if we're initialized.
-      if ( Native != null )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
-
-      return true;
-    }
-
-    public override bool Remove( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || !m_shovels.Contains( shovel ) )
-        return false;
-
-      if ( Native != null )
-        Native.remove( shovel.Native );
-
-      return m_shovels.Remove( shovel );
-    }
-
-    public override bool Contains( DeformableTerrainShovel shovel )
-    {
-      return shovel != null && m_shovels.Contains( shovel );
-    }
-
-    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
-    {
-      m_shovels.RemoveAll( shovel => shovel == null );
-      if ( removeDisabled ) {
-        int removed = m_shovels.RemoveAll( shovel => !shovel.isActiveAndEnabled );
-        if ( removed > 0 ) {
-          if ( warn )
-            Debug.LogWarning( $"Removed {removed} disabled shovels from terrain {gameObject.name}." +
-                              " Disabled shovels should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
-                              " To fix this warning, please remove any disabled shovels from the terrain." );
-          else
-            Debug.Log( $"Removed {removed} disabled shovels from terrain {gameObject.name}." );
-        }
-      }
-    }
     public override void ConvertToDynamicMassInShape( Shape failureVolume )
     {
       if ( !IsNativeNull() )
