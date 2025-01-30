@@ -1,5 +1,4 @@
 using agxSensor;
-using System;
 using UnityEngine;
 
 namespace AGXUnity.Sensor
@@ -12,7 +11,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_refractiveIndexReal = 1.4517f;
 
-    [Range( 0, 5 )]
+    [ClampAboveZeroInInspector( true )]
     [Tooltip( "The real part of the material top-layer refractive index" )]
     public float RefractiveIndexReal
     {
@@ -28,7 +27,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_refractiveIndexImaginary = 0;
 
-    [Range( 0, 1 )]
+    [FloatSliderInInspector( 0, 1 )]
     [Tooltip( "The imaginary part of the material top-layer refractive index" )]
     public float RefractiveIndexImaginary
     {
