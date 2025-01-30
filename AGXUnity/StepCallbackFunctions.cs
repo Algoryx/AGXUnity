@@ -67,6 +67,16 @@
     /// </summary>
     public StepCallbackDef _Internal_PrePost;
 
+    /// <summary>
+    /// Internal callbacks for handing incoming OpenPLX signals.
+    /// </summary>
+    public StepCallbackDef _Internal_OpenPLXSignalPreSync;
+
+    /// <summary>
+    /// Internal callbacks for handing outgoing OpenPLX signals.
+    /// </summary>
+    public StepCallbackDef _Internal_OpenPLXSignalPostSync;
+
     public void OnInitialize( agxSDK.Simulation simulation )
     {
       m_simulationStepEvents = new SimulationStepEvents( this );
