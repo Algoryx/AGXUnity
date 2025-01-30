@@ -1,5 +1,6 @@
 ﻿using AGXUnity;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -97,6 +98,27 @@ namespace AGXUnityEditor
     {
       return Selection.activeObject = Utils.AssetFactory.Create<ConveyorBeltProperties>( "conveyor belt properties" );
     }
+
+
+    [MenuItem( "Assets/AGXUnity/Lidar Material - Lambertian opaque", priority = 740 )]
+    public static Object CreateLidarSurfaceMaterialLambertianOpaque()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<LidarSurfaceMaterialLambertianOpaque>( "lidar lambertian opaque material" );
+    }
+
+
+    [MenuItem( "Assets/AGXUnity/Lidar Material - Ggx Oren Nayar", priority = 740 )]
+    public static Object CreateLidarSurfaceMaterialGgxAndOrenNayar()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<LidarSurfaceMaterialGgxAndOrenNayar>( "lidar ggx oren nayar material" );
+    }
+
+    [MenuItem( "Assets/AGXUnity/Sensor Ambient Material", priority = 740 )]
+    public static Object CreateSensorAmbientMaterial()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<AmbientMaterial>( "Sensor Ambient Material" );
+    }
+
 
     [MenuItem( "Assets/AGXUnity/Import/Selected URDF [instance]", validate = true, priority = 550 )]
     public static bool IsUrdfSelected()

@@ -1,3 +1,4 @@
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System;
 using System.Diagnostics;
@@ -374,6 +375,7 @@ namespace AGXUnity
     /// </summary>
     public ContactEventHandler ContactCallbacks { get; } = new ContactEventHandler();
 
+
     /// <summary>
     /// Save current simulation/scene to an AGX native file (.agx or .aagx).
     /// </summary>
@@ -435,11 +437,15 @@ namespace AGXUnity
     protected override void OnDestroy()
     {
       base.OnDestroy();
+
       if ( m_simulation != null ) {
         StepCallbacks.OnDestroy( m_simulation );
         ContactCallbacks.OnDestroy( this );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
       }
       m_simulation = null;
@@ -448,8 +454,13 @@ namespace AGXUnity
     protected override void OnApplicationQuit()
     {
       base.OnApplicationQuit();
-      if ( m_simulation != null )
+
+      if ( m_simulation != null ) {
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
+      }
     }
 
     private agxSDK.Simulation GetOrCreateSimulation()

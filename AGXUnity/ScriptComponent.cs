@@ -66,6 +66,8 @@ namespace AGXUnity
     [HideInInspector]
     public bool IsSynchronizingProperties { get; private set; }
 
+    public static event System.Action<ScriptComponent> OnInitialized;
+
     /// <summary>
     /// Cached synchronized properties.
     /// </summary>
@@ -105,6 +107,8 @@ namespace AGXUnity
           if ( Application.isPlaying )
             m_uuidHash = Simulation.Instance.ContactCallbacks.Map( this );
         }
+
+        OnInitialized?.Invoke( this );
       }
 
       return State == States.INITIALIZED ? this : null;

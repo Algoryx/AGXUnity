@@ -1113,5 +1113,44 @@ namespace AGXUnityEditor
 
       return null;
     }
+
+    public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
+    {
+      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( "Channel Count", data.ChannelCount );
+      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( "Beam Spacing", data.BeamSpacing );
+      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( "Lidar Mode", data.LidarMode );
+    }
+
+    public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
+    {
+      data.Frequency     = EditorGUILayout.FloatField( "Frequency", data.Frequency );
+      data.HorizontalFoV = EditorGUILayout.FloatField( "HorizontalFoV", data.HorizontalFoV );
+      data.VerticalFoV   = EditorGUILayout.FloatField( "VerticalFoV", data.VerticalFoV );
+      data.HorizontalResolution = EditorGUILayout.FloatField( "HorizontalResolution", data.HorizontalResolution );
+      data.VerticalResolution   = EditorGUILayout.FloatField( "VerticalResolution", data.VerticalResolution );
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
+    public static object ModelDataDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of ModelData Elements isn't supported." );
+        return null;
+      }
+
+      var data = wrapper.Get<AGXUnity.Sensor.IModelData>( objects[0] );
+      using ( new InspectorGUI.IndentScope() ) {
+        switch ( data ) {
+          case AGXUnity.Sensor.OusterData ousterData:
+            DrawOusterModelData( ousterData );
+            break;
+          case AGXUnity.Sensor.GenericSweepData sweepData:
+            DrawGenericSweepModelData( sweepData );
+            break;
+        }
+      }
+
+      return null;
+    }
   }
 }
