@@ -76,7 +76,7 @@ namespace AGXUnity.Sensor
       {
         m_ambientMaterial = value;
         if ( Native != null ) {
-          var nativeMat = m_ambientMaterial?.GetInitialized<AmbientMaterial>()?.Native.ToMaterialInstance();
+          RtMaterialInstance nativeMat = m_ambientMaterial?.GetInitialized<AmbientMaterial>()?.Native;
           if ( nativeMat == null )
             nativeMat = new RtMaterialInstance(); // Create a null instance to set unset the ambient mat
           Native.getScene().setMaterial( nativeMat );
@@ -193,10 +193,10 @@ namespace AGXUnity.Sensor
     {
       RtMaterialInstance rtMaterialInstance = null;
       if ( material != null )
-        rtMaterialInstance = material.GetRtMaterialInstance();
+        rtMaterialInstance = material.GetRtMaterial();
 
       Profiler.BeginSample( "CreateShapeInstance" );
-      RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? InternalDefaultMaterial.ToMaterialInstance(), (RtEntityId)(++m_currentEntityId));
+      RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? InternalDefaultMaterial, (RtEntityId)(++m_currentEntityId));
       RtShapeInstance shapeInstance = RtShapeInstance.create(Native.getScene(), rtShape, data);
 
       shapeInstance.setTransform(
@@ -334,7 +334,7 @@ namespace AGXUnity.Sensor
       if ( AmbientMaterial != null ) {
         var ambMat = AmbientMaterial.GetInitialized<AmbientMaterial>().Native;
 
-        Native.getScene().setMaterial( ambMat.ToMaterialInstance() );
+        Native.getScene().setMaterial( ambMat );
       }
 
       FindValidComponents<MeshFilter>( true ).ForEach( RegisterMeshfilter );

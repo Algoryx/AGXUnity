@@ -23,7 +23,6 @@ namespace AGXUnity.Sensor
     }
 
     protected RtLambertianOpaqueMaterial Native = null;
-    public override RtMaterialInstance GetRtMaterialInstance() => Native?.ToMaterialInstance();
     public override RtSurfaceMaterial GetRtMaterial() => Native;
 
     public override void Destroy()

@@ -38,9 +38,14 @@ namespace AGXUnityTesting.Runtime
       return material;
     }
 
+
     [OneTimeSetUp]
     public void SetupLidarScene()
     {
+      Simulation.Instance.LogEnabled = true;
+      Simulation.Instance.LogPath = "/home/filip/dev/AGXUnity/build/ubuntu-22.04/Tests/agx.log";
+      //agxSensor.agxSensorSWIG.rgl_configure_logging( 0, "/home/filip/dev/AGXUnity/build/ubuntu-22.04/Tests/rgl.log", true );
+
       CreateShape<Box>( new Vector3( 3, 0, 3 ) );
       CreateShape<Sphere>( new Vector3( -3, 0, 3 ) );
       CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) );
