@@ -89,6 +89,7 @@ namespace AGXUnity.Sensor
     private LidarSurfaceMaterialDefinition m_defaultSurfaceMaterial;
 
     [DisableInRuntimeInspector]
+    [IgnoreSynchronization]
     public LidarSurfaceMaterialDefinition DefaultSurfaceMaterial
     {
       get => m_defaultSurfaceMaterial;
@@ -365,10 +366,12 @@ namespace AGXUnity.Sensor
       Profiler.BeginSample( "SensorEnvironment.AddNewComponents" );
       while ( m_newlyAdded.Count != 0 ) {
         var c = m_newlyAdded.Last();
-        foreach ( var subcomp in c.GetComponentsInChildren<ScriptComponent>() )
-          TrackIfSupported( subcomp );
-        foreach ( var mesh in c.GetComponentsInChildren<MeshFilter>() )
-          RegisterMeshfilter( mesh );
+        if ( c != null ) {
+          foreach ( var subcomp in c.GetComponentsInChildren<ScriptComponent>() )
+            TrackIfSupported( subcomp );
+          foreach ( var mesh in c.GetComponentsInChildren<MeshFilter>() )
+            RegisterMeshfilter( mesh );
+        }
         m_newlyAdded.Remove( c );
       }
       Profiler.EndSample();
