@@ -50,12 +50,21 @@ namespace AGXUnityTesting
         yield return WaitUntilLoaded();
         var targetTime = Simulation.Instance.Native.getTimeStamp() + time;
         while ( Simulation.Instance.Native.getTimeStamp() < targetTime ) {
-#if TEST_REALTIME_SYNC
-          yield return new WaitForFixedUpdate();
-#else
-          Simulation.Instance.DoStep();
-#endif
+          yield return Step();
         }
+      }
+    }
+
+    public static IEnumerator Step()
+    {
+      if ( !Application.isPlaying )
+        Debug.LogError( "TestUtils are not supported in edit-mode" );
+      else {
+#if TEST_REALTIME_SYNC
+        yield return new WaitForFixedUpdate();
+#else
+        Simulation.Instance.DoStep();
+#endif
       }
     }
   }
