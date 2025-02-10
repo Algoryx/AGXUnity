@@ -168,10 +168,7 @@ namespace AGXUnity.Rendering
     {
       Profiler.BeginSample( "UpdatePoints" );
 
-      m_pointArray = m_output.Native.View<agx.Vec4f>( out uint count, m_pointArray );
-
-      //foreach ( var p in m_pointArray )
-      //  Debug.Log( p.w );
+      m_pointArray = m_output.View<agx.Vec4f>( out uint count, m_pointArray );
 
       m_instanceBuffers[ m_currentIndex ] = EnsureBuffer( m_instanceBuffers[ m_currentIndex ], Mathf.Max( (int)count, 1 ) );
 
