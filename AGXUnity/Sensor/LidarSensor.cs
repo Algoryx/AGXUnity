@@ -8,23 +8,65 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
+  /// <summary>
+  /// IModelData is an empty interface to allow for a lidar sensor to hold generic data dependent on the
+  /// underlying lidar model used.
+  /// </summary>
   public interface IModelData { }
 
   [Serializable]
   public class OusterData : IModelData
   {
+    /// <summary>
+    /// The vertical resolution of the Ouster lidar.
+    /// </summary>
+    [Tooltip("The vertical resolution of the Ouster lidar.")]
     public LidarModelOusterOS.ChannelCount ChannelCount = LidarModelOusterOS.ChannelCount.ch_32;
+
+    /// <summary>
+    /// The spacing of the beams shot by the Ouster lidar.
+    /// </summary>
+    [Tooltip("The spacing of the beams shot by the Ouster lidar.")]
     public LidarModelOusterOS.BeamSpacing BeamSpacing = LidarModelOusterOS.BeamSpacing.Uniform;
+
+    /// <summary>
+    /// The operational mode of the Ouster lidar where (RxF) denotes a resolution of R points and a frequency of F Hz.
+    /// </summary>
+    [Tooltip("The operational mode of the Ouster lidar where (RxF) denotes a resolution of R points and a frequency of F Hz.")]
     public LidarModelOusterOS.LidarMode LidarMode = LidarModelOusterOS.LidarMode.Mode_512x20;
   }
 
   [Serializable]
   public class GenericSweepData : IModelData
   {
+    /// <summary>
+    /// The frequency [Hz] of the lidar sweep
+    /// </summary>
+    [Tooltip("The frequency [Hz] of the lidar sweep")]
     public float Frequency = 10.0f;
+
+    /// <summary>
+    /// The horizontal FoV [deg] of the lidar sweep
+    /// </summary>
+    [Tooltip("The horizontal FoV [deg] of the lidar sweep")]
     public float HorizontalFoV = 360.0f;
+
+    /// <summary>
+    /// The vertical FoV [deg] of the lidar sweep
+    /// </summary>
+    [Tooltip("The vertical FoV [deg] of the lidar sweep")]
     public float VerticalFoV = 35.0f;
+
+    /// <summary>
+    /// The horizontal resolution [deg per point] of the lidar sweep 
+    /// </summary>
+    [Tooltip("The Horizontal resolution [deg per point] of the lidar sweep ")]
     public float HorizontalResolution = 0.5f;
+
+    /// <summary>
+    /// The vertical resolution [deg per point] of the lidar sweep 
+    /// </summary>
+    [Tooltip("The vertical resolution [deg per point] of the lidar sweep ")]
     public float VerticalResolution = 0.5f;
   }
 
@@ -50,32 +92,37 @@ namespace AGXUnity.Sensor
     /// </summary>
     public Lidar Native { get; private set; } = null;
 
-    /**
-    * The Model, or preset, of this Lidar.
-    * Changing this will assign Model specific properties to this Lidar.
-    */
     [SerializeField]
     private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
 
+    /// <summary>
+    /// The Model, or preset, of this Lidar.
+    /// Changing this will assign Model specific properties to this Lidar.
+    /// </summary>
+    [Tooltip( "The Model, or preset, of this Lidar. " +
+              "Changing this will assign Model specific properties to this Lidar." )]
+    [DisableInRuntimeInspector]
     public LidarModelPreset LidarModelPreset
     {
       get => m_lidarModelPreset;
       set
       {
+        if ( value != m_lidarModelPreset ) {
+          ModelData = value switch
+          {
+            LidarModelPreset.LidarModelOusterOS0 => new OusterData(),
+            LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
+            LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
+            LidarModelPreset.LidarModelGeneric360HorizontalSweep => new GenericSweepData(),
+            _ => null,
+          };
+        }
         m_lidarModelPreset = value;
-        ModelData = value switch
-        {
-          LidarModelPreset.LidarModelOusterOS0 => new OusterData(),
-          LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
-          LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
-          LidarModelPreset.LidarModelGeneric360HorizontalSweep => new GenericSweepData(),
-          _ => null,
-        };
       }
     }
 
-
     [field: SerializeReference]
+    [DisableInRuntimeInspector]
     public IModelData ModelData { get; private set; } = new OusterData();
 
     /**
@@ -230,7 +277,7 @@ namespace AGXUnity.Sensor
             Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV ),
             Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution ),
             sweepData.Frequency
-          ); // TODO Default frequency for now, implement lidar settings
+          );
           break;
 
         case LidarModelPreset.LidarModelOusterOS0:

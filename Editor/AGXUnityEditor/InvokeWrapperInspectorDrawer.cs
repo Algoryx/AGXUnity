@@ -1,4 +1,4 @@
-﻿using AGXUnity;
+using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using System;
@@ -1114,20 +1114,26 @@ namespace AGXUnityEditor
       return null;
     }
 
+    private static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
+    {
+      var member = parentType.GetMember( memberName )[ 0 ];
+      return InspectorGUI.MakeLabel( member, postText );
+    }
+
     public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
     {
-      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( "Channel Count", data.ChannelCount );
-      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( "Beam Spacing", data.BeamSpacing );
-      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( "Lidar Mode", data.LidarMode );
+      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "ChannelCount" ), data.ChannelCount );
+      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "BeamSpacing" ), data.BeamSpacing );
+      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "LidarMode" ), data.LidarMode );
     }
 
     public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
     {
-      data.Frequency     = EditorGUILayout.FloatField( "Frequency", data.Frequency );
-      data.HorizontalFoV = EditorGUILayout.FloatField( "HorizontalFoV", data.HorizontalFoV );
-      data.VerticalFoV   = EditorGUILayout.FloatField( "VerticalFoV", data.VerticalFoV );
-      data.HorizontalResolution = EditorGUILayout.FloatField( "HorizontalResolution", data.HorizontalResolution );
-      data.VerticalResolution   = EditorGUILayout.FloatField( "VerticalResolution", data.VerticalResolution );
+      data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency );
+      data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalFoV" ), data.HorizontalFoV );
+      data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalFoV" ), data.VerticalFoV );
+      data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalResolution" ), data.HorizontalResolution );
+      data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalResolution" ), data.VerticalResolution );
     }
 
     [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
