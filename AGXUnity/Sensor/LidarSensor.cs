@@ -1,5 +1,4 @@
 using agx;
-using agxModel;
 using agxSensor;
 using AGXUnity.Utils;
 using System;
@@ -125,67 +124,118 @@ namespace AGXUnity.Sensor
     [DisableInRuntimeInspector]
     public IModelData ModelData { get; private set; } = new OusterData();
 
-    /**
-    * The minimum and maximum range of the Lidar Sensor [m].
-    * Objects outside this range will not be detected by this Lidar Sensor.
-    */
-    public RangeReal LidarRange = new RangeReal(0.1f, float.MaxValue);
+    [SerializeField]
+    private RangeReal m_lidarRange = new RangeReal(0.1f, float.MaxValue);
 
-    /**
-    * Divergence of the lidar laser light beam [deg].
-    * This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
-    * exit dimater to the cone surface is half this angle.
-    * This property affects the calculated intensity.
-    */
+    /// <summary>
+    /// The minimum and maximum range of the Lidar Sensor [m].
+    /// Objects outside this range will not be detected by this Lidar Sensor.
+    /// </summary>
+    [Tooltip( "The minimum and maximum range of the Lidar Sensor [m]. " +
+              "Objects outside this range will not be detected by this Lidar Sensor." )]
+    public RangeReal LidarRange
+    {
+      get => m_lidarRange;
+      set
+      {
+        m_lidarRange = value;
+        if ( Native != null )
+          Native.getModel().getRayRange().setRange( new RangeReal32( m_lidarRange.Min, m_lidarRange.Max ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_beamDivergence = 0.001f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Divergence of the lidar laser light beam [deg].
+    /// This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
+    /// exit dimater to the cone surface is half this angle.
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "Divergence of the lidar laser light beam [deg]. " +
+              "This the total \"cone angle\", i.e. the angle between a perfectly parallel beam of the same " +
+              "exit dimater to the cone surface is half this angle. " +
+              "This property affects the calculated intensity." )]
     [ClampAboveZeroInInspector]
-    public float BeamDivergence = 0.001f * 180f / Mathf.PI;
+    public float BeamDivergence
+    {
+      get => m_beamDivergence;
+      set
+      {
+        m_beamDivergence = Mathf.Max( value, 1e-10f );
+        if ( Native != null )
+          Native.getModel().getProperties().setBeamDivergence( m_beamDivergence * Mathf.Deg2Rad );
+      }
+    }
 
-    /**
-    * The diameter of the lidar laser light beam as it exits the lidar [m].
-    * This property affects the calculated intensity.
-    */
-    public float BeamExitRadius = 0.005f;
+    [SerializeField]
+    private float m_beamExitRadius = 0.005f;
 
-    /**
-    * Determines the number of maximum raytrace steps.
-    * The number of steps is one more than the number of bounces a ray will make,
-    * however, this number will generally not affect the size of the output data.
-    * It should be noted that the time and memory complexity of the raytrace will grow
-    * exponentially with the maximum number of raytrace steps.
-    */
-    [Min(1)]
-    public int RayTraceDepth = 1;
+    /// <summary>
+    /// The diameter of the lidar laser light beam as it exits the lidar [m].
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "The diameter of the lidar laser light beam as it exits the lidar [m]. " +
+              "This property affects the calculated intensity." )]
+    [ClampAboveZeroInInspector]
+    public float BeamExitRadius
+    {
+      get => m_beamExitRadius;
+      set
+      {
+        m_beamExitRadius = Mathf.Max( value, 1e-10f );
+        if ( Native != null )
+          Native.getModel().getProperties().setBeamExitRadius( m_beamExitRadius );
+      }
+    }
 
-    /**
-	  * Enables or disables distance gaussian noise, adding an individual distance error to each
-	  * measurements of Position.
-	  */
-    public bool DistanceGaussianNoiseEnabled = false;
+    private uint m_rayTraceDepth = 1;
 
-    /**
-	   * Determines the distance noise characteristics. The standard deviation is calculated as
-	  * s = stdDev + d * stdDevSlope where d is the distance in centimeters.
-	  */
-    public GaussianFunctionSettings DistanceGaussianNoiseSettings = new GaussianFunctionSettings();
+    /// <summary>
+    /// Determines the number of maximum raytrace steps.
+    /// The number of steps is one more than the number of bounces a ray will make,
+    /// however, this number will generally not affect the size of the output data.
+    /// It should be noted that the time and memory complexity of the raytrace will grow
+    /// exponentially with the maximum number of raytrace steps.
+    /// </summary>
+    [Tooltip( "Determines the number of maximum raytrace steps. " +
+              "The number of steps is one more than the number of bounces a ray will make, " +
+              "however, this number will generally not affect the size of the output data. " +
+              "It should be noted that the time and memory complexity of the raytrace will grow " +
+              "exponentially with the maximum number of raytrace steps." )]
+    [ClampAboveZeroInInspector()]
+    public uint RayTraceDepth
+    {
+      get => m_rayTraceDepth;
+      set
+      {
+        m_rayTraceDepth = value;
+        if ( Native != null )
+          Native.getOutputHandler().setRaytraceDepth( m_rayTraceDepth );
+      }
+    }
 
-    /**
-    * Enables or disables angle ray gaussian noise, adding an individual angle error to each lidar
-    * ray.
-    */
-    public bool RayAngleGaussianNoiseEnabled = false;
+    /// <summary>
+    /// Settings controlling the gaussian noise applied to the distance output along rays for hits.
+    /// </summary>
+    [SerializeField]
+    public LidarDistanceGaussianNoise DistanceGaussianNoise = new LidarDistanceGaussianNoise();
 
-    /**
-	  * Determines the lidar ray noise characteristics.
-	  */
-    public GaussianFunctionSettings RayAngleGaussianNoiseSettings = new GaussianFunctionSettings();
-    // TODO check type of above, custom editor usw
+    /// <summary>
+    /// Settings controlling the gaussian noise applied to the ray angles before rays are shot.
+    /// </summary>
+    [SerializeField]
+    public LidarRayAngleGaussianNoise RayAngleGaussianNoise = new LidarRayAngleGaussianNoise();
 
-    /**
-	  * Discard rays reaching max range or not.
-	  */
+    [SerializeField]
     private bool m_setEnableRemoveRayMisses = true;
 
-    public bool SetEnableRemoveRayMisses
+    /// <summary>
+	  /// When enabled, discard rays that miss all objects.
+    /// </summary>
+    [Tooltip( "When enabled, discard rays that miss all objects." )]
+    public bool RemoveRayMisses
     {
       get => m_setEnableRemoveRayMisses;
       set
@@ -231,6 +281,9 @@ namespace AGXUnity.Sensor
       }
 
       Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
+
+      DistanceGaussianNoise?.Initialize( Native );
+      RayAngleGaussianNoise?.Initialize( Native );
 
       SensorEnvironment.Instance.Native.add( Native );
 
@@ -334,15 +387,9 @@ namespace AGXUnity.Sensor
           break;
       }
 
-      UpdateLidarProperties();
+      PropertySynchronizer.Synchronize( this );
 
       return lidarModel;
-    }
-    private void UpdateLidarProperties()
-    {
-      // TODO only update stuff that we want overridable with this lidar... But have to decide on that interface
-
-
     }
   }
 }

@@ -1,4 +1,4 @@
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using System;
@@ -1154,6 +1154,40 @@ namespace AGXUnityEditor
             DrawGenericSweepModelData( sweepData );
             break;
         }
+      }
+
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.LidarRayAngleGaussianNoise ) )]
+    public static object LidarRayAngleGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var data = wrapper.Get<AGXUnity.Sensor.LidarRayAngleGaussianNoise>( objects[0] );
+      data.Enable = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "Enable", " Ray Angle Gaussian Noise" ), data.Enable );
+      if ( !data.Enable )
+        return null;
+
+      using ( new InspectorGUI.IndentScope() ) {
+        data.Mean               = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Mean" ), data.Mean );
+        data.StandardDeviation  = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviation" ), data.StandardDeviation ), 0.0f );
+        data.DistortionAxis     = (agxSensor.LidarRayAngleGaussianNoise.Axis)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "DistortionAxis" ), data.DistortionAxis );
+      }
+
+      return null;
+    }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.LidarDistanceGaussianNoise ) )]
+    public static object LidarDistanceGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var data = wrapper.Get<AGXUnity.Sensor.LidarDistanceGaussianNoise>( objects[0] );
+      data.Enable = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "Enable", " Distance Gaussian Noise" ), data.Enable );
+      if ( !data.Enable )
+        return null;
+
+      using ( new InspectorGUI.IndentScope() ) {
+        data.Mean                   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Mean" ), data.Mean );
+        data.StandardDeviationBase  = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationBase" ), data.StandardDeviationBase ), 0.0f );
+        data.StandardDeviationSlope = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationSlope" ), data.StandardDeviationSlope ), 0.0f );
       }
 
       return null;
