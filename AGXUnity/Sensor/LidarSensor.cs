@@ -199,7 +199,12 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private List<LidarOutput> m_outputs = new List<LidarOutput>();
 
-    public void UpdateTransform()
+    /// <summary>
+    /// An array of the outputs registered to this LidarSensor instance.
+    /// </summary>
+    public LidarOutput[] Outputs => m_outputs.ToArray();
+
+    private void UpdateTransform()
     {
       Native.setFrame( new agx.Frame(
                           new AffineMatrix4x4(
@@ -215,11 +220,15 @@ namespace AGXUnity.Sensor
       if ( model == null )
         return false;
 
-      Native = new Lidar( null, model ); // Note: Use default position in order to have the rays be created 
-      Native.getOutputHandler().setEnableRemoveRayMisses( SetEnableRemoveRayMisses );
+      Native = new Lidar( null, model );
+      Native.getOutputHandler().setEnableRemoveRayMisses( RemoveRayMisses );
 
-      foreach ( var output in m_outputs )
-        output.Initialize( this );
+      foreach ( var output in m_outputs ) {
+        if ( !output.Initialize( this ) ) {
+          Debug.LogError( $"Lidar '{name}' failed to initialize outputs" );
+          return false;
+        }
+      }
 
       Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
 
@@ -238,21 +247,45 @@ namespace AGXUnity.Sensor
       Native?.setEnable( false );
     }
 
-    public void Add( LidarOutput output )
-    {
-      if ( !m_outputs.Contains( output ) )
-        m_outputs.Add( output );
-      if ( Native != null )
-        output.Initialize( this );
-    }
-
-    public void Remove( LidarOutput output )
+    /// <summary>
+    /// Adds a new <see cref="LidarOutput"/> to this LidarSensor. 
+    /// Note that adding the same output to multiple sensors is not supported.
+    /// </summary>
+    /// <param name="output">The output to add to this sensor.</param>
+    /// <returns>True if the output was successfully added.</returns>
+    public bool Add( LidarOutput output )
     {
       if ( m_outputs.Contains( output ) )
+        return false;
+
+      m_outputs.Add( output );
+      if ( Native != null ) {
+        bool ok = output.Initialize( this );
+        if ( ok )
+          return true;
+
         m_outputs.Remove( output );
+        return false;
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Removes a <see cref="LidarOutput"/> from this LidarSensor. 
+    /// </summary>
+    /// <param name="output">The output to remove from this sensor.</param>
+    /// <returns>True if the output was successfully removed.</returns>
+    public bool Remove( LidarOutput output )
+    {
+      if ( !m_outputs.Contains( output ) )
+        return false;
+
+      m_outputs.Remove( output );
       if ( Native != null )
         Native.getOutputHandler().removeChild( output.Native );
+      return true;
     }
+
     protected override void OnDestroy()
     {
       if ( SensorEnvironment.HasInstance ) {
