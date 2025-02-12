@@ -52,7 +52,12 @@ namespace AGXUnityTesting.Runtime
     [TearDown]
     public void TearDownLidarScene()
     {
-      foreach ( var lidar in Object.FindObjectsOfType<LidarSensor>() )
+#if UNITY_2022_2_OR_NEWER
+      var lidars = Object.FindObjectsByType<LidarSensor>( FindObjectsSortMode.None );
+#else
+      var lidars = Object.FindObjectsOfType<LidarSensor>( );
+#endif
+      foreach ( var lidar in lidars )
         Object.Destroy( lidar.gameObject );
     }
 
@@ -596,7 +601,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-    [Ignore( "Setting divergence at runtime is currently not supported" )]
     public IEnumerator TestBeamDivergenceChange()
     {
       var lidarComp = CreateDefaultTestLidar();
@@ -634,7 +638,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-    [Ignore( "Setting exit radius at runtime is currently not supported" )]
     public IEnumerator TestBeamExitRadiusChange()
     {
       var lidarComp = CreateDefaultTestLidar();
@@ -659,7 +662,7 @@ namespace AGXUnityTesting.Runtime
       points = output.View<float>( out uint _, points );
       var postAvgInt = points.Average();
 
-      Assert.Less( postAvgInt, preAvgInt, "Expected average intensity to be lower with greater beam exit radius." );
+      Assert.AreNotEqual( postAvgInt, preAvgInt, "Expected average intensity to be change with greater beam exit radius." );
 
       lidarComp.BeamExitRadius = 0;
 

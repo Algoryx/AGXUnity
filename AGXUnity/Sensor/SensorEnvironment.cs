@@ -17,10 +17,6 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
-    // TODO possible choice on what to stream
-    // TODO looking at https://git.algoryx.se/algoryx/unreal/agxunreal/-/blob/feature/agx-lidar/AGXUnrealDev/Plugins/AGXUnreal/Source/AGXUnreal/Public/Sensors/AGX_SensorEnvironment.h?ref_type=heads
-
-
     /// <summary>
     /// Native instance, created in Start/Initialize.
     /// </summary>
@@ -29,11 +25,13 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Keeping track of invisible objects is extra work, which can be skipped for performance reasons
     /// </summary>
+    [Tooltip("Keeping track of invisible objects is extra work, which can be skipped for performance reasons")]
     public bool DisabledObjectsVisibleToSensors = false;
 
     /// <summary>
     /// Show log messages on each thing added to the sensor environment
     /// </summary>
+    [Tooltip("Show log messages on each thing added to the sensor environment")]
     public bool DebugLogOnAdd = false;
 
     // Internal lists
@@ -61,14 +59,14 @@ namespace AGXUnity.Sensor
       typeof(Track)
     };
 
-
-    /**
-     * The Ambient material used by the Sensor Environment.
-     * This is used to simulate atmospheric effects on the Lidar laser rays, such as rain or fog.
-     */
     [SerializeField]
     private AmbientMaterial m_ambientMaterial = null;
 
+    /// <summary>
+    /// The Ambient material used by the Sensor Environment.
+    /// This is used to simulate atmospheric effects on the Lidar laser rays, such as rain or fog.
+    /// </summary>
+    [Tooltip( "The Ambient material used by the Sensor Environment. This is used to simulate atmospheric effects on the Lidar laser rays, such as rain or fog." )]
     public AmbientMaterial AmbientMaterial
     {
       get => m_ambientMaterial;
@@ -84,10 +82,13 @@ namespace AGXUnity.Sensor
       }
     }
 
-    //TODO temporary solution, fix materials
     [SerializeField]
     private LidarSurfaceMaterialDefinition m_defaultSurfaceMaterial;
 
+    /// <summary>
+    /// The default surface material used for objects in the scene that do not have explicitly specified materials.
+    /// </summary>
+    [Tooltip( "The default surface material used for objects in the scene that do not have explicitly specified materials." )]
     [DisableInRuntimeInspector]
     [IgnoreSynchronization]
     public LidarSurfaceMaterialDefinition DefaultSurfaceMaterial
@@ -107,7 +108,10 @@ namespace AGXUnity.Sensor
     private uint m_currentOutputID = 1;
     private int m_currentEntityId = 0;
 
-    // Always use this method in order to have each lidar use a unique output id
+    /// <summary>
+    /// Generate a new Output ID to be used in this sensor environment.
+    /// </summary>
+    /// <returns>A new Output ID to be used in this sensor environment.</returns>
     public uint GenerateOutputID()
     {
       return m_currentOutputID++;
@@ -119,6 +123,12 @@ namespace AGXUnity.Sensor
     /// </summary>
     /// <param name="newlyCreated">The newwly created object to be registered</param>
     public void RegisterCreatedObject( GameObject newlyCreated ) => m_newlyAdded.Add( newlyCreated );
+
+    // public void SetMaterialForMeshFilter( MeshFilter mesh, LidarSurfaceMaterial material )
+    // {
+    //   if ( m_rtShapeInstances.TryGetValue( mesh, out var instance ) )
+    //     instance.handle.setMaterial( material.LidarSurfaceMaterialDefinition.GetRtMaterial() );
+    // }
 
     // Call this when adding MeshFilters during runtime from custom script
     private void RegisterMeshfilter( MeshFilter meshFilter )
@@ -136,6 +146,11 @@ namespace AGXUnity.Sensor
 
       if ( mesh == null )
         return;
+
+      if ( !mesh.isReadable ) {
+        Debug.LogWarning( $"Mesh '{mesh.name}' is not readable and will not be added to the sensor environment. It will be invisible to sensors. Consider enabling Read/Write in the asset import inspector" );
+        return;
+      }
 
       if ( !m_rtShapes.TryGetValue( mesh, out RtShape rtShape ) ) {
         rtShape = CreateShape( mesh );
@@ -164,9 +179,9 @@ namespace AGXUnity.Sensor
     {
       Profiler.BeginSample( "CreateShape" );
 
-      var meshTriangles = mesh.triangles;
-      var meshVertices = mesh.vertices;
-      var meshNormals = mesh.normals;
+      int[] meshTriangles = mesh.triangles;
+      Vector3[] meshVertices = mesh.vertices;
+      Vector3[] meshNormals = mesh.normals;
 
       int tris = meshTriangles.Length;
       int verts = meshVertices.Length;
@@ -455,15 +470,6 @@ namespace AGXUnity.Sensor
                 meshFilter.transform.lossyScale.ToHandedVec3() );
       }
       Profiler.EndSample();
-    }
-
-    protected override void OnEnable()
-    {
-    }
-
-    // Note that disabling this component does not stop the sensor simulation
-    protected override void OnDisable()
-    {
     }
 
     internal void DisposeRT()

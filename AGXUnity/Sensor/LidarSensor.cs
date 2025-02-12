@@ -3,6 +3,7 @@ using agxSensor;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.Sensor
@@ -219,14 +220,14 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Settings controlling the gaussian noise applied to the distance output along rays for hits.
     /// </summary>
-    [SerializeField]
-    public LidarDistanceGaussianNoise DistanceGaussianNoise = new LidarDistanceGaussianNoise();
+    [field: SerializeField]
+    public LidarDistanceGaussianNoise DistanceGaussianNoise { get; } = new LidarDistanceGaussianNoise();
 
     /// <summary>
     /// Settings controlling the gaussian noise applied to the ray angles before rays are shot.
     /// </summary>
-    [SerializeField]
-    public LidarRayAngleGaussianNoise RayAngleGaussianNoise = new LidarRayAngleGaussianNoise();
+    [field: SerializeField]
+    public LidarRayAngleGaussianNoise RayAngleGaussianNoise { get; } = new LidarRayAngleGaussianNoise();
 
     [SerializeField]
     private bool m_setEnableRemoveRayMisses = true;
@@ -348,6 +349,17 @@ namespace AGXUnity.Sensor
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateTransform;
       }
+
+      while ( m_outputs.Count > 0 ) {
+        var output = m_outputs.Last();
+        Remove( output );
+        output.Native?.Dispose();
+      }
+
+      DistanceGaussianNoise?.Native.Dispose();
+      RayAngleGaussianNoise?.Native.Dispose();
+
+      Native?.Dispose();
 
       base.OnDestroy();
     }
