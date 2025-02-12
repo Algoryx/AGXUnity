@@ -226,4 +226,19 @@ namespace AGXUnity
     public bool IsFolder { get; private set; }
     public StringAsFilePicker( bool IsFolder = false ) { this.IsFolder = IsFolder; }
   }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class DynamicallyShowInInspector : Attribute
+  {
+    public DynamicallyShowInInspector( string name, bool isMethod = false, bool invert = false )
+    {
+      Name = name;
+      IsMethod = isMethod;
+      Invert = invert;
+    }
+
+    public bool IsMethod { get; private set; }
+    public string Name { get; private set; }
+    public bool Invert { get; private set; }
+  }
 }

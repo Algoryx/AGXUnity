@@ -13,6 +13,11 @@ namespace AGXUnity.Rendering
   {
     [SerializeField]
     private Color m_lowIntensityColor = new Color(0.8f, 0.5f, 0); // Orange
+
+    /// <summary>
+    /// The color used to represent lidar points with low intensity
+    /// </summary>
+    [Tooltip( "The color used to represent lidar points with low intensity" )]
     public Color LowIntensityColor
     {
       get => m_lowIntensityColor;
@@ -26,6 +31,11 @@ namespace AGXUnity.Rendering
 
     [SerializeField]
     private Color m_highIntensityColor = new Color(0.8f, 0.1f, 0); // Dark red
+
+    /// <summary>
+    /// The color used to represent lidar points with high intensity
+    /// </summary>
+    [Tooltip( "The color used to represent lidar points with high intensity" )]
     public Color HighIntensityColor
     {
       get => m_highIntensityColor;
@@ -39,7 +49,12 @@ namespace AGXUnity.Rendering
 
     [SerializeField]
     private float m_pointSize = 0.02f;
+
+    /// <summary>
+    /// The size of the rendered lidar points
+    /// </summary>
     [ClampAboveZeroInInspector]
+    [Tooltip( "The size of the rendered lidar points" )]
     public float PointSize
     {
       get => m_pointSize;
@@ -53,6 +68,11 @@ namespace AGXUnity.Rendering
 
     [SerializeField]
     private int m_preservedDatas = 0;
+
+    /// <summary>
+    /// When greater than 0, the prior n timesteps' outputs will be renderered in addition to the current frame's output.
+    /// </summary>
+    [Tooltip( "When greater than 0, the prior n timesteps' outputs will be renderered in addition to the current frame's output." )]
     [ClampAboveZeroInInspector( true )]
     public int PreserveDataSets
     {
@@ -61,7 +81,7 @@ namespace AGXUnity.Rendering
       {
         var old = m_preservedDatas;
         m_preservedDatas = value;
-        if ( value != old )
+        if ( value != old && Application.isPlaying )
           ResizeBufferPool();
       }
     }
@@ -110,9 +130,11 @@ namespace AGXUnity.Rendering
 
       ResizeBufferPool();
 
-      m_output = new LidarOutput();
-      m_output.Add( agxSensor.RtOutput.Field.XYZ_VEC3_F32 );
-      m_output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 );
+      m_output = new LidarOutput
+      {
+        agxSensor.RtOutput.Field.XYZ_VEC3_F32,
+        agxSensor.RtOutput.Field.INTENSITY_F32
+      };
 
       m_sensor.Add( m_output );
 
@@ -146,10 +168,16 @@ namespace AGXUnity.Rendering
 
       m_indirectArgs[ 1 ] = 0;
       for ( int i = oldCount; i < newCount; i++ ) {
-        m_argsBuffers[ i ] = new ComputeBuffer( 1, m_indirectArgs.Length * sizeof( uint ), ComputeBufferType.IndirectArguments );
+        m_argsBuffers[ i ] = new ComputeBuffer( 1, m_indirectArgs.Length * sizeof( uint ), ComputeBufferType.IndirectArguments, ComputeBufferMode.Dynamic );
         m_argsBuffers[ i ].SetData( m_indirectArgs );
         m_propertyBlocks[ i ] = new MaterialPropertyBlock();
       }
+
+      for ( int i = oldCount - newCount; i > 0; i-- ) {
+        oldArgs[ i % oldCount ].Release();
+        oldInstances[ i % oldCount ].Release();
+      }
+
       m_currentIndex = 0;
     }
 
@@ -161,10 +189,10 @@ namespace AGXUnity.Rendering
         current.Release();
       }
 
-      return new ComputeBuffer( count, sizeof( float ) * 4, ComputeBufferType.Structured );
+      return new ComputeBuffer( count, sizeof( float ) * 4, ComputeBufferType.Structured, ComputeBufferMode.Dynamic );
     }
 
-    public void UpdatePoints()
+    private void UpdatePoints()
     {
       Profiler.BeginSample( "UpdatePoints" );
 
@@ -216,9 +244,11 @@ namespace AGXUnity.Rendering
       if ( m_instanceBuffers != null )
         foreach ( var ib in m_instanceBuffers )
           ib?.Release();
+      m_instanceBuffers = null;
       if ( m_argsBuffers != null )
         foreach ( var ab in m_argsBuffers )
           ab?.Release();
+      m_argsBuffers = null;
       if ( m_pointCloudMaterialInstance != null ) Destroy( m_pointCloudMaterialInstance );
       base.OnDestroy();
     }

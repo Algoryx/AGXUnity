@@ -71,7 +71,7 @@ namespace AGXUnityEditor
         InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
         var group = InspectorGroupHandler.Create();
         foreach ( var wrapper in fieldsAndProperties ) {
-          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+          if ( !ShouldBeShownInInspector( wrapper.Member, objects ) )
             continue;
 
           group.Update( wrapper, objects[ 0 ] );
@@ -118,7 +118,7 @@ namespace AGXUnityEditor
         InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
         var group = InspectorGroupHandler.Create();
         foreach ( var wrapper in fieldsAndProperties ) {
-          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+          if ( !ShouldBeShownInInspector( wrapper.Member, objects ) )
             continue;
 
           group.Update( wrapper, objects[ 0 ] );
@@ -135,7 +135,7 @@ namespace AGXUnityEditor
       }
     }
 
-    public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
+    public static bool ShouldBeShownInInspector( MemberInfo memberInfo, object[] targets )
     {
       if ( memberInfo == null )
         return false;
@@ -143,8 +143,54 @@ namespace AGXUnityEditor
       // Override hidden in inspector.
       var runtimeHide = EditorApplication.isPlayingOrWillChangePlaymode &&
                         memberInfo.IsDefined( typeof( HideInRuntimeInspectorAttribute ), true );
+
       if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) || runtimeHide )
         return false;
+
+      if ( targets != null && memberInfo.IsDefined( typeof( DynamicallyShowInInspector ), true ) ) {
+        var t = memberInfo.DeclaringType;
+        var showInfo = memberInfo.GetCustomAttribute<DynamicallyShowInInspector>();
+        var bindings =  BindingFlags.Instance |
+                        BindingFlags.Static |
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic;
+        if ( showInfo.IsMethod )
+          bindings |=   BindingFlags.InvokeMethod;
+        else
+          bindings |=   BindingFlags.GetField |
+                        BindingFlags.GetProperty;
+
+        var members = t.GetMember( showInfo.Name, bindings );
+        if ( members.Length == 0 ) {
+          Debug.LogWarning( $"No member '{showInfo.Name}' found to determine dynamic inspector status for member '{memberInfo.Name}', skipping" );
+          return false;
+        }
+        else if ( members.Length > 1 ) {
+          Debug.LogWarning( $"Multiple members '{showInfo.Name}' found to determine dynamic inspector status for member '{memberInfo.Name}', skipping" );
+          return false;
+        }
+
+        var member = members[ 0 ];
+        if ( member.MemberType == MemberTypes.Method ) {
+          var method = (MethodInfo)member;
+          if ( method.GetParameters().Length != 0 ) {
+            Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{memberInfo.Name}', requires parameters, this is not supported, skipping" );
+            return false;
+          }
+          if ( method.ContainsGenericParameters ) {
+            Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{memberInfo.Name}', requires type parameters, sthis is not supported, skipping" );
+            return false;
+          }
+          if ( !method.IsStatic )
+            return targets.All( t => (bool)method.Invoke( t, new object[] { } ) );
+          return (bool)method.Invoke( null, new object[] { } );
+        }
+        else if ( member.MemberType == MemberTypes.Property ) {
+          var property = (PropertyInfo)member;
+
+          return targets.All( t => (bool)property.GetValue( t ) );
+        }
+      }
 
       // In general, don't show UnityEngine objects unless ShowInInspector is set.
       bool show = memberInfo.IsDefined( typeof( ShowInInspector ), true ) ||

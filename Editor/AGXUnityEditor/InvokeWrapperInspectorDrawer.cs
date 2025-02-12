@@ -927,7 +927,7 @@ namespace AGXUnityEditor
           // Ignoring Unity specific properties such as "name" and "hideFlags".
           if ( !char.IsUpper( property.Member.Name[ 0 ] ) )
             continue;
-          if ( !InspectorEditor.ShouldBeShownInInspector( property.Member ) )
+          if ( !InspectorEditor.ShouldBeShownInInspector( property.Member, new object[] { element } ) )
             continue;
 
           var containingType = property.GetContainingType();
