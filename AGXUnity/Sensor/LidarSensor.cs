@@ -73,7 +73,7 @@ namespace AGXUnity.Sensor
   public enum LidarModelPreset
   {
     NONE,
-    LidarModelGeneric360HorizontalSweep,
+    LidarModelGenericHorizontalSweep,
     LidarModelOusterOS0,
     LidarModelOusterOS1,
     LidarModelOusterOS2
@@ -113,7 +113,7 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelOusterOS0 => new OusterData(),
             LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
             LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
-            LidarModelPreset.LidarModelGeneric360HorizontalSweep => new GenericSweepData(),
+            LidarModelPreset.LidarModelGenericHorizontalSweep => new GenericSweepData(),
             _ => null,
           };
         }
@@ -369,7 +369,7 @@ namespace AGXUnity.Sensor
       LidarModel lidarModel = null;
 
       switch ( preset ) {
-        case LidarModelPreset.LidarModelGeneric360HorizontalSweep:
+        case LidarModelPreset.LidarModelGenericHorizontalSweep:
           GenericSweepData sweepData = ModelData as GenericSweepData;
           lidarModel = new LidarModelHorizontalSweep(
             Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV ),

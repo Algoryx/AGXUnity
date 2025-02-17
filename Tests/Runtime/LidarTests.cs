@@ -69,7 +69,7 @@ namespace AGXUnityTesting.Runtime
       var lidarComp = lidarGO.AddComponent<LidarSensor>();
       var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
 
-      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGeneric360HorizontalSweep;
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGenericHorizontalSweep;
       var modelData = ( lidarComp.ModelData as GenericSweepData );
       modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
       modelData.HorizontalResolution = 2;
