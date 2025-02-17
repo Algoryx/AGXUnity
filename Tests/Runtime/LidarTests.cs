@@ -67,7 +67,9 @@ namespace AGXUnityTesting.Runtime
       lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       lidarGO.transform.position = position;
       var lidarComp = lidarGO.AddComponent<LidarSensor>();
-      var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+      if ( !Application.isBatchMode ) {
+        var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+      }
 
       lidarComp.LidarModelPreset = LidarModelPreset.LidarModelGenericHorizontalSweep;
       var modelData = ( lidarComp.ModelData as GenericSweepData );
