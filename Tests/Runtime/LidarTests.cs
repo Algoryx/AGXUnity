@@ -319,6 +319,33 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
+    public IEnumerator TestLateAddSurfaceMaterial()
+    {
+      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+
+      var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+
+      yield return TestUtils.Step();
+
+      var mat = AddLambertianMaterial( box, 0.2f );
+      mat.Reflectivity = 0.0f;
+
+      yield return TestUtils.Step();
+
+      var data = output.View<float>( out uint _ );
+      var noReflect = data.Average();
+
+      Assert.Zero( noReflect, "Intensity should be zero from material with 0 reflectivity" );
+
+      GameObject.Destroy( box );
+    }
+
+    [UnityTest]
     public IEnumerator TestAddMeshAfterInitialization()
     {
       var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);

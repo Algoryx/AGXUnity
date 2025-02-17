@@ -124,11 +124,16 @@ namespace AGXUnity.Sensor
     /// <param name="newlyCreated">The newwly created object to be registered</param>
     public void RegisterCreatedObject( GameObject newlyCreated ) => m_newlyAdded.Add( newlyCreated );
 
-    // public void SetMaterialForMeshFilter( MeshFilter mesh, LidarSurfaceMaterial material )
-    // {
-    //   if ( m_rtShapeInstances.TryGetValue( mesh, out var instance ) )
-    //     instance.handle.setMaterial( material.LidarSurfaceMaterialDefinition.GetRtMaterial() );
-    // }
+    /// <summary>
+    /// Attempt to set the surface material for the provided MeshFilter, if added.
+    /// </summary>
+    /// <param name="mesh">The mesh to set the material for.</param>
+    /// <param name="material">The material to set.</param>
+    public void SetMaterialForMeshFilter( MeshFilter mesh, LidarSurfaceMaterial material )
+    {
+      if ( m_rtShapeInstances.TryGetValue( mesh, out var instance ) )
+        instance.handle.setMaterial( material.LidarSurfaceMaterialDefinition.GetRtMaterial() );
+    }
 
     // Call this when adding MeshFilters during runtime from custom script
     private void RegisterMeshfilter( MeshFilter meshFilter )
@@ -236,6 +241,9 @@ namespace AGXUnity.Sensor
 
       RtSurfaceMaterial rtMaterial = LidarSurfaceMaterial.FindClosestMaterial(scriptComponent.gameObject)?.GetRtMaterial() ?? InternalDefaultMaterial;
 
+      // Set material in the case where this material was added before initializing the SensorEnvironment object.
+      // Any additional material handling added here should be added in LidarSurfaceMaterial.cs
+      // as well to properly handle both cases.
       bool added = false;
       if ( scriptComponent is DeformableTerrain dt ) {
         var c = dt.Native;
