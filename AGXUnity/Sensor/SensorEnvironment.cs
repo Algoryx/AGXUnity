@@ -508,6 +508,7 @@ namespace AGXUnity.Sensor
       m_rtShapes.Clear();
       m_meshFilters.Clear();
 
+      Native?.Dispose();
       Native = null;
     }
 

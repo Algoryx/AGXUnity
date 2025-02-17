@@ -91,6 +91,7 @@ namespace AGXUnity.Sensor
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public Lidar Native { get; private set; } = null;
+    public LidarModel m_nativeModel = null;
 
     [SerializeField]
     private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
@@ -267,11 +268,10 @@ namespace AGXUnity.Sensor
     {
       SensorEnvironment.Instance.GetInitialized();
 
-      var model = CreateLidarModel(LidarModelPreset);
-      if ( model == null )
+      m_nativeModel = CreateLidarModel( LidarModelPreset );
+      if ( m_nativeModel == null )
         return false;
-
-      Native = new Lidar( null, model );
+      Native = new Lidar( null, m_nativeModel );
       Native.getOutputHandler().setEnableRemoveRayMisses( RemoveRayMisses );
 
       foreach ( var output in m_outputs ) {
@@ -360,6 +360,9 @@ namespace AGXUnity.Sensor
       RayAngleGaussianNoise?.Native.Dispose();
 
       Native?.Dispose();
+      Native = null;
+      m_nativeModel?.Dispose();
+      m_nativeModel = null;
 
       base.OnDestroy();
     }
