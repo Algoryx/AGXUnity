@@ -3,6 +3,7 @@ using UnityEngine;
 namespace AGXUnity.Sensor
 {
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor" )]
+  [DisallowMultipleComponent]
   public class LidarSurfaceMaterial : ScriptComponent
   {
     public bool PropagateToChildrenRecusively = false;
