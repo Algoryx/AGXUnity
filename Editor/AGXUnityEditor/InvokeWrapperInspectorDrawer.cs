@@ -754,9 +754,25 @@ namespace AGXUnityEditor
 
       var preWidth = EditorGUIUtility.labelWidth;
       EditorGUIUtility.labelWidth = 25;
-      noise.Mean                = EditorGUILayout.FloatField( "<b>\u03BC</b>", noise.Mean );
+
+      noise.Mean =
+        EditorGUILayout.FloatField(
+          GUI.MakeLabel(
+            "<b>\u03BC</b>",
+            toolTip: "The mean of the gaussian distribution of the ray angle noise applied." ),
+          noise.Mean );
+
       GUILayout.Space( 5 );
-      noise.StandardDeviation   = Mathf.Max( 0.0f, EditorGUILayout.FloatField( "<b>\u03C3</b>", noise.StandardDeviation ) );
+
+      noise.StandardDeviation =
+        Mathf.Max(
+          0.0f,
+          EditorGUILayout.FloatField(
+            GUI.MakeLabel(
+              "<b>\u03C3</b>",
+              toolTip: "The standard deviation of the gaussian distribution of the ray angle noise applied." ),
+            noise.StandardDeviation ) );
+
       EditorGUIUtility.labelWidth = preWidth;
     }
 
