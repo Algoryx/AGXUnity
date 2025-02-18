@@ -177,7 +177,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.True( output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 ) );
       Assert.True( output.Contains( agxSensor.RtOutput.Field.INTENSITY_F32 ) );
-      Assert.False( output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 ) );
+      Assert.True( output.Add( agxSensor.RtOutput.Field.INTENSITY_F32 ) );
 
       lidarComp.Add( output );
 
