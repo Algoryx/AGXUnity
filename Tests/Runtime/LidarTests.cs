@@ -50,7 +50,7 @@ namespace AGXUnityTesting.Runtime
     }
 
     [TearDown]
-    public void TearDownLidarScene()
+    public void CleanLidarScene()
     {
 #if UNITY_2022_2_OR_NEWER
       var lidars = Object.FindObjectsByType<LidarSensor>( FindObjectsSortMode.None );
@@ -59,6 +59,21 @@ namespace AGXUnityTesting.Runtime
 #endif
       foreach ( var lidar in lidars )
         Object.Destroy( lidar.gameObject );
+    }
+
+    [OneTimeTearDown]
+    public void TearDownLidarScene()
+    {
+#if UNITY_2022_2_OR_NEWER
+      var geoms = Object.FindObjectsByType<Shape>( FindObjectsSortMode.None );
+#else
+      var geoms = Object.FindObjectsOfType<Shape>( );
+#endif      
+
+      foreach ( var geom in geoms )
+        GameObject.Destroy( geom.gameObject );
+
+      GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
 
     private LidarSensor CreateDefaultTestLidar( Vector3 position = default )
@@ -106,7 +121,7 @@ namespace AGXUnityTesting.Runtime
       };
       lidarComp.Add( output );
 
-      lidarComp.GetInitialized();
+      TestUtils.InitializeAll();
 
       yield return TestUtils.Step();
 
@@ -131,6 +146,7 @@ namespace AGXUnityTesting.Runtime
       };
       lidarComp.Add( output );
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       var data = output.View<PosIntensity>(out uint _);
@@ -161,6 +177,7 @@ namespace AGXUnityTesting.Runtime
       };
       lidarComp.Add( output );
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       Assert.Throws<System.ArgumentException>( () => output.View<DataInvalid>( out uint _ ) );
@@ -241,6 +258,7 @@ namespace AGXUnityTesting.Runtime
       ambMat.Visibility = 2;
       SensorEnvironment.Instance.AmbientMaterial = ambMat;
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -266,6 +284,7 @@ namespace AGXUnityTesting.Runtime
 
       lidarComp.RemoveRayMisses = false;
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -290,8 +309,7 @@ namespace AGXUnityTesting.Runtime
       var output = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp.Add( output );
 
-      lidarComp.GetInitialized();
-
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       var data = output.View<float>( out uint _ );
@@ -315,7 +333,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Zero( noReflect, "Intensity should be zero from material with 0 reflectivity" );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
     }
 
     [UnityTest]
@@ -328,13 +346,13 @@ namespace AGXUnityTesting.Runtime
       var output = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp.Add( output );
 
-      lidarComp.GetInitialized();
-
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       var mat = AddLambertianMaterial( box, 0.2f );
       mat.Reflectivity = 0.0f;
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       var data = output.View<float>( out uint _ );
@@ -342,7 +360,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Zero( noReflect, "Intensity should be zero from material with 0 reflectivity" );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
     }
 
     [UnityTest]
@@ -357,12 +375,13 @@ namespace AGXUnityTesting.Runtime
 
       var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
     }
 
     [UnityTest]
@@ -384,7 +403,7 @@ namespace AGXUnityTesting.Runtime
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
     }
 
     [UnityTest]
@@ -399,12 +418,13 @@ namespace AGXUnityTesting.Runtime
 
       var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
 
       yield return TestUtils.Step();
 
@@ -426,6 +446,7 @@ namespace AGXUnityTesting.Runtime
 
       var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -444,7 +465,7 @@ namespace AGXUnityTesting.Runtime
       output.View<agx.Vec3f>( out count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( box );
+      yield return TestUtils.DestroyAndWait( box );
     }
 
     [UnityTest]
@@ -464,12 +485,13 @@ namespace AGXUnityTesting.Runtime
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
       cable.AddComponent<CableRenderer>();
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( cable );
+      yield return TestUtils.DestroyAndWait( cable );
     }
 
     [UnityTest]
@@ -489,13 +511,15 @@ namespace AGXUnityTesting.Runtime
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
       cable.AddComponent<CableRenderer>();
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( cable );
+      yield return TestUtils.DestroyAndWait( cable );
 
+      yield return new WaitForEndOfFrame();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out count );
@@ -519,6 +543,7 @@ namespace AGXUnityTesting.Runtime
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
       cable.AddComponent<CableRenderer>();
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -538,7 +563,7 @@ namespace AGXUnityTesting.Runtime
       output.View<agx.Vec3f>( out count );
       Assert.NotZero( count );
 
-      GameObject.Destroy( cable );
+      yield return TestUtils.DestroyAndWait( cable );
     }
 
     float CalculateAverageDifference( agx.Vec3f[] points, System.Func<agx.Vec3f, agx.Vec3f, float> err )
@@ -562,8 +587,7 @@ namespace AGXUnityTesting.Runtime
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
 
-      lidarComp.GetInitialized();
-
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       System.Func<agx.Vec3f, agx.Vec3f, float> err = (agx.Vec3f p1, agx.Vec3f p2) => Mathf.Pow( p2.length() - p1.length(), 2 );
@@ -602,8 +626,8 @@ namespace AGXUnityTesting.Runtime
       var noise = new LidarRayAngleGaussianNoise();
 
       lidarComp.RayAngleGaussianNoises.Add( noise );
-      lidarComp.GetInitialized();
 
+      TestUtils.InitializeAll();
       yield return TestUtils.Step();
 
       System.Func<agx.Vec3f, agx.Vec3f, float> err = (agx.Vec3f p1, agx.Vec3f p2) => Mathf.Acos(p2.normal().dot(p1.normal()));

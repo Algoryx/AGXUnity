@@ -27,7 +27,7 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnitySetUp]
-    public IEnumerator SetupWireScene()
+    public IEnumerator SetupTerrainScene()
     {
       GameObject go = new GameObject("Test terrain");
 
