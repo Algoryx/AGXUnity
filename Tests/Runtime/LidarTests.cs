@@ -519,7 +519,6 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.DestroyAndWait( cable );
 
-      yield return new WaitForEndOfFrame();
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out count );
