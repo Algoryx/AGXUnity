@@ -14,7 +14,7 @@ namespace AGXUnity.Sensor
   {
     public agxSensor.LidarRayAngleGaussianNoise Native { get; private set; }
 
-    private agxSensor.Lidar Parent { get; set; } = null;
+    private agxSensor.Lidar m_parent = null;
 
     [SerializeField]
     private bool m_enable = false;
@@ -31,9 +31,9 @@ namespace AGXUnity.Sensor
         m_enable = value;
         if ( Native != null ) {
           if ( m_enable )
-            Parent.getRayDistortionHandler().add( Native );
+            m_parent.getRayDistortionHandler().add( Native );
           else
-            Parent.getRayDistortionHandler().remove( Native );
+            m_parent.getRayDistortionHandler().remove( Native );
         }
       }
     }
@@ -92,13 +92,28 @@ namespace AGXUnity.Sensor
       }
     }
 
-    public bool Initialize( agxSensor.Lidar parent )
+    internal bool Initialize( agxSensor.Lidar parent )
     {
-      Parent = parent;
+      if ( Native != null ) {
+        if ( parent == m_parent )
+          return true;
+
+        Debug.LogWarning( "Cannot add a single noise instance to two different parents" );
+        return false;
+      }
+      m_parent = parent;
       Native = new agxSensor.LidarRayAngleGaussianNoise( m_mean, m_standardDeviation, DistortionAxis );
       if ( Enable )
         return parent.getRayDistortionHandler().add( Native );
       return true;
+    }
+
+    internal void Disconnect()
+    {
+      if ( Native != null && m_parent != null )
+        m_parent.getRayDistortionHandler().remove( Native );
+      m_parent = null;
+      Native = null;
     }
   }
 
@@ -114,7 +129,7 @@ namespace AGXUnity.Sensor
   {
     public agxSensor.RtDistanceGaussianNoise Native { get; private set; }
 
-    private agxSensor.Lidar Parent { get; set; } = null;
+    private agxSensor.Lidar m_parent = null;
 
     [SerializeField]
     private bool m_enable = false;
@@ -131,9 +146,9 @@ namespace AGXUnity.Sensor
         m_enable = value;
         if ( Native != null ) {
           if ( m_enable )
-            Parent.getOutputHandler().add( Native );
+            m_parent.getOutputHandler().add( Native );
           else
-            Parent.getOutputHandler().remove( Native );
+            m_parent.getOutputHandler().remove( Native );
         }
       }
     }
@@ -194,11 +209,19 @@ namespace AGXUnity.Sensor
 
     public bool Initialize( agxSensor.Lidar parent )
     {
-      Parent = parent;
+      m_parent = parent;
       Native = new agxSensor.RtDistanceGaussianNoise( m_mean, m_standardDeviationBase, m_standardDeviationSlope );
       if ( Enable )
         return parent.getOutputHandler().add( Native );
       return true;
+    }
+
+    internal void Disconnect()
+    {
+      if ( Native != null && m_parent != null )
+        m_parent.getOutputHandler().remove( Native );
+      m_parent = null;
+      Native = null;
     }
   }
 }

@@ -218,18 +218,6 @@ namespace AGXUnity.Sensor
       }
     }
 
-    /// <summary>
-    /// Settings controlling the gaussian noise applied to the distance output along rays for hits.
-    /// </summary>
-    [field: SerializeField]
-    public LidarDistanceGaussianNoise DistanceGaussianNoise { get; } = new LidarDistanceGaussianNoise();
-
-    /// <summary>
-    /// Settings controlling the gaussian noise applied to the ray angles before rays are shot.
-    /// </summary>
-    [field: SerializeField]
-    public LidarRayAngleGaussianNoise RayAngleGaussianNoise { get; } = new LidarRayAngleGaussianNoise();
-
     [SerializeField]
     private bool m_setEnableRemoveRayMisses = true;
 
@@ -248,6 +236,20 @@ namespace AGXUnity.Sensor
       }
     }
 
+    /// <summary>
+    /// Settings controlling the gaussian noise applied to the distance output along rays for hits.
+    /// </summary>
+    [field: SerializeField]
+    public LidarDistanceGaussianNoise DistanceGaussianNoise { get; } = new LidarDistanceGaussianNoise();
+
+    /// <summary>
+    /// Settings controlling the gaussian noise applied to the ray angles before rays are shot.
+    /// </summary>
+    [field: SerializeField]
+    public List<LidarRayAngleGaussianNoise> RayAngleGaussianNoises { get; set; } = new List<LidarRayAngleGaussianNoise>();
+
+    private readonly List<LidarRayAngleGaussianNoise> m_initializedNoises = new List<LidarRayAngleGaussianNoise>();
+
     [SerializeField]
     private List<LidarOutput> m_outputs = new List<LidarOutput>();
 
@@ -256,8 +258,18 @@ namespace AGXUnity.Sensor
     /// </summary>
     public LidarOutput[] Outputs => m_outputs.ToArray();
 
-    private void UpdateTransform()
+    private void Sync()
     {
+      // Sync ray angle noises
+      foreach ( var noise in m_initializedNoises )
+        if ( !RayAngleGaussianNoises.Contains( noise ) )
+          noise.Disconnect();
+
+      foreach ( var noise in RayAngleGaussianNoises )
+        if ( !m_initializedNoises.Contains( noise ) )
+          if ( noise.Initialize( Native ) )
+            m_initializedNoises.Add( noise );
+
       Native.setFrame( new agx.Frame(
                           new AffineMatrix4x4(
                             ( transform.rotation ).ToHandedQuat(),
@@ -281,10 +293,11 @@ namespace AGXUnity.Sensor
         }
       }
 
-      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateTransform;
+      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
 
       DistanceGaussianNoise?.Initialize( Native );
-      RayAngleGaussianNoise?.Initialize( Native );
+      foreach ( var noise in RayAngleGaussianNoises )
+        noise?.Initialize( Native );
 
       SensorEnvironment.Instance.Native.add( Native );
 
@@ -336,28 +349,26 @@ namespace AGXUnity.Sensor
 
       m_outputs.Remove( output );
       if ( Native != null )
-        Native.getOutputHandler().removeChild( output.Native );
+        output.Disconnect();
       return true;
     }
 
     protected override void OnDestroy()
     {
-      if ( SensorEnvironment.HasInstance ) {
+      if ( SensorEnvironment.HasInstance )
         SensorEnvironment.Instance.Native?.remove( Native );
-      }
 
-      if ( Simulation.HasInstance ) {
-        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateTransform;
-      }
+      if ( Simulation.HasInstance )
+        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= Sync;
 
       while ( m_outputs.Count > 0 ) {
         var output = m_outputs.Last();
         Remove( output );
-        output.Native?.Dispose();
       }
 
-      DistanceGaussianNoise?.Native.Dispose();
-      RayAngleGaussianNoise?.Native.Dispose();
+      DistanceGaussianNoise?.Disconnect();
+      foreach ( var noise in m_initializedNoises )
+        noise.Disconnect();
 
       Native?.Dispose();
       Native = null;

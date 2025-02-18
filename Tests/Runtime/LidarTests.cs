@@ -599,6 +599,9 @@ namespace AGXUnityTesting.Runtime
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
 
+      var noise = new LidarRayAngleGaussianNoise();
+
+      lidarComp.RayAngleGaussianNoises.Add( noise );
       lidarComp.GetInitialized();
 
       yield return TestUtils.Step();
@@ -608,9 +611,9 @@ namespace AGXUnityTesting.Runtime
       var points = output.View<agx.Vec3f>( out uint _ );
       var preAvgDiff = CalculateAverageDifference( points, err );
 
-      lidarComp.RayAngleGaussianNoise.Enable = true;
-      lidarComp.RayAngleGaussianNoise.StandardDeviation = 0.2f;
-      lidarComp.RayAngleGaussianNoise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
+      noise.Enable = true;
+      noise.StandardDeviation = 0.2f;
+      noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
 
       yield return TestUtils.Step();
 
@@ -619,7 +622,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Greater( postAvgDiff, preAvgDiff, "Expected average angle difference difference to be greater with noise." );
 
-      lidarComp.RayAngleGaussianNoise.Enable = false;
+      noise.Enable = false;
 
       yield return TestUtils.Step();
 
