@@ -346,7 +346,10 @@ namespace AGXUnity.Sensor
         return false;
 
       var simulation = Simulation.Instance.GetInitialized().Native;
-      simulation.setPreIntegratePositions( true ); // From Python, check if this is needed
+      if ( Simulation.Instance.PreIntegratePositions != true ) {
+        Debug.LogWarning( "Running sensor simulations require Simulation.PreIntegratePositions to be enabled. This option will be enabled by the SensorEnvironment." );
+        Simulation.Instance.PreIntegratePositions = true;
+      }
 
       // Default material
       if ( DefaultSurfaceMaterial != null )
@@ -368,7 +371,10 @@ namespace AGXUnity.Sensor
 
       UpdateEnvironment();
 
-      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += UpdateEnvironment;
+      // We require objects to have been synced with their simulated counterparts.
+      // This happens in PostSynchronizeTransforms which is right before preCollide
+      // since we require also PreIntegratePositions = true.
+      Simulation.Instance.StepCallbacks.SimulationPreCollide += UpdateEnvironment;
       ScriptComponent.OnInitialized += LateInitializeScriptComponent;
 
       return true;
@@ -524,7 +530,7 @@ namespace AGXUnity.Sensor
     protected override void OnDestroy()
     {
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= UpdateEnvironment;
+        Simulation.Instance.StepCallbacks.SimulationPreCollide -= UpdateEnvironment;
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
 
