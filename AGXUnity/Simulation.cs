@@ -172,6 +172,28 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [SerializeField]
+    private bool m_preIntegratePositions = false;
+
+    /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [Tooltip( "Set true to integrate positions at the start of the timestep rather than at the end. " )]
+    public bool PreIntegratePositions
+    {
+      get => m_preIntegratePositions;
+      set
+      {
+        m_preIntegratePositions = value;
+
+        if ( m_simulation != null )
+          m_simulation.setPreIntegratePositions( m_preIntegratePositions );
+      }
+    }
+
+    /// <summary>
     /// Display statistics window toggle.
     /// </summary>
     [SerializeField]
@@ -623,7 +645,7 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
-      if ( StepCallbacks.PostSynchronizeTransforms != null )
+      if ( !Simulation.Instance.PreIntegratePositions && StepCallbacks.PostSynchronizeTransforms != null )
         StepCallbacks.PostSynchronizeTransforms.Invoke();
 
       if ( TrackMemoryAllocations )

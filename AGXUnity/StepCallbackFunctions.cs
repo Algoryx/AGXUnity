@@ -97,6 +97,9 @@
 
       public sealed override void preCollide( double time )
       {
+        if ( Simulation.Instance.PreIntegratePositions )
+          Invoke( m_functions.PostSynchronizeTransforms );
+
         Invoke( m_functions.SimulationPreCollide );
       }
 
