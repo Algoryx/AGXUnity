@@ -131,11 +131,12 @@ namespace AGXUnity.Sensor
     /// <param name="material">The material to set.</param>
     public void SetMaterialForMeshFilter( MeshFilter mesh, LidarSurfaceMaterial material )
     {
-      if ( m_rtShapeInstances.TryGetValue( mesh, out var instance ) )
-        instance.handle.setMaterial( material.LidarSurfaceMaterialDefinition.GetRtMaterial() );
+      if ( m_rtShapeInstances.TryGetValue( mesh, out var instance ) ) {
+        using var handle = instance.handle;
+        handle.setMaterial( material.LidarSurfaceMaterialDefinition.GetRtMaterial() );
+      }
     }
 
-    // Call this when adding MeshFilters during runtime from custom script
     private void RegisterMeshfilter( MeshFilter meshFilter )
     {
       if ( !m_meshFilters.Contains( meshFilter ) )
@@ -506,13 +507,13 @@ namespace AGXUnity.Sensor
         Native.remove( track );
       m_tracks.Clear();
 
-      foreach ( var rtShapeInstance in m_rtShapeInstances ) {
+      foreach ( var rtShapeInstance in m_rtShapeInstances )
         rtShapeInstance.Value?.Dispose();
-      }
+
       m_rtShapeInstances.Clear();
-      foreach ( var rtShape in m_rtShapes ) {
+      foreach ( var rtShape in m_rtShapes )
         rtShape.Value?.Dispose();
-      }
+
       m_rtShapes.Clear();
       m_meshFilters.Clear();
 
