@@ -1,7 +1,9 @@
 using AGXUnity.Sensor;
+using AGXUnity.Utils;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Rendering;
 
 namespace AGXUnity.Rendering
 {
@@ -138,8 +140,6 @@ namespace AGXUnity.Rendering
 
       m_sensor.Add( m_output );
 
-      Simulation.Instance.StepCallbacks.PostStepForward += UpdatePoints;
-
       return true;
     }
 
@@ -212,8 +212,13 @@ namespace AGXUnity.Rendering
       Profiler.EndSample();
     }
 
-    protected void Update()
+    private void SRPRender( ScriptableRenderContext _, Camera cam ) => Render( cam );
+
+    private void Render( Camera cam )
     {
+      if ( !RenderingUtils.CameraShouldRender( cam ) )
+        return;
+
       if ( m_pointArray == null ||  m_pointArray.Count() == 0 )
         return;
 
@@ -231,16 +236,35 @@ namespace AGXUnity.Rendering
           0,
           mpb,
           UnityEngine.Rendering.ShadowCastingMode.Off,
-          false
+          false,
+          0,
+          cam
         );
       }
     }
 
-    protected override void OnDestroy()
+    protected override void OnEnable()
     {
+      // We hook into the rendering process to render even when the application is paused.
+      // For the Built-in render pipeline this is done by adding a callback to the Camera.OnPreCull event which is called for each camera in the scene.
+      // For SRPs such as URP and HDRP the beginCameraRendering event serves a similar purpose.
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
+      RenderPipelineManager.beginCameraRendering += SRPRender;
+      Camera.onPreCull -= Render;
+      Camera.onPreCull += Render;
+      Simulation.Instance.StepCallbacks.PostStepForward += UpdatePoints;
+    }
+
+    protected override void OnDisable()
+    {
+      Camera.onPreCull -= Render;
+      RenderPipelineManager.beginCameraRendering -= SRPRender;
       if ( Simulation.HasInstance )
         Simulation.Instance.StepCallbacks.PostStepForward -= UpdatePoints;
+    }
 
+    protected override void OnDestroy()
+    {
       if ( m_instanceBuffers != null )
         foreach ( var ib in m_instanceBuffers )
           ib?.Release();
