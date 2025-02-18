@@ -14,7 +14,7 @@ namespace AGXUnity.Sensor
   /// WIP component for streaming data to agx sensor environment
   /// </summary>
   [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment" )]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
     /// <summary>

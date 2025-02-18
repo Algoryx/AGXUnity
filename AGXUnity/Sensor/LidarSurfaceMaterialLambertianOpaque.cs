@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensors" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#lidar-surface-material-definition" )]
   public class LidarSurfaceMaterialLambertianOpaque : LidarSurfaceMaterialDefinition
   {
     [SerializeField]

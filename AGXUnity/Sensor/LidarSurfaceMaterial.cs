@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#setting-surface-material" )]
   [DisallowMultipleComponent]
   public class LidarSurfaceMaterial : ScriptComponent
   {
