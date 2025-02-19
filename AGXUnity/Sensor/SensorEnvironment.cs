@@ -371,10 +371,7 @@ namespace AGXUnity.Sensor
 
       UpdateEnvironment();
 
-      // We require objects to have been synced with their simulated counterparts.
-      // This happens in PostSynchronizeTransforms which is right before preCollide
-      // since we require also PreIntegratePositions = true.
-      Simulation.Instance.StepCallbacks.SimulationPreCollide += UpdateEnvironment;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += UpdateEnvironment;
       ScriptComponent.OnInitialized += LateInitializeScriptComponent;
 
       return true;
@@ -382,7 +379,7 @@ namespace AGXUnity.Sensor
 
     private void TrackIfSupported( ScriptComponent sc )
     {
-      if ( s_supportedComponents.Contains( sc.GetType() ) )
+      if ( s_supportedComponents.Contains( sc.GetType() ) && !m_agxComponents.ContainsKey( sc ) )
         m_agxComponents.Add( sc, false );
     }
 
@@ -530,7 +527,7 @@ namespace AGXUnity.Sensor
     protected override void OnDestroy()
     {
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.SimulationPreCollide -= UpdateEnvironment;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
 

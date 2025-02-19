@@ -57,7 +57,7 @@ namespace AGXUnity
       if ( RigidBodies.Length == 0 )
         Debug.LogWarning( "ArticulatedRoot without bodies - this component can be removed.", this );
 
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
+      Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform += OnPostSynchronizeTransforms;
 
       return true;
     }
@@ -78,7 +78,7 @@ namespace AGXUnity
     {
       RigidBodies = null;
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransforms;
 
       base.OnDestroy();
     }

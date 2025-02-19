@@ -645,8 +645,10 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
-      if ( !Simulation.Instance.PreIntegratePositions && StepCallbacks.PostSynchronizeTransforms != null )
+      if ( !Simulation.Instance.PreIntegratePositions && StepCallbacks.PostSynchronizeTransforms != null ) {
+        StepCallbacks._Internal_PostSynchronizeTransform.Invoke();
         StepCallbacks.PostSynchronizeTransforms.Invoke();
+      }
 
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );

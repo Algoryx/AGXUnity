@@ -283,7 +283,7 @@ namespace AGXUnity.Collide
       // Removing us from synchronization the transform since
       // we're implicitly updated from the synchronization of
       // the body.
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+      Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
     }
 
     /// <summary>
@@ -355,7 +355,7 @@ namespace AGXUnity.Collide
       // Adding transform synchronization. This will be removed if this
       // shape is part of a rigid body (SetRigidBody) since our transform
       // will be updated with our parent body.
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+      Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform += OnPostSynchronizeTransformsCallback;
 
       return base.Initialize();
     }
@@ -407,7 +407,7 @@ namespace AGXUnity.Collide
         GetSimulation().remove( m_geometry );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
 
       if ( m_geometry != null ) {
         m_geometry.Dispose();
