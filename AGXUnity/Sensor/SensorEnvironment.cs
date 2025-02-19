@@ -145,8 +145,6 @@ namespace AGXUnity.Sensor
       if ( m_rtShapeInstances.ContainsKey( meshFilter ) )
         return;
 
-      m_newlyAdded.Remove( meshFilter.gameObject );
-
       UnityEngine.Mesh mesh = meshFilter.sharedMesh;
       bool newMesh = false;
 
@@ -235,6 +233,8 @@ namespace AGXUnity.Sensor
     {
       if ( scriptComponent == null )
         return false;
+
+      scriptComponent.GetInitialized<ScriptComponent>();
 
       m_newlyAdded.Remove( scriptComponent.gameObject );
 
@@ -384,7 +384,6 @@ namespace AGXUnity.Sensor
     {
       if ( s_supportedComponents.Contains( sc.GetType() ) )
         m_agxComponents.Add( sc, false );
-      m_newlyAdded.Remove( sc.gameObject );
     }
 
     private void UpdateEnvironment()
@@ -394,16 +393,17 @@ namespace AGXUnity.Sensor
       Profiler.BeginSample( "SensorEnvironment.UpdateEnvironment" );
 
       Profiler.BeginSample( "SensorEnvironment.AddNewComponents" );
-      while ( m_newlyAdded.Count != 0 ) {
-        var c = m_newlyAdded.Last();
-        if ( c != null ) {
-          foreach ( var subcomp in c.GetComponentsInChildren<ScriptComponent>() )
-            TrackIfSupported( subcomp );
-          foreach ( var mesh in c.GetComponentsInChildren<MeshFilter>() )
-            RegisterMeshfilter( mesh );
-        }
-        m_newlyAdded.Remove( c );
-      }
+
+      var components = m_newlyAdded.SelectMany(go => go.GetComponentsInChildren<ScriptComponent>()).Distinct();
+      var meshes = m_newlyAdded.SelectMany(go => go.GetComponentsInChildren<MeshFilter>()).Distinct();
+
+      foreach ( var comp in components )
+        TrackIfSupported( comp );
+      foreach ( var mesh in meshes )
+        RegisterMeshfilter( mesh );
+
+      m_newlyAdded.Clear();
+
       Profiler.EndSample();
 
       UpdateShapeInstances();
