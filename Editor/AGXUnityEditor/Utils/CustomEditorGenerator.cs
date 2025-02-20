@@ -157,8 +157,7 @@ namespace AGXUnityEditor.Utils
     private static void GenerateEditor( Type type, string path )
     {
       string classAndFilename = GetClassName( type );
-      string csFileContent = @"
-using UnityEditor;
+      string csFileContent = @"using UnityEditor;
 
 namespace AGXUnityEditor.Editors
 {
