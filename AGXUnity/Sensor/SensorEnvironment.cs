@@ -371,6 +371,7 @@ namespace AGXUnity.Sensor
 
       UpdateEnvironment();
 
+      Simulation.Instance.StepCallbacks.PreStepForward += AddNew;
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += UpdateEnvironment;
       ScriptComponent.OnInitialized += LateInitializeScriptComponent;
 
@@ -383,16 +384,12 @@ namespace AGXUnity.Sensor
         m_agxComponents.Add( sc, false );
     }
 
-    private void UpdateEnvironment()
+    private void AddNew()
     {
-      if ( Native == null )
-        return;
-      Profiler.BeginSample( "SensorEnvironment.UpdateEnvironment" );
-
       Profiler.BeginSample( "SensorEnvironment.AddNewComponents" );
 
-      var components = m_newlyAdded.SelectMany(go => go.GetComponentsInChildren<ScriptComponent>()).Distinct();
-      var meshes = m_newlyAdded.SelectMany(go => go.GetComponentsInChildren<MeshFilter>()).Distinct();
+      var components = m_newlyAdded.Where(c => c != null).SelectMany(go => go.GetComponentsInChildren<ScriptComponent>()).Distinct();
+      var meshes = m_newlyAdded.Where(c => c != null).SelectMany(go => go.GetComponentsInChildren<MeshFilter>()).Distinct();
 
       foreach ( var comp in components )
         TrackIfSupported( comp );
@@ -402,6 +399,13 @@ namespace AGXUnity.Sensor
       m_newlyAdded.Clear();
 
       Profiler.EndSample();
+    }
+
+    private void UpdateEnvironment()
+    {
+      if ( Native == null )
+        return;
+      Profiler.BeginSample( "SensorEnvironment.UpdateEnvironment" );
 
       UpdateShapeInstances();
       UpdateAGXComponents();
@@ -526,8 +530,10 @@ namespace AGXUnity.Sensor
 
     protected override void OnDestroy()
     {
-      if ( Simulation.HasInstance )
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
+        Simulation.Instance.StepCallbacks.PreStepForward-= AddNew;
+      }
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
 
