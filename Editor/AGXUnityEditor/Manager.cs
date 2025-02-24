@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -80,6 +81,8 @@ namespace AGXUnityEditor
       // will probably be loaded again after the fix.
       if ( !VerifyCompatibility() )
         return;
+
+      VerifyDependencies();
 
       // Initializes AGX Dynamics. We're trying to be first to do this, preventing:
       //   - Recursive Serialization is not supported. You can't dereference a PPtr while loading.
@@ -893,6 +896,19 @@ namespace AGXUnityEditor
       }
 
       return true;
+    }
+
+    public static void VerifyDependencies()
+    {
+      var info = UnityEditor.PackageManager.PackageInfo.FindForPackageName( "com.unity.shadergraph" );
+      if ( info == null ) {
+        bool install = EditorUtility.DisplayDialog(
+          "Install shadergraph dependency",
+          "The Shader Graph package is not installed in the current project. AGXUnity requires the Shader Graph package to render it's components properly. If it is not installed, some components will fail to render",
+          "Install", "Ignore" );
+        if ( install )
+          Client.Add( "com.unity.shadergraph" );
+      }
     }
 
     private static T GetOrCreateAsset<T>( string assetPath, Func<T> createFunc = null )
