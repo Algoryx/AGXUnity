@@ -900,7 +900,8 @@ namespace AGXUnityEditor
 
     public static void VerifyDependencies()
     {
-      var info = UnityEditor.PackageManager.PackageInfo.FindForPackageName( "com.unity.shadergraph" );
+      var infos = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
+      var info = infos.Where( i => i.name == "com.unity.shadergraph" ).FirstOrDefault();
       if ( info == null ) {
         bool install = EditorUtility.DisplayDialog(
           "Install shadergraph dependency",
