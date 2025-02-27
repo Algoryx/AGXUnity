@@ -90,6 +90,25 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private float m_soilParticleGrowthRate = 0.125f;
+
+    /// <summary>
+    /// Set the rate factor in the algorithm for growing soil particles from fluid mass and particle resizing. 
+    /// Default: 0.125
+    /// </summary>
+    [ClampAboveZeroInInspector()]
+    [Tooltip( "Set the rate factor in the algorithm for growing soil particles from fluid mass and particle resizing." )]
+    public float SoilParticleGrowthRate
+    {
+      get { return m_soilParticleGrowthRate; }
+      set
+      {
+        m_soilParticleGrowthRate = value;
+        Propagate( properties => properties.setSoilParticleGrowthRate( m_soilParticleGrowthRate ) );
+      }
+    }
+
+    [SerializeField]
     private float m_avalancheDecayFraction = 0.1f;
 
     /// <summary>
