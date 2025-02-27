@@ -291,13 +291,6 @@ namespace AGXUnity.Rendering
       var endIt = native.end();
       int i = 0;
 
-      var pipeline = RenderingUtils.DetectPipeline();
-      var colVar = "";
-      //if ( pipeline == RenderingUtils.PipelineType.BuiltIn )
-      //  colVar = "_InstancedColor";
-      //else if ( pipeline == RenderingUtils.PipelineType.HDRP || pipeline == RenderingUtils.PipelineType.Universal )
-      colVar = "_Color";
-
       MaterialPropertyBlock block = new MaterialPropertyBlock();
 
       m_segmentSpawner.Begin();
@@ -317,12 +310,14 @@ namespace AGXUnity.Rendering
           if ( m_segmentRenderers.TryGetValue( id, out meshRenderers ) && meshRenderers.Item1 != null ) {
             if ( m_renderDamages && CableDamage.DamageValueCount == (int)native.getNumSegments() ) {
               float t = CableDamage.DamageValue(i) / CableDamage.MaxDamage;
-              block.SetColor( colVar, Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
+              block.SetColor( "_Color", Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
+              block.SetColor( "_InstancedColor", Color.Lerp( CableDamage.Properties.MinColor, CableDamage.Properties.MaxColor, t ) );
               meshRenderers.Item1.SetPropertyBlock( block );
               meshRenderers.Item2.SetPropertyBlock( block );
             }
             else {
-              block.SetColor( colVar, Material.color );
+              block.SetColor( "_Color", Material.color );
+              block.SetColor( "_InstancedColor", Material.color );
               meshRenderers.Item1.SetPropertyBlock( block );
               meshRenderers.Item2.SetPropertyBlock( block );
             }
@@ -365,6 +360,7 @@ namespace AGXUnity.Rendering
       if ( Material.enableInstancing ) {
         rp.matProps = new MaterialPropertyBlock();
         rp.matProps.SetVectorArray( "_Color", m_segmentColors );
+        rp.matProps.SetVectorArray( "_InstancedColor", m_segmentColors );
         Graphics.RenderMeshInstanced( rp, m_sphereMeshInstance, 0, m_segmentSphereMatrices, m_positions.Count );
         Graphics.RenderMeshInstanced( rp, m_cylinderMeshInstance, 0, m_segmentCylinderMatrices, m_numCylinders );
       }
