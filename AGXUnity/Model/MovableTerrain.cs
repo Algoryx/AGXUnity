@@ -136,6 +136,16 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// The compaction that all terrain cells are initialized to.
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [ClampAboveZeroInInspector( true )]
+    [InspectorPriority( -1 )]
+    [field: SerializeField]
+    [Tooltip( "The compaction that all terrain cells are initialized to." )]
+    public float InitialCompaction { get; set; } = 1.0f;
+
     [field: SerializeField]
     [InspectorPriority( -1 )]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
@@ -218,6 +228,9 @@ namespace AGXUnity.Model
                                        heights,
                                        false,
                                        depth );
+
+      if ( InitialCompaction != 1.0f )
+        Native.setCompaction( InitialCompaction );
 
       GetSimulation().add( Native );
 
