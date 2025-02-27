@@ -241,6 +241,8 @@ namespace AGXUnity.Rendering
 
 
       RenderParams rp = new RenderParams(m_meshInstanceMaterial);
+      rp.shadowCastingMode = ShadowCastingMode.On;
+      rp.receiveShadows = true;
       Profiler.BeginSample( "DrawCalls" );
       if ( m_meshInstanceMaterial.enableInstancing )
         Graphics.RenderMeshInstanced( rp, m_meshInstance, 0, m_granuleMatrices.unityMats, m_numRendered );

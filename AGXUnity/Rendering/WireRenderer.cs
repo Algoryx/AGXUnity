@@ -189,6 +189,8 @@ namespace AGXUnity.Rendering
         return;
 
       var rp = new RenderParams(m_material);
+      rp.shadowCastingMode = ShadowCastingMode.On;
+      rp.receiveShadows = true;
 
       if ( Material.enableInstancing ) {
         Graphics.RenderMeshInstanced( rp, m_sphereMeshInstance, 0, m_segmentSphereMatrices, m_positions.Count );
