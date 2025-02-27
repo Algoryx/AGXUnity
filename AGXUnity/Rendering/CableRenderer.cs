@@ -354,8 +354,8 @@ namespace AGXUnity.Rendering
         return;
 
       var rp = new RenderParams(m_material);
-      rp.shadowCastingMode = ShadowCastingMode.On;
-      rp.receiveShadows = true;
+      rp.shadowCastingMode = ShadowCastingMode;
+      rp.receiveShadows = ReceiveShadows;
 
       if ( Material.enableInstancing ) {
         rp.matProps = new MaterialPropertyBlock();
