@@ -120,6 +120,7 @@ namespace AGXUnity.Model
     /// will be added to the heights.
     /// </summary>
     [IgnoreSynchronization]
+    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector( true )]
     public float MaximumDepth
     {

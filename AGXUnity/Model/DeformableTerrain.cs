@@ -41,6 +41,16 @@ namespace AGXUnity.Model
     public int TerrainDataResolution { get { return TerrainUtils.TerrainDataResolution( TerrainData ); } }
 
     /// <summary>
+    /// The compaction that all terrain cells are initialized to.
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [ClampAboveZeroInInspector( true )]
+    [InspectorPriority( -1 )]
+    [field: SerializeField]
+    [Tooltip( "The compaction that all terrain cells are initialized to." )]
+    public float InitialCompaction { get; set; } = 1.0f;
+
+    /// <summary>
     /// Resets heights of the Unity terrain and recreate native instance.
     /// </summary>
     public void ResetHeights()
@@ -51,6 +61,9 @@ namespace AGXUnity.Model
       transform.position = transform.position + MaximumDepth * Vector3.down;
 
       Native.setHeights( nativeHeightData.Heights );
+
+      if ( InitialCompaction != 1.0f )
+        Native.setCompaction( InitialCompaction, true );
 
       PropertySynchronizer.Synchronize( this );
     }
@@ -118,6 +131,9 @@ namespace AGXUnity.Model
 
       Native.setTransform( Utils.TerrainUtils.CalculateNativeOffset( transform, TerrainData ) );
 
+      if ( InitialCompaction != 1.0f )
+        Native.setCompaction( InitialCompaction );
+
       GetSimulation().add( Native );
     }
 
@@ -173,6 +189,7 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
     // ------------------------------- Implementation of DeformableTerrainBase -----------------------------------
     // -----------------------------------------------------------------------------------------------------------
+    [DisableInRuntimeInspector]
     public override float ElementSize => TerrainData.size.x / ( TerrainDataResolution - 1 );
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
