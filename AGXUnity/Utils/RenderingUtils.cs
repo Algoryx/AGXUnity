@@ -126,16 +126,7 @@ namespace AGXUnity.Utils
     /// <returns>A new material if the current render pipeline is recognized or null otherwise</returns>
     public static Material CreateDefaultMaterial()
     {
-      switch ( DetectPipeline() ) {
-        case PipelineType.BuiltIn:
-          return new Material( Shader.Find( "Standard" ) );
-        case PipelineType.HDRP:
-          return new Material( Shader.Find( "HDRP/Lit" ) );
-        case PipelineType.Universal:
-          return new Material( Shader.Find( "Universal Render Pipeline/Lit" ) );
-        default:
-          return null;
-      }
+      return new Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
     }
 
     /// <summary>
@@ -168,11 +159,8 @@ namespace AGXUnity.Utils
     /// <param name="col">The color to set as the main color</param>
     public static void SetColor( Material mat, Color col )
     {
-      var pipeline = DetectPipeline();
-      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
-        mat.SetVector( "_BaseColor", col );
-      else
-        mat.SetVector( "_Color", col );
+      mat.SetVector( "_BaseColor", col );
+      mat.SetVector( "_Color", col );
     }
 
     /// <summary>
@@ -184,10 +172,7 @@ namespace AGXUnity.Utils
     public static void SetSmoothness( Material mat, float smoothness )
     {
       var pipeline = DetectPipeline();
-      if ( pipeline == PipelineType.Universal || pipeline == PipelineType.HDRP )
-        mat.SetFloat( "_Smoothness", smoothness );
-      else
-        mat.SetFloat( "_Glossiness", smoothness );
+      mat.SetFloat( "_Smoothness", smoothness );
     }
 
     /// <summary>
@@ -204,17 +189,21 @@ namespace AGXUnity.Utils
       switch ( pipeline ) {
         case PipelineType.BuiltIn:
           mat.SetBlendMode( enable ? Rendering.BlendMode.Transparent : Rendering.BlendMode.Opaque );
+          mat.EnableKeyword( $"_BUILTIN_SURFACE_TYPE_TRANSPARENT" );
+          mat.SetFloat( $"_BUILTIN_Surface", enable ? 1 : 0 );
+          mat.SetFloat( $"_BUILTIN_Blend", 0 );
+          mat.SetFloat( $"_BUILTIN_AlphaClip", 0 );
+          mat.SetFloat( $"_BUILTIN_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
+          mat.SetFloat( $"_BUILTIN_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
+          mat.SetFloat( $"_BUILTIN_ZWrite", enable ? 0 : 1 );
+          mat.SetFloat( $"_BUILTIN_ZWriteControl", enable ? 0 : 1 );
           break;
         case PipelineType.HDRP:
+        case PipelineType.Universal:
           mat.SetFloat( "_SurfaceType", enable ? 1 : 0 );
           mat.SetFloat( "_BlendMode", 0 );
           mat.SetFloat( "_AlphaCutoffEnable", 0 );
           mat.SetFloat( "_EnableBlendModePreserveSpecularLighting", 1 );
-          mat.SetInt( "_SrcBlend", enable ? (int)BlendMode.SrcAlpha : (int)BlendMode.One );
-          mat.SetInt( "_DstBlend", enable ? (int)BlendMode.OneMinusSrcAlpha : (int)BlendMode.Zero );
-          mat.SetInt( "_ZWrite", enable ? 0 : 1 );
-          break;
-        case PipelineType.Universal:
           mat.SetFloat( "_Surface", enable ? 1 : 0 );
           mat.SetFloat( "_Blend", 0 );
           mat.SetFloat( "_Clip", 0 );
@@ -229,13 +218,18 @@ namespace AGXUnity.Utils
             mat.DisableKeyword( "_SURFACE_TYPE_TRANSPARENT" );
           }
           mat.SetInt( "_ZWrite", enable ? 0 : 1 );
-          mat.SetShaderPassEnabled( "DepthOnly", !enable );
-          mat.SetShaderPassEnabled( "SHADOWCASTER", !enable );
           break;
         default:
           break;
       }
       mat.renderQueue = enable ? (int)RenderQueue.Transparent : (int)RenderQueue.Geometry;
+      mat.SetOverrideTag( "RenderType", "Transparent" );
+    }
+
+    public static void SetShadowcastingEnabled( Material mat, bool enable )
+    {
+      mat.SetFloat( "_CastShadows", enable ? 1 : 0 );
+      mat.SetShaderPassEnabled( "SHADOWCASTER", enable );
     }
   }
 }
