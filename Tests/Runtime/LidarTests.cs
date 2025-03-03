@@ -565,11 +565,11 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.DestroyAndWait( cable );
     }
 
-    float CalculateAverageDifference( agx.Vec3f[] points, System.Func<agx.Vec3f, agx.Vec3f, float> err )
+    float CalculateAverageDifference( agx.Vec3f[] points, uint numPoints, System.Func<agx.Vec3f, agx.Vec3f, float> err )
     {
       float tot = 0;
       int count = 0;
-      for ( int i = 1; i < points.Length; i++ ) {
+      for ( int i = 1; i < numPoints; i++ ) {
         if ( points[ i-1 ].normal().dot( points[ i ].normal() ) < 0.95f )
           continue;
         tot += err( points[ i-1 ], points[ i ] );
@@ -591,16 +591,16 @@ namespace AGXUnityTesting.Runtime
 
       System.Func<agx.Vec3f, agx.Vec3f, float> err = (agx.Vec3f p1, agx.Vec3f p2) => Mathf.Pow( p2.length() - p1.length(), 2 );
 
-      var points = output.View<agx.Vec3f>( out uint _ );
-      var preAvgDiff = CalculateAverageDifference( points, err);
+      var points = output.View<agx.Vec3f>( out uint count );
+      var preAvgDiff = CalculateAverageDifference( points, count, err );
 
       lidarComp.DistanceGaussianNoise.Enable = true;
       lidarComp.DistanceGaussianNoise.StandardDeviationBase = 0.1f;
 
       yield return TestUtils.Step();
 
-      points = output.View<agx.Vec3f>( out uint _, points );
-      var postAvgDiff = CalculateAverageDifference( points, err );
+      points = output.View<agx.Vec3f>( out count, points );
+      var postAvgDiff = CalculateAverageDifference( points, count, err );
 
       Assert.Greater( postAvgDiff, preAvgDiff, "Expected average distance difference to be greater with noise." );
 
@@ -608,8 +608,8 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      points = output.View<agx.Vec3f>( out uint _, points );
-      var finalAvgDiff = CalculateAverageDifference( points, err );
+      points = output.View<agx.Vec3f>( out count, points );
+      var finalAvgDiff = CalculateAverageDifference( points, count, err );
 
       Assert.AreEqual( finalAvgDiff, preAvgDiff, 0.00001f, "Expected average distance to be same as before enabling noise." );
     }
@@ -631,8 +631,9 @@ namespace AGXUnityTesting.Runtime
 
       System.Func<agx.Vec3f, agx.Vec3f, float> err = (agx.Vec3f p1, agx.Vec3f p2) => Mathf.Acos(p2.normal().dot(p1.normal()));
 
-      var points = output.View<agx.Vec3f>( out uint _ );
-      var preAvgDiff = CalculateAverageDifference( points, err );
+      var points = output.View<agx.Vec3f>( out uint count );
+      var preAvgDiff = CalculateAverageDifference( points, count, err );
+      Debug.Log( preAvgDiff );
 
       noise.Enable = true;
       noise.StandardDeviation = 0.2f;
@@ -640,19 +641,22 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      points = output.View<agx.Vec3f>( out uint _, points );
-      var postAvgDiff = CalculateAverageDifference( points, err );
+      points = output.View<agx.Vec3f>( out count, points );
+      var postAvgDiff = CalculateAverageDifference( points, count, err );
+      Debug.Log( postAvgDiff );
 
       Assert.Greater( postAvgDiff, preAvgDiff, "Expected average angle difference difference to be greater with noise." );
 
       noise.Enable = false;
 
       yield return TestUtils.Step();
+      //yield return TestUtils.SimulateSeconds( 100 );
 
-      points = output.View<agx.Vec3f>( out uint _, points );
-      var finalAvgDiff = CalculateAverageDifference( points, err );
+      points = output.View<agx.Vec3f>( out count, points );
+      var finalAvgDiff = CalculateAverageDifference( points, count, err );
+      Debug.Log( finalAvgDiff );
 
-      Assert.AreEqual( finalAvgDiff, preAvgDiff, 0.00001f, "Expected average angle difference to be same as before enabling noise." );
+      Assert.AreEqual( preAvgDiff, finalAvgDiff, 0.00001f, "Expected average angle difference to be same as before enabling noise." );
     }
 
     [UnityTest]
@@ -670,15 +674,15 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      var points = output.View<float>( out uint _ );
+      var points = output.View<float>( out uint count );
       var preAvgInt = points.Average();
 
       lidarComp.BeamDivergence = 0.003f;
 
       yield return TestUtils.Step();
 
-      points = output.View<float>( out uint _, points );
-      var postAvgInt = points.Average();
+      points = output.View<float>( out count, points );
+      var postAvgInt = points.Take((int)count).Average();
 
       Assert.Less( postAvgInt, preAvgInt, "Expected average intensity to be lower with greater beam divergence." );
 
@@ -686,8 +690,8 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      points = output.View<float>( out uint _, points );
-      var finalAvgInt = points.Average();
+      points = output.View<float>( out count, points );
+      var finalAvgInt = points.Take((int)count).Average();
 
       Assert.AreEqual( finalAvgInt, preAvgInt, 0.00001f, "Expected average intensity to be same as before changing beam divergence." );
     }
@@ -707,15 +711,15 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      var points = output.View<float>( out uint _ );
-      var preAvgInt = points.Average();
+      var points = output.View<float>( out uint count );
+      var preAvgInt = points.Take((int)count).Average();
 
       lidarComp.BeamExitRadius = 0.003f;
 
       yield return TestUtils.Step();
 
-      points = output.View<float>( out uint _, points );
-      var postAvgInt = points.Average();
+      points = output.View<float>( out count, points );
+      var postAvgInt = points.Take((int)count).Average();
 
       Assert.AreNotEqual( postAvgInt, preAvgInt, "Expected average intensity to be change with greater beam exit radius." );
 
@@ -723,8 +727,8 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
 
-      points = output.View<float>( out uint _, points );
-      var finalAvgInt = points.Average();
+      points = output.View<float>( out count, points );
+      var finalAvgInt = points.Take((int)count).Average();
 
       Assert.AreEqual( finalAvgInt, preAvgInt, 0.00001f, "Expected average intensity to be same as before changing beam exit radius." );
     }
