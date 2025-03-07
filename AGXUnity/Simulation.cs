@@ -1,3 +1,4 @@
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System;
 using System.Diagnostics;
@@ -167,6 +168,28 @@ namespace AGXUnity
           m_solverSettings.SetSimulation( m_simulation );
           m_solverSettings.GetInitialized<SolverSettings>();
         }
+      }
+    }
+
+    /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [SerializeField]
+    private bool m_preIntegratePositions = false;
+
+    /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [Tooltip( "Set true to integrate positions at the start of the timestep rather than at the end. " )]
+    public bool PreIntegratePositions
+    {
+      get => m_preIntegratePositions;
+      set
+      {
+        m_preIntegratePositions = value;
+
+        if ( m_simulation != null )
+          m_simulation.setPreIntegratePositions( m_preIntegratePositions );
       }
     }
 
@@ -374,6 +397,7 @@ namespace AGXUnity
     /// </summary>
     public ContactEventHandler ContactCallbacks { get; } = new ContactEventHandler();
 
+
     /// <summary>
     /// Save current simulation/scene to an AGX native file (.agx or .aagx).
     /// </summary>
@@ -435,11 +459,15 @@ namespace AGXUnity
     protected override void OnDestroy()
     {
       base.OnDestroy();
+
       if ( m_simulation != null ) {
         StepCallbacks.OnDestroy( m_simulation );
         ContactCallbacks.OnDestroy( this );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
       }
       m_simulation = null;
@@ -448,8 +476,13 @@ namespace AGXUnity
     protected override void OnApplicationQuit()
     {
       base.OnApplicationQuit();
-      if ( m_simulation != null )
+
+      if ( m_simulation != null ) {
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
+      }
     }
 
     private agxSDK.Simulation GetOrCreateSimulation()
@@ -615,8 +648,10 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
-      if ( StepCallbacks.PostSynchronizeTransforms != null )
-        StepCallbacks.PostSynchronizeTransforms.Invoke();
+      if ( !Simulation.Instance.PreIntegratePositions ) {
+        StepCallbacks._Internal_PostSynchronizeTransform?.Invoke();
+        StepCallbacks.PostSynchronizeTransforms?.Invoke();
+      }
 
       if ( StepCallbacks._Internal_OpenPLXSignalPostSync != null )
         StepCallbacks._Internal_OpenPLXSignalPostSync.Invoke();

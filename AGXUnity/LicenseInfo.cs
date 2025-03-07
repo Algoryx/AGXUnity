@@ -28,11 +28,12 @@ namespace AGXUnity
       AGXHydraulics    = 1 << 7,
       AGXHydrodynamics = 1 << 8,
       AGXSimulink      = 1 << 9,
-      AGXTerrain       = 1 << 10,
-      AGXTires         = 1 << 11,
+      AGXSensor        = 1 << 10,
+      AGXTerrain       = 1 << 11,
+      AGXTires         = 1 << 12,
       AGXTracks        = 1 << 12,
-      AGXWireLink      = 1 << 13,
-      AGXWires         = 1 << 14,
+      AGXWireLink      = 1 << 14,
+      AGXWires         = 1 << 15,
       All              = ~0
     }
 

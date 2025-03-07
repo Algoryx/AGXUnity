@@ -125,7 +125,7 @@ namespace AGXUnityEditor.Tools
         using ( InspectorGUI.IndentScope.Single ) {
           var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
           foreach ( var wrapper in ecRowDataWrappers ) {
-            if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) )
+            if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member, null ) )
               continue;
 
             for ( int i = 0; i < 3; ++i ) {
