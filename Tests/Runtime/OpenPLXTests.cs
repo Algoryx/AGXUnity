@@ -94,7 +94,7 @@ namespace AGXUnityTesting.Runtime
       var cartRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/cart");
       var rodRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/rod");
 
-      rodRB.Native.addForce( new agx.Vec3( 50, 0, 0 ) );
+      rodRB.Native.addForceAtLocalPosition( new agx.Vec3( 25, 0, 0 ), new agx.Vec3( 0, 0, 1 ) );
 
       yield return TestUtils.SimulateSeconds( 4.0f );
 
