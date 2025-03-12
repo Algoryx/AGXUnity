@@ -1,5 +1,7 @@
 using AGXUnity.Utils;
 using openplx.DriveTrain;
+using openplx.DriveTrain.Signals;
+using openplx.Physics.Interactions;
 using openplx.Physics.Signals;
 using openplx.Physics1D.Bodies;
 using openplx.Physics3D.Interactions;
@@ -39,6 +41,55 @@ namespace AGXUnity.IO.OpenPLX
 
     private static ValueOutputSignal GenerateBoolOutputSignal( BoolOutput bo, OpenPLXRoot root )
     {
+      var source = bo.source();
+      switch ( bo ) {
+        case TorqueConverterLockedUpOutput: {
+            if ( source is EmpiricalTorqueConverter etc ) {
+              if ( root.FindRuntimeMappedObject( etc.getName() ) is not agxDriveTrain.TorqueConverter agxTc ) {
+                Debug.LogError( $"{etc.getName()} was not mapped to a powerline unit" );
+                return null;
+              }
+              else
+                return ValueOutputSignal.from_bool( agxTc.getEnableLockUp(), bo );
+            }
+            else {
+              Debug.LogError( $"Signal of type 'TorqueConverterLockedUpOutput' requires a source of type 'EmpiricalTorqueConverter'" );
+              return null;
+            }
+          }
+        case EngagedOutput: {
+            if ( source is AutomaticClutch ac ) {
+              if ( root.FindRuntimeMappedObject( ac.getName() ) is not agxDriveTrain.DryClutch agxDc ) {
+                Debug.LogError( $"{ac.getName()} was not mapped to a powerline unit" );
+                return null;
+              }
+              else
+                return ValueOutputSignal.from_bool( agxDc.isEngaged(), bo );
+            }
+            else {
+              Debug.LogError( $"Signal of type 'EngagedOutput' requires a source of type 'AutomaticClutch'" );
+              return null;
+            }
+          }
+        case ActivatedOutput: {
+            if ( source is openplx.Robotics.EndEffectors.VacuumGripper vg ) {
+              Debug.LogWarning( "Vacuum Grippers are not yet supported by the AGXUnity OpenPLX-bindings" );
+              return null;
+            }
+            else {
+              Debug.LogError( $"Signal of type 'ActivatedOutput' requires a source of type 'VacuumGripper'" );
+              return null;
+            }
+          }
+        case InteractionEnabledOutput: {
+            if ( source is Interaction inter ) {
+              return ValueOutputSignal.from_bool( true, bo );
+            }
+            else {
+              Debug.LogError( $"Signal of type 'InteractionEnabledOutput' requires a source of type 'Interaction'" );
+              return null;
+            }
+          }
         default: Debug.LogWarning( $"Unhandled BoolOutput source type '{bo.source().GetType().FullName}'" ); return null;
       }
     }
@@ -67,6 +118,16 @@ namespace AGXUnity.IO.OpenPLX
             var prismatic = root.FindMappedObject(fm.getName());
             var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
             return ValueOutputSignal.from_force_1d( motor.Native.getCurrentForce(), f1do );
+          }
+        case LinearVelocityMotor lvm: {
+            var prismatic = root.FindMappedObject(lvm.getName());
+            var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
+            return ValueOutputSignal.from_force_1d( motor.Native.getCurrentForce(), f1do );
+          }
+        case LinearRange lr: {
+            var prismatic = root.FindMappedObject(lr.getName());
+            var range = prismatic.GetComponent<Constraint>().GetController<RangeController>();
+            return ValueOutputSignal.from_force_1d( range.Native.getCurrentForce(), f1do );
           }
         default: Debug.LogWarning( $"Unhandled Force1DOutput source type '{f1do.source().GetType().FullName}'" ); return null;
       }
@@ -164,6 +225,11 @@ namespace AGXUnity.IO.OpenPLX
             var spring = agxPrismatic.GetComponent<Constraint>().GetController<LockController>();
             return ValueOutputSignal.from_distance( spring.Position, p1do );
           }
+        case LinearRange lr: {
+            var agxPrismatic = root.FindMappedObject( lr.getName() );
+            var range = agxPrismatic.GetComponent<Constraint>();
+            return ValueOutputSignal.from_distance( range.GetCurrentAngle(), p1do );
+          }
         default: Debug.LogWarning( $"Unhandled Position1DOutput source type '{p1do.source().GetType().FullName}'" ); return null;
       }
     }
@@ -192,6 +258,11 @@ namespace AGXUnity.IO.OpenPLX
             else
               return ValueOutputSignal.from_angular_velocity_1d( agxVc.getTargetVelocity(), av1do );
           }
+        case openplx.Physics3D.Interactions.RotationalVelocityMotor rvm3d: {
+            var hinge = root.FindMappedObject(rvm3d.getName());
+            var motor = hinge.GetComponent<Constraint>().GetController<TargetSpeedController>();
+            return ValueOutputSignal.from_angular_velocity_1d( motor.Speed, av1do );
+          }
         default: Debug.LogWarning( $"Unhandled AngularVelocity1DOutput source type '{av1do.source().GetType().FullName}'" ); return null;
       }
     }
@@ -203,6 +274,11 @@ namespace AGXUnity.IO.OpenPLX
             var agxPrismatic = root.FindMappedObject( prismatic.getName() );
             var constraint = agxPrismatic.GetComponent<Constraint>();
             return ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), lv1do );
+          }
+        case LinearVelocityMotor lvm: {
+            var agxPrismatic = root.FindMappedObject( lvm.getName() );
+            var motor = agxPrismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
+            return ValueOutputSignal.from_velocity_1d( motor.Speed, lv1do );
           }
         default: Debug.LogWarning( $"Unhandled LinearVelocity1DOutput source type '{lv1do.source().GetType().FullName}'" ); return null;
       }
