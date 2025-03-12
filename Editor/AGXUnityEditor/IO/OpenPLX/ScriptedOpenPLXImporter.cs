@@ -69,7 +69,7 @@ namespace AGXUnityEditor.IO.OpenPLX
         ImportTime = (float)( end - start ).TotalSeconds;
       }
       catch ( Exception e ) {
-        Debug.LogError( "Failed importing file" );
+        Debug.LogError( $"Failed importing file: '{ctx.assetPath}'" );
         Debug.LogException( e );
       }
     }
