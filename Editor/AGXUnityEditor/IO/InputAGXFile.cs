@@ -1065,7 +1065,7 @@ namespace AGXUnityEditor.IO
 
       return FileInfo.ObjectDb.GetOrCreateMaterial( UpdateMaterialLibrary( material, nativeMaterial ),
                                                     name,
-                                                    m => RestoreLocalDataFrom( m, nativeMaterial ),
+                                                    m => m.RestoreLocalDataFrom( nativeMaterial ),
                                                     () => MaterialFactory( nativeMaterial ) );
     }
 

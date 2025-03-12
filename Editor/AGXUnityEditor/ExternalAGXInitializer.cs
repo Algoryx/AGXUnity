@@ -10,7 +10,7 @@ using Environment = AGXUnity.IO.Environment;
 namespace AGXUnityEditor
 {
   [PreviousSettingsFile( FileName = "AGXInitData.asset" )]
-  public class ExternalAGXInitializer : AGXUnitySettings<ExternalAGXInitializer>
+  public class ExternalAGXInitializer : AGXUnityEditorSettings<ExternalAGXInitializer>
   {
     public string AGX_DIR         = string.Empty;
     public string AGX_DATA_DIR    = string.Empty;
