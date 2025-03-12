@@ -100,13 +100,15 @@ namespace AGXUnity.IO.OpenPLX
 
         track.ThicknessVariation = MapVariation( box_description.variation().height_variation() );
         track.WidthVariation = MapVariation( box_description.variation().width_variation() );
+
+        track.Material = Data.MaterialCache[ box_description.contact_geometry().material() ];
       }
 
       track.Width = default_width;
       track.Thickness = default_height;
 
       MapInternalMergeProperties( system, track );
-      //MapTrackProperties( system, track );
+      MapTrackProperties( system, track );
 
       return;
     }
@@ -318,7 +320,7 @@ namespace AGXUnity.IO.OpenPLX
 
       track_props.name = track_system.getName() + "_TP";
       track.Properties = track_props;
-      Data.CacheMappedTrackProperties.Add( track_props );
+      Data.MappedTrackProperties.Add( track_props );
     }
   }
 }
