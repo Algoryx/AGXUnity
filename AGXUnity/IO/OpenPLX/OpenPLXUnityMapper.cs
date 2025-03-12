@@ -176,7 +176,7 @@ namespace AGXUnity.IO.OpenPLX
         {
           openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
           openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
-          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => null,
+          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
           openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
           _ => null
         };
@@ -202,7 +202,7 @@ namespace AGXUnity.IO.OpenPLX
       OpenPLXObject.RegisterGameObject( visual.getName(), go );
       Utils.MapLocalTransform( go.transform, visual.local_transform() );
       if ( !cachedMat )
-        go.GetComponent<MeshRenderer>().material = Data.VisualMaterial;
+        go.GetComponent<MeshRenderer>().material = MapVisualMaterial(visual.material());
 
       return go;
     }
@@ -236,6 +236,75 @@ namespace AGXUnity.IO.OpenPLX
       outMesh.RecalculateBounds();
       outMesh.RecalculateNormals();
       return outMesh;
+    }
+
+    Material MapVisualMaterial( openplx.Visuals.Materials.Material mat )
+    {
+      if ( Data.RenderMaterialCache.TryGetValue( mat, out var renderMat ) )
+        return renderMat;
+
+      if ( mat is openplx.Visuals.Materials.TextureMaterial texMat ) {
+        renderMat = RenderingUtils.CreateDefaultMaterial();
+        renderMat.name = mat.getName();
+
+#if UNITY_EDITOR
+        var path = texMat.path();
+        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+
+        var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
+
+        renderMat.SetTexture( "_MainTex", source );
+        renderMat.SetTextureScale( "_MainTex", new Vector2( (float)texMat.scale_u(), (float)texMat.scale_v() ) );
+
+#endif
+        Data.RenderMaterialCache[ mat ] = renderMat;
+        Data.MappedMaterials.Add( renderMat );
+        return renderMat;
+      }
+      else
+        return Data.VisualMaterial;
+    }
+
+    GameObject MapExternalTriMesh( openplx.Visuals.Geometries.ExternalTriMeshGeometry objGeom )
+    {
+      string path = objGeom.path();
+
+      GameObject go = new GameObject();
+      var mf = go.AddComponent<MeshFilter>();
+      var mr = go.AddComponent<MeshRenderer>();
+
+      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+        // TODO: Error reporting
+        //var name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
+        //var member = obj_geometry.getOwner()->getType()->findFirstMember(name);
+        //var token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
+        //m_error_reporter->reportError( StringParameterError::create( PathNotAbsolute, token.line, token.column, m_source_id, obj_geometry.path() ) );
+        //geometry = new agxCollide::Geometry();
+      }
+      else {
+#if UNITY_EDITOR
+        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+
+        mf.mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+#else
+        var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+        mf.mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
+#endif
+        go.transform.localScale = objGeom.scale().ToVector3();
+        //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
+        //if ( mesh == nullptr ) {
+        //  auto name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
+        //  auto member = obj_geometry.getOwner()->getType()->findFirstMember(name);
+        //  auto token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
+        //  m_error_reporter->reportError( Error::create( InvalidObjFile, token.line, token.column, m_source_id ) );
+        //  geometry = new agxCollide::Geometry();
+        //}
+        //else {
+        //  geometry = new agxCollide::Geometry( mesh );
+        //}
+      }
+
+      return go;
     }
 
     GameObject MapExternalTriMesh( Charges.ExternalTriMeshGeometry objGeom )
@@ -598,6 +667,44 @@ namespace AGXUnity.IO.OpenPLX
       Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
     }
 
+    GameObject MapTerrain( openplx.Terrain.Terrain terrain )
+    {
+      GameObject terrainGO = Factory.Create<RigidBody>();
+      Data.FrameCache[ terrain ] = terrainGO;
+      OpenPLXObject.RegisterGameObject( terrain.getName(), terrainGO );
+      var rbComp = terrainGO.GetComponent<RigidBody>();
+      Utils.MapLocalTransform( terrainGO.transform, terrain.kinematics().local_transform() );
+      terrainGO.transform.rotation *= Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+
+      rbComp.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      var terrainComp = terrainGO.AddComponent<MovableTerrain>();
+
+      terrainComp.ElementSize = (float)terrain.element_size();
+      terrainComp.MaximumDepth = (float)terrain.max_depth();
+      terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
+      terrainComp.InvertDepthDirection = false;
+
+      //var x_material = lookupMaterial(terrain.material());
+      //if ( x_material && !terrain.material().is_default_terrain_material() ) {
+      //  var x_terrain_material_annotation = terrain.material().findAnnotations("agx_terrain_material");
+      //  std.string x_terrain_material_name = terrain.material().unique_name();
+      //  if ( x_terrain_material_annotation.size() == 1 && x_terrain_material_annotation.front().isString() ) {
+      //    x_terrain_material_name = x_terrain_material_annotation.front().asString();
+      //  }
+      //  if ( !x_terrain.loadLibraryMaterial( x_terrain_material_name ) ) {
+      //    var token = tokenOfObject(*terrain);
+      //    m_error_reporter.reportError( StringParameterError.create( openplx.agxerror.MissingTerrainMaterialConfiguration,
+      //        token.line, token.column, m_source_id, terrain.material().getName()
+      //        ) );
+      //  }
+      //  x_terrain.setMaterial( x_material );
+      //  x_terrain.getTerrainMaterial().getBulkProperties().setDensity( terrain.material().density() );
+      //}
+
+      return terrainGO;
+    }
+
     GameObject MapSystem( openplx.Physics3D.System system )
     {
       var s = MapSystemPass1( system );
@@ -667,6 +774,9 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       // TODO: Map terrains
+      foreach ( var terr in system.getValues<openplx.Terrain.Terrain>() ) {
+        Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
+      }
     }
 
     void MapSystemPass3( openplx.Physics3D.System system )
