@@ -7,7 +7,7 @@ using GUI = AGXUnity.Utils.GUI;
 namespace AGXUnityEditor
 {
   [PreviousSettingsFile( FileName = "Data.asset" )]
-  public class EditorData : AGXUnitySettings<EditorData>
+  public class EditorData : AGXUnityEditorSettings<EditorData>
   {
     public double SecondsSinceLastGC { get { return EditorApplication.timeSinceStartup - m_lastGC; } }
 

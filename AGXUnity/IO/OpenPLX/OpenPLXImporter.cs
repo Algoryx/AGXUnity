@@ -54,6 +54,16 @@ namespace AGXUnity.IO.OpenPLX
     private OpenPlxContext CreateContext( agxopenplx.AgxCache cache = null )
     {
       std.StringVector bundle_paths = new std.StringVector { OpenPLXDir + "/AGXUnity/OpenPLX" };
+      foreach ( var additional in OpenPLXSettings.Instance.AdditionalBundleDirs ) {
+        if ( String.IsNullOrEmpty( additional ) )
+          continue;
+        if ( !System.IO.Directory.Exists( additional ) ) {
+          Debug.LogWarning( $"Specified bundle directory '{additional}' does not exist, skipping..." );
+          continue;
+        }
+
+        bundle_paths.Add( additional );
+      }
 
       var context = new OpenPlxContext( bundle_paths );
 

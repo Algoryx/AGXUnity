@@ -18,8 +18,6 @@ namespace AGXUnityEditor.IO
     private const string m_refScript = "RigidBody.cs";
     private static string m_relDataPathDir = string.Empty;
 
-    public static string PackageName => "com.algoryx.agxunity";
-
     public static bool IsPackageContext => AGXUnityPackageDirectory.StartsWith( "Packages" );
 
     /// <summary>
@@ -107,7 +105,7 @@ namespace AGXUnityEditor.IO
           return "Assets/" + m_relDataPathDir;
         }
         else {
-          return "Packages/" + PackageName;
+          return "Packages/" + AGXUnity.IO.Utils.PackageName;
         }
       }
     }

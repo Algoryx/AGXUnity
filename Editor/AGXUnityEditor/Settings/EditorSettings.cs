@@ -1,3 +1,4 @@
+using AGXUnity.IO.OpenPLX;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -6,7 +7,7 @@ using GUI = AGXUnity.Utils.GUI;
 namespace AGXUnityEditor
 {
   [PreviousSettingsFile( FileName = "Settings.asset" )]
-  public class EditorSettings : AGXUnitySettings<EditorSettings>
+  public class EditorSettings : AGXUnityEditorSettings<EditorSettings>
   {
     [HideInInspector]
     public static readonly int ToggleButtonSize = 18;
@@ -92,6 +93,48 @@ namespace AGXUnityEditor
         HandleKeyHandlerGUI( GUI.MakeLabel( "Pick handler (scene view)" ), BuiltInToolsTool_PickHandlerKeyHandler );
       }
 
+      InspectorGUI.Separator( 1, 4 );
+      EditorGUILayout.Space( 5 );
+      EditorGUILayout.LabelField( GUI.AddSizeTag( "<b>OpenPLX settings</b>", 15 ) );
+      EditorGUILayout.Space();
+
+      EditorGUILayout.LabelField( "<b>Additional Bundle Directories</b>" );
+      var bundles = OpenPLXSettings.Instance.AdditionalBundleDirs;
+      int toRemove = -1;
+      bool changed = false;
+      using ( new InspectorGUI.IndentScope() ) {
+        for ( int i = 0; i < bundles.Count; i++ ) {
+          using var scope = new EditorGUILayout.HorizontalScope();
+          InspectorGUI.SelectFile( GUI.MakeLabel( "" ), bundles[ i ], "Select Bundle Directory", Application.dataPath, newFile => { bundles[ i ] = newFile; changed = true; }, true );
+          if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                    true,
+                                    $"Remove bundle directory.",
+                                    GUILayout.Width( 18 ) ) )
+            toRemove = i;
+        }
+
+        if ( bundles.Count == 0 )
+          EditorGUILayout.LabelField( "<i>No additional bundle directories added</i>" );
+      }
+
+      if ( toRemove >= 0 ) {
+        bundles.RemoveAt( toRemove );
+        changed = true;
+      }
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        GUILayout.FlexibleSpace();
+        if ( InspectorGUI.Button( MiscIcon.EntryAdd,
+                                    true,
+                                    $"Add bundle directory.",
+                                    GUILayout.Width( 18 ) ) ) {
+          bundles.Add( "" );
+          changed = true;
+        }
+      }
+
+      if ( changed )
+        OpenPLXSettings.Instance.Save();
 
       // Recommended settings
       InspectorGUI.Separator( 1, 4 );
