@@ -67,20 +67,20 @@ namespace AGXUnity.IO.OpenPLX
 
       var context = new OpenPlxContext( bundle_paths );
 
-      MathSwig.Math_register_factories_cs( context );
-      PhysicsSwig.Physics_register_factories_cs( context );
-      Physics1DSwig.Physics1D_register_factories_cs( context );
-      Physics3DSwig.Physics3D_register_factories_cs( context );
-      DriveTrainSwig.DriveTrain_register_factories_cs( context );
-      RoboticsSwig.Robotics_register_factories_cs( context );
-      SimulationSwig.Simulation_register_factories_cs( context );
-      VehiclesSwig.Vehicles_register_factories_cs( context );
-      TerrainSwig.Terrain_register_factories_cs( context );
-      VisualsSwig.Visuals_register_factories_cs( context );
-      UrdfSwig.Urdf_register_factories_cs( context );
+      MathSWIG.Math_register_factories_cs( context );
+      PhysicsSWIG.Physics_register_factories_cs( context );
+      Physics1DSWIG.Physics1D_register_factories_cs( context );
+      Physics3DSWIG.Physics3D_register_factories_cs( context );
+      DriveTrainSWIG.DriveTrain_register_factories_cs( context );
+      RoboticsSWIG.Robotics_register_factories_cs( context );
+      SimulationSWIG.Simulation_register_factories_cs( context );
+      VehiclesSWIG.Vehicles_register_factories_cs( context );
+      TerrainSWIG.Terrain_register_factories_cs( context );
+      VisualsSWIG.Visuals_register_factories_cs( context );
+      UrdfSWIG.Urdf_register_factories_cs( context );
 
 
-      OpenPlxAgx.register_plugins( context, cache );
+      agxOpenPLXSWIG.register_plugins( context, cache );
 
       return context;
     }
@@ -88,7 +88,7 @@ namespace AGXUnity.IO.OpenPLX
     public Object ParseOpenPLXSource( string source, agxopenplx.AgxCache agxCache = null )
     {
       var context = CreateContext(agxCache);
-      Object loadedObj = CoreSwig.loadModelFromFile( source, null, context );
+      Object loadedObj = CoreSWIG.loadModelFromFile( source, null, context );
 
       if ( context.hasErrors() ) {
         loadedObj = null;
