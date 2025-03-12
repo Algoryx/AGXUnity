@@ -25,6 +25,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public Action<Error> ErrorReporter { get; set; } = null;
     public Action<MapperData> SuccessCallback { get; set; } = null;
+    public Action ErrorCallback { get; set; } = null;
     public MapperOptions Options { get; set; }
     public GameObject ImportOpenPLXFile( string path )
     {
@@ -46,7 +47,7 @@ namespace AGXUnity.IO.OpenPLX
           root.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       }
       else
-        Debug.LogError( $"There were errors importing the OpenPLX file '{path}'" );
+        ErrorCallback?.Invoke();
 
       return go;
     }

@@ -34,6 +34,8 @@ namespace AGXUnityEditor.IO.OpenPLX
     public bool IgnoreDisabledMeshes = false;
     public bool RotateUp = true;
 
+    private bool m_nonImportable = true;
+
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
@@ -59,10 +61,17 @@ namespace AGXUnityEditor.IO.OpenPLX
       importer.ErrorReporter = ReportErrors;
       importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes, RotateUp );
       importer.SuccessCallback = data => OnSuccess( ctx, data );
+      importer.ErrorCallback = () => {
+        if ( !m_nonImportable )
+          Debug.LogError( $"There were errors importing the OpenPLX file '{ctx.assetPath}'" );
+      };
 
       try {
         var go = importer.ImportOpenPLXFile( ctx.assetPath );
         var end = DateTime.Now;
+
+        if ( Errors.Count > 0 && m_nonImportable )
+          SkipImport = true;
 
         ctx.AddObjectToAsset( "Root", go, icon );
         ctx.SetMainObject( go );
@@ -98,6 +107,8 @@ namespace AGXUnityEditor.IO.OpenPLX
     public void ReportErrors( openplx.Error error )
     {
       var ef = new UnityOpenPLXErrorFormatter();
+      if ( error.getErrorCode() != CoreSWIG.MissingAssignment && error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
+        m_nonImportable = false;
       var raw = ef.format( error );
       var m = Regex.Match( raw, ".+:\\d+:\\d+ (.+)" );
       Errors.Add( new Error
