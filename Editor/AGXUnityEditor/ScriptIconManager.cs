@@ -18,7 +18,7 @@ namespace AGXUnityEditor
     {
       foreach ( var t in TypeCache.GetTypesDerivedFrom( typeof( MonoBehaviour ), "AGXUnity" ) ) {
         if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) && !s_ignored.Contains( t ) )
-          SetGizmoIconEnabled( t.AsType(), true, false );
+          SetGizmoIconEnabled( t, true, false );
       }
     }
 
