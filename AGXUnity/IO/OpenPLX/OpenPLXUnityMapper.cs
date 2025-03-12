@@ -521,7 +521,6 @@ namespace AGXUnity.IO.OpenPLX
       mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
       mapped.CuttingDirection = Line.Create( body.gameObject, Vector3.zero, shovel.cutting_direction().ToHandedVector3() );
       mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
-      mapped.AutoAddToTerrains = true;
     }
 
     void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
