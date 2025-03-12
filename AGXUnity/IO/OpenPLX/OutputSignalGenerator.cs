@@ -39,28 +39,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private static ValueOutputSignal GenerateBoolOutputSignal( BoolOutput bo, OpenPLXRoot root )
     {
-      switch ( bo.source() ) {
-        case EmpiricalTorqueConverter etc: {
-            if ( root.FindRuntimeMappedObject( etc.getName() ) is not agxDriveTrain.TorqueConverter agxTc ) {
-              Debug.LogError( $"{etc.getName()} was not mapped to a powerline unit" );
-              return null;
-            }
-            else
-              return ValueOutputSignal.from_bool( agxTc.getEnableLockUp(), bo );
-          }
-        case AutomaticClutch ac: {
-            if ( root.FindRuntimeMappedObject( ac.getName() ) is not agxDriveTrain.DryClutch agxDc ) {
-              Debug.LogError( $"{ac.getName()} was not mapped to a powerline unit" );
-              return null;
-            }
-            else
-              return ValueOutputSignal.from_bool( agxDc.isEngaged(), bo );
-          }
-        case openplx.Robotics.EndEffectors.VacuumGripper vg: {
-            Debug.LogWarning( "Vacuum Grippers are not yet supported by the AGXUnity OpenPLX-bindings" );
-            return null;
-          }
-        default: Debug.LogWarning( $"Unhandled IntOutput source type '{bo.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled BoolOutput source type '{bo.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -77,7 +56,7 @@ namespace AGXUnity.IO.OpenPLX
               return ValueOutputSignal.from_int( agxGearbox.getGear() - num_reverse, io );
             }
           }
-        default: Debug.LogWarning( $"Unhandled IntOutput source type '{io.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled IntOutput source type '{io.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -89,7 +68,7 @@ namespace AGXUnity.IO.OpenPLX
             var motor = prismatic.GetComponent<Constraint>().GetController<TargetSpeedController>();
             return ValueOutputSignal.from_force_1d( motor.Native.getCurrentForce(), f1do );
           }
-        default: Debug.LogWarning( $"Unhandled Force1DOutput source type '{f1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled Force1DOutput source type '{f1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -114,7 +93,7 @@ namespace AGXUnity.IO.OpenPLX
             var spring = hinge.GetComponent<Constraint>().GetController<LockController>();
             return ValueOutputSignal.from_angle( spring.Position, ao );
           }
-        default: Debug.LogWarning( $"Unhandled AngleOutput source type '{ao.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled AngleOutput source type '{ao.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -167,7 +146,7 @@ namespace AGXUnity.IO.OpenPLX
             var dynValue = dttm.getDynamic("___the__last__motor__torque___");
             return ValueOutputSignal.from_torque_1d( dynValue.isReal() ? dynValue.asReal() : 0.0, t1do );
           }
-        default: Debug.LogWarning( $"Unhandled Torque1DOutput source type '{t1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled Torque1DOutput source type '{t1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -185,7 +164,7 @@ namespace AGXUnity.IO.OpenPLX
             var spring = agxPrismatic.GetComponent<Constraint>().GetController<LockController>();
             return ValueOutputSignal.from_distance( spring.Position, p1do );
           }
-        default: Debug.LogWarning( $"Unhandled Position1DOutput source type '{p1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled Position1DOutput source type '{p1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -213,7 +192,7 @@ namespace AGXUnity.IO.OpenPLX
             else
               return ValueOutputSignal.from_angular_velocity_1d( agxVc.getTargetVelocity(), av1do );
           }
-        default: Debug.LogWarning( $"Unhandled AngularVelocity1DOutput source type '{av1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled AngularVelocity1DOutput source type '{av1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -225,7 +204,7 @@ namespace AGXUnity.IO.OpenPLX
             var constraint = agxPrismatic.GetComponent<Constraint>();
             return ValueOutputSignal.from_velocity_1d( constraint.GetCurrentSpeed(), lv1do );
           }
-        default: Debug.LogWarning( $"Unhandled LinearVelocity1DOutput source type '{lv1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled LinearVelocity1DOutput source type '{lv1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -248,7 +227,7 @@ namespace AGXUnity.IO.OpenPLX
             else
               return ValueOutputSignal.from_fraction( agxGear.getGearRatio(), fo );
           }
-        default: Debug.LogWarning( $"Unhandled FractionOutput source type '{fo.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled FractionOutput source type '{fo.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -287,7 +266,7 @@ namespace AGXUnity.IO.OpenPLX
             else
               return ValueOutputSignal.from_angular_velocity_1d( agxClutch.getSlip(), rv1do );
           }
-        default: Debug.LogWarning( $"Unhandled RelativeVelocity1DOutput source type '{rv1do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled RelativeVelocity1DOutput source type '{rv1do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -299,7 +278,7 @@ namespace AGXUnity.IO.OpenPLX
             var agxRB= agxRBObj.GetComponent<RigidBody>();
             return ValueOutputSignal.from_position_3d( agxRB.Native.getPosition().ToOpenPLXVec3(), p3do );
           }
-        default: Debug.LogWarning( $"Unhandled Position3DOutput source type '{p3do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled Position3DOutput source type '{p3do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -312,7 +291,7 @@ namespace AGXUnity.IO.OpenPLX
             var vel = agxrb.Native.getRotation().getAsEulerAngles();
             return ValueOutputSignal.from_rpy( vel.ToOpenPLXVec3(), rpyo );
           }
-        default: Debug.LogWarning( $"Unhandled RPYOutput source type '{rpyo.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled RPYOutput source type '{rpyo.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -325,7 +304,7 @@ namespace AGXUnity.IO.OpenPLX
             var vel = agxRb.LinearVelocity.ToLeftHanded();
             return ValueOutputSignal.from_velocity_3d( vel.ToOpenPLXVec3(), lv3do );
           }
-        default: Debug.LogWarning( $"Unhandled LinearVelocity3DOutput source type '{lv3do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled LinearVelocity3DOutput source type '{lv3do.source().GetType().FullName}'" ); return null;
       }
     }
 
@@ -338,7 +317,7 @@ namespace AGXUnity.IO.OpenPLX
             var vel = agxRb.AngularVelocity.ToLeftHanded();
             return ValueOutputSignal.from_velocity_3d( vel.ToOpenPLXVec3(), av3do );
           }
-        default: Debug.LogWarning( $"Unhandled AngularVelocity3DOutput source type '{av3do.source().GetType().Name}'" ); return null;
+        default: Debug.LogWarning( $"Unhandled AngularVelocity3DOutput source type '{av3do.source().GetType().FullName}'" ); return null;
       }
     }
   }
