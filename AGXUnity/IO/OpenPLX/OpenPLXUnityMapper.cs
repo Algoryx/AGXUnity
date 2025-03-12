@@ -70,6 +70,24 @@ namespace AGXUnity.IO.OpenPLX
       return RootNode;
     }
 
+    private void FindOutputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
+      where T : openplx.Core.Object
+    {
+      foreach ( var (objName, obj) in system.getEntries<T>() ) {
+        foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
+          signals.RegisterSignal( prefix + "." + objName + "." + name, output );
+      }
+    }
+
+    private void FindInputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
+      where T : openplx.Core.Object
+    {
+      foreach ( var (objName, obj) in system.getEntries<T>() ) {
+        foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
+          signals.RegisterSignal( prefix + "." + objName + "." + name, input );
+      }
+    }
+
     private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
     {
       foreach ( var (name, subsystem) in obj.getEntries<openplx.Physics3D.System>() )
@@ -80,6 +98,16 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
         signals.RegisterSignal( prefix + "." + name, input );
+
+      if ( obj is openplx.Physics3D.System system ) {
+        FindOutputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
+        FindOutputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
+        FindOutputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
+
+        FindInputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
+        FindInputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
+        FindInputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
+      }
     }
 
     Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
