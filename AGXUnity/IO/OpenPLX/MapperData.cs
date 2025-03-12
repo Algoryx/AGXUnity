@@ -23,6 +23,7 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Physics.Charges.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Charges.Material, ShapeMaterial>();
     public Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject>();
     public Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel> FrictionModelCache { get; } = new Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel>();
+    public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
     public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };
@@ -33,5 +34,6 @@ namespace AGXUnity.IO.OpenPLX
     public List<Material> MappedMaterials { get; } = new List<Material>();
     public List<TrackProperties> MappedTrackProperties { get; } = new List<TrackProperties>();
     public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
+    public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
   }
 }

@@ -202,7 +202,7 @@ namespace AGXUnity.IO.OpenPLX
       OpenPLXObject.RegisterGameObject( visual.getName(), go );
       Utils.MapLocalTransform( go.transform, visual.local_transform() );
       if ( !cachedMat )
-        go.GetComponent<MeshRenderer>().material = MapVisualMaterial(visual.material());
+        go.GetComponent<MeshRenderer>().material = MapVisualMaterial( visual.material() );
 
       return go;
     }
@@ -685,22 +685,32 @@ namespace AGXUnity.IO.OpenPLX
       terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
       terrainComp.InvertDepthDirection = false;
 
-      //var x_material = lookupMaterial(terrain.material());
-      //if ( x_material && !terrain.material().is_default_terrain_material() ) {
-      //  var x_terrain_material_annotation = terrain.material().findAnnotations("agx_terrain_material");
-      //  std.string x_terrain_material_name = terrain.material().unique_name();
-      //  if ( x_terrain_material_annotation.size() == 1 && x_terrain_material_annotation.front().isString() ) {
-      //    x_terrain_material_name = x_terrain_material_annotation.front().asString();
-      //  }
-      //  if ( !x_terrain.loadLibraryMaterial( x_terrain_material_name ) ) {
-      //    var token = tokenOfObject(*terrain);
-      //    m_error_reporter.reportError( StringParameterError.create( openplx.agxerror.MissingTerrainMaterialConfiguration,
-      //        token.line, token.column, m_source_id, terrain.material().getName()
-      //        ) );
-      //  }
-      //  x_terrain.setMaterial( x_material );
-      //  x_terrain.getTerrainMaterial().getBulkProperties().setDensity( terrain.material().density() );
-      //}
+      var terrainMat = terrain.material();
+      if ( !terrainMat.is_default_terrain_material() ) {
+        if ( !Data.MaterialCache.TryGetValue( terrainMat, out var shapeMaterial ) ) {
+          shapeMaterial = MapMaterial( terrainMat );
+          Data.MaterialCache[ terrainMat ] = shapeMaterial;
+        }
+
+        if ( !Data.TerrainMaterialCache.TryGetValue( terrainMat, out var mappedTerrMat ) ) {
+          mappedTerrMat = ScriptableObject.CreateInstance<DeformableTerrainMaterial>();
+          var matAnnotation = terrainMat.findAnnotations("agx_terrain_material");
+          string matName = terrainMat.unique_name();
+          if ( matAnnotation.Count == 1 && matAnnotation[ 0 ].isString() ) {
+            matName = matAnnotation[ 0 ].asString();
+          }
+
+          mappedTerrMat.SetPresetNameAndUpdateValues( matName );
+          mappedTerrMat.name = terrainMat.getName()+"_TM";
+
+          Data.TerrainMaterialCache[ terrainMat ] = mappedTerrMat;
+          Data.MappedTerrainMaterials.Add( mappedTerrMat );
+        }
+
+        terrainComp.DefaultTerrainMaterial = mappedTerrMat;
+        terrainComp.Material = shapeMaterial;
+        terrainComp.ParticleMaterial = shapeMaterial;
+      }
 
       return terrainGO;
     }

@@ -102,6 +102,8 @@ namespace AGXUnityEditor.IO.OpenPLX
         ctx.AddObjectToAsset( props.name, props );
       foreach ( var props in data.MappedTrackInternalMergeProperties )
         ctx.AddObjectToAsset( props.name, props );
+      foreach ( var mat in data.MappedTerrainMaterials )
+        ctx.AddObjectToAsset( mat.name, mat );
     }
 
     public void ReportErrors( openplx.Error error )
