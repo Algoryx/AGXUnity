@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-
+using UnityEngine.Profiling;
 using Input = openplx.Physics.Signals.Input;
 using Object = openplx.Core.Object;
 
@@ -111,12 +111,16 @@ namespace AGXUnity.IO.OpenPLX
       if ( !isActiveAndEnabled )
         return;
       foreach ( var outputSource in m_outputs ) {
+        if ( !outputSource.Native.enabled() )
+          continue;
+        Profiler.BeginSample( "BrickSignals Generate Signals" );
         OutputSignal signal = OutputSignalGenerator.GenerateSignalFrom( outputSource.Native, Root );
 
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
           m_outputCache[ outputSource.Native ] = signal;
         }
+        Profiler.EndSample();
       }
     }
 
