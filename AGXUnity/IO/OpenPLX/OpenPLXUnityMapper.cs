@@ -14,16 +14,18 @@ namespace AGXUnity.IO.OpenPLX
 {
   public struct MapperOptions
   {
-    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false, bool ignoreDisabledMeshes = false )
+    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false, bool ignoreDisabledMeshes = false, bool rotateUp = true )
     {
       HideMeshesInHierarchy = hideMeshes;
       HideVisualMaterialsInHierarchy = hideVisuals;
       IgnoreDisabledMeshes = ignoreDisabledMeshes;
+      RotateUp = rotateUp;
     }
 
     public bool HideMeshesInHierarchy;
     public bool HideVisualMaterialsInHierarchy;
     public bool IgnoreDisabledMeshes;
+    public bool RotateUp;
   }
 
   public class OpenPLXUnityMapper

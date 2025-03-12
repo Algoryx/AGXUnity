@@ -32,6 +32,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public bool HideImportedMeshes = true;
     public bool HideImportedVisualMaterials = false;
     public bool IgnoreDisabledMeshes = false;
+    public bool RotateUp = true;
 
     public override void OnImportAsset( AssetImportContext ctx )
     {
@@ -49,16 +50,14 @@ namespace AGXUnityEditor.IO.OpenPLX
         return;
       }
 
-
       // TODO: Add support for dependecy-based reimport
       //foreach ( var dep in dependencies )
       //  ctx.DependsOnSourceAsset( dep );
 
-
       var start = DateTime.Now;
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportErrors;
-      importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes );
+      importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes, RotateUp );
       importer.SuccessCallback = data => OnSuccess( ctx, data );
 
       try {

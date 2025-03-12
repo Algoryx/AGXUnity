@@ -41,6 +41,9 @@ namespace AGXUnity.IO.OpenPLX
         foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
           ErrorReporter?.Invoke( error );
         SuccessCallback?.Invoke( mapper.Data );
+
+        if ( Options.RotateUp )
+          root.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       }
       else
         Debug.LogError( $"There were errors importing the OpenPLX file '{path}'" );

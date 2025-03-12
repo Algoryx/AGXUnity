@@ -93,6 +93,8 @@ namespace AGXUnityEditor.IO.OpenPLX
       skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
       skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
       skipContainer.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "RotateUp" ) ) );
+
       if ( !skipImport ) {
 
         if ( ScriptedOpenPLXImporter.Errors.Count > 0 ) {
