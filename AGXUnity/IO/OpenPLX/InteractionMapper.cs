@@ -221,9 +221,9 @@ namespace AGXUnity.IO.OpenPLX
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
-          target.SetCompliance( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
-        else if ( key.StartsWith( "around_" ) )
           target.SetCompliance( mapped.Value, MapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+        else if ( key.StartsWith( "around_" ) )
+          target.SetCompliance( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
       }
     }
 
@@ -354,6 +354,8 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.ForceMotor => ConstraintType.Prismatic,
         // Cylindrical
         Interactions.Cylindrical => ConstraintType.CylindricalJoint,
+        // Ball
+        Interactions.Ball => ConstraintType.BallJoint,
         // Unknown
         _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
       };
@@ -367,6 +369,7 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.Hinge => MappedConstraintType.Ordinary,
         Interactions.Prismatic => MappedConstraintType.Ordinary,
         Interactions.Cylindrical => MappedConstraintType.Ordinary,
+        Interactions.Ball => MappedConstraintType.Ordinary,
         Interactions.RotationalRange => MappedConstraintType.RotationalRange,
         Interactions.TorsionSpring => MappedConstraintType.RotationalLock,
         Interactions.RotationalVelocityMotor => MappedConstraintType.RotationalTargetSpeed,
