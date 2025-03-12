@@ -208,7 +208,7 @@ namespace AGXUnity.IO.OpenPLX
 
       merge_props.name = track_system.getName() + "_MP";
       track.InternalMergeProperties = merge_props;
-      Data.CacheMappedTrackInternalMergeProperties.Add( merge_props );
+      Data.MappedTrackInternalMergeProperties.Add( merge_props );
     }
 
     private void MapTrackProperties( Tracks.System track_system, Track track )

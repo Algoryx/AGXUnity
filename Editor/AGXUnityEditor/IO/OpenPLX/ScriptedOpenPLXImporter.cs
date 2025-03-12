@@ -77,19 +77,21 @@ namespace AGXUnityEditor.IO.OpenPLX
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
       ctx.AddObjectToAsset( "Default Material", data.VisualMaterial );
-      foreach ( var mesh in data.CacheMappedMeshes )
+      foreach ( var mesh in data.MappedMeshes )
         ctx.AddObjectToAsset( mesh.name, mesh );
-      foreach ( var mat in data.CacheMappedMaterials )
+      foreach ( var mat in data.MappedMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
       ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
       foreach ( var mat in data.MaterialCache.Values )
         if ( mat != data.DefaultMaterial )
           ctx.AddObjectToAsset( mat.name, mat );
-      foreach ( var mat in data.ContactMaterials )
+      foreach ( var mat in data.MappedContactMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
-      foreach ( var props in data.CacheMappedTrackProperties )
+      foreach ( var fric in data.MappedFrictionModels )
+        ctx.AddObjectToAsset( fric.name, fric );
+      foreach ( var props in data.MappedTrackProperties )
         ctx.AddObjectToAsset( props.name, props );
-      foreach ( var props in data.CacheMappedTrackInternalMergeProperties )
+      foreach ( var props in data.MappedTrackInternalMergeProperties )
         ctx.AddObjectToAsset( props.name, props );
     }
 

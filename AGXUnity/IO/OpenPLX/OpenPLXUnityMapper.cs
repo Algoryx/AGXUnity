@@ -98,12 +98,12 @@ namespace AGXUnity.IO.OpenPLX
       if ( Options.HideMeshesInHierarchy )
         mesh.hideFlags = HideFlags.HideInHierarchy;
       mesh.name = visual.getName();
-      Data.CacheMappedMeshes.Add( mesh );
+      Data.MappedMeshes.Add( mesh );
       filter.mesh = mesh;
 
       var rm = rd.getRenderMaterial();
       if ( rm != null ) {
-        if ( !Data.MappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
+        if ( !Data.NativeMappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
           mat = new Material( Shader.Find( "Standard" ) );
           mat.RestoreLocalDataFrom( rm );
           if ( rm.getName() != "" )
@@ -112,8 +112,8 @@ namespace AGXUnity.IO.OpenPLX
             mat.name = rm.getHash().ToString();
           if ( Options.HideVisualMaterialsInHierarchy )
             mat.hideFlags = HideFlags.HideInHierarchy;
-          Data.MappedRenderMaterialCache[ rm.getHash() ] = mat;
-          Data.CacheMappedMaterials.Add( mat );
+          Data.NativeMappedRenderMaterialCache[ rm.getHash() ] = mat;
+          Data.MappedMaterials.Add( mat );
         }
 
         renderer.material = mat;
@@ -324,7 +324,7 @@ namespace AGXUnity.IO.OpenPLX
         meshSource.name = geom.getName();
         if ( Options.HideMeshesInHierarchy )
           meshSource.hideFlags    = HideFlags.HideInHierarchy;
-        Data.CacheMappedMeshes.Add( meshSource );
+        Data.MappedMeshes.Add( meshSource );
         mesh.AddSourceObject( meshSource );
 
         //var meshes        = MeshSplitter.Split( collisionData.getVertices(),
