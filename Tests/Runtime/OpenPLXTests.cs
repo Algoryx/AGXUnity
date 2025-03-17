@@ -274,30 +274,30 @@ namespace AGXUnityTesting.Runtime
       signals.SendInputSignal( openplx.Physics.Signals.RealInputSignal.create( 1, input.Native ) );
       yield return TestUtils.SimulateSeconds( 0.2f );
 
-      Assert.AreEqual( 1, signals.GetConvertedOutputValue<float>( "SignalScene.angularVelocity" ) );
-      Assert.AreEqual( 1, signals.GetConvertedOutputValue<double>( "SignalScene.angularVelocity" ) );
+      Assert.AreEqual( 1, signals.GetConvertedOutputValue<float>( "SignalScene.angularVelocity" ), 1e-10 );
+      Assert.AreEqual( 1, signals.GetConvertedOutputValue<double>( "SignalScene.angularVelocity" ), 1e-10 );
 
-      var groundTruth = signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation().getAsEulerAngles();
+      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(),agx.EulerConvention.ZYXs);
 
       var vec3Result = signals.GetConvertedOutputValue<agx.Vec3>("SignalScene.boxRPY");
-      Assert.AreEqual( groundTruth.x, vec3Result.x );
-      Assert.AreEqual( groundTruth.y, vec3Result.y );
-      Assert.AreEqual( groundTruth.z, vec3Result.z );
+      Assert.AreEqual( groundTruth.x, vec3Result.x, 1e-10 );
+      Assert.AreEqual( groundTruth.y, vec3Result.y, 1e-10 );
+      Assert.AreEqual( groundTruth.z, vec3Result.z, 1e-10 );
 
       var vec3fResult = signals.GetConvertedOutputValue<agx.Vec3f>("SignalScene.boxRPY");
-      Assert.AreEqual( (float)groundTruth.x, vec3fResult.x );
-      Assert.AreEqual( (float)groundTruth.y, vec3fResult.y );
-      Assert.AreEqual( (float)groundTruth.z, vec3fResult.z );
+      Assert.AreEqual( (float)groundTruth.x, vec3fResult.x, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.y, vec3fResult.y, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.z, vec3fResult.z, 1e-10 );
 
       var vector3Result = signals.GetConvertedOutputValue<Vector3>("SignalScene.boxRPY");
-      Assert.AreEqual( (float)groundTruth.x, vector3Result.x );
-      Assert.AreEqual( (float)groundTruth.y, vector3Result.y );
-      Assert.AreEqual( (float)groundTruth.z, vector3Result.z );
+      Assert.AreEqual( (float)groundTruth.x, vector3Result.x, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.y, vector3Result.y, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.z, vector3Result.z, 1e-10 );
 
       var openPLXVec3Result = signals.GetConvertedOutputValue<openplx.Math.Vec3>("SignalScene.boxRPY");
-      Assert.AreEqual( groundTruth.x, openPLXVec3Result.x() );
-      Assert.AreEqual( groundTruth.y, openPLXVec3Result.y() );
-      Assert.AreEqual( groundTruth.z, openPLXVec3Result.z() );
+      Assert.AreEqual( groundTruth.x, openPLXVec3Result.x(), 1e-10 );
+      Assert.AreEqual( groundTruth.y, openPLXVec3Result.y(), 1e-10 );
+      Assert.AreEqual( groundTruth.z, openPLXVec3Result.z(), 1e-10 );
     }
 
     [UnityTest]
@@ -314,30 +314,68 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.SimulateSeconds( 0.2f );
 
-      Assert.AreEqual( -1, velocityOutput.GetCachedValue<float>() );
-      Assert.AreEqual( -1, velocityOutput.GetCachedValue<double>() );
+      Assert.AreEqual( -1, velocityOutput.GetCachedValue<float>(), 1e-10 );
+      Assert.AreEqual( -1, velocityOutput.GetCachedValue<double>(), 1e-10 );
 
-      var groundTruth = signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation().getAsEulerAngles();
+      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(), agx.EulerConvention.ZYXs);
 
       var vec3Result = boxRPY.GetCachedValue<agx.Vec3>();
-      Assert.AreEqual( groundTruth.x, vec3Result.x );
-      Assert.AreEqual( groundTruth.y, vec3Result.y );
-      Assert.AreEqual( groundTruth.z, vec3Result.z );
+      Assert.AreEqual( groundTruth.x, vec3Result.x, 1e-10 );
+      Assert.AreEqual( groundTruth.y, vec3Result.y, 1e-10 );
+      Assert.AreEqual( groundTruth.z, vec3Result.z, 1e-10 );
 
       var vec3fResult = boxRPY.GetCachedValue<agx.Vec3f>();
-      Assert.AreEqual( (float)groundTruth.x, vec3fResult.x );
-      Assert.AreEqual( (float)groundTruth.y, vec3fResult.y );
-      Assert.AreEqual( (float)groundTruth.z, vec3fResult.z );
+      Assert.AreEqual( (float)groundTruth.x, vec3fResult.x, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.y, vec3fResult.y, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.z, vec3fResult.z, 1e-10 );
 
       var vector3Result = boxRPY.GetCachedValue<Vector3>();
-      Assert.AreEqual( (float)groundTruth.x, vector3Result.x );
-      Assert.AreEqual( (float)groundTruth.y, vector3Result.y );
-      Assert.AreEqual( (float)groundTruth.z, vector3Result.z );
+      Assert.AreEqual( (float)groundTruth.x, vector3Result.x, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.y, vector3Result.y, 1e-10 );
+      Assert.AreEqual( (float)groundTruth.z, vector3Result.z, 1e-10 );
 
       var openPLXVec3Result = boxRPY.GetCachedValue<openplx.Math.Vec3>();
-      Assert.AreEqual( groundTruth.x, openPLXVec3Result.x() );
-      Assert.AreEqual( groundTruth.y, openPLXVec3Result.y() );
-      Assert.AreEqual( groundTruth.z, openPLXVec3Result.z() );
+      Assert.AreEqual( groundTruth.x, openPLXVec3Result.x(), 1e-10 );
+      Assert.AreEqual( groundTruth.y, openPLXVec3Result.y(), 1e-10 );
+      Assert.AreEqual( groundTruth.z, openPLXVec3Result.z(), 1e-10 );
+    }
+
+    [UnityTest]
+    public IEnumerator TestRBLinearVelocitySignal()
+    {
+      yield return LoadOpenPLX( "rb_velocity_signal_test.openplx" );
+
+      var signals = FindComponentByName<OpenPLXSignals>("rb_velocity_signal_test");
+
+      var input = signals.FindInputTarget("SignalScene.box_linear_vel_in");
+      var output = signals.FindOutputSource("SignalScene.box_linear_vel_out");
+
+      input.SendSignal( new agx.Vec3( 1, 1, 1 ) );
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      var outVel = output.GetCachedValue<agx.Vec3>();
+
+      Assert.AreEqual( outVel, new agx.Vec3( 1, 1, 1 ) );
+    }
+
+    [UnityTest]
+    public IEnumerator TestRBAngularVelocitySignal()
+    {
+      yield return LoadOpenPLX( "rb_velocity_signal_test.openplx" );
+
+      var signals = FindComponentByName<OpenPLXSignals>("rb_velocity_signal_test");
+
+      var input = signals.FindInputTarget("SignalScene.box_angular_vel_in");
+      var output = signals.FindOutputSource("SignalScene.box_angular_vel_out");
+
+      input.SendSignal( new agx.Vec3( 1, 1, 1 ) );
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      var outVel = output.GetCachedValue<agx.Vec3>();
+
+      Assert.AreEqual( outVel, new agx.Vec3( 1, 1, 1 ) );
     }
   }
 }
