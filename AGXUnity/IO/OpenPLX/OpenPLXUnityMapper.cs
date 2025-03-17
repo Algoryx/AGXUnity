@@ -186,7 +186,7 @@ namespace AGXUnity.IO.OpenPLX
             go.transform.localScale = box.size().ToVector3();
             break;
           case openplx.Visuals.Geometries.Cylinder cyl:
-            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height(), (float)cyl.radius() );
+            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height()/2, (float)cyl.radius() );
             break;
           case openplx.Visuals.Geometries.Sphere sphere:
             go.transform.localScale = Vector3.one * (float)sphere.radius();
