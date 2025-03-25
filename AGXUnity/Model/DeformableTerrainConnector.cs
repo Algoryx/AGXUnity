@@ -35,7 +35,7 @@ namespace AGXUnity.Model
       return TerrainUtils.WriteTerrainDataOffsetRaw( Terrain, MaximumDepth );
     }
 
-    private void OnDestroy()
+    internal void OnReset()
     {
       if ( InitialHeights != null ) {
         transform.position += MaximumDepth * Vector3.up;
@@ -47,7 +47,13 @@ namespace AGXUnity.Model
         UnityEditor.EditorUtility.SetDirty( Terrain.terrainData );
         UnityEditor.AssetDatabase.SaveAssets();
 #endif
+        InitialHeights = null;
       }
+    }
+
+    private void OnDestroy()
+    {
+      OnReset();
     }
   }
 }
