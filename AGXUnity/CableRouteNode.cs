@@ -64,7 +64,9 @@ namespace AGXUnity
         if ( value != m_type ) {
           m_type = value;
           if ( m_type == Cable.NodeType.BodyFixedNode )
-            this.NodeData = new BodyFixedData();
+            NodeData = new BodyFixedData();
+          else
+            NodeData = new NoExtraData();
         }
       }
     }
@@ -173,11 +175,17 @@ namespace AGXUnity
     public void OnAfterDeserialize()
     {
       if ( NodeData == null ) {
-        // If cable was created prior to 5.3.0, the default was to have IgnoreNodeRotation = true. 
-        var bfd = new BodyFixedData();
-        bfd.RigidAttachment = true;
-        bfd.IgnoreNodeRotation = true;
-        NodeData = bfd;
+        if ( Type == Cable.NodeType.BodyFixedNode ) {
+          // If cable was created prior to 5.3.0, the default was to have IgnoreNodeRotation = true. 
+          // We set it to the same when we deserialize a node without data to ensure consistent behaviour across versions.
+          var bfd = new BodyFixedData();
+          bfd.RigidAttachment = true;
+          bfd.IgnoreNodeRotation = true;
+          NodeData = bfd;
+        }
+        else {
+          NodeData = new NoExtraData();
+        }
       }
     }
   }

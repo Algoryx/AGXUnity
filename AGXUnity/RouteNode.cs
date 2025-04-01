@@ -8,6 +8,11 @@ namespace AGXUnity
     public abstract bool Initialize( RouteNode parent );
   }
 
+  public class NoExtraData : IExtraNodeData
+  {
+    public bool Initialize( RouteNode parent ) { return true; }
+  }
+
   [Serializable]
   public abstract class RouteNode : IFrame
   {
