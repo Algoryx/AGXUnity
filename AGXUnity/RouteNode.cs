@@ -5,7 +5,7 @@ namespace AGXUnity
 {
   public interface IExtraNodeData
   {
-    public abstract bool Initialize( WireRouteNode parent );
+    public abstract bool Initialize( RouteNode parent );
   }
 
   [Serializable]

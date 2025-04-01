@@ -299,7 +299,8 @@ namespace AGXUnity
         };
 
         var currIndex = m_routePointCurve.FindIndex( curr.Time );
-        var nextIndex = currIndex + 1;
+        var nextIndex = m_routePointCurve.FindIndex( next.Time );
+
         routePointData.CurrNode = Route[ currIndex ];
         routePointData.NextNode = Route[ nextIndex ];
 
@@ -396,6 +397,7 @@ namespace AGXUnity
 
           cable = CreateNative( result.NumSegments / Route.TotalLength );
 
+
           var handledNodes = new HashSet<CableRouteNode>();
           var success = TraverseRoutePoints( routePointData =>
           {
@@ -413,14 +415,17 @@ namespace AGXUnity
 
             if ( attachmentNode != null && !handledNodes.Contains( attachmentNode ) ) {
               handledNodes.Add( attachmentNode );
-              routeNode.Add( CableAttachment.AttachmentType.Rigid,
-                             attachmentNode.Parent,
-                             attachmentNode.LocalPosition,
-                             attachmentNode.LocalRotation );
+              var nodeData = (attachmentNode.NodeData as BodyFixedData);
+              var attachment = routeNode.Add( nodeData.RigidAttachment ? CableAttachment.AttachmentType.Rigid : CableAttachment.AttachmentType.Ball,
+                                              attachmentNode.Parent,
+                                              attachmentNode.LocalPosition,
+                                              attachmentNode.LocalRotation);
+              attachment.IgnoreNodeRotation = nodeData.IgnoreNodeRotation;
             }
 
             if ( !cable.add( routeNode.GetInitialized<CableRouteNode>().Native ) )
               throw new Exception( $"{GetType().FullName} ERROR: Unable to add node to cable." );
+
           } );
 
           if ( !success )
@@ -465,6 +470,12 @@ namespace AGXUnity
 
       return true;
     }
+
+    //private void OnGUI()
+    //{
+
+    //  Gizmos.DrawLine()
+    //}
 
     protected override void OnDisable()
     {
