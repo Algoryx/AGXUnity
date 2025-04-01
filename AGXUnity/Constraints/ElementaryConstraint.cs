@@ -13,6 +13,15 @@ namespace AGXUnity
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
   public class ElementaryConstraint : IPropertySynchronizable
   {
+    [Serializable]
+    public struct AppendData
+    {
+      [SerializeField]
+      public agx.Angle.Axis Axis;
+      [SerializeField]
+      public agx.Angle.Type Type;
+    }
+
     /// <summary>
     /// Create instance given temporary native elementary constraint.
     /// </summary>
@@ -76,7 +85,7 @@ namespace AGXUnity
     /// </summary>
     [field: SerializeField]
     [HideInInspector]
-    public string NativeName { get; private set; }
+    public string NativeName { get; internal set; }
 
     /// <summary>
     /// Enable flag. Paired with property Enable.
@@ -115,7 +124,7 @@ namespace AGXUnity
     /// Native instance of this elementary constraint. Only set when the
     /// constraint is initialized and is simulating.
     /// </summary>
-    public agx.ElementaryConstraint Native { get; private set; }
+    public agx.ElementaryConstraint Native { get; protected set; }
 
     /// <summary>
     /// Callback from Constraint when it's being initialized.

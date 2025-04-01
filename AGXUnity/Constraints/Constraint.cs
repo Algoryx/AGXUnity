@@ -19,6 +19,7 @@ namespace AGXUnity
     DistanceJoint,
     AngularLockJoint,
     PlaneJoint,
+    GenericConstraint1DOF,
     Unknown
   }
 
@@ -89,7 +90,7 @@ namespace AGXUnity
 
       GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity." + type ) );
       try {
-        Constraint constraint = constraintGameObject.AddComponent<Constraint>();
+        Constraint constraint = type == ConstraintType.GenericConstraint1DOF ? constraintGameObject.AddComponent<Generic1DOFControlledConstraint>() : constraintGameObject.AddComponent<Constraint>();
         constraint.Type = type;
 
         constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
@@ -97,8 +98,11 @@ namespace AGXUnity
 
         // Creating a temporary native instance of the constraint, including a rigid body and frames.
         // Given this native instance we copy the default configuration.
-        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) )
+        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) ) {
+          if ( constraint is Generic1DOFControlledConstraint g1dof )
+            g1dof.Type = g1dof.Type;
           constraint.TryAddElementaryConstraints( tmpNative.Instance );
+        }
 
         return constraint;
       }
@@ -318,7 +322,7 @@ namespace AGXUnity
     /// List of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [SerializeReference]
-    private List<ElementaryConstraint> m_elementaryConstraintsNew = new List<ElementaryConstraint>();
+    protected List<ElementaryConstraint> m_elementaryConstraintsNew = new List<ElementaryConstraint>();
 
     /// <summary>
     /// Array of elementary constraints in this constraint - controllers and ordinary.
@@ -685,6 +689,20 @@ namespace AGXUnity
         TryAddElementaryConstraints( tempNative.Instance, onObjectCreated );
     }
 
+    protected virtual agx.Constraint CreateNative( RigidBody rb1, agx.Frame f1, RigidBody rb2, agx.Frame f2 )
+    {
+      var native = (agx.Constraint)Activator.CreateInstance( NativeType,
+                                                           new object[]
+                                                           {
+                                                             rb1.Native,
+                                                             f1,
+                                                             ( rb2 != null ? rb2.Native : null ),
+                                                             f2
+                                                           } );
+
+      return native;
+    }
+
     /// <summary>
     /// Creates native instance and adds it to the simulation if this constraint
     /// is properly configured.
@@ -752,14 +770,7 @@ namespace AGXUnity
       }
 
       try {
-        Native = (agx.Constraint)Activator.CreateInstance( NativeType,
-                                                           new object[]
-                                                           {
-                                                             rb1.Native,
-                                                             f1,
-                                                             ( rb2 != null ? rb2.Native : null ),
-                                                             f2
-                                                           } );
+        Native = CreateNative( rb1, f1, rb2, f2 );
 
         // Assigning native elementary constraints to our elementary constraint instances.
         foreach ( ElementaryConstraint ec in ElementaryConstraints )
