@@ -397,7 +397,6 @@ namespace AGXUnity
 
           cable = CreateNative( result.NumSegments / Route.TotalLength );
 
-
           var handledNodes = new HashSet<CableRouteNode>();
           var success = TraverseRoutePoints( routePointData =>
           {
@@ -470,12 +469,6 @@ namespace AGXUnity
 
       return true;
     }
-
-    //private void OnGUI()
-    //{
-
-    //  Gizmos.DrawLine()
-    //}
 
     protected override void OnDisable()
     {
