@@ -131,6 +131,7 @@ namespace AGXUnity
 
     ~NativeHandler()
     {
+      LicenseManager.ReturnFloating( "Shutting down" );
       m_isAgx = null;
     }
 

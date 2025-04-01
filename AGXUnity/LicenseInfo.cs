@@ -94,6 +94,7 @@ namespace AGXUnity
 
         info.IsValid = agx.Runtime.instance().isValid();
         info.Status = agx.Runtime.instance().getStatus();
+        info.IsFloating = agx.Runtime.instance().isFloatingLicense();
 
         ParseDate( ref info, agx.Runtime.instance().readValue( "EndDate" ) );
 
@@ -198,6 +199,11 @@ namespace AGXUnity
     /// True if the license is valid - otherwise false.
     /// </summary>
     public bool IsValid;
+
+    /// <summary>
+    /// True if the license is a floating license
+    /// </summary>
+    public bool IsFloating;
 
     /// <summary>
     /// License status if something is wrong - otherwise an empty string.
