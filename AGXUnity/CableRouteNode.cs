@@ -6,7 +6,22 @@ using UnityEngine;
 namespace AGXUnity
 {
   [Serializable]
-  public class CableRouteNode : RouteNode
+  public class BodyFixedData : IExtraNodeData
+  {
+    [field: SerializeField]
+    public bool RigidAttachment { get; set; } = true;
+
+    [field: SerializeField]
+    public bool IgnoreNodeRotation { get; set; } = false;
+
+    public bool Initialize( RouteNode parent )
+    {
+      throw new NotImplementedException();
+    }
+  }
+
+  [Serializable]
+  public class CableRouteNode : RouteNode, ISerializationCallbackReceiver
   {
     /// <summary>
     /// Construct a route node given parent game object, local position to parent and
@@ -44,7 +59,16 @@ namespace AGXUnity
     public Cable.NodeType Type
     {
       get { return m_type; }
-      set { m_type = value; }
+      set
+      {
+        if ( value != m_type ) {
+          m_type = value;
+          if ( m_type == Cable.NodeType.BodyFixedNode )
+            NodeData = new BodyFixedData();
+          else
+            NodeData = new NoExtraData();
+        }
+      }
     }
 
     [SerializeField]
@@ -125,8 +149,12 @@ namespace AGXUnity
 
       foreach ( var attachment in m_attachments ) {
         var attachmentRb       = attachment.Parent != null ? attachment.Parent.GetInitializedComponentInParent<RigidBody>() : null;
-        var attachmentPosition = attachmentRb != null ? CalculateLocalPosition( attachmentRb.gameObject ).ToHandedVec3() : attachment.Position.ToHandedVec3();
-        var attachmentRotation = attachmentRb != null ? CalculateLocalRotation( attachmentRb.gameObject ).ToHandedQuat() : attachment.Rotation.ToHandedQuat();
+        var attachmentPosition = attachmentRb != null ? attachment.CalculateLocalPosition( attachmentRb.gameObject ).ToHandedVec3() : attachment.Position.ToHandedVec3();
+        agx.Quat attachmentRotation;
+        if ( attachment.IgnoreNodeRotation )
+          attachmentRotation = attachmentRb != null ? CalculateLocalRotation( attachmentRb.gameObject ).ToHandedQuat() : attachment.Rotation.ToHandedQuat();
+        else
+          attachmentRotation = attachmentRb != null ? attachment.CalculateLocalRotation( attachmentRb.gameObject ).ToHandedQuat() : attachment.Rotation.ToHandedQuat();
         agxCable.SegmentAttachment nativeAttachment = null;
         if ( attachment.Type == CableAttachment.AttachmentType.Ball )
           nativeAttachment = new agxCable.PointSegmentAttachment( attachmentRb != null ? attachmentRb.Native : null, attachmentPosition );
@@ -140,6 +168,25 @@ namespace AGXUnity
       }
 
       return true;
+    }
+
+    public void OnBeforeSerialize() { }
+
+    public void OnAfterDeserialize()
+    {
+      if ( NodeData == null ) {
+        if ( Type == Cable.NodeType.BodyFixedNode ) {
+          // If cable was created prior to 5.3.0, the default was to have IgnoreNodeRotation = true. 
+          // We set it to the same when we deserialize a node without data to ensure consistent behaviour across versions.
+          var bfd = new BodyFixedData();
+          bfd.RigidAttachment = true;
+          bfd.IgnoreNodeRotation = true;
+          NodeData = bfd;
+        }
+        else {
+          NodeData = new NoExtraData();
+        }
+      }
     }
   }
 }
