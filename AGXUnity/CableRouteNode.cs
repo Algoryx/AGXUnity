@@ -61,7 +61,7 @@ namespace AGXUnity
       get { return m_type; }
       set
       {
-        if ( value != m_type ) {
+        if ( value != m_type || NodeData == null ) {
           m_type = value;
           if ( m_type == Cable.NodeType.BodyFixedNode )
             NodeData = new BodyFixedData();
