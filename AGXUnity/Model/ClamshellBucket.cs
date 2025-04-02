@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Clamshell Bucket" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#clamshell-buckets" )]
   public class ClamshellBucket : ScriptComponent
   {
     public agxTerrain.ClamShellBucket Native { get; private set; } = null;
