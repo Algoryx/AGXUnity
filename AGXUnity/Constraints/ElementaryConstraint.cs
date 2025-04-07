@@ -27,7 +27,18 @@ namespace AGXUnity
     /// </summary>
     /// <param name="tmpEc">Temporary elementary constraint.</param>
     /// <returns>New instance, as similar as possible, to the given native elementary constraint.</returns>
+    [Obsolete( "Elementary constraint no longer requires a gameObject" )]
     public static ElementaryConstraint Create( GameObject gameObject, agx.ElementaryConstraint tmpEc )
+    {
+      return Create( tmpEc );
+    }
+
+    /// <summary>
+    /// Create instance given temporary native elementary constraint.
+    /// </summary>
+    /// <param name="tmpEc">Temporary elementary constraint.</param>
+    /// <returns>New instance, as similar as possible, to the given native elementary constraint.</returns>
+    public static ElementaryConstraint Create( agx.ElementaryConstraint tmpEc )
     {
       if ( tmpEc == null )
         return null;

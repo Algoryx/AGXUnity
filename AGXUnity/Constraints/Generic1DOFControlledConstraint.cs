@@ -14,6 +14,8 @@ namespace AGXUnity
 
     [SerializeField]
     private SecondaryType m_controller = SecondaryType.Lock;
+
+    [InspectorPriority( -1 )]
     public SecondaryType Controller
     {
       get => m_controller;
@@ -31,16 +33,20 @@ namespace AGXUnity
       }
     }
 
+    private void Reset()
+    {
+      Type = ConstraintType.GenericConstraint1DOF;
+      RecreateElementary();
+    }
+
     private void RecreateElementary()
     {
       agx.ConstraintAngleBasedData cabd = new agx.ConstraintAngleBasedData(null, ConstraintAngle);
-      var nativeType = NativeControllerType;
-
-      var nativeController = (agx.ElementaryConstraint)Activator.CreateInstance( nativeType, new object[] { cabd } );
+      var nativeController = (agx.ElementaryConstraint)Activator.CreateInstance( NativeControllerType, new object[] { cabd } );
       nativeController.setName( NativeControllerName );
 
       var old = ConstraintController;
-      ConstraintController = (ElementaryConstraintController)ElementaryConstraint.Create( gameObject, nativeController );
+      ConstraintController = (ElementaryConstraintController)ElementaryConstraint.Create( nativeController );
       if ( old != null ) {
         ConstraintController.Enable = old.Enable;
         ConstraintController.Compliance = old.Compliance;
@@ -76,6 +82,7 @@ namespace AGXUnity
     }
 
     public agx.Angle.Axis DOFAxis = agx.Angle.Axis.N;
+
     [SerializeField]
     private agx.Angle.Type m_DOFType = agx.Angle.Type.ROTATIONAL;
     public agx.Angle.Type DOFType
@@ -103,18 +110,13 @@ namespace AGXUnity
 
     protected override agx.Constraint CreateNative( RigidBody rb1, agx.Frame f1, RigidBody rb2, agx.Frame f2 )
     {
-      var native = (agx.Constraint)new agx.GenericConstraint1DOF( rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2);
-
       agx.Angle angle = ConstraintAngle;
-      var AP = native.getAttachmentPair();
-      AP.add( angle );
+      agx.ConstraintAngleBasedData cabd = new agx.ConstraintAngleBasedData(null, angle);
 
-      agx.ConstraintAngleBasedData cabd = new agx.ConstraintAngleBasedData(AP, angle);
-      var nativeType = NativeControllerType;
-
-      var nativeController = (agx.ElementaryConstraint)Activator.CreateInstance( nativeType, new object[] { cabd } );
+      var nativeController = (agx.BasicControllerConstraint)Activator.CreateInstance( NativeControllerType, new object[] { cabd } );
       nativeController.setName( NativeControllerName );
-      native.addSecondaryConstraint( NativeControllerName, nativeController );
+
+      var native = (agx.Constraint)new agx.GenericConstraint1DOF( rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2, nativeController);
 
       return native;
     }

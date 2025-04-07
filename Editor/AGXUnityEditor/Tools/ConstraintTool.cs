@@ -61,8 +61,11 @@ namespace AGXUnityEditor.Tools
       // The constraint type is Unknown when, e.g., go.AddComponent<Constraint>()
       // or when the constraint has been reset. If any of the selected constraints
       // is of type Unknown, we exit the GUI here.
-      if ( !ConstraintTypeGUI( constraints, differentTypes ) )
+      if ( constraints.Any( c => c.Type == ConstraintType.Unknown ) )
         return;
+
+      if ( Constraint.Type != ConstraintType.GenericConstraint1DOF )
+        ConstraintTypeGUI( constraints, differentTypes );
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
@@ -254,9 +257,8 @@ namespace AGXUnityEditor.Tools
       return "";
     }
 
-    private bool ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
+    private void ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
     {
-      var anyUnknownType = constraints.Any( c => c.Type == ConstraintType.Unknown );
       // Reference type is set to unknown if we have multi-select and
       // the types aren't the same. This is to detect if the user has
       // selected some valid type, with the limitation that it's not
@@ -307,8 +309,6 @@ namespace AGXUnityEditor.Tools
           Undo.CollapseUndoOperations( undoIndex );
         }
       }
-
-      return !anyUnknownType;
     }
 
     public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state )

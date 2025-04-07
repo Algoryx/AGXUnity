@@ -98,10 +98,10 @@ namespace AGXUnity
 
         // Creating a temporary native instance of the constraint, including a rigid body and frames.
         // Given this native instance we copy the default configuration.
-        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) ) {
-          if ( constraint is Generic1DOFControlledConstraint g1dof )
-            g1dof.Type = g1dof.Type;
-          constraint.TryAddElementaryConstraints( tmpNative.Instance );
+        if ( type != ConstraintType.GenericConstraint1DOF ) {
+          using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) ) {
+            constraint.TryAddElementaryConstraints( tmpNative.Instance );
+          }
         }
 
         return constraint;
@@ -219,8 +219,18 @@ namespace AGXUnity
     public ConstraintType Type
     {
       get { return m_type; }
-      private set
+      protected set
       {
+        if ( this is Generic1DOFControlledConstraint ) {
+          if ( value != ConstraintType.GenericConstraint1DOF ) {
+            Debug.LogWarning( "Cannot swap constraint type of GenericConstraint1DOF." );
+            return;
+          }
+        }
+        else if ( value == ConstraintType.GenericConstraint1DOF ) {
+          Debug.LogWarning( "Unable to swap type to GenericConstraint1DOF, please use the dedicated component instead." );
+          return;
+        }
         m_type = value;
       }
     }
@@ -581,7 +591,7 @@ namespace AGXUnity
         }
 
         using ( var nativeHinge = new TemporaryNative( NativeType ) ) {
-          swing = ElementaryConstraint.Create( gameObject, nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
+          swing = ElementaryConstraint.Create( nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
         }
 
         if ( swing == null ) {
@@ -622,7 +632,7 @@ namespace AGXUnity
         if ( native.getElementaryConstraint( i ).getName() == "" )
           throw new Exception( "Native elementary constraint doesn't have a name." );
 
-        var ec = ElementaryConstraint.Create( gameObject, native.getElementaryConstraint( i ) );
+        var ec = ElementaryConstraint.Create( native.getElementaryConstraint( i ) );
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -635,7 +645,7 @@ namespace AGXUnity
         if ( native.getSecondaryConstraint( i ).getName() == "" )
           throw new Exception( "Native secondary constraint doesn't have a name." );
 
-        var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
+        var sc = ElementaryConstraint.Create( native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -677,7 +687,10 @@ namespace AGXUnity
         Debug.LogWarning( "Invalid to change type of an initialized constraint.", this );
         return;
       }
-
+      if ( this is Generic1DOFControlledConstraint ) {
+        Debug.LogWarning( "Cannot swap constraint type of GenericConstraint1DOF." );
+        return;
+      }
       m_elementaryConstraintsNew.Clear();
 
       SetType( type, true );
