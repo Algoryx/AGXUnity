@@ -38,6 +38,9 @@ namespace AGXUnity.IO.OpenPLX
     public string Name { get; protected set; }
 
     [field: SerializeField]
+    public bool Enabled { get; protected set; }
+
+    [field: SerializeField]
     public long ValueTypeCode { get; protected set; }
 
     [SerializeField]

@@ -12,6 +12,7 @@ namespace AGXUnity.IO.OpenPLX
     public InputTarget( string name, Input input )
     {
       Name = name;
+      Enabled = true;
       m_serializedType = new SerializedType( input.GetType() );
       ValueTypeCode = input.type();
     }

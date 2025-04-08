@@ -11,6 +11,7 @@ namespace AGXUnity.IO.OpenPLX
     public OutputSource( string name, Output output )
     {
       Name = name;
+      Enabled = output.enabled();
       m_serializedType = new SerializedType( output.GetType() );
       ValueTypeCode = output.type();
     }
