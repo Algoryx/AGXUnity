@@ -567,11 +567,18 @@ namespace AGXUnity.IO.OpenPLX
       Data.FrameCache[ body ] = rb;
       OpenPLXObject.RegisterGameObject( body.getName(), rb );
       var rbComp = rb.GetComponent<RigidBody>();
-      Utils.MapLocalTransform( rb.transform, body.kinematics().local_transform() );
-
-      MapMassProperties( rbComp.MassProperties, body.inertia(), body.kinematics().local_cm_transform() );
+      var kinematics = body.kinematics();
+      Utils.MapLocalTransform( rb.transform, kinematics.local_transform() );
+      MapMassProperties( rbComp.MassProperties, body.inertia(), kinematics.local_cm_transform() );
 
       rbComp.MotionControl = body.is_dynamic() ? agx.RigidBody.MotionControl.DYNAMICS : agx.RigidBody.MotionControl.KINEMATICS;
+
+      var transform = openplx.Math.AffineTransform.create();
+      if ( body.getOwner() is openplx.Physics3D.System owningSystem )
+        transform = owningSystem.reduce_body_to_world_system_transform( body );
+
+      rbComp.LinearVelocity = transform.transform_vec3_vector( kinematics.initial_local_linear_velocity() ).ToHandedVector3();
+      rbComp.AngularVelocity = transform.transform_vec3_vector( kinematics.initial_local_angular_velocity() ).ToHandedVector3();
 
       bool hasVisuals = false;
       foreach ( var visual in body.getValues<openplx.Visuals.Geometries.Geometry>() ) {
