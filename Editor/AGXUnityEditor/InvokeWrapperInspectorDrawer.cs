@@ -689,6 +689,82 @@ namespace AGXUnityEditor
                                         InspectorEditor.Skin.TextField );
     }
 
+    [InspectorDrawer( typeof( agx.Angle.Axis ) )]
+    public static object AxisDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( !wrapper.GetContainingType().IsVisible )
+        return null;
+
+      var prev = wrapper.Get<agx.Angle.Axis>( objects[ 0 ] );
+      var newState = agx.Angle.Axis.U;
+
+
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
+
+        var xSel = prev == agx.Angle.Axis.U;
+        var ySel = prev == agx.Angle.Axis.V;
+        var zSel = prev == agx.Angle.Axis.N;
+
+        var skin = InspectorGUISkin.Instance;
+
+        var buttonWidth = 20;
+
+        if ( GUILayout.Toggle( xSel,
+                               GUI.MakeLabel( "X", xSel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                               GUILayout.Width( buttonWidth ) ) != xSel )
+          newState = agx.Angle.Axis.U;
+        if ( GUILayout.Toggle( ySel,
+                               GUI.MakeLabel( "Y", ySel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
+                               GUILayout.Width( buttonWidth ) ) != ySel )
+          newState = agx.Angle.Axis.V;
+        if ( GUILayout.Toggle( zSel,
+                               GUI.MakeLabel( "Z", zSel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                               GUILayout.Width( buttonWidth ) ) != zSel )
+          newState = agx.Angle.Axis.N;
+      }
+
+      return newState;
+    }
+
+    [InspectorDrawer( typeof( agx.Angle.Type ) )]
+    public static object AngleTypeDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( !wrapper.GetContainingType().IsVisible )
+        return null;
+
+      var prev = wrapper.Get<agx.Angle.Type>( objects[ 0 ] );
+      var newState = agx.Angle.Type.ROTATIONAL;
+
+
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
+
+        var rotSel = prev == agx.Angle.Type.ROTATIONAL;
+        var transSel = prev == agx.Angle.Type.TRANSLATIONAL;
+
+        var skin = InspectorGUISkin.Instance;
+
+        var buttonWidth = 30;
+
+        if ( GUILayout.Toggle( rotSel,
+                               GUI.MakeLabel( GUI.Symbols.CircleArrowAcw.ToString(), rotSel, "Control rotational DOF around the selected axis." ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                               GUILayout.Width( buttonWidth ) ) != rotSel )
+          newState = agx.Angle.Type.ROTATIONAL;
+        if ( GUILayout.Toggle( transSel,
+                               GUI.MakeLabel( GUI.Symbols.ArrowRight.ToString(), transSel, "Control translational DOF around the selected axis." ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                               GUILayout.Width( buttonWidth ) ) != transSel )
+          newState = agx.Angle.Type.TRANSLATIONAL;
+      }
+
+      return newState;
+    }
+
     [InspectorDrawer( typeof( Enum ), IsBaseType = true )]
     public static object EnumDrawer( object[] objects, InvokeWrapper wrapper )
     {
