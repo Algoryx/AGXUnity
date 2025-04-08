@@ -126,22 +126,9 @@ namespace AGXUnity.IO.OpenPLX
 
     public void SendInputSignal( InputSignal input )
     {
-      m_inputSignalQueue.Enqueue( input );
-    }
+    #region Output Signal Helpers
 
-    public Value GetOutputValue( Output output )
-    {
-      if ( output == null || !m_outputCache.TryGetValue( output, out var signal ) )
-        return null;
-
-      if ( signal is not ValueOutputSignal vos )
-        return null;
-
-      return vos.value();
-
-    }
-
-    public Value GetOutputValue( string outputName )
+    public Value GetValue( string outputName )
     {
       if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var endpoint ) )
         return null;
@@ -149,48 +136,56 @@ namespace AGXUnity.IO.OpenPLX
       if ( endpoint is not OutputSource os )
         return null;
 
-      return GetOutputValue( os.Native );
+      return os.GetValue();
     }
 
-    public T GetConvertedOutputValue<T>( Output output )
+    public Value GetValue( Output output )
     {
-      if ( !m_outputCache.TryGetValue( output, out var signal ) )
-        throw new ArgumentException( "Specified output does not have a cached value", "output" );
+      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
+        return null;
 
-      if ( signal is not ValueOutputSignal vos )
-        throw new ArgumentException( $"Given output '{output.getName()}' did not send a ValueOutputSignal" );
-
-      if ( !IsValueTypeCompatible<T>( signal.source().type(), true ) )
-        throw new InvalidCastException( $"Cannot convert signal value of type '{signal.source().GetType().Name}' to provided type '{typeof( T ).Name}'" );
-
-      var value = vos.value();
-
-      if ( value is RealValue realVal )
-        return (T)Convert.ChangeType( realVal.value(), typeof( T ) );
-      else if ( value is Vec3Value v3val ) {
-        if ( typeof( T ) == typeof( Vector3 ) )
-          return (T)(object)v3val.value().ToVector3();
-        else if ( typeof( T ) == typeof( agx.Vec3 ) )
-          return (T)(object)v3val.value().ToVec3();
-        else if ( typeof( T ) == typeof( agx.Vec3f ) )
-          return (T)(object)v3val.value().ToVec3f();
-        else if ( typeof( T ) == typeof( openplx.Math.Vec3 ) )
-          return (T)(object)v3val.value();
-      }
-
-      throw new InvalidCastException( "Could not map signal type to requested type" );
+      return endpoint.GetValue();
     }
 
-    public T GetConvertedOutputValue<T>( string outputName )
+    public T GetValue<T>( Output output )
+    {
+      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
+        throw new ArgumentException( $"Failed to find output '{output.getName()}' in OpenPLX Root '{Root.name}'", "output" );
+
+      return endpoint.GetValue<T>();
+    }
+
+    public bool TryGetValue<T>( Output output, out T value )
+    {
+      value = default;
+      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
+        return false;
+
+      return endpoint.TryGetValue( out value );
+    }
+
+    public T GetValue<T>( string outputName )
     {
       if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var output ) )
         throw new ArgumentException( $"Specified output '{outputName}' does not exist", "outputName" );
       if ( output is not OutputSource os )
         throw new ArgumentException( $"Specified output '{outputName}' is not an output signal", "outputName" );
 
-      return GetConvertedOutputValue<T>( os.Native );
+      return os.GetValue<T>();
     }
 
+    public bool TryGetValue<T>( string outputName, out T value )
+    {
+      value = default;
+      if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var output ) ||
+           output is not OutputSource os )
+        return false;
+
+      return os.TryGetValue<T>( out value );
+    }
+    #endregion
+
+    #region Signal Type Handling
     public enum ValueType
     {
       Integer,
@@ -228,7 +223,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private static ValueType[] s_typeCache;
 
-    internal static ValueType GetOpenPLXTypeEnum( long type )
+    public static ValueType GetOpenPLXTypeEnum( long type )
     {
       if ( s_typeCache == null ) {
 
@@ -264,6 +259,7 @@ namespace AGXUnity.IO.OpenPLX
         s_typeCache[ tempIO.Percentage() - 1 ]            = ValueType.Real;
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;
+        s_typeCache[ tempIO.Duration() - 1 ]              = ValueType.Real;
 
         if ( s_typeCache.Contains( ValueType.Unknown ) )
           Debug.LogWarning( "OpenPLX value type mapping contains unhandled value type(s)" );
@@ -296,5 +292,6 @@ namespace AGXUnity.IO.OpenPLX
 
       return requestedType == endpointType;
     }
+    #endregion
   }
 }
