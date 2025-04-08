@@ -59,7 +59,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
-      var mcObject = OpenPLXObject.CreateGameObject( mc.getName() );
+      mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc is Charges.RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();

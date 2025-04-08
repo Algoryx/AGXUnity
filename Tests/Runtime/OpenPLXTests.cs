@@ -377,5 +377,41 @@ namespace AGXUnityTesting.Runtime
 
       Assert.AreEqual( outVel, new agx.Vec3( 1, 1, 1 ) );
     }
+
+    [UnityTest]
+    public IEnumerator TestMCLinearVelocitySignal()
+    {
+      yield return LoadOpenPLX( "mc_signal_test.openplx" );
+
+      var signals = FindComponentByName<OpenPLXSignals>("mc_signal_test");
+
+      var output = signals.FindOutputSource("SignalScene.mc_linvel_signal");
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      var outVel = output.GetValue<agx.Vec3>();
+
+      Assert.That( outVel.x, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+      Assert.That( outVel.y, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+      Assert.That( outVel.z, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+    }
+
+    [UnityTest]
+    public IEnumerator TestMCAngularVelocitySignal()
+    {
+      yield return LoadOpenPLX( "mc_signal_test.openplx" );
+
+      var signals = FindComponentByName<OpenPLXSignals>("mc_signal_test");
+
+      var output = signals.FindOutputSource("SignalScene.mc_angvel_signal");
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      var outVel = output.GetValue<agx.Vec3>();
+
+      Assert.That( outVel.x, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+      Assert.That( outVel.y, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+      Assert.That( outVel.z, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+    }
   }
 }
