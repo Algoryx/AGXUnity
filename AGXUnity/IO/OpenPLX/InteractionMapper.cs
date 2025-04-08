@@ -148,6 +148,7 @@ namespace AGXUnity.IO.OpenPLX
       c.AttachmentPair.Synchronized = false;
       c.AttachmentPair.ReferenceFrame = at1;
       c.AttachmentPair.ConnectedFrame = at2;
+      c.CollisionsState = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
       return c;
     }
 
