@@ -4,6 +4,7 @@ using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using openplx.Simulation;
 using System;
+using System.Linq;
 using UnityEngine;
 
 using Bodies = openplx.Physics3D.Bodies;
@@ -177,6 +178,7 @@ namespace AGXUnity.IO.OpenPLX
           openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
           openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
           openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
+          openplx.Visuals.Geometries.ConvexMesh cm => MapConvex( cm ),
           openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
           _ => null
         };
@@ -265,6 +267,25 @@ namespace AGXUnity.IO.OpenPLX
         return Data.VisualMaterial;
     }
 
+    GameObject MapConvex( openplx.Physics3D.Charges.ConvexMesh convex ) => MapConvex( convex.vertices() );
+    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
+    GameObject MapConvex( std.MathVec3Vector vertices )
+    {
+      GameObject go = new GameObject();
+      var mf = go.AddComponent<MeshFilter>();
+      var mr = go.AddComponent<MeshRenderer>();
+
+      var mesh = new UnityEngine.Mesh();
+      var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
+
+      var md = source.getMeshData();
+      mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
+      mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+
+      mf.mesh = mesh;
+      return go;
+    }
+
     GameObject MapExternalTriMesh( openplx.Visuals.Geometries.ExternalTriMeshGeometry objGeom )
     {
       string path = objGeom.path();
@@ -287,7 +308,8 @@ namespace AGXUnity.IO.OpenPLX
 
         mf.mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
 #else
-        var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+        var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+        // TODO: Add UVs
         mf.mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
 #endif
         go.transform.localScale = objGeom.scale().ToVector3();
