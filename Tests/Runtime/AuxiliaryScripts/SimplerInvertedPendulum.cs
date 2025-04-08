@@ -41,8 +41,8 @@ namespace AGXUnityTesting.Runtime.Aux
     private void Pre()
     {
       try {
-        ha = hao.GetCachedValue<double>();
-        hav = havo.GetCachedValue<double>();
+        ha = hao.GetValue<double>();
+        hav = havo.GetValue<double>();
       }
       catch {
         return;

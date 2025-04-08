@@ -73,10 +73,10 @@ namespace AGXUnityTesting.Runtime.Aux
     private void Pre()
     {
       try {
-        ha = hao.GetCachedValue<double>();
-        hav = havo.GetCachedValue<double>();
-        xpos = poso.GetCachedValue<Vector3>().x;
-        xvel = velo.GetCachedValue<Vector3>().x;
+        ha = hao.GetValue<double>();
+        hav = havo.GetValue<double>();
+        xpos = poso.GetValue<Vector3>().x;
+        xvel = velo.GetValue<Vector3>().x;
       }
       catch {
         return;

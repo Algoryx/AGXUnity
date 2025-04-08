@@ -47,6 +47,7 @@ namespace AGXUnity.IO.OpenPLX
     }
 
     public InputTarget FindInputTarget( string name ) => m_inputs.Find( it => it.Name == name );
+
     public OutputSource FindOutputSource( string name ) => m_outputs.Find( os => os.Name == name );
 
     internal Object InitializeNativeEndpoint( string endpoint )
@@ -73,6 +74,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var output in m_outputs ) {
         ok &= output.Initialize( this );
         m_declaredNameEndpointMap[ output.Name ] = output;
+        m_outputWrapperMap[ output.Native ] = output;
       }
 
       Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPreSync += Pre;
@@ -110,17 +112,13 @@ namespace AGXUnity.IO.OpenPLX
       m_outputSignalList.Clear();
       if ( !isActiveAndEnabled )
         return;
-      foreach ( var outputSource in m_outputs ) {
-        if ( !outputSource.Native.enabled() )
-          continue;
-        Profiler.BeginSample( "BrickSignals Generate Signals" );
-        OutputSignal signal = OutputSignalGenerator.GenerateSignalFrom( outputSource.Native, Root );
+      foreach ( var signal in NativeOutputQueue.getSignals() ) {
 
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
-          m_outputCache[ outputSource.Native ] = signal;
+          m_outputWrapperMap[ signal.source() ].CachedSignal = signal;
         }
-        Profiler.EndSample();
+        //  Profiler.EndSample();
       }
     }
 
