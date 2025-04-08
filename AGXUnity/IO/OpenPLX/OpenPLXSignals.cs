@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.Profiling;
 using Input = openplx.Physics.Signals.Input;
 using Object = openplx.Core.Object;
 
@@ -30,8 +29,8 @@ namespace AGXUnity.IO.OpenPLX
     [HideInInspector]
     public OpenPLXRoot Root => GetComponent<OpenPLXRoot>();
 
-    private Dictionary<Output, OutputSignal> m_outputCache = new Dictionary<Output, OutputSignal>();
     private Dictionary<string, SignalEndpoint> m_declaredNameEndpointMap = new Dictionary<string, SignalEndpoint>();
+    private Dictionary<Output, OutputSource> m_outputWrapperMap = new Dictionary<Output, OutputSource>();
 
     public void RegisterSignal<T>( string signal, T openPLXSignal )
       where T : openplx.Core.Object
@@ -124,6 +123,8 @@ namespace AGXUnity.IO.OpenPLX
 
     public void SendInputSignal( InputSignal input )
     {
+    }
+
     #region Output Signal Helpers
 
     public Value GetValue( string outputName )
