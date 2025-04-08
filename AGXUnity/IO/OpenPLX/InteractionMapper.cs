@@ -264,7 +264,7 @@ namespace AGXUnity.IO.OpenPLX
 
     void EnableRangeInteraction( RangeController agxRange, Interactions.RangeInteraction1DOF range )
     {
-      agxRange.Enable = true;
+      agxRange.Enable = range.enabled();
       agxRange.Range = new RangeReal( (float)range.start(), (float)range.end() );
       agxRange.ForceRange = new RangeReal( (float)range.min_effort(), (float)range.max_effort() );
 
@@ -274,7 +274,7 @@ namespace AGXUnity.IO.OpenPLX
 
     void EnableSpringInteraction( LockController agxLock, Interactions.SpringInteraction1DOF spring )
     {
-      agxLock.Enable = true;
+      agxLock.Enable = spring.enabled();
       agxLock.ForceRange = new RangeReal( (float)spring.min_effort(), (float)spring.max_effort() );
       if ( spring is Interactions.TorsionSpring ts )
         agxLock.Position = (float)ts.angle();
@@ -290,7 +290,7 @@ namespace AGXUnity.IO.OpenPLX
     void EnableTorqueMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.TorqueMotor motor )
     {
       agxTarSpeed.Compliance = 1e-16f;
-      agxTarSpeed.Enable = true;
+      agxTarSpeed.Enable = motor.enabled();
       agxTarSpeed.Speed = 0;
 
       var torque = Mathf.Clamp((float)motor.default_torque(), (float)motor.min_effort(), (float)motor.max_effort());
@@ -300,7 +300,7 @@ namespace AGXUnity.IO.OpenPLX
     void EnableForceMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.ForceMotor motor )
     {
       agxTarSpeed.Compliance = 1e-16f;
-      agxTarSpeed.Enable = true;
+      agxTarSpeed.Enable = motor.enabled();
       agxTarSpeed.Speed = 0;
 
       var force = Mathf.Clamp((float)motor.default_force(), (float)motor.min_effort(), (float)motor.max_effort());
@@ -309,7 +309,7 @@ namespace AGXUnity.IO.OpenPLX
 
     void EnableVelocityMotorInteraction( TargetSpeedController agxTarSpeed, Interactions.VelocityMotor motor )
     {
-      agxTarSpeed.Enable = true;
+      agxTarSpeed.Enable = motor.enabled();
       agxTarSpeed.Compliance = (float)( motor.gain() > 0.0f ? ( 1.0f / motor.gain() ) : float.MaxValue );
       agxTarSpeed.ForceRange = new RangeReal( (float)motor.min_effort(), (float)motor.max_effort() );
 
