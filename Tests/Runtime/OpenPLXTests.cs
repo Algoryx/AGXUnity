@@ -239,7 +239,7 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-    public IEnumerator TestMergeInteractions()
+    public IEnumerator TestMultiInteractions()
     {
       yield return LoadOpenPLX( "multi_interaction.openplx" );
 
@@ -247,14 +247,14 @@ namespace AGXUnityTesting.Runtime
       var hinge = openPLX.FindMappedObject("PendulumScene.hingePendulum");
       Assert.NotNull( hinge );
       var constraints = hinge.gameObject.GetComponentsInChildren<Constraint>();
-      // Pendulum system contains 1 hinge, 2 motors, 2 ranges, 2 springs. Should map to 2 constriants
-      Assert.AreEqual( 2, constraints.Length );
+      // Pendulum system contains 1 hinge, 2 motors, 2 ranges, 2 springs. Should map to 7 constraints
+      Assert.AreEqual( 7, constraints.Length );
 
       var prismatic = openPLX.FindMappedObject("PendulumScene.linearPendulum");
       Assert.NotNull( prismatic );
       constraints = prismatic.gameObject.GetComponentsInChildren<Constraint>();
-      // Pendulum system contains 1 prismatic, 2 motors, 2 ranges, 2 springs. Should map to 2 constriants
-      Assert.AreEqual( 2, constraints.Length );
+      // Pendulum system contains 1 prismatic, 2 motors, 2 ranges, 2 springs. Should map to 7 constraints
+      Assert.AreEqual( 7, constraints.Length );
     }
 
     [UnityTest]

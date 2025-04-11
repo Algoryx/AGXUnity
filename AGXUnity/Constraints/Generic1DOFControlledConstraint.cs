@@ -39,6 +39,12 @@ namespace AGXUnity
       RecreateElementary();
     }
 
+    public Generic1DOFControlledConstraint()
+    {
+      Type = ConstraintType.GenericConstraint1DOF;
+      RecreateElementary();
+    }
+
     private void RecreateElementary()
     {
       agx.ConstraintAngleBasedData cabd = new agx.ConstraintAngleBasedData(null, ConstraintAngle);
@@ -116,7 +122,7 @@ namespace AGXUnity
       var nativeController = (agx.BasicControllerConstraint)Activator.CreateInstance( NativeControllerType, new object[] { cabd } );
       nativeController.setName( NativeControllerName );
 
-      var native = (agx.Constraint)new agx.GenericConstraint1DOF( rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2, nativeController);
+      var native = (agx.Constraint)new agx.SingleControllerConstraint1DOF( rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2, nativeController);
 
       return native;
     }

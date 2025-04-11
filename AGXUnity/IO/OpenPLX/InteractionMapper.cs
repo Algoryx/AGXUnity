@@ -1,4 +1,5 @@
 using openplx.Physics.Charges;
+using openplx.Physics3D.Interactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,17 +13,6 @@ namespace AGXUnity.IO.OpenPLX
   public class InteractionMapper
   {
     private MapperData Data;
-
-    enum MappedConstraintType
-    {
-      Ordinary,
-      RotationalTargetSpeed,
-      RotationalRange,
-      RotationalLock,
-      TranslationalTargetSpeed,
-      TranslationalRange,
-      TranslationalLock,
-    };
 
     public class CKEquality : IEqualityComparer<ChargeKey>
     {
@@ -45,10 +35,6 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    private Dictionary<ChargeKey,List<Constraint>> ChargeConstraintsMap = new Dictionary<ChargeKey,List<Constraint>>(new CKEquality());
-    private HashSet<Tuple<Constraint,MappedConstraintType>> UsedConstraintDofs = new HashSet<Tuple<Constraint,MappedConstraintType>>();
-    private Dictionary<Constraint, openplx.Core.Object> ConstraintParents = new Dictionary<Constraint, openplx.Core.Object>();
-
     public InteractionMapper( MapperData cache )
     {
       Data = cache;
@@ -59,6 +45,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
+      var mcObject = OpenPLXObject.CreateGameObject( mc.getName() + (mc is Charges.RedirectedMateConnector ? "_redirected" : "") );
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc is Charges.RedirectedMateConnector redirected )
@@ -247,7 +234,7 @@ namespace AGXUnity.IO.OpenPLX
     public GameObject MapMate( Interactions.Mate mate, openplx.Physics3D.System system )
     {
 
-      Constraint agxConstraint = getOrCreateConstraintForInteraction(mate);
+      Constraint agxConstraint = CreateConstraintForInteraction(mate);
       if ( agxConstraint == null ) {
         Debug.LogWarning( $"Mate type '{mate.GetType()}' is not supported" );
         return null;
@@ -335,28 +322,25 @@ namespace AGXUnity.IO.OpenPLX
     //  return cGO;
     //}
 
-    Constraint getOrCreateConstraintForInteraction( openplx.Physics.Interactions.Interaction interaction )
+    Constraint CreateConstraintForInteraction( openplx.Physics.Interactions.Interaction interaction )
     {
       ConstraintType ?type = interaction switch
       {
-        // Lock
+        // Ordinary
         Interactions.Lock => ConstraintType.LockJoint,
-        // Hinge
         Interactions.Hinge => ConstraintType.Hinge,
-        Interactions.RotationalRange => ConstraintType.Hinge,
-        Interactions.TorsionSpring => ConstraintType.Hinge,
-        Interactions.RotationalVelocityMotor => ConstraintType.Hinge,
-        Interactions.TorqueMotor => ConstraintType.Hinge,
-        // Prismatic
         Interactions.Prismatic => ConstraintType.Prismatic,
-        Interactions.LinearRange => ConstraintType.Prismatic,
-        Interactions.LinearSpring => ConstraintType.Prismatic,
-        Interactions.LinearVelocityMotor => ConstraintType.Prismatic,
-        Interactions.ForceMotor => ConstraintType.Prismatic,
-        // Cylindrical
         Interactions.Cylindrical => ConstraintType.CylindricalJoint,
-        // Ball
         Interactions.Ball => ConstraintType.BallJoint,
+        // Generic 1DOF
+        Interactions.RotationalRange => ConstraintType.GenericConstraint1DOF,
+        Interactions.TorsionSpring => ConstraintType.GenericConstraint1DOF,
+        Interactions.RotationalVelocityMotor => ConstraintType.GenericConstraint1DOF,
+        Interactions.TorqueMotor => ConstraintType.GenericConstraint1DOF,
+        Interactions.LinearRange => ConstraintType.GenericConstraint1DOF,
+        Interactions.LinearSpring => ConstraintType.GenericConstraint1DOF,
+        Interactions.LinearVelocityMotor => ConstraintType.GenericConstraint1DOF,
+        Interactions.ForceMotor => ConstraintType.GenericConstraint1DOF,
         // Unknown
         _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
       };
@@ -364,43 +348,8 @@ namespace AGXUnity.IO.OpenPLX
       if ( type == null )
         return null;
 
-      MappedConstraintType? ct = interaction switch
-      {
-        Interactions.Lock => MappedConstraintType.Ordinary,
-        Interactions.Hinge => MappedConstraintType.Ordinary,
-        Interactions.Prismatic => MappedConstraintType.Ordinary,
-        Interactions.Cylindrical => MappedConstraintType.Ordinary,
-        Interactions.Ball => MappedConstraintType.Ordinary,
-        Interactions.RotationalRange => MappedConstraintType.RotationalRange,
-        Interactions.TorsionSpring => MappedConstraintType.RotationalLock,
-        Interactions.RotationalVelocityMotor => MappedConstraintType.RotationalTargetSpeed,
-        Interactions.TorqueMotor => MappedConstraintType.RotationalTargetSpeed,
-        Interactions.LinearRange => MappedConstraintType.TranslationalRange,
-        Interactions.LinearSpring => MappedConstraintType.TranslationalLock,
-        Interactions.LinearVelocityMotor => MappedConstraintType.TranslationalTargetSpeed,
-        Interactions.ForceMotor => MappedConstraintType.TranslationalTargetSpeed,
-        _ => Utils.ReportUnimplementedS<MappedConstraintType>( interaction, Data.ErrorReporter )
-      };
-
-      if ( ct == null )
-        return null;
-
-      if ( !ChargeConstraintsMap.ContainsKey( interaction.charges() ) )
-        ChargeConstraintsMap[ interaction.charges() ] = new List<Constraint>();
-
-      var availableConstraint = ChargeConstraintsMap[ interaction.charges() ]
-        .Where(c => c.Type == type.Value)
-        .Where(c => ConstraintParents.ContainsKey(c) && ConstraintParents[c] == interaction.getOwner())
-        .Where(c => !UsedConstraintDofs.Contains(Tuple.Create(c,ct.Value)))
-        .FirstOrDefault();
-
-      if ( availableConstraint == null ) {
-        availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
-        availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
-        ChargeConstraintsMap[ interaction.charges() ].Add( availableConstraint );
-        ConstraintParents.Add( availableConstraint, interaction.getOwner() );
-      }
-      UsedConstraintDofs.Add( Tuple.Create( availableConstraint, ct.Value ) );
+      var availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
+      availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
 
       return availableConstraint;
     }
@@ -410,22 +359,48 @@ namespace AGXUnity.IO.OpenPLX
       if ( interaction is Interactions.Mate mate )
         return MapMate( mate, system );
 
-      var constraint = getOrCreateConstraintForInteraction(interaction);
+      var constraint = CreateConstraintForInteraction(interaction);
+
+      if ( constraint is not Generic1DOFControlledConstraint g1dof )
+        return null;
+
+      agx.Angle.Type? angleType = interaction switch
+      {
+        LinearRange => agx.Angle.Type.TRANSLATIONAL,
+        LinearSpring => agx.Angle.Type.TRANSLATIONAL,
+        LinearVelocityMotor => agx.Angle.Type.TRANSLATIONAL,
+        ForceMotor => agx.Angle.Type.TRANSLATIONAL,
+        RotationalRange => agx.Angle.Type.ROTATIONAL,
+        TorsionSpring => agx.Angle.Type.ROTATIONAL,
+        RotationalVelocityMotor => agx.Angle.Type.ROTATIONAL,
+        TorqueMotor => agx.Angle.Type.ROTATIONAL,
+        _ => null
+      };
+
+      if ( angleType == null )
+        return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+
+      g1dof.DOFType = angleType.Value;
 
       switch ( interaction ) {
         case Interactions.RangeInteraction1DOF range:
+          g1dof.Controller = Generic1DOFControlledConstraint.SecondaryType.Range;
           EnableRangeInteraction( constraint.GetController<RangeController>(), range );
           break;
         case Interactions.SpringInteraction1DOF spring:
+          g1dof.Controller = Generic1DOFControlledConstraint.SecondaryType.Lock;
           EnableSpringInteraction( constraint.GetController<LockController>(), spring );
           break;
         case Interactions.TorqueMotor tm:
+          g1dof.Controller = Generic1DOFControlledConstraint.SecondaryType.TargetSpeed;
           EnableTorqueMotorInteraction( constraint.GetController<TargetSpeedController>(), tm );
           break;
         case Interactions.VelocityMotor vm:
+          g1dof.Controller = Generic1DOFControlledConstraint.SecondaryType.TargetSpeed;
           EnableVelocityMotorInteraction( constraint.GetController<TargetSpeedController>(), vm );
           break;
         case Interactions.ForceMotor fm:
+          g1dof.Controller = Generic1DOFControlledConstraint.SecondaryType.TargetSpeed;
           EnableForceMotorInteraction( constraint.GetController<TargetSpeedController>(), fm );
           break;
         default:

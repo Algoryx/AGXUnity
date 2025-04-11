@@ -257,7 +257,6 @@ namespace AGXUnity.IO.OpenPLX
 
         renderMat.SetTexture( "_MainTex", source );
         renderMat.SetTextureScale( "_MainTex", new Vector2( (float)texMat.scale_u(), (float)texMat.scale_v() ) );
-
 #endif
         Data.RenderMaterialCache[ mat ] = renderMat;
         Data.MappedMaterials.Add( renderMat );

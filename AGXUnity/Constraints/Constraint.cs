@@ -403,6 +403,8 @@ namespace AGXUnity
       where T : struct
     {
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( this );
+      if ( rowParser == null )
+        return;
       var rows = typeof( T ) == typeof( TranslationalDof ) ?
                    rowParser.TranslationalRows :
                    rowParser.RotationalRows;
