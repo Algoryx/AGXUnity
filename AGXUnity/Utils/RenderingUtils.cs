@@ -136,6 +136,7 @@ namespace AGXUnity.Utils
     /// <param name="tex">The texture to set as the main texture</param>
     public static void SetMainTexture( Material mat, Texture tex )
     {
+      mat.mainTexture = tex;
       switch ( DetectPipeline() ) {
         case PipelineType.BuiltIn:
           mat.SetTexture( "_MainTex", tex );
@@ -159,6 +160,7 @@ namespace AGXUnity.Utils
     /// <param name="col">The color to set as the main color</param>
     public static void SetColor( Material mat, Color col )
     {
+      mat.color = col;
       mat.SetVector( "_BaseColor", col );
       mat.SetVector( "_Color", col );
     }
