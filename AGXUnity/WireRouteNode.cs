@@ -14,10 +14,11 @@ namespace AGXUnity
     public Vector2 FrictionCoefficients { get; set; } = new Vector2( 0, 0 );
 
 
-    public virtual bool Initialize( WireRouteNode parent )
+    public virtual bool Initialize( RouteNode parent )
     {
-      parent.Native.getMaterial().setFrictionCoefficient( FrictionCoefficients.x, agxWire.NodeMaterial.Direction.NEGATIVE );
-      parent.Native.getMaterial().setFrictionCoefficient( FrictionCoefficients.y, agxWire.NodeMaterial.Direction.POSITIVE );
+      var nativeNode = (parent as WireRouteNode).Native;
+      nativeNode.getMaterial().setFrictionCoefficient( FrictionCoefficients.x, agxWire.NodeMaterial.Direction.NEGATIVE );
+      nativeNode.getMaterial().setFrictionCoefficient( FrictionCoefficients.y, agxWire.NodeMaterial.Direction.POSITIVE );
       return true;
     }
   }

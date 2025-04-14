@@ -1,9 +1,9 @@
 ﻿using AGXUnity.Model;
 using AGXUnity.Utils;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
 using static agx.agxSWIG.UnityHelpers;
@@ -189,12 +189,10 @@ namespace AGXUnity.Rendering
         }
 
         if ( !material.enableInstancing ) {
-          Debug.LogError( "AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
-                          "The granule render material must have instancing enabled for this render mode to work.",
-                          material );
-          return false;
+          Debug.LogWarning( "AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
+                            "The granule render material does not have instancing enabled. This might cause degraded performance.",
+                            material );
         }
-
         var renderers = GranuleInstance.GetComponentsInChildren<MeshRenderer>();
         if ( renderers.Length != 1 ) {
           Debug.LogError( "AGXUnity.Rendering.DeformableTerrainParticleRenderer: " +
@@ -204,12 +202,9 @@ namespace AGXUnity.Rendering
         }
 
         m_meshInstance = filters[ 0 ].sharedMesh;
-        m_shadowCastingMode = renderers[ 0 ].shadowCastingMode;
-        m_receiveShadows = renderers[ 0 ].receiveShadows;
         m_meshInstanceMaterial = material;
-        m_granuleMatrices = new List<MatrixUnion> { new MatrixUnion() };
-        m_granuleMatrices[ 0 ].unityMats = new Matrix4x4[ 1023 ];
-        m_meshInstanceProperties = new MaterialPropertyBlock();
+        m_granuleMatrices = new MatrixUnion();
+        m_granuleMatrices.unityMats = new Matrix4x4[ 1024 ];
       }
       else {
         if ( FilterParticles )
@@ -233,6 +228,7 @@ namespace AGXUnity.Rendering
 
     private void Render( Camera cam )
     {
+      Profiler.BeginSample( "RenderGranules" );
       if ( !RenderingUtils.CameraShouldRender( cam ) )
         return;
 
@@ -243,35 +239,18 @@ namespace AGXUnity.Rendering
       if ( !isValidDrawInstanceMode )
         return;
 
-      if ( m_numRendered < 1024 ) {
-        Graphics.DrawMeshInstanced( m_meshInstance,
-                                    0,
-                                    m_meshInstanceMaterial,
-                                    m_granuleMatrices[ 0 ].unityMats,
-                                    m_numRendered,
-                                    m_meshInstanceProperties,
-                                    m_shadowCastingMode,
-                                    m_receiveShadows,
-                                    0,
-                                    cam );
-      }
-      // DrawMeshInstanced only supports up to 1023 meshes for each call,
-      // we need to subdivide if we have more particles than that.
-      else {
-        for ( int i = 0; i < m_numRendered; i += 1023 ) {
-          int count = Mathf.Min( 1023, m_numRendered - i );
-          Graphics.DrawMeshInstanced( m_meshInstance,
-                                      0,
-                                      m_meshInstanceMaterial,
-                                      m_granuleMatrices[ i / 1023 ].unityMats,
-                                      count,
-                                      m_meshInstanceProperties,
-                                      m_shadowCastingMode,
-                                      m_receiveShadows,
-                                      0,
-                                      cam );
-        }
-      }
+
+      RenderParams rp = new RenderParams(m_meshInstanceMaterial);
+      rp.shadowCastingMode = ShadowCastingMode.On;
+      rp.receiveShadows = true;
+      Profiler.BeginSample( "DrawCalls" );
+      if ( m_meshInstanceMaterial.enableInstancing )
+        Graphics.RenderMeshInstanced( rp, m_meshInstance, 0, m_granuleMatrices.unityMats, m_numRendered );
+      else
+        for ( int i = 0; i < m_numRendered; i++ )
+          Graphics.RenderMesh( rp, m_meshInstance, 0, m_granuleMatrices.unityMats[ i ] );
+      Profiler.EndSample();
+      Profiler.EndSample();
     }
 
     private void Synchronize()
@@ -292,29 +271,19 @@ namespace AGXUnity.Rendering
         if ( FilterParticles ) {
           m_numRendered = 0;
           int start = 0;
-          int i = 0;
           var uuid = ParticleProvider.GetParticleMaterialUuid();
-          while ( start != numGranulars ) {
-            if ( i + 1 > m_granuleMatrices.Count ) {
-              m_granuleMatrices.Add( new MatrixUnion() );
-              m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
-            }
-            m_numRendered += PopulateMatricesFilterByMaterial( granulars, m_granuleMatrices[ i++ ].agxMats, ref start, uuid );
-          }
+          if ( numGranulars >= m_granuleMatrices.unityMats.Length )
+            m_granuleMatrices.unityMats = new Matrix4x4[ Mathf.NextPowerOfTwo( numGranulars ) ];
+          m_numRendered += PopulateMatricesFilterByMaterial( granulars, m_granuleMatrices.agxMats, ref start, uuid );
           uuid.ReturnToPool();
         }
         else {
           m_numRendered = numGranulars;
 
-          // Use 1023 as arbitrary block size since that is the
-          // amount of particles that can be drawn with DrawMeshInstanced.
-          while ( m_numRendered / 1023 + 1 > m_granuleMatrices.Count ) {
-            m_granuleMatrices.Add( new MatrixUnion() );
-            m_granuleMatrices[ m_granuleMatrices.Count - 1 ].unityMats = new Matrix4x4[ 1023 ];
-          }
+          if ( numGranulars >= m_granuleMatrices.unityMats.Length )
+            m_granuleMatrices.unityMats = new Matrix4x4[ Mathf.NextPowerOfTwo( numGranulars ) ];
 
-          for ( int arrayIndex = 0; arrayIndex < ( m_numRendered / 1023 + 1 ); ++arrayIndex )
-            PopulateMatrices( granulars, m_granuleMatrices[ arrayIndex ].agxMats, arrayIndex * 1023 );
+          PopulateMatrices( granulars, m_granuleMatrices.agxMats, 0 );
         }
       }
       else if ( isValidDrawGameObjectMode ) {
@@ -358,7 +327,6 @@ namespace AGXUnity.Rendering
       m_meshInstance = null;
       m_meshInstanceMaterial = null;
       m_granuleMatrices = null;
-      m_meshInstanceProperties = null;
     }
 
     private void Destroy( int count )
@@ -383,12 +351,9 @@ namespace AGXUnity.Rendering
       }
     }
 
-    private List<MatrixUnion> m_granuleMatrices;
+    private MatrixUnion m_granuleMatrices;
     private int m_numRendered = 0;
-    private MaterialPropertyBlock m_meshInstanceProperties = null;
     private Mesh m_meshInstance = null;
-    private ShadowCastingMode m_shadowCastingMode = ShadowCastingMode.On;
-    private bool m_receiveShadows = true;
     private Material m_meshInstanceMaterial = null;
   }
 }
