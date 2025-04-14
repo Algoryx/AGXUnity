@@ -101,6 +101,33 @@ namespace AGXUnity
       return false;
     }
 
+    public static LicenseInfo QueryInfo( string filename )
+    {
+      var info = new LicenseInfo()
+      {
+        IsValid = false,
+        Type = LicenseInfo.LicenseType.Unknown,
+        TypeDescription = "Unknown",
+      };
+
+      if ( !File.Exists( filename ) ) {
+        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - file doesn't exist." );
+        return info;
+      }
+
+      var licenseType = GetLicenseType( filename );
+      if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
+        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - unknown file extension." );
+        return info;
+      }
+
+      var licenseContent = File.ReadAllText(filename);
+      if ( licenseType == LicenseInfo.LicenseType.Legacy )
+        return LicenseInfo.FromLegacy( licenseContent );
+
+      return LicenseInfo.FromNative( agx.Runtime.instance().queryLicenseInformation( licenseContent ) );
+    }
+
     /// <summary>
     /// Load license file (service or legacy) given filename including path.
     /// </summary>

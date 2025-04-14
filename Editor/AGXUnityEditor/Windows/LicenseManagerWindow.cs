@@ -318,28 +318,15 @@ namespace AGXUnityEditor.Windows
       var currentLicense = AGXUnity.LicenseManager.LicenseInfo.UniqueId;
       var licenseData = new List<LicenseData>();
       m_updateLicenseInfoTask = Task.Run( () => {
-        if ( AGXUnity.LicenseManager.LicenseInfo.IsFloating )
-          AGXUnity.LicenseManager.ReturnFloating( "Checking license info" );
         foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
-          var valid = AGXUnity.LicenseManager.LoadFile( licenseFile );
+          var info = AGXUnity.LicenseManager.QueryInfo( licenseFile );
+
           licenseData.Add( new LicenseData()
           {
             Filename = licenseFile,
-            LicenseInfo = AGXUnity.LicenseManager.LicenseInfo
+            LicenseInfo = info
           } );
-          if ( AGXUnity.LicenseManager.LicenseInfo.IsFloating )
-            AGXUnity.LicenseManager.ReturnFloating( "Checking license info" );
         }
-
-        // Try to load previously loaded license.
-        var data = licenseData.Find( d => !string.IsNullOrEmpty( currentLicense ) &&
-                                          d.LicenseInfo.UniqueId == currentLicense );
-        var successfullyLoadedPrevLicense = data.LicenseInfo.IsParsed &&
-                                            data.LicenseInfo.IsValid &&
-                                            AGXUnity.LicenseManager.LoadFile( data.Filename );
-        // Fall-back to default behavior.
-        if ( !successfullyLoadedPrevLicense )
-          AGXUnity.LicenseManager.LoadFile();
 
         return licenseData;
       } );
