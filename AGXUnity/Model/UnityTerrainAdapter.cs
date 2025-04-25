@@ -147,7 +147,6 @@ namespace AGXUnity.Model
       while ( m_tilesToLoad.TryPeek( out UnityTile tile ) ) {
         // FIXME: Loading tiles currently takes quite a long time due to the write/read
         // optimally this should happen asynchronously but it is uncertain whether the Unity API allows it.
-
         float[,] data = tile.tile.gameObject.GetComponent<DeformableTerrainConnector>().WriteTerrainDataOffset();
         int res       = tile.tile.terrainData.heightmapResolution;
         float scale   = tile.tile.terrainData.heightmapScale.y;
@@ -218,6 +217,14 @@ namespace AGXUnity.Model
       }
 
       return heights;
+    }
+
+    public override void onReset()
+    {
+      m_unityData.Clear();
+
+      foreach ( var tile in m_unityTiles )
+        tile.Value.GetComponent<DeformableTerrainConnector>().OnReset();
     }
 
     /// <summary>
