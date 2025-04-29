@@ -1,4 +1,4 @@
-using agx;
+﻿using agx;
 using agxSensor;
 using AGXUnity.Utils;
 using System;
@@ -129,6 +129,12 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private RangeReal m_lidarRange = new RangeReal(0.1f, float.MaxValue);
 
+    public Vector3 LocalRotation = Vector3.zero;
+    public Vector3 LocalPosition = Vector3.zero;
+
+    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
+    public UnityEngine.Matrix4x4 GlobalTransform => transform.localToWorldMatrix * LocalTransform;
+
     /// <summary>
     /// The minimum and maximum range of the Lidar Sensor [m].
     /// Objects outside this range will not be detected by this Lidar Sensor.
@@ -222,7 +228,7 @@ namespace AGXUnity.Sensor
     private bool m_setEnableRemoveRayMisses = true;
 
     /// <summary>
-	  /// When enabled, discard rays that miss all objects.
+    /// When enabled, discard rays that miss all objects.
     /// </summary>
     [Tooltip( "When enabled, discard rays that miss all objects." )]
     public bool RemoveRayMisses
@@ -240,7 +246,7 @@ namespace AGXUnity.Sensor
     /// Settings controlling the gaussian noise applied to the distance output along rays for hits.
     /// </summary>
     [field: SerializeField]
-    public LidarDistanceGaussianNoise DistanceGaussianNoise { get; } = new LidarDistanceGaussianNoise();
+    public LidarDistanceGaussianNoise DistanceGaussianNoise { get; private set; } = new LidarDistanceGaussianNoise();
 
     /// <summary>
     /// Settings controlling the gaussian noise applied to the ray angles before rays are shot.
@@ -270,10 +276,12 @@ namespace AGXUnity.Sensor
           if ( noise.Initialize( Native ) )
             m_initializedNoises.Add( noise );
 
+      var xform = GlobalTransform;
+
       Native.setFrame( new agx.Frame(
                           new AffineMatrix4x4(
-                            ( transform.rotation ).ToHandedQuat(),
-                            transform.position.ToHandedVec3() ) ) );
+                            ( xform.rotation ).ToHandedQuat(),
+                            xform.GetPosition().ToHandedVec3() ) ) );
     }
 
     protected override bool Initialize()
@@ -417,5 +425,26 @@ namespace AGXUnity.Sensor
 
       return lidarModel;
     }
+    private void OnDrawGizmosSelected()
+    {
+      var xform = GlobalTransform;
+
+      var pos = xform.GetPosition();
+      var scale = UnityEditor.HandleUtility.GetHandleSize(pos) * 1.5f;
+      Gizmos.DrawLine( pos, xform.MultiplyPoint( Vector3.forward * scale ) );
+
+      int numPoints = 25;
+      Vector3[] disc = new Vector3[numPoints];
+
+      Vector3 x = xform.MultiplyVector(Vector3.right * scale);
+      Vector3 y = xform.MultiplyVector(Vector3.up * scale);
+
+      for ( int i = 0; i < numPoints; i++ ) {
+        float ang = Mathf.PI * 2 * i / numPoints;
+        disc[ i ] = pos + x * Mathf.Cos( ang ) + y * Mathf.Sin( ang );
+      }
+      Gizmos.DrawLineStrip( disc, true );
+    }
   }
+
 }
