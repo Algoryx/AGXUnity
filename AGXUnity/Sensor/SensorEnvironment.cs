@@ -1,4 +1,4 @@
-using agx;
+﻿using agx;
 using agxSensor;
 using AGXUnity.Collide;
 using AGXUnity.Model;
@@ -38,6 +38,7 @@ namespace AGXUnity.Sensor
     private readonly List<MeshFilter> m_meshFilters = new();
     private readonly Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new();
     private readonly Dictionary<UnityEngine.MeshFilter, RtShapeInstance> m_rtShapeInstances = new();
+    private readonly HashSet<UnityEngine.MeshFilter> m_ignoredMeshes = new();
 
     private readonly Dictionary<DeformableTerrain,agxTerrain.Terrain> m_deformableTerrains = new();
     private readonly Dictionary<DeformableTerrainPager,agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
@@ -139,6 +140,9 @@ namespace AGXUnity.Sensor
 
     private void RegisterMeshfilter( MeshFilter meshFilter )
     {
+      if ( m_ignoredMeshes.Contains( meshFilter ) )
+        return;
+
       if ( !m_meshFilters.Contains( meshFilter ) )
         m_meshFilters.Add( meshFilter );
 
@@ -153,6 +157,7 @@ namespace AGXUnity.Sensor
 
       if ( !mesh.isReadable ) {
         Debug.LogWarning( $"Mesh '{mesh.name}' is not readable and will not be added to the sensor environment. It will be invisible to sensors. Consider enabling Read/Write in the asset import inspector" );
+        m_ignoredMeshes.Add( meshFilter );
         return;
       }
 
@@ -532,7 +537,7 @@ namespace AGXUnity.Sensor
     {
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
-        Simulation.Instance.StepCallbacks.PreStepForward-= AddNew;
+        Simulation.Instance.StepCallbacks.PreStepForward -= AddNew;
       }
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
