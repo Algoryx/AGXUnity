@@ -11,7 +11,7 @@ namespace AGXUnity.IO.OpenPLX
       public OpenPLXRoot Root { get; set; }
       public agxPowerLine.PowerLine PowerLine { get; set; }
       public Dictionary<Object, agxPowerLine.Unit> UnitCache { get; set; } = new Dictionary<Object, agxPowerLine.Unit>();
-      public Dictionary<string, object> RuntimeMap { get; set; } = new Dictionary<string, object>();
+      public Dictionary<string, agx.Referenced> RuntimeMap { get; set; } = new Dictionary<string, agx.Referenced>();
     }
 
     private DrivetrainMapper DrivetrainMapper { get; set; }

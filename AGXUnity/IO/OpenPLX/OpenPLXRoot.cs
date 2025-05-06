@@ -25,7 +25,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public Object Native { get; private set; }
 
-    private Dictionary<string, object> m_runtimeMap;
+    public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
     private Dictionary<string, GameObject> m_objectMap;
 
     public GameObject FindMappedObject( string declaration )
@@ -47,13 +47,13 @@ namespace AGXUnity.IO.OpenPLX
 
     public object FindRuntimeMappedObject( string declaration )
     {
-      return m_runtimeMap.GetValueOrDefault( declaration, null );
+      return RuntimeMapped.GetValueOrDefault( declaration, null );
     }
 
     public T FindRuntimeMappedObject<T>( string declaration )
       where T : class
     {
-      return m_runtimeMap.GetValueOrDefault( declaration, null ) as T;
+      return RuntimeMapped.GetValueOrDefault( declaration, null ) as T;
     }
 
     protected override bool Initialize()
@@ -74,7 +74,7 @@ namespace AGXUnity.IO.OpenPLX
 
       var RTMapper = new RuntimeMapper();
       RTMapper.PerformRuntimeMapping( this );
-      m_runtimeMap = RTMapper.MapperData.RuntimeMap;
+      RuntimeMapped = RTMapper.MapperData.RuntimeMap;
 
       return base.Initialize();
     }
