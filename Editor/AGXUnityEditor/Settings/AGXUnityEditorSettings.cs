@@ -1,3 +1,4 @@
+using AGXUnity;
 using System;
 using System.IO;
 using System.Reflection;
@@ -12,38 +13,14 @@ namespace AGXUnityEditor
     public string FileName;
   }
 
-  public class AGXUnitySettings<T> : ScriptableObject
-    where T : AGXUnitySettings<T>
+  public class AGXUnityEditorSettings<T> : AGXUnitySettings<T>
+    where T : AGXUnityEditorSettings<T>
   {
-    public static string s_packageSettingsDirectory => $"ProjectSettings/Packages/{IO.Utils.PackageName}/";
-    public static string s_settingsPath => s_packageSettingsDirectory + typeof( T ).Name + ".json";
-
-    private static T s_instance = null;
-    public static T Instance
-    {
-      get
-      {
-        if ( s_instance == null ) {
-          s_instance = GetOrCreateInstance();
-        }
-        return s_instance;
-      }
-    }
-
-    protected virtual void OnCreated() { }
-
-    public void Save()
-    {
-      Directory.CreateDirectory( s_packageSettingsDirectory );
-      var json = JsonUtility.ToJson( this );
-      File.WriteAllText( s_settingsPath, json );
-    }
-
-    public static T GetOrCreateInstance()
+    public static new T GetOrCreateInstance()
     {
       T instance = CreateInstance<T>();
       try {
-        var json = File.ReadAllText( s_settingsPath );
+        var json = File.ReadAllText( Instance.SettingsPath );
         JsonUtility.FromJsonOverwrite( json, instance );
       }
       catch {
