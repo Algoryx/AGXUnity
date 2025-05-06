@@ -13,14 +13,6 @@ namespace AGXUnity
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
   public class ElementaryConstraint : IPropertySynchronizable
   {
-    [Serializable]
-    public struct AppendData
-    {
-      [SerializeField]
-      public agx.Angle.Axis Axis;
-      [SerializeField]
-      public agx.Angle.Type Type;
-    }
 
     /// <summary>
     /// Create instance given temporary native elementary constraint.
@@ -192,6 +184,15 @@ namespace AGXUnity
       RowData = new ElementaryConstraintRowData[ source.NumRows ];
       for ( int i = 0; i < source.NumRows; ++i )
         RowData[ i ] = new ElementaryConstraintRowData( this, source.RowData[ i ] );
+    }
+
+    internal void Construct( string name, bool enable, int numRows )
+    {
+      NativeName = name;
+      m_enable = enable;
+      RowData = new ElementaryConstraintRowData[ numRows ];
+      for ( int i = 0; i < numRows; ++i )
+        RowData[ i ] = new ElementaryConstraintRowData( this, i );
     }
 
     protected bool Initialize()

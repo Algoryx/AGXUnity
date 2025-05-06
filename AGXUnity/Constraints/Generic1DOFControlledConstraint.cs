@@ -47,12 +47,9 @@ namespace AGXUnity
 
     private void RecreateElementary()
     {
-      agx.ConstraintAngleBasedData cabd = new agx.ConstraintAngleBasedData(null, ConstraintAngle);
-      var nativeController = (agx.ElementaryConstraint)Activator.CreateInstance( NativeControllerType, new object[] { cabd } );
-      nativeController.setName( NativeControllerName );
-
       var old = ConstraintController;
-      ConstraintController = (ElementaryConstraintController)ElementaryConstraint.Create( nativeController );
+      ConstraintController = System.Activator.CreateInstance( System.Type.GetType( "AGXUnity." + NativeControllerType.Name ) ) as ElementaryConstraintController;
+      ConstraintController.Construct( NativeControllerName, true, 1 );
       if ( old != null ) {
         ConstraintController.Enable = old.Enable;
         ConstraintController.Compliance = old.Compliance;
@@ -70,17 +67,17 @@ namespace AGXUnity
     {
       get
       {
-        var prefix = Controller switch
+        var prefix = DOFType switch
+        {
+          agx.Angle.Type.ROTATIONAL => "R",
+          agx.Angle.Type.TRANSLATIONAL => "T",
+          _ => "Unknown"
+        };
+        var postfix = Controller switch
         {
           SecondaryType.TargetSpeed => "M",
           SecondaryType.Lock => "L",
           SecondaryType.Range => "R",
-          _ => "Unknown"
-        };
-        var postfix = DOFType switch
-        {
-          agx.Angle.Type.ROTATIONAL => "R",
-          agx.Angle.Type.TRANSLATIONAL => "T",
           _ => "Unknown"
         };
         return prefix + postfix;

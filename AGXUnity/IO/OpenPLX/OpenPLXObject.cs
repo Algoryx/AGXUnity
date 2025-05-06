@@ -21,6 +21,11 @@ namespace AGXUnity.IO.OpenPLX
       return GetComponent<Constraint>().GetInitialized().Native;
     }
 
+    agx.Constraint1DOF GetGeneric1DOFNative()
+    {
+      return GetComponent<Generic1DOFControlledConstraint>().GetInitialized<Generic1DOFControlledConstraint>().Native.asConstraint1DOF();
+    }
+
     agx.Referenced DefaultHandling( openplx.Core.Object obj )
     {
       if ( NeedsNativeMapping( obj ) )
@@ -46,14 +51,14 @@ namespace AGXUnity.IO.OpenPLX
       Interactions.Prismatic => GetNativeConstraint().asPrismatic(),
       Interactions.Cylindrical => GetNativeConstraint().asCylindricalJoint(),
       Interactions.Ball => GetNativeConstraint().asBallJoint(),
-      Interactions.RotationalRange => GetNativeController<RangeController>( CT.Rotational ),
-      Interactions.TorsionSpring => GetNativeController<LockController>( CT.Rotational ),
-      Interactions.RotationalVelocityMotor => GetNativeController<TargetSpeedController>( CT.Rotational ),
-      Interactions.TorqueMotor => GetNativeController<TargetSpeedController>( CT.Rotational ),
-      Interactions.LinearRange => GetNativeController<RangeController>( CT.Translational ),
-      Interactions.LinearSpring => GetNativeController<LockController>( CT.Translational ),
-      Interactions.LinearVelocityMotor => GetNativeController<TargetSpeedController>( CT.Translational ),
-      Interactions.ForceMotor => GetNativeController<TargetSpeedController>( CT.Translational ),
+      Interactions.RotationalRange => GetGeneric1DOFNative().getRange1D(),
+      Interactions.TorsionSpring => GetGeneric1DOFNative().getLock1D(),
+      Interactions.RotationalVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
+      Interactions.TorqueMotor => GetGeneric1DOFNative().getMotor1D(),
+      Interactions.LinearRange => GetGeneric1DOFNative().getRange1D(),
+      Interactions.LinearSpring => GetGeneric1DOFNative().getLock1D(),
+      Interactions.LinearVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
+      Interactions.ForceMotor => GetGeneric1DOFNative().getMotor1D(),
       openplx.Physics.Charges.ContactGeometry => GetComponent<Shape>().NativeGeometry,
       openplx.Physics3D.Charges.MateConnector => GetComponent<ObserverFrame>().Native,
       openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,

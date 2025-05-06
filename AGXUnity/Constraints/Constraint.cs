@@ -822,7 +822,7 @@ namespace AGXUnity
 
         Native.setName( name );
 
-        bool valid = added && Native.getValid();
+        bool valid = added && (Native.getValid() || Type == ConstraintType.GenericConstraint1DOF);
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += OnPreStepForwardUpdate;
 
         // It's not possible to check which properties an animator
