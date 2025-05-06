@@ -18,14 +18,12 @@ public class OpenPLXSignalsTool : CustomTargetTool
 
   private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints )
   {
-    var showDisabled = EditorData.Instance.GetData( OpenPLXSignals, "show_disabled_endpoints");
+    var style = InspectorGUISkin.Instance.Label;
+    style.alignment = TextAnchor.MiddleRight;
     foreach ( var endpoint in endpoints ) {
-      if ( !showDisabled.Bool && !endpoint.Enabled )
-        continue;
       GUILayout.BeginHorizontal();
-      GUILayout.Label( endpoint.Name );
-      GUILayout.FlexibleSpace();
-      GUILayout.Label( endpoint.Type.Name );
+      EditorGUILayout.LabelField( endpoint.Name );
+      GUILayout.Label( endpoint.Type.Name, style, GUILayout.ExpandWidth( false ) );
       GUILayout.EndHorizontal();
       if ( endpoint is OutputSource output && output.HasSendSignal ) {
         GUILayout.BeginHorizontal();
@@ -45,12 +43,26 @@ public class OpenPLXSignalsTool : CustomTargetTool
   {
     base.OnPostTargetMembersGUI();
 
-    var showDisabled = EditorData.Instance.GetData( OpenPLXSignals, "show_disabled_endpoints", entry => entry.Bool = false );
-    showDisabled.Bool = EditorGUILayout.Toggle( "Show Disabled Signals", showDisabled.Bool );
+    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "signal_interfaces", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Signal Interfaces", true ) ) ) {
+      using var indent = new InspectorGUI.IndentScope();
+      foreach ( var sigInt in OpenPLXSignals.Interfaces ) {
+        var intPrefix = "signal_interfaces_" + sigInt.Name;
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix, entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( sigInt.Name, true ) ) ) {
+          using var sigIntIndent = new InspectorGUI.IndentScope();
+          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix + "_inputs", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", false ) ) )
+            RenderSignalList( sigInt.Inputs );
+          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix + "_outputs", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Outputs", false ) ) )
+            RenderSignalList( sigInt.Outputs );
+        }
+      }
+    }
 
-    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "input_signal_fouldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", true ) ) )
-      RenderSignalList( OpenPLXSignals.Inputs );
-    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "output_signal_fouldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Outputs", true ) ) )
-      RenderSignalList( OpenPLXSignals.Outputs );
+    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "advanced_foldout", entry => entry.Bool = false ), AGXUnity.Utils.GUI.MakeLabel( "Advanced", true ) ) ) {
+      using var indent = new InspectorGUI.IndentScope();
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "input_signal_foldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", false ) ) )
+        RenderSignalList( OpenPLXSignals.Inputs );
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "output_signal_foldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Outputs", false ) ) )
+        RenderSignalList( OpenPLXSignals.Outputs );
+    }
   }
 }

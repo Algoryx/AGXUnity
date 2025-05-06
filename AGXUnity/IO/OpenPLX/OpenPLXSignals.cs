@@ -9,6 +9,22 @@ using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.OpenPLX
 {
+  [Serializable]
+  public struct SignalInterface
+  {
+    [SerializeField]
+    public string Name;
+
+    [SerializeField]
+    public bool Enabled;
+
+    [SerializeField]
+    public List<OutputSource> Outputs;
+
+    [SerializeField]
+    public List<InputTarget> Inputs;
+  }
+
   [RequireComponent( typeof( OpenPLXRoot ) )]
   public class OpenPLXSignals : ScriptComponent
   {
@@ -16,9 +32,12 @@ namespace AGXUnity.IO.OpenPLX
     private List<OutputSource> m_outputs = new List<OutputSource>();
     [SerializeField]
     private List<InputTarget> m_inputs = new List<InputTarget>();
+    [SerializeField]
+    private List<SignalInterface> m_interfaces = new List<SignalInterface>();
 
     public OutputSource[] Outputs => m_outputs.ToArray();
     public InputTarget[] Inputs => m_inputs.ToArray();
+    public SignalInterface[] Interfaces => m_interfaces.ToArray();
 
     private Queue<InputSignal> m_inputSignalQueue = new Queue<InputSignal>();
     private List<OutputSignal> m_outputSignalList = new List<OutputSignal>();
@@ -39,17 +58,19 @@ namespace AGXUnity.IO.OpenPLX
     private agxopenplx.OutputSignalQueue NativeOutputQueue;
     private agxopenplx.OutputSignalListener NativeOutputListener;
 
-    public void RegisterSignal<T>( string signal, T openPLXSignal )
-      where T : openplx.Core.Object
+    public void RegisterSignal( string signal, Input openPLXSignal )
     {
-      if ( openPLXSignal is Output output )
-        m_outputs.Add( new OutputSource( signal, output ) );
-      else if ( openPLXSignal is Input input )
-        m_inputs.Add( new InputTarget( signal, input ) );
-      else {
-        Debug.LogError( "Provided endpoint is neither an input nor an output" );
-        return;
-      }
+      m_inputs.Add( new InputTarget( signal, openPLXSignal ) );
+    }
+
+    public void RegisterSignal( string signal, Output openPLXSignal )
+    {
+      m_outputs.Add( new OutputSource( signal, openPLXSignal ) );
+    }
+
+    public void RegisterInterface( SignalInterface sigInterface )
+    {
+      m_interfaces.Add( sigInterface );
     }
 
     public InputTarget FindInputTarget( string name ) => m_inputs.Find( it => it.Name == name );
@@ -304,6 +325,9 @@ namespace AGXUnity.IO.OpenPLX
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;
         s_typeCache[ tempIO.Duration() - 1 ]              = ValueType.Real;
+        s_typeCache[ tempIO.TorqueRange() - 1 ]           = ValueType.Ignored;
+        s_typeCache[ tempIO.ForceRange() - 1 ]            = ValueType.Ignored;
+
 
         if ( s_typeCache.Contains( ValueType.Unknown ) )
           Debug.LogWarning( "OpenPLX value type mapping contains unhandled value type(s)" );

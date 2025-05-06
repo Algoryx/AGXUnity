@@ -4,6 +4,7 @@ using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using openplx.Simulation;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -66,7 +67,7 @@ namespace AGXUnity.IO.OpenPLX
         Utils.AddChild( RootNode, MapBody( body ), Data.ErrorReporter, body );
 
       var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
-      MapSignals( obj, signals, obj.getName() );
+      MapSignals( obj, signals );
 
       return RootNode;
     }
@@ -89,10 +90,29 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
+    private void MapSignals( Object obj, OpenPLXSignals signals )
+    {
+      foreach ( var (name, sigInterface) in obj.getEntries<openplx.Physics.Signals.SignalInterface>() ) {
+        var sigInt = new SignalInterface();
+        sigInt.Name = name;
+        sigInt.Enabled = sigInterface.enable();
+        sigInt.Inputs = new List<InputTarget>();
+        foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
+          sigInt.Inputs.Add( new InputTarget( inpName, input ) );
+        sigInt.Outputs = new List<OutputSource>();
+        foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
+          sigInt.Outputs.Add( new OutputSource( outName, output ) );
+
+        signals.RegisterInterface( sigInt );
+      }
+
+      MapAllSignals( obj, signals, obj.getName() );
+    }
+
+    private void MapAllSignals( Object obj, OpenPLXSignals signals, string prefix )
     {
       foreach ( var (name, subsystem) in obj.getEntries<openplx.Physics3D.System>() )
-        MapSignals( subsystem, signals, prefix + "." + name );
+        MapAllSignals( subsystem, signals, prefix + "." + name );
 
       foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
         signals.RegisterSignal( prefix + "." + name, output );
