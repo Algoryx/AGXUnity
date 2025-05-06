@@ -30,6 +30,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject FindMappedObject( string declaration )
     {
+      declaration = Native.getObject( declaration.Substring( declaration.IndexOf( '.' ) + 1 ) ).getName();
       if ( Native != null ) {
         if ( m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];
