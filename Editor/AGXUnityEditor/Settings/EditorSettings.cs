@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
@@ -123,7 +124,7 @@ namespace AGXUnityEditor
       }
 
       EditorGUILayout.LabelField( "<b>Maximum Allowed Timestep</b>" );
-      var usingRecommendedMaxTimestep = Time.fixedDeltaTime == Time.maximumDeltaTime;
+      var usingRecommendedMaxTimestep = Mathf.Abs(Time.fixedDeltaTime - Time.maximumDeltaTime) < 1e-4;
       if ( usingRecommendedMaxTimestep )
         EditorGUILayout.LabelField( ok );
       else {
@@ -132,6 +133,15 @@ namespace AGXUnityEditor
           Time.maximumDeltaTime = Time.fixedDeltaTime;
           Debug.Log( "Updated Unity Maximum Allowed Timestep to the same as Fixed Timestep " + Time.fixedDeltaTime + " seconds" );
           EditorUtility.SetDirty( this );
+
+          // Reserialize TimeManager to persist change
+          var asset = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TimeManager.asset").FirstOrDefault();
+          if ( asset == null ) {
+            Debug.LogError( "Could not find TimeManager.asset, updated setting will not be persisted across restarts of the editor!" );
+            return;
+          }
+          EditorUtility.SetDirty( asset );
+          AssetDatabase.SaveAssets();
         }
       }
 
@@ -204,16 +214,19 @@ namespace AGXUnityEditor
 
         if ( showDropdownPressed ) {
           GenericMenu menu = new GenericMenu();
-          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () => {
+          menu.AddItem( GUI.MakeLabel( "Reset to default" ), false, () =>
+          {
             if ( EditorUtility.DisplayDialog( "Reset to default", "Reset key(s) to default?", "OK", "Cancel" ) )
               keyHandler.ResetToDefault();
           } );
-          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () => {
+          menu.AddItem( GUI.MakeLabel( "Add key" ), false, () =>
+          {
             keyHandler.Add( KeyCode.None );
           } );
 
           if ( keyHandler.NumKeyCodes > 1 ) {
-            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () => {
+            menu.AddItem( GUI.MakeLabel( "Remove key" ), false, () =>
+            {
               if ( EditorUtility.DisplayDialog( "Remove key", "Remove key: " + keyHandler[ keyHandler.NumKeyCodes - 1 ].ToString() + "?", "OK", "Cancel" ) )
                 keyHandler.Remove( keyHandler.NumKeyCodes - 1 );
             } );
