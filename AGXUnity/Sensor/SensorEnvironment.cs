@@ -34,6 +34,12 @@ namespace AGXUnity.Sensor
     [Tooltip("Show log messages on each thing added to the sensor environment")]
     public bool DebugLogOnAdd = false;
 
+    /// <summary>
+    /// Select which layers to include game objects from
+    /// </summary>
+    [Tooltip("Select which layers to include game objects from")]
+    public LayerMask IncludedLayers = ~0;
+
     // Internal lists
     private readonly List<MeshFilter> m_meshFilters = new();
     private readonly Dictionary<UnityEngine.Mesh, RtShape> m_rtShapes = new();
@@ -143,6 +149,12 @@ namespace AGXUnity.Sensor
       if ( m_ignoredMeshes.Contains( meshFilter ) )
         return;
 
+      var layer = meshFilter.gameObject.layer;
+      if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 ) {
+        m_ignoredMeshes.Add( meshFilter );
+        return;
+      }
+
       if ( !m_meshFilters.Contains( meshFilter ) )
         m_meshFilters.Add( meshFilter );
 
@@ -237,6 +249,10 @@ namespace AGXUnity.Sensor
     private bool AddAGXModel( ScriptComponent scriptComponent )
     {
       if ( scriptComponent == null )
+        return false;
+
+      var layer = scriptComponent.gameObject.layer;
+      if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 )
         return false;
 
       scriptComponent.GetInitialized<ScriptComponent>();
