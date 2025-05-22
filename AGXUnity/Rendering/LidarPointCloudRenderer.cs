@@ -236,7 +236,7 @@ namespace AGXUnity.Rendering
           mpb,
           UnityEngine.Rendering.ShadowCastingMode.Off,
           false,
-          0,
+          gameObject.layer,
           cam
         );
       }
