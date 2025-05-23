@@ -834,5 +834,30 @@ namespace AGXUnityTesting.Runtime
         oldCount = newCount;
       }
     }
+
+    [UnityTest]
+    public IEnumerator TestLocalPosition()
+    {
+      var lidarComp = CreateDefaultTestLidar();
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      yield return TestUtils.Step();
+
+      var elevations = output.View<agx.Vec3f>( out uint _ );
+      var preMaxElevation = elevations.Select(p => p.z).Max();
+
+      lidarComp.LocalPosition = new Vector3( 0, 0, 1 );
+      yield return TestUtils.Step();
+
+      elevations = output.View<agx.Vec3f>( out uint _ );
+      var postMaxElevation = elevations.Select(p => p.z).Max();
+
+      Assert.Less( postMaxElevation, preMaxElevation - 0.8f );
+    }
   }
 }
