@@ -9,7 +9,7 @@ namespace AGXUnity.Model
   {
     [SerializeField]
     private int m_numberOfTeeth = 6;
-    [ClampAboveZeroInInspector]
+    [ClampAboveZeroInInspector( acceptZero: true )]
     [Tooltip( "The number of teeth that the shovel has" )]
     public int NumberOfTeeth
     {
