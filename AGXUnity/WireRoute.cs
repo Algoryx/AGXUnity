@@ -18,7 +18,7 @@ namespace AGXUnity
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
   [Serializable]
-  public class WireRoute : Route<WireRouteNode>
+  public class WireRoute : Route<WireRouteNode>, ISerializationCallbackReceiver
   {
     /// <summary>
     /// Checks validity of current route.
@@ -176,6 +176,17 @@ namespace AGXUnity
     private void OnRemovedFromList( WireRouteNode node, int index )
     {
       node.Wire = null;
+    }
+
+    public void OnBeforeSerialize() { }
+
+    public void OnAfterDeserialize()
+    {
+      // Remove callback if it exists to avoid any possible duplicates
+      OnNodeAdded   -= this.OnAddedToList;
+      OnNodeRemoved -= this.OnRemovedFromList;
+      OnNodeAdded   += this.OnAddedToList;
+      OnNodeRemoved += this.OnRemovedFromList;
     }
   }
 }

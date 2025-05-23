@@ -24,9 +24,12 @@
     public StepCallbackDef PreSynchronizeTransforms;
 
     /// <summary>
-    /// Callback after native simulation.stepForward is done and before any
-    /// other post callbacks. Write back transforms from the simulation to
+    /// Callback after native simulation.stepForward has integrated the positions 
+    /// in the simulation. Write back transforms from the simulation to
     /// the Unity objects during this call.
+    /// Note that when this callback is invoked during simulation stepping depends
+    /// on whether PreIntegratePositions is true in the Simulation class as this affects 
+    /// when transforms are computed.
     /// </summary>
     public StepCallbackDef PostSynchronizeTransforms;
 
@@ -67,6 +70,11 @@
     /// </summary>
     public StepCallbackDef _Internal_PrePost;
 
+    /// <summary>
+    /// Internal preparation callbacks.
+    /// </summary>
+    public StepCallbackDef _Internal_PostSynchronizeTransform;
+
     public void OnInitialize( agxSDK.Simulation simulation )
     {
       m_simulationStepEvents = new SimulationStepEvents( this );
@@ -97,6 +105,9 @@
 
       public sealed override void preCollide( double time )
       {
+        if ( Simulation.Instance.PreIntegratePositions )
+          Invoke( m_functions.PostSynchronizeTransforms, m_functions._Internal_PostSynchronizeTransform );
+
         Invoke( m_functions.SimulationPreCollide );
       }
 

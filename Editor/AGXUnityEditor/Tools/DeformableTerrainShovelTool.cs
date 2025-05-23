@@ -70,13 +70,14 @@ namespace AGXUnityEditor.Tools
         var rayCenter    = 0.5f * ( CuttingEdgeLineTool.Line.Center + TopEdgeLineTool.Line.Center );
         var rayDir       = Vector3.Cross( cuttingDir, cuttingToTop ).normalized;
 
-        if ( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ) < 0.95f )
+        var absDot = Mathf.Abs(Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ));
+        if ( absDot < 0.95f )
           m_edgeIssues.Add( "\u2022 " +
                             GUI.AddColorTag( "Top", Color.Lerp( Color.yellow, Color.white, 0.35f ) ) +
                             " and " +
                             GUI.AddColorTag( "Cutting", Color.Lerp( Color.red, Color.white, 0.35f ) ) +
-                            " edge direction expected to be approximately parallel with dot product > 0.95, currently: " +
-                            GUI.AddColorTag( Vector3.Dot( cuttingDir, TopEdgeLineTool.Line.Direction ).ToString(), Color.red ) );
+                            " edge direction expected to be approximately parallel with (absolute) dot product > 0.95, currently: " +
+                            GUI.AddColorTag( absDot.ToString(), Color.red ) );
         if ( !Utils.Raycast.Intersect( new Ray( rayCenter, rayDir ), Shovel.GetComponentsInChildren<MeshFilter>() ).Hit )
           m_edgeIssues.Add( "\u2022 " +
                             GUI.AddColorTag( "Top", Color.Lerp( Color.yellow, Color.white, 0.35f ) ) +

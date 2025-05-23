@@ -87,6 +87,22 @@ namespace AGXUnityEditor.Tools
           end.FrictionCoefficients = InspectorGUI.Vector2Field( AGXUnity.Utils.GUI.MakeLabel( "Friction Coefficients" ), end.FrictionCoefficients, "F,B" );
         }
       }
+      else if ( Node.NodeData is BodyFixedData fixedData ) {
+        using ( new InspectorGUI.IndentScope() ) {
+
+          fixedData.RigidAttachment = EditorGUILayout.Toggle( AGXUnity.Utils.GUI.MakeLabel( "Rigid Attachment",
+                                                                                            false,
+                                                                                            "When enabled, the rotation of the attached cable segment will be locked to the body, " +
+                                                                                            "otherwise, only the position will be locked" ),
+                                                              fixedData.RigidAttachment );
+
+          fixedData.IgnoreNodeRotation = EditorGUILayout.Toggle( AGXUnity.Utils.GUI.MakeLabel( "Ignore Node Rotation",
+                                                                                               false,
+                                                                                               "When enabled, the rotation of the created cable attachment will be derived from the routed cable " +
+                                                                                               "rather than from the rotation of the node itself" ),
+                                                                 fixedData.IgnoreNodeRotation );
+        }
+      }
       base.OnPostTargetMembersGUI();
     }
 

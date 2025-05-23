@@ -84,20 +84,6 @@ namespace AGXUnity.Model
       }
     }
 
-    [SerializeField]
-    private bool m_autoAddToTerrains = false;
-
-    public bool AutoAddToTerrains
-    {
-      get => m_autoAddToTerrains;
-      set
-      {
-        m_autoAddToTerrains = value;
-        if ( Native != null && m_autoAddToTerrains )
-          AddToAllTerrains();
-      }
-    }
-
     /// <summary>
     /// Checks if top, cutting edges and cutting direction is valid.
     /// </summary>
@@ -137,27 +123,18 @@ namespace AGXUnity.Model
         Settings.name = "[Temporary]Shovel Settings";
       }
 
-      if ( AutoAddToTerrains )
-        AddToAllTerrains();
+      Simulation.Instance.Native.add( Native );
 
       return true;
-    }
-
-    private void AddToAllTerrains()
-    {
-#if UNITY_2022_2_OR_NEWER
-      foreach ( var terr in FindObjectsByType<DeformableTerrainBase>( FindObjectsSortMode.None ) )
-        terr.Add( this );
-#else
-      foreach ( var terr in FindObjectsOfType<DeformableTerrainBase>() )
-        terr.Add( this );
-#endif
     }
 
     protected override void OnDestroy()
     {
       if ( Settings != null )
         Settings.Unregister( this );
+
+      if ( Simulation.HasInstance )
+        Simulation.Instance.Native.remove( Native );
 
       Native = null;
 

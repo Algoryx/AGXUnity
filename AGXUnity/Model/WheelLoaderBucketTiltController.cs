@@ -149,7 +149,7 @@ namespace AGXUnity.Model
     protected override void OnEnable()
     {
       if ( WheelLoader != null && RefObserver != null && BucketTransform != null ) {
-        Simulation.Instance.StepCallbacks.PostStepForward += OnPost;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPost;
         TargetAngle = CurrentAngle;
       }
     }
@@ -157,7 +157,7 @@ namespace AGXUnity.Model
     protected override void OnDisable()
     {
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPost;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPost;
     }
 
     private void OnPost()
