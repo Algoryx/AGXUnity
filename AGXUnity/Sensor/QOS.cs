@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
+  /// <summary>
+  /// Helper class used to encapsulate QOS-state for use with agxROS2
+  /// </summary>
   [Serializable]
   public class QOS
   {
