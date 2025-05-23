@@ -50,6 +50,13 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.WaitUntilLoaded();
     }
 
+    [UnityTearDown]
+    public IEnumerator TearDownTerrainScene()
+    {
+      GameObject.Destroy( unityTerrain.gameObject );
+      yield return null;
+    }
+
     [Test]
     public void TestTerrainGetSingleHeight()
     {
@@ -133,6 +140,7 @@ namespace AGXUnityTesting.Runtime
   {
     private DeformableTerrainPager testTerrain;
     private Terrain unityTerrain;
+    private GameObject pagerProbe;
 
     private const float HEIGHT_DELTA = 0.0005f;
 
@@ -168,12 +176,20 @@ namespace AGXUnityTesting.Runtime
       testTerrain = go.AddComponent<DeformableTerrainPager>();
       testTerrain.MaximumDepth = 2;
 
-      var rb = Factory.Create<RigidBody>();
+      pagerProbe = Factory.Create<RigidBody>();
 
-      testTerrain.Add( rb.GetComponent<RigidBody>() );
+      testTerrain.Add( pagerProbe.GetComponent<RigidBody>() );
 
       // Ensure that the middle tile is paged in
       yield return TestUtils.SimulateSeconds( 0.2f );
+    }
+
+    [UnityTearDown]
+    public IEnumerator TearDownTerrainScene()
+    {
+      GameObject.Destroy( unityTerrain.gameObject );
+      GameObject.Destroy( pagerProbe );
+      yield return null;
     }
 
     [Test]
