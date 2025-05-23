@@ -783,13 +783,13 @@ namespace AGXUnityEditor
       var target = objects[0] as Object;
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ), InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
         using var indent = new InspectorGUI.IndentScope();
-        using ( new EditorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).durabilityPolicy != qos.durabilityPolicy ) ) )
+        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).durabilityPolicy != qos.durabilityPolicy ) ) )
           qos.durabilityPolicy = (agxROS2.QOS_DURABILITY)EditorGUILayout.EnumPopup( "Durability Policy", qos.durabilityPolicy );
-        using ( new EditorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).reliabilityPolicy != qos.reliabilityPolicy ) ) )
+        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).reliabilityPolicy != qos.reliabilityPolicy ) ) )
           qos.reliabilityPolicy = (agxROS2.QOS_RELIABILITY)EditorGUILayout.EnumPopup( "Reliability Policy", qos.reliabilityPolicy );
-        using ( new EditorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyPolicy != qos.historyPolicy ) ) )
+        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyPolicy != qos.historyPolicy ) ) )
           qos.historyPolicy = (agxROS2.QOS_HISTORY)EditorGUILayout.EnumPopup( "History Policy", qos.historyPolicy );
-        using ( new EditorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyDepth != qos.historyDepth ) ) )
+        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyDepth != qos.historyDepth ) ) )
           qos.historyDepth = (uint)EditorGUILayout.IntField( "History Depth", (int)qos.historyDepth );
       }
 

@@ -126,6 +126,23 @@ namespace AGXUnityEditor
       private static int m_pixelsPerLevel = 15;
     }
 
+    // TODO: This scope is built into Unity 6.0+, remove this when support for older versions is dropped.
+    public class MixedValueScope : IDisposable
+    {
+      private bool PriorMixedValueState { get; set; }
+
+      public MixedValueScope( bool mixedValue )
+      {
+        PriorMixedValueState = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mixedValue;
+      }
+
+      public void Dispose()
+      {
+        EditorGUI.showMixedValue = PriorMixedValueState;
+      }
+    }
+
     public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
       Separator( height, space, InspectorGUISkin.BrandColor, 1.0f );
