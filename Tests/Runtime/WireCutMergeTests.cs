@@ -97,7 +97,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.True( SourceWire.Merge( result ), "Merge failed" );
       // Need to wait a frame to ensure object is destroyed
-      yield return new WaitForEndOfFrame();
+      yield return null;
       Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
     }
 
@@ -116,7 +116,7 @@ namespace AGXUnityTesting.Runtime
       Assert.True( SourceWire.Merge( result1 ), "Merge failed" );
 
       // Need to wait a frame to ensure object is destroyed
-      yield return new WaitForEndOfFrame();
+      yield return null;
       Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
     }
 
@@ -128,7 +128,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.False( result.Merge( SourceWire ), "Merge should fail" );
       // Need to wait a frame to ensure object is destroyed
-      yield return new WaitForEndOfFrame();
+      yield return null;
       Assert.AreEqual( 2, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
     }
 
@@ -144,7 +144,7 @@ namespace AGXUnityTesting.Runtime
       Assert.NotNull( SourceWire.EndWinch, "EndWinch was not moved to the merged wire after merge" );
 
       // Need to wait a frame to ensure object is destroyed
-      yield return new WaitForEndOfFrame();
+      yield return null;
       Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
     }
 
@@ -168,7 +168,7 @@ namespace AGXUnityTesting.Runtime
       Assert.NotNull( SourceWire.EndWinch, "EndWinch was not moved to the merged wire after merge" );
 
       // Need to wait a frame to ensure object is destroyed
-      yield return new WaitForEndOfFrame();
+      yield return null;
       Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
     }
   }
