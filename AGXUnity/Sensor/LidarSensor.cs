@@ -443,6 +443,7 @@ namespace AGXUnity.Sensor
     }
     private void OnDrawGizmosSelected()
     {
+#if UNITY_EDITOR
       var xform = GlobalTransform;
 
       var pos = xform.GetPosition();
@@ -460,7 +461,7 @@ namespace AGXUnity.Sensor
         disc[ i ] = pos + x * Mathf.Cos( ang ) + y * Mathf.Sin( ang );
       }
       Gizmos.DrawLineStrip( disc, true );
+#endif
     }
   }
-
 }
