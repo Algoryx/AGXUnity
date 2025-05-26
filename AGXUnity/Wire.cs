@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using AGXUnity.Rendering;
+using AGXUnity.Utils;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -68,6 +70,8 @@ namespace AGXUnity
     /// Get native instance, if initialized.
     /// </summary>
     public agxWire.Wire Native { get; private set; }
+
+    private agxWire.Wire AssignedNative = null;
 
     /// <summary>
     /// Radius of this wire - default 0.015. Paired with property Radius.
@@ -239,6 +243,13 @@ namespace AGXUnity
       if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXWires, this ) )
         return false;
 
+      if ( AssignedNative != null ) {
+        Native = AssignedNative;
+
+        Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+        return Native.initialized();
+      }
+
       WireRoute.ValidatedRoute validatedRoute = Route.GetValidated();
       if ( !validatedRoute.Valid ) {
         Debug.LogError( validatedRoute.ErrorString, this );
@@ -331,6 +342,76 @@ namespace AGXUnity
 
       if ( m_renderer != null )
         m_renderer.OnPostStepForward( this );
+    }
+
+    private static Wire FromNative( agxWire.Wire native )
+    {
+      var GO = new GameObject("New Wire");
+      var wire = GO.AddComponent<AGXUnity.Wire>();
+      wire.AssignedNative = native;
+      native.reference();
+      return wire.GetInitialized();
+    }
+
+    public Wire Cut( Vector3 worldPoint )
+    {
+      var cutWire = Native.cut( worldPoint.ToHandedVec3(), 2 );
+      if ( cutWire == null )
+        return null;
+
+      var newWire = FromNative( cutWire );
+      newWire.m_material = m_material;
+      newWire.m_linearVelocityDamping = m_linearVelocityDamping;
+      newWire.m_radius = m_radius;
+      newWire.m_scaleConstant = m_scaleConstant;
+      newWire.m_resolutionPerUnitLength = m_resolutionPerUnitLength;
+      if ( EndWinch != null ) {
+        newWire.Route.Add( NodeType.FreeNode ); // Dummy node
+        newWire.Route.Add( NodeType.WinchNode ).Wire = this;
+        newWire.EndWinch.InitializeFrom( EndWinch.Native );
+        Route.Remove( Route.Last() );
+      }
+
+      if ( TryGetComponent<WireRenderer>( out var renderer ) ) {
+        var newRenderer = newWire.gameObject.AddComponent<WireRenderer>();
+        newRenderer.enabled = renderer.enabled;
+        newRenderer.Material = renderer.Material;
+        newRenderer.ReceiveShadows = renderer.ReceiveShadows;
+      }
+
+      return newWire;
+    }
+
+    public bool Merge( Wire other, bool removeGameObject = true )
+    {
+      var res = Native.merge( other.Native );
+      if ( !res ) {
+        Debug.LogWarning( $"Failed to merge wires '{name}' and '{other.name}'" );
+        return false;
+      }
+
+      if ( other.BeginWinch != null ) {
+        var node = WireRouteNode.Create( NodeType.WinchNode );
+        node.Wire = this;
+        Route.InsertBefore( node, Route.First() );
+        BeginWinch.InitializeFrom( other.BeginWinch.Native );
+      }
+
+      if ( other.EndWinch != null ) {
+        if ( Route.NumNodes == 0 )
+          Route.Add( NodeType.FreeNode ); // Dummy node
+        Route.Add( NodeType.WinchNode ).Wire = this;
+
+        EndWinch.InitializeFrom( other.EndWinch.Native );
+      }
+
+      if ( other.TryGetComponent<WireRenderer>( out var renderer ) )
+        Destroy( renderer );
+      Destroy( other );
+
+      if ( removeGameObject )
+        Destroy( other.gameObject );
+      return true;
     }
 
     private void Reset()
