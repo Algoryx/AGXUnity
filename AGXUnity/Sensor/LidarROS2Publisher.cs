@@ -5,6 +5,8 @@ using UnityEngine;
 namespace AGXUnity.Sensor
 {
   [RequireComponent( typeof( LidarSensor ) )]
+  [AddComponentMenu( "AGXUnity/Sensors/Lidar ROS2 Publisher" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#publishing-lidar-data-over-ros2" )]
   public class LidarROS2Publisher : ScriptComponent
   {
     /// <summary>
