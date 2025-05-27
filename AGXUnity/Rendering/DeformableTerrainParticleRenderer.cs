@@ -3,7 +3,6 @@ using AGXUnity.Utils;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
 using static agx.agxSWIG.UnityHelpers;
@@ -228,9 +227,10 @@ namespace AGXUnity.Rendering
 
     private void Render( Camera cam )
     {
-      Profiler.BeginSample( "RenderGranules" );
       if ( !RenderingUtils.CameraShouldRender( cam ) )
         return;
+
+      using var _ = new ProfileScope();
 
       var isValidDrawInstanceMode = RenderMode == GranuleRenderMode.DrawMeshInstanced &&
                                     m_numRendered > 0 &&
@@ -239,18 +239,14 @@ namespace AGXUnity.Rendering
       if ( !isValidDrawInstanceMode )
         return;
 
-
       RenderParams rp = new RenderParams(m_meshInstanceMaterial);
       rp.shadowCastingMode = ShadowCastingMode.On;
       rp.receiveShadows = true;
-      Profiler.BeginSample( "DrawCalls" );
       if ( m_meshInstanceMaterial.enableInstancing )
         Graphics.RenderMeshInstanced( rp, m_meshInstance, 0, m_granuleMatrices.unityMats, m_numRendered );
       else
         for ( int i = 0; i < m_numRendered; i++ )
           Graphics.RenderMesh( rp, m_meshInstance, 0, m_granuleMatrices.unityMats[ i ] );
-      Profiler.EndSample();
-      Profiler.EndSample();
     }
 
     private void Synchronize()
