@@ -21,10 +21,19 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.WaitUntilLoaded();
     }
 
+    private Wire[] FindWires()
+    {
+#if UNITY_2022_2_OR_NEWER
+      return UnityEngine.Object.FindObjectsByType<Wire>( FindObjectsSortMode.None );
+#else
+      return UnityEngine.Object.FindObjectsOfType<Wire>();
+#endif
+    }
+
     [TearDown]
     public void TearDownWireScene()
     {
-      foreach ( var wire in Object.FindObjectsOfType<Wire>() )
+      foreach ( var wire in FindWires() )
         Object.Destroy( wire.gameObject );
     }
 
@@ -33,7 +42,7 @@ namespace AGXUnityTesting.Runtime
     {
       var result = SourceWire.Cut( Vector3.zero );
       Assert.NotNull( result, "Cutting failed" );
-      Assert.AreEqual( 2, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 2, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [Test]
@@ -44,7 +53,7 @@ namespace AGXUnityTesting.Runtime
         current = current.Cut( new Vector3( x, 0, 0 ) );
         Assert.NotNull( current, "Cutting failed" );
       }
-      Assert.AreEqual( 4, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 4, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [Test]
@@ -86,7 +95,7 @@ namespace AGXUnityTesting.Runtime
     {
       var result = SourceWire.Cut( Vector3.left );
       Assert.Null( result, "Cutting should fail" );
-      Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 1, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [UnityTest]
@@ -98,7 +107,7 @@ namespace AGXUnityTesting.Runtime
       Assert.True( SourceWire.Merge( result ), "Merge failed" );
       // Need to wait a frame to ensure object is destroyed
       yield return null;
-      Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 1, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [UnityTest]
@@ -117,7 +126,7 @@ namespace AGXUnityTesting.Runtime
 
       // Need to wait a frame to ensure object is destroyed
       yield return null;
-      Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 1, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [UnityTest]
@@ -129,7 +138,7 @@ namespace AGXUnityTesting.Runtime
       Assert.False( result.Merge( SourceWire ), "Merge should fail" );
       // Need to wait a frame to ensure object is destroyed
       yield return null;
-      Assert.AreEqual( 2, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 2, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [UnityTest]
@@ -145,7 +154,7 @@ namespace AGXUnityTesting.Runtime
 
       // Need to wait a frame to ensure object is destroyed
       yield return null;
-      Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 1, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
 
     [UnityTest]
@@ -169,7 +178,7 @@ namespace AGXUnityTesting.Runtime
 
       // Need to wait a frame to ensure object is destroyed
       yield return null;
-      Assert.AreEqual( 1, Object.FindObjectsOfType<Wire>().Length, "Unexpected number of wires in the simulation" );
+      Assert.AreEqual( 1, FindWires().Length, "Unexpected number of wires in the simulation" );
     }
   }
 }
