@@ -1,7 +1,6 @@
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 using Mesh = UnityEngine.Mesh;
@@ -79,9 +78,6 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private List<DeformableTerrainShovel> m_shovels = new List<DeformableTerrainShovel>();
-
-    [SerializeField]
     private Vector2 m_sizeMeters = new Vector2(2,2);
 
     [ClampAboveZeroInInspector]
@@ -140,8 +136,18 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// The compaction that all terrain cells are initialized to.
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [ClampAboveZeroInInspector( true )]
+    [InspectorPriority( -1 )]
     [field: SerializeField]
-    [InspectorPriority(-1)]
+    [Tooltip( "The compaction that all terrain cells are initialized to." )]
+    public float InitialCompaction { get; set; } = 1.0f;
+
+    [field: SerializeField]
+    [InspectorPriority( -1 )]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
     public bool InvertDepthDirection { get; set; } = true;
 
@@ -166,7 +172,7 @@ namespace AGXUnity.Model
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
       var mat = TerrainRenderer.sharedMaterial;
-      if ( !AssetDatabase.Contains(mat) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
+      if ( !AssetDatabase.Contains( mat ) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
         TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
         RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       }
@@ -177,8 +183,6 @@ namespace AGXUnity.Model
     {
       // Only printing the errors if something is wrong.
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
-
-      RemoveInvalidShovels();
 
       InitializeNative();
 
@@ -225,8 +229,8 @@ namespace AGXUnity.Model
                                        false,
                                        depth );
 
-      foreach ( var shovel in Shovels )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>()?.Native );
+      if ( InitialCompaction != 1.0f )
+        Native.setCompaction( InitialCompaction );
 
       GetSimulation().add( Native );
 
@@ -336,8 +340,8 @@ namespace AGXUnity.Model
     {
       Vector3 size = new Vector3( ( SizeCells.x - 1 ) * ElementSize, MaximumDepth, ( SizeCells.y - 1 ) * ElementSize);
       Vector3 pos = new Vector3(
-        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2, 
-        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f, 
+        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2,
+        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f,
         -( ( SizeCells.y - 1 ) % 2 ) * ElementSize / 2);
 
       Gizmos.matrix = transform.localToWorldMatrix;
@@ -356,56 +360,10 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
 
     protected override float ElementSizeGetter => ElementSize;
-    public override DeformableTerrainShovel[] Shovels => m_shovels.ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface().getSoilParticles(); }
     public override agx.Uuid GetParticleMaterialUuid() => Native?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getProperties(); }
-
-    public override bool Add( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || m_shovels.Contains( shovel ) )
-        return false;
-
-      m_shovels.Add( shovel );
-
-      // Initialize shovel if we're initialized.
-      if ( Native != null )
-        Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native );
-
-      return true;
-    }
-
-    public override bool Remove( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || !m_shovels.Contains( shovel ) )
-        return false;
-
-      if ( Native != null )
-        Native.remove( shovel.Native );
-
-      return m_shovels.Remove( shovel );
-    }
-    public override bool Contains( DeformableTerrainShovel shovel )
-    {
-      return shovel != null && m_shovels.Contains( shovel );
-    }
-
-    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
-    {
-      m_shovels.RemoveAll( shovel => shovel == null );
-      if ( removeDisabled ) {
-        int removed = m_shovels.RemoveAll( shovel => !shovel.isActiveAndEnabled );
-        if ( removed > 0 ) {
-          if ( warn )
-            Debug.LogWarning( $"Removed {removed} disabled shovels from terrain {gameObject.name}." +
-                              " Disabled shovels should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
-                              " To fix this warning, please remove any disabled shovels from the terrain." );
-          else
-            Debug.Log( $"Removed {removed} disabled shovels from terrain {gameObject.name}." );
-        }
-      }
-    }
 
     public override void ConvertToDynamicMassInShape( Collide.Shape failureVolume )
     {

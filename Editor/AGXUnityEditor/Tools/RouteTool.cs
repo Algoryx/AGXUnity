@@ -1,8 +1,9 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
 using AGXUnity;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -22,7 +23,12 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public Route<NodeT> Route { get; private set; }
+    public Route<NodeT> Route => Parent switch
+    {
+      Cable cable => cable.Route as Route<NodeT>,
+      Wire wire => wire.Route as Route<NodeT>,
+      _ => throw new NotImplementedException(),
+    };
 
     private NodeT m_selected = null;
     public NodeT Selected
@@ -78,11 +84,23 @@ namespace AGXUnityEditor.Tools
       }
     }
 
-    public RouteTool( Object[] targets )
-      : base( targets )
+    public bool RouteFromMeshTool
     {
-      Route = (Route<NodeT>)Parent.GetType().GetProperty( "Route", System.Reflection.BindingFlags.Instance |
-                                                                   System.Reflection.BindingFlags.Public ).GetGetMethod().Invoke( Parent, null );
+      get { return GetChild<RouteFromMeshTool<ParentT, NodeT>>() != null; }
+      set
+      {
+        if ( value && !RouteFromMeshTool ) {
+          var tool = new RouteFromMeshTool<ParentT, NodeT>(Parent, Route);
+          AddChild( tool );
+        }
+        else if ( !value )
+          RemoveChild( GetChild<RouteFromMeshTool<ParentT, NodeT>>() );
+      }
+    }
+
+    public RouteTool( Object[] targets )
+  : base( targets )
+    {
 
       VisualInSceneView = true;
     }
@@ -133,15 +151,26 @@ namespace AGXUnityEditor.Tools
       }
 
       bool toggleDisableCollisions = false;
+      bool toggleRouteFromMesh = false;
       var skin = InspectorEditor.Skin;
 
-      InspectorGUI.ToolButtons( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
+      var toolButtonData = new List<InspectorGUI.ToolButtonData>();
+      toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.DisableCollisions,
                                                                     DisableCollisionsTool,
                                                                     "Disable collisions against other objects",
                                                                     () => toggleDisableCollisions = true ) );
+      toolButtonData.Add( InspectorGUI.ToolButtonData.Create( ToolIcon.CreateShapeGivenVisual,
+                                                                    RouteFromMeshTool,
+                                                                    "Generate a node route from a visual mesh",
+                                                                    () => toggleRouteFromMesh = true ) );
+      InspectorGUI.ToolButtons( toolButtonData.ToArray() );
 
       if ( DisableCollisionsTool ) {
         GetChild<DisableCollisionsTool>().OnInspectorGUI();
+      }
+
+      if ( RouteFromMeshTool ) {
+        GetChild<RouteFromMeshTool<ParentT, NodeT>>().OnInspectorGUI();
       }
 
       if ( !EditorApplication.isPlaying )
@@ -149,6 +178,8 @@ namespace AGXUnityEditor.Tools
 
       if ( toggleDisableCollisions )
         DisableCollisionsTool = !DisableCollisionsTool;
+      if ( toggleRouteFromMesh )
+        RouteFromMeshTool = !RouteFromMeshTool;
     }
 
     protected virtual string GetNodeTypeString( RouteNode node ) { return string.Empty; }
@@ -199,8 +230,7 @@ namespace AGXUnityEditor.Tools
                                                             SelectGameObjectDropdownMenuTool.GetGUIContent( node.Parent ).text,
                                                             !validatedNode.Valid,
                                                             validatedNode.ErrorString ),
-                                            newState =>
-                                            {
+                                            newState => {
                                               Selected = newState ? node : null;
                                               EditorUtility.SetDirty( Parent );
                                             } );
@@ -234,7 +264,7 @@ namespace AGXUnityEditor.Tools
 
       NodeT listOpNode   = null;
 
-      Undo.RecordObject( Route, "Route changed" );
+      Undo.RecordObject( Parent, "Route changed" );
 
       EditorGUI.BeginChangeCheck();
 
@@ -248,11 +278,13 @@ namespace AGXUnityEditor.Tools
           using ( InspectorGUI.IndentScope.Single ) {
             var foldoutState = NodeFoldout( validatedNode );
             if ( foldoutState.Foldout ) {
+              var tool = GetRouteNodeTool( node );
+
+              tool.OnPreTargetMembersGUI();
               OnPreFrameGUI( node );
-
               InspectorGUI.HandleFrame( node, 1 );
-
               OnPostFrameGUI( node );
+              tool.OnPostTargetMembersGUI();
             }
 
             if ( listOpNode == null && foldoutState.ButtonPressed )
@@ -313,15 +345,15 @@ namespace AGXUnityEditor.Tools
         Selected = null;
         Route.Remove( listOpNode );
       }
-      if( EditorGUI.EndChangeCheck() )
-        EditorUtility.SetDirty( Route );
+      if ( EditorGUI.EndChangeCheck() )
+        EditorUtility.SetDirty( Parent );
     }
 
     private void CreateRouteNodeTool( NodeT node )
     {
       AddChild( new RouteNodeTool( node,
                                    Parent,
-                                   Route,
+                                   Parent,
                                    () => { return Selected; },
                                    ( selected ) => { Selected = selected as NodeT; },
                                    ( n ) => { return Route.Contains( n as NodeT ); },
@@ -331,7 +363,7 @@ namespace AGXUnityEditor.Tools
 
     private EditorDataEntry GetData( NodeT node, string identifier, Action<EditorDataEntry> onCreate = null )
     {
-      return EditorData.Instance.GetData( Route, identifier + "_" + Route.IndexOf( node ), onCreate );
+      return EditorData.Instance.GetData( Parent, identifier + "_" + Route.IndexOf( node ), onCreate );
     }
 
     private EditorDataEntry GetFoldoutData( NodeT node )

@@ -126,6 +126,23 @@ namespace AGXUnityEditor
       private static int m_pixelsPerLevel = 15;
     }
 
+    // TODO: This scope is built into Unity 6.0+, remove this when support for older versions is dropped.
+    public class MixedValueScope : IDisposable
+    {
+      private bool PriorMixedValueState { get; set; }
+
+      public MixedValueScope( bool mixedValue )
+      {
+        PriorMixedValueState = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mixedValue;
+      }
+
+      public void Dispose()
+      {
+        EditorGUI.showMixedValue = PriorMixedValueState;
+      }
+    }
+
     public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
       Separator( height, space, InspectorGUISkin.BrandColor, 1.0f );
@@ -515,8 +532,7 @@ namespace AGXUnityEditor
                            MiscButtonData.Create( GUI.MakeLabel( "...",
                                                                  InspectorGUISkin.BrandColor,
                                                                  true ),
-                                                  () =>
-                                                  {
+                                                  () => {
                                                     string result = EditorUtility.OpenFolderPanel( openFolderTitle,
                                                                                                    currentFolder,
                                                                                                    "" );
@@ -888,11 +904,11 @@ namespace AGXUnityEditor
           }
 
           if ( addButtonPressed ) {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :
                                                         Object.FindObjectsByType<T>(FindObjectsSortMode.None) );
-            
+
 #else
             var sceneItems = availableItemsToAdd ?? ( isAsset ?
                                                         IO.Utils.FindAssetsOfType<T>( string.Empty ) :
@@ -908,8 +924,7 @@ namespace AGXUnityEditor
                 continue;
               addItemMenu.AddItem( GUI.MakeLabel( sceneItem.name ),
                                    false,
-                                   () =>
-                                   {
+                                   () => {
                                      onAdd( sceneItem );
                                    } );
             }
@@ -1577,8 +1592,7 @@ namespace AGXUnityEditor
     {
       for ( int i = 0; i < s_multiFloat2Values.Length; ++i )
         s_multiFloat2Values[ i ] = value[ i ];
-      Vector234FieldEx( label, s_multiFloat2Values, subLabels, "X,Y", values =>
-      {
+      Vector234FieldEx( label, s_multiFloat2Values, subLabels, "X,Y", values => {
         for ( int i = 0; i < values.Length; ++i )
           value[ i ] = values[ i ];
       } );
@@ -1596,8 +1610,7 @@ namespace AGXUnityEditor
     {
       for ( int i = 0; i < s_multiFloat3Values.Length; ++i )
         s_multiFloat3Values[ i ] = value[ i ];
-      Vector234FieldEx( label, s_multiFloat3Values, subLabels, "X,Y,Z", values =>
-      {
+      Vector234FieldEx( label, s_multiFloat3Values, subLabels, "X,Y,Z", values => {
         for ( int i = 0; i < values.Length; ++i )
           value[ i ] = values[ i ];
       } );
@@ -1615,8 +1628,7 @@ namespace AGXUnityEditor
     {
       for ( int i = 0; i < s_multiFloat4Values.Length; ++i )
         s_multiFloat4Values[ i ] = value[ i ];
-      Vector234FieldEx( label, s_multiFloat4Values, subLabels, "X,Y,Z", values =>
-      {
+      Vector234FieldEx( label, s_multiFloat4Values, subLabels, "X,Y,Z", values => {
         for ( int i = 0; i < values.Length; ++i )
           value[ i ] = values[ i ];
       } );
@@ -1634,8 +1646,7 @@ namespace AGXUnityEditor
     {
       for ( int i = 0; i < s_multiInt2Values.Length; ++i )
         s_multiInt2Values[ i ] = value[ i ];
-      Vector234IntFieldEx( label, s_multiInt2Values, subLabels, "X,Y", values =>
-      {
+      Vector234IntFieldEx( label, s_multiInt2Values, subLabels, "X,Y", values => {
         for ( int i = 0; i < values.Length; ++i )
           value[ i ] = values[ i ];
       } );
@@ -1653,8 +1664,7 @@ namespace AGXUnityEditor
     {
       for ( int i = 0; i < s_multiInt3Values.Length; ++i )
         s_multiInt3Values[ i ] = value[ i ];
-      Vector234IntFieldEx( label, s_multiInt3Values, subLabels, "X,Y,Z", values =>
-      {
+      Vector234IntFieldEx( label, s_multiInt3Values, subLabels, "X,Y,Z", values => {
         for ( int i = 0; i < values.Length; ++i )
           value[ i ] = values[ i ];
       } );

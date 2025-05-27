@@ -1,14 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Collide;
-using AGXUnity.Utils;
-
-using GUI = AGXUnity.Utils.GUI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using Assembly = AGXUnity.Assembly;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools

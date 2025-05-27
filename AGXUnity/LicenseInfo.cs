@@ -1,8 +1,8 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-
-using AGXUnity.Utils;
-
+using System.Text.RegularExpressions;
 using Math = System.Math;
 
 namespace AGXUnity
@@ -29,11 +29,12 @@ namespace AGXUnity
       AGXHydraulics    = 1 << 7,
       AGXHydrodynamics = 1 << 8,
       AGXSimulink      = 1 << 9,
-      AGXTerrain       = 1 << 10,
-      AGXTires         = 1 << 11,
+      AGXSensor        = 1 << 10,
+      AGXTerrain       = 1 << 11,
+      AGXTires         = 1 << 12,
       AGXTracks        = 1 << 12,
-      AGXWireLink      = 1 << 13,
-      AGXWires         = 1 << 14,
+      AGXWireLink      = 1 << 14,
+      AGXWires         = 1 << 15,
       All              = ~0
     }
 
@@ -94,6 +95,7 @@ namespace AGXUnity
 
         info.IsValid = agx.Runtime.instance().isValid();
         info.Status = agx.Runtime.instance().getStatus();
+        info.IsFloating = agx.Runtime.instance().isFloatingLicense();
 
         ParseDate( ref info, agx.Runtime.instance().readValue( "EndDate" ) );
 
@@ -131,23 +133,68 @@ namespace AGXUnity
           info.UniqueId = agx.Runtime.instance().readValue( "License" );
         }
 
-        var enabledModules = agx.Runtime.instance().getEnabledModules().ToArray();
-        info.EnabledModules = Module.None;
-        foreach ( var module in enabledModules ) {
-          if ( module == "AgX" ) {
-            info.EnabledModules |= Module.AGX;
-            continue;
-          }
-          else if ( !module.StartsWith( "AgX-" ) )
-            continue;
-          var enabledModule = module.Replace( "AgX-", "AGX" );
-          if ( Enum.TryParse<Module>( enabledModule, out var enumModule ) )
-            info.EnabledModules |= enumModule;
-        }
+        var enabledModules = agx.Runtime.instance().getEnabledModules();
+        ParseModules( ref info, enabledModules );
       }
       catch ( System.Exception ) {
         info = new LicenseInfo();
       }
+
+      return info;
+    }
+
+    public static LicenseInfo FromNative( agx.LicenseInfo native )
+    {
+      var info = new LicenseInfo();
+      info.Version = agx.agxSWIG.agxGetVersion( false );
+
+      info.Status = "";
+      info.IsValid = native.licenseType != -1;
+      LicenseInfo.ParseDate( ref info, native.endDate );
+
+      info.Type = LicenseInfo.LicenseType.Service;
+      var subscriptionType = native.product.Split("-");
+      if ( subscriptionType.Length == 2 )
+        info.TypeDescription = subscriptionType[ 1 ].Trim();
+
+      info.User = native.user;
+      info.Contact = native.contact;
+
+      info.UniqueId = native.installationID;
+
+      info.IsFloating = native.licenseType == 1;
+
+      ParseModules( ref info, native.modules );
+      return info;
+    }
+
+    public static LicenseInfo FromLegacy( string legacyLicenseContent )
+    {
+      var info = new LicenseInfo()
+      {
+        Type = LicenseInfo.LicenseType.Legacy,
+        TypeDescription = "Legacy License",
+        Version = agx.agxSWIG.agxGetVersion( false )
+      };
+
+      var userMatch = Regex.Match( legacyLicenseContent, @"^\s+User\s+""(.*)""\s*$", RegexOptions.Multiline );
+      if ( userMatch.Success )
+        info.User = userMatch.Groups[ 1 ].Value;
+
+      var contactMatch = Regex.Match( legacyLicenseContent, @"^\s+Contact\s+""(.*)""\s*$", RegexOptions.Multiline );
+      if ( contactMatch.Success )
+        info.Contact = contactMatch.Groups[ 1 ].Value;
+
+      var endDateMatch = Regex.Match( legacyLicenseContent, @"^\s+EndDate\s+""(.*)""\s*$", RegexOptions.Multiline );
+      if ( endDateMatch.Success )
+        LicenseInfo.ParseDate( ref info, endDateMatch.Groups[ 1 ].Value );
+
+      info.IsValid = !info.IsExpired;
+      info.IsFloating = false;
+
+      var moduleMatch = Regex.Match( legacyLicenseContent, @"^\s+Modules\s+""(.*)""\s*$", RegexOptions.Multiline );
+      if ( moduleMatch.Success )
+        ParseModules( ref info, moduleMatch.Groups[ 1 ].Value.Split( ',' ) );
 
       return info;
     }
@@ -198,6 +245,11 @@ namespace AGXUnity
     /// True if the license is valid - otherwise false.
     /// </summary>
     public bool IsValid;
+
+    /// <summary>
+    /// True if the license is a floating license
+    /// </summary>
+    public bool IsFloating;
 
     /// <summary>
     /// License status if something is wrong - otherwise an empty string.
@@ -308,6 +360,21 @@ namespace AGXUnity
       return $"Valid: {IsValid}, Valid End Date: {ValidEndDate}, End Date: {EndDate}, " +
              $"Modules: [{string.Join( ",", EnabledModules )}], User: {User}, Contact: {Contact}, " +
              $"Status: {Status}";
+    }
+
+    private static void ParseModules( ref LicenseInfo info, IEnumerable<String> modules )
+    {
+      foreach ( var module in modules ) {
+        if ( module == "AgX" ) {
+          info.EnabledModules |= LicenseInfo.Module.AGX;
+          continue;
+        }
+        else if ( !module.StartsWith( "AgX-" ) )
+          continue;
+        var enabledModule = module.Replace( "AgX-", "AGX" );
+        if ( Enum.TryParse<LicenseInfo.Module>( enabledModule, out var enumModule ) )
+          info.EnabledModules |= enumModule;
+      }
     }
 
     private static bool ParseDate( ref LicenseInfo info, string dateString )

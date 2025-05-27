@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -348,7 +349,7 @@ namespace AGXUnityEditor
 
       var go = Terrain.CreateTerrainGameObject( terrainData );
       go.name = Factory.CreateName<DeformableTerrainPager>();
-      if ( go == null ) { 
+      if ( go == null ) {
         AssetDatabase.DeleteAsset( terrainDataName );
         return null;
       }
@@ -378,7 +379,7 @@ namespace AGXUnityEditor
       go.AddComponent<MeshFilter>();
       var renderer = go.AddComponent<MeshRenderer>();
       renderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
-      RenderingUtils.SetMainTexture(renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ));
+      RenderingUtils.SetMainTexture( renderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       go.AddComponent<MovableTerrain>();
 
       if ( command.context is GameObject ctx )
@@ -407,6 +408,17 @@ namespace AGXUnityEditor
 
     #endregion
 
+    #region Sensors
+    [MenuItem( "AGXUnity/Sensor/LiDAR", priority = 50 )]
+    [MenuItem( "GameObject/AGXUnity/Sensor/LiDAR", validate = false, priority = 10 )]
+    public static GameObject LiDAR( MenuCommand command )
+    {
+      var lidar = CreateModel<LidarSensor>( command );
+      lidar.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      return Selection.activeGameObject = lidar;
+    }
+    #endregion
+
     #region Managers
     [MenuItem( "AGXUnity/Managers/Debug Render Manager", validate = true )]
     private static bool DebugRendererValidate()
@@ -432,6 +444,18 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
     }
 
+    [MenuItem( "AGXUnity/Sensor Environment", validate = true )]
+    private static bool SensorEnvironmentValidate()
+    {
+      return ValidateManager<SensorEnvironment>();
+    }
+
+    [MenuItem( "AGXUnity/Sensor Environment", priority = 66 )]
+    public static GameObject SensorEnvironment()
+    {
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<SensorEnvironment>()?.gameObject;
+    }
+
     [MenuItem( "AGXUnity/Plot", priority = 66 )]
     public static GameObject Plot()
     {
@@ -443,13 +467,13 @@ namespace AGXUnityEditor
 #if USE_VISUAL_SCRIPTING
       var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
       var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
-      AssetDatabase.CopyAsset(plotAssetPath, targetAssetPath);
+      AssetDatabase.CopyAsset( plotAssetPath, targetAssetPath );
 
       AssetDatabase.SaveAssets();
       AssetDatabase.Refresh();
 
       var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
-      sm.nest.SwitchToMacro(AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>(targetAssetPath));
+      sm.nest.SwitchToMacro( AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>( targetAssetPath ) );
 #endif
 
       return Selection.activeGameObject = PlotObject.gameObject;

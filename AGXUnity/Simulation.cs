@@ -1,3 +1,4 @@
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System;
 using System.Diagnostics;
@@ -167,6 +168,28 @@ namespace AGXUnity
           m_solverSettings.SetSimulation( m_simulation );
           m_solverSettings.GetInitialized<SolverSettings>();
         }
+      }
+    }
+
+    /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [SerializeField]
+    private bool m_preIntegratePositions = false;
+
+    /// <summary>
+    /// Set true to integrate positions at the start of the timestep rather than at the end. 
+    /// </summary>
+    [Tooltip( "Set true to integrate positions at the start of the timestep rather than at the end. " )]
+    public bool PreIntegratePositions
+    {
+      get => m_preIntegratePositions;
+      set
+      {
+        m_preIntegratePositions = value;
+
+        if ( m_simulation != null )
+          m_simulation.setPreIntegratePositions( m_preIntegratePositions );
       }
     }
 
@@ -374,6 +397,7 @@ namespace AGXUnity
     /// </summary>
     public ContactEventHandler ContactCallbacks { get; } = new ContactEventHandler();
 
+
     /// <summary>
     /// Save current simulation/scene to an AGX native file (.agx or .aagx).
     /// </summary>
@@ -435,11 +459,15 @@ namespace AGXUnity
     protected override void OnDestroy()
     {
       base.OnDestroy();
+
       if ( m_simulation != null ) {
         StepCallbacks.OnDestroy( m_simulation );
         ContactCallbacks.OnDestroy( this );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
       }
       m_simulation = null;
@@ -448,8 +476,13 @@ namespace AGXUnity
     protected override void OnApplicationQuit()
     {
       base.OnApplicationQuit();
-      if ( m_simulation != null )
+
+      if ( m_simulation != null ) {
+        if ( SensorEnvironment.HasInstance )
+          SensorEnvironment.Instance.DisposeRT();
+        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
+      }
     }
 
     private agxSDK.Simulation GetOrCreateSimulation()
@@ -612,8 +645,10 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.StepForward );
 
-      if ( StepCallbacks.PostSynchronizeTransforms != null )
-        StepCallbacks.PostSynchronizeTransforms.Invoke();
+      if ( !Simulation.Instance.PreIntegratePositions ) {
+        StepCallbacks._Internal_PostSynchronizeTransform?.Invoke();
+        StepCallbacks.PostSynchronizeTransforms?.Invoke();
+      }
 
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );
@@ -830,26 +865,26 @@ namespace AGXUnity
       GUILayout.Label( Utils.GUI.MakeLabel( Utils.GUI.AddColorTag( name, color ), isHeader ? 14 : 12, isHeader ), style );
     }
 
-    private Utils.MovingAverage<double> m_simTime, 
+    private Utils.MovingAverage<double> m_simTime,
                                         m_spaceTime,
-                                        m_dynamicsSystemTime, 
+                                        m_dynamicsSystemTime,
                                         m_preCollideTime,
                                         m_preTime,
                                         m_postTime,
                                         m_lastTime,
                                         m_contactEventsTime,
                                         m_managedStepForward;
-    private void InitializeMovingAverages(int size)
+    private void InitializeMovingAverages( int size )
     {
-      m_simTime = new MovingAverage<double>(size);
-      m_spaceTime = new MovingAverage<double>(size);
-      m_dynamicsSystemTime = new MovingAverage<double>(size);
-      m_preCollideTime = new MovingAverage<double>(size);
-      m_preTime = new MovingAverage<double>(size);
-      m_postTime = new MovingAverage<double>(size);
-      m_lastTime = new MovingAverage<double>(size);
-      m_contactEventsTime = new MovingAverage<double>(size);
-      m_managedStepForward = new MovingAverage<double>(size);
+      m_simTime = new MovingAverage<double>( size );
+      m_spaceTime = new MovingAverage<double>( size );
+      m_dynamicsSystemTime = new MovingAverage<double>( size );
+      m_preCollideTime = new MovingAverage<double>( size );
+      m_preTime = new MovingAverage<double>( size );
+      m_postTime = new MovingAverage<double>( size );
+      m_lastTime = new MovingAverage<double>( size );
+      m_contactEventsTime = new MovingAverage<double>( size );
+      m_managedStepForward = new MovingAverage<double>( size );
     }
 
     protected void OnGUI()
@@ -862,8 +897,7 @@ namespace AGXUnity
                           new Rect( new Vector2( 16,
                                                  0.5f * Screen.height ),
                                     new Vector2( Screen.width - 32, 32 ) ),
-                          id =>
-                          {
+                          id => {
                             // Invalid license if initialized.
                             if ( NativeHandler.Instance.Initialized ) {
                               var status = agx.Runtime.instance().getStatus();
@@ -895,8 +929,8 @@ namespace AGXUnity
       if ( m_statisticsWindowData == null )
         return;
 
-      if (m_simTime == null || m_simTime.Size != StatisticsMovingAverageCount)
-        InitializeMovingAverages(StatisticsMovingAverageCount);
+      if ( m_simTime == null || m_simTime.Size != StatisticsMovingAverageCount )
+        InitializeMovingAverages( StatisticsMovingAverageCount );
 
       var simColor      = Color.Lerp( Color.white, Color.blue, 0.2f );
       var spaceColor    = Color.Lerp( Color.white, Color.green, 0.2f );
@@ -908,15 +942,15 @@ namespace AGXUnity
       var labelStyle         = m_statisticsWindowData.LabelStyle;
       var stats              = agx.Statistics.instance();
 
-      m_simTime.Add(           stats.getTimingInfo( "Simulation", "Step forward time" ).current);
-      m_spaceTime.Add(         stats.getTimingInfo( "Simulation", "Collision-detection time" ).current);
-      m_dynamicsSystemTime.Add(stats.getTimingInfo( "Simulation", "Dynamics-system time" ).current);
-      m_preCollideTime.Add(    stats.getTimingInfo( "Simulation", "Pre-collide event time" ).current);
-      m_preTime.Add(           stats.getTimingInfo( "Simulation", "Pre-step event time" ).current);
-      m_postTime.Add(          stats.getTimingInfo( "Simulation", "Post-step event time" ).current);
-      m_lastTime.Add(          stats.getTimingInfo( "Simulation", "Last-step event time" ).current);
-      m_contactEventsTime.Add( stats.getTimingInfo( "Simulation", "Triggering contact events" ).current);
- 
+      m_simTime.Add( stats.getTimingInfo( "Simulation", "Step forward time" ).current );
+      m_spaceTime.Add( stats.getTimingInfo( "Simulation", "Collision-detection time" ).current );
+      m_dynamicsSystemTime.Add( stats.getTimingInfo( "Simulation", "Dynamics-system time" ).current );
+      m_preCollideTime.Add( stats.getTimingInfo( "Simulation", "Pre-collide event time" ).current );
+      m_preTime.Add( stats.getTimingInfo( "Simulation", "Pre-step event time" ).current );
+      m_postTime.Add( stats.getTimingInfo( "Simulation", "Post-step event time" ).current );
+      m_lastTime.Add( stats.getTimingInfo( "Simulation", "Last-step event time" ).current );
+      m_contactEventsTime.Add( stats.getTimingInfo( "Simulation", "Triggering contact events" ).current );
+
       var numBodies      = m_system.getRigidBodies().Count;
       var numShapes      = m_space.getGeometries().Count;
       var numConstraints = m_system.getConstraints().Count +
@@ -925,12 +959,11 @@ namespace AGXUnity
                              (int)Native.getParticleSystem().getNumParticles() :
                              0;
 
-      m_managedStepForward.Add(m_statisticsWindowData.ManagedStepForward);
+      m_managedStepForward.Add( m_statisticsWindowData.ManagedStepForward );
 
       GUILayout.Window( m_statisticsWindowData.Id,
                         DisplayMemoryAllocations ? m_statisticsWindowData.RectMemoryEnabled : m_statisticsWindowData.Rect,
-                        id =>
-                        {
+                        id => {
                           StatisticsLabel( "Total time:            ", m_simTime.Value + m_lastTime.Value, simColor, labelStyle, true );
                           StatisticsLabel( "  - Pre-collide step:      ", m_preCollideTime.Value, eventColor, labelStyle );
                           StatisticsLabel( "  - Collision detection:   ", m_spaceTime.Value, spaceColor, labelStyle );

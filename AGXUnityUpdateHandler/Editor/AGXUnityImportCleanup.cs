@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -105,7 +105,7 @@ namespace AGXUnityUpdate.Detail
 
       if ( DefineSymbols.Contains( OnImportDefineSymbol ) )
         DefineSymbols.Remove( OnImportDefineSymbol );
-      else 
+      else
         EditorApplication.update -= OnEditorUpdate;
     }
 

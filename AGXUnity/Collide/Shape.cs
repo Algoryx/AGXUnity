@@ -1,8 +1,8 @@
-﻿using System.Linq;
+﻿using AGXUnity.Utils;
 using System.Collections.Generic;
-using AGXUnity.Utils;
-using UnityEngine;
 using System.ComponentModel;
+using System.Linq;
+using UnityEngine;
 
 namespace AGXUnity.Collide
 {
@@ -106,8 +106,8 @@ namespace AGXUnity.Collide
       set
       {
         m_isSensor = value;
-        if (NativeGeometry != null)
-          NativeGeometry.setSensor(m_isSensor);
+        if ( NativeGeometry != null )
+          NativeGeometry.setSensor( m_isSensor );
       }
     }
 
@@ -120,7 +120,7 @@ namespace AGXUnity.Collide
     /// <summary>
     /// Specify whether the shape should be included in the mass properties calculation of the parent Rigid Body.
     /// </summary>
-    [Description("Toggle whether or not to include this geometry when automatically calculating mass properties.")]
+    [Description( "Toggle whether or not to include this geometry when automatically calculating mass properties." )]
     public bool EnableMassProperties
     {
       get { return m_enableMassProperties; }
@@ -283,7 +283,7 @@ namespace AGXUnity.Collide
       // Removing us from synchronization the transform since
       // we're implicitly updated from the synchronization of
       // the body.
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+      Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
     }
 
     /// <summary>
@@ -334,7 +334,7 @@ namespace AGXUnity.Collide
     protected override bool Initialize()
     {
       m_transform = transform;
-      
+
       m_geometry = CreateNative();
 
       if ( m_geometry == null )
@@ -355,7 +355,7 @@ namespace AGXUnity.Collide
       // Adding transform synchronization. This will be removed if this
       // shape is part of a rigid body (SetRigidBody) since our transform
       // will be updated with our parent body.
-      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+      Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform += OnPostSynchronizeTransformsCallback;
 
       return base.Initialize();
     }
@@ -407,7 +407,7 @@ namespace AGXUnity.Collide
         GetSimulation().remove( m_geometry );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
 
       if ( m_geometry != null ) {
         m_geometry.Dispose();

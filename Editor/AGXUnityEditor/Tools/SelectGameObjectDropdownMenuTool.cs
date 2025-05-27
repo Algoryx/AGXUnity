@@ -1,10 +1,10 @@
-﻿using System;
+﻿using AGXUnity;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using AGXUnity;
-
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using AGXUnity.Rendering;
 
 namespace AGXUnityEditor.Tools
 {
@@ -12,25 +12,26 @@ namespace AGXUnityEditor.Tools
   {
     public static GUIContent GetGUIContent( GameObject gameObject )
     {
-      bool isNull       = gameObject == null;
-      bool hasVisual    = !isNull && gameObject.GetComponent<MeshFilter>() != null;
-      bool hasRigidBody = !isNull && gameObject.GetComponent<RigidBody>() != null;
-      bool hasShape     = !isNull && gameObject.GetComponent<AGXUnity.Collide.Shape>() != null;
-      bool hasWire      = !isNull && gameObject.GetComponent<Wire>() != null;
-      bool hasCable     = !isNull && gameObject.GetComponent<Cable>() != null;
-      bool hasTrack     = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
-      bool hasTerrain   = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null;
-      bool hasPager     = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrainPager>() != null;
+      bool isNull                   = gameObject == null;
+      bool hasVisual                = !isNull && gameObject.GetComponent<MeshFilter>() != null;
+      bool hasRigidBody             = !isNull && gameObject.GetComponent<RigidBody>() != null;
+      bool hasShape                 = !isNull && gameObject.GetComponent<AGXUnity.Collide.Shape>() != null;
+      bool hasWire                  = !isNull && gameObject.GetComponent<Wire>() != null;
+      bool hasCable                 = !isNull && gameObject.GetComponent<Cable>() != null;
+      bool hasSkinnedCableRenderer  = !isNull && gameObject.GetComponent<SkinnedCableRenderer>() != null;
+      bool hasTrack                 = !isNull && gameObject.GetComponent<AGXUnity.Model.Track>() != null;
+      bool hasTerrain               = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null;
+      bool hasPager                 = !isNull && gameObject.GetComponent<AGXUnity.Model.DeformableTerrainPager>() != null;
 
-      string nullTag      = isNull       ? GUI.AddColorTag( "[null]", Color.red ) : "";
-      string visualTag    = hasVisual    ? GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
-      string rigidBodyTag = hasRigidBody ? GUI.AddColorTag( "[RigidBody]", Color.Lerp( Color.blue, Color.white, 0.35f ) ) : "";
-      string shapeTag     = hasShape     ? GUI.AddColorTag( "[" + gameObject.GetComponent<AGXUnity.Collide.Shape>().GetType().Name + "]", Color.Lerp( Color.green, Color.black, 0.4f ) ) : "";
-      string wireTag      = hasWire      ? GUI.AddColorTag( "[Wire]", Color.Lerp( Color.cyan, Color.black, 0.35f ) ) : "";
-      string cableTag     = hasCable     ? GUI.AddColorTag( "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
-      string trackTag     = hasTrack     ? GUI.AddColorTag( "[Track]", Color.Lerp( Color.yellow, Color.red, 0.45f ) ) : "";
-      string terrainTag   = hasTerrain   ? GUI.AddColorTag( "[Terrain]", Color.Lerp( Color.green, Color.yellow, 0.25f ) ) : "";
-      string pagingTag    = hasPager     ? GUI.AddColorTag( "[PaginTerrain]", Color.Lerp( Color.green, Color.yellow, 0.65f ) ) : "";
+      string nullTag                  = isNull       ? GUI.AddColorTag( "[null]", Color.red ) : "";
+      string visualTag                = hasVisual    ? GUI.AddColorTag( "[Visual]", Color.yellow ) : "";
+      string rigidBodyTag             = hasRigidBody ? GUI.AddColorTag( "[RigidBody]", Color.Lerp( Color.blue, Color.white, 0.35f ) ) : "";
+      string shapeTag                 = hasShape     ? GUI.AddColorTag( "[" + gameObject.GetComponent<AGXUnity.Collide.Shape>().GetType().Name + "]", Color.Lerp( Color.green, Color.black, 0.4f ) ) : "";
+      string wireTag                  = hasWire      ? GUI.AddColorTag( "[Wire]", Color.Lerp( Color.cyan, Color.black, 0.35f ) ) : "";
+      string cableTag                 = hasCable     ? GUI.AddColorTag( hasSkinnedCableRenderer ? "[SkinnedCable]" : "[Cable]", Color.Lerp( Color.yellow, Color.red, 0.65f ) ) : "";
+      string trackTag                 = hasTrack     ? GUI.AddColorTag( "[Track]", Color.Lerp( Color.yellow, Color.red, 0.45f ) ) : "";
+      string terrainTag               = hasTerrain   ? GUI.AddColorTag( "[Terrain]", Color.Lerp( Color.green, Color.yellow, 0.25f ) ) : "";
+      string pagingTag                = hasPager     ? GUI.AddColorTag( "[PaginTerrain]", Color.Lerp( Color.green, Color.yellow, 0.65f ) ) : "";
 
       string name = isNull ? "World" : gameObject.name;
 

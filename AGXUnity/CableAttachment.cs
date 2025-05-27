@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -25,6 +23,9 @@ namespace AGXUnity
 
       return attachment;
     }
+
+    [field: SerializeField]
+    public bool IgnoreNodeRotation { get; set; } = true;
 
     [SerializeField]
     private AttachmentType m_type = AttachmentType.Unknown;

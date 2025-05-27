@@ -1,6 +1,6 @@
+using AGXUnity.Utils;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {

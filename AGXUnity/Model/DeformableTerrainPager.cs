@@ -38,6 +38,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private List<PagingBody<DeformableTerrainShovel>> m_shovels = new List<PagingBody<DeformableTerrainShovel>>();
 
+
     /// <summary>
     /// Shovels along with their respective load radii that are associated with this terrainPager
     /// </summary>
@@ -46,6 +47,12 @@ namespace AGXUnity.Model
     /// </remarks>
     [HideInInspector]
     public PagingBody<DeformableTerrainShovel>[] PagingShovels { get { return m_shovels.ToArray(); } }
+
+    /// <summary>
+    /// Rigidbodies associated to this terrain.
+    /// </summary>
+    [HideInInspector]
+    public DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( rb => rb.Body ).ToArray(); } }
 
     [SerializeField]
     private List<PagingBody<RigidBody>> m_rigidbodies = new List<PagingBody<RigidBody>>();
@@ -175,6 +182,23 @@ namespace AGXUnity.Model
       if ( Native != null )
         Native.add( shovel.GetInitialized<DeformableTerrainShovel>().Native, requiredRadius, preloadRadius );
 
+      return true;
+    }
+
+    /// <summary>
+    /// Disassociate shovel instance to this terrain.
+    /// </summary>
+    /// <param name="shovel">Shovel instance to remove.</param>
+    /// <returns>True if removed, false if null or not associated to this terrain.</returns>
+    public bool Remove( DeformableTerrainShovel shovel )
+    {
+      if ( shovel == null || m_shovels.Find( pagingRigidBody => pagingRigidBody.Body == shovel ) == null )
+        return false;
+
+      if ( Native != null )
+        Native.remove( shovel.Native );
+
+      m_shovels.RemoveAt( m_shovels.FindIndex( pagingRigidBody => pagingRigidBody.Body == shovel ) );
       return true;
     }
 
@@ -316,8 +340,6 @@ namespace AGXUnity.Model
       if ( AutoTileOnPlay )
         RecalculateParameters();
 
-      RemoveInvalidShovels( true );
-
       // Create a new adapter using the terrain attached to this gameobject as the root
       // This attaches DeformableTerrainConnector components to each connected Unity terrain which must be done before InitializeNative is called
       m_terrainDataSource = new UnityTerrainAdapter( Terrain, MaximumDepth );
@@ -370,6 +392,8 @@ namespace AGXUnity.Model
       Native.setTerrainDataSource( m_terrainDataSource );
       Native.setShouldStoreCompaction( m_compactionStoreDepth.UseOverride, (uint)m_compactionStoreDepth.OverrideValue );
 
+      GetSimulation().add( Native );
+
       // Add Rigidbodies and shovels to pager
       foreach ( var shovel in m_shovels )
         Native.add( shovel.Body.GetInitialized<DeformableTerrainShovel>().Native, shovel.requiredRadius, shovel.preloadRadius );
@@ -403,6 +427,7 @@ namespace AGXUnity.Model
         UpdateTerrain( tiles[ i ] );
       foreach ( var terr in m_updatedTerrains )
         terr.terrainData.SyncHeightmap();
+      m_updatedTerrains.Clear();
     }
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
@@ -461,11 +486,49 @@ namespace AGXUnity.Model
       return tileIndex;
     }
 
-    private Vector2Int GetGlobalIndex( agxTerrain.Terrain terrain, agx.Vec2i index )
+    /// <summary>
+    /// Converts a tile local index to a global index used to index specific cells over the entirety of the pager.
+    /// </summary>
+    /// <param name="terrain">The local agx terrain that the index is relative to</param>
+    /// <param name="index">The local index of the cell</param>
+    /// <returns>A global index referencing the specific local cell</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetGlobalIndex( agxTerrain.Terrain terrain, agx.Vec2i index )
     {
       var tileIndex = GetTileIndex( terrain );
       return GetGlobalIndexInternal( tileIndex, index );
     }
+
+    /// <summary>
+    /// Converts a given global cell index to the corresponding index of the Unity terrain containing that cell.
+    /// </summary>
+    /// <param name="globalIndex">The global cell index to convert</param>
+    /// <returns>The Unity terrain tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetUnityTerrainIndex( Vector2Int globalIndex ) => m_terrainDataSource.GlobalToUnityIndex( globalIndex );
+    /// <summary>
+    /// Converts a given local cell index to the corresponding index of the Unity terrain containing that cell.
+    /// </summary>
+    /// <param name="terrain">The local agx terrain that the index is relative to</param>
+    /// <param name="index">The local index of the cell</param>
+    /// <returns>The Unity terrain tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Vector2Int GetUnityTerrainIndex( agxTerrain.Terrain terrain, agx.Vec2i index ) => m_terrainDataSource.GlobalToUnityIndex( GetGlobalIndex( terrain, index ) );
+    /// <summary>
+    /// Gets the Unity terrain at the specified Unity tile index.
+    /// </summary>
+    /// <param name="terrainIndex">The Unity terrain tile index</param>
+    /// <returns>The Unity terrain at the specified tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Terrain GetUnityTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.GetTerrainAtTerrainIndex( terrainIndex );
+
+    /// <summary>
+    /// Whether or not the pager has fetched data from the terrain at the given index.
+    /// </summary>
+    /// <param name="terrainIndex">The terrain index to check</param>
+    /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_terrainDataSource.IsDataFetchedFromTerrain( terrainIndex );
 
     public void RecalculateParameters()
     {
@@ -547,50 +610,11 @@ namespace AGXUnity.Model
     // -----------------------------------------------------------------------------------------------------------
 
     public override float ElementSize => TerrainData.size.x / ( TerrainDataResolution - 1 );
-    public override DeformableTerrainShovel[] Shovels => m_shovels.Select( shovel => shovel.Body ).ToArray();
     public override agx.GranularBodyPtrArray GetParticles() { return Native?.getSoilSimulationInterface()?.getSoilParticles(); }
     public override agx.Uuid GetParticleMaterialUuid() => Native?.getTemplateTerrain()?.getMaterial( agxTerrain.Terrain.MaterialType.PARTICLE ).getUuid();
     public override agxTerrain.TerrainProperties GetProperties() { return Native?.getTemplateTerrain()?.getProperties(); }
     public override agxTerrain.SoilSimulationInterface GetSoilSimulationInterface() { return Native?.getSoilSimulationInterface(); }
     public override void OnPropertiesUpdated() { Native?.applyChangesToTemplateTerrain(); }
-    public override bool Add( DeformableTerrainShovel shovel )
-    {
-      return Add( shovel, requiredRadius: default, preloadRadius: default );
-    }
-    public override bool Remove( DeformableTerrainShovel shovel )
-    {
-      if ( shovel == null || m_shovels.Find( pagingShovel => pagingShovel.Body == shovel ) == null )
-        return false;
-
-      if ( Native != null )
-        Native.remove( shovel.Native );
-
-      m_shovels.RemoveAt( m_shovels.FindIndex( pagingShovel => pagingShovel.Body == shovel ) );
-      return true;
-    }
-    public override bool Contains( DeformableTerrainShovel shovel )
-    {
-      return m_shovels.Find( s => s.Body == shovel ) != null;
-    }
-    public override void RemoveInvalidShovels( bool removeDisabled = false, bool warn = false )
-    {
-      m_shovels.RemoveAll( shovel => shovel.Body == null );
-      m_rigidbodies.RemoveAll( rb => rb.Body == null );
-
-      if ( removeDisabled ) {
-        int remShovels = m_shovels.RemoveAll( shovel => !shovel.Body.isActiveAndEnabled );
-        int remRBs = m_rigidbodies.RemoveAll( rb => !rb.Body.isActiveAndEnabled );
-        if ( remShovels + remRBs > 0 ) {
-          if ( warn )
-            Debug.LogWarning( $"Removed {remShovels} disabled shovels and {remRBs} disabled rigid bodies from terrain {gameObject.name}." +
-                              " Disabled objects should not be added to the terrain on play and should instead be added manually when enabled during runtime." +
-                              " To fix this warning, please remove any disabled objects from the terrain." );
-          else
-            Debug.Log( $"Removed {remShovels} disabled shovels and {remRBs} disabled rigid bodies from terrain {gameObject.name}." );
-
-        }
-      }
-    }
     public override void ConvertToDynamicMassInShape( Shape failureVolume )
     {
       if ( Native != null ) {

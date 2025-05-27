@@ -1,7 +1,7 @@
-﻿using System;
-using UnityEngine;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEditor;
-using AGXUnity.Utils;
+using UnityEngine;
 
 namespace AGXUnityEditor
 {

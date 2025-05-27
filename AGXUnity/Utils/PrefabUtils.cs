@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
-using UnityEditor.Experimental.SceneManagement;
 #endif
 
 namespace AGXUnity.Utils

@@ -1,12 +1,11 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
   [AddComponentMenu( "AGXUnity/Cable" )]
-  [RequireComponent( typeof( CableRoute ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#cable" )]
   public class Cable : ScriptComponent
   {
@@ -157,7 +156,6 @@ namespace AGXUnity
             var currMaterial = Native.getMaterial();
             var currIsDefault = currMaterial != null &&
                                 currMaterial.getName() == "DefaultCableMaterial";
-                                Utils.Math.Approximately( (float)currMaterial.getBulkMaterial().getDensity(), 700.0f );
             if ( currMaterial == null || !currIsDefault ) {
               var defaultMaterial = new agx.Material( "DefaultCableMaterial" );
               defaultMaterial.getBulkMaterial().setDensity( 700.0 );
@@ -202,20 +200,20 @@ namespace AGXUnity
       set { m_routeAlgorithm = value; }
     }
 
-    private CableRoute m_routeComponent = null;
+    //============ Storage for interaction between "RouteFromMeshTool.cs" and "SkinnedCableRenderer.cs" ============    
+    [HideInInspector]
+    [SerializeField]
+    public Mesh RouteMeshSource { get; set; }
+    [HideInInspector]
+    [SerializeField]
+    public Material RouteMeshMaterial { get; set; }
+    //==============================================================================================================
+
     /// <summary>
     /// Get route to initialize this cable.
     /// </summary>
-    [HideInInspector]
-    public CableRoute Route
-    {
-      get
-      {
-        if ( m_routeComponent == null )
-          m_routeComponent = GetComponent<CableRoute>();
-        return m_routeComponent;
-      }      
-    }
+    [field: SerializeReference]
+    public CableRoute Route { get; private set; } = new CableRoute();
 
     private PointCurve m_routePointCurve              = null;
     private float m_routePointResolutionPerUnitLength = -1.0f;
@@ -292,8 +290,7 @@ namespace AGXUnity
       if ( !result.Successful )
         return false;
 
-      m_routePointCurve.Traverse( ( curr, next, type ) =>
-      {
+      m_routePointCurve.Traverse( ( curr, next, type ) => {
         var routePointData = new RoutePointData()
         {
           CurrPoint = curr,
@@ -302,7 +299,8 @@ namespace AGXUnity
         };
 
         var currIndex = m_routePointCurve.FindIndex( curr.Time );
-        var nextIndex = currIndex + 1;
+        var nextIndex = m_routePointCurve.FindIndex( next.Time );
+
         routePointData.CurrNode = Route[ currIndex ];
         routePointData.NextNode = Route[ nextIndex ];
 
@@ -416,14 +414,17 @@ namespace AGXUnity
 
             if ( attachmentNode != null && !handledNodes.Contains( attachmentNode ) ) {
               handledNodes.Add( attachmentNode );
-              routeNode.Add( CableAttachment.AttachmentType.Rigid,
-                             attachmentNode.Parent,
-                             attachmentNode.LocalPosition,
-                             attachmentNode.LocalRotation );
+              var nodeData = (attachmentNode.NodeData as BodyFixedData);
+              var attachment = routeNode.Add( nodeData.RigidAttachment ? CableAttachment.AttachmentType.Rigid : CableAttachment.AttachmentType.Ball,
+                                              attachmentNode.Parent,
+                                              attachmentNode.LocalPosition,
+                                              attachmentNode.LocalRotation);
+              attachment.IgnoreNodeRotation = nodeData.IgnoreNodeRotation;
             }
 
             if ( !cable.add( routeNode.GetInitialized<CableRouteNode>().Native ) )
               throw new Exception( $"{GetType().FullName} ERROR: Unable to add node to cable." );
+
           } );
 
           if ( !success )
@@ -551,8 +552,7 @@ namespace AGXUnity
         if ( result.Successful ) {
           m_routePointResolutionPerUnitLength = ResolutionPerUnitLength;
           var routePoints = new List<Vector3>();
-          m_routePointCurve.Traverse( ( curr, next, type ) =>
-          {
+          m_routePointCurve.Traverse( ( curr, next, type ) => {
             routePoints.Add( curr.Point );
             if ( type == PointCurve.SegmentType.Last && Mathf.Abs( next.Time - 1.0f ) < Mathf.Abs( curr.Time - 1 ) )
               routePoints.Add( next.Point );

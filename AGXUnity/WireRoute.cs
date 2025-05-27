@@ -1,8 +1,7 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity
 {
@@ -18,9 +17,8 @@ namespace AGXUnity
   /// var freeNodes = from node in route select node.Type == Wire.NodeType.FreeNode;
   /// Wire.RouteNode myNode = route.FirstOrDefault( node => node.Frame == thisFrame );
   /// </example>
-  [HideInInspector]
-  [AddComponentMenu( "" )]
-  public class WireRoute : Route<WireRouteNode>
+  [Serializable]
+  public class WireRoute : Route<WireRouteNode>, ISerializationCallbackReceiver
   {
     /// <summary>
     /// Checks validity of current route.
@@ -66,24 +64,12 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Wire this route belongs to.
-    /// </summary>
-    private Wire m_wire = null;
-
-    /// <summary>
     /// Get or set the wire this route belongs to.
     /// </summary>
+    [field: SerializeField]
     public Wire Wire
     {
-      get
-      {
-        if ( m_wire == null ) {
-          m_wire = GetComponent<Wire>();
-          foreach ( var node in this )
-            node.Wire = m_wire;
-        }
-        return m_wire;
-      }
+      get; private set;
     }
 
     /// <summary>
@@ -174,8 +160,10 @@ namespace AGXUnity
       base.Clear();
     }
 
-    private WireRoute()
+    internal WireRoute( Wire parent )
     {
+      Wire = parent;
+
       OnNodeAdded   += this.OnAddedToList;
       OnNodeRemoved += this.OnRemovedFromList;
     }
@@ -188,6 +176,17 @@ namespace AGXUnity
     private void OnRemovedFromList( WireRouteNode node, int index )
     {
       node.Wire = null;
+    }
+
+    public void OnBeforeSerialize() { }
+
+    public void OnAfterDeserialize()
+    {
+      // Remove callback if it exists to avoid any possible duplicates
+      OnNodeAdded   -= this.OnAddedToList;
+      OnNodeRemoved -= this.OnRemovedFromList;
+      OnNodeAdded   += this.OnAddedToList;
+      OnNodeRemoved += this.OnRemovedFromList;
     }
   }
 }

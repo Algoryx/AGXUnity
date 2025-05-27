@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
+using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -110,7 +110,7 @@ namespace AGXUnityEditor.Tools
             // and rendering Poisson's ratio if dir == CableProperties.Direction.Twist.
             // Similarly the Yield point is ignored in the stretch direction so we hide the inspector
             var renderFloat = wrapper.GetContainingType() == typeof( float ) &&
-                              ( InspectorEditor.ShouldBeShownInInspector( wrapper.Member ) ||
+                              ( InspectorEditor.ShouldBeShownInInspector( wrapper.Member, null ) ||
                               ( wrapper.Member.Name == "PoissonsRatio" && dir == CableProperties.Direction.Twist ) ||
                               ( wrapper.Member.Name == "YieldPoint" && dir != CableProperties.Direction.Stretch ) );
             if ( renderFloat ) {

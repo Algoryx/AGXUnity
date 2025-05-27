@@ -159,6 +159,37 @@ namespace AGXUnity.Rendering
       return true;
     }
 
+    protected override void OnApplicationQuit()
+    {
+      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
+    }
+
+    protected override void OnDestroy()
+    {
+      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
+
+      base.OnDestroy();
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost-= PostStep;
+        terrain.OnModification -= UpdateTextureAt;
+      }
+
+      base.OnDisable();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.SimulationPost += PostStep;
+        terrain.OnModification += UpdateTextureAt;
+      }
+      base.OnEnable();
+    }
+
     private void PostStep()
     {
       foreach ( var terr in m_shouldUpdate )

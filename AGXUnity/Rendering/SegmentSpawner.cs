@@ -1,7 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
-using AGXUnity.Utils;
 
 namespace AGXUnity.Rendering
 {

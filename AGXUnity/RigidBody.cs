@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
+﻿using AGXUnity.Collide;
 using AGXUnity.Utils;
-using AGXUnity.Collide;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity
@@ -13,7 +13,6 @@ namespace AGXUnity
   /// </summary>
   [AddComponentMenu( "AGXUnity/Rigid Body" )]
   [DisallowMultipleComponent]
-  [RequireComponent( typeof( MassProperties ) )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#rigid-body" )]
   public class RigidBody : ScriptComponent
   {
@@ -52,23 +51,14 @@ namespace AGXUnity
     private agx.RigidBody m_rb = null;
 
     /// <summary>
-    /// Cached mass properties component.
-    /// </summary>
-    private MassProperties m_massPropertiesComponent = null;
-    
-    /// <summary>
     /// Cached unity-transform.
     /// </summary>
     private Transform m_transform;
 
     #region Public Serialized Properties
-    /// <summary>
-    /// Restoring this from when mass properties were ScriptAsset so that
-    /// we can convert it to the component version.
-    /// </summary>
-    [UnityEngine.Serialization.FormerlySerializedAs( "m_massProperties" )]
-    [SerializeField]
-    private MassProperties m_massPropertiesAsAsset = null;
+
+    [field: SerializeField]
+    public MassProperties MassProperties { get; private set; }
 
     /// <summary>
     /// Motion control of this rigid body, paired with property MotionControl.
@@ -207,20 +197,6 @@ namespace AGXUnity
     public agx.RigidBody Native { get { return m_rb; } }
 
     /// <summary>
-    /// Mass properties of this rigid body.
-    /// </summary>
-    [HideInInspector]
-    public MassProperties MassProperties
-    {
-      get
-      {
-        if ( m_massPropertiesComponent == null )
-          m_massPropertiesComponent = GetComponent<MassProperties>();
-        return m_massPropertiesComponent;
-      }
-    }
-
-    /// <summary>
     /// Array of shapes belonging to this rigid body instance.
     /// </summary>
     [HideInInspector]
@@ -246,7 +222,7 @@ namespace AGXUnity
     {
       get
       {
-        return ((State == States.CONSTRUCTED || State == States.DESTROYED) && GetArticulatedRoot() != null) ||
+        return ( ( State == States.CONSTRUCTED || State == States.DESTROYED ) && GetArticulatedRoot() != null ) ||
                m_hasArticulatedRoot;
       }
       private set
@@ -285,8 +261,7 @@ namespace AGXUnity
     /// </summary>
     public void UpdateMassProperties()
     {
-      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) =>
-      {
+      PeekTemporaryNativeOrGetNative( ( rb, isTemp ) => {
         if ( !isTemp ) {
           rb.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
           rb.updateMassProperties();
@@ -401,22 +376,6 @@ namespace AGXUnity
       return native;
     }
 
-    public bool PatchMassPropertiesAsComponent()
-    {
-      // Already have mass properties as component - this instance has been patched.
-      if ( GetComponent<MassProperties>() != null )
-        return false;
-
-      MassProperties mp = gameObject.AddComponent<MassProperties>();
-      if ( m_massPropertiesAsAsset != null ) {
-        mp.CopyFrom( m_massPropertiesAsAsset );
-        DestroyImmediate( m_massPropertiesAsAsset );
-        m_massPropertiesAsAsset = null;
-      }
-
-      return true;
-    }
-
     public void RestoreLocalDataFrom( agx.RigidBody native )
     {
       if ( native == null )
@@ -437,13 +396,14 @@ namespace AGXUnity
     #endregion
 
     #region Protected Virtual Methods
+
     protected override bool Initialize()
     {
       m_transform        = transform;
       Shapes             = GetShapes();
       HasArticulatedRoot = GetArticulatedRoot() != null &&
                            GetArticulatedRoot().enabled;
-      
+
       VerifyConfiguration();
 
       m_rb = new agx.RigidBody();
@@ -458,6 +418,7 @@ namespace AGXUnity
       GetSimulation().add( m_rb );
 
       UpdateMassProperties();
+      PropertySynchronizer.Synchronize( MassProperties );
 
       HandleUpdateCallbacks( isActiveAndEnabled );
 
@@ -491,6 +452,11 @@ namespace AGXUnity
     }
     #endregion
 
+    public RigidBody()
+    {
+      MassProperties = new MassProperties( this );
+    }
+
     private void HandleEnableDisable( bool enable )
     {
       if ( Native == null )
@@ -515,9 +481,9 @@ namespace AGXUnity
         return;
 
       if ( enable )
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform += OnPostSynchronizeTransformsCallback;
       else
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
     }
 
     internal void OnPostSynchronizeTransformsCallback()

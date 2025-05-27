@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using UnityEngine;
-using UnityEditor;
+﻿using AGXUnity.Collide;
 using AGXUnity.Rendering;
-using AGXUnity.Collide;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace AGXUnityEditor.Menus
 {

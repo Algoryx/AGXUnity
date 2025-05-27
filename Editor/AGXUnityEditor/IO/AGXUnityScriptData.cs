@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,7 +13,7 @@ namespace AGXUnityEditor.IO
                                                                in Resources.FindObjectsOfTypeAll<MonoScript>()
                                                                where script.GetClass() != null &&
                                                                      script.GetClass().FullName.StartsWith( "AGXUnity." )
-                                                                select script ).ToDictionary( script => script.GetClass().FullName,
+                                                               select script ).ToDictionary( script => script.GetClass().FullName,
                                                                                               script => new AGXUnityScriptData( script ) );
       return nameScriptMap;
     }

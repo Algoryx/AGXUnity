@@ -1,13 +1,12 @@
-﻿using System;
-using System.Reflection;
-using System.Linq;
-using UnityEngine;
-using UnityEditor;
-using AGXUnity;
+﻿using AGXUnity;
 using AGXUnity.Utils;
-
-using Object = UnityEngine.Object;
+using System;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
+using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor
 {
@@ -56,7 +55,7 @@ namespace AGXUnityEditor
     {
       targets = targets.Where( obj => obj != null ).ToArray();
 
-      using ( new GUI.EnabledBlock(targets.All(o => (o.hideFlags & HideFlags.NotEditable) == 0)) ) {
+      using ( new GUI.EnabledBlock( targets.All( o => ( o.hideFlags & HideFlags.NotEditable ) == 0 ) ) ) {
         if ( targets.Length == 0 )
           return;
 
@@ -72,7 +71,7 @@ namespace AGXUnityEditor
         InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
         var group = InspectorGroupHandler.Create();
         foreach ( var wrapper in fieldsAndProperties ) {
-          if ( !ShouldBeShownInInspector( wrapper.Member ) )
+          if ( !ShouldBeShownInInspector( wrapper.Member, objects ) )
             continue;
 
           group.Update( wrapper, objects[ 0 ] );
@@ -89,7 +88,54 @@ namespace AGXUnityEditor
       }
     }
 
-    public static bool ShouldBeShownInInspector( MemberInfo memberInfo )
+    /// <summary>
+    /// Draw supported member GUI for given targets. This method supports
+    /// non-UnityEngine.Object instances, such as pure Serializable classes,
+    /// that are part of <paramref name="targets"/>. <paramref name="getChildCallback"/>
+    /// is called to access these serializable objects. If <paramref name="getChildCallback"/>
+    /// is null, targets will be rendered.
+    /// </summary>
+    /// <param name="targets">Target UnityEngine.Object instances (used for Undo and SetDirty).</param>
+    /// <param name="getChildCallback">Null and targets will be rendered, otherwise the returned
+    ///                                instance from this callback.</param>
+    public static void DrawMembersGUI( object[] targets,
+                                       Object[] undoObjects,
+                                       Func<object, object> getChildCallback = null,
+                                       bool enabled = true )
+    {
+      targets = targets.Where( obj => obj != null ).ToArray();
+
+      var objects = targets.Select( target => getChildCallback == null ?
+                                        target :
+                                        getChildCallback( target ) )
+                             .Where( obj => obj != null ).ToArray();
+      if ( objects.Length == 0 )
+        return;
+
+      using ( new GUI.EnabledBlock( enabled ) ) {
+        Undo.RecordObjects( undoObjects, "Inspector" );
+
+        InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
+        var group = InspectorGroupHandler.Create();
+        foreach ( var wrapper in fieldsAndProperties ) {
+          if ( !ShouldBeShownInInspector( wrapper.Member, objects ) )
+            continue;
+
+          group.Update( wrapper, objects[ 0 ] );
+
+          if ( group.IsHidden )
+            continue;
+
+          var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                                wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+          using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+            HandleType( wrapper, objects, null );
+        }
+        group.Dispose();
+      }
+    }
+
+    public static bool ShouldBeShownInInspector( MemberInfo memberInfo, object[] targets )
     {
       if ( memberInfo == null )
         return false;
@@ -97,8 +143,54 @@ namespace AGXUnityEditor
       // Override hidden in inspector.
       var runtimeHide = EditorApplication.isPlayingOrWillChangePlaymode &&
                         memberInfo.IsDefined( typeof( HideInRuntimeInspectorAttribute ), true );
+
       if ( memberInfo.IsDefined( typeof( HideInInspector ), true ) || runtimeHide )
         return false;
+
+      if ( targets != null && memberInfo.IsDefined( typeof( DynamicallyShowInInspector ), true ) ) {
+        var t = memberInfo.DeclaringType;
+        var showInfo = memberInfo.GetCustomAttribute<DynamicallyShowInInspector>();
+        var bindings =  BindingFlags.Instance |
+                        BindingFlags.Static |
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic;
+        if ( showInfo.IsMethod )
+          bindings |=   BindingFlags.InvokeMethod;
+        else
+          bindings |=   BindingFlags.GetField |
+                        BindingFlags.GetProperty;
+
+        var members = t.GetMember( showInfo.Name, bindings );
+        if ( members.Length == 0 ) {
+          Debug.LogWarning( $"No member '{showInfo.Name}' found to determine dynamic inspector status for member '{memberInfo.Name}', skipping" );
+          return false;
+        }
+        else if ( members.Length > 1 ) {
+          Debug.LogWarning( $"Multiple members '{showInfo.Name}' found to determine dynamic inspector status for member '{memberInfo.Name}', skipping" );
+          return false;
+        }
+
+        var member = members[ 0 ];
+        if ( member.MemberType == MemberTypes.Method ) {
+          var method = (MethodInfo)member;
+          if ( method.GetParameters().Length != 0 ) {
+            Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{memberInfo.Name}', requires parameters, this is not supported, skipping" );
+            return false;
+          }
+          if ( method.ContainsGenericParameters ) {
+            Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{memberInfo.Name}', requires type parameters, sthis is not supported, skipping" );
+            return false;
+          }
+          if ( !method.IsStatic )
+            return targets.All( t => (bool)method.Invoke( t, new object[] { } ) );
+          return (bool)method.Invoke( null, new object[] { } );
+        }
+        else if ( member.MemberType == MemberTypes.Property ) {
+          var property = (PropertyInfo)member;
+
+          return targets.All( t => (bool)property.GetValue( t ) );
+        }
+      }
 
       // In general, don't show UnityEngine objects unless ShowInInspector is set.
       bool show = memberInfo.IsDefined( typeof( ShowInInspector ), true ) ||
@@ -132,17 +224,17 @@ namespace AGXUnityEditor
       DrawMembersGUI( this.targets, null, serializedObject );
 
       ToolManager.OnPostTargetMembers( this.targets );
-      
+
       // If any changes occured during the editor draw we have to tell unity that the component has changes.
       // Additionally, some components (such as the Constraint component) modifies other components on the same GameObject.
       // In this case all compoments have to be manually dirtied. Here, we blanket dirty all compoments on the same GameObject
       // as the currently edited component.
       if ( EditorGUI.EndChangeCheck() ) {
-        foreach ( var t in this.targets ){
+        foreach ( var t in this.targets ) {
           EditorUtility.SetDirty( t );
-          if(t is MonoBehaviour root)
-            foreach( var comp in root.GetComponents<MonoBehaviour>() )
-              EditorUtility.SetDirty(comp);
+          if ( t is MonoBehaviour root )
+            foreach ( var comp in root.GetComponents<MonoBehaviour>() )
+              EditorUtility.SetDirty( comp );
         }
       }
 
@@ -186,6 +278,10 @@ namespace AGXUnityEditor
       }
 
       ToolManager.OnTargetEditorEnable( this.targets, this );
+
+      var ctx = ContextManager.GetCustomContextForType(m_targetType);
+      if ( ctx != null )
+        UnityEditor.EditorTools.ToolManager.SetActiveContext( ctx );
     }
 
     private void OnDisable()
@@ -202,6 +298,8 @@ namespace AGXUnityEditor
       m_targetType = null;
       m_targetGameObjects = null;
       m_numTargetGameObjectsTargetComponents = 0;
+
+      UnityEditor.EditorTools.ToolManager.SetActiveContext( null );
     }
 
     private bool IsTargetMostProbablyDeleted()
@@ -267,10 +365,12 @@ namespace AGXUnityEditor
         if ( serializedProperty != null ) {
           EditorGUI.BeginChangeCheck();
           EditorGUILayout.PropertyField( serializedProperty );
+          if ( serializedProperty.isArray )
+            Debug.LogWarning( "The AGXUnity Inspector wrapper currently does not support editable array types. Consider using List<T> as an alternative." );
           if ( EditorGUI.EndChangeCheck() && assignSupported ) {
             changed = true;
-            value = serializedProperty.objectReferenceValue;
-          }            
+            value = serializedProperty.boxedValue;
+          }
         }
       }
 

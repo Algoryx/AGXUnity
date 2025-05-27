@@ -1,8 +1,7 @@
-﻿using System;
-using System.Linq;
-using UnityEngine;
+﻿using AGXUnity;
+using System;
 using UnityEditor;
-using AGXUnity;
+using UnityEngine;
 
 namespace AGXUnityEditor.Tools
 {
@@ -78,6 +77,33 @@ namespace AGXUnityEditor.Tools
       Visual.Visible = !EditorApplication.isPlaying;
       Visual.Color = Selected ? Visual.MouseOverColor : m_color( Node );
       Visual.SetTransform( Node.Position, Node.Rotation, radius, true, 1.2f * m_radius(), Mathf.Max( 1.5f * m_radius(), 0.25f ) );
+    }
+
+    public override void OnPostTargetMembersGUI()
+    {
+      if ( Node.NodeData is EyeNodeData end ) {
+        EditorGUILayout.LabelField( "<b>Eye Node Data</b>", InspectorGUISkin.Instance.Label );
+        using ( new InspectorGUI.IndentScope() ) {
+          end.FrictionCoefficients = InspectorGUI.Vector2Field( AGXUnity.Utils.GUI.MakeLabel( "Friction Coefficients" ), end.FrictionCoefficients, "F,B" );
+        }
+      }
+      else if ( Node.NodeData is BodyFixedData fixedData ) {
+        using ( new InspectorGUI.IndentScope() ) {
+
+          fixedData.RigidAttachment = EditorGUILayout.Toggle( AGXUnity.Utils.GUI.MakeLabel( "Rigid Attachment",
+                                                                                            false,
+                                                                                            "When enabled, the rotation of the attached cable segment will be locked to the body, " +
+                                                                                            "otherwise, only the position will be locked" ),
+                                                              fixedData.RigidAttachment );
+
+          fixedData.IgnoreNodeRotation = EditorGUILayout.Toggle( AGXUnity.Utils.GUI.MakeLabel( "Ignore Node Rotation",
+                                                                                               false,
+                                                                                               "When enabled, the rotation of the created cable attachment will be derived from the routed cable " +
+                                                                                               "rather than from the rotation of the node itself" ),
+                                                                 fixedData.IgnoreNodeRotation );
+        }
+      }
+      base.OnPostTargetMembersGUI();
     }
 
     private void OnClick( Utils.Raycast.Result result, Utils.VisualPrimitive primitive )

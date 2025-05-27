@@ -2,6 +2,7 @@ using AGXUnity.Utils;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -146,7 +147,6 @@ namespace AGXUnity.Model
       while ( m_tilesToLoad.TryPeek( out UnityTile tile ) ) {
         // FIXME: Loading tiles currently takes quite a long time due to the write/read
         // optimally this should happen asynchronously but it is uncertain whether the Unity API allows it.
-
         float[,] data = tile.tile.gameObject.GetComponent<DeformableTerrainConnector>().WriteTerrainDataOffset();
         int res       = tile.tile.terrainData.heightmapResolution;
         float scale   = tile.tile.terrainData.heightmapScale.y;
@@ -219,17 +219,42 @@ namespace AGXUnity.Model
       return heights;
     }
 
+    public override void onReset()
+    {
+      m_unityData.Clear();
+
+      foreach ( var tile in m_unityTiles )
+        tile.Value.GetComponent<DeformableTerrainConnector>().OnReset();
+    }
+
     /// <summary>
     /// Converts from the given global index to the corresponding unity tile index. Since the local --> global index mapping proccess is 
     /// not one-to-one this function will return only the tile where the global index is at local index x != resolution and y != resolution
     /// </summary>
     /// <param name="globalIndex">The global index to convert to a unity tile index</param>
     /// <returns>The unity tile index for the given global index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
     public Vector2Int GlobalToUnityIndex( Vector2Int globalIndex )
     {
       return new Vector2Int( (int)Mathf.Floor( (float)globalIndex.x / ( m_tileResolution - 1 ) ),
                              (int)Mathf.Floor( (float)globalIndex.y / ( m_tileResolution - 1 ) ) );
     }
+
+    /// <summary>
+    /// Returns the connected Unity terrain at the specified Unity terrain tile index
+    /// </summary>
+    /// <param name="terrainIndex">The Unity terrain tile index to fetch the terrain for.</param>
+    /// <returns>The Unity terrain at the specified tile index</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public Terrain GetTerrainAtTerrainIndex( Vector2Int terrainIndex ) => m_unityTiles.GetValueOrDefault( terrainIndex, null );
+
+    /// <summary>
+    /// Whether or not the pager has fetched data from the terrain at the given index.
+    /// </summary>
+    /// <param name="terrainIndex">The terrain index to check</param>
+    /// <returns>True if data has been fetched for the specified index, false otherwise.</returns>
+    [MethodImpl( MethodImplOptions.AggressiveInlining )]
+    public bool IsDataFetchedFromTerrain( Vector2Int terrainIndex ) => m_unityData.ContainsKey( terrainIndex );
 
     // Checks if unity tile data is loaded for the tile at the given index and queues the tile to be loaded if it is not
     private bool VerifyAndQueueTileData( Vector2Int unityIndex )
@@ -239,7 +264,7 @@ namespace AGXUnity.Model
         // Dont queue tiles twice
         if ( m_tilesToLoad.Where( tile => tile.index == unityIndex ).Count() > 0 )
           return false;
-        
+
         // Dont queue tiles that are not tracked by the adapter
         if ( !m_unityTiles.ContainsKey( unityIndex ) )
           return false;

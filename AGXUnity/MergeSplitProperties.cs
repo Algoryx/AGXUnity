@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AGXUnity.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -118,7 +119,7 @@ namespace AGXUnity
         if ( constraint.GetInitialized<Constraint>() != null ) {
           RigidBody refRB = constraint.AttachmentPair.ReferenceObject.GetComponent<RigidBody>();
           RigidBody conRB = null;
-          if( constraint.AttachmentPair.ConnectedObject != null) 
+          if ( constraint.AttachmentPair.ConnectedObject != null )
             conRB = constraint.AttachmentPair.ConnectedObject.GetComponent<RigidBody>();
           if ( !blacklist.Any( pair =>
             ( pair.Item1 == refRB && pair.Item2 == conRB ) ||
@@ -143,6 +144,16 @@ namespace AGXUnity
           if ( it.getConstraint() != null )
             Add( agxSDK.MergeSplitHandler.getOrCreateProperties( it.getConstraint() ) );
         }
+      }
+
+      var terrains = GetComponentsInChildren<DeformableTerrainBase>();
+      foreach ( var terrain in terrains ) {
+        if ( terrain is DeformableTerrain regular )
+          Add( agxSDK.MergeSplitHandler.getOrCreateProperties( regular.GetInitialized().Native.getGeometry() ) );
+        else if ( terrain is MovableTerrain movable )
+          Add( agxSDK.MergeSplitHandler.getOrCreateProperties( movable.GetInitialized().Native.getGeometry() ) );
+        else if ( terrain is DeformableTerrainPager pager )
+          Debug.LogWarning( $"MergeSplitProperties '{name}' cannot be applied to child '{terrain.name}' as Pagers are not currently supported" );
       }
 
       GeometryContactThresholds.GetInitialized<GeometryContactMergeSplitThresholds>();

@@ -1,11 +1,10 @@
-﻿using System.Linq;
+﻿using AGXUnity.IO.URDF;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
-using AGXUnity.IO.URDF;
-
-using Material = AGXUnity.IO.URDF.Material;
+using UnityEngine;
 using Collision = AGXUnity.IO.URDF.Collision;
+using Material = AGXUnity.IO.URDF.Material;
 
 namespace AGXUnityEditor.IO.URDF
 {
@@ -198,8 +197,7 @@ namespace AGXUnityEditor.IO.URDF
       // access to the game object and components. Geometries are also
       // collected and named here.
       if ( rootGameObject != null ) {
-        Traverse( rootGameObject, ( go, element ) =>
-        {
+        Traverse( rootGameObject, ( go, element ) => {
           if ( element is Link link ) {
             CollectAndNameLinkAssets( link );
           }
@@ -218,7 +216,7 @@ namespace AGXUnityEditor.IO.URDF
           else if ( element is Visual visual ) {
             var isMesh = visual.Geometry.Type == Geometry.GeometryType.Mesh;
             var saveMaterial = visual.Material != null ||
-                               ( 
+                               (
                                  isMesh &&
                                  visual.Geometry.ResourceType == Geometry.MeshResourceType.STL
                                );

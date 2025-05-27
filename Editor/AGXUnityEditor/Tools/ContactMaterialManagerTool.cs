@@ -1,14 +1,13 @@
-﻿using System;
-using UnityEngine;
+﻿using AGXUnity;
+using System;
 using UnityEditor;
-using AGXUnity;
-
-using GUI    = AGXUnity.Utils.GUI;
+using UnityEngine;
+using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
 namespace AGXUnityEditor.Tools
 {
-  [CustomTool( typeof ( ContactMaterialManager ) )]
+  [CustomTool( typeof( ContactMaterialManager ) )]
   public class ContactMaterialManagerTool : CustomTargetTool
   {
     public static readonly string Identifier = "Contact Materials";
@@ -46,8 +45,7 @@ namespace AGXUnityEditor.Tools
 
     private Action<ContactMaterial, int> PreContactMaterialEditor( ContactMaterialEntry[] entries )
     {
-      return ( cm, index ) =>
-      {
+      return ( cm, index ) => {
         using ( InspectorGUI.IndentScope.Single ) {
           entries[ index ].IsOriented = InspectorGUI.Toggle( GUI.MakeLabel( "Is Oriented",
                                                                             false,

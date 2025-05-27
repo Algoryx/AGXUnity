@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -8,10 +9,15 @@ namespace AGXUnityEditor
   [InitializeOnLoad]
   class ScriptIconManager
   {
+    static Type[] s_ignored =
+    {
+      typeof(AGXUnity.Sensor.LidarSensor)
+    };
+
     static ScriptIconManager()
     {
       foreach ( var t in Assembly.GetAssembly( typeof( AGXUnity.ScriptComponent ) ).DefinedTypes ) {
-        if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) )
+        if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) && !s_ignored.Contains( t ) )
           SetGizmoIconEnabled( t.AsType(), true, false );
       }
     }
@@ -31,7 +37,7 @@ namespace AGXUnityEditor
         foreach ( object annotation in (System.Collections.IEnumerable)allA ) {
           Type annotationType = annotation.GetType();
           FieldInfo scriptClassField = annotationType.GetField("scriptClass", BindingFlags.Public | BindingFlags.Instance);
-          if ( (string)( scriptClassField.GetValue( annotation ) ) == type.Name ) 
+          if ( (string)( scriptClassField.GetValue( annotation ) ) == type.Name )
             hasAnnotation = true;
         }
         if ( !hasAnnotation ) return;
