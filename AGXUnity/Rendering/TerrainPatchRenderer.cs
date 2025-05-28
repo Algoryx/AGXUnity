@@ -159,18 +159,6 @@ namespace AGXUnity.Rendering
       return true;
     }
 
-    protected override void OnApplicationQuit()
-    {
-      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
-    }
-
-    protected override void OnDestroy()
-    {
-      m_initialData?.Reset( GetComponent<Terrain>().terrainData );
-
-      base.OnDestroy();
-    }
-
     protected override void OnDisable()
     {
       if ( Simulation.HasInstance ) {
