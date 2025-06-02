@@ -634,17 +634,6 @@ namespace AGXUnity.IO.OpenPLX
       return rb;
     }
 
-    ShapeMaterial MapMaterial( openplx.Physics.Charges.Material material )
-    {
-      var sm = ShapeMaterial.CreateInstance<ShapeMaterial>();
-      sm.name = material.getName();
-
-      sm.Density = (float)material.density();
-      // TODO: AGXUnity does not expose Young's modulus in ShapeMaterial
-
-      return sm;
-    }
-
     GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
     {
       var lockObject = OpenPLXObject.CreateGameObject( kinematicLock.getName() );
@@ -736,7 +725,7 @@ namespace AGXUnity.IO.OpenPLX
       var terrainMat = terrain.material();
       if ( !terrainMat.is_default_terrain_material() ) {
         if ( !Data.MaterialCache.TryGetValue( terrainMat, out var shapeMaterial ) ) {
-          shapeMaterial = MapMaterial( terrainMat );
+          shapeMaterial = InteractionMapper.MapMaterial( terrainMat );
           Data.MaterialCache[ terrainMat ] = shapeMaterial;
         }
 
@@ -792,7 +781,7 @@ namespace AGXUnity.IO.OpenPLX
         foreach ( var geometry in body.getValues<Charges.ContactGeometry>() ) {
           if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Charges.Material" || !geometry.material().isDefault( "density" ) ) {
             if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
-              Data.MaterialCache[ geometry.material() ] = MapMaterial( geometry.material() );
+              Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
           }
           else
             Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
@@ -802,7 +791,7 @@ namespace AGXUnity.IO.OpenPLX
         if ( trackSystem.belt().link_description() is openplx.Vehicles.Tracks.BoxLinkDescription desc ) {
           var mat = desc.contact_geometry().material();
           if ( !Data.MaterialCache.ContainsKey( mat ) ) {
-            Data.MaterialCache[ mat ] = MapMaterial( mat );
+            Data.MaterialCache[ mat ] = InteractionMapper.MapMaterial( mat );
           }
         }
       }

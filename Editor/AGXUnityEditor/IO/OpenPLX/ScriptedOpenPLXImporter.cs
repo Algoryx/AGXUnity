@@ -112,7 +112,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       if ( error.getErrorCode() != CoreSWIG.MissingAssignment && error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
         m_nonImportable = false;
       var raw = ef.format( error );
-      var m = Regex.Match( raw, ".+:\\d+:\\d+ (.+)" );
+      var m = Regex.Match( raw, ".*:\\d+:\\d+ (.+)" );
       Errors.Add( new Error
       {
         raw       = raw,

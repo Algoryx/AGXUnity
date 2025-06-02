@@ -21,7 +21,7 @@ namespace AGXUnity.IO.OpenPLX
     /// However, when the application is built, the OpenPLX file is copied to a corresponding directory in the build directory and the path of the
     /// OpenPLX file needs to be updated accordingly.
     /// </summary>
-    public string OpenPLXFile => OpenPLXAssetPath.Replace( "Assets/", OpenPLXImporter.OpenPLXDir + "/" );
+    public string OpenPLXFile => OpenPLXAssetPath.Replace( "Assets/", OpenPLXImporter.OpenPLXRoot + "/" );
 
     public Object Native { get; private set; }
 
@@ -30,7 +30,8 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject FindMappedObject( string declaration )
     {
-      declaration = Native.getObject( declaration.Substring( declaration.IndexOf( '.' ) + 1 ) ).getName();
+      var relativeDeclaration = declaration.Substring( declaration.IndexOf( '.' ) + 1 );
+      declaration = Native.getObject( relativeDeclaration ).getName();
       if ( Native != null ) {
         if ( m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];

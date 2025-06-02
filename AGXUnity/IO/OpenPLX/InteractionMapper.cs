@@ -577,19 +577,37 @@ namespace AGXUnity.IO.OpenPLX
       cm.FrictionModel = fm;
     }
 
+    public ShapeMaterial MapMaterial( openplx.Physics.Charges.Material material )
+    {
+      var sm = ShapeMaterial.CreateInstance<ShapeMaterial>();
+      sm.name = material.getName();
+
+      sm.Density = (float)material.density();
+      // TODO: AGXUnity does not expose Young's modulus in ShapeMaterial
+
+      return sm;
+    }
+
     public void MapContactModel( openplx.Physics.Interactions.SurfaceContact.Model contactModel )
     {
       var mat1 = contactModel.material_1();
       var mat2 = contactModel.material_2();
 
-      ShapeMaterial sm1 = mat1 != null ? Data.MaterialCache[mat1] : null;
-      ShapeMaterial sm2 = mat2 != null ? Data.MaterialCache[mat2] : null;
+      ShapeMaterial sm1 = mat1 != null && Data.MaterialCache.ContainsKey(mat1) ? Data.MaterialCache[mat1] : null;
+      ShapeMaterial sm2 = mat2 != null && Data.MaterialCache.ContainsKey(mat2) ? Data.MaterialCache[mat2] : null;
 
-      if ( sm1 == null )
-        Data.ErrorReporter.Report( mat1, AgxUnityOpenPLXErrors.MissingMaterial );
+      if ( sm1 == null ) {
+        sm1 = MapMaterial( mat1 );
+        Data.MaterialCache.Add( mat1, sm1 );
+      }
 
-      if ( sm2 == null )
-        Data.ErrorReporter.Report( mat2, AgxUnityOpenPLXErrors.MissingMaterial );
+      if ( mat1 == mat2 )
+        sm2 = sm1;
+
+      if ( sm2 == null ) {
+        sm2 = MapMaterial( mat2 );
+        Data.MaterialCache.Add( mat2, sm2 );
+      }
 
       if ( sm1  == null || sm2 == null )
         return;
