@@ -172,7 +172,7 @@ namespace AGXUnity.Model
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
       var mat = TerrainRenderer.sharedMaterial;
-      if ( !AssetDatabase.Contains( mat ) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) {
+      if ( mat == null || ( !AssetDatabase.Contains( mat ) && !mat.SupportsPipeline( RenderingUtils.DetectPipeline() ) ) ) {
         TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
         RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
       }
@@ -297,6 +297,7 @@ namespace AGXUnity.Model
       TerrainMesh.sharedMesh.vertices = vertices;
       m_terrainVertices = vertices;
       TerrainMesh.sharedMesh.uv = uvs;
+      TerrainMesh.sharedMesh.indexFormat = width * height >= Mathf.Pow( 2, 16 ) ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
       TerrainMesh.sharedMesh.SetIndices( indices, MeshTopology.Triangles, 0 );
       TerrainMesh.sharedMesh.RecalculateNormals();
     }
