@@ -467,7 +467,7 @@ namespace AGXUnityEditor
           var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
           var newInstance = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
                                ScriptAsset.Create( instanceType ) as Object :
-                               new Material( Shader.Find( "Standard" ) );
+                               new Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
           newInstance.name = info.Name;
           AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension != assetExtension ? assetExtension : "" ) );
           AssetDatabase.SaveAssets();
