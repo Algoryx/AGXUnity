@@ -837,11 +837,11 @@ namespace AGXUnity.IO.OpenPLX
         TrackMapper.MapTrackSystem( trackSystem );
 
       foreach ( var mateConnector in system.getValues<openplx.Physics3D.Charges.MateConnector>() )
-        InteractionMapper.MapMateConnectorInitial( mateConnector, s );
+        InteractionMapper.MapMateConnector( mateConnector );
 
       foreach ( var body in system.getValues<openplx.Physics3D.Bodies.RigidBody>() )
         foreach ( var mateConnector in body.getValues<openplx.Physics3D.Charges.MateConnector>() )
-          InteractionMapper.MapMateConnectorInitial( mateConnector, Data.BodyCache[ body ].gameObject );
+          InteractionMapper.MapMateConnector( mateConnector );
     }
 
     void MapSystemPass4( openplx.Physics3D.System system )

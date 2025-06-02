@@ -40,7 +40,7 @@ namespace AGXUnity.IO.OpenPLX
       Data = cache;
     }
 
-    public void MapMateConnectorInitial( openplx.Physics3D.Charges.MateConnector mc, GameObject parent )
+    public void MapMateConnector( openplx.Physics3D.Charges.MateConnector mc )
     {
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
@@ -51,10 +51,20 @@ namespace AGXUnity.IO.OpenPLX
       if ( mc is Charges.RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();
 
-      if ( Data.FrameCache.ContainsKey( owner ) )
-        mcObject.transform.SetParent( Data.FrameCache[ owner ].transform );
-      else
-        mcObject.transform.SetParent( parent.transform );
+      openplx.Core.Object current = owner;
+
+      while ( current != null && !Data.FrameCache.ContainsKey( current ) )
+        current = current.getOwner();
+
+      if ( current == null )
+        Debug.LogError( $"MateConnector '{mc.getName()}' has no valid parent GameObject in the hierarchy to parent to." );
+
+      var parent = Data.FrameCache[ current ];
+
+      mcObject.transform.SetParent( parent.transform );
+
+      if ( current != owner )
+        mcObject.name = mc.getName();
 
       mcObject.transform.localPosition = mc.position().ToHandedVector3();
 
@@ -74,19 +84,19 @@ namespace AGXUnity.IO.OpenPLX
       Data.MateConnectorCache[ mc ] = mcObject;
     }
 
-    IFrame MapMateConnector( Charges.MateConnector mate_connector )
+    GameObject GetMappedMC( Charges.MateConnector mc )
+    {
+      if ( !Data.MateConnectorCache.ContainsKey( mc ) )
+        MapMateConnector( mc );
+      return Data.MateConnectorCache[ mc ];
+    }
+
+    IFrame GOToIFrame( GameObject mappedMC )
     {
       var frame = new IFrame();
 
-      if ( Data.MateConnectorCache.TryGetValue( mate_connector, out GameObject mapped ) ) {
-        frame.SetParent( mapped, false );
-        return frame;
-      }
-      else {
-        // TODO: Remove Warning
-        Debug.LogWarning( "Mapping MC -> Frame encountered a new MC" );
-        return null;
-      }
+      frame.SetParent( mappedMC, false );
+      return frame;
     }
 
     HingeClass MapInteraction<HingeClass>( openplx.Physics.Interactions.Interaction interaction,
@@ -99,8 +109,11 @@ namespace AGXUnity.IO.OpenPLX
       var mate_connector1 = charge1 == null ? null : charge1 as Charges.MateConnector;
       var mate_connector2 = charge2 == null ? null : charge2 as Charges.MateConnector;
 
-      var frame1 = mate_connector1 == null ? null : MapMateConnector(mate_connector1);
-      var frame2 = mate_connector2 == null ? null : MapMateConnector(mate_connector2);
+      var mappedMC1 = GetMappedMC(mate_connector1);
+      var mappedMC2 = GetMappedMC(mate_connector2);
+
+      var frame1 = mate_connector1 == null ? null : GOToIFrame(mappedMC1);
+      var frame2 = mate_connector2 == null ? null : GOToIFrame(mappedMC2);
 
       if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1 ) {
         RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
