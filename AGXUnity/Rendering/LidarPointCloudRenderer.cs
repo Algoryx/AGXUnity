@@ -1,4 +1,4 @@
-using AGXUnity.Sensor;
+﻿using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System.Linq;
 using UnityEngine;
@@ -205,8 +205,7 @@ namespace AGXUnity.Rendering
       m_instanceBuffers[ m_currentIndex ].SetData( m_pointArray, 0, 0, (int)count );
       m_argsBuffers[ m_currentIndex ].SetData( m_indirectArgs );
 
-      var mat = transform.localToWorldMatrix;
-      m_propertyBlocks[ m_currentIndex ].SetMatrix( "_ObjectToWorld", mat );
+      m_propertyBlocks[ m_currentIndex ].SetMatrix( "_ObjectToWorld", m_sensor.GlobalTransform );
 
       m_currentIndex = ( m_currentIndex + 1 ) % ( PreserveDataSets + 1 );
       Profiler.EndSample();
@@ -219,7 +218,7 @@ namespace AGXUnity.Rendering
       if ( !RenderingUtils.CameraShouldRender( cam ) )
         return;
 
-      if ( m_pointArray == null ||  m_pointArray.Count() == 0 )
+      if ( m_pointArray == null || m_pointArray.Count() == 0 )
         return;
 
       for ( int i = 0; i < PreserveDataSets + 1; i++ ) {
@@ -237,7 +236,7 @@ namespace AGXUnity.Rendering
           mpb,
           UnityEngine.Rendering.ShadowCastingMode.Off,
           false,
-          0,
+          gameObject.layer,
           cam
         );
       }

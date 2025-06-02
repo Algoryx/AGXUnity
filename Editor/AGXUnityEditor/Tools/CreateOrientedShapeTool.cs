@@ -50,7 +50,7 @@ namespace AGXUnityEditor.Tools
 
       public string VisualPrimitiveName;
       public Color VisualPrimitiveColor { get; set; } = Color.red;
-      public string VisualPrimitiveShader { get; set; } = "Diffuse";
+      public string VisualPrimitiveShader { get; set; } = "AGXUnity/Shader Graph/CrossRPDefault";
 
       public SelectionData( GameObject go )
       {

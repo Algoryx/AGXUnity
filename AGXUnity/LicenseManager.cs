@@ -101,6 +101,33 @@ namespace AGXUnity
       return false;
     }
 
+    public static LicenseInfo QueryInfo( string filename )
+    {
+      var info = new LicenseInfo()
+      {
+        IsValid = false,
+        Type = LicenseInfo.LicenseType.Unknown,
+        TypeDescription = "Unknown",
+      };
+
+      if ( !File.Exists( filename ) ) {
+        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - file doesn't exist." );
+        return info;
+      }
+
+      var licenseType = GetLicenseType( filename );
+      if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
+        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - unknown file extension." );
+        return info;
+      }
+
+      var licenseContent = File.ReadAllText(filename);
+      if ( licenseType == LicenseInfo.LicenseType.Legacy )
+        return LicenseInfo.FromLegacy( licenseContent );
+
+      return LicenseInfo.FromNative( agx.Runtime.instance().queryLicenseInformation( licenseContent ) );
+    }
+
     /// <summary>
     /// Load license file (service or legacy) given filename including path.
     /// </summary>
@@ -729,6 +756,12 @@ namespace AGXUnity
         Debug.LogException( e );
       }
 
+      // We can't know prior to loading the license whether a license is floating or not, if the license loading fails and the status mentions 'floating'
+      // we check if the license is indeed a floating license and if so we update the license info
+      if ( !loadSuccess && LicenseInfo.Status.Contains( "floating" ) ) {
+        loadSuccess = LoadFloating( filename, context );
+      }
+
       return loadSuccess;
     }
 
@@ -749,6 +782,8 @@ namespace AGXUnity
       if ( licenseContentType == LicenseContentType.Unknown ) {
         IssueLoadWarning( $"Unknown license content: \"{licenseContent}\".", context );
         return false;
+
+
       }
 
       try {
@@ -792,6 +827,39 @@ namespace AGXUnity
       UpdateLicenseInformation();
 
       return LicenseInfo.IsValid;
+    }
+
+    private static bool LoadFloating( string file, string context )
+    {
+      try {
+        agx.Runtime.instance().openNetworkSession( file );
+        LoadInfo( $"Loading floating license successful: {agx.Runtime.instance().isValid()}.", context );
+      }
+      catch ( Exception e ) {
+        IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
+        Debug.LogException( e );
+        return false;
+      }
+
+      UpdateLicenseInformation();
+
+      return LicenseInfo.IsValid;
+    }
+
+    public static bool ReturnFloating( string context )
+    {
+      bool success;
+      try {
+        success = agx.Runtime.instance().closeNetworkSession();
+        LoadInfo( $"Returning floating license successful: {success}.", context );
+      }
+      catch ( Exception e ) {
+        IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
+        Debug.LogException( e );
+        return false;
+      }
+
+      return success;
     }
 
     private static void LoadInfo( string info, string context )

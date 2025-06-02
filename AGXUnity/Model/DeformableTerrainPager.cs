@@ -450,7 +450,7 @@ namespace AGXUnity.Model
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        OnModification?.Invoke( terrain.get(), index, Terrain, unityIndex );
+        OnModification?.Invoke( terrain.get(), index, tile, unityIndex );
         m_updatedTerrains.Add( tile );
       };
 
