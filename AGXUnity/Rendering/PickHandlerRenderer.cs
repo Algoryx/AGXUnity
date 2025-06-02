@@ -46,7 +46,7 @@ namespace AGXUnity.Rendering
 
     protected override bool Initialize()
     {
-      const string shader = "Standard";
+      const string shader = "AGXUnity/Shader Graph/CrossRPDefault";
 
       if ( GetComponent<Constraint>().Type == ConstraintType.AngularLockJoint )
         return true;
