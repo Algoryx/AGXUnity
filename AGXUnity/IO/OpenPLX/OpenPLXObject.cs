@@ -1,4 +1,5 @@
 using AGXUnity.Collide;
+using AGXUnity.Model;
 using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,6 +63,7 @@ namespace AGXUnity.IO.OpenPLX
       openplx.Physics.Charges.ContactGeometry => GetComponent<Shape>().NativeGeometry,
       openplx.Physics3D.Charges.MateConnector => GetComponent<ObserverFrame>().Native,
       openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
+      openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
       _ => DefaultHandling( obj )
     };
 
