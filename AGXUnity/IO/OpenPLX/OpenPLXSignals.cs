@@ -39,7 +39,6 @@ namespace AGXUnity.IO.OpenPLX
     public InputTarget[] Inputs => m_inputs.ToArray();
     public SignalInterface[] Interfaces => m_interfaces.ToArray();
 
-    private Queue<InputSignal> m_inputSignalQueue = new Queue<InputSignal>();
     private List<OutputSignal> m_outputSignalList = new List<OutputSignal>();
 
     [HideInInspector]
@@ -51,7 +50,7 @@ namespace AGXUnity.IO.OpenPLX
     private Dictionary<string, SignalEndpoint> m_declaredNameEndpointMap = new Dictionary<string, SignalEndpoint>();
     private Dictionary<Output, OutputSource> m_outputWrapperMap = new Dictionary<Output, OutputSource>();
 
-    private std.StringReferenceMap m_nativeMap;
+    private std.StringReferenceLookup m_nativeMap;
     private agxopenplx.InputSignalQueue NativeInputQueue;
     private agxopenplx.SignalSourceMapper NativeMapper;
     private agxopenplx.InputSignalListener NativeInputListener;
@@ -104,10 +103,9 @@ namespace AGXUnity.IO.OpenPLX
         m_outputWrapperMap[ output.Native ] = output;
       }
 
-      Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPreSync += Pre;
       Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPostSync += Post;
 
-      m_nativeMap = new std.StringReferenceMap();
+      m_nativeMap = new std.StringReferenceLookup();
       foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
         foreach ( var decl in openPLXObj.SourceDeclarations ) {
           var obj = Root.Native.getObject( decl.Replace($"{Root.Native.getName()}.", "") );
@@ -115,20 +113,19 @@ namespace AGXUnity.IO.OpenPLX
             continue;
           var native = openPLXObj.FindCorrespondingNative( Root, obj );
           if ( native != null )
-            m_nativeMap.Add( decl, native );
+            m_nativeMap.Add( new( decl, native ) );
         }
       }
 
-      foreach ( var (k, v) in Root.RuntimeMapped ) {
-        m_nativeMap.Add( k, v );
-      }
+      foreach ( var (k, v) in Root.RuntimeMapped )
+        m_nativeMap.Add( new( k, v ) );
 
       NativeInputQueue = agxopenplx.InputSignalQueue.create();
       NativeOutputQueue = agxopenplx.OutputSignalQueue.create();
 
       NativeMapper = agxopenplx.SignalSourceMapper.createPreMapped( m_nativeMap, agxopenplx.SignalSourceMapMode.Name );
 
-      //NativeInputListener = new agxopenplx.InputSignalListener( m_nativeMap, NativeInputQueue );
+      NativeInputListener = new agxopenplx.InputSignalListener( NativeInputQueue, NativeMapper );
       NativeOutputListener = new agxopenplx.OutputSignalListener( Root.Native, NativeOutputQueue, NativeMapper );
 
       Simulation.Instance.Native.add( NativeInputListener );
@@ -140,28 +137,10 @@ namespace AGXUnity.IO.OpenPLX
     protected override void OnDestroy()
     {
       if ( Simulation.HasInstance ) {
-        Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPreSync -= Pre;
         Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPostSync -= Post;
 
         Simulation.Instance.Native.remove( NativeInputListener );
         Simulation.Instance.Native.remove( NativeOutputListener );
-      }
-    }
-
-    void Pre()
-    {
-      if ( !isActiveAndEnabled ) {
-        m_inputSignalQueue.Clear();
-        return;
-      }
-      while ( m_inputSignalQueue.TryDequeue( out var inpSig ) ) {
-        switch ( inpSig ) {
-          case RealInputSignal realSig: InputSignalHandler.HandleRealInputSignal( realSig, Root ); break;
-          case Vec3InputSignal vec3Sig: InputSignalHandler.HandleVec3InputSignal( vec3Sig, Root ); break;
-          case IntInputSignal intSig: InputSignalHandler.HandleIntInputSignal( intSig, Root ); break;
-          case BoolInputSignal boolSig: InputSignalHandler.HandleBoolInputSignal( boolSig, Root ); break;
-          default: Debug.LogWarning( $"Unhandled InputSignal type: '{inpSig.GetType().Name}'" ); break;
-        }
       }
     }
 
@@ -171,24 +150,16 @@ namespace AGXUnity.IO.OpenPLX
       if ( !isActiveAndEnabled )
         return;
       foreach ( var signal in NativeOutputQueue.getSignals() ) {
-        //foreach ( var outputSource in m_outputs ) {
-        //  if ( !outputSource.Native.enabled() )
-        //    continue;
-        //  Profiler.BeginSample( "BrickSignals Generate Signals" );
-        //  OutputSignal signal = OutputSignalGenerator.GenerateSignalFrom( outputSource.Native, Root );
-
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
           m_outputWrapperMap[ signal.source() ].CachedSignal = signal;
         }
-        //  Profiler.EndSample();
       }
     }
 
     public void SendInputSignal( InputSignal input )
     {
       NativeInputQueue.send( input );
-      m_inputSignalQueue.Enqueue( input );
     }
 
     #region Output Signal Helpers
