@@ -8,9 +8,38 @@ namespace AGXUnity.IO.OpenPLX
   public class MapperData
   {
     public GameObject RootNode { get; set; } = null;
-    public Material VisualMaterial { get; set; } = null;
+
+    private Material m_defaultVisualMaterial = null;
+    public Material DefaultVisualMaterial
+    {
+      get
+      {
+        if ( m_defaultVisualMaterial == null ) {
+          m_defaultVisualMaterial = RenderingUtils.CreateDefaultMaterial();
+          m_defaultVisualMaterial.hideFlags = HideFlags.HideInHierarchy;
+        }
+        return m_defaultVisualMaterial;
+      }
+    }
+    public bool HasDefaultVisualMaterial => m_defaultVisualMaterial != null;
+
     public ErrorReporter ErrorReporter { get; set; } = null;
-    public ShapeMaterial DefaultMaterial { get; set; } = null;
+
+    private ShapeMaterial m_defaultMaterial = null;
+    public ShapeMaterial DefaultMaterial
+    {
+      get
+      {
+        if ( m_defaultMaterial == null ) {
+          m_defaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
+          m_defaultMaterial.Density = 1000;
+          m_defaultMaterial.name = "Default";
+        }
+        return m_defaultMaterial;
+      }
+    }
+    public bool HasDefaultMaterial => m_defaultMaterial != null;
+
     public FrictionModel DefaultFriction { get; set; } = null;
 
     public SavedPrefabLocalData PrefabLocalData { get; set; } = null;

@@ -35,7 +35,6 @@ namespace AGXUnity.IO.OpenPLX
     public MapperData Data { get; } = new MapperData();
 
     public GameObject RootNode => Data.RootNode;
-    public Material VisualMaterial => Data.VisualMaterial;
 
     private InteractionMapper InteractionMapper { get; set; }
     private TrackMapper TrackMapper { get; set; }
@@ -44,13 +43,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public OpenPLXUnityMapper( MapperOptions options = new MapperOptions() )
     {
-      Data.VisualMaterial = ShapeVisual.CreateDefaultMaterial();
-      Data.VisualMaterial.hideFlags = HideFlags.HideInHierarchy;
       Data.ErrorReporter = new openplx.ErrorReporter();
-      Data.DefaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
-      Data.DefaultMaterial.Density = 1000;
-      Data.DefaultMaterial.name = "Default";
-
       Options = options;
 
       InteractionMapper = new InteractionMapper( Data );
@@ -283,7 +276,7 @@ namespace AGXUnity.IO.OpenPLX
         return renderMat;
       }
       else
-        return Data.VisualMaterial;
+        return Data.DefaultVisualMaterial;
     }
 
     GameObject MapConvex( openplx.Physics3D.Charges.ConvexMesh convex ) => MapConvex( convex.vertices() );
@@ -539,7 +532,7 @@ namespace AGXUnity.IO.OpenPLX
         var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
         var visual = visualGO.GetComponent<ShapeVisual>();
         if ( visual != null )
-          visual.SetMaterial( VisualMaterial );
+          visual.SetMaterial( Data.DefaultVisualMaterial );
       }
 
       Utils.MapLocalTransform( go.transform, geom.local_transform() );

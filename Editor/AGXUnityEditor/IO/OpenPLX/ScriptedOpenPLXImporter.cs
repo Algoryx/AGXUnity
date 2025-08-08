@@ -85,12 +85,14 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
-      ctx.AddObjectToAsset( "Default Material", data.VisualMaterial );
+      if ( data.HasDefaultVisualMaterial )
+        ctx.AddObjectToAsset( "Default Material", data.DefaultVisualMaterial );
       foreach ( var mesh in data.MappedMeshes )
         ctx.AddObjectToAsset( mesh.name, mesh );
       foreach ( var mat in data.MappedMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
-      ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
+      if ( data.HasDefaultMaterial )
+        ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
       foreach ( var mat in data.MaterialCache.Values )
         if ( mat != data.DefaultMaterial )
           ctx.AddObjectToAsset( mat.name, mat );
