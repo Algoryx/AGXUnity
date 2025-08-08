@@ -5,6 +5,7 @@ using AGXUnity.Utils;
 using openplx.Simulation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -231,7 +232,7 @@ namespace AGXUnity.IO.OpenPLX
       return go;
     }
 
-    UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices )
+    UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices, agx.Vec2Vector uvs = null )
     {
       var outMesh = new UnityEngine.Mesh();
       Vector3[] uVertices = new Vector3[vertices.Count];
@@ -248,6 +249,15 @@ namespace AGXUnity.IO.OpenPLX
         uIndices[ i + 2 ] = (int)indices[ i + 1 ];
       }
       outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
+
+      if ( uvs != null ) {
+        Debug.Log( uvs.Count );
+        Vector2[] uUvs = new Vector2[uvs.Count];
+        for ( int i = 0; i < uvs.Count; i++ )
+          uUvs[ i ].Set( (float)uvs[ i ].x, (float)uvs[ i ].y );
+        outMesh.SetUVs( 0, uUvs );
+      }
+
       outMesh.RecalculateBounds();
       outMesh.RecalculateNormals();
       return outMesh;
@@ -262,15 +272,18 @@ namespace AGXUnity.IO.OpenPLX
         renderMat = RenderingUtils.CreateDefaultMaterial();
         renderMat.name = mat.getName();
 
-#if UNITY_EDITOR
         var path = texMat.path();
+#if UNITY_EDITOR
         var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
-
         var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
-
+#else
+        var converted = OpenPLXRoot.TransformOpenPLXPath(path);
+        byte[] data = File.ReadAllBytes(converted);
+        var source = new Texture2D(2, 2);
+        source.LoadImage( data );
+#endif
         renderMat.SetTexture( "_MainTex", source );
         renderMat.SetTextureScale( "_MainTex", new Vector2( (float)texMat.scale_u(), (float)texMat.scale_v() ) );
-#endif
         Data.RenderMaterialCache[ mat ] = renderMat;
         Data.MappedMaterials.Add( renderMat );
         return renderMat;
@@ -321,8 +334,8 @@ namespace AGXUnity.IO.OpenPLX
         mf.mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
 #else
         var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-        // TODO: Add UVs
-        mf.mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
+
+        mf.mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
 #endif
         go.transform.localScale = objGeom.scale().ToVector3();
         //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
