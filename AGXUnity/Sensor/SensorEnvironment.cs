@@ -450,7 +450,7 @@ namespace AGXUnity.Sensor
         }
 
         // Update object visibility
-        bool currentlyVisible = component.gameObject.activeInHierarchy || DisabledObjectsVisibleToSensors;
+        bool currentlyVisible = component.isActiveAndEnabled || DisabledObjectsVisibleToSensors;
         bool previouslyVisible = entry.Value;
         if ( currentlyVisible != previouslyVisible ) {
           if ( currentlyVisible )
