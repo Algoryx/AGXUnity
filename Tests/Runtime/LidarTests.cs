@@ -43,7 +43,6 @@ namespace AGXUnityTesting.Runtime
       return material;
     }
 
-
     [OneTimeSetUp]
     public void SetupLidarScene()
     {
@@ -53,21 +52,31 @@ namespace AGXUnityTesting.Runtime
       m_keep.Add( CreateShape<Cone>( new Vector3( 3, 0, -3 ) ) );
     }
 
-    [TearDown]
-    public void CleanLidarScene()
+    [SetUp]
+    public void SetupPreIntegrate()
+    {
+      Simulation.Instance.PreIntegratePositions = true;
+    }
+
+    [UnityTearDown]
+    public IEnumerator CleanLidarScene()
     {
 #if UNITY_2022_2_OR_NEWER
       var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
 #else
       var objects = Object.FindObjectsOfType<ScriptComponent>( );
 #endif
+      GOList toDestroy = new GOList();
+
       foreach ( var obj in objects ) {
         var root = obj.gameObject;
         while ( root.transform.parent != null )
           root = root.transform.parent.gameObject;
         if ( !m_keep.Contains( root ) )
-          Object.Destroy( root );
+          toDestroy.Add( root );
       }
+
+      return TestUtils.DestroyAndWait( toDestroy.ToArray() );
     }
 
     [OneTimeTearDown]
