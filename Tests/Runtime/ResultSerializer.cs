@@ -22,8 +22,9 @@ public class ResultSerializer : ITestRunCallback
         WriteResultsToXml( testResults, xmlWriter );
 
       System.Console.WriteLine( $"\n Test results written to: {fullPath}\n" );
+
+      Application.Quit( testResults.FailCount > 0 ? 1 : 0 );
     }
-    Application.Quit( testResults.FailCount > 0 ? 1 : 0 );
   }
 
   // The code below this point is taken and modified from the UnityEditor.TestTools.TestRunner.Api.ResultsWriter class to 
