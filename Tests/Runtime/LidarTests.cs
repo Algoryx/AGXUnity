@@ -50,12 +50,9 @@ namespace AGXUnityTesting.Runtime
       m_keep.Add( CreateShape<Sphere>( new Vector3( -3, 0, 3 ) ) );
       m_keep.Add( CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) ) );
       m_keep.Add( CreateShape<Cone>( new Vector3( 3, 0, -3 ) ) );
-    }
-
-    [SetUp]
-    public void SetupPreIntegrate()
-    {
       Simulation.Instance.PreIntegratePositions = true;
+      m_keep.Add( Simulation.Instance.gameObject );
+      m_keep.Add( SensorEnvironment.Instance.gameObject );
     }
 
     [UnityTearDown]
