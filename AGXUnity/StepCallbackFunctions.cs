@@ -79,7 +79,7 @@
     /// Internal callbacks for handing outgoing OpenPLX signals.
     /// </summary>
     public StepCallbackDef _Internal_OpenPLXSignalPostSync;
-    
+
     /// Internal preparation callbacks.
     /// </summary>
     public StepCallbackDef _Internal_PostSynchronizeTransform;
