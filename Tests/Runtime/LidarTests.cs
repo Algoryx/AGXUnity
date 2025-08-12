@@ -9,10 +9,14 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
+using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
+
 namespace AGXUnityTesting.Runtime
 {
   public class LidarTests
   {
+    private GOList m_keep = new GOList();
+
     private GameObject CreateShape<T>( Vector3 transform = new Vector3() )
       where T : Shape
     {
@@ -43,22 +47,27 @@ namespace AGXUnityTesting.Runtime
     [OneTimeSetUp]
     public void SetupLidarScene()
     {
-      CreateShape<Box>( new Vector3( 3, 0, 3 ) );
-      CreateShape<Sphere>( new Vector3( -3, 0, 3 ) );
-      CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) );
-      CreateShape<Cone>( new Vector3( 3, 0, -3 ) );
+      m_keep.Add( CreateShape<Box>( new Vector3( 3, 0, 3 ) ) );
+      m_keep.Add( CreateShape<Sphere>( new Vector3( -3, 0, 3 ) ) );
+      m_keep.Add( CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) ) );
+      m_keep.Add( CreateShape<Cone>( new Vector3( 3, 0, -3 ) ) );
     }
 
     [TearDown]
     public void CleanLidarScene()
     {
 #if UNITY_2022_2_OR_NEWER
-      var lidars = Object.FindObjectsByType<LidarSensor>( FindObjectsSortMode.None );
+      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
 #else
-      var lidars = Object.FindObjectsOfType<LidarSensor>( );
+      var objects = Object.FindObjectsOfType<ScriptComponent>( );
 #endif
-      foreach ( var lidar in lidars )
-        Object.Destroy( lidar.gameObject );
+      foreach ( var obj in objects ) {
+        var root = obj.gameObject;
+        while ( root.transform.parent != null )
+          root = root.transform.parent.gameObject;
+        if ( !m_keep.Contains( root ) )
+          Object.Destroy( root );
+      }
     }
 
     [OneTimeTearDown]
@@ -479,13 +488,15 @@ namespace AGXUnityTesting.Runtime
       lidarComp.GetInitialized();
 
       var cable = new GameObject();
-      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      cable.transform.localPosition = new Vector3( 0, 5, -1 );
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
       cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
+
+
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -505,13 +516,14 @@ namespace AGXUnityTesting.Runtime
       lidarComp.GetInitialized();
 
       var cable = new GameObject();
-      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      cable.transform.localPosition = new Vector3( 0, 5, -1 );
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
       cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
+
       yield return TestUtils.Step();
 
       output.View<agx.Vec3f>( out uint count );
@@ -536,7 +548,7 @@ namespace AGXUnityTesting.Runtime
       lidarComp.GetInitialized();
 
       var cable = new GameObject();
-      cable.transform.localPosition = new Vector3( 0, 5, -3 );
+      cable.transform.localPosition = new Vector3( 0, 5, -1 );
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
