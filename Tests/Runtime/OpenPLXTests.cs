@@ -38,7 +38,7 @@ namespace AGXUnityTesting.Runtime
 
     public IEnumerator LoadOpenPLX( string source )
     {
-      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile( System.IO.Path.Combine( TestDataFolder, source ) );
+      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ) );
       Assert.NotNull( openPLXObj, $"Failed to import OpenPLX file '{source}'" );
       openPLXObj.transform.rotation = Quaternion.AngleAxis( -90, Vector3.right );
       yield return TestUtils.WaitUntilLoaded();
@@ -111,7 +111,7 @@ namespace AGXUnityTesting.Runtime
     {
       yield return TestUtils.WaitUntilLoaded();
 
-      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile("Assets/Tests/LinearSpringTest.openplx");
+      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>("Assets/Tests/LinearSpringTest.openplx");
 
       openPLXObj.name = "Imported OpenPLX Object";
       openPLXObj.transform.position = new Vector3( 30, 0, 3 );
@@ -412,6 +412,26 @@ namespace AGXUnityTesting.Runtime
       Assert.That( outVel.x, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
       Assert.That( outVel.y, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
       Assert.That( outVel.z, Is.Not.EqualTo( 0 ).Within( 1e-10 ) );
+    }
+
+    [Test]
+    public void TestImportVisualMaterial()
+    {
+      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( "Assets/Tests/visual_mat.openplx" );
+
+      byte[] data = System.IO.File.ReadAllBytes("Assets/Tests/simple_checkerboard.png");
+      var groundTruthTexture = new Texture2D(2, 2);
+      groundTruthTexture.LoadImage( data );
+
+      var plxTex = material.mainTexture as Texture2D;
+
+      Assert.That( plxTex.height, Is.EqualTo( groundTruthTexture.height ) );
+      Assert.That( plxTex.width, Is.EqualTo( groundTruthTexture.width ) );
+
+      for ( int y = 0; y < plxTex.height; y++ )
+        for ( int x = 0; x < plxTex.width; x++ )
+          Assert.That( plxTex.GetPixel( x, y ), Is.EqualTo( groundTruthTexture.GetPixel( x, y ) ) );
+
     }
   }
 }

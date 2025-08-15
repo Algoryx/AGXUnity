@@ -36,19 +36,31 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     private bool m_nonImportable = true;
 
+    private string IconPath => IO.Utils.AGXUnityEditorDirectory + "/Icons/Logos/openplx-icon.png";
+
+    private Texture2D m_icon = null;
+    private Texture2D Icon
+    {
+      get
+      {
+        if ( m_icon == null )
+          m_icon = AssetDatabase.LoadAssetAtPath<Texture2D>( IconPath );
+
+        return m_icon;
+      }
+    }
+
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
       ImportTime = 0;
-      var iconPath =  IO.Utils.AGXUnityEditorDirectory + "/Icons/Logos/openplx-icon.png";
-      var icon = AssetDatabase.LoadAssetAtPath<Texture2D>( iconPath );
 
       // TODO: Investigate why selecting config.openplx files in the project view crashes unity
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.openplx" ) )
         SkipImport = true;
 
       if ( SkipImport ) {
-        ctx.AddObjectToAsset( "Root", new GameObject(), icon );
+        ctx.AddObjectToAsset( "Root", new GameObject(), Icon );
         return;
       }
 
@@ -73,7 +85,7 @@ namespace AGXUnityEditor.IO.OpenPLX
         if ( Errors.Count > 0 && m_nonImportable )
           SkipImport = true;
 
-        ctx.AddObjectToAsset( "Root", go, icon );
+
         ctx.SetMainObject( go );
         ImportTime = (float)( end - start ).TotalSeconds;
       }
@@ -85,6 +97,8 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
+      if ( data.RootNode )
+        ctx.AddObjectToAsset( "Root", data.RootNode, Icon );
       if ( data.HasDefaultVisualMaterial )
         ctx.AddObjectToAsset( "Default Material", data.DefaultVisualMaterial );
       foreach ( var mesh in data.MappedMeshes )

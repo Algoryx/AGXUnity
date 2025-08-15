@@ -26,42 +26,53 @@ namespace AGXUnity.IO.OpenPLX
     }
 
 
-    public static GameObject ImportOpenPLXFile( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null )
+    public static T ImportOpenPLXFile<T>( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null ) where T : UnityEngine.Object
     {
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportToConsole;
       importer.SuccessCallback = onSuccess;
       importer.Options = options;
-      return importer.ImportOpenPLXFile( path );
+      return importer.ImportOpenPLXFile<T>( path );
     }
 
     public Action<Error> ErrorReporter { get; set; } = null;
     public Action<MapperData> SuccessCallback { get; set; } = null;
     public Action ErrorCallback { get; set; } = null;
     public MapperOptions Options { get; set; }
-    public GameObject ImportOpenPLXFile( string path )
+    public T ImportOpenPLXFile<T>( string path ) where T : UnityEngine.Object
     {
-      var go = new GameObject( System.IO.Path.GetFileNameWithoutExtension(path) );
-      var root = go.AddComponent<OpenPLXRoot>();
+      var obj = ImportOpenPLXFile(path);
 
-      root.OpenPLXAssetPath = path;
+      if ( obj is not T casted ) {
+        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.IncompatibleImportType, 1, 1, path ) );
+        return null;
+      }
 
+      return casted;
+    }
+
+    public UnityEngine.Object ImportOpenPLXFile( string path )
+    {
       var mapper = new OpenPLXUnityMapper(Options);
-      var loadedModel = ParseOpenPLXSource(root.OpenPLXFile, mapper.Data.AgxCache);
+      Object loadedModel = null;
+      if ( System.IO.File.Exists( path ) )
+        loadedModel = ParseOpenPLXSource( path, mapper.Data.AgxCache );
+      else
+        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.FileDoesNotExist, 1, 1, path ) );
 
+      UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
-        mapper.MapObject( loadedModel, root.gameObject );
+        importedObject = mapper.MapObject( loadedModel, path );
+        if ( importedObject is GameObject go )
+          go.GetComponent<OpenPLX.OpenPLXRoot>().OpenPLXAssetPath = path;
         foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
           ErrorReporter?.Invoke( error );
         SuccessCallback?.Invoke( mapper.Data );
-
-        if ( Options.RotateUp )
-          root.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       }
       else
         ErrorCallback?.Invoke();
 
-      return go;
+      return importedObject;
     }
 
     private OpenPlxContext CreateContext( agxopenplx.AgxCache cache = null )

@@ -10,7 +10,11 @@ namespace AGXUnity.IO.OpenPLX
     InvalidDefomationType = 6,
     UnsupportedFrictionModel = 7,
     RigidBodyOwnerNotSystem = 8,
+    IncompatibleImportType = 9,
+    UnmappableRootModel = 10,
+    FileDoesNotExist = 11,
   }
+
   public class UnityOpenPLXErrorFormatter : openplx.ErrorFormatter
   {
     private string formatMessage( string message, openplx.Error error )
@@ -29,6 +33,9 @@ namespace AGXUnity.IO.OpenPLX
         (ulong)AgxUnityOpenPLXErrors.InvalidDefomationType => formatMessage( "AGXUnity does not support the specified deformation type", error ),
         (ulong)AgxUnityOpenPLXErrors.UnsupportedFrictionModel => formatMessage( "AGXUnity only supports dry friction", error ),
         (ulong)AgxUnityOpenPLXErrors.RigidBodyOwnerNotSystem => formatMessage( "RigidBody must be owned by a Physics3D.System", error ),
+        (ulong)AgxUnityOpenPLXErrors.IncompatibleImportType => formatMessage( "Imported model could not be mapped to the provided type", error ),
+        (ulong)AgxUnityOpenPLXErrors.UnmappableRootModel => formatMessage( "The root openplx model could not be mapped to an AGXUnity representation", error ),
+        (ulong)AgxUnityOpenPLXErrors.FileDoesNotExist => formatMessage( "Provided file does not exist", error ),
         _ => base.format( error )
       };
     }

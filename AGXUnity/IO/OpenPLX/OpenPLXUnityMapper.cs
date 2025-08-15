@@ -5,7 +5,6 @@ using AGXUnity.Utils;
 using openplx.Simulation;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -51,19 +50,35 @@ namespace AGXUnity.IO.OpenPLX
       TrackMapper = new TrackMapper( Data );
     }
 
-    public GameObject MapObject( Object obj, GameObject rootNode )
+    public UnityEngine.Object MapObject( Object obj, string path )
     {
-      Data.RootNode = rootNode;
-      Data.PrefabLocalData = rootNode.AddComponent<SavedPrefabLocalData>();
+      if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
+        return MapSimulatable( obj, path );
+      else if ( obj is openplx.Visuals.Materials.Material mat )
+        return MapVisualMaterial( mat );
+      else
+        Data.ErrorReporter.Report( obj, AgxUnityOpenPLXErrors.UnmappableRootModel );
+
+      return RootNode;
+    }
+
+    private GameObject MapSimulatable( Object obj, string path )
+    {
+      Data.RootNode = new GameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
+      Data.RootNode.AddComponent<OpenPLXRoot>();
+      if ( Options.RotateUp )
+        Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
+
       if ( obj is openplx.Physics3D.System system )
-        Utils.AddChild( RootNode, MapSystem( system ), Data.ErrorReporter, system );
+        Utils.AddChild( Data.RootNode, MapSystem( system ), Data.ErrorReporter, system );
       else if ( obj is Bodies.RigidBody body )
-        Utils.AddChild( RootNode, MapBody( body ), Data.ErrorReporter, body );
+        Utils.AddChild( Data.RootNode, MapBody( body ), Data.ErrorReporter, body );
 
       var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
       MapSignals( obj, signals );
 
-      return RootNode;
+      return Data.RootNode;
     }
 
     private void FindOutputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
