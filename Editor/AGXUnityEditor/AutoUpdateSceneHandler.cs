@@ -264,6 +264,8 @@ namespace AGXUnityEditor
       var terrainMaterialUpdated = false;
       foreach ( var terrainMaterial in terrainMaterials ) {
         var asset = IO.Utils.ParseAsset( AssetDatabase.GetAssetPath( terrainMaterial ) );
+        if ( asset == null )
+          continue;
         int presetValue = -1;
         if ( asset.Fields.ContainsKey( "m_preset" ) && asset.Fields[ "m_preset" ].TryGet( out presetValue ) ) {
           var presetName = ( (LegacyDeformableTerrainMaterialPreset)presetValue ).ToString();

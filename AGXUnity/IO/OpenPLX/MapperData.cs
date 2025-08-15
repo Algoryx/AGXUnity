@@ -1,0 +1,69 @@
+using AGXUnity.Model;
+using AGXUnity.Utils;
+using openplx;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace AGXUnity.IO.OpenPLX
+{
+  public class MapperData
+  {
+    public GameObject RootNode { get; set; } = null;
+
+    private Material m_defaultVisualMaterial = null;
+    public Material DefaultVisualMaterial
+    {
+      get
+      {
+        if ( m_defaultVisualMaterial == null ) {
+          m_defaultVisualMaterial = RenderingUtils.CreateDefaultMaterial();
+          m_defaultVisualMaterial.hideFlags = HideFlags.HideInHierarchy;
+        }
+        return m_defaultVisualMaterial;
+      }
+    }
+    public bool HasDefaultVisualMaterial => m_defaultVisualMaterial != null;
+
+    public ErrorReporter ErrorReporter { get; set; } = null;
+
+    private ShapeMaterial m_defaultMaterial = null;
+    public ShapeMaterial DefaultMaterial
+    {
+      get
+      {
+        if ( m_defaultMaterial == null ) {
+          m_defaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
+          m_defaultMaterial.Density = 1000;
+          m_defaultMaterial.name = "Default";
+        }
+        return m_defaultMaterial;
+      }
+    }
+    public bool HasDefaultMaterial => m_defaultMaterial != null;
+
+    public FrictionModel DefaultFriction { get; set; } = null;
+
+    public SavedPrefabLocalData PrefabLocalData { get; set; } = null;
+    public agxopenplx.AgxCache AgxCache { get; } = new agxopenplx.AgxCache();
+
+    public Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape>();
+    public Dictionary<openplx.Core.Object, RigidBody> BodyCache { get; } = new Dictionary<openplx.Core.Object, RigidBody>();
+    public Dictionary<openplx.Physics.System, GameObject> SystemCache { get; } = new Dictionary<openplx.Physics.System, GameObject>();
+    public Dictionary<openplx.Core.Object, GameObject> FrameCache { get; } = new Dictionary<openplx.Core.Object, GameObject>();
+    public Dictionary<openplx.Physics.Charges.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Charges.Material, ShapeMaterial>();
+    public Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject>();
+    public Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel> FrictionModelCache { get; } = new Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel>();
+    public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
+
+    public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
+    public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };
+
+    public List<ContactMaterial> MappedContactMaterials { get; } = new List<ContactMaterial>();
+    public List<FrictionModel> MappedFrictionModels { get; } = new List<FrictionModel>();
+    public List<Mesh> MappedMeshes { get; } = new List<Mesh>();
+    public List<Material> MappedMaterials { get; } = new List<Material>();
+    public List<TrackProperties> MappedTrackProperties { get; } = new List<TrackProperties>();
+    public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
+    public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
+  }
+}
