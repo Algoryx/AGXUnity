@@ -24,6 +24,7 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     [SerializeField]
     public List<Error> Errors;
+    public List<string> Dependencies;
 
     [field: SerializeField]
     public float ImportTime { get; private set; }
@@ -63,11 +64,6 @@ namespace AGXUnityEditor.IO.OpenPLX
         ctx.AddObjectToAsset( "Root", new GameObject(), Icon );
         return;
       }
-
-      // TODO: Add support for dependecy-based reimport
-      //foreach ( var dep in dependencies )
-      //  ctx.DependsOnSourceAsset( dep );
-
       var start = DateTime.Now;
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportErrors;
@@ -97,6 +93,15 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
+      foreach ( var doc in data.RegisteredDocuments ) {
+        var relative = System.IO.Path.GetRelativePath( Application.dataPath, doc );
+        var normalized = "Assets/" + relative.Replace('\\','/');
+
+        Dependencies.Add( normalized );
+        ctx.DependsOnSourceAsset( normalized );
+      }
+      Dependencies.Sort();
+
       if ( data.RootNode )
         ctx.AddObjectToAsset( "Root", data.RootNode, Icon );
       if ( data.HasDefaultVisualMaterial )

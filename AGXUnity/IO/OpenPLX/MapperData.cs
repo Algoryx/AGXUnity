@@ -10,6 +10,8 @@ namespace AGXUnity.IO.OpenPLX
   {
     public GameObject RootNode { get; set; } = null;
 
+    public HashSet<string> RegisteredDocuments { get; } = new HashSet<string>();
+
     private Material m_defaultVisualMaterial = null;
     public Material DefaultVisualMaterial
     {

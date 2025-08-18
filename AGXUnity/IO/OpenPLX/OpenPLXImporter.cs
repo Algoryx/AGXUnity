@@ -56,7 +56,7 @@ namespace AGXUnity.IO.OpenPLX
       var mapper = new OpenPLXUnityMapper(Options);
       Object loadedModel = null;
       if ( System.IO.File.Exists( path ) )
-        loadedModel = ParseOpenPLXSource( path, mapper.Data.AgxCache );
+        loadedModel = ParseOpenPLXSource( path, mapper.Data );
       else
         ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.FileDoesNotExist, 1, 1, path ) );
 
@@ -109,10 +109,18 @@ namespace AGXUnity.IO.OpenPLX
       return context;
     }
 
-    public Object ParseOpenPLXSource( string source, agxopenplx.AgxCache agxCache = null )
+    public Object ParseOpenPLXSource( string source, MapperData data = null )
     {
-      var context = CreateContext(agxCache);
+      var context = CreateContext(data?.AgxCache);
       Object loadedObj = CoreSWIG.loadModelFromFile( source, null, context );
+      var objs = context.getRegisteredObjects();
+      if ( data != null ) {
+        foreach ( var obj in objs ) {
+          var doc = obj?.getType()?.getOwningDocument()?.getSourceId();
+          if ( doc != null )
+            data.RegisteredDocuments.Add( doc );
+        }
+      }
 
       if ( context.hasErrors() ) {
         loadedObj = null;

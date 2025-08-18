@@ -1,5 +1,4 @@
 using AGXUnity;
-using AGXUnity.IO.OpenPLX;
 using AGXUnityEditor.UIElements;
 using System.Linq;
 using UnityEditor;
@@ -131,12 +130,18 @@ namespace AGXUnityEditor.IO.OpenPLX
           skipContainer.Add( statistics );
         }
       }
-      var deps = OpenPLXImporter.FindDependencies(ScriptedOpenPLXImporter.assetPath);
-      if ( deps.Length > 0 ) {
-        skipContainer.Add( new Label() { text = $"<b>Dependencies ({deps.Length})</b>" } );
+      var deps = ScriptedOpenPLXImporter.Dependencies;
+      if ( deps.Count > 0 ) {
+        skipContainer.Add( new Label() { text = $"<b>Dependencies ({deps.Count})</b>" } );
+        int numCore = 0;
         foreach ( var dep in deps ) {
-          skipContainer.Add( new Label() { text = dep } );
+          if ( dep.StartsWith( "Assets/AGXUnity" ) )
+            numCore++;
+          else
+            skipContainer.Add( new Label() { text = dep } );
         }
+        if ( numCore > 0 )
+          skipContainer.Add( new Label() { text = $"Core bundle dependencies ({numCore})" } );
       }
       ve.Add( skipContainer );
       ve.Add( new IMGUIContainer( () => base.ApplyRevertGUI() ) );
