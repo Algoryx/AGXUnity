@@ -431,7 +431,15 @@ namespace AGXUnityTesting.Runtime
       for ( int y = 0; y < plxTex.height; y++ )
         for ( int x = 0; x < plxTex.width; x++ )
           Assert.That( plxTex.GetPixel( x, y ), Is.EqualTo( groundTruthTexture.GetPixel( x, y ) ) );
+    }
 
+    [Test]
+    public void TestBundleDirectory()
+    {
+      OpenPLXSettings.Instance.AdditionalBundleDirs.Add( "Assets/Tests/TestBundle" );
+      var dependant = OpenPLXImporter.ImportOpenPLXFile<GameObject>("Assets/Tests/use_test_bundle.openplx");
+
+      Assert.NotNull( dependant );
     }
   }
 }
