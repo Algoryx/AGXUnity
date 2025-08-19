@@ -1,5 +1,6 @@
 using AGXUnity;
 using AGXUnity.IO.OpenPLX;
+using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
 using System.Linq;
@@ -36,18 +37,18 @@ namespace AGXUnityTesting.Runtime
       yield return new WaitForEndOfFrame();
     }
 
-    public IEnumerator LoadOpenPLX( string source )
+    public void LoadOpenPLX( string source )
     {
       var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ) );
       Assert.NotNull( openPLXObj, $"Failed to import OpenPLX file '{source}'" );
       openPLXObj.transform.rotation = Quaternion.AngleAxis( -90, Vector3.right );
-      yield return TestUtils.WaitUntilLoaded();
+      openPLXObj.InitializeAll();
     }
 
     [UnityTest]
     public IEnumerator TestLinearSpring()
     {
-      yield return LoadOpenPLX( "LinearSpringTest.openplx" );
+      LoadOpenPLX( "LinearSpringTest.openplx" );
 
       yield return TestUtils.SimulateSeconds( 2.0f );
 
@@ -60,7 +61,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLinearRange()
     {
-      yield return LoadOpenPLX( "LinearRangeTest.openplx" );
+      LoadOpenPLX( "LinearRangeTest.openplx" );
 
       yield return TestUtils.SimulateSeconds( 2.0f );
 
@@ -73,7 +74,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestSimplerInvertedPendulum()
     {
-      yield return LoadOpenPLX( "simpler_inverted_pendulum.openplx" );
+      LoadOpenPLX( "simpler_inverted_pendulum.openplx" );
       GameObject.Find( "simpler_inverted_pendulum" ).AddComponent<Aux.SimplerInvertedPendulum>();
       var rodRB = FindComponentByName<RigidBody>("simpler_inverted_pendulum/PendulumScene/rod");
 
@@ -87,7 +88,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestInvertedPendulum()
     {
-      yield return LoadOpenPLX( "inverted_pendulum.openplx" );
+      LoadOpenPLX( "inverted_pendulum.openplx" );
       GameObject.Find( "inverted_pendulum" ).AddComponent<Aux.InvertedPendulumController>();
       // Inverted pendulum is calibrated for 60hz
       //Time.fixedDeltaTime = 1.0f/60.0f;
@@ -129,7 +130,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestImportExtendedAGXAtRuntime()
     {
-      yield return LoadOpenPLX( "extended_pendulum_from_agx.openplx" );
+      LoadOpenPLX( "extended_pendulum_from_agx.openplx" );
 
       yield return TestUtils.SimulateSeconds( 5.0f );
 
@@ -141,9 +142,9 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestSimpleDrivetrain()
     {
-      yield return LoadOpenPLX( "drive_train_velocity_input.openplx" );
+      LoadOpenPLX( "drive_train_velocity_input.openplx" );
 
-      yield return TestUtils.SimulateTo( 0.5f );
+      yield return TestUtils.Step();
 
       var hinge = FindComponentByName<Constraint>("drive_train_velocity_input/PendulumScene/pendulum/hinge");
       Assert.AreEqual( 1, hinge.GetCurrentSpeed() );
@@ -153,9 +154,9 @@ namespace AGXUnityTesting.Runtime
 
     public IEnumerator TestDrivetrainVelocitySignal()
     {
-      yield return LoadOpenPLX( "drive_train_velocity_input.openplx" );
+      LoadOpenPLX( "drive_train_velocity_input.openplx" );
 
-      yield return TestUtils.SimulateTo( 0.5f );
+      yield return TestUtils.Step();
 
       var signals = FindComponentByName<OpenPLXSignals>("drive_train_velocity_input");
       FindComponentByName<RigidBody>( "drive_train_velocity_input/PendulumScene/pendulum/rod" );
@@ -174,9 +175,9 @@ namespace AGXUnityTesting.Runtime
 
     public IEnumerator TestDrivetrainTorqueSignal()
     {
-      yield return LoadOpenPLX( "drive_train_torque_input.openplx" );
+      LoadOpenPLX( "drive_train_torque_input.openplx" );
 
-      yield return TestUtils.SimulateTo( 0.5f );
+      yield return TestUtils.Step();
 
       var signals = FindComponentByName<OpenPLXSignals>("drive_train_torque_input");
       FindComponentByName<RigidBody>( "drive_train_torque_input/PendulumScene/pendulum/rod" );
@@ -197,8 +198,8 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestDrivetrainDifferential()
     {
-      yield return LoadOpenPLX( "differential_test.openplx" );
-      yield return TestUtils.SimulateTo( 0.5f );
+      LoadOpenPLX( "differential_test.openplx" );
+      yield return TestUtils.Step();
 
       var rod1RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum1/rod");
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
@@ -209,18 +210,18 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestDrivetrainGear()
     {
-      yield return LoadOpenPLX( "differential_test.openplx" );
-      yield return TestUtils.SimulateTo( 0.5f );
+      LoadOpenPLX( "differential_test.openplx" );
+      yield return TestUtils.Step();
 
       var rod1RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum1/rod");
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
     }
 
-    [UnityTest]
-    public IEnumerator TestLoadWithMaterials()
+    [Test]
+    public void TestLoadWithMaterials()
     {
-      yield return LoadOpenPLX( "material_scene.openplx" );
+      LoadOpenPLX( "material_scene.openplx" );
       var root = FindComponentByName<OpenPLXRoot>( "material_scene" );
 
       var b1 = root.FindMappedObject("MaterialScene.Box1.geometry").GetComponent<AGXUnity.Collide.Shape>();
@@ -238,10 +239,10 @@ namespace AGXUnityTesting.Runtime
       Assert.IsTrue( ContactMaterialManager.Instance.ContactMaterials.Any( cm => cm.Material1 == ground.Material && cm.Material2 == b3.Material ), "Loaded BoxInline <-> Ground CM" );
     }
 
-    [UnityTest]
-    public IEnumerator TestMultiInteractions()
+    [Test]
+    public void TestMultiInteractions()
     {
-      yield return LoadOpenPLX( "multi_interaction.openplx" );
+      LoadOpenPLX( "multi_interaction.openplx" );
 
       var openPLX = FindComponentByName<OpenPLXRoot>("multi_interaction");
       var hinge = openPLX.FindMappedObject("PendulumScene.hingePendulum");
@@ -260,7 +261,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestImportOBJAtRuntime()
     {
-      yield return LoadOpenPLX( "obj_import_test.openplx" );
+      LoadOpenPLX( "obj_import_test.openplx" );
 
       yield return TestUtils.SimulateSeconds( 1.0f );
     }
@@ -268,7 +269,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestCachedSignals()
     {
-      yield return LoadOpenPLX( "signal_test.openplx" );
+      LoadOpenPLX( "signal_test.openplx" );
       var signals = FindComponentByName<OpenPLXSignals>("signal_test");
       var input = signals.FindInputTarget("SignalScene.motorSpeedInput");
       signals.SendInputSignal( openplx.Physics.Signals.RealInputSignal.create( 1, input.Native ) );
@@ -303,7 +304,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestEndpointWrapper()
     {
-      yield return LoadOpenPLX( "signal_test.openplx" );
+      LoadOpenPLX( "signal_test.openplx" );
 
       var signals = FindComponentByName<OpenPLXSignals>("signal_test");
       var input = signals.FindInputTarget("SignalScene.motorSpeedInput");
@@ -343,7 +344,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRBLinearVelocitySignal()
     {
-      yield return LoadOpenPLX( "rb_velocity_signal_test.openplx" );
+      LoadOpenPLX( "rb_velocity_signal_test.openplx" );
 
       var signals = FindComponentByName<OpenPLXSignals>("rb_velocity_signal_test");
 
@@ -362,7 +363,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRBAngularVelocitySignal()
     {
-      yield return LoadOpenPLX( "rb_velocity_signal_test.openplx" );
+      LoadOpenPLX( "rb_velocity_signal_test.openplx" );
 
       var signals = FindComponentByName<OpenPLXSignals>("rb_velocity_signal_test");
 
@@ -381,7 +382,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestMCLinearVelocitySignal()
     {
-      yield return LoadOpenPLX( "mc_signal_test.openplx" );
+      LoadOpenPLX( "mc_signal_test.openplx" );
 
       var signals = FindComponentByName<OpenPLXSignals>("mc_signal_test");
 
@@ -399,7 +400,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestMCAngularVelocitySignal()
     {
-      yield return LoadOpenPLX( "mc_signal_test.openplx" );
+      LoadOpenPLX( "mc_signal_test.openplx" );
 
       var signals = FindComponentByName<OpenPLXSignals>("mc_signal_test");
 
