@@ -65,7 +65,8 @@ namespace AGXUnity.IO.OpenPLX
     private GameObject MapSimulatable( Object obj, string path )
     {
       Data.RootNode = new GameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
-      Data.RootNode.AddComponent<OpenPLXRoot>();
+      var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
+      rootComp.Native = obj;
       if ( Options.RotateUp )
         Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();

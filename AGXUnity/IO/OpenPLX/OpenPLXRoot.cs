@@ -25,7 +25,7 @@ namespace AGXUnity.IO.OpenPLX
     /// </summary>
     public string OpenPLXFile => TransformOpenPLXPath( OpenPLXAssetPath );
 
-    public Object Native { get; private set; }
+    public Object Native { get; internal set; }
 
     public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
     private Dictionary<string, GameObject> m_objectMap;
@@ -61,13 +61,15 @@ namespace AGXUnity.IO.OpenPLX
 
     protected override bool Initialize()
     {
-      var importer = new OpenPLXImporter();
-      importer.ErrorReporter = ReportError;
-      Native = importer.ParseOpenPLXSource( OpenPLXFile );
-
       if ( Native == null ) {
-        Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
-        return false;
+        var importer = new OpenPLXImporter();
+        importer.ErrorReporter = ReportError;
+        Native = importer.ParseOpenPLXSource( OpenPLXFile );
+
+        if ( Native == null ) {
+          Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
+          return false;
+        }
       }
 
       m_objectMap = new Dictionary<string, GameObject>();
