@@ -60,8 +60,8 @@ namespace AGXUnity.IO.OpenPLX
       Interactions.LinearSpring => GetGeneric1DOFNative().getLock1D(),
       Interactions.LinearVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
       Interactions.ForceMotor => GetGeneric1DOFNative().getMotor1D(),
-      openplx.Physics.Charges.ContactGeometry => GetComponent<Shape>().NativeGeometry,
-      openplx.Physics3D.Charges.MateConnector => GetComponent<ObserverFrame>().Native,
+      openplx.Physics.Charges.ContactGeometry => gameObject.GetInitializedComponent<Shape>().NativeGeometry,
+      openplx.Physics3D.Charges.MateConnector => gameObject.GetInitializedComponent<ObserverFrame>().Native,
       openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
       openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
       _ => DefaultHandling( obj )
