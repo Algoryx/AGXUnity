@@ -11,11 +11,9 @@ namespace AGXUnity.IO
     public static string RuntimeSettingsDirectory => $"AGXUnitySettings/";
 
 #if UNITY_EDITOR
-    public static string SettingsDirectory => EditorSettingDirectory;
+    public static string SettingsDirectory => $"{Application.dataPath[ ..Application.dataPath.IndexOf( "/Assets" ) ]}/{EditorSettingDirectory}";
 #else
-    public static string SettingsDirectory => RuntimeSettingsDirectory;
+    public static string SettingsDirectory => $"{Application.dataPath}/{RuntimeSettingsDirectory}";
 #endif
-
-    public static string SettingsDirectoryFull => Application.dataPath + RuntimeSettingsDirectory;
   }
 }
