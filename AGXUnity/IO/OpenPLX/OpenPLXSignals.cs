@@ -213,6 +213,7 @@ namespace AGXUnity.IO.OpenPLX
       Integer,
       Real,
       Vec3,
+      Boolean,
       Ignored,
       Unknown
     }
@@ -231,6 +232,7 @@ namespace AGXUnity.IO.OpenPLX
         case TypeCode.Decimal: return ValueType.Real;
         case TypeCode.Double: return ValueType.Real;
         case TypeCode.Single: return ValueType.Real;
+        case TypeCode.Boolean: return ValueType.Boolean;
         default: break;
       };
 
@@ -277,7 +279,7 @@ namespace AGXUnity.IO.OpenPLX
         s_typeCache[ tempIO.Force3D() - 1 ]               = ValueType.Vec3;
         s_typeCache[ tempIO.Acceleration3D() - 1 ]        = ValueType.Vec3;
         s_typeCache[ tempIO.AngularAcceleration3D() - 1 ] = ValueType.Vec3;
-        s_typeCache[ tempIO.Boolean() - 1 ]               = ValueType.Ignored;
+        s_typeCache[ tempIO.Boolean() - 1 ]               = ValueType.Boolean;
         s_typeCache[ tempIO.Percentage() - 1 ]            = ValueType.Real;
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;

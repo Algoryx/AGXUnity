@@ -33,6 +33,7 @@ namespace AGXUnity.IO.OpenPLX
       {
         OpenPLXSignals.ValueType.Integer |
         OpenPLXSignals.ValueType.Real => RealInputSignal.create(Convert.ToDouble(value), Native),
+        OpenPLXSignals.ValueType.Boolean => BoolInputSignal.create(Convert.ToBoolean(value), Native),
         OpenPLXSignals.ValueType.Vec3 =>
           Vec3InputSignal.create(
             (

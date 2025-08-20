@@ -41,6 +41,10 @@ namespace AGXUnity.IO.OpenPLX
         converted = (T)Convert.ChangeType( intVal.value(), typeof( T ) );
         return true;
       }
+      else if ( value is BoolValue boolVal ) {
+        converted = (T)Convert.ChangeType( boolVal.value(), typeof( T ) );
+        return true;
+      }
       else if ( value is Vec3Value v3val ) {
         if ( typeof( T ) == typeof( UnityEngine.Vector3 ) )
           converted = (T)(object)v3val.value().ToVector3();
@@ -60,8 +64,11 @@ namespace AGXUnity.IO.OpenPLX
 
     public T GetValue<T>()
     {
+      if ( !Enabled )
+        throw new ArgumentException( $"Output '{Name}' is not enabled" );
+
       if ( CachedSignal == null )
-        throw new ArgumentException( "Specified output does not have a cached value", "output" );
+        throw new ArgumentException( $"Output '{Name}' does not have a cached value", "output" );
 
       if ( CachedSignal is not ValueOutputSignal vos )
         throw new ArgumentException( $"Output '{Name}' did not send a ValueOutputSignal" );
@@ -78,7 +85,8 @@ namespace AGXUnity.IO.OpenPLX
     public bool TryGetValue<T>( out T output )
     {
       output = default;
-      if ( CachedSignal == null ||
+      if ( !Enabled ||
+           CachedSignal == null ||
            CachedSignal is not ValueOutputSignal vos ||
            !OpenPLXSignals.IsValueTypeCompatible<T>( CachedSignal.source().type(), true ) ||
            !TryConvertOutputSignal( vos, out output ) )
