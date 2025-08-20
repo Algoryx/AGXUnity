@@ -117,6 +117,10 @@ namespace AGXUnity.IO.OpenPLX
       typeof(openplx.DriveTrain.TorqueMotor),
       typeof(openplx.DriveTrain.Differential),
       typeof(openplx.DriveTrain.EmpiricalTorqueConverter),
+      typeof(openplx.DriveTrain.ManualBrake),
+      typeof(openplx.DriveTrain.AutomaticBrake),
+      typeof(openplx.DriveTrain.ManualClutch),
+      typeof(openplx.DriveTrain.AutomaticClutch),
     };
 
     public static bool IsRuntimeMapped( openplx.Core.Object obj )
