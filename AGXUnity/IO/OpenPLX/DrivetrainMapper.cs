@@ -1,5 +1,6 @@
 using AGXUnity.Utils;
 using openplx.Physics1D.Charges;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -31,7 +32,8 @@ namespace AGXUnity.IO.OpenPLX
       return rotational_unit;
     }
 
-    public void ConnectDrivetrainInteraction( openplx.Physics.Interactions.Interaction interaction, agxPowerLine.Connector connector )
+    private Tuple<agxPowerLine.Unit, agxPowerLine.Side, agxPowerLine.Unit, agxPowerLine.Side>
+      FindInteractionUnits( openplx.Physics.Interactions.Interaction interaction )
     {
       openplx.Physics.Charges.Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
       openplx.Physics.Charges.Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
@@ -39,25 +41,91 @@ namespace AGXUnity.IO.OpenPLX
       var input_connector = charge1 as openplx.Physics1D.Charges.MateConnector;
       var output_connector = charge2 as openplx.Physics1D.Charges.MateConnector;
 
-      var pump_shaft = input_connector.getOwner() as openplx.DriveTrain.Shaft;
-      var turbine_shaft = output_connector.getOwner() as openplx.DriveTrain.Shaft;
+      var input_shaft = input_connector.getOwner() as openplx.DriveTrain.Shaft;
+      var output_shaft = output_connector.getOwner() as openplx.DriveTrain.Shaft;
 
-      agxPowerLine.Unit pump_unit = pump_shaft == null ? null : MapperData.UnitCache[pump_shaft];
-      agxPowerLine.Unit turbine_unit = turbine_shaft == null ? null : MapperData.UnitCache[turbine_shaft];
-
-      if ( pump_unit == null || turbine_unit == null ) {
+      agxPowerLine.Unit input_unit = input_shaft == null ? null : MapperData.UnitCache[input_shaft];
+      agxPowerLine.Unit output_unit = output_shaft == null ? null : MapperData.UnitCache[output_shaft];
+      if ( input_unit == null || output_unit == null ) {
         // TODO: Error reporting
         //reportErrorFromKey( torque_converter_key, MissingConnectedBody, system );
+        return Tuple.Create<agxPowerLine.Unit, agxPowerLine.Side, agxPowerLine.Unit, agxPowerLine.Side>
+          ( null, agxPowerLine.Side.NO_SIDE, null, agxPowerLine.Side.NO_SIDE );
       }
-      else {
-        agxPowerLine.Side pump_side = pump_shaft.input() == input_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
-        connector.connect( agxPowerLine.Side.INPUT, pump_side, pump_unit );
-        agxPowerLine.Side turbine_side = turbine_shaft.input() == output_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
-        connector.connect( agxPowerLine.Side.OUTPUT, turbine_side, turbine_unit );
-      }
+      agxPowerLine.Side input_side = input_shaft.input() == input_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+      agxPowerLine.Side output_side = output_shaft.input() == output_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
+
+      return Tuple.Create( input_unit, input_side, output_unit, output_side );
     }
 
-    public agxPowerLine.RotationalConnector MapGear( openplx.DriveTrain.Gear gear )
+    public void ConnectDrivetrainInteraction( openplx.Physics.Interactions.Interaction interaction, agxPowerLine.Connector connector )
+    {
+      var (in_unit, in_side, out_unit, out_side) = FindInteractionUnits( interaction );
+
+      if ( in_unit == null || out_unit == null )
+        return;
+
+      connector.connect( agxPowerLine.Side.INPUT, in_side, in_unit );
+      connector.connect( agxPowerLine.Side.OUTPUT, out_side, out_unit );
+    }
+
+    public void ConnectDrivetrainInteraction( openplx.Physics.Interactions.Interaction interaction, agxPowerLine.Unit unit )
+    {
+      var (in_unit, in_side, out_unit, out_side) = FindInteractionUnits( interaction );
+
+      if ( in_unit == null || out_unit == null )
+        return;
+
+      unit.connect( agxPowerLine.Side.INPUT, in_side, in_unit );
+      unit.connect( agxPowerLine.Side.OUTPUT, out_side, out_unit );
+    }
+
+    public agxDriveTrain.Brake MapBrake( openplx.DriveTrain.ManualBrake brake )
+    {
+      agxDriveTrain.Brake agx_brake = new agxDriveTrain.Brake();
+
+      if ( brake is openplx.DriveTrain.AutomaticBrake automatic ) {
+        agx_brake.setManualMode( false );
+        agx_brake.setEngage( automatic.initially_engaged() );
+        agx_brake.setEngageTimeConstant( automatic.engagement_duration() );
+        agx_brake.setDisengageTimeConstant( automatic.disengagement_duration() );
+      }
+      else
+        agx_brake.setManualMode( true );
+
+      ConnectDrivetrainInteraction( brake, agx_brake );
+
+      agx_brake.setTorqueCapacity( brake.torque_capacity() );
+      agx_brake.setFraction( brake.initial_engagement_fraction() );
+      agx_brake.setMinRelativeSlip( brake.min_relative_slip_ratio() );
+
+      agx_brake.setName( brake.getName() );
+      return agx_brake;
+    }
+
+    public agxDriveTrain.DryClutch MapClutch( openplx.DriveTrain.ManualClutch clutch )
+    {
+      agxDriveTrain.DryClutch agx_clutch = new agxDriveTrain.DryClutch();
+
+      if ( clutch is openplx.DriveTrain.AutomaticClutch automatic ) {
+        agx_clutch.setManualMode( false );
+        agx_clutch.setEngage( automatic.initially_engaged() );
+        agx_clutch.setEngageTimeConstant( automatic.engagement_duration() );
+        agx_clutch.setDisengageTimeConstant( automatic.disengagement_duration() );
+      }
+      else
+        agx_clutch.setManualMode( true );
+      ConnectDrivetrainInteraction( clutch, agx_clutch );
+      agx_clutch.setTorqueCapacity( clutch.torque_capacity() );
+      agx_clutch.setFraction( clutch.initial_engagement_fraction() );
+      agx_clutch.setMinRelativeSlip( clutch.min_relative_slip_ratio() );
+
+      agx_clutch.setName( clutch.getName() );
+
+      return agx_clutch;
+    }
+
+    public agxDriveTrain.Gear MapGear( openplx.DriveTrain.Gear gear )
     {
       agxDriveTrain.Gear agx_gear = null;
       if ( gear is openplx.DriveTrain.ViscousGear viscGear ) {

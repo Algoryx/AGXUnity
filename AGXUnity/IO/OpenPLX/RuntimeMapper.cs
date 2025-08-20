@@ -58,40 +58,28 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
+    void MapConnectors<T, U>( openplx.Physics3D.System system, System.Func<T, U> mapping )
+      where T : Object
+      where U : agxPowerLine.SubGraph
+    {
+      foreach ( var obj in system.getValues<T>() ) {
+        var mapped = mapping( obj );
+        MapperData.RuntimeMap[ obj.getName() ] = mapped;
+        MapperData.PowerLine.add( mapped );
+      }
+    }
+
     void MapSystemPass4( openplx.Physics3D.System system )
     {
       foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
-      foreach ( var gear in system.getValues<openplx.DriveTrain.Gear>() ) {
-        var mapped = DrivetrainMapper.MapGear( gear );
-        MapperData.RuntimeMap[ gear.getName() ] = mapped;
-        MapperData.PowerLine.add( mapped );
-      }
-
-      foreach ( var gearbox in system.getValues<openplx.DriveTrain.GearBox>() ) {
-        var mapped = DrivetrainMapper.MapGearBox( gearbox );
-        MapperData.RuntimeMap[ gearbox.getName() ] = mapped;
-        MapperData.PowerLine.add( mapped );
-      }
-
-      foreach ( var diff in system.getValues<openplx.DriveTrain.Differential>() ) {
-        var mapped = DrivetrainMapper.MapDifferential( diff );
-        MapperData.RuntimeMap[ diff.getName() ] = mapped;
-        MapperData.PowerLine.add( mapped );
-      }
-
-      foreach ( var tc in system.getValues<openplx.DriveTrain.EmpiricalTorqueConverter>() ) {
-        var mapped = DrivetrainMapper.MapTorqueConverter( tc );
-        MapperData.RuntimeMap[ tc.getName() ] = mapped;
-        MapperData.PowerLine.add( mapped );
-      }
-
-      foreach ( var engine in system.getValues<openplx.DriveTrain.CombustionEngine>() ) {
-        var mapped = DrivetrainMapper.MapCombustionEngine(engine);
-        MapperData.RuntimeMap[ engine.getName() ] = mapped;
-        MapperData.PowerLine.add( mapped );
-      }
+      MapConnectors<openplx.DriveTrain.Gear, agxDriveTrain.Gear>( system, DrivetrainMapper.MapGear );
+      MapConnectors<openplx.DriveTrain.Differential, agxDriveTrain.Differential>( system, DrivetrainMapper.MapDifferential );
+      MapConnectors<openplx.DriveTrain.EmpiricalTorqueConverter, agxDriveTrain.TorqueConverter>( system, DrivetrainMapper.MapTorqueConverter );
+      MapConnectors<openplx.DriveTrain.ManualClutch, agxDriveTrain.DryClutch>( system, DrivetrainMapper.MapClutch );
+      MapConnectors<openplx.DriveTrain.CombustionEngine, agxDriveTrain.CombustionEngine>( system, DrivetrainMapper.MapCombustionEngine );
+      MapConnectors<openplx.DriveTrain.ManualBrake, agxDriveTrain.Brake>( system, DrivetrainMapper.MapBrake );
 
       foreach ( var actuator in system.getValues<openplx.DriveTrain.Actuator>() )
         DrivetrainMapper.MapActuator( actuator );

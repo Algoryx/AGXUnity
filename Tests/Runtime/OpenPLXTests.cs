@@ -218,6 +218,58 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
     }
 
+    [UnityTest]
+    public IEnumerator TestDrivetrainBrake()
+    {
+      LoadOpenPLX( "drive_train_brake.openplx" );
+      var signals = FindComponentByName<OpenPLXSignals>( "drive_train_brake" );
+
+      var engageBrakeInput = signals.FindInputTarget( "PendulumScene.pendulum.brake.engage_input" );
+      var engagedBrakeOutput = signals.FindOutputSource( "PendulumScene.pendulum.brake.engaged_output" );
+      var angularVelocityOutput = signals.FindOutputSource("PendulumScene.pendulum.hinge.angular_velocity_output");
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      Assert.That( !engagedBrakeOutput.GetValue<bool>() );
+      var speed = angularVelocityOutput.GetValue<float>();
+      Assert.AreEqual( 1.0f, speed, 0.0001f );
+
+      engageBrakeInput.SendSignal( true );
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      Assert.That( engagedBrakeOutput.GetValue<bool>() );
+      speed = angularVelocityOutput.GetValue<float>();
+      Assert.AreEqual( 0.0f, speed, 0.0001f );
+    }
+
+    [UnityTest]
+    public IEnumerator TestDrivetrainClutch()
+    {
+      LoadOpenPLX( "drive_train_clutch.openplx" );
+      var signals = FindComponentByName<OpenPLXSignals>( "drive_train_clutch" );
+
+      var engageClutchInput = signals.FindInputTarget( "PendulumScene.pendulum.clutch.engage_input" );
+      var engagedClutchOutput = signals.FindOutputSource( "PendulumScene.pendulum.clutch.engaged_output" );
+      var torqueOutput = signals.FindOutputSource("PendulumScene.pendulum.motor.torque_output");
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      Assert.That( engagedClutchOutput.GetValue<bool>() );
+
+      var torque = torqueOutput.GetValue<float>();
+      Assert.Greater( torque, 1.0f );
+
+      engageClutchInput.SendSignal( false );
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      Assert.That( !engagedClutchOutput.GetValue<bool>() );
+      // Torque should drop as the clutch is disengaged
+      torque = torqueOutput.GetValue<float>();
+      Assert.Less( torque, 1.0f );
+    }
+
     [Test]
     public void TestLoadWithMaterials()
     {
