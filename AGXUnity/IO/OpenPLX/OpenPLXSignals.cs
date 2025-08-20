@@ -57,36 +57,11 @@ namespace AGXUnity.IO.OpenPLX
     private agxopenplx.OutputSignalQueue NativeOutputQueue;
     private agxopenplx.OutputSignalListener NativeOutputListener;
 
-    internal void RegisterSignal( string signal, Input openPLXSignal )
-    {
-      m_inputs.Add( new InputTarget( signal, openPLXSignal ) );
-    }
-
-    internal void RegisterSignal( string signal, Output openPLXSignal )
-    {
-      m_outputs.Add( new OutputSource( signal, openPLXSignal ) );
-    }
-
-    internal void RegisterInterface( SignalInterface sigInterface )
-    {
-      m_interfaces.Add( sigInterface );
-    }
-
     public InputTarget FindInputTarget( string name ) => m_inputs.Find( it => it.Name == name );
 
     public OutputSource FindOutputSource( string name ) => m_outputs.Find( os => os.Name == name );
 
-    internal Object InitializeNativeEndpoint( string endpoint )
-    {
-      var relativeSigName = endpoint.Replace(Root.Native.getName() + ".", "").Trim();
-      var signalObj = Root.Native.getObject(relativeSigName);
-      if ( signalObj != null )
-        return signalObj;
-      else {
-        Debug.LogError( $"{endpoint} does not exist!" );
-        return null;
-      }
-    }
+    public void SendInputSignal( InputSignal input ) => NativeInputQueue.send( input );
 
     protected override bool Initialize()
     {
@@ -157,9 +132,20 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    public void SendInputSignal( InputSignal input )
+    internal void RegisterSignal( string signal, Input openPLXSignal ) => m_inputs.Add( new InputTarget( signal, openPLXSignal ) );
+    internal void RegisterSignal( string signal, Output openPLXSignal ) => m_outputs.Add( new OutputSource( signal, openPLXSignal ) );
+    internal void RegisterInterface( SignalInterface sigInterface ) => m_interfaces.Add( sigInterface );
+
+    internal Object InitializeNativeEndpoint( string endpoint )
     {
-      NativeInputQueue.send( input );
+      var relativeSigName = endpoint.Replace(Root.Native.getName() + ".", "").Trim();
+      var signalObj = Root.Native.getObject(relativeSigName);
+      if ( signalObj != null )
+        return signalObj;
+      else {
+        Debug.LogError( $"{endpoint} does not exist!" );
+        return null;
+      }
     }
 
     #region Output Signal Helpers
