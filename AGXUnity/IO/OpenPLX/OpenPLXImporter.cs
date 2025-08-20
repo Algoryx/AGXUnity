@@ -132,7 +132,7 @@ namespace AGXUnity.IO.OpenPLX
       return loadedObj;
     }
 
-    public static string[] FindDependencies( string source )
+    public static string[] FindExplicitDependencies( string source )
     {
       // TODO: Explicit dependency check is slow and crashes on build
       //var context = CreateContext();

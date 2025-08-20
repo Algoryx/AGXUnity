@@ -45,7 +45,7 @@ namespace AGXUnityEditor.IO.OpenPLX
 
           if ( src.StartsWith( "Assets/AGXUnity" ) )
             continue;
-          var deps = OpenPLXImporter.FindDependencies( src );
+          var deps = OpenPLXImporter.FindExplicitDependencies( src );
           foreach ( var dep in deps ) {
             var relative = Path.GetRelativePath( projectPath, dep );
             if ( !copiedDeps.Contains( relative ) ) {
