@@ -57,17 +57,17 @@ namespace AGXUnity.IO.OpenPLX
     private agxopenplx.OutputSignalQueue NativeOutputQueue;
     private agxopenplx.OutputSignalListener NativeOutputListener;
 
-    public void RegisterSignal( string signal, Input openPLXSignal )
+    internal void RegisterSignal( string signal, Input openPLXSignal )
     {
       m_inputs.Add( new InputTarget( signal, openPLXSignal ) );
     }
 
-    public void RegisterSignal( string signal, Output openPLXSignal )
+    internal void RegisterSignal( string signal, Output openPLXSignal )
     {
       m_outputs.Add( new OutputSource( signal, openPLXSignal ) );
     }
 
-    public void RegisterInterface( SignalInterface sigInterface )
+    internal void RegisterInterface( SignalInterface sigInterface )
     {
       m_interfaces.Add( sigInterface );
     }
