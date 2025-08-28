@@ -23,7 +23,7 @@ namespace AGXUnity.IO.OpenPLX
     }
     public override string format( openplx.Error error )
     {
-      return error.getErrorCode() switch
+      return (ulong)error.getErrorCode() switch
       {
         (ulong)AgxUnityOpenPLXErrors.Unimplemented => formatMessage( "The specified model is not implemented by the mapper", error ),
         (ulong)AgxUnityOpenPLXErrors.NullChild => formatMessage( "The child object could not be mapped", error ),

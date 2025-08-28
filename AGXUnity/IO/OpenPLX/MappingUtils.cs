@@ -81,7 +81,7 @@ namespace AGXUnity.IO.OpenPLX
       var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
       var document = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument() : member.asVarAssignment().getOwningDocument();
       string sourceID = document?.getSourceId();
-      err.reportError( openplx.Error.create( (ulong)errorType, tok.line, tok.column, sourceID ?? "" ) );
+      err.reportError( openplx.Error.create( (uint)errorType, tok.line, tok.column, sourceID ?? "" ) );
     }
 
     public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
