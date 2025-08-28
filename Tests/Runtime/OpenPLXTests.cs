@@ -32,7 +32,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTearDown]
     public IEnumerator RemoveLoadedObjects()
     {
-      foreach ( var roots in Object.FindObjectsOfType<OpenPLXRoot>() )
+      foreach ( var roots in Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ) )
         Object.Destroy( roots.gameObject );
       yield return new WaitForEndOfFrame();
     }
@@ -474,7 +474,7 @@ namespace AGXUnityTesting.Runtime
 
       byte[] data = System.IO.File.ReadAllBytes("Assets/Tests/simple_checkerboard.png");
       var groundTruthTexture = new Texture2D(2, 2);
-      groundTruthTexture.LoadImage( data );
+      ImageConversion.LoadImage( groundTruthTexture, data );
 
       var plxTex = material.mainTexture as Texture2D;
 
