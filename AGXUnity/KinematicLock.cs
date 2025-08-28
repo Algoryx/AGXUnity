@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "AGXUnity/Kinematic Lock" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#kinematic-lock" )]
   public class KinematicLock : ScriptComponent
   {
     public agx.MergedBody Native { get; private set; }
@@ -45,6 +47,20 @@ namespace AGXUnity
       Simulation.Instance.Native.add( Native );
 
       return true;
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Native == null || !Simulation.HasInstance )
+        return;
+      Simulation.Instance.Native.add( Native );
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native == null || !Simulation.HasInstance )
+        return;
+      Simulation.Instance.Native.remove( Native );
     }
   }
 }

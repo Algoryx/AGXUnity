@@ -5,6 +5,9 @@ using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.OpenPLX
 {
+  [AddComponentMenu( "" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-root" )]
   public class OpenPLXRoot : ScriptComponent
   {
 

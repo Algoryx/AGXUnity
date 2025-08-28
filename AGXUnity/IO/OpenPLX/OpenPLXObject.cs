@@ -10,6 +10,9 @@ using Interactions = openplx.Physics3D.Interactions;
 
 namespace AGXUnity.IO.OpenPLX
 {
+  [AddComponentMenu( "" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-import" )]
   public class OpenPLXObject : ScriptComponent
   {
     agx.ElementaryConstraint GetNativeController<T>( CT controllerType ) where T : ElementaryConstraintController

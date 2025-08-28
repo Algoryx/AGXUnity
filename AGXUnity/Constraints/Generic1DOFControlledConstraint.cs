@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace AGXUnity
 {
+  [AddComponentMenu( "" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-import" )]
   public class Generic1DOFControlledConstraint : Constraint
   {
     public enum SecondaryType

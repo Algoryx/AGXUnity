@@ -3,6 +3,7 @@ using UnityEngine;
 namespace AGXUnity.Utils
 {
   [DisallowMultipleComponent]
+  [AddComponentMenu( "AGXUnity/Plot" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plotting-and-data-acquisition" )]
   public class Plot : ScriptComponent
   {
