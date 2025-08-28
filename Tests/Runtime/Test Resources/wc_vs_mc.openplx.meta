@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a7dc6eefd3be54049a2ef563a2fb7053
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  Errors:
+  - message: Symbol already defined
+    line: 17
+    column: 3
+  <ImportTime>k__BackingField: 0.0556699
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0

@@ -13,7 +13,7 @@ namespace AGXUnityTesting.Runtime
   [TestFixture]
   public class OpenPLXTests
   {
-    private string TestDataFolder => "Assets/Tests/";
+    private string TestDataFolder => "Assets/AGXUnity/Tests/Runtime/Test Resources";
     private T FindComponentByName<T>( string name ) where T : MonoBehaviour
     {
       var go = GameObject.Find(name);
@@ -112,7 +112,7 @@ namespace AGXUnityTesting.Runtime
     {
       yield return TestUtils.WaitUntilLoaded();
 
-      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>("Assets/Tests/LinearSpringTest.openplx");
+      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>(TestDataFolder + "/LinearSpringTest.openplx");
 
       openPLXObj.name = "Imported OpenPLX Object";
       openPLXObj.transform.position = new Vector3( 30, 0, 3 );
@@ -470,9 +470,9 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestImportVisualMaterial()
     {
-      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( "Assets/Tests/visual_mat.openplx" );
+      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/visual_mat.openplx" );
 
-      byte[] data = System.IO.File.ReadAllBytes("Assets/Tests/simple_checkerboard.png");
+      byte[] data = System.IO.File.ReadAllBytes( TestDataFolder + "/simple_checkerboard.png");
       var groundTruthTexture = new Texture2D(2, 2);
       ImageConversion.LoadImage( groundTruthTexture, data );
 
@@ -489,8 +489,8 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestBundleDirectory()
     {
-      OpenPLXSettings.Instance.AdditionalBundleDirs.Add( "Assets/Tests/TestBundle" );
-      var dependant = OpenPLXImporter.ImportOpenPLXFile<GameObject>("Assets/Tests/use_test_bundle.openplx");
+      OpenPLXSettings.Instance.AdditionalBundleDirs.Add( TestDataFolder + "/TestBundle" );
+      var dependant = OpenPLXImporter.ImportOpenPLXFile<GameObject>( TestDataFolder + "/use_test_bundle.openplx" );
 
       Assert.NotNull( dependant );
     }

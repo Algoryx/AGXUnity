@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 828322ee5ba1f434293ce7da2d805472
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  Errors:
+  - message: Variable not found
+    line: 2
+    column: 3
+  <ImportTime>k__BackingField: 0.1169482
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0

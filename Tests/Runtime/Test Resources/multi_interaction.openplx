@@ -1,0 +1,82 @@
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Charges.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Charges.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    mate_connector is Physics3D.Charges.MateConnector:
+        position.z: -geometry.size.z * 0.5
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+HingePendulum is Physics3D.System:
+    rod is Rod
+    hinge is Physics3D.Interactions.Hinge
+    motor is Physics3D.Interactions.RotationalVelocityMotor:
+        target_speed: 1
+        charges: hinge.charges
+    range is Physics3D.Interactions.RotationalRange:
+        start: -1
+        end: 1
+        charges: hinge.charges
+    spring is Physics3D.Interactions.TorsionSpring:
+        flexibility.stiffness: 100
+        charges: hinge.charges
+
+    motor2 is Physics3D.Interactions.RotationalVelocityMotor:
+        target_speed: 1
+        charges: hinge.charges
+    range2 is Physics3D.Interactions.RotationalRange:
+        start: -1
+        end: 1
+        charges: hinge.charges
+    spring2 is Physics3D.Interactions.TorsionSpring:
+        flexibility.stiffness: 100
+        charges: hinge.charges
+
+LinearPendulum is Physics3D.System:
+    rod is Rod:
+      mate_connector.main_axis: Math.Vec3.Z_AXIS()
+      mate_connector.normal: Math.Vec3.X_AXIS()
+    prismatic is Physics3D.Interactions.Prismatic
+    motor is Physics3D.Interactions.LinearVelocityMotor:
+        target_speed: 1
+        charges: prismatic.charges
+    range is Physics3D.Interactions.LinearRange:
+        start: -1
+        end: 1
+        charges: prismatic.charges
+    spring is Physics3D.Interactions.LinearSpring:
+        flexibility.stiffness: 100
+        charges: prismatic.charges
+
+    motor2 is Physics3D.Interactions.LinearVelocityMotor:
+        target_speed: 1
+        charges: prismatic.charges
+    range2 is Physics3D.Interactions.LinearRange:
+        start: -1
+        end: 1
+        charges: prismatic.charges
+    spring2 is Physics3D.Interactions.LinearSpring:
+        flexibility.stiffness: 100
+        charges: prismatic.charges
+
+
+PendulumScene is Physics3D.System:
+    world_connector1 is Physics3D.Charges.MateConnector:
+        main_axis: Math.Vec3.X_AXIS()
+        position.x: -0.2
+
+    world_connector2 is Physics3D.Charges.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        position.x: 0.2
+
+    hingePendulum is HingePendulum:
+        hinge.charges: [world_connector1, hingePendulum.rod.mate_connector]
+
+    linearPendulum is LinearPendulum:
+        prismatic.charges: [world_connector2, linearPendulum.rod.mate_connector]
