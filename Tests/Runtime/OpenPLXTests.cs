@@ -11,7 +11,7 @@ namespace AGXUnityTesting.Runtime
 {
 
   [TestFixture]
-  public class OpenPLXTests
+  public class OpenPLXTests : AGXUnityFixture
   {
     private string TestDataFolder => "Assets/AGXUnity/Tests/Runtime/Test Resources";
     private T FindComponentByName<T>( string name ) where T : MonoBehaviour
@@ -32,9 +32,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTearDown]
     public IEnumerator RemoveLoadedObjects()
     {
-      foreach ( var roots in Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ) )
-        Object.Destroy( roots.gameObject );
-      yield return new WaitForEndOfFrame();
+      yield return TestUtils.DestroyAndWait( Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ).Select( r => r.gameObject ).ToArray() );
     }
 
     public void LoadOpenPLX( string source )
@@ -471,13 +469,15 @@ namespace AGXUnityTesting.Runtime
     public void TestImportVisualMaterial()
     {
       var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/visual_mat.openplx" );
+      Assert.NotNull( material );
 
-      byte[] data = System.IO.File.ReadAllBytes( TestDataFolder + "/simple_checkerboard.png");
+      byte[] data = System.IO.File.ReadAllBytes( OpenPLXImporter.TransformOpenPLXPath(TestDataFolder + "/simple_checkerboard.png") );
+      Assert.NotNull( data );
       var groundTruthTexture = new Texture2D(2, 2);
       ImageConversion.LoadImage( groundTruthTexture, data );
 
       var plxTex = material.mainTexture as Texture2D;
-
+      Assert.NotNull( plxTex );
       Assert.That( plxTex.height, Is.EqualTo( groundTruthTexture.height ) );
       Assert.That( plxTex.width, Is.EqualTo( groundTruthTexture.width ) );
 
