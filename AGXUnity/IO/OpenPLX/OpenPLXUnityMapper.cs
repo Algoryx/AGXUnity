@@ -293,7 +293,7 @@ namespace AGXUnity.IO.OpenPLX
         var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
         var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
 #else
-        var converted = OpenPLXRoot.TransformOpenPLXPath(path);
+        var converted = OpenPLXImporter.TransformOpenPLXPath(path);
         byte[] data = System.IO.File.ReadAllBytes(converted);
         var source = new Texture2D(2, 2);
         source.LoadImage( data );

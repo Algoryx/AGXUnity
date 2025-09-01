@@ -57,7 +57,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       ImportTime = 0;
 
       // TODO: Investigate why selecting config.openplx files in the project view crashes unity
-      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity" ) || ctx.assetPath.EndsWith( "config.openplx" ) )
+      if ( ctx.assetPath.StartsWith( "Assets/AGXUnity/OpenPLX" ) || ctx.assetPath.EndsWith( "config.openplx" ) )
         SkipImport = true;
 
       if ( SkipImport ) {

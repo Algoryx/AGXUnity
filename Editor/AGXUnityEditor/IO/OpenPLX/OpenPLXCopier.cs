@@ -43,7 +43,7 @@ namespace AGXUnityEditor.IO.OpenPLX
           CopyAsset( src, openPLXTarDir );
           num++;
 
-          if ( src.StartsWith( "Assets/AGXUnity" ) )
+          if ( src.StartsWith( "Assets/AGXUnity/OpenPLX" ) )
             continue;
           var deps = OpenPLXImporter.FindExplicitDependencies( src );
           foreach ( var dep in deps ) {

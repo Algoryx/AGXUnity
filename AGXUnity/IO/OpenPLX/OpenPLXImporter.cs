@@ -25,6 +25,7 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
+    public static string TransformOpenPLXPath( string path ) => System.IO.Path.IsPathRooted( path ) ? path : path.Replace( "Assets/", OpenPLXRoot + "/" );
 
     public static T ImportOpenPLXFile<T>( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null ) where T : UnityEngine.Object
     {
@@ -54,11 +55,12 @@ namespace AGXUnity.IO.OpenPLX
     public UnityEngine.Object ImportOpenPLXFile( string path )
     {
       var mapper = new OpenPLXUnityMapper(Options);
+      var transformed = TransformOpenPLXPath(path);
       Object loadedModel = null;
-      if ( System.IO.File.Exists( path ) )
-        loadedModel = ParseOpenPLXSource( path, mapper.Data );
+      if ( System.IO.File.Exists( transformed ) )
+        loadedModel = ParseOpenPLXSource( transformed, mapper.Data );
       else
-        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.FileDoesNotExist, 1, 1, path ) );
+        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.FileDoesNotExist, 1, 1, transformed ) );
 
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
@@ -79,14 +81,15 @@ namespace AGXUnity.IO.OpenPLX
     {
       std.StringVector bundle_paths = new std.StringVector { OpenPLXBundlesDir };
       foreach ( var additional in OpenPLXSettings.Instance.AdditionalBundleDirs ) {
-        if ( String.IsNullOrEmpty( additional ) )
+        var transformed = TransformOpenPLXPath( additional );
+        if ( String.IsNullOrEmpty( transformed ) )
           continue;
-        if ( !System.IO.Directory.Exists( additional ) ) {
-          Debug.LogWarning( $"Specified bundle directory '{additional}' does not exist, skipping..." );
+        if ( !System.IO.Directory.Exists( transformed ) ) {
+          Debug.LogWarning( $"Specified bundle directory '{transformed}' does not exist, skipping..." );
           continue;
         }
 
-        bundle_paths.Add( additional );
+        bundle_paths.Add( transformed );
       }
 
       var context = new OpenPlxContext( bundle_paths );
@@ -172,7 +175,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private static void ReportToConsole( Error error )
     {
-      var ef = new ErrorFormatter();
+      var ef = new UnityOpenPLXErrorFormatter();
       Debug.LogError( ef.format( error ) );
     }
   }

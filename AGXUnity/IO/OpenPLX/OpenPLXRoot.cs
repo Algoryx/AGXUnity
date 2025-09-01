@@ -19,14 +19,12 @@ namespace AGXUnity.IO.OpenPLX
     [field: SerializeField]
     public string OpenPLXAssetPath { get; set; }
 
-    public static string TransformOpenPLXPath( string path ) => path.Replace( "Assets/", OpenPLXImporter.OpenPLXRoot + "/" );
-
     /// <summary>
     /// In the editor the files will be located in the assets folder (Unless the path is absolute). In this case it is fine loading the path as is.
     /// However, when the application is built, the OpenPLX file is copied to a corresponding directory in the build directory and the path of the
     /// OpenPLX file needs to be updated accordingly.
     /// </summary>
-    public string OpenPLXFile => TransformOpenPLXPath( OpenPLXAssetPath );
+    public string OpenPLXFile => OpenPLXImporter.TransformOpenPLXPath( OpenPLXAssetPath );
 
     public Object Native { get; internal set; }
 
