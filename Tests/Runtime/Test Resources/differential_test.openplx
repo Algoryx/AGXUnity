@@ -41,6 +41,7 @@ PendulumsDriveTrain is Physics3D.System:
         connector_1d: right_shaft2.output
 
     motor is Physics1D.Interactions.RotationalVelocityMotor:
+        target_speed: 1
         charges: [input_shaft.input]
 
 
@@ -61,6 +62,3 @@ PendulumScene is Physics3D.System:
     pendulum_dt is PendulumsDriveTrain:
         left_hinge_actuator.mate_3d: pendulum1.hinge
         right_hinge_actuator.mate_3d: pendulum2.hinge
-
-    velocity_motor_input is Physics.Signals.AngularVelocity1DInput:
-        source: pendulum_dt.motor
