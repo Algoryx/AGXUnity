@@ -551,7 +551,7 @@ namespace AGXUnity.IO.OpenPLX
       shapeComp.CollisionsEnabled = geom.enable_collisions();
       shapeComp.EnableMassProperties = geom.include_in_mass_properties();
 
-      if ( geom.material().is_default_material() )
+      if ( !geom.material().is_default_material() )
         if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
           shapeComp.Material = sm;
 

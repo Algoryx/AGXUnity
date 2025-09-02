@@ -448,62 +448,12 @@ namespace AGXUnity.IO.OpenPLX
         return;
       }
 
-      var solveType = FrictionModel.ESolveType.Direct;
-      var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");
-      var approximateConeAnnotation = friction.findAnnotations("agx_approximate_cone_friction");
-      bool approximate_cone = approximateConeAnnotation.Count == 1 &&  approximateConeAnnotation[0].isTrue() ? true : false;
-      if ( solveTypeAnnotation.Count == 1 && solveTypeAnnotation[ 0 ].isString() ) {
-        if ( solveTypeAnnotation[ 0 ].isString( "SPLIT" ) )
-          solveType = FrictionModel.ESolveType.Split;
-        else if ( solveTypeAnnotation[ 0 ].isString( "DIRECT_AND_ITERATIVE" ) )
-          solveType = FrictionModel.ESolveType.DirectAndIterative;
-        else if ( solveTypeAnnotation[ 0 ].isString( "ITERATIVE" ) )
-          solveType = FrictionModel.ESolveType.Iterative;
-        else if ( !solveTypeAnnotation[ 0 ].isString( "DIRECT" ) ) {
-          // TODO: Add warning
-          //SPDLOG_WARN( "AGX friction solve type annotation defaults to DIRECT, {} is not supported", friction_solve_type_annotation.front().asString() );
-        }
-      }
-      fm.SolveType = solveType;
-
       // TODO: Map oriented friction models
-      // Figure out if a oriented friction trait is being used
-      //var reference_body = friction.getObject("reference_body");
-      //var reference_geometry = friction.getObject("reference_geometry");
-      //agx.FrameRef agx_reference_frame = nullptr;
-      //if ( reference_body != nullptr ) {
-      //  var it = m_rigidbody_map.find(reference_body);
-      //  if ( it == m_rigidbody_map.end() ) {
-      //    var token = friction.getType().getNameToken();
-      //    m_error_reporter.reportError( Error.create( openplx.agxerror.MissingConnectedBody, token.line, token.column, m_source_id ) );
-      //  }
-      //  else {
-      //    agx_reference_frame = it.second.getFrame();
-      //  }
-      //}
-      //else if ( reference_geometry != nullptr ) {
-      //  var it = m_geometry_map.find(reference_geometry);
-      //  if ( it == m_geometry_map.end() ) {
-      //    var token = friction.getType().getNameToken();
-      //    m_error_reporter.reportError( Error.create( openplx.agxerror.MissingConnectedGeometry, token.line, token.column, m_source_id ) );
-      //  }
-      //  else {
-      //    agx_reference_frame = it.second.getFrame();
-      //  }
-      //}
+      // TODO: Find Oriented friction reference frames
 
       //var primary_direction = friction.getObject("primary_direction") as openplx.Math.Vec3;
       if ( friction is openplx.Physics.Interactions.Dissipation.DryConeFriction cone ) {
-        //agx.IterativeProjectedConeFrictionRef ipcf = nullptr;
-        //if ( primary_direction != nullptr && agx_reference_frame != nullptr ) {
-        //  ipcf = new agx.OrientedIterativeProjectedConeFrictionModel( agx_reference_frame,
-        //                                                              mapVec3( primary_direction ),
-        //                                                              agx.FrictionModel.DIRECT );
-        //}
-        //else {
-        //  ipcf = new agx.IterativeProjectedConeFriction( agx.FrictionModel.DIRECT );
-        //}
-        //ipcf.setEnableDirectExactConeProjection( !approximate_cone );
+        //TODO: Handle oriented model
         fm = FrictionModel.CreateInstance<FrictionModel>();
         fm.name = friction.getName();
         fm.SolveType = FrictionModel.ESolveType.Direct;
@@ -511,16 +461,7 @@ namespace AGXUnity.IO.OpenPLX
         Data.MappedFrictionModels.Add( fm );
       }
       else if ( friction is openplx.Physics.Interactions.Dissipation.DryBoxFriction box ) {
-        //agx.BoxFrictionModelRef bfm = nullptr;
-        //if ( primary_direction != nullptr && agx_reference_frame != nullptr ) {
-        //  bfm = new agx.OrientedBoxFrictionModel( agx_reference_frame,
-        //                                                 mapVec3( primary_direction ),
-        //                                                 agx.FrictionModel.DIRECT );
-        //}
-        //else {
-        //  bfm = new agx.BoxFrictionModel( agx.FrictionModel.DIRECT );
-        //}
-        //fm = bfm;
+        //TODO: Handle oriented model
         fm = FrictionModel.CreateInstance<FrictionModel>();
         fm.name = friction.getName();
         fm.SolveType = FrictionModel.ESolveType.Direct;
@@ -528,16 +469,7 @@ namespace AGXUnity.IO.OpenPLX
         Data.MappedFrictionModels.Add( fm );
       }
       else if ( friction is openplx.Physics.Interactions.Dissipation.DryScaleBoxFriction scale_box ) {
-        //agx.ScaleBoxFrictionModelRef sbfm = nullptr;
-        //if ( primary_direction != nullptr && agx_reference_frame != nullptr ) {
-        //  sbfm = new agx.OrientedScaleBoxFrictionModel( agx_reference_frame,
-        //                                                 mapVec3( primary_direction ),
-        //                                                 agx.FrictionModel.DIRECT );
-        //}
-        //else {
-        //  sbfm = new agx.ScaleBoxFrictionModel( agx.FrictionModel.DIRECT );
-        //}
-        //fm = sbfm;
+        //TODO: Handle oriented model
         fm = FrictionModel.CreateInstance<FrictionModel>();
         fm.name = friction.getName();
         fm.SolveType = FrictionModel.ESolveType.Direct;
@@ -552,22 +484,7 @@ namespace AGXUnity.IO.OpenPLX
           scale_with_depth = true;
           depth_factor = constant_normal_scaled_depth.depth_factor();
         }
-        //if ( primary_direction != nullptr && agx_reference_frame != nullptr ) {
-        //  cnfm = new agx.ConstantNormalForceOrientedBoxFrictionModel( constant_normal.normal_force() * depth_factor,
-        //                                                 agx_reference_frame,
-        //                                                 mapVec3( primary_direction ),
-        //                                                 agx.FrictionModel.DIRECT,
-        //                                                 scale_with_depth );
-        //}
-        //else {
-        //  var default_dir = new agx.Vec3(1,0,0);
-        //  cnfm = new agx.ConstantNormalForceOrientedBoxFrictionModel( constant_normal.normal_force() * depth_factor,
-        //                                                 nullptr,
-        //                                                 *default_dir,
-        //                                                 agx.FrictionModel.DIRECT,
-        //                                                 scale_with_depth );
-        //}
-        //fm = cnfm;
+        //TODO: Handle oriented model
         fm = FrictionModel.CreateInstance<FrictionModel>();
         fm.name = friction.getName();
         fm.SolveType = FrictionModel.ESolveType.Direct;
@@ -588,6 +505,25 @@ namespace AGXUnity.IO.OpenPLX
         }
         fm = Data.DefaultFriction;
       }
+
+      var solveType = FrictionModel.ESolveType.Direct;
+      var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");
+      var approximateConeAnnotation = friction.findAnnotations("agx_approximate_cone_friction");
+      bool approximate_cone = approximateConeAnnotation.Count == 1 &&  approximateConeAnnotation[0].isTrue() ? true : false;
+      if ( solveTypeAnnotation.Count == 1 && solveTypeAnnotation[ 0 ].isString() ) {
+        if ( solveTypeAnnotation[ 0 ].isString( "SPLIT" ) )
+          solveType = FrictionModel.ESolveType.Split;
+        else if ( solveTypeAnnotation[ 0 ].isString( "DIRECT_AND_ITERATIVE" ) )
+          solveType = FrictionModel.ESolveType.DirectAndIterative;
+        else if ( solveTypeAnnotation[ 0 ].isString( "ITERATIVE" ) )
+          solveType = FrictionModel.ESolveType.Iterative;
+        else if ( !solveTypeAnnotation[ 0 ].isString( "DIRECT" ) ) {
+          // TODO: Add warning
+          //SPDLOG_WARN( "AGX friction solve type annotation defaults to DIRECT, {} is not supported", friction_solve_type_annotation.front().asString() );
+        }
+      }
+      fm.SolveType = solveType;
+
       Data.FrictionModelCache[ friction ] = fm;
       cm.FrictionModel = fm;
     }
