@@ -44,6 +44,16 @@ namespace AGXUnity.IO.OpenPLX
             ),
             Native
           ),
+        OpenPLXSignals.ValueType.Vec2 =>
+          RealRangeInputSignal.create(
+            (
+              typeof( T ) == typeof( UnityEngine.Vector2 ) ? ((UnityEngine.Vector2)(object)value).ToOpenPLXVec2() :
+              typeof( T ) == typeof( agx.Vec2 ) ? ((agx.Vec2)(object)value).ToOpenPLXVec2() :
+              typeof( T ) == typeof( agx.Vec2f ) ? ((agx.Vec2f)(object)value).ToOpenPLXVec2() :
+              typeof( T ) == typeof( openplx.Math.Vec2 ) ? (openplx.Math.Vec2)(object)value : null
+            ),
+            Native
+          ),
         _ => null
       };
       SignalRoot.SendInputSignal( signal );

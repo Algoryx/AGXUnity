@@ -216,6 +216,7 @@ namespace AGXUnity.IO.OpenPLX
       Integer,
       Real,
       Vec3,
+      Vec2,
       Boolean,
       Ignored,
       Unknown
@@ -244,6 +245,12 @@ namespace AGXUnity.IO.OpenPLX
         || typeof( T ) == typeof( agx.Vec3f )
         || typeof( T ) == typeof( openplx.Math.Vec3 ) )
         return ValueType.Vec3;
+
+      if ( typeof( T ) == typeof( Vector2 )
+        || typeof( T ) == typeof( agx.Vec2 )
+        || typeof( T ) == typeof( agx.Vec2f )
+        || typeof( T ) == typeof( openplx.Math.Vec2 ) )
+        return ValueType.Vec2;
 
       return ValueType.Unknown;
     }
@@ -287,9 +294,9 @@ namespace AGXUnity.IO.OpenPLX
         s_typeCache[ tempIO.Composite() - 1 ]             = ValueType.Ignored;
         s_typeCache[ tempIO.Integer() - 1 ]               = ValueType.Integer;
         s_typeCache[ tempIO.Duration() - 1 ]              = ValueType.Real;
-        s_typeCache[ tempIO.TorqueRange() - 1 ]           = ValueType.Ignored;
-        s_typeCache[ tempIO.ForceRange() - 1 ]            = ValueType.Ignored;
-
+        s_typeCache[ tempIO.TorqueRange() - 1 ]           = ValueType.Vec2;
+        s_typeCache[ tempIO.ForceRange() - 1 ]            = ValueType.Vec2;
+        s_typeCache[ tempIO.Rpm() - 1 ]                   = ValueType.Real;
 
         if ( s_typeCache.Contains( ValueType.Unknown ) )
           Debug.LogWarning( "OpenPLX value type mapping contains unhandled value type(s)" );

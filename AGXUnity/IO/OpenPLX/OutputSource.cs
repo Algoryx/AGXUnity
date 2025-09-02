@@ -58,6 +58,19 @@ namespace AGXUnity.IO.OpenPLX
           return false;
         return true;
       }
+      else if ( value is Vec2Value v2val ) {
+        if ( typeof( T ) == typeof( UnityEngine.Vector2 ) )
+          converted = (T)(object)v2val.value().ToVector2();
+        else if ( typeof( T ) == typeof( agx.Vec2 ) )
+          converted = (T)(object)v2val.value().ToVec2();
+        else if ( typeof( T ) == typeof( agx.Vec3f ) )
+          converted = (T)(object)v2val.value().ToVec2f();
+        else if ( typeof( T ) == typeof( openplx.Math.Vec2 ) )
+          converted = (T)(object)v2val.value();
+        else
+          return false;
+        return true;
+      }
 
       return false;
     }
