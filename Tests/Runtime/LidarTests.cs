@@ -13,7 +13,7 @@ using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class LidarTests
+  public class LidarTests : AGXUnityFixture
   {
     private GOList m_keep = new GOList();
 

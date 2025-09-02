@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: fbd20f30959a6cb4cbb06bdc0717afaa
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  Errors:
+  - message: Type not found
+    line: 61
+    column: 20
+  - message: Variable not found
+    line: 66
+    column: 16
+  - message: Missing assignment PendulumScene.velocity_motor_input.motor.charges,
+      owning model is not complete
+    line: 65
+    column: 5
