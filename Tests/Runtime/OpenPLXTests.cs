@@ -494,5 +494,40 @@ namespace AGXUnityTesting.Runtime
 
       Assert.NotNull( dependant );
     }
+
+    [UnityTest]
+    public IEnumerator TestRangeSignals()
+    {
+      LoadOpenPLX( "torque_range.openplx" );
+      var signals = FindComponentByName<OpenPLXSignals>( "torque_range" );
+      Assert.NotNull( signals );
+
+      var rangeInput = signals.FindInputTarget("PendulumScene.pendulum.motor.torque_range_input");
+      var rangeOutput = signals.FindOutputSource("PendulumScene.pendulum.motor.torque_range_output");
+      var torqueOutput = signals.FindOutputSource("PendulumScene.pendulum.motor.torque_output");
+
+      yield return TestUtils.Step();
+
+      Assert.That( Mathf.Abs( torqueOutput.GetValue<float>() ), Is.GreaterThan( 2 ) );
+
+      rangeInput.SendSignal( new Vector2( -1, 1 ) );
+      yield return TestUtils.Step();
+      Assert.That( Mathf.Abs( torqueOutput.GetValue<float>() ), Is.LessThanOrEqualTo( 1 ) );
+      var rangeSignalVector2 = rangeOutput.GetValue<Vector2>();
+      Assert.That( rangeSignalVector2.x, Is.EqualTo( -1.0f ).Within( 1e-10 ) );
+      Assert.That( rangeSignalVector2.y, Is.EqualTo( 1.0f ).Within( 1e-10 ) );
+
+      rangeInput.SendSignal( new agx.Vec2( 2, 3 ) );
+      yield return TestUtils.Step();
+      var rangeSignalVec2 = rangeOutput.GetValue<agx.Vec2>();
+      Assert.That( rangeSignalVec2.x, Is.EqualTo( 2.0f ).Within( 1e-10 ) );
+      Assert.That( rangeSignalVec2.y, Is.EqualTo( 3.0f ).Within( 1e-10 ) );
+
+      rangeInput.SendSignal( new agx.Vec2f( 4, 5 ) );
+      yield return TestUtils.Step();
+      var rangeSignalVec2f = rangeOutput.GetValue<agx.Vec2f>();
+      Assert.That( rangeSignalVec2f.x, Is.EqualTo( 4.0f ).Within( 1e-10 ) );
+      Assert.That( rangeSignalVec2f.y, Is.EqualTo( 5.0f ).Within( 1e-10 ) );
+    }
   }
 }
