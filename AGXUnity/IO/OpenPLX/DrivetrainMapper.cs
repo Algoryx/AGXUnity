@@ -47,8 +47,7 @@ namespace AGXUnity.IO.OpenPLX
       agxPowerLine.Unit input_unit = input_shaft == null ? null : MapperData.UnitCache[input_shaft];
       agxPowerLine.Unit output_unit = output_shaft == null ? null : MapperData.UnitCache[output_shaft];
       if ( input_unit == null || output_unit == null ) {
-        // TODO: Error reporting
-        //reportErrorFromKey( torque_converter_key, MissingConnectedBody, system );
+        Debug.LogError( $"Failed to map charges for interaction '{interaction.getName()}'" );
         return Tuple.Create<agxPowerLine.Unit, agxPowerLine.Side, agxPowerLine.Unit, agxPowerLine.Side>
           ( null, agxPowerLine.Side.NO_SIDE, null, agxPowerLine.Side.NO_SIDE );
       }
@@ -152,7 +151,7 @@ namespace AGXUnity.IO.OpenPLX
         agx_gear = holonomicGear;
       }
       else {
-        // TODO: Error reporting
+        Debug.LogWarning( $"Gear type '{gear.getType().getName()}' is not implemented in AGXUnity" );
         return null;
       }
 
@@ -218,7 +217,8 @@ namespace AGXUnity.IO.OpenPLX
       agxPowerLine.Unit right_unit = MapperData.UnitCache.GetValueOrDefault(right_shaft,null);
 
       if ( drive_unit == null || left_unit == null || right_unit == null ) {
-        // TODO: Error reporting
+        Debug.LogError( $"Failed to map charges for differential '{differential.getName()}'" );
+        return null;
       }
       else {
         agxPowerLine.Side drive_side = drive_shaft.input() == drive_connector ? agxPowerLine.Side.INPUT : agxPowerLine.Side.OUTPUT;
@@ -232,7 +232,6 @@ namespace AGXUnity.IO.OpenPLX
       agx_differential.setName( differential.getName() );
 
       return agx_differential;
-
     }
 
     public agxDriveTrain.TorqueConverter MapTorqueConverter( openplx.DriveTrain.EmpiricalTorqueConverter tc )
@@ -279,13 +278,12 @@ namespace AGXUnity.IO.OpenPLX
       return constraint;
     }
 
-    public agxDriveTrain.CombustionEngine MapCombustionEngine( openplx.DriveTrain.CombustionEngine engine )
+    public agxDriveTrain.CombustionEngine MapMeanValueEngine( openplx.DriveTrain.MeanValueEngine engine )
     {
       var parameters = new agxDriveTrain.CombustionEngineParameters();
       parameters.displacementVolume = engine.displacement_volume();
       parameters.maxTorque = engine.max_torque();
       parameters.maxTorqueRPM = engine.max_torque_RPM();
-      //parameters.maxPower = engine.max_power();
       parameters.maxPowerRPM = engine.max_power_RPM();
       parameters.idleRPM = engine.idle_RPM();
       parameters.crankShaftInertia = engine.crank_shaft_inertia();
@@ -300,8 +298,9 @@ namespace AGXUnity.IO.OpenPLX
 
 
       if ( charge is not MateConnector connector ) {
-        // Error reporting
-        //reportErrorFromKey( torque_converter_key, MissingConnectedBody, system );
+        var errorData = BaseError.CreateErrorData( charge );
+        var error = new agxopenplx.MissingConnectedBody(errorData.fromLine,errorData.fromColumn,errorData.toLine,errorData.toColumn,errorData.sourceID,engine);
+        Debug.LogError( error.getMessage( true ) );
       }
       else {
         var shaft = connector.getOwner() as openplx.DriveTrain.Shaft;
@@ -309,17 +308,16 @@ namespace AGXUnity.IO.OpenPLX
         agxPowerLine.Unit shaft_unit = shaft == null ? null : MapperData.UnitCache[ shaft ];
 
         if ( shaft_unit == null ) {
-          // Error reporting
-          // reportErrorFromKey( torque_converter_key, MissingConnectedBody, system );
+          var errorData = BaseError.CreateErrorData( shaft );
+          var error = new agxopenplx.MissingConnectedBody(errorData.fromLine,errorData.fromColumn,errorData.toLine,errorData.toColumn,errorData.sourceID,engine);
+          Debug.LogError( error.getMessage( true ) );
         }
-        else {
+        else
           stiff_internal_gear.connect( agxPowerLine.Side.OUTPUT, agxPowerLine.Side.INPUT, shaft_unit );
-        }
       }
       agxEngine.setName( engine.getName() );
 
       return agxEngine;
-
     }
 
     public void MapActuator( openplx.DriveTrain.Actuator actuator )

@@ -45,7 +45,7 @@ namespace AGXUnity.IO.OpenPLX
       var obj = ImportOpenPLXFile(path);
 
       if ( obj is not T casted ) {
-        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.IncompatibleImportType, 1, 1, path ) );
+        ErrorReporter?.Invoke( new IncompatibleImportTypeError( path ) );
         return null;
       }
 
@@ -60,7 +60,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( System.IO.File.Exists( transformed ) )
         loadedModel = ParseOpenPLXSource( transformed, mapper.Data );
       else
-        ErrorReporter?.Invoke( Error.create( (int)AgxUnityOpenPLXErrors.FileDoesNotExist, 1, 1, transformed ) );
+        ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
 
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
@@ -175,8 +175,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private static void ReportToConsole( Error error )
     {
-      var ef = new UnityOpenPLXErrorFormatter();
-      Debug.LogError( ef.format( error ) );
+      Debug.LogError( error.getMessage( true ) );
     }
   }
 }

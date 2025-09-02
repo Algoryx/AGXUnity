@@ -1,7 +1,6 @@
 using AGXUnity.IO.OpenPLX;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -129,15 +128,12 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public void ReportErrors( openplx.Error error )
     {
-      var ef = new UnityOpenPLXErrorFormatter();
-      if ( error.getErrorCode() != CoreSWIG.MissingAssignment && error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
+      if ( error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
         m_nonImportable = false;
-      var raw = ef.format( error );
-      var m = Regex.Match( raw, ".*:\\d+:\\d+ (.+)" );
       Errors.Add( new Error
       {
-        raw       = raw,
-        message   = m.Groups[ 1 ].Value,
+        raw       = error.getMessage( true ),
+        message   = error.getMessage( false ),
         document  = error.getSourceId(),
         line      = (int)error.getLine(),
         column    = (int)error.getColumn()

@@ -94,7 +94,7 @@ namespace AGXUnity.IO.OpenPLX
       float default_height = 0.1f;
       if ( belt.link_description() is BoxLinkDescription box_description ) {
         if ( box_description.contact_geometry().local_transform().position().length() > 0.0001f )
-          Data.ErrorReporter.Report( box_description.contact_geometry().local_transform().position(), AgxUnityOpenPLXErrors.LocalOffsetNotSupported );
+          Data.ErrorReporter.reportError( new LocalOffsetNotSupportedError( box_description.contact_geometry().local_transform().position() ) );
         default_width  = (float)box_description.width();
         default_height = (float)box_description.height();
 

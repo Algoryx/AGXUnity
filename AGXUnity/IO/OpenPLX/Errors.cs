@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace AGXUnity.IO.OpenPLX
 {
   public enum AgxUnityOpenPLXErrors
@@ -15,29 +17,163 @@ namespace AGXUnity.IO.OpenPLX
     FileDoesNotExist = 11,
   }
 
-  public class UnityOpenPLXErrorFormatter : openplx.ErrorFormatter
+
+
+  public class BaseError : openplx.Error
   {
-    private string formatMessage( string message, openplx.Error error )
+    public struct ErrorData
     {
-      return $"{error.getSourceId()}:{error.getLine()}:{error.getColumn()} {message}";
-    }
-    public override string format( openplx.Error error )
+      public uint fromLine;
+      public uint toLine;
+      public uint fromColumn;
+      public uint toColumn;
+      public string sourceID;
+    };
+    public static ErrorData CreateErrorData( openplx.Core.Object source )
     {
-      return (ulong)error.getErrorCode() switch
+      var subName = source.getName().Substring(source.getName().LastIndexOf('.') + 1);
+
+      openplx.Token tok;
+      openplx.Document document;
+      if ( source.getOwner() != null ) {
+        var ownerType = source.getOwner().getType();
+        openplx.Node member = ownerType.findFirstMember( subName );
+        tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
+        document = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument() : member.asVarAssignment().getOwningDocument();
+      }
+      else {
+        tok = source.getType().getNameToken();
+        document = source.getType().getOwningDocument();
+      }
+      return new ErrorData
       {
-        (ulong)AgxUnityOpenPLXErrors.Unimplemented => formatMessage( "The specified model is not implemented by the mapper", error ),
-        (ulong)AgxUnityOpenPLXErrors.NullChild => formatMessage( "The child object could not be mapped", error ),
-        (ulong)AgxUnityOpenPLXErrors.LocalOffsetNotSupported => formatMessage( "Specifying a local offset is not supported by AGXUnity", error ),
-        (ulong)AgxUnityOpenPLXErrors.MissingMaterial => formatMessage( "The specified material could not be found", error ),
-        (ulong)AgxUnityOpenPLXErrors.DuplicateMaterialPairForSurfaceContactModelDefinition => formatMessage( "The specified material pair appears in more than one SurfaceContact.Model definition", error ),
-        (ulong)AgxUnityOpenPLXErrors.InvalidDefomationType => formatMessage( "AGXUnity does not support the specified deformation type", error ),
-        (ulong)AgxUnityOpenPLXErrors.UnsupportedFrictionModel => formatMessage( "AGXUnity only supports dry friction", error ),
-        (ulong)AgxUnityOpenPLXErrors.RigidBodyOwnerNotSystem => formatMessage( "RigidBody must be owned by a Physics3D.System", error ),
-        (ulong)AgxUnityOpenPLXErrors.IncompatibleImportType => formatMessage( "Imported model could not be mapped to the provided type", error ),
-        (ulong)AgxUnityOpenPLXErrors.UnmappableRootModel => formatMessage( "The root openplx model could not be mapped to an AGXUnity representation", error ),
-        (ulong)AgxUnityOpenPLXErrors.FileDoesNotExist => formatMessage( "Provided file does not exist", error ),
-        _ => base.format( error )
+        fromLine    = (uint)tok.line,
+        toLine      = (uint)tok.line,
+        fromColumn  = (uint)tok.column,
+        toColumn    = (uint)tok.column,
+        sourceID    = document?.getSourceId(),
       };
     }
+
+    protected BaseError( openplx.Core.Object source, AgxUnityOpenPLXErrors code )
+      : this( CreateErrorData( source ), code )
+    { }
+
+    private BaseError( ErrorData data, AgxUnityOpenPLXErrors code )
+      : base( (uint)code, data.fromLine, data.fromColumn, data.toLine, data.toColumn, data.sourceID )
+    { }
+
+    protected BaseError( string sourceID, AgxUnityOpenPLXErrors code )
+      : base( (uint)code, 1, 1, 1, 1, sourceID )
+    { }
+  }
+
+  public class UnimplementedError : BaseError
+  {
+    public UnimplementedError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.Unimplemented )
+    { }
+
+    protected override string createErrorMessage() => "The specified model is not implemented by the mapper";
+  }
+
+  public class NullChildError : BaseError
+  {
+    public NullChildError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.NullChild )
+    { }
+
+    protected override string createErrorMessage() => "The child object could not be mapped";
+  }
+
+  public class LocalOffsetNotSupportedError : BaseError
+  {
+    public LocalOffsetNotSupportedError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.LocalOffsetNotSupported )
+    { }
+
+    protected override string createErrorMessage() => "Specifying a local offset is not supported by AGXUnity";
+  }
+
+  public class MissingMaterialError : BaseError
+  {
+    public MissingMaterialError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.MissingMaterial )
+    { }
+
+    protected override string createErrorMessage() => "The specified material could not be found";
+  }
+
+  public class DuplicateMaterialPairForSurfaceContactModelDefinitionError : BaseError
+  {
+    public DuplicateMaterialPairForSurfaceContactModelDefinitionError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.DuplicateMaterialPairForSurfaceContactModelDefinition )
+    { }
+
+    protected override string createErrorMessage() => "The specified material pair appears in more than one SurfaceContact.Model definition";
+  }
+
+  public class InvalidDefomationTypeError : BaseError
+  {
+    public InvalidDefomationTypeError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.InvalidDefomationType )
+    { }
+
+    protected override string createErrorMessage() => "AGXUnity does not support the specified deformation type";
+  }
+
+  public class UnsupportedFrictionModelError : BaseError
+  {
+    public UnsupportedFrictionModelError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.UnsupportedFrictionModel )
+    { }
+
+    protected override string createErrorMessage() => "AGXUnity only supports dry friction";
+  }
+
+  public class RigidBodyOwnerNotSystemError : BaseError
+  {
+    public RigidBodyOwnerNotSystemError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.RigidBodyOwnerNotSystem )
+    { }
+
+    protected override string createErrorMessage() => "RigidBody must be owned by a Physics3D.System";
+  }
+
+  public class IncompatibleImportTypeError : BaseError
+  {
+    public IncompatibleImportTypeError( string path )
+      : base( path, AgxUnityOpenPLXErrors.IncompatibleImportType )
+    { }
+
+    protected override string createErrorMessage() => "Imported model could not be mapped to the provided type";
+  }
+
+  public class UnmappableRootModelError : BaseError
+  {
+    public UnmappableRootModelError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.UnmappableRootModel )
+    { }
+
+    protected override string createErrorMessage() => "The root openplx model could not be mapped to an AGXUnity representation";
+  }
+
+  public class FileDoesNotExistError : BaseError
+  {
+    private string m_path;
+
+    public FileDoesNotExistError( openplx.Core.Object source, string path )
+      : base( source, AgxUnityOpenPLXErrors.FileDoesNotExist )
+    {
+      m_path = path;
+    }
+
+    public FileDoesNotExistError( string path )
+      : base( path, AgxUnityOpenPLXErrors.FileDoesNotExist )
+    {
+      m_path = path;
+    }
+
+    protected override string createErrorMessage() => $"Provided file does not exist: '{m_path}'";
   }
 }

@@ -78,7 +78,7 @@ namespace AGXUnity.IO.OpenPLX
       MapConnectors<openplx.DriveTrain.Differential, agxDriveTrain.Differential>( system, DrivetrainMapper.MapDifferential );
       MapConnectors<openplx.DriveTrain.EmpiricalTorqueConverter, agxDriveTrain.TorqueConverter>( system, DrivetrainMapper.MapTorqueConverter );
       MapConnectors<openplx.DriveTrain.ManualClutch, agxDriveTrain.DryClutch>( system, DrivetrainMapper.MapClutch );
-      MapConnectors<openplx.DriveTrain.CombustionEngine, agxDriveTrain.CombustionEngine>( system, DrivetrainMapper.MapCombustionEngine );
+      MapConnectors<openplx.DriveTrain.MeanValueEngine, agxDriveTrain.CombustionEngine>( system, DrivetrainMapper.MapMeanValueEngine );
       MapConnectors<openplx.DriveTrain.ManualBrake, agxDriveTrain.Brake>( system, DrivetrainMapper.MapBrake );
 
       foreach ( var actuator in system.getValues<openplx.DriveTrain.Actuator>() )

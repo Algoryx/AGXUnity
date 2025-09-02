@@ -1,3 +1,4 @@
+using agxopenplx;
 using openplx.Physics.Charges;
 using openplx.Physics3D.Interactions;
 using System;
@@ -73,7 +74,10 @@ namespace AGXUnity.IO.OpenPLX
       // Orthonormalize
       normal_n = ( normal_n - main_axis_n * ( normal_n * main_axis_n ) ).normal();
 
-      // TODO: Error reporting
+      if ( Math.Abs( mc.normal().normal() * main_axis_n - 1.0 ) < float.Epsilon ) {
+        var errorData = BaseError.CreateErrorData(mc);
+        Data.ErrorReporter.reportError( new InvalidMateConnectorAxis( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, mc ) );
+      }
 
       var rotation = openplx.Math.Quat.from_to(openplx.Math.Vec3.Z_AXIS(), main_axis_n);
       var new_x = rotation.rotate(openplx.Math.Vec3.X_AXIS());
@@ -135,7 +139,12 @@ namespace AGXUnity.IO.OpenPLX
         frame2.SetParent( rb2?.gameObject, false );
       }
 
-      // TODO: Error reporting
+      if ( frame1.Parent == null && frame2.Parent == null
+        && mate_connector1 is not Charges.RedirectedMateConnector
+        && mate_connector2 is not Charges.RedirectedMateConnector ) {
+        var errorData = BaseError.CreateErrorData( interaction );
+        Data.ErrorReporter.reportError( new MissingConnectedBody( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, interaction ) );
+      }
 
       return interactionCreator( frame2, frame1 );
     }
@@ -427,42 +436,35 @@ namespace AGXUnity.IO.OpenPLX
 
     public void MapFrictionModel( ContactMaterial cm, openplx.Physics.Interactions.Dissipation.DefaultFriction friction )
     {
-      // TODO: Map friction model
+      // TODO: Map more friction models
       if ( friction is not openplx.Physics.Interactions.Dissipation.DefaultDryFriction dryFriction ) {
-        Data.ErrorReporter.Report( friction, AgxUnityOpenPLXErrors.UnsupportedFrictionModel );
+        Data.ErrorReporter.reportError( new UnsupportedFrictionModelError( friction ) );
         return;
       }
-
-      // TODO: Map Solve type
-      //auto friction_solve_type = agx::FrictionModel::DIRECT;
-      //auto friction_solve_type_annotation = friction->findAnnotations("agx_friction_solve_type");
-      //auto approximate_cone_annotation = friction->findAnnotations("agx_approximate_cone_friction");
-      //bool approximate_cone = approximate_cone_annotation.size() == 1 &&  approximate_cone_annotation.front()->isTrue() ? true : false;
-      //if ( friction_solve_type_annotation.size() == 1 && friction_solve_type_annotation.front()->isString() ) {
-      //  if ( friction_solve_type_annotation.front()->isString( "SPLIT" ) ) {
-      //    friction_solve_type = agx::FrictionModel::SPLIT;
-      //  }
-      //  else if ( friction_solve_type_annotation.front()->isString( "DIRECT_AND_ITERATIVE" ) ) {
-      //    friction_solve_type = agx::FrictionModel::DIRECT_AND_ITERATIVE;
-      //  }
-      //  else if ( friction_solve_type_annotation.front()->isString( "ITERATIVE" ) ) {
-      //    friction_solve_type = agx::FrictionModel::ITERATIVE;
-      //  }
-      //  else if ( !friction_solve_type_annotation.front()->isString( "DIRECT" ) ) {
-      //    SPDLOG_WARN( "AGX friction solve type annotation defaults to DIRECT, {} is not supported", friction_solve_type_annotation.front()->asString() );
-      //  }
-      //}
-
-      //var cone = std.dynamic_pointer_cast<Physics.Interactions.Dissipation.DryConeFriction>(friction);
-      //var box = std.dynamic_pointer_cast<Physics.Interactions.Dissipation.DryBoxFriction>(friction);
-      //var scale_box = std.dynamic_pointer_cast<Physics.Interactions.Dissipation.DryScaleBoxFriction>(friction);
-      //var constant_normal = std.dynamic_pointer_cast<Physics.Interactions.Dissipation.DryConstantNormalForceFriction>(friction);
 
       cm.FrictionCoefficients = new Vector2( (float)dryFriction.coefficient(), (float)dryFriction.coefficient() );
       if ( Data.FrictionModelCache.TryGetValue( friction, out FrictionModel fm ) ) {
         cm.FrictionModel = fm;
         return;
       }
+
+      var solveType = FrictionModel.ESolveType.Direct;
+      var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");
+      var approximateConeAnnotation = friction.findAnnotations("agx_approximate_cone_friction");
+      bool approximate_cone = approximateConeAnnotation.Count == 1 &&  approximateConeAnnotation[0].isTrue() ? true : false;
+      if ( solveTypeAnnotation.Count == 1 && solveTypeAnnotation[ 0 ].isString() ) {
+        if ( solveTypeAnnotation[ 0 ].isString( "SPLIT" ) )
+          solveType = FrictionModel.ESolveType.Split;
+        else if ( solveTypeAnnotation[ 0 ].isString( "DIRECT_AND_ITERATIVE" ) )
+          solveType = FrictionModel.ESolveType.DirectAndIterative;
+        else if ( solveTypeAnnotation[ 0 ].isString( "ITERATIVE" ) )
+          solveType = FrictionModel.ESolveType.Iterative;
+        else if ( !solveTypeAnnotation[ 0 ].isString( "DIRECT" ) ) {
+          // TODO: Add warning
+          //SPDLOG_WARN( "AGX friction solve type annotation defaults to DIRECT, {} is not supported", friction_solve_type_annotation.front().asString() );
+        }
+      }
+      fm.SolveType = solveType;
 
       // TODO: Map oriented friction models
       // Figure out if a oriented friction trait is being used
@@ -626,7 +628,7 @@ namespace AGXUnity.IO.OpenPLX
         return;
 
       if ( Data.PrefabLocalData.ContactMaterials.Any( cm => ( cm.Material1 == sm1 && cm.Material2 == sm2 ) || ( cm.Material1 == sm2 && cm.Material2 == sm1 ) ) ) {
-        Data.ErrorReporter.Report( contactModel, AgxUnityOpenPLXErrors.DuplicateMaterialPairForSurfaceContactModelDefinition );
+        Data.ErrorReporter.reportError( new DuplicateMaterialPairForSurfaceContactModelDefinitionError( contactModel ) );
         return;
       }
 
@@ -634,9 +636,6 @@ namespace AGXUnity.IO.OpenPLX
       cm.name = contactModel.getName();
       cm.Material1 = sm1;
       cm.Material2 = sm2;
-
-      // TODO: set the damping
-      //var mechanical_damping = std.dynamic_pointer_cast<Physics.Interactions.Damping.MechanicalDamping>(contactModel.damping());
 
       // Set the deformation
       if ( contactModel.normal_flexibility() is openplx.Physics.Interactions.Flexibility.Rigid rigid ) {

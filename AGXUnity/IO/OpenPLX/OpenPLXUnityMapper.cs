@@ -1,3 +1,4 @@
+using agxopenplx;
 using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Rendering;
@@ -57,7 +58,7 @@ namespace AGXUnity.IO.OpenPLX
       else if ( obj is openplx.Visuals.Materials.Material mat )
         return MapVisualMaterial( mat );
       else
-        Data.ErrorReporter.Report( obj, AgxUnityOpenPLXErrors.UnmappableRootModel );
+        Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
 
       return RootNode;
     }
@@ -336,35 +337,25 @@ namespace AGXUnity.IO.OpenPLX
       var mr = go.AddComponent<MeshRenderer>();
 
       if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
-        // TODO: Error reporting
-        //var name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
-        //var member = obj_geometry.getOwner()->getType()->findFirstMember(name);
-        //var token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
-        //m_error_reporter->reportError( StringParameterError::create( PathNotAbsolute, token.line, token.column, m_source_id, obj_geometry.path() ) );
-        //geometry = new agxCollide::Geometry();
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom.path() ) );
       }
       else {
+        UnityEngine.Mesh mesh;
 #if UNITY_EDITOR
         var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
-
-        mf.mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+        mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
 #else
         var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-
-        mf.mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
+        mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
 #endif
+        if ( mesh == null ) {
+          var errorData = BaseError.CreateErrorData( objGeom );
+          Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        }
+        else
+          mf.mesh = mesh;
         go.transform.localScale = objGeom.scale().ToVector3();
-        //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
-        //if ( mesh == nullptr ) {
-        //  auto name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
-        //  auto member = obj_geometry.getOwner()->getType()->findFirstMember(name);
-        //  auto token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
-        //  m_error_reporter->reportError( Error::create( InvalidObjFile, token.line, token.column, m_source_id ) );
-        //  geometry = new agxCollide::Geometry();
-        //}
-        //else {
-        //  geometry = new agxCollide::Geometry( mesh );
-        //}
       }
 
       return go;
@@ -372,24 +363,19 @@ namespace AGXUnity.IO.OpenPLX
 
     GameObject MapExternalTriMesh( Charges.ExternalTriMeshGeometry objGeom )
     {
-      //std::filesystem::path source_id = m_source_id;
       string path = objGeom.path();
-      //Debug.Log( $"External obj file path: {path}" );
 
       GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
-      var mesh = go.GetComponent<AGXUnity.Collide.Mesh>();
+      var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
 
       if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
-        // TODO: Error reporting
-        //var name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
-        //var member = obj_geometry.getOwner()->getType()->findFirstMember(name);
-        //var token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
-        //m_error_reporter->reportError( StringParameterError::create( PathNotAbsolute, token.line, token.column, m_source_id, obj_geometry.path() ) );
-        //geometry = new agxCollide::Geometry();
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom.path() ) );
       }
       else {
+        UnityEngine.Mesh mesh;
 #if UNITY_EDITOR
-        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+        var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
 
         var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
         UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
@@ -401,23 +387,19 @@ namespace AGXUnity.IO.OpenPLX
           s.ApplyModifiedProperties();
         }
 
-        mesh.AddSourceObject( source );
-        mesh.transform.localScale = objGeom.scale().ToVector3();
+        mesh = source;
+        meshComp.transform.localScale = objGeom.scale().ToVector3();
 #else
         var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-        mesh.AddSourceObject( AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() ) );
+        mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
 #endif
-        //agxCollide::ShapeRef mesh = agxUtil::TrimeshReaderWriter::createTrimesh(path.string(), agxCollide::Trimesh::REMOVE_DUPLICATE_VERTICES, agx::Matrix3x3(mapVec3(obj_geometry.scale())));
-        //if ( mesh == nullptr ) {
-        //  auto name = OpenPLX::Internal::split(obj_geometry.getName(), ".").back();
-        //  auto member = obj_geometry.getOwner()->getType()->findFirstMember(name);
-        //  auto token = member->isVarDeclaration() ? member->asVarDeclaration()->getNameToken() : member->asVarAssignment()->getTargetSegments().back();
-        //  m_error_reporter->reportError( Error::create( InvalidObjFile, token.line, token.column, m_source_id ) );
-        //  geometry = new agxCollide::Geometry();
-        //}
-        //else {
-        //  geometry = new agxCollide::Geometry( mesh );
-        //}
+        if ( mesh == null ) {
+          var errorData = BaseError.CreateErrorData( objGeom );
+          Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        }
+        else
+          meshComp.AddSourceObject( mesh );
+
       }
 
       return go;
@@ -567,12 +549,9 @@ namespace AGXUnity.IO.OpenPLX
       Utils.MapLocalTransform( go.transform, geom.local_transform() );
       var shapeComp = go.GetComponent<Shape>();
       shapeComp.CollisionsEnabled = geom.enable_collisions();
-      // TODO: Replace this if this property is added to OpenPLX.
-      // For now, assume that we dont want automatic calculation for disabled geometries
-      //shapeComp.EnableMassProperties = geom.enable_collisions();
+      shapeComp.EnableMassProperties = geom.include_in_mass_properties();
 
-      // TODO: This does not properly check whether it is the default material
-      if ( geom.material().getName() != "Physics.Charges.Material" )
+      if ( geom.material().is_default_material() )
         if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
           shapeComp.Material = sm;
 
@@ -593,14 +572,11 @@ namespace AGXUnity.IO.OpenPLX
         mp.Mass.UserValue = (float)inertia.mass();
 
       else if ( inertia.mass() < 0.0 ) {
-        // TODO: Error Reporting
-        //auto token = inertia.getOwner()->getType()->getNameToken();
-        //m_error_reporter->reportError( Error::create( NegativeMass, token.line, token.column, m_source_id ) );
+        var errorData = BaseError.CreateErrorData(inertia);
+        Data.ErrorReporter.reportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
         return false;
       }
-
       var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
-
       if ( cm_transform_is_set ) {
         mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
         if ( !cm.rotation().IsDefault() )
@@ -833,7 +809,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
           if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
-            Data.ErrorReporter.Report( body, AgxUnityOpenPLXErrors.RigidBodyOwnerNotSystem );
+            Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
             continue;
           }
 
@@ -842,10 +818,8 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
-      // TODO: Map terrains
-      foreach ( var terr in system.getValues<openplx.Terrain.Terrain>() ) {
+      foreach ( var terr in system.getValues<openplx.Terrain.Terrain>() )
         Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
-      }
     }
 
     void MapSystemPass3( openplx.Physics3D.System system )

@@ -1,6 +1,5 @@
 using AGXUnity.Utils;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.OpenPLX
@@ -75,26 +74,17 @@ namespace AGXUnity.IO.OpenPLX
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
-    public static void Report( this openplx.ErrorReporter err, openplx.Core.Object obj, AgxUnityOpenPLXErrors errorType )
-    {
-      var member = obj.getOwner().getType().findFirstMember(obj.getName().Substring(obj.getName().LastIndexOf('.') + 1));
-      var tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
-      var document = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument() : member.asVarAssignment().getOwningDocument();
-      string sourceID = document?.getSourceId();
-      err.reportError( openplx.Error.create( (uint)errorType, tok.line, tok.column, sourceID ?? "" ) );
-    }
-
     public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
       where T : struct
     {
-      err.Report( obj, AgxUnityOpenPLXErrors.Unimplemented );
+      err.reportError( new UnimplementedError( obj ) );
       return null;
     }
 
     public static T ReportUnimplemented<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
       where T : class
     {
-      err.Report( obj, AgxUnityOpenPLXErrors.Unimplemented );
+      err.reportError( new UnimplementedError( obj ) );
       return null;
     }
 
@@ -109,7 +99,7 @@ namespace AGXUnity.IO.OpenPLX
       typeof(openplx.Physics1D.Interactions.RotationalVelocityMotor),
       typeof(openplx.DriveTrain.Gear),
       typeof(openplx.DriveTrain.FlexibleGear),
-      typeof(openplx.DriveTrain.CombustionEngine),
+      typeof(openplx.DriveTrain.MeanValueEngine),
       typeof(openplx.DriveTrain.HingeActuator),
       typeof(openplx.DriveTrain.PrismaticActuator),
       typeof(openplx.DriveTrain.GearBox),

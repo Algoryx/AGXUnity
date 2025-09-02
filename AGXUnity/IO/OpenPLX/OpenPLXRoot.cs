@@ -87,8 +87,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private static void ReportError( Error error )
     {
-      UnityOpenPLXErrorFormatter error_formatter = new UnityOpenPLXErrorFormatter();
-      Debug.LogError( error_formatter.format( error ) );
+      Debug.LogError( error.getMessage( true ) );
     }
   }
 }
