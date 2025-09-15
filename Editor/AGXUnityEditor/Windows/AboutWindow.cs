@@ -97,7 +97,7 @@ namespace AGXUnityEditor.Windows
 
       GUILayout.Label( "Support", EditorStyles.boldLabel );
       EditorGUILayout.SelectableLabel( "For support regarding AGX Dynamics for Unity, please send an email to <a href=\"mailto:support@algoryx.com\">support@algoryx.com</a> describing your issue. " +
-                                        "Please also write your Unity editor version and the AGX Dynamics for Unity version which listed above.",
+                                        "Please also write your Unity editor version and the AGX Dynamics for Unity version which is listed above.",
                                        InspectorEditor.Skin.LabelWordWrap,
                                        GUILayout.ExpandHeight( true ) );
     }
