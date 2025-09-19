@@ -34,7 +34,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public bool IgnoreDisabledMeshes = false;
     public bool RotateUp = true;
 
-    private bool m_nonImportable = true;
+    private bool m_nonImportable = false;
 
     private string IconPath => IO.Utils.AGXUnityEditorDirectory + "/Icons/Logos/openplx-icon.png";
 
@@ -73,21 +73,16 @@ namespace AGXUnityEditor.IO.OpenPLX
           Debug.LogError( $"There were errors importing the OpenPLX file '{ctx.assetPath}'" );
       };
 
-      try {
-        var go = importer.ImportOpenPLXFile( ctx.assetPath );
-        var end = DateTime.Now;
+      var go = importer.ImportOpenPLXFile( ctx.assetPath );
+      var end = DateTime.Now;
+      ImportTime = (float)( end - start ).TotalSeconds;
 
-        if ( Errors.Count > 0 && m_nonImportable )
+      if ( Errors.Count > 0 ) {
+        if ( m_nonImportable )
           SkipImport = true;
-
-
+      }
+      else
         ctx.SetMainObject( go );
-        ImportTime = (float)( end - start ).TotalSeconds;
-      }
-      catch ( Exception e ) {
-        Debug.LogError( $"Failed importing file: '{ctx.assetPath}'" );
-        Debug.LogException( e );
-      }
     }
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
@@ -133,7 +128,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       Errors.Add( new Error
       {
         raw       = error.getMessage( true ),
-        message   = error.getMessage( false ),
+        message   = error.getMessage( false ).Replace( "\\", "/" ),
         document  = error.getSourceId(),
         line      = (int)error.getLine(),
         column    = (int)error.getColumn()

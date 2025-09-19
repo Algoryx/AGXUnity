@@ -65,11 +65,16 @@ namespace AGXUnity.IO.OpenPLX
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
         importedObject = mapper.MapObject( loadedModel, path );
-        if ( importedObject is GameObject go )
-          go.GetComponent<OpenPLX.OpenPLXRoot>().OpenPLXAssetPath = path;
-        foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
-          ErrorReporter?.Invoke( error );
-        SuccessCallback?.Invoke( mapper.Data );
+        if ( importedObject == null || mapper.Data.ErrorReporter.getErrorCount() > 0 ) {
+          foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
+            ErrorReporter?.Invoke( error );
+          ErrorCallback?.Invoke();
+        }
+        else {
+          if ( importedObject is GameObject go )
+            go.GetComponent<OpenPLX.OpenPLXRoot>().OpenPLXAssetPath = path;
+          SuccessCallback?.Invoke( mapper.Data );
+        }
       }
       else
         ErrorCallback?.Invoke();

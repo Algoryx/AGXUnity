@@ -37,8 +37,7 @@ namespace AGXUnity.IO.OpenPLX
         return new AGXUnity.Model.SinusoidalVariation( (float)sin.additional_amplitude(), (float)sin.period() );
       if ( variation is Tracks::DiscretePulseVariation disc )
         return new AGXUnity.Model.DiscretePulseVariation( (float)disc.additional_amplitude(), (int)disc.discrete_period() );
-      //Debug.LogWarning( $"Unknown variation type {variation.getType().getName()}: {variation.getName()}" );
-      return null;
+      return Utils.ReportUnimplemented<TrackNodeVariation>( variation, Data.ErrorReporter );
     }
 
     public void MapTrackSystem( Tracks.System system )

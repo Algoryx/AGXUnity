@@ -2,6 +2,7 @@ using AGXUnity.Model;
 using AGXUnity.Utils;
 using openplx;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.OpenPLX
@@ -9,6 +10,8 @@ namespace AGXUnity.IO.OpenPLX
   public class MapperData
   {
     public GameObject RootNode { get; set; } = null;
+
+    public HashSet<GameObject> CreatedGameObjects { get; } = new HashSet<GameObject>();
 
     public HashSet<string> RegisteredDocuments { get; } = new HashSet<string>();
 
@@ -67,5 +70,33 @@ namespace AGXUnity.IO.OpenPLX
     public List<TrackProperties> MappedTrackProperties { get; } = new List<TrackProperties>();
     public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
     public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
+
+    public GameObject CreateGameObject( string name = null )
+    {
+      GameObject go = new GameObject( name );
+      RegisterGameObject( go );
+      return go;
+    }
+
+    public void RegisterGameObject( GameObject go ) => CreatedGameObjects.Add( go );
+
+    public GameObject CreateOpenPLXObject( string name )
+    {
+      GameObject go = new GameObject( );
+      RegisterOpenPLXObject( name, go );
+
+      return go;
+    }
+
+    public void RegisterOpenPLXObject( string name, GameObject go )
+    {
+      var bo = go.GetOrCreateComponent<OpenPLXObject>();
+      RegisterGameObject( go );
+      if ( bo.SourceDeclarations.Count == 0 ) {
+        var nameShort = name.Split('.').Last();
+        go.name = nameShort;
+      }
+      bo.SourceDeclarations.Add( name );
+    }
   }
 }

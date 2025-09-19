@@ -53,19 +53,34 @@ namespace AGXUnity.IO.OpenPLX
 
     public UnityEngine.Object MapObject( Object obj, string path )
     {
-      if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
-        return MapSimulatable( obj, path );
-      else if ( obj is openplx.Visuals.Materials.Material mat )
-        return MapVisualMaterial( mat );
-      else
-        Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
+      try {
+        if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
+          return MapSimulatable( obj, path );
+        else if ( obj is openplx.Visuals.Materials.Material mat )
+          return MapVisualMaterial( mat );
+        else
+          Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
+        Debug.LogException( e );
+
+        foreach ( var go in Data.CreatedGameObjects ) {
+          if ( Application.isEditor )
+            GameObject.DestroyImmediate( go );
+          else
+            GameObject.Destroy( go );
+        }
+
+        return null;
+      }
 
       return RootNode;
     }
 
     private GameObject MapSimulatable( Object obj, string path )
     {
-      Data.RootNode = new GameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
+      Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
       var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
       rootComp.Native = obj;
       if ( Options.RotateUp )
@@ -144,7 +159,7 @@ namespace AGXUnity.IO.OpenPLX
 
     Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
     {
-      GameObject go = new GameObject();
+      GameObject go = Data.CreateGameObject();
 
       var rd      = shape.getRenderData();
 
@@ -192,14 +207,8 @@ namespace AGXUnity.IO.OpenPLX
         if ( uuid_annot.isString() ) {
           var uuid = uuid_annot.asString();
           var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
-          if ( shape != null ) {
+          if ( shape != null )
             (go, cachedMat) = MapCachedVisual( shape.first, shape.second, visual );
-
-            if ( go == null ) {
-              Debug.Log( "uh oh" );
-              return null;
-            }
-          }
         }
       }
 
@@ -232,7 +241,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( go == null )
         return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
 
-      OpenPLXObject.RegisterGameObject( visual.getName(), go );
+      Data.RegisterOpenPLXObject( visual.getName(), go );
       Utils.MapLocalTransform( go.transform, visual.local_transform() );
       if ( !cachedMat )
         go.GetComponent<MeshRenderer>().material = MapVisualMaterial( visual.material() );
@@ -245,6 +254,7 @@ namespace AGXUnity.IO.OpenPLX
       where OpenPLXType : Charges.ContactGeometry
     {
       GameObject go = Factory.Create<UnityType>();
+      Data.RegisterGameObject( go );
       setup( openPLX, go.GetComponent<UnityType>() );
       return go;
     }
@@ -268,7 +278,6 @@ namespace AGXUnity.IO.OpenPLX
       outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
 
       if ( uvs != null ) {
-        Debug.Log( uvs.Count );
         Vector2[] uUvs = new Vector2[uvs.Count];
         for ( int i = 0; i < uvs.Count; i++ )
           uUvs[ i ].Set( (float)uvs[ i ].x, (float)uvs[ i ].y );
@@ -313,7 +322,7 @@ namespace AGXUnity.IO.OpenPLX
     GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
     GameObject MapConvex( std.MathVec3Vector vertices )
     {
-      GameObject go = new GameObject();
+      GameObject go = Data.CreateGameObject();
       var mf = go.AddComponent<MeshFilter>();
       var mr = go.AddComponent<MeshRenderer>();
 
@@ -332,7 +341,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       string path = objGeom.path();
 
-      GameObject go = new GameObject();
+      GameObject go = Data.CreateGameObject();
       var mf = go.AddComponent<MeshFilter>();
       var mr = go.AddComponent<MeshRenderer>();
 
@@ -366,6 +375,7 @@ namespace AGXUnity.IO.OpenPLX
       string path = objGeom.path();
 
       GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
+      Data.RegisterGameObject( go );
       var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
 
       if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
@@ -409,6 +419,7 @@ namespace AGXUnity.IO.OpenPLX
       where T : Shape
     {
       go = Factory.Create<T>();
+      Data.RegisterGameObject( go );
       return go.GetComponent<T>();
     }
 
@@ -507,11 +518,6 @@ namespace AGXUnity.IO.OpenPLX
               return null;
 
             go = MapCachedShape( shape, geom );
-
-            if ( go == null ) {
-              Debug.Log( "uh oh" );
-              return null;
-            }
           }
         }
       }
@@ -537,7 +543,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( go == null )
         return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
 
-      OpenPLXObject.RegisterGameObject( geom.getName(), go );
+      Data.RegisterOpenPLXObject( geom.getName(), go );
 
       if ( addVisuals ) {
         var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
@@ -604,7 +610,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       GameObject rb = Factory.Create<RigidBody>();
       Data.FrameCache[ body ] = rb;
-      OpenPLXObject.RegisterGameObject( body.getName(), rb );
+      Data.RegisterOpenPLXObject( body.getName(), rb );
       var rbComp = rb.GetComponent<RigidBody>();
       var kinematics = body.kinematics();
       Utils.MapLocalTransform( rb.transform, kinematics.local_transform() );
@@ -634,7 +640,7 @@ namespace AGXUnity.IO.OpenPLX
 
     GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
     {
-      var lockObject = OpenPLXObject.CreateGameObject( kinematicLock.getName() );
+      var lockObject = Data.CreateOpenPLXObject( kinematicLock.getName() );
       var lockComponent = lockObject.AddComponent<KinematicLock>();
 
       foreach ( var body in kinematicLock.bodies() ) {
@@ -706,7 +712,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       GameObject terrainGO = Factory.Create<RigidBody>();
       Data.FrameCache[ terrain ] = terrainGO;
-      OpenPLXObject.RegisterGameObject( terrain.getName(), terrainGO );
+      Data.RegisterOpenPLXObject( terrain.getName(), terrainGO );
       var rbComp = terrainGO.GetComponent<RigidBody>();
       Utils.MapLocalTransform( terrainGO.transform, terrain.kinematics().local_transform() );
       terrainGO.transform.rotation *= Quaternion.FromToRotation( Vector3.up, Vector3.forward );
@@ -762,11 +768,13 @@ namespace AGXUnity.IO.OpenPLX
 
     GameObject MapSystemPass1( openplx.Physics3D.System system )
     {
-      GameObject s = OpenPLXObject.CreateGameObject(system.getName());
+      GameObject s = Data.CreateOpenPLXObject(system.getName());
       Utils.MapLocalTransform( s.transform, system.local_transform() );
 
       Data.SystemCache[ system ] = s;
+      // TODO: Replace with single world body
       var dummyRB = Factory.Create<RigidBody>();
+      Data.RegisterGameObject( dummyRB );
       dummyRB.transform.SetParent( s.transform, false );
       dummyRB.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
       dummyRB.name = "System Dummy RB";

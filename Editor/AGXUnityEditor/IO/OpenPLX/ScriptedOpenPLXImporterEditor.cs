@@ -28,18 +28,20 @@ namespace AGXUnityEditor.IO.OpenPLX
       var StatusIcon = new VisualElement( );
       StatusIcon.style.height = 16;
       StatusIcon.style.width = 16;
+      StatusIcon.style.flexGrow = 0;
+      StatusIcon.style.flexShrink = 0;
       StatusIcon.AddToClassList( HelpBox.iconErrorUssClassName );
 
       var nameLabel = new Label( err.message );
-      nameLabel.style.flexGrow = 0.8f;
-      nameLabel.style.flexBasis = 0;
+      nameLabel.style.flexGrow = 1;
+      nameLabel.style.flexShrink = 1;
       nameLabel.style.overflow = Overflow.Hidden;
       nameLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
       nameLabel.style.marginRight = 2;
 
       var pathLabel = new Label( err.Location );
-      pathLabel.style.flexGrow = 0.2f;
-      pathLabel.style.flexBasis = 0;
+      pathLabel.style.flexGrow = 0;
+      pathLabel.style.flexShrink = 0;
       pathLabel.style.overflow = Overflow.Hidden;
       pathLabel.style.unityTextAlign = TextAnchor.MiddleRight;
       pathLabel.style.marginRight = 2;
@@ -51,6 +53,8 @@ namespace AGXUnityEditor.IO.OpenPLX
       var CopyIcon = new VisualElement();
       CopyIcon.style.height = 16;
       CopyIcon.style.width = 12;
+      CopyIcon.style.flexGrow = 0;
+      CopyIcon.style.flexShrink = 0;
       CopyIcon.style.backgroundImage = EditorGUIUtility.FindTexture( "Clipboard" );
       CopyIcon.style.unityBackgroundImageTintColor = normalTint;
       CopyIcon.RegisterCallback<MouseDownEvent>( mde => {

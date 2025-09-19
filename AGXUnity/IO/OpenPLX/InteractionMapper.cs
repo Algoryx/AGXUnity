@@ -46,7 +46,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
-      var mcObject = OpenPLXObject.CreateGameObject( mc.getName() + (mc is Charges.RedirectedMateConnector ? "_redirected" : "") );
+      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is Charges.RedirectedMateConnector ? "_redirected" : "") );
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc is Charges.RedirectedMateConnector redirected )
@@ -262,8 +262,6 @@ namespace AGXUnity.IO.OpenPLX
         return null;
       }
 
-      OpenPLXObject.RegisterGameObject( mate.getName(), agxConstraint.gameObject, true );
-
       MapMateDissipation( mate.dissipation(), mate.flexibility(), agxConstraint );
       MapMateFlexibility( mate.flexibility(), agxConstraint );
 
@@ -371,6 +369,7 @@ namespace AGXUnity.IO.OpenPLX
         return null;
 
       var availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
+      Data.RegisterOpenPLXObject( interaction.getName(), availableConstraint.gameObject );
       availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
 
       return availableConstraint;
@@ -429,9 +428,7 @@ namespace AGXUnity.IO.OpenPLX
           return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
       };
 
-      GameObject cGO = constraint.gameObject;
-      OpenPLXObject.RegisterGameObject( interaction.getName(), cGO );
-      return cGO;
+      return constraint.gameObject;
     }
 
     public void MapFrictionModel( ContactMaterial cm, openplx.Physics.Interactions.Dissipation.DefaultFriction friction )
