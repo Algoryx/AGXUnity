@@ -2,10 +2,7 @@ using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Utils;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-
-using CT = AGXUnity.Constraint.ControllerType;
 using Interactions = openplx.Physics3D.Interactions;
 
 namespace AGXUnity.IO.OpenPLX
@@ -15,11 +12,6 @@ namespace AGXUnity.IO.OpenPLX
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-import" )]
   public class OpenPLXObject : ScriptComponent
   {
-    agx.ElementaryConstraint GetNativeController<T>( CT controllerType ) where T : ElementaryConstraintController
-    {
-      return GetComponent<Constraint>().GetInitialized().GetController<T>( controllerType ).Native;
-    }
-
     agx.Constraint GetNativeConstraint()
     {
       return GetComponent<Constraint>().GetInitialized().Native;
@@ -73,23 +65,5 @@ namespace AGXUnity.IO.OpenPLX
     [field: SerializeField]
     [DisableInRuntimeInspector]
     public List<string> SourceDeclarations { get; private set; } = new List<string>();
-
-    public static GameObject CreateGameObject( string name )
-    {
-      GameObject go = new GameObject( );
-      RegisterGameObject( name, go );
-
-      return go;
-    }
-
-    public static void RegisterGameObject( string name, GameObject go, bool overrideName = false )
-    {
-      var bo = go.GetOrCreateComponent<OpenPLXObject>();
-      if ( bo.SourceDeclarations.Count == 0 || overrideName ) {
-        var nameShort = name.Split('.').Last();
-        go.name = nameShort;
-      }
-      bo.SourceDeclarations.Add( name );
-    }
   }
 }
