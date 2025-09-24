@@ -540,8 +540,12 @@ namespace AGXUnity.IO.OpenPLX
         };
       }
 
-      if ( go == null )
+      if ( go == null ) {
+        // TODO: Robotics Links can have null contact geometries maybe?
+        if ( geom.GetType() == typeof( openplx.Physics3D.Charges.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
+          return null;
         return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
+      }
 
       Data.RegisterOpenPLXObject( geom.getName(), go );
 
