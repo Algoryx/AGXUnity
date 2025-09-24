@@ -51,7 +51,8 @@ namespace AGXUnity.IO.OpenPLX
     public OpenPLXRoot Root => GetComponent<OpenPLXRoot>();
 
     private Dictionary<string, SignalEndpoint> m_declaredNameEndpointMap = new Dictionary<string, SignalEndpoint>();
-    private Dictionary<Output, OutputSource> m_outputWrapperMap = new Dictionary<Output, OutputSource>();
+
+    private Dictionary<Output, OutputSignal> m_outputSignalCache = new Dictionary<Output, OutputSignal>();
 
     private std.StringReferenceLookup m_nativeMap;
     private agxopenplx.InputSignalQueue NativeInputQueue;
@@ -130,7 +131,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var signal in NativeOutputQueue.getSignals() ) {
         if ( signal != null ) {
           m_outputSignalList.Add( signal );
-          m_outputWrapperMap[ signal.source() ].CachedSignal = signal;
+          m_outputSignalCache[ signal.source() ] = signal;
         }
       }
     }
@@ -153,6 +154,8 @@ namespace AGXUnity.IO.OpenPLX
 
     #region Output Signal Helpers
 
+    public bool HasCachedSignal( Output output ) => m_outputSignalCache.ContainsKey( output );
+
     public Value GetValue( string outputName )
     {
       if ( !m_declaredNameEndpointMap.TryGetValue( outputName, out var endpoint ) )
@@ -166,27 +169,52 @@ namespace AGXUnity.IO.OpenPLX
 
     public Value GetValue( Output output )
     {
-      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
+      if ( !m_outputSignalCache.TryGetValue( output, out var signal ) )
         return null;
 
-      return endpoint.GetValue();
+      if ( signal == null )
+        return null;
+
+      if ( signal is not ValueOutputSignal vos )
+        return null;
+
+      return vos.value();
     }
 
     public T GetValue<T>( Output output )
     {
-      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
-        throw new ArgumentException( $"Failed to find output '{output.getName()}' in OpenPLX Root '{Root.name}'", "output" );
+      if ( !m_outputSignalCache.TryGetValue( output, out var signal ) )
+        throw new ArgumentException( $"Output '{output.getName()}' does not have a cached value", "output" );
 
-      return endpoint.GetValue<T>();
+      if ( !output.enabled() )
+        throw new ArgumentException( $"Output '{output.getName()}' is not enabled" );
+
+      if ( signal is not ValueOutputSignal vos )
+        throw new ArgumentException( $"Output '{output.getName()}' did not send a ValueOutputSignal" );
+
+      if ( !IsValueTypeCompatible<T>( signal.source().type(), true ) )
+        throw new InvalidCastException( $"Cannot convert signal value of type '{signal.source().GetType().Name}' to provided type '{typeof( T ).Name}'" );
+
+      if ( !TryConvertOutputSignal<T>( vos, out T converted ) )
+        throw new InvalidCastException( "Could not map signal type to requested type" );
+
+      return converted;
     }
 
     public bool TryGetValue<T>( Output output, out T value )
     {
       value = default;
-      if ( !m_outputWrapperMap.TryGetValue( output, out var endpoint ) )
+      if ( !m_outputSignalCache.TryGetValue( output, out var signal ) )
         return false;
 
-      return endpoint.TryGetValue( out value );
+      if ( !output.enabled() ||
+           signal == null ||
+           signal is not ValueOutputSignal vos ||
+           !IsValueTypeCompatible<T>( signal.source().type(), true ) ||
+           !TryConvertOutputSignal( vos, out value ) )
+        return false;
+
+      return true;
     }
 
     public T GetValue<T>( string outputName )
@@ -328,6 +356,53 @@ namespace AGXUnity.IO.OpenPLX
         return requestedType == ValueType.Real || requestedType == ValueType.Integer;
 
       return requestedType == endpointType;
+    }
+
+    private static bool TryConvertOutputSignal<T>( ValueOutputSignal vos, out T converted )
+    {
+      var value = vos.value();
+      converted = default;
+
+      if ( value is RealValue realVal ) {
+        converted = (T)Convert.ChangeType( realVal.value(), typeof( T ) );
+        return true;
+      }
+      else if ( value is IntValue intVal ) {
+        converted = (T)Convert.ChangeType( intVal.value(), typeof( T ) );
+        return true;
+      }
+      else if ( value is BoolValue boolVal ) {
+        converted = (T)Convert.ChangeType( boolVal.value(), typeof( T ) );
+        return true;
+      }
+      else if ( value is Vec3Value v3val ) {
+        if ( typeof( T ) == typeof( UnityEngine.Vector3 ) )
+          converted = (T)(object)v3val.value().ToVector3();
+        else if ( typeof( T ) == typeof( agx.Vec3 ) )
+          converted = (T)(object)v3val.value().ToVec3();
+        else if ( typeof( T ) == typeof( agx.Vec3f ) )
+          converted = (T)(object)v3val.value().ToVec3f();
+        else if ( typeof( T ) == typeof( openplx.Math.Vec3 ) )
+          converted = (T)(object)v3val.value();
+        else
+          return false;
+        return true;
+      }
+      else if ( value is Vec2Value v2val ) {
+        if ( typeof( T ) == typeof( UnityEngine.Vector2 ) )
+          converted = (T)(object)v2val.value().ToVector2();
+        else if ( typeof( T ) == typeof( agx.Vec2 ) )
+          converted = (T)(object)v2val.value().ToVec2();
+        else if ( typeof( T ) == typeof( agx.Vec2f ) )
+          converted = (T)(object)v2val.value().ToVec2f();
+        else if ( typeof( T ) == typeof( openplx.Math.Vec2 ) )
+          converted = (T)(object)v2val.value();
+        else
+          return false;
+        return true;
+      }
+
+      return false;
     }
     #endregion
   }

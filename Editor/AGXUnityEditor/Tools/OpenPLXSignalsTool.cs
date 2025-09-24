@@ -25,13 +25,16 @@ public class OpenPLXSignalsTool : CustomTargetTool
       EditorGUILayout.LabelField( endpoint.Name );
       GUILayout.Label( endpoint.Type.Name, style, GUILayout.ExpandWidth( false ) );
       GUILayout.EndHorizontal();
-      if ( endpoint is OutputSource output && output.HasSendSignal ) {
+      if ( endpoint is OutputSource output && output.HasSentSignal ) {
         GUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
         var type = OpenPLXSignals.GetOpenPLXTypeEnum( endpoint.ValueTypeCode );
         switch ( type ) {
           case OpenPLXSignals.ValueType.Integer: GUILayout.Label( $"{output.GetValue<int>()}" ); break;
           case OpenPLXSignals.ValueType.Real: GUILayout.Label( $"{output.GetValue<double>()}" ); break;
+          case OpenPLXSignals.ValueType.Vec3: GUILayout.Label( $"{output.GetValue<Vector3>()}" ); break;
+          case OpenPLXSignals.ValueType.Vec2: GUILayout.Label( $"{output.GetValue<Vector2>()}" ); break;
+          case OpenPLXSignals.ValueType.Boolean: GUILayout.Label( $"{output.GetValue<bool>()}" ); break;
           default: break;
         }
         GUILayout.EndHorizontal();
