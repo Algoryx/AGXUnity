@@ -239,8 +239,16 @@ namespace AGXUnity.IO.OpenPLX
 
       Data.RegisterOpenPLXObject( visual.getName(), go );
       Utils.MapLocalTransform( go.transform, visual.local_transform() );
-      if ( !cachedMat )
-        go.GetComponent<MeshRenderer>().material = MapVisualMaterial( visual.material() );
+      if ( !cachedMat ) {
+        // TODO: Find a better way to check whether to use material
+        // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
+        // TODO: This is only relevant when using editor assets which is currently disabled
+#if false
+        if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
+#endif
+        foreach ( var renderer in go.GetComponentsInChildren<MeshRenderer>() )
+          renderer.material = MapVisualMaterial( visual.material() );
+      }
 
       return go;
     }
@@ -253,6 +261,22 @@ namespace AGXUnity.IO.OpenPLX
       Data.RegisterGameObject( go );
       setup( openPLX, go.GetComponent<UnityType>() );
       return go;
+    }
+
+    bool VerifyAssetPath( string path, openplx.Core.Object obj )
+    {
+      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+        var errorData = BaseError.CreateErrorData( obj );
+        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        return false;
+      }
+
+      if ( !System.IO.File.Exists( path ) ) {
+        Data.ErrorReporter.reportError( new FileDoesNotExistError( obj, path ) );
+        return false;
+      }
+
+      return true;
     }
 
     UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices, agx.Vec2Vector uvs = null )
@@ -295,6 +319,8 @@ namespace AGXUnity.IO.OpenPLX
         renderMat.name = mat.getName();
 
         var path = texMat.path();
+        if ( !VerifyAssetPath( path, texMat ) )
+          return null;
 #if UNITY_EDITOR
         var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
         var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
@@ -338,30 +364,42 @@ namespace AGXUnity.IO.OpenPLX
       string path = objGeom.path();
 
       GameObject go = Data.CreateGameObject();
+
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return go;
+
+      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
+      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
+#if false
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+
+      var prefab = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab( UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ) );
+
+      var rot = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+      var m = new Matrix4x4();
+      m.SetTRS( Vector3.zero, rot, Vector3.one );
+      prefab.transform.localPosition = m.MultiplyPoint( prefab.transform.localPosition );
+      //prefab.transform.localRotation = rot * prefab.transform.localRotation;
+      prefab.transform.SetParent( go.transform, false );
+#else
       var mf = go.AddComponent<MeshFilter>();
       var mr = go.AddComponent<MeshRenderer>();
 
-      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+      var mesh = new UnityEngine.Mesh();
+
+      var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
+
+      if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom.path() ) );
+        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
       }
-      else {
-        UnityEngine.Mesh mesh;
-#if UNITY_EDITOR
-        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
-        mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
-#else
-        var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-        mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
+      else
+        mf.mesh = mesh;
 #endif
-        if ( mesh == null ) {
-          var errorData = BaseError.CreateErrorData( objGeom );
-          Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
-        }
-        else
-          mf.mesh = mesh;
-        go.transform.localScale = objGeom.scale().ToVector3();
-      }
+      go.transform.localScale = objGeom.scale().ToVector3();
 
       return go;
     }
@@ -374,16 +412,16 @@ namespace AGXUnity.IO.OpenPLX
       Data.RegisterGameObject( go );
       var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
 
-      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
-        var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom.path() ) );
-      }
-      else {
-        UnityEngine.Mesh mesh;
-#if UNITY_EDITOR
-        var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return go;
 
-        var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+      UnityEngine.Mesh mesh;
+      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
+      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
+#if false
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
+      var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+      if ( source != null ) {
         UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
 
         var readable = s.FindProperty( "m_IsReadable" );
@@ -392,21 +430,28 @@ namespace AGXUnity.IO.OpenPLX
           readable.boolValue = true;
           s.ApplyModifiedProperties();
         }
-
         mesh = source;
-        meshComp.transform.localScale = objGeom.scale().ToVector3();
-#else
-        var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-        mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
-#endif
-        if ( mesh == null ) {
-          var errorData = BaseError.CreateErrorData( objGeom );
-          Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
-        }
-        else
-          meshComp.AddSourceObject( mesh );
-
       }
+      else {
+        var agxMesh = agxUtil.agxUtilSWIG.createTrimesh( path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3() );
+        mesh = AGXMeshToUnityMesh( agxMesh.getMeshData().getVertices(), agxMesh.getMeshData().getIndices() );
+        mesh.name = objGeom.getName() + "_mesh";
+        Data.MappedMeshes.Add( mesh );
+      }
+
+      meshComp.transform.localScale = objGeom.scale().ToVector3();
+#else
+      var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
+#endif
+      if ( mesh == null ) {
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+      }
+      else
+        meshComp.AddSourceObject( mesh );
 
       return go;
     }
