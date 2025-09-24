@@ -16,6 +16,9 @@ namespace AGXUnity.IO.OpenPLX
     public string Name;
 
     [SerializeField]
+    public string Path;
+
+    [SerializeField]
     public bool Enabled;
 
     [SerializeField]
@@ -23,6 +26,9 @@ namespace AGXUnity.IO.OpenPLX
 
     [SerializeField]
     public List<InputTarget> Inputs;
+
+    public OutputSource FindOutput( string name ) => Outputs.FirstOrDefault( s => s.Name.EndsWith( name ) );
+    public InputTarget FindInput( string name ) => Inputs.FirstOrDefault( s => s.Name.EndsWith( name ) );
   }
 
   [RequireComponent( typeof( OpenPLXRoot ) )]
@@ -79,7 +85,17 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var output in m_outputs ) {
         ok &= output.Initialize( this );
         m_declaredNameEndpointMap[ output.Name ] = output;
-        m_outputWrapperMap[ output.Native ] = output;
+      }
+
+      foreach ( var sigInt in m_interfaces ) {
+        foreach ( var input in sigInt.Inputs ) {
+          ok &= input.Initialize( this );
+          m_declaredNameEndpointMap[ input.Name ] = input;
+        }
+        foreach ( var output in sigInt.Outputs ) {
+          ok &= output.Initialize( this );
+          m_declaredNameEndpointMap[ output.Name ] = output;
+        }
       }
 
       Simulation.Instance.StepCallbacks._Internal_OpenPLXSignalPostSync += Post;

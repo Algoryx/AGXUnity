@@ -49,8 +49,8 @@ public class OpenPLXSignalsTool : CustomTargetTool
     if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "signal_interfaces", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Signal Interfaces", true ) ) ) {
       using var indent = new InspectorGUI.IndentScope();
       foreach ( var sigInt in OpenPLXSignals.Interfaces ) {
-        var intPrefix = "signal_interfaces_" + sigInt.Name;
-        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix, entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( sigInt.Name, true ) ) ) {
+        var intPrefix = "signal_interfaces_" + sigInt.Path + sigInt.Name;
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix, entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( sigInt.Path + "." + sigInt.Name, true ) ) ) {
           using var sigIntIndent = new InspectorGUI.IndentScope();
           if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix + "_inputs", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", false ) ) )
             RenderSignalList( sigInt.Inputs );
