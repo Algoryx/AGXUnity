@@ -481,9 +481,9 @@ namespace AGXUnity
         return;
 
       if ( enable )
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform += OnPostSynchronizeTransformsCallback;
       else
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransformsCallback;
+        Simulation.Instance.StepCallbacks._Internal_PostSynchronizeTransform -= OnPostSynchronizeTransformsCallback;
     }
 
     internal void OnPostSynchronizeTransformsCallback()

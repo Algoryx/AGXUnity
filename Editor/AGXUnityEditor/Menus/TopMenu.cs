@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -415,6 +416,17 @@ namespace AGXUnityEditor
 
     #endregion
 
+    #region Sensors
+    [MenuItem( "AGXUnity/Sensor/LiDAR", priority = 50 )]
+    [MenuItem( "GameObject/AGXUnity/Sensor/LiDAR", validate = false, priority = 10 )]
+    public static GameObject LiDAR( MenuCommand command )
+    {
+      var lidar = CreateModel<LidarSensor>( command );
+      lidar.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      return Selection.activeGameObject = lidar;
+    }
+    #endregion
+
     #region Managers
     [MenuItem( "AGXUnity/Managers/Debug Render Manager", validate = true )]
     private static bool DebugRendererValidate()
@@ -438,6 +450,18 @@ namespace AGXUnityEditor
     public static GameObject Simulation()
     {
       return Selection.activeGameObject = GetOrCreateUniqueGameObject<Simulation>()?.gameObject;
+    }
+
+    [MenuItem( "AGXUnity/Sensor Environment", validate = true )]
+    private static bool SensorEnvironmentValidate()
+    {
+      return ValidateManager<SensorEnvironment>();
+    }
+
+    [MenuItem( "AGXUnity/Sensor Environment", priority = 66 )]
+    public static GameObject SensorEnvironment()
+    {
+      return Selection.activeGameObject = GetOrCreateUniqueGameObject<SensorEnvironment>()?.gameObject;
     }
 
     [MenuItem( "AGXUnity/Plot", priority = 66 )]

@@ -25,8 +25,6 @@ namespace AGXUnityEditor.Tools
 
     public override void OnPreTargetMembersGUI()
     {
-      MovableTerrain.RemoveInvalidShovels();
-
       EditorGUILayout.Space();
       sizeToUse = (SizeUnit)EditorGUILayout.EnumPopup( "Size Units", sizeToUse );
 

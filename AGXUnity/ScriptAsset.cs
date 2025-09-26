@@ -94,4 +94,22 @@ namespace AGXUnity
     /// <returns></returns>
     protected abstract bool Initialize();
   }
+
+  /// <summary>
+  /// Extension methods for ScriptAsset.
+  /// This is used for template inference in classes that derive from ScriptAsset.
+  /// </summary>
+  public static partial class ScriptAssetExtensions
+  {
+    /// <summary>
+    /// Shorthand for the GetInitialized method which does not require specifying the asset type.
+    /// </summary>
+    /// <typeparam name="T">The asset type, deduced from instance.</typeparam>
+    /// <param name="inst">Asset instance to initialize.</param>
+    /// <returns></returns>
+    public static T GetInitialized<T>( this T inst ) where T : ScriptAsset
+    {
+      return inst.GetInitialized<T>();
+    }
+  }
 }

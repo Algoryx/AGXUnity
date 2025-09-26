@@ -126,6 +126,23 @@ namespace AGXUnityEditor
       private static int m_pixelsPerLevel = 15;
     }
 
+    // TODO: This scope is built into Unity 6.0+, remove this when support for older versions is dropped.
+    public class MixedValueScope : IDisposable
+    {
+      private bool PriorMixedValueState { get; set; }
+
+      public MixedValueScope( bool mixedValue )
+      {
+        PriorMixedValueState = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mixedValue;
+      }
+
+      public void Dispose()
+      {
+        EditorGUI.showMixedValue = PriorMixedValueState;
+      }
+    }
+
     public static void BrandSeparator( float height = 1.0f, float space = 1.0f )
     {
       Separator( height, space, InspectorGUISkin.BrandColor, 1.0f );
@@ -450,7 +467,7 @@ namespace AGXUnityEditor
           var relativePath = IO.Utils.MakeRelative( path, Application.dataPath );
           var newInstance = typeof( ScriptAsset ).IsAssignableFrom( instanceType ) ?
                                ScriptAsset.Create( instanceType ) as Object :
-                               new Material( Shader.Find( "Standard" ) );
+                               new Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
           newInstance.name = info.Name;
           AssetDatabase.CreateAsset( newInstance, relativePath + ( info.Extension != assetExtension ? assetExtension : "" ) );
           AssetDatabase.SaveAssets();
@@ -1227,7 +1244,7 @@ namespace AGXUnityEditor
                                           0.45f );
       EditorGUILayout.LabelField( GUI.MakeLabel( info.IsExpired ?
                                                    "License expired" :
-                                                   "License expires" ),
+                                                   "License valid until" ),
                                   info.ValidEndDate ?
                                     GUI.MakeLabel( info.EndDate.ToString( "yyyy-MM-dd" ) +
                                                    GUI.AddColorTag( $" ({info.DiffString} {( info.IsExpired ? "ago" : "remaining" )})",

@@ -138,6 +138,7 @@ namespace AGXUnity.Model
           RenderingUtils.SetSmoothness( s_replaceMat, 0.0f );
           RenderingUtils.SetTransparencyEnabled( s_replaceMat, true );
           RenderingUtils.SetColor( s_replaceMat, new Color( 0.0f, 1.0f, 0.0f, 0.3f ) );
+          RenderingUtils.SetShadowcastingEnabled( s_replaceMat, false );
         }
         foreach ( var visual in gameObject.GetComponentsInChildren<ShapeVisual>() )
           visual.SetMaterial( s_replaceMat );

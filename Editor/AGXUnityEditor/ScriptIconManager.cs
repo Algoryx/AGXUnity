@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -8,10 +9,15 @@ namespace AGXUnityEditor
   [InitializeOnLoad]
   class ScriptIconManager
   {
+    static Type[] s_ignored =
+    {
+      typeof(AGXUnity.Sensor.LidarSensor)
+    };
+
     static ScriptIconManager()
     {
       foreach ( var t in Assembly.GetAssembly( typeof( AGXUnity.ScriptComponent ) ).DefinedTypes ) {
-        if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) )
+        if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) && !s_ignored.Contains( t ) )
           SetGizmoIconEnabled( t.AsType(), true, false );
       }
     }

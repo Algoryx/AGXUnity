@@ -89,12 +89,23 @@ namespace AGXUnity
       BrakeForceRange = new RangeReal( native.getBrakeForceRange() );
     }
 
+    internal void InitializeFrom( agxWire.WireWinchController native )
+    {
+      RestoreLocalDataFrom( native );
+      Native = native;
+
+    }
+
     public bool Initialize( WireRouteNode winchNode )
     {
       if ( winchNode == null ) {
         Debug.LogWarning( "Unable to initialize winch - no winch node assigned." );
         return false;
       }
+
+      // Initilized from cut
+      if ( Native != null )
+        return true;
 
       RigidBody rb = winchNode.Parent != null ? winchNode.Parent.GetInitializedComponentInParent<RigidBody>() : null;
       if ( rb == null )
