@@ -4,7 +4,6 @@ using AGXUnity.Model;
 using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using Mesh = AGXUnity.Collide.Mesh;
 using Plane = AGXUnity.Collide.Plane;
@@ -31,13 +30,12 @@ namespace AGXUnityEditor
       var views = SceneView.sceneViews;
       if ( parent != null )
         go.transform.SetParent( parent.transform, false );
-      else if (SceneView.sceneViews.Count > 0)
-      {
+      else if ( SceneView.sceneViews.Count > 0 ) {
         var view = SceneView.sceneViews[0] as SceneView;
-        if (view != null)
-          view.MoveToView(go.transform);
+        if ( view != null )
+          view.MoveToView( go.transform );
       }
-      
+
       AGXUnity.Rendering.ShapeVisual.Create( go.GetComponent<T>() );
 
       Undo.RegisterCreatedObjectUndo( go, "shape" );

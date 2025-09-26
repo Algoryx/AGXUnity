@@ -1,11 +1,11 @@
+using AGXUnityEditor.UIElements;
 using AGXUnityEditor.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using AGXUnityEditor.UIElements;
-using System;
 
 namespace AGXUnityEditor.Windows
 {
@@ -116,19 +116,16 @@ namespace AGXUnityEditor.Windows
       bool foundTerrainPager = FindObjectsOfType( typeof( AGXUnity.Model.DeformableTerrainPager ), true ).Length > 0;
 #endif
 
-      if (foundTerrainPager)
-      {
-        Debug.Log("Convert PhysX to AGX Tool: Found at least one Deformable Terrain Pager, assuming Terrain Colliders to be part of that system. If there are separate terrains that should have Terrain Colliders, add manually.");
+      if ( foundTerrainPager ) {
+        Debug.Log( "Convert PhysX to AGX Tool: Found at least one Deformable Terrain Pager, assuming Terrain Colliders to be part of that system. If there are separate terrains that should have Terrain Colliders, add manually." );
       }
-      else
-      {
+      else {
         var terrains = FindColliderAssetData(typeof(TerrainCollider), PhysXType.Collider);
-        for (int i = terrains.Count; --i >= 0;)
-        {
-          if (terrains[i].gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null)
-            terrains.RemoveAt(i);
+        for ( int i = terrains.Count; --i >= 0; ) {
+          if ( terrains[ i ].gameObject.GetComponent<AGXUnity.Model.DeformableTerrain>() != null )
+            terrains.RemoveAt( i );
         }
-        convertibleObjects.AddRange(terrains);
+        convertibleObjects.AddRange( terrains );
       }
 
       convertibleObjects.AddRange( FindRigidbodyData( prefabObject ) );
@@ -176,26 +173,20 @@ namespace AGXUnityEditor.Windows
 
       // The aptly named Physic Material apparently changed its name to the less Danish-English Physics Material
 #if UNITY_6000_0_OR_NEWER
-      string[] pmPaths = AssetDatabase.FindAssets("t:PhysicsMaterial")
-                                        .Select(AssetDatabase.GUIDToAssetPath)
-                                        .ToArray();
+      IEnumerable<string> pmPaths = AssetDatabase.FindAssets("t:PhysicsMaterial")
+                                        .Select(AssetDatabase.GUIDToAssetPath);
       foreach ( var pmPath in pmPaths ) {
         PhysicsMaterial physicMaterial = AssetDatabase.LoadAssetAtPath<PhysicsMaterial>(pmPath);
-
-        var prefabData = PrefabData.CreateInstance(physicMaterial.name, pmPath, 1, updatable: false);
-        m_prefabPhysXAssets.Add( prefabData );
-      }
 #else
-      string[] pmPaths = AssetDatabase.FindAssets("t:PhysicMaterial")
-                                        .Select(AssetDatabase.GUIDToAssetPath)
-                                        .ToArray();
+      IEnumerable<string> pmPaths= AssetDatabase.FindAssets("t:PhysicMaterial")
+                                        .Select(AssetDatabase.GUIDToAssetPath);
       foreach ( var pmPath in pmPaths ) {
-        PhysicsMaterial physicMaterial = AssetDatabase.LoadAssetAtPath<PhysicMaterial>(pmPath);
+        PhysicMaterial physicMaterial = AssetDatabase.LoadAssetAtPath<PhysicMaterial>(pmPath);
 
+#endif
         var prefabData = PrefabData.CreateInstance(physicMaterial.name, pmPath, 1, updatable: false);
         m_prefabPhysXAssets.Add( prefabData );
       }
-#endif
 
       m_prefabPhysXAssets = m_prefabPhysXAssets.OrderBy( p => p.Name ).ToList();
     }
@@ -220,7 +211,7 @@ namespace AGXUnityEditor.Windows
 #if UNITY_2023_1_OR_NEWER
         components = FindObjectsByType( typeof( Rigidbody ), FindObjectsInactive.Include, FindObjectsSortMode.None );
 #else
-        components = FindObjectsOfType(typeof(RigidBody), true);
+        components = FindObjectsOfType( typeof( Rigidbody ), true );
 #endif
       }
       else {
@@ -312,7 +303,7 @@ namespace AGXUnityEditor.Windows
 #if UNITY_2023_1_OR_NEWER
         components = FindObjectsByType( type, FindObjectsInactive.Include, FindObjectsSortMode.None );
 #else
-        components = FindObjectsOfType(type, true);
+        components = FindObjectsOfType( type, true );
 #endif
       }
       else {
@@ -349,15 +340,15 @@ namespace AGXUnityEditor.Windows
       }
 
       return components.Select( o => {
-                         var data = CreateInstance<AssetData>();
-                         data.Convert = false;
-                         data.type = type;
-                         data.physXType = physXType;
-                         data.gameObject = ( (UnityEngine.Component)o ).gameObject;
-                         data.Updatable = false;
+        var data = CreateInstance<AssetData>();
+        data.Convert = false;
+        data.type = type;
+        data.physXType = physXType;
+        data.gameObject = ( (UnityEngine.Component)o ).gameObject;
+        data.Updatable = false;
 
-                         return data;
-                       } ).ToList();
+        return data;
+      } ).ToList();
     }
 
     private void UpdateColors()
@@ -689,7 +680,7 @@ namespace AGXUnityEditor.Windows
       numAssets.Add( image );
 
       var label = new Label() { text = $" {(m_prefabPhysXAssets != null ? m_prefabPhysXAssets.Where( a => a.Updatable).Count() : 0)}" };
-      label.style.flexGrow = 0; 
+      label.style.flexGrow = 0;
       label.style.flexShrink = 0;
       numAssets.Add( label );
 
@@ -698,7 +689,7 @@ namespace AGXUnityEditor.Windows
       prefabBox.Add( header );
 
       var scrolledTable = new ScrollView();
-      if (m_prefabPhysXAssets != null)
+      if ( m_prefabPhysXAssets != null )
         foreach ( var prefabData in m_prefabPhysXAssets ) // Populate rows with prefabs
           scrolledTable.Add( CreatePrefabRowUI( prefabData ) );
 
@@ -746,19 +737,12 @@ namespace AGXUnityEditor.Windows
           if ( !prefab.Convert )
             continue;
 
-          GameObject prefabObject = PrefabUtility.LoadPrefabContents(prefab.Path);
-          if ( prefabObject == null )
+          var scope = new PrefabUtility.EditPrefabContentsScope( prefab.Path );
+          if ( scope.prefabContentsRoot == null )
             continue;
 
-          var objects = GatherObjects(prefabObject);
-          try {
-            ConvertObjects( objects );
-
-            PrefabUtility.SaveAsPrefabAsset(prefabObject, prefab.Path);
-          }
-          finally {
-            PrefabUtility.UnloadPrefabContents( prefabObject );
-          }
+          var objects = GatherObjects(scope.prefabContentsRoot);
+          ConvertObjects( objects );
 
           Debug.Log( $"Converted prefab: {prefab.Name}, objects: {objects.Count}" );
         }
@@ -793,7 +777,7 @@ namespace AGXUnityEditor.Windows
 
       if ( !physXRb.automaticInertiaTensor ) {
         agxRB.MassProperties.InertiaDiagonal.UseDefault = false;
-        agxRB.MassProperties.InertiaDiagonal.Value = physXRb.centerOfMass;
+        agxRB.MassProperties.InertiaDiagonal.Value = physXRb.inertiaTensor;
       }
 
       if ( physXRb.isKinematic )
@@ -883,18 +867,16 @@ namespace AGXUnityEditor.Windows
           newObject.name = "AGXUnity.Collide.Mesh";
           newObject.transform.localPosition = Vector3.zero;
 
-          if (physXMesh.sharedMesh.isReadable)
-          {
+          if ( physXMesh.sharedMesh.isReadable ) {
             agxMesh.AddSourceObject( physXMesh.sharedMesh );
           }
-          else
-          {
+          else {
             Mesh readableMesh = new Mesh();
             readableMesh.vertices = physXMesh.sharedMesh.vertices;
             readableMesh.triangles = physXMesh.sharedMesh.triangles;
             agxMesh.AddSourceObject( readableMesh );
-            
-            Undo.RegisterCompleteObjectUndo(readableMesh, "Create Readable Mesh");
+
+            Undo.RegisterCreatedObjectUndo( readableMesh, "Create Readable Mesh" );
           }
 
           agxMesh.IsSensor = physXMesh.isTrigger;
@@ -905,8 +887,8 @@ namespace AGXUnityEditor.Windows
         case "UnityEngine.TerrainCollider":
           Undo.DestroyObjectImmediate( newObject );
           var terrain = asset.gameObject.GetComponent<Terrain>();
-          if (terrain.leftNeighbor != null || terrain.rightNeighbor != null || 
-                terrain.topNeighbor != null || terrain.bottomNeighbor != null)
+          if ( terrain.leftNeighbor != null || terrain.rightNeighbor != null ||
+                terrain.topNeighbor != null || terrain.bottomNeighbor != null )
             Undo.AddComponent<AGXUnity.Model.DeformableTerrainPager>( asset.gameObject );
           else
             Undo.AddComponent<AGXUnity.Model.DeformableTerrain>( asset.gameObject );
