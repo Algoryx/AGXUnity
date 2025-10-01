@@ -946,6 +946,93 @@ namespace AGXUnityEditor
       return null;
     }
 
+    [InspectorDrawer( typeof( List<string> ) )]
+    public static object StringListDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var list = wrapper.Get<List<string>>( objects[ 0 ] );
+      var target = objects[ 0 ] as Object;
+
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+                                 InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+        int insertElementBefore = -1;
+        int insertElementAfter = -1;
+        int eraseElement = -1;
+        var skin = InspectorEditor.Skin;
+        var buttonLayout = new GUILayoutOption[]
+        {
+          GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
+          GUILayout.Height( 1.0f * EditorGUIUtility.singleLineHeight )
+        };
+        for ( int i = 0; i < list.Count; i++ ) {
+          using ( InspectorGUI.IndentScope.Single ) {
+            GUILayout.BeginHorizontal();
+            {
+              InspectorGUI.Separator( 1.0f, EditorGUIUtility.singleLineHeight );
+
+              if ( InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+                                        true,
+                                        "Insert new element before this.",
+                                        buttonLayout ) )
+                insertElementBefore = i;
+              if ( InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                        true,
+                                        "Insert new element after this.",
+                                        buttonLayout ) )
+                insertElementAfter = i;
+              if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                        true,
+                                        "Remove this element.",
+                                        buttonLayout ) )
+                eraseElement = i;
+            }
+            GUILayout.EndHorizontal();
+
+            list[ i ] = EditorGUILayout.TextField( list[ i ] );
+          }
+        }
+
+        InspectorGUI.Separator( 1.0f, 0.5f * EditorGUIUtility.singleLineHeight );
+
+        if ( list.Count == 0 )
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
+
+        bool addElementToList = false;
+        GUILayout.BeginHorizontal();
+        {
+          GUILayout.FlexibleSpace();
+          addElementToList = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                                  true,
+                                                  "Add new element.",
+                                                  buttonLayout );
+        }
+        GUILayout.EndHorizontal();
+
+        string newObject = null;
+        if ( addElementToList || insertElementBefore != -1 || insertElementAfter != -1 )
+          newObject = "";
+
+        if ( eraseElement != -1 )
+          list.RemoveAt( eraseElement );
+        else if ( newObject != null ) {
+          if ( addElementToList || ( list.Count > 0 && insertElementAfter == list.Count - 1 ) )
+            list.Add( newObject );
+          else if ( insertElementAfter != -1 )
+            list.Insert( insertElementAfter + 1, newObject );
+          else if ( insertElementBefore != -1 )
+            list.Insert( insertElementBefore, newObject );
+        }
+
+        if ( eraseElement != -1 || newObject != null )
+          EditorUtility.SetDirty( target );
+      }
+
+      // A bit of a hack until I figure out how to handle multi-selection
+      // of lists, if that should be possible at all. We're handling the
+      // list from inside this drawer and by returning null the return
+      // value isn't propagated to any targets.
+      return null;
+    }
+
     [InspectorDrawer( typeof( List<> ), IsGeneric = true )]
     public static object GenericListDrawer( object[] objects, InvokeWrapper wrapper )
     {
