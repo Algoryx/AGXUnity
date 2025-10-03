@@ -103,7 +103,8 @@ namespace AGXUnity.IO.OpenPLX
       m_nativeMap = new std.StringReferenceLookup();
       foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
         foreach ( var decl in openPLXObj.SourceDeclarations ) {
-          var obj = Root.Native.getObject( decl.Replace($"{Root.Native.getName()}.", "") );
+          var relative = decl.Replace( Root.PrunedNativeName + ".", "" ).Trim();
+          var obj = Root.Native.getObject( relative);
           if ( obj == null )
             continue;
           var native = openPLXObj.FindCorrespondingNative( Root, obj );
@@ -158,8 +159,11 @@ namespace AGXUnity.IO.OpenPLX
 
     internal Object InitializeNativeEndpoint( string endpoint )
     {
-      var relativeSigName = endpoint.Replace(Root.Native.getName() + ".", "").Trim();
-      var signalObj = Root.Native.getObject(relativeSigName);
+      var rootName = Root.Native.getName() + ".";
+      if ( !endpoint.StartsWith( rootName ) )
+        rootName = rootName[ ( rootName.IndexOf( "." ) + 1 ).. ];
+      var relSigName = endpoint.Replace( rootName, "" ).Trim();
+      var signalObj = Root.Native.getObject(relSigName);
       if ( signalObj != null )
         return signalObj;
       else {
