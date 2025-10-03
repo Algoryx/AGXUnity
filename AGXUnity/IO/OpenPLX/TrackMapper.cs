@@ -37,6 +37,7 @@ namespace AGXUnity.IO.OpenPLX
         return new AGXUnity.Model.SinusoidalVariation( (float)sin.additional_amplitude(), (float)sin.period() );
       if ( variation is Tracks::DiscretePulseVariation disc )
         return new AGXUnity.Model.DiscretePulseVariation( (float)disc.additional_amplitude(), (int)disc.discrete_period() );
+      if ( variation.GetType() == typeof( CyclicVariation ) )
         return null;
       return Utils.ReportUnimplemented<TrackNodeVariation>( variation, Data.ErrorReporter );
     }
