@@ -16,13 +16,21 @@ public class OpenPLXSignalsTool : CustomTargetTool
     IsSingleInstanceTool = true;
   }
 
-  private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints )
+  private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints, string interfacePrefix = "" )
   {
     var style = InspectorGUISkin.Instance.Label;
     style.alignment = TextAnchor.MiddleRight;
     foreach ( var endpoint in endpoints ) {
       GUILayout.BeginHorizontal();
-      EditorGUILayout.LabelField( endpoint.Name );
+      var name = endpoint.Name;
+      if ( interfacePrefix != "" ) {
+        var interfaceName = interfacePrefix + ".";
+        if ( !name.StartsWith( interfaceName ) )
+          interfaceName = interfaceName[ ( interfaceName.IndexOf( "." ) + 1 ).. ];
+
+        name = name.Replace( interfaceName, "" );
+      }
+      EditorGUILayout.LabelField( name );
       GUILayout.Label( endpoint.Type.Name, style, GUILayout.ExpandWidth( false ) );
       GUILayout.EndHorizontal();
       if ( endpoint is OutputSource output && output.HasSentSignal ) {
@@ -49,13 +57,14 @@ public class OpenPLXSignalsTool : CustomTargetTool
     if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "signal_interfaces", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Signal Interfaces", true ) ) ) {
       using var indent = new InspectorGUI.IndentScope();
       foreach ( var sigInt in OpenPLXSignals.Interfaces ) {
-        var intPrefix = "signal_interfaces_" + sigInt.Path + sigInt.Name;
-        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix, entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( sigInt.Path + "." + sigInt.Name, true ) ) ) {
+        var signalInterfaceName = sigInt.Path + "." + sigInt.Name;
+        var intPrefix = "signal_interfaces_" + signalInterfaceName;
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix, entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( signalInterfaceName, true ) ) ) {
           using var sigIntIndent = new InspectorGUI.IndentScope();
           if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix + "_inputs", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", false ) ) )
-            RenderSignalList( sigInt.Inputs );
+            RenderSignalList( sigInt.Inputs, signalInterfaceName );
           if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, intPrefix + "_outputs", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Outputs", false ) ) )
-            RenderSignalList( sigInt.Outputs );
+            RenderSignalList( sigInt.Outputs, signalInterfaceName );
         }
       }
     }
