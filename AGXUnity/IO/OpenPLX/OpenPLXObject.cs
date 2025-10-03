@@ -12,15 +12,11 @@ namespace AGXUnity.IO.OpenPLX
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-import" )]
   public class OpenPLXObject : ScriptComponent
   {
-    agx.Constraint GetNativeConstraint()
-    {
-      return GetComponent<Constraint>().GetInitialized().Native;
-    }
+    agx.Constraint GetNativeConstraint() =>
+      GetComponent<Constraint>().GetInitialized().Native;
 
-    agx.Constraint1DOF GetGeneric1DOFNative()
-    {
-      return GetComponent<Generic1DOFControlledConstraint>().GetInitialized<Generic1DOFControlledConstraint>().Native.asConstraint1DOF();
-    }
+    agx.Constraint1DOF GetGeneric1DOFNative() =>
+      GetComponent<Generic1DOFControlledConstraint>().GetInitialized().Native.asConstraint1DOF();
 
     agx.Referenced DefaultHandling( openplx.Core.Object obj )
     {
@@ -33,11 +29,13 @@ namespace AGXUnity.IO.OpenPLX
     {
       if ( Utils.IsRuntimeMapped( obj ) )
         return false;
-      if ( obj is openplx.Visuals.Geometries.Geometry )
-        return false;
-      if ( obj is openplx.Physics.System )
-        return false;
-      return true;
+      return obj switch
+      {
+        openplx.Visuals.Geometries.Geometry => false,
+        openplx.Physics.System => false,
+        openplx.Physics.KinematicLock => false,
+        _ => true
+      };
     }
 
     internal agx.Referenced FindCorrespondingNative( OpenPLX.OpenPLXRoot root, openplx.Core.Object obj ) => obj switch
