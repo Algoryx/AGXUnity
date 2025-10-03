@@ -19,6 +19,21 @@ namespace AGXUnity.IO.OpenPLX
     [field: SerializeField]
     public string OpenPLXAssetPath { get; set; }
 
+    // TODO: This is a workaround to the root object being prefixed with the bundle name but not the child objects. When this issue is fixed in OpenPLX, this should be removed
+    [HideInInspector]
+    public string PrunedNativeName
+    {
+      get
+      {
+        if ( Native == null )
+          throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
+        var prunedNativeName = Native.getName();
+        if ( prunedNativeName.Contains( "." ) )
+          prunedNativeName = prunedNativeName[ ( prunedNativeName.IndexOf( "." ) + 1 ).. ];
+        return prunedNativeName;
+      }
+    }
+
     /// <summary>
     /// In the editor the files will be located in the assets folder (Unless the path is absolute). In this case it is fine loading the path as is.
     /// However, when the application is built, the OpenPLX file is copied to a corresponding directory in the build directory and the path of the
@@ -33,7 +48,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject FindMappedObject( string declaration )
     {
-      var relativeDeclaration = declaration.Substring( declaration.IndexOf( '.' ) + 1 );
+      var relativeDeclaration = declaration.Replace( PrunedNativeName + ".", "" );
       declaration = Native.getObject( relativeDeclaration ).getName();
       if ( Native != null ) {
         if ( m_objectMap.ContainsKey( declaration ) )
