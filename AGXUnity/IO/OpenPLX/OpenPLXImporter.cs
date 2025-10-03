@@ -12,16 +12,16 @@ namespace AGXUnity.IO.OpenPLX
 {
   public class OpenPLXImporter
   {
-    public static string BundleDirOverride { get; set; } = null;
+    public static string[] BundleDirOverrides { get; set; } = null;
     public static string OpenPLXRoot => Application.dataPath + ( Application.isEditor ? "" : "/OpenPLX" );
 
-    public static string OpenPLXBundlesDir
+    public static string[] OpenPLXBundlesDirs
     {
       get
       {
-        if ( BundleDirOverride != null )
-          return BundleDirOverride;
-        return OpenPLXRoot + "/AGXUnity/OpenPLX";
+        if ( BundleDirOverrides != null )
+          return BundleDirOverrides;
+        return new string[] { OpenPLXRoot + "/AGXUnity/OpenPLX" };
       }
     }
 
@@ -84,7 +84,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private OpenPlxContext CreateContext( agxopenplx.AgxCache cache = null )
     {
-      std.StringVector bundle_paths = new std.StringVector { OpenPLXBundlesDir };
+      std.StringVector bundle_paths = new std.StringVector(OpenPLXBundlesDirs);
       foreach ( var additional in OpenPLXSettings.Instance.AdditionalBundleDirs ) {
         var transformed = TransformOpenPLXPath( additional );
         if ( String.IsNullOrEmpty( transformed ) )
