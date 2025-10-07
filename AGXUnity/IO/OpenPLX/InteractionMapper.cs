@@ -430,7 +430,7 @@ namespace AGXUnity.IO.OpenPLX
           break;
         default:
           return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
-      };
+      }
 
       return constraint.gameObject;
     }

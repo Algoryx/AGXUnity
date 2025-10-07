@@ -286,7 +286,7 @@ namespace AGXUnity.IO.OpenPLX
         case TypeCode.Single: return ValueType.Real;
         case TypeCode.Boolean: return ValueType.Boolean;
         default: break;
-      };
+      }
 
       if ( typeof( T ) == typeof( Vector3 )
         || typeof( T ) == typeof( agx.Vec3 )

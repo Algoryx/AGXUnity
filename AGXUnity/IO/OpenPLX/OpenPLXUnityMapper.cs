@@ -231,7 +231,7 @@ namespace AGXUnity.IO.OpenPLX
             break;
           default:
             break;
-        };
+        }
       }
 
       if ( go == null )
