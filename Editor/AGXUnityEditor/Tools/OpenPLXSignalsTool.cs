@@ -18,7 +18,7 @@ public class OpenPLXSignalsTool : CustomTargetTool
 
   private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints, string interfacePrefix = "" )
   {
-    var style = InspectorGUISkin.Instance.Label;
+    var style = new GUIStyle(InspectorGUISkin.Instance.Label);
     style.alignment = TextAnchor.MiddleRight;
     foreach ( var endpoint in endpoints ) {
       GUILayout.BeginHorizontal();
