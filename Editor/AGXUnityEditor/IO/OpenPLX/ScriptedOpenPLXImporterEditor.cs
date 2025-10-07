@@ -139,7 +139,7 @@ namespace AGXUnityEditor.IO.OpenPLX
         skipContainer.Add( new Label() { text = $"<b>Dependencies ({deps.Count})</b>" } );
         int numCore = 0;
         foreach ( var dep in deps ) {
-          if ( dep.StartsWith( "Assets/AGXUnity" ) )
+          if ( dep.StartsWith( "Assets/AGXUnity/OpenPLX" ) )
             numCore++;
           else
             skipContainer.Add( new Label() { text = dep } );

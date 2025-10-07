@@ -8,25 +8,9 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
-  Errors:
-  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\Tests\drive_train_brake.openplx:30:5
-      Missing assignment PendulumScene.pendulum.brake.min_relative_slip_ratio, owning
-      model is not complete
-    message: Missing assignment PendulumScene.pendulum.brake.min_relative_slip_ratio,
-      owning model is not complete
-    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\Tests\drive_train_brake.openplx
-    line: 30
-    column: 5
-  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\Tests\drive_train_brake.openplx:2:5
-      Missing assignment PendulumScene.pendulum.brake.charges, owning model is not
-      complete
-    message: Missing assignment PendulumScene.pendulum.brake.charges, owning model
-      is not complete
-    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\Tests\drive_train_brake.openplx
-    line: 2
-    column: 5
+  Errors: []
   Dependencies: []
-  <ImportTime>k__BackingField: 0.9613984
+  <ImportTime>k__BackingField: 0
   SkipImport: 0
   HideImportedMeshes: 1
   HideImportedVisualMaterials: 0

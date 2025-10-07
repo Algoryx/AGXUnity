@@ -9,6 +9,7 @@ ScriptedImporter:
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
   Errors: []
+  Dependencies: []
   <ImportTime>k__BackingField: 0
   SkipImport: 1
   HideImportedMeshes: 1

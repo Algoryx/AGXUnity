@@ -14,8 +14,7 @@ Rod is Physics3D.Bodies.RigidBody:
         main_axis: Math.Vec3.Y_AXIS()
         normal: Math.Vec3.Z_AXIS()
 
-    # PendulumScene_rod is defined in @"inverted_pendulum.agx", it has uuid "e7477154-09f7-5d4b-e406-0fd10fb911b9".
-ExtendedRod is PendulumScene_rod:
+ExtendedRod is Physics3D.Bodies.RigidBody:
     top_connector is Physics3D.Charges.MateConnector:
         position.z: 0.6
         main_axis: Math.Vec3.from_xyz(0, -1, 0)

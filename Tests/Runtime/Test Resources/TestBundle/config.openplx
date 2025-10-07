@@ -1,4 +1,4 @@
 config is BundleConfig:
     name: "Test"
-    version: "0.17.14"
-    dependencies: ["Physics3D==0.17.14"]
+    version: "0.17.26"
+    dependencies: ["Physics3D==0.17.26"]

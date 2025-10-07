@@ -53,6 +53,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
+      Dependencies = new List<string>();
       ImportTime = 0;
 
       // TODO: Investigate why selecting config.openplx files in the project view crashes unity

@@ -8,32 +8,11 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
-  Errors:
-  - message: Nested declarations not allowed
-    line: 29
-    column: 5
-  - message: Nested declarations not allowed
-    line: 32
-    column: 5
-  - message: Variable not found
-    line: 18
-    column: 14
-  - message: Variable not found
-    line: 22
-    column: 14
-  - message: Variable not found
-    line: 26
-    column: 14
-  - message: Member not found in Type
-    line: 39
-    column: 22
-  - message: Type mismatch
-    line: 39
-    column: 14
-  - message: Missing assignment MaterialScene.GroundHinge.charges, owning model is
-      not complete
-    line: 38
-    column: 3
-  <ImportTime>k__BackingField: 0.0606001
+  Errors: []
+  Dependencies: []
+  <ImportTime>k__BackingField: 0
+  SkipImport: 0
   HideImportedMeshes: 1
   HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0
+  RotateUp: 1
