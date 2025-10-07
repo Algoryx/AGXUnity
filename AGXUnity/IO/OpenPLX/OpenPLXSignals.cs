@@ -62,7 +62,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private std.StringReferenceLookup m_nativeMap;
     private agxopenplx.InputSignalQueue NativeInputQueue;
-    private agxopenplx.SignalSourceMapper NativeMapper;
+    private agxopenplx.AgxObjectMap NativeMapper;
     private agxopenplx.InputSignalListener NativeInputListener;
     private agxopenplx.OutputSignalQueue NativeOutputQueue;
     private agxopenplx.OutputSignalListener NativeOutputListener;
@@ -119,7 +119,7 @@ namespace AGXUnity.IO.OpenPLX
       NativeInputQueue = agxopenplx.InputSignalQueue.create();
       NativeOutputQueue = agxopenplx.OutputSignalQueue.create();
 
-      NativeMapper = agxopenplx.SignalSourceMapper.createPreMapped( m_nativeMap, agxopenplx.SignalSourceMapMode.Name );
+      NativeMapper = agxopenplx.AgxObjectMap.createPreMapped( m_nativeMap, agxopenplx.AgxObjectMapMode.Name );
 
       NativeInputListener = new agxopenplx.InputSignalListener( NativeInputQueue, NativeMapper );
       NativeOutputListener = new agxopenplx.OutputSignalListener( Root.Native, NativeOutputQueue, NativeMapper );

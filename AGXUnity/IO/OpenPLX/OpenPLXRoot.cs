@@ -93,9 +93,43 @@ namespace AGXUnity.IO.OpenPLX
         foreach ( var decl in openPLXObj.SourceDeclarations )
           m_objectMap.Add( decl, openPLXObj.gameObject );
 
-      var RTMapper = new RuntimeMapper();
-      RTMapper.PerformRuntimeMapping( this );
-      RuntimeMapped = RTMapper.MapperData.RuntimeMap;
+      var m_nativeMap = new std.StringReferenceLookup();
+      foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
+        foreach ( var decl in openPLXObj.SourceDeclarations ) {
+          var relative = decl.Replace( PrunedNativeName + ".", "" ).Trim();
+
+          var obj = Native.getObject( relative);
+          if ( obj == null )
+            continue;
+          var native = openPLXObj.FindCorrespondingNative( this, obj );
+          if ( native != null )
+            m_nativeMap.Add( new( decl, native ) );
+        }
+      }
+
+      var map = agxopenplx.AgxObjectMap.createPreMapped(m_nativeMap,agxopenplx.AgxObjectMapMode.Name);
+      var errorReporter = new ErrorReporter();
+      var mapper = new agxopenplx.OpenPlxDriveTrainMapper( errorReporter, map );
+
+      agxPowerLine.PowerLineRef powerline = new agxPowerLine.PowerLineRef(new agxPowerLine.PowerLine());
+      mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System, powerline );
+
+      RuntimeMapped = new Dictionary<string, agx.Referenced>();
+      Simulation.Instance.Native.add( powerline.get() );
+      foreach ( var (obj, constraint) in mapper.getMappedConstraints() ) {
+        Simulation.Instance.Native.add( constraint.get() );
+        RuntimeMapped.Add( obj.getName(), constraint.get() );
+      }
+      foreach ( var obj in powerline.getUnits() ) {
+        var objName = obj.getName();
+        if ( objName.StartsWith( PrunedNativeName + "." ) )
+          RuntimeMapped.Add( objName, obj.get() );
+      }
+      foreach ( var obj in powerline.getConnectors() ) {
+        var objName = obj.getName();
+        if ( objName.StartsWith( PrunedNativeName + "." ) )
+          RuntimeMapped.Add( objName, obj.get() );
+      }
 
       return base.Initialize();
     }
