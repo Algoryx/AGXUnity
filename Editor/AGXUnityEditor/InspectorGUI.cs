@@ -1238,7 +1238,7 @@ namespace AGXUnityEditor
                                           0.45f );
       EditorGUILayout.LabelField( GUI.MakeLabel( info.IsExpired ?
                                                    "License expired" :
-                                                   "License expires" ),
+                                                   "License valid until" ),
                                   info.ValidEndDate ?
                                     GUI.MakeLabel( info.EndDate.ToString( "yyyy-MM-dd" ) +
                                                    GUI.AddColorTag( $" ({info.DiffString} {( info.IsExpired ? "ago" : "remaining" )})",

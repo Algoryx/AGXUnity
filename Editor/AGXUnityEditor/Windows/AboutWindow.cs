@@ -103,8 +103,10 @@ namespace AGXUnityEditor.Windows
       InspectorGUI.BrandSeparator( 1, 8 );
 
       GUILayout.Label( "Support", EditorStyles.boldLabel );
-      EditorGUILayout.SelectableLabel( "Please refer to the information received when purchasing your license for support contact information.",
-                                       InspectorEditor.Skin.LabelWordWrap );
+      EditorGUILayout.SelectableLabel( "For support regarding AGX Dynamics for Unity, please send an email to <a href=\"mailto:support@algoryx.com\">support@algoryx.com</a> describing your issue. " +
+                                        "Please also write your Unity editor version and the AGX Dynamics for Unity version which is listed above.",
+                                       InspectorEditor.Skin.LabelWordWrap,
+                                       GUILayout.ExpandHeight( true ) );
     }
 
     private AGXUnity.LicenseInfo s_agxInfo = new AGXUnity.LicenseInfo();

@@ -38,6 +38,17 @@ namespace AGXUnity.Model
     [SerializeField]
     private List<PagingBody<DeformableTerrainShovel>> m_shovels = new List<PagingBody<DeformableTerrainShovel>>();
 
+    private IEnumerable<PagingBody<DeformableTerrainShovel>> VerifyShovels()
+    {
+      m_shovels = m_shovels.Where( s => s.Body != null ).ToList();
+      return m_shovels;
+    }
+
+    private IEnumerable<PagingBody<RigidBody>> VerifyRigidBodies()
+    {
+      m_rigidbodies = m_rigidbodies.Where( s => s.Body != null ).ToList();
+      return m_rigidbodies;
+    }
 
     /// <summary>
     /// Shovels along with their respective load radii that are associated with this terrainPager
@@ -46,13 +57,13 @@ namespace AGXUnity.Model
     /// Do not attempt to modify the load-radii by modifying this list, instead use <see cref="SetTileLoadRadius(DeformableTerrainShovel,float,float)"/>
     /// </remarks>
     [HideInInspector]
-    public PagingBody<DeformableTerrainShovel>[] PagingShovels { get { return m_shovels.ToArray(); } }
+    public PagingBody<DeformableTerrainShovel>[] PagingShovels => VerifyShovels().ToArray();
 
     /// <summary>
-    /// Rigidbodies associated to this terrain.
+    /// Shovels associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public DeformableTerrainShovel[] Shovels { get { return m_shovels.Select( rb => rb.Body ).ToArray(); } }
+    public DeformableTerrainShovel[] Shovels => VerifyShovels().Select( rb => rb.Body ).ToArray();
 
     [SerializeField]
     private List<PagingBody<RigidBody>> m_rigidbodies = new List<PagingBody<RigidBody>>();
@@ -61,7 +72,7 @@ namespace AGXUnity.Model
     /// Rigidbodies associated to this terrain.
     /// </summary>
     [HideInInspector]
-    public RigidBody[] RigidBodies { get { return m_rigidbodies.Select( rb => rb.Body ).ToArray(); } }
+    public RigidBody[] RigidBodies => VerifyRigidBodies().Select( rb => rb.Body ).ToArray();
 
     /// <summary>
     /// Rigidbodies along with their respective load radii that are associated with this terrainPager
@@ -70,7 +81,7 @@ namespace AGXUnity.Model
     /// Do not attempt to modify the load-radii by modifying this list, instead use <see cref="SetTileLoadRadius(RigidBody,float,float)"/>
     /// </remarks>
     [HideInInspector]
-    public PagingBody<RigidBody>[] PagingRigidBodies { get { return m_rigidbodies.ToArray(); } }
+    public PagingBody<RigidBody>[] PagingRigidBodies => VerifyRigidBodies().ToArray();
 
     /// <summary>
     /// Unity Terrain component.
