@@ -1,0 +1,33 @@
+FrictionCM is Physics.Interactions.SurfaceContact.Model:
+  with AGX.ContactReductionBinResolution
+  friction becomes Physics.Interactions.Dissipation.DefaultDryFriction
+  bin_resolution: 2
+
+const BoxMaterial is Physics.Charges.Material
+
+const GroundMaterial is Physics.Charges.Material
+
+SlidingBox is Physics3D.Bodies.RigidBody:
+  kinematics.local_transform.position: Math.Vec3.from_xyz(0,0,0.1)
+  geometry is Physics3D.Charges.Box:
+    size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+    material: BoxMaterial
+
+GroundBox is Physics3D.Bodies.RigidBody:
+  geometry is Physics3D.Charges.Box:
+    size: Math.Vec3.from_xyz(0.5,0.5,0.1)
+    material: GroundMaterial
+
+MaterialScene is Physics3D.System:
+  Box is SlidingBox
+  
+  Ground is GroundBox
+
+  GroundBoxCM is FrictionCM:
+    material_1: GroundMaterial
+    material_2: BoxMaterial
+    normal_restitution: 0.1
+    tangential_restitution: 0.1
+
+
+

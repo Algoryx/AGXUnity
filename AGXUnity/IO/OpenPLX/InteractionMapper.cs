@@ -599,6 +599,16 @@ namespace AGXUnity.IO.OpenPLX
       if ( contactModel.clearance() is openplx.Physics.Interactions.Clearance.ConstantDistanceClearance constant_slack_distance )
         cm.AdhesiveOverlap = (float)constant_slack_distance.distance();
 
+      if ( contactModel.hasTrait( "AGX.ContactReductionBinResolution" ) ) {
+        var binResolution = contactModel.getNumber( "bin_resolution" );
+        cm.ContactReductionLevel = binResolution switch
+        {
+          1 => ContactMaterial.ContactReductionLevelType.Aggressive,
+          2 => ContactMaterial.ContactReductionLevelType.Moderate,
+          _ => ContactMaterial.ContactReductionLevelType.Minimal
+        };
+      }
+
       // Restitution
       cm.Restitution = (float)contactModel.normal_restitution();
       // TODO: Tangential restitution

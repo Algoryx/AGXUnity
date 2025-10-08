@@ -1,4 +1,5 @@
 using AGXUnity;
+using AGXUnity.IO;
 using AGXUnity.IO.OpenPLX;
 using AGXUnity.Utils;
 using NUnit.Framework;
@@ -6,6 +7,7 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
+using static AGXUnity.ContactMaterial;
 
 namespace AGXUnityTesting.Runtime
 {
@@ -528,6 +530,15 @@ namespace AGXUnityTesting.Runtime
       var rangeSignalVec2f = rangeOutput.GetValue<agx.Vec2f>();
       Assert.That( rangeSignalVec2f.x, Is.EqualTo( 4.0f ).Within( 1e-10 ) );
       Assert.That( rangeSignalVec2f.y, Is.EqualTo( 5.0f ).Within( 1e-10 ) );
+    }
+
+    [Test]
+    public void TestAGXContactModelReduction()
+    {
+      var dependant = OpenPLXImporter.ImportOpenPLXFile<GameObject>( TestDataFolder + "/agx_bundle_test.openplx" );
+      Assert.NotNull( dependant );
+      var level = dependant.GetComponent<SavedPrefabLocalData>().ContactMaterials[0].ContactReductionLevel;
+      Assert.That( level, Is.EqualTo( ContactReductionLevelType.Moderate ) );
     }
   }
 }
