@@ -71,6 +71,13 @@ namespace AGXUnityEditor.Windows
                                         agxDynamicsVersion,
                                         InspectorEditor.Skin.Label );
 
+
+      var openplxVersion = GUI.AddColorTag( CoreSWIG.getOpenPlxCoreVersion(), fieldColor );
+
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "OpenPLX version" ),
+                                        openplxVersion,
+                                        InspectorEditor.Skin.Label );
+
       InspectorGUI.LicenseEndDateField( s_agxInfo );
 
       InspectorGUI.BrandSeparator( 1, 8 );

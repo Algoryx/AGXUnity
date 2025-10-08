@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace AGXUnity.Utils
 {
+  [AddComponentMenu( "AGXUnity/Data Series" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plotting-and-data-acquisition" )]
   public class DataSeries : ScriptComponent
   {
