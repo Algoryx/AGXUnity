@@ -1,7 +1,9 @@
+using AGXUnity.Utils;
 using openplx;
 using openplx.Core.Api;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -27,6 +29,29 @@ namespace AGXUnity.IO.OpenPLX
 
     public static string TransformOpenPLXPath( string path ) => System.IO.Path.IsPathRooted( path ) ? path : path.Replace( "Assets/", OpenPLXRoot + "/" );
 
+    public static List<string> FindDeclaredModels( string path )
+    {
+      var transformed = TransformOpenPLXPath(path);
+      if ( !System.IO.File.Exists( path ) )
+        throw new FileNotFoundException( "Cannot find the specified OpenPLX-file", path );
+      var lines = System.IO.File.ReadAllLines(transformed);
+      var result = new List<string>();
+      foreach ( var line in lines ) {
+        if ( line.Length == 0
+          || !System.Char.IsLetter( line, 0 )
+          || line.StartsWith( "trait " )
+          || line.StartsWith( "import " ) )
+          continue;
+
+        var src = line;
+        if ( src.StartsWith( "const " ) )
+          src = src[ 6.. ];
+
+        result.Add( src.SplitSpace()[ 0 ] );
+      }
+      return result;
+    }
+
     public static T ImportOpenPLXFile<T>( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null ) where T : UnityEngine.Object
     {
       var importer = new OpenPLXImporter();
@@ -40,9 +65,9 @@ namespace AGXUnity.IO.OpenPLX
     public Action<MapperData> SuccessCallback { get; set; } = null;
     public Action ErrorCallback { get; set; } = null;
     public MapperOptions Options { get; set; }
-    public T ImportOpenPLXFile<T>( string path ) where T : UnityEngine.Object
+    public T ImportOpenPLXFile<T>( string path, string model = null ) where T : UnityEngine.Object
     {
-      var obj = ImportOpenPLXFile(path);
+      var obj = ImportOpenPLXFile(path, model);
 
       if ( obj is not T casted ) {
         ErrorReporter?.Invoke( new IncompatibleImportTypeError( path ) );
@@ -52,13 +77,13 @@ namespace AGXUnity.IO.OpenPLX
       return casted;
     }
 
-    public UnityEngine.Object ImportOpenPLXFile( string path )
+    public UnityEngine.Object ImportOpenPLXFile( string path, string model = null )
     {
       var mapper = new OpenPLXUnityMapper(Options);
       var transformed = TransformOpenPLXPath(path);
       Object loadedModel = null;
       if ( System.IO.File.Exists( transformed ) )
-        loadedModel = ParseOpenPLXSource( transformed, mapper.Data );
+        loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data );
       else
         ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
 
@@ -71,8 +96,11 @@ namespace AGXUnity.IO.OpenPLX
           ErrorCallback?.Invoke();
         }
         else {
-          if ( importedObject is GameObject go )
-            go.GetComponent<OpenPLX.OpenPLXRoot>().OpenPLXAssetPath = path;
+          if ( importedObject is GameObject go ) {
+            var root = go.GetComponent<OpenPLX.OpenPLXRoot>();
+            root.OpenPLXAssetPath = path;
+            root.OpenPLXModelName = model;
+          }
           SuccessCallback?.Invoke( mapper.Data );
         }
       }
@@ -117,10 +145,10 @@ namespace AGXUnity.IO.OpenPLX
       return context;
     }
 
-    public Object ParseOpenPLXSource( string source, MapperData data = null )
+    public Object ParseOpenPLXSource( string source, string model = null, MapperData data = null )
     {
       var context = CreateContext(data?.AgxCache);
-      Object loadedObj = CoreSWIG.loadModelFromFile( source, null, context );
+      Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
       var objs = context.getRegisteredObjects();
       if ( data != null ) {
         foreach ( var obj in objs ) {

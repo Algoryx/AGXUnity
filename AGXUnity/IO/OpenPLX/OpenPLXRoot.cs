@@ -18,6 +18,8 @@ namespace AGXUnity.IO.OpenPLX
     /// </summary>
     [field: SerializeField]
     public string OpenPLXAssetPath { get; set; }
+    [field: SerializeField]
+    public string OpenPLXModelName { get; set; }
 
     // TODO: This is a workaround to the root object being prefixed with the bundle name but not the child objects. When this issue is fixed in OpenPLX, this should be removed
     [HideInInspector]
@@ -40,7 +42,6 @@ namespace AGXUnity.IO.OpenPLX
     /// OpenPLX file needs to be updated accordingly.
     /// </summary>
     public string OpenPLXFile => OpenPLXImporter.TransformOpenPLXPath( OpenPLXAssetPath );
-
     public Object Native { get; internal set; }
 
     public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
@@ -80,7 +81,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( Native == null ) {
         var importer = new OpenPLXImporter();
         importer.ErrorReporter = ReportError;
-        Native = importer.ParseOpenPLXSource( OpenPLXFile );
+        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName );
 
         if ( Native == null ) {
           Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );

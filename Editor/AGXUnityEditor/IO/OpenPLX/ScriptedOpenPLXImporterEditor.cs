@@ -100,6 +100,13 @@ namespace AGXUnityEditor.IO.OpenPLX
 
       if ( !skipImport ) {
 
+        var models = ScriptedOpenPLXImporter.DeclaredModels.ToList();
+        models.Add( "Default" );
+        var modelSelection = new DropdownField( "Imported Model", models, ScriptedOpenPLXImporter.ImportedModel );
+        modelSelection.RegisterValueChangedCallback( ce => ScriptedOpenPLXImporter.ImportedModel = ce.newValue );
+        modelSelection.BindProperty( serializedObject.FindProperty( "ImportedModel" ) );
+        skipContainer.Add( modelSelection );
+
         if ( ScriptedOpenPLXImporter.Errors.Count > 0 ) {
           skipContainer.Add( new Label() { text = $"<b>Errors ({ScriptedOpenPLXImporter.Errors.Count})</b>" } );
           var errors = new VisualElement();
@@ -135,17 +142,18 @@ namespace AGXUnityEditor.IO.OpenPLX
         }
       }
       var deps = ScriptedOpenPLXImporter.Dependencies;
-      if ( deps.Count > 0 ) {
-        skipContainer.Add( new Label() { text = $"<b>Dependencies ({deps.Count})</b>" } );
+      if ( deps.Length > 0 ) {
+        var depFoldout = new Foldout(){ text = $"<b>Dependencies ({deps.Length})</b>", value = false };
         int numCore = 0;
         foreach ( var dep in deps ) {
           if ( dep.StartsWith( "Assets/AGXUnity/OpenPLX" ) )
             numCore++;
           else
-            skipContainer.Add( new Label() { text = dep } );
+            depFoldout.Add( new Label() { text = dep } );
         }
         if ( numCore > 0 )
-          skipContainer.Add( new Label() { text = $"Core bundle dependencies ({numCore})" } );
+          depFoldout.Add( new Label() { text = $"<b>Core bundle dependencies ({numCore})</b>" } );
+        skipContainer.Add( depFoldout );
       }
       ve.Add( skipContainer );
       ve.Add( new IMGUIContainer( () => base.ApplyRevertGUI() ) );

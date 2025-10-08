@@ -22,8 +22,16 @@ namespace AGXUnityEditor.IO.OpenPLX
     }
 
     [SerializeField]
+    private List<string> m_dependencies;
+    [SerializeField]
+    private List<string> m_declaredModels;
+
+    [SerializeField]
     public List<Error> Errors;
-    public List<string> Dependencies;
+    [SerializeField]
+    public string ImportedModel;
+    public string[] Dependencies => m_dependencies.ToArray();
+    public string[] DeclaredModels => m_declaredModels.ToArray();
 
     [field: SerializeField]
     public float ImportTime { get; private set; }
@@ -53,7 +61,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public override void OnImportAsset( AssetImportContext ctx )
     {
       Errors = new List<Error>();
-      Dependencies = new List<string>();
+      m_dependencies = new List<string>();
       ImportTime = 0;
 
       // TODO: Investigate why selecting config.openplx files in the project view crashes unity
@@ -64,6 +72,11 @@ namespace AGXUnityEditor.IO.OpenPLX
         ctx.AddObjectToAsset( "Root", new GameObject(), Icon );
         return;
       }
+      m_declaredModels = OpenPLXImporter.FindDeclaredModels( ctx.assetPath );
+      if ( ImportedModel == null
+        || ( ImportedModel != "Default" && !m_declaredModels.Contains( ImportedModel ) ) )
+        ImportedModel = "Default";
+
       var start = DateTime.Now;
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportErrors;
@@ -74,7 +87,8 @@ namespace AGXUnityEditor.IO.OpenPLX
           Debug.LogError( $"There were errors importing the OpenPLX file '{ctx.assetPath}'" );
       };
 
-      var go = importer.ImportOpenPLXFile( ctx.assetPath );
+      var modelName = ImportedModel != "Default" ? ImportedModel : null;
+      var go = importer.ImportOpenPLXFile( ctx.assetPath, modelName );
       var end = DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 
@@ -92,10 +106,10 @@ namespace AGXUnityEditor.IO.OpenPLX
         var relative = System.IO.Path.GetRelativePath( Application.dataPath, doc );
         var normalized = "Assets/" + relative.Replace('\\','/');
 
-        Dependencies.Add( normalized );
+        m_dependencies.Add( normalized );
         ctx.DependsOnSourceAsset( normalized );
       }
-      Dependencies.Sort();
+      m_dependencies.Sort();
 
       if ( data.RootNode )
         ctx.AddObjectToAsset( "Root", data.RootNode, Icon );
