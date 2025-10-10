@@ -135,6 +135,30 @@ namespace AGXUnityTesting.Runtime
         for ( int x = 0; x < 10; x++ )
           Assert.AreEqual( expected[ y, x ], RescaleUnityHeight( results[ y, x ], true ), HEIGHT_DELTA );
     }
+
+    [Test]
+    public void TestClampedTerrainGivesWarning()
+    {
+      GameObject go = new GameObject("Clamped Terrain");
+
+      unityTerrain = go.AddComponent<Terrain>();
+      unityTerrain.terrainData = new TerrainData();
+      unityTerrain.terrainData.size = new Vector3( 30, 10, 30 );
+      unityTerrain.terrainData.heightmapResolution = 33;
+
+      float [,] heights = new float[33,33];
+      for ( int y = 0; y < 33; y++ )
+        for ( int x = 0; x < 33; x++ )
+          heights[ y, x ] = 5.0f / unityTerrain.terrainData.heightmapScale.y;
+
+      unityTerrain.terrainData.SetHeights( 0, 0, heights );
+
+      testTerrain = go.AddComponent<DeformableTerrain>();
+      testTerrain.MaximumDepth = 10;
+
+      LogAssert.Expect( LogType.Warning, $"Terrain heights were clamped! Max allowed: 10, Max Encountered: 15 and AGXUnity.Model.DeformableTerrain.MaximumDepth = 10. Resolve this by increasing max height and lower the terrain or decrease Maximum Depth." );
+      testTerrain.GetInitialized();
+    }
   }
   public class PagerTests
   {

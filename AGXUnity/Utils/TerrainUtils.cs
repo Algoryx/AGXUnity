@@ -92,20 +92,18 @@ namespace AGXUnity.Utils
       for ( int y = resolutionY - 1; y >= 0; --y ) {
         for ( int x = resolutionX - 1; x >= 0; --x ) {
           heights[ y, x ] += scaledOffset;
-          agxHeights.Add( heights[ y, x ] * scale.y );
-          if ( heights[ y, x ] > dataMaxHeight )
-            maxClampedHeight = System.Math.Max( maxClampedHeight, (float)heights[ y, x ] );
+          var scaledHeight = heights[ y, x ] * scale.y;
+          agxHeights.Add( scaledHeight );
+          if ( scaledHeight > dataMaxHeight )
+            maxClampedHeight = System.Math.Max( maxClampedHeight, scaledHeight );
         }
       }
 
       terrainData.SetHeights( 0, 0, heights );
 
       if ( maxClampedHeight > 0.0f ) {
-        Debug.LogWarning( "Terrain heights were clamped: UnityEngine.TerrainData max height = " +
-                          dataMaxHeight +
-                          " and AGXUnity.Model.DeformableTerrain.MaximumDepth = " +
-                          offset +
-                          ". Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
+        Debug.LogWarning( $"Terrain heights were clamped! Max allowed: {dataMaxHeight}, Max Encountered: {maxClampedHeight} and " +
+          $"AGXUnity.Model.DeformableTerrain.MaximumDepth = {offset}. Resolve this by increasing max height and lower the terrain or decrease Maximum Depth.", terrain );
       }
 
       return new NativeHeights
