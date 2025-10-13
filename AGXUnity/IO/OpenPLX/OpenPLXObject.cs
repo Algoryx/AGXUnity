@@ -1,5 +1,6 @@
 using AGXUnity.Collide;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System.Collections.Generic;
 using UnityEngine;
@@ -57,6 +58,7 @@ namespace AGXUnity.IO.OpenPLX
       openplx.Physics3D.Charges.MateConnector => gameObject.GetInitializedComponent<ObserverFrame>().Native,
       openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
       openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
+      openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
       _ => DefaultHandling( obj )
     };
 

@@ -134,6 +134,7 @@ namespace AGXUnity.IO.OpenPLX
       DriveTrainSWIG.DriveTrain_register_factories_cs( context );
       RoboticsSWIG.Robotics_register_factories_cs( context );
       SimulationSWIG.Simulation_register_factories_cs( context );
+      SensorsSWIG.Sensors_register_factories_cs( context );
       VehiclesSWIG.Vehicles_register_factories_cs( context );
       TerrainSWIG.Terrain_register_factories_cs( context );
       VisualsSWIG.Visuals_register_factories_cs( context );
