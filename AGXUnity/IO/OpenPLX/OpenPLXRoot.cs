@@ -81,7 +81,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( Native == null ) {
         var importer = new OpenPLXImporter();
         importer.ErrorReporter = ReportError;
-        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName );
+        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName );
 
         if ( Native == null ) {
           Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
