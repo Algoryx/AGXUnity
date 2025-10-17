@@ -196,25 +196,15 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-    public IEnumerator TestDrivetrainDifferential()
+    public IEnumerator TestDrivetrainDifferentialAndGear()
     {
       LoadOpenPLX( "differential_test.openplx" );
-      yield return TestUtils.Step();
+      yield return TestUtils.SimulateSeconds( 0.5f );
 
       var rod1RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum1/rod");
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.GreaterOrEqual( Mathf.Abs( rod1RB.AngularVelocity.z ), 0.1f );
       Assert.GreaterOrEqual( Mathf.Abs( rod2RB.AngularVelocity.z ), 0.1f );
-    }
-
-    [UnityTest]
-    public IEnumerator TestDrivetrainGear()
-    {
-      LoadOpenPLX( "differential_test.openplx" );
-      yield return TestUtils.Step();
-
-      var rod1RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum1/rod");
-      var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
     }
 
