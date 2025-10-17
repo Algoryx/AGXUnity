@@ -33,17 +33,27 @@ namespace AGXUnity.IO.OpenPLX
     {
       var subName = source.getName().Substring(source.getName().LastIndexOf('.') + 1);
 
-      openplx.Token tok;
-      openplx.Document document;
+      openplx.Token tok = null;
+      openplx.Document document = null;
       if ( source.getOwner() != null ) {
         var ownerType = source.getOwner().getType();
-        openplx.Node member = ownerType.findFirstMember( subName );
-        tok = member.isVarDeclaration() ? member.asVarDeclaration().getNameToken() : member.asVarAssignment().getTargetSegments().Last();
-        document = member.isVarDeclaration() ? member.asVarDeclaration().getOwningDocument() : member.asVarAssignment().getOwningDocument();
+        openplx.Node member = ownerType?.findFirstMember( subName );
+        if ( member != null ) {
+          tok = member.isVarDeclaration() ? member?.asVarDeclaration()?.getNameToken() : member?.asVarAssignment()?.getTargetSegments()?.Last();
+          document = member.isVarDeclaration() ? member?.asVarDeclaration()?.getOwningDocument() : member?.asVarAssignment()?.getOwningDocument();
+        }
       }
       else {
         tok = source.getType().getNameToken();
         document = source.getType().getOwningDocument();
+      }
+      if ( tok == null || document == null ) {
+        // Fallback to declaration of root model
+        var owner = source.getOwner();
+        while ( owner.getOwner() != null )
+          owner = owner.getOwner();
+        tok = owner.getType().getNameToken();
+        document = owner.getType().getOwningDocument();
       }
       return new ErrorData
       {
