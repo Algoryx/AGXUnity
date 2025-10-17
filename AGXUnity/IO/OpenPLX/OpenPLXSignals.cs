@@ -346,6 +346,7 @@ namespace AGXUnity.IO.OpenPLX
         s_typeCache[ tempIO.ForceRange() - 1 ]            = ValueType.Vec2;
         s_typeCache[ tempIO.Rpm() - 1 ]                   = ValueType.Real;
         s_typeCache[ tempIO.Ratio() - 1 ]                 = ValueType.Real;
+        s_typeCache[ tempIO.Mass() - 1 ]                  = ValueType.Real;
 
         if ( s_typeCache.Contains( ValueType.Unknown ) )
           Debug.LogWarning( "OpenPLX value type mapping contains unhandled value type(s)" );
