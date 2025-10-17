@@ -103,6 +103,8 @@ namespace AGXUnityEditor.IO.OpenPLX
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
       foreach ( var doc in data.RegisteredDocuments ) {
+        if ( doc == null || doc.Length == 0 )
+          continue;
         var relative = System.IO.Path.GetRelativePath( Application.dataPath, doc );
         var normalized = "Assets/" + relative.Replace('\\','/');
 

@@ -4,8 +4,6 @@ using openplx.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 using Object = openplx.Core.Object;
@@ -151,13 +149,6 @@ namespace AGXUnity.IO.OpenPLX
       var context = CreateContext(data?.AgxCache);
       Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
       var objs = context.getRegisteredObjects();
-      if ( data != null ) {
-        foreach ( var obj in objs ) {
-          var doc = obj?.getType()?.getOwningDocument()?.getSourceId();
-          if ( doc != null )
-            data.RegisteredDocuments.Add( doc );
-        }
-      }
 
       if ( context.hasErrors() ) {
         loadedObj = null;
@@ -165,46 +156,43 @@ namespace AGXUnity.IO.OpenPLX
           foreach ( var error in context.getErrors() )
             ErrorReporter( error );
       }
+      else {
+        Action<string> addIfValid = (string path) => {
+          if(path != null && path.Length > 0)
+            data.RegisteredDocuments.Add( path );
+        };
+
+        // Find Imports
+        var imports = loadedObj.getType().getOwningDocument().findImports();
+        foreach ( var import in imports ) {
+          addIfValid( import.getPath() );
+        }
+
+        // Find references to paths in members
+        var values = new std.OuterSymbolSet();
+        loadedObj.getType().getOuterTreeRoot().collectValues( values );
+        foreach ( var val in values ) {
+          var boundValue = val.getBoundValue();
+          if ( boundValue == null )
+            continue;
+          if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
+            var path = boundValue.asConstant().getToken().lexeme.Trim('\"');
+            if ( System.IO.File.Exists( path ) )
+              addIfValid( path );
+          }
+        }
+
+        // Find bundle dependencies and add all files to dependencies
+        var ic = OpenPlxContextInternal.fromContext( context );
+        foreach ( var bundle in ic.analysisContext().getBundles() ) {
+          var config = bundle.documents[ 0 ].getBundleConfig();
+          addIfValid( config.config_file_path );
+          foreach ( var file in config.openplx_files )
+            addIfValid( file );
+        }
+      }
 
       return loadedObj;
-    }
-
-    public static string[] FindExplicitDependencies( string source )
-    {
-      // TODO: Explicit dependency check is slow and crashes on build
-      //var context = CreateContext();
-      //var ic = OpenPLXContextInternal.fromContext( context );
-      //var doc = ic.parseFile( source );
-
-      //var imports = doc.findImports();
-      //return imports.Select( imp => imp.getPath().Replace( "\\", "/" ) ).ToArray();
-
-
-      // TODO: This does not currently handle nested imports handled by plugins. 
-      // i.e. if an imported URDF file in turn import an OBJ file.
-      List<string> dependencyExtensions = new List<string>() { "obj", "png", "jpg" };
-
-      string extRegex = "";
-      foreach ( var ext in dependencyExtensions )
-        extRegex += "|" + ext;
-      extRegex = extRegex[ 1.. ];
-
-      // Check for instances where a string is preceeded by an "import" statement or where the string ends with a known extension supported path.
-      string depRegex = $"(?:import\\s+(@?\".*?\"))|(?:(@?\".*?\\.(?:{extRegex})\"))";
-
-      var reg = new Regex(depRegex);
-
-      var relativeDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(source)) + "/";
-      var openPLX = System.IO.File.ReadAllLines( source );
-      return openPLX
-        .SelectMany( l => reg.Matches( l ) )
-        .SelectMany( m => m.Groups.Skip( 1 ) )
-        .Where( g => g.Success )
-        .Select( g => g.Value )
-        .Select( i => i.StartsWith( '@' ) ? relativeDir + i[ 2..( i.Length - 1 ) ] : i[ 1..( i.Length - 1 ) ] )
-        .Select( i => i.Replace( '\\', '/' ) )
-        .Distinct()
-        .ToArray();
     }
 
     private static void ReportToConsole( Error error )

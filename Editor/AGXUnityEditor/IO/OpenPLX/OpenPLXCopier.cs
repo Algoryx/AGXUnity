@@ -43,10 +43,19 @@ namespace AGXUnityEditor.IO.OpenPLX
           CopyAsset( src, openPLXTarDir );
           num++;
 
+          // TODO: this path should use the importer properties
           if ( src.StartsWith( "Assets/AGXUnity/OpenPLX" ) )
             continue;
-          var deps = OpenPLXImporter.FindExplicitDependencies( src );
-          foreach ( var dep in deps ) {
+
+          var importer = (ScriptedOpenPLXImporter)AssetImporter.GetAtPath(src);
+          if ( importer == null ) {
+            Debug.LogWarning( $"No importer found for asset at path '{src}'." );
+            continue;
+          }
+
+          foreach ( var dep in importer.Dependencies ) {
+            if ( dep.EndsWith( ".openplx" ) )
+              continue;
             var relative = Path.GetRelativePath( projectPath, dep );
             if ( !copiedDeps.Contains( relative ) ) {
               CopyAsset( relative, openPLXTarDir );
