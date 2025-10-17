@@ -37,9 +37,9 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.DestroyAndWait( Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ).Select( r => r.gameObject ).ToArray() );
     }
 
-    public void LoadOpenPLX( string source )
+    public void LoadOpenPLX( string source, string modelName = null )
     {
-      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ) );
+      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ), default, null, modelName );
       Assert.NotNull( openPLXObj, $"Failed to import OpenPLX file '{source}'" );
       openPLXObj.transform.rotation = Quaternion.AngleAxis( -90, Vector3.right );
       openPLXObj.InitializeAll();

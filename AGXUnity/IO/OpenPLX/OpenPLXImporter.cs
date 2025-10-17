@@ -52,13 +52,13 @@ namespace AGXUnity.IO.OpenPLX
       return result;
     }
 
-    public static T ImportOpenPLXFile<T>( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null ) where T : UnityEngine.Object
+    public static T ImportOpenPLXFile<T>( string path, MapperOptions options = new MapperOptions(), Action<MapperData> onSuccess = null, string model = null ) where T : UnityEngine.Object
     {
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportToConsole;
       importer.SuccessCallback = onSuccess;
       importer.Options = options;
-      return importer.ImportOpenPLXFile<T>( path );
+      return importer.ImportOpenPLXFile<T>( path, model );
     }
 
     public Action<Error> ErrorReporter { get; set; } = null;
