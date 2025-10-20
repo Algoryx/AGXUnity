@@ -98,6 +98,8 @@ namespace AGXUnityEditor.IO.OpenPLX
       }
       else
         ctx.SetMainObject( go );
+
+      EditorUtility.SetDirty( this );
     }
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )

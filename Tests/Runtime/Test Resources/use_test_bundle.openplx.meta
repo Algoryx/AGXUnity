@@ -8,6 +8,9 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  dependencies: []
+  declaredModels:
+  - TestBody
   Errors:
   - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
       Resources\use_test_bundle.openplx:1:13 Type "Test.Test" not found
@@ -16,9 +19,9 @@ ScriptedImporter:
       Resources\use_test_bundle.openplx
     line: 1
     column: 13
-  Dependencies: []
-  <ImportTime>k__BackingField: 1.4928572
-  SkipImport: 0
+  ImportedModel: Default
+  <ImportTime>k__BackingField: 0.3790163
+  SkipImport: 1
   HideImportedMeshes: 1
   HideImportedVisualMaterials: 0
   IgnoreDisabledMeshes: 0
