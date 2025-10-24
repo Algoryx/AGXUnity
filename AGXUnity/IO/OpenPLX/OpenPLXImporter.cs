@@ -175,8 +175,9 @@ namespace AGXUnity.IO.OpenPLX
     public static string[] FindDependencies( string source, string model = null )
     {
       var context = CreateContext();
-      Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
       var obj = CoreSWIG.loadModelFromFile( source, model, context );
+      if ( obj == null )
+        return null;
       return FindDependencies( obj, context );
     }
 
@@ -190,9 +191,8 @@ namespace AGXUnity.IO.OpenPLX
 
       // Find Imports
       var imports = obj.getType().getOwningDocument().findImports();
-      foreach ( var import in imports ) {
+      foreach ( var import in imports )
         addIfValid( import.getPath() );
-      }
 
       // Find references to paths in members
       var values = new std.OuterSymbolSet();

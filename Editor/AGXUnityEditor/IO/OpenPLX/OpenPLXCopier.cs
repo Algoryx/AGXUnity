@@ -57,8 +57,13 @@ namespace AGXUnityEditor.IO.OpenPLX
 
           // If no dependencies are found, we assume that the importer has not yet run and does not have any cached dependencies
           // TODO: This should be changed once the OpenPLX API is changed to more easily check for dependencies
-          if ( dependencies.Length == 0 )
-            dependencies = OpenPLXImporter.FindDependencies( src );
+          if ( dependencies.Length == 0 && !importer.SkipImport )
+            dependencies = OpenPLXImporter.FindDependencies( src, importer.ImportedModel == "Default" ? null : importer.ImportedModel );
+
+          if ( importer.Errors.Count != 0 || dependencies == null ) {
+            Debug.LogWarning( $"There were error importing openplx file '{src}', build might not include all of its dependencies." );
+            continue;
+          }
 
           foreach ( var dep in dependencies ) {
             if ( dep.EndsWith( ".openplx" ) )
