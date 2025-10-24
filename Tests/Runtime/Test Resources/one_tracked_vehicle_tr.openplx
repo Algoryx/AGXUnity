@@ -1,0 +1,138 @@
+BoxComponent is Physics3D.Bodies.RigidBody:
+    inertia.mass: 3.0
+    geometry is Physics3D.Charges.Box:
+        size: Math.Vec3.from_xyz(1.0, 1.0, 1.0)
+
+MySprocket is Vehicles.Tracks.RigidCylindricalSprocket:
+    radius: 0.15
+    width: 1
+
+MyIdler is Vehicles.Tracks.RigidCylindricalIdler:
+    radius: 0.1
+    width: 1
+
+MyBoxLinkVariation is Vehicles.Tracks.BoxLinkVariation:
+    height_variation becomes Vehicles.Tracks.DiscretePulseVariation:
+        discrete_period: 5
+        additional_amplitude: 0.05
+
+    width_variation becomes Vehicles.Tracks.SinusoidalVariation:
+        period: 0.7
+        additional_amplitude: 0.1
+
+const LinkMaterial is Physics.Charges.Material:
+    density: 2000
+
+MyLinkDescription is Vehicles.Tracks.BoxLinkDescription:
+    variation becomes MyBoxLinkVariation
+    width: 1
+    height: 0.1
+    contact_geometry.material: LinkMaterial
+
+DefaultBelt is Vehicles.Tracks.FixedLinkCountBelt:
+    link_count: 100
+    link_description becomes Vehicles.Tracks.BoxLinkDescription:
+        width: 1
+        height: 0.1
+        contact_geometry.material: LinkMaterial
+
+MyAdvancedBelt is DefaultBelt:
+    link_description becomes MyLinkDescription
+
+
+MyDefaultTracks is Vehicles.Tracks.System:
+    belt becomes DefaultBelt
+
+    sprocket_connector is Physics3D.Charges.StructuralPlanarConnector:
+        x: 2.1
+        y: 1.1
+
+    idler_connector_1 is Physics3D.Charges.StructuralPlanarConnector:
+        x: -1.1
+        y: 1.1
+
+    idler_connector_2 is Physics3D.Charges.StructuralPlanarConnector:
+        x: -1.1
+        y: -1.1
+
+    idler_connector_3 is Physics3D.Charges.StructuralPlanarConnector:
+        x: 1.1
+        y: -1.1
+
+    sprocket is MySprocket
+    idler_1 is MyIdler
+    idler_2 is MyIdler
+    idler_3 is MyIdler
+    road_wheels: [sprocket, idler_1, idler_2, idler_3]
+
+    sprocket_hinge is Physics3D.Interactions.Hinge:
+        charges: [sprocket_connector, sprocket.center_connector]
+
+    velocity_motor is Physics3D.Interactions.RotationalVelocityMotor:
+        charges: sprocket_hinge.charges
+        gain: 1000000000
+        target_speed: 4
+
+    idler_1_hinge is Physics3D.Interactions.Hinge:
+        charges: [idler_connector_1, idler_1.center_connector]
+
+    idler_2_hinge is Physics3D.Interactions.Hinge:
+        charges: [idler_connector_2, idler_2.center_connector]
+
+    idler_3_hinge is Physics3D.Interactions.Hinge:
+        charges: [idler_connector_3, idler_3.center_connector]
+
+
+
+MyAdvancedTracks is MyDefaultTracks:
+    belt becomes MyAdvancedBelt
+
+OneTrackVehicle is Physics3D.System:
+    chassis is BoxComponent:
+        kinematics.local_transform.position: Math.Vec3.from_xyz(0,0,0)
+
+    tracks is MyDefaultTracks:
+        local_transform.position: Math.Vec3.from_xyz(0,0.1,0.1) * 2
+        local_transform.rotation: Math.Quat.from_to(Math.Vec3.Z_AXIS(),Math.Vec3.Y_AXIS())
+
+        sprocket_connector.redirected_parent: chassis
+        idler_connector_1.redirected_parent: chassis
+        idler_connector_2.redirected_parent: chassis
+        idler_connector_3.redirected_parent: chassis
+
+AdvancedOneTrackVehicle is OneTrackVehicle:
+    tracks becomes MyAdvancedTracks
+
+BoxToFloorSCD is Physics3D.Interactions.SurfaceContact.PointwiseElasticityDryFrictionModel:
+    friction:
+        coefficient: 0.0
+    normal_flexibility becomes Physics.Interactions.SurfaceContact.PointwiseElasticity:
+        stiffness: 1.0
+    dissipation becomes Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping:
+        relaxation_time: 100000.0
+    tangential_restitution: 1.0
+    normal_restitution: 1.0
+
+Scene is Physics3D.System:
+
+    floor is BoxComponent:
+        kinematics.local_transform.position.z: -2
+        kinematics.local_transform.position.x: 3
+        geometry.size.x: 10
+        geometry.size.y: 5
+        geometry.size.z: 0.5
+
+    vehicle is OneTrackVehicle:
+        local_transform.rotation: Math.Quat.from_to(Math.Vec3.X_AXIS(), Math.Vec3.Z_AXIS())
+        local_transform.position: Math.Vec3.from_xyz(0,1,0)
+
+    advanced_vehicle is AdvancedOneTrackVehicle:
+        local_transform.rotation: Math.Quat.from_to(Math.Vec3.X_AXIS(), Math.Vec3.Z_AXIS())
+        local_transform.position: Math.Vec3.from_xyz(0,-1,0)
+
+    surface_contact_model is BoxToFloorSCD:
+        material_1: LinkMaterial
+        material_2: LinkMaterial
+
+
+    kinematically_controlled: [floor]

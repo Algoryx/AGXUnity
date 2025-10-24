@@ -13,7 +13,7 @@ using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class LidarTests
+  public class LidarTests : AGXUnityFixture
   {
     private GOList m_keep = new GOList();
 
@@ -651,7 +651,6 @@ namespace AGXUnityTesting.Runtime
 
       var points = output.View<agx.Vec3f>( out uint count );
       var preAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( preAvgDiff );
 
       noise.Enable = true;
       noise.StandardDeviation = 0.2f;
@@ -661,18 +660,15 @@ namespace AGXUnityTesting.Runtime
 
       points = output.View<agx.Vec3f>( out count, points );
       var postAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( postAvgDiff );
 
       Assert.Greater( postAvgDiff, preAvgDiff, "Expected average angle difference difference to be greater with noise." );
 
       noise.Enable = false;
 
       yield return TestUtils.Step();
-      //yield return TestUtils.SimulateSeconds( 100 );
 
       points = output.View<agx.Vec3f>( out count, points );
       var finalAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( finalAvgDiff );
 
       Assert.AreEqual( preAvgDiff, finalAvgDiff, 0.00001f, "Expected average angle difference to be same as before enabling noise." );
     }

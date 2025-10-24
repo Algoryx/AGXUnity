@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+using agx;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -137,12 +138,14 @@ namespace AGXUnity.Rendering
 
         if ( track.Native != null ) {
           foreach ( var node in track.Native.nodes() ) {
+            var applied = Model.VariationUtils.ApplyVariations( track.WidthVariation, track.ThicknessVariation, node.getHalfExtents(), nodeCounter );
             var renderInstance = m_root.transform.GetChild( nodeCounter++ );
             renderInstance.rotation = node.getRigidBody().getRotation().ToHandedQuaternion();
             renderInstance.position = node.getBeginPosition().ToHandedVector3() +
+                                      node.getRigidBody().getRotation().ToHandedQuaternion() * applied.Item2.ToHandedVector3() +
                                       renderInstance.TransformDirection( 0.5f * (float)node.getLength() * Vector3.forward );
             if ( AutomaticScaling )
-              renderInstance.localScale = 2.0f * node.getHalfExtents().ToVector3();
+              renderInstance.localScale = 2.0f * applied.Item1.ToVector3();
             else
               renderInstance.localScale = new Vector3( 1, 1, 1 );
           }
@@ -252,6 +255,8 @@ namespace AGXUnity.Rendering
       public float Width;
       public float Thickness;
       public float InitialTensionDistance;
+      public Model.TrackNodeVariation ThicnessVariation;
+      public Model.TrackNodeVariation WidthVariation;
     }
 
     public struct TrackWheelDesc
@@ -304,6 +309,8 @@ namespace AGXUnity.Rendering
       {
         var reqUpdate = TrackWheels.Length != track.Wheels.Length ||
                         Track.NumberOfNodes != track.NumberOfNodes ||
+                        Track.WidthVariation != track.WidthVariation ||
+                        Track.ThicnessVariation != track.ThicknessVariation ||
                        !Math.Approximately( Track.Width, track.Width ) ||
                        !Math.Approximately( Track.Thickness, track.Thickness ) ||
                        !Math.Approximately( Track.InitialTensionDistance, track.InitialTensionDistance );
@@ -345,6 +352,16 @@ namespace AGXUnity.Rendering
                                                                                                     Track.Thickness,
                                                                                                     Track.InitialTensionDistance ),
                                                                           new agxVehicle.TrackWheelDescVector( ( from wheelDef in TrackWheels select wheelDef.Native ).ToArray() ) );
+        if ( track.ThicknessVariation != null || track.WidthVariation != null ) {
+          for ( int i = 0; i < nodes.Count; i++ ) {
+            var applied = Model.VariationUtils.ApplyVariations( track.WidthVariation, track.ThicknessVariation, nodes[ i ].halfExtents, i );
+            var transform = nodes[i].transform;
+            transform = AffineMatrix4x4.translate( applied.Item2 ) * transform;
+            nodes[ i ].transform = transform;
+            nodes[ i ].halfExtents = applied.Item1;
+          }
+        }
+
         TrackNodes = ( from node in nodes select TrackNodeDesc.Create( node ) ).ToArray();
       }
     }
