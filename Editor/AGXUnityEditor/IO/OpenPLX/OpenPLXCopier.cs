@@ -53,7 +53,14 @@ namespace AGXUnityEditor.IO.OpenPLX
             continue;
           }
 
-          foreach ( var dep in importer.Dependencies ) {
+          string[] dependencies = importer.Dependencies;
+
+          // If no dependencies are found, we assume that the importer has not yet run and does not have any cached dependencies
+          // TODO: This should be changed once the OpenPLX API is changed to more easily check for dependencies
+          if ( dependencies.Length == 0 )
+            dependencies = OpenPLXImporter.FindDependencies( src );
+
+          foreach ( var dep in dependencies ) {
             if ( dep.EndsWith( ".openplx" ) )
               continue;
             var relative = Path.GetRelativePath( projectPath, dep );
