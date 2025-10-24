@@ -22,24 +22,31 @@ namespace AGXUnityEditor.IO.OpenPLX
     }
 
     [SerializeField]
+    private List<Error> m_errors;
+    [SerializeField]
     private List<string> m_dependencies;
     [SerializeField]
     private List<string> m_declaredModels;
 
-    [SerializeField]
-    public List<Error> Errors;
-    [SerializeField]
-    public string ImportedModel;
+    public Error[] Errors => m_errors.ToArray();
     public string[] Dependencies => m_dependencies.ToArray();
     public string[] DeclaredModels => m_declaredModels.ToArray();
 
     [field: SerializeField]
     public float ImportTime { get; private set; }
 
+    [SerializeField]
+    [Tooltip("By default, the last model declared in an imported OpenPLX-file will be the one mapped to AGXUnity. This option allows this behaviour to be overridden to instead import any model declared at the root level of the file. Note that the options provided are not guaranteed to be importable or complete.")]
+    public string ImportedModel;
+    [Tooltip("Skips this OpenPLX file when importing assets. Other files using models defined in this OpenPLX file are not skipped by extension.")]
     public bool SkipImport = false;
+    [Tooltip("When importing large models there might be a large amount of meshes being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported meshes in the subasset view.")]
     public bool HideImportedMeshes = true;
+    [Tooltip("When importing large models there might be a large amount of materials being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported materials in the subasset view.")]
     public bool HideImportedVisualMaterials = false;
+    [Tooltip("When importing OpenPLX files that in turn import .agx archives, the visual meshes are sometimes attached to a disabled collision mesh with the same source mesh. When enabled, this option skips the import of these disabled meshes when mapping to AGXUnity objects.")]
     public bool IgnoreDisabledMeshes = false;
+    [Tooltip("Since AGX use Z-up by default, many OpenPLX models might be built using Z-Up. This option applies a rotation to move the model Z-axis to the Unity Y-axis.")]
     public bool RotateUp = true;
 
     private bool m_nonImportable = false;
@@ -60,7 +67,7 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public override void OnImportAsset( AssetImportContext ctx )
     {
-      Errors = new List<Error>();
+      m_errors = new List<Error>();
       m_dependencies = new List<string>();
       ImportTime = 0;
 
@@ -92,7 +99,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       var end = DateTime.Now;
       ImportTime = (float)( end - start ).TotalSeconds;
 
-      if ( Errors.Count > 0 ) {
+      if ( m_errors.Count > 0 ) {
         if ( m_nonImportable )
           SkipImport = true;
       }
@@ -144,7 +151,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     {
       if ( error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
         m_nonImportable = false;
-      Errors.Add( new Error
+      m_errors.Add( new Error
       {
         raw       = error.getMessage( true ),
         message   = error.getMessage( false ).Replace( "\\", "/" ),

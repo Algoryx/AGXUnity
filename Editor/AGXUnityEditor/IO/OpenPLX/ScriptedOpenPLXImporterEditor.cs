@@ -1,5 +1,6 @@
 using AGXUnity;
 using AGXUnityEditor.UIElements;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
@@ -107,23 +108,25 @@ namespace AGXUnityEditor.IO.OpenPLX
         modelSelection.BindProperty( serializedObject.FindProperty( "ImportedModel" ) );
         skipContainer.Add( modelSelection );
 
-        if ( ScriptedOpenPLXImporter.Errors.Count > 0 ) {
-          skipContainer.Add( new Label() { text = $"<b>Errors ({ScriptedOpenPLXImporter.Errors.Count})</b>" } );
+        if ( ScriptedOpenPLXImporter.Errors.Length > 0 ) {
+          var sorted = new List<ScriptedOpenPLXImporter.Error>(ScriptedOpenPLXImporter.Errors);
+          sorted.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
+
+          skipContainer.Add( new Label() { text = $"<b>Errors ({sorted.Count})</b>" } );
           var errors = new VisualElement();
           errors.SetMargin( 5, 0, 0, 0 );
           errors.SetBorder( 2, Color.Lerp( InspectorGUI.BackgroundColor, Color.black, 0.2f ) );
           errors.SetBorderRadius( 5 );
           errors.SetPadding( 5, 5, 5, 15 );
-          ScriptedOpenPLXImporter.Errors.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
 
-          var foldout = new Foldout() { text = GetDocumentPathShort(ScriptedOpenPLXImporter.Errors[0].document), value = true };
-          for ( int i = 0; i < ScriptedOpenPLXImporter.Errors.Count; i++ ) {
-            var docShort = GetDocumentPathShort( ScriptedOpenPLXImporter.Errors[ i ].document );
+          var foldout = new Foldout() { text = GetDocumentPathShort(sorted[0].document), value = true };
+          for ( int i = 0; i < sorted.Count; i++ ) {
+            var docShort = GetDocumentPathShort( sorted[ i ].document );
             if ( foldout.text != docShort ) {
               errors.Add( foldout );
               foldout = new Foldout() { text = docShort, value = true };
             }
-            foldout.Add( TableRowUI( ScriptedOpenPLXImporter.Errors[ i ] ) );
+            foldout.Add( TableRowUI( sorted[ i ] ) );
           }
           errors.Add( foldout );
           skipContainer.Add( errors );

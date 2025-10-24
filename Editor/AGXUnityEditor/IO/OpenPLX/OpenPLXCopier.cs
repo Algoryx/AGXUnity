@@ -60,7 +60,7 @@ namespace AGXUnityEditor.IO.OpenPLX
           if ( dependencies.Length == 0 && !importer.SkipImport )
             dependencies = OpenPLXImporter.FindDependencies( src, importer.ImportedModel == "Default" ? null : importer.ImportedModel );
 
-          if ( importer.Errors.Count != 0 || dependencies == null ) {
+          if ( importer.Errors.Length != 0 || dependencies == null ) {
             Debug.LogWarning( $"There were error importing openplx file '{src}', build might not include all of its dependencies." );
             continue;
           }
