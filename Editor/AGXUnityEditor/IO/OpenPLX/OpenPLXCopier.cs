@@ -44,7 +44,7 @@ namespace AGXUnityEditor.IO.OpenPLX
           num++;
 
           // TODO: this path should use the importer properties
-          if ( src.StartsWith( "Assets/AGXUnity/OpenPLX" ) )
+          if ( src.StartsWith( "Assets/AGXUnity/OpenPLX" ) || src.EndsWith( "config.openplx" ) )
             continue;
 
           var importer = (ScriptedOpenPLXImporter)AssetImporter.GetAtPath(src);
