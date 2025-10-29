@@ -36,6 +36,14 @@ namespace AGXUnity
       IsSynchronizingProperties = false;
     }
 
+    private const int CurrentSerializationVersion = 1;
+
+    // Serialization version currently unused
+#pragma warning disable 0414
+    [SerializeField]
+    private int m_serializationVersion = CurrentSerializationVersion;
+#pragma warning restore 0414
+
     /// <summary>
     /// Returns native simulation object unless the scene is being
     /// destructed.

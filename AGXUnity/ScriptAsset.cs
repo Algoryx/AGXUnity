@@ -20,6 +20,14 @@ namespace AGXUnity
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
   public abstract class ScriptAsset : ScriptableObject, IPropertySynchronizable
   {
+    private const int CurrentSerializationVersion = 1;
+
+    // Serialization version is currently unused
+#pragma warning disable 0414
+    [SerializeField]
+    private int m_serializationVersion = CurrentSerializationVersion;
+#pragma warning restore 0414
+
     public static T Create<T>() where T : ScriptAsset
     {
       return Create( typeof( T ) ) as T;

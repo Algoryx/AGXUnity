@@ -24,7 +24,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private float m_toothLength = 0.15f;
 
-    [ClampAboveZeroInInspector]
+    [ClampAboveZeroInInspector( true )]
     [Tooltip( "The length of the shovel's teeth" )]
     public float ToothLength
     {
