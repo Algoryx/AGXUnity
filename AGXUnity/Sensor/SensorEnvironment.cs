@@ -47,6 +47,7 @@ namespace AGXUnity.Sensor
     private readonly HashSet<UnityEngine.MeshFilter> m_ignoredMeshes = new();
 
     private readonly Dictionary<DeformableTerrain,agxTerrain.Terrain> m_deformableTerrains = new();
+    private readonly Dictionary<MovableTerrain,agxTerrain.Terrain> m_movableTerrains = new();
     private readonly Dictionary<DeformableTerrainPager,agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
     private readonly Dictionary<HeightField,agxCollide.HeightField> m_heightfields = new();
     private readonly Dictionary<Wire,agxWire.Wire> m_wires = new();
@@ -59,6 +60,7 @@ namespace AGXUnity.Sensor
     private static readonly System.Type[] s_supportedComponents = new[]
     {
       typeof(DeformableTerrain),
+      typeof(MovableTerrain),
       typeof(DeformableTerrainPager),
       typeof(HeightField),
       typeof(Cable),
@@ -151,6 +153,11 @@ namespace AGXUnity.Sensor
 
       var layer = meshFilter.gameObject.layer;
       if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 ) {
+        m_ignoredMeshes.Add( meshFilter );
+        return;
+      }
+
+      if ( meshFilter.GetComponent<MovableTerrain>() != null ) {
         m_ignoredMeshes.Add( meshFilter );
         return;
       }
@@ -273,6 +280,12 @@ namespace AGXUnity.Sensor
         added = Native.add( c );
         m_deformableTerrains.Add( dt, c );
       }
+      if ( scriptComponent is MovableTerrain mt ) {
+        var c = mt.Native;
+        RtSurfaceMaterial.set( c, rtMaterial );
+        added = Native.add( c );
+        m_movableTerrains.Add( mt, c );
+      }
       else if ( scriptComponent is DeformableTerrainPager dtp ) {
         var c = dtp.Native;
         RtSurfaceMaterial.set( c, rtMaterial );
@@ -316,6 +329,11 @@ namespace AGXUnity.Sensor
         var c = dt.Native ?? m_deformableTerrains.GetValueOrDefault(dt);
         Native.remove( c );
         m_deformableTerrains.Remove( dt );
+      }
+      if ( scriptComponent is MovableTerrain mt ) {
+        var c = mt.Native ?? m_movableTerrains.GetValueOrDefault(mt);
+        Native.remove( c );
+        m_movableTerrains.Remove( mt );
       }
       else if ( scriptComponent is DeformableTerrainPager dtp ) {
         var c = dtp.Native ?? m_deformableTerrainPagers.GetValueOrDefault( dtp );
@@ -514,6 +532,10 @@ namespace AGXUnity.Sensor
       foreach ( var (_, dt) in m_deformableTerrains )
         Native.remove( dt );
       m_deformableTerrains.Clear();
+
+      foreach ( var (_, mt) in m_movableTerrains )
+        Native.remove( mt );
+      m_movableTerrains.Clear();
 
       foreach ( var (_, dtp) in m_deformableTerrainPagers )
         Native.remove( dtp );

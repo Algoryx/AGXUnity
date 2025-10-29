@@ -6,7 +6,7 @@ namespace AGXUnity.Model
   [AddComponentMenu( "AGXUnity/Deformable Terrain Shovel" )]
   [DisallowMultipleComponent]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#shovel" )]
-  public class DeformableTerrainShovel : ScriptComponent
+  public class DeformableTerrainShovel : ScriptComponent, ISerializationCallbackReceiver
   {
     /// <summary>
     /// Native instance of this shovel.
@@ -50,19 +50,46 @@ namespace AGXUnity.Model
       }
     }
 
-    [SerializeField]
-    private Line m_cuttingDirection = new Line();
+    [field: SerializeField]
+    private bool m_hasTeeth = false;
 
     [HideInInspector]
-    public Line CuttingDirection
+    public bool HasTeeth
     {
-      get { return m_cuttingDirection; }
+      get => m_hasTeeth;
       set
       {
-        m_cuttingDirection = value ?? new Line();
-        if ( m_cuttingDirection.Valid && Native != null )
-          Native.setCuttingDirection( m_cuttingDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3().normal() );
+        m_hasTeeth = value;
+        UpdateTeethSettings();
       }
+    }
+
+    [SerializeField]
+    private Line m_cuttingDirection = null;
+
+    [SerializeField]
+    private Line m_toothDirection = new Line();
+
+    [HideInInspector]
+    public Line ToothDirection
+    {
+      get { return m_toothDirection; }
+      set
+      {
+        m_toothDirection = value ?? new Line();
+        UpdateTeethSettings();
+      }
+    }
+
+    private void UpdateTeethSettings()
+    {
+      if ( Native == null )
+        return;
+
+      if ( !m_hasTeeth )
+        Native.getSettings().setToothDirection( new agx.Vec3( 0 ) );
+      else if ( m_toothDirection.Valid )
+        Native.getSettings().setToothDirection( m_toothDirection.CalculateLocalDirection( RigidBody.gameObject ).ToHandedVec3().normal() );
     }
 
     [SerializeField]
@@ -91,8 +118,7 @@ namespace AGXUnity.Model
     public bool HasValidateEdges()
     {
       return TopEdge.Valid &&
-             CuttingEdge.Valid &&
-             CuttingDirection.Valid;
+             CuttingEdge.Valid;
     }
 
     protected override bool Initialize()
@@ -107,16 +133,19 @@ namespace AGXUnity.Model
         Debug.LogWarning( "Unable to create shovel - invalid Top Edge.", this );
       if ( !CuttingEdge.Valid )
         Debug.LogWarning( "Unable to create shovel - invalid Cutting Edge.", this );
-      if ( !CuttingDirection.Valid )
-        Debug.LogWarning( "Unable to create shovel - invalid Cutting Direction.", this );
+      if ( HasTeeth ) {
+        if ( !ToothDirection.Valid )
+          Debug.LogWarning( "Tooth direction was not configured, this might lead to incorrect simulation results", this );
+        if ( Mathf.Abs( Vector3.Dot( ToothDirection.Direction, CuttingEdge.Direction ) ) > 0.05 )
+          Debug.LogWarning( "Tooth direction is not orthogonal to Cutting Edge, this might lead to incorrect simulation results", this );
+      }
 
       if ( !HasValidateEdges() )
         return false;
 
       Native = new agxTerrain.Shovel( rb,
                                       TopEdge.ToNativeEdge( gameObject ),
-                                      CuttingEdge.ToNativeEdge( gameObject ),
-                                      CuttingDirection.CalculateLocalDirection( gameObject ).ToHandedVec3().normal() );
+                                      CuttingEdge.ToNativeEdge( gameObject ) );
 
       if ( Settings == null ) {
         Settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
@@ -157,6 +186,30 @@ namespace AGXUnity.Model
     {
       if ( GetComponent<RigidBody>() == null )
         Debug.LogError( "Component: DeformableTerrainShovel requires RigidBody component.", this );
+    }
+
+    public void OnBeforeSerialize() { }
+
+    /// <summary>
+    /// Unfortunately we cannot check directly against null since unity will construct a default initialized object when "null" is value-serialized.
+    /// Use this method instead to check whether the frames of the cutting direction was serilaized as "null".
+    /// </summary>
+    private bool IsNullFrame( IFrame frame )
+    {
+      return
+        frame.Parent == null &&
+        frame.LocalPosition == Vector3.zero &&
+        frame.LocalRotation == Quaternion.identity;
+    }
+
+    public void OnAfterDeserialize()
+    {
+      // See not above
+      if ( !IsNullFrame( m_cuttingDirection.Start ) || !IsNullFrame( m_cuttingDirection.End ) ) {
+        m_hasTeeth = true;
+        m_toothDirection = m_cuttingDirection;
+        m_cuttingDirection = null;
+      }
     }
 
     private RigidBody m_rb = null;
