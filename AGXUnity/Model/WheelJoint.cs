@@ -1,180 +1,25 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace AGXUnity
+namespace AGXUnity.Model
 {
-  /// <summary>
-  /// Supported default constraint types.
-  /// </summary>
-  public enum ConstraintType
-  {
-    Hinge,
-    Prismatic,
-    LockJoint,
-    CylindricalJoint,
-    BallJoint,
-    DistanceJoint,
-    AngularLockJoint,
-    PlaneJoint,
-    Unknown
-  }
-
-  [AddComponentMenu( "" )]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
-  public class Constraint : ScriptComponent
+  [AddComponentMenu( "AGXUnity/Constraints/Wheel Joint" )]
+  public class WheelJoint : ScriptComponent
   {
     /// <summary>
-    /// Constraint solve types.
+    /// Controller dimensions of the wheel joing used to find controllers in the constraint. 
+    /// - 'Steering' finds the controllers around the steering axle. 
+    /// - 'Wheel' finds the controllers around the wheel rotation axis. 
+    /// - 'Suspension' finds the controller along the suspension axis.
     /// </summary>
-    public enum ESolveType
+    public enum WheelDimension
     {
-      Direct,
-      Iterative,
-      DirectAndIterative
-    }
-
-    /// <summary>
-    /// Controller type used to find controllers in a constraint. 'Primary'
-    /// can be used for all constraints with controllers except Cylindrical joint.
-    /// The Cylindrical joint has two of each controller. One along the translational
-    /// axis and one along the rotational.
-    /// </summary>
-    public enum ControllerType
-    {
-      Primary = 0,
-      Translational = 1,
-      Rotational = 2
-    }
-
-    /// <summary>
-    /// Translational degrees of freedom.
-    /// </summary>
-    public enum TranslationalDof
-    {
-      X,
-      Y,
-      Z,
-      All
-    }
-
-    /// <summary>
-    /// Rotational degrees of freedom.
-    /// </summary>
-    public enum RotationalDof
-    {
-      X,
-      Y,
-      Z,
-      All
-    }
-
-    /// <summary>
-    /// Create a new constraint given type and constraint frames.
-    /// </summary>
-    /// <param name="type">Constraint type.</param>
-    /// <param name="referenceFrame">Reference frame.</param>
-    /// <param name="connectedFrame">Connected frame.</param>
-    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
-    public static Constraint Create( ConstraintType type,
-                                     ConstraintFrame referenceFrame,
-                                     ConstraintFrame connectedFrame )
-    {
-      if ( type == ConstraintType.Unknown ) {
-        Debug.LogWarning( "Unable to create constraint - unknown constraint type." );
-        return null;
-      }
-
-      GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity." + type ) );
-      try {
-        Constraint constraint = constraintGameObject.AddComponent<Constraint>();
-        constraint.Type = type;
-
-        constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
-        constraint.AttachmentPair.ConnectedFrame = connectedFrame ?? new ConstraintFrame();
-
-        // Creating a temporary native instance of the constraint, including a rigid body and frames.
-        // Given this native instance we copy the default configuration.
-        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) )
-          constraint.TryAddElementaryConstraints( tmpNative.Instance );
-
-        return constraint;
-      }
-      catch ( System.Exception e ) {
-        Debug.LogException( e );
-        DestroyImmediate( constraintGameObject );
-        return null;
-      }
-    }
-
-    /// <summary>
-    /// Create a new constraint component given constraint type.
-    /// </summary>
-    /// <param name="type">Constraint type.</param>
-    /// <param name="givenAttachmentPair">Optional initial attachment pair. When given,
-    ///                                   values and fields will be copied to this objects
-    ///                                   attachment pair.</param>
-    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
-    public static Constraint Create( ConstraintType type, AttachmentPair givenAttachmentPair = null )
-    {
-      var instance = Create( type, new ConstraintFrame(), new ConstraintFrame() );
-      if ( instance == null )
-        return null;
-
-      instance.AttachmentPair.CopyFrom( givenAttachmentPair );
-
-      return instance;
-    }
-
-    /// <summary>
-    /// Finds constraint type given native instance.
-    /// </summary>
-    /// <param name="native">Native instance.</param>
-    /// <returns>ConstraintType of the native instance.</returns>
-    public static ConstraintType FindType( agx.Constraint native )
-    {
-      return native                      == null ? ConstraintType.Unknown :
-             native.asHinge()            != null ? ConstraintType.Hinge :
-             native.asPrismatic()        != null ? ConstraintType.Prismatic :
-             native.asLockJoint()        != null ? ConstraintType.LockJoint :
-             native.asCylindricalJoint() != null ? ConstraintType.CylindricalJoint :
-             native.asBallJoint()        != null ? ConstraintType.BallJoint :
-             native.asDistanceJoint()    != null ? ConstraintType.DistanceJoint :
-             native.asAngularLockJoint() != null ? ConstraintType.AngularLockJoint :
-             native.asPlaneJoint()       != null ? ConstraintType.PlaneJoint :
-                                                   ConstraintType.Unknown;
-    }
-
-    /// <summary>
-    /// Converts native solve type to ESolveType.
-    /// </summary>
-    /// <param name="solveType">Native solve type.</param>
-    /// <returns>ESolveType</returns>
-    public static ESolveType Convert( agx.Constraint.SolveType solveType )
-    {
-      return solveType switch
-      {
-        agx.Constraint.SolveType.DIRECT => ESolveType.Direct,
-        agx.Constraint.SolveType.ITERATIVE => ESolveType.Iterative,
-        _ => ESolveType.DirectAndIterative
-      };
-    }
-
-    /// <summary>
-    /// Converts constraint solve type to native version.
-    /// </summary>
-    /// <param name="solveType">Constraint solve type.</param>
-    /// <returns>Native solve type.</returns>
-    public static agx.Constraint.SolveType Convert( ESolveType solveType )
-    {
-      return solveType switch
-      {
-        ESolveType.Direct => agx.Constraint.SolveType.DIRECT,
-        ESolveType.Iterative => agx.Constraint.SolveType.ITERATIVE,
-        _ => agx.Constraint.SolveType.DIRECT_AND_ITERATIVE
-      };
+      Steering = 0,
+      Wheel = 1,
+      Suspension = 2
     }
 
     /// <summary>
@@ -203,84 +48,29 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Type of this constraint. Paired with property Type.
-    /// </summary>
-    [SerializeField]
-    private ConstraintType m_type = ConstraintType.Hinge;
-
-    /// <summary>
-    /// Type of this constraint.
-    /// </summary>
-    [HideInInspector]
-    public ConstraintType Type
-    {
-      get { return m_type; }
-      private set
-      {
-        m_type = value;
-      }
-    }
-
-    /// <summary>
-    /// Collision state when the simulation is running.
-    /// </summary>
-    public enum ECollisionsState
-    {
-      /// <summary>
-      /// Do nothing - preserves the current external state.
-      /// </summary>
-      KeepExternalState,
-      /// <summary>
-      /// Disables selected Reference object against selected Connected.
-      /// </summary>
-      DisableReferenceVsConnected,
-      /// <summary>
-      /// Disables the rigid bodies. If the second object hasn't got a
-      /// rigid body - all child shapes in Connected will be disabled
-      /// against the first rigid body.
-      /// </summary>
-      DisableRigidBody1VsRigidBody2
-    }
-
-    /// <summary>
-    /// Collisions state when the simulation is running.
-    /// </summary>
-    [SerializeField]
-    private ECollisionsState m_collisionsState = ECollisionsState.KeepExternalState;
-
-    /// <summary>
     /// Collisions state when the simulation is running.
     /// </summary>
     [HideInInspector]
-    public ECollisionsState CollisionsState
-    {
-      get { return m_collisionsState; }
-      set { m_collisionsState = value; }
-    }
+    [field: SerializeField]
+    public Constraint.ECollisionsState CollisionsState { get; set; } = Constraint.ECollisionsState.DisableRigidBody1VsRigidBody2;
 
     [SerializeField]
-    private ESolveType m_solveType = ESolveType.Direct;
+    private Constraint.ESolveType m_solveType = Constraint.ESolveType.Direct;
 
     /// <summary>
     /// Solve type of this constraint.
     /// </summary>
     [HideInInspector]
-    public ESolveType SolveType
+    public Constraint.ESolveType SolveType
     {
-      get { return m_solveType; }
+      get => m_solveType;
       set
       {
         m_solveType = value;
         if ( Native != null )
-          Native.setSolveType( Convert( m_solveType ) );
+          Native.setSolveType( Constraint.Convert( m_solveType ) );
       }
     }
-
-    /// <summary>
-    /// Draw gizmos flag - paired with DrawGizmosEnable.
-    /// </summary>
-    [SerializeField]
-    private bool m_drawGizmosEnable = true;
 
     private bool m_isAnimated = false;
 
@@ -288,31 +78,20 @@ namespace AGXUnity
     /// Enable/disable gizmos drawing of this constraint. Enabled by default.
     /// </summary>
     [HideInInspector]
-    public bool DrawGizmosEnable { get { return m_drawGizmosEnable; } set { m_drawGizmosEnable = value; } }
-
-    /// <summary>
-    /// Type of the native instance constructed from agxDotNet.dll and current ConstraintType.
-    /// </summary>
-    public Type NativeType { get { return System.Type.GetType( "agx." + m_type + ", agxDotNet" ); } }
+    [field: SerializeField]
+    public bool DrawGizmosEnable { get; set; } = true;
 
     /// <summary>
     /// Native instance if this constraint is initialized - otherwise null.
     /// </summary>
-    public agx.Constraint Native { get; private set; }
+    public agxVehicle.WheelJoint Native { get; private set; }
 
-    /// <summary>
-    /// True if game object is active in hierarchy and this component is enabled.
-    /// </summary>
-    [HideInInspector]
-    public bool IsEnabled { get { return gameObject.activeInHierarchy && enabled; } }
-
-    [SerializeField]
-    private bool m_connectedFrameNativeSyncEnabled = false;
     /// <summary>
     /// True to enable synchronization of the connected frame to the native constraint (default: false/disabled).
     /// </summary>
     [HideInInspector]
-    public bool ConnectedFrameNativeSyncEnabled { get { return m_connectedFrameNativeSyncEnabled; } set { m_connectedFrameNativeSyncEnabled = value; } }
+    [field: SerializeField]
+    public bool ConnectedFrameNativeSyncEnabled { get; set; } = false;
 
     /// <summary>
     /// List of elementary constraints in this constraint - controllers and ordinary.
@@ -324,7 +103,7 @@ namespace AGXUnity
     /// Array of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [HideInInspector]
-    public ElementaryConstraint[] ElementaryConstraints { get { return m_elementaryConstraintsNew.ToArray(); } }
+    public ElementaryConstraint[] ElementaryConstraints => m_elementaryConstraintsNew.ToArray();
 
     /// <summary>
     /// Finds and returns an array of ordinary ElementaryConstraint objects, i.e., the ones
@@ -358,21 +137,24 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Find controller of given type and dimension. Asking for the controller of a
-    /// hinge and a prismatic with <paramref name="controllerType"/> == Primary will
-    /// always be valid. The same with <paramref name="controllerType"/> == Rotational
-    /// and the prismatic controller will be null, since it's Translational.
+    /// Find controller of given type and dimension. 
     /// </summary>
     /// <typeparam name="T">Type of the controller.</typeparam>
-    /// <param name="controllerType">Working dimension of the controller. Primary for "first".</param>
+    /// <param name="dimension">Working dimension of the controller.</param>
     /// <returns>Controller of given type and working dimension - if present, otherwise null.</returns>
-    public T GetController<T>( ControllerType controllerType = ControllerType.Primary ) where T : ElementaryConstraintController
+    public T GetController<T>( WheelDimension dimension ) where T : ElementaryConstraintController
     {
       var controllers = GetElementaryConstraintControllers();
+      var dimName = dimension switch
+      {
+        WheelDimension.Steering => "St",
+        WheelDimension.Suspension => "Su",
+        WheelDimension.Wheel => "Wh",
+        _ => "N/A"
+      };
       for ( int i = 0; i < controllers.Length; ++i ) {
-        T controller = controllers[ i ].As<T>( controllerType );
-        if ( controller != null )
-          return controller;
+        if ( controllers[ i ].NativeName.EndsWith( dimName ) && controllers[ i ] is T casted )
+          return casted;
       }
 
       return null;
@@ -389,7 +171,7 @@ namespace AGXUnity
       where T : struct
     {
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( GetOrdinaryElementaryConstraints() );
-      var rows = typeof( T ) == typeof( TranslationalDof ) ?
+      var rows = typeof( T ) == typeof( Constraint.TranslationalDof ) ?
                    rowParser.TranslationalRows :
                    rowParser.RotationalRows;
 
@@ -406,6 +188,12 @@ namespace AGXUnity
       }
     }
 
+    private void Reset()
+    {
+      using ( var tmpNative = new TemporaryNative() )
+        TryAddElementaryConstraints( tmpNative.Instance );
+    }
+
     /// <summary>
     /// Set compliance to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
@@ -413,8 +201,8 @@ namespace AGXUnity
     /// <param name="compliance">New compliance.</param>
     public void SetCompliance( float compliance )
     {
-      TraverseRowData( data => data.Compliance = compliance, TranslationalDof.All );
-      TraverseRowData( data => data.Compliance = compliance, RotationalDof.All );
+      TraverseRowData( data => data.Compliance = compliance, Constraint.TranslationalDof.All );
+      TraverseRowData( data => data.Compliance = compliance, Constraint.RotationalDof.All );
     }
 
     /// <summary>
@@ -423,7 +211,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="compliance">New compliance.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetCompliance( float compliance, TranslationalDof dof )
+    public void SetCompliance( float compliance, Constraint.TranslationalDof dof )
     {
       TraverseRowData( data => data.Compliance = compliance, dof );
     }
@@ -434,7 +222,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="compliance">New compliance.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetCompliance( float compliance, RotationalDof dof )
+    public void SetCompliance( float compliance, Constraint.RotationalDof dof )
     {
       TraverseRowData( data => data.Compliance = compliance, dof );
     }
@@ -446,8 +234,8 @@ namespace AGXUnity
     /// <param name="damping">New damping.</param>
     public void SetDamping( float damping )
     {
-      TraverseRowData( data => data.Damping = damping, TranslationalDof.All );
-      TraverseRowData( data => data.Damping = damping, RotationalDof.All );
+      TraverseRowData( data => data.Damping = damping, Constraint.TranslationalDof.All );
+      TraverseRowData( data => data.Damping = damping, Constraint.RotationalDof.All );
     }
 
     /// <summary>
@@ -456,7 +244,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="damping">New damping.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetDamping( float damping, TranslationalDof dof )
+    public void SetDamping( float damping, Constraint.TranslationalDof dof )
     {
       TraverseRowData( data => data.Damping = damping, dof );
     }
@@ -467,7 +255,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="damping">New damping.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetDamping( float damping, RotationalDof dof )
+    public void SetDamping( float damping, Constraint.RotationalDof dof )
     {
       TraverseRowData( data => data.Damping = damping, dof );
     }
@@ -479,8 +267,8 @@ namespace AGXUnity
     /// <param name="forceRange">New force range.</param>
     public void SetForceRange( RangeReal forceRange )
     {
-      TraverseRowData( data => data.ForceRange = forceRange, TranslationalDof.All );
-      TraverseRowData( data => data.ForceRange = forceRange, RotationalDof.All );
+      TraverseRowData( data => data.ForceRange = forceRange, Constraint.TranslationalDof.All );
+      TraverseRowData( data => data.ForceRange = forceRange, Constraint.RotationalDof.All );
     }
 
     /// <summary>
@@ -489,7 +277,7 @@ namespace AGXUnity
     /// </summary>
     /// <param name="forceRange">New force range.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetForceRange( RangeReal forceRange, TranslationalDof dof )
+    public void SetForceRange( RangeReal forceRange, Constraint.TranslationalDof dof )
     {
       TraverseRowData( data => data.ForceRange = forceRange, dof );
     }
@@ -500,103 +288,9 @@ namespace AGXUnity
     /// </summary>
     /// <param name="forceRange">New force range.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetForceRange( RangeReal forceRange, RotationalDof dof )
+    public void SetForceRange( RangeReal forceRange, Constraint.RotationalDof dof )
     {
       TraverseRowData( data => data.ForceRange = forceRange, dof );
-    }
-
-    /// <summary>
-    /// Calculates the current angle for given degree of freedom when this
-    /// constraint is active.
-    /// </summary>
-    /// <param name="controllerType">Working dimension (translational or rotational). It's
-    ///                              normally enough with Primary if this constraint isn't
-    ///                              a CylindricalJoint. If cylindrical - primary == Translational.</param>
-    /// <returns>Current angle of the active constraint.</returns>
-    public float GetCurrentAngle( ControllerType controllerType = ControllerType.Primary )
-    {
-      if ( Native != null ) {
-        var c1d = agx.Constraint1DOF.safeCast( Native );
-        if ( c1d != null )
-          return System.Convert.ToSingle( c1d.getAngle() );
-
-        var c2d = agx.Constraint2DOF.safeCast( Native );
-        if ( c2d != null )
-          return controllerType == ControllerType.Primary || controllerType == ControllerType.Translational ?
-                   System.Convert.ToSingle( c2d.getAngle( agx.Constraint2DOF.DOF.FIRST ) ) :
-                   System.Convert.ToSingle( c2d.getAngle( agx.Constraint2DOF.DOF.SECOND ) );
-      }
-
-      return 0.0f;
-    }
-
-    /// <summary>
-    /// Calculates the current speed for given degree of freedom when this
-    /// constraint is active.
-    /// </summary>
-    /// <param name="controllerType">Working dimension (translational or rotational). It's
-    ///                              normally enough with Primary if this constraint isn't
-    ///                              a CylindricalJoint. If cylindrical - primary == Translational.</param>
-    /// <returns>Current speed of the active constraint.</returns>
-    public float GetCurrentSpeed( ControllerType controllerType = ControllerType.Primary )
-    {
-      if ( Native != null ) {
-        var c1d = agx.Constraint1DOF.safeCast( Native );
-        if ( c1d != null )
-          return System.Convert.ToSingle( c1d.getCurrentSpeed() );
-
-        var c2d = agx.Constraint2DOF.safeCast( Native );
-        if ( c2d != null )
-          return controllerType == ControllerType.Primary || controllerType == ControllerType.Translational ?
-                   System.Convert.ToSingle( c2d.getCurrentSpeed( agx.Constraint2DOF.DOF.FIRST ) ) :
-                   System.Convert.ToSingle( c2d.getCurrentSpeed( agx.Constraint2DOF.DOF.SECOND ) );
-      }
-
-      return 0.0f;
-    }
-
-    /// <summary>
-    /// Patches primary and secondary elementary constraints to the current version of AGX.
-    /// </summary>
-    /// <param name="native">If given, the native configuration may be used.</param>
-    /// <returns>True if modification were applied - otherwise false.</returns>
-    public bool VerifyImplementation()
-    {
-      if ( Type == ConstraintType.Hinge ) {
-        var swing = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "SW" );
-        // Already created with swing - hinge is up to date.
-        if ( swing != null )
-          return false;
-
-        var ecUn = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "D1_UN" );
-        var ecVn = m_elementaryConstraintsNew.FirstOrDefault( ec => ec.NativeName == "D1_VN" );
-        // Not swing nor dot1's - this is an unknown configuration.
-        if ( ecUn == null || ecVn == null ) {
-          Debug.LogWarning( "Trying to patch hinge but the elementary constraint configuration is undefined.", this );
-          return false;
-        }
-
-        using ( var nativeHinge = new TemporaryNative( NativeType ) ) {
-          swing = ElementaryConstraint.Create( gameObject, nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
-        }
-
-        if ( swing == null ) {
-          Debug.LogWarning( "Unable to find elementary constraint \"SW\" in native hinge implementation.", this );
-          return false;
-        }
-
-        swing.Enable = ecUn.Enable || ecVn.Enable;
-        swing.RowData[ 0 ].CopyFrom( ecUn.RowData[ 0 ] );
-        swing.RowData[ 1 ].CopyFrom( ecVn.RowData[ 0 ] );
-
-        m_elementaryConstraintsNew.Insert( m_elementaryConstraintsNew.IndexOf( ecUn ), swing );
-        m_elementaryConstraintsNew.Remove( ecUn );
-        m_elementaryConstraintsNew.Remove( ecVn );
-
-        return true;
-      }
-
-      return false;
     }
 
     /// <summary>
@@ -642,50 +336,6 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Assign constraint type given this constraint hasn't been constructed yet.
-    /// </summary>
-    /// <param name="type">Constraint type.</param>
-    /// <param name="force">Force change, i.e., ignore that this constraint has been initialized.</param>
-    public void SetType( ConstraintType type, bool force )
-    {
-      if ( !force && m_elementaryConstraintsNew.Count > 0 ) {
-        Debug.LogWarning( "Not possible to change constraint type when the constraint has been constructed. Ignoring new type.", this );
-        return;
-      }
-
-      Type = type;
-    }
-
-    /// <summary>
-    /// Change constraint type. Note that all values will be default
-    /// when the type has changed.
-    /// </summary>
-    /// <param name="type">New type of the constraint.</param>
-    /// <param name="onObjectCreated">Optional callback when an object has been created.</param>
-    /// <param name="destroyObject">
-    /// Optional callback to destroy an object - Object.DestroyImmediate
-    /// is used by default.
-    /// </param>
-    public void ChangeType( ConstraintType type,
-                            Action<object> onObjectCreated = null )
-    {
-      if ( Native != null ) {
-        Debug.LogWarning( "Invalid to change type of an initialized constraint.", this );
-        return;
-      }
-
-      m_elementaryConstraintsNew.Clear();
-
-      SetType( type, true );
-
-      if ( type == ConstraintType.Unknown )
-        return;
-
-      using ( var tempNative = new TemporaryNative( NativeType, AttachmentPair ) )
-        TryAddElementaryConstraints( tempNative.Instance, onObjectCreated );
-    }
-
-    /// <summary>
     /// Creates native instance and adds it to the simulation if this constraint
     /// is properly configured.
     /// </summary>
@@ -695,12 +345,6 @@ namespace AGXUnity
       if ( AttachmentPair.ReferenceObject == null ) {
         Debug.LogError( "Unable to initialize constraint - reference object " +
                         "must be valid and contain a rigid body component.",
-                        this );
-        return false;
-      }
-
-      if ( Type == ConstraintType.Unknown ) {
-        Debug.LogError( "Unable to initialize constraint - constraint type is Unknown.",
                         this );
         return false;
       }
@@ -752,31 +396,24 @@ namespace AGXUnity
       }
 
       try {
-        Native = (agx.Constraint)Activator.CreateInstance( NativeType,
-                                                           new object[]
-                                                           {
-                                                             rb1.Native,
-                                                             f1,
-                                                             ( rb2 != null ? rb2.Native : null ),
-                                                             f2
-                                                           } );
+        Native = new agxVehicle.WheelJoint( rb1.Native, f1, ( rb2 != null ? rb2.Native : null ), f2 );
 
         // Assigning native elementary constraints to our elementary constraint instances.
         foreach ( ElementaryConstraint ec in ElementaryConstraints )
           if ( !ec.OnConstraintInitialize( this ) )
             throw new Exception( "Unable to initialize elementary constraint: " +
                                  ec.NativeName +
-                                 " (not present in native constraint). ConstraintType: " + Type );
+                                 " (not present in native wheel joint)." );
 
         bool added = GetSimulation().add( Native );
-        Native.setEnable( IsEnabled );
+        Native.setEnable( isActiveAndEnabled );
 
         // Not possible to handle collisions if connected frame parent is null/world.
-        if ( CollisionsState != ECollisionsState.KeepExternalState && AttachmentPair.ConnectedObject != null ) {
+        if ( CollisionsState != Constraint.ECollisionsState.KeepExternalState && AttachmentPair.ConnectedObject != null ) {
           string groupName = gameObject.name + "_" + gameObject.GetInstanceID().ToString();
           GameObject go1   = null;
           GameObject go2   = null;
-          if ( CollisionsState == ECollisionsState.DisableReferenceVsConnected ) {
+          if ( CollisionsState == Constraint.ECollisionsState.DisableReferenceVsConnected ) {
             go1 = AttachmentPair.ReferenceObject;
             go2 = AttachmentPair.ConnectedObject;
           }
@@ -841,11 +478,6 @@ namespace AGXUnity
       base.OnDestroy();
     }
 
-    private void Reset()
-    {
-      Type = ConstraintType.Unknown;
-    }
-
     private void OnPreStepForwardUpdate()
     {
       if ( Native == null || !Native.getValid() )
@@ -888,11 +520,72 @@ namespace AGXUnity
       }
     }
 
+    /// <summary>
+    /// Calculates the current angle for given degree of freedom when this
+    /// constraint is active.
+    /// </summary>
+    /// <param name="controllerType">Working dimension (translational or rotational). It's
+    ///                              normally enough with Primary if this constraint isn't
+    ///                              a CylindricalJoint. If cylindrical - primary == Translational.</param>
+    /// <returns>Current angle of the active constraint.</returns>
+    public float GetCurrentAngle( WheelDimension controllerType = WheelDimension.Steering )
+    {
+      if ( Native != null )
+        return System.Convert.ToSingle( Native.getAngle( (agxVehicle.WheelJoint.SecondaryConstraint)controllerType ) );
+
+      return 0.0f;
+    }
+
+    public Vector3 SteeringAxis
+    {
+      get
+      {
+        if ( Native == null ) {
+          var frame = AttachmentPair.ConnectedFrame;
+          if ( AttachmentPair.Synchronized )
+            frame = AttachmentPair.ReferenceFrame;
+          return frame.Rotation * Vector3.forward;
+        }
+        else
+          return Native.getSteeringAxle().ToHandedVector3();
+      }
+    }
+
+    public Vector3 WheelAttachmentPoint
+    {
+      get
+      {
+        if ( Native == null ) {
+          var frame = AttachmentPair.ConnectedFrame;
+          if ( AttachmentPair.Synchronized )
+            frame = AttachmentPair.ReferenceFrame;
+          return frame.Position;
+        }
+        else
+          return Native.getAttachmentPair().getAttachment2().get( agx.Attachment.Transformed.ANCHOR_POS ).ToHandedVector3();
+      }
+    }
+
+    public Vector3 WheelAxis
+    {
+      get
+      {
+        if ( Native == null ) {
+          var frame = AttachmentPair.ConnectedFrame;
+          if ( AttachmentPair.Synchronized )
+            frame = AttachmentPair.ReferenceFrame;
+          return frame.Rotation * Vector3.up;
+        }
+        else
+          return Native.getAttachmentPair().getAttachment1().get( agx.Attachment.Transformed.V ).ToHandedVector3();
+      }
+    }
+
     private class TemporaryNative : IDisposable
     {
-      public agx.Constraint Instance { get { return m_native; } }
+      public agxVehicle.WheelJoint Instance => m_native;
 
-      public TemporaryNative( Type nativeType, AttachmentPair attachmentPair = null )
+      public TemporaryNative( AttachmentPair attachmentPair = null )
       {
         m_rb1 = new agx.RigidBody();
         m_f1 = new agx.Frame();
@@ -911,7 +604,7 @@ namespace AGXUnity
           m_f2.setLocalRotate( attachmentPair.ConnectedFrame.Rotation.ToHandedQuat() );
         }
 
-        m_native = (agx.Constraint)Activator.CreateInstance( nativeType, new object[] { m_rb1, m_f1, null, m_f2 } );
+        m_native = new agxVehicle.WheelJoint( m_rb1, m_f1, null, m_f2 );
       }
 
       public void Dispose()
@@ -922,7 +615,7 @@ namespace AGXUnity
         m_f2.Dispose();
       }
 
-      private agx.Constraint m_native = null;
+      private agxVehicle.WheelJoint m_native = null;
       private agx.RigidBody m_rb1 = null;
       private agx.Frame m_f1 = null;
       private agx.Frame m_f2 = null;
@@ -941,37 +634,50 @@ namespace AGXUnity
       }
     }
 
-    private static void DrawGizmos( Color color, AttachmentPair attachmentPair, bool selected )
+    private void DrawGizmos( Color color, bool selected )
     {
+      if ( !DrawGizmosEnable || !isActiveAndEnabled )
+        return;
+
+      Vector3 pos = WheelAttachmentPoint;
       Gizmos.color = color;
+      var scale = 0.3f *
+        Utils.Math.Clamp(
+          Rendering.Spawner.Utils.FindConstantScreenSizeScale( pos, Camera.current ),
+          0.2f,
+          2.0f );
       Gizmos.DrawMesh( GizmosMesh,
-                       attachmentPair.ReferenceFrame.Position,
-                       attachmentPair.ReferenceFrame.Rotation * Quaternion.FromToRotation( Vector3.up, Vector3.forward ),
-                       0.3f * Utils.Math.Clamp( Rendering.Spawner.Utils.FindConstantScreenSizeScale( attachmentPair.ReferenceFrame.Position,
-                                                                                                     Camera.current ),
-                                                0.2f,
-                                                2.0f ) * Vector3.one );
+                       pos,
+                       AttachmentPair.ReferenceFrame.Rotation,
+                       scale * Vector3.one );
 
-      if ( !attachmentPair.Synchronized && selected ) {
+      if ( !AttachmentPair.Synchronized && selected ) {
         Gizmos.color = Color.red;
-        Gizmos.DrawLine( attachmentPair.ReferenceFrame.Position, attachmentPair.ConnectedFrame.Position );
+        Gizmos.DrawLine( AttachmentPair.ReferenceFrame.Position, AttachmentPair.ConnectedFrame.Position );
       }
+
+      Vector3 up = SteeringAxis;
+
+      up = up / 9 * scale * 2;
+      var top = pos + up * 9;
+      var right = Vector3.Cross(up, Camera.current.transform.forward).normalized * scale;
+
+      var points = new List<Vector3>();
+
+      points.Add( pos );
+      points.Add( pos+up );
+      for ( int i = 1; i < 4; i++ ) {
+        points.Add( pos+up * ( i * 2 ) + right/5 );
+        points.Add( pos+up * ( i * 2 + 1 ) - right/5 );
+      }
+      points.Add( top - up );
+      points.Add( top );
+
+      Gizmos.DrawLineStrip( points.ToArray(), false );
     }
 
-    private void OnDrawGizmos()
-    {
-      if ( !DrawGizmosEnable || !IsEnabled )
-        return;
+    private void OnDrawGizmos() => DrawGizmos( Color.blue, false );
+    private void OnDrawGizmosSelected() => DrawGizmos( Color.green, true );
 
-      DrawGizmos( Color.blue, AttachmentPair, false );
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-      if ( !DrawGizmosEnable || !IsEnabled )
-        return;
-
-      DrawGizmos( Color.green, AttachmentPair, true );
-    }
   }
 }
