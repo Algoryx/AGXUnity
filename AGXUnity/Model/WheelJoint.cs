@@ -8,7 +8,7 @@ namespace AGXUnity.Model
 {
   [AddComponentMenu( "AGXUnity/Vehicle/Wheel Joint" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wheel-joint" )]
-  public class WheelJoint : ScriptComponent
+  public class WheelJoint : ScriptComponent, IConstraint
   {
     /// <summary>
     /// Controller dimensions of the wheel joing used to find controllers in the constraint. 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static AGXUnity.Constraint;
 
 namespace AGXUnity
 {
@@ -22,9 +23,32 @@ namespace AGXUnity
     Unknown
   }
 
+  public interface IConstraint
+  {
+    public AttachmentPair AttachmentPair { get; }
+    public Constraint.ECollisionsState CollisionsState { get; set; }
+    public Constraint.ESolveType SolveType { get; set; }
+    public bool ConnectedFrameNativeSyncEnabled { get; set; }
+    public ElementaryConstraint[] ElementaryConstraints { get; }
+
+    public ElementaryConstraint[] GetOrdinaryElementaryConstraints();
+    public ElementaryConstraintController[] GetElementaryConstraintControllers();
+    public void TraverseRowData<T>( Action<ElementaryConstraintRowData> callback, T value )
+      where T : struct;
+    public void SetCompliance( float compliance );
+    public void SetCompliance( float compliance, TranslationalDof dof );
+    public void SetCompliance( float compliance, RotationalDof dof );
+    public void SetDamping( float damping );
+    public void SetDamping( float damping, TranslationalDof dof );
+    public void SetDamping( float damping, RotationalDof dof );
+    public void SetForceRange( RangeReal forceRange );
+    public void SetForceRange( RangeReal forceRange, TranslationalDof dof );
+    public void SetForceRange( RangeReal forceRange, RotationalDof dof );
+  }
+
   [AddComponentMenu( "" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#constraint" )]
-  public class Constraint : ScriptComponent
+  public class Constraint : ScriptComponent, IConstraint
   {
     /// <summary>
     /// Constraint solve types.
