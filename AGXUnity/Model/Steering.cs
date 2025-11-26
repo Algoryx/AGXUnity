@@ -80,13 +80,14 @@ namespace AGXUnity.Model
     /// <summary>
     /// Validates that the wheel joints both have a common steering axis.
     /// </summary>
-    public bool ValidateWheelRotations() => Quaternion.Dot( RightWheel.AttachmentPair.ConnectedFrame.Rotation, LeftWheel.AttachmentPair.ConnectedFrame.Rotation ) > 0.95f;
+    public bool ValidateWheelRotations() => Vector3.Dot( RightWheel.SteeringAxis, LeftWheel.SteeringAxis ) > 0.99f;
 
     /// <summary>
     /// The steering parameters used to construct the internal steering mechanism of the constraint.
     /// </summary>
     [field: SerializeField]
     [DisableInRuntimeInspector]
+    [AllowRecursiveEditing]
     public SteeringParameters Parameters { get; set; } = null;
 
     protected override bool Initialize()

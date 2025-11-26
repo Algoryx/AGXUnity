@@ -761,7 +761,7 @@ namespace AGXUnity.Model
 
       Vector3 up = SteeringAxis;
 
-      up = up / 9 * scale * 2;
+      up = up / 9 * scale;
       var top = pos + up * 9;
       var right = Vector3.Cross(up, Camera.current.transform.forward).normalized * scale;
 
@@ -775,7 +775,7 @@ namespace AGXUnity.Model
       }
       points.Add( top - up );
       points.Add( top );
-
+      Gizmos.color = color;
       Gizmos.DrawLineStrip( points.ToArray(), false );
     }
 
