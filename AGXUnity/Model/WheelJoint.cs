@@ -6,7 +6,8 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
-  [AddComponentMenu( "AGXUnity/Constraints/Wheel Joint" )]
+  [AddComponentMenu( "AGXUnity/Vehicle/Wheel Joint" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#wheel-joint" )]
   public class WheelJoint : ScriptComponent
   {
     /// <summary>
@@ -134,6 +135,89 @@ namespace AGXUnity.Model
                in m_elementaryConstraintsNew
                where ec is ElementaryConstraintController
                select ec as ElementaryConstraintController ).ToArray();
+    }
+
+    /// <summary>
+    /// Create a new wheel joint given constraint frames.
+    /// </summary>
+    /// <param name="referenceFrame">Reference frame.</param>
+    /// <param name="connectedFrame">Connected frame.</param>
+    /// <returns>WheelJoint component, added to a new game object - null if unsuccessful.</returns>
+    public static WheelJoint Create( ConstraintFrame referenceFrame,
+                                     ConstraintFrame connectedFrame )
+    {
+      GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity.WheelJoint" ) );
+      try {
+        WheelJoint constraint = constraintGameObject.AddComponent<WheelJoint>();
+
+        constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
+        constraint.AttachmentPair.ConnectedFrame = connectedFrame ?? new ConstraintFrame();
+
+        // Creating a temporary native instance of the constraint, including a rigid body and frames.
+        // Given this native instance we copy the default configuration.
+        using ( var tmpNative = new TemporaryNative( constraint.AttachmentPair ) )
+          constraint.TryAddElementaryConstraints( tmpNative.Instance );
+
+        return constraint;
+      }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
+        DestroyImmediate( constraintGameObject );
+        return null;
+      }
+    }
+
+    /// <summary>
+    /// Create a new WheelJoint component.
+    /// </summary>
+    /// <param name="givenAttachmentPair">Optional initial attachment pair. When given,
+    ///                                   values and fields will be copied to this objects
+    ///                                   attachment pair.</param>
+    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
+    public static WheelJoint Create( AttachmentPair givenAttachmentPair = null )
+    {
+      var instance = Create( new ConstraintFrame(), new ConstraintFrame() );
+      if ( instance == null )
+        return null;
+
+      instance.AttachmentPair.CopyFrom( givenAttachmentPair );
+
+      return instance;
+    }
+
+    /// <summary>
+    /// Create a new WheelJoint component given a wheel RB, chassis RB, steering axis, and wheel rotation axis .
+    /// </summary>
+    /// <param name="wheel">The RB of the wheel to be used in the constraint</param>
+    /// <param name="chassis">The RB of the chassis to be used in the constraint</param>
+    /// <param name="steeringAxis">The axis in world space around which the wheel rotates when steering</param>
+    /// <param name="wheelAxis">The axis in world space around which the wheel rotates when rolling</param>
+    /// <returns>Constraint component, added to a new game object - null if unsuccessful.</returns>
+    public static WheelJoint Create( RigidBody wheel, RigidBody chassis, Vector3 steeringAxis, Vector3 wheelAxis )
+    {
+      if ( steeringAxis.sqrMagnitude < 1e-6f || wheelAxis.sqrMagnitude < 1e-6f ) {
+        Debug.LogError( $"Steering Axis and Wheel Axis must both have non-zero length. Steering: {steeringAxis}, Wheel: {wheelAxis}" );
+        return null;
+      }
+
+      steeringAxis.Normalize();
+      wheelAxis.Normalize();
+
+      if ( Vector3.Dot( steeringAxis, wheelAxis ) > 0.01f ) {
+        Debug.LogError( $"Steering Axis and Wheel Axis must be orthogonal. Steering: {steeringAxis}, Wheel: {wheelAxis}" );
+        return null;
+      }
+
+      var wheelRotation = Quaternion.LookRotation( steeringAxis, wheelAxis );
+
+      var WheelFrame = new ConstraintFrame(wheel.gameObject);
+      WheelFrame.Rotation = wheelRotation;
+
+      var chassisFrame = new ConstraintFrame(chassis.gameObject);
+      chassisFrame.Rotation = wheelRotation;
+
+      var instance = Create( WheelFrame, chassisFrame );
+      return instance;
     }
 
     /// <summary>
@@ -521,21 +605,34 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Calculates the current angle for given degree of freedom when this
-    /// constraint is active.
+    /// Calculates the current angle for given degree of freedom when this WheelJoint is active.
     /// </summary>
-    /// <param name="controllerType">Working dimension (translational or rotational). It's
-    ///                              normally enough with Primary if this constraint isn't
-    ///                              a CylindricalJoint. If cylindrical - primary == Translational.</param>
-    /// <returns>Current angle of the active constraint.</returns>
-    public float GetCurrentAngle( WheelDimension controllerType = WheelDimension.Steering )
+    /// <param name="wheelDimension">Wheel dimension (Steering, Suspension or wheel (rotation)). </param>
+    /// <returns>Current angle of the specified dimension of the wheel joint</returns>
+    public float GetCurrentAngle( WheelDimension wheelDimension = WheelDimension.Steering )
     {
       if ( Native != null )
-        return System.Convert.ToSingle( Native.getAngle( (agxVehicle.WheelJoint.SecondaryConstraint)controllerType ) );
+        return System.Convert.ToSingle( Native.getAngle( (agxVehicle.WheelJoint.SecondaryConstraint)wheelDimension ) );
 
       return 0.0f;
     }
 
+    /// <summary>
+    /// Calculates the current speed for given degree of freedom when this WheelJoint is active.
+    /// </summary>
+    /// <param name="wheelDimension">Wheel dimension (Steering, Suspension or wheel (rotation)). </param>
+    /// <returns>Current speed of the specified dimension of the wheel joint</returns>
+    public float GetCurrentSpeed( WheelDimension wheelDimension = WheelDimension.Steering )
+    {
+      //if ( Native != null )
+      //  return System.Convert.ToSingle( Native.getCurrentSpeed( (agxVehicle.WheelJoint.SecondaryConstraint)wheelDimension ) );
+
+      return 0.0f;
+    }
+
+    /// <summary>
+    /// Calculates the axis around which the wheel joint steers.
+    /// </summary>
     public Vector3 SteeringAxis
     {
       get
@@ -551,6 +648,9 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Calculates the attachment point of the wheel joint.
+    /// </summary>
     public Vector3 WheelAttachmentPoint
     {
       get
@@ -566,6 +666,9 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Calculates the axis aroudn which the wheel rotates
+    /// </summary>
     public Vector3 WheelAxis
     {
       get

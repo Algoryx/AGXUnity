@@ -4,8 +4,13 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [AddComponentMenu( "AGXUnity/Vehicle/Steering" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#steering" )]
   public class Steering : ScriptComponent
   {
+    /// <summary>
+    /// Different steering mechanisms that the steering constraint supports
+    /// </summary>
     public enum SteeringMechanism
     {
       Ackermann,
@@ -17,6 +22,9 @@ namespace AGXUnity.Model
     [SerializeField]
     private SteeringMechanism m_mechanism = SteeringMechanism.Ackermann;
 
+    /// <summary>
+    /// The steering mechanism used internally to calculate the wheel angles given an input steering angle.
+    /// </summary>
     public SteeringMechanism Mechanism
     {
       get => m_mechanism;
@@ -35,6 +43,9 @@ namespace AGXUnity.Model
     /// </summary>
     public agxVehicle.Steering Native { get; private set; }
 
+    /// <summary>
+    /// Gets or sets the current steering angle that the constraint tries to maintain for the steering wheel
+    /// </summary>
     [HideInInspector]
     public double SteeringAngle
     {
@@ -42,23 +53,58 @@ namespace AGXUnity.Model
       set => Native?.setSteeringAngle( Mathf.Clamp( (float)value, -(float)MaxSteeringAngle, (float)MaxSteeringAngle ) );
     }
 
+    /// <summary>
+    /// Calculates the maximum steering angle that can be applied to the constraint. 
+    /// Note that this value is only calculated at runtime and edit-time access will return 0.0f.
+    /// </summary>
     [HideInInspector]
     public double MaxSteeringAngle => Native != null ? Native.getMaximumSteeringAngle( 0 ) : 0.0f;
 
+    /// <summary>
+    /// The left wheel in the steering constraint
+    /// </summary>
     [field: SerializeField]
     public WheelJoint LeftWheel { get; set; } = null;
 
+    /// <summary>
+    /// The right wheel in the steering constraint
+    /// </summary>
     [field: SerializeField]
     public WheelJoint RightWheel { get; set; } = null;
 
+    /// <summary>
+    /// Validates that the provided wheel joints both have a common attachment body (chassis or world)
+    /// </summary>
+    public bool ValidateWheelConnectedParents() => RightWheel.AttachmentPair.ConnectedObject == LeftWheel.AttachmentPair.ConnectedObject;
+
+    /// <summary>
+    /// Validates that the wheel joints both have a common steering axis.
+    /// </summary>
+    public bool ValidateWheelRotations() => Quaternion.Dot( RightWheel.AttachmentPair.ConnectedFrame.Rotation, LeftWheel.AttachmentPair.ConnectedFrame.Rotation ) > 0.95f;
+
+    /// <summary>
+    /// The steering parameters used to construct the internal steering mechanism of the constraint.
+    /// </summary>
     [field: SerializeField]
     [DisableInRuntimeInspector]
     public SteeringParameters Parameters { get; set; } = null;
 
     protected override bool Initialize()
     {
-      if ( LeftWheel == null || RightWheel == null )
+      if ( LeftWheel == null || RightWheel == null ) {
+        Debug.LogError( "The Steering constraint requires both WheelJoints to be set", this );
         return false;
+      }
+
+      if ( !ValidateWheelConnectedParents() ) {
+        Debug.LogError( "The WheelJoints in a steering constraint must have a common Connected Parent object" );
+        return false;
+      }
+
+      if ( !ValidateWheelRotations() ) {
+        Debug.LogError( "The WheelJoints in a steering constraint must have a common steering axis" );
+        return false;
+      }
 
       var leftNative = LeftWheel.GetInitialized().Native;
       var rightNative = RightWheel.GetInitialized().Native;
@@ -92,12 +138,37 @@ namespace AGXUnity.Model
         return false;
 
       Simulation.Instance.Native.add( Native );
+      Native.setEnable( isActiveAndEnabled );
 
       return base.Initialize();
     }
 
+    protected override void OnDestroy()
+    {
+      if ( Simulation.HasInstance )
+        Simulation.Instance.Native.remove( Native );
+
+      Native = null;
+
+      base.OnDestroy();
+    }
+
+    protected override void OnEnable()
+    {
+      if ( Native != null && !Native.getEnable() )
+        Native.setEnable( true );
+    }
+
+    protected override void OnDisable()
+    {
+      if ( Native != null && Native.getEnable() )
+        Native.setEnable( false );
+    }
+
     private void OnDrawGizmos()
     {
+      if ( !isActiveAndEnabled )
+        return;
       var scale = 0.02f;
 
       var leftWJ = LeftWheel.WheelAttachmentPoint;

@@ -2,10 +2,14 @@ using UnityEngine;
 
 namespace AGXUnity.Model
 {
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#steering-parameters" )]
   public class SteeringParameters : ScriptAsset
   {
     public agxVehicle.SteeringParameters Native { get; private set; }
 
+    /// <summary>
+    /// The steering mechanism that this set of steering parameters is inteded for
+    /// </summary>
     [field: SerializeField]
     [HideInInspector]
     public Steering.SteeringMechanism Mechanism { get; set; } = Steering.SteeringMechanism.Ackermann;
@@ -15,9 +19,10 @@ namespace AGXUnity.Model
     private bool Show_lr => Mechanism == Steering.SteeringMechanism.RackPinion || Mechanism == Steering.SteeringMechanism.Davis;
     private bool Show_side => Mechanism == Steering.SteeringMechanism.Ackermann;
 
-    [ SerializeField ]
+    [SerializeField]
     private float m_phi0 = -105.0f * Mathf.Deg2Rad;
 
+    [Tooltip( "Specifies the initial angle of between the wheel axis and the kingpin rod." )]
     public float Phi0
     {
       get => m_phi0;
@@ -33,6 +38,7 @@ namespace AGXUnity.Model
     private float m_l = 0.16f;
 
     [ClampAboveZeroInInspector]
+    [Tooltip( "Specifies the length of the kingpin rod." )]
     public float L
     {
       get => m_l;
@@ -48,6 +54,7 @@ namespace AGXUnity.Model
     private float m_alpha0 = 76 * Mathf.Deg2Rad;
 
     [DynamicallyShowInInspector( "Show_alpha0" )]
+    [Tooltip( "Specifies the initial angle between the wheel axis and the tie rod." )]
     public float Alpha0
     {
       get => Mechanism == Steering.SteeringMechanism.Davis ? ( Mathf.PI - Phi0 ) : m_alpha0;
@@ -68,6 +75,7 @@ namespace AGXUnity.Model
 
     [ClampAboveZeroInInspector]
     [DynamicallyShowInInspector( "Show_lc" )]
+    [Tooltip( "Specifies the length of the steering arm." )]
     public float Lc
     {
       get => m_lc;
@@ -85,6 +93,7 @@ namespace AGXUnity.Model
     [ClampAboveZeroInInspector]
     [FloatSliderInInspector( 0, 1 )]
     [DynamicallyShowInInspector( "Show_lr" )]
+    [Tooltip( "Specifies the length of the rack." )]
     public float Lr
     {
       get => Mechanism == Steering.SteeringMechanism.BellCrank ? 0.0f : m_lr;
@@ -103,6 +112,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private float m_gear = 1.0f;
 
+    [Tooltip( "The gear ratio between the steering wheel rotation and the steering arm rotation." )]
     public float Gear
     {
       get => m_gear;
@@ -114,6 +124,9 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// Specifies a side on which the steering arm is located.
+    /// </summary>
     public enum SteeringArmSide
     {
       Left = 0,
@@ -124,6 +137,7 @@ namespace AGXUnity.Model
     private SteeringArmSide m_side = SteeringArmSide.Left;
 
     [DynamicallyShowInInspector( "Show_side" )]
+    [Tooltip( "When using the Ackermann steering mechanism, this parameter decides which side the steering arm is located on." )]
     public SteeringArmSide Side
     {
       get => m_side;
@@ -135,7 +149,9 @@ namespace AGXUnity.Model
       }
     }
 
-    [AGXUnity.InvokableInInspector]
+    /// <summary>
+    /// Assigns the default values to each parameter given the current steering mechanism.
+    /// </summary>
     public void AssignDefaults()
     {
       agxVehicle.SteeringParameters tmp = Mechanism switch
@@ -152,13 +168,14 @@ namespace AGXUnity.Model
         return;
       }
 
-      Phi0    = (float)tmp.phi0;
-      L       = (float)tmp.l;
-      Alpha0  = (float)tmp.alpha0;
-      Lc      = (float)tmp.lc;
-      Lr      = (float)tmp.lr;
-      Gear    = (float)tmp.gear;
-      Side    = (SteeringArmSide)tmp.side;
+      Phi0      = (float)tmp.phi0;
+      L         = (float)tmp.l;
+      Lc        = (float)tmp.lc;
+      Gear      = (float)tmp.gear;
+      Side      = (SteeringArmSide)tmp.side;
+      // Assign these directly to avoid warnings when setting implicit parameters
+      m_lr      = (float)tmp.lr;
+      m_alpha0  = (float)tmp.alpha0;
     }
 
     public override void Destroy()
