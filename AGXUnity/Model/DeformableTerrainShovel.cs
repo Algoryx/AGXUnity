@@ -204,7 +204,7 @@ namespace AGXUnity.Model
 
     public void OnAfterDeserialize()
     {
-      // See not above
+      // See note above
       if ( !IsNullFrame( m_cuttingDirection.Start ) || !IsNullFrame( m_cuttingDirection.End ) ) {
         m_hasTeeth = true;
         m_toothDirection = m_cuttingDirection;
