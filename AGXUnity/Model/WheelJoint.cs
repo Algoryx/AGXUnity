@@ -633,6 +633,7 @@ namespace AGXUnity.Model
     /// <summary>
     /// Calculates the axis around which the wheel joint steers.
     /// </summary>
+    [HideInInspector]
     public Vector3 SteeringAxis
     {
       get
@@ -651,6 +652,7 @@ namespace AGXUnity.Model
     /// <summary>
     /// Calculates the attachment point of the wheel joint.
     /// </summary>
+    [HideInInspector]
     public Vector3 WheelAttachmentPoint
     {
       get
@@ -667,8 +669,9 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Calculates the axis aroudn which the wheel rotates
+    /// Calculates the axis around which the wheel rotates
     /// </summary>
+    [HideInInspector]
     public Vector3 WheelAxis
     {
       get
