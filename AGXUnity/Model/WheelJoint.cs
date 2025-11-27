@@ -624,8 +624,8 @@ namespace AGXUnity.Model
     /// <returns>Current speed of the specified dimension of the wheel joint</returns>
     public float GetCurrentSpeed( WheelDimension wheelDimension = WheelDimension.Steering )
     {
-      //if ( Native != null )
-      //  return System.Convert.ToSingle( Native.getCurrentSpeed( (agxVehicle.WheelJoint.SecondaryConstraint)wheelDimension ) );
+      if ( Native != null )
+        return System.Convert.ToSingle( Native.getCurrentSpeed( (agxVehicle.WheelJoint.SecondaryConstraint)wheelDimension ) );
 
       return 0.0f;
     }
@@ -645,7 +645,7 @@ namespace AGXUnity.Model
           return frame.Rotation * Vector3.forward;
         }
         else
-          return Native.getSteeringAxle().ToHandedVector3();
+          return Native.getSteeringAxis().ToHandedVector3();
       }
     }
 

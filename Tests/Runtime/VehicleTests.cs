@@ -216,7 +216,7 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.SimulateSeconds( 0.5f );
 
-      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Wheel ), Is.EqualTo( 0.0f ), "Wheel should not rotate given an enabled LockController" );
+      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Wheel ), Is.EqualTo( 0.0f ).Within( 1e-6f ), "Wheel should not rotate given an enabled LockController" );
     }
 
     [UnityTest]
@@ -230,18 +230,20 @@ namespace AGXUnityTesting.Runtime
 
       motor.Enable = true;
       motor.Speed = 1;
+      motor.Compliance = 1e-6f;
 
       range.Enable = true;
-      range.Range = new RangeReal( -Mathf.PI, Mathf.PI );
-
-      yield return TestUtils.Step();
-
-      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Steering ), Is.EqualTo( 1.0f ), "Wheel should rotate given a non zero speed passed to an enabled TargetSpeedController" );
+      range.Range = new RangeReal( -1, 1 );
+      range.Compliance = 1e-15f;
 
       yield return TestUtils.SimulateSeconds( 0.5f );
 
-      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Steering ), Is.EqualTo( 0.0f ), "Wheel should rotate not rotate as it hits the range of a RangeController" );
-      Assert.That( vehicle.LeftJoint.GetCurrentAngle( WheelJoint.WheelDimension.Steering ), Is.EqualTo( Mathf.PI ), "Wheel rotation should match that of the the RangeController as it hits the limit" );
+      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Steering ), Is.EqualTo( 1.0f ), "Wheel should rotate given a non zero speed passed to an enabled TargetSpeedController" );
+
+      yield return TestUtils.SimulateSeconds( 1.0f );
+
+      Assert.That( vehicle.LeftJoint.GetCurrentSpeed( WheelJoint.WheelDimension.Steering ), Is.EqualTo( 0.0f ).Within( 1e-6f ), "Wheel should rotate not rotate as it hits the range of a RangeController" );
+      Assert.That( vehicle.LeftJoint.GetCurrentAngle( WheelJoint.WheelDimension.Steering ), Is.EqualTo( 1 ), "Wheel rotation should match that of the the RangeController as it hits the limit" );
     }
 
     [Test]
