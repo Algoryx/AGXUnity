@@ -115,7 +115,7 @@ namespace AGXUnity.Utils
     }
 
     private static Dictionary<Type, List<FieldPropertyPair>> m_cache = new Dictionary<Type, List<FieldPropertyPair>>();
-    private static Regex m_fieldPropertyMatcher = new Regex( @"\b(m_)([a-z])(\w+)", RegexOptions.Compiled );
+    private static Regex m_fieldPropertyMatcher = new Regex( @"\b(m_)([a-z])(\w*)", RegexOptions.Compiled );
 
     /// <summary>
     /// Searches for field + property match:

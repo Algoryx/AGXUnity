@@ -1,4 +1,5 @@
 ﻿using AGXUnity;
+using AGXUnity.Model;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -11,7 +12,7 @@ namespace AGXUnityEditor.Tools
   [CustomTool( typeof( RigidBody ) )]
   public class RigidBodyTool : CustomTargetTool
   {
-    private List<Constraint> m_constraints = new List<Constraint>();
+    private List<IConstraint> m_constraints = new List<IConstraint>();
 
     public RigidBody RigidBody
     {
@@ -156,6 +157,21 @@ namespace AGXUnityEditor.Tools
           if ( constraint.AttachmentPair.Contains( rb ) )
             m_constraints.Add( constraint );
       }
+
+#if UNITY_2022_2_OR_NEWER
+      var allWheelJoints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
+                             StageUtility.GetCurrentStageHandle().FindComponentsOfType<WheelJoint>() :
+                             Object.FindObjectsByType<WheelJoint>(FindObjectsSortMode.None);
+#else
+      var allWheelJoints = StageUtility.GetCurrentStageHandle().Contains( RigidBody.gameObject ) ?
+                             StageUtility.GetCurrentStageHandle().FindComponentsOfType<WheelJoint>() :
+                             Object.FindObjectsOfType<WheelJoint>();
+#endif
+      foreach ( var wheelJoint in allWheelJoints ) {
+        foreach ( var rb in GetTargets<RigidBody>() )
+          if ( wheelJoint.AttachmentPair.Contains( rb ) )
+            m_constraints.Add( wheelJoint );
+      }
     }
 
     public override void OnAdd()
@@ -273,7 +289,7 @@ namespace AGXUnityEditor.Tools
 
       InspectorGUI.ToolArrayGUI( this, RigidBody.Shapes, "Shapes" );
 
-      InspectorGUI.ToolArrayGUI( this, m_constraints.ToArray(), "Constraints" );
+      InspectorGUI.ToolArrayGUI( this, m_constraints.Cast<ScriptComponent>().ToArray(), "Constraints" );
     }
   }
 }

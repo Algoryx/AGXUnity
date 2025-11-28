@@ -111,7 +111,7 @@ namespace AGXUnityEditor.Tools
 
       var constraintsParser = ( from constraint
                                 in constraints
-                                select ConstraintUtils.ConstraintRowParser.Create( constraint ) ).ToArray();
+                                select ConstraintUtils.ConstraintRowParser.Create( constraint.GetOrdinaryElementaryConstraints() ) ).ToArray();
       var allElementaryConstraints = constraints.SelectMany( constraint => constraint.GetOrdinaryElementaryConstraints() ).ToArray();
       Undo.RecordObjects( constraints, "ConstraintTool" );
 

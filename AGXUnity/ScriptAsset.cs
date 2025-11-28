@@ -28,6 +28,12 @@ namespace AGXUnity
     private int m_serializationVersion = CurrentSerializationVersion;
 #pragma warning restore 0414
 
+    /// <summary>
+    /// True when the property synchronizer is running during (post) initialize.
+    /// </summary>
+    [HideInInspector]
+    public bool IsSynchronizingProperties { get; private set; } = false;
+
     public static T Create<T>() where T : ScriptAsset
     {
       return Create( typeof( T ) ) as T;
@@ -54,8 +60,11 @@ namespace AGXUnity
       if ( state == ScriptAssetManager.InitializationState.NotInitialized ) {
         NativeHandler.Instance.MakeMainThread();
 
-        if ( Initialize() )
+        if ( Initialize() ) {
+          IsSynchronizingProperties = true;
           Utils.PropertySynchronizer.Synchronize( this );
+          IsSynchronizingProperties = false;
+        }
         else {
           Debug.LogError( "Unable to initialize script asset: " + this.name, this );
           ScriptAssetManager.Instance.Unregister( this );
