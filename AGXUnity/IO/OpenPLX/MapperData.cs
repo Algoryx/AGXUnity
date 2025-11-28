@@ -51,12 +51,12 @@ namespace AGXUnity.IO.OpenPLX
     public SavedPrefabLocalData PrefabLocalData { get; set; } = null;
     public agxopenplx.AgxCache AgxCache { get; } = new agxopenplx.AgxCache();
 
-    public Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<openplx.Physics.Charges.ContactGeometry, Collide.Shape>();
+    public Dictionary<openplx.Physics.Geometries.ContactGeometry, Collide.Shape> GeometryCache { get; } = new Dictionary<openplx.Physics.Geometries.ContactGeometry, Collide.Shape>();
     public Dictionary<openplx.Core.Object, RigidBody> BodyCache { get; } = new Dictionary<openplx.Core.Object, RigidBody>();
     public Dictionary<openplx.Physics.System, GameObject> SystemCache { get; } = new Dictionary<openplx.Physics.System, GameObject>();
     public Dictionary<openplx.Core.Object, GameObject> FrameCache { get; } = new Dictionary<openplx.Core.Object, GameObject>();
-    public Dictionary<openplx.Physics.Charges.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Charges.Material, ShapeMaterial>();
-    public Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Charges.MateConnector, GameObject>();
+    public Dictionary<openplx.Physics.Geometries.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Geometries.Material, ShapeMaterial>();
+    public Dictionary<openplx.Physics3D.Interactions.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Interactions.MateConnector, GameObject>();
     public Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel> FrictionModelCache { get; } = new Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel>();
     public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
 

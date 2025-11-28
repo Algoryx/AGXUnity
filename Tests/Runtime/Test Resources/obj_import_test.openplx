@@ -1,6 +1,6 @@
 Icosahedron is Physics3D.Bodies.RigidBody:
     inertia.mass: 1
-    geometry is Physics3D.Charges.ExternalTriMeshGeometry:
+    geometry is Physics3D.Geometries.ExternalTriMeshGeometry:
         scale: Math.Vec3.from_xyz(1, 1, 1)
         path: @"Icosahedron.obj"
 

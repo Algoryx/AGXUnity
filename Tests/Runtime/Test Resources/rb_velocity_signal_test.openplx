@@ -1,5 +1,5 @@
 Box is Physics3D.Bodies.RigidBody:
-  geometry is Physics3D.Charges.Box:
+  geometry is Physics3D.Geometries.Box:
     size: Math.Vec3.from_xyz(0.1,0.1,0.1)
 
   is_dynamic: false

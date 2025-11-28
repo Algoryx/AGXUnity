@@ -1,9 +1,9 @@
 
 Rod is Physics3D.Bodies.RigidBody:
     inertia.mass: 10
-    geometry is Physics3D.Charges.Box:
+    geometry is Physics3D.Geometries.Box:
         size: Math.Vec3.from_xyz(0.1, 0.1, 1)
-    mate_connector is Physics3D.Charges.MateConnector:
+    mate_connector is Physics3D.Interactions.MateConnector:
         main_axis: Math.Vec3.Y_AXIS()
         normal: Math.Vec3.Z_AXIS()
 
@@ -27,7 +27,7 @@ PendulumsDriveTrain is Physics3D.System:
 
     gear is DriveTrain.FlexibleGear:
       ratio: -1.0
-      charges: [right_shaft1.output, right_shaft2.input]
+      connectors: [right_shaft1.output, right_shaft2.input]
 
     diff is DriveTrain.Differential:
         drive_shaft: input_shaft
@@ -42,22 +42,22 @@ PendulumsDriveTrain is Physics3D.System:
 
     motor is Physics1D.Interactions.RotationalVelocityMotor:
         target_speed: 1
-        charges: [input_shaft.input]
+        connectors: [input_shaft.input]
 
 
 PendulumScene is Physics3D.System:
-    world_connector1 is Physics3D.Charges.MateConnector:
+    world_connector1 is Physics3D.Interactions.MateConnector:
         main_axis: Math.Vec3.Y_AXIS()
         normal: Math.Vec3.X_AXIS()
         position.y: 0.2
-    world_connector2 is Physics3D.Charges.MateConnector:
+    world_connector2 is Physics3D.Interactions.MateConnector:
         main_axis: Math.Vec3.Y_AXIS()
         normal: Math.Vec3.X_AXIS()
         position.y: -0.2
     pendulum1 is Pendulum:
-        hinge.charges: [pendulum1.rod.mate_connector, world_connector1]
+        hinge.connectors: [pendulum1.rod.mate_connector, world_connector1]
     pendulum2 is Pendulum:
-        hinge.charges: [pendulum2.rod.mate_connector, world_connector2]
+        hinge.connectors: [pendulum2.rod.mate_connector, world_connector2]
 
     pendulum_dt is PendulumsDriveTrain:
         left_hinge_actuator.mate_3d: pendulum1.hinge

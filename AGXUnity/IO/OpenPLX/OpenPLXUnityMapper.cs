@@ -10,7 +10,7 @@ using System.Linq;
 using UnityEngine;
 
 using Bodies = openplx.Physics3D.Bodies;
-using Charges = openplx.Physics3D.Charges;
+using Geometries = openplx.Physics3D.Geometries;
 using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.OpenPLX
@@ -39,6 +39,7 @@ namespace AGXUnity.IO.OpenPLX
 
     private InteractionMapper InteractionMapper { get; set; }
     private TrackMapper TrackMapper { get; set; }
+    private SensorMapper SensorMapper { get; set; }
 
     MapperOptions Options;
 
@@ -49,6 +50,7 @@ namespace AGXUnity.IO.OpenPLX
 
       InteractionMapper = new InteractionMapper( Data );
       TrackMapper = new TrackMapper( Data );
+      SensorMapper = new SensorMapper( Data );
     }
 
     public UnityEngine.Object MapObject( Object obj, string path )
@@ -255,7 +257,7 @@ namespace AGXUnity.IO.OpenPLX
 
     GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
       where UnityType : Shape
-      where OpenPLXType : Charges.ContactGeometry
+      where OpenPLXType : Geometries.ContactGeometry
     {
       GameObject go = Factory.Create<UnityType>();
       Data.RegisterGameObject( go );
@@ -340,7 +342,7 @@ namespace AGXUnity.IO.OpenPLX
         return Data.DefaultVisualMaterial;
     }
 
-    GameObject MapConvex( openplx.Physics3D.Charges.ConvexMesh convex ) => MapConvex( convex.vertices() );
+    GameObject MapConvex( Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
     GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
     GameObject MapConvex( std.MathVec3Vector vertices )
     {
@@ -404,7 +406,7 @@ namespace AGXUnity.IO.OpenPLX
       return go;
     }
 
-    GameObject MapExternalTriMesh( Charges.ExternalTriMeshGeometry objGeom )
+    GameObject MapExternalTriMesh( Geometries.ExternalTriMeshGeometry objGeom )
     {
       string path = objGeom.path();
 
@@ -464,7 +466,7 @@ namespace AGXUnity.IO.OpenPLX
       return go.GetComponent<T>();
     }
 
-    GameObject MapCachedShape( agxCollide.Shape shape, Charges.ContactGeometry geom )
+    GameObject MapCachedShape( agxCollide.Shape shape, Geometries.ContactGeometry geom )
     {
       var type = (agxCollide.Shape.Type)shape.getType();
       GameObject go = null;
@@ -546,7 +548,7 @@ namespace AGXUnity.IO.OpenPLX
              type == agxCollide.Shape.Type.HEIGHT_FIELD;
     }
 
-    GameObject MapContactGeometry( Charges.ContactGeometry geom, bool addVisuals )
+    GameObject MapContactGeometry( Geometries.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
       var uuid_annots = geom.findAnnotations("uuid");
@@ -566,24 +568,24 @@ namespace AGXUnity.IO.OpenPLX
       if ( go == null ) {
         go = geom switch
         {
-          Charges.Box box => CreateShape<Box, Charges.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
-          Charges.Cylinder cyl => CreateShape<Cylinder, Charges.Cylinder>( cyl, ( bcyl, ucyl ) => {
+          Geometries.Box box => CreateShape<Box, Geometries.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
+          Geometries.Cylinder cyl => CreateShape<Cylinder, Geometries.Cylinder>( cyl, ( bcyl, ucyl ) => {
             ucyl.Radius = (float)bcyl.radius();
             ucyl.Height = (float)bcyl.height();
           } ),
-          Charges.Sphere sphere => CreateShape<Sphere, Charges.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
-          Charges.Capsule cap => CreateShape<Capsule, Charges.Capsule>( cap, ( bcap, ucap ) => {
+          Geometries.Sphere sphere => CreateShape<Sphere, Geometries.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
+          Geometries.Capsule cap => CreateShape<Capsule, Geometries.Capsule>( cap, ( bcap, ucap ) => {
             ucap.Radius = (float)bcap.radius();
             ucap.Height = (float)bcap.height();
           } ),
-          Charges.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
+          Geometries.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
           _ => null
         };
       }
 
       if ( go == null ) {
         // TODO: Robotics Links can have null contact geometries maybe?
-        if ( geom.GetType() == typeof( openplx.Physics3D.Charges.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
+        if ( geom.GetType() == typeof( Geometries.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
           return null;
         return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
       }
@@ -676,7 +678,7 @@ namespace AGXUnity.IO.OpenPLX
         Utils.AddChild( rb, MapVisualGeometry( visual ), Data.ErrorReporter, visual );
       }
 
-      foreach ( var geom in body.getValues<Charges.ContactGeometry>() )
+      foreach ( var geom in body.getValues<Geometries.ContactGeometry>() )
         Utils.AddChild( rb, MapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
 
       Data.BodyCache[ body ] = rbComp;
@@ -702,8 +704,9 @@ namespace AGXUnity.IO.OpenPLX
       var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
       mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
       mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
-      mapped.CuttingDirection = Line.Create( body.gameObject, Vector3.zero, shovel.cutting_direction().ToHandedVector3() );
-      mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
+      // TODO: Map teeth direction
+      //mapped.CuttingDirection = Line.Create( body.gameObject, Vector3.zero, shovel.cutting_direction().ToHandedVector3() );
+      //mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
     }
 
     void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
@@ -724,7 +727,7 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    void MapGeometryToCollisionGroup( Charges.ContactGeometry geometry, CollisionGroup collision_group )
+    void MapGeometryToCollisionGroup( Geometries.ContactGeometry geometry, CollisionGroup collision_group )
     {
       if ( Data.GeometryCache.ContainsKey( geometry ) ) {
         var shape = Data.GeometryCache[geometry];
@@ -744,7 +747,7 @@ namespace AGXUnity.IO.OpenPLX
           MapBodyToCollisionGroup( body3d, collision_group );
 
       foreach ( var geometry in collision_group.geometries() )
-        if ( geometry is Charges.ContactGeometry geometry3d )
+        if ( geometry is Geometries.ContactGeometry geometry3d )
           MapGeometryToCollisionGroup( geometry3d, collision_group );
     }
 
@@ -829,8 +832,8 @@ namespace AGXUnity.IO.OpenPLX
         Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
 
       foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
-        foreach ( var geometry in body.getValues<Charges.ContactGeometry>() ) {
-          if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Charges.Material" || !geometry.material().isDefault( "density" ) ) {
+        foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
+          if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
             if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
               Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
           }
@@ -885,11 +888,11 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var trackSystem in system.getValues<openplx.Vehicles.Tracks.System>() )
         TrackMapper.MapTrackSystem( trackSystem );
 
-      foreach ( var mateConnector in system.getValues<openplx.Physics3D.Charges.MateConnector>() )
+      foreach ( var mateConnector in system.getValues<openplx.Physics3D.Interactions.MateConnector>() )
         InteractionMapper.MapMateConnector( mateConnector );
 
       foreach ( var body in system.getValues<openplx.Physics3D.Bodies.RigidBody>() )
-        foreach ( var mateConnector in body.getValues<openplx.Physics3D.Charges.MateConnector>() )
+        foreach ( var mateConnector in body.getValues<openplx.Physics3D.Interactions.MateConnector>() )
           InteractionMapper.MapMateConnector( mateConnector );
     }
 

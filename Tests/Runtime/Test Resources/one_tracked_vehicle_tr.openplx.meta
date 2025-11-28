@@ -8,6 +8,7 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  errors: []
   dependencies:
   - Assets/AGXUnity/OpenPLX/agxBundle/AGXTerrain/ExcavationModeData.openplx
   - Assets/AGXUnity/OpenPLX/agxBundle/AGXTerrain/Shovel.openplx
@@ -75,17 +76,17 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics/Bodies/Body.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Bodies/Inertia.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Bodies/Kinematics.openplx
-  - Assets/AGXUnity/OpenPLX/Physics/Charges/Charge.openplx
-  - Assets/AGXUnity/OpenPLX/Physics/Charges/ContactGeometry.openplx
-  - Assets/AGXUnity/OpenPLX/Physics/Charges/LinearElasticMaterial.openplx
-  - Assets/AGXUnity/OpenPLX/Physics/Charges/Material.openplx
   - Assets/AGXUnity/OpenPLX/Physics/config.openplx
+  - Assets/AGXUnity/OpenPLX/Physics/Geometries/ContactGeometry.openplx
+  - Assets/AGXUnity/OpenPLX/Physics/Geometries/LinearElasticMaterial.openplx
+  - Assets/AGXUnity/OpenPLX/Physics/Geometries/Material.openplx
   - Assets/AGXUnity/OpenPLX/Physics/GeometryMaterialOverrideTrait.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Adhesion/ConstantForceAdhesion.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Adhesion/DefaultAdhesion.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Clearance/ConstantAngleClearance.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Clearance/ConstantDistanceClerance.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Clearance/DefaultClearance.openplx
+  - Assets/AGXUnity/OpenPLX/Physics/Interactions/Connector.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Dissipation/AsymmetricLimitFriction.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Dissipation/ConstantLimitFriction.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Dissipation/ConstantViscousSurfaceFriction.openplx
@@ -107,6 +108,7 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/SurfaceContact/Model.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/SurfaceContact/PatchElasticity.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/SurfaceContact/PointwiseElasticity.openplx
+  - Assets/AGXUnity/OpenPLX/Physics/Interactions/SurfaceContact/Traits/SurfaceViscosity.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Toughness/DefaultToughness.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Toughness/ThresholdFracture.openplx
   - Assets/AGXUnity/OpenPLX/Physics/Interactions/Toughness/ThresholdPlastic.openplx
@@ -202,11 +204,11 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics1D/Bodies/LinearKinematics.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/Bodies/RotationalBody.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/Bodies/RotationalKinematics.openplx
-  - Assets/AGXUnity/OpenPLX/Physics1D/Charges/LinearConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics1D/Charges/MateConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics1D/Charges/RotationalConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/config.openplx
+  - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/LinearConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/Mate.openplx
+  - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/MateConnector.openplx
+  - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/RotationalConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/RotationalVelocityMotor.openplx
   - Assets/AGXUnity/OpenPLX/Physics1D/Interactions/VelocityMotor.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Bodies/Body.openplx
@@ -214,21 +216,17 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics3D/Bodies/Kinematics.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Bodies/RigidBody.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Bodies/RigidBodyKinematics.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/AdaptiveMateConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/Box.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/Capsule.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/ContactGeometry.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/ConvexMesh.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/Cylinder.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/ExternalTriMeshGeometry.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/MateConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/RedirectedMateConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/Sphere.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/StructuralPlanarConnector.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/TriMesh.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/TriMeshGeometry.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Charges/World.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/config.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/Box.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/Capsule.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/ContactGeometry.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/ConvexMesh.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/Cylinder.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/ExternalTriMeshGeometry.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/Sphere.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/TriMesh.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Geometries/TriMeshGeometry.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/AdaptiveMateConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Ball.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Clearance/ConstantBallClearance.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Clearance/ConstantCylindricalClearance.openplx
@@ -241,21 +239,26 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/CylindricalMechanicalDamping.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultBallDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultCylindricalDissipation.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultDistanceDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultHingeDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultLockDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultMateDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DefaultPrismaticDissipation.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/DistanceMechanicalDamping.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/HingeMechanicalDamping.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/LockMechanicalDamping.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Dissipation/PrismaticMechanicalDamping.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Distance.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultBallFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultCylindricalFlexibility.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultDistanceFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultHingeFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultLockFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultMateFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/DefaultPrismaticFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticBallFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticCylindricalFlexibility.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticDistanceFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticHingeFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticLockFlexibility.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Flexibility/LinearElasticPrismaticFlexibility.openplx
@@ -266,22 +269,27 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/LinearVelocityMotor.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Lock.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Mate.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/MateConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Prismatic.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/RangeInteraction1DOF.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/RedirectedMateConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/RotationalRange.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/RotationalVelocityMotor.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SpringInteraction1DOF.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/BodyOrientedFrictionTrait.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/GeometryOrientedFrictionTrait.openplx
-  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/OrientedFrictionTrait.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/StructuralPlanarConnector.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/PatchElasticityDryFrictionModel.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/PointwiseElasticityDryFrictionModel.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/Traits/BodyOrientedFriction.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/Traits/GeometryOrientedFriction.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/Traits/OrientedFriction.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/SurfaceContact/Traits/OrientedSurfaceViscosity.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/TorqueMotor.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/TorsionSpring.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/BallThresholdFracture.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/CylindricalThresholdFracture.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultBallToughness.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultCylindricalToughness.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultDistanceThoughness.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultHingeToughness.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultLockToughness.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/DefaultMateToughness.openplx
@@ -290,6 +298,7 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/LockThresholdFracture.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/Toughness/PrismaticThresholdFracture.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/VelocityMotor.openplx
+  - Assets/AGXUnity/OpenPLX/Physics3D/Interactions/World.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Signals/AngularVelocity3DInput.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Signals/AngularVelocity3DInputTrait.openplx
   - Assets/AGXUnity/OpenPLX/Physics3D/Signals/AngularVelocity3DOutput.openplx
@@ -361,6 +370,14 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Robotics/Signals/SensorValues.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/config.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Distortion.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/Ouster/OS0.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/Ouster/OS1.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/Ouster/OS2.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/Ouster/OSDome.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/SICK/TIM150.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/SICK/TIM310.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/SICK/TIM781.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Library/LIDARs/Velodyne/VLP16.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/LidarDetectionDistanceGaussianNoise.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/LidarLogic.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/LidarSensingDistortion.openplx
@@ -372,6 +389,12 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Sensors/Optics/RaySource.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/BeamEmitter.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/DistortedRayEmission.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarHorizontalResolution1024.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarHorizontalResolution2048.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarHorizontalResolution512.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarVerticalResolution128.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarVerticalResolution32.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/LidarVerticalResolution64.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/PulsedBeamEmitter.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Optics/Traits/RayEmitter.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/PulsedLidarLogic.openplx
@@ -379,6 +402,10 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Sensors/Signals/LidarOutput.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Signals/LidarOutputField.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Signals/SensorOutputSignal.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Traits/LidarFrequency05.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Traits/LidarFrequency10.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Traits/LidarFrequency15.openplx
+  - Assets/AGXUnity/OpenPLX/Sensors/Traits/LidarFrequency20.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Traits/MateAttachment.openplx
   - Assets/AGXUnity/OpenPLX/Sensors/Traits/MateConnectorAttachment.openplx
   - Assets/AGXUnity/OpenPLX/Simulation/CollisionGroup.openplx
@@ -396,6 +423,20 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Urdf/config.openplx
   - Assets/AGXUnity/OpenPLX/Urdf/PackagePath.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/config.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/FourWheel/FrontWheelDrive.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/FourWheel/Traits/FrontLeftWheelSuspension.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/FourWheel/Traits/FrontRightWheelSuspension.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/FourWheel/Traits/RearLeftWheelSuspension.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/FourWheel/Traits/RearRightWheelSuspension.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Interactions/Ackermann.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Interactions/BellCrank.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Interactions/RackAndPinion.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Interactions/Steering.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Suspensions/Connector.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Suspensions/LinearSpring.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Suspensions/Suspension.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Suspensions/Traits/SpringDamper.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Suspensions/Traits/Steering.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/Belt.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/BoxLinkDescription.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/BoxLinkVariation.openplx
@@ -417,6 +458,8 @@ ScriptedImporter:
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/RoadWheel.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/SinusoidalVariation.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Tracks/System.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Vehicle.openplx
+  - Assets/AGXUnity/OpenPLX/Vehicles/Wheels/Actuator.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Wheels/ElasticWheel.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Wheels/Interactions/Dissipation/DefaultWheelDissipation.openplx
   - Assets/AGXUnity/OpenPLX/Vehicles/Wheels/Interactions/Dissipation/WheelMechanichalDamping.openplx
@@ -453,9 +496,8 @@ ScriptedImporter:
   - AdvancedOneTrackVehicle
   - BoxToFloorSCD
   - Scene
-  Errors: []
+  <ImportTime>k__BackingField: 0.2923562
   ImportedModel: Default
-  <ImportTime>k__BackingField: 0.229515
   SkipImport: 0
   HideImportedMeshes: 1
   HideImportedVisualMaterials: 0

@@ -73,6 +73,8 @@ namespace AGXUnity.IO.OpenPLX
 
     public void SendInputSignal( InputSignal input ) => NativeInputQueue.send( input );
 
+    private agxopenplx.AgxMetadata m_meta;
+
     protected override bool Initialize()
     {
       Root.GetInitialized();
@@ -121,8 +123,10 @@ namespace AGXUnity.IO.OpenPLX
 
       NativeMapper = agxopenplx.AgxObjectMap.createPreMapped( m_nativeMap, agxopenplx.AgxObjectMapMode.Name );
 
-      NativeInputListener = new agxopenplx.InputSignalListener( NativeInputQueue, NativeMapper );
-      NativeOutputListener = new agxopenplx.OutputSignalListener( Root.Native, NativeOutputQueue, NativeMapper );
+      m_meta = new agxopenplx.AgxMetadata();
+
+      NativeInputListener = new agxopenplx.InputSignalListener( NativeInputQueue, NativeMapper, m_meta );
+      NativeOutputListener = new agxopenplx.OutputSignalListener( Root.Native, NativeOutputQueue, NativeMapper, m_meta );
 
       Simulation.Instance.Native.add( NativeInputListener );
       Simulation.Instance.Native.add( NativeOutputListener );

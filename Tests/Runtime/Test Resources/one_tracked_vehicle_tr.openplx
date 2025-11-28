@@ -1,6 +1,6 @@
 BoxComponent is Physics3D.Bodies.RigidBody:
     inertia.mass: 3.0
-    geometry is Physics3D.Charges.Box:
+    geometry is Physics3D.Geometries.Box:
         size: Math.Vec3.from_xyz(1.0, 1.0, 1.0)
 
 MySprocket is Vehicles.Tracks.RigidCylindricalSprocket:
@@ -20,7 +20,7 @@ MyBoxLinkVariation is Vehicles.Tracks.BoxLinkVariation:
         period: 0.7
         additional_amplitude: 0.1
 
-const LinkMaterial is Physics.Charges.Material:
+const LinkMaterial is Physics.Geometries.Material:
     density: 2000
 
 MyLinkDescription is Vehicles.Tracks.BoxLinkDescription:
@@ -43,19 +43,19 @@ MyAdvancedBelt is DefaultBelt:
 MyDefaultTracks is Vehicles.Tracks.System:
     belt becomes DefaultBelt
 
-    sprocket_connector is Physics3D.Charges.StructuralPlanarConnector:
+    sprocket_connector is Physics3D.Interactions.StructuralPlanarConnector:
         x: 2.1
         y: 1.1
 
-    idler_connector_1 is Physics3D.Charges.StructuralPlanarConnector:
+    idler_connector_1 is Physics3D.Interactions.StructuralPlanarConnector:
         x: -1.1
         y: 1.1
 
-    idler_connector_2 is Physics3D.Charges.StructuralPlanarConnector:
+    idler_connector_2 is Physics3D.Interactions.StructuralPlanarConnector:
         x: -1.1
         y: -1.1
 
-    idler_connector_3 is Physics3D.Charges.StructuralPlanarConnector:
+    idler_connector_3 is Physics3D.Interactions.StructuralPlanarConnector:
         x: 1.1
         y: -1.1
 
@@ -66,21 +66,21 @@ MyDefaultTracks is Vehicles.Tracks.System:
     road_wheels: [sprocket, idler_1, idler_2, idler_3]
 
     sprocket_hinge is Physics3D.Interactions.Hinge:
-        charges: [sprocket_connector, sprocket.center_connector]
+        connectors: [sprocket_connector, sprocket.center_connector]
 
     velocity_motor is Physics3D.Interactions.RotationalVelocityMotor:
-        charges: sprocket_hinge.charges
+        connectors: sprocket_hinge.connectors
         gain: 1000000000
         target_speed: 4
 
     idler_1_hinge is Physics3D.Interactions.Hinge:
-        charges: [idler_connector_1, idler_1.center_connector]
+        connectors: [idler_connector_1, idler_1.center_connector]
 
     idler_2_hinge is Physics3D.Interactions.Hinge:
-        charges: [idler_connector_2, idler_2.center_connector]
+        connectors: [idler_connector_2, idler_2.center_connector]
 
     idler_3_hinge is Physics3D.Interactions.Hinge:
-        charges: [idler_connector_3, idler_3.center_connector]
+        connectors: [idler_connector_3, idler_3.center_connector]
 
 
 

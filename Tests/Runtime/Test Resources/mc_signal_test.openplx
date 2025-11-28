@@ -1,12 +1,12 @@
 Box is Physics3D.Bodies.RigidBody:
-  geometry is Physics3D.Charges.Box:
+  geometry is Physics3D.Geometries.Box:
     size: Math.Vec3.from_xyz(0.1,0.1,0.1)
 
   is_dynamic: false
 
   kinematics.initial_local_angular_velocity: Math.Vec3.from_xyz(1,1,1)
 
-  observed_mc is Physics3D.Charges.MateConnector:
+  observed_mc is Physics3D.Interactions.MateConnector:
     position: Math.Vec3.from_xyz(0,0,1)
 
 SignalScene is Physics3D.System:

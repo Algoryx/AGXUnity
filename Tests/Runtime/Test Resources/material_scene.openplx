@@ -1,26 +1,26 @@
 FrictionCM is Physics.Interactions.SurfaceContact.Model:
   friction becomes Physics.Interactions.Dissipation.DefaultDryFriction
 
-const BoxMaterial1 is Physics.Charges.Material:
+const BoxMaterial1 is Physics.Geometries.Material:
   density: 1500
 
-const BoxMaterial2 is Physics.Charges.Material:
+const BoxMaterial2 is Physics.Geometries.Material:
   density: 2000
 
-const GroundMaterial is Physics.Charges.Material
+const GroundMaterial is Physics.Geometries.Material
 
 SlidingBox is Physics3D.Bodies.RigidBody:
   kinematics.local_transform.position: Math.Vec3.from_xyz(0,0.3,0.1)
-  geometry is Physics3D.Charges.Box:
+  geometry is Physics3D.Geometries.Box:
     size: Math.Vec3.from_xyz(0.1,0.1,0.1)
 
 GroundBox is Physics3D.Bodies.RigidBody:
   gm is GroundMaterial
 
-  floor_mc is Physics3D.Charges.MateConnector:
+  floor_mc is Physics3D.Interactions.MateConnector:
     main_axis: Math.Vec3.from_xyz(1,0,0)
 
-  geometry is Physics3D.Charges.Box:
+  geometry is Physics3D.Geometries.Box:
     size: Math.Vec3.from_xyz(1,1,0.1)
     material: gm
 
@@ -42,14 +42,14 @@ MaterialScene is Physics3D.System:
 
   Ground is GroundBox
 
-  world_mc is Physics3D.Charges.MateConnector:
+  world_mc is Physics3D.Interactions.MateConnector:
       main_axis: Math.Vec3.from_xyz(1,0,0)
 
   GroundHinge is Physics3D.Interactions.Hinge:
-    charges: [ world_mc, Ground.floor_mc ]
+    connectors: [ world_mc, Ground.floor_mc ]
 
   GroundMotor is Physics3D.Interactions.RotationalVelocityMotor:
-    charges: GroundHinge.charges
+    connectors: GroundHinge.connectors
     target_speed: 0.1
 
   GroundBox1CM is FrictionCM:

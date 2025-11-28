@@ -1,12 +1,11 @@
 using agxopenplx;
-using openplx.Physics.Charges;
 using openplx.Physics3D.Interactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using ChargeKey = std.PhysicsChargesChargeVector;
-using Charges = openplx.Physics3D.Charges;
+using Connector = openplx.Physics.Interactions.Connector;
+using InteractionKey = std.PhysicsInteractionsConnectorVector;
 using Interactions = openplx.Physics3D.Interactions;
 
 namespace AGXUnity.IO.OpenPLX
@@ -15,9 +14,9 @@ namespace AGXUnity.IO.OpenPLX
   {
     private MapperData Data;
 
-    public class CKEquality : IEqualityComparer<ChargeKey>
+    public class IKEquality : IEqualityComparer<InteractionKey>
     {
-      public bool Equals( ChargeKey x, ChargeKey y )
+      public bool Equals( InteractionKey x, InteractionKey y )
       {
         if ( x.Count != y.Count )
           return false;
@@ -27,11 +26,11 @@ namespace AGXUnity.IO.OpenPLX
         return true;
       }
 
-      public int GetHashCode( ChargeKey obj )
+      public int GetHashCode( InteractionKey obj )
       {
         int hash = 0;
-        foreach ( var charge in obj )
-          hash ^= charge.GetHashCode();
+        foreach ( var connector in obj )
+          hash ^= connector.GetHashCode();
         return hash;
       }
     }
@@ -41,15 +40,15 @@ namespace AGXUnity.IO.OpenPLX
       Data = cache;
     }
 
-    public void MapMateConnector( openplx.Physics3D.Charges.MateConnector mc )
+    public void MapMateConnector( MateConnector mc )
     {
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
-      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is Charges.RedirectedMateConnector ? "_redirected" : "") );
+      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is RedirectedMateConnector ? "_redirected" : "") );
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
-      if ( mc is Charges.RedirectedMateConnector redirected )
+      if ( mc is RedirectedMateConnector redirected )
         owner = redirected.redirected_parent();
 
       openplx.Core.Object current = owner;
@@ -88,7 +87,7 @@ namespace AGXUnity.IO.OpenPLX
       Data.MateConnectorCache[ mc ] = mcObject;
     }
 
-    GameObject GetMappedMC( Charges.MateConnector mc )
+    GameObject GetMappedMC( MateConnector mc )
     {
       if ( !Data.MateConnectorCache.ContainsKey( mc ) )
         MapMateConnector( mc );
@@ -107,11 +106,11 @@ namespace AGXUnity.IO.OpenPLX
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
       where HingeClass : class
     {
-      Charge charge1 = interaction.charges().Count >= 1 ? interaction.charges()[0] : null;
-      Charge charge2 = interaction.charges().Count >= 2 ? interaction.charges()[1] : null;
+      Connector connector1 = interaction.connectors().Count >= 1 ? interaction.connectors()[0] : null;
+      Connector connector2 = interaction.connectors().Count >= 2 ? interaction.connectors()[1] : null;
 
-      var mate_connector1 = charge1 == null ? null : charge1 as Charges.MateConnector;
-      var mate_connector2 = charge2 == null ? null : charge2 as Charges.MateConnector;
+      var mate_connector1 = connector1 == null ? null : connector1 as MateConnector;
+      var mate_connector2 = connector2 == null ? null : connector2 as MateConnector;
 
       var mappedMC1 = GetMappedMC(mate_connector1);
       var mappedMC2 = GetMappedMC(mate_connector2);
@@ -119,11 +118,11 @@ namespace AGXUnity.IO.OpenPLX
       var frame1 = mate_connector1 == null ? null : GOToIFrame(mappedMC1);
       var frame2 = mate_connector2 == null ? null : GOToIFrame(mappedMC2);
 
-      if ( mate_connector1 is Charges.RedirectedMateConnector redirected_connector1 ) {
+      if ( mate_connector1 is RedirectedMateConnector redirected_connector1 ) {
         RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
         frame1.SetParent( rb1?.gameObject, true );
       }
-      if ( mate_connector2 is Charges.RedirectedMateConnector redirected_connector2 ) {
+      if ( mate_connector2 is RedirectedMateConnector redirected_connector2 ) {
         RigidBody rb2 = redirected_connector2.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector2.redirected_parent() ];
         frame2.SetParent( rb2?.gameObject, true );
       }
@@ -140,8 +139,8 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       if ( frame1.Parent == null && frame2.Parent == null
-        && mate_connector1 is not Charges.RedirectedMateConnector
-        && mate_connector2 is not Charges.RedirectedMateConnector ) {
+        && mate_connector1 is not RedirectedMateConnector
+        && mate_connector2 is not RedirectedMateConnector ) {
         var errorData = BaseError.CreateErrorData( interaction );
         Data.ErrorReporter.reportError( new MissingConnectedBody( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, interaction ) );
       }
@@ -529,7 +528,7 @@ namespace AGXUnity.IO.OpenPLX
       cm.FrictionModel = fm;
     }
 
-    public ShapeMaterial MapMaterial( openplx.Physics.Charges.Material material )
+    public ShapeMaterial MapMaterial( openplx.Physics.Geometries.Material material )
     {
       var sm = ShapeMaterial.CreateInstance<ShapeMaterial>();
       sm.name = material.getName();
