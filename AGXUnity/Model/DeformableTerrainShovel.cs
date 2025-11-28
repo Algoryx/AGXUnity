@@ -188,28 +188,16 @@ namespace AGXUnity.Model
         Debug.LogError( "Component: DeformableTerrainShovel requires RigidBody component.", this );
     }
 
-    public void OnBeforeSerialize() { }
-
-    /// <summary>
-    /// Unfortunately we cannot check directly against null since unity will construct a default initialized object when "null" is value-serialized.
-    /// Use this method instead to check whether the frames of the cutting direction was serilaized as "null".
-    /// </summary>
-    private bool IsNullFrame( IFrame frame )
+    protected override bool PerformMigration()
     {
-      return
-        frame.Parent == null &&
-        frame.LocalPosition == Vector3.zero &&
-        frame.LocalRotation == Quaternion.identity;
-    }
-
-    public void OnAfterDeserialize()
-    {
-      // See not above
-      if ( !IsNullFrame( m_cuttingDirection.Start ) || !IsNullFrame( m_cuttingDirection.End ) ) {
+      if ( m_serializationVersion < 1 ) {
         m_hasTeeth = true;
         m_toothDirection = m_cuttingDirection;
         m_cuttingDirection = null;
+        return true;
       }
+
+      return false;
     }
 
     private RigidBody m_rb = null;

@@ -17,7 +17,7 @@ namespace AGXUnity
   /// assert( rb.Native != null );
   /// </example>
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#components" )]
-  public abstract class ScriptComponent : MonoBehaviour, IPropertySynchronizable
+  public abstract class ScriptComponent : MonoBehaviour, IPropertySynchronizable, ISerializationCallbackReceiver
   {
     public enum States
     {
@@ -36,13 +36,37 @@ namespace AGXUnity
       IsSynchronizingProperties = false;
     }
 
+    // Version log:
+    // 1 - Migrate shovel cutting direction to tooth direction
     private const int CurrentSerializationVersion = 1;
 
-    // Serialization version currently unused
-#pragma warning disable 0414
     [SerializeField]
-    private int m_serializationVersion = CurrentSerializationVersion;
-#pragma warning restore 0414
+    protected int m_serializationVersion = -1;
+
+    public void OnBeforeSerialize()
+    {
+      m_serializationVersion = CurrentSerializationVersion;
+    }
+
+    public void OnAfterDeserialize()
+    {
+      if ( m_serializationVersion != CurrentSerializationVersion ) {
+        if ( PerformMigration() ) {
+          Debug.Log( $"Performed automatic migration of a component with type '{this.GetType()}'" );
+#if UNITY_EDITOR
+          // Ensure the migration is saved
+          UnityEditor.EditorApplication.delayCall += () =>
+            UnityEditor.EditorUtility.SetDirty( this );
+#endif
+        }
+      }
+    }
+
+    /// <summary>
+    /// Implement this to recieve a callback when an old version of a ScriptComponent is deserialized.
+    /// </summary>
+    /// <returns>True if migrations were made, false otherwise</returns>
+    protected virtual bool PerformMigration() => true;
 
     /// <summary>
     /// Returns native simulation object unless the scene is being
