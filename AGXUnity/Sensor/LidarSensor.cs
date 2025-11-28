@@ -70,13 +70,28 @@ namespace AGXUnity.Sensor
     public float VerticalResolution = 0.5f;
   }
 
+
+  [Serializable]
+  public class LivoxData : IModelData
+  {
+    /// <summary>
+    /// Optionally downsample the amount of points generated. 1 is default, 2 is sample every other point in the pattern, 3 every 3 points etc.
+    /// </summary>
+    [Tooltip("The vertical resolution of the Ouster lidar.")]
+    [Min(1)]
+    public uint Downsample = 1;
+  }
+
+
   public enum LidarModelPreset
   {
     NONE,
     LidarModelGenericHorizontalSweep,
     LidarModelOusterOS0,
     LidarModelOusterOS1,
-    LidarModelOusterOS2
+    LidarModelOusterOS2,
+    LidarModelLivoxAvia,
+    LidarModelLivoxHap,
   }
 
   /// <summary>
@@ -115,6 +130,8 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
             LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
             LidarModelPreset.LidarModelGenericHorizontalSweep => new GenericSweepData(),
+            LidarModelPreset.LidarModelLivoxAvia => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxHap => new LivoxData(),
             _ => null,
           };
         }
@@ -429,6 +446,16 @@ namespace AGXUnity.Sensor
         case LidarModelPreset.LidarModelOusterOS2:
           ousterData = ModelData as OusterData;
           lidarModel = new LidarModelOusterOS2( ousterData.ChannelCount, ousterData.BeamSpacing, ousterData.LidarMode );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxAvia:
+          LivoxData livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxAvia(livoxData.Downsample);
+          break;
+
+        case LidarModelPreset.LidarModelLivoxHap:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxHap(livoxData.Downsample);
           break;
 
         case LidarModelPreset.NONE:
