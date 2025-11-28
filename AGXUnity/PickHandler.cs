@@ -40,7 +40,7 @@ namespace AGXUnity
       float rotationalCompliance    = 1.0E-10f / ( Mathf.Max( mass, 1.0f ) );
       float damping                 = 10.0f / 60.0f;
 
-      var rowParser = ConstraintUtils.ConstraintRowParser.Create( constraint );
+      var rowParser = ConstraintUtils.ConstraintRowParser.Create( constraint.GetOrdinaryElementaryConstraints() );
       if ( rowParser == null )
         return;
 

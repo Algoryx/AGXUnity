@@ -134,10 +134,23 @@ namespace AGXUnity
     /// </summary>
     /// <param name="constraint">Constraint object this elementary constraint is part of.</param>
     /// <returns>True if successful.</returns>
-    public virtual bool OnConstraintInitialize( Constraint constraint )
+    public bool OnConstraintInitialize( Constraint constraint )
     {
       Native = constraint.Native.getElementaryConstraintGivenName( NativeName ) ??
                constraint.Native.getSecondaryConstraintGivenName( NativeName );
+
+      return Initialize();
+    }
+
+    /// <summary>
+    /// Callback from Constraint when it's being initialized.
+    /// </summary>
+    /// <param name="wheelJoint">Constraint object this elementary constraint is part of.</param>
+    /// <returns>True if successful.</returns>
+    public bool OnConstraintInitialize( AGXUnity.Model.WheelJoint wheelJoint )
+    {
+      Native = wheelJoint.Native.getElementaryConstraintGivenName( NativeName ) ??
+               wheelJoint.Native.getSecondaryConstraintGivenName( NativeName );
 
       return Initialize();
     }

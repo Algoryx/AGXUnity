@@ -1,4 +1,6 @@
 ﻿using AGXUnity;
+using AGXUnity.Model;
+using AGXUnity.Utils;
 using System;
 using UnityEditor;
 using UnityEngine;
@@ -32,7 +34,7 @@ namespace AGXUnityEditor.Tools
 
     public ConstraintCreateTool( GameObject parent,
                                  bool makeConstraintChildToParent,
-                                 Action<Constraint> onCreate = null )
+                                 Action<IConstraint> onCreate = null )
       : base( isSingleInstanceTool: true )
     {
       Parent = parent;
@@ -91,11 +93,13 @@ namespace AGXUnityEditor.Tools
                                                                 m_createConstraintData.Name,
                                                                 skin.TextField );
 
-      m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Type", true ),
-                                                                                         m_createConstraintData.ConstraintType,
-                                                                                         val => (ConstraintType)val != ConstraintType.Unknown,
-                                                                                         false,
-                                                                                         skin.Popup );
+      // Hijack the Unknown type to represent WheelJoints
+      string[] types = Enum.GetNames(typeof(ConstraintType));
+      types[ (int)ConstraintType.Unknown ] = "Wheel Joint";
+
+      m_createConstraintData.ConstraintType = (ConstraintType)EditorGUILayout.Popup( GUI.MakeLabel( "Type", true ),
+                                                                                     (int)m_createConstraintData.ConstraintType,
+                                                                                     types );
 
       AttachmentFrameTool.OnPreTargetMembersGUI();
       AttachmentFrameTool.AttachmentPairs[ 0 ].Synchronize();
@@ -119,11 +123,26 @@ namespace AGXUnityEditor.Tools
                                                                     "Create the constraint",
                                                                     "Cancel" );
       if ( createCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
-        GameObject constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,
-                                                          m_createConstraintData.AttachmentPair );
-        Constraint constraint           = constraintGameObject.GetComponent<Constraint>();
-        constraintGameObject.name       = m_createConstraintData.Name;
+        GameObject constraintGameObject = null;
+
+        IConstraint constraint = null;
+
+        if ( m_createConstraintData.ConstraintType != ConstraintType.Unknown ) {
+          constraintGameObject = Factory.Create( m_createConstraintData.ConstraintType,
+                                                 m_createConstraintData.AttachmentPair );
+
+          constraint = constraintGameObject.GetComponent<Constraint>();
+
+        }
+        else {
+          constraint = WheelJoint.Create( m_createConstraintData.AttachmentPair );
+          constraintGameObject = ( constraint as WheelJoint ).gameObject;
+          PrefabUtils.PlaceInCurrentStange( constraintGameObject );
+
+        }
+
         constraint.CollisionsState      = m_createConstraintData.CollisionState;
+        constraintGameObject.name       = m_createConstraintData.Name;
 
         if ( MakeConstraintChildToParent )
           constraintGameObject.transform.SetParent( Parent.transform );
@@ -194,6 +213,6 @@ namespace AGXUnityEditor.Tools
     }
 
     private CreateConstraintData m_createConstraintData = new CreateConstraintData();
-    private Action<Constraint> m_onCreate = null;
+    private Action<IConstraint> m_onCreate = null;
   }
 }
