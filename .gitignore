@@ -86,6 +86,8 @@ Plugins/x86_64/*.so*
 Plugins/x86_64/*.so*.meta
 Plugins/x86_64/agx
 Plugins/x86_64/agx.meta
+Plugins/x86_64/WebDebugger
+Plugins/x86_64/WebDebugger.meta
 
 !Plugins/x86_64/agxDotNet.dll
 !Plugins/x86_64/agxDotNet.dll.meta
