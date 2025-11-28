@@ -1,0 +1,31 @@
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Geometries.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    input_connector is Physics3D.Interactions.MateConnector:
+        position.z: -geometry.size.z * 0.5
+        main_axis: -Math.Vec3.Z_AXIS()
+        normal: -Math.Vec3.Y_AXIS()
+
+FallingRod is Physics3D.System:
+    rod1 is Rod
+    prismatic is Physics3D.Interactions.Prismatic:
+        initial_position: -0.25
+    external_range is Physics3D.Interactions.LinearRange:
+        start: -0.5
+        end: 0
+        connectors: prismatic.connectors
+
+FallingRodScene is Physics3D.System:
+    world_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Z_AXIS()
+        normal: Math.Vec3.Y_AXIS()
+
+    falling_rod is FallingRod:
+        prismatic.connectors: [ world_connector, falling_rod.rod1.input_connector ]

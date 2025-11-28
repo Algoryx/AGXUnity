@@ -171,6 +171,7 @@ namespace AGXUnityEditor
         }
 
         var member = members[ 0 ];
+        bool dynamicShow = false;
         if ( member.MemberType == MemberTypes.Method ) {
           var method = (MethodInfo)member;
           if ( method.GetParameters().Length != 0 ) {
@@ -182,14 +183,18 @@ namespace AGXUnityEditor
             return false;
           }
           if ( !method.IsStatic )
-            return targets.All( t => (bool)method.Invoke( t, new object[] { } ) );
-          return (bool)method.Invoke( null, new object[] { } );
+            dynamicShow = targets.All( t => (bool)method.Invoke( t, new object[] { } ) );
+          else
+            dynamicShow = (bool)method.Invoke( null, new object[] { } );
         }
         else if ( member.MemberType == MemberTypes.Property ) {
           var property = (PropertyInfo)member;
 
-          return targets.All( t => (bool)property.GetValue( t ) );
+          dynamicShow = targets.All( t => (bool)property.GetValue( t ) );
         }
+        if ( showInfo.Invert )
+          return !dynamicShow;
+        return dynamicShow;
       }
 
       // In general, don't show UnityEngine objects unless ShowInInspector is set.
