@@ -395,6 +395,8 @@ namespace AGXUnity
       get => m_enableWebDebugging;
       set
       {
+        if ( m_enableWebDebugging == value )
+          return;
         m_enableWebDebugging = value;
         if ( m_simulation != null )
           Native.setEnableWebDebugger( m_enableWebDebugging, m_webDebuggingPort );
@@ -414,6 +416,8 @@ namespace AGXUnity
       get => m_webDebuggingPort;
       set
       {
+        if ( m_webDebuggingPort == value )
+          return;
         m_webDebuggingPort = value;
         if ( m_simulation != null )
           Native.setEnableWebDebugger( EnableWebDebugging, m_webDebuggingPort );
