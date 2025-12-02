@@ -134,6 +134,14 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelLivoxHap => new LivoxData(),
             _ => null,
           };
+
+          LocalRotation = ModelData switch
+          {
+            OusterData => new Vector3(90, 90, 0),
+            GenericSweepData => new Vector3(-90, 90, 0),
+            LivoxData => new Vector3(-90, 90, 0),
+            _ => new Vector3()
+          };
         }
         m_lidarModelPreset = value;
       }
