@@ -1284,6 +1284,11 @@ namespace AGXUnityEditor
       data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalResolution" ), data.VerticalResolution );
     }
 
+    public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )
+    {
+      data.Downsample = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Downsample" ), data.Downsample );
+    }
+
     [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
     public static object ModelDataDrawer( object[] objects, InvokeWrapper wrapper )
     {
@@ -1300,6 +1305,9 @@ namespace AGXUnityEditor
             break;
           case AGXUnity.Sensor.GenericSweepData sweepData:
             DrawGenericSweepModelData( sweepData );
+            break;
+          case AGXUnity.Sensor.LivoxData livoxData:
+            DrawLivoxModelData( livoxData );
             break;
         }
       }

@@ -77,7 +77,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Optionally downsample the amount of points generated. 1 is default, 2 is sample every other point in the pattern, 3 every 3 points etc.
     /// </summary>
-    [Tooltip("The vertical resolution of the Ouster lidar.")]
+    [Tooltip("Scale down the amount of points per second by skipping points in the pattern if set larger than 1.")]
     [Min(1)]
     public uint Downsample = 1;
   }
@@ -95,7 +95,7 @@ namespace AGXUnity.Sensor
   }
 
   /// <summary>
-  /// WIP component for lidar sensor
+  /// Lidar Sensor Component
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
@@ -450,12 +450,12 @@ namespace AGXUnity.Sensor
 
         case LidarModelPreset.LidarModelLivoxAvia:
           LivoxData livoxData = ModelData as LivoxData;
-          lidarModel = new LidarModelLivoxAvia(livoxData.Downsample);
+          lidarModel = new LidarModelLivoxAvia( livoxData.Downsample );
           break;
 
         case LidarModelPreset.LidarModelLivoxHap:
           livoxData = ModelData as LivoxData;
-          lidarModel = new LidarModelLivoxHap(livoxData.Downsample);
+          lidarModel = new LidarModelLivoxHap( livoxData.Downsample );
           break;
 
         case LidarModelPreset.NONE:
