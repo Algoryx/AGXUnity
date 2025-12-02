@@ -92,6 +92,11 @@ namespace AGXUnity.Sensor
     LidarModelOusterOS2,
     LidarModelLivoxAvia,
     LidarModelLivoxHap,
+    LidarModelLivoxHorizon,
+    LidarModelLivoxMid40,
+    LidarModelLivoxMid70,
+    LidarModelLivoxMid360,
+    LidarModelLivoxTele,
   }
 
   /// <summary>
@@ -132,6 +137,11 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelGenericHorizontalSweep => new GenericSweepData(),
             LidarModelPreset.LidarModelLivoxAvia => new LivoxData(),
             LidarModelPreset.LidarModelLivoxHap => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxHorizon => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid40 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid70 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid360 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxTele => new LivoxData(),
             _ => null,
           };
 
@@ -464,6 +474,31 @@ namespace AGXUnity.Sensor
         case LidarModelPreset.LidarModelLivoxHap:
           livoxData = ModelData as LivoxData;
           lidarModel = new LidarModelLivoxHap( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxHorizon:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxHorizon( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid40:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid40( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid70:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid70( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid360:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid360( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxTele:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxTele( livoxData.Downsample );
           break;
 
         case LidarModelPreset.NONE:
