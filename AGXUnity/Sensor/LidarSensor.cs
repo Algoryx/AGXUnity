@@ -82,6 +82,40 @@ namespace AGXUnity.Sensor
     public uint Downsample = 1;
   }
 
+  [Serializable]
+  public class ReadFromFileData : IModelData
+  {
+    /// <summary>
+    /// The frequency [Hz] of the lidar sweep
+    /// </summary>
+    public float Frequency = 10f;
+    /// <summary>
+    /// The amount of points from the pattern per frame
+    /// </summary>
+    [Min(1)]
+    public uint FrameSize = 1000;
+    /// <summary>
+    /// Path to the .csv or binare file with the ray pattern
+    /// </summary>
+    public string FilePath = "";
+    /// <summary>
+    /// If true: file has only azimuth,elevation (no first column)
+    /// </summary>
+    public bool TwoColumns = false;
+    /// <summary>
+    /// If true: read values as degrees, if false: read as radians
+    /// </summary>
+    public bool AnglesInDegrees = true;
+    /// <summary>
+    /// If true skip first line of file
+    /// </summary>
+    public bool FirstLineIsHeader = true;
+    /// <summary>
+    /// CSV column delimiter
+    /// </summary>
+    public char Delimiter = ',';
+
+  }
 
   public enum LidarModelPreset
   {
@@ -97,6 +131,7 @@ namespace AGXUnity.Sensor
     LidarModelLivoxMid70,
     LidarModelLivoxMid360,
     LidarModelLivoxTele,
+    LidarModelReadFromFile,
   }
 
   /// <summary>
@@ -142,6 +177,7 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelLivoxMid70 => new LivoxData(),
             LidarModelPreset.LidarModelLivoxMid360 => new LivoxData(),
             LidarModelPreset.LidarModelLivoxTele => new LivoxData(),
+            LidarModelPreset.LidarModelReadFromFile => new ReadFromFileData(),
             _ => null,
           };
 
@@ -499,6 +535,18 @@ namespace AGXUnity.Sensor
         case LidarModelPreset.LidarModelLivoxTele:
           livoxData = ModelData as LivoxData;
           lidarModel = new LidarModelLivoxTele( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelReadFromFile:
+          ReadFromFileData readFromFileData = ModelData as ReadFromFileData;
+          RayFileDefinition rayFileDefinition = new RayFileDefinition();
+          rayFileDefinition.path = readFromFileData.FilePath;
+          rayFileDefinition.twoColumns = readFromFileData.TwoColumns;
+          rayFileDefinition.anglesInDegrees = readFromFileData.AnglesInDegrees;
+          rayFileDefinition.firstLineIsHeader = readFromFileData.FirstLineIsHeader;
+          rayFileDefinition.delimiter = readFromFileData.Delimiter;
+          LidarProperties lidarProperties = new LidarProperties(BeamDivergence, BeamExitRadius);
+          lidarModel = new LidarModelReadFromFile(rayFileDefinition, readFromFileData.Frequency, readFromFileData.FrameSize, 1, new RangeReal32(LidarRange.Min, LidarRange.Max), lidarProperties);
           break;
 
         case LidarModelPreset.NONE:

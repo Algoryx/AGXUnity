@@ -1284,6 +1284,17 @@ namespace AGXUnityEditor
       data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalResolution" ), data.VerticalResolution );
     }
 
+    public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
+    {
+      data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency );
+      data.FrameSize     = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize );
+      data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
+      data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
+      data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
+      data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
+      data.Delimiter     = char.Parse(EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "Delimiter" ), data.Delimiter.ToString() ));
+    }
+
     public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )
     {
       data.Downsample = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Downsample" ), data.Downsample );
@@ -1308,6 +1319,9 @@ namespace AGXUnityEditor
             break;
           case AGXUnity.Sensor.LivoxData livoxData:
             DrawLivoxModelData( livoxData );
+            break;
+          case AGXUnity.Sensor.ReadFromFileData readFromFileData:
+            DrawReadFromFileModelData( readFromFileData );
             break;
         }
       }
