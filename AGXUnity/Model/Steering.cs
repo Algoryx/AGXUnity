@@ -56,7 +56,7 @@ namespace AGXUnity.Model
     /// <summary>
     /// Validates that the provided wheel joints both have a common attachment body (chassis or world)
     /// </summary>
-    public bool ValidateWheelConnectedParents() => RightWheel.AttachmentPair.ConnectedObject == LeftWheel.AttachmentPair.ConnectedObject;
+    public bool ValidateWheelConnectedParents() => RightWheel.AttachmentPair.ConnectedBody == LeftWheel.AttachmentPair.ConnectedBody;
 
     /// <summary>
     /// Validates that the wheel joints both have a common steering axis.
@@ -87,10 +87,10 @@ namespace AGXUnity.Model
       }
     }
 
-    private bool Show_alpha0 => Mechanism == SteeringMechanism.BellCrank || Mechanism == SteeringMechanism.RackPinion;
-    private bool Show_lc => Mechanism != SteeringMechanism.Ackermann;
-    private bool Show_lr => Mechanism == SteeringMechanism.RackPinion || Mechanism == SteeringMechanism.Davis;
-    private bool Show_side => Mechanism == SteeringMechanism.Ackermann;
+    private bool HasAlpha0 => Mechanism == SteeringMechanism.BellCrank || Mechanism == SteeringMechanism.RackPinion;
+    private bool HasLc => Mechanism != SteeringMechanism.Ackermann;
+    private bool HasLr => Mechanism == SteeringMechanism.RackPinion || Mechanism == SteeringMechanism.Davis;
+    private bool HasSide => Mechanism == SteeringMechanism.Ackermann;
 
 
     [SerializeField]
@@ -134,7 +134,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private float m_alpha0 = 76 * Mathf.Deg2Rad;
 
-    [DynamicallyShowInInspector( "Show_alpha0" )]
+    [DynamicallyShowInInspector( nameof( HasAlpha0 ) )]
     [DisableInRuntimeInspector]
     [IgnoreSynchronization]
     [Tooltip( "Specifies the initial angle between the wheel axis and the tie rod." )]
@@ -165,7 +165,7 @@ namespace AGXUnity.Model
     private float m_lc = 1.0f;
 
     [ClampAboveZeroInInspector]
-    [DynamicallyShowInInspector( "Show_lc" )]
+    [DynamicallyShowInInspector( nameof( HasLc ) )]
     [IgnoreSynchronization]
     [Tooltip( "Specifies the length of the steering arm." )]
     public float Lc
@@ -186,7 +186,7 @@ namespace AGXUnity.Model
     [DisableInRuntimeInspector]
     [FloatSliderInInspector( 0, 1 )]
     [IgnoreSynchronization]
-    [DynamicallyShowInInspector( "Show_lr" )]
+    [DynamicallyShowInInspector( nameof( HasLr ) )]
     [Tooltip( "Specifies the length of the rack." )]
     public float Lr
     {
@@ -238,7 +238,7 @@ namespace AGXUnity.Model
     [SerializeField]
     private SteeringArmSide m_side = SteeringArmSide.Left;
 
-    [DynamicallyShowInInspector( "Show_side" )]
+    [DynamicallyShowInInspector( nameof( HasSide ) )]
     [DisableInRuntimeInspector]
     [IgnoreSynchronization]
     [Tooltip( "When using the Ackermann steering mechanism, this parameter decides which side the steering arm is located on." )]
@@ -275,11 +275,15 @@ namespace AGXUnity.Model
 
       Phi0      = (float)tmp.phi0;
       L         = (float)tmp.l;
-      Lc        = (float)tmp.lc;
+      if ( HasLc )
+        Lc      = (float)tmp.lc;
       Gear      = (float)tmp.gear;
-      Side      = (SteeringArmSide)tmp.side;
-      Lr        = (float)tmp.lr;
-      Alpha0    = (float)tmp.alpha0;
+      if ( HasSide )
+        Side    = (SteeringArmSide)tmp.side;
+      if ( HasLr )
+        Lr      = (float)tmp.lr;
+      if ( HasAlpha0 )
+        Alpha0  = (float)tmp.alpha0;
     }
 
     protected override bool Initialize()
@@ -357,8 +361,6 @@ namespace AGXUnity.Model
       if ( !isActiveAndEnabled || RightWheel == null || LeftWheel == null )
         return;
       try {
-
-
         var scale = 0.02f;
 
         var leftWJ = LeftWheel.WheelAttachmentPoint;
@@ -373,38 +375,40 @@ namespace AGXUnity.Model
         var m_R = ( 1 + 2 * L * Mathf.Cos( Phi0 ) - Lr ) * wheelTrackLength / 2.0 / Mathf.Cos( Alpha0 );
 
         Vec3[] wheelWorldAttachs = {
-        LeftWheel.WheelAttachmentPoint.ToHandedVec3(),
-        RightWheel.WheelAttachmentPoint.ToHandedVec3()
-      };
+          LeftWheel.WheelAttachmentPoint.ToHandedVec3(),
+          RightWheel.WheelAttachmentPoint.ToHandedVec3()
+        };
 
-        UnityEngine.Matrix4x4[] matrices = {
-        LeftWheel.AttachmentPair.ConnectedFrame.Parent.transform.localToWorldMatrix,
-        RightWheel.AttachmentPair.ConnectedFrame.Parent.transform.localToWorldMatrix
-      };
+        UnityEngine.Matrix4x4 chassisToWorld = UnityEngine.Matrix4x4.identity;
 
-        Vector3 leftLocal = LeftWheel.AttachmentPair.ConnectedFrame.Parent.transform.localToWorldMatrix * leftWJ;
-        Vector3 rightLocal = RightWheel.AttachmentPair.ConnectedFrame.Parent.transform.localToWorldMatrix * rightWJ;
+        if ( LeftWheel.AttachmentPair.ConnectedBody != null )
+          chassisToWorld = LeftWheel.AttachmentPair.ConnectedBody.transform.localToWorldMatrix;
 
-        Vec3 wheelAxis = axleAxis.ToHandedVec3();
-        Vec3 steeringAxis = LeftWheel.SteeringAxis.ToHandedVec3();
+        var worldToChassis = chassisToWorld.inverse;
+
+        Vector3 leftLocal = worldToChassis * leftWJ;
+        Vector3 rightLocal = worldToChassis * rightWJ;
+
+        Vec3 wheelAxis = ((Vector3)(worldToChassis * axleAxis)).ToHandedVec3();
+        Vec3 steeringAxis = ((Vector3)(worldToChassis * LeftWheel.SteeringAxis)).ToHandedVec3();
         Vec3 forwardAxis = steeringAxis.cross(wheelAxis);
 
         if ( Mechanism == SteeringMechanism.Ackermann ) {
           double d = wheelTrackLength;
           double c = 2.0 * m_R;
           double[] psi = new double[]{
-          -agxMath.Acos((d - c) / (2 * b)) + LeftWheel.GetCurrentAngle(),
-          -agxMath.PI + agxMath.Acos((d - c) / (2 * b)) + RightWheel.GetCurrentAngle()
-        };
+            -agxMath.Acos((d - c) / (2 * b)) + LeftWheel.GetCurrentAngle(),
+            -agxMath.PI + agxMath.Acos((d - c) / (2 * b)) + RightWheel.GetCurrentAngle()
+          };
 
           // Render spheres at free hub
           Vector3[] freeHub   =  {
-          (leftLocal.ToHandedVec3() + wheelAxis * b * agxMath.Cos(psi[0]) + forwardAxis * b * agxMath.Sin(psi[0])).ToHandedVector3(),
-          (rightLocal.ToHandedVec3() + wheelAxis * b * agxMath.Cos(psi[1]) + forwardAxis * b * agxMath.Sin(psi[1])).ToHandedVector3()
-        };
+            (leftLocal.ToHandedVec3() + wheelAxis * b * agxMath.Cos(psi[0]) + forwardAxis * b * agxMath.Sin(psi[0])).ToHandedVector3(),
+            (rightLocal.ToHandedVec3() + wheelAxis * b * agxMath.Cos(psi[1]) + forwardAxis * b * agxMath.Sin(psi[1])).ToHandedVector3()
+          };
 
           for ( int i = 0; i < 2; ++i ) {
-            freeHub[ i ] = matrices[ i ] * freeHub[ i ];
+            freeHub[ i ] = chassisToWorld * freeHub[ i ];
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere( freeHub[ i ], scale );
           }
@@ -429,32 +433,32 @@ namespace AGXUnity.Model
           Vec3 tieRodPos = new Vec3( leftLocal.ToHandedVec3() + new Quat( betas[ 0 ], steeringAxis ) * wheelAxis * b + new Quat( Alpha0, steeringAxis ) * wheelAxis * m_R );
           Vec3 steerColumnLocal = tieRodPos + steerArmLength * forwardAxis + rackLength / 2.0 * wheelAxis;
 
-          Vector3 steerColumnWorld = matrices[0] * steerColumnLocal.ToHandedVector3();
+          Vector3 steerColumnWorld = chassisToWorld * steerColumnLocal.ToHandedVector3();
 
           if ( Mechanism == SteeringMechanism.BellCrank ) {
             double[] m_thetas = {
-            SteeringAngle + agxMath.Atan2( -0.5 * rackLength, steerArmLength ),
-            SteeringAngle + agxMath.Atan2( 0.5 * rackLength, steerArmLength )
-          };
+              SteeringAngle + agxMath.Atan2( -0.5 * rackLength, steerArmLength ),
+              SteeringAngle + agxMath.Atan2( 0.5 * rackLength, steerArmLength )
+            };
 
             // Transform steering column from chasis to world coordinate system.
             AffineMatrix4x4[] R = {
-            AffineMatrix4x4.rotate( m_thetas[ 0 ], steeringAxis ),
-            AffineMatrix4x4.rotate( m_thetas[ 1 ], steeringAxis )
-          };
+              AffineMatrix4x4.rotate( m_thetas[ 0 ], steeringAxis ),
+              AffineMatrix4x4.rotate( m_thetas[ 1 ], steeringAxis )
+            };
 
             Vector3[] steeringArmPos = {
-            matrices[0] * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * steerArmLength * R[ 0 ] ).ToHandedVector3(),
-            matrices[0] * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * steerArmLength * R[ 1 ] ).ToHandedVector3()
-          };
+              chassisToWorld * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * steerArmLength * R[ 0 ] ).ToHandedVector3(),
+              chassisToWorld * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * steerArmLength * R[ 1 ] ).ToHandedVector3()
+            };
 
             for ( int i = 0; i < 2; ++i ) {
               // Rendering the kingpin, that links to wheel anchor
               var delta = betas[i] + (i == 0 ? LeftWheel : RightWheel).GetCurrentAngle();
               Vector3[] kp = {
-              matrices[i] * (i == 0 ? leftLocal : rightLocal),
-              matrices[i] * ((i == 0 ? leftLocal : rightLocal) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
-            };
+                chassisToWorld * (i == 0 ? leftLocal : rightLocal),
+                chassisToWorld * ((i == 0 ? leftLocal : rightLocal) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
+              };
               Gizmos.color = Color.blue;
               GizmoUtils.DrawCylinder( kp[ 0 ], kp[ 1 ], scale );
 
@@ -477,9 +481,9 @@ namespace AGXUnity.Model
           else { // Rack-Pinion or Davis
             var halfRack = 0.5 * rackLength;
             double[] _l = {
-            -halfRack + steerArmLength * agxMath.Tan(SteeringAngle),
-            halfRack + steerArmLength * agxMath.Tan(SteeringAngle)
-          };
+              -halfRack + steerArmLength * agxMath.Tan(SteeringAngle),
+              halfRack + steerArmLength * agxMath.Tan(SteeringAngle)
+            };
 
             double[] thetas = new double[2];
             double[] m_r = new double[2];
@@ -492,22 +496,22 @@ namespace AGXUnity.Model
             if ( Mechanism == SteeringMechanism.RackPinion ) {
               // Transform steering column from chasis to world coordinate system.
               AffineMatrix4x4[] Rs = {
-              AffineMatrix4x4.rotate( thetas[ 0 ], steeringAxis ),
-              AffineMatrix4x4.rotate( thetas[ 1 ], steeringAxis )
-            };
+                AffineMatrix4x4.rotate( thetas[ 0 ], steeringAxis ),
+                AffineMatrix4x4.rotate( thetas[ 1 ], steeringAxis )
+              };
 
               Vector3[] steeringArmPos ={
-              matrices[0] * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * m_r[0] * Rs[ 0 ] ).ToHandedVector3(),
-              matrices[0] * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * m_r[1] * Rs[ 1 ] ).ToHandedVector3()
-            };
+                chassisToWorld * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * m_r[0] * Rs[ 0 ] ).ToHandedVector3(),
+                chassisToWorld * ( steerColumnLocal + new Quat( -agxMath.PI / 2.0, steeringAxis ) * wheelAxis * m_r[1] * Rs[ 1 ] ).ToHandedVector3()
+              };
 
               for ( int i = 0; i < 2; ++i ) {
                 // Rendering the kingpin, that links to wheel anchor
                 var delta = betas[i] + (i == 0 ? LeftWheel : RightWheel).GetCurrentAngle();
                 Vector3[] kp = {
-              matrices[i] * (i == 0 ? leftLocal : rightLocal),
-              matrices[i] * ((i == 0 ? leftLocal : rightLocal) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
-            };
+                  chassisToWorld * (i == 0 ? leftLocal : rightLocal),
+                  chassisToWorld * ((i == 0 ? leftLocal : rightLocal) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
+                };
                 Gizmos.color = Color.blue;
                 GizmoUtils.DrawCylinder( kp[ 0 ], kp[ 1 ], scale );
 
@@ -545,16 +549,16 @@ namespace AGXUnity.Model
               }
 
               Vector3[] ends = {
-              matrices[0] * getP(0).ToHandedVector3(),
-              matrices[0] * getP(1).ToHandedVector3()
-            };
+                chassisToWorld * getP(0).ToHandedVector3(),
+                chassisToWorld * getP(1).ToHandedVector3()
+              };
 
               for ( int i = 0; i < 2; ++i ) {
                 var delta = betas[i] + (i == 0 ? LeftWheel.GetCurrentAngle() : RightWheel.GetCurrentAngle());
                 Vector3[] kp = {
-                matrices[0] * (i == 0 ? leftLocal : rightLocal),
-                matrices[0] * (( i == 0 ? leftLocal : rightLocal ) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
-              };
+                  chassisToWorld * (i == 0 ? leftLocal : rightLocal),
+                  chassisToWorld * (( i == 0 ? leftLocal : rightLocal ) + (new Quat(delta, steeringAxis) * wheelAxis * b).ToHandedVector3())
+                };
 
                 // Rendering kingpin
                 Gizmos.color = Color.blue;

@@ -41,6 +41,7 @@ namespace AGXUnity
     private const int CurrentSerializationVersion = 1;
 
     [SerializeField]
+    [HideInInspector]
     protected int m_serializationVersion = -1;
 
     public void OnBeforeSerialize()
