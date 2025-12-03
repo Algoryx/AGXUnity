@@ -552,35 +552,29 @@ namespace AGXUnityEditor
                                    string currentFile,
                                    string openFileTitle,
                                    string openFileDirectory,
-                                   Action<string> onNewFileSelected )
+                                   Action<string> onNewFileSelected,
+                                   bool folder = false )
     {
       var selectNewFolderButtonWidth = 28.0f;
 
-      var rect     = EditorGUILayout.GetControlRect();
-      var orgWidth = rect.width;
-      rect.width   = EditorGUIUtility.labelWidth;
+      EditorGUILayout.PrefixLabel( label );
 
-      EditorGUI.PrefixLabel( rect, label );
+      EditorGUILayout.TextField( currentFile, InspectorEditor.Skin.TextField );
+      if ( UnityEngine.GUILayout.Button( GUI.MakeLabel( "...",
+                                                        InspectorGUISkin.BrandColor,
+                                                        true ),
+                                         InspectorEditor.Skin.ButtonMiddle,
 
-      var indentOffset = IndentScope.PixelLevel - 2;
-
-      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
-      rect.width = orgWidth -
-                   EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth + indentOffset;
-      EditorGUI.SelectableLabel( rect,
-                                 currentFile,
-                                 InspectorEditor.Skin.TextField );
-      rect.x    += rect.width;
-      rect.width = selectNewFolderButtonWidth;
-      if ( UnityEngine.GUI.Button( rect,
-                                   GUI.MakeLabel( "...",
-                                                  InspectorGUISkin.BrandColor,
-                                                  true ),
-                                   InspectorEditor.Skin.ButtonMiddle ) ) {
-        string result = EditorUtility.OpenFilePanel( openFileTitle,
-                                                     openFileDirectory,
-                                                     "" );
+                                         GUILayout.Width( selectNewFolderButtonWidth ) ) ) {
+        string result;
+        if ( folder )
+          result = EditorUtility.OpenFolderPanel( openFileTitle,
+                                                  openFileDirectory,
+                                                  "" );
+        else
+          result = EditorUtility.OpenFilePanel( openFileTitle,
+                                                openFileDirectory,
+                                                "" );
         if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
           onNewFileSelected?.Invoke( result );
           // Remove focus from any control so that the field is updated.

@@ -1,0 +1,58 @@
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Geometries.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    mate_connector is Physics3D.Interactions.MateConnector:
+        position.z: -geometry.size.z * 0.7
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+Cart is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 0.1)
+    connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.X_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+    rotated_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+PendulumScene is Physics3D.System:
+    world_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.X_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+    cart is Cart
+    rod is Rod
+
+    prismatic is Physics3D.Interactions.Prismatic:
+        connectors: [world_connector, cart.connector]
+
+    cart_motor is Physics3D.Interactions.LinearVelocityMotor:
+        target_speed: 0
+        gain: 1E5
+        connectors: prismatic.connectors
+
+    hinge is Physics3D.Interactions.Hinge:
+        initial_angle: 0
+        connectors: [cart.rotated_connector, rod.mate_connector]
+
+    motor_input is Physics.Signals.LinearVelocity1DInput:
+        source: cart_motor
+
+    hinge_angle_output is Physics.Signals.AngleOutput:
+        source: hinge
+    hinge_angular_velocity_output is Physics.Signals.AngularVelocity1DOutput:
+        source: hinge
+
+    cart_position_output is Physics3D.Signals.Position3DOutput:
+        source: cart
+    cart_velocity_output is Physics3D.Signals.LinearVelocity3DOutput:
+        source: cart

@@ -61,8 +61,11 @@ namespace AGXUnityEditor.Tools
       // The constraint type is Unknown when, e.g., go.AddComponent<Constraint>()
       // or when the constraint has been reset. If any of the selected constraints
       // is of type Unknown, we exit the GUI here.
-      if ( !ConstraintTypeGUI( constraints, differentTypes ) )
+      if ( constraints.Any( c => c.Type == ConstraintType.Unknown ) )
         return;
+
+      if ( Constraint.Type != ConstraintType.GenericConstraint1DOF )
+        ConstraintTypeGUI( constraints, differentTypes );
 
       EditorGUI.showMixedValue = constraints.Any( constraint => refConstraint.CollisionsState != constraint.CollisionsState );
       var collisionsState = ConstraintCollisionsStateGUI( refConstraint.CollisionsState );
@@ -116,104 +119,127 @@ namespace AGXUnityEditor.Tools
       Undo.RecordObjects( constraints, "ConstraintTool" );
 
       var ecRowDataWrappers = InvokeWrapper.FindFieldsAndProperties<ElementaryConstraintRowData>();
-      foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
-        if ( !InspectorGUI.Foldout( selected( "ec_" + rowType.ToString() ),
-                                    GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
-          continue;
-        }
+      if ( constraints.All( c => c.Type != ConstraintType.GenericConstraint1DOF ) ) {
+        foreach ( ConstraintUtils.ConstraintRowParser.RowType rowType in Enum.GetValues( typeof( ConstraintUtils.ConstraintRowParser.RowType ) ) ) {
+          if ( !InspectorGUI.Foldout( selected( "ec_" + rowType.ToString() ),
+                                      GUI.MakeLabel( rowType.ToString() + " properties", true ) ) ) {
+            continue;
+          }
 
-        using ( InspectorGUI.IndentScope.Single ) {
-          var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
-          foreach ( var wrapper in ecRowDataWrappers ) {
-            if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member, null ) )
-              continue;
+          using ( InspectorGUI.IndentScope.Single ) {
+            var refTransOrRotRowData = constraintsParser[ 0 ][ rowType ];
+            foreach ( var wrapper in ecRowDataWrappers ) {
+              if ( !InspectorEditor.ShouldBeShownInInspector( wrapper.Member, null ) )
+                continue;
 
-            for ( int i = 0; i < 3; ++i ) {
-              var rowDataInstances = ( from constraintParser
+              for ( int i = 0; i < 3; ++i ) {
+                var rowDataInstances = ( from constraintParser
                                        in constraintsParser
-                                       where constraintParser[ rowType ][ i ] != null
-                                       select constraintParser[ rowType ][ i ].RowData ).ToArray();
+                                         where constraintParser[ rowType ][ i ] != null
+                                         select constraintParser[ rowType ][ i ].RowData ).ToArray();
 
-              using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
-                var labelContent = i == 0 ? InspectorGUI.MakeLabel( wrapper.Member ) : null;
-                var fieldContent = GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] );
-                if ( wrapper.IsType<float>() ) {
-                  EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
-                  EditorGUI.BeginChangeCheck();
-                  var value = InspectorGUI.CustomFloatField( labelContent,
+                using ( new GUI.EnabledBlock( refTransOrRotRowData[ i ] != null ) ) {
+                  var labelContent = i == 0 ? InspectorGUI.MakeLabel( wrapper.Member ) : null;
+                  var fieldContent = GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] );
+                  if ( wrapper.IsType<float>() ) {
+                    EditorGUI.showMixedValue = !wrapper.AreValuesEqual( rowDataInstances );
+                    EditorGUI.BeginChangeCheck();
+                    var value = InspectorGUI.CustomFloatField( labelContent,
                                                              fieldContent,
                                                              wrapper.Get<float>( refTransOrRotRowData[ i ]?.RowData ) );
-                  if ( EditorGUI.EndChangeCheck() ) {
-                    foreach ( var constraintParser in constraintsParser )
-                      wrapper.ConditionalSet( constraintParser[ rowType ][ i ]?.RowData, value );
+                    if ( EditorGUI.EndChangeCheck() ) {
+                      foreach ( var constraintParser in constraintsParser )
+                        wrapper.ConditionalSet( constraintParser[ rowType ][ i ]?.RowData, value );
+                    }
                   }
-                }
-                else if ( wrapper.IsType<RangeReal>() ) {
-                  EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
-                                                                                       wrapper.Get<RangeReal>( rowData ).Min ) ) ||
-                                             rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
-                                                                                       wrapper.Get<RangeReal>( rowData ).Max ) );
-                  var rangeChangeData = InspectorGUI.RangeRealField( labelContent,
+                  else if ( wrapper.IsType<RangeReal>() ) {
+                    EditorGUI.showMixedValue = rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Min,
+                                                                                         wrapper.Get<RangeReal>( rowData ).Min ) ) ||
+                                               rowDataInstances.Any( rowData => !Equals( wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ).Max,
+                                                                                         wrapper.Get<RangeReal>( rowData ).Max ) );
+                    var rangeChangeData = InspectorGUI.RangeRealField( labelContent,
                                                                      wrapper.Get<RangeReal>( refTransOrRotRowData[ i ]?.RowData ),
                                                                      GUI.MakeLabel( RowLabels[ i ], RowColors[ i ] ) );
-                  if ( rangeChangeData.MinChanged || rangeChangeData.MaxChanged ) {
-                    foreach ( var constraintParser in constraintsParser ) {
-                      var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
-                      if ( rangeChangeData.MinChanged )
-                        range.Min = rangeChangeData.Min;
-                      if ( rangeChangeData.MaxChanged )
-                        range.Max = rangeChangeData.Max;
+                    if ( rangeChangeData.MinChanged || rangeChangeData.MaxChanged ) {
+                      foreach ( var constraintParser in constraintsParser ) {
+                        var range = wrapper.Get<RangeReal>( constraintParser[ rowType ][ i ].RowData );
+                        if ( rangeChangeData.MinChanged )
+                          range.Min = rangeChangeData.Min;
+                        if ( rangeChangeData.MaxChanged )
+                          range.Max = rangeChangeData.Max;
 
-                      // Validation of Min > Max has to go somewhere else because if e.g.,
-                      // Min = 50 and the user wants to type Max = 200 we're receiving
-                      // Max = 2 as the user types.
+                        // Validation of Min > Max has to go somewhere else because if e.g.,
+                        // Min = 50 and the user wants to type Max = 200 we're receiving
+                        // Max = 2 as the user types.
 
-                      wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, range );
+                        wrapper.ConditionalSet( constraintParser[ rowType ][ i ].RowData, range );
+                      }
                     }
                   }
                 }
+                EditorGUI.showMixedValue = false;
               }
-              EditorGUI.showMixedValue = false;
-            }
-          } // For type wrappers.
-        } // Indentation.
-      } // For Translational, Rotational.
+            } // For type wrappers.
+          } // Indentation.
+        } // For Translational, Rotational.
+      }
+    }
+
+    public override void OnPostTargetMembersGUI()
+    {
+      var constraints    = GetTargets<Constraint>().ToArray();
+      var refConstraint  = constraints[ 0 ];
+      var skin           = InspectorEditor.Skin;
+
+      Func<string, EditorDataEntry> selected = ( id ) =>
+      {
+        return EditorData.Instance.GetData( refConstraint, id, entry => entry.Bool = false );
+      };
 
       var ecControllers = refConstraint.GetElementaryConstraintControllers();
-      if ( ecControllers.Length > 0 &&
-           InspectorGUI.Foldout( selected( "controllers" ),
-                                 GUI.MakeLabel( "Controllers", true ) ) ) {
-        using ( InspectorGUI.IndentScope.Single ) {
-          foreach ( var refController in ecControllers ) {
-            // Skip Cone Limit friction controllers
-            if ( refController.NativeName.StartsWith( "CL" ) )
-              continue;
+      bool singleController = ecControllers.Length == 1;
+      if ( ecControllers.Length > 0 ) {
+        if ( singleController ||
+          InspectorGUI.Foldout( selected( "controllers" ), GUI.MakeLabel( "Controllers", true ) ) ) {
+          using ( InspectorGUI.IndentScope.Single ) {
+            foreach ( var refController in ecControllers ) {
+              // Skip Cone Limit friction controllers
+              if ( refController.NativeName.StartsWith( "CL" ) )
+                continue;
 
-            var controllerType    = refController.GetControllerType();
-            var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
-            var controllerName    = ConstraintUtils.FindName( refController );
-            if ( controllerName.EndsWith( " Controller" ) )
-              controllerName = controllerName.Remove( controllerName.LastIndexOf( " Controller" ) );
-            string nativeTag = GetNativeNameTag(refController.NativeName);
-            var controllerLabel   = GUI.MakeLabel( ( controllerType == Constraint.ControllerType.Rotational ?
+              var controllerType    = refController.GetControllerType();
+              var controllerTypeTag = controllerType.ToString()[ 0 ].ToString();
+              var controllerName    = ConstraintUtils.FindName( refController );
+              if ( controllerName.EndsWith( " Controller" ) )
+                controllerName = controllerName.Remove( controllerName.LastIndexOf( " Controller" ) );
+              string nativeTag = GetNativeNameTag(refController.NativeName);
+              var controllerLabel   = GUI.MakeLabel( ( controllerType == Constraint.ControllerType.Rotational ?
                                                        GUI.Symbols.CircleArrowAcw.ToString() + " " :
                                                        GUI.Symbols.ArrowRight.ToString() + " " ) +
                                                     controllerName +
                                                     nativeTag,
                                                     true );
-            if ( !InspectorGUI.Foldout( selected( controllerTypeTag + controllerName + refController.NativeName ),
-                                        controllerLabel ) ) {
-              continue;
-            }
-            var controllers = ( from constraint
-                                in constraints
-                                from controller
-                                in constraint.GetElementaryConstraintControllers()
-                                where controller.NativeName == refController.NativeName
-                                select controller ).ToArray();
-            using ( InspectorGUI.IndentScope.Single ) {
-              InspectorEditor.DrawMembersGUI( controllers, constraints );
-              InspectorEditor.DrawMembersGUI( controllers, constraints, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
+              bool show = false;
+              if ( singleController ) {
+                GUILayout.Label( controllerLabel, skin.Label );
+                show = true;
+              }
+              else if ( InspectorGUI.Foldout( selected( controllerTypeTag + controllerName + refController.NativeName ),
+                                          controllerLabel ) ) {
+                show = true;
+              }
+              if ( show ) {
+                var controllers = ( from constraint
+                                  in constraints
+                                    from controller
+                                  in constraint.GetElementaryConstraintControllers()
+                                    where controller.NativeName == refController.NativeName
+                                    select controller ).ToArray();
+                using ( InspectorGUI.IndentScope.Single ) {
+                  InspectorEditor.DrawMembersGUI( controllers, constraints );
+                  InspectorEditor.DrawMembersGUI( controllers, constraints, controller => ( controller as ElementaryConstraint ).RowData[ 0 ] );
+                }
+              }
             }
           }
         }
@@ -231,9 +257,8 @@ namespace AGXUnityEditor.Tools
       return "";
     }
 
-    private bool ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
+    private void ConstraintTypeGUI( Constraint[] constraints, bool differentTypes )
     {
-      var anyUnknownType = constraints.Any( c => c.Type == ConstraintType.Unknown );
       // Reference type is set to unknown if we have multi-select and
       // the types aren't the same. This is to detect if the user has
       // selected some valid type, with the limitation that it's not
@@ -284,8 +309,6 @@ namespace AGXUnityEditor.Tools
           Undo.CollapseUndoOperations( undoIndex );
         }
       }
-
-      return !anyUnknownType;
     }
 
     public static Constraint.ECollisionsState ConstraintCollisionsStateGUI( Constraint.ECollisionsState state )
