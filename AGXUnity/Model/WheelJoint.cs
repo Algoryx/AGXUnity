@@ -396,7 +396,7 @@ namespace AGXUnity.Model
         if ( native.getElementaryConstraint( i ).getName() == "" )
           throw new Exception( "Native elementary constraint doesn't have a name." );
 
-        var ec = ElementaryConstraint.Create( native.getElementaryConstraint( i ) );
+        var ec = ElementaryConstraint.Create( gameObject, native.getElementaryConstraint( i ) );
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -409,7 +409,7 @@ namespace AGXUnity.Model
         if ( native.getSecondaryConstraint( i ).getName() == "" )
           throw new Exception( "Native secondary constraint doesn't have a name." );
 
-        var sc = ElementaryConstraint.Create( native.getSecondaryConstraint( i ) );
+        var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
