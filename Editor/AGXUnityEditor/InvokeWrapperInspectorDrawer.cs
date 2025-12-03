@@ -1292,7 +1292,7 @@ namespace AGXUnityEditor
       data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
       data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
       data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
-      data.Delimiter     = char.Parse(EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "Delimiter" ), data.Delimiter.ToString() ));
+      data.Delimiter     = char.Parse( EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "Delimiter" ), data.Delimiter.ToString() ) );
     }
 
     public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )

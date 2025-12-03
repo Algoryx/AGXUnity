@@ -183,9 +183,9 @@ namespace AGXUnity.Sensor
 
           LocalRotation = ModelData switch
           {
-            OusterData => new Vector3(90, 90, 0),
-            GenericSweepData => new Vector3(-90, 90, 0),
-            LivoxData => new Vector3(-90, 90, 0),
+            OusterData => new Vector3( 90, 90, 0 ),
+            GenericSweepData => new Vector3( -90, 90, 0 ),
+            LivoxData => new Vector3( -90, 90, 0 ),
             _ => new Vector3()
           };
         }
@@ -546,7 +546,7 @@ namespace AGXUnity.Sensor
           rayFileDefinition.firstLineIsHeader = readFromFileData.FirstLineIsHeader;
           rayFileDefinition.delimiter = readFromFileData.Delimiter;
           LidarProperties lidarProperties = new LidarProperties(BeamDivergence, BeamExitRadius);
-          lidarModel = new LidarModelReadFromFile(rayFileDefinition, readFromFileData.Frequency, readFromFileData.FrameSize, 1, new RangeReal32(LidarRange.Min, LidarRange.Max), lidarProperties);
+          lidarModel = new LidarModelReadFromFile( rayFileDefinition, readFromFileData.Frequency, readFromFileData.FrameSize, 1, new RangeReal32( LidarRange.Min, LidarRange.Max ), lidarProperties );
           break;
 
         case LidarModelPreset.NONE:
