@@ -93,7 +93,7 @@ namespace AGXUnity.Sensor
     /// The amount of points from the pattern per frame
     /// </summary>
     [Min(1)]
-    public uint FrameSize = 1000;
+    public uint FrameSize = 10000;
     /// <summary>
     /// Path to the .csv or binare file with the ray pattern
     /// </summary>
