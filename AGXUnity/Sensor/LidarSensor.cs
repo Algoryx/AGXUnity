@@ -8,6 +8,17 @@ using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
+  public class TestHelper
+  {
+    static public bool LidarRayPatternsAreFound()
+    {
+      var _ = NativeHandler.Instance;
+      var fileTest = agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).find( "MaterialLibrary/TerrainMaterials/avia.bin" );
+      return !string.IsNullOrEmpty( fileTest );
+    }
+
+  }
+
   /// <summary>
   /// IModelData is an empty interface to allow for a lidar sensor to hold generic data dependent on the
   /// underlying lidar model used.
@@ -559,6 +570,7 @@ namespace AGXUnity.Sensor
 
       return lidarModel;
     }
+
     private void OnDrawGizmosSelected()
     {
 #if UNITY_EDITOR

@@ -14,5 +14,12 @@ namespace AGXUnityTesting.Runtime
       Assert.NotNull( presets );
       Assert.NotZero( presets.Length );
     }
+
+    [Test]
+    public void LidarRayPatternsAreFound()
+    {
+      var _ = NativeHandler.Instance;
+      Assert.True( AGXUnity.Sensor.TestHelper.LidarRayPatternsAreFound() );
+    }
   }
 }
