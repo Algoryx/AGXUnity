@@ -19,8 +19,8 @@ namespace AGXUnity.Model
         if ( s_defaultTerrainMaterialsPath == null ) {
           var terrainMaterialLibraryOptions = new string[]
           {
-            "data/TerrainMaterials",
-            "data/MaterialLibrary/TerrainMaterials"
+            "TerrainMaterials",
+            "MaterialLibrary/TerrainMaterials"
           };
 
           foreach ( var materialLibraryOption in terrainMaterialLibraryOptions ) {

@@ -775,7 +775,7 @@ namespace AGXUnityEditor
         // to RUNTIME_PATH (for entities and components). The license file is
         // searched for by the license manager.
         var dataAndRuntimePath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath + "/data" );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAndRuntimePath );
       }
       // Check if user would like to initialize AGX Dynamics with an
