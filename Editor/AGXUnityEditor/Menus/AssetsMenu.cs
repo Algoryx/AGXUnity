@@ -57,12 +57,6 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<TwoBodyTireProperties>( "two body tire properties" );
     }
 
-    [MenuItem( "Assets/AGXUnity/Steering Parameters", priority = 660 )]
-    public static Object CreateSteeringParameters()
-    {
-      return Selection.activeObject = Utils.AssetFactory.Create<SteeringParameters>( "steering parameters" );
-    }
-
     [MenuItem( "Assets/AGXUnity/Solver Settings", priority = 680 )]
     public static Object CrateSolverSettings()
     {
