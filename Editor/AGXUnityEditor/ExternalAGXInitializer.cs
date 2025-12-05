@@ -294,7 +294,7 @@ namespace AGXUnityEditor
                               select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
       var installedBinDir = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64";
       AGX_PLUGIN_PATH     = $"{installedBinDir}{Path.DirectorySeparatorChar}plugins";
-      AGX_DATA_DIR        = $"{installedBinDir}{Path.DirectorySeparatorChar}data";
+      AGX_DATA_DIR        = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
 
       return true;
     }

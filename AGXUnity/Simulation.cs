@@ -61,8 +61,8 @@ namespace AGXUnity
     [HideInInspector]
     public AutoSteppingModes AutoSteppingMode
     {
-      get { return m_autoSteppingMode; }
-      set { m_autoSteppingMode = value; }
+      get => m_autoSteppingMode;
+      set => m_autoSteppingMode = value;
     }
 
     [SerializeField]
@@ -82,8 +82,8 @@ namespace AGXUnity
     [HideInInspector]
     public float FixedUpdateRealTimeFactor
     {
-      get { return m_fixedUpdateRealTimeFactor; }
-      set { m_fixedUpdateRealTimeFactor = Mathf.Max( value, 0.0f ); }
+      get => m_fixedUpdateRealTimeFactor;
+      set => m_fixedUpdateRealTimeFactor = Mathf.Max( value, 0.0f );
     }
 
     [SerializeField]
@@ -97,8 +97,8 @@ namespace AGXUnity
     [HideInInspector]
     public float UpdateRealTimeCorrectionFactor
     {
-      get { return m_updateRealTimeCorrectionFactor; }
-      set { m_updateRealTimeCorrectionFactor = Mathf.Max( value, 0.0f ); }
+      get => m_updateRealTimeCorrectionFactor;
+      set => m_updateRealTimeCorrectionFactor = Mathf.Max( value, 0.0f );
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ namespace AGXUnity
     /// </summary>
     public Vector3 Gravity
     {
-      get { return m_gravity; }
+      get => m_gravity;
       set
       {
         m_gravity = value;
@@ -134,7 +134,7 @@ namespace AGXUnity
     [HideInInspector]
     public float TimeStep
     {
-      get { return m_timeStep; }
+      get => m_timeStep;
       set
       {
         m_timeStep = Mathf.Max( value, 1.0E-8f );
@@ -153,7 +153,7 @@ namespace AGXUnity
     [IgnoreSynchronization]
     public SolverSettings SolverSettings
     {
-      get { return m_solverSettings; }
+      get => m_solverSettings;
       set
       {
         if ( m_solverSettings != null ) {
@@ -205,7 +205,7 @@ namespace AGXUnity
     [HideInInspector]
     public bool DisplayStatistics
     {
-      get { return m_displayStatistics; }
+      get => m_displayStatistics;
       set
       {
         m_displayStatistics = value;
@@ -232,8 +232,8 @@ namespace AGXUnity
     [HideInInspector]
     public int StatisticsMovingAverageCount
     {
-      get { return m_statisticsMovingAverage; }
-      set { m_statisticsMovingAverage = value; }
+      get => m_statisticsMovingAverage;
+      set => m_statisticsMovingAverage = value;
     }
 
     [SerializeField]
@@ -247,20 +247,20 @@ namespace AGXUnity
     [HideInInspector]
     public bool DisplayMemoryAllocations
     {
-      get { return m_displayMemoryAllocations; }
-      set { m_displayMemoryAllocations = value; }
+      get => m_displayMemoryAllocations;
+      set => m_displayMemoryAllocations = value;
     }
 
     private bool TrackMemoryAllocations
     {
-      get { return DisplayMemoryAllocations && DisplayStatistics; }
+      get => DisplayMemoryAllocations && DisplayStatistics;
     }
 
     [SerializeField]
     private bool m_enableMergeSplitHandler = false;
     public bool EnableMergeSplitHandler
     {
-      get { return m_enableMergeSplitHandler; }
+      get => m_enableMergeSplitHandler;
       set
       {
         m_enableMergeSplitHandler = value;
@@ -274,8 +274,8 @@ namespace AGXUnity
     [HideInInspector]
     public bool SavePreFirstStep
     {
-      get { return m_savePreFirstStep; }
-      set { m_savePreFirstStep = value; }
+      get => m_savePreFirstStep;
+      set => m_savePreFirstStep = value;
     }
 
     [SerializeField]
@@ -283,8 +283,8 @@ namespace AGXUnity
     [HideInInspector]
     public string SavePreFirstStepPath
     {
-      get { return m_savePreFirstStepPath; }
-      set { m_savePreFirstStepPath = value; }
+      get => m_savePreFirstStepPath;
+      set => m_savePreFirstStepPath = value;
     }
 
     [SerializeField]
@@ -294,7 +294,7 @@ namespace AGXUnity
     [IgnoreSynchronization]
     public bool LogEnabled
     {
-      get { return m_logEnabled; }
+      get => m_logEnabled;
       set
       {
         if ( value == m_logEnabled ) return;
@@ -328,7 +328,7 @@ namespace AGXUnity
     [IgnoreSynchronization]
     public bool LogToUnityConsole
     {
-      get { return m_logToUnityConsole; }
+      get => m_logToUnityConsole;
       set
       {
         if ( value == m_logToUnityConsole ) return;
@@ -352,7 +352,7 @@ namespace AGXUnity
     [IgnoreSynchronization]
     public LogLevel AGXUnityLogLevel
     {
-      get { return m_agxUnityLogLevel; }
+      get => m_agxUnityLogLevel;
       set
       {
         m_agxUnityLogLevel = value;
@@ -382,10 +382,83 @@ namespace AGXUnity
       }
     }
 
+    [SerializeField]
+    private bool m_enableWebDebugging = false;
+
+    /// <summary>
+    /// Enable/disable the web debugging of this simulation instance.
+    /// </summary>
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public bool EnableWebDebugging
+    {
+      get => m_enableWebDebugging;
+      set
+      {
+        if ( m_enableWebDebugging == value )
+          return;
+        m_enableWebDebugging = value;
+        if ( m_simulation != null )
+          Native.setEnableWebDebugger( m_enableWebDebugging, m_webDebuggingPort );
+      }
+    }
+
+    [SerializeField]
+    private ushort m_webDebuggingPort = 9001;
+
+    /// <summary>
+    /// When web debugging is enabled, this property specifies which port the simulation will use to communicate with the debugging client.
+    /// </summary>
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public ushort WebDebuggingPort
+    {
+      get => m_webDebuggingPort;
+      set
+      {
+        if ( m_webDebuggingPort == value )
+          return;
+        m_webDebuggingPort = value;
+        if ( m_simulation != null )
+          Native.setEnableWebDebugger( EnableWebDebugging, m_webDebuggingPort );
+      }
+    }
+
+    /// <summary>
+    /// Calling this method will spin up a temporary web server which will serve the Web Debugger web page which will then be opened
+    /// in a browser. Note that calling this method multiple times in short succession might cause it to fail as the previous server 
+    /// might not have been stopped yet.
+    /// </summary>
+    /// <param name="port">The port on which to serve the web debugger client</param>
+    /// <param name="timeoutms">how long to wait for the Web server to spin up until the launch attempt is considered failed</param>
+    public static void LaunchWebDebugger( ushort port = 5173, uint timeoutms = 500 )
+    {
+      // Spin up a temp web server. This will be cleaned up when the object is GCed.
+      var server = new agxNet.WebDebuggerServer( port, "" );
+      try {
+        server.start();
+        var startTime  = System.DateTime.Now;
+
+        // Spinlock while waiting for the server to start
+        while ( !server.isRunning() && ( DateTime.Now -  startTime ).TotalMilliseconds < timeoutms ) { }
+
+        // Ensure that the server started properly
+        if ( !server.isRunning() ) {
+          Debug.LogError( "Failed to launch Web Debugger (timeout)" );
+          return;
+        }
+
+        Application.OpenURL( $"http://localhost:{port}" );
+      }
+      catch ( ApplicationException ) {
+        Debug.LogError( "Failed to launch Web Debugger" );
+      }
+    }
+
     /// <summary>
     /// Get the native instance, if not deleted.
     /// </summary>
-    public agxSDK.Simulation Native { get { return GetOrCreateSimulation(); } }
+    public agxSDK.Simulation Native => GetOrCreateSimulation();
 
     /// <summary>
     /// Step callback interface for this simulation. Valid use from "initialize" to "Destroy".
@@ -518,6 +591,9 @@ namespace AGXUnity
         OpenLogFileIfEnabled();
         if ( m_logToUnityConsole )
           m_logAdapter = new LogAdapter( this, m_agxUnityLogLevel, DisableMeshCreationWarnings );
+
+        if ( EnableWebDebugging )
+          m_simulation.setEnableWebDebugger( true, m_webDebuggingPort );
       }
 
       return m_simulation;
