@@ -1,5 +1,6 @@
 using AGXUnity.Utils;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AGXUnity.IO.OpenPLX
@@ -94,27 +95,17 @@ namespace AGXUnity.IO.OpenPLX
         parent.AddChild( child );
     }
 
-    private static HashSet<System.Type> s_rtMapped = new HashSet<System.Type>()
-    {
-      typeof(openplx.Physics1D.Interactions.RotationalVelocityMotor),
-      typeof(openplx.DriveTrain.Gear),
-      typeof(openplx.DriveTrain.FlexibleGear),
-      typeof(openplx.DriveTrain.MeanValueEngine),
-      typeof(openplx.DriveTrain.HingeActuator),
-      typeof(openplx.DriveTrain.PrismaticActuator),
-      typeof(openplx.DriveTrain.GearBox),
-      typeof(openplx.DriveTrain.Shaft),
-      typeof(openplx.DriveTrain.TorqueMotor),
-      typeof(openplx.DriveTrain.Differential),
-      typeof(openplx.DriveTrain.EmpiricalTorqueConverter),
-      typeof(openplx.DriveTrain.ManualBrake),
-      typeof(openplx.DriveTrain.AutomaticBrake),
-      typeof(openplx.DriveTrain.ManualClutch),
-      typeof(openplx.DriveTrain.AutomaticClutch),
-    };
+    private static HashSet<System.Type> s_rtMapped = null;
 
     public static bool IsRuntimeMapped( openplx.Core.Object obj )
     {
+      if ( s_rtMapped == null ) {
+        s_rtMapped = new HashSet<System.Type>() { typeof( openplx.Physics1D.Interactions.RotationalVelocityMotor ) };
+
+        var assembly = typeof(openplx.DriveTrain.Actuator).Assembly;
+        foreach ( var type in assembly.GetTypes().Where( t => t.Namespace != null && t.Namespace.StartsWith( "openplx.DriveTrain" ) ) )
+          s_rtMapped.Add( type );
+      }
       return s_rtMapped.Contains( obj.GetType() );
     }
   }
