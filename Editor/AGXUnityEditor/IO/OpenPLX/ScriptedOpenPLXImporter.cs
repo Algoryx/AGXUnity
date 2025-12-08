@@ -16,7 +16,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       public string raw;
       public string message;
       public string document;
-      public string Location => $"{line}:{column}";
+      public readonly string Location => $"{line}:{column}";
       public int line;
       public int column;
     }

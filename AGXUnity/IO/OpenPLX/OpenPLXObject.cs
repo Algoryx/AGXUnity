@@ -46,6 +46,7 @@ namespace AGXUnity.IO.OpenPLX
       Interactions.Prismatic => GetNativeConstraint().asPrismatic(),
       Interactions.Cylindrical => GetNativeConstraint().asCylindricalJoint(),
       Interactions.Ball => GetNativeConstraint().asBallJoint(),
+      Interactions.Distance => GetNativeConstraint().asDistanceJoint(),
       Interactions.RotationalRange => GetGeneric1DOFNative().getRange1D(),
       Interactions.TorsionSpring => GetGeneric1DOFNative().getLock1D(),
       Interactions.RotationalVelocityMotor => GetGeneric1DOFNative().getMotor1D(),

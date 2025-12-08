@@ -261,6 +261,9 @@ namespace AGXUnity.IO.OpenPLX
         return null;
       }
 
+      if ( mate is Distance dist )
+        agxConstraint.GetController<LockController>().Position = (float)dist.target_distance();
+
       MapMateDissipation( mate.dissipation(), mate.flexibility(), agxConstraint );
       MapMateFlexibility( mate.flexibility(), agxConstraint );
 
@@ -351,6 +354,7 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.Prismatic => ConstraintType.Prismatic,
         Interactions.Cylindrical => ConstraintType.CylindricalJoint,
         Interactions.Ball => ConstraintType.BallJoint,
+        Interactions.Distance => ConstraintType.DistanceJoint,
         // Generic 1DOF
         Interactions.RotationalRange => ConstraintType.GenericConstraint1DOF,
         Interactions.TorsionSpring => ConstraintType.GenericConstraint1DOF,
