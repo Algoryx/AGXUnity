@@ -236,8 +236,14 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
-      if ( go == null )
+
+      if ( go == null ) {
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
+          return null;
+
         return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
+      }
 
       Data.RegisterOpenPLXObject( visual.getName(), go );
       Utils.MapLocalTransform( go.transform, visual.local_transform() );
@@ -410,12 +416,12 @@ namespace AGXUnity.IO.OpenPLX
     {
       string path = objGeom.path();
 
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return null;
+
       GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
       Data.RegisterGameObject( go );
       var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
-
-      if ( !VerifyAssetPath( path, objGeom ) )
-        return go;
 
       UnityEngine.Mesh mesh;
       // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
@@ -587,6 +593,11 @@ namespace AGXUnity.IO.OpenPLX
         // TODO: Robotics Links can have null contact geometries maybe?
         if ( geom.GetType() == typeof( Geometries.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
           return null;
+
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( geom is Geometries.ExternalTriMeshGeometry )
+          return null;
+
         return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
       }
 
