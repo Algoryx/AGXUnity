@@ -10,12 +10,13 @@ using Environment = AGXUnity.IO.Environment;
 namespace AGXUnityEditor
 {
   [PreviousSettingsFile( FileName = "AGXInitData.asset" )]
-  public class ExternalAGXInitializer : AGXUnitySettings<ExternalAGXInitializer>
+  public class ExternalAGXInitializer : AGXUnityEditorSettings<ExternalAGXInitializer>
   {
-    public string AGX_DIR         = string.Empty;
-    public string AGX_DATA_DIR    = string.Empty;
-    public string AGX_PLUGIN_PATH = string.Empty;
-    public string[] AGX_BIN_PATH  = new string[] { };
+    public string AGX_DIR             = string.Empty;
+    public string AGX_DATA_DIR        = string.Empty;
+    public string AGX_PLUGIN_PATH     = string.Empty;
+    public string[] AGX_OPENPLX_PATHS = new string[] { };
+    public string[] AGX_BIN_PATH      = new string[] { };
 
     public static bool IsApplied { get; private set; } = false;
 
@@ -69,6 +70,8 @@ namespace AGXUnityEditor
                                                                                       Path.DirectorySeparatorChar +
                                                                                       "cfg" );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
+
+        AGXUnity.IO.OpenPLX.OpenPLXImporter.BundleDirOverrides = AGX_OPENPLX_PATHS;
       }
       catch ( Exception ) {
         return false;
@@ -93,10 +96,11 @@ namespace AGXUnityEditor
 
     public void Clear()
     {
-      AGX_DIR         = string.Empty;
-      AGX_DATA_DIR    = string.Empty;
-      AGX_PLUGIN_PATH = string.Empty;
-      AGX_BIN_PATH    = new string[] { };
+      AGX_DIR           = string.Empty;
+      AGX_DATA_DIR      = string.Empty;
+      AGX_PLUGIN_PATH   = string.Empty;
+      AGX_OPENPLX_PATHS = new string[] { };
+      AGX_BIN_PATH      = new string[] { };
     }
 
     public enum AGXDirectoryType
@@ -295,16 +299,17 @@ namespace AGXUnityEditor
       var installedBinDir = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64";
       AGX_PLUGIN_PATH     = $"{installedBinDir}{Path.DirectorySeparatorChar}plugins";
       AGX_DATA_DIR        = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
-
+      AGX_OPENPLX_PATHS   = new string[] { $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}openplxbundles", $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
       return true;
     }
 
     private bool InitializeInstalled( string agxDir )
     {
-      AGX_DIR         = agxDir;
-      AGX_DATA_DIR    = $"{AGX_DIR}{Path.DirectorySeparatorChar}data";
-      AGX_BIN_PATH    = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" };
-      AGX_PLUGIN_PATH = $"{AGX_BIN_PATH[ 0 ]}{Path.DirectorySeparatorChar}plugins";
+      AGX_DIR           = agxDir;
+      AGX_DATA_DIR      = $"{AGX_DIR}{Path.DirectorySeparatorChar}data";
+      AGX_OPENPLX_PATHS = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}openplxbundles", $"{AGX_DIR}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
+      AGX_BIN_PATH      = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" };
+      AGX_PLUGIN_PATH   = $"{AGX_BIN_PATH[ 0 ]}{Path.DirectorySeparatorChar}plugins";
 
       return true;
     }

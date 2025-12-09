@@ -1,0 +1,37 @@
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Geometries.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    mate_connector is Physics3D.Interactions.MateConnector:
+        position.z: -geometry.size.z * 0.7
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+PendulumScene is Physics3D.System:
+    world_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+    rod is Rod
+
+    hinge is Physics3D.Interactions.Hinge:
+        initial_angle: 0
+        connectors: [world_connector, rod.mate_connector]
+
+    rod_motor is Physics3D.Interactions.RotationalVelocityMotor:
+        target_speed: 0
+        connectors: hinge.connectors
+
+    motor_input is Physics.Signals.AngularVelocity1DInput:
+        source: rod_motor
+
+    hinge_angle_output is Physics.Signals.AngleOutput:
+        source: hinge
+    hinge_angular_velocity_output is Physics.Signals.AngularVelocity1DOutput:
+        source: hinge

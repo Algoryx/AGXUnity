@@ -1,0 +1,23 @@
+Box is Physics3D.Bodies.RigidBody:
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+
+  is_dynamic: false
+
+SignalScene is Physics3D.System:
+  box is Box
+
+  boxRPY is Physics3D.Signals.RPYOutput:
+    source: box
+
+  box_linear_vel_in is Physics3D.Signals.LinearVelocity3DInput:
+    source: box
+
+  box_linear_vel_out is Physics3D.Signals.LinearVelocity3DOutput:
+    source: box
+  
+  box_angular_vel_in is Physics3D.Signals.AngularVelocity3DInput:
+    source: box
+
+  box_angular_vel_out is Physics3D.Signals.AngularVelocity3DOutput:
+    source: box
