@@ -269,6 +269,8 @@ namespace AGXUnity.IO.OpenPLX
 
       agxConstraint.SetForceRange( new RangeReal( float.NegativeInfinity, float.PositiveInfinity ) );
 
+      Data.MateCache[ mate ] = agxConstraint;
+
       return agxConstraint.gameObject;
     }
 
@@ -372,6 +374,7 @@ namespace AGXUnity.IO.OpenPLX
         return null;
 
       var availableConstraint = MapInteraction( interaction, ( f1, f2 ) => CreateConstraint( f1, f2, type.Value ) );
+      availableConstraint.enabled = interaction.enabled();
       Data.RegisterOpenPLXObject( interaction.getName(), availableConstraint.gameObject );
       availableConstraint.SetForceRange( new RangeReal( 0.0f, 0.0f ) );
 

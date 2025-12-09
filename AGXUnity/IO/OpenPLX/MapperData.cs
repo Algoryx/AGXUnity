@@ -55,10 +55,12 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Core.Object, RigidBody> BodyCache { get; } = new Dictionary<openplx.Core.Object, RigidBody>();
     public Dictionary<openplx.Physics.System, GameObject> SystemCache { get; } = new Dictionary<openplx.Physics.System, GameObject>();
     public Dictionary<openplx.Core.Object, GameObject> FrameCache { get; } = new Dictionary<openplx.Core.Object, GameObject>();
+    public Dictionary<openplx.Physics3D.Interactions.Mate, Constraint> MateCache { get; } = new Dictionary<openplx.Physics3D.Interactions.Mate, Constraint>();
     public Dictionary<openplx.Physics.Geometries.Material, ShapeMaterial> MaterialCache { get; } = new Dictionary<openplx.Physics.Geometries.Material, ShapeMaterial>();
     public Dictionary<openplx.Physics3D.Interactions.MateConnector, GameObject> MateConnectorCache { get; } = new Dictionary<openplx.Physics3D.Interactions.MateConnector, GameObject>();
     public Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel> FrictionModelCache { get; } = new Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel>();
     public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
+    public Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties> TirePropertyCache { get; } = new Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
     public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };

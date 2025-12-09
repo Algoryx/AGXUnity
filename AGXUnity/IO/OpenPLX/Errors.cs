@@ -4,6 +4,7 @@ namespace AGXUnity.IO.OpenPLX
 {
   public enum AgxUnityOpenPLXErrors
   {
+    InternalMapperError = 0,
     Unimplemented = 1,
     NullChild = 2,
     LocalOffsetNotSupported = 3,
@@ -15,9 +16,10 @@ namespace AGXUnity.IO.OpenPLX
     IncompatibleImportType = 9,
     UnmappableRootModel = 10,
     FileDoesNotExist = 11,
+    InvalidWheelChassis = 12,
+    MissingWheelBody = 13,
+    UnmappedWheel = 14,
   }
-
-
 
   public class BaseError : openplx.Error
   {
@@ -78,13 +80,30 @@ namespace AGXUnity.IO.OpenPLX
     { }
   }
 
+  public class InternalMapperError : BaseError
+  {
+    string m_error;
+
+    public InternalMapperError( openplx.Core.Object source, string error )
+      : base( source, AgxUnityOpenPLXErrors.InternalMapperError )
+    {
+      m_error = error;
+    }
+
+    protected override string createErrorMessage() => m_error;
+  }
+
   public class UnimplementedError : BaseError
   {
+    string m_modelName;
+
     public UnimplementedError( openplx.Core.Object source )
       : base( source, AgxUnityOpenPLXErrors.Unimplemented )
-    { }
+    {
+      m_modelName = source.getType().getNameWithNamespace( "." );
+    }
 
-    protected override string createErrorMessage() => "The specified model is not implemented by the mapper";
+    protected override string createErrorMessage() => $"Mapping of model '{m_modelName}' is not implemented by the mapper";
   }
 
   public class NullChildError : BaseError
@@ -185,5 +204,44 @@ namespace AGXUnity.IO.OpenPLX
     }
 
     protected override string createErrorMessage() => $"Provided file does not exist: '{m_path}'";
+  }
+
+  public class InvalidWheelChassisError : BaseError
+  {
+    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+
+    public InvalidWheelChassisError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+      : base( suspension, AgxUnityOpenPLXErrors.InvalidWheelChassis )
+    {
+      m_suspension = suspension;
+    }
+
+    protected override string createErrorMessage() => $"Failed to find mapped chassis body for chassis '{m_suspension.chassis_connector().getName()}'";
+  }
+
+  public class MissingWheelBodyError : BaseError
+  {
+    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+
+    public MissingWheelBodyError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+      : base( suspension, AgxUnityOpenPLXErrors.MissingWheelBody )
+    {
+      m_suspension = suspension;
+    }
+
+    protected override string createErrorMessage() => $"Failed to find mapped wheel body for wheel '{m_suspension.attachment_connector().getName()}'";
+  }
+
+  public class UnmappedWheelError : BaseError
+  {
+    private openplx.Vehicles.Suspensions.Suspension m_wheel;
+
+    public UnmappedWheelError( openplx.Vehicles.Suspensions.Suspension wheel )
+      : base( wheel, AgxUnityOpenPLXErrors.UnmappedWheel )
+    {
+      m_wheel = wheel;
+    }
+
+    protected override string createErrorMessage() => $"Failed to find mapped wheel joint";
   }
 }

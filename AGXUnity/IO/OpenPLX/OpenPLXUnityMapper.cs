@@ -38,7 +38,7 @@ namespace AGXUnity.IO.OpenPLX
     public GameObject RootNode => Data.RootNode;
 
     private InteractionMapper InteractionMapper { get; set; }
-    private TrackMapper TrackMapper { get; set; }
+    private VehicleMapper VehicleMapper { get; set; }
     private SensorMapper SensorMapper { get; set; }
 
     MapperOptions Options;
@@ -49,7 +49,7 @@ namespace AGXUnity.IO.OpenPLX
       Options = options;
 
       InteractionMapper = new InteractionMapper( Data );
-      TrackMapper = new TrackMapper( Data );
+      VehicleMapper = new VehicleMapper( Data );
       SensorMapper = new SensorMapper( Data );
     }
 
@@ -821,7 +821,7 @@ namespace AGXUnity.IO.OpenPLX
       MapSystemPass2( system );
       MapSystemPass3( system );
       MapSystemPass4( system );
-
+      MapSystemPass5( system );
       return s;
     }
 
@@ -897,7 +897,7 @@ namespace AGXUnity.IO.OpenPLX
         MapSystemPass3( subSystem );
 
       foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() )
-        TrackMapper.MapTrackSystem( trackSystem );
+        VehicleMapper.MapTrackSystem( trackSystem );
 
       foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
         InteractionMapper.MapMateConnector( mateConnector );
@@ -914,12 +914,17 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
-      foreach ( var kinematicLock in system.getValues<openplx.Physics.KinematicLock>() )
+      foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
         Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
-      foreach ( var interaction in system.getValues<openplx.Physics.Interactions.Interaction>() )
-        if ( !Utils.IsRuntimeMapped( interaction ) )
-          Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+      foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() ) {
+        if ( !Utils.IsRuntimeMapped( interaction ) && interaction is not openplx.Vehicles.Steering.Interactions.DualSuspensionSteering ) {
+          if ( interaction is openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+            Utils.AddChild( s, VehicleMapper.MapSuspension( suspension ), Data.ErrorReporter, suspension );
+          else
+            Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+        }
+      }
 
       foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
         InteractionMapper.MapContactModel( contactModel );
@@ -938,6 +943,20 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var disabledPair in system.getNonReferenceValues<openplx.Simulation.DisableCollisionPair>() )
         MapDisabledPair( disabledPair );
+    }
+
+    void MapSystemPass5( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass5( subSystem );
+
+      foreach ( var steering in system.getNonReferenceValues<openplx.Vehicles.Steering.Interactions.DualSuspensionSteering>() )
+        Utils.AddChild( s, VehicleMapper.MapSteering( steering ), Data.ErrorReporter, steering );
+
+      foreach ( var wheel in system.getNonReferenceValues<openplx.Vehicles.Wheels.ElasticWheel>() )
+        VehicleMapper.MapElasticWheel( wheel );
     }
   }
 

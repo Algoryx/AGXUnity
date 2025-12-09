@@ -60,6 +60,8 @@ namespace AGXUnity.IO.OpenPLX
       openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
       openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
       openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
+      openplx.Vehicles.Steering.Interactions.DualSuspensionSteering => gameObject.GetInitializedComponent<Steering>().Native,
+      openplx.Vehicles.Suspensions.Interactions.LinearSpringDamperMate => gameObject.GetInitializedComponent<WheelJoint>().Native,
       _ => DefaultHandling( obj )
     };
 

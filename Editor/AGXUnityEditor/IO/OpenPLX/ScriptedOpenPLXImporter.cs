@@ -145,6 +145,10 @@ namespace AGXUnityEditor.IO.OpenPLX
         ctx.AddObjectToAsset( props.name, props );
       foreach ( var mat in data.MappedTerrainMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
+      foreach ( var props in data.TirePropertyCache.Values ) {
+        props.hideFlags = HideFlags.HideInHierarchy; // There is currently a one-to-one mapping of properties to tires so no need to expose these
+        ctx.AddObjectToAsset( props.name, props );
+      }
     }
 
     public void ReportErrors( openplx.Error error )
