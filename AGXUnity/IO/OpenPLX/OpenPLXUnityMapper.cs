@@ -839,10 +839,10 @@ namespace AGXUnity.IO.OpenPLX
       dummyRB.name = "System Dummy RB";
       Data.FrameCache[ system ] = dummyRB;
 
-      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
 
-      foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
           if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
             if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
@@ -852,7 +852,7 @@ namespace AGXUnity.IO.OpenPLX
             Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
         }
       }
-      foreach ( var trackSystem in system.getValues<openplx.Vehicles.Tracks.System>() ) {
+      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() ) {
         if ( trackSystem.belt().link_description() is openplx.Vehicles.Tracks.BoxLinkDescription desc ) {
           var mat = desc.contact_geometry().material();
           if ( !Data.MaterialCache.ContainsKey( mat ) ) {
@@ -868,12 +868,12 @@ namespace AGXUnity.IO.OpenPLX
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass2( subSystem );
 
       // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
-      foreach ( var body in system.getValues<Bodies.RigidBody>() ) {
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
           if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
             Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
@@ -885,7 +885,7 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
-      foreach ( var terr in system.getValues<openplx.Terrain.Terrain>() )
+      foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
         Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
     }
 
@@ -893,16 +893,16 @@ namespace AGXUnity.IO.OpenPLX
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass3( subSystem );
 
-      foreach ( var trackSystem in system.getValues<openplx.Vehicles.Tracks.System>() )
+      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() )
         TrackMapper.MapTrackSystem( trackSystem );
 
-      foreach ( var mateConnector in system.getValues<openplx.Physics3D.Interactions.MateConnector>() )
+      foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
         InteractionMapper.MapMateConnector( mateConnector );
 
-      foreach ( var body in system.getValues<openplx.Physics3D.Bodies.RigidBody>() )
+      foreach ( var body in system.getNonReferenceValues<openplx.Physics3D.Bodies.RigidBody>() )
         foreach ( var mateConnector in body.getValues<openplx.Physics3D.Interactions.MateConnector>() )
           InteractionMapper.MapMateConnector( mateConnector );
     }
@@ -911,7 +911,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       var s = Data.SystemCache[system];
 
-      foreach ( var subSystem in system.getValues<openplx.Physics3D.System>() )
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
       foreach ( var kinematicLock in system.getValues<openplx.Physics.KinematicLock>() )
@@ -921,23 +921,57 @@ namespace AGXUnity.IO.OpenPLX
         if ( !Utils.IsRuntimeMapped( interaction ) )
           Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
-      foreach ( var contactModel in system.getValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
+      foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
         InteractionMapper.MapContactModel( contactModel );
 
-      foreach ( var shovel in system.getValues<openplx.Terrain.Shovel>() )
+      foreach ( var shovel in system.getNonReferenceValues<openplx.Terrain.Shovel>() )
         MapShovel( shovel );
 
       // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
-      foreach ( var collision_group in system.getValues<CollisionGroup>() )
+      foreach ( var collision_group in system.getNonReferenceValues<CollisionGroup>() )
         MapCollisionGroup( collision_group );
 
 
       foreach ( var rb in system.kinematically_controlled() )
         Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-      foreach ( var disabledPair in system.getValues<openplx.Simulation.DisableCollisionPair>() )
+      foreach ( var disabledPair in system.getNonReferenceValues<openplx.Simulation.DisableCollisionPair>() )
         MapDisabledPair( disabledPair );
+    }
+  }
+
+  // TODO: Remove these once they're added to the C# API
+  static partial class ObjectExtensions
+  {
+    public static List<System.Tuple<string, T>> getNonReferenceEntries<T>( this Object source )
+    {
+      List<System.Tuple<string,T>> output = new List<System.Tuple<string,T>>();
+      std.StringAnyPairVector all_entries = new std.StringAnyPairVector();
+      source.extractEntriesTo( all_entries );
+      foreach ( var entry in all_entries ) {
+        if ( !entry.second.isObject() || entry.second.isReference() )
+          continue;
+        var obj = entry.second.asObject();
+        if (
+          obj != null &&
+          obj.getOwner() != null &&
+          obj.getOwner() == source &&
+          obj is T value )
+          output.Add( System.Tuple.Create( entry.first, value ) );
+      }
+      return output;
+    }
+
+    public static List<T> getNonReferenceValues<T>( this Object source )
+    {
+      List<T> output = new List<T>();
+
+      var entries = getNonReferenceEntries<T>(source);
+      foreach ( var (_, value) in entries )
+        output.Add( value );
+
+      return output;
     }
   }
 }
