@@ -31,7 +31,7 @@ namespace AGXUnity.IO.OpenPLX
 
       InputSignal signal = OpenPLXSignals.GetOpenPLXTypeEnum(ValueTypeCode) switch
       {
-        OpenPLXSignals.ValueType.Integer |
+        OpenPLXSignals.ValueType.Integer => IntInputSignal.create(Convert.ToInt64(value), Native),
         OpenPLXSignals.ValueType.Real => RealInputSignal.create(Convert.ToDouble(value), Native),
         OpenPLXSignals.ValueType.Boolean => BoolInputSignal.create(Convert.ToBoolean(value), Native),
         OpenPLXSignals.ValueType.Vec3 =>
