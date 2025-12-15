@@ -1,0 +1,50 @@
+Chassis is Physics3D.Bodies.RigidBody:
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+
+  is_dynamic: false
+    
+
+Wheel is Vehicles.Wheels.ElasticWheel:
+  rim becomes Vehicles.Wheels.Rim:
+    radius: 0.03
+    width: 0.02
+    rotational_axis: Math.Vec3.X_AXIS()
+    geometry.local_transform.rotation: Math.Quat.from_to(Math.Vec3.Z_AXIS(), Math.Vec3.Y_AXIS())
+
+  tire becomes Vehicles.Wheels.Tire:
+    outer_radius: 0.05
+    inner_radius: rim.radius
+    width: 0.015
+    rotational_axis: Math.Vec3.X_AXIS()
+    geometry.local_transform.rotation: Math.Quat.from_to(Math.Vec3.Z_AXIS(), Math.Vec3.Y_AXIS())
+
+WheelScene is Physics3D.System:
+  chassis is Chassis:
+    up is Math.Vec3: Math.Vec3.Z_AXIS()
+    forward is Math.Vec3: Math.Vec3.Y_AXIS()
+
+  left_mc is  Vehicles.Suspensions.Interactions.Connector:
+    position: Math.Vec3.from_xyz(-0.06, 0.0, -0.05)
+    redirected_parent: chassis
+    up_vector: chassis.up
+    forward_vector: chassis.forward
+
+  right_mc is Vehicles.Suspensions.Interactions.Connector:
+    redirected_parent: chassis
+    up_vector: chassis.up
+    forward_vector: chassis.forward
+    position: Math.Vec3.from_xyz(0.06, 0.0, -0.05)
+
+  left_wheel is Wheel
+  right_wheel is Wheel
+
+  suspension_left is Vehicles.Suspensions.LinearSpringDamper with Vehicles.Suspensions.Traits.Steering:
+    chassis_connector: left_mc
+    attachment_connector: left_wheel.connector
+
+  suspension_right is Vehicles.Suspensions.LinearSpringDamper with Vehicles.Suspensions.Traits.Steering:
+    chassis_connector: right_mc
+    attachment_connector: right_wheel.connector
+
+

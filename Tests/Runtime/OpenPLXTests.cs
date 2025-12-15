@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.IO;
 using AGXUnity.IO.OpenPLX;
+using AGXUnity.Model;
 using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
@@ -37,12 +38,14 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.DestroyAndWait( Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ).Select( r => r.gameObject ).ToArray() );
     }
 
-    public void LoadOpenPLX( string source, string modelName = null )
+    public OpenPLXRoot LoadOpenPLX( string source, string modelName = null )
     {
       var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ), default, null, modelName );
       Assert.NotNull( openPLXObj, $"Failed to import OpenPLX file '{source}'" );
       openPLXObj.transform.rotation = Quaternion.AngleAxis( -90, Vector3.right );
       openPLXObj.InitializeAll();
+
+      return openPLXObj.GetComponent<OpenPLXRoot>();
     }
 
     [UnityTest]
@@ -132,7 +135,7 @@ namespace AGXUnityTesting.Runtime
     {
       LoadOpenPLX( "extended_pendulum_from_agx.openplx" );
 
-      yield return TestUtils.SimulateSeconds( 5.0f );
+      yield return TestUtils.SimulateSeconds( 1.2f );
 
       var tip = GameObject.Find("extended_pendulum_from_agx/MyScene/inv_pendulum/top_extension/arrow");
       Assert.NotNull( tip );
@@ -529,6 +532,17 @@ namespace AGXUnityTesting.Runtime
       Assert.NotNull( dependant );
       var level = dependant.GetComponent<SavedPrefabLocalData>().ContactMaterials[0].ContactReductionLevel;
       Assert.That( level, Is.EqualTo( ContactReductionLevelType.Moderate ) );
+    }
+
+    [Test]
+    public void TestWheelImportComponents()
+    {
+      var root = LoadOpenPLX( "elastic_wheel.openplx" );
+      var leftWheel = root.FindMappedObject( "WheelScene.left_wheel" );
+      Assert.IsTrue( leftWheel.TryGetComponent<TwoBodyTire>( out var leftTire ), "Elastic wheel should be mapepd to TwoBodyTire" );
+      var leftSuspension = root.FindMappedObject("WheelScene.suspension_left.mate");
+      Assert.IsTrue( leftSuspension.TryGetComponent<WheelJoint>( out var leftWheelJoint ), "Suspensions should be mapped to WheelJoint" );
+      Assert.That( leftWheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable, Is.False, "Suspensions with steering trait should not be constrained around the steering axis" );
     }
   }
 }

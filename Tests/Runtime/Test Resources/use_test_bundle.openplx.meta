@@ -8,7 +8,6 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
-  dependencies: []
   declaredModels:
   - TestBody
   Errors:
@@ -20,7 +19,6 @@ ScriptedImporter:
     line: 1
     column: 13
   ImportedModel: Default
-  <ImportTime>k__BackingField: 0.3790163
   SkipImport: 1
   HideImportedMeshes: 1
   HideImportedVisualMaterials: 0
