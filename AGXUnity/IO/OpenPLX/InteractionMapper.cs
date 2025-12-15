@@ -78,11 +78,7 @@ namespace AGXUnity.IO.OpenPLX
         Data.ErrorReporter.reportError( new InvalidMateConnectorAxis( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, mc ) );
       }
 
-      var rotation = openplx.Math.Quat.from_to(openplx.Math.Vec3.Z_AXIS(), main_axis_n);
-      var new_x = rotation.rotate(openplx.Math.Vec3.X_AXIS());
-      var angle = openplx.Math.Vec3.angle_between_vectors(new_x,normal_n,main_axis_n);
-      var rotation_2 = openplx.Math.Quat.angle_axis(angle,main_axis_n);
-      mcObject.transform.localRotation = ( rotation_2 * rotation ).ToHandedQuaternion();
+      mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), normal_n.ToHandedVector3() );
 
       Data.MateConnectorCache[ mc ] = mcObject;
     }
