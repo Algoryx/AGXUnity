@@ -178,38 +178,38 @@ namespace AGXUnity.IO.OpenPLX
     {
       HashSet<string> dependencies = new HashSet<string>();
       // TODO: This currently returns all openplx files in all bundles which can cause circular import dependencies.
-      //Action<string> addIfValid = (string path) => {
-      //  if(path != null && path.Length > 0 && path != obj.getType().getOwningDocument().getSourceId())
-      //    dependencies.Add( path );
-      //};
+      Action<string> addIfValid = (string path) => {
+        if(path != null && path.Length > 0 && path != obj.getType().getOwningDocument().getSourceId())
+          dependencies.Add( path );
+      };
 
-      //// Find Imports
-      //var imports = obj.getType().getOwningDocument().findImports();
-      //foreach ( var import in imports )
-      //  addIfValid( import.getPath() );
+      // Find Imports
+      var imports = obj.getType().getOwningDocument().findImports();
+      foreach ( var import in imports )
+        addIfValid( import.getPath() );
 
-      //// Find references to paths in members
-      //var values = new std.OuterSymbolSet();
-      //obj.getType().getOuterTreeRoot().collectValues( values );
-      //foreach ( var val in values ) {
-      //  var boundValue = val.getBoundValue();
-      //  if ( boundValue == null )
-      //    continue;
-      //  if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
-      //    var path = boundValue.asConstant().getToken().lexeme.Trim('\"');
-      //    if ( System.IO.File.Exists( path ) )
-      //      addIfValid( path );
-      //  }
-      //}
+      // Find references to paths in members
+      var values = new std.OuterSymbolSet();
+      obj.getType().getOuterTreeRoot().collectValues( values );
+      foreach ( var val in values ) {
+        var boundValue = val.getBoundValue();
+        if ( boundValue == null )
+          continue;
+        if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
+          var path = boundValue.asConstant().getToken().lexeme.Trim('\"');
+          if ( System.IO.File.Exists( path ) )
+            addIfValid( path );
+        }
+      }
 
-      //// Find bundle dependencies and add all files to dependencies
-      //var ic = OpenPlxContextInternal.fromContext( context );
-      //foreach ( var bundle in ic.analysisContext().getBundles() ) {
-      //  var config = bundle.documents[ 0 ].getBundleConfig();
-      //  addIfValid( config.config_file_path );
-      //  foreach ( var file in config.openplx_files )
-      //    addIfValid( file );
-      //}
+      // Find bundle dependencies and add all files to dependencies
+      var ic = OpenPlxContextInternal.fromContext( context );
+      foreach ( var bundle in ic.analysisContext().getBundles() ) {
+        var config = bundle.documents[ 0 ].getBundleConfig();
+        addIfValid( config.config_file_path );
+        foreach ( var file in config.openplx_files )
+          addIfValid( file );
+      }
 
       return dependencies.ToArray();
     }

@@ -1,6 +1,7 @@
 using AGXUnity.IO.OpenPLX;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -24,16 +25,43 @@ namespace AGXUnityEditor.IO.OpenPLX
     [SerializeField]
     private List<Error> m_errors;
     [SerializeField]
-    private List<string> m_dependencies;
-    [SerializeField]
     private List<string> m_declaredModels;
 
     public Error[] Errors => m_errors.ToArray();
-    public string[] Dependencies => m_dependencies.ToArray();
-    public string[] DeclaredModels => m_declaredModels.ToArray();
+    public string[] Dependencies
+    {
+      get
+      {
+        var data = GetOrLoadData();
+        if ( data != null )
+          return data.Depenencies;
+        return new string[ 0 ];
+      }
+    }
 
-    [field: SerializeField]
-    public float ImportTime { get; private set; }
+    public float ImportTime
+    {
+      get
+      {
+        var data = GetOrLoadData();
+        if ( data != null )
+          return data.ImportTime;
+        return 0.0f;
+      }
+    }
+
+    private ScriptedImportData GetOrLoadData()
+    {
+      if ( m_data != null )
+        return m_data;
+
+      else
+        m_data = AssetDatabase.LoadAllAssetsAtPath( assetPath ).OfType<ScriptedImportData>().First();
+
+      return m_data;
+    }
+
+    public string[] DeclaredModels => m_declaredModels.ToArray();
 
     [SerializeField]
     [Tooltip("By default, the last model declared in an imported OpenPLX-file will be the one mapped to AGXUnity. This option allows this behaviour to be overridden to instead import any model declared at the root level of the file. Note that the options provided are not guaranteed to be importable or complete.")]
@@ -50,6 +78,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public bool RotateUp = true;
 
     private bool m_nonImportable = false;
+    private ScriptedImportData m_data;
 
     private string IconPath => IO.Utils.AGXUnityEditorDirectory + "/Icons/Logos/openplx-icon.png";
 
@@ -69,8 +98,12 @@ namespace AGXUnityEditor.IO.OpenPLX
     {
       m_nonImportable = true;
       m_errors = new List<Error>();
-      m_dependencies = new List<string>();
-      ImportTime = 0;
+
+      m_data = ScriptableObject.CreateInstance<ScriptedImportData>();
+      m_data.hideFlags = HideFlags.HideInHierarchy;
+      ctx.AddObjectToAsset( "ImportData", m_data, Icon );
+
+      m_data.ImportTime = 0;
 
       // TODO: Investigate why selecting config.openplx files in the project view crashes unity
       if ( ctx.assetPath.StartsWith( "Assets/AGXUnity/OpenPLX" ) || ctx.assetPath.EndsWith( "config.openplx" ) )
@@ -98,7 +131,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       var modelName = ImportedModel != "Default" ? ImportedModel : null;
       var go = importer.ImportOpenPLXFile( ctx.assetPath, modelName );
       var end = DateTime.Now;
-      ImportTime = (float)( end - start ).TotalSeconds;
+      m_data.ImportTime = (float)( end - start ).TotalSeconds;
 
       if ( m_errors.Count > 0 ) {
         if ( m_nonImportable )
@@ -106,22 +139,23 @@ namespace AGXUnityEditor.IO.OpenPLX
       }
       else
         ctx.SetMainObject( go );
-
-      EditorUtility.SetDirty( this );
     }
 
     public void OnSuccess( AssetImportContext ctx, MapperData data )
     {
+      List<string> dependencies = new List<string>();
       foreach ( var doc in data.RegisteredDocuments ) {
         if ( doc == null || doc.Length == 0 )
           continue;
         var relative = System.IO.Path.GetRelativePath( Application.dataPath, doc );
         var normalized = "Assets/" + relative.Replace('\\','/');
 
-        m_dependencies.Add( normalized );
         ctx.DependsOnSourceAsset( normalized );
+        dependencies.Add( normalized );
       }
-      m_dependencies.Sort();
+
+      dependencies.Sort();
+      m_data.Depenencies = dependencies.ToArray();
 
       if ( data.RootNode )
         ctx.AddObjectToAsset( "Root", data.RootNode, Icon );
