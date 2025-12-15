@@ -567,5 +567,23 @@ namespace AGXUnityTesting.Runtime
 
       Assert.That( steeringOutput.GetValue<float>(), Is.EqualTo( 0.5 ).Within( 1e-6f ), "Sending steering angle input should cause the output to match" );
     }
+
+    [UnityTest]
+    public IEnumerator TestShovelTerrainImport()
+    {
+      var root = LoadOpenPLX( "shovel.openplx" );
+      var shovelGO = root.FindMappedObject( "ShovelScene.shovel.shovel" );
+      Assert.NotNull( shovelGO );
+      Assert.IsTrue( shovelGO.TryGetComponent<DeformableTerrainShovel>( out var shovel ), "Shovels should be properly mapped" );
+      var terrainGO = root.FindMappedObject("ShovelScene.terrain");
+      Assert.NotNull( terrainGO );
+      Assert.IsTrue( terrainGO.TryGetComponent<MovableTerrain>( out var terrain ), "Terrains should be properly mapped" );
+
+      Assert.NotNull( shovel.Settings );
+
+      yield return TestUtils.SimulateSeconds( 1 );
+
+      Assert.That( terrain.GetSoilSimulationInterface().getNumSoilParticles(), Is.GreaterThan( 0 ), "After some time, the shovel should have dug up some particles" );
+    }
   }
 }

@@ -61,6 +61,7 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel> FrictionModelCache { get; } = new Dictionary<openplx.Physics.Interactions.Dissipation.DefaultFriction, FrictionModel>();
     public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
     public Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties> TirePropertyCache { get; } = new Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties>();
+    public Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings> ShovelSettingsCache { get; } = new Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
     public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };
@@ -72,6 +73,8 @@ namespace AGXUnity.IO.OpenPLX
     public List<TrackProperties> MappedTrackProperties { get; } = new List<TrackProperties>();
     public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
     public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
+
+    public bool TerrainParticleRendererAdded { get; set; } = false;
 
     public GameObject CreateGameObject( string name = null )
     {

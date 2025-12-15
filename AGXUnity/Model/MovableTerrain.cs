@@ -186,6 +186,11 @@ namespace AGXUnity.Model
 
       InitializeNative();
 
+      if ( TerrainRenderer.sharedMaterial == null ) {
+        TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
+        RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
+      }
+
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
       // Native terrain may change the number of PPGS iterations to default (25).

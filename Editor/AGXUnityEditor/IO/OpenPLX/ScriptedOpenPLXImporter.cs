@@ -184,6 +184,10 @@ namespace AGXUnityEditor.IO.OpenPLX
         props.hideFlags = HideFlags.HideInHierarchy; // There is currently a one-to-one mapping of properties to tires so no need to expose these
         ctx.AddObjectToAsset( props.name, props );
       }
+      foreach ( var settings in data.ShovelSettingsCache.Values ) {
+        settings.hideFlags = HideFlags.HideInHierarchy; // There is currently a one-to-one mapping of settings to shovels so no need to expose these
+        ctx.AddObjectToAsset( settings.name, settings );
+      }
     }
 
     public void ReportErrors( openplx.Error error )

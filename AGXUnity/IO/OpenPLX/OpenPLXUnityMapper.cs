@@ -731,11 +731,19 @@ namespace AGXUnity.IO.OpenPLX
     {
       var body = Data.BodyCache[shovel.body()];
       var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
+
+      Data.RegisterOpenPLXObject( shovel.getName(), mapped.gameObject );
+
       mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
       mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
-      // TODO: Map teeth direction
-      //mapped.CuttingDirection = Line.Create( body.gameObject, Vector3.zero, shovel.cutting_direction().ToHandedVector3() );
-      //mapped.CuttingDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.cutting_direction().ToHandedVector3() );
+      mapped.ToothDirection = Line.Create( body.gameObject, Vector3.zero, shovel.tooth_direction().ToHandedVector3() );
+      mapped.ToothDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.tooth_direction().ToHandedVector3() );
+
+      var settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
+      settings.NumberOfTeeth = (int)shovel.number_teeth();
+      settings.ToothLength = (float)shovel.tooth_length();
+      settings.ToothRadius = new RangeReal( (float)shovel.tooth_min_radius(), (float)shovel.tooth_max_radius() );
+      // TODO: Map AGX-specific shovel settings
     }
 
     void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
@@ -828,6 +836,12 @@ namespace AGXUnity.IO.OpenPLX
         terrainComp.DefaultTerrainMaterial = mappedTerrMat;
         terrainComp.Material = shapeMaterial;
         terrainComp.ParticleMaterial = shapeMaterial;
+      }
+
+      if ( !Data.TerrainParticleRendererAdded ) {
+        Data.TerrainParticleRendererAdded = true;
+        var renderer = terrainGO.AddComponent<DeformableTerrainParticleRenderer>();
+        renderer.GranuleInstance = Resources.Load<GameObject>( "Debug/SphereRenderer" );
       }
 
       return terrainGO;
