@@ -819,6 +819,7 @@ namespace AGXUnity
                                  " (not present in native constraint). ConstraintType: " + Type );
 
         bool added = GetSimulation().add( Native );
+        bool preEnableValid = Native.getValid();
         Native.setEnable( IsEnabled );
 
         // Not possible to handle collisions if connected frame parent is null/world.
@@ -846,7 +847,7 @@ namespace AGXUnity
 
         Native.setName( name );
 
-        bool valid = added && (Native.getValid() || Type == ConstraintType.GenericConstraint1DOF);
+        bool valid = added && (preEnableValid || Type == ConstraintType.GenericConstraint1DOF);
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += OnPreStepForwardUpdate;
 
         // It's not possible to check which properties an animator
