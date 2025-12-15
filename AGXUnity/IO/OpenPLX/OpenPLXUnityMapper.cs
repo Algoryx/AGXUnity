@@ -977,38 +977,4 @@ namespace AGXUnity.IO.OpenPLX
         VehicleMapper.MapElasticWheel( wheel );
     }
   }
-
-  // TODO: Remove these once they're added to the C# API
-  static partial class ObjectExtensions
-  {
-    public static List<System.Tuple<string, T>> getNonReferenceEntries<T>( this Object source )
-    {
-      List<System.Tuple<string,T>> output = new List<System.Tuple<string,T>>();
-      std.StringAnyPairVector all_entries = new std.StringAnyPairVector();
-      source.extractEntriesTo( all_entries );
-      foreach ( var entry in all_entries ) {
-        if ( !entry.second.isObject() || entry.second.isReference() )
-          continue;
-        var obj = entry.second.asObject();
-        if (
-          obj != null &&
-          obj.getOwner() != null &&
-          obj.getOwner() == source &&
-          obj is T value )
-          output.Add( System.Tuple.Create( entry.first, value ) );
-      }
-      return output;
-    }
-
-    public static List<T> getNonReferenceValues<T>( this Object source )
-    {
-      List<T> output = new List<T>();
-
-      var entries = getNonReferenceEntries<T>(source);
-      foreach ( var (_, value) in entries )
-        output.Add( value );
-
-      return output;
-    }
-  }
 }

@@ -131,20 +131,7 @@ namespace AGXUnity.IO.OpenPLX
 
       var context = new OpenPlxContext( bundle_paths );
 
-      MathSWIG.Math_register_factories_cs( context );
-      PhysicsSWIG.Physics_register_factories_cs( context );
-      Physics1DSWIG.Physics1D_register_factories_cs( context );
-      Physics3DSWIG.Physics3D_register_factories_cs( context );
-      DriveTrainSWIG.DriveTrain_register_factories_cs( context );
-      RoboticsSWIG.Robotics_register_factories_cs( context );
-      SimulationSWIG.Simulation_register_factories_cs( context );
-      SensorsSWIG.Sensors_register_factories_cs( context );
-      VehiclesSWIG.Vehicles_register_factories_cs( context );
-      TerrainSWIG.Terrain_register_factories_cs( context );
-      VisualsSWIG.Visuals_register_factories_cs( context );
-      UrdfSWIG.Urdf_register_factories_cs( context );
-
-
+      agxOpenPLXSWIG.register_bundles( context );
       agxOpenPLXSWIG.register_plugins( context, cache );
 
       return context;

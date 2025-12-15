@@ -144,6 +144,7 @@ namespace AGXUnityEditor.IO.OpenPLX
           skipContainer.Add( statistics );
         }
       }
+
       var deps = ScriptedOpenPLXImporter.Dependencies;
       if ( deps.Length > 0 ) {
         var depFoldout = new Foldout(){ text = $"<b>Dependencies ({deps.Length})</b>", value = false };
