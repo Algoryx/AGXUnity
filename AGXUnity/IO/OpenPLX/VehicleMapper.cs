@@ -415,18 +415,11 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       // OpenPLX assumes axes N = Wheel and U = Steering, in agx N = Steering, V = Steering is used. Apply a local rotation to correct for this from the precalculated frame.
-      Quaternion frameCorrection = Quaternion.Euler(0,-90, 90);
+      Quaternion frameCorrection = Quaternion.Euler(-90, 0, 0);
       var chassisFrame    = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.chassis_connector() ], Vector3.zero, frameCorrection );
       var wheelFrame      = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.attachment_connector() ], Vector3.zero, frameCorrection );
 
-      //// TODO: OpenPLX 19.0.0 does not properly set the normal axis of the frame. Instead use the up and main axes to derive the full frame as a local override until fixed.
-      var chassisCon = linearSpring.chassis_connector();
-      var patchRotation = chassisFrame.Parent.transform.parent.rotation * Quaternion.LookRotation( chassisCon.up_vector().ToHandedVector3(), chassisCon.main_axis().ToHandedVector3() );
-      chassisFrame.Rotation = patchRotation;
-      wheelFrame.Rotation = patchRotation;
-
       var wheelJoint = WheelJoint.Create(wheelFrame, chassisFrame);
-
       if ( !linearSpring.getOwner().hasTrait( "Vehicles.Suspensions.Traits.Steering" ) )
         wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable = true;
 
