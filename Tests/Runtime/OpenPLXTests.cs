@@ -544,5 +544,28 @@ namespace AGXUnityTesting.Runtime
       Assert.IsTrue( leftSuspension.TryGetComponent<WheelJoint>( out var leftWheelJoint ), "Suspensions should be mapped to WheelJoint" );
       Assert.That( leftWheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable, Is.False, "Suspensions with steering trait should not be constrained around the steering axis" );
     }
+
+    [UnityTest]
+    public IEnumerator TestSteering()
+    {
+      var root = LoadOpenPLX( "elastic_wheel.openplx" );
+      var steering = root.FindMappedObject( "WheelScene.steering" );
+      Assert.IsTrue( steering.TryGetComponent<Steering>( out var steeringComp ), "Steering should map to steering constraint" );
+
+      Assert.That( steeringComp.Mechanism, Is.EqualTo( Steering.SteeringMechanism.Ackermann ), "Specific steering mechanisms should map to proper enum flag" );
+
+      var signals = root.GetComponent<OpenPLXSignals>();
+      var steeringInput = signals.FindInputTarget( "WheelScene.steering.steering_angle_input" );
+      var steeringOutput = signals.FindOutputSource( "WheelScene.steering.steering_angle_output" );
+
+      yield return TestUtils.Step();
+
+      Assert.That( steeringOutput.GetValue<float>(), Is.EqualTo( 0.0f ).Within( 1e-6f ), "Steering angle should default to 0.0f" );
+      steeringInput.SendSignal( 0.5f );
+
+      yield return TestUtils.SimulateSeconds( 1.0f );
+
+      Assert.That( steeringOutput.GetValue<float>(), Is.EqualTo( 0.5 ).Within( 1e-6f ), "Sending steering angle input should cause the output to match" );
+    }
   }
 }
