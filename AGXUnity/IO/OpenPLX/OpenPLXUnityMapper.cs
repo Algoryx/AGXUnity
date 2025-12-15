@@ -348,14 +348,29 @@ namespace AGXUnity.IO.OpenPLX
         return Data.DefaultVisualMaterial;
     }
 
-    GameObject MapConvex( Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
-    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex ) => MapConvex( convex.vertices() );
-    GameObject MapConvex( std.MathVec3Vector vertices )
+    GameObject MapConvex( Geometries.ConvexMesh convex )
     {
-      GameObject go = Data.CreateGameObject();
-      var mf = go.AddComponent<MeshFilter>();
-      var mr = go.AddComponent<MeshRenderer>();
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var meshComp = go.AddComponent<AGXUnity.Collide.Mesh>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() + "_mesh" );
 
+      meshComp.AddSourceObject( mesh );
+      return go;
+    }
+
+    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex )
+    {
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var mr = go.AddComponent<MeshRenderer>();
+      var mf = go.AddComponent<MeshFilter>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() );
+
+      mf.mesh = mesh;
+      return mf.gameObject;
+    }
+
+    UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
+    {
       var mesh = new UnityEngine.Mesh();
       var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
 
@@ -363,8 +378,10 @@ namespace AGXUnity.IO.OpenPLX
       mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
       mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
 
-      mf.mesh = mesh;
-      return go;
+      mesh.name = name;
+      Data.MappedMeshes.Add( mesh );
+
+      return mesh;
     }
 
     GameObject MapExternalTriMesh( openplx.Visuals.Geometries.ExternalTriMeshGeometry objGeom )
@@ -585,6 +602,7 @@ namespace AGXUnity.IO.OpenPLX
             ucap.Height = (float)bcap.height();
           } ),
           Geometries.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
+          Geometries.ConvexMesh cm => MapConvex( cm ),
           _ => null
         };
       }

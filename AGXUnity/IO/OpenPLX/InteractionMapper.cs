@@ -383,7 +383,11 @@ namespace AGXUnity.IO.OpenPLX
         return MapMate( mate, system );
 
       // TODO: Robotics joints can have null actuators maybe?
-      if ( interaction.GetType() == typeof( openplx.Physics.Interactions.Interaction1DOF ) && system is openplx.Robotics.Joints.Joint )
+      if (
+        interaction.GetType() == typeof( openplx.Physics.Interactions.Interaction1DOF ) &&
+        ( system is openplx.Robotics.Joints.Joint ||
+          system is openplx.Robotics.Robots.Robot
+        ) )
         return null;
 
       var constraint = CreateConstraintForInteraction(interaction);
