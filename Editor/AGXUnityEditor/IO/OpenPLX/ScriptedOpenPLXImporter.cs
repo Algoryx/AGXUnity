@@ -67,6 +67,7 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public override void OnImportAsset( AssetImportContext ctx )
     {
+      m_nonImportable = true;
       m_errors = new List<Error>();
       m_dependencies = new List<string>();
       ImportTime = 0;
@@ -153,7 +154,7 @@ namespace AGXUnityEditor.IO.OpenPLX
 
     public void ReportErrors( openplx.Error error )
     {
-      if ( error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound )
+      if ( error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound && error.getErrorCode() != (uint)AgxUnityOpenPLXErrors.TraitNotImportable )
         m_nonImportable = false;
       m_errors.Add( new Error
       {

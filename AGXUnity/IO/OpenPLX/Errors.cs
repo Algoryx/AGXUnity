@@ -19,6 +19,7 @@ namespace AGXUnity.IO.OpenPLX
     InvalidWheelChassis = 12,
     MissingWheelBody = 13,
     UnmappedWheel = 14,
+    TraitNotImportable = 15,
   }
 
   public class BaseError : openplx.Error
@@ -244,4 +245,15 @@ namespace AGXUnity.IO.OpenPLX
 
     protected override string createErrorMessage() => $"Failed to find mapped wheel joint";
   }
+
+  public class TraitNotImportableError : BaseError
+  {
+    public TraitNotImportableError( openplx.Core.Object sourceModel )
+      : base( sourceModel, AgxUnityOpenPLXErrors.TraitNotImportable )
+    {
+    }
+
+    protected override string createErrorMessage() => $"Cannot directly import a trait into AGXUnity";
+  }
+
 }
