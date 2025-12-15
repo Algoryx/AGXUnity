@@ -3,7 +3,6 @@ Chassis is Physics3D.Bodies.RigidBody:
     size: Math.Vec3.from_xyz(0.1,0.1,0.1)
 
   is_dynamic: false
-    
 
 Wheel is Vehicles.Wheels.ElasticWheel:
   rim becomes Vehicles.Wheels.Rim:
@@ -46,5 +45,11 @@ WheelScene is Physics3D.System:
   suspension_right is Vehicles.Suspensions.LinearSpringDamper with Vehicles.Suspensions.Traits.Steering:
     chassis_connector: right_mc
     attachment_connector: right_wheel.connector
+
+  steering is Vehicles.Steering.Interactions.Ackermann:
+    left_suspension: suspension_left
+    right_suspension: suspension_right
+    steering_angle_output:
+        enabled: true
 
 
