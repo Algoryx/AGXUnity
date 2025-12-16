@@ -180,7 +180,7 @@ namespace AGXUnity.IO.OpenPLX
           mat = new Material( Shader.Find( "Standard" ) );
           mat.RestoreLocalDataFrom( rm );
           if ( rm.getName() != "" )
-            mat.name = rm.getName();
+            mat.name = $"{rm.getName()}#{rm.getHash()}";
           else
             mat.name = rm.getHash().ToString();
           if ( Options.HideVisualMaterialsInHierarchy )

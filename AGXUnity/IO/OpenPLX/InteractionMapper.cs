@@ -45,7 +45,9 @@ namespace AGXUnity.IO.OpenPLX
       if ( Data.MateConnectorCache.ContainsKey( mc ) )
         return;
 
-      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is RedirectedMateConnector ? "_redirected" : "") );
+      // Since redirected MCs can be placed in other places than the unique location derived by their
+      // names, we need to add some unique identifier to avoid name collisions in the hierarchy.
+      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is RedirectedMateConnector ? $"_rd_#{mc.To32BitFnv1aHash()}" : "") );
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc is RedirectedMateConnector redirected )
@@ -327,20 +329,6 @@ namespace AGXUnity.IO.OpenPLX
       MapControllerDissipation( motor.zero_speed_spring_dissipation(), motor.zero_speed_spring_flexibility(), agxTarSpeed );
       MapControllerFlexibility( motor.zero_speed_spring_flexibility(), agxTarSpeed );
     }
-
-    //GameObject mapRotationalVelocityMotor(openplx.Physics1D.Interactions.RotationalVelocityMotor motor,  openplx.Physics3D.System system )
-    //{
-    //  var motor_hinge = mapInteraction( motor, system, ( f1, f2 ) => createConstraint( f1, f2, ConstraintType.Hinge ) );
-    //  motor_hinge.SetForceRange( new RangeReal( 0, 0 ) );
-
-    //  var motor_tarSpeed = motor_hinge.GetController<TargetSpeedController>();
-    //  enableMotorInteraction( motor_tarSpeed, motor );
-
-    //  GameObject cGO = motor_hinge.gameObject;
-    //  OpenPLXObject.RegisterGameObject( motor.getName(), cGO );
-
-    //  return cGO;
-    //}
 
     Constraint CreateConstraintForInteraction( openplx.Physics.Interactions.Interaction interaction )
     {

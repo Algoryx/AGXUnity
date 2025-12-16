@@ -65,6 +65,8 @@ namespace AGXUnity.IO.OpenPLX
            ( quat.isDefault( "x" ) && quat.isDefault( "y" ) && quat.isDefault( "z" ) && quat.isDefault( "w" ) )
         || quat.ToQuat().zeroRotation();
     }
+
+    public static uint To32BitFnv1aHash( this openplx.Core.Object obj ) => obj.getName().To32BitFnv1aHash();
   }
   public static class Utils
   {
