@@ -188,7 +188,7 @@ namespace AGXUnity.Model
 
       if ( TerrainRenderer.sharedMaterial == null ) {
         TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
-        RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, AssetDatabase.GetBuiltinExtraResource<Texture2D>( "Default-Checker-Gray.png" ) );
+        RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, Resources.Load<Texture2D>( "Default-Checker-Gray.png" ) );
       }
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
