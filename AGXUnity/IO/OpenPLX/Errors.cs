@@ -20,6 +20,8 @@ namespace AGXUnity.IO.OpenPLX
     MissingWheelBody = 13,
     UnmappedWheel = 14,
     TraitNotImportable = 15,
+    NonPrincipalAxis = 16,
+    MultipleDistanceDistortions = 17,
   }
 
   public class BaseError : openplx.Error
@@ -256,4 +258,25 @@ namespace AGXUnity.IO.OpenPLX
     protected override string createErrorMessage() => $"Cannot directly import a trait into AGXUnity";
   }
 
+  public class NonPrincipalAxisError : BaseError
+  {
+    private openplx.Math.Vec3 m_axis;
+
+    public NonPrincipalAxisError( openplx.Math.Vec3 axis )
+      : base( axis, AgxUnityOpenPLXErrors.NonPrincipalAxis )
+    {
+      m_axis = axis;
+    }
+
+    protected override string createErrorMessage() => $"AGXUnity only supports principal axes ({m_axis.x()},{m_axis.y()},{m_axis.z()})";
+  }
+
+  public class MultipleDistanceDistortionsError : BaseError
+  {
+    public MultipleDistanceDistortionsError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.MultipleDistanceDistortions )
+    { }
+
+    protected override string createErrorMessage() => $"AGXUnity only supports a single distance distortion";
+  }
 }

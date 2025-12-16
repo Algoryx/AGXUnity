@@ -2,10 +2,12 @@ using AGXUnity;
 using AGXUnity.IO;
 using AGXUnity.IO.OpenPLX;
 using AGXUnity.Model;
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static AGXUnity.ContactMaterial;
@@ -584,6 +586,28 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 1 );
 
       Assert.That( terrain.GetSoilSimulationInterface().getNumSoilParticles(), Is.GreaterThan( 0 ), "After some time, the shovel should have dug up some particles" );
+    }
+
+    [Test]
+    public void TestValidLidarOK()
+    {
+      LoadOpenPLX( "simple_lidar.openplx", "ValidLidar" );
+
+      var lidar = FindComponentByName<LidarSensor>( "simple_lidar/ValidLidar/sensor" );
+
+      Assert.That( lidar.DistanceGaussianNoise.Enable );
+      Assert.That( lidar.DistanceGaussianNoise.Mean, Is.EqualTo( 0f ) );
+      Assert.That( lidar.DistanceGaussianNoise.StandardDeviationBase, Is.EqualTo( 0.01f ) );
+      Assert.That( lidar.DistanceGaussianNoise.StandardDeviationSlope, Is.EqualTo( 0.02f ) );
+    }
+
+    [Test]
+    public void TestDoubleDistanceDistortionLidarError()
+    {
+      var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(
+        TestDataFolder + "/simple_lidar.openplx", default, null, "DoubleDistanceDistortionLidar" );
+
+      LogAssert.Expect( LogType.Error, new Regex( ".*distance distortion.*" ) );
     }
   }
 }

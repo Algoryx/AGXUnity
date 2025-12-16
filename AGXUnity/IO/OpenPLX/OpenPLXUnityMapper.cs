@@ -946,6 +946,9 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
+      foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
+        Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
+
       foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
         Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 

@@ -56,7 +56,7 @@ namespace AGXUnityEditor.IO.OpenPLX
         return m_data;
 
       else
-        m_data = AssetDatabase.LoadAllAssetsAtPath( assetPath ).OfType<ScriptedImportData>().First();
+        m_data = AssetDatabase.LoadAllAssetsAtPath( assetPath ).OfType<ScriptedImportData>().FirstOrDefault();
 
       return m_data;
     }
