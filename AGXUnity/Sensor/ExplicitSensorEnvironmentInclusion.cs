@@ -10,7 +10,7 @@ namespace AGXUnity.Sensor
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Explicit Sensor Inclusion" )]
-  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment-explicit-control" )]
+  [HelpURL( "file:///C:/Users/Filip/Dev/AGXUnity/doc/sphinx/build/html/editor_interface.html#fine-grained-control-of-which-objects-are-added-to-the-sensor-environment" )]
   public class ExplicitSensorEnvironmentInclusion : ScriptComponent
   {
     [Tooltip( "When enabled, the affected gameobjects will be force-included in the sensor environment. When disabled, they will be force-excluded" )]
