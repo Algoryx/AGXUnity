@@ -873,5 +873,117 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Less( postMaxElevation, preMaxElevation - 0.8f );
     }
+
+    [UnityTest]
+    public IEnumerator TestExcludeSpecificMesh()
+    {
+      var lidarComp = CreateDefaultTestLidar();
+      lidarComp.LidarRange = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = mesh.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d > 0.15f ), Is.True, "After adding an explicit exclusion, the mesh should no longer be visible" );
+
+      include.Include = true;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "Disabling the exclude makes the mesh visible again" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestExcludeRecursive()
+    {
+      var lidarComp = CreateDefaultTestLidar();
+      lidarComp.LidarRange = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      var parent = new GameObject("Parent");
+      mesh.transform.parent = parent.transform;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = parent.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+      include.PropagateToChildrenRecusively = false;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "After adding an explicit exclusion to parent, the mesh should still be visible" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestExcludeOverride()
+    {
+      var lidarComp = CreateDefaultTestLidar();
+      lidarComp.LidarRange = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      var parent = new GameObject("Parent");
+      mesh.transform.parent = parent.transform;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = parent.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d > 0.15f ), Is.True, "After adding an explicit exclusion to parent, the mesh should no longer be visible" );
+
+      var localInclude = mesh.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      localInclude.Include = true;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "After adding an explicit include to local object, the mesh should be visible again" );
+    }
   }
 }

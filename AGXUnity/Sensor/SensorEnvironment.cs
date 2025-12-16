@@ -53,6 +53,8 @@ namespace AGXUnity.Sensor
     private readonly Dictionary<Wire,agxWire.Wire> m_wires = new();
     private readonly Dictionary<Cable,agxCable.Cable> m_cables = new();
     private readonly Dictionary<Track,agxVehicle.Track> m_tracks = new();
+    private readonly Dictionary<GameObject, ExplicitSensorEnvironmentInclusion> m_explicitInclusions = new();
+    private readonly Dictionary<ExplicitSensorEnvironmentInclusion,GameObject> m_transformMap = new();
 
     private readonly Dictionary<ScriptComponent, bool> m_agxComponents = new();
     private readonly List<GameObject> m_newlyAdded = new();
@@ -65,7 +67,8 @@ namespace AGXUnity.Sensor
       typeof(HeightField),
       typeof(Cable),
       typeof(Wire),
-      typeof(Track)
+      typeof(Track),
+      typeof(ExplicitSensorEnvironmentInclusion)
     };
 
     [SerializeField]
@@ -253,10 +256,36 @@ namespace AGXUnity.Sensor
       return shapeInstance;
     }
 
+    private bool IsVisible( GameObject gameObject, bool componentVisible )
+    {
+      if ( !m_explicitInclusions.ContainsKey( gameObject ) )
+        m_explicitInclusions.Add( gameObject, ExplicitSensorEnvironmentInclusion.FindClosest( gameObject ) );
+
+      var inclusion = m_explicitInclusions[gameObject];
+
+      return inclusion != null ? inclusion.Include : componentVisible;
+    }
+
     private bool AddAGXModel( ScriptComponent scriptComponent )
     {
       if ( scriptComponent == null )
         return false;
+
+      if ( scriptComponent is ExplicitSensorEnvironmentInclusion incComp ) {
+        Queue<Transform> iterqueue = new Queue<Transform>();
+        iterqueue.Enqueue( incComp.transform );
+        while ( iterqueue.TryDequeue( out var res ) ) {
+          if ( res.TryGetComponent<ExplicitSensorEnvironmentInclusion>( out var subInc ) && subInc != incComp )
+            continue;
+
+          m_explicitInclusions[ res.gameObject ] = incComp;
+          if ( incComp.PropagateToChildrenRecusively )
+            foreach ( Transform child in res )
+              iterqueue.Enqueue( child );
+        }
+
+        m_transformMap[ incComp ] = incComp.gameObject;
+      }
 
       var layer = scriptComponent.gameObject.layer;
       if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 )
@@ -359,6 +388,27 @@ namespace AGXUnity.Sensor
         var c = hf.Native ?? m_heightfields.GetValueOrDefault( hf );
         Native.remove( c );
         m_heightfields.Remove( hf );
+      }
+      else if ( scriptComponent is ExplicitSensorEnvironmentInclusion inc ) {
+        if ( !m_transformMap.TryGetValue( inc, out var go ) )
+          go = inc.gameObject;
+        if ( go == null )
+          return false;
+
+        var newInc = ExplicitSensorEnvironmentInclusion.FindClosest(go.transform.parent.gameObject);
+        while ( newInc != null && !newInc.PropagateToChildrenRecusively )
+          newInc = ExplicitSensorEnvironmentInclusion.FindClosest( newInc.transform.parent.gameObject );
+
+        Queue<Transform> iterqueue = new Queue<Transform>();
+        iterqueue.Enqueue( inc.transform );
+        while ( iterqueue.TryDequeue( out var res ) ) {
+          if ( res.TryGetComponent<ExplicitSensorEnvironmentInclusion>( out var subInc ) && subInc != inc )
+            continue;
+
+          m_explicitInclusions[ res.gameObject ] = newInc;
+          foreach ( Transform child in res )
+            iterqueue.Enqueue( child );
+        }
       }
       else {
         Debug.LogWarning( "AGX type not handled by this method" );
@@ -468,7 +518,9 @@ namespace AGXUnity.Sensor
         }
 
         // Update object visibility
-        bool currentlyVisible = component.isActiveAndEnabled || DisabledObjectsVisibleToSensors;
+        bool currentlyVisible = IsVisible(component.gameObject, component.isActiveAndEnabled);
+        if ( component is ExplicitSensorEnvironmentInclusion )
+          currentlyVisible = component.isActiveAndEnabled;
         bool previouslyVisible = entry.Value;
         if ( currentlyVisible != previouslyVisible ) {
           if ( currentlyVisible )
@@ -503,16 +555,13 @@ namespace AGXUnity.Sensor
           continue;
         }
 
-        // Handle invisible objects
-        if ( !DisabledObjectsVisibleToSensors ) {
-          bool visible = meshFilter.gameObject.activeInHierarchy;
-          bool containsKey = m_rtShapeInstances.ContainsKey(meshFilter);
+        bool visible = IsVisible(meshFilter.gameObject, meshFilter.gameObject.activeInHierarchy || DisabledObjectsVisibleToSensors);
+        bool containsKey = m_rtShapeInstances.ContainsKey(meshFilter);
 
-          if ( visible && !containsKey )
-            RegisterMeshfilter( meshFilter );
-          else if ( !visible && containsKey )
-            RemoveInstance( meshFilter );
-        }
+        if ( visible && !containsKey )
+          RegisterMeshfilter( meshFilter );
+        else if ( !visible && containsKey )
+          RemoveInstance( meshFilter );
       }
 
       foreach ( var shapeInstance in m_rtShapeInstances ) {
@@ -566,6 +615,7 @@ namespace AGXUnity.Sensor
 
       m_rtShapes.Clear();
       m_meshFilters.Clear();
+      m_explicitInclusions.Clear();
 
       Native?.Dispose();
       Native = null;
