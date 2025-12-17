@@ -101,7 +101,8 @@ namespace AGXUnity.IO.OpenPLX
         var nameShort = name.Split('.').Last();
         go.name = nameShort;
       }
-      bo.SourceDeclarations.Add( name );
+      if ( !bo.SourceDeclarations.Contains( name ) )
+        bo.SourceDeclarations.Add( name );
     }
   }
 }
