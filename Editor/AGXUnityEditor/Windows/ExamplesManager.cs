@@ -873,7 +873,7 @@ namespace AGXUnityEditor.Windows
       return s_dependencyData.ContainsKey( packageName ) ? s_dependencyData[ packageName ] : DependencyState.Unknown;
     }
 
-    private static string s_metadataURL = @"https://us.download.algoryx.se/AGXUnity/examples/current/ExampleMetadata.json";
+    private static string s_metadataURL = @$"https://us.download.algoryx.se/AGXUnity/examples/test/{PackageManifest.Instance.GetAGXUnityVersionInfo().VersionStringShort}/ExampleMetadata.json";
     private static ListRequest s_listPackagesRequest = null;
     private static List<AddRequest> s_addPackageRequests = new List<AddRequest>();
     private static List<ExampleData> s_exampleData = new List<ExampleData>();
