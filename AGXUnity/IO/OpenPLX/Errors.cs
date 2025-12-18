@@ -22,6 +22,7 @@ namespace AGXUnity.IO.OpenPLX
     TraitNotImportable = 15,
     NonPrincipalAxis = 16,
     MultipleDistanceDistortions = 17,
+    NonSymmetricSweepPattern = 18,
   }
 
   public class BaseError : openplx.Error
@@ -278,5 +279,14 @@ namespace AGXUnity.IO.OpenPLX
     { }
 
     protected override string createErrorMessage() => $"AGXUnity only supports a single distance distortion";
+  }
+
+  public class NonSymmetricSweepPatternError : BaseError
+  {
+    public NonSymmetricSweepPatternError( openplx.Math.Vec2 FoV )
+      : base( FoV, AgxUnityOpenPLXErrors.NonSymmetricSweepPattern )
+    { }
+
+    protected override string createErrorMessage() => $"AGXUnity only supports symmetrical sweep patterns";
   }
 }
