@@ -415,7 +415,7 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       // OpenPLX assumes axes N = Wheel and U = Steering, in agx N = Steering, V = Steering is used. Apply a local rotation to correct for this from the precalculated frame.
-      Quaternion frameCorrection = Quaternion.Euler(-90, 0, 180);
+      Quaternion frameCorrection = Quaternion.Euler( 0, -90, 90);
       var chassisFrame    = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.chassis_connector() ], Vector3.zero, frameCorrection );
       var wheelFrame      = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.attachment_connector() ], Vector3.zero, frameCorrection );
 

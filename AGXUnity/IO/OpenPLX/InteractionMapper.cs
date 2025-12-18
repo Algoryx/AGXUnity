@@ -80,7 +80,8 @@ namespace AGXUnity.IO.OpenPLX
         Data.ErrorReporter.reportError( new InvalidMateConnectorAxis( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, mc ) );
       }
 
-      mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), normal_n.ToHandedVector3() );
+      var up = main_axis_n.cross(normal_n).normal();
+      mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), up.ToHandedVector3() );
 
       Data.MateConnectorCache[ mc ] = mcObject;
     }
