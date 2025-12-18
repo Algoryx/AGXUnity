@@ -1,0 +1,997 @@
+using agxopenplx;
+using AGXUnity.Collide;
+using AGXUnity.Model;
+using AGXUnity.Rendering;
+using AGXUnity.Utils;
+using openplx.Simulation;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+using Bodies = openplx.Physics3D.Bodies;
+using Geometries = openplx.Physics3D.Geometries;
+using Object = openplx.Core.Object;
+
+namespace AGXUnity.IO.OpenPLX
+{
+  public struct MapperOptions
+  {
+    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false, bool ignoreDisabledMeshes = false, bool rotateUp = true )
+    {
+      HideMeshesInHierarchy = hideMeshes;
+      HideVisualMaterialsInHierarchy = hideVisuals;
+      IgnoreDisabledMeshes = ignoreDisabledMeshes;
+      RotateUp = rotateUp;
+    }
+
+    public bool HideMeshesInHierarchy;
+    public bool HideVisualMaterialsInHierarchy;
+    public bool IgnoreDisabledMeshes;
+    public bool RotateUp;
+  }
+
+  public class OpenPLXUnityMapper
+  {
+    public MapperData Data { get; } = new MapperData();
+
+    public GameObject RootNode => Data.RootNode;
+
+    private InteractionMapper InteractionMapper { get; set; }
+    private VehicleMapper VehicleMapper { get; set; }
+    private SensorMapper SensorMapper { get; set; }
+
+    MapperOptions Options;
+
+    public OpenPLXUnityMapper( MapperOptions options = new MapperOptions() )
+    {
+      Data.ErrorReporter = new openplx.ErrorReporter();
+      Options = options;
+
+      InteractionMapper = new InteractionMapper( Data );
+      VehicleMapper = new VehicleMapper( Data );
+      SensorMapper = new SensorMapper( Data );
+    }
+
+    public UnityEngine.Object MapObject( Object obj, string path )
+    {
+      try {
+        if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
+          return MapSimulatable( obj, path );
+        else if ( obj is openplx.Visuals.Materials.Material mat )
+          return MapVisualMaterial( mat );
+        else
+          Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
+        Debug.LogException( e );
+
+        foreach ( var go in Data.CreatedGameObjects ) {
+          if ( Application.isEditor )
+            GameObject.DestroyImmediate( go );
+          else
+            GameObject.Destroy( go );
+        }
+
+        return null;
+      }
+
+      return RootNode;
+    }
+
+    private GameObject MapSimulatable( Object obj, string path )
+    {
+      Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
+      var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
+      rootComp.Native = obj;
+      if ( Options.RotateUp )
+        Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
+
+      if ( obj is openplx.Physics3D.System system )
+        Utils.AddChild( Data.RootNode, MapSystem( system ), Data.ErrorReporter, system );
+      else if ( obj is Bodies.RigidBody body )
+        Utils.AddChild( Data.RootNode, MapBody( body ), Data.ErrorReporter, body );
+
+      var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
+      MapSignals( obj, signals, obj.getName() );
+
+      return Data.RootNode;
+    }
+
+    private void FindOutputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
+      where T : openplx.Core.Object
+    {
+      foreach ( var (objName, obj) in system.getEntries<T>() ) {
+        foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
+          signals.RegisterSignal( prefix + "." + objName + "." + name, output );
+      }
+    }
+
+    private void FindInputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
+      where T : openplx.Core.Object
+    {
+      foreach ( var (objName, obj) in system.getEntries<T>() ) {
+        foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
+          signals.RegisterSignal( prefix + "." + objName + "." + name, input );
+      }
+    }
+
+    private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
+    {
+      foreach ( var (name, sigInterface) in obj.getEntries<openplx.Physics.Signals.SignalInterface>() ) {
+        var sigInt = new SignalInterface();
+        sigInt.Name = name;
+        sigInt.Path = obj.getName();
+        sigInt.Enabled = sigInterface.enable();
+        sigInt.Inputs = new List<InputTarget>();
+        foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
+          sigInt.Inputs.Add( new InputTarget( sigInterface.getName() + "." + inpName, input ) );
+        sigInt.Outputs = new List<OutputSource>();
+        foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
+          sigInt.Outputs.Add( new OutputSource( sigInterface.getName() + "." + outName, output ) );
+
+        signals.RegisterInterface( sigInt );
+      }
+
+      foreach ( var (name, subsystem) in obj.getEntries<openplx.Physics3D.System>() )
+        MapSignals( subsystem, signals, prefix + "." + name );
+
+      foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
+        signals.RegisterSignal( prefix + "." + name, output );
+
+      foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
+        signals.RegisterSignal( prefix + "." + name, input );
+
+      if ( obj is openplx.Physics3D.System system ) {
+        FindOutputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
+        FindOutputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
+        FindOutputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
+
+        FindInputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
+        FindInputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
+        FindInputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
+      }
+    }
+
+    Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
+    {
+      GameObject go = Data.CreateGameObject();
+
+      var rd      = shape.getRenderData();
+
+      var filter = go.AddComponent<MeshFilter>();
+      var renderer = go.AddComponent<MeshRenderer>();
+
+      renderer.enabled = rd.getShouldRender();
+
+      // TODO: Should these be cached? Can they?
+      var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
+      if ( Options.HideMeshesInHierarchy )
+        mesh.hideFlags = HideFlags.HideInHierarchy;
+      mesh.name = visual.getName();
+      Data.MappedMeshes.Add( mesh );
+      filter.mesh = mesh;
+
+      var rm = rd.getRenderMaterial();
+      if ( rm != null ) {
+        if ( !Data.NativeMappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
+          mat = new Material( Shader.Find( "Standard" ) );
+          mat.RestoreLocalDataFrom( rm );
+          if ( rm.getName() != "" )
+            mat.name = $"{rm.getName()}#{rm.getHash()}";
+          else
+            mat.name = rm.getHash().ToString();
+          if ( Options.HideVisualMaterialsInHierarchy )
+            mat.hideFlags = HideFlags.HideInHierarchy;
+          Data.NativeMappedRenderMaterialCache[ rm.getHash() ] = mat;
+          Data.MappedMaterials.Add( mat );
+        }
+
+        renderer.material = mat;
+        return Tuple.Create( go, true );
+      }
+
+      return Tuple.Create( go, false );
+    }
+
+    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual )
+    {
+      GameObject go = null;
+      bool cachedMat = false;
+      var uuid_annots = visual.findAnnotations("uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
+          if ( shape != null )
+            (go, cachedMat) = MapCachedVisual( shape.first, shape.second, visual );
+        }
+      }
+
+      if ( go == null ) {
+        go = visual switch
+        {
+          openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
+          openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
+          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
+          openplx.Visuals.Geometries.ConvexMesh cm => MapConvex( cm ),
+          openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
+          _ => null
+        };
+
+        switch ( visual ) {
+          case openplx.Visuals.Geometries.Box box:
+            go.transform.localScale = box.size().ToVector3();
+            break;
+          case openplx.Visuals.Geometries.Cylinder cyl:
+            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height()/2, (float)cyl.radius() );
+            break;
+          case openplx.Visuals.Geometries.Sphere sphere:
+            go.transform.localScale = Vector3.one * (float)sphere.radius();
+            break;
+          default:
+            break;
+        }
+      }
+
+
+      if ( go == null ) {
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
+          return null;
+
+        return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
+      }
+
+      Data.RegisterOpenPLXObject( visual.getName(), go );
+      Utils.MapLocalTransform( go.transform, visual.local_transform() );
+      if ( !cachedMat ) {
+        // TODO: Find a better way to check whether to use material
+        // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
+        // TODO: This is only relevant when using editor assets which is currently disabled
+#if false
+        if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
+#endif
+        foreach ( var renderer in go.GetComponentsInChildren<MeshRenderer>() )
+          renderer.material = MapVisualMaterial( visual.material() );
+      }
+
+      return go;
+    }
+
+    GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
+      where UnityType : Shape
+      where OpenPLXType : Geometries.ContactGeometry
+    {
+      GameObject go = Factory.Create<UnityType>();
+      Data.RegisterGameObject( go );
+      setup( openPLX, go.GetComponent<UnityType>() );
+      return go;
+    }
+
+    bool VerifyAssetPath( string path, openplx.Core.Object obj )
+    {
+      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+        var errorData = BaseError.CreateErrorData( obj );
+        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        return false;
+      }
+
+      if ( !System.IO.File.Exists( path ) ) {
+        Data.ErrorReporter.reportError( new FileDoesNotExistError( obj, path ) );
+        return false;
+      }
+
+      return true;
+    }
+
+    UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices, agx.Vec2Vector uvs = null )
+    {
+      var outMesh = new UnityEngine.Mesh();
+      Vector3[] uVertices = new Vector3[vertices.Count];
+      for ( int i = 0; i < vertices.Count; i++ )
+        uVertices[ i ].Set( (float)-vertices[ i ].x, (float)vertices[ i ].y, (float)vertices[ i ].z );
+      outMesh.vertices = uVertices;
+      if ( vertices.Count > UInt16.MaxValue )
+        outMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+      int[] uIndices = new int[indices.Count];
+      for ( int i = 0; i < indices.Count; i += 3 ) {
+        uIndices[ i ]     = (int)indices[ i ];
+        uIndices[ i + 1 ] = (int)indices[ i + 2 ];
+        uIndices[ i + 2 ] = (int)indices[ i + 1 ];
+      }
+      outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
+
+      if ( uvs != null ) {
+        Vector2[] uUvs = new Vector2[uvs.Count];
+        for ( int i = 0; i < uvs.Count; i++ )
+          uUvs[ i ].Set( (float)uvs[ i ].x, (float)uvs[ i ].y );
+        outMesh.SetUVs( 0, uUvs );
+      }
+
+      outMesh.RecalculateBounds();
+      outMesh.RecalculateNormals();
+      return outMesh;
+    }
+
+    Material MapVisualMaterial( openplx.Visuals.Materials.Material mat )
+    {
+      if ( Data.RenderMaterialCache.TryGetValue( mat, out var renderMat ) )
+        return renderMat;
+
+      if ( mat is openplx.Visuals.Materials.TextureMaterial texMat ) {
+        renderMat = RenderingUtils.CreateDefaultMaterial();
+        renderMat.name = mat.getName();
+
+        var path = texMat.path();
+        if ( !VerifyAssetPath( path, texMat ) )
+          return null;
+#if UNITY_EDITOR
+        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+        var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
+#else
+        var converted = OpenPLXImporter.TransformOpenPLXPath(path);
+        byte[] data = System.IO.File.ReadAllBytes(converted);
+        var source = new Texture2D(2, 2);
+        source.LoadImage( data );
+#endif
+        renderMat.SetTexture( "_MainTex", source );
+        renderMat.SetTextureScale( "_MainTex", new Vector2( (float)texMat.scale_u(), (float)texMat.scale_v() ) );
+        Data.RenderMaterialCache[ mat ] = renderMat;
+        Data.MappedMaterials.Add( renderMat );
+        return renderMat;
+      }
+      else
+        return Data.DefaultVisualMaterial;
+    }
+
+    GameObject MapConvex( Geometries.ConvexMesh convex )
+    {
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var meshComp = go.AddComponent<AGXUnity.Collide.Mesh>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() + "_mesh" );
+
+      meshComp.AddSourceObject( mesh );
+      return go;
+    }
+
+    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex )
+    {
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var mr = go.AddComponent<MeshRenderer>();
+      var mf = go.AddComponent<MeshFilter>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() );
+
+      mf.mesh = mesh;
+      return mf.gameObject;
+    }
+
+    UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
+    {
+      var mesh = new UnityEngine.Mesh();
+      var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
+
+      var md = source.getMeshData();
+      mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
+      mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+
+      mesh.name = name;
+      Data.MappedMeshes.Add( mesh );
+
+      return mesh;
+    }
+
+    GameObject MapExternalTriMesh( openplx.Visuals.Geometries.ExternalTriMeshGeometry objGeom )
+    {
+      string path = objGeom.path();
+
+      GameObject go = Data.CreateGameObject();
+
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return go;
+
+      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
+      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
+#if false
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+
+      var prefab = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab( UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ) );
+
+      var rot = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+      var m = new Matrix4x4();
+      m.SetTRS( Vector3.zero, rot, Vector3.one );
+      prefab.transform.localPosition = m.MultiplyPoint( prefab.transform.localPosition );
+      //prefab.transform.localRotation = rot * prefab.transform.localRotation;
+      prefab.transform.SetParent( go.transform, false );
+#else
+      var mf = go.AddComponent<MeshFilter>();
+      var mr = go.AddComponent<MeshRenderer>();
+
+      var mesh = new UnityEngine.Mesh();
+
+      var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
+
+      if ( mesh == null ) {
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+      }
+      else
+        mf.mesh = mesh;
+#endif
+      go.transform.localScale = objGeom.scale().ToVector3();
+
+      return go;
+    }
+
+    GameObject MapExternalTriMesh( Geometries.ExternalTriMeshGeometry objGeom )
+    {
+      string path = objGeom.path();
+
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return null;
+
+      GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
+      Data.RegisterGameObject( go );
+      var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
+
+      UnityEngine.Mesh mesh;
+      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
+      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
+#if false
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
+      var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+      if ( source != null ) {
+        UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
+
+        var readable = s.FindProperty( "m_IsReadable" );
+        if ( !readable.boolValue ) {
+          Debug.LogWarning( $"Mesh at path '{assetPath}' was not readable. Marking the mesh as readable..." );
+          readable.boolValue = true;
+          s.ApplyModifiedProperties();
+        }
+        mesh = source;
+      }
+      else {
+        var agxMesh = agxUtil.agxUtilSWIG.createTrimesh( path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3() );
+        mesh = AGXMeshToUnityMesh( agxMesh.getMeshData().getVertices(), agxMesh.getMeshData().getIndices() );
+        mesh.name = objGeom.getName() + "_mesh";
+        Data.MappedMeshes.Add( mesh );
+      }
+
+      meshComp.transform.localScale = objGeom.scale().ToVector3();
+#else
+      var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
+#endif
+      if ( mesh == null ) {
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+      }
+      else
+        meshComp.AddSourceObject( mesh );
+
+      return go;
+    }
+
+    private T CreateShapeHelper<T>( ref GameObject go )
+      where T : Shape
+    {
+      go = Factory.Create<T>();
+      Data.RegisterGameObject( go );
+      return go.GetComponent<T>();
+    }
+
+    GameObject MapCachedShape( agxCollide.Shape shape, Geometries.ContactGeometry geom )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      GameObject go = null;
+
+      if ( type == agxCollide.Shape.Type.BOX ) {
+        var box = CreateShapeHelper<Box>(ref go);
+        box.HalfExtents = shape.asBox().getHalfExtents().ToVector3();
+      }
+      else if ( type == agxCollide.Shape.Type.CYLINDER ) {
+        var cylinder    = CreateShapeHelper<Cylinder>(ref go);
+        cylinder.Radius = Convert.ToSingle( shape.asCylinder().getRadius() );
+        cylinder.Height = Convert.ToSingle( shape.asCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
+        var hollowCylinder       = CreateShapeHelper<HollowCylinder>( ref go );
+        hollowCylinder.Thickness = Convert.ToSingle( shape.asHollowCylinder().getThickness() );
+        hollowCylinder.Radius    = Convert.ToSingle( shape.asHollowCylinder().getOuterRadius() );
+        hollowCylinder.Height    = Convert.ToSingle( shape.asHollowCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONE ) {
+        var cone          = CreateShapeHelper < Cone >(ref go);
+        cone.BottomRadius = Convert.ToSingle( shape.asCone().getBottomRadius() );
+        cone.TopRadius    = Convert.ToSingle( shape.asCone().getTopRadius() );
+        cone.Height       = Convert.ToSingle( shape.asCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CONE ) {
+        var hollowCone          = CreateShapeHelper < HollowCone >(ref go);
+        hollowCone.Thickness    = Convert.ToSingle( shape.asHollowCone().getThickness() );
+        hollowCone.BottomRadius = Convert.ToSingle( shape.asHollowCone().getBottomOuterRadius() );
+        hollowCone.TopRadius    = Convert.ToSingle( shape.asHollowCone().getTopOuterRadius() );
+        hollowCone.Height       = Convert.ToSingle( shape.asHollowCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CAPSULE ) {
+        var capsule    = CreateShapeHelper < Capsule >(ref go);
+        capsule.Radius = Convert.ToSingle( shape.asCapsule().getRadius() );
+        capsule.Height = Convert.ToSingle( shape.asCapsule().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.SPHERE ) {
+        var sphere    = CreateShapeHelper < Sphere >(ref go);
+        sphere.Radius = Convert.ToSingle( shape.asSphere().getRadius() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONVEX ||
+                type == agxCollide.Shape.Type.TRIMESH ||
+                type == agxCollide.Shape.Type.HEIGHT_FIELD ) {
+        var mesh          = CreateShapeHelper < Collide.Mesh >(ref go);
+        var collisionData = shape.asMesh().getMeshData();
+        var nativeToWorld = shape.getTransform();
+        var meshToLocal   = mesh.transform.worldToLocalMatrix;
+
+        var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
+        meshSource.name = geom.getName();
+        if ( Options.HideMeshesInHierarchy )
+          meshSource.hideFlags    = HideFlags.HideInHierarchy;
+        Data.MappedMeshes.Add( meshSource );
+        mesh.AddSourceObject( meshSource );
+
+        //var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+        //                                        collisionData.getIndices(),
+        //                                        v => v.ToHandedVector3()).Meshes;
+        //foreach ( var meshSource in meshes ) {
+        //  meshSource.name = geom.getName();
+        //  Data.CacheMappedMeshes.Add( meshSource );
+        //  mesh.AddSourceObject( meshSource );
+        //}
+      }
+      else {
+        Debug.LogWarning( "Unsupported shape type: " + type );
+        return null;
+      }
+
+      return go;
+    }
+
+    private bool ShapeIsMeshType( agxCollide.Shape shape )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      return type == agxCollide.Shape.Type.CONVEX ||
+             type == agxCollide.Shape.Type.TRIMESH ||
+             type == agxCollide.Shape.Type.HEIGHT_FIELD;
+    }
+
+    GameObject MapContactGeometry( Geometries.ContactGeometry geom, bool addVisuals )
+    {
+      GameObject go = null;
+      var uuid_annots = geom.findAnnotations("uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeCS( uuid );
+          if ( shape != null ) {
+            if ( Options.IgnoreDisabledMeshes && !geom.enable_collisions() && ShapeIsMeshType( shape ) )
+              return null;
+
+            go = MapCachedShape( shape, geom );
+          }
+        }
+      }
+
+      if ( go == null ) {
+        go = geom switch
+        {
+          Geometries.Box box => CreateShape<Box, Geometries.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
+          Geometries.Cylinder cyl => CreateShape<Cylinder, Geometries.Cylinder>( cyl, ( bcyl, ucyl ) => {
+            ucyl.Radius = (float)bcyl.radius();
+            ucyl.Height = (float)bcyl.height();
+          } ),
+          Geometries.Sphere sphere => CreateShape<Sphere, Geometries.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
+          Geometries.Capsule cap => CreateShape<Capsule, Geometries.Capsule>( cap, ( bcap, ucap ) => {
+            ucap.Radius = (float)bcap.radius();
+            ucap.Height = (float)bcap.height();
+          } ),
+          Geometries.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
+          Geometries.ConvexMesh cm => MapConvex( cm ),
+          _ => null
+        };
+      }
+
+      if ( go == null ) {
+        // TODO: Robotics Links can have null contact geometries maybe?
+        if ( geom.GetType() == typeof( Geometries.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
+          return null;
+
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( geom is Geometries.ExternalTriMeshGeometry )
+          return null;
+
+        return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
+      }
+
+      Data.RegisterOpenPLXObject( geom.getName(), go );
+
+      if ( addVisuals ) {
+        var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
+        var visual = visualGO.GetComponent<ShapeVisual>();
+        if ( visual != null )
+          visual.SetMaterial( Data.DefaultVisualMaterial );
+      }
+
+      Utils.MapLocalTransform( go.transform, geom.local_transform() );
+      var shapeComp = go.GetComponent<Shape>();
+      shapeComp.CollisionsEnabled = geom.enable_collisions();
+      shapeComp.EnableMassProperties = geom.include_in_mass_properties();
+
+      if ( !geom.material().is_default_material() )
+        if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
+          shapeComp.Material = sm;
+
+      Data.GeometryCache[ geom ] = shapeComp;
+      return go;
+    }
+
+    bool InertiaTensorIsSet( openplx.Math.Matrix3x3 inertia_tensor )
+    {
+      return inertia_tensor.e00() != 0.0
+          || inertia_tensor.e11() != 0.0
+          || inertia_tensor.e22() != 0.0;
+    }
+
+    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, openplx.Math.AffineTransform cm )
+    {
+      if ( inertia.mass() > 0.0 )
+        mp.Mass.UserValue = (float)inertia.mass();
+
+      else if ( inertia.mass() < 0.0 ) {
+        var errorData = BaseError.CreateErrorData(inertia);
+        Data.ErrorReporter.reportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
+        return false;
+      }
+      var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
+      if ( cm_transform_is_set ) {
+        mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
+        if ( !cm.rotation().IsDefault() )
+          // TODO: Proper warning passed to importer
+          Debug.LogWarning( "AGXUnity does not support rotated Center of mass frames" );
+      }
+
+      var inertia_tensor = inertia.tensor();
+      var inertia_tensor_is_set = InertiaTensorIsSet(inertia_tensor);
+      if ( inertia_tensor_is_set ) {
+        mp.InertiaDiagonal.UserValue = new Vector3( (float)inertia_tensor.e00(), (float)inertia_tensor.e11(), (float)inertia_tensor.e22() );
+        mp.InertiaOffDiagonal.UserValue = new Vector3( (float)inertia_tensor.e01(), (float)inertia_tensor.e02(), (float)inertia_tensor.e12() );
+      }
+
+      mp.Mass.UseDefault = inertia.mass() <= 0.0;
+      mp.InertiaDiagonal.UseDefault = !inertia_tensor_is_set;
+      mp.InertiaOffDiagonal.UseDefault = !inertia_tensor_is_set;
+
+      mp.CenterOfMassOffset.UseDefault = !cm_transform_is_set;
+
+      return true;
+    }
+
+    GameObject MapBody( Bodies.RigidBody body )
+    {
+      GameObject rb = Factory.Create<RigidBody>();
+      Data.FrameCache[ body ] = rb;
+      Data.RegisterOpenPLXObject( body.getName(), rb );
+      var rbComp = rb.GetComponent<RigidBody>();
+      var kinematics = body.kinematics();
+      Utils.MapLocalTransform( rb.transform, kinematics.local_transform() );
+      MapMassProperties( rbComp.MassProperties, body.inertia(), kinematics.local_cm_transform() );
+
+      rbComp.MotionControl = body.is_dynamic() ? agx.RigidBody.MotionControl.DYNAMICS : agx.RigidBody.MotionControl.KINEMATICS;
+
+      var transform = openplx.Math.AffineTransform.create();
+      if ( body.getOwner() is openplx.Physics3D.System owningSystem )
+        transform = owningSystem.reduce_body_to_world_system_transform( body );
+
+      rbComp.LinearVelocity = transform.transform_vec3_vector( kinematics.initial_local_linear_velocity() ).ToHandedVector3();
+      rbComp.AngularVelocity = transform.transform_vec3_vector( kinematics.initial_local_angular_velocity() ).ToHandedVector3();
+
+      bool hasVisuals = false;
+      foreach ( var visual in body.getValues<openplx.Visuals.Geometries.Geometry>() ) {
+        hasVisuals = true;
+        Utils.AddChild( rb, MapVisualGeometry( visual ), Data.ErrorReporter, visual );
+      }
+
+      foreach ( var geom in body.getValues<Geometries.ContactGeometry>() )
+        Utils.AddChild( rb, MapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
+
+      Data.BodyCache[ body ] = rbComp;
+      return rb;
+    }
+
+    GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
+    {
+      var lockObject = Data.CreateOpenPLXObject( kinematicLock.getName() );
+      var lockComponent = lockObject.AddComponent<KinematicLock>();
+
+      foreach ( var body in kinematicLock.bodies() ) {
+        var rb = Data.BodyCache[ body ];
+        lockComponent.Add( rb );
+      }
+
+      return lockObject;
+    }
+
+    void MapShovel( openplx.Terrain.Shovel shovel )
+    {
+      var body = Data.BodyCache[shovel.body()];
+      var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
+
+      Data.RegisterOpenPLXObject( shovel.getName(), mapped.gameObject );
+
+      mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
+      mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
+      mapped.ToothDirection = Line.Create( body.gameObject, Vector3.zero, shovel.tooth_direction().ToHandedVector3() );
+      mapped.ToothDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.tooth_direction().ToHandedVector3() );
+
+      var settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
+      settings.NumberOfTeeth = (int)shovel.number_teeth();
+      settings.ToothLength = (float)shovel.tooth_length();
+      settings.ToothRadius = new RangeReal( (float)shovel.tooth_min_radius(), (float)shovel.tooth_max_radius() );
+      // TODO: Map AGX-specific shovel settings
+    }
+
+    void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
+    {
+      if ( Data.SystemCache.ContainsKey( system ) ) {
+        var sysGO = Data.SystemCache[ system ];
+        var cg = sysGO.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void MapBodyToCollisionGroup( Bodies.Body body, CollisionGroup collision_group )
+    {
+      if ( Data.BodyCache.ContainsKey( body ) ) {
+        var rb = Data.BodyCache[body];
+        var cg = rb.gameObject.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void MapGeometryToCollisionGroup( Geometries.ContactGeometry geometry, CollisionGroup collision_group )
+    {
+      if ( Data.GeometryCache.ContainsKey( geometry ) ) {
+        var shape = Data.GeometryCache[geometry];
+        var cg = shape.gameObject.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), false );
+      }
+    }
+
+    void MapCollisionGroup( CollisionGroup collision_group )
+    {
+      foreach ( var system in collision_group.systems() )
+        if ( system is openplx.Physics3D.System system3d )
+          MapSystemToCollisionGroup( system3d, collision_group );
+
+      foreach ( var body in collision_group.bodies() )
+        if ( body is Bodies.Body body3d )
+          MapBodyToCollisionGroup( body3d, collision_group );
+
+      foreach ( var geometry in collision_group.geometries() )
+        if ( geometry is Geometries.ContactGeometry geometry3d )
+          MapGeometryToCollisionGroup( geometry3d, collision_group );
+    }
+
+    void MapDisabledPair( DisableCollisionPair pair )
+    {
+      Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
+    }
+
+    GameObject MapTerrain( openplx.Terrain.Terrain terrain )
+    {
+      GameObject terrainGO = Factory.Create<RigidBody>();
+      Data.FrameCache[ terrain ] = terrainGO;
+      Data.RegisterOpenPLXObject( terrain.getName(), terrainGO );
+      var rbComp = terrainGO.GetComponent<RigidBody>();
+      Utils.MapLocalTransform( terrainGO.transform, terrain.kinematics().local_transform() );
+      terrainGO.transform.rotation *= Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+
+      rbComp.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      var terrainComp = terrainGO.AddComponent<MovableTerrain>();
+
+      terrainComp.ElementSize = (float)terrain.element_size();
+      terrainComp.MaximumDepth = (float)terrain.max_depth();
+      terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
+      terrainComp.InvertDepthDirection = false;
+
+      var terrainMat = terrain.material();
+      if ( !terrainMat.is_default_terrain_material() ) {
+        if ( !Data.MaterialCache.TryGetValue( terrainMat, out var shapeMaterial ) ) {
+          shapeMaterial = InteractionMapper.MapMaterial( terrainMat );
+          Data.MaterialCache[ terrainMat ] = shapeMaterial;
+        }
+
+        if ( !Data.TerrainMaterialCache.TryGetValue( terrainMat, out var mappedTerrMat ) ) {
+          mappedTerrMat = ScriptableObject.CreateInstance<DeformableTerrainMaterial>();
+          var matAnnotation = terrainMat.findAnnotations("agx_terrain_material");
+          string matName = terrainMat.unique_name();
+          if ( matAnnotation.Count == 1 && matAnnotation[ 0 ].isString() ) {
+            matName = matAnnotation[ 0 ].asString();
+          }
+
+          mappedTerrMat.SetPresetNameAndUpdateValues( matName );
+          mappedTerrMat.name = terrainMat.getName()+"_TM";
+
+          Data.TerrainMaterialCache[ terrainMat ] = mappedTerrMat;
+          Data.MappedTerrainMaterials.Add( mappedTerrMat );
+        }
+
+        terrainComp.DefaultTerrainMaterial = mappedTerrMat;
+        terrainComp.Material = shapeMaterial;
+        terrainComp.ParticleMaterial = shapeMaterial;
+      }
+
+      if ( !Data.TerrainParticleRendererAdded ) {
+        Data.TerrainParticleRendererAdded = true;
+        var renderer = terrainGO.AddComponent<DeformableTerrainParticleRenderer>();
+        renderer.GranuleInstance = Resources.Load<GameObject>( "Debug/SphereRenderer" );
+      }
+
+      return terrainGO;
+    }
+
+    GameObject MapSystem( openplx.Physics3D.System system )
+    {
+      var s = MapSystemPass1( system );
+      MapSystemPass2( system );
+      MapSystemPass3( system );
+      MapSystemPass4( system );
+      MapSystemPass5( system );
+      return s;
+    }
+
+    GameObject MapSystemPass1( openplx.Physics3D.System system )
+    {
+      GameObject s = Data.CreateOpenPLXObject(system.getName());
+      Utils.MapLocalTransform( s.transform, system.local_transform() );
+
+      Data.SystemCache[ system ] = s;
+      // TODO: Replace with single world body
+      var dummyRB = Factory.Create<RigidBody>();
+      Data.RegisterGameObject( dummyRB );
+      dummyRB.transform.SetParent( s.transform, false );
+      dummyRB.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
+      dummyRB.name = "System Dummy RB";
+      Data.FrameCache[ system ] = dummyRB;
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
+
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
+        foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
+          if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
+            if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
+              Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
+          }
+          else
+            Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
+        }
+      }
+      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() ) {
+        if ( trackSystem.belt().link_description() is openplx.Vehicles.Tracks.BoxLinkDescription desc ) {
+          var mat = desc.contact_geometry().material();
+          if ( !Data.MaterialCache.ContainsKey( mat ) ) {
+            Data.MaterialCache[ mat ] = InteractionMapper.MapMaterial( mat );
+          }
+        }
+      }
+
+      return s;
+    }
+
+    void MapSystemPass2( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass2( subSystem );
+
+      // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
+
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
+        if ( !Data.BodyCache.ContainsKey( body ) ) {
+          if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
+            Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
+            continue;
+          }
+
+          var parent = Data.SystemCache[ owningSystem ];
+          Utils.AddChild( parent, MapBody( body ), Data.ErrorReporter, body );
+        }
+      }
+
+      foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
+        Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
+    }
+
+    void MapSystemPass3( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass3( subSystem );
+
+      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() )
+        VehicleMapper.MapTrackSystem( trackSystem );
+
+      foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
+        InteractionMapper.MapMateConnector( mateConnector );
+
+      foreach ( var body in system.getNonReferenceValues<openplx.Physics3D.Bodies.RigidBody>() )
+        foreach ( var mateConnector in body.getValues<openplx.Physics3D.Interactions.MateConnector>() )
+          InteractionMapper.MapMateConnector( mateConnector );
+    }
+
+    void MapSystemPass4( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass4( subSystem );
+
+      foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
+        Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
+
+      foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
+        Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
+
+      foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() ) {
+        if ( !Utils.IsRuntimeMapped( interaction ) && interaction is not openplx.Vehicles.Steering.Interactions.DualSuspensionSteering ) {
+          if ( interaction is openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+            Utils.AddChild( s, VehicleMapper.MapSuspension( suspension ), Data.ErrorReporter, suspension );
+          else
+            Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+        }
+      }
+
+      foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
+        InteractionMapper.MapContactModel( contactModel );
+
+      foreach ( var shovel in system.getNonReferenceValues<openplx.Terrain.Shovel>() )
+        MapShovel( shovel );
+
+      // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
+
+      foreach ( var collision_group in system.getNonReferenceValues<CollisionGroup>() )
+        MapCollisionGroup( collision_group );
+
+
+      foreach ( var rb in system.kinematically_controlled() )
+        Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      foreach ( var disabledPair in system.getNonReferenceValues<openplx.Simulation.DisableCollisionPair>() )
+        MapDisabledPair( disabledPair );
+    }
+
+    void MapSystemPass5( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass5( subSystem );
+
+      foreach ( var steering in system.getNonReferenceValues<openplx.Vehicles.Steering.Interactions.DualSuspensionSteering>() )
+        Utils.AddChild( s, VehicleMapper.MapSteering( steering ), Data.ErrorReporter, steering );
+
+      foreach ( var wheel in system.getNonReferenceValues<openplx.Vehicles.Wheels.ElasticWheel>() )
+        VehicleMapper.MapElasticWheel( wheel );
+    }
+  }
+}

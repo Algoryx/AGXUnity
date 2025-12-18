@@ -693,6 +693,9 @@ namespace AGXUnity
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PreStepForward );
 
+      if ( StepCallbacks._Internal_OpenPLXSignalPreSync != null )
+        StepCallbacks._Internal_OpenPLXSignalPreSync.Invoke();
+
       if ( StepCallbacks.PreSynchronizeTransforms != null )
         StepCallbacks.PreSynchronizeTransforms.Invoke();
 
@@ -725,6 +728,9 @@ namespace AGXUnity
         StepCallbacks._Internal_PostSynchronizeTransform?.Invoke();
         StepCallbacks.PostSynchronizeTransforms?.Invoke();
       }
+
+      if ( StepCallbacks._Internal_OpenPLXSignalPostSync != null )
+        StepCallbacks._Internal_OpenPLXSignalPostSync.Invoke();
 
       if ( TrackMemoryAllocations )
         MemoryAllocations.Snap( MemoryAllocations.Section.PostSynchronizeTransforms );

@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class WireCutMergeTests
+  public class WireCutMergeTests : AGXUnityFixture
   {
     private Wire SourceWire;
     [UnitySetUp]

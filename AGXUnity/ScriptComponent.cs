@@ -69,7 +69,7 @@ namespace AGXUnity
     /// Implement this to recieve a callback when an old version of a ScriptComponent is deserialized.
     /// </summary>
     /// <returns>True if migrations were made, false otherwise</returns>
-    protected virtual bool PerformMigration() => true;
+    protected virtual bool PerformMigration() => false;
 
     /// <summary>
     /// Returns native simulation object unless the scene is being

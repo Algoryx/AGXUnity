@@ -126,27 +126,34 @@ namespace AGXUnity.Sensor
     [DisableInRuntimeInspector]
     public IModelData ModelData { get; private set; } = new OusterData();
 
+    [SerializeField]
+    public GameObject LidarFrame;
+
+    private bool HasExplicitFrame() => LidarFrame != null;
+
     /// <summary>
     /// Local sensor rotation relative to the parent GameObject transform.
     /// </summary>
     [Tooltip("Local sensor rotation relative to the parent GameObject transform.")]
+    [DynamicallyShowInInspector("HasExplicitFrame", true, true)]
     public Vector3 LocalRotation = Vector3.zero;
 
     /// <summary>
     /// Local sensor offset relative to the parent GameObject transform.
     /// </summary>
     [Tooltip("Local sensor offset relative to the parent GameObject transform.")]
+    [DynamicallyShowInInspector("HasExplicitFrame", true, true)]
     public Vector3 LocalPosition = Vector3.zero;
 
     /// <summary>
     /// The local transformation matrix from the sensor frame to the parent GameObject frame
     /// </summary>
-    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
+    private UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
 
     /// <summary>
     /// The global transformation matrix from the sensor frame to the world frame. 
     /// </summary>
-    public UnityEngine.Matrix4x4 GlobalTransform => transform.localToWorldMatrix * LocalTransform;
+    public UnityEngine.Matrix4x4 GlobalTransform => HasExplicitFrame() ? LidarFrame.transform.localToWorldMatrix : transform.localToWorldMatrix * LocalTransform;
 
     [SerializeField]
     private RangeReal m_lidarRange = new RangeReal(0.1f, float.MaxValue);
@@ -317,7 +324,7 @@ namespace AGXUnity.Sensor
         }
       }
 
-      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += Sync;
 
       DistanceGaussianNoise?.Initialize( Native );
       foreach ( var noise in RayAngleGaussianNoises )
@@ -383,7 +390,7 @@ namespace AGXUnity.Sensor
         SensorEnvironment.Instance.Native?.remove( Native );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= Sync;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= Sync;
 
       while ( m_outputs.Count > 0 ) {
         var output = m_outputs.Last();

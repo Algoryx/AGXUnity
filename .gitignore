@@ -106,3 +106,7 @@ Editor/Data/Data.asset*
 Editor/Data/Settings.asset*
 Editor/Data/AGXInitData.asset*
 
+# Ignore Brick files for now
+/OpenPLX*
+/Plugins/x86_64/OpenPLX*
+

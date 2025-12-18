@@ -1,0 +1,2 @@
+TestMaterial is Visuals.Materials.TextureMaterial:
+    path: @"simple_checkerboard.png"

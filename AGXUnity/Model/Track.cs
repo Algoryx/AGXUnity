@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using agxVehicle;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -61,6 +62,27 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeReference]
+    private TrackNodeVariation m_thicknessVariation = null;
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public TrackNodeVariation ThicknessVariation
+    {
+      get => m_thicknessVariation;
+      set
+      {
+        if ( value == m_thicknessVariation )
+          return;
+
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change thickness variation of nodes on an initialized track,", this );
+          return;
+        }
+        m_thicknessVariation = value;
+      }
+    }
+
     [SerializeField]
     private float m_width = 0.35f;
 
@@ -80,6 +102,27 @@ namespace AGXUnity.Model
           return;
         }
         m_width = value;
+      }
+    }
+
+    [SerializeReference]
+    private TrackNodeVariation m_widthVariation = null;
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public TrackNodeVariation WidthVariation
+    {
+      get => m_widthVariation;
+      set
+      {
+        if ( value == m_widthVariation )
+          return;
+
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change width variation of nodes on an initialized track,", this );
+          return;
+        }
+        m_widthVariation = value;
       }
     }
 
@@ -230,6 +273,27 @@ namespace AGXUnity.Model
       m_wheels.RemoveAll( wheel => wheel == null );
     }
 
+    private class OnInitializeAdapter : TrackNodeOnInitializeCallback
+    {
+      private int m_nodeIdx = 0;
+
+      private TrackNodeVariation m_widthVariation;
+      private TrackNodeVariation m_heightVariation;
+
+      public OnInitializeAdapter( float width, float height, TrackNodeVariation widthVariation, TrackNodeVariation heightVariation )
+      {
+        m_widthVariation = widthVariation;
+        m_heightVariation = heightVariation;
+      }
+
+      public override void onInitialize( TrackNode node )
+      {
+        var applied = VariationUtils.ApplyVariations(m_widthVariation, m_heightVariation, node.getHalfExtents(), m_nodeIdx);
+        node.getRigidBody().add( new agxCollide.Geometry( new agxCollide.Box( applied.Item1 ) ), agx.AffineMatrix4x4.translate( new agx.Vec3( applied.Item2.x, 0.0f, node.getHalfExtents().z ) ) );
+        m_nodeIdx++;
+      }
+    }
+
     protected override bool Initialize()
     {
       if ( !LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTracks, this ) )
@@ -257,6 +321,9 @@ namespace AGXUnity.Model
 
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
+
+      if ( WidthVariation != null || ThicknessVariation != null )
+        Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
 
       if ( isActiveAndEnabled )
         GetSimulation().add( Native );

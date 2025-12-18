@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 1e111e60bcaa9d0408cc0c7ed01f9ec2
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  errors: []
+  declaredModels:
+  - Box
+  - SignalScene
+  ImportedModel: Default
+  SkipImport: 0
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0
+  RotateUp: 1
