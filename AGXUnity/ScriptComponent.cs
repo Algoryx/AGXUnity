@@ -56,8 +56,10 @@ namespace AGXUnity
           Debug.Log( $"Performed automatic migration of a component with type '{this.GetType()}'" );
 #if UNITY_EDITOR
           // Ensure the migration is saved
-          UnityEditor.EditorApplication.delayCall += () =>
-            UnityEditor.EditorUtility.SetDirty( this );
+          UnityEditor.EditorApplication.delayCall += () => {
+            if ( this != null )
+              UnityEditor.EditorUtility.SetDirty( this );
+          };
 #endif
         }
       }
