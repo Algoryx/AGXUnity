@@ -10,7 +10,7 @@ namespace AGXUnityEditor.Windows
     public static AboutWindow Open()
     {
       // Get existing open window or if none, make a new one:
-      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 380 ),
+      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 400 ),
                                                    true,
                                                    "AGX Dynamics for Unity" );
       return window;

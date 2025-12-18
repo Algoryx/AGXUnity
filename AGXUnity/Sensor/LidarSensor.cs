@@ -390,7 +390,7 @@ namespace AGXUnity.Sensor
         SensorEnvironment.Instance.Native?.remove( Native );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= Sync;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= Sync;
 
       while ( m_outputs.Count > 0 ) {
         var output = m_outputs.Last();
