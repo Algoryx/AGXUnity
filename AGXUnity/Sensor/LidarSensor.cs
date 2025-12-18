@@ -324,7 +324,7 @@ namespace AGXUnity.Sensor
         }
       }
 
-      Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += Sync;
 
       DistanceGaussianNoise?.Initialize( Native );
       foreach ( var noise in RayAngleGaussianNoises )
