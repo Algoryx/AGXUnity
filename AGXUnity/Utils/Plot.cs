@@ -10,7 +10,6 @@ namespace AGXUnity.Utils
     /// <summary>
     /// Native AGXPlot.System object.
     /// </summary>
-    [SerializeField]
     public agxPlot.System Native { get; private set; } = null;
 
     /// <summary>
