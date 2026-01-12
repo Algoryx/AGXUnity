@@ -225,6 +225,17 @@ namespace AGXUnityEditor.Tools
 
     private void HandleHierarchyDragDrop( int instanceId, Rect pos )
     {
+#if UNITY_6000_3_OR_NEWER
+      InspectorGUI.HandleDragDrop<AGXUnity.ShapeMaterial>( pos,
+                                                           Event.current,
+                                                           material =>
+                                                             HasShapeMaterialProperty( EditorUtility.EntityIdToObject( instanceId ) as GameObject, false ),
+                                                           material =>
+                                                           {
+                                                             AssignMaterial( EditorUtility.EntityIdToObject( instanceId ) as GameObject,
+                                                                             material );
+                                                           } );
+#else 
       InspectorGUI.HandleDragDrop<AGXUnity.ShapeMaterial>( pos,
                                                            Event.current,
                                                            material =>
@@ -233,6 +244,7 @@ namespace AGXUnityEditor.Tools
                                                              AssignMaterial( EditorUtility.InstanceIDToObject( instanceId ) as GameObject,
                                                                              material );
                                                            } );
+#endif
     }
 
     private void HandleSceneViewDragDrop( Event current, SceneView sceneView )

@@ -49,7 +49,12 @@ namespace AGXUnityEditor
       int index = 0;
       while ( index < m_data.Count ) {
         var data = m_data[ index ];
-        if ( data == null || ( !data.IsStatic && EditorUtility.InstanceIDToObject( data.InstanceId ) == null ) )
+#if UNITY_6000_3_OR_NEWER
+        var obj = EditorUtility.EntityIdToObject( data.InstanceId );
+#else
+        var obj = EditorUtility.InstanceIDToObject( data.InstanceId );
+#endif
+        if ( data == null || ( !data.IsStatic && obj == null ) )
           m_data.RemoveAt( index );
         else
           ++index;

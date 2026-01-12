@@ -65,7 +65,11 @@ namespace AGXUnityEditor.Windows
       sp.Next( true );
       var id = sp.intValue;
 
+#if UNITY_6000_3_OR_NEWER
+      AssetDatabase.TryGetGUIDAndLocalFileIdentifier( (EntityId)id, out string guid, out long _ );
+#else
       AssetDatabase.TryGetGUIDAndLocalFileIdentifier( id, out string guid, out long _ );
+#endif
       return AssetDatabase.GUIDToAssetPath( guid ); ;
     }
 
