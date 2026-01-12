@@ -177,5 +177,4 @@ Shader "AGXUnity/Built-In/PointCloudShader"
       ENDCG
     }
   }
-  FallBack "Diffuse"
 }
