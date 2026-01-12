@@ -2,15 +2,52 @@
 using agxSensor;
 using AGXUnity.Utils;
 using UnityEngine;
+using System;
 
 namespace AGXUnity.Sensor
 {
+
+  //  public interface IImuAttachment { }
+
+  [Serializable]
+  // TODO name could be ImuAttachmentConfig
+  public class ImuAttachment// : IImuAttachment
+  {
+    /// <summary>
+    /// Detectable measurement range, in m/s^2 / radians/s / T
+    /// </summary>
+    [Tooltip("Measurement range - values outside of range will be truncated")]
+    // TODO should really be three ranges, not 1... Special type needed, or maybe rangeX, rangeY, rangeZ
+    // Could also be a bool for using maxrange
+    //public Vec2 TriaxialRange = new Vec2(double.MinValue, double.MaxValue); // TODO double??
+    public Vector2 TriaxialRange;
+
+    /// <summary>
+    /// Cross axis sensitivity
+    /// </summary>
+    [Tooltip("Cross axis sensitivity")]
+    // TODO float or Matrix3x3...
+    public float CrossAxisSensitivity;
+
+    /// <summary>
+    /// Bias reported in each axis under conditions without externally applied transformation, in m/s^2
+    /// </summary>
+    [Tooltip("todo")]
+    public float ZeroRateBias;
+
+    public ImuAttachment( Vector2 triaxialRange, float crossAxisSensitivity, float zeroRateBias )
+    {
+      TriaxialRange = triaxialRange;
+      CrossAxisSensitivity = crossAxisSensitivity;
+      ZeroRateBias = zeroRateBias;
+    }
+  }
 
   /// <summary>
   /// IMU Sensor Component
   /// </summary>
   [DisallowMultipleComponent]
-  [AddComponentMenu( "AGXUnity/Sensors/IMU Sensor" )]
+  [AddComponentMenu("AGXUnity/Sensors/IMU Sensor")]
   //[HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-lidar-sensors" )]
   public class ImuSensor : ScriptComponent
   {
@@ -19,6 +56,70 @@ namespace AGXUnity.Sensor
     /// </summary>
     public IMU Native { get; private set; } = null;
     public IMUModel m_nativeModel = null;
+
+
+
+
+    /// <summary>
+    /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
+    /// </summary>
+    [field: SerializeField]
+    [Tooltip( "When enabled, show configuration for the IMU attachment and create attachment when initializing object." )]
+    [DisableInRuntimeInspector]
+    public bool EnableAccelerometer { get; set; } = true;
+
+    /// <summary>
+    /// Accelerometer TODO
+    /// </summary>
+    [field: SerializeField]
+    [DynamicallyShowInInspector("EnableAccelerometer")]
+    [DisableInRuntimeInspector]
+    public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 260f);
+
+
+
+
+    /// <summary>
+    /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
+    /// </summary>
+    [field: SerializeField]
+    [Tooltip( "When enabled, show configuration for the IMU attachment and create attachment when initializing object." )]
+    [DisableInRuntimeInspector]
+    public bool EnableGyroscope { get; set; } = true;
+
+    /// <summary>
+    /// Gyroscope TODO
+    /// </summary>
+    [field: SerializeField]
+    [DynamicallyShowInInspector("EnableGyroscope")]
+    [DisableInRuntimeInspector]
+    public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 3f);
+
+
+
+
+    /// <summary>
+    /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
+    /// </summary>
+    [field: SerializeField]
+    [Tooltip( "When enabled, show configuration for the IMU attachment and create attachment when initializing object." )]
+    [DisableInRuntimeInspector]
+    public bool EnableMagnetometer { get; set; } = true;
+
+    /// <summary>
+    /// Magnetometer TODO
+    /// </summary>
+    [field: SerializeField]
+    [DynamicallyShowInInspector("EnableMagnetometer")]
+    [DisableInRuntimeInspector]
+    public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 0f);
+
+
+
+
+
+
+    [RuntimeValue("m/s")] public int test = 3;
 
     /// <summary>
     /// Local sensor rotation relative to the parent GameObject transform.
@@ -35,7 +136,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The local transformation matrix from the sensor frame to the parent GameObject frame
     /// </summary>
-    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
+    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS(LocalPosition, Quaternion.Euler(LocalRotation), Vector3.one);
 
     /// <summary>
     /// The global transformation matrix from the sensor frame to the world frame. 
@@ -52,11 +153,11 @@ namespace AGXUnity.Sensor
     //private void Sync()
     //{
     //  var xform = GlobalTransform;
-//
+    //
     //  Native.getFrame().setTranslate( xform.GetPosition().ToHandedVec3() );
     //  Native.getFrame().setRotate( xform.rotation.ToHandedQuat() );
-//
-//
+    //
+    //
     //  //Debug.Log( Native.getFrame().getTranslate() );
     //  //Native.setFrame( new Frame(
     //  //                    new AffineMatrix4x4(
@@ -68,122 +169,130 @@ namespace AGXUnity.Sensor
     {
       SensorEnvironment.Instance.GetInitialized();
 
-      // TODO save the models in private vars to update values
+      // TODO do we need to save these in private vars? We'll see
+
+      var imu_attachments = new IMUModelSensorAttachmentRefVector();
 
       // Accelerometer
-      var accelerometer_modifiers = new ITriaxialSignalSystemNodeRefVector
-      {
-        //new GyroscopeLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
-        //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
-      };
+      if ( EnableAccelerometer ) {
+        var modifiers = new ITriaxialSignalSystemNodeRefVector
+        {
+          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
+        };
 
-      var accelerometer_model = new AccelerometerModel(
-        new TriaxialRange(),
-        new TriaxialCrossSensitivity(0.0),
-        new Vec3(0.0),
-        accelerometer_modifiers
-      );
+        var accelerometer = new AccelerometerModel(
+          new TriaxialRange( new agx.RangeReal( AccelerometerAttachment.TriaxialRange.x, AccelerometerAttachment.TriaxialRange.y ) ),
+          new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ),
+          new Vec3( AccelerometerAttachment.ZeroRateBias ),
+          modifiers
+        );
+
+        imu_attachments.Add( new IMUModelAccelerometerAttachment( AffineMatrix4x4.identity(), accelerometer ) );
+      }
 
       // Gyroscope
-      var gyroscope_modifiers = new ITriaxialSignalSystemNodeRefVector {
-        //new GyroscopeLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
-        //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
-      };
+      if ( EnableGyroscope ) {
+        var gyroscope_modifiers = new ITriaxialSignalSystemNodeRefVector
+        {
+          //new GyroscopeLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
+          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
+        };
 
-      var gyroscope_model = new GyroscopeModel(
-        new TriaxialRange(new agx.RangeReal(-1, 1)),
-        new TriaxialCrossSensitivity(0.01),
-        new Vec3(0.0),
-        gyroscope_modifiers
-      );
+        var gyroscope = new GyroscopeModel(
+          new TriaxialRange( new agx.RangeReal( GyroscopeAttachment.TriaxialRange.x, GyroscopeAttachment.TriaxialRange.y ) ),
+          new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
+          new Vec3( GyroscopeAttachment.ZeroRateBias ),
+          gyroscope_modifiers
+        );
 
-      // Magnetometer
-      var magnetometer_modifiers = new ITriaxialSignalSystemNodeRefVector {
-        //new TriaxialGaussianNoise( new Vec3( 4.5e-7 ) )
-      };
+        imu_attachments.Add( new IMUModelGyroscopeAttachment( AffineMatrix4x4.identity(), gyroscope ) );
+      }
 
-      var magnetometer_model = new MagnetometerModel(
-        new TriaxialRange(),
-        new TriaxialCrossSensitivity(0.01),
-        new Vec3(0.0),
-        magnetometer_modifiers
-      );
+      // magnetometer
+      MagnetometerModel magnetometer = null;
+      if ( EnableMagnetometer ) {
+        var magnetometer_modifiers = new ITriaxialSignalSystemNodeRefVector
+        {
+          //new magnetometerLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
+          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
+        };
 
-      var imu_attachments = new IMUModelSensorAttachmentRefVector
-      {
-        new IMUModelAccelerometerAttachment(
-          new AffineMatrix4x4(), accelerometer_model
-        ),
-        new IMUModelGyroscopeAttachment(
-          new AffineMatrix4x4(), gyroscope_model
-        ),
-        new IMUModelMagnetometerAttachment(
-          new AffineMatrix4x4(), magnetometer_model
-        )
-      };
+        magnetometer = new MagnetometerModel(
+          new TriaxialRange( new agx.RangeReal( MagnetometerAttachment.TriaxialRange.x, MagnetometerAttachment.TriaxialRange.y ) ),
+          new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
+          new Vec3( MagnetometerAttachment.ZeroRateBias ),
+          magnetometer_modifiers
+        );
 
-      m_nativeModel = IMUModel.makeIdealNineDoFModel();
-      //m_nativeModel = new IMUModel( imu_attachments );
+        imu_attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), magnetometer ) );
+      }
 
-      if ( m_nativeModel == null )
-        return false;
+      if (imu_attachments.Count == 0 ) {
+        Debug.LogWarning( "No sensor attachments on IMU means the component will do nothing" );
+        return true;
+      }
 
-      PropertySynchronizer.Synchronize( this );
+      m_nativeModel = new IMUModel( imu_attachments );
+
+      if (m_nativeModel == null)
+        return false; // TODO error
+
+      PropertySynchronizer.Synchronize(this);
 
       // TODO moveme to function that can get called both when setting RB and from here
       var measuredRB = MeasuredBody.GetInitialized<RigidBody>().Native;
-      SensorEnvironment.Instance.Native.add( measuredRB );      
+      SensorEnvironment.Instance.Native.add(measuredRB);
 
       var rbFrame = measuredRB.getFrame();
-      if ( rbFrame == null )
-        Debug.LogError( "Need RB to follow" );
+      if (rbFrame == null)
+        Debug.LogError("Need RB to follow");
 
-      Native = new IMU( rbFrame, m_nativeModel );
+      Native = new IMU(rbFrame, m_nativeModel);
 
       // TODO temp depth firsth output implementation
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
       m_output = new IMUOutputNineDoF();
-      Native.getOutputHandler().add( m_outputID, m_output );
+      Native.getOutputHandler().add(m_outputID, m_output);
 
       //Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
-      SensorEnvironment.Instance.Native.add( Native );
+      SensorEnvironment.Instance.Native.add(Native);
 
       return true;
     }
-    
+
     // TODO removeme used for testing
     private void OnPostStepForward()
     {
-      NineDoFView view = Native.getOutputHandler().get( m_outputID ).viewNineDoF();
+      NineDoFView view = Native.getOutputHandler().get(m_outputID).viewNineDoF();
 
       // Debug.Log( "Test: " + view.size()); // Returns 1
 
-      Debug.Log( "Pos: " + Native.getFrame().getTranslate() );
+      Debug.Log("Pos: " + Native.getFrame().getTranslate());
 
-      Debug.Log( "Accelerometer 0: " + view[ 0 ].getTriplet( 0 ).length() );
-      Debug.Log( "Gyroscope 1: " + view[ 0 ].getTriplet( 1 ).length() );
-      Debug.Log( "Magnetometer 2: " + view[ 0 ].getTriplet( 2 ).length() );
+      Debug.Log("Accelerometer 0: " + view[0].getTriplet(0).length());
+      Debug.Log("Gyroscope 1: " + view[0].getTriplet(1).length());
+      Debug.Log("Magnetometer 2: " + view[0].getTriplet(2).length());
     }
 
     protected override void OnEnable()
     {
-      Native?.setEnable( true );
+      Native?.setEnable(true);
     }
 
     protected override void OnDisable()
     {
-      Native?.setEnable( false );
+      Native?.setEnable(false);
     }
 
 
     protected override void OnDestroy()
     {
-      if ( SensorEnvironment.HasInstance )
-        SensorEnvironment.Instance.Native?.remove( Native );
+      if (SensorEnvironment.HasInstance)
+        SensorEnvironment.Instance.Native?.remove(Native);
 
-      if ( Simulation.HasInstance ) 
+      if (Simulation.HasInstance)
       {
         //Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= Sync;
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;

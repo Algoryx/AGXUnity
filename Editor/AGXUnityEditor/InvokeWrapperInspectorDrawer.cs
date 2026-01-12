@@ -1486,5 +1486,24 @@ namespace AGXUnityEditor
 
       return null;
     }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
+    public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
+        return null;
+      }
+
+      var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
+      using ( new InspectorGUI.IndentScope() ) {
+        data.TriaxialRange = EditorGUILayout.Vector2Field( FindGUIContentFor( data.GetType(), "TriaxialRange" ), data.TriaxialRange );
+        data.CrossAxisSensitivity = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "CrossAxisSensitivity" ), data.CrossAxisSensitivity );
+        data.ZeroRateBias = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "ZeroRateBias" ), data.ZeroRateBias );
+      }
+
+      return null;
+    }
+
   }
 }
