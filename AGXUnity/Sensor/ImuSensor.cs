@@ -6,13 +6,28 @@ using System;
 
 namespace AGXUnity.Sensor
 {
-
-  //  public interface IImuAttachment { }
-
+  [Serializable]
+  [Flags]
+  public enum OutputXYZ
+  {
+    None = 0,
+    X = 1 << 0,
+    Y = 1 << 1,
+    Z = 1 << 2,
+  }
   [Serializable]
   // TODO name could be ImuAttachmentConfig
-  public class ImuAttachment// : IImuAttachment
+  public class ImuAttachment
   {
+    public enum ImuAttachmentType
+    {
+      Accelerometer,
+      Gyroscope,
+      Magnetometer
+    }
+
+    public ImuAttachmentType type { get; private set; }
+
     /// <summary>
     /// Detectable measurement range, in m/s^2 / radians/s / T
     /// </summary>
@@ -30,13 +45,27 @@ namespace AGXUnity.Sensor
     public float CrossAxisSensitivity;
 
     /// <summary>
-    /// Bias reported in each axis under conditions without externally applied transformation, in m/s^2
+    /// Bias reported in each axis under conditions without externally applied transformation
     /// </summary>
-    [Tooltip("todo")]
+    [Tooltip("Bias reported in each axis under conditions without externally applied transformation")]
     public float ZeroRateBias;
 
-    public ImuAttachment( Vector2 triaxialRange, float crossAxisSensitivity, float zeroRateBias )
+    /// <summary>
+    /// Applies an offset to the zero rate bias depending on the linear acceleration that the gyroscope is exposed to
+    /// </summary>
+    [Tooltip("Offset to the zero rate bias depending on the linear acceleration")]
+    // TODO could be a matrix3x3
+    public Vector3 LinearAccelerationEffects;
+
+    /// <summary>
+    /// Output flags - which, if any, of x y z should be used in output view
+    /// </summary>
+    public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y;// | OutputXYZ.Z;
+
+    // Constructor to set different default values for different sensor types
+    public ImuAttachment( ImuAttachmentType type, Vector2 triaxialRange, float crossAxisSensitivity, float zeroRateBias )
     {
+      this.type = type;
       TriaxialRange = triaxialRange;
       CrossAxisSensitivity = crossAxisSensitivity;
       ZeroRateBias = zeroRateBias;
@@ -58,8 +87,6 @@ namespace AGXUnity.Sensor
     public IMUModel m_nativeModel = null;
 
 
-
-
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
     /// </summary>
@@ -72,11 +99,13 @@ namespace AGXUnity.Sensor
     /// Accelerometer TODO
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector("EnableAccelerometer")]
+    [DynamicallyShowInInspector( "EnableAccelerometer" )]
     [DisableInRuntimeInspector]
-    public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 260f);
-
-
+    public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment(
+      ImuAttachment.ImuAttachmentType.Accelerometer,
+      new Vector2( float.MinValue, float.MaxValue ),
+      0.01f,
+      260f );
 
 
     /// <summary>
@@ -93,9 +122,11 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     [DynamicallyShowInInspector("EnableGyroscope")]
     [DisableInRuntimeInspector]
-    public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 3f);
-
-
+    public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment(
+      ImuAttachment.ImuAttachmentType.Gyroscope,
+      new Vector2( float.MinValue, float.MaxValue ),
+      0.01f,
+      3f );
 
 
     /// <summary>
@@ -112,10 +143,11 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     [DynamicallyShowInInspector("EnableMagnetometer")]
     [DisableInRuntimeInspector]
-    public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment( new Vector2(float.MinValue, float.MaxValue), 0.01f, 0f);
-
-
-
+    public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment(
+      ImuAttachment.ImuAttachmentType.Magnetometer,
+      new Vector2( float.MinValue, float.MaxValue ),
+      0.01f,
+      0f );
 
 
 
