@@ -1501,7 +1501,7 @@ namespace AGXUnityEditor
       using ( new InspectorGUI.IndentScope() ) {
         if ( data.type == ImuAttachment.ImuAttachmentType.Gyroscope )
           data.LinearAccelerationEffects = EditorGUILayout.Vector3Field( "Linear Acceleration Effects", data.LinearAccelerationEffects );
-        data.TriaxialRange = EditorGUILayout.Vector2Field( "Triaxial Range", data.TriaxialRange );
+        data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
         data.CrossAxisSensitivity = EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity );
         data.ZeroRateBias = EditorGUILayout.FloatField( "Zero Rate Bias", data.ZeroRateBias );
         EditorGUI.BeginChangeCheck();
@@ -1513,9 +1513,30 @@ namespace AGXUnityEditor
       return null;
     }
 
+    public static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    {
+      data.Mode = ( TriaxialRangeData.ConfigurationMode )EditorGUILayout.EnumPopup( "Sensor Measurement Range" , data.Mode );
+
+      using ( new InspectorGUI.IndentScope() ) {
+        switch ( data.Mode ) {
+          case TriaxialRangeData.ConfigurationMode.MaxRange:
+            break;
+          case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
+            data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
+            break;
+          case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
+            data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
+            data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
+            data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
+            break;
+        }
+      }
+      return data;
+    }
+
     public static OutputXYZ OutputXYZGUI( OutputXYZ state )
     {
-      var skin          = InspectorEditor.Skin;
+      var skin = InspectorEditor.Skin;
 
       using ( new EditorGUILayout.HorizontalScope() ) {
         EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", true ),
@@ -1524,28 +1545,28 @@ namespace AGXUnityEditor
         var xEnabled = state.HasFlag(OutputXYZ.X);
         var yEnabled = state.HasFlag(OutputXYZ.Y);
         var zEnabled = state.HasFlag(OutputXYZ.Z);
-          
+
         if ( GUILayout.Toggle( xEnabled,
                                GUI.MakeLabel( "X",
                                               xEnabled,
                                               "Use sensor X value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Left ),
                                GUILayout.Width( 76 ) ) != xEnabled )
-             state ^= OutputXYZ.X;
+          state ^= OutputXYZ.X;
         if ( GUILayout.Toggle( yEnabled,
                                GUI.MakeLabel( "Y",
                                               yEnabled,
                                               "Use sensor X value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
                                GUILayout.Width( 76 ) ) != yEnabled )
-             state ^= OutputXYZ.Y;
+          state ^= OutputXYZ.Y;
         if ( GUILayout.Toggle( zEnabled,
                                GUI.MakeLabel( "Z",
                                               yEnabled,
                                               "Use sensor Z value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Right ),
                                GUILayout.Width( 76 ) ) != zEnabled )
-             state ^= OutputXYZ.Z;
+          state ^= OutputXYZ.Z;
       }
 
       return state;

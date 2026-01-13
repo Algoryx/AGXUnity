@@ -35,7 +35,7 @@ namespace AGXUnity.Sensor
     // TODO should really be three ranges, not 1... Special type needed, or maybe rangeX, rangeY, rangeZ
     // Could also be a bool for using maxrange
     //public Vec2 TriaxialRange = new Vec2(double.MinValue, double.MaxValue); // TODO double??
-    public Vector2 TriaxialRange;
+    public TriaxialRangeData TriaxialRange;
 
     /// <summary>
     /// Cross axis sensitivity
@@ -63,7 +63,7 @@ namespace AGXUnity.Sensor
     public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y;// | OutputXYZ.Z;
 
     // Constructor to set different default values for different sensor types
-    public ImuAttachment( ImuAttachmentType type, Vector2 triaxialRange, float crossAxisSensitivity, float zeroRateBias )
+    public ImuAttachment( ImuAttachmentType type, TriaxialRangeData triaxialRange, float crossAxisSensitivity, float zeroRateBias )
     {
       this.type = type;
       TriaxialRange = triaxialRange;
@@ -76,7 +76,7 @@ namespace AGXUnity.Sensor
   /// IMU Sensor Component
   /// </summary>
   [DisallowMultipleComponent]
-  [AddComponentMenu("AGXUnity/Sensors/IMU Sensor")]
+  [AddComponentMenu( "AGXUnity/Sensors/IMU Sensor" )]
   //[HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-lidar-sensors" )]
   public class ImuSensor : ScriptComponent
   {
@@ -85,7 +85,6 @@ namespace AGXUnity.Sensor
     /// </summary>
     public IMU Native { get; private set; } = null;
     public IMUModel m_nativeModel = null;
-
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -103,10 +102,9 @@ namespace AGXUnity.Sensor
     [DisableInRuntimeInspector]
     public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Accelerometer,
-      new Vector2( float.MinValue, float.MaxValue ),
+      new TriaxialRangeData(),
       0.01f,
       260f );
-
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -120,14 +118,13 @@ namespace AGXUnity.Sensor
     /// Gyroscope TODO
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector("EnableGyroscope")]
+    [DynamicallyShowInInspector( "EnableGyroscope" )]
     [DisableInRuntimeInspector]
     public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Gyroscope,
-      new Vector2( float.MinValue, float.MaxValue ),
+      new TriaxialRangeData(),
       0.01f,
       3f );
-
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -141,15 +138,13 @@ namespace AGXUnity.Sensor
     /// Magnetometer TODO
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector("EnableMagnetometer")]
+    [DynamicallyShowInInspector( "EnableMagnetometer" )]
     [DisableInRuntimeInspector]
     public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Magnetometer,
-      new Vector2( float.MinValue, float.MaxValue ),
+      new TriaxialRangeData(),
       0.01f,
       0f );
-
-
 
     [RuntimeValue("m/s")] public int test = 3;
 
@@ -168,7 +163,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The local transformation matrix from the sensor frame to the parent GameObject frame
     /// </summary>
-    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS(LocalPosition, Quaternion.Euler(LocalRotation), Vector3.one);
+    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
 
     /// <summary>
     /// The global transformation matrix from the sensor frame to the world frame. 
@@ -213,7 +208,7 @@ namespace AGXUnity.Sensor
         };
 
         var accelerometer = new AccelerometerModel(
-          new TriaxialRange( new agx.RangeReal( AccelerometerAttachment.TriaxialRange.x, AccelerometerAttachment.TriaxialRange.y ) ),
+          AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ),
           new Vec3( AccelerometerAttachment.ZeroRateBias ),
           modifiers
@@ -250,7 +245,7 @@ namespace AGXUnity.Sensor
         };
 
         magnetometer = new MagnetometerModel(
-          new TriaxialRange( new agx.RangeReal( MagnetometerAttachment.TriaxialRange.x, MagnetometerAttachment.TriaxialRange.y ) ),
+          MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
           new Vec3( MagnetometerAttachment.ZeroRateBias ),
           magnetometer_modifiers
