@@ -176,21 +176,7 @@ namespace AGXUnity.Sensor
     //TODO probably move to own class
     private uint m_outputID = 0; // Must be greater than 0 to be valid
     private IMUOutputNineDoF m_output = null;
-
-    //private void Sync()
-    //{
-    //  var xform = GlobalTransform;
-    //
-    //  Native.getFrame().setTranslate( xform.GetPosition().ToHandedVec3() );
-    //  Native.getFrame().setRotate( xform.rotation.ToHandedQuat() );
-    //
-    //
-    //  //Debug.Log( Native.getFrame().getTranslate() );
-    //  //Native.setFrame( new Frame(
-    //  //                    new AffineMatrix4x4(
-    //  //                      xform.rotation.ToHandedQuat(),
-    //  //                      xform.GetPosition().ToHandedVec3() ) ) );
-    //}
+    private double[] m_outputBuffer;
 
     protected override bool Initialize()
     {
@@ -226,7 +212,7 @@ namespace AGXUnity.Sensor
         };
 
         var gyroscope = new GyroscopeModel(
-          new TriaxialRange( new agx.RangeReal( GyroscopeAttachment.TriaxialRange.x, GyroscopeAttachment.TriaxialRange.y ) ),
+          GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
           new Vec3( GyroscopeAttachment.ZeroRateBias ),
           gyroscope_modifiers
@@ -254,74 +240,107 @@ namespace AGXUnity.Sensor
         imu_attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), magnetometer ) );
       }
 
-      if (imu_attachments.Count == 0 ) {
+      if ( imu_attachments.Count == 0 ) {
         Debug.LogWarning( "No sensor attachments on IMU means the component will do nothing" );
         return true;
       }
 
       m_nativeModel = new IMUModel( imu_attachments );
 
-      if (m_nativeModel == null)
+      if ( m_nativeModel == null )
         return false; // TODO error
 
-      PropertySynchronizer.Synchronize(this);
+      PropertySynchronizer.Synchronize( this );
 
       // TODO moveme to function that can get called both when setting RB and from here
       var measuredRB = MeasuredBody.GetInitialized<RigidBody>().Native;
-      SensorEnvironment.Instance.Native.add(measuredRB);
+      SensorEnvironment.Instance.Native.add( measuredRB );
 
       var rbFrame = measuredRB.getFrame();
-      if (rbFrame == null)
-        Debug.LogError("Need RB to follow");
+      if ( rbFrame == null )
+        Debug.LogError( "Need RB to follow" );
 
-      Native = new IMU(rbFrame, m_nativeModel);
+      Native = new IMU( rbFrame, m_nativeModel );
 
-      // TODO temp depth firsth output implementation
+      // For SWIG reasons, we will create a ninedof output and use the fields selectively
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
       m_output = new IMUOutputNineDoF();
-      Native.getOutputHandler().add(m_outputID, m_output);
+      Native.getOutputHandler().add( m_outputID, m_output );
+      uint outputCount = 0;
+      outputCount += EnableAccelerometer ? Utils.Math.PopCount( (uint)AccelerometerAttachment.OutputFlags ) : 0;
+      outputCount += EnableGyroscope ? Utils.Math.PopCount( (uint)GyroscopeAttachment.OutputFlags ) : 0;
+      outputCount += EnableMagnetometer ? Utils.Math.PopCount( (uint)MagnetometerAttachment.OutputFlags ) : 0;
+      Debug.Log( "Enabled field count: " + outputCount ); // TODO removeme
+      m_outputBuffer = new double[ outputCount ];
 
       //Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
-      SensorEnvironment.Instance.Native.add(Native);
+      SensorEnvironment.Instance.Native.add( Native );
 
       return true;
+    }
+
+    public void GetOutput()
+    {
+      if ( Native == null )
+        return;
+
+      NineDoFValue view = Native.getOutputHandler().get(m_outputID).viewNineDoF()[0];
+
+      int i = 0;
+
+      if ( EnableAccelerometer ) {
+        var a = AccelerometerAttachment.OutputFlags;
+        if ( ( a & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x0;
+        if ( ( a & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y0;
+        if ( ( a & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z0;
+      }
+
+      if ( EnableGyroscope ) {
+        var g = GyroscopeAttachment.OutputFlags;
+        if ( ( g & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x1;
+        if ( ( g & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y1;
+        if ( ( g & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z1;
+      }
+
+      if ( EnableMagnetometer ) {
+        var m = MagnetometerAttachment.OutputFlags;
+        if ( ( m & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x2;
+        if ( ( m & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y2;
+        if ( ( m & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z2;
+      }
     }
 
     // TODO removeme used for testing
     private void OnPostStepForward()
     {
-      NineDoFView view = Native.getOutputHandler().get(m_outputID).viewNineDoF();
+      GetOutput();
 
-      // Debug.Log( "Test: " + view.size()); // Returns 1
+      string output = "";
+      for ( int i = 0; i < m_outputBuffer.Length; i++ )
+        output += m_outputBuffer[ i ].ToString() + " ";
 
-      Debug.Log("Pos: " + Native.getFrame().getTranslate());
-
-      Debug.Log("Accelerometer 0: " + view[0].getTriplet(0).length());
-      Debug.Log("Gyroscope 1: " + view[0].getTriplet(1).length());
-      Debug.Log("Magnetometer 2: " + view[0].getTriplet(2).length());
+      Debug.Log( "Output: " + output );
     }
 
     protected override void OnEnable()
     {
-      Native?.setEnable(true);
+      Native?.setEnable( true );
     }
 
     protected override void OnDisable()
     {
-      Native?.setEnable(false);
+      Native?.setEnable( false );
     }
 
 
     protected override void OnDestroy()
     {
-      if (SensorEnvironment.HasInstance)
-        SensorEnvironment.Instance.Native?.remove(Native);
+      if ( SensorEnvironment.HasInstance )
+        SensorEnvironment.Instance.Native?.remove( Native );
 
-      if (Simulation.HasInstance)
-      {
-        //Simulation.Instance.StepCallbacks.PreSynchronizeTransforms -= Sync;
+      if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }
 
