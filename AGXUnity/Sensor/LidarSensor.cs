@@ -103,6 +103,8 @@ namespace AGXUnity.Sensor
     [Tooltip( "The Model, or preset, of this Lidar. " +
               "Changing this will assign Model specific properties to this Lidar." )]
     [DisableInRuntimeInspector]
+
+    [InspectorGroupEnd]
     public LidarModelPreset LidarModelPreset
     {
       get => m_lidarModelPreset;
@@ -127,6 +129,7 @@ namespace AGXUnity.Sensor
     public IModelData ModelData { get; private set; } = new OusterData();
 
     [SerializeField]
+    [InspectorGroupBegin(Name="Local Frame Settings")]
     public GameObject LidarFrame;
 
     private bool HasExplicitFrame() => LidarFrame != null;
@@ -135,14 +138,14 @@ namespace AGXUnity.Sensor
     /// Local sensor rotation relative to the parent GameObject transform.
     /// </summary>
     [Tooltip("Local sensor rotation relative to the parent GameObject transform.")]
-    [DynamicallyShowInInspector("HasExplicitFrame", true, true)]
+    [DynamicallyShowInInspector(nameof(HasExplicitFrame), true, true)]
     public Vector3 LocalRotation = Vector3.zero;
 
     /// <summary>
     /// Local sensor offset relative to the parent GameObject transform.
     /// </summary>
     [Tooltip("Local sensor offset relative to the parent GameObject transform.")]
-    [DynamicallyShowInInspector("HasExplicitFrame", true, true)]
+    [DynamicallyShowInInspector(nameof(HasExplicitFrame), true, true)]
     public Vector3 LocalPosition = Vector3.zero;
 
     /// <summary>
