@@ -16,7 +16,7 @@ namespace AGXUnity.Sensor
     Z = 1 << 2,
   }
   [Serializable]
-  // TODO name could be ImuAttachmentConfig
+  // TODO probably move this to inside IMU comp
   public class ImuAttachment
   {
     public enum ImuAttachmentType
@@ -26,22 +26,21 @@ namespace AGXUnity.Sensor
       Magnetometer
     }
 
-    public ImuAttachmentType type { get; private set; }
+    /// <summary>
+    /// Accelerometer / Gyroscope / Magnetometer
+    /// </summary>
+    public ImuAttachmentType Type { get; private set; }
 
     /// <summary>
     /// Detectable measurement range, in m/s^2 / radians/s / T
     /// </summary>
     [Tooltip("Measurement range - values outside of range will be truncated")]
-    // TODO should really be three ranges, not 1... Special type needed, or maybe rangeX, rangeY, rangeZ
-    // Could also be a bool for using maxrange
-    //public Vec2 TriaxialRange = new Vec2(double.MinValue, double.MaxValue); // TODO double??
     public TriaxialRangeData TriaxialRange;
 
     /// <summary>
     /// Cross axis sensitivity
     /// </summary>
     [Tooltip("Cross axis sensitivity")]
-    // TODO float or Matrix3x3...
     public float CrossAxisSensitivity;
 
     /// <summary>
@@ -50,22 +49,40 @@ namespace AGXUnity.Sensor
     [Tooltip("Bias reported in each axis under conditions without externally applied transformation")]
     public float ZeroRateBias;
 
+    public bool EnableLinearAccelerationEffects = false;
     /// <summary>
     /// Applies an offset to the zero rate bias depending on the linear acceleration that the gyroscope is exposed to
     /// </summary>
     [Tooltip("Offset to the zero rate bias depending on the linear acceleration")]
-    // TODO could be a matrix3x3
     public Vector3 LinearAccelerationEffects;
+
+    public bool EnableTotalGaussianNoise = false;
+    /// <summary>
+    /// Base level noise in the measurement signal 
+    /// </summary>
+    public Vector3 TotalGaussianNoise;
+
+    public bool EnableSignalScaling = false;
+    /// <summary>
+    /// Constant scaling to the triaxial signal
+    /// </summary>
+    public Vector3 SignalScaling = Vector3.one;
+
+    public bool EnableGaussianSpectralNoise = false;
+    /// <summary>
+    /// Sample frequency dependent Gaussian noise
+    /// </summary>
+    public Vector3 GaussianSpectralNoise;
 
     /// <summary>
     /// Output flags - which, if any, of x y z should be used in output view
     /// </summary>
-    public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y;// | OutputXYZ.Z;
+    public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y | OutputXYZ.Z;
 
-    // Constructor to set different default values for different sensor types
+    // Constructor enables us to set different default values per sensor type
     public ImuAttachment( ImuAttachmentType type, TriaxialRangeData triaxialRange, float crossAxisSensitivity, float zeroRateBias )
     {
-      this.type = type;
+      this.Type = type;
       TriaxialRange = triaxialRange;
       CrossAxisSensitivity = crossAxisSensitivity;
       ZeroRateBias = zeroRateBias;
@@ -175,23 +192,32 @@ namespace AGXUnity.Sensor
 
     //TODO probably move to own class
     private uint m_outputID = 0; // Must be greater than 0 to be valid
-    private IMUOutputNineDoF m_output = null;
     private double[] m_outputBuffer;
 
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
 
-      // TODO do we need to save these in private vars? We'll see
+      Func<ImuAttachment, ITriaxialSignalSystemNodeRefVector> buildModifiers = a =>
+      {
+        var modifiers = new ITriaxialSignalSystemNodeRefVector();
 
+        if ( a.EnableTotalGaussianNoise )
+          modifiers.Add(new TriaxialGaussianNoise(a.TotalGaussianNoise.ToVec3())); // TODO handedness
+        if ( a.EnableSignalScaling )
+          modifiers.Add(new TriaxialSignalScaling(a.SignalScaling.ToVec3()));
+        if ( a.EnableGaussianSpectralNoise )
+          modifiers.Add(new TriaxialSpectralGaussianNoise(a.GaussianSpectralNoise.ToVec3()) );
+        if ( a.EnableLinearAccelerationEffects && a.Type == ImuAttachment.ImuAttachmentType.Gyroscope )
+          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.GaussianSpectralNoise.ToVec3()) );
+
+        return modifiers;
+      };
       var imu_attachments = new IMUModelSensorAttachmentRefVector();
 
       // Accelerometer
       if ( EnableAccelerometer ) {
-        var modifiers = new ITriaxialSignalSystemNodeRefVector
-        {
-          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
-        };
+        var modifiers = buildModifiers(AccelerometerAttachment);
 
         var accelerometer = new AccelerometerModel(
           AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange(),
@@ -205,36 +231,28 @@ namespace AGXUnity.Sensor
 
       // Gyroscope
       if ( EnableGyroscope ) {
-        var gyroscope_modifiers = new ITriaxialSignalSystemNodeRefVector
-        {
-          //new GyroscopeLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
-          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
-        };
+        var modifiers = buildModifiers(GyroscopeAttachment);
 
         var gyroscope = new GyroscopeModel(
           GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
           new Vec3( GyroscopeAttachment.ZeroRateBias ),
-          gyroscope_modifiers
+          modifiers
         );
 
         imu_attachments.Add( new IMUModelGyroscopeAttachment( AffineMatrix4x4.identity(), gyroscope ) );
       }
 
-      // magnetometer
+      // Magnetometer
       MagnetometerModel magnetometer = null;
       if ( EnableMagnetometer ) {
-        var magnetometer_modifiers = new ITriaxialSignalSystemNodeRefVector
-        {
-          //new magnetometerLinearAccelerationEffects( new Vec3( 2.62 * 1e-4 ) ),
-          //new TriaxialSpectralGaussianNoise( new Vec3( 1.75 * 1e-4 ) )
-        };
+        var modifiers = buildModifiers(MagnetometerAttachment);
 
         magnetometer = new MagnetometerModel(
           MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
           new Vec3( MagnetometerAttachment.ZeroRateBias ),
-          magnetometer_modifiers
+          modifiers
         );
 
         imu_attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), magnetometer ) );
@@ -242,6 +260,11 @@ namespace AGXUnity.Sensor
 
       if ( imu_attachments.Count == 0 ) {
         Debug.LogWarning( "No sensor attachments on IMU means the component will do nothing" );
+        return true;
+      }
+
+      if ( imu_attachments.Count == 1 ) {
+        Debug.LogWarning( "KNOWN BUG: currently two sensors are needed for output to work properly! Suggested workaround: Enable another one and disable output" );
         return true;
       }
 
@@ -264,16 +287,18 @@ namespace AGXUnity.Sensor
 
       // For SWIG reasons, we will create a ninedof output and use the fields selectively
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
-      m_output = new IMUOutputNineDoF();
-      Native.getOutputHandler().add( m_outputID, m_output );
       uint outputCount = 0;
       outputCount += EnableAccelerometer ? Utils.Math.PopCount( (uint)AccelerometerAttachment.OutputFlags ) : 0;
       outputCount += EnableGyroscope ? Utils.Math.PopCount( (uint)GyroscopeAttachment.OutputFlags ) : 0;
       outputCount += EnableMagnetometer ? Utils.Math.PopCount( (uint)MagnetometerAttachment.OutputFlags ) : 0;
+
+      var output = new IMUOutputNineDoF();
+      // output.setPaddingValue( 0 ); // TODO remove all thoughts of padding
+      Native.getOutputHandler().add( m_outputID, output );
+
       Debug.Log( "Enabled field count: " + outputCount ); // TODO removeme
       m_outputBuffer = new double[ outputCount ];
 
-      //Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += Sync;
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
       SensorEnvironment.Instance.Native.add( Native );
@@ -286,29 +311,47 @@ namespace AGXUnity.Sensor
       if ( Native == null )
         return;
 
+      //var imuOutput = Native.getOutputHandler().get(m_outputID);
+      //Debug.Log( "getElementSize: " + imuOutput.getElementSize() + ", hasUnreadData: " + imuOutput.hasUnreadData());
+      //Debug.Log( "Tri:  " + imuOutput.viewTriaxialXYZ().size() );
+      //Debug.Log( "Six:  " + imuOutput.viewSixDoF().size() );
+      //Debug.Log( "Nine: " + imuOutput.viewNineDoF().size() );
+      //return;
+
       NineDoFValue view = Native.getOutputHandler().get(m_outputID).viewNineDoF()[0];
 
-      int i = 0;
+      // This is all kind of a workaround to use a ninedof buffer with an arbitrary number
+      // of doubles read based on settings. If Native isn't null we have at least one sensor.
+      int i = 0, j = 0;
+
+      var triplets = new Vec3[]
+      {
+        view.getTriplet( 0 ),
+        view.getTriplet( 1 ),
+        view.getTriplet( 2 )
+      };
 
       if ( EnableAccelerometer ) {
         var a = AccelerometerAttachment.OutputFlags;
-        if ( ( a & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x0;
-        if ( ( a & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y0;
-        if ( ( a & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z0;
+        if ( ( a & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( a & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( a & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
+        j++;
       }
 
       if ( EnableGyroscope ) {
         var g = GyroscopeAttachment.OutputFlags;
-        if ( ( g & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x1;
-        if ( ( g & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y1;
-        if ( ( g & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z1;
+        if ( ( g & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( g & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( g & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
+        j++;
       }
 
       if ( EnableMagnetometer ) {
         var m = MagnetometerAttachment.OutputFlags;
-        if ( ( m & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = view.x2;
-        if ( ( m & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = view.y2;
-        if ( ( m & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = view.z2;
+        if ( ( m & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( m & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( m & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
       }
     }
 
@@ -345,7 +388,6 @@ namespace AGXUnity.Sensor
       }
 
       //TODO remove modules and modifiers, possibly
-      m_output.Dispose();
 
       Native?.Dispose();
       Native = null;

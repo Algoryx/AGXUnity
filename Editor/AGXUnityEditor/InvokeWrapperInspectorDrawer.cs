@@ -1499,8 +1499,6 @@ namespace AGXUnityEditor
 
       var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
       using ( new InspectorGUI.IndentScope() ) {
-        if ( data.type == ImuAttachment.ImuAttachmentType.Gyroscope )
-          data.LinearAccelerationEffects = EditorGUILayout.Vector3Field( "Linear Acceleration Effects", data.LinearAccelerationEffects );
         data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
         data.CrossAxisSensitivity = EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity );
         data.ZeroRateBias = EditorGUILayout.FloatField( "Zero Rate Bias", data.ZeroRateBias );
@@ -1508,14 +1506,61 @@ namespace AGXUnityEditor
         data.OutputFlags = OutputXYZGUI( data.OutputFlags );
         if ( EditorGUI.EndChangeCheck() )
           EditorUtility.SetDirty( target );
+
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+            GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
+          using ( new InspectorGUI.IndentScope() ) {
+            ( data.EnableTotalGaussianNoise, data.TotalGaussianNoise ) = OptionalVector3GUI(
+              data.EnableTotalGaussianNoise,
+              data.TotalGaussianNoise,
+              "Total Gaussian Noise",
+              "Tooltip todo" );
+            ( data.EnableSignalScaling, data.SignalScaling ) = OptionalVector3GUI(
+              data.EnableSignalScaling,
+              data.SignalScaling,
+              "Signal Scaling",
+              "Tooltip todo" );
+            ( data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise ) = OptionalVector3GUI(
+              data.EnableGaussianSpectralNoise,
+              data.GaussianSpectralNoise,
+              "Gaussian Spectral Noise",
+              "Tooltip todo" );
+            if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
+                ( data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects ) = OptionalVector3GUI(
+                data.EnableLinearAccelerationEffects,
+                data.LinearAccelerationEffects,
+                "Linear Acceleration Effects",
+                "Tooltip todo" );
+            }
+          }
+        }
       }
+
+      InspectorGUI.Separator();
 
       return null;
     }
 
-    public static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    private static (bool, Vector3) OptionalVector3GUI(bool toggle, Vector3 value, string label, string tooltip)
     {
-      data.Mode = ( TriaxialRangeData.ConfigurationMode )EditorGUILayout.EnumPopup( "Sensor Measurement Range" , data.Mode );
+      using (new GUILayout.HorizontalScope() ) {
+        var rect = EditorGUILayout.GetControlRect();
+        var xMaxOriginal = rect.xMax;
+        rect.xMax = EditorGUIUtility.labelWidth + 20;
+        //InspectorGUI.MakeLabel( wrapper.Member );
+        toggle = EditorGUI.ToggleLeft( rect, GUI.MakeLabel( label, false, tooltip ), toggle );
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && toggle)) {
+          rect.x = rect.xMax - 30;
+          rect.xMax = xMaxOriginal;
+          value = EditorGUI.Vector3Field(rect, "", value );
+        }
+      }
+      return (toggle, value);
+    }
+
+    private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    {
+      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( "Sensor Measurement Range", data.Mode );
 
       using ( new InspectorGUI.IndentScope() ) {
         switch ( data.Mode ) {
@@ -1534,12 +1579,12 @@ namespace AGXUnityEditor
       return data;
     }
 
-    public static OutputXYZ OutputXYZGUI( OutputXYZ state )
+    private static OutputXYZ OutputXYZGUI( OutputXYZ state )
     {
       var skin = InspectorEditor.Skin;
 
       using ( new EditorGUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", true ),
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false ),
                                       InspectorEditor.Skin.LabelMiddleLeft );
 
         var xEnabled = state.HasFlag(OutputXYZ.X);
