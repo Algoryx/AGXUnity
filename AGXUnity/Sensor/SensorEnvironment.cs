@@ -40,7 +40,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Show log messages on each thing added to the sensor environment")]
     public bool DebugLogOnAdd = false;
-/*
+
     [InspectorGroupBegin(Name = "Magnetic Field", DefaultExpanded = true)]
 
     /// <summary>
@@ -78,7 +78,7 @@ namespace AGXUnity.Sensor
     public Vector3 DipoleCenter = new Vector3( 1.9e-10f, 20.79e3f, -6.369e6f );
 
     [InspectorGroupEnd]
-*/
+
     /// <summary>
     /// Select which layers to include game objects from
     /// </summary>
@@ -503,16 +503,16 @@ namespace AGXUnity.Sensor
 
       FindValidComponents<ScriptComponent>( true ).ForEach( c => TrackIfSupported( c ) );
 
-//      switch ( FieldType ) {
-//        case MagneticFieldType.UNIFORM:
-//          Native.setMagneticField( new UniformMagneticField( MagneticFieldVector.ToHandedVec3() ) );
-//          break;
-//        case MagneticFieldType.DIPOLE:
-//          Native.setMagneticField( new DipoleMagneticField( MagneticMoment.ToHandedVec3(), DipoleCenter.ToHandedVec3() ) );
-//          break;
-//        default:
-//          break;
-//      }
+      switch ( FieldType ) {
+        case MagneticFieldType.UNIFORM:
+          Native.setMagneticField( new UniformMagneticField( MagneticFieldVector.ToHandedVec3() ) );
+          break;
+        case MagneticFieldType.DIPOLE:
+          Native.setMagneticField( new DipoleMagneticField( MagneticMoment.ToHandedVec3(), DipoleCenter.ToHandedVec3() ) );
+          break;
+        default:
+          break;
+      }
 
       UpdateEnvironment();
 
