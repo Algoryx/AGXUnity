@@ -47,7 +47,7 @@ namespace AGXUnity.Sensor
     /// Bias reported in each axis under conditions without externally applied transformation
     /// </summary>
     [Tooltip("Bias reported in each axis under conditions without externally applied transformation")]
-    public float ZeroRateBias;
+    public Vector3 ZeroBias;
 
     public bool EnableLinearAccelerationEffects = false;
     /// <summary>
@@ -80,12 +80,12 @@ namespace AGXUnity.Sensor
     public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y | OutputXYZ.Z;
 
     // Constructor enables us to set different default values per sensor type
-    public ImuAttachment( ImuAttachmentType type, TriaxialRangeData triaxialRange, float crossAxisSensitivity, float zeroRateBias )
+    public ImuAttachment( ImuAttachmentType type, TriaxialRangeData triaxialRange, float crossAxisSensitivity, Vector3 zeroRateBias )
     {
       this.Type = type;
       TriaxialRange = triaxialRange;
       CrossAxisSensitivity = crossAxisSensitivity;
-      ZeroRateBias = zeroRateBias;
+      ZeroBias = zeroRateBias;
     }
   }
 
@@ -121,7 +121,7 @@ namespace AGXUnity.Sensor
       ImuAttachment.ImuAttachmentType.Accelerometer,
       new TriaxialRangeData(),
       0.01f,
-      260f );
+      Vector3.one * 260f );
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -141,7 +141,7 @@ namespace AGXUnity.Sensor
       ImuAttachment.ImuAttachmentType.Gyroscope,
       new TriaxialRangeData(),
       0.01f,
-      3f );
+      Vector3.one * 3f );
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -161,7 +161,7 @@ namespace AGXUnity.Sensor
       ImuAttachment.ImuAttachmentType.Magnetometer,
       new TriaxialRangeData(),
       0.01f,
-      0f );
+      Vector3.one * 0f );
 
     [RuntimeValue("m/s")] public int test = 3;
 
@@ -222,7 +222,7 @@ namespace AGXUnity.Sensor
         var accelerometer = new AccelerometerModel(
           AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ),
-          new Vec3( AccelerometerAttachment.ZeroRateBias ),
+          AccelerometerAttachment.ZeroBias.ToVec3(),
           modifiers
         );
 
@@ -236,7 +236,7 @@ namespace AGXUnity.Sensor
         var gyroscope = new GyroscopeModel(
           GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
-          new Vec3( GyroscopeAttachment.ZeroRateBias ),
+          GyroscopeAttachment.ZeroBias.ToVec3(),
           modifiers
         );
 
@@ -251,7 +251,7 @@ namespace AGXUnity.Sensor
         magnetometer = new MagnetometerModel(
           MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
-          new Vec3( MagnetometerAttachment.ZeroRateBias ),
+          MagnetometerAttachment.ZeroBias.ToVec3(),
           modifiers
         );
 

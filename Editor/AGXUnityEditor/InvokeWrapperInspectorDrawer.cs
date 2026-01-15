@@ -1501,7 +1501,7 @@ namespace AGXUnityEditor
       using ( new InspectorGUI.IndentScope() ) {
         data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
         data.CrossAxisSensitivity = EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity );
-        data.ZeroRateBias = EditorGUILayout.FloatField( "Zero Rate Bias", data.ZeroRateBias );
+        data.ZeroBias = EditorGUILayout.Vector3Field( "Zero Rate Bias", data.ZeroBias );
         EditorGUI.BeginChangeCheck();
         data.OutputFlags = OutputXYZGUI( data.OutputFlags );
         if ( EditorGUI.EndChangeCheck() )
