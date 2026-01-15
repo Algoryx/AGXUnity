@@ -985,5 +985,47 @@ namespace AGXUnityTesting.Runtime
       distances = output.View<float>( out count, distances );
       Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "After adding an explicit include to local object, the mesh should be visible again" );
     }
+
+    private agx.Vec2f HitPosToAzimuthElevation( agx.Vec3f point )
+    {
+      if ( point.length2() > 1e11 )
+        point /= 1e30f;
+      var dir = point.normal();
+      float elevation = (float)agx.agxMath.Acos(dir.z) * Mathf.Rad2Deg;
+      float azimuth = (float)agx.agxMath.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+      return new agx.Vec2f( azimuth, elevation );
+    }
+
+    [UnityTest]
+    public IEnumerator TestLidarRayWindow()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.FoVMode = GenericSweepData.FoVModes.Window;
+      sweepData.HorizontalFoVWindow = new RangeReal( 0, 90 );
+      sweepData.VerticalFoVWindow = new RangeReal( 0, 90 );
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var distances = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.GreaterThan( 0 ), "Window should contain points" );
+
+      bool withinWindow = distances
+        .Take( (int)count )
+        .Select(HitPosToAzimuthElevation)
+        .All( p =>
+          p.x <= sweepData.HorizontalFoVWindow.Max &&
+          p.x >= sweepData.HorizontalFoVWindow.Min &&
+          p.y <= sweepData.VerticalFoVWindow.Max &&
+          p.y >= sweepData.VerticalFoVWindow.Min );
+
+      Assert.That( withinWindow, Is.True, "All points should lie within the specified window" );
+    }
   }
 }
