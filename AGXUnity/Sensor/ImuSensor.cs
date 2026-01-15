@@ -203,13 +203,13 @@ namespace AGXUnity.Sensor
         var modifiers = new ITriaxialSignalSystemNodeRefVector();
 
         if ( a.EnableTotalGaussianNoise )
-          modifiers.Add(new TriaxialGaussianNoise(a.TotalGaussianNoise.ToVec3())); // TODO handedness
+          modifiers.Add(new TriaxialGaussianNoise(a.TotalGaussianNoise.ToHandedVec3()));
         if ( a.EnableSignalScaling )
-          modifiers.Add(new TriaxialSignalScaling(a.SignalScaling.ToVec3()));
+          modifiers.Add(new TriaxialSignalScaling(a.SignalScaling.ToHandedVec3()));
         if ( a.EnableGaussianSpectralNoise )
-          modifiers.Add(new TriaxialSpectralGaussianNoise(a.GaussianSpectralNoise.ToVec3()) );
+          modifiers.Add(new TriaxialSpectralGaussianNoise(a.GaussianSpectralNoise.ToHandedVec3()) );
         if ( a.EnableLinearAccelerationEffects && a.Type == ImuAttachment.ImuAttachmentType.Gyroscope )
-          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.GaussianSpectralNoise.ToVec3()) );
+          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.GaussianSpectralNoise.ToHandedVec3()) );
 
         return modifiers;
       };
@@ -222,7 +222,7 @@ namespace AGXUnity.Sensor
         var accelerometer = new AccelerometerModel(
           AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ),
-          AccelerometerAttachment.ZeroBias.ToVec3(),
+          AccelerometerAttachment.ZeroBias.ToHandedVec3(),
           modifiers
         );
 
@@ -236,7 +236,7 @@ namespace AGXUnity.Sensor
         var gyroscope = new GyroscopeModel(
           GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
-          GyroscopeAttachment.ZeroBias.ToVec3(),
+          GyroscopeAttachment.ZeroBias.ToHandedVec3(),
           modifiers
         );
 
@@ -251,7 +251,7 @@ namespace AGXUnity.Sensor
         magnetometer = new MagnetometerModel(
           MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
-          MagnetometerAttachment.ZeroBias.ToVec3(),
+          MagnetometerAttachment.ZeroBias.ToHandedVec3(),
           modifiers
         );
 
