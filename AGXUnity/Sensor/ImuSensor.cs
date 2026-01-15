@@ -163,8 +163,6 @@ namespace AGXUnity.Sensor
       0.01f,
       Vector3.one * 0f );
 
-    [RuntimeValue("m/s")] public int test = 3;
-
     /// <summary>
     /// Local sensor rotation relative to the parent GameObject transform.
     /// </summary>
@@ -187,16 +185,26 @@ namespace AGXUnity.Sensor
     /// </summary>
     public UnityEngine.Matrix4x4 GlobalTransform => transform.localToWorldMatrix * LocalTransform;
 
-    // TODO tidy up etc
-    public RigidBody MeasuredBody = null;
 
-    //TODO probably move to own class
-    private uint m_outputID = 0; // Must be greater than 0 to be valid
+    [RuntimeValue] public RigidBody TrackedRigidBody;
+    [RuntimeValue] public Vector3 OutputRow1;
+    [RuntimeValue] public Vector3 OutputRow2;
+    [RuntimeValue] public Vector3 OutputRow3;
+
+    private uint m_outputID = 0;
     private double[] m_outputBuffer;
 
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
+
+      var rigidBody = GetComponentInParent<RigidBody>();
+      if (rigidBody == null) 
+      {
+        Debug.LogWarning( "No Rigidbody found in this object or parents, IMU will be inactive" );
+        return true; 
+      }
+      TrackedRigidBody = rigidBody;
 
       Func<ImuAttachment, ITriaxialSignalSystemNodeRefVector> buildModifiers = a =>
       {
@@ -259,7 +267,7 @@ namespace AGXUnity.Sensor
       }
 
       if ( imu_attachments.Count == 0 ) {
-        Debug.LogWarning( "No sensor attachments on IMU means the component will do nothing" );
+        Debug.LogWarning( "No sensor attachments on IMU means the component will be inactive" );
         return true;
       }
 
@@ -271,18 +279,22 @@ namespace AGXUnity.Sensor
       m_nativeModel = new IMUModel( imu_attachments );
 
       if ( m_nativeModel == null )
-        return false; // TODO error
+      {
+        Debug.LogWarning( "Could not create native imu model, component will be inactive" );
+        return true;
+      }
 
       PropertySynchronizer.Synchronize( this );
 
       // TODO moveme to function that can get called both when setting RB and from here
-      var measuredRB = MeasuredBody.GetInitialized<RigidBody>().Native;
+      var measuredRB = rigidBody.GetInitialized<RigidBody>().Native;
       SensorEnvironment.Instance.Native.add( measuredRB );
 
       var rbFrame = measuredRB.getFrame();
-      if ( rbFrame == null )
-        Debug.LogError( "Need RB to follow" );
-
+      if ( rbFrame == null ) 
+      {
+        Debug.LogWarning( "Could not get rigid body frame" );
+      }
       Native = new IMU( rbFrame, m_nativeModel );
 
       // For SWIG reasons, we will create a ninedof output and use the fields selectively
@@ -310,13 +322,6 @@ namespace AGXUnity.Sensor
     {
       if ( Native == null )
         return;
-
-      //var imuOutput = Native.getOutputHandler().get(m_outputID);
-      //Debug.Log( "getElementSize: " + imuOutput.getElementSize() + ", hasUnreadData: " + imuOutput.hasUnreadData());
-      //Debug.Log( "Tri:  " + imuOutput.viewTriaxialXYZ().size() );
-      //Debug.Log( "Six:  " + imuOutput.viewSixDoF().size() );
-      //Debug.Log( "Nine: " + imuOutput.viewNineDoF().size() );
-      //return;
 
       NineDoFValue view = Native.getOutputHandler().get(m_outputID).viewNineDoF()[0];
 
@@ -355,16 +360,20 @@ namespace AGXUnity.Sensor
       }
     }
 
-    // TODO removeme used for testing
+    // TODO where do we update runtime values?
     private void OnPostStepForward()
     {
       GetOutput();
 
-      string output = "";
-      for ( int i = 0; i < m_outputBuffer.Length; i++ )
-        output += m_outputBuffer[ i ].ToString() + " ";
-
-      Debug.Log( "Output: " + output );
+      // If using runtime values
+      for ( int i = 0; i < m_outputBuffer.Length; i++ ) {
+        if ( i < 3 )
+          OutputRow1[ i ] = (float)m_outputBuffer[ i ];
+        else if ( i < 6 )
+          OutputRow2[ i % 3 ] = (float)m_outputBuffer[ i ];
+        else
+          OutputRow3[ i % 6 ] = (float)m_outputBuffer[ i ];
+      }
     }
 
     protected override void OnEnable()

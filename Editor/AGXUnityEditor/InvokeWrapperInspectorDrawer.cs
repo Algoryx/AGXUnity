@@ -1514,23 +1514,23 @@ namespace AGXUnityEditor
               data.EnableTotalGaussianNoise,
               data.TotalGaussianNoise,
               "Total Gaussian Noise",
-              "Tooltip todo" );
+              "" );
             ( data.EnableSignalScaling, data.SignalScaling ) = OptionalVector3GUI(
               data.EnableSignalScaling,
               data.SignalScaling,
               "Signal Scaling",
-              "Tooltip todo" );
+              "" );
             ( data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise ) = OptionalVector3GUI(
               data.EnableGaussianSpectralNoise,
               data.GaussianSpectralNoise,
               "Gaussian Spectral Noise",
-              "Tooltip todo" );
+              "" );
             if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
                 ( data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects ) = OptionalVector3GUI(
                 data.EnableLinearAccelerationEffects,
                 data.LinearAccelerationEffects,
                 "Linear Acceleration Effects",
-                "Tooltip todo" );
+                "" );
             }
           }
         }
