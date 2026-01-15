@@ -27,8 +27,8 @@ namespace AGXUnity.IO.OpenPLX
       if ( lidar is RayEmitter rayEmitter ) {
         if ( rayEmitter is BeamEmitter beamEmitter ) {
           if ( beamEmitter.beam_divergence() is ConicalBeamDivergence conical ) {
-            lidarComp.BeamDivergence = (float)conical.divergence_angle();
-            lidarComp.BeamExitRadius = (float)conical.waist_radius();
+            modelData.BeamDivergence = (float)conical.divergence_angle();
+            modelData.BeamExitRadius = (float)conical.waist_radius();
           }
 
           if ( beamEmitter is PulsedBeamEmitter pulsedEmitter ) {
@@ -40,28 +40,22 @@ namespace AGXUnity.IO.OpenPLX
       }
       if ( lidar is PulsedLidarLogic pulsed ) {
         if ( pulsed.ray_source() is HorizontalSweepRaySource horizontalSweep ) {
-          // AGXUnity currently does not support non-symmetric sweep patterns. Make sure the pattern is symmetric and approximate it using the settings available.
-          // TODO: Replace with windowed sweep settings
-          bool ok = true;
-          if ( !agx.agxMath.Equivalent( horizontalSweep.horizontal_fov().x(), -horizontalSweep.horizontal_fov().y() ) ) {
-            Data.ErrorReporter.reportError( new NonSymmetricSweepPatternError( horizontalSweep.horizontal_fov() ) );
-            ok = false;
-          }
-          if ( !agx.agxMath.Equivalent( horizontalSweep.vertical_fov().x(), -horizontalSweep.vertical_fov().y() ) ) {
-            Data.ErrorReporter.reportError( new NonSymmetricSweepPatternError( horizontalSweep.vertical_fov() ) );
-            ok = false;
-          }
+          modelData.Frequency = (float)horizontalSweep.frequency();
 
-          if ( !ok )
-            return null;
-
+          // TODO: AGXUnity does not currently support total point resolution as OpenPLX provides
+          // so the values are converted here.
           var horizontalFovDeg = (float)( horizontalSweep.horizontal_fov().y() - horizontalSweep.horizontal_fov().x() ) * Mathf.Rad2Deg;
           var verticalFovDeg = (float)( horizontalSweep.vertical_fov().y() - horizontalSweep.vertical_fov().x() ) * Mathf.Rad2Deg;
-          modelData.HorizontalFoV = Mathf.Max( horizontalFovDeg, 0.1f );
-          modelData.VerticalFoV = Mathf.Max( verticalFovDeg, 0.1f );
-          modelData.Frequency = (float)horizontalSweep.frequency();
-          modelData.HorizontalResolution = modelData.HorizontalFoV / horizontalSweep.horizontal_resolution();
-          modelData.VerticalResolution = modelData.VerticalFoV / horizontalSweep.vertical_resolution();
+          modelData.HorizontalResolution = horizontalFovDeg / horizontalSweep.horizontal_resolution();
+          modelData.VerticalResolution = verticalFovDeg / horizontalSweep.vertical_resolution();
+
+          modelData.FoVMode = GenericSweepData.FoVModes.Window;
+          modelData.HorizontalFoVWindow = new RangeReal(
+            (float)( horizontalSweep.horizontal_fov().x() * Mathf.Rad2Deg ),
+            (float)( horizontalSweep.horizontal_fov().y() * Mathf.Rad2Deg ) );
+          modelData.VerticalFoVWindow = new RangeReal(
+            (float)( horizontalSweep.vertical_fov().x() * Mathf.Rad2Deg ),
+            (float)( horizontalSweep.vertical_fov().y() * Mathf.Rad2Deg ) );
         }
       }
 

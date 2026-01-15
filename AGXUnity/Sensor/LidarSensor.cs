@@ -339,70 +339,16 @@ namespace AGXUnity.Sensor
     public UnityEngine.Matrix4x4 GlobalTransform => HasExplicitFrame() ? LidarFrame.transform.localToWorldMatrix : transform.localToWorldMatrix * LocalTransform;
 
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private RangeReal m_lidarRange = new RangeReal(0.1f, float.MaxValue);
 
-    /// <summary>
-    /// The minimum and maximum range of the Lidar Sensor [m].
-    /// Objects outside this range will not be detected by this Lidar Sensor.
-    /// </summary>
-    [Tooltip( "The minimum and maximum range of the Lidar Sensor [m]. " +
-              "Objects outside this range will not be detected by this Lidar Sensor." )]
-    public RangeReal LidarRange
-    {
-      get => m_lidarRange;
-      set
-      {
-        m_lidarRange = value;
-        if ( Native != null )
-          Native.getModel().getRayRange().setRange( new RangeReal32( m_lidarRange.Min, m_lidarRange.Max ) );
-      }
-    }
-
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private float m_beamDivergence = 0.001f * Mathf.Rad2Deg;
 
-    /// <summary>
-    /// Divergence of the lidar laser light beam [deg].
-    /// This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
-    /// exit dimater to the cone surface is half this angle.
-    /// This property affects the calculated intensity.
-    /// </summary>
-    [Tooltip( "Divergence of the lidar laser light beam [deg]. " +
-              "This the total \"cone angle\", i.e. the angle between a perfectly parallel beam of the same " +
-              "exit dimater to the cone surface is half this angle. " +
-              "This property affects the calculated intensity." )]
-    [ClampAboveZeroInInspector]
-    public float BeamDivergence
-    {
-      get => m_beamDivergence;
-      set
-      {
-        m_beamDivergence = Mathf.Max( value, 1e-10f );
-        if ( Native != null )
-          Native.getModel().getProperties().setBeamDivergence( m_beamDivergence * Mathf.Deg2Rad );
-      }
-    }
-
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private float m_beamExitRadius = 0.005f;
-
-    /// <summary>
-    /// The diameter of the lidar laser light beam as it exits the lidar [m].
-    /// This property affects the calculated intensity.
-    /// </summary>
-    [Tooltip( "The diameter of the lidar laser light beam as it exits the lidar [m]. " +
-              "This property affects the calculated intensity." )]
-    [ClampAboveZeroInInspector]
-    public float BeamExitRadius
-    {
-      get => m_beamExitRadius;
-      set
-      {
-        m_beamExitRadius = Mathf.Max( value, 1e-10f );
-        if ( Native != null )
-          Native.getModel().getProperties().setBeamExitRadius( m_beamExitRadius );
-      }
-    }
 
     private uint m_rayTraceDepth = 1;
 
@@ -518,6 +464,21 @@ namespace AGXUnity.Sensor
       SensorEnvironment.Instance.Native.add( Native );
 
       return true;
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        if ( ModelData is GenericSweepData sweepData ) {
+#pragma warning disable CS0618 // Type or member is obsolete
+          sweepData.Range = m_lidarRange;
+          sweepData.BeamDivergence = m_beamDivergence;
+          sweepData.BeamExitRadius = m_beamExitRadius;
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+        return true;
+      }
+      return false;
     }
 
     protected override void OnEnable()
