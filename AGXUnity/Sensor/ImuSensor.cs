@@ -230,11 +230,10 @@ namespace AGXUnity.Sensor
       }
 
       // Magnetometer
-      MagnetometerModel magnetometer = null;
       if ( EnableMagnetometer ) {
         var modifiers = buildModifiers(MagnetometerAttachment);
 
-        magnetometer = new MagnetometerModel(
+        var magnetometer = new MagnetometerModel(
           MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
           MagnetometerAttachment.ZeroBias.ToHandedVec3(),
