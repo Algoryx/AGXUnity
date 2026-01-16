@@ -163,29 +163,6 @@ namespace AGXUnity.Sensor
       0.01f,
       Vector3.one * 0f );
 
-    /// <summary>
-    /// Local sensor rotation relative to the parent GameObject transform.
-    /// </summary>
-    [Tooltip("Local sensor rotation relative to the parent GameObject transform.")]
-    public Vector3 LocalRotation = Vector3.zero;
-
-    /// <summary>
-    /// Local sensor offset relative to the parent GameObject transform.
-    /// </summary>
-    [Tooltip("Local sensor offset relative to the parent GameObject transform.")]
-    public Vector3 LocalPosition = Vector3.zero;
-
-    /// <summary>
-    /// The local transformation matrix from the sensor frame to the parent GameObject frame
-    /// </summary>
-    public UnityEngine.Matrix4x4 LocalTransform => UnityEngine.Matrix4x4.TRS( LocalPosition, Quaternion.Euler( LocalRotation ), Vector3.one );
-
-    /// <summary>
-    /// The global transformation matrix from the sensor frame to the world frame. 
-    /// </summary>
-    public UnityEngine.Matrix4x4 GlobalTransform => transform.localToWorldMatrix * LocalTransform;
-
-
     [RuntimeValue] public RigidBody TrackedRigidBody;
     [RuntimeValue] public Vector3 OutputRow1;
     [RuntimeValue] public Vector3 OutputRow2;
@@ -407,8 +384,6 @@ namespace AGXUnity.Sensor
     private void OnDrawGizmosSelected()
     {
 #if UNITY_EDITOR
-      var xform = GlobalTransform;
-
       if ( m_nodeGizmoMesh == null )
         m_nodeGizmoMesh = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
         
@@ -417,8 +392,8 @@ namespace AGXUnity.Sensor
 
       Gizmos.color = Color.yellow;
       Gizmos.DrawWireMesh( m_nodeGizmoMesh,
-                      xform.GetPosition(),
-                      xform.GetRotation(),
+                      transform.position,
+                      transform.rotation,
                       Vector3.one * 0.2f );
 #endif
     }
