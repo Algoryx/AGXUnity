@@ -392,8 +392,6 @@ namespace AGXUnity.Sensor
         Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
       }
 
-      //TODO remove modules and modifiers, possibly
-
       Native?.Dispose();
       Native = null;
       m_nativeModel?.Dispose();
@@ -402,28 +400,26 @@ namespace AGXUnity.Sensor
       base.OnDestroy();
     }
 
-    //TODO draw something useful
+
+    [NonSerialized]
+    private Mesh m_nodeGizmoMesh = null;
+
     private void OnDrawGizmosSelected()
     {
 #if UNITY_EDITOR
       var xform = GlobalTransform;
 
-      var pos = xform.GetPosition();
-      var scale = UnityEditor.HandleUtility.GetHandleSize(pos) * 1.5f;
-      Gizmos.DrawLine( pos, xform.MultiplyPoint( Vector3.forward * scale ) ); // Up
-      Gizmos.DrawLine( pos, xform.MultiplyPoint( Vector3.left * scale ) );
+      if ( m_nodeGizmoMesh == null )
+        m_nodeGizmoMesh = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
+        
+      if ( m_nodeGizmoMesh == null )
+        return;
 
-      int numPoints = 25;
-      Vector3[] disc = new Vector3[numPoints];
-
-      Vector3 x = xform.MultiplyVector(Vector3.right * scale);
-      Vector3 y = xform.MultiplyVector(Vector3.up * scale);
-
-      for ( int i = 0; i < numPoints; i++ ) {
-        float ang = Mathf.PI * 2 * i / numPoints;
-        disc[ i ] = pos + x * Mathf.Cos( ang ) + y * Mathf.Sin( ang );
-      }
-      Gizmos.DrawLineStrip( disc, true );
+      Gizmos.color = Color.yellow;
+      Gizmos.DrawWireMesh( m_nodeGizmoMesh,
+                      xform.GetPosition(),
+                      xform.GetRotation(),
+                      Vector3.one * 0.2f );
 #endif
     }
   }
