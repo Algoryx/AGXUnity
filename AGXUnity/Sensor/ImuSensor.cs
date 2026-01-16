@@ -29,6 +29,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Accelerometer / Gyroscope / Magnetometer
     /// </summary>
+    [SerializeField]
     public ImuAttachmentType Type { get; private set; }
 
     /// <summary>
@@ -82,7 +83,7 @@ namespace AGXUnity.Sensor
     // Constructor enables us to set different default values per sensor type
     public ImuAttachment( ImuAttachmentType type, TriaxialRangeData triaxialRange, float crossAxisSensitivity, Vector3 zeroRateBias )
     {
-      this.Type = type;
+      Type = type;
       TriaxialRange = triaxialRange;
       CrossAxisSensitivity = crossAxisSensitivity;
       ZeroBias = zeroRateBias;
@@ -101,7 +102,7 @@ namespace AGXUnity.Sensor
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public IMU Native { get; private set; } = null;
-    public IMUModel m_nativeModel = null;
+    private IMUModel m_nativeModel = null;
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -179,7 +180,7 @@ namespace AGXUnity.Sensor
       if (rigidBody == null) 
       {
         Debug.LogWarning( "No Rigidbody found in this object or parents, IMU will be inactive" );
-        return true; 
+        return false; 
       }
       TrackedRigidBody = rigidBody;
 
@@ -194,7 +195,7 @@ namespace AGXUnity.Sensor
         if ( a.EnableGaussianSpectralNoise )
           modifiers.Add(new TriaxialSpectralGaussianNoise(a.GaussianSpectralNoise.ToHandedVec3()) );
         if ( a.EnableLinearAccelerationEffects && a.Type == ImuAttachment.ImuAttachmentType.Gyroscope )
-          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.GaussianSpectralNoise.ToHandedVec3()) );
+          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.LinearAccelerationEffects.ToHandedVec3()) );
 
         return modifiers;
       };
@@ -244,16 +245,16 @@ namespace AGXUnity.Sensor
       }
 
       if ( imu_attachments.Count == 0 ) {
-        Debug.LogWarning( "No sensor attachments on IMU means the component will be inactive" );
-        return true;
+        Debug.LogWarning( "No sensor attachments, IMU will be inactive" );
+        return false;
       }
 
       m_nativeModel = new IMUModel( imu_attachments );
 
       if ( m_nativeModel == null )
       {
-        Debug.LogWarning( "Could not create native imu model, component will be inactive" );
-        return true;
+        Debug.LogWarning( "Could not create native imu model, IMU will be inactive" );
+        return false;
       }
 
       PropertySynchronizer.Synchronize( this );
@@ -264,7 +265,8 @@ namespace AGXUnity.Sensor
       var rbFrame = measuredRB.getFrame();
       if ( rbFrame == null ) 
       {
-        Debug.LogWarning( "Could not get rigid body frame" );
+        Debug.LogWarning( "Could not get rigid body frame, IMU will be inactive" );
+        return false;
       }
       Native = new IMU( rbFrame, m_nativeModel );
 
@@ -289,10 +291,19 @@ namespace AGXUnity.Sensor
 
     public void GetOutput(IMUOutput output, double[] buffer)
     {
-      if ( Native == null )
+      if ( Native == null || buffer == null || output == null ) {
+        Debug.LogError( "Null problem" );
+        // output.viewNineDoF()[0];
         return;
+      }
 
-      NineDoFValue view = output.viewNineDoF()[0];
+      NineDoFView views = output.viewNineDoF();
+      if ( views == null ) {
+        Debug.LogWarning( "No views" );
+        return;
+      }
+
+      NineDoFValue view = views[ 0 ];
 
       // This is all kind of a workaround to use a ninedof buffer with an arbitrary number
       // of doubles read based on settings. If Native isn't null we have at least one sensor.
@@ -331,6 +342,9 @@ namespace AGXUnity.Sensor
 
     private void OnPostStepForward()
     {
+      if ( !gameObject.activeInHierarchy )
+        return;
+
       GetOutput(Native.getOutputHandler().get(m_outputID), OutputBuffer);
 
       if ( Application.isEditor ) {
