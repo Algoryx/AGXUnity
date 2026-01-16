@@ -16,7 +16,7 @@ namespace AGXUnity.Sensor
     Z = 1 << 2,
   }
   [Serializable]
-  // TODO probably move this to inside IMU comp
+  // Data class to store IMU sensor attachment configuration
   public class ImuAttachment
   {
     public enum ImuAttachmentType
@@ -94,7 +94,7 @@ namespace AGXUnity.Sensor
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/IMU Sensor" )]
-  //[HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-lidar-sensors" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-imu-sensors" )]
   public class ImuSensor : ScriptComponent
   {
     /// <summary>
@@ -112,7 +112,7 @@ namespace AGXUnity.Sensor
     public bool EnableAccelerometer { get; set; } = true;
 
     /// <summary>
-    /// Accelerometer TODO
+    /// Accelerometer sensor attachment
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( "EnableAccelerometer" )]
@@ -132,7 +132,7 @@ namespace AGXUnity.Sensor
     public bool EnableGyroscope { get; set; } = true;
 
     /// <summary>
-    /// Gyroscope TODO
+    /// Gyroscope sensor attachment
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( "EnableGyroscope" )]
@@ -152,7 +152,7 @@ namespace AGXUnity.Sensor
     public bool EnableMagnetometer { get; set; } = true;
 
     /// <summary>
-    /// Magnetometer TODO
+    /// Magnetometer sensor attachment
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( "EnableMagnetometer" )]
@@ -258,7 +258,6 @@ namespace AGXUnity.Sensor
 
       PropertySynchronizer.Synchronize( this );
 
-      // TODO moveme to function that can get called both when setting RB and from here
       var measuredRB = rigidBody.GetInitialized<RigidBody>().Native;
       SensorEnvironment.Instance.Native.add( measuredRB );
 
@@ -277,10 +276,8 @@ namespace AGXUnity.Sensor
       outputCount += EnableMagnetometer ? Utils.Math.PopCount( (uint)MagnetometerAttachment.OutputFlags ) : 0;
 
       var output = new IMUOutputNineDoF();
-      // output.setPaddingValue( 0 ); // TODO remove all thoughts of padding
       Native.getOutputHandler().add( m_outputID, output );
 
-      Debug.Log( "Enabled field count: " + outputCount ); // TODO removeme
       OutputBuffer = new double[ outputCount ];
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
@@ -290,7 +287,7 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    public void GetOutput(IMUOutput output)
+    public void GetOutput(IMUOutput output, double[] buffer)
     {
       if ( Native == null )
         return;
@@ -310,32 +307,31 @@ namespace AGXUnity.Sensor
 
       if ( EnableAccelerometer ) {
         var a = AccelerometerAttachment.OutputFlags;
-        if ( ( a & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( a & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( a & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( a & OutputXYZ.X ) != 0 ) buffer[ i++ ] = triplets[ j ].x;
+        if ( ( a & OutputXYZ.Y ) != 0 ) buffer[ i++ ] = triplets[ j ].y;
+        if ( ( a & OutputXYZ.Z ) != 0 ) buffer[ i++ ] = triplets[ j ].z;
         j++;
       }
 
       if ( EnableGyroscope ) {
         var g = GyroscopeAttachment.OutputFlags;
-        if ( ( g & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( g & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( g & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( g & OutputXYZ.X ) != 0 ) buffer[ i++ ] = triplets[ j ].x;
+        if ( ( g & OutputXYZ.Y ) != 0 ) buffer[ i++ ] = triplets[ j ].y;
+        if ( ( g & OutputXYZ.Z ) != 0 ) buffer[ i++ ] = triplets[ j ].z;
         j++;
       }
 
       if ( EnableMagnetometer ) {
         var m = MagnetometerAttachment.OutputFlags;
-        if ( ( m & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( m & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( m & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( m & OutputXYZ.X ) != 0 ) buffer[ i++ ] = triplets[ j ].x;
+        if ( ( m & OutputXYZ.Y ) != 0 ) buffer[ i++ ] = triplets[ j ].y;
+        if ( ( m & OutputXYZ.Z ) != 0 ) buffer[ i++ ] = triplets[ j ].z;
       }
     }
 
-    // TODO where do we update runtime values?
     private void OnPostStepForward()
     {
-      GetOutput(Native.getOutputHandler().get(m_outputID));
+      GetOutput(Native.getOutputHandler().get(m_outputID), OutputBuffer);
 
       if ( Application.isEditor ) {
         for ( int i = 0; i < OutputBuffer.Length; i++ ) {

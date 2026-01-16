@@ -80,7 +80,7 @@ namespace AGXUnity.Sensor
   }
 
   /// <summary>
-  /// WIP component for lidar sensor
+  /// Lidar Sensor Component
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
