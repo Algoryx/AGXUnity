@@ -192,7 +192,7 @@ namespace AGXUnity.Sensor
     [RuntimeValue] public Vector3 OutputRow3;
 
     private uint m_outputID = 0;
-    private double[] m_outputBuffer;
+    public double[] OutputBuffer { get; private set; }
 
     protected override bool Initialize()
     {
@@ -271,11 +271,6 @@ namespace AGXUnity.Sensor
         return true;
       }
 
-      if ( imu_attachments.Count == 1 ) {
-        Debug.LogWarning( "KNOWN BUG: currently two sensors are needed for output to work properly! Suggested workaround: Enable another one and disable output" );
-        return true;
-      }
-
       m_nativeModel = new IMUModel( imu_attachments );
 
       if ( m_nativeModel == null )
@@ -309,7 +304,7 @@ namespace AGXUnity.Sensor
       Native.getOutputHandler().add( m_outputID, output );
 
       Debug.Log( "Enabled field count: " + outputCount ); // TODO removeme
-      m_outputBuffer = new double[ outputCount ];
+      OutputBuffer = new double[ outputCount ];
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
@@ -318,12 +313,12 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    public void GetOutput()
+    public void GetOutput(IMUOutput output)
     {
       if ( Native == null )
         return;
 
-      NineDoFValue view = Native.getOutputHandler().get(m_outputID).viewNineDoF()[0];
+      NineDoFValue view = output.viewNineDoF()[0];
 
       // This is all kind of a workaround to use a ninedof buffer with an arbitrary number
       // of doubles read based on settings. If Native isn't null we have at least one sensor.
@@ -338,41 +333,42 @@ namespace AGXUnity.Sensor
 
       if ( EnableAccelerometer ) {
         var a = AccelerometerAttachment.OutputFlags;
-        if ( ( a & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( a & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( a & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( a & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( a & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( a & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
         j++;
       }
 
       if ( EnableGyroscope ) {
         var g = GyroscopeAttachment.OutputFlags;
-        if ( ( g & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( g & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( g & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( g & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( g & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( g & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
         j++;
       }
 
       if ( EnableMagnetometer ) {
         var m = MagnetometerAttachment.OutputFlags;
-        if ( ( m & OutputXYZ.X ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].x;
-        if ( ( m & OutputXYZ.Y ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].y;
-        if ( ( m & OutputXYZ.Z ) != 0 ) m_outputBuffer[ i++ ] = triplets[ j ].z;
+        if ( ( m & OutputXYZ.X ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].x;
+        if ( ( m & OutputXYZ.Y ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].y;
+        if ( ( m & OutputXYZ.Z ) != 0 ) OutputBuffer[ i++ ] = triplets[ j ].z;
       }
     }
 
     // TODO where do we update runtime values?
     private void OnPostStepForward()
     {
-      GetOutput();
+      GetOutput(Native.getOutputHandler().get(m_outputID));
 
-      // If using runtime values
-      for ( int i = 0; i < m_outputBuffer.Length; i++ ) {
-        if ( i < 3 )
-          OutputRow1[ i ] = (float)m_outputBuffer[ i ];
-        else if ( i < 6 )
-          OutputRow2[ i % 3 ] = (float)m_outputBuffer[ i ];
-        else
-          OutputRow3[ i % 6 ] = (float)m_outputBuffer[ i ];
+      if ( Application.isEditor ) {
+        for ( int i = 0; i < OutputBuffer.Length; i++ ) {
+          if ( i < 3 )
+            OutputRow1[ i ] = (float)OutputBuffer[ i ];
+          else if ( i < 6 )
+            OutputRow2[ i % 3 ] = (float)OutputBuffer[ i ];
+          else
+            OutputRow3[ i % 6 ] = (float)OutputBuffer[ i ];
+        }
       }
     }
 
