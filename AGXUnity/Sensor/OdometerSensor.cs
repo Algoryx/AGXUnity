@@ -22,10 +22,10 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Optional: Explicitly assign the constraint component to attach the odometer to.
     /// If left empty the component will use the first compatible parent.
-    /// Compatible with: Hinge, CylindricalJoint, SplineJoint, WheelJoint, SlackHingeJoint, SlackCylindricalJoint
+    /// Compatible with: Hinge, CylindricalJoint, WheelJoint
     /// </summary>
     [field: SerializeField]
-    [Tooltip( "Constraint component to attach odometer to: Hinge, CylindricalJoint, SplineJoint, WheelJoint, slackjoints. If unset, the first compatible parent is used." )]
+    [Tooltip( "Constraint component to attach odometer to: Hinge, CylindricalJoint, WheelJoint. If unset, the first compatible parent is used." )]
     [DisableInRuntimeInspector]
     public Constraint ConstraintComponent { get; set; } = null;
 
@@ -158,15 +158,6 @@ namespace AGXUnity.Sensor
 
       if ( nativeConstraint is agx.CylindricalJoint cylindrical )
         return new Odometer( cylindrical, model );
-
-      if ( nativeConstraint is agx.SplineJoint spline )
-        return new Odometer( spline, model );
-
-      if ( nativeConstraint is agx.SlackHingeJoint slackHinge )
-        return new Odometer( slackHinge, model );
-
-      if ( nativeConstraint is agx.SlackCylindricalJoint slackCylindrical )
-        return new Odometer( slackCylindrical, model );
 
       return null;
     }
