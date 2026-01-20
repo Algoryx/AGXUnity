@@ -164,7 +164,7 @@ namespace AGXUnity.Sensor
       0.01f,
       Vector3.one * 0f );
 
-    [RuntimeValue] public RigidBody TrackedRigidBody;
+    [RuntimeValue] public RigidBody TrackedRigidBody { get; private set; }
     [RuntimeValue] public Vector3 OutputRow1;
     [RuntimeValue] public Vector3 OutputRow2;
     [RuntimeValue] public Vector3 OutputRow3;
