@@ -97,6 +97,15 @@ namespace AGXUnityEditor
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
+
+    [InspectorDrawer( typeof( uint ) )]
+    public static object UIntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      // We need to clamp before we convert as the uint will simply wrap around otherwise, this loses some precision but should be fine in most cases.
+      return (uint)Mathf.Max( EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                       (int)wrapper.Get<uint>( objects[ 0 ] ) ), 0 );
+    }
+
     [InspectorDrawer( typeof( Vector2Int ) )]
     public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
@@ -1457,8 +1466,16 @@ namespace AGXUnityEditor
           if ( newWindow.MaxChanged || newWindow.MinChanged )
             data.VerticalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
         }
-        data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
-        data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
+        data.ResolutionMode = (GenericSweepData.ResolutionModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ResolutionMode ) ), data.ResolutionMode );
+        if ( data.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint ) {
+          data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
+          data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
+        }
+        else if ( data.ResolutionMode == GenericSweepData.ResolutionModes.TotalPoints ) {
+          data.HorizontalResolutionTotal = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolutionTotal ) ), data.HorizontalResolutionTotal );
+          data.VerticalResolutionTotal   = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolutionTotal ) ), data.VerticalResolutionTotal );
+        }
+
       }
       var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
       if ( result.MaxChanged || result.MinChanged )

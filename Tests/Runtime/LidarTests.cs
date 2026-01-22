@@ -1027,5 +1027,26 @@ namespace AGXUnityTesting.Runtime
 
       Assert.That( withinWindow, Is.True, "All points should lie within the specified window" );
     }
+
+    [UnityTest]
+    public IEnumerator TestLidarRayCountResolution()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.ResolutionMode = GenericSweepData.ResolutionModes.TotalPoints;
+      sweepData.HorizontalResolutionTotal = 600;
+      sweepData.VerticalResolutionTotal = 20;
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _ = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.EqualTo( 600 * 20 ), "Total amount of points should be horizontal * vertical" );
+    }
   }
 }

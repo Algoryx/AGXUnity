@@ -56,6 +56,12 @@ namespace AGXUnity.Sensor
       Window,
     };
 
+    public enum ResolutionModes
+    {
+      DegreesPerPoint,
+      TotalPoints,
+    };
+
     [SerializeField]
     [FormerlySerializedAs("Frequency")]
     private float m_frequency = 10.0f;
@@ -150,6 +156,13 @@ namespace AGXUnity.Sensor
       }
     }
 
+    [Tooltip( "Selects how amount of points in the scan pattern is defined." +
+              "\n- When the <b>Degrees Per Point mode</b> is selected, the distance between points will be constant and the " +
+              "total amount of points will be determined by the size of the scan FoV" +
+              "\n- When the <b>Total Points mode</b> is selected, the total amount of points will be constant and the spacing " +
+              "will be determined by the size of the scan FoV")]
+    public ResolutionModes ResolutionMode = ResolutionModes.DegreesPerPoint;
+
     [SerializeField]
     [FormerlySerializedAs("HorizontalResolution")]
     private float m_horizontalResolution = 0.5f;
@@ -176,6 +189,32 @@ namespace AGXUnity.Sensor
     {
       get => m_verticalResolution;
       set => m_verticalResolution = Mathf.Max( value, 0.001f );
+    }
+
+    [SerializeField]
+    private int m_horizontalResolutionTotal = 1024;
+
+    /// <summary>
+    /// The horizontal resolution [num points] of the lidar sweep 
+    /// </summary>
+    [Tooltip( "The Horizontal resolution [num points] of the lidar sweep" )]
+    public int HorizontalResolutionTotal
+    {
+      get => m_horizontalResolutionTotal;
+      set => m_horizontalResolutionTotal = Mathf.Max( value, 0 );
+    }
+
+    [SerializeField]
+    private int m_verticalResolutionTotal = 256;
+
+    /// <summary>
+    /// The vertical resolution [num points] of the lidar sweep 
+    /// </summary>
+    [Tooltip( "The vertical resolution [num points] of the lidar sweep" )]
+    public int VerticalResolutionTotal
+    {
+      get => m_verticalResolutionTotal;
+      set => m_verticalResolutionTotal = Mathf.Max( value, 0 );
     }
 
     [SerializeField]
@@ -350,6 +389,7 @@ namespace AGXUnity.Sensor
     [Obsolete("This field has been moved into the LiDAR model data")]
     private float m_beamExitRadius = 0.005f;
 
+    [SerializeField]
     private uint m_rayTraceDepth = 1;
 
     /// <summary>
@@ -555,25 +595,39 @@ namespace AGXUnity.Sensor
       base.OnDestroy();
     }
 
+    private LidarModel CreateGenericSweepModel( GenericSweepData sweepData )
+    {
+      var degPerPointRes = Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution );
+      var totalPointRes = new agx.Vec2u( (uint)sweepData.HorizontalResolutionTotal, (uint)sweepData.VerticalResolutionTotal );
+
+      LidarRayPatternHorizontalSweep pattern;
+      if ( sweepData.FoVMode == GenericSweepData.FoVModes.Centered ) {
+        var fovWindow = Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV );
+        if ( sweepData.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint )
+          pattern = new LidarRayPatternHorizontalSweep( fovWindow, degPerPointRes, sweepData.Frequency );
+        else
+          pattern = new LidarRayPatternHorizontalSweep( fovWindow, totalPointRes, sweepData.Frequency );
+      }
+      else {
+        var horizontal = new agx.RangeReal( sweepData.HorizontalFoVWindow.Min * Mathf.Deg2Rad, sweepData.HorizontalFoVWindow.Max * Mathf.Deg2Rad );
+        var vertical = new agx.RangeReal( sweepData.VerticalFoVWindow.Min * Mathf.Deg2Rad, sweepData.VerticalFoVWindow.Max * Mathf.Deg2Rad );
+        if ( sweepData.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint )
+          pattern = new LidarRayPatternHorizontalSweep( horizontal, vertical, degPerPointRes, sweepData.Frequency );
+        else
+          pattern = new LidarRayPatternHorizontalSweep( horizontal, vertical, totalPointRes, sweepData.Frequency );
+      }
+      var range = new agx.RangeReal32( sweepData.Range.Min, sweepData.Range.Max );
+      LidarProperties properties = new LidarProperties(sweepData.BeamDivergence, sweepData.BeamExitRadius);
+      return new LidarModel( pattern, range, properties );
+    }
+
     private LidarModel CreateLidarModel( LidarModelPreset preset )
     {
       LidarModel lidarModel = null;
 
       switch ( preset ) {
         case LidarModelPreset.LidarModelGenericHorizontalSweep:
-          GenericSweepData sweepData = ModelData as GenericSweepData;
-          var resolution = Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution );
-          LidarRayPatternHorizontalSweep pattern;
-          if ( sweepData.FoVMode == GenericSweepData.FoVModes.Centered )
-            pattern = new LidarRayPatternHorizontalSweep( Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV ), resolution, sweepData.Frequency );
-          else {
-            var horizontal = new agx.RangeReal( sweepData.HorizontalFoVWindow.Min * Mathf.Deg2Rad, sweepData.HorizontalFoVWindow.Max * Mathf.Deg2Rad );
-            var vertical = new agx.RangeReal( sweepData.VerticalFoVWindow.Min * Mathf.Deg2Rad, sweepData.VerticalFoVWindow.Max * Mathf.Deg2Rad );
-            pattern = new LidarRayPatternHorizontalSweep( horizontal, vertical, resolution, sweepData.Frequency );
-          }
-          var range = new agx.RangeReal32( sweepData.Range.Min, sweepData.Range.Max );
-          LidarProperties properties = new LidarProperties(sweepData.BeamDivergence, sweepData.BeamExitRadius);
-          lidarModel = new LidarModel( pattern, range, properties );
+          lidarModel = CreateGenericSweepModel( ModelData as GenericSweepData );
           break;
 
         case LidarModelPreset.LidarModelOusterOS0:
