@@ -42,12 +42,9 @@ namespace AGXUnity.IO.OpenPLX
         if ( pulsed.ray_source() is HorizontalSweepRaySource horizontalSweep ) {
           modelData.Frequency = (float)horizontalSweep.frequency();
 
-          // TODO: AGXUnity does not currently support total point resolution as OpenPLX provides
-          // so the values are converted here.
-          var horizontalFovDeg = (float)( horizontalSweep.horizontal_fov().y() - horizontalSweep.horizontal_fov().x() ) * Mathf.Rad2Deg;
-          var verticalFovDeg = (float)( horizontalSweep.vertical_fov().y() - horizontalSweep.vertical_fov().x() ) * Mathf.Rad2Deg;
-          modelData.HorizontalResolution = horizontalFovDeg / horizontalSweep.horizontal_resolution();
-          modelData.VerticalResolution = verticalFovDeg / horizontalSweep.vertical_resolution();
+          modelData.ResolutionMode = GenericSweepData.ResolutionModes.TotalPoints;
+          modelData.HorizontalResolution = horizontalSweep.horizontal_resolution();
+          modelData.VerticalResolution = horizontalSweep.vertical_resolution();
 
           modelData.FoVMode = GenericSweepData.FoVModes.Window;
           modelData.HorizontalFoVWindow = new RangeReal(

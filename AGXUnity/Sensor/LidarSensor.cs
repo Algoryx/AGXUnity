@@ -301,7 +301,7 @@ namespace AGXUnity.Sensor
   }
 
   /// <summary>
-  /// WIP component for lidar sensor
+  /// Component used to simulate a lidar sensor. For objects to be visible to this LiDAR, they have to be added to the <see cref="SensorEnvironment"/>.
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
@@ -312,7 +312,8 @@ namespace AGXUnity.Sensor
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public Lidar Native { get; private set; } = null;
-    public LidarModel m_nativeModel = null;
+
+    private LidarModel m_nativeModel = null;
 
     [SerializeField]
     private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
@@ -344,11 +345,18 @@ namespace AGXUnity.Sensor
       }
     }
 
+    /// <summary>
+    /// Model specific data for this lidar. The specific model data type will vary based on the current <see cref="LidarModelPreset"/> value
+    /// </summary>
     [field: SerializeReference]
     public IModelData ModelData { get; private set; } = new OusterData();
 
+    /// <summary>
+    /// Specifies an explicit frame for this lidar to allow placement of the lidar component to be independent of the position of the sensor in the world.
+    /// </summary>
     [SerializeField]
     [InspectorGroupBegin(Name="Local Frame Settings")]
+    [Tooltip("Specifies an explicit frame for this lidar to allow placement of the lidar component to be independent of the position of the sensor in the world.")]
     public GameObject LidarFrame;
 
     private bool HasExplicitFrame() => LidarFrame != null;
