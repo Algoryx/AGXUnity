@@ -226,11 +226,12 @@ namespace AGXUnity.Rendering
           continue;
         var mpb = m_propertyBlocks[i];
         mpb.SetBuffer( "pointBuffer", m_instanceBuffers[ i ] );
+        var range = m_sensor.Native.getModel().getRayRange().getRange();
         Graphics.DrawMeshInstancedIndirect(
           m_pointMesh,
           0,
           m_pointCloudMaterialInstance,
-          new Bounds( transform.position, Vector3.one * Mathf.Min( m_sensor.LidarRange.Max * 2f, float.MaxValue ) ),
+          new Bounds( transform.position, Vector3.one * Mathf.Min( range.upper() * 2f, float.MaxValue ) ),
           m_argsBuffers[ i ],
           0,
           mpb,

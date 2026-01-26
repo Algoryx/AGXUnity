@@ -97,6 +97,15 @@ namespace AGXUnityEditor
                                        wrapper.Get<int>( objects[ 0 ] ) );
     }
 
+
+    [InspectorDrawer( typeof( uint ) )]
+    public static object UIntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      // We need to clamp before we convert as the uint will simply wrap around otherwise, this loses some precision but should be fine in most cases.
+      return (uint)Mathf.Max( EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                       (int)wrapper.Get<uint>( objects[ 0 ] ) ), 0 );
+    }
+
     [InspectorDrawer( typeof( Vector2Int ) )]
     public static object Vector2IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
@@ -1433,18 +1442,46 @@ namespace AGXUnityEditor
 
     public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
     {
-      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "ChannelCount" ), data.ChannelCount );
-      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "BeamSpacing" ), data.BeamSpacing );
-      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "LidarMode" ), data.LidarMode );
+      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ChannelCount ) ), data.ChannelCount );
+      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.BeamSpacing ) ), data.BeamSpacing );
+      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.LidarMode ) ), data.LidarMode );
     }
 
     public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
     {
-      data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency );
-      data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalFoV" ), data.HorizontalFoV );
-      data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalFoV" ), data.VerticalFoV );
-      data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalResolution" ), data.HorizontalResolution );
-      data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalResolution" ), data.VerticalResolution );
+      bool isRuntime = EditorApplication.isPlayingOrWillChangePlaymode;
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !isRuntime ) ) {
+        data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.Frequency ) ), data.Frequency );
+        data.FoVMode       = (GenericSweepData.FoVModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.FoVMode ) ), data.FoVMode );
+        if ( data.FoVMode == GenericSweepData.FoVModes.Centered ) {
+          data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoV ) ), data.HorizontalFoV );
+          data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoV ) ), data.VerticalFoV );
+        }
+        else if ( data.FoVMode == GenericSweepData.FoVModes.Window ) {
+          var newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoVWindow ) ), data.HorizontalFoVWindow );
+          if ( newWindow.MaxChanged || newWindow.MinChanged )
+            data.HorizontalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+          newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoVWindow ) ), data.VerticalFoVWindow );
+          if ( newWindow.MaxChanged || newWindow.MinChanged )
+            data.VerticalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+        }
+        data.ResolutionMode = (GenericSweepData.ResolutionModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ResolutionMode ) ), data.ResolutionMode );
+        if ( data.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint ) {
+          data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
+          data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
+        }
+        else if ( data.ResolutionMode == GenericSweepData.ResolutionModes.TotalPoints ) {
+          data.HorizontalResolutionTotal = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolutionTotal ) ), data.HorizontalResolutionTotal );
+          data.VerticalResolutionTotal   = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolutionTotal ) ), data.VerticalResolutionTotal );
+        }
+
+      }
+      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+      if ( result.MaxChanged || result.MinChanged )
+        data.Range = new RangeReal( result.Min, result.Max );
+      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
     }
 
     [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]

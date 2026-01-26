@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Sensor
 {
@@ -12,7 +13,14 @@ namespace AGXUnity.Sensor
   /// IModelData is an empty interface to allow for a lidar sensor to hold generic data dependent on the
   /// underlying lidar model used.
   /// </summary>
-  public interface IModelData { }
+  public interface IModelData
+  {
+    /// <summary>
+    /// Connects the runtime sensor to the model data instance to allow for the model to modify applicable 
+    /// properties at runtime.
+    /// </summary>
+    void ConnectRuntimeInstance( LidarSensor sensor );
+  }
 
   [Serializable]
   public class OusterData : IModelData
@@ -34,40 +42,253 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("The operational mode of the Ouster lidar where (RxF) denotes a resolution of R points and a frequency of F Hz.")]
     public LidarModelOusterOS.LidarMode LidarMode = LidarModelOusterOS.LidarMode.Mode_512x20;
+
+    // Ouster models does not support runtime modifications so we do not need to track the runtime sensor
+    void IModelData.ConnectRuntimeInstance( LidarSensor sensor ) { }
   }
 
   [Serializable]
   public class GenericSweepData : IModelData
   {
+    public enum FoVModes
+    {
+      Centered,
+      Window,
+    };
+
+    public enum ResolutionModes
+    {
+      DegreesPerPoint,
+      TotalPoints,
+    };
+
+    [SerializeField]
+    [FormerlySerializedAs("Frequency")]
+    private float m_frequency = 10.0f;
+
     /// <summary>
     /// The frequency [Hz] of the lidar sweep
     /// </summary>
-    [Tooltip("The frequency [Hz] of the lidar sweep")]
-    public float Frequency = 10.0f;
+    [Tooltip( "The frequency [Hz] of the lidar sweep" )]
+    public float Frequency
+    {
+      get => m_frequency;
+      set => m_frequency = Mathf.Max( value, 0 );
+    }
 
     /// <summary>
-    /// The horizontal FoV [deg] of the lidar sweep
+    /// Selects how the scan pattern of this generic sweep lidar is defined.
+    /// When the Centered mode is selected, the Horizontal & Vertical FoVs define a window
+    /// with the specified angles that are centered around the lidar forward.
+    /// When the Window mode is selected, the Horzontal & vertical FoV Windows are used as min/max intervals
+    /// to define a window.
     /// </summary>
-    [Tooltip("The horizontal FoV [deg] of the lidar sweep")]
-    public float HorizontalFoV = 360.0f;
+    [Tooltip( "Selects how the scan pattern of this generic sweep lidar is defined." +
+              "\n- When the <b>Centered mode</b> is selected, the Horizontal & Vertical FoVs define a window" +
+              "with the specified angles that are centered around the lidar forward." +
+              "\n- When the <b>Window mode</b> is selected, the Horzontal & vertical FoV Windows are used as " +
+              "min/max intervals to define a window.")]
+    public FoVModes FoVMode = FoVModes.Centered;
+
+    [SerializeField]
+    [FormerlySerializedAs("HorizontalFoV")]
+    private float m_horizontalFoV = 360.0f;
 
     /// <summary>
-    /// The vertical FoV [deg] of the lidar sweep
+    /// The horizontal FoV [deg] of the lidar sweep (Only used when Centered FoVMode is selected).
     /// </summary>
-    [Tooltip("The vertical FoV [deg] of the lidar sweep")]
-    public float VerticalFoV = 35.0f;
+    [Tooltip( "The horizontal FoV [deg] of the lidar sweep" )]
+    public float HorizontalFoV
+    {
+      get => m_horizontalFoV;
+      set => m_horizontalFoV = Mathf.Clamp( value, 0.0f, 360.0f );
+    }
+
+    [SerializeField]
+    private RangeReal m_horizontalFoVWindow = new RangeReal(-180,180);
+
+    /// <summary>
+    /// The horizontal FoV window [deg] of the lidar sweep (Only used when Window FoVMode is selected).
+    /// </summary>
+    [Tooltip( "The horizontal FoV window [deg] of the lidar sweep" )]
+    public RangeReal HorizontalFoVWindow
+    {
+      get => m_horizontalFoVWindow;
+      set
+      {
+        // While [-180, 180] is the default we want to be able to select any start point around the rotational axis
+        // e.g. to have a 360 scan with the lidar back being the scan forward.
+        m_horizontalFoVWindow.Min = Mathf.Clamp( value.Min, -360.0f, 360.0f );
+        m_horizontalFoVWindow.Max = Mathf.Clamp( value.Max, -360.0f, 360.0f );
+      }
+    }
+
+    [SerializeField]
+    [FormerlySerializedAs("VerticalFoV")]
+    private float m_verticalFoV = 35.0f;
+
+    /// <summary>
+    /// The vertical FoV [deg] of the lidar sweep (Only used when Centered FoVMode is selected).
+    /// </summary>
+    [Tooltip( "The vertical FoV [deg] of the lidar sweep" )]
+    public float VerticalFoV
+    {
+      get => m_verticalFoV;
+      set => m_verticalFoV = Mathf.Clamp( value, 0.0f, 360.0f );
+    }
+
+    [SerializeField]
+    private RangeReal m_verticalFoVWindow = new RangeReal(-17.5f,17.5f);
+
+    /// <summary>
+    /// The vertical FoV window [deg] of the lidar sweep (Only used when Window FoVMode is selected).
+    /// </summary>
+    [Tooltip( "The vertical FoV window [deg] of the lidar sweep" )]
+    public RangeReal VerticalFoVWindow
+    {
+      get => m_verticalFoVWindow;
+      set
+      {
+        // While [-180, 180] is the default we want to be able to select any start point around the rotational axis
+        // e.g. to have a 360 scan with the lidar back being the scan forward.
+        m_verticalFoVWindow.Min = Mathf.Clamp( value.Min, -360.0f, 360.0f );
+        m_verticalFoVWindow.Max = Mathf.Clamp( value.Max, -360.0f, 360.0f );
+      }
+    }
+
+    [Tooltip( "Selects how amount of points in the scan pattern is defined." +
+              "\n- When the <b>Degrees Per Point mode</b> is selected, the distance between points will be constant and the " +
+              "total amount of points will be determined by the size of the scan FoV" +
+              "\n- When the <b>Total Points mode</b> is selected, the total amount of points will be constant and the spacing " +
+              "will be determined by the size of the scan FoV")]
+    public ResolutionModes ResolutionMode = ResolutionModes.DegreesPerPoint;
+
+    [SerializeField]
+    [FormerlySerializedAs("HorizontalResolution")]
+    private float m_horizontalResolution = 0.5f;
 
     /// <summary>
     /// The horizontal resolution [deg per point] of the lidar sweep 
     /// </summary>
-    [Tooltip("The Horizontal resolution [deg per point] of the lidar sweep ")]
-    public float HorizontalResolution = 0.5f;
+    [Tooltip( "The Horizontal resolution [deg per point] of the lidar sweep" )]
+    public float HorizontalResolution
+    {
+      get => m_horizontalResolution;
+      set => m_horizontalResolution = Mathf.Max( value, 0.001f );
+    }
+
+    [SerializeField]
+    [FormerlySerializedAs("VerticalResolution")]
+    private float m_verticalResolution = 0.5f;
 
     /// <summary>
     /// The vertical resolution [deg per point] of the lidar sweep 
     /// </summary>
-    [Tooltip("The vertical resolution [deg per point] of the lidar sweep ")]
-    public float VerticalResolution = 0.5f;
+    [Tooltip( "The vertical resolution [deg per point] of the lidar sweep" )]
+    public float VerticalResolution
+    {
+      get => m_verticalResolution;
+      set => m_verticalResolution = Mathf.Max( value, 0.001f );
+    }
+
+    [SerializeField]
+    private int m_horizontalResolutionTotal = 1024;
+
+    /// <summary>
+    /// The horizontal resolution [num points] of the lidar sweep 
+    /// </summary>
+    [Tooltip( "The Horizontal resolution [num points] of the lidar sweep" )]
+    public int HorizontalResolutionTotal
+    {
+      get => m_horizontalResolutionTotal;
+      set => m_horizontalResolutionTotal = Mathf.Max( value, 0 );
+    }
+
+    [SerializeField]
+    private int m_verticalResolutionTotal = 256;
+
+    /// <summary>
+    /// The vertical resolution [num points] of the lidar sweep 
+    /// </summary>
+    [Tooltip( "The vertical resolution [num points] of the lidar sweep" )]
+    public int VerticalResolutionTotal
+    {
+      get => m_verticalResolutionTotal;
+      set => m_verticalResolutionTotal = Mathf.Max( value, 0 );
+    }
+
+    [SerializeField]
+    private RangeReal m_range = new RangeReal(0.1f,float.MaxValue);
+
+    /// <summary>
+    /// The range of the lidar rays outside of which ray intersections will be counted as misses
+    /// </summary>
+    [Tooltip( "The range of the lidar rays outside of which ray intersections will be counted as misses" )]
+    public RangeReal Range
+    {
+      get => m_range;
+      set
+      {
+        m_range = value;
+        m_range.Min = Mathf.Max( m_range.Min, 0 );
+        m_range.Max = Mathf.Max( m_range.Max, 0 );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getRayRange().setRange( new RangeReal32( m_range.Min, m_range.Max ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_beamDivergence = 0.001f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Divergence of the lidar laser light beam [deg].
+    /// This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
+    /// exit dimater to the cone surface is half this angle.
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "Divergence of the lidar laser light beam [deg]. " +
+              "This the total \"cone angle\", i.e. the angle between a perfectly parallel beam of the same " +
+              "exit dimater to the cone surface is half this angle. " +
+              "This property affects the calculated intensity." )]
+    [ClampAboveZeroInInspector]
+    public float BeamDivergence
+    {
+      get => m_beamDivergence;
+      set
+      {
+        m_beamDivergence = Mathf.Max( value, 1e-10f );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getProperties().setBeamDivergence( m_beamDivergence * Mathf.Deg2Rad );
+      }
+    }
+
+    [SerializeField]
+    private float m_beamExitRadius = 0.005f;
+
+    /// <summary>
+    /// The diameter of the lidar laser light beam as it exits the lidar [m].
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "The diameter of the lidar laser light beam as it exits the lidar [m]. " +
+              "This property affects the calculated intensity." )]
+    [ClampAboveZeroInInspector]
+    public float BeamExitRadius
+    {
+      get => m_beamExitRadius;
+      set
+      {
+        m_beamExitRadius = Mathf.Max( value, 1e-10f );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getProperties().setBeamExitRadius( m_beamExitRadius );
+      }
+    }
+
+    private LidarSensor m_runtimeSensor;
+
+    void IModelData.ConnectRuntimeInstance( LidarSensor sensor )
+    {
+      m_runtimeSensor = sensor;
+    }
   }
 
   public enum LidarModelPreset
@@ -80,7 +301,7 @@ namespace AGXUnity.Sensor
   }
 
   /// <summary>
-  /// WIP component for lidar sensor
+  /// Component used to simulate a lidar sensor. For objects to be visible to this LiDAR, they have to be added to the <see cref="SensorEnvironment"/>.
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
@@ -91,7 +312,8 @@ namespace AGXUnity.Sensor
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public Lidar Native { get; private set; } = null;
-    public LidarModel m_nativeModel = null;
+
+    private LidarModel m_nativeModel = null;
 
     [SerializeField]
     private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
@@ -103,7 +325,6 @@ namespace AGXUnity.Sensor
     [Tooltip( "The Model, or preset, of this Lidar. " +
               "Changing this will assign Model specific properties to this Lidar." )]
     [DisableInRuntimeInspector]
-
     [InspectorGroupEnd]
     public LidarModelPreset LidarModelPreset
     {
@@ -124,12 +345,18 @@ namespace AGXUnity.Sensor
       }
     }
 
+    /// <summary>
+    /// Model specific data for this lidar. The specific model data type will vary based on the current <see cref="LidarModelPreset"/> value
+    /// </summary>
     [field: SerializeReference]
-    [DisableInRuntimeInspector]
     public IModelData ModelData { get; private set; } = new OusterData();
 
+    /// <summary>
+    /// Specifies an explicit frame for this lidar to allow placement of the lidar component to be independent of the position of the sensor in the world.
+    /// </summary>
     [SerializeField]
     [InspectorGroupBegin(Name="Local Frame Settings")]
+    [Tooltip("Specifies an explicit frame for this lidar to allow placement of the lidar component to be independent of the position of the sensor in the world.")]
     public GameObject LidarFrame;
 
     private bool HasExplicitFrame() => LidarFrame != null;
@@ -159,71 +386,18 @@ namespace AGXUnity.Sensor
     public UnityEngine.Matrix4x4 GlobalTransform => HasExplicitFrame() ? LidarFrame.transform.localToWorldMatrix : transform.localToWorldMatrix * LocalTransform;
 
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private RangeReal m_lidarRange = new RangeReal(0.1f, float.MaxValue);
 
-    /// <summary>
-    /// The minimum and maximum range of the Lidar Sensor [m].
-    /// Objects outside this range will not be detected by this Lidar Sensor.
-    /// </summary>
-    [Tooltip( "The minimum and maximum range of the Lidar Sensor [m]. " +
-              "Objects outside this range will not be detected by this Lidar Sensor." )]
-    public RangeReal LidarRange
-    {
-      get => m_lidarRange;
-      set
-      {
-        m_lidarRange = value;
-        if ( Native != null )
-          Native.getModel().getRayRange().setRange( new RangeReal32( m_lidarRange.Min, m_lidarRange.Max ) );
-      }
-    }
-
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private float m_beamDivergence = 0.001f * Mathf.Rad2Deg;
 
-    /// <summary>
-    /// Divergence of the lidar laser light beam [deg].
-    /// This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
-    /// exit dimater to the cone surface is half this angle.
-    /// This property affects the calculated intensity.
-    /// </summary>
-    [Tooltip( "Divergence of the lidar laser light beam [deg]. " +
-              "This the total \"cone angle\", i.e. the angle between a perfectly parallel beam of the same " +
-              "exit dimater to the cone surface is half this angle. " +
-              "This property affects the calculated intensity." )]
-    [ClampAboveZeroInInspector]
-    public float BeamDivergence
-    {
-      get => m_beamDivergence;
-      set
-      {
-        m_beamDivergence = Mathf.Max( value, 1e-10f );
-        if ( Native != null )
-          Native.getModel().getProperties().setBeamDivergence( m_beamDivergence * Mathf.Deg2Rad );
-      }
-    }
-
     [SerializeField]
+    [Obsolete("This field has been moved into the LiDAR model data")]
     private float m_beamExitRadius = 0.005f;
 
-    /// <summary>
-    /// The diameter of the lidar laser light beam as it exits the lidar [m].
-    /// This property affects the calculated intensity.
-    /// </summary>
-    [Tooltip( "The diameter of the lidar laser light beam as it exits the lidar [m]. " +
-              "This property affects the calculated intensity." )]
-    [ClampAboveZeroInInspector]
-    public float BeamExitRadius
-    {
-      get => m_beamExitRadius;
-      set
-      {
-        m_beamExitRadius = Mathf.Max( value, 1e-10f );
-        if ( Native != null )
-          Native.getModel().getProperties().setBeamExitRadius( m_beamExitRadius );
-      }
-    }
-
+    [SerializeField]
     private uint m_rayTraceDepth = 1;
 
     /// <summary>
@@ -329,6 +503,8 @@ namespace AGXUnity.Sensor
 
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += Sync;
 
+      ModelData.ConnectRuntimeInstance( this );
+
       DistanceGaussianNoise?.Initialize( Native );
       foreach ( var noise in RayAngleGaussianNoises )
         noise?.Initialize( Native );
@@ -336,6 +512,21 @@ namespace AGXUnity.Sensor
       SensorEnvironment.Instance.Native.add( Native );
 
       return true;
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        if ( ModelData is GenericSweepData sweepData ) {
+#pragma warning disable CS0618 // Type or member is obsolete
+          sweepData.Range = m_lidarRange;
+          sweepData.BeamDivergence = m_beamDivergence;
+          sweepData.BeamExitRadius = m_beamExitRadius;
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+        return true;
+      }
+      return false;
     }
 
     protected override void OnEnable()
@@ -412,18 +603,39 @@ namespace AGXUnity.Sensor
       base.OnDestroy();
     }
 
+    private LidarModel CreateGenericSweepModel( GenericSweepData sweepData )
+    {
+      var degPerPointRes = Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution );
+      var totalPointRes = new agx.Vec2u( (uint)sweepData.HorizontalResolutionTotal, (uint)sweepData.VerticalResolutionTotal );
+
+      LidarRayPatternHorizontalSweep pattern;
+      if ( sweepData.FoVMode == GenericSweepData.FoVModes.Centered ) {
+        var fovWindow = Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV );
+        if ( sweepData.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint )
+          pattern = new LidarRayPatternHorizontalSweep( fovWindow, degPerPointRes, sweepData.Frequency );
+        else
+          pattern = new LidarRayPatternHorizontalSweep( fovWindow, totalPointRes, sweepData.Frequency );
+      }
+      else {
+        var horizontal = new agx.RangeReal( sweepData.HorizontalFoVWindow.Min * Mathf.Deg2Rad, sweepData.HorizontalFoVWindow.Max * Mathf.Deg2Rad );
+        var vertical = new agx.RangeReal( sweepData.VerticalFoVWindow.Min * Mathf.Deg2Rad, sweepData.VerticalFoVWindow.Max * Mathf.Deg2Rad );
+        if ( sweepData.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint )
+          pattern = new LidarRayPatternHorizontalSweep( horizontal, vertical, degPerPointRes, sweepData.Frequency );
+        else
+          pattern = new LidarRayPatternHorizontalSweep( horizontal, vertical, totalPointRes, sweepData.Frequency );
+      }
+      var range = new agx.RangeReal32( sweepData.Range.Min, sweepData.Range.Max );
+      LidarProperties properties = new LidarProperties(sweepData.BeamDivergence, sweepData.BeamExitRadius);
+      return new LidarModel( pattern, range, properties );
+    }
+
     private LidarModel CreateLidarModel( LidarModelPreset preset )
     {
       LidarModel lidarModel = null;
 
       switch ( preset ) {
         case LidarModelPreset.LidarModelGenericHorizontalSweep:
-          GenericSweepData sweepData = ModelData as GenericSweepData;
-          lidarModel = new LidarModelHorizontalSweep(
-            Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalFoV, sweepData.VerticalFoV ),
-            Mathf.Deg2Rad * new agx.Vec2( sweepData.HorizontalResolution, sweepData.VerticalResolution ),
-            sweepData.Frequency
-          );
+          lidarModel = CreateGenericSweepModel( ModelData as GenericSweepData );
           break;
 
         case LidarModelPreset.LidarModelOusterOS0:
