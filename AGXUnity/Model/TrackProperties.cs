@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -8,7 +9,94 @@ namespace AGXUnity.Model
     public agxVehicle.TrackProperties Native { get; private set; }
 
     [SerializeField]
-    private Vector3 m_hingeComplianceTranslational = 1.0E-10f * Vector3.one;
+    private Vector2 m_hingeComplianceRotational = 1.0E-10f * Vector2.one;
+
+    [SerializeField]
+    private Vector2 m_hingeDampingRotational = 0.04f * Vector2.one;
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        System.Func<float, float> convertCompliance = (float old) => {
+          // Calculate correction term based on an assumed node length of 0.1m
+          const float numNodesPerMeter = 10;
+          const float correction = 1.0f - 1.0f / (numNodesPerMeter + 1.0f);
+          const float invPairLength = correction / 0.1f;
+
+          return 1 / (old * invPairLength);
+        };
+
+        System.Func<float, float> convertDamping = (float old) => {
+          float dt = 0.02f; // Unity serialization mechanism does not allow us to get the current fixed timestep here so we assume a dt of 0.02
+
+          return old / dt;
+        };
+
+        HingeStiffnessTranslational = new Vector3( convertCompliance( HingeStiffnessTranslational.x ), convertCompliance( HingeStiffnessTranslational.y ), convertCompliance( HingeStiffnessTranslational.z ) );
+        HingeAttenuationTranslational = new Vector3( convertDamping( HingeAttenuationTranslational.x ), convertDamping( HingeAttenuationTranslational.y ), convertDamping( HingeAttenuationTranslational.z ) );
+        HingeStiffnessRotational = new Vector3( convertCompliance( m_hingeComplianceRotational.x ), convertCompliance( m_hingeComplianceRotational.y ), 100.0f );
+        HingeAttenuationRotational = new Vector3( convertDamping( m_hingeDampingRotational.x ), convertDamping( m_hingeDampingRotational.y ), 2.0f );
+
+        return true;
+      }
+
+      return false;
+    }
+
+    [field: SerializeField]
+    public bool FullDoF { get; set; } = false;
+
+    [DynamicallyShowInInspector( nameof( FullDoF ), invert: true )]
+    [ClampAboveZeroInInspector]
+    public float BendingStiffness
+    {
+      get => m_hingeStiffnessRotational.z;
+      set
+      {
+        m_hingeStiffnessRotational.z = value;
+        Native?.setBendingStiffness( m_hingeStiffnessRotational.z, agxVehicle.TrackProperties.Axis.LATERAL );
+      }
+    }
+
+    [DynamicallyShowInInspector( nameof( FullDoF ), invert: true )]
+    [ClampAboveZeroInInspector]
+    public float BendingAttenuation
+    {
+      get => m_hingeAttenuationRotational.z;
+      set
+      {
+        m_hingeAttenuationRotational.z = value;
+        Native?.setBendingAttenuation( m_hingeAttenuationRotational.z, agxVehicle.TrackProperties.Axis.LATERAL );
+      }
+    }
+
+    [DynamicallyShowInInspector( nameof( FullDoF ), invert: true )]
+    [ClampAboveZeroInInspector]
+    public float TensileStiffness
+    {
+      get => m_hingeStiffnessTranslational.y;
+      set
+      {
+        m_hingeStiffnessTranslational.y = value;
+        Native?.setTensileStiffness( m_hingeStiffnessTranslational.y );
+      }
+    }
+
+    [DynamicallyShowInInspector( nameof( FullDoF ), invert: true )]
+    [ClampAboveZeroInInspector]
+    public float TensileAttenuation
+    {
+      get => m_hingeAttenuationTranslational.y;
+      set
+      {
+        m_hingeAttenuationTranslational.y = value;
+        Native?.setTensileAttenuation( m_hingeAttenuationTranslational.y );
+      }
+    }
+
+    [SerializeField]
+    [FormerlySerializedAs("m_hingeComplianceTranslational")]
+    private Vector3 m_hingeStiffnessTranslational = 1.1E10f * Vector3.one;
 
     /// <summary>
     /// Compliance for the translational degrees of freedom in the
@@ -18,22 +106,24 @@ namespace AGXUnity.Model
     [InspectorGroupBegin( Name = "Node Hinge Properties", DefaultExpanded = true )]
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Compliance for the translational degrees of freedom in the hinges between track nodes. \nX: The axis along the thickness of the track.\nY: The axis along the track.\nZ: The axis along the width of the track." )]
-    public Vector3 HingeComplianceTranslational
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
+    public Vector3 HingeStiffnessTranslational
     {
-      get { return m_hingeComplianceTranslational; }
+      get { return m_hingeStiffnessTranslational; }
       set
       {
-        m_hingeComplianceTranslational = value;
+        m_hingeStiffnessTranslational = value;
         if ( Native != null ) {
-          Native.setHingeCompliance( m_hingeComplianceTranslational.x, agx.Hinge.DOF.TRANSLATIONAL_1 );
-          Native.setHingeCompliance( m_hingeComplianceTranslational.y, agx.Hinge.DOF.TRANSLATIONAL_2 );
-          Native.setHingeCompliance( m_hingeComplianceTranslational.z, agx.Hinge.DOF.TRANSLATIONAL_3 );
+          Native.setShearStiffness( m_hingeStiffnessTranslational.x, agxVehicle.TrackProperties.Axis.LATERAL, m_hingeAttenuationTranslational.x );
+          Native.setTensileStiffness( m_hingeStiffnessTranslational.y, m_hingeAttenuationTranslational.y );
+          Native.setShearStiffness( m_hingeStiffnessTranslational.z, agxVehicle.TrackProperties.Axis.VERTICAL, m_hingeAttenuationTranslational.z );
         }
       }
     }
 
     [SerializeField]
-    private Vector3 m_hingeDampingTranslational = 0.04f * Vector3.one;
+    [FormerlySerializedAs("m_hingeDampingTranslational")]
+    private Vector3 m_hingeAttenuationTranslational = 2 * Vector3.one;
 
     /// <summary>
     /// Damping for the translational degrees of freedom in the
@@ -42,22 +132,23 @@ namespace AGXUnity.Model
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Damping for the translational degrees of freedom in the hinges between track nodes. \nX: The axis along the thickness of the track.\nY: The axis along the track.\nZ: The axis along the width of the track." )]
-    public Vector3 HingeDampingTranslational
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
+    public Vector3 HingeAttenuationTranslational
     {
-      get { return m_hingeDampingTranslational; }
+      get { return m_hingeAttenuationTranslational; }
       set
       {
-        m_hingeDampingTranslational = value;
+        m_hingeAttenuationTranslational = value;
         if ( Native != null ) {
-          Native.setHingeDamping( m_hingeDampingTranslational.x, agx.Hinge.DOF.TRANSLATIONAL_1 );
-          Native.setHingeDamping( m_hingeDampingTranslational.y, agx.Hinge.DOF.TRANSLATIONAL_2 );
-          Native.setHingeDamping( m_hingeDampingTranslational.z, agx.Hinge.DOF.TRANSLATIONAL_3 );
+          Native.setShearAttenuation( m_hingeAttenuationTranslational.x, agxVehicle.TrackProperties.Axis.LATERAL );
+          Native.setTensileAttenuation( m_hingeAttenuationTranslational.y );
+          Native.setShearAttenuation( m_hingeAttenuationTranslational.z, agxVehicle.TrackProperties.Axis.VERTICAL );
         }
       }
     }
 
     [SerializeField]
-    private Vector2 m_hingeComplianceRotational = 1.0E-10f * Vector2.one;
+    private Vector3 m_hingeStiffnessRotational = new Vector3(1.1E10f, 1.1E10f, 50);
 
     /// <summary>
     /// Compliance for the rotational degrees of freedom in the
@@ -66,21 +157,23 @@ namespace AGXUnity.Model
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Compliance for the rotational degrees of freedom in the hinges between track nodes. \nX: Rotation along the axis orthogonal to the track.\nY: Rotation along the axis of the track." )]
-    public Vector2 HingeComplianceRotational
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
+    public Vector3 HingeStiffnessRotational
     {
-      get { return m_hingeComplianceRotational; }
+      get { return m_hingeStiffnessRotational; }
       set
       {
-        m_hingeComplianceRotational = value;
+        m_hingeStiffnessRotational = value;
         if ( Native != null ) {
-          Native.setHingeCompliance( m_hingeComplianceRotational.x, agx.Hinge.DOF.ROTATIONAL_1 );
-          Native.setHingeCompliance( m_hingeComplianceRotational.y, agx.Hinge.DOF.ROTATIONAL_2 );
+          Native.setBendingStiffness( m_hingeStiffnessRotational.x, agxVehicle.TrackProperties.Axis.VERTICAL, m_hingeAttenuationRotational.x );
+          Native.setTorsionalStiffness( m_hingeStiffnessRotational.y, m_hingeAttenuationRotational.y );
+          Native.setBendingStiffness( m_hingeStiffnessRotational.z, agxVehicle.TrackProperties.Axis.LATERAL, m_hingeAttenuationRotational.z );
         }
       }
     }
 
     [SerializeField]
-    private Vector2 m_hingeDampingRotational = 0.04f * Vector2.one;
+    private Vector3 m_hingeAttenuationRotational = 2.0f * Vector2.one;
 
     /// <summary>
     /// Damping for the rotational degrees of freedom in the
@@ -89,15 +182,17 @@ namespace AGXUnity.Model
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Damping for the rotational degrees of freedom in the hinges between track nodes. \nX: Rotation along the axis orthogonal to the track.\nY: Rotation along the axis of the track." )]
-    public Vector2 HingeDampingRotational
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
+    public Vector3 HingeAttenuationRotational
     {
-      get { return m_hingeDampingRotational; }
+      get { return m_hingeAttenuationRotational; }
       set
       {
-        m_hingeDampingRotational = value;
+        m_hingeAttenuationRotational = value;
         if ( Native != null ) {
-          Native.setHingeDamping( m_hingeDampingRotational.x, agx.Hinge.DOF.ROTATIONAL_1 );
-          Native.setHingeDamping( m_hingeDampingRotational.y, agx.Hinge.DOF.ROTATIONAL_2 );
+          Native.setBendingAttenuation( m_hingeAttenuationRotational.x, agxVehicle.TrackProperties.Axis.VERTICAL );
+          Native.setTorsionalAttenuation( m_hingeAttenuationRotational.y );
+          Native.setBendingAttenuation( m_hingeAttenuationRotational.z, agxVehicle.TrackProperties.Axis.LATERAL );
         }
       }
     }
@@ -110,7 +205,8 @@ namespace AGXUnity.Model
     /// track nodes to define how the track may bend.
     /// Default: Enabled
     /// </summary>
-    [Tooltip( "True to enable the range in the hinges between the track nodes to define how the track may bend." )]
+    [Tooltip( "True to enable the 1range in the hinges between the track nodes to define how the track may bend." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public bool HingeRangeEnabled
     {
       get { return m_hingeRangeEnabled; }
@@ -131,6 +227,7 @@ namespace AGXUnity.Model
     /// Default: [-120, 20]
     /// </summary>
     [Tooltip( "Range used if the hinge range between the nodes are enabled - given in degrees." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public RangeReal HingeRangeRange
     {
       get { return m_hingeRangeRange; }
@@ -155,6 +252,7 @@ namespace AGXUnity.Model
     /// </summary>
     [InspectorGroupBegin( Name = "Merge/Split Properties", DefaultExpanded = true )]
     [Tooltip( "When the track has been initialized some nodes are in contact with the wheels. If this flag is true the interacting nodes will be merged to the wheel directly after initialize, if false the nodes will be merged during the first (or later) time step." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public bool OnInitializeMergeNodesToWheelsEnabled
     {
       get { return m_onInitializeMergeNodesToWheelsEnabled; }
@@ -176,6 +274,7 @@ namespace AGXUnity.Model
     /// Default: Enabled
     /// </summary>
     [Tooltip( "True to position/transform the track nodes to the surface of the wheels after the track has been initialized.When false, the routing algorithm positions are used." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public bool OnInitializeTransformNodesToWheelsEnabled
     {
       get { return m_onInitializeTransformNodesToWheelsEnabled; }
@@ -195,6 +294,7 @@ namespace AGXUnity.Model
     /// Default: 1.0E-3
     /// </summary>
     [Tooltip( "When the nodes are transformed to the wheels, this is the final target overlap" )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public float TransformNodesToWheelsOverlap
     {
       get { return m_transformNodesToWheelsOverlap; }
@@ -217,6 +317,7 @@ namespace AGXUnity.Model
     /// Default: -0.1
     /// </summary>
     [Tooltip( "Threshold when to merge a node to a wheel. Given a reference direction in the track, this value is the projection of the deviation (from the reference direction) of the node direction onto the wheel radial direction vector. I.e., when the projection is negative the node can be considered \"wrapped\" on the wheel." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public float NodesToWheelsMergeThreshold
     {
       get { return m_nodesToWheelsMergeThreshold; }
@@ -239,6 +340,7 @@ namespace AGXUnity.Model
     /// Default: -0.05
     /// </summary>
     [Tooltip( "Threshold when to split a node from a wheel. Given a reference direction in the track, this value is the projection of the deviation (from the reference direction) of the node direction onto the wheel radial direction vector. I.e., when the projection is negative the node can be considered \"wrapped\" on the wheel." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public float NodesToWheelsSplitThreshold
     {
       get { return m_nodesToWheelsSplitThreshold; }
@@ -261,6 +363,7 @@ namespace AGXUnity.Model
     /// </summary>
     [Tooltip( "Average direction of non-merged nodes entering or exiting a wheel is used as reference direction to split of a merged node. This is the number of nodes to include into this average direction." )]
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public int NumNodesIncludedInAverageDirection
     {
       get { return m_numNodesIncludedInAverageDirection; }
@@ -284,6 +387,7 @@ namespace AGXUnity.Model
     /// </summary>
     [InspectorGroupBegin( Name = "Stabilizing Properties" )]
     [Tooltip( "Minimum value of the normal force (the hinge force along the track) used in \"internal\" friction calculations.I.e., when the track is compressed, this value is used with the friction coefficient as a minimum stabilizing compliance. If this value is negative there will be stabilization when the track is compressed." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public float MinStabilizingHingeNormalForce
     {
       get { return m_minStabilizingHingeNormalForce; }
@@ -305,6 +409,7 @@ namespace AGXUnity.Model
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Friction parameter of the internal friction in the node hinges. This parameter scales the normal force in the hinge." )]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public float StabilizingHingeFrictionParameter
     {
       get { return m_stabilizingHingeFrictionParameter; }

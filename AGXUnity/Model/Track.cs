@@ -1,3 +1,4 @@
+using AGXUnity.Utils;
 using agxVehicle;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,35 @@ namespace AGXUnity.Model
     public agxVehicle.Track Native { get; private set; } = null;
 
     [SerializeField]
+    private bool m_fullDoF = false;
+
+    /// <summary>
+    /// When enabled, the track will simulate individual links in the track based on the track properties.
+    /// While this results in higher fidelity in the simulation results, it can also cause the simualation to become more unstable
+    /// under harsh conditions (heavy impacts, high speeds) or when the track properties is not properly configured for stability.
+    /// 
+    /// In general, the Low DoF model should be preferred unless the high fidelity simulation is a necessity.
+    /// </summary>
+    [Tooltip( "When enabled, the track will simulate individual links in the track based on the track properties. " +
+              "While this results in higher fidelity in the simulation results, it can also cause the simualation to become more unstable" +
+              " under harsh conditions (heavy impacts, high speeds) or when the track properties is not properly configured for stability. " +
+              "In general, the Low DoF model should be preferred unless the high fidelity simulation is a necessity." )]
+    public bool FullDoF
+    {
+      get => m_fullDoF;
+      set
+      {
+        m_fullDoF = value;
+        if ( Native != null )
+          Native.setEnableFullDegreeModel( m_fullDoF );
+      }
+    }
+
+    [DisableInRuntimeInspector]
+    [Tooltip("An object")]
+    public GameObject ReferenceObject;
+
+    [SerializeField]
     private int m_numberOfNodes = 64;
 
     /// <summary>
@@ -27,6 +57,8 @@ namespace AGXUnity.Model
     /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
+    [DisableInRuntimeInspector]
+    [Tooltip( "Approximate number of nodes in the track. The final value may differ depending on the configuration of the wheels." )]
     public int NumberOfNodes
     {
       get { return m_numberOfNodes; }
@@ -48,6 +80,7 @@ namespace AGXUnity.Model
     /// Default: 0.05
     /// </summary>
     [IgnoreSynchronization]
+    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
     public float Thickness
     {
@@ -138,6 +171,7 @@ namespace AGXUnity.Model
     /// Default: 1.0E-3
     /// </summary>
     [IgnoreSynchronization]
+    [DisableInRuntimeInspector]
     public float InitialTensionDistance
     {
       get { return m_initialTensionDistance; }
@@ -179,6 +213,7 @@ namespace AGXUnity.Model
     /// Node to node merge properties of this track.
     /// </summary>
     [AllowRecursiveEditing]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public TrackInternalMergeProperties InternalMergeProperties
     {
       get { return m_internalMergeProperties; }
@@ -311,10 +346,23 @@ namespace AGXUnity.Model
         return false;
       }
 
-      Native = new agxVehicle.Track( (ulong)NumberOfNodes,
+      agx.RigidBody refBody = null;
+
+      if ( ReferenceObject != null )
+        refBody = ReferenceObject.gameObject.GetInitializedComponentInParent<RigidBody>().Native;
+
+      if ( !FullDoF && refBody == null )
+        Debug.LogWarning( $"Track '{this.name}' is using the reduced DoF model but does not specify a reference body. This is likely to cause errors in the simulation." );
+
+      if ( FullDoF && Properties != null && !Properties.FullDoF )
+        Debug.LogWarning( $"Track '{this.name}' is using the full DoF model but it's properties are configured for the reduced DoF model. " +
+                          $"While this is supported, it can lead to errors due to the properties not being fully specified for the model" );
+
+      Native = new agxVehicle.Track( refBody,
+                                     (ulong)NumberOfNodes,
                                      Width,
                                      Thickness,
-                                     InitialTensionDistance );
+                                     new agxVehicle.InitialTrackTension( InitialTensionDistance ) );
 
       if ( Properties != null )
         Native.setProperties( Properties.GetInitialized<TrackProperties>().Native );
