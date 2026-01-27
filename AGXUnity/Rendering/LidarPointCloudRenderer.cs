@@ -318,12 +318,12 @@ namespace AGXUnity.Rendering
 
     protected override void OnDestroy()
     {
-      m_pointBuffer.Release();
-      m_deadBuffer.Release();
-      m_insertionBuffer.Release();
-      m_ttlBuffer.Release();
-      m_deadIndexBuffer.Release();
-      m_argsBuffer.Release();
+      if ( m_pointBuffer != null ) m_pointBuffer.Release();
+      if ( m_deadBuffer != null ) m_deadBuffer.Release();
+      if ( m_insertionBuffer != null ) m_insertionBuffer.Release();
+      if ( m_ttlBuffer != null ) m_ttlBuffer.Release();
+      if ( m_deadIndexBuffer != null ) m_deadIndexBuffer.Release();
+      if ( m_argsBuffer != null ) m_argsBuffer.Release();
 
       foreach ( var buffer in m_deferredDeletion )
         buffer.Release();
