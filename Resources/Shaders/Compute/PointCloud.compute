@@ -1,0 +1,70 @@
+RWBuffer<float> ttls;
+RWBuffer<int> deadPoints;
+RWBuffer<float4> newPoints;
+RWBuffer<float4> pointCloud;
+
+RWBuffer<float4> oldPointCloud;
+RWBuffer<float> oldttls;
+
+RWBuffer<int> deadIndex;
+
+uint numPoints;
+float decayTime;
+float dt;
+float4x4 sensorToWorld;
+
+#pragma kernel Update
+[numthreads(128,1,1)]
+void Update(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= numPoints) return;
+
+    ttls[id.x] -= dt;
+
+    if(ttls[id.x] <= 0){
+        int index;
+        InterlockedAdd(deadIndex[0], 1, index);
+
+        deadPoints[index] = id.x;
+    }
+}
+
+#pragma kernel Insert 
+[numthreads(128,1,1)]
+void Insert(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= numPoints) return;
+
+    int index;
+    InterlockedAdd(deadIndex[0], -1, index);
+
+    index -= 1;
+
+    int insertAt = deadPoints[index];
+
+    float4 toInsert = newPoints[id.x];
+    toInsert.x = -toInsert.x;
+
+    toInsert.xyz = mul(sensorToWorld,float4(toInsert.xyz,1.0f)).xyz;
+
+    pointCloud[insertAt] = toInsert;
+    ttls[insertAt] = decayTime; 
+}
+
+#pragma kernel Copy
+[numthreads(128,1,1)]
+void Copy(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= numPoints) return;
+
+    pointCloud[id.x] = oldPointCloud[id.x];
+    ttls[id.x] = oldttls[id.x];
+}
+
+#pragma kernel Initialize
+[numthreads(128,1,1)]
+void Initialize(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= numPoints) return;
+    ttls[id.x] = 0.0f;
+}

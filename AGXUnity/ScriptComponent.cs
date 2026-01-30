@@ -38,9 +38,11 @@ namespace AGXUnity
 
     // Version log:
     // 1 - Migrate shovel cutting direction to tooth direction
-    private const int CurrentSerializationVersion = 1;
+    // 2 - Migrate Range, Beam Divergence, and Beam Exit Radius into the LiDAR model
+    private const int CurrentSerializationVersion = 2;
 
     [SerializeField]
+    [HideInInspector]
     protected int m_serializationVersion = -1;
 
     public void OnBeforeSerialize()
@@ -55,8 +57,10 @@ namespace AGXUnity
           Debug.Log( $"Performed automatic migration of a component with type '{this.GetType()}'" );
 #if UNITY_EDITOR
           // Ensure the migration is saved
-          UnityEditor.EditorApplication.delayCall += () =>
-            UnityEditor.EditorUtility.SetDirty( this );
+          UnityEditor.EditorApplication.delayCall += () => {
+            if ( this != null )
+              UnityEditor.EditorUtility.SetDirty( this );
+          };
 #endif
         }
       }
@@ -66,7 +70,7 @@ namespace AGXUnity
     /// Implement this to recieve a callback when an old version of a ScriptComponent is deserialized.
     /// </summary>
     /// <returns>True if migrations were made, false otherwise</returns>
-    protected virtual bool PerformMigration() => true;
+    protected virtual bool PerformMigration() => false;
 
     /// <summary>
     /// Returns native simulation object unless the scene is being

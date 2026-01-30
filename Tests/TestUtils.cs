@@ -42,22 +42,6 @@ namespace AGXUnityTesting
       }
     }
 
-    public static IEnumerator SimulateTo( float time )
-    {
-      if ( !Application.isPlaying )
-        Debug.LogError( "TestUtils are not supported in edit-mode" );
-      else {
-        yield return WaitUntilLoaded();
-        while ( Simulation.Instance.Native.getTimeStamp() < time ) {
-#if TEST_REALTIME_SYNC
-          yield return new WaitForFixedUpdate();
-#else
-          Simulation.Instance.DoStep();
-#endif
-        }
-      }
-    }
-
     public static IEnumerator SimulateSeconds( float time )
     {
       if ( !Application.isPlaying )

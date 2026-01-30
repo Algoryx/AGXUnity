@@ -172,6 +172,15 @@ namespace AGXUnityEditor.Tools
         }
       }
 
+      Simulation.EnableWebDebugging = EditorGUILayout.Toggle( "Enable Web debugging", Simulation.EnableWebDebugging );
+      using ( new EditorGUI.IndentLevelScope() ) {
+        using ( new GUI.EnabledBlock( Simulation.EnableWebDebugging ) )
+          Simulation.WebDebuggingPort = (ushort)EditorGUILayout.IntField( "Web Debugging Port", Simulation.WebDebuggingPort );
+      }
+
+      if ( GUILayout.Button( "Start Web Debugger" ) )
+        Simulation.LaunchWebDebugger();
+
 #if AGXUNITY_DEV_ENV
       using ( new GUI.EnabledBlock( EditorApplication.isPlaying ) ) {
         var rect    = EditorGUILayout.GetControlRect();

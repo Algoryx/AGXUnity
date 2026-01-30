@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class TerrainTests
+  public class TerrainTests : AGXUnityFixture
   {
     private DeformableTerrain testTerrain;
     private Terrain unityTerrain;
@@ -160,7 +160,7 @@ namespace AGXUnityTesting.Runtime
       testTerrain.GetInitialized();
     }
   }
-  public class PagerTests
+  public class PagerTests : AGXUnityFixture
   {
     private DeformableTerrainPager testTerrain;
     private Terrain unityTerrain;

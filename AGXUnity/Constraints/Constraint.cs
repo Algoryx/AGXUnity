@@ -20,6 +20,7 @@ namespace AGXUnity
     DistanceJoint,
     AngularLockJoint,
     PlaneJoint,
+    GenericConstraint1DOF,
     Unknown
   }
 
@@ -113,7 +114,7 @@ namespace AGXUnity
 
       GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity." + type ) );
       try {
-        Constraint constraint = constraintGameObject.AddComponent<Constraint>();
+        Constraint constraint = type == ConstraintType.GenericConstraint1DOF ? constraintGameObject.AddComponent<Generic1DOFControlledConstraint>() : constraintGameObject.AddComponent<Constraint>();
         constraint.Type = type;
 
         constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
@@ -121,8 +122,11 @@ namespace AGXUnity
 
         // Creating a temporary native instance of the constraint, including a rigid body and frames.
         // Given this native instance we copy the default configuration.
-        using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) )
-          constraint.TryAddElementaryConstraints( tmpNative.Instance );
+        if ( type != ConstraintType.GenericConstraint1DOF ) {
+          using ( var tmpNative = new TemporaryNative( constraint.NativeType, constraint.AttachmentPair ) ) {
+            constraint.TryAddElementaryConstraints( tmpNative.Instance );
+          }
+        }
 
         return constraint;
       }
@@ -239,8 +243,18 @@ namespace AGXUnity
     public ConstraintType Type
     {
       get { return m_type; }
-      private set
+      protected set
       {
+        if ( this is Generic1DOFControlledConstraint ) {
+          if ( value != ConstraintType.GenericConstraint1DOF ) {
+            Debug.LogWarning( "Cannot swap constraint type of GenericConstraint1DOF." );
+            return;
+          }
+        }
+        else if ( value == ConstraintType.GenericConstraint1DOF ) {
+          Debug.LogWarning( "Unable to swap type to GenericConstraint1DOF, please use the dedicated component instead." );
+          return;
+        }
         m_type = value;
       }
     }
@@ -342,7 +356,7 @@ namespace AGXUnity
     /// List of elementary constraints in this constraint - controllers and ordinary.
     /// </summary>
     [SerializeReference]
-    private List<ElementaryConstraint> m_elementaryConstraintsNew = new List<ElementaryConstraint>();
+    protected List<ElementaryConstraint> m_elementaryConstraintsNew = new List<ElementaryConstraint>();
 
     /// <summary>
     /// Array of elementary constraints in this constraint - controllers and ordinary.
@@ -413,6 +427,8 @@ namespace AGXUnity
       where T : struct
     {
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( GetOrdinaryElementaryConstraints() );
+      if ( rowParser == null )
+        return;
       var rows = typeof( T ) == typeof( TranslationalDof ) ?
                    rowParser.TranslationalRows :
                    rowParser.RotationalRows;
@@ -601,7 +617,7 @@ namespace AGXUnity
         }
 
         using ( var nativeHinge = new TemporaryNative( NativeType ) ) {
-          swing = ElementaryConstraint.Create( gameObject, nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
+          swing = ElementaryConstraint.Create( nativeHinge.Instance.getElementaryConstraintGivenName( "SW" ) );
         }
 
         if ( swing == null ) {
@@ -642,7 +658,7 @@ namespace AGXUnity
         if ( native.getElementaryConstraint( i ).getName() == "" )
           throw new Exception( "Native elementary constraint doesn't have a name." );
 
-        var ec = ElementaryConstraint.Create( gameObject, native.getElementaryConstraint( i ) );
+        var ec = ElementaryConstraint.Create( native.getElementaryConstraint( i ) );
         if ( ec == null )
           throw new Exception( "Failed to configure elementary constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -655,7 +671,7 @@ namespace AGXUnity
         if ( native.getSecondaryConstraint( i ).getName() == "" )
           throw new Exception( "Native secondary constraint doesn't have a name." );
 
-        var sc = ElementaryConstraint.Create( gameObject, native.getSecondaryConstraint( i ) );
+        var sc = ElementaryConstraint.Create( native.getSecondaryConstraint( i ) );
         if ( sc == null )
           throw new Exception( "Failed to configure elementary controller constraint with name: " + native.getElementaryConstraint( i ).getName() + "." );
 
@@ -697,7 +713,10 @@ namespace AGXUnity
         Debug.LogWarning( "Invalid to change type of an initialized constraint.", this );
         return;
       }
-
+      if ( this is Generic1DOFControlledConstraint ) {
+        Debug.LogWarning( "Cannot swap constraint type of GenericConstraint1DOF." );
+        return;
+      }
       m_elementaryConstraintsNew.Clear();
 
       SetType( type, true );
@@ -707,6 +726,20 @@ namespace AGXUnity
 
       using ( var tempNative = new TemporaryNative( NativeType, AttachmentPair ) )
         TryAddElementaryConstraints( tempNative.Instance, onObjectCreated );
+    }
+
+    protected virtual agx.Constraint CreateNative( RigidBody rb1, agx.Frame f1, RigidBody rb2, agx.Frame f2 )
+    {
+      var native = (agx.Constraint)Activator.CreateInstance( NativeType,
+                                                           new object[]
+                                                           {
+                                                             rb1.Native,
+                                                             f1,
+                                                             ( rb2 != null ? rb2.Native : null ),
+                                                             f2
+                                                           } );
+
+      return native;
     }
 
     /// <summary>
@@ -776,14 +809,7 @@ namespace AGXUnity
       }
 
       try {
-        Native = (agx.Constraint)Activator.CreateInstance( NativeType,
-                                                           new object[]
-                                                           {
-                                                             rb1.Native,
-                                                             f1,
-                                                             ( rb2 != null ? rb2.Native : null ),
-                                                             f2
-                                                           } );
+        Native = CreateNative( rb1, f1, rb2, f2 );
 
         // Assigning native elementary constraints to our elementary constraint instances.
         foreach ( ElementaryConstraint ec in ElementaryConstraints )
@@ -793,6 +819,7 @@ namespace AGXUnity
                                  " (not present in native constraint). ConstraintType: " + Type );
 
         bool added = GetSimulation().add( Native );
+        bool preEnableValid = Native.getValid();
         Native.setEnable( IsEnabled );
 
         // Not possible to handle collisions if connected frame parent is null/world.
@@ -820,7 +847,7 @@ namespace AGXUnity
 
         Native.setName( name );
 
-        bool valid = added && Native.getValid();
+        bool valid = added && (preEnableValid || Type == ConstraintType.GenericConstraint1DOF);
         Simulation.Instance.StepCallbacks.PreSynchronizeTransforms += OnPreStepForwardUpdate;
 
         // It's not possible to check which properties an animator

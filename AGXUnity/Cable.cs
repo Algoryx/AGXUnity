@@ -202,10 +202,10 @@ namespace AGXUnity
 
     //============ Storage for interaction between "RouteFromMeshTool.cs" and "SkinnedCableRenderer.cs" ============    
     [HideInInspector]
-    [SerializeField]
+    [field: SerializeField]
     public Mesh RouteMeshSource { get; set; }
     [HideInInspector]
-    [SerializeField]
+    [field: SerializeField]
     public Material RouteMeshMaterial { get; set; }
     //==============================================================================================================
 

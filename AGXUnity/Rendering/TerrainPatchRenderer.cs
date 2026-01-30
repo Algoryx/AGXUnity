@@ -33,6 +33,7 @@ namespace AGXUnity.Rendering
 
   [RequireComponent( typeof( DeformableTerrainBase ) )]
   [DisallowMultipleComponent]
+  [AddComponentMenu( "AGXUnity/Rendering/Terrain Patch Renderer" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#using-different-terrain-materials" )]
   public class TerrainPatchRenderer : ScriptComponent
   {

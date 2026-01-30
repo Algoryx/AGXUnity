@@ -13,7 +13,7 @@ using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class LidarTests
+  public class LidarTests : AGXUnityFixture
   {
     private GOList m_keep = new GOList();
 
@@ -91,7 +91,7 @@ namespace AGXUnityTesting.Runtime
       GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
 
-    private LidarSensor CreateDefaultTestLidar( Vector3 position = default )
+    private (LidarSensor, GenericSweepData) CreateDefaultTestLidar( Vector3 position = default )
     {
       var lidarGO = new GameObject("Lidar");
       lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
@@ -107,7 +107,7 @@ namespace AGXUnityTesting.Runtime
       modelData.HorizontalResolution = 2;
       modelData.VerticalResolution = 2;
 
-      return lidarComp;
+      return (lidarComp, modelData);
     }
 
     [UnityTest]
@@ -127,7 +127,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLidarOutputPreAdd()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       var output = new LidarOutput
       {
@@ -150,7 +150,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLidarOutputPostAdd()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       lidarComp.GetInitialized();
 
@@ -181,7 +181,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLidarOutputInvalidViewFails()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       lidarComp.GetInitialized();
 
@@ -201,7 +201,7 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestLidarOutputAddField()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       lidarComp.GetInitialized();
 
@@ -221,7 +221,7 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestLidarOutputRemoveField()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       lidarComp.GetInitialized();
 
@@ -244,8 +244,8 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestAddLidarOutputToMultipleLidarsShouldFail()
     {
-      var lidarComp1 = CreateDefaultTestLidar();
-      var lidarComp2 = CreateDefaultTestLidar();
+      var (lidarComp1, _) = CreateDefaultTestLidar();
+      var (lidarComp2, _) = CreateDefaultTestLidar();
 
       lidarComp1.GetInitialized();
       lidarComp2.GetInitialized();
@@ -261,7 +261,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestSensorEnvironmentAmbientMaterial()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -290,7 +290,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRemoveMisses()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -316,7 +316,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestSurfaceMaterialReflectivity()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
       var mat = AddLambertianMaterial( box, 0.2f );
@@ -354,7 +354,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLateAddSurfaceMaterial()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var box = CreateShape<Box>( new Vector3( 0, 5, -3 ) );
 
@@ -381,7 +381,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestAddMeshAfterInitialization()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -402,7 +402,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestAddMeshNonAGXAfterInitialization()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -424,7 +424,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRemoveMesh()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -452,7 +452,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestDisableEnableMesh()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -486,7 +486,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestAddCableAfterInitialization()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput() { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -502,8 +502,8 @@ namespace AGXUnityTesting.Runtime
 
       TestUtils.InitializeAll();
 
-
       yield return TestUtils.Step();
+      //yield return TestUtils.SimulateSeconds( 5 );
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
@@ -514,7 +514,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRemoveCable()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -546,7 +546,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestDisableEnableCable()
     {
-      var lidarComp = CreateDefaultTestLidar(Vector3.up * 5);
+      var (lidarComp, _) = CreateDefaultTestLidar( Vector3.up * 5 );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -599,7 +599,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestDistanceNoise()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -635,7 +635,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRayAngleNoise()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -651,7 +651,6 @@ namespace AGXUnityTesting.Runtime
 
       var points = output.View<agx.Vec3f>( out uint count );
       var preAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( preAvgDiff );
 
       noise.Enable = true;
       noise.StandardDeviation = 0.2f;
@@ -661,18 +660,15 @@ namespace AGXUnityTesting.Runtime
 
       points = output.View<agx.Vec3f>( out count, points );
       var postAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( postAvgDiff );
 
       Assert.Greater( postAvgDiff, preAvgDiff, "Expected average angle difference difference to be greater with noise." );
 
       noise.Enable = false;
 
       yield return TestUtils.Step();
-      //yield return TestUtils.SimulateSeconds( 100 );
 
       points = output.View<agx.Vec3f>( out count, points );
       var finalAvgDiff = CalculateAverageDifference( points, count, err );
-      Debug.Log( finalAvgDiff );
 
       Assert.AreEqual( preAvgDiff, finalAvgDiff, 0.00001f, "Expected average angle difference to be same as before enabling noise." );
     }
@@ -680,22 +676,22 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestBeamDivergenceChange()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp.Add( output );
 
       lidarComp.GetInitialized();
 
-      lidarComp.BeamDivergence = 0;
-      lidarComp.BeamExitRadius = 0;
+      sweepData.BeamDivergence = 0;
+      sweepData.BeamExitRadius = 0;
 
       yield return TestUtils.Step();
 
       var points = output.View<float>( out uint count );
       var preAvgInt = points.Average();
 
-      lidarComp.BeamDivergence = 0.003f;
+      sweepData.BeamDivergence = 0.003f;
 
       yield return TestUtils.Step();
 
@@ -704,7 +700,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Less( postAvgInt, preAvgInt, "Expected average intensity to be lower with greater beam divergence." );
 
-      lidarComp.BeamDivergence = 0;
+      sweepData.BeamDivergence = 0;
 
       yield return TestUtils.Step();
 
@@ -717,22 +713,22 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestBeamExitRadiusChange()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp.Add( output );
 
       lidarComp.GetInitialized();
 
-      lidarComp.BeamDivergence = 0;
-      lidarComp.BeamExitRadius = 0;
+      sweepData.BeamDivergence = 0;
+      sweepData.BeamExitRadius = 0;
 
       yield return TestUtils.Step();
 
       var points = output.View<float>( out uint count );
       var preAvgInt = points.Take((int)count).Average();
 
-      lidarComp.BeamExitRadius = 0.003f;
+      sweepData.BeamExitRadius = 0.003f;
 
       yield return TestUtils.Step();
 
@@ -741,7 +737,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.AreNotEqual( postAvgInt, preAvgInt, "Expected average intensity to be change with greater beam exit radius." );
 
-      lidarComp.BeamExitRadius = 0;
+      sweepData.BeamExitRadius = 0;
 
       yield return TestUtils.Step();
 
@@ -754,8 +750,8 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestBeamDivergence()
     {
-      var lidarComp1 = CreateDefaultTestLidar();
-      var lidarComp2 = CreateDefaultTestLidar();
+      var (lidarComp1, sweepData1) = CreateDefaultTestLidar();
+      var (lidarComp2, sweepData2) = CreateDefaultTestLidar();
 
       var output1 = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp1.Add( output1 );
@@ -763,11 +759,11 @@ namespace AGXUnityTesting.Runtime
       var output2 = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp2.Add( output2 );
 
-      lidarComp1.BeamDivergence = 0.01f;
-      lidarComp1.BeamExitRadius = 0.01f;
+      sweepData1.BeamDivergence = 0.01f;
+      sweepData1.BeamExitRadius = 0.01f;
 
-      lidarComp2.BeamDivergence = 0.03f;
-      lidarComp2.BeamExitRadius = 0.01f;
+      sweepData2.BeamDivergence = 0.03f;
+      sweepData2.BeamExitRadius = 0.01f;
 
       lidarComp1.GetInitialized();
       lidarComp2.GetInitialized();
@@ -786,8 +782,8 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestBeamExitRadius()
     {
-      var lidarComp1 = CreateDefaultTestLidar();
-      var lidarComp2 = CreateDefaultTestLidar();
+      var (lidarComp1, sweepData1) = CreateDefaultTestLidar();
+      var (lidarComp2, sweepData2) = CreateDefaultTestLidar();
 
       var output1 = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp1.Add( output1 );
@@ -795,11 +791,11 @@ namespace AGXUnityTesting.Runtime
       var output2 = new LidarOutput { agxSensor.RtOutput.Field.INTENSITY_F32 };
       lidarComp2.Add( output2 );
 
-      lidarComp1.BeamDivergence = 0.01f;
-      lidarComp1.BeamExitRadius = 0.01f;
+      sweepData1.BeamDivergence = 0.01f;
+      sweepData1.BeamExitRadius = 0.01f;
 
-      lidarComp2.BeamDivergence = 0.01f;
-      lidarComp2.BeamExitRadius = 0.03f;
+      sweepData2.BeamDivergence = 0.01f;
+      sweepData2.BeamExitRadius = 0.03f;
 
       lidarComp1.GetInitialized();
       lidarComp2.GetInitialized();
@@ -818,14 +814,14 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestRange()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
 
       lidarComp.GetInitialized();
 
-      lidarComp.LidarRange = new RangeReal( 0.1f, 50 );
+      sweepData.Range = new RangeReal( 0.1f, 50 );
       lidarComp.RemoveRayMisses = true;
 
       yield return TestUtils.Step();
@@ -835,7 +831,7 @@ namespace AGXUnityTesting.Runtime
       uint oldCount = firstCount;
 
       for ( float max = 50; max > 1; max-- ) {
-        lidarComp.LidarRange = new RangeReal( 0.1f, max );
+        sweepData.Range = new RangeReal( 0.1f, max );
         yield return TestUtils.Step();
         output.View<agx.Vec3f>( out uint newCount );
         Assert.LessOrEqual( newCount, oldCount, "Expected number of points to decrease with lower range." );
@@ -845,7 +841,7 @@ namespace AGXUnityTesting.Runtime
       Assert.Zero( oldCount, "Exepected short range lidar to have zero hits." );
 
       for ( float max = 1; max < 50; max++ ) {
-        lidarComp.LidarRange = new RangeReal( 0.1f, max );
+        sweepData.Range = new RangeReal( 0.1f, max );
         yield return TestUtils.Step();
         output.View<agx.Vec3f>( out uint newCount );
         Assert.GreaterOrEqual( newCount, oldCount, "Expected number of points to increase with higher range." );
@@ -856,7 +852,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLocalPosition()
     {
-      var lidarComp = CreateDefaultTestLidar();
+      var (lidarComp, _) = CreateDefaultTestLidar();
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
@@ -876,6 +872,181 @@ namespace AGXUnityTesting.Runtime
       var postMaxElevation = elevations.Select(p => p.z).Max();
 
       Assert.Less( postMaxElevation, preMaxElevation - 0.8f );
+    }
+
+    [UnityTest]
+    public IEnumerator TestExcludeSpecificMesh()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = mesh.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d > 0.15f ), Is.True, "After adding an explicit exclusion, the mesh should no longer be visible" );
+
+      include.Include = true;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "Disabling the exclude makes the mesh visible again" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestExcludeRecursive()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      var parent = new GameObject("Parent");
+      mesh.transform.parent = parent.transform;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = parent.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+      include.PropagateToChildrenRecusively = false;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "After adding an explicit exclusion to parent, the mesh should still be visible" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestExcludeOverride()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.DISTANCE_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = true;
+
+      var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+      mesh.transform.localScale = Vector3.one * 0.1f;
+      mesh.transform.position = lidarComp.transform.position;
+
+      var parent = new GameObject("Parent");
+      mesh.transform.parent = parent.transform;
+
+      SensorEnvironment.Instance.RegisterCreatedObject( mesh );
+
+      yield return TestUtils.Step();
+      var distances = output.View<float>( out uint count );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "By default, the mesh is added to the sensor environment" );
+
+      var include = parent.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      include.Include = false;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d > 0.15f ), Is.True, "After adding an explicit exclusion to parent, the mesh should no longer be visible" );
+
+      var localInclude = mesh.AddComponent<ExplicitSensorEnvironmentInclusion>();
+      localInclude.Include = true;
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+      distances = output.View<float>( out count, distances );
+      Assert.That( distances.Take( (int)count ).All( d => d < 0.15f ), Is.True, "After adding an explicit include to local object, the mesh should be visible again" );
+    }
+
+    private agx.Vec2f HitPosToAzimuthElevation( agx.Vec3f point )
+    {
+      if ( point.length2() > 1e11 )
+        point /= 1e30f;
+      var dir = point.normal();
+      float elevation = (float)agx.agxMath.Acos(dir.z) * Mathf.Rad2Deg;
+      float azimuth = (float)agx.agxMath.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+      return new agx.Vec2f( azimuth, elevation );
+    }
+
+    [UnityTest]
+    public IEnumerator TestLidarRayWindow()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.FoVMode = GenericSweepData.FoVModes.Window;
+      sweepData.HorizontalFoVWindow = new RangeReal( 0, 90 );
+      sweepData.VerticalFoVWindow = new RangeReal( 0, 90 );
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var distances = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.GreaterThan( 0 ), "Window should contain points" );
+
+      bool withinWindow = distances
+        .Take( (int)count )
+        .Select(HitPosToAzimuthElevation)
+        .All( p =>
+          p.x <= sweepData.HorizontalFoVWindow.Max &&
+          p.x >= sweepData.HorizontalFoVWindow.Min &&
+          p.y <= sweepData.VerticalFoVWindow.Max &&
+          p.y >= sweepData.VerticalFoVWindow.Min );
+
+      Assert.That( withinWindow, Is.True, "All points should lie within the specified window" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestLidarRayCountResolution()
+    {
+      var (lidarComp, sweepData) = CreateDefaultTestLidar();
+      sweepData.ResolutionMode = GenericSweepData.ResolutionModes.TotalPoints;
+      sweepData.HorizontalResolutionTotal = 600;
+      sweepData.VerticalResolutionTotal = 20;
+      sweepData.Range = new RangeReal( 0, 100 );
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _ = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.EqualTo( 600 * 20 ), "Total amount of points should be horizontal * vertical" );
     }
   }
 }

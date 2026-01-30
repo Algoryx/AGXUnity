@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: 5ecc42f1f402fc144b2f7f5079e694ad
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  declaredModels:
+  - TestBody
+  Errors:
+  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\use_test_bundle.openplx:1:13 Type "Test.Test" not found
+    message: Type "Test.Test" not found
+    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\use_test_bundle.openplx
+    line: 1
+    column: 13
+  ImportedModel: Default
+  SkipImport: 1
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0
+  RotateUp: 1

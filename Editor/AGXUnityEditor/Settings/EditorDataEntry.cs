@@ -191,7 +191,11 @@ namespace AGXUnityEditor
 
       // This is to trigger an update of the target GUI when the value has been changed.
       // E.g., clicking expand/collapse on a foldout we'd like the GUI to instantly respond.
+#if UNITY_6000_3_OR_NEWER
+      UnityEngine.Object obj = EditorUtility.EntityIdToObject( InstanceId );
+#else
       UnityEngine.Object obj = EditorUtility.InstanceIDToObject( InstanceId );
+#endif
       if ( obj != null )
         SceneView.RepaintAll();
     }
