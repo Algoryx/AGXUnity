@@ -1486,13 +1486,18 @@ namespace AGXUnityEditor
 
     public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
     {
-      data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency );
-      data.FrameSize     = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize );
+      data.Frequency     = Mathf.Max(1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ));
+      data.FrameSize     = (uint)Mathf.Max(1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ));
       data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
       data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
       data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
       data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
       data.Delimiter     = char.Parse( EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "Delimiter" ), data.Delimiter.ToString() ) );
+      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+      if ( result.MaxChanged || result.MinChanged )
+        data.Range = new RangeReal( result.Min, result.Max );
+      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
     }
 
     public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )

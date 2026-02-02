@@ -11,7 +11,7 @@ using UnityEngine.Profiling;
 namespace AGXUnity.Sensor
 {
   /// <summary>
-  /// WIP component for streaming data to agx sensor environment
+  /// Component for streaming data to agx sensor environment
   /// </summary>
   [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment" )]

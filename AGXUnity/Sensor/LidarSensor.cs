@@ -199,7 +199,6 @@ namespace AGXUnity.Sensor
     {
       get => m_verticalResolution;
       set => m_verticalResolution = Mathf.Max( value, 0.001f );
-
     }
 
     [SerializeField]
@@ -309,7 +308,6 @@ namespace AGXUnity.Sensor
     /// Optionally downsample the amount of points generated. 1 is default, 2 is sample every other point in the pattern, 3 every 3 points etc.
     /// </summary>
     [Tooltip("Scale down the amount of points per second by skipping points in the pattern if set larger than 1.")]
-    [Min(1)]
     public uint Downsample = 1;
 
 
@@ -327,7 +325,6 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The amount of points from the pattern per frame
     /// </summary>
-    [Min(1)]
     public uint FrameSize = 10000;
     /// <summary>
     /// Path to the .csv or binare file with the ray pattern
@@ -442,7 +439,7 @@ namespace AGXUnity.Sensor
   }
 
   /// <summary>
-  /// Lidar Sensor Component
+  /// Lidar Sensor Component. For objects to be visible to this lidar, they have to be added to the <see cref="SensorEnvironment"/>.
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
