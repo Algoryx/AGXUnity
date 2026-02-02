@@ -114,9 +114,9 @@ namespace AGXUnity.Model
       {
         m_hingeStiffnessTranslational = value;
         if ( Native != null ) {
-          Native.setShearStiffness( m_hingeStiffnessTranslational.x, agxVehicle.TrackProperties.Axis.LATERAL, m_hingeAttenuationTranslational.x );
-          Native.setTensileStiffness( m_hingeStiffnessTranslational.y, m_hingeAttenuationTranslational.y );
-          Native.setShearStiffness( m_hingeStiffnessTranslational.z, agxVehicle.TrackProperties.Axis.VERTICAL, m_hingeAttenuationTranslational.z );
+          Native.setShearStiffness( m_hingeStiffnessTranslational.x, agxVehicle.TrackProperties.Axis.LATERAL );
+          Native.setTensileStiffness( m_hingeStiffnessTranslational.y );
+          Native.setShearStiffness( m_hingeStiffnessTranslational.z, agxVehicle.TrackProperties.Axis.VERTICAL );
         }
       }
     }
@@ -165,9 +165,9 @@ namespace AGXUnity.Model
       {
         m_hingeStiffnessRotational = value;
         if ( Native != null ) {
-          Native.setBendingStiffness( m_hingeStiffnessRotational.x, agxVehicle.TrackProperties.Axis.VERTICAL, m_hingeAttenuationRotational.x );
-          Native.setTorsionalStiffness( m_hingeStiffnessRotational.y, m_hingeAttenuationRotational.y );
-          Native.setBendingStiffness( m_hingeStiffnessRotational.z, agxVehicle.TrackProperties.Axis.LATERAL, m_hingeAttenuationRotational.z );
+          Native.setBendingStiffness( m_hingeStiffnessRotational.x, agxVehicle.TrackProperties.Axis.VERTICAL );
+          Native.setTorsionalStiffness( m_hingeStiffnessRotational.y );
+          Native.setBendingStiffness( m_hingeStiffnessRotational.z, agxVehicle.TrackProperties.Axis.LATERAL );
         }
       }
     }
