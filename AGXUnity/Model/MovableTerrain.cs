@@ -2,6 +2,7 @@ using AGXUnity.Collide;
 using AGXUnity.Utils;
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 using Mesh = UnityEngine.Mesh;
 
@@ -78,41 +79,50 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private Vector2 m_sizeMeters = new Vector2(2,2);
+    private Vector2 m_sizeMeters = new Vector2(2, 2);
 
     [ClampAboveZeroInInspector]
     [HideInInspector]
+    [IgnoreSynchronization]
     public Vector2 SizeMeters
     {
       get => m_sizeMeters;
       set
       {
+        if ( m_sizeMeters == value )
+          return;
         m_sizeMeters = value;
         RecalculateSizes( false );
       }
     }
 
     [SerializeField]
-    private Vector2Int m_sizeCells = new Vector2Int(20,20);
+    private Vector2Int m_sizeCells = new Vector2Int(20, 20);
 
     [ClampAboveZeroInInspector]
     [HideInInspector]
+    [IgnoreSynchronization]
     public Vector2Int SizeCells
     {
       get => m_sizeCells;
       set
       {
+        if ( m_sizeCells == value )
+          return;
         m_sizeCells = value;
         RecalculateSizes( true );
       }
     }
 
     [HideInInspector]
+    [IgnoreSynchronization]
     public int Resolution
     {
       get => m_sizeCells.x;
       set
       {
+        if ( m_sizeCells.x == value )
+          return;
         m_sizeCells.x = value;
         RecalculateSizes( false );
       }
@@ -126,11 +136,14 @@ namespace AGXUnity.Model
     /// </summary>
     [HideInInspector]
     [ClampAboveZeroInInspector]
+    [IgnoreSynchronization]
     public new float ElementSize
     {
       get => m_elementSize;
       set
       {
+        if ( m_elementSize == value )
+          return;
         m_elementSize = value;
         RecalculateSizes( true );
       }
@@ -150,6 +163,39 @@ namespace AGXUnity.Model
     [InspectorPriority( -1 )]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
     public bool InvertDepthDirection { get; set; } = true;
+
+    [SerializeField]
+    private List<Shape> m_bedShapes = new List<Shape>();
+
+    public Shape[] BedGeometries => m_bedShapes.ToArray();
+
+    public bool AddBedGeometry( Shape bedGeom )
+    {
+      if ( Native != null ) {
+        Debug.LogWarning( $"Failed to add bed geometry: Cannot add bed geometry to terrain '{name}' after it's been initialized" );
+        return false;
+      }
+      if ( m_bedShapes.Contains( bedGeom ) ) {
+        Debug.LogWarning( $"Failed to add bed geometry: Terrain '{name}' already contains bed geometry '{bedGeom.name}'" );
+        return false;
+      }
+      m_bedShapes.Add( bedGeom );
+      return true;
+    }
+
+    public bool RemoveBedGeometry( Shape bedGeom )
+    {
+      if ( Native != null ) {
+        Debug.LogWarning( $"Failed to remove bed geometry: Cannot remove bed geometry from terrain '{name}' after it's been initialized" );
+        return false;
+      }
+      if ( !m_bedShapes.Contains( bedGeom ) ) {
+        Debug.LogWarning( $"Failed to remove bed geometry: Terrain '{name}' does not contain bed geometry '{bedGeom.name}'" );
+        return false;
+      }
+      m_bedShapes.Remove( bedGeom );
+      return true;
+    }
 
     private void RecalculateSizes( bool fromCellCount )
     {
@@ -217,6 +263,42 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
+    public agxTerrain.Terrain CreateBed()
+    {
+      List<agxCollide.Geometry> temps = new List<agxCollide.Geometry>();
+      var geoms = new agxCollide.GeometryPtrVector();
+
+      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
+      var worldToTerrain = terrainToWorld.inverse();
+
+      foreach ( var geom in m_bedShapes ) {
+        var temp = geom.CreateTemporaryNative();
+        temp.setTransform( geom.transform.localToWorldMatrix.ToAffine4x4() * worldToTerrain );
+
+        geoms.Add( temp );
+        temps.Add( temp );
+      }
+      return agxTerrain.Terrain.createTerrainBedFromGeometries( (uint)Resolution, geoms, 0.01f, 0, true );
+    }
+
+    public void Test()
+    {
+      Native = CreateBed();
+
+      this.ElementSize = (float)Native.getElementSize();
+      this.SizeCells = new Vector2Int( (int)Native.getHeightField().getResolutionX(), (int)Native.getHeightField().getResolutionY() );
+
+      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
+      this.transform.localPosition = ( terrainToWorld.transformPoint( Native.getPosition() ) ).ToHandedVector3();
+
+      Debug.Log( $"Native pos: {Native.getPosition()}" );
+      Debug.Log( $"Native pos transformed: {terrainToWorld.transformPoint( Native.getPosition() )}" );
+
+      SetupMesh();
+
+      Native = null;
+    }
+
     private void InitializeNative()
     {
       var heights = new agx.RealVector((int)(SizeCells.x * SizeCells.y));
@@ -227,12 +309,18 @@ namespace AGXUnity.Model
         Array.Fill( heightArr, MaximumDepth );
       }
       heights.Set( heightArr );
-      Native = new agxTerrain.Terrain( (uint)SizeCells.x,
-                                       (uint)SizeCells.y,
-                                       ElementSize,
-                                       heights,
-                                       false,
-                                       depth );
+
+      Native = CreateBed();
+
+      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
+      this.transform.localPosition = ( terrainToWorld.transformPoint( Native.getPosition() ) ).ToHandedVector3();
+
+      //Native = new agxTerrain.Terrain( (uint)SizeCells.x,
+      //                                 (uint)SizeCells.y,
+      //                                 ElementSize,
+      //                                 heights,
+      //                                 false,
+      //                                 depth );
 
       if ( InitialCompaction != 1.0f )
         Native.setCompaction( InitialCompaction );
@@ -258,34 +346,55 @@ namespace AGXUnity.Model
 
     private void SetupMesh()
     {
-      int width = SizeCells.x;
-      int height = SizeCells.y;
-
-      if ( width * height == 0 )
-        return;
       if ( TerrainMesh.sharedMesh == null ) {
         TerrainMesh.sharedMesh = new Mesh();
         TerrainMesh.sharedMesh.name = "Terrain mesh";
         TerrainMesh.sharedMesh.MarkDynamic();
       }
 
+      int width;
+      int height;
+      float elemSize;
+      System.Func<int, int, float> heightGetter;
+
+      if ( Native != null ) {
+        width = (int)Native.getHeightField().getResolutionX();
+        height = (int)Native.getHeightField().getResolutionY();
+        elemSize = (float)Native.getElementSize();
+        heightGetter = ( int x, int y ) => (float)Native.getHeight( new agx.Vec2i( width - x - 1, height - y - 1 ) );
+      }
+      else {
+        width = SizeCells.x;
+        height = SizeCells.y;
+        elemSize = ElementSize;
+        if ( Native != null && InvertDepthDirection )
+          heightGetter = ( _, _ ) => MaximumDepth;
+        else
+          heightGetter = ( _, _ ) => 0.0f;
+      }
+
+      if ( width * height == 0 )
+        return;
+
       // Create a grid of vertices matching that of the undelying heightfield.
       var vertices = new Vector3[width * height];
       var uvs = new Vector2[width * height];
-      var indices = new int[ ( width - 1 ) * 6 * ( height - 1 ) ];
+      var indices = new int[(width - 1) * 6 * (height - 1)];
       int i = 0;
 
-      float terrainHeight = 0;
-      if ( Native != null && InvertDepthDirection )
-        terrainHeight = MaximumDepth;
-      for ( var y = 0; y < height; y++ ) {
-        for ( var x = 0; x < width; x++ ) {
-          vertices[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
-          vertices[ y * width + x ].z = ( y - height / 2 ) * ElementSize;
-          vertices[ y * width + x ].y = terrainHeight;
+      float x0 = -width / 2.0f + 0.5f;
+      float y0 = -height / 2.0f + 0.5f;
 
-          uvs[ y * width + x ].x = ( x - width / 2 ) * ElementSize;
-          uvs[ y * width + x ].y = ( y - height / 2 ) * ElementSize;
+      for ( var y = 0; y < height; y++ ) {
+        float yPos = (y0 + y) * elemSize;
+        for ( var x = 0; x < width; x++ ) {
+          float xPos = (x0 + x) * elemSize;
+          vertices[ y * width + x ].x = xPos;
+          vertices[ y * width + x ].z = yPos;
+          vertices[ y * width + x ].y = heightGetter( x, y );
+
+          uvs[ y * width + x ].x = xPos;
+          uvs[ y * width + x ].y = yPos;
 
           if ( x != width - 1 && y != height - 1 ) {
             indices[ i++ ] = y * width + x;
@@ -316,7 +425,7 @@ namespace AGXUnity.Model
         var mod = modifiedVertices[i];
         int idx = (int)(mod.y * SizeCells.x + mod.x) + 1;
 
-        float height = (float)Native.getHeight( mod );
+        float height = (float)Native.getHeight(mod);
         m_terrainVertices[ SizeCells.x * SizeCells.y - idx ].y = height;
       }
 
@@ -326,29 +435,23 @@ namespace AGXUnity.Model
 
     private agx.AffineMatrix4x4 GetTerrainOffset()
     {
-      double offset = ElementSize*0.5;
-      agx.AffineMatrix4x4 terrainOffset =
-        agx.AffineMatrix4x4.translate( new agx.Vec3( SizeCells.x % 2 == 0 ? offset : 0.0, SizeCells.y % 2 == 0 ? offset : 0.0, 0.0 ) ) *
-        agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() );
+      agx.AffineMatrix4x4 terrainOffset = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS());
 
       var rb = RigidBody;
       if ( rb == null )
         return terrainOffset;
       // Using the world position of the shape - which includes scaling etc.
-      var shapeInWorld = new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
-                                                  transform.position.ToHandedVec3() );
-      var rbInWorld    = new agx.AffineMatrix4x4( rb.transform.rotation.ToHandedQuat(),
-                                                  rb.transform.position.ToHandedVec3() );
+      var shapeInWorld = new agx.AffineMatrix4x4(transform.rotation.ToHandedQuat(),
+                                                  transform.position.ToHandedVec3());
+      var rbInWorld = new agx.AffineMatrix4x4(rb.transform.rotation.ToHandedQuat(),
+                                                  rb.transform.position.ToHandedVec3());
       return terrainOffset * shapeInWorld * rbInWorld.inverse();
     }
 
     private void OnDrawGizmosSelected()
     {
-      Vector3 size = new Vector3( ( SizeCells.x - 1 ) * ElementSize, MaximumDepth, ( SizeCells.y - 1 ) * ElementSize);
-      Vector3 pos = new Vector3(
-        -( ( SizeCells.x - 1 ) % 2 ) * ElementSize / 2,
-        InvertDepthDirection ? MaximumDepth / 2  - 0.001f : - MaximumDepth / 2 - 0.001f,
-        -( ( SizeCells.y - 1 ) % 2 ) * ElementSize / 2);
+      Vector3 size = new Vector3((SizeCells.x - 1) * ElementSize, MaximumDepth, (SizeCells.y - 1) * ElementSize);
+      Vector3 pos = new Vector3(0, InvertDepthDirection ? MaximumDepth / 2 - 0.001f : -MaximumDepth / 2 - 0.001f, 0);
 
       Gizmos.matrix = transform.localToWorldMatrix;
       Gizmos.color = new Color( 0.5f, 1.0f, 0.5f, 0.5f );
@@ -399,7 +502,7 @@ namespace AGXUnity.Model
           float value = heights[ y, x ];
           heights[ y, x ] = value / scale;
 
-          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart);
+          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart );
           Native.setHeight( idx, value );
         }
       }
@@ -436,10 +539,10 @@ namespace AGXUnity.Model
       if ( xstart + width >= resolutionX || xstart < 0 || ystart + height >= resolutionY || ystart < 0 )
         throw new ArgumentOutOfRangeException( "", $"Requested height patch with start ({xstart},{ystart}) and size ({width},{height}) extends outside of the terrain size ({resolutionX},{resolutionY})" );
 
-      float [,] heights = new float[height,width];
+      float[,] heights = new float[ height, width ];
       for ( int y = 0; y < height; y++ ) {
         for ( int x = 0; x < width; x++ ) {
-          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart);
+          agx.Vec2i idx = new agx.Vec2i( resolutionX - 1 - x - xstart, resolutionY - 1 - y - ystart );
           heights[ y, x ] = (float)Native.getHeight( idx );
         }
       }
@@ -467,7 +570,7 @@ namespace AGXUnity.Model
       int resX = (int)Native.getResolutionX();
       int resY = (int)Native.getResolutionY();
       var agxIdx = new agx.Vec2i( 0, 0 );
-      var uIdx = new Vector2Int(0,0);
+      var uIdx = new Vector2Int( 0, 0 );
       for ( int y = 0; y < resY; y++ ) {
         agxIdx.y = resY - 1 - y;
         for ( int x = 0; x < resX; x++ ) {
@@ -522,7 +625,5 @@ namespace AGXUnity.Model
       Native.setEnable( enable );
       Native.getGeometry().setEnable( enable );
     }
-
-
   }
 }

@@ -1,4 +1,5 @@
-﻿using AGXUnity.Model;
+﻿using AGXUnity.Collide;
+using AGXUnity.Model;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,6 +15,15 @@ namespace AGXUnityEditor.Tools
     public MovableTerrainTool( Object[] targets )
       : base( targets )
     {
+    }
+
+    private Shape[] m_availableBedGeometries;
+
+    public override void OnAdd()
+    {
+      m_availableBedGeometries = null;
+      if ( !EditorApplication.isPlayingOrWillChangePlaymode )
+        m_availableBedGeometries = GameObject.FindObjectsByType<Shape>( FindObjectsSortMode.None );
     }
 
     public enum SizeUnit
@@ -34,7 +44,10 @@ namespace AGXUnityEditor.Tools
           newSize = new Vector2( Mathf.Clamp( newSize.x, 0.1f, float.MaxValue ), Mathf.Clamp( newSize.y, 0.1f, float.MaxValue ) );
           MovableTerrain.SizeMeters = newSize;
           MovableTerrain.Resolution = Mathf.Clamp( EditorGUILayout.IntField( "Resolution", MovableTerrain.Resolution ), 1, int.MaxValue );
-          EditorGUILayout.LabelField( $"Terrain size is {MovableTerrain.SizeCells.x} x {MovableTerrain.SizeCells.y} cells sized {MovableTerrain.ElementSize:F2} m" );
+          EditorGUILayout.LabelField( new GUIContent(
+            $"Terrain size is {MovableTerrain.SizeCells.x} x {MovableTerrain.SizeCells.y} cells sized {MovableTerrain.ElementSize:F2} m",
+            $"Cell size is {MovableTerrain.ElementSize:F5} m"
+            ) );
         }
         else {
           var newSize = InspectorGUI.Vector2IntField( GUI.MakeLabel("Count"), MovableTerrain.SizeCells );
@@ -44,6 +57,16 @@ namespace AGXUnityEditor.Tools
           EditorGUILayout.LabelField( $"Terrain size is {MovableTerrain.SizeMeters.x:F1} x {MovableTerrain.SizeMeters.y:F1} m" );
         }
       }
+    }
+
+    public override void OnPostTargetMembersGUI()
+    {
+      if ( GUILayout.Button( "Test" ) ) {
+        MovableTerrain.Test();
+      }
+
+      InspectorGUI.ToolListGUI( this, MovableTerrain.BedGeometries, "Bed Geometries", m_availableBedGeometries, geom => MovableTerrain.AddBedGeometry( geom ), geom => MovableTerrain.RemoveBedGeometry( geom ) );
+      base.OnPostTargetMembersGUI();
     }
   }
 }
