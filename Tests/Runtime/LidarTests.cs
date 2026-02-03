@@ -110,6 +110,23 @@ namespace AGXUnityTesting.Runtime
       return (lidarComp, modelData);
     }
 
+    private (LidarSensor, LivoxData) CreateLivoxTestLidar( Vector3 position = default, uint downsample = 1 )
+    {
+      var lidarGO = new GameObject("LivoxLidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position = position;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      if ( !Application.isBatchMode ) {
+        var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+      }
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelLivoxAvia;
+      var modelData = ( lidarComp.ModelData as LivoxData );
+      modelData.Downsample = downsample;
+
+      return (lidarComp, modelData);
+    }
+
     [UnityTest]
     public IEnumerator TestCreateLidar()
     {
@@ -1047,6 +1064,28 @@ namespace AGXUnityTesting.Runtime
       var _ = output.View<agx.Vec3f>( out uint count );
 
       Assert.That( count, Is.EqualTo( 600 * 20 ), "Total amount of points should be horizontal * vertical" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestLivoxLidarDownSample()
+    {
+      var (lidarComp1, modelData1) = CreateLivoxTestLidar(Vector3.zero, 1);
+      var output1 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp1.Add( output1 );
+      lidarComp1.GetInitialized();
+      lidarComp1.RemoveRayMisses = false;
+
+      var (lidarComp2, modelData2) = CreateLivoxTestLidar(Vector3.zero, 2);
+      var output2 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp2.Add( output2 );
+      lidarComp2.GetInitialized();
+      lidarComp2.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _1 = output1.View<agx.Vec3f>( out uint count1 );
+      var _2 = output2.View<agx.Vec3f>( out uint count2 );
+
+      Assert.That( count1, Is.EqualTo( count2 * 2 ), "Downsample is wrong yo. Downsample 2 should yield half the amount of points as Downsample 1" );
     }
   }
 }
