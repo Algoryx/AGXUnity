@@ -1492,7 +1492,9 @@ namespace AGXUnityEditor
       data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
       data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
       data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
-      data.Delimiter     = char.Parse( EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "Delimiter" ), data.Delimiter.ToString() ) );
+      var delimiterText = EditorGUILayout.TextField( FindGUIContentFor(data.GetType(), "Delimiter"),  data.Delimiter.ToString() );
+      if ( char.TryParse( delimiterText, out var delimiter ) )
+        data.Delimiter = delimiter;
       var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
       if ( result.MaxChanged || result.MinChanged )
         data.Range = new RangeReal( result.Min, result.Max );
