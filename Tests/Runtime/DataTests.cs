@@ -18,8 +18,7 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void LidarRayPatternsAreFound()
     {
-      var _ = NativeHandler.Instance;
-      Assert.True( AGXUnity.Sensor.TestHelper.LidarRayPatternsAreFound() );
+      Assert.True( LidarDataUtil.LidarRayPatternsAreFound() );
     }
   }
 }

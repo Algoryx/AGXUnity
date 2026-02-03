@@ -16,7 +16,7 @@ namespace AGXUnityTesting.Editor
     [Test]
     public void LidarRayPatternsAreFound()
     {
-      Assert.True( AGXUnity.Sensor.TestHelper.LidarRayPatternsAreFound() );
+      Assert.True( LidarDataUtil.LidarRayPatternsAreFound() );
     }
   }
 }
