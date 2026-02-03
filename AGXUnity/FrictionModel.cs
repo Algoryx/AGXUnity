@@ -112,6 +112,7 @@ namespace AGXUnity
     /// <summary>
     /// Get or set solve type of this friction model.
     /// </summary>
+    [Tooltip( "Get or set solve type of this friction model." )]
     public ESolveType SolveType
     {
       get { return m_solveType; }
@@ -142,8 +143,17 @@ namespace AGXUnity
     private EType m_type = EType.IterativeProjectedFriction;
 
     /// <summary>
-    /// Get or set friction model type.
+    /// Specifies the friction model to use for this contact materials using this asset.
+    /// * Iterative Projected Cone - The default model. Provides a good base model which handles anisotripic frictions better than the box models.
+    /// * Scale Box - Will attempt to scale the friction bounds throughout the solve stage.
+    /// * Box - Has fixed friction bounds throughout the solve stage, performant but low accuracy. Makes a guess at the normal force to solve for friction.
+    /// * Constant Normal Force Box - Like Box, but will use a provided constant normal force magnitude.
     /// </summary>
+    [Tooltip( "Specifies the friction model to use for this contact materials using this asset.\n" +
+              "* Iterative Projected Cone - The default model. Provides a good base model which handles anisotripic frictions better than the box models.\n" +
+              "* Scale Box - Will attempt to scale the friction bounds throughout the solve stage.\n" +
+              "* Box - Has fixed friction bounds throughout the solve stage, performant but low accuracy. Makes a guess at the normal force to solve for friction.\n" +
+              "* Constant Normal Force Box - Like Box, but will use a provided constant normal force magnitude." )]
     public EType Type
     {
       get { return m_type; }
@@ -164,17 +174,26 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials.
+    /// </summary>
+    [Tooltip( "Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials" )]
+    public bool TrackFrictionModel { get; set; } = false;
+
+    /// <summary>
     /// This field is specific for agx.ConstantNormalForceOrientedBoxFrictionModel and
     /// only used when type is EType.ConstantNormalForceBoxFriction.
     /// </summary>
     [SerializeField]
     private float m_normalForceMagnitude = 100.0f;
 
+    private bool IsConstantNormalForceModel => Type == EType.ConstantNormalForceBoxFriction;
+
     /// <summary>
     /// Normal force magnitude used in ConstantNormalForceBoxFriction.
     /// </summary>
-    [HideInInspector]
+    [Tooltip( "The normal force magnitude used" )]
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsConstantNormalForceModel ) )]
     public float NormalForceMagnitude
     {
       get { return m_normalForceMagnitude; }
@@ -182,9 +201,13 @@ namespace AGXUnity
       {
         m_normalForceMagnitude = value;
         if ( Native != null ) {
-          var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
-          if ( native != null )
-            native.setNormalForceMagnitude( m_normalForceMagnitude );
+          if ( Native is agxVehicle.TrackBoxFrictionModel trackFriction )
+            trackFriction.setConstantNormalForceMagnitude( m_normalForceMagnitude );
+          else {
+            var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
+            if ( native != null )
+              native.setNormalForceMagnitude( m_normalForceMagnitude );
+          }
         }
       }
     }
@@ -203,7 +226,11 @@ namespace AGXUnity
     ///   depth * secondary_friction_coefficient * given_normal_force
     /// Default: false.
     /// </summary>
-    [HideInInspector]
+    [Tooltip( "Enable/disable scale of the given normal force with the contact " +
+              "point depth resulting in a maximum friction force: \n" +
+              "  depth * primary_friction_coefficient * given_normal_force\n" +
+              "  depth * secondary_friction_coefficient * given_normal_force\n" )]
+    [DynamicallyShowInInspector( nameof( IsConstantNormalForceModel ) )]
     public bool ScaleNormalForceWithDepth
     {
       get { return m_scaleNormalForceWithDepth; }
@@ -211,9 +238,13 @@ namespace AGXUnity
       {
         m_scaleNormalForceWithDepth = value;
         if ( Native != null ) {
-          var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
-          if ( native != null )
-            native.setEnableScaleWithDepth( m_scaleNormalForceWithDepth );
+          if ( Native is agxVehicle.TrackBoxFrictionModel trackFriction )
+            trackFriction.setEnableScaleWithDepth( m_scaleNormalForceWithDepth );
+          else {
+            var native = Native.asConstantNormalForceOrientedBoxFrictionModel();
+            if ( native != null )
+              native.setEnableScaleWithDepth( m_scaleNormalForceWithDepth );
+          }
         }
       }
     }
@@ -237,30 +268,46 @@ namespace AGXUnity
       }
 
       agx.FrictionModel frictionModel = null;
-      if ( type == EType.IterativeProjectedFriction )
-        frictionModel = referenceFrame != null ?
-                          new agx.OrientedIterativeProjectedConeFrictionModel( referenceFrame,
+
+      if ( TrackFrictionModel ) {
+        frictionModel = type switch
+        {
+          EType.IterativeProjectedFriction => new agxVehicle.TrackIterativeProjectedConeFrictionModel( Convert( solveType ) ),
+          EType.ScaleBoxFriction => new agxVehicle.TrackScaleBoxFrictionModel( Convert( solveType ) ),
+          EType.BoxFriction => new agxVehicle.TrackBoxFrictionModel( Convert( solveType ) ),
+          EType.ConstantNormalForceBoxFriction => new agxVehicle.TrackBoxFrictionModel( Convert( solveType ), NormalForceMagnitude, ScaleNormalForceWithDepth ),
+          _ => null
+        };
+
+        if ( frictionModel == null )
+          Debug.LogError( $"Friction Type {System.Enum.GetName( typeof( EType ), type )} does not support a track variant" );
+      }
+      else {
+        if ( type == EType.IterativeProjectedFriction )
+          frictionModel = referenceFrame != null ?
+                            new agx.OrientedIterativeProjectedConeFrictionModel( referenceFrame,
+                                                                                 Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
+                                                                                 Convert( solveType ) ) :
+                            new agx.IterativeProjectedConeFriction( Convert( solveType ) );
+        else if ( type == EType.ScaleBoxFriction )
+          frictionModel = referenceFrame != null ?
+                            new agx.OrientedScaleBoxFrictionModel( referenceFrame,
+                                                                   Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
+                                                                   Convert( solveType ) ) :
+                            new agx.ScaleBoxFrictionModel( Convert( solveType ) );
+        else if ( type == EType.BoxFriction )
+          frictionModel = referenceFrame != null ?
+                            new agx.OrientedBoxFrictionModel( referenceFrame,
+                                                              Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
+                                                              Convert( solveType ) ) :
+                            new agx.BoxFrictionModel( Convert( solveType ) );
+        else if ( type == EType.ConstantNormalForceBoxFriction ) {
+          frictionModel = new agx.ConstantNormalForceOrientedBoxFrictionModel( NormalForceMagnitude,
+                                                                               referenceFrame,
                                                                                Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
-                                                                               Convert( solveType ) ) :
-                          new agx.IterativeProjectedConeFriction( Convert( solveType ) );
-      else if ( type == EType.ScaleBoxFriction )
-        frictionModel = referenceFrame != null ?
-                          new agx.OrientedScaleBoxFrictionModel( referenceFrame,
-                                                                 Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
-                                                                 Convert( solveType ) ) :
-                          new agx.ScaleBoxFrictionModel( Convert( solveType ) );
-      else if ( type == EType.BoxFriction )
-        frictionModel = referenceFrame != null ?
-                          new agx.OrientedBoxFrictionModel( referenceFrame,
-                                                            Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
-                                                            Convert( solveType ) ) :
-                          new agx.BoxFrictionModel( Convert( solveType ) );
-      else if ( type == EType.ConstantNormalForceBoxFriction ) {
-        frictionModel = new agx.ConstantNormalForceOrientedBoxFrictionModel( NormalForceMagnitude,
-                                                                             referenceFrame,
-                                                                             Convert( m_orientedFrictionPrimaryDirection ).ToHandedVec3(),
-                                                                             Convert( solveType ),
-                                                                             ScaleNormalForceWithDepth );
+                                                                               Convert( solveType ),
+                                                                               ScaleNormalForceWithDepth );
+        }
       }
 
       return frictionModel;

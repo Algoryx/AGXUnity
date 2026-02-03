@@ -43,8 +43,11 @@ namespace AGXUnity.Model
       }
     }
 
+    /// <summary>
+    /// An object which defines the reference frame which the track is attached to. Normally, this body should be the chassis of the vehicle
+    /// </summary>
     [DisableInRuntimeInspector]
-    [Tooltip("An object")]
+    [Tooltip("An object which defines the reference frame which the track is attached to. Normally, this body should be the chassis of the vehicle")]
     public GameObject ReferenceObject;
 
     [SerializeField]
@@ -82,6 +85,7 @@ namespace AGXUnity.Model
     [IgnoreSynchronization]
     [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
+    [Tooltip( "Thickness of this track" )]
     public float Thickness
     {
       get { return m_thickness; }
@@ -125,6 +129,7 @@ namespace AGXUnity.Model
     /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
+    [Tooltip( "Width of this track" )]
     public float Width
     {
       get { return m_width; }
@@ -172,6 +177,11 @@ namespace AGXUnity.Model
     /// </summary>
     [IgnoreSynchronization]
     [DisableInRuntimeInspector]
+    [Tooltip( "Value (distance) of how much shorter each node should be which causes tension in the " +
+              "system of tracks and wheels. Ideal case\n" +
+              "  track_tension = initialDistanceTension * track_constraint_compliance.\n" +
+              "Since contacts and other factors are included it's not possible to know " +
+              "the exact tension after the system has been created." )]
     public float InitialTensionDistance
     {
       get { return m_initialTensionDistance; }
@@ -259,6 +269,15 @@ namespace AGXUnity.Model
     public TrackWheel[] Wheels
     {
       get { return m_wheels.ToArray(); }
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        FullDoF = true;
+        return true;
+      }
+      return false;
     }
 
     /// <summary>
