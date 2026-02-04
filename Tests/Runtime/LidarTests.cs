@@ -53,6 +53,9 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.PreIntegratePositions = true;
       m_keep.Add( Simulation.Instance.gameObject );
       m_keep.Add( SensorEnvironment.Instance.gameObject );
+
+      // Lidar ray intervals are sensitive to time step so ensure that the timestep is exact here
+      Simulation.Instance.Native.setTimeStep( 0.02 );
     }
 
     [UnityTearDown]
