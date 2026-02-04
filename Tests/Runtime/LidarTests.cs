@@ -53,6 +53,9 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.PreIntegratePositions = true;
       m_keep.Add( Simulation.Instance.gameObject );
       m_keep.Add( SensorEnvironment.Instance.gameObject );
+
+      // Lidar ray intervals are sensitive to time step so ensure that the timestep is exact here
+      Simulation.Instance.Native.setTimeStep( 0.02 );
     }
 
     [UnityTearDown]
@@ -85,9 +88,10 @@ namespace AGXUnityTesting.Runtime
       var geoms = Object.FindObjectsOfType<Shape>( );
 #endif      
 
-      TestUtils.DestroyAndWait( geoms.Select( g => g.gameObject ).ToArray() );
+      foreach ( var g in geoms )
+        GameObject.Destroy( g.gameObject );
 
-      TestUtils.DestroyAndWait( SensorEnvironment.Instance.gameObject );
+      GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
 
     private (LidarSensor, GenericSweepData) CreateDefaultTestLidar( Vector3 position = default )
