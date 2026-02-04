@@ -321,21 +321,23 @@ namespace AGXUnity.IO.OpenPLX
         track_props.HingeRangeRange = new AGXUnity.RangeReal( (float)min, (float)max );
       }
 
-      var track_hinge_compliance_annots = track_system.findAnnotations("agx_track_hinge_compliance");
-      if ( track_hinge_compliance_annots.Count != 0 ) {
-        if ( track_hinge_compliance_annots[ 0 ].isNumber() ) {
-          track_props.HingeComplianceRotational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
-          track_props.HingeComplianceTranslational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
-        }
-      }
 
-      var track_hinge_relaxation_time = track_system.findAnnotations("agx_track_hinge_relaxation_time");
-      if ( track_hinge_relaxation_time.Count != 0 ) {
-        if ( track_hinge_relaxation_time[ 0 ].isNumber() ) {
-          track_props.HingeDampingRotational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
-          track_props.HingeDampingTranslational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
-        }
-      }
+      // TODO: Map new stiffness/attenuation parameters
+      //var track_hinge_compliance_annots = track_system.findAnnotations("agx_track_hinge_compliance");
+      //if ( track_hinge_compliance_annots.Count != 0 ) {
+      //  if ( track_hinge_compliance_annots[ 0 ].isNumber() ) {
+      //    track_props.HingeStiffnessRotational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+      //    track_props.HingeComplianceTranslational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+      //  }
+      //}
+
+      //var track_hinge_relaxation_time = track_system.findAnnotations("agx_track_hinge_relaxation_time");
+      //if ( track_hinge_relaxation_time.Count != 0 ) {
+      //  if ( track_hinge_relaxation_time[ 0 ].isNumber() ) {
+      //    track_props.HingeDampingRotational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+      //    track_props.HingeAttenuationTranslational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+      //  }
+      //}
 
       var track_stabilizing_friction_parameter = track_system.findAnnotations("agx_track_stabilizing_friction_parameter");
       if ( track_stabilizing_friction_parameter.Count != 0 ) {

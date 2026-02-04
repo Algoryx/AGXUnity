@@ -1,6 +1,7 @@
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Model;
+using AGXUnity.Rendering;
 using NUnit.Framework;
 using System;
 using System.Collections;
@@ -364,6 +365,141 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 0.5f );
 
       Assert.That( vehicle.LeftJoint.GetCurrentAngle(), Is.GreaterThan( 0.1f ), "Re-enabled steering constraint should affect wheel angle" );
+    }
+
+    private (RigidBody, TrackWheel) CreateWheel( Vector3 pos, TrackWheelModel model = TrackWheelModel.Idler )
+    {
+      var frontWheel = Factory.Create<RigidBody>();
+      var wheelCollider = Factory.Create<Cylinder>();
+      var cylinderComp = wheelCollider.GetComponent<Cylinder>();
+      ShapeVisual.Create( cylinderComp ).transform.parent = wheelCollider.transform;
+      cylinderComp.Radius = 0.2f;
+      wheelCollider.transform.parent = frontWheel.transform;
+
+      frontWheel.transform.rotation = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+      frontWheel.transform.position = pos;
+
+      var trackWheel = TrackWheel.Create(wheelCollider);
+      trackWheel.Model = model;
+
+      var constraint = Constraint.Create( ConstraintType.Hinge, new ConstraintFrame( frontWheel,Vector3.zero, Quaternion.FromToRotation( Vector3.up, Vector3.forward ) ), new ConstraintFrame() );
+      constraint.transform.parent = frontWheel.transform;
+      if ( model == TrackWheelModel.Sprocket ) {
+        var motor = constraint.GetController<TargetSpeedController>();
+        motor.Speed = 1;
+        motor.Enable = true;
+      }
+
+      return (frontWheel.GetComponent<RigidBody>(), trackWheel);
+    }
+
+    private Track CreateSimpleTrack()
+    {
+      GameObject root = new GameObject("Simple Track");
+
+      var (frontRB, frontWheel) = CreateWheel( Vector3.left, TrackWheelModel.Sprocket );
+      var (backRB, backWheel) = CreateWheel( Vector3.right );
+
+      var track = Factory.Create<Track>();
+      var trackComp = track.GetComponent<Track>();
+      track.AddComponent<TrackRenderer>();
+      trackComp.Width = 1;
+
+      trackComp.Add( frontWheel );
+      trackComp.Add( backWheel );
+
+      frontRB.transform.parent = root.transform;
+      backRB.transform.parent = root.transform;
+      track.transform.parent = root.transform;
+
+      return trackComp;
+    }
+
+    [UnityTest]
+    public IEnumerator TestSimpleTrackInitializes()
+    {
+      var track = CreateSimpleTrack();
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+    }
+
+    [UnityTest]
+    public IEnumerator TestFullDoFTrackInitializes()
+    {
+      var track = CreateSimpleTrack();
+      track.FullDoF = true;
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+    }
+
+    private GameObject CreateBox( Vector3 pos )
+    {
+      var boxRB = Factory.Create<RigidBody>();
+      var boxCollider = Factory.Create<Box>();
+      var cylinderComp = boxCollider.GetComponent<Box>();
+      ShapeVisual.Create( cylinderComp ).transform.parent = boxCollider.transform;
+      cylinderComp.HalfExtents = Vector3.one * 0.2f;
+      boxCollider.transform.parent = boxRB.transform;
+      boxRB.transform.position = pos;
+
+      return boxRB.gameObject;
+    }
+
+    [UnityTest]
+    public IEnumerator TestBoxTrackConveyor()
+    {
+      var track = CreateSimpleTrack();
+
+      var box = CreateBox(Vector3.up);
+
+      yield return TestUtils.SimulateSeconds( 3f );
+
+      Assert.That( box.transform.position.y, Is.GreaterThan( 0 ), "Conveyor should carry the box" );
+      Assert.That( box.transform.position.x, Is.LessThan( -0.5 ), "Conveyor should move the box" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestBoxTrackFriction()
+    {
+      var track = CreateSimpleTrack();
+
+      // Rotate 45 degrees to verify that the friction model properly finds the reference frame from the track
+      track.transform.parent.rotation = Quaternion.FromToRotation( Vector3.forward, new Vector3( 1, 0, 1 ).normalized );
+
+      var box = CreateBox(Vector3.up);
+
+      var sm1 = ShapeMaterial.CreateInstance<ShapeMaterial>();
+      track.Material = sm1;
+
+      var sm2 = ShapeMaterial.CreateInstance<ShapeMaterial>();
+      box.GetComponentInChildren<Box>().Material = sm2;
+
+      var cm = ContactMaterial.CreateInstance<ContactMaterial>();
+      cm.Material1 = sm1;
+      cm.Material2 = sm2;
+
+      // Set zero friction in primary direction
+      cm.FrictionCoefficients = new Vector2( 0, 1 );
+
+      cm.FrictionModel = FrictionModel.CreateInstance<FrictionModel>();
+      cm.FrictionModel.Type = FrictionModel.EType.ConstantNormalForceBoxFriction;
+      cm.FrictionModel.NormalForceMagnitude = 1000;
+      cm.FrictionModel.TrackFrictionModel = true;
+
+      ContactMaterialManager.Instance.Add( cm );
+
+      yield return TestUtils.SimulateSeconds( 3f );
+
+      Assert.That( box.transform.position.y, Is.GreaterThan( 0 ), "Conveyor should carry the box" );
+      Assert.That( box.transform.position.x, Is.EqualTo( 0 ).Within( 0.1f ), "Conveyor should not move the box" );
+
+      // Set friciton in primary direction
+      cm.FrictionCoefficients = new Vector2( 1, 0 );
+
+      yield return TestUtils.SimulateSeconds( 3f );
+
+      Assert.That( box.transform.position.y, Is.GreaterThan( 0 ), "Conveyor should carry the box" );
+      Assert.That( box.transform.position.x, Is.LessThan( -0.5 ), "Conveyor should not move the box" );
     }
   }
 }

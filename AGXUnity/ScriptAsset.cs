@@ -18,15 +18,44 @@ namespace AGXUnity
   /// implementations.
   /// </summary>
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#assets" )]
-  public abstract class ScriptAsset : ScriptableObject, IPropertySynchronizable
+  public abstract class ScriptAsset : ScriptableObject, IPropertySynchronizable, ISerializationCallbackReceiver
   {
-    private const int CurrentSerializationVersion = 1;
+    // 2 - Move to using stiffness + attenuation in track properties
+    private const int CurrentSerializationVersion = 2;
 
     // Serialization version is currently unused
 #pragma warning disable 0414
     [SerializeField]
-    private int m_serializationVersion = CurrentSerializationVersion;
+    [HideInInspector]
+    protected int m_serializationVersion = -1;
 #pragma warning restore 0414
+
+    public void OnBeforeSerialize()
+    {
+      m_serializationVersion = CurrentSerializationVersion;
+    }
+
+    public void OnAfterDeserialize()
+    {
+      if ( m_serializationVersion != CurrentSerializationVersion ) {
+        if ( PerformMigration() ) {
+          Debug.Log( $"Performed automatic migration of an asset with type '{this.GetType()}'" );
+#if UNITY_EDITOR
+          // Ensure the migration is saved
+          UnityEditor.EditorApplication.delayCall += () => {
+            if ( this != null )
+              UnityEditor.EditorUtility.SetDirty( this );
+          };
+#endif
+        }
+      }
+    }
+
+    /// <summary>
+    /// Implement this to recieve a callback when an old version of a ScriptAsset is deserialized.
+    /// </summary>
+    /// <returns>True if migrations were made, false otherwise</returns>
+    protected virtual bool PerformMigration() => false;
 
     /// <summary>
     /// True when the property synchronizer is running during (post) initialize.
