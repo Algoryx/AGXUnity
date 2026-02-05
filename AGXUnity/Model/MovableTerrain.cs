@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 using Mesh = UnityEngine.Mesh;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -78,54 +79,71 @@ namespace AGXUnity.Model
       }
     }
 
+    public enum Placement
+    {
+      Automatic,
+      Manual
+    };
+
+    /// <summary>
+    /// Specifies how to position and initialize the terrain:
+    /// * <b>Manual</b> - Use the terrain sizes and GameObject position/rotation directly to create the terrain.
+    /// * <b>Automatic</b> - Create the terrain based on a list of Bed Geometries. This mode will calculate the
+    /// bounds of the bed geometries to set the position and size of the terrain after which it will raycast against
+    /// the geometry list to find the initial and minimum heights of the terrain
+    /// </summary>
+    [field: SerializeField]
+    [HideInInspector]
+    [Tooltip( "Specifies how to position and initialize the terrain:\n" +
+              "* <b>Manual</b> - Use the terrain sizes and GameObject position/rotation directly to create the terrain.\n" +
+              "* <b>Automatic</b> - Create the terrain based on a list of Bed Geometries. This mode will calculate the " +
+              "bounds of the bed geometries to set the position and size of the terrain after which it will raycast against " +
+              "the geometry list to find the initial and minimum heights of the terrain" )]
+    public Placement PlacementMode { get; set; } = Placement.Automatic;
+
     [SerializeField]
     private Vector2 m_sizeMeters = new Vector2(2, 2);
 
+    /// <summary>
+    /// Specifies the size of the terrain in Meters
+    /// </summary>
     [ClampAboveZeroInInspector]
     [HideInInspector]
     [IgnoreSynchronization]
+    [Tooltip( "Specifies the size of the terrain in Meters" )]
     public Vector2 SizeMeters
     {
       get => m_sizeMeters;
-      set
-      {
-        if ( m_sizeMeters == value )
-          return;
-        m_sizeMeters = value;
-        RecalculateSizes( false );
-      }
+      set => SetTerrainSizeResolution( value, Resolution );
     }
 
     [SerializeField]
     private Vector2Int m_sizeCells = new Vector2Int(20, 20);
 
+    /// <summary>
+    /// Specifies the size of the terrain in Cell count
+    /// </summary>
     [ClampAboveZeroInInspector]
     [HideInInspector]
     [IgnoreSynchronization]
+    [Tooltip( "Specifies the size of the terrain in Cell count" )]
     public Vector2Int SizeCells
     {
       get => m_sizeCells;
-      set
-      {
-        if ( m_sizeCells == value )
-          return;
-        m_sizeCells = value;
-        RecalculateSizes( true );
-      }
+      set => SetCellCountElementSize( value, ElementSize );
     }
 
+    /// <summary>
+    /// Specifies the amount of cells in the local X-axis
+    /// </summary>
     [HideInInspector]
     [IgnoreSynchronization]
+    [Tooltip( "Specifies the amount of cells in the local X-axis" )]
+    [DelayedInspector]
     public int Resolution
     {
       get => m_sizeCells.x;
-      set
-      {
-        if ( m_sizeCells.x == value )
-          return;
-        m_sizeCells.x = value;
-        RecalculateSizes( false );
-      }
+      set => SetTerrainSizeResolution( SizeMeters, value );
     }
 
     [SerializeField]
@@ -137,16 +155,11 @@ namespace AGXUnity.Model
     [HideInInspector]
     [ClampAboveZeroInInspector]
     [IgnoreSynchronization]
+    [Tooltip( "The size of each underlying tile in the terrain, in meters." )]
     public new float ElementSize
     {
       get => m_elementSize;
-      set
-      {
-        if ( m_elementSize == value )
-          return;
-        m_elementSize = value;
-        RecalculateSizes( true );
-      }
+      set => SetCellCountElementSize( SizeCells, value );
     }
 
     /// <summary>
@@ -159,16 +172,85 @@ namespace AGXUnity.Model
     [Tooltip( "The compaction that all terrain cells are initialized to." )]
     public float InitialCompaction { get; set; } = 1.0f;
 
+    /// <summary>
+    /// When enabled, the maximum depth will be added as height during initialization of the terrain
+    /// </summary>
     [field: SerializeField]
-    [InspectorPriority( -1 )]
+    [field: FormerlySerializedAs( "<InvertDepthDirection>k__BackingField" )]
+    [HideInInspector]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
-    public bool InvertDepthDirection { get; set; } = true;
+    public bool MaxDepthAsInitialHeight { get; set; } = true;
+
+    [field: SerializeField]
+    private float m_terrainBedMargin = 0.01f;
+
+    /// <summary>
+    /// Adds a margin by which to shrink the terrain relative to the bed geometries' bounds. 
+    /// Can be negative, in which case the resulting terrain will be expanded.
+    /// </summary>
+    [HideInInspector]
+    [IgnoreSynchronization]
+    [DelayedInspector]
+    [Tooltip( "Adds a margin by which to shrink the terrain relative to the bed geometries' bounds. " +
+              "Can be negative, in which case the resulting terrain will be expanded." )]
+    public float TerrainBedMargin
+    {
+      get => m_terrainBedMargin;
+      set
+      {
+        if ( m_terrainBedMargin == value )
+          return;
+        if ( Native != null ) {
+          Debug.LogError( "Cannot change Terrain bed margin after it's been initialized" );
+          return;
+        }
+        m_terrainBedMargin = value;
+        RecalculateAutomaticBed();
+      }
+    }
+
+    [field: SerializeField]
+    private float m_terrainBedHeightOffset = 0;
+
+    /// <summary>
+    /// Adds an offset to the terrain to allow the bottom of the bed to be above/below the provided bed geometries.
+    /// </summary>
+    [HideInInspector]
+    [IgnoreSynchronization]
+    [DelayedInspector]
+    [Tooltip( "Adds an offset to the terrain to allow the bottom of the bed to be above/below the provided bed geometries." )]
+    public float TerrainBedHeightOffset
+    {
+      get => m_terrainBedHeightOffset;
+      set
+      {
+        {
+          if ( m_terrainBedHeightOffset == value )
+            return;
+          if ( Native != null ) {
+            Debug.LogError( "Cannot change Terrain bed margin after it's been initialized" );
+            return;
+          }
+          m_terrainBedHeightOffset = value;
+          RecalculateAutomaticBed();
+        }
+      }
+    }
 
     [SerializeField]
     private List<Shape> m_bedShapes = new List<Shape>();
 
+    /// <summary>
+    /// The geometries to use when Placement mode is set to Automatic to compute terrain placement and heights.
+    /// </summary>
     public Shape[] BedGeometries => m_bedShapes.ToArray();
 
+    /// <summary>
+    /// Adds a terrain bed geometry to be used when Automatic placement is used. 
+    /// The geometries added this way are ignored if Manual placement is used instead.
+    /// </summary>
+    /// <param name="bedGeom">A shape that is a part of the terrain bed that the terrain represents</param>
+    /// <returns>True if the bed geometry was successfully added, false otherwise</returns>
     public bool AddBedGeometry( Shape bedGeom )
     {
       if ( Native != null ) {
@@ -180,9 +262,17 @@ namespace AGXUnity.Model
         return false;
       }
       m_bedShapes.Add( bedGeom );
+
+      RecalculateAutomaticBed();
+
       return true;
     }
 
+    /// <summary>
+    /// Removes a terrain bed geometry from the geometries used by the Automatic placement. 
+    /// </summary>
+    /// <param name="bedGeom">The geometry to remove from the bed geometries</param>
+    /// <returns>True if the bed geometry was successfully removed, false otherwise</returns>
     public bool RemoveBedGeometry( Shape bedGeom )
     {
       if ( Native != null ) {
@@ -194,26 +284,71 @@ namespace AGXUnity.Model
         return false;
       }
       m_bedShapes.Remove( bedGeom );
+
+      RecalculateAutomaticBed();
+
       return true;
     }
 
-    private void RecalculateSizes( bool fromCellCount )
+    private void SetCellCountElementSize( Vector2Int cellCount, float elementSize )
     {
-      if ( fromCellCount ) {
-        m_sizeMeters.x = m_sizeCells.x * m_elementSize;
-        m_sizeMeters.y = m_sizeCells.y * m_elementSize;
+      if ( SizeCells == cellCount && ElementSize == elementSize )
+        return;
+
+      if ( Native != null ) {
+        Debug.LogError( "Change terrain placement parameters after the terrain has been initialized" );
+        return;
       }
+
+      if ( PlacementMode == Placement.Automatic ) {
+        Debug.LogWarning( ( cellCount != SizeCells ? "Terrain size" : "Element size" ) + " cannot be set explicitly when Placement Mode is set to Automatic. Ignoring change..." );
+        return;
+      }
+
+      m_sizeCells = cellCount;
+      m_elementSize = elementSize;
+
+      m_sizeMeters.x = m_sizeCells.x * m_elementSize;
+      m_sizeMeters.y = m_sizeCells.y * m_elementSize;
+
+      SetupMesh();
+    }
+
+    private void SetTerrainSizeResolution( Vector2 terrainSize, int resolution )
+    {
+      if ( SizeMeters == terrainSize && Resolution == resolution )
+        return;
+
+      if ( Native != null ) {
+        Debug.LogError( "Change terrain placement parameters after the terrain has been initialized" );
+        return;
+      }
+
+      if ( PlacementMode == Placement.Automatic && SizeMeters != terrainSize ) {
+        Debug.LogWarning( "Terrain size cannot be set explicitly when Placement Mode is set to Automatic. Ignoring change..." );
+        return;
+      }
+
+      m_sizeCells.x = Mathf.Max( resolution, 2 );
+      if ( PlacementMode == Placement.Automatic )
+        RecalculateAutomaticBed();
       else {
+        m_sizeMeters = terrainSize;
         m_elementSize = m_sizeMeters.x / m_sizeCells.x;
         m_sizeCells.y = Mathf.CeilToInt( Resolution * m_sizeMeters.y / m_sizeMeters.x );
+
+        SetupMesh();
       }
-      SetupMesh();
     }
 
     public override void EditorUpdate()
     {
-      if ( TerrainMesh.sharedMesh == null )
-        SetupMesh();
+      if ( TerrainMesh.sharedMesh == null ) {
+        if ( PlacementMode == Placement.Automatic )
+          RecalculateAutomaticBed();
+        else
+          SetupMesh();
+      }
 
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
@@ -231,6 +366,8 @@ namespace AGXUnity.Model
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
       InitializeNative();
+      if ( Native == null )
+        return false;
 
       if ( TerrainRenderer.sharedMaterial == null ) {
         TerrainRenderer.sharedMaterial = RenderingUtils.CreateDefaultMaterial();
@@ -263,13 +400,14 @@ namespace AGXUnity.Model
       base.OnDestroy();
     }
 
-    public agxTerrain.Terrain CreateBed()
+    private agx.AffineMatrix4x4 TerrainToWorldMatrix => agx.AffineMatrix4x4.rotate( agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS() ) * transform.localToWorldMatrix.ToAffine4x4();
+
+    private agxTerrain.Terrain CreateBed()
     {
       List<agxCollide.Geometry> temps = new List<agxCollide.Geometry>();
       var geoms = new agxCollide.GeometryPtrVector();
 
-      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
-      var worldToTerrain = terrainToWorld.inverse();
+      var worldToTerrain = TerrainToWorldMatrix.inverse();
 
       foreach ( var geom in m_bedShapes ) {
         var temp = geom.CreateTemporaryNative();
@@ -278,22 +416,48 @@ namespace AGXUnity.Model
         geoms.Add( temp );
         temps.Add( temp );
       }
-      return agxTerrain.Terrain.createTerrainBedFromGeometries( (uint)Resolution, geoms, 0.01f, 0, true );
+      var terrain = agxTerrain.Terrain.createTerrainBedFromGeometries( (uint)Resolution, geoms, TerrainBedMargin, TerrainBedHeightOffset, true );
+
+      if ( MaxDepthAsInitialHeight ) {
+        int numCells = (int)(terrain.getResolutionX() * terrain.getResolutionY());
+        var heights = new agx.RealVector(numCells);
+        var heightArr = new double[ numCells ];
+        Array.Fill( heightArr, MaximumDepth );
+        heights.Set( heightArr );
+        terrain.setHeights( heights );
+      }
+      return terrain;
     }
 
-    public void Test()
+    /// <summary>
+    /// Force a recalculation of the terrain properties given the terrain bed geometries
+    /// </summary>
+    public void RecalculateAutomaticBed()
     {
-      Native = CreateBed();
+      if ( PlacementMode != Placement.Automatic ) {
+        Debug.LogWarning( "Cannot recalculate automatic terrain bed unless Automatic Placement Mode is selected" );
+        return;
+      }
 
-      this.ElementSize = (float)Native.getElementSize();
-      this.SizeCells = new Vector2Int( (int)Native.getHeightField().getResolutionX(), (int)Native.getHeightField().getResolutionY() );
+      if ( Native != null ) {
+        Debug.LogWarning( "Cannot recalculate autoamtic terrain bed for an initialized terrain" );
+        return;
+      }
 
-      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
-      this.transform.localPosition = ( terrainToWorld.transformPoint( Native.getPosition() ) ).ToHandedVector3();
+      if ( m_bedShapes.Count > 0 ) {
+        // Create temporary bed
+        Native = CreateBed();
 
-      Debug.Log( $"Native pos: {Native.getPosition()}" );
-      Debug.Log( $"Native pos transformed: {terrainToWorld.transformPoint( Native.getPosition() )}" );
+        // Set derived sizes without triggering implicit recalculation
+        this.m_elementSize = (float)Native.getElementSize();
+        this.m_sizeCells = new Vector2Int( (int)Native.getHeightField().getResolutionX(), (int)Native.getHeightField().getResolutionY() );
+        this.m_sizeMeters = new Vector2( (float)Native.getSize().x, (float)Native.getSize().y );
 
+        // Set position
+        this.transform.position = ( TerrainToWorldMatrix.transformPoint( Native.getPosition() ) ).ToHandedVector3();
+      }
+
+      // Create render mesh
       SetupMesh();
 
       Native = null;
@@ -301,26 +465,32 @@ namespace AGXUnity.Model
 
     private void InitializeNative()
     {
-      var heights = new agx.RealVector((int)(SizeCells.x * SizeCells.y));
-      var heightArr = new double[ SizeCells.x * SizeCells.y ];
-      var depth = MaximumDepth;
-      if ( InvertDepthDirection ) {
-        depth = 0;
-        Array.Fill( heightArr, MaximumDepth );
+      if ( PlacementMode == Placement.Automatic ) {
+        if ( m_bedShapes.Count == 0 ) {
+          Debug.LogError( $"Failed to initialize terrain '{name}', Placement mode is set to Automatic but no bed geometries were provided." );
+          return;
+        }
+
+        Native = CreateBed();
+        transform.position = TerrainToWorldMatrix.transformPoint( Native.getPosition() ).ToHandedVector3();
       }
-      heights.Set( heightArr );
+      else {
+        var heights = new agx.RealVector((int)(SizeCells.x * SizeCells.y));
+        var heightArr = new double[ SizeCells.x * SizeCells.y ];
+        var depth = MaximumDepth;
+        if ( MaxDepthAsInitialHeight ) {
+          depth = 0;
+          Array.Fill( heightArr, MaximumDepth );
+        }
+        heights.Set( heightArr );
 
-      Native = CreateBed();
-
-      var terrainToWorld = agx.AffineMatrix4x4.rotate(agx.Vec3.Z_AXIS(), agx.Vec3.Y_AXIS()) * transform.localToWorldMatrix.ToAffine4x4();
-      this.transform.localPosition = ( terrainToWorld.transformPoint( Native.getPosition() ) ).ToHandedVector3();
-
-      //Native = new agxTerrain.Terrain( (uint)SizeCells.x,
-      //                                 (uint)SizeCells.y,
-      //                                 ElementSize,
-      //                                 heights,
-      //                                 false,
-      //                                 depth );
+        Native = new agxTerrain.Terrain( (uint)SizeCells.x,
+                                         (uint)SizeCells.y,
+                                         ElementSize,
+                                         heights,
+                                         false,
+                                         depth );
+      }
 
       if ( InitialCompaction != 1.0f )
         Native.setCompaction( InitialCompaction );
@@ -367,7 +537,7 @@ namespace AGXUnity.Model
         width = SizeCells.x;
         height = SizeCells.y;
         elemSize = ElementSize;
-        if ( Native != null && InvertDepthDirection )
+        if ( Native != null && MaxDepthAsInitialHeight )
           heightGetter = ( _, _ ) => MaximumDepth;
         else
           heightGetter = ( _, _ ) => 0.0f;
@@ -450,8 +620,10 @@ namespace AGXUnity.Model
 
     private void OnDrawGizmosSelected()
     {
+      if ( PlacementMode == Placement.Automatic )
+        return;
       Vector3 size = new Vector3((SizeCells.x - 1) * ElementSize, MaximumDepth, (SizeCells.y - 1) * ElementSize);
-      Vector3 pos = new Vector3(0, InvertDepthDirection ? MaximumDepth / 2 - 0.001f : -MaximumDepth / 2 - 0.001f, 0);
+      Vector3 pos = new Vector3(0, MaxDepthAsInitialHeight ? MaximumDepth / 2 - 0.001f : -MaximumDepth / 2 - 0.001f, 0);
 
       Gizmos.matrix = transform.localToWorldMatrix;
       Gizmos.color = new Color( 0.5f, 1.0f, 0.5f, 0.5f );
