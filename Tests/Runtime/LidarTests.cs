@@ -1070,13 +1070,13 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestLivoxLidarDownSample()
     {
-      var ( lidarComp1, modelData1 ) = CreateLivoxTestLidar( Vector3.zero, 1 );
+      var (lidarComp1, modelData1) = CreateLivoxTestLidar( Vector3.zero, 1 );
       var output1 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp1.Add( output1 );
       lidarComp1.GetInitialized();
       lidarComp1.RemoveRayMisses = false;
 
-      var ( lidarComp2, modelData2 ) = CreateLivoxTestLidar( Vector3.zero, 2 );
+      var (lidarComp2, modelData2) = CreateLivoxTestLidar( Vector3.zero, 2 );
       var output2 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp2.Add( output2 );
       lidarComp2.GetInitialized();

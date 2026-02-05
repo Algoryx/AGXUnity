@@ -1486,8 +1486,8 @@ namespace AGXUnityEditor
 
     public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
     {
-      data.Frequency     = Mathf.Max(1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ));
-      data.FrameSize     = (uint)Mathf.Max(1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ));
+      data.Frequency     = Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ) );
+      data.FrameSize     = (uint)Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ) );
       data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
       data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
       data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
