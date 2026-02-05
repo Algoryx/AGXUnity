@@ -1885,7 +1885,7 @@ namespace AGXUnityEditor
       return InspectorGUI.MakeLabel( member, postText );
     }
 
-    public static void RenderDefault<T>( object[] objects, string name, bool isField = false )
+    public static void DefaultInspector<T>( object[] objects, string name, bool isField = false )
     {
       InvokeWrapper wrapper;
       if ( isField )
