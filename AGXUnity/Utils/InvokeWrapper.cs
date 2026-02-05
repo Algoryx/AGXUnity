@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace AGXUnity.Utils
 {
@@ -63,6 +64,7 @@ namespace AGXUnity.Utils
       Priority              = priorityAttribute != null ?
                                 priorityAttribute.Priority :
                                 0;
+      IsDelayed             = HasAttribute<DelayedInspectorAttribute>() || HasAttribute<DelayedAttribute>();
     }
 
     /// <summary>
@@ -74,6 +76,8 @@ namespace AGXUnity.Utils
     /// Priority of this member. Higher values are earlier in the resulting array.
     /// </summary>
     public int Priority { get; private set; }
+
+    public bool IsDelayed { get; private set; }
 
     /// <summary>
     /// Find attribute of given type.
