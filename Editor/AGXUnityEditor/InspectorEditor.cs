@@ -325,7 +325,7 @@ namespace AGXUnityEditor
       return targetComponents.Length != m_numTargetGameObjectsTargetComponents;
     }
 
-    private static bool HandleType( InvokeWrapper wrapper,
+    internal static bool HandleType( InvokeWrapper wrapper,
                                     object[] objects,
                                     SerializedObject fallback )
     {

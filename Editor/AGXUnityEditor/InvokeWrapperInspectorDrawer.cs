@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using static AGXUnityEditor.InspectorGUI;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -1453,12 +1454,6 @@ namespace AGXUnityEditor
       DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ), -1 );
 
       return null;
-    }
-
-    private static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
-    {
-      var member = parentType.GetMember( memberName )[ 0 ];
-      return InspectorGUI.MakeLabel( member, postText );
     }
 
     public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
