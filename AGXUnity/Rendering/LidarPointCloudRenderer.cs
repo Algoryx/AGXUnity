@@ -331,6 +331,10 @@ namespace AGXUnity.Rendering
 
       m_argsBuffer = null;
       if ( m_pointCloudMaterialInstance != null ) Destroy( m_pointCloudMaterialInstance );
+
+      if ( m_sensor != null )
+        m_sensor.Remove( m_output );
+
       base.OnDestroy();
     }
   }

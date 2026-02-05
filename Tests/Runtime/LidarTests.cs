@@ -53,6 +53,9 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.PreIntegratePositions = true;
       m_keep.Add( Simulation.Instance.gameObject );
       m_keep.Add( SensorEnvironment.Instance.gameObject );
+
+      // Lidar ray intervals are sensitive to time step so ensure that the timestep is exact here
+      Simulation.Instance.Native.setTimeStep( 0.02 );
     }
 
     [UnityTearDown]
@@ -73,7 +76,7 @@ namespace AGXUnityTesting.Runtime
           toDestroy.Add( root );
       }
 
-      return TestUtils.DestroyAndWait( toDestroy.ToArray() );
+      yield return TestUtils.DestroyAndWait( toDestroy.ToArray() );
     }
 
     [OneTimeTearDown]
@@ -85,8 +88,8 @@ namespace AGXUnityTesting.Runtime
       var geoms = Object.FindObjectsOfType<Shape>( );
 #endif      
 
-      foreach ( var geom in geoms )
-        GameObject.Destroy( geom.gameObject );
+      foreach ( var g in geoms )
+        GameObject.Destroy( g.gameObject );
 
       GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
@@ -356,14 +359,14 @@ namespace AGXUnityTesting.Runtime
 
       Assert.Greater( postAverage, preAverage );
 
-      mat.Reflectivity = 0.0f;
+      mat.Reflectivity = 0.0001f; // Points with intensity 0 are filtered so give material a little bit of reflectivity
 
       yield return TestUtils.Step();
 
       data = output.View<float>( out uint _ );
       var noReflect = data.Average();
 
-      Assert.Zero( noReflect, "Intensity should be zero from material with 0 reflectivity" );
+      Assert.That( noReflect, Is.Zero.Within( 1e-6f ), "Intensity should be zero from material with 0 reflectivity" );
 
       yield return TestUtils.DestroyAndWait( box );
     }
@@ -382,7 +385,7 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step();
 
       var mat = AddLambertianMaterial( box, 0.2f );
-      mat.Reflectivity = 0.0f;
+      mat.Reflectivity = 0.0001f; // Points with intensity 0 are filtered so give material a little bit of reflectivity
 
       TestUtils.InitializeAll();
       yield return TestUtils.Step();
@@ -390,7 +393,7 @@ namespace AGXUnityTesting.Runtime
       var data = output.View<float>( out uint _ );
       var noReflect = data.Average();
 
-      Assert.Zero( noReflect, "Intensity should be zero from material with 0 reflectivity" );
+      Assert.That( noReflect, Is.Zero.Within( 1e-6f ), "Intensity should be zero from material with 0 reflectivity" );
 
       yield return TestUtils.DestroyAndWait( box );
     }
@@ -520,7 +523,6 @@ namespace AGXUnityTesting.Runtime
       TestUtils.InitializeAll();
 
       yield return TestUtils.Step();
-      //yield return TestUtils.SimulateSeconds( 5 );
 
       output.View<agx.Vec3f>( out uint count );
       Assert.NotZero( count );
@@ -701,7 +703,7 @@ namespace AGXUnityTesting.Runtime
       lidarComp.GetInitialized();
 
       sweepData.BeamDivergence = 0;
-      sweepData.BeamExitRadius = 0;
+      sweepData.BeamExitRadius = 0.01f;
 
       yield return TestUtils.Step();
 
@@ -1062,7 +1064,6 @@ namespace AGXUnityTesting.Runtime
 
       yield return TestUtils.Step();
       var _ = output.View<agx.Vec3f>( out uint count );
-
       Assert.That( count, Is.EqualTo( 600 * 20 ), "Total amount of points should be horizontal * vertical" );
     }
 

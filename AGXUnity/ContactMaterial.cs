@@ -408,6 +408,11 @@ namespace AGXUnity
                                             GameObject referenceObject,
                                             FrictionModel.PrimaryDirection primaryDirection )
     {
+      if ( isOriented && FrictionModel.TrackFrictionModel ) {
+        Debug.LogWarning( "Setting IsOriented on a ContactMaterial with a track FrictionModel is reduntant and will be ignored." );
+        return;
+      }
+
       if ( !isOriented || referenceObject == null || FrictionModel == null )
         return;
 

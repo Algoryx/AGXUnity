@@ -287,6 +287,100 @@ namespace AGXUnity.Utils
       return new Vector3( -v.x, v.y, v.z );
     }
 
+    // Cache a basis change matrix to apply the X-Flip to handle handedness
+    private static readonly Matrix4x4 BasisChange = new Matrix4x4(
+      new Vector4(-1, 0, 0, 0),
+      new Vector4( 0, 1, 0, 0),
+      new Vector4( 0, 0, 1, 0),
+      new Vector4( 0, 0, 0, 1)
+    );
+
+    /// <summary>
+    /// Converts from a Left-handed, column major Unity matrix to a right-handed, row major AGX matrix such that 
+    /// given a matrix constructed with TRS(uPos,uRot,(1,1,1)) the resulting agx matrix will be equivalent to first 
+    /// converting uPos and uRot individually and then constructing the agx matrix from the converted values.
+    /// Note that using this method with a non-affine matrix is not defined.
+    /// </summary>
+    /// <param name="m">The unity matrix to convert</param>
+    /// <returns>The converted AGX matrix</returns>
+    public static agx.AffineMatrix4x4 ToAffine4x4( this Matrix4x4 m )
+    {
+      // Apply basis change and transpose
+      Matrix4x4 c = BasisChange * m.transpose * BasisChange;
+
+      // Build AGX AffineMatrix4x4.
+      return new agx.AffineMatrix4x4(
+        c.m00, c.m01, c.m02, c.m03,
+        c.m10, c.m11, c.m12, c.m13,
+        c.m20, c.m21, c.m22, c.m23,
+        c.m30, c.m31, c.m32, c.m33
+      );
+    }
+
+    /// <summary>
+    /// Converts from a Left-handed, column major Unity matrix to a right-handed, row major AGX matrix such that 
+    /// given a matrix constructed with TRS(uPos,uRot,(1,1,1)) the resulting agx matrix will be equivalent to first 
+    /// converting uPos and uRot individually and then constructing the agx matrix from the converted values.
+    /// Note that using this method with a non-affine matrix is not defined.
+    /// </summary>
+    /// <param name="m">The unity matrix to convert</param>
+    /// <returns>The converted AGX matrix</returns>
+    public static agx.AffineMatrix4x4f ToAffine4x4f( this Matrix4x4 m )
+    {
+      // Apply basis change and transpose
+      Matrix4x4 c = BasisChange * m.transpose * BasisChange;
+
+      // Build AGX AffineMatrix4x4 from
+      return new agx.AffineMatrix4x4f(
+        c.m00, c.m01, c.m02, c.m03,
+        c.m10, c.m11, c.m12, c.m13,
+        c.m20, c.m21, c.m22, c.m23,
+        c.m30, c.m31, c.m32, c.m33
+      );
+    }
+
+    /// <summary>
+    /// Converts from a right-handed, row major AGX matrix to a left-handed, column major Unity matrix such that 
+    /// given a matrix constructed with aPos and aRot the resulting unity matrix will be equivalent to first 
+    /// converting aPos and aRot individually and then constructing the Unity matrix from the converted values using TRS.
+    /// </summary>
+    /// <param name="m">The AGX matrix to convert</param>
+    /// <returns>The converted Unity matrix</returns>
+    public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4 m )
+    {
+      // Copy AGX matrix into a Unity Matrix4x4
+      Matrix4x4 C = new Matrix4x4();
+      C.m00 = (float)m.at( 0, 0 ); C.m01 = (float)m.at( 0, 1 ); C.m02 = (float)m.at( 0, 2 ); C.m03 = (float)m.at( 0, 3 );
+      C.m10 = (float)m.at( 1, 0 ); C.m11 = (float)m.at( 1, 1 ); C.m12 = (float)m.at( 1, 2 ); C.m13 = (float)m.at( 1, 3 );
+      C.m20 = (float)m.at( 2, 0 ); C.m21 = (float)m.at( 2, 1 ); C.m22 = (float)m.at( 2, 2 ); C.m23 = (float)m.at( 2, 3 );
+      C.m30 = (float)m.at( 3, 0 ); C.m31 = (float)m.at( 3, 1 ); C.m32 = (float)m.at( 3, 2 ); C.m33 = (float)m.at( 3, 3 );
+
+      // Apply basis change and transpose
+      Matrix4x4 unityM = BasisChange * C.transpose * BasisChange;
+      return unityM;
+    }
+
+    /// <summary>
+    /// Converts from a right-handed, row major AGX matrix to a left-handed, column major Unity matrix such that 
+    /// given a matrix constructed with aPos and aRot the resulting unity matrix will be equivalent to first 
+    /// converting aPos and aRot individually and then constructing the Unity matrix from the converted values using TRS.
+    /// </summary>
+    /// <param name="m">The AGX matrix to convert</param>
+    /// <returns>The converted Unity matrix</returns>
+    public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4f m )
+    {
+      // Copy AGX matrix into a Unity Matrix4x4
+      Matrix4x4 C = new Matrix4x4();
+      C.m00 = m.at( 0, 0 ); C.m01 = m.at( 0, 1 ); C.m02 = m.at( 0, 2 ); C.m03 = m.at( 0, 3 );
+      C.m10 = m.at( 1, 0 ); C.m11 = m.at( 1, 1 ); C.m12 = m.at( 1, 2 ); C.m13 = m.at( 1, 3 );
+      C.m20 = m.at( 2, 0 ); C.m21 = m.at( 2, 1 ); C.m22 = m.at( 2, 2 ); C.m23 = m.at( 2, 3 );
+      C.m30 = m.at( 3, 0 ); C.m31 = m.at( 3, 1 ); C.m32 = m.at( 3, 2 ); C.m33 = m.at( 3, 3 );
+
+      // Apply basis change
+      Matrix4x4 unityM = BasisChange * C.transpose * BasisChange;
+      return unityM;
+    }
+
     /// <summary>
     /// Convert from agx.Vec4 to UnityEngine.Color.
     /// </summary>
