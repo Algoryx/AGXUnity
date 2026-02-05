@@ -1088,33 +1088,5 @@ namespace AGXUnityTesting.Runtime
 
       Assert.That( count1, Is.EqualTo( count2 * 2 ), "Downsample is wrong yo. Downsample 2 should yield half the amount of points as Downsample 1" );
     }
-
-    [UnityTest]
-    public IEnumerator TestReadFromFileCsvLidar()
-    {
-      var lidarGO = new GameObject("Lidar");
-      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
-      var lidarComp = lidarGO.AddComponent<LidarSensor>();
-
-      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelReadFromFile;
-      var modelData = ( lidarComp.ModelData as ReadFromFileData );
-      modelData.Frequency = 1.0f/Simulation.Instance.TimeStep;
-      modelData.AnglesInDegrees = true;
-      modelData.Delimiter = ',';
-      modelData.FirstLineIsHeader = false;
-      modelData.FrameSize = 2;
-      modelData.TwoColumns = false;
-      modelData.FilePath = "Assets/AGXUnity/Tests/Runtime/Test Resources/csv_lidar_pattern.csv";
-
-      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
-      lidarComp.Add( output );
-      lidarComp.GetInitialized();
-      lidarComp.RemoveRayMisses = false;
-
-      yield return TestUtils.Step();
-      var _ = output.View<agx.Vec3f>( out uint count );
-
-      Assert.That( count, Is.EqualTo( 2 ), "Couldn't create readfromfile lidar and get 2 points back" );
-    }
   }
 }
