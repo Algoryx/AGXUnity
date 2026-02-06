@@ -805,11 +805,12 @@ namespace AGXUnity.IO.OpenPLX
       rbComp.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
       var terrainComp = terrainGO.AddComponent<MovableTerrain>();
+      terrainComp.PlacementMode = MovableTerrain.Placement.Manual;
 
       terrainComp.ElementSize = (float)terrain.element_size();
       terrainComp.MaximumDepth = (float)terrain.max_depth();
       terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
-      terrainComp.InvertDepthDirection = false;
+      terrainComp.MaxDepthAsInitialHeight = false;
 
       var terrainMat = terrain.material();
       if ( !terrainMat.is_default_terrain_material() ) {

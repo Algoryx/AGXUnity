@@ -238,6 +238,58 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private bool m_renderSides = true;
+
+    /// <summary>
+    /// When enabled, the sides of the terrain will be rendered down to the minimum height of the terrain.
+    /// This can cause some visual inconsistencies at the edges for lower resolutions and requires some extra processing during update.
+    /// </summary>
+    [InspectorPriority( -1 )]
+    [InspectorGroupBegin( Name = "Rendering Options" )]
+    [Tooltip( "When enabled, the sides of the terrain will be rendered down to the minimum height of the terrain." +
+              "This can cause some visual inconsistencies at the edges for lower resolutions and requires some extra processing during update." )]
+    public bool RenderSides
+    {
+      get => m_renderSides;
+      set
+      {
+        if ( m_renderSides == value )
+          return;
+        m_renderSides = value;
+        RecreateMesh();
+      }
+    }
+
+    [SerializeField]
+    private bool m_heightsAsVertexColors = false;
+
+    /// <summary>
+    /// When enabled, the generate mesh will contain non-white vertex colors with the following enclosed values:
+    /// <b>R</b> - The current height.
+    /// <b>G</b> - The minimum height.
+    /// <b>B</b> - The current height above the minimum height.
+    /// All of these are in meters and use the corresponding cell index to fetch values.
+    /// </summary>
+    [Tooltip( "When enabled, the generate mesh will contain non-white vertex colors with the following enclosed values:\n" +
+              "<b>R</b> - The current height.\n" +
+              "<b>G</b> - The minimum height.\n" +
+              "<b>B</b> - The current height above the minimum height.\n" +
+              "All of these are in meters and use the corresponding cell index to fetch values." )]
+    [InspectorPriority( -1 )]
+    public bool HeightsAsVertexColors
+    {
+      get => m_heightsAsVertexColors;
+      set
+      {
+        if ( m_heightsAsVertexColors == value )
+          return;
+        m_heightsAsVertexColors = value;
+        RecreateMesh();
+      }
+    }
+
+
+    [SerializeField]
     private List<Shape> m_bedShapes = new List<Shape>();
 
     /// <summary>
@@ -343,12 +395,8 @@ namespace AGXUnity.Model
 
     public override void EditorUpdate()
     {
-      if ( TerrainMesh.sharedMesh == null ) {
-        if ( PlacementMode == Placement.Automatic )
-          RecalculateAutomaticBed();
-        else
-          SetupMesh();
-      }
+      if ( TerrainMesh.sharedMesh == null )
+        RecreateMesh();
 
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
@@ -440,7 +488,7 @@ namespace AGXUnity.Model
       }
 
       if ( Native != null ) {
-        Debug.LogWarning( "Cannot recalculate autoamtic terrain bed for an initialized terrain" );
+        Debug.LogWarning( "Cannot recalculate automatic terrain bed for an initialized terrain" );
         return;
       }
 
@@ -514,8 +562,41 @@ namespace AGXUnity.Model
       UpdateHeights( Native.getModifiedVertices() );
     }
 
+    /// <summary>
+    /// Generator method which generates a set of indices on the border of the terrain.
+    /// Corners are generated twice, once for each side they connect.
+    /// Side index corresponds to: 
+    ///   (0) y = 0, x = 0 -> width-1
+    ///   (1) y = 0 -> height-1, x = width-1
+    ///   (2) y = height - 1, x = width-1 -> 0
+    ///   (3) y = height - 1 -> 0, x = 0
+    /// </summary>
+    /// <param name="width">The width of the box to generate side indices for</param>
+    /// <param name="height">The height of the box to generate side indices for</param>
+    /// <returns>A tuple containing indices (x, y, sideIdx)</returns>
+    private IEnumerable<(int, int, int)> SideIndexGenerator( int width, int height )
+    {
+      for ( int x = 0; x < width; x++ )
+        yield return (x, 0, 0);
+      for ( int y = 0; y < height; y++ )
+        yield return (width-1, y, 1);
+      for ( int x = width - 1; x >= 0; x-- )
+        yield return (x, height - 1, 2);
+      for ( int y = height - 1; y >= 0; y-- )
+        yield return (0, y, 3);
+    }
+
+    private void RecreateMesh()
+    {
+      if ( Native != null || PlacementMode == Placement.Manual )
+        SetupMesh();
+      else
+        RecalculateAutomaticBed();
+    }
+
     private void SetupMesh()
     {
+      // Reuse or create new mesh
       if ( TerrainMesh.sharedMesh == null ) {
         TerrainMesh.sharedMesh = new Mesh();
         TerrainMesh.sharedMesh.name = "Terrain mesh";
@@ -526,45 +607,77 @@ namespace AGXUnity.Model
       int height;
       float elemSize;
       System.Func<int, int, float> heightGetter;
+      System.Func<int, int, float> minHeightGetter;
 
+      // Setup getters and terrain info to avoid having to check Native == null in subsequent code
       if ( Native != null ) {
         width = (int)Native.getHeightField().getResolutionX();
         height = (int)Native.getHeightField().getResolutionY();
         elemSize = (float)Native.getElementSize();
         heightGetter = ( int x, int y ) => (float)Native.getHeight( new agx.Vec2i( width - x - 1, height - y - 1 ) );
+        minHeightGetter = ( int x, int y ) => (float)Native.getMinimumHeight( new agx.Vec2i( width - x - 1, height - y - 1 ) );
       }
       else {
         width = SizeCells.x;
         height = SizeCells.y;
         elemSize = ElementSize;
-        if ( Native != null && MaxDepthAsInitialHeight )
+        if ( MaxDepthAsInitialHeight ) {
           heightGetter = ( _, _ ) => MaximumDepth;
-        else
+          minHeightGetter = ( _, _ ) => 0.0f;
+        }
+        else {
           heightGetter = ( _, _ ) => 0.0f;
+          minHeightGetter = ( _, _ ) => -MaximumDepth;
+        }
       }
 
+      // Early out if size is 0
       if ( width * height == 0 )
         return;
 
       // Create a grid of vertices matching that of the undelying heightfield.
-      var vertices = new Vector3[width * height];
-      var uvs = new Vector2[width * height];
-      var indices = new int[(width - 1) * 6 * (height - 1)];
+      int numVertices = width * height;
+      int numIndices = (width - 1) * 6 * (height - 1);
+
+      // When rendering sides we add additional vertices and indices
+      if ( RenderSides ) {
+        int skirtVertices = ( width + height ) * 2;
+        numVertices += skirtVertices;
+        numIndices += ( skirtVertices - 1 ) * 6;
+      }
+
+      var vertices = new Vector3[numVertices];
+      var uvs = new Vector2[numVertices];
+      var indices = new int[numIndices];
+      // null colors = all white
+      Color[] colors = null;
+      if ( HeightsAsVertexColors )
+        colors = new Color[ numVertices ];
       int i = 0;
 
+      // Base local position to center mesh on terrain center
       float x0 = -width / 2.0f + 0.5f;
       float y0 = -height / 2.0f + 0.5f;
 
+      // Iterate all voxel centers
       for ( var y = 0; y < height; y++ ) {
         float yPos = (y0 + y) * elemSize;
         for ( var x = 0; x < width; x++ ) {
+          var terrHeight = heightGetter( x, y );
           float xPos = (x0 + x) * elemSize;
           vertices[ y * width + x ].x = xPos;
           vertices[ y * width + x ].z = yPos;
-          vertices[ y * width + x ].y = heightGetter( x, y );
+          vertices[ y * width + x ].y = terrHeight;
 
           uvs[ y * width + x ].x = xPos;
           uvs[ y * width + x ].y = yPos;
+
+          if ( HeightsAsVertexColors ) {
+            var minHeight = minHeightGetter( x, y );
+            colors[ y * width + x ].r = terrHeight;
+            colors[ y * width + x ].g = minHeight;
+            colors[ y * width + x ].b = terrHeight - minHeight;
+          }
 
           if ( x != width - 1 && y != height - 1 ) {
             indices[ i++ ] = y * width + x;
@@ -577,11 +690,70 @@ namespace AGXUnity.Model
           }
         }
       }
+
+      if ( RenderSides ) {
+        int baseIndex = width * height;
+        int skirtIndex = 0;
+        (int, int) last = (0,0);
+        foreach ( (int x, int y, int side) in SideIndexGenerator( width, height ) ) {
+          var minHeight = minHeightGetter( x, y );
+          vertices[ baseIndex + skirtIndex ].x = vertices[ y * width + x ].x;
+          vertices[ baseIndex + skirtIndex ].z = vertices[ y * width + x ].z;
+          vertices[ baseIndex + skirtIndex ].y = minHeight;
+
+          var heightDiff = vertices[ y * width + x ].y - minHeight;
+
+          // Extend UV along the axis perpendicular to the side, causes seams in corners
+          // but cant really avoid that without stretching texture on the sides
+          if ( side == 0 ) {
+            uvs[ baseIndex + skirtIndex ].x = uvs[ y * width + x ].x;
+            uvs[ baseIndex + skirtIndex ].y = uvs[ y * width + x ].y - heightDiff;
+          }
+          else if ( side == 1 ) {
+            uvs[ baseIndex + skirtIndex ].x = uvs[ y * width + x ].x + heightDiff;
+            uvs[ baseIndex + skirtIndex ].y = uvs[ y * width + x ].y;
+          }
+          else if ( side == 2 ) {
+            uvs[ baseIndex + skirtIndex ].x = uvs[ y * width + x ].x;
+            uvs[ baseIndex + skirtIndex ].y = uvs[ y * width + x ].y + heightDiff;
+          }
+          else {
+            uvs[ baseIndex + skirtIndex ].x = uvs[ y * width + x ].x - heightDiff;
+            uvs[ baseIndex + skirtIndex ].y = uvs[ y * width + x ].y;
+          }
+
+          // height == minHeight for edges
+          if ( HeightsAsVertexColors ) {
+            colors[ baseIndex + skirtIndex ].r = minHeight;
+            colors[ baseIndex + skirtIndex ].g = minHeight;
+            colors[ baseIndex + skirtIndex ].b = 0.0f;
+          }
+
+          // Skip first vertex but after that look back to build quad
+          if ( side != 0 || x != 0 || y != 0 ) {
+            indices[ i++ ] = y * width + x;
+            indices[ i++ ] = baseIndex + skirtIndex - 1;
+            indices[ i++ ] = last.Item2 * width + last.Item1;
+
+            indices[ i++ ] = y * width + x;
+            indices[ i++ ] = baseIndex + skirtIndex;
+            indices[ i++ ] = baseIndex + skirtIndex - 1;
+          }
+
+          last = (x, y);
+          skirtIndex++;
+        }
+      }
+
       TerrainMesh.sharedMesh.Clear();
       TerrainMesh.sharedMesh.vertices = vertices;
+      // If HeightsAsVertexColors is disabled then setting colors to null uses the default white vertex colors
+      TerrainMesh.sharedMesh.colors = colors;
       m_terrainVertices = vertices;
+      m_terrainColors = colors;
+      m_terrainUVs = uvs;
       TerrainMesh.sharedMesh.uv = uvs;
-      TerrainMesh.sharedMesh.indexFormat = width * height >= Mathf.Pow( 2, 16 ) ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
+      TerrainMesh.sharedMesh.indexFormat = numIndices >= Mathf.Pow( 2, 16 ) ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16;
       TerrainMesh.sharedMesh.SetIndices( indices, MeshTopology.Triangles, 0 );
       TerrainMesh.sharedMesh.RecalculateNormals();
     }
@@ -597,9 +769,37 @@ namespace AGXUnity.Model
 
         float height = (float)Native.getHeight(mod);
         m_terrainVertices[ SizeCells.x * SizeCells.y - idx ].y = height;
+
+        // If vertex colors are requested these have to be recomputed here on height change
+        if ( HeightsAsVertexColors ) {
+          float minHeight = (float)Native.getMinimumHeight(mod);
+          m_terrainColors[ SizeCells.x * SizeCells.y - idx ].r = height;
+          m_terrainColors[ SizeCells.x * SizeCells.y - idx ].g = minHeight;
+          m_terrainColors[ SizeCells.x * SizeCells.y - idx ].b = height - minHeight;
+        }
+
+        // Recompute UVs for sides since these are dependent on the height difference between the actual and minimum heights for the edge points
+        if ( RenderSides ) {
+          int x = SizeCells.x - (int)mod.x - 1;
+          int y = SizeCells.y - (int)mod.y - 1;
+          int baseIndex = SizeCells.x * SizeCells.y;
+          float heightDiff = height - (float)Native.getMinimumHeight(mod);
+          if ( y == 0 )
+            m_terrainUVs[ baseIndex + x ].y = m_terrainUVs[ SizeCells.x * SizeCells.y - idx ].y - heightDiff;
+          if ( x == SizeCells.x - 1 )
+            m_terrainUVs[ baseIndex + SizeCells.x + y ].x = m_terrainUVs[ SizeCells.x * SizeCells.y - idx ].x + heightDiff;
+          if ( y == SizeCells.y - 1 )
+            m_terrainUVs[ baseIndex + 2 * SizeCells.x + SizeCells.y - x - 1 ].y = m_terrainUVs[ SizeCells.x * SizeCells.y - idx ].y + heightDiff;
+          if ( x == 0 )
+            m_terrainUVs[ baseIndex + 2 * SizeCells.x + 2 * SizeCells.y - y - 1 ].x = m_terrainUVs[ SizeCells.x * SizeCells.y - idx ].x - heightDiff;
+        }
       }
 
       TerrainMesh.mesh.vertices = m_terrainVertices;
+      if ( HeightsAsVertexColors )
+        TerrainMesh.mesh.colors = m_terrainColors;
+      if ( RenderSides )
+        TerrainMesh.mesh.uv = m_terrainUVs;
       TerrainMesh.mesh.RecalculateNormals();
     }
 
@@ -620,8 +820,10 @@ namespace AGXUnity.Model
 
     private void OnDrawGizmosSelected()
     {
-      if ( PlacementMode == Placement.Automatic )
+      // Box is cluttery when using automatic placment and redundant when using RenderSides
+      if ( PlacementMode == Placement.Automatic || RenderSides )
         return;
+
       Vector3 size = new Vector3((SizeCells.x - 1) * ElementSize, MaximumDepth, (SizeCells.y - 1) * ElementSize);
       Vector3 pos = new Vector3(0, MaxDepthAsInitialHeight ? MaximumDepth / 2 - 0.001f : -MaximumDepth / 2 - 0.001f, 0);
 
@@ -633,6 +835,8 @@ namespace AGXUnity.Model
     }
 
     private Vector3[] m_terrainVertices = null;
+    private Vector2[] m_terrainUVs = null;
+    private Color[] m_terrainColors = null;
     private MeshFilter m_terrainMesh = null;
     private MeshRenderer m_terrainRenderer = null;
 
