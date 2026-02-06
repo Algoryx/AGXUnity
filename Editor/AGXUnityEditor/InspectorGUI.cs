@@ -1878,5 +1878,26 @@ namespace AGXUnityEditor
         }
       }
     }
+
+    public static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
+    {
+      var member = parentType.GetMember( memberName )[ 0 ];
+      return InspectorGUI.MakeLabel( member, postText );
+    }
+
+    public static void DefaultInspector<T>( object[] objects, string name, bool isField = false )
+    {
+      InvokeWrapper wrapper;
+      if ( isField )
+        wrapper = new FieldWrapper( typeof( T ).GetField( name, InvokeWrapper.DefaultBindingFlags ) );
+      else
+        wrapper = new PropertyWrapper( typeof( T ).GetProperty( name, InvokeWrapper.DefaultBindingFlags ) );
+
+      var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                              wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+        InspectorEditor.HandleType( wrapper, objects, null );
+    }
   }
 }
