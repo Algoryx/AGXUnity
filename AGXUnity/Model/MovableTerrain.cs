@@ -348,7 +348,7 @@ namespace AGXUnity.Model
         return;
 
       if ( Native != null ) {
-        Debug.LogError( "Change terrain placement parameters after the terrain has been initialized" );
+        Debug.LogError( "Cannot change terrain placement parameters after the terrain has been initialized" );
         return;
       }
 
@@ -372,7 +372,7 @@ namespace AGXUnity.Model
         return;
 
       if ( Native != null ) {
-        Debug.LogError( "Change terrain placement parameters after the terrain has been initialized" );
+        Debug.LogError( "Cannot change terrain placement parameters after the terrain has been initialized" );
         return;
       }
 
