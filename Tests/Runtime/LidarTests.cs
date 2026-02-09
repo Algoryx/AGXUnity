@@ -1087,7 +1087,50 @@ namespace AGXUnityTesting.Runtime
       var _2 = output2.View<agx.Vec3f>( out uint count2 );
 
       // Downsample skips every other point in the list, thus prone to off by one errors
-      Assert.That( count1, Is.GreaterThanOrEqualTo( count2 * 2 - 1 ), "Downsample doesn't work properly. Downsample 2 should yield half the amount of points as Downsample 1" );
+      Assert.That( count2, Is.EqualTo( count1 / 2.0f ).Within( 0.5f + float.Epsilon ), "Downsample doesn't work properly. Downsample 2 should yield half the amount of points as Downsample 1" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestReadFromFileCsvLidar()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelReadFromFile;
+      var modelData = ( lidarComp.ModelData as ReadFromFileData );
+      modelData.Frequency = 1/Simulation.Instance.TimeStep;
+      modelData.AnglesInDegrees = true;
+      modelData.Delimiter = ',';
+      modelData.FirstLineIsHeader = false;
+      modelData.FrameSize = 2;
+      modelData.TwoColumns = false;
+      modelData.FilePath = "Assets/AGXUnity/Tests/Runtime/Test Resources/csv_lidar_pattern.csv";
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _ = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.GreaterThan( 0 ), "Couldn't create readfromfile lidar and get points back" );
+    }
+
+    [Test]
+    public void TestNonExistentCsvLidar()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelReadFromFile;
+      var modelData = ( lidarComp.ModelData as ReadFromFileData );
+      modelData.FilePath = "does_not_exist.csv";
+
+      LogAssert.Expect( LogType.Error, new Regex( ".*File does not exist.*" ) );
+      lidarComp.GetInitialized();
     }
   }
 }

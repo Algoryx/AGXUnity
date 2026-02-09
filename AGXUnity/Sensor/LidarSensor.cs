@@ -3,6 +3,7 @@ using agxSensor;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -826,6 +827,11 @@ namespace AGXUnity.Sensor
         case LidarModelPreset.LidarModelReadFromFile:
           ReadFromFileData readFromFileData = ModelData as ReadFromFileData;
           RayFileDefinition rayFileDefinition = new RayFileDefinition();
+          if ( !File.Exists( readFromFileData.FilePath ) ) {
+            Debug.LogError( $"Failed to load ray pattern '{readFromFileData.FilePath}', File does not exist" );
+            return null;
+          }
+
           rayFileDefinition.path = readFromFileData.FilePath;
           rayFileDefinition.twoColumns = readFromFileData.TwoColumns;
           rayFileDefinition.anglesInDegrees = readFromFileData.AnglesInDegrees;
