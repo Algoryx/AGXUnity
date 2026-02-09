@@ -573,8 +573,10 @@ namespace AGXUnity.Sensor
         return false;
 
       m_outputs.Remove( output );
-      if ( Native != null )
-        output.Disconnect();
+      if ( Native != null ) {
+        if ( output.Native.getParent() == Native )
+          output.Disconnect();
+      }
       return true;
     }
 

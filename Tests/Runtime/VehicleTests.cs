@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace AGXUnityTesting.Runtime
 {
-  public class VehicleTests
+  public class VehicleTests : AGXUnityFixture
   {
     private GameObject CreateShape<T>( Vector3 transform = new Vector3() )
       where T : Shape
@@ -72,13 +72,6 @@ namespace AGXUnityTesting.Runtime
         LeftJoint = left,
         RightJoint = right,
       };
-    }
-
-    [OneTimeSetUp]
-    public void EnableLogging()
-    {
-      Simulation.Instance.LogToUnityConsole = true;
-      Simulation.Instance.AGXUnityLogLevel = LogLevel.Debug;
     }
 
     [UnityTearDown]
@@ -397,6 +390,10 @@ namespace AGXUnityTesting.Runtime
     {
       GameObject root = new GameObject("Simple Track");
 
+      var refBody = Factory.Create<RigidBody>( );
+      refBody.transform.parent = root.transform;
+      refBody.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
       var (frontRB, frontWheel) = CreateWheel( Vector3.left, TrackWheelModel.Sprocket );
       var (backRB, backWheel) = CreateWheel( Vector3.right );
 
@@ -404,6 +401,7 @@ namespace AGXUnityTesting.Runtime
       var trackComp = track.GetComponent<Track>();
       track.AddComponent<TrackRenderer>();
       trackComp.Width = 1;
+      trackComp.ReferenceObject = refBody;
 
       trackComp.Add( frontWheel );
       trackComp.Add( backWheel );

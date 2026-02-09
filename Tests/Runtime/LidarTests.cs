@@ -501,7 +501,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
 
@@ -528,7 +527,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
 
@@ -560,7 +558,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
       yield return TestUtils.Step();

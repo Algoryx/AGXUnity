@@ -95,8 +95,7 @@ namespace AGXUnityTesting.Runtime
     {
       LoadOpenPLX( "inverted_pendulum.openplx" );
       GameObject.Find( "inverted_pendulum" ).AddComponent<Aux.InvertedPendulumController>();
-      // Inverted pendulum is calibrated for 60hz
-      //Time.fixedDeltaTime = 1.0f/60.0f;
+
       var cartRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/cart");
       var rodRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/rod");
 
@@ -109,7 +108,6 @@ namespace AGXUnityTesting.Runtime
 
       Assert.AreEqual( 0.0f, cartRB.transform.position.x, 0.01f, "Cart Position" );
       Assert.AreEqual( 0.0f, cartRB.LinearVelocity.x, 0.1f, "Cart Velocity" );
-      //Time.fixedDeltaTime = 1.0f/50.0f;
     }
 
     [UnityTest]
@@ -573,6 +571,8 @@ namespace AGXUnityTesting.Runtime
     [UnityTest]
     public IEnumerator TestShovelTerrainImport()
     {
+      LogAssert.Expect( LogType.Warning, new Regex( @"AGXUnity\.Rendering\.DeformableTerrainParticleRenderer:.*" ) );
+
       var root = LoadOpenPLX( "shovel.openplx" );
       var shovelGO = root.FindMappedObject( "ShovelScene.shovel.shovel" );
       Assert.NotNull( shovelGO );
