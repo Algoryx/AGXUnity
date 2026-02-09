@@ -617,18 +617,20 @@ namespace AGXUnity.Sensor
       m_meshFilters.Clear();
       m_explicitInclusions.Clear();
 
-      Native?.Dispose();
-      Native = null;
-    }
-
-    protected override void OnDestroy()
-    {
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
         Simulation.Instance.StepCallbacks.PreStepForward -= AddNew;
       }
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
+
+      Native?.Dispose();
+      Native = null;
+    }
+
+    protected override void OnDestroy()
+    {
+      DisposeRT();
 
       base.OnDestroy();
     }
