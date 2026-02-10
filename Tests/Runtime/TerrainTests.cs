@@ -53,8 +53,7 @@ namespace AGXUnityTesting.Runtime
     [UnityTearDown]
     public IEnumerator TearDownTerrainScene()
     {
-      GameObject.Destroy( unityTerrain.gameObject );
-      yield return null;
+      yield return TestUtils.DestroyAndWait( unityTerrain.gameObject );
     }
 
     [Test]

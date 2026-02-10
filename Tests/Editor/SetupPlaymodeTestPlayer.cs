@@ -7,6 +7,7 @@ using UnityEngine.TestTools;
 
 [assembly: TestPlayerBuildModifier( typeof( SetupPlaymodeTestPlayer ) )]
 [assembly: PostBuildCleanup( typeof( SetupPlaymodeTestPlayer ) )]
+[assembly: TestMustExpectAllLogs]
 
 public class SetupPlaymodeTestPlayer : ITestPlayerBuildModifier, IPostBuildCleanup
 {
