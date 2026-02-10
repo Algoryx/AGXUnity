@@ -1102,7 +1102,7 @@ namespace AGXUnityTesting.Runtime
       modelData.FirstLineIsHeader = false;
       modelData.FrameSize = 2;
       modelData.TwoColumns = false;
-      modelData.FilePath = "Assets/AGXUnity/Tests/Runtime/Test Resources/csv_lidar_pattern.csv";
+      modelData.FilePath = ResourceHelper.GetTestResource( "csv_lidar_pattern.csv" );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );
