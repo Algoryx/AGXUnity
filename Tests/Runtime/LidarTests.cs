@@ -113,6 +113,23 @@ namespace AGXUnityTesting.Runtime
       return (lidarComp, modelData);
     }
 
+    private (LidarSensor, LivoxData) CreateLivoxTestLidar( Vector3 position = default, uint downsample = 1 )
+    {
+      var lidarGO = new GameObject("LivoxLidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      lidarGO.transform.position = position;
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+      if ( !Application.isBatchMode ) {
+        var lidarRender = lidarGO.AddComponent<LidarPointCloudRenderer>();
+      }
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelLivoxAvia;
+      var modelData = ( lidarComp.ModelData as LivoxData );
+      modelData.Downsample = downsample;
+
+      return (lidarComp, modelData);
+    }
+
     [UnityTest]
     public IEnumerator TestCreateLidar()
     {
@@ -1045,6 +1062,72 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step();
       var _ = output.View<agx.Vec3f>( out uint count );
       Assert.That( count, Is.EqualTo( 600 * 20 ), "Total amount of points should be horizontal * vertical" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestLivoxLidarDownSample()
+    {
+      var (lidarComp1, modelData1) = CreateLivoxTestLidar( Vector3.zero, 1 );
+      var output1 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp1.Add( output1 );
+      lidarComp1.GetInitialized();
+      lidarComp1.RemoveRayMisses = false;
+
+      var (lidarComp2, modelData2) = CreateLivoxTestLidar( Vector3.zero, 2 );
+      var output2 = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp2.Add( output2 );
+      lidarComp2.GetInitialized();
+      lidarComp2.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _1 = output1.View<agx.Vec3f>( out uint count1 );
+      var _2 = output2.View<agx.Vec3f>( out uint count2 );
+
+      // Downsample skips every other point in the list, thus prone to off by one errors
+      Assert.That( count2, Is.EqualTo( count1 / 2.0f ).Within( 0.5f + float.Epsilon ), "Downsample doesn't work properly. Downsample 2 should yield half the amount of points as Downsample 1" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestReadFromFileCsvLidar()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelReadFromFile;
+      var modelData = ( lidarComp.ModelData as ReadFromFileData );
+      modelData.Frequency = 1/Simulation.Instance.TimeStep;
+      modelData.AnglesInDegrees = true;
+      modelData.Delimiter = ',';
+      modelData.FirstLineIsHeader = false;
+      modelData.FrameSize = 2;
+      modelData.TwoColumns = false;
+      modelData.FilePath = "Assets/AGXUnity/Tests/Runtime/Test Resources/csv_lidar_pattern.csv";
+
+      var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
+      lidarComp.Add( output );
+      lidarComp.GetInitialized();
+      lidarComp.RemoveRayMisses = false;
+
+      yield return TestUtils.Step();
+      var _ = output.View<agx.Vec3f>( out uint count );
+
+      Assert.That( count, Is.GreaterThan( 0 ), "Couldn't create readfromfile lidar and get points back" );
+    }
+
+    [Test]
+    public void TestNonExistentCsvLidar()
+    {
+      var lidarGO = new GameObject("Lidar");
+      lidarGO.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      var lidarComp = lidarGO.AddComponent<LidarSensor>();
+
+      lidarComp.LidarModelPreset = LidarModelPreset.LidarModelReadFromFile;
+      var modelData = ( lidarComp.ModelData as ReadFromFileData );
+      modelData.FilePath = "does_not_exist.csv";
+
+      LogAssert.Expect( LogType.Error, new Regex( ".*File does not exist.*" ) );
+      lidarComp.GetInitialized();
     }
   }
 }

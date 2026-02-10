@@ -3,6 +3,7 @@ using agxSensor;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -291,17 +292,145 @@ namespace AGXUnity.Sensor
     }
   }
 
+  [Serializable]
+  public class LivoxData : IModelData
+  {
+    /// <summary>
+    /// Optionally downsample the amount of points generated. 1 is default, 2 is sample every other point in the pattern, 3 every 3 points etc.
+    /// </summary>
+    [Tooltip("Scale down the amount of points per second by skipping points in the pattern if set larger than 1.")]
+    public uint Downsample = 1;
+
+
+    // Livox models does not support runtime modifications so we do not need to track the runtime sensor
+    void IModelData.ConnectRuntimeInstance( LidarSensor sensor ) { }
+  }
+
+  [Serializable]
+  public class ReadFromFileData : IModelData
+  {
+    /// <summary>
+    /// The frequency [Hz] of the lidar sweep
+    /// </summary>
+    public float Frequency = 10f;
+    /// <summary>
+    /// The amount of points from the pattern per frame
+    /// </summary>
+    public uint FrameSize = 10000;
+    /// <summary>
+    /// Path to the .csv or binare file with the ray pattern
+    /// </summary>
+    public string FilePath = "";
+    /// <summary>
+    /// If true: file has only azimuth,elevation (no first column)
+    /// </summary>
+    public bool TwoColumns = false;
+    /// <summary>
+    /// If true: read values as degrees, if false: read as radians
+    /// </summary>
+    public bool AnglesInDegrees = true;
+    /// <summary>
+    /// If true skip first line of file
+    /// </summary>
+    public bool FirstLineIsHeader = true;
+    /// <summary>
+    /// CSV column delimiter
+    /// </summary>
+    public char Delimiter = ',';
+
+    [SerializeField]
+    private RangeReal m_range = new RangeReal(0.1f,float.MaxValue);
+
+    /// <summary>
+    /// The range of the lidar rays outside of which ray intersections will be counted as misses
+    /// </summary>
+    [Tooltip( "The range of the lidar rays outside of which ray intersections will be counted as misses" )]
+    public RangeReal Range
+    {
+      get => m_range;
+      set
+      {
+        m_range = value;
+        m_range.Min = Mathf.Max( m_range.Min, 0 );
+        m_range.Max = Mathf.Max( m_range.Max, 0 );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getRayRange().setRange( new RangeReal32( m_range.Min, m_range.Max ) );
+      }
+    }
+
+    [SerializeField]
+    private float m_beamDivergence = 0.001f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Divergence of the lidar laser light beam [deg].
+    /// This the total "cone angle", i.e. the angle between a perfectly parallel beam of the same
+    /// exit dimater to the cone surface is half this angle.
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "Divergence of the lidar laser light beam [deg]. " +
+              "This the total \"cone angle\", i.e. the angle between a perfectly parallel beam of the same " +
+              "exit dimater to the cone surface is half this angle. " +
+              "This property affects the calculated intensity." )]
+    [ClampAboveZeroInInspector]
+    public float BeamDivergence
+    {
+      get => m_beamDivergence;
+      set
+      {
+        m_beamDivergence = Mathf.Max( value, 1e-10f );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getProperties().setBeamDivergence( m_beamDivergence * Mathf.Deg2Rad );
+      }
+    }
+
+    [SerializeField]
+    private float m_beamExitRadius = 0.005f;
+
+    /// <summary>
+    /// The diameter of the lidar laser light beam as it exits the lidar [m].
+    /// This property affects the calculated intensity.
+    /// </summary>
+    [Tooltip( "The diameter of the lidar laser light beam as it exits the lidar [m]. " +
+              "This property affects the calculated intensity." )]
+    [ClampAboveZeroInInspector]
+    public float BeamExitRadius
+    {
+      get => m_beamExitRadius;
+      set
+      {
+        m_beamExitRadius = Mathf.Max( value, 1e-10f );
+        if ( m_runtimeSensor != null && m_runtimeSensor.Native != null )
+          m_runtimeSensor.Native.getModel().getProperties().setBeamExitRadius( m_beamExitRadius );
+      }
+    }
+
+    private LidarSensor m_runtimeSensor;
+
+    void IModelData.ConnectRuntimeInstance( LidarSensor sensor )
+    {
+      m_runtimeSensor = sensor;
+    }
+  }
+
   public enum LidarModelPreset
   {
     NONE,
     LidarModelGenericHorizontalSweep,
     LidarModelOusterOS0,
     LidarModelOusterOS1,
-    LidarModelOusterOS2
+    LidarModelOusterOS2,
+    LidarModelLivoxAvia,
+    LidarModelLivoxHap,
+    LidarModelLivoxHorizon,
+    LidarModelLivoxMid40,
+    LidarModelLivoxMid70,
+    LidarModelLivoxMid360,
+    LidarModelLivoxTele,
+    LidarModelReadFromFile,
   }
 
   /// <summary>
-  /// Component used to simulate a lidar sensor. For objects to be visible to this LiDAR, they have to be added to the <see cref="SensorEnvironment"/>.
+  /// Lidar Sensor Component. For objects to be visible to this lidar, they have to be added to the <see cref="SensorEnvironment"/>.
   /// </summary>
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Sensors/Lidar Sensor" )]
@@ -312,8 +441,7 @@ namespace AGXUnity.Sensor
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public Lidar Native { get; private set; } = null;
-
-    private LidarModel m_nativeModel = null;
+    public LidarModel m_nativeModel = null;
 
     [SerializeField]
     private LidarModelPreset m_lidarModelPreset = LidarModelPreset.LidarModelOusterOS1;
@@ -338,6 +466,14 @@ namespace AGXUnity.Sensor
             LidarModelPreset.LidarModelOusterOS1 => new OusterData(),
             LidarModelPreset.LidarModelOusterOS2 => new OusterData(),
             LidarModelPreset.LidarModelGenericHorizontalSweep => new GenericSweepData(),
+            LidarModelPreset.LidarModelLivoxAvia => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxHap => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxHorizon => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid40 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid70 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxMid360 => new LivoxData(),
+            LidarModelPreset.LidarModelLivoxTele => new LivoxData(),
+            LidarModelPreset.LidarModelReadFromFile => new ReadFromFileData(),
             _ => null,
           };
         }
@@ -655,6 +791,64 @@ namespace AGXUnity.Sensor
           lidarModel = new LidarModelOusterOS2( ousterData.ChannelCount, ousterData.BeamSpacing, ousterData.LidarMode );
           break;
 
+        case LidarModelPreset.LidarModelLivoxAvia:
+          LivoxData livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxAvia( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxHap:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxHap( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxHorizon:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxHorizon( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid40:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid40( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid70:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid70( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxMid360:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxMid360( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelLivoxTele:
+          livoxData = ModelData as LivoxData;
+          lidarModel = new LidarModelLivoxTele( livoxData.Downsample );
+          break;
+
+        case LidarModelPreset.LidarModelReadFromFile:
+          ReadFromFileData readFromFileData = ModelData as ReadFromFileData;
+          RayFileDefinition rayFileDefinition = new RayFileDefinition();
+          if ( !File.Exists( readFromFileData.FilePath ) ) {
+            Debug.LogError( $"Failed to load ray pattern '{readFromFileData.FilePath}', File does not exist" );
+            return null;
+          }
+
+          rayFileDefinition.path = readFromFileData.FilePath;
+          rayFileDefinition.twoColumns = readFromFileData.TwoColumns;
+          rayFileDefinition.anglesInDegrees = readFromFileData.AnglesInDegrees;
+          rayFileDefinition.firstLineIsHeader = readFromFileData.FirstLineIsHeader;
+          rayFileDefinition.delimiter = readFromFileData.Delimiter;
+          LidarProperties lidarProperties = new LidarProperties(readFromFileData.BeamDivergence, readFromFileData.BeamExitRadius);
+          lidarModel = new LidarModelReadFromFile(
+            rayFileDefinition,
+            readFromFileData.Frequency,
+            readFromFileData.FrameSize,
+            1,
+            new RangeReal32( readFromFileData.Range.Min, readFromFileData.Range.Max ),
+            lidarProperties );
+          break;
+
         case LidarModelPreset.NONE:
         default:
           Debug.LogWarning( "No valid LidarModelPreset selected!" );
@@ -665,6 +859,7 @@ namespace AGXUnity.Sensor
 
       return lidarModel;
     }
+
     private void OnDrawGizmosSelected()
     {
 #if UNITY_EDITOR
