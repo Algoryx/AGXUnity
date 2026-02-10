@@ -86,6 +86,8 @@ namespace AGXUnityTesting.Runtime
       var toDelete = objects.Where(x => x is not Simulation).Select(x => x.gameObject).ToArray();
 
       yield return TestUtils.DestroyAndWait( toDelete );
+
+      yield return TestUtils.DestroyAndWait( GameObject.Find( "Simple Track" ) );
     }
 
     [Test]
