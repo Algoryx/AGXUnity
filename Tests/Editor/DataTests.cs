@@ -12,5 +12,11 @@ namespace AGXUnityTesting.Editor
       Assert.NotNull( presets );
       Assert.NotZero( presets.Length );
     }
+
+    [Test]
+    public void LidarRayPatternsAreFound()
+    {
+      Assert.True( LidarDataUtil.LidarRayPatternsAreFound() );
+    }
   }
 }
