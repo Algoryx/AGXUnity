@@ -518,7 +518,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
 
@@ -545,7 +544,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
 
@@ -577,7 +575,6 @@ namespace AGXUnityTesting.Runtime
       var cableComp = cable.AddComponent<Cable>();
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.right, Quaternion.Euler( 0, -90, 0 ) );
       cableComp.Route.Add( Cable.NodeType.BodyFixedNode, cable, Vector3.left, Quaternion.Euler( 0, -90, 0 ) );
-      cable.AddComponent<CableRenderer>();
 
       TestUtils.InitializeAll();
       yield return TestUtils.Step();
@@ -1105,7 +1102,7 @@ namespace AGXUnityTesting.Runtime
       modelData.FirstLineIsHeader = false;
       modelData.FrameSize = 2;
       modelData.TwoColumns = false;
-      modelData.FilePath = "Assets/AGXUnity/Tests/Runtime/Test Resources/csv_lidar_pattern.csv";
+      modelData.FilePath = ResourceHelper.GetTestResource( "csv_lidar_pattern.csv" );
 
       var output = new LidarOutput { agxSensor.RtOutput.Field.XYZ_VEC3_F32 };
       lidarComp.Add( output );

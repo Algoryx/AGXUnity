@@ -1,6 +1,7 @@
 using AGXUnity;
 using NUnit.Framework;
 using System.Collections;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -135,6 +136,7 @@ namespace AGXUnityTesting.Runtime
       var result = SourceWire.Cut( Vector3.zero );
       Assert.NotNull( result, "Cutting failed" );
 
+      LogAssert.Expect( LogType.Warning, new Regex( "Failed to merge wires.*" ) );
       Assert.False( result.Merge( SourceWire ), "Merge should fail" );
       // Need to wait a frame to ensure object is destroyed
       yield return null;
