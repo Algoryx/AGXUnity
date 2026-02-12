@@ -163,6 +163,15 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// When enabled, the maximum depth will be added as height during initialization of the terrain
+    /// </summary>
+    [field: SerializeField]
+    [field: FormerlySerializedAs( "<InvertDepthDirection>k__BackingField" )]
+    [InspectorPriority( -1 )]
+    [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
+    public bool MaxDepthAsInitialHeight { get; set; } = true;
+
+    /// <summary>
     /// The compaction that all terrain cells are initialized to.
     /// </summary>
     [DisableInRuntimeInspector]
@@ -171,15 +180,6 @@ namespace AGXUnity.Model
     [field: SerializeField]
     [Tooltip( "The compaction that all terrain cells are initialized to." )]
     public float InitialCompaction { get; set; } = 1.0f;
-
-    /// <summary>
-    /// When enabled, the maximum depth will be added as height during initialization of the terrain
-    /// </summary>
-    [field: SerializeField]
-    [field: FormerlySerializedAs( "<InvertDepthDirection>k__BackingField" )]
-    [HideInInspector]
-    [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
-    public bool MaxDepthAsInitialHeight { get; set; } = true;
 
     [field: SerializeField]
     private float m_terrainBedMargin = 0.01f;

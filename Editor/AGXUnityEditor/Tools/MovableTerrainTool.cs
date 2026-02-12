@@ -48,8 +48,6 @@ namespace AGXUnityEditor.Tools
               $"Cell size is {MovableTerrain.ElementSize:F5} m"
               ) );
 
-        DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.MaxDepthAsInitialHeight ) );
-
         DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.TerrainBedMargin ) );
         DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.TerrainBedHeightOffset ) );
 
@@ -76,8 +74,6 @@ namespace AGXUnityEditor.Tools
             $"Terrain size is {MovableTerrain.SizeMeters.x} x {MovableTerrain.SizeMeters.y} m"
             ) );
         }
-
-        DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.MaxDepthAsInitialHeight ) );
       }
     }
   }
