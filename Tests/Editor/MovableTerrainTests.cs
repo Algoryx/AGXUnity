@@ -46,15 +46,15 @@ namespace AGXUnityTesting.Editor
       var preSizeC = terr.SizeCells;
       var preSizeE = terr.ElementSize;
 
-      LogAssert.Expect( new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
       terr.SizeMeters = Vector3.one;
       Assert.AreEqual( terr.SizeMeters, preSizeM );
 
-      LogAssert.Expect( new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
       terr.SizeCells = Vector2Int.one;
       Assert.AreEqual( terr.SizeCells, preSizeC );
 
-      LogAssert.Expect( new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new System.Text.RegularExpressions.Regex( ".*size cannot.*" ) );
       terr.ElementSize = 1.0f;
       Assert.AreEqual( terr.ElementSize, preSizeE );
     }

@@ -64,15 +64,15 @@ namespace AGXUnityTesting.Runtime
       var preSizeC = terr.SizeCells;
       var preSizeE = terr.ElementSize;
 
-      LogAssert.Expect( new Regex( "Cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new Regex( "Cannot.*" ) );
       terr.SizeMeters = Vector3.one;
       Assert.AreEqual( terr.SizeMeters, preSizeM );
 
-      LogAssert.Expect( new Regex( "Cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new Regex( "Cannot.*" ) );
       terr.SizeCells = Vector2Int.one;
       Assert.AreEqual( terr.SizeCells, preSizeC );
 
-      LogAssert.Expect( new Regex( "Cannot.*" ) );
+      LogAssert.Expect( LogType.Error, new Regex( "Cannot.*" ) );
       terr.ElementSize = 1.0f;
       Assert.AreEqual( terr.ElementSize, preSizeE );
     }
