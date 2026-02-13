@@ -543,7 +543,7 @@ namespace AGXUnity.Model
       if ( InitialCompaction != 1.0f )
         Native.setCompaction( InitialCompaction );
 
-      GetSimulation().add( Native );
+      Simulation.Instance.Native.add( Native );
 
       var rb = RigidBody;
       if ( rb != null )
