@@ -2,6 +2,7 @@ using agxSensor;
 using AGXUnity.Utils;
 using UnityEngine;
 using System;
+using AGXUnity.Model;
 
 namespace AGXUnity.Sensor
 {
@@ -25,9 +26,9 @@ namespace AGXUnity.Sensor
     /// Compatible with: Hinge, CylindricalJoint, WheelJoint
     /// </summary>
     [field: SerializeField]
-    [Tooltip( "Constraint component to attach odometer to: Hinge, CylindricalJoint, WheelJoint. If unset, the first compatible parent is used." )]
+    [Tooltip( "Constraint / WheelJoint component to attach odometer to: Hinge, CylindricalJoint, WheelJoint. If unset, the first compatible parent is used." )]
     [DisableInRuntimeInspector]
-    public Constraint ConstraintComponent { get; set; } = null;
+    public ScriptComponent ConstraintComponent { get; set; } = null;
 
     /// <summary>
     /// Wheel radius in meters
@@ -38,6 +39,7 @@ namespace AGXUnity.Sensor
     [ClampAboveZeroInInspector]
     public float WheelRadius { get; set; } = 0.5f;
 
+    [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
     [field: SerializeField]
     [DisableInRuntimeInspector]
     public bool EnableTotalGaussianNoise { get; set; } = false;
@@ -75,11 +77,30 @@ namespace AGXUnity.Sensor
     [DisableInRuntimeInspector]
     public float SignalScaling { get; set; } = 1.0f;
 
+    [InspectorGroupEnd]
+
+    [HideInInspector]
+    public bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
+
     [RuntimeValue] public float SensorValue { get; private set; }
 
     private uint m_outputID = 0;
     [HideInInspector]
     public double OutputBuffer { get; private set; }
+
+    private ScriptComponent FindParentJoint()
+    {
+      ScriptComponent component = GetComponentInParent<WheelJoint>();
+      if ( component == null )
+        component = GetComponentInParent<Constraint>();
+      return component;
+    }
+
+    private void Reset()
+    {
+      if ( ConstraintComponent == null )
+        ConstraintComponent = FindParentJoint();
+    }
 
     protected override bool Initialize()
     {
@@ -92,7 +113,7 @@ namespace AGXUnity.Sensor
 
       // Find a constraint component if not explicitly assigned
       if ( ConstraintComponent == null ) {
-        ConstraintComponent = GetComponentInParent<Constraint>();
+        ConstraintComponent = FindParentJoint();
       }
 
       if ( ConstraintComponent == null ) {
@@ -120,13 +141,25 @@ namespace AGXUnity.Sensor
 
       PropertySynchronizer.Synchronize( this );
 
-      var initializedConstraint = ConstraintComponent.GetInitialized<Constraint>();
-      if ( initializedConstraint == null ) {
-        Debug.LogWarning( "Constraint component not initializable, odometer will be inactive" );
-        return false;
+      if ( IsWheelJoint ) {
+        var initializedWheelJoint = ConstraintComponent.GetInitialized<WheelJoint>();
+        if ( initializedWheelJoint == null ) {
+          Debug.LogWarning( "Wheel Joint component not initializable, encoder will be inactive" );
+          return false;
+        }
+
+        Native = CreateNativeOdometerFromConstraint( initializedWheelJoint.Native, m_nativeModel );
+      }
+      else {
+        var initializedConstraint = ConstraintComponent.GetInitialized<Constraint>();
+        if ( initializedConstraint == null ) {
+          Debug.LogWarning( "Constraint component not initializable, encoder will be inactive" );
+          return false;
+        }
+
+        Native = CreateNativeOdometerFromConstraint( initializedConstraint.Native, m_nativeModel );
       }
 
-      Native = CreateNativeOdometerFromConstraint( initializedConstraint.Native, m_nativeModel );
       if ( Native == null ) {
         Debug.LogWarning( "Unsupported constraint type for odometer, odometer will be inactive" );
         return false;

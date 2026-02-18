@@ -154,7 +154,6 @@ namespace AGXUnity.Sensor
       return component;
     }
 
-    // Set constraint on component creation
     private void Reset()
     {
       if ( ConstraintComponent == null )
@@ -195,13 +194,25 @@ namespace AGXUnity.Sensor
 
       PropertySynchronizer.Synchronize( this );
 
-      var initializedConstraint = ConstraintComponent.GetInitialized<Constraint>();
-      if ( initializedConstraint == null ) {
-        Debug.LogWarning( "Constraint component not initializable, encoder will be inactive" );
-        return false;
+      if ( IsWheelJoint ) {
+        var initializedWheelJoint = ConstraintComponent.GetInitialized<WheelJoint>();
+        if ( initializedWheelJoint == null ) {
+          Debug.LogWarning( "Wheel Joint component not initializable, encoder will be inactive" );
+          return false;
+        }
+
+        Native = CreateNativeEncoderFromConstraint( initializedWheelJoint.Native, m_nativeModel, SampleTwoDof, SampleWheelJoint );
+      }
+      else {
+        var initializedConstraint = ConstraintComponent.GetInitialized<Constraint>();
+        if ( initializedConstraint == null ) {
+          Debug.LogWarning( "Constraint component not initializable, encoder will be inactive" );
+          return false;
+        }
+
+        Native = CreateNativeEncoderFromConstraint( initializedConstraint.Native, m_nativeModel, SampleTwoDof, SampleWheelJoint );
       }
 
-      Native = CreateNativeEncoderFromConstraint( initializedConstraint.Native, m_nativeModel, SampleTwoDof, SampleWheelJoint );
       if ( Native == null ) {
         Debug.LogWarning( "Unsupported constraint type for encoder, encoder will be inactive" );
         return false;
@@ -235,10 +246,8 @@ namespace AGXUnity.Sensor
       if ( nativeConstraint == null || model == null )
         return null;
 
-      if ( nativeConstraint is agx.Hinge hinge ) {
-        Debug.Log( "Creating Hinge encoder" );
+      if ( nativeConstraint is agx.Hinge hinge )
         return new Encoder( hinge, model );
-      }
 
       if ( nativeConstraint is agx.Prismatic prismatic )
         return new Encoder( prismatic, model );

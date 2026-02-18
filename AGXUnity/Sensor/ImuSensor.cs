@@ -29,7 +29,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Accelerometer / Gyroscope / Magnetometer
     /// </summary>
-    [SerializeField]
+    [field: SerializeField]
     public ImuAttachmentType Type { get; private set; }
 
     /// <summary>
