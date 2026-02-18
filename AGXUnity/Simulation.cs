@@ -540,7 +540,6 @@ namespace AGXUnity
           m_solverSettings.SetSimulation( null );
         if ( SensorEnvironment.HasInstance )
           SensorEnvironment.Instance.DisposeRT();
-        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
       }
       m_simulation = null;
@@ -553,7 +552,6 @@ namespace AGXUnity
       if ( m_simulation != null ) {
         if ( SensorEnvironment.HasInstance )
           SensorEnvironment.Instance.DisposeRT();
-        m_simulation.setSensorEnvironment( null );
         m_simulation.cleanup();
       }
     }

@@ -12,6 +12,8 @@ Shader "AGXUnity/Built-In/PointCloudShader"
     Tags { "Queue" = "AlphaTest" "DisableBatching"="True" }
     Pass
     {
+      Blend SrcAlpha OneMinusSrcAlpha
+
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
@@ -25,12 +27,12 @@ Shader "AGXUnity/Built-In/PointCloudShader"
       };
 
       StructuredBuffer<PointData> pointBuffer;
+      StructuredBuffer<float> ttls;
 
-      float _PointSize;
-      float4 _MainTex_ST;
-      float4x4 _ObjectToWorld;
       float4 _ColorStart;
       float4 _ColorEnd;
+      float _PointSize;
+      float _DecayTime;
 
       struct appdata
       {
@@ -56,11 +58,9 @@ Shader "AGXUnity/Built-In/PointCloudShader"
         PointData hit = pointBuffer[instanceID];
 
         float3 particlePos = hit.position;
-        particlePos.x = -particlePos.x;
-        particlePos = mul(_ObjectToWorld,float4(particlePos.x,particlePos.y,particlePos.z,1)).xyz;
 
         o.particlePos.xyz = particlePos;
-        o.particlePos.w = 1;
+        o.particlePos.w = 1.0f;
 
         // check if the current projection is orthographic or not from the current projection matrix
         bool isOrtho = UNITY_MATRIX_P._m33 == 1.0;
@@ -123,9 +123,11 @@ Shader "AGXUnity/Built-In/PointCloudShader"
 
         o.screenPos = ComputeScreenPos(o.vertex);
         o.screenPos.z = -UnityWorldToViewPos( float4(worldPos, 1) ).z;
+
+        o.particlePos.w = ttls[instanceID];
             
-        //o.color.rgb = mul(_ObjectToWorld,float4(particlePos.x,particlePos.y,particlePos.z,1));
         o.color = lerp(_ColorStart, _ColorEnd, saturate(hit.intensity));
+        o.color.a = o.color.a * saturate(ttls[instanceID] / _DecayTime);
         return o;
       }
 
@@ -145,6 +147,8 @@ Shader "AGXUnity/Built-In/PointCloudShader"
 
       float4 frag(v2f i, out float outDepth : SV_Depth) : SV_Target
       {
+        clip(i.particlePos.w);
+
         bool isOrtho = UNITY_MATRIX_P._m33 == 1.0;
 
         // ray origin
@@ -154,7 +158,7 @@ Shader "AGXUnity/Built-In/PointCloudShader"
         float3 rayDir = normalize(i.rayDir);
 
         // ray sphere intersection
-        float rayHit = sphIntersect(rayOrigin, rayDir, float4(i.particlePos.xyz, i.particlePos.w * _PointSize));
+        float rayHit = sphIntersect(rayOrigin, rayDir, float4(i.particlePos.xyz, _PointSize));
 
         clip(rayHit);
 

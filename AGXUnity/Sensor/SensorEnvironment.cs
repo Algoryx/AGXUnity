@@ -11,7 +11,7 @@ using UnityEngine.Profiling;
 namespace AGXUnity.Sensor
 {
   /// <summary>
-  /// WIP component for streaming data to agx sensor environment
+  /// Component for streaming data to agx sensor environment
   /// </summary>
   [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment" )]
@@ -673,18 +673,20 @@ namespace AGXUnity.Sensor
       m_meshFilters.Clear();
       m_explicitInclusions.Clear();
 
-      Native?.Dispose();
-      Native = null;
-    }
-
-    protected override void OnDestroy()
-    {
       if ( Simulation.HasInstance ) {
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
         Simulation.Instance.StepCallbacks.PreStepForward -= AddNew;
       }
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
+
+      Native?.Dispose();
+      Native = null;
+    }
+
+    protected override void OnDestroy()
+    {
+      DisposeRT();
 
       base.OnDestroy();
     }

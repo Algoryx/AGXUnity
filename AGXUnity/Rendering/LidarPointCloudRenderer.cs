@@ -1,5 +1,7 @@
-﻿using AGXUnity.Sensor;
+﻿
+using AGXUnity.Sensor;
 using AGXUnity.Utils;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -69,33 +71,43 @@ namespace AGXUnity.Rendering
     }
 
     [SerializeField]
-    private int m_preservedDatas = 0;
+    private float m_decayTime = 0.2f;
 
     /// <summary>
-    /// When greater than 0, the prior n timesteps' outputs will be renderered in addition to the current frame's output.
+    /// Specifies the time that points should be visible for before they disappear, they will gradually fade over this time.
     /// </summary>
-    [Tooltip( "When greater than 0, the prior n timesteps' outputs will be renderered in addition to the current frame's output." )]
-    [ClampAboveZeroInInspector( true )]
-    public int PreserveDataSets
+    [Tooltip( "Specifies the time that points should be visible for before they disappear, they will gradually fade over this time." )]
+    [ClampAboveZeroInInspector( false )]
+    public float DecayTime
     {
-      get => m_preservedDatas;
+      get => m_decayTime;
       set
       {
-        var old = m_preservedDatas;
-        m_preservedDatas = value;
-        if ( value != old && Application.isPlaying )
-          ResizeBufferPool();
+        m_decayTime = value;
+        if ( m_pointCloudMaterialInstance != null )
+          m_pointCloudMaterialInstance.SetFloat( "_DecayTime", m_decayTime );
       }
     }
 
     private Mesh m_pointMesh;
     private Material m_pointCloudMaterialInstance;
-    private ComputeBuffer[] m_instanceBuffers;
-    private ComputeBuffer[] m_argsBuffers;
-    private MaterialPropertyBlock[] m_propertyBlocks;
-    private int m_currentIndex = 0;
+    private ComputeShader m_pointcloudCompute;
+
+    private ComputeBuffer m_pointBuffer;
+    private ComputeBuffer m_ttlBuffer;
+    private ComputeBuffer m_deadBuffer;
+    private ComputeBuffer m_deadIndexBuffer;
+    private ComputeBuffer m_insertionBuffer;
+
+    private List<ComputeBuffer> m_deferredDeletion = new List<ComputeBuffer>();
+
+    private ComputeBuffer m_argsBuffer;
+    private MaterialPropertyBlock m_propertyBlock;
     private agx.Vec4f[] m_pointArray;
     private uint[] m_indirectArgs = new uint[5];
+    private uint m_numPoints = 0;
+
+    private List<(float,uint)> m_activePoints = new List<(float, uint)>();
 
     private LidarSensor m_sensor;
     private LidarOutput m_output;
@@ -110,6 +122,8 @@ namespace AGXUnity.Rendering
     {
       m_sensor = GetComponent<LidarSensor>().GetInitialized();
 
+      m_pointcloudCompute = Resources.Load<ComputeShader>( "Shaders/Compute/PointCloud" );
+
       // Use quad mesh for rendering
       m_pointMesh = Resources.GetBuiltinResource<Mesh>( "Quad.fbx" );
 
@@ -118,6 +132,7 @@ namespace AGXUnity.Rendering
         m_pointCloudMaterialInstance.SetColor( "_ColorStart", LowIntensityColor );
         m_pointCloudMaterialInstance.SetColor( "_ColorEnd", HighIntensityColor );
         m_pointCloudMaterialInstance.SetFloat( "_PointSize", PointSize );
+        m_pointCloudMaterialInstance.SetFloat( "_DecayTime", DecayTime );
       }
       catch {
         Debug.LogError( "Couldn't load point cloud material!" );
@@ -130,7 +145,11 @@ namespace AGXUnity.Rendering
       m_indirectArgs[ 3 ] = (uint)m_pointMesh.GetBaseVertex( 0 ); // Base vertex location
       m_indirectArgs[ 4 ] = 0; // Padding
 
-      ResizeBufferPool();
+      m_deadIndexBuffer = new ComputeBuffer( 1, sizeof( int ) );
+      m_argsBuffer = new ComputeBuffer( 1, 5 * sizeof( int ), ComputeBufferType.IndirectArguments, ComputeBufferMode.Dynamic );
+      m_propertyBlock = new MaterialPropertyBlock();
+
+      EnsureBuffers( 16384 ); // Start out at 2^14 points
 
       m_output = new LidarOutput
       {
@@ -143,71 +162,109 @@ namespace AGXUnity.Rendering
       return true;
     }
 
-    private void ResizeBufferPool()
+    private void EnsureBuffers( uint numPoints )
     {
-      var oldInstances = m_instanceBuffers;
-      var oldArgs = m_argsBuffers;
-      var oldMPBs = m_propertyBlocks;
+      if ( m_numPoints >= numPoints ) return;
 
-      m_instanceBuffers = new ComputeBuffer[ PreserveDataSets + 1 ];
-      m_argsBuffers = new ComputeBuffer[ PreserveDataSets + 1 ];
-      m_propertyBlocks = new MaterialPropertyBlock[ PreserveDataSets + 1 ];
+      int newPointCount = Mathf.NextPowerOfTwo((int)numPoints);
 
-      int oldCount = oldInstances?.Length ?? 0;
-      int newCount = PreserveDataSets + 1;
-
-      if ( oldInstances != null ) {
-        int i1 = m_currentIndex + oldCount;
-
-        for ( int i2 = 0; i2 < Mathf.Min( oldCount, newCount ); i2++, i1-- ) {
-          m_instanceBuffers[ i2 ] = oldInstances[ i1 % oldCount ];
-          m_argsBuffers[ i2 ] = oldArgs[ i1 % oldCount ];
-          m_propertyBlocks[ i2 ] = oldMPBs[ i1 % oldCount ];
-        }
+      if ( m_numPoints != 0 ) {
+        m_insertionBuffer.Release();
+        m_deadBuffer.Release();
       }
 
-      m_indirectArgs[ 1 ] = 0;
-      for ( int i = oldCount; i < newCount; i++ ) {
-        m_argsBuffers[ i ] = new ComputeBuffer( 1, m_indirectArgs.Length * sizeof( uint ), ComputeBufferType.IndirectArguments, ComputeBufferMode.Dynamic );
-        m_argsBuffers[ i ].SetData( m_indirectArgs );
-        m_propertyBlocks[ i ] = new MaterialPropertyBlock();
+      var oldPoints = m_pointBuffer;
+      var oldTTL = m_ttlBuffer;
+
+      m_pointBuffer = new ComputeBuffer( newPointCount, 4 * sizeof( float ), ComputeBufferType.Structured );
+      m_insertionBuffer = new ComputeBuffer( newPointCount, 4 * sizeof( float ), ComputeBufferType.Structured );
+      m_deadBuffer = new ComputeBuffer( newPointCount, sizeof( int ), ComputeBufferType.Structured );
+      m_ttlBuffer = new ComputeBuffer( newPointCount, sizeof( float ), ComputeBufferType.Structured );
+
+      // Setup initial ttl data
+      var kernel = m_pointcloudCompute.FindKernel("Initialize");
+
+      m_pointcloudCompute.GetKernelThreadGroupSizes( kernel, out uint x, out _, out _ );
+      m_pointcloudCompute.SetInt( "numPoints", (int)numPoints );
+      m_pointcloudCompute.SetBuffer( kernel, "ttls", m_ttlBuffer );
+
+      m_pointcloudCompute.Dispatch( kernel, (int)( numPoints / x ) + 1, 1, 1 );
+
+      if ( m_numPoints != 0 ) {
+        // Copy data from old buffers
+        kernel = m_pointcloudCompute.FindKernel( "Copy" );
+        m_pointcloudCompute.GetKernelThreadGroupSizes( kernel, out x, out _, out _ );
+
+        m_pointcloudCompute.SetBuffer( kernel, "pointCloud", m_pointBuffer );
+        m_pointcloudCompute.SetBuffer( kernel, "oldPointCloud", oldPoints );
+        m_pointcloudCompute.SetBuffer( kernel, "ttls", m_ttlBuffer );
+        m_pointcloudCompute.SetBuffer( kernel, "oldttls", oldTTL );
+        m_pointcloudCompute.SetInt( "numPoints", (int)m_numPoints );
+
+        m_pointcloudCompute.Dispatch( kernel, (int)( m_numPoints / x ) + 1, 1, 1 );
+
+        m_deferredDeletion.Add( oldTTL );
+        m_deferredDeletion.Add( oldPoints );
       }
 
-      for ( int i = oldCount - newCount; i > 0; i-- ) {
-        oldArgs[ i % oldCount ].Release();
-        oldInstances[ i % oldCount ].Release();
-      }
-
-      m_currentIndex = 0;
-    }
-
-    private ComputeBuffer EnsureBuffer( ComputeBuffer current, int count )
-    {
-      if ( current != null ) {
-        if ( current.count > count )
-          return current;
-        current.Release();
-      }
-
-      return new ComputeBuffer( count, sizeof( float ) * 4, ComputeBufferType.Structured, ComputeBufferMode.Dynamic );
+      m_numPoints = numPoints;
     }
 
     private void UpdatePoints()
     {
       Profiler.BeginSample( "UpdatePoints" );
+      foreach ( var b in m_deferredDeletion )
+        b.Release();
+      m_deferredDeletion.Clear();
+
+      var dt = (float)Simulation.Instance.Native.getTimeStep();
 
       m_pointArray = m_output.View<agx.Vec4f>( out uint count, m_pointArray );
 
-      m_instanceBuffers[ m_currentIndex ] = EnsureBuffer( m_instanceBuffers[ m_currentIndex ], Mathf.Max( (int)count, 1 ) );
+      m_activePoints = m_activePoints
+        .Select( count => (count.Item1-dt, count.Item2) )
+        .Where( count => count.Item1 >= 0 )
+        .Append( (DecayTime, count) )
+        .ToList();
 
-      m_indirectArgs[ 1 ] = count;
+      uint totalCount = (uint)m_activePoints.Sum(count => count.Item2);
 
-      m_instanceBuffers[ m_currentIndex ].SetData( m_pointArray, 0, 0, (int)count );
-      m_argsBuffers[ m_currentIndex ].SetData( m_indirectArgs );
+      EnsureBuffers( totalCount );
 
-      m_propertyBlocks[ m_currentIndex ].SetMatrix( "_ObjectToWorld", m_sensor.GlobalTransform );
+      m_deadIndexBuffer.SetData( new int[] { 0 } );
 
-      m_currentIndex = ( m_currentIndex + 1 ) % ( PreserveDataSets + 1 );
+      // Update points
+      var kernel = m_pointcloudCompute.FindKernel( "Update" );
+      m_pointcloudCompute.GetKernelThreadGroupSizes( kernel, out uint x, out _, out _ );
+
+      m_pointcloudCompute.SetBuffer( kernel, "ttls", m_ttlBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "deadPoints", m_deadBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "deadIndex", m_deadIndexBuffer );
+      m_pointcloudCompute.SetInt( "numPoints", (int)m_numPoints );
+      m_pointcloudCompute.SetFloat( "dt", dt );
+
+      m_pointcloudCompute.Dispatch( kernel, (int)( m_numPoints / x ) + 1, 1, 1 );
+
+      // Insert new points
+      m_insertionBuffer.SetData( m_pointArray, 0, 0, (int)count );
+
+      kernel = m_pointcloudCompute.FindKernel( "Insert" );
+      m_pointcloudCompute.GetKernelThreadGroupSizes( kernel, out x, out _, out _ );
+
+      m_pointcloudCompute.SetBuffer( kernel, "deadPoints", m_deadBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "pointCloud", m_pointBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "ttls", m_ttlBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "newPoints", m_insertionBuffer );
+      m_pointcloudCompute.SetBuffer( kernel, "deadIndex", m_deadIndexBuffer );
+      m_pointcloudCompute.SetMatrix( "sensorToWorld", m_sensor.GlobalTransform );
+      m_pointcloudCompute.SetFloat( "decayTime", DecayTime );
+      m_pointcloudCompute.SetInt( "numPoints", (int)count );
+
+      m_pointcloudCompute.Dispatch( kernel, (int)( count / x ) + 1, 1, 1 );
+
+      m_indirectArgs[ 1 ] = m_numPoints;
+      m_argsBuffer.SetData( m_indirectArgs );
+
       Profiler.EndSample();
     }
 
@@ -221,25 +278,22 @@ namespace AGXUnity.Rendering
       if ( m_pointArray == null || m_pointArray.Count() == 0 )
         return;
 
-      for ( int i = 0; i < PreserveDataSets + 1; i++ ) {
-        if ( m_instanceBuffers[ i ] == null )
-          continue;
-        var mpb = m_propertyBlocks[i];
-        mpb.SetBuffer( "pointBuffer", m_instanceBuffers[ i ] );
-        Graphics.DrawMeshInstancedIndirect(
-          m_pointMesh,
-          0,
-          m_pointCloudMaterialInstance,
-          new Bounds( transform.position, Vector3.one * Mathf.Min( m_sensor.LidarRange.Max * 2f, float.MaxValue ) ),
-          m_argsBuffers[ i ],
-          0,
-          mpb,
-          UnityEngine.Rendering.ShadowCastingMode.Off,
-          false,
-          gameObject.layer,
-          cam
-        );
-      }
+      m_propertyBlock.SetBuffer( "pointBuffer", m_pointBuffer );
+      m_propertyBlock.SetBuffer( "ttls", m_ttlBuffer );
+      var range = m_sensor.Native.getModel().getRayRange().getRange();
+      Graphics.DrawMeshInstancedIndirect(
+        m_pointMesh,
+        0,
+        m_pointCloudMaterialInstance,
+        new Bounds( transform.position, Vector3.one * Mathf.Min( range.upper() * 2f, float.MaxValue ) ),
+        m_argsBuffer,
+        0,
+        m_propertyBlock,
+        UnityEngine.Rendering.ShadowCastingMode.Off,
+        false,
+        gameObject.layer,
+        cam
+      );
     }
 
     protected override void OnEnable()
@@ -264,15 +318,23 @@ namespace AGXUnity.Rendering
 
     protected override void OnDestroy()
     {
-      if ( m_instanceBuffers != null )
-        foreach ( var ib in m_instanceBuffers )
-          ib?.Release();
-      m_instanceBuffers = null;
-      if ( m_argsBuffers != null )
-        foreach ( var ab in m_argsBuffers )
-          ab?.Release();
-      m_argsBuffers = null;
+      if ( m_pointBuffer != null ) m_pointBuffer.Release();
+      if ( m_deadBuffer != null ) m_deadBuffer.Release();
+      if ( m_insertionBuffer != null ) m_insertionBuffer.Release();
+      if ( m_ttlBuffer != null ) m_ttlBuffer.Release();
+      if ( m_deadIndexBuffer != null ) m_deadIndexBuffer.Release();
+      if ( m_argsBuffer != null ) m_argsBuffer.Release();
+
+      foreach ( var buffer in m_deferredDeletion )
+        buffer.Release();
+      m_deferredDeletion.Clear();
+
+      m_argsBuffer = null;
       if ( m_pointCloudMaterialInstance != null ) Destroy( m_pointCloudMaterialInstance );
+
+      if ( m_sensor != null )
+        m_sensor.Remove( m_output );
+
       base.OnDestroy();
     }
   }

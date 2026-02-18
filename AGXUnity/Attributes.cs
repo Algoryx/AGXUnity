@@ -139,6 +139,8 @@ namespace AGXUnity
       }
       else if ( type == typeof( int ) )
         return (int)value > 0 || ( m_acceptZero && (int)value == 0 );
+      else if ( type == typeof( uint ) )
+        return (uint)value > 0 || ( m_acceptZero && (uint)value == 0 );
       else if ( type == typeof( Vector2Int ) )
         return IsValid( (Vector2Int)value );
       else if ( type == typeof( Vector3Int ) )
