@@ -37,7 +37,7 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     [Tooltip( "Encoder accumulation mode. INCREMENTAL wraps within the cycle range; ABSOLUTE is single-turn absolute" )]
     [DisableInRuntimeInspector]
-    public EncoderModel.Mode Mode { get; set; } = EncoderModel.Mode.INCREMENTAL;
+    public EncoderModel.Mode Mode { get; set; } = EncoderModel.Mode.ABSOLUTE;
 
     /// <summary>
     /// Cycle range [min, max] in sensor units.
@@ -87,6 +87,7 @@ namespace AGXUnity.Sensor
     [DisableInRuntimeInspector]
     public bool OutputSpeed { get; set; } = false;
 
+    [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
     [field: SerializeField]
     [DisableInRuntimeInspector]
     public bool EnableTotalGaussianNoise { get; set; } = false;
@@ -126,6 +127,7 @@ namespace AGXUnity.Sensor
     [DynamicallyShowInInspector( "EnableSignalScaling" )]
     [DisableInRuntimeInspector]
     public float SignalScaling { get; set; } = 1.0f;
+    [InspectorGroupEnd]
 
     [RuntimeValue] public float PositionValue { get; private set; }
     [RuntimeValue] public float SpeedValue { get; private set; }
@@ -138,9 +140,11 @@ namespace AGXUnity.Sensor
     [HideInInspector]
     public double SpeedBuffer { get; private set; }
 
+    [HideInInspector]
     public bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
 
-    public bool HasTwoDof => ConstraintComponent == null || (ConstraintComponent is Constraint constraint && constraint.Type == ConstraintType.CylindricalJoint);
+    [HideInInspector]
+    public bool HasTwoDof => ConstraintComponent == null || ( ConstraintComponent is Constraint constraint && constraint.Type == ConstraintType.CylindricalJoint );
 
     private ScriptComponent FindParentJoint()
     {
@@ -153,7 +157,7 @@ namespace AGXUnity.Sensor
     // Set constraint on component creation
     private void Reset()
     {
-      if (ConstraintComponent == null)
+      if ( ConstraintComponent == null )
         ConstraintComponent = FindParentJoint();
     }
 
@@ -206,11 +210,7 @@ namespace AGXUnity.Sensor
       if ( OutputPosition || OutputSpeed ) {
         m_outputID = SensorEnvironment.Instance.GenerateOutputID();
 
-        var output = new EncoderOutput();
-        if ( OutputPosition )
-          output.add( EncoderOutput.Field.POSITION_F64 );
-        if ( OutputSpeed )
-          output.add( EncoderOutput.Field.SPEED_F64 );
+        var output = new EncoderOutputPositionSpeed();
 
         Native.getOutputHandler().add( m_outputID, output );
 
@@ -235,9 +235,10 @@ namespace AGXUnity.Sensor
       if ( nativeConstraint == null || model == null )
         return null;
 
-      // Dedicated constructors (preferred).
-      if ( nativeConstraint is agx.Hinge hinge )
+      if ( nativeConstraint is agx.Hinge hinge ) {
+        Debug.Log( "Creating Hinge encoder" );
         return new Encoder( hinge, model );
+      }
 
       if ( nativeConstraint is agx.Prismatic prismatic )
         return new Encoder( prismatic, model );
@@ -280,14 +281,14 @@ namespace AGXUnity.Sensor
         SpeedBuffer = 0;
       }
       else {
-        var viewPosition = output.viewPosition();
-        var viewSpeed = output.viewPosition();
-
-        if ( viewPosition != null )
-          PositionBuffer = viewPosition[ 0 ];
-
-        if ( viewSpeed != null )
-          SpeedBuffer = viewSpeed[ 0 ];
+        var viewPosSpeed = output.viewPositionSpeed();
+        if ( viewPosSpeed != null && viewPosSpeed.size() > 0 ) {
+          var first = viewPosSpeed.begin();
+          if ( OutputSpeed )
+            SpeedBuffer = first.speed;
+          if ( OutputPosition )
+            PositionBuffer = first.position;
+        }
       }
 
       // Convenience runtime display of output
