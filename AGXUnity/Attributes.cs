@@ -243,4 +243,12 @@ namespace AGXUnity
     public string Name { get; private set; }
     public bool Invert { get; private set; }
   }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class DelayedInspectorAttribute : Attribute
+  {
+    public DelayedInspectorAttribute()
+    {
+    }
+  }
 }

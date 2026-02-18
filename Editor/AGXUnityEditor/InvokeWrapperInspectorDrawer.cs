@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using static AGXUnityEditor.InspectorGUI;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -93,17 +94,28 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                       wrapper.Get<int>( objects[ 0 ] ) );
+      if ( wrapper.IsDelayed )
+        return EditorGUILayout.DelayedIntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                wrapper.Get<int>( objects[ 0 ] ) );
+      else
+        return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                         wrapper.Get<int>( objects[ 0 ] ) );
     }
 
 
     [InspectorDrawer( typeof( uint ) )]
     public static object UIntDrawer( object[] objects, InvokeWrapper wrapper )
     {
+      int result;
+      if ( wrapper.IsDelayed )
+        result = EditorGUILayout.DelayedIntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                  (int)wrapper.Get<uint>( objects[ 0 ] ) );
+      else
+        result = EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           (int)wrapper.Get<uint>( objects[ 0 ] ) );
+
       // We need to clamp before we convert as the uint will simply wrap around otherwise, this loses some precision but should be fine in most cases.
-      return (uint)Mathf.Max( EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                       (int)wrapper.Get<uint>( objects[ 0 ] ) ), 0 );
+      return (uint)Mathf.Max( result, 0 );
     }
 
     [InspectorDrawer( typeof( Vector2Int ) )]
@@ -693,9 +705,14 @@ namespace AGXUnityEditor
           InspectorGUI.SelectFile( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), wrapper.Get<string>( objects[ 0 ] ), "Select file", s => result = s );
         return result;
       }
-      return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                        wrapper.Get<string>( objects[ 0 ] ),
-                                        InspectorEditor.Skin.TextField );
+      if ( wrapper.IsDelayed )
+        return EditorGUILayout.DelayedTextField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                 wrapper.Get<string>( objects[ 0 ] ),
+                                                 InspectorEditor.Skin.TextField );
+      else
+        return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                          wrapper.Get<string>( objects[ 0 ] ),
+                                          InspectorEditor.Skin.TextField );
     }
 
     [InspectorDrawer( typeof( agx.Angle.Axis ) )]
@@ -803,9 +820,14 @@ namespace AGXUnityEditor
                                        value,
                                        slider.Min,
                                        slider.Max );
-      else
-        return EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           value );
+      else {
+        if ( wrapper.IsDelayed )
+          return EditorGUILayout.DelayedFloatField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                    value );
+        else
+          return EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                             value );
+      }
     }
 
     private static void RenderLidarRayAngleGaussianNose( LidarRayAngleGaussianNoise noise )
@@ -1432,12 +1454,6 @@ namespace AGXUnityEditor
       DrawUrdfElement( wrapper.Get<AGXUnity.IO.URDF.Element>( objects[ 0 ] ), -1 );
 
       return null;
-    }
-
-    private static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
-    {
-      var member = parentType.GetMember( memberName )[ 0 ];
-      return InspectorGUI.MakeLabel( member, postText );
     }
 
     public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
