@@ -167,9 +167,24 @@ namespace AGXUnity.Model
     /// </summary>
     [field: SerializeField]
     [field: FormerlySerializedAs( "<InvertDepthDirection>k__BackingField" )]
+    private bool m_maxDepthAsInitialHeight = true;
+
     [InspectorPriority( -1 )]
     [Tooltip( "When enabled, the maximum depth will be added as height during initialization of the terrain." )]
-    public bool MaxDepthAsInitialHeight { get; set; } = true;
+    public bool MaxDepthAsInitialHeight
+    {
+      get => m_maxDepthAsInitialHeight;
+      set
+      {
+        if ( value == m_maxDepthAsInitialHeight ) return;
+        if ( Native != null ) {
+          Debug.LogError( "Cannot change MaxDepthAsInitialHeight after the terrain has been initialized" );
+          return;
+        }
+        m_maxDepthAsInitialHeight = value;
+        RecreateMesh();
+      }
+    }
 
     /// <summary>
     /// The compaction that all terrain cells are initialized to.
@@ -393,10 +408,16 @@ namespace AGXUnity.Model
       }
     }
 
+    // Keep track of last max depth to know when to recreate the mesh
+    private float m_lastDepth = float.MinValue;
+
     public override void EditorUpdate()
     {
-      if ( TerrainMesh.sharedMesh == null )
+
+      if ( TerrainMesh.sharedMesh == null || m_lastDepth != MaximumDepth ) {
         RecreateMesh();
+        m_lastDepth = MaximumDepth;
+      }
 
 #if UNITY_EDITOR
       // If the current material is the default (not an asset) and does not support the current rendering pipeline, replace it with new default.
