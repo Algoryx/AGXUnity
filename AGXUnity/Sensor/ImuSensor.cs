@@ -122,7 +122,7 @@ namespace AGXUnity.Sensor
       ImuAttachment.ImuAttachmentType.Accelerometer,
       new TriaxialRangeData(),
       0.01f,
-      Vector3.one * 260f );
+      Vector3.zero );
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -142,7 +142,7 @@ namespace AGXUnity.Sensor
       ImuAttachment.ImuAttachmentType.Gyroscope,
       new TriaxialRangeData(),
       0.01f,
-      Vector3.one * 3f );
+      Vector3.zero );
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -292,7 +292,6 @@ namespace AGXUnity.Sensor
     {
       if ( Native == null || buffer == null || output == null ) {
         Debug.LogError( "Null problem" );
-        // output.viewNineDoF()[0];
         return;
       }
 
