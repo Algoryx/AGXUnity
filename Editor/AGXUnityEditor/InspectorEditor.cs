@@ -104,7 +104,7 @@ namespace AGXUnityEditor
           InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
           var style = GUI.Align( GUI.Skin.label, TextAnchor.MiddleLeft );
           GUILayout.Label( GUI.MakeLabel( "Runtime Values", true, "" ), style );
-          
+
           using ( new GUI.EnabledBlock( false ) ) {
             group = InspectorGroupHandler.Create();
             foreach ( var wrapper in runtimeValues ) {
