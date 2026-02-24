@@ -177,10 +177,9 @@ namespace AGXUnity.Sensor
       SensorEnvironment.Instance.GetInitialized();
 
       var rigidBody = GetComponentInParent<RigidBody>();
-      if (rigidBody == null) 
-      {
+      if ( rigidBody == null ) {
         Debug.LogWarning( "No Rigidbody found in this object or parents, IMU will be inactive" );
-        return false; 
+        return false;
       }
       TrackedRigidBody = rigidBody;
 
@@ -250,8 +249,7 @@ namespace AGXUnity.Sensor
 
       m_nativeModel = new IMUModel( imu_attachments );
 
-      if ( m_nativeModel == null )
-      {
+      if ( m_nativeModel == null ) {
         Debug.LogWarning( "Could not create native imu model, IMU will be inactive" );
         return false;
       }
@@ -262,8 +260,7 @@ namespace AGXUnity.Sensor
       SensorEnvironment.Instance.Native.add( measuredRB );
 
       var rbFrame = measuredRB.getFrame();
-      if ( rbFrame == null ) 
-      {
+      if ( rbFrame == null ) {
         Debug.LogWarning( "Could not get rigid body frame, IMU will be inactive" );
         return false;
       }
@@ -288,7 +285,7 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    public void GetOutput(IMUOutput output, double[] buffer)
+    public void GetOutput( IMUOutput output, double[] buffer )
     {
       if ( Native == null || buffer == null || output == null ) {
         Debug.LogError( "Null problem" );
@@ -343,7 +340,7 @@ namespace AGXUnity.Sensor
       if ( !gameObject.activeInHierarchy )
         return;
 
-      GetOutput(Native.getOutputHandler().get(m_outputID), OutputBuffer);
+      GetOutput( Native.getOutputHandler().get( m_outputID ), OutputBuffer );
 
       if ( Application.isEditor ) {
         for ( int i = 0; i < OutputBuffer.Length; i++ ) {
@@ -394,7 +391,7 @@ namespace AGXUnity.Sensor
 #if UNITY_EDITOR
       if ( m_nodeGizmoMesh == null )
         m_nodeGizmoMesh = Resources.Load<Mesh>( @"Debug/Models/HalfSphere" );
-        
+
       if ( m_nodeGizmoMesh == null )
         return;
 
