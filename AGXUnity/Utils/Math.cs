@@ -61,5 +61,14 @@ namespace AGXUnity.Utils
       lhs = rhs;
       rhs = tmp;
     }
+
+    // Counts enabled bits
+    public static uint PopCount( uint value )
+    {
+      uint c = 0;
+      for ( ; value != 0; c++ )
+        value &= value - 1;
+      return c;
+    }
   }
 }

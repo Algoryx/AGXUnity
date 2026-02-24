@@ -1552,5 +1552,138 @@ namespace AGXUnityEditor
 
       return null;
     }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
+    public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var target = objects[ 0 ] as Object;
+
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
+        return null;
+      }
+
+      var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
+      using ( new InspectorGUI.IndentScope() ) {
+        data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
+        data.CrossAxisSensitivity = EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity );
+        data.ZeroBias = EditorGUILayout.Vector3Field( "Zero Rate Bias", data.ZeroBias );
+        EditorGUI.BeginChangeCheck();
+        data.OutputFlags = OutputXYZGUI( data.OutputFlags );
+        if ( EditorGUI.EndChangeCheck() )
+          EditorUtility.SetDirty( target );
+
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+            GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
+          using ( new InspectorGUI.IndentScope() ) {
+            (data.EnableTotalGaussianNoise, data.TotalGaussianNoise) = OptionalVector3GUI(
+              data.EnableTotalGaussianNoise,
+              data.TotalGaussianNoise,
+              "Total Gaussian Noise",
+              "" );
+            (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
+              data.EnableSignalScaling,
+              data.SignalScaling,
+              "Signal Scaling",
+              "" );
+            (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
+              data.EnableGaussianSpectralNoise,
+              data.GaussianSpectralNoise,
+              "Gaussian Spectral Noise",
+              "" );
+            if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
+              (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
+              data.EnableLinearAccelerationEffects,
+              data.LinearAccelerationEffects,
+              "Linear Acceleration Effects",
+              "" );
+            }
+          }
+        }
+      }
+
+      InspectorGUI.Separator();
+
+      return null;
+    }
+
+    private static (bool, Vector3) OptionalVector3GUI( bool toggle, Vector3 value, string label, string tooltip )
+    {
+      using ( new GUILayout.HorizontalScope() ) {
+        var rect = EditorGUILayout.GetControlRect();
+        var xMaxOriginal = rect.xMax;
+        rect.xMax = EditorGUIUtility.labelWidth + 20;
+        //InspectorGUI.MakeLabel( wrapper.Member );
+        toggle = EditorGUI.ToggleLeft( rect, GUI.MakeLabel( label, false, tooltip ), toggle );
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && toggle ) ) {
+          rect.x = rect.xMax - 30;
+          rect.xMax = xMaxOriginal;
+          value = EditorGUI.Vector3Field( rect, "", value );
+        }
+      }
+      return (toggle, value);
+    }
+
+    private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    {
+      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( "Sensor Measurement Range", data.Mode );
+
+      using ( new InspectorGUI.IndentScope() ) {
+        switch ( data.Mode ) {
+          case TriaxialRangeData.ConfigurationMode.MaxRange:
+            break;
+          case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
+            data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
+            break;
+          case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
+            data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
+            data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
+            data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
+            break;
+        }
+      }
+      return data;
+    }
+
+    private static OutputXYZ OutputXYZGUI( OutputXYZ state )
+    {
+      var skin = InspectorEditor.Skin;
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false ),
+                                      InspectorEditor.Skin.LabelMiddleLeft );
+
+        var xEnabled = state.HasFlag(OutputXYZ.X);
+        var yEnabled = state.HasFlag(OutputXYZ.Y);
+        var zEnabled = state.HasFlag(OutputXYZ.Z);
+
+        if ( GUILayout.Toggle( xEnabled,
+                               GUI.MakeLabel( "X",
+                                              xEnabled,
+                                              "Use sensor X value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                               GUILayout.Width( 76 ) ) != xEnabled )
+          state ^= OutputXYZ.X;
+        if ( GUILayout.Toggle( yEnabled,
+                               GUI.MakeLabel( "Y",
+                                              yEnabled,
+                                              "Use sensor X value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
+                               GUILayout.Width( 76 ) ) != yEnabled )
+          state ^= OutputXYZ.Y;
+        if ( GUILayout.Toggle( zEnabled,
+                               GUI.MakeLabel( "Z",
+                                              yEnabled,
+                                              "Use sensor Z value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                               GUILayout.Width( 76 ) ) != zEnabled )
+          state ^= OutputXYZ.Z;
+      }
+
+      return state;
+    }
+
+
   }
 }
+

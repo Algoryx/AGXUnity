@@ -17,6 +17,13 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment" )]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
+    public enum MagneticFieldType
+    {
+      NONE,
+      UNIFORM,
+      DIPOLE
+    }
+
     /// <summary>
     /// Native instance, created in Start/Initialize.
     /// </summary>
@@ -33,6 +40,44 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Show log messages on each thing added to the sensor environment")]
     public bool DebugLogOnAdd = false;
+
+    [InspectorGroupBegin(Name = "Magnetic Field", DefaultExpanded = true)]
+
+    /// <summary>
+    /// Set type of magnetic field used in the simulation
+    /// </summary>
+    [Tooltip("Set type of magnetic field used in the simulation")]
+    [HideInRuntimeInspector]
+    public MagneticFieldType FieldType = MagneticFieldType.UNIFORM;
+
+    private bool UsingUniformMagneticField => FieldType == MagneticFieldType.UNIFORM;
+    private bool UsingDipoleMagneticField => FieldType == MagneticFieldType.DIPOLE;
+
+    /// <summary>
+    /// Set the field vector of the uniform magnetic field used in the simulation [in Tesla]
+    /// </summary>
+    [Tooltip("Set the field vector of the uniform magnetic field used in the simulation [in Tesla]")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( "UsingUniformMagneticField" )]
+    public Vector3 MagneticFieldVector = new Vector3( 19.462e-6f, 44.754e-6f, 7.8426e-6f );
+
+    /// <summary>
+    /// Magnetic moment vector [in m^2 * A]
+    /// </summary>
+    [Tooltip("Magnetic dipole moment vector [in m^2 * A]")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( "UsingDipoleMagneticField" )]
+    public Vector3 MagneticMoment = new Vector3( -2.69e19f, -7.65e22f, 1.5e22f );
+
+    /// <summary>
+    /// Magnetic dipole center
+    /// </summary>
+    [Tooltip("Magnetic dipole center")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( "UsingDipoleMagneticField" )]
+    public Vector3 DipoleCenter = new Vector3( 1.9e-10f, 20.79e3f, -6.369e6f );
+
+    [InspectorGroupEnd]
 
     /// <summary>
     /// Select which layers to include game objects from
@@ -457,6 +502,17 @@ namespace AGXUnity.Sensor
       FindValidComponents<MeshFilter>( true ).ForEach( RegisterMeshfilter );
 
       FindValidComponents<ScriptComponent>( true ).ForEach( c => TrackIfSupported( c ) );
+
+      switch ( FieldType ) {
+        case MagneticFieldType.UNIFORM:
+          Native.setMagneticField( new UniformMagneticField( MagneticFieldVector.ToHandedVec3() ) );
+          break;
+        case MagneticFieldType.DIPOLE:
+          Native.setMagneticField( new DipoleMagneticField( MagneticMoment.ToHandedVec3(), DipoleCenter.ToHandedVec3() ) );
+          break;
+        default:
+          break;
+      }
 
       UpdateEnvironment();
 
