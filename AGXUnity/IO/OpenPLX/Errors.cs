@@ -212,9 +212,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class InvalidWheelChassisError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_suspension;
 
-    public InvalidWheelChassisError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+    public InvalidWheelChassisError( openplx.Vehicles.Suspensions.SingleMate.Base suspension )
       : base( suspension, AgxUnityOpenPLXErrors.InvalidWheelChassis )
     {
       m_suspension = suspension;
@@ -225,9 +225,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class MissingWheelBodyError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_suspension;
 
-    public MissingWheelBodyError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+    public MissingWheelBodyError( openplx.Vehicles.Suspensions.SingleMate.Base suspension )
       : base( suspension, AgxUnityOpenPLXErrors.MissingWheelBody )
     {
       m_suspension = suspension;
@@ -238,9 +238,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class UnmappedWheelError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Suspension m_wheel;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_wheel;
 
-    public UnmappedWheelError( openplx.Vehicles.Suspensions.Suspension wheel )
+    public UnmappedWheelError( openplx.Vehicles.Suspensions.SingleMate.Base wheel )
       : base( wheel, AgxUnityOpenPLXErrors.UnmappedWheel )
     {
       m_wheel = wheel;

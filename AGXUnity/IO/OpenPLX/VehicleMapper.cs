@@ -2,6 +2,7 @@ using AGXUnity.IO.OpenPLX;
 using AGXUnity.Model;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
+using openplx.Physics3D.Interactions;
 using openplx.Vehicles.Tracks;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,11 +15,20 @@ namespace AGXUnity.IO.OpenPLX
   {
     private MapperData Data;
 
-    private Dictionary<openplx.Vehicles.Suspensions.Interactions.Mate, WheelJoint> m_mappedWheels = new Dictionary<openplx.Vehicles.Suspensions.Interactions.Mate, WheelJoint> ();
+    private Dictionary<openplx.Vehicles.Suspensions.SingleMate.Base, WheelJoint> m_mappedWheels = new Dictionary<openplx.Vehicles.Suspensions.SingleMate.Base, WheelJoint> ();
 
     public VehicleMapper( MapperData cache )
     {
       Data = cache;
+    }
+
+    public bool HandledInteraction( openplx.Physics.Interactions.Interaction interaction )
+    {
+      if ( interaction is openplx.Vehicles.Steering.Kinematic.Interactions.Base )
+        return true;
+      if ( interaction.getOwner() is openplx.Vehicles.Suspensions.SingleMate.Base susp && ( interaction == susp.mate() || interaction == susp.range() ) )
+        return true;
+      return false;
     }
 
     public void MapElasticWheel( openplx.Vehicles.Wheels.ElasticWheel wheel )
@@ -378,97 +388,120 @@ namespace AGXUnity.IO.OpenPLX
       Data.MappedTrackProperties.Add( track_props );
     }
 
-    public GameObject MapSuspension( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
-    {
-      return suspension switch
-      {
-        openplx.Vehicles.Suspensions.Interactions.LinearSpringDamperMate linSpring => MapLinearSpringDamperMate( linSpring ),
-        _ => Utils.ReportUnimplemented<GameObject>( suspension, Data.ErrorReporter )
-      };
-    }
-
-    public GameObject MapLinearSpringDamperMate( openplx.Vehicles.Suspensions.Interactions.LinearSpringDamperMate linearSpring )
+    public bool MapSingleMateSuspensionOnto( openplx.Vehicles.Suspensions.SingleMate.Base suspension, GameObject onto )
     {
       RigidBody chassis = null;
       RigidBody wheel = null;
-      var parent = linearSpring.chassis_connector().redirected_parent();
+      var parent = suspension.chassis_connector().getOwner();
 
       if ( parent == null )
-        return null;
+        return false;
 
-      if ( Data.BodyCache.ContainsKey( parent ) )
-        chassis = Data.BodyCache[ parent ];
+      openplx.Physics3D.Bodies.RigidBody chassisBody = null;
+
+      if ( suspension.chassis_connector() is RedirectedMateConnector crmc )
+        chassisBody = crmc.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+      else if ( parent is openplx.Physics3D.System chassisSystem )
+        chassisBody = suspension.attachment_connector().getOwner() as openplx.Physics3D.Bodies.RigidBody;
+      else
+        chassisBody = parent as openplx.Physics3D.Bodies.RigidBody;
+
+      if ( chassisBody != null && Data.BodyCache.ContainsKey( chassisBody ) )
+        chassis = Data.BodyCache[ chassisBody ];
       else {
-        Data.ErrorReporter.reportError( new InvalidWheelChassisError( linearSpring ) );
-        return null;
+        Data.ErrorReporter.reportError( new InvalidWheelChassisError( suspension ) );
+        return false;
       }
 
-      var wheelParent = linearSpring.attachment_connector().getOwner();
+      var wheelParent = suspension.attachment_connector().getOwner();
+      openplx.Physics3D.Bodies.RigidBody attachmentBody = null;
 
-      if ( wheelParent is openplx.Physics3D.Bodies.RigidBody wheelBody )
-        wheel = Data.BodyCache[ wheelBody ];
-      else if ( wheelParent is openplx.Vehicles.Wheels.Wheel wheelModel ) {
-        wheel = Data.BodyCache.GetValueOrDefault( wheelModel.rim() );
+      if ( suspension.attachment_connector() is RedirectedMateConnector armc )
+        attachmentBody = armc.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+      else if ( wheelParent is openplx.Physics3D.Bodies.RigidBody ab )
+        attachmentBody = ab;
+      else if ( wheelParent is openplx.Vehicles.Wheels.Base wheelModel )
+        attachmentBody = wheelModel.rim();
+
+      if ( attachmentBody != null && Data.BodyCache.ContainsKey( attachmentBody ) )
+        wheel = Data.BodyCache[ attachmentBody ];
+      else {
+        Data.ErrorReporter.reportError( new MissingWheelBodyError( suspension ) );
+        return false;
       }
 
-      if ( wheel == null ) {
-        Data.ErrorReporter.reportError( new MissingWheelBodyError( linearSpring ) );
-        return null;
-      }
+      // OpenPLX assumes axes N = Wheel and U = Suspension, in agx N = Suspension, V = Wheel is used. Apply a local rotation to correct for this from the precalculated frame.
+      Quaternion frameCorrection = Quaternion.Euler( 0, -90, -90 );
+      var chassisXForm  = chassis.transform.worldToLocalMatrix * Data.MateConnectorCache[ suspension.chassis_connector() ].transform.localToWorldMatrix;
+      var wheelXForm    = wheel.transform.worldToLocalMatrix * Data.MateConnectorCache[ suspension.attachment_connector() ].transform.localToWorldMatrix;
 
-      // OpenPLX assumes axes N = Wheel and U = Steering, in agx N = Steering, V = Steering is used. Apply a local rotation to correct for this from the precalculated frame.
-      Quaternion frameCorrection = Quaternion.Euler( 0, -90, -90);
-      var chassisFrame    = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.chassis_connector() ], Vector3.zero, frameCorrection );
-      var wheelFrame      = new ConstraintFrame( Data.MateConnectorCache[ linearSpring.attachment_connector() ], Vector3.zero, frameCorrection );
+      var chassisFrame    = new ConstraintFrame( chassis.gameObject, chassisXForm.GetTranslate(), chassisXForm.GetRotation() * frameCorrection);
+      var wheelFrame      = new ConstraintFrame( wheel.gameObject, wheelXForm.GetTranslate(), wheelXForm.GetRotation() * frameCorrection );
 
-      var wheelJoint = WheelJoint.Create(wheelFrame, chassisFrame);
-      if ( !linearSpring.getOwner().hasTrait( "Vehicles.Suspensions.Traits.Steering" ) )
+      var wheelJoint = WheelJoint.Create(wheelFrame, chassisFrame, onto);
+      if ( !suspension.HasTrait<openplx.Vehicles.Suspensions.Properties.Steering>() )
         wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable = true;
 
-      if ( linearSpring.hasTrait( "Vehicles.Suspensions.Traits.SpringDamper" ) ) {
-        var damping = InteractionMapper.MapDissipation( linearSpring.spring_damping(), linearSpring.spring_constant() );
+      if ( suspension is openplx.Vehicles.Suspensions.SingleMate.LinearSpringDamper lsd ) {
+        var damping = InteractionMapper.MapDissipation( lsd.mate().spring_damping(), lsd.mate().spring_constant() );
         if ( damping.HasValue )
           wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Damping = damping.Value;
-        var compliance = InteractionMapper.MapFlexibility(linearSpring.spring_constant());
+        var compliance = InteractionMapper.MapFlexibility(lsd.mate().spring_constant());
         if ( compliance.HasValue )
           wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Compliance = compliance.Value;
+
+        wheelJoint.enabled = lsd.mate().enabled();
       }
 
-      wheelJoint.enabled = linearSpring.enabled();
+      var range = wheelJoint.GetController<RangeController>( WheelJoint.WheelDimension.Suspension );
+      range.Enable = suspension.range().enabled();
+      var rangeCompliance = InteractionMapper.MapFlexibility(suspension.range().flexibility());
+      if ( rangeCompliance.HasValue )
+        range.Compliance = rangeCompliance.Value;
+      var rangeDamping = InteractionMapper.MapDissipation(suspension.range().dissipation(),suspension.range().flexibility());
+      if ( rangeDamping.HasValue )
+        range.Damping = rangeDamping.Value;
+      range.Range = new RangeReal( (float)suspension.range().start(), (float)suspension.range().end() );
+      range.ForceRange = new RangeReal( (float)suspension.range().min_effort(), (float)suspension.range().max_effort() );
 
-      Data.RegisterOpenPLXObject( linearSpring.getName(), wheelJoint.gameObject );
+      Data.RegisterOpenPLXObject( suspension.getName(), wheelJoint.gameObject );
+      Data.RegisterOpenPLXObject( suspension.range().getName(), wheelJoint.gameObject );
+      Data.RegisterOpenPLXObject( suspension.mate().getName(), wheelJoint.gameObject );
 
-      m_mappedWheels[ linearSpring ] = wheelJoint;
+      m_mappedWheels[ suspension ] = wheelJoint;
 
-      return wheelJoint.gameObject;
+      return true;
     }
 
-    public GameObject MapSteering( openplx.Vehicles.Steering.Interactions.DualSuspensionSteering steering )
+    public bool MapSteeringOnto( openplx.Vehicles.Steering.Kinematic.Base steering, GameObject onto )
     {
       Steering.SteeringMechanism? mechanism = steering switch
       {
-        openplx.Vehicles.Steering.Interactions.Ackermann => Steering.SteeringMechanism.Ackermann,
-        openplx.Vehicles.Steering.Interactions.BellCrank => Steering.SteeringMechanism.BellCrank,
-        openplx.Vehicles.Steering.Interactions.RackAndPinion => Steering.SteeringMechanism.RackPinion,
+        openplx.Vehicles.Steering.Kinematic.Ackermann => Steering.SteeringMechanism.Ackermann,
+        openplx.Vehicles.Steering.Kinematic.BellCrank => Steering.SteeringMechanism.BellCrank,
+        openplx.Vehicles.Steering.Kinematic.RackAndPinion => Steering.SteeringMechanism.RackPinion,
         _ => null
       };
 
-      if ( !mechanism.HasValue )
-        return Utils.ReportUnimplemented<GameObject>( steering, Data.ErrorReporter );
+      if ( !mechanism.HasValue ) {
+        Data.ErrorReporter.reportError( new UnimplementedError( steering ) );
+        return false;
+      }
 
-      var steeringGO = Data.CreateOpenPLXObject(steering.getName());
-      var steeringComp = steeringGO.AddComponent<Steering>();
+      var steeringComp = onto.AddComponent<Steering>();
+      Data.RegisterOpenPLXObject( steering.getName(), onto );
+      Data.RegisterOpenPLXObject( steering.interaction().getName(), onto );
 
       WheelJoint rightWheel, leftWheel;
 
-      if ( !m_mappedWheels.TryGetValue( steering.right_suspension().mate(), out rightWheel ) ) {
+      if ( !m_mappedWheels.TryGetValue( steering.right_suspension(), out rightWheel ) ) {
         Data.ErrorReporter.reportError( new UnmappedWheelError( steering.right_suspension() ) );
-        return null;
+        return false;
       }
 
-      if ( !m_mappedWheels.TryGetValue( steering.left_suspension().mate(), out leftWheel ) ) {
+      if ( !m_mappedWheels.TryGetValue( steering.left_suspension(), out leftWheel ) ) {
         Data.ErrorReporter.reportError( new UnmappedWheelError( steering.left_suspension() ) );
-        return null;
+        return false;
       }
 
       steeringComp.RightWheel = rightWheel;
@@ -476,22 +509,27 @@ namespace AGXUnity.IO.OpenPLX
 
       steeringComp.Mechanism = mechanism.Value;
 
-      steeringComp.Phi0 = (float)steering.knuckle_angle();
-      steeringComp.L = (float)steering.knuckle_length();
-
-      if ( steering is openplx.Vehicles.Steering.Interactions.BellCrank bellCrank ) {
-        steeringComp.Lc = (float)bellCrank.steering_column_distance();
-        steeringComp.Gear = (float)bellCrank.gear();
+      if ( steering is openplx.Vehicles.Steering.Kinematic.Ackermann ackermann ) {
+        steeringComp.Phi0 = (float)ackermann.knuckle_angle();
+        steeringComp.L    = (float)ackermann.knuckle_length();
+      }
+      else if ( steering is openplx.Vehicles.Steering.Kinematic.BellCrank bellCrank ) {
+        steeringComp.Phi0   = (float)bellCrank.knuckle_angle();
+        steeringComp.L      = (float)bellCrank.knuckle_length();
+        steeringComp.Lc     = (float)bellCrank.steering_column_distance();
+        steeringComp.Gear   = (float)bellCrank.gear();
         steeringComp.Alpha0 = (float)bellCrank.initial_angle_right_tie_rod();
       }
-      else if ( steering is openplx.Vehicles.Steering.Interactions.RackAndPinion rackPinion ) {
-        steeringComp.Lc = (float)rackPinion.steering_column_distance();
-        steeringComp.Lr = (float)rackPinion.rack_length();
-        steeringComp.Gear = (float)rackPinion.gear();
+      else if ( steering is openplx.Vehicles.Steering.Kinematic.RackAndPinion rackPinion ) {
+        steeringComp.Phi0   = (float)rackPinion.knuckle_angle();
+        steeringComp.L      = (float)rackPinion.knuckle_length();
+        steeringComp.Lc     = (float)rackPinion.steering_column_distance();
+        steeringComp.Lr     = (float)rackPinion.rack_length();
+        steeringComp.Gear   = (float)rackPinion.gear();
         steeringComp.Alpha0 = (float)rackPinion.initial_angle_right_tie_rod();
       }
 
-      return steeringGO;
+      return true;
     }
   }
 }
