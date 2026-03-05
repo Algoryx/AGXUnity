@@ -127,10 +127,10 @@ namespace AGXUnity.IO.OpenPLX
         sigInt.Enabled = sigInterface.enable();
         sigInt.Inputs = new List<InputTarget>();
         foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
-          sigInt.Inputs.Add( new InputTarget( sigInterface.getName() + "." + inpName, input ) );
+          sigInt.Inputs.Add( new InputTarget( prefix + "." + name + "." + inpName, input ) );
         sigInt.Outputs = new List<OutputSource>();
         foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
-          sigInt.Outputs.Add( new OutputSource( sigInterface.getName() + "." + outName, output ) );
+          sigInt.Outputs.Add( new OutputSource( prefix + "." + name + "." + outName, output ) );
 
         signals.RegisterInterface( sigInt );
       }
