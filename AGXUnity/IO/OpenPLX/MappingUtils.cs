@@ -67,6 +67,13 @@ namespace AGXUnity.IO.OpenPLX
     }
 
     public static uint To32BitFnv1aHash( this openplx.Core.Object obj ) => obj.getName().To32BitFnv1aHash();
+
+    public static bool HasTrait<T>( this openplx.Core.Object obj )
+      where T : class
+    {
+      string traitName = typeof( T ).FullName.Substring( 8 );
+      return obj.hasTrait( traitName );
+    }
   }
   public static class Utils
   {

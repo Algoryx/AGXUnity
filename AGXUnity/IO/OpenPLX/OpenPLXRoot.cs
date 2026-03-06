@@ -31,7 +31,7 @@ namespace AGXUnity.IO.OpenPLX
           throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
         var prunedNativeName = Native.getName();
         if ( prunedNativeName.Contains( "." ) )
-          prunedNativeName = prunedNativeName[ ( prunedNativeName.IndexOf( "." ) + 1 ).. ];
+          prunedNativeName = prunedNativeName[ ( prunedNativeName.LastIndexOf( "." ) + 1 ).. ];
         return prunedNativeName;
       }
     }
@@ -107,7 +107,7 @@ namespace AGXUnity.IO.OpenPLX
             continue;
           var native = openPLXObj.FindCorrespondingNative( this, obj );
           if ( native != null )
-            m_nativeMap.Add( new( decl, native ) );
+            m_nativeMap.Add( new( obj.getName(), native ) );
         }
       }
 

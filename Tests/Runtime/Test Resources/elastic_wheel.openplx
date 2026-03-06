@@ -9,27 +9,29 @@ Wheel is Vehicles.Wheels.ElasticWheel:
     radius: 0.03
     width: 0.02
     rotational_axis: Math.Vec3.X_AXIS()
-    geometry.local_transform.rotation: Math.Quat.from_to(Math.Vec3.Z_AXIS(), Math.Vec3.Y_AXIS())
 
   tire becomes Vehicles.Wheels.Tire:
     outer_radius: 0.05
     inner_radius: rim.radius
     width: 0.015
     rotational_axis: Math.Vec3.X_AXIS()
-    geometry.local_transform.rotation: Math.Quat.from_to(Math.Vec3.Z_AXIS(), Math.Vec3.Y_AXIS())
+
+WheelMC is Physics3D.Interactions.RedirectedMateConnector:
+  with Vehicles.Interfaces.UpForwardVectors 
+  with Vehicles.Suspensions.Properties.WheelAxisFromUpForward
 
 WheelScene is Physics3D.System:
   chassis is Chassis:
     up is Math.Vec3: Math.Vec3.Z_AXIS()
     forward is Math.Vec3: Math.Vec3.Y_AXIS()
 
-  left_mc is  Vehicles.Suspensions.Interactions.Connector:
+  left_mc is WheelMC:
     position: Math.Vec3.from_xyz(-0.06, 0.0, -0.05)
     redirected_parent: chassis
     up_vector: chassis.up
     forward_vector: chassis.forward
 
-  right_mc is Vehicles.Suspensions.Interactions.Connector:
+  right_mc is WheelMC:
     redirected_parent: chassis
     up_vector: chassis.up
     forward_vector: chassis.forward
@@ -38,18 +40,17 @@ WheelScene is Physics3D.System:
   left_wheel is Wheel
   right_wheel is Wheel
 
-  suspension_left is Vehicles.Suspensions.LinearSpringDamper with Vehicles.Suspensions.Traits.Steering:
+  suspension_left is Vehicles.Suspensions.SingleMate.LinearSpringDamper with Vehicles.Suspensions.Properties.Steering:
     chassis_connector: left_mc
     attachment_connector: left_wheel.connector
 
-  suspension_right is Vehicles.Suspensions.LinearSpringDamper with Vehicles.Suspensions.Traits.Steering:
+  suspension_right is Vehicles.Suspensions.SingleMate.LinearSpringDamper with Vehicles.Suspensions.Properties.Steering:
     chassis_connector: right_mc
     attachment_connector: right_wheel.connector
 
-  steering is Vehicles.Steering.Interactions.Ackermann:
+  steering is Vehicles.Steering.Kinematic.Ackermann:
     left_suspension: suspension_left
     right_suspension: suspension_right
-    steering_angle_output:
-        enabled: true
+    interaction.steering_angle_output.enabled: true
 
 
