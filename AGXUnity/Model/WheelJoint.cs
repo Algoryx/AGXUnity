@@ -142,13 +142,18 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="referenceFrame">Reference frame.</param>
     /// <param name="connectedFrame">Connected frame.</param>
+    /// <param name="createOn">Creates the constraint on the given gameobject, or a new if null</param>
     /// <returns>WheelJoint component, added to a new game object - null if unsuccessful.</returns>
     public static WheelJoint Create( ConstraintFrame referenceFrame,
-                                     ConstraintFrame connectedFrame )
+                                     ConstraintFrame connectedFrame,
+                                     GameObject createOn = null )
     {
-      GameObject constraintGameObject = new GameObject( Factory.CreateName( "AGXUnity.WheelJoint" ) );
+      bool createGameobject = createOn == null;
+      if ( createGameobject )
+        createOn = new GameObject( Factory.CreateName( "AGXUnity.WheelJoint" ) );
+      WheelJoint constraint = null;
       try {
-        WheelJoint constraint = constraintGameObject.AddComponent<WheelJoint>();
+        constraint = createOn.AddComponent<WheelJoint>();
 
         constraint.AttachmentPair.ReferenceFrame = referenceFrame ?? new ConstraintFrame();
         constraint.AttachmentPair.ConnectedFrame = connectedFrame ?? new ConstraintFrame();
@@ -162,7 +167,10 @@ namespace AGXUnity.Model
       }
       catch ( System.Exception e ) {
         Debug.LogException( e );
-        DestroyImmediate( constraintGameObject );
+        if ( createGameobject )
+          DestroyImmediate( createOn );
+        else if ( constraint != null )
+          DestroyImmediate( constraint );
         return null;
       }
     }

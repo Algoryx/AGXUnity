@@ -127,10 +127,10 @@ namespace AGXUnity.IO.OpenPLX
         sigInt.Enabled = sigInterface.enable();
         sigInt.Inputs = new List<InputTarget>();
         foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
-          sigInt.Inputs.Add( new InputTarget( sigInterface.getName() + "." + inpName, input ) );
+          sigInt.Inputs.Add( new InputTarget( prefix + "." + name + "." + inpName, input ) );
         sigInt.Outputs = new List<OutputSource>();
         foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
-          sigInt.Outputs.Add( new OutputSource( sigInterface.getName() + "." + outName, output ) );
+          sigInt.Outputs.Add( new OutputSource( prefix + "." + name + "." + outName, output ) );
 
         signals.RegisterInterface( sigInt );
       }
@@ -947,20 +947,18 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
+      if ( system is openplx.Vehicles.Suspensions.SingleMate.Base suspension )
+        VehicleMapper.MapSingleMateSuspensionOnto( suspension, s );
+
       foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
         Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
 
       foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
         Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
-      foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() ) {
-        if ( !Utils.IsRuntimeMapped( interaction ) && interaction is not openplx.Vehicles.Steering.Interactions.DualSuspensionSteering ) {
-          if ( interaction is openplx.Vehicles.Suspensions.Interactions.Mate suspension )
-            Utils.AddChild( s, VehicleMapper.MapSuspension( suspension ), Data.ErrorReporter, suspension );
-          else
-            Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
-        }
-      }
+      foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() )
+        if ( !Utils.IsRuntimeMapped( interaction ) && !VehicleMapper.HandledInteraction( interaction ) )
+          Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
       foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
         InteractionMapper.MapContactModel( contactModel );
@@ -988,8 +986,8 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass5( subSystem );
 
-      foreach ( var steering in system.getNonReferenceValues<openplx.Vehicles.Steering.Interactions.DualSuspensionSteering>() )
-        Utils.AddChild( s, VehicleMapper.MapSteering( steering ), Data.ErrorReporter, steering );
+      if ( system is openplx.Vehicles.Steering.Kinematic.Base steering )
+        VehicleMapper.MapSteeringOnto( steering, s );
 
       foreach ( var wheel in system.getNonReferenceValues<openplx.Vehicles.Wheels.ElasticWheel>() )
         VehicleMapper.MapElasticWheel( wheel );
