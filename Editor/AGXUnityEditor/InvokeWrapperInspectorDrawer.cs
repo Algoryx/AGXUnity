@@ -1667,7 +1667,7 @@ namespace AGXUnityEditor
         if ( GUILayout.Toggle( yEnabled,
                                GUI.MakeLabel( "Y",
                                               yEnabled,
-                                              "Use sensor X value in output" ),
+                                              "Use sensor Y value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
                                GUILayout.Width( 76 ) ) != yEnabled )
           state ^= OutputXYZ.Y;
