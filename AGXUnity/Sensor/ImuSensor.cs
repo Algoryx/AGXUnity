@@ -383,11 +383,6 @@ namespace AGXUnity.Sensor
         Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
       }
 
-      Native?.Dispose();
-      Native = null;
-      m_nativeModel?.Dispose();
-      m_nativeModel = null;
-
       base.OnDestroy();
     }
 
