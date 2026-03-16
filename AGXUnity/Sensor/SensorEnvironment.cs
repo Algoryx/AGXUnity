@@ -19,9 +19,9 @@ namespace AGXUnity.Sensor
   {
     public enum MagneticFieldType
     {
-      NONE,
-      UNIFORM,
-      DIPOLE
+      None,
+      Uniform,
+      Dipole
     }
 
     /// <summary>
@@ -48,10 +48,10 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Set type of magnetic field used in the simulation")]
     [HideInRuntimeInspector]
-    public MagneticFieldType FieldType = MagneticFieldType.UNIFORM;
+    public MagneticFieldType FieldType = MagneticFieldType.Uniform;
 
-    private bool UsingUniformMagneticField => FieldType == MagneticFieldType.UNIFORM;
-    private bool UsingDipoleMagneticField => FieldType == MagneticFieldType.DIPOLE;
+    private bool UsingUniformMagneticField => FieldType == MagneticFieldType.Uniform;
+    private bool UsingDipoleMagneticField => FieldType == MagneticFieldType.Dipole;
 
     /// <summary>
     /// Set the field vector of the uniform magnetic field used in the simulation [in Tesla]
@@ -504,10 +504,10 @@ namespace AGXUnity.Sensor
       FindValidComponents<ScriptComponent>( true ).ForEach( c => TrackIfSupported( c ) );
 
       switch ( FieldType ) {
-        case MagneticFieldType.UNIFORM:
+        case MagneticFieldType.Uniform:
           Native.setMagneticField( new UniformMagneticField( MagneticFieldVector.ToHandedVec3() ) );
           break;
-        case MagneticFieldType.DIPOLE:
+        case MagneticFieldType.Dipole:
           Native.setMagneticField( new DipoleMagneticField( MagneticMoment.ToHandedVec3(), DipoleCenter.ToHandedVec3() ) );
           break;
         default:
