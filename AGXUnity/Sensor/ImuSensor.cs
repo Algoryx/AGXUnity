@@ -267,9 +267,9 @@ namespace AGXUnity.Sensor
       // For SWIG reasons, we will create a ninedof output and use the fields selectively
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
       uint outputCount = 0;
-      outputCount += EnableAccelerometer ? Utils.Math.PopCount( (uint)AccelerometerAttachment.OutputFlags ) : 0;
-      outputCount += EnableGyroscope ? Utils.Math.PopCount( (uint)GyroscopeAttachment.OutputFlags ) : 0;
-      outputCount += EnableMagnetometer ? Utils.Math.PopCount( (uint)MagnetometerAttachment.OutputFlags ) : 0;
+      outputCount += EnableAccelerometer ? Utils.Math.CountEnabledBits( (uint)AccelerometerAttachment.OutputFlags ) : 0;
+      outputCount += EnableGyroscope ? Utils.Math.CountEnabledBits( (uint)GyroscopeAttachment.OutputFlags ) : 0;
+      outputCount += EnableMagnetometer ? Utils.Math.CountEnabledBits( (uint)MagnetometerAttachment.OutputFlags ) : 0;
 
       var output = new IMUOutputNineDoF();
       Native.getOutputHandler().add( m_outputID, output );

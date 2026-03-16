@@ -63,7 +63,7 @@ namespace AGXUnity.Utils
     }
 
     // Counts enabled bits
-    public static uint PopCount( uint value )
+    public static uint CountEnabledBits( uint value )
     {
       uint c = 0;
       for ( ; value != 0; c++ )
