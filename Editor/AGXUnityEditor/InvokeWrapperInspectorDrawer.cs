@@ -1661,22 +1661,19 @@ namespace AGXUnityEditor
                                GUI.MakeLabel( "X",
                                               xEnabled,
                                               "Use sensor X value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
-                               GUILayout.Width( 76 ) ) != xEnabled )
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ) ) != xEnabled )
           state ^= OutputXYZ.X;
         if ( GUILayout.Toggle( yEnabled,
                                GUI.MakeLabel( "Y",
                                               yEnabled,
                                               "Use sensor X value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
-                               GUILayout.Width( 76 ) ) != yEnabled )
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
           state ^= OutputXYZ.Y;
         if ( GUILayout.Toggle( zEnabled,
                                GUI.MakeLabel( "Z",
                                               yEnabled,
                                               "Use sensor Z value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
-                               GUILayout.Width( 76 ) ) != zEnabled )
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
           state ^= OutputXYZ.Z;
       }
 
