@@ -51,15 +51,15 @@ namespace AGXUnity.Sensor
 
     public enum TwoDofSample
     {
-      First,
-      Second
+      Rotational,
+      Translational
     }
 
     [field: SerializeField]
     [Tooltip( "Which DoF to sample for 2-DoF constraints (Cylindrical)" )]
     [DisableInRuntimeInspector]
     [DynamicallyShowInInspector( "HasTwoDof", true )]
-    public TwoDofSample SampleTwoDof { get; set; } = TwoDofSample.First;
+    public TwoDofSample SampleTwoDof { get; set; } = TwoDofSample.Rotational;
 
     public enum WheelJointSample
     {
@@ -261,7 +261,7 @@ namespace AGXUnity.Sensor
 
     private static agx.Constraint2DOF.DOF ToConstraint2Dof( TwoDofSample value )
     {
-      return value == TwoDofSample.Second ? agx.Constraint2DOF.DOF.SECOND : agx.Constraint2DOF.DOF.FIRST;
+      return value == TwoDofSample.Translational ? agx.Constraint2DOF.DOF.SECOND : agx.Constraint2DOF.DOF.FIRST;
     }
 
     private static agxVehicle.WheelJoint.SecondaryConstraint ToWheelSecondaryConstraint( WheelJointSample value )
