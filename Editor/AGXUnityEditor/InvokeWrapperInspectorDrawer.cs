@@ -1673,7 +1673,7 @@ namespace AGXUnityEditor
           state ^= OutputXYZ.Y;
         if ( GUILayout.Toggle( zEnabled,
                                GUI.MakeLabel( "Z",
-                                              yEnabled,
+                                              zEnabled,
                                               "Use sensor Z value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Right ),
                                GUILayout.Width( 76 ) ) != zEnabled )
