@@ -176,10 +176,7 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    private double GetSignalResolution()
-    {
-      return 2.0 * System.Math.PI * WheelRadius / PulsesPerRevolution;
-    }
+    private double SignalResolution => 2.0 * System.Math.PI * WheelRadius / PulsesPerRevolution;
 
     private static Odometer CreateNativeOdometerFromConstraint( agx.Constraint nativeConstraint, OdometerModel model )
     {
