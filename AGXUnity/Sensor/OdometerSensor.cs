@@ -139,8 +139,6 @@ namespace AGXUnity.Sensor
         return false;
       }
 
-      PropertySynchronizer.Synchronize( this );
-
       if ( IsWheelJoint ) {
         var initializedWheelJoint = ConstraintComponent.GetInitialized<WheelJoint>();
         if ( initializedWheelJoint == null ) {
@@ -168,6 +166,8 @@ namespace AGXUnity.Sensor
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
       var output = new OdometerOutputDistance();
       Native.getOutputHandler().add( m_outputID, output );
+
+      PropertySynchronizer.Synchronize( this );
 
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 

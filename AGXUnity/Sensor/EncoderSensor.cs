@@ -192,8 +192,6 @@ namespace AGXUnity.Sensor
         return false;
       }
 
-      PropertySynchronizer.Synchronize( this );
-
       if ( IsWheelJoint ) {
         var initializedWheelJoint = ConstraintComponent.GetInitialized<WheelJoint>();
         if ( initializedWheelJoint == null ) {
@@ -231,7 +229,7 @@ namespace AGXUnity.Sensor
         Debug.LogWarning( "No output configured for encoder" );
       }
 
-
+      PropertySynchronizer.Synchronize( this );
 
       SensorEnvironment.Instance.Native.add( Native );
 

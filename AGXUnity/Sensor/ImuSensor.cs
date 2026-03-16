@@ -254,8 +254,6 @@ namespace AGXUnity.Sensor
         return false;
       }
 
-      PropertySynchronizer.Synchronize( this );
-
       var measuredRB = rigidBody.GetInitialized<RigidBody>().Native;
       SensorEnvironment.Instance.Native.add( measuredRB );
 
@@ -277,6 +275,8 @@ namespace AGXUnity.Sensor
       Native.getOutputHandler().add( m_outputID, output );
 
       OutputBuffer = new double[ outputCount ];
+
+      PropertySynchronizer.Synchronize( this );
 
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 
