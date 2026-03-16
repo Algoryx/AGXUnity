@@ -165,9 +165,9 @@ namespace AGXUnity.Sensor
       Vector3.one * 0f );
 
     [RuntimeValue] public RigidBody TrackedRigidBody { get; private set; }
-    [RuntimeValue] public Vector3 OutputRow1;
-    [RuntimeValue] public Vector3 OutputRow2;
-    [RuntimeValue] public Vector3 OutputRow3;
+    [RuntimeValue] public Vector3 OutputRow1 { get; private set; }
+    [RuntimeValue] public Vector3 OutputRow2 { get; private set; }
+    [RuntimeValue] public Vector3 OutputRow3 { get; private set; }
 
     private uint m_outputID = 0;
     public double[] OutputBuffer { get; private set; }
@@ -344,12 +344,21 @@ namespace AGXUnity.Sensor
 
       if ( Application.isEditor ) {
         for ( int i = 0; i < OutputBuffer.Length; i++ ) {
-          if ( i < 3 )
-            OutputRow1[ i ] = (float)OutputBuffer[ i ];
-          else if ( i < 6 )
-            OutputRow2[ i % 3 ] = (float)OutputBuffer[ i ];
-          else
-            OutputRow3[ i % 6 ] = (float)OutputBuffer[ i ];
+          if ( i < 3 ) {
+            var outputRow1 = OutputRow1;
+            outputRow1[ i ] = (float)OutputBuffer[ i ];
+            OutputRow1 = outputRow1;
+          }
+          else if ( i < 6 ) {
+            var outputRow2 = OutputRow2;
+            outputRow2[ i % 3 ] = (float)OutputBuffer[ i ];
+            OutputRow2 = outputRow2;
+          }
+          else {
+            var outputRow3 = OutputRow3;
+            outputRow3[ i % 6 ] = (float)OutputBuffer[ i ];
+            OutputRow3 = outputRow3;
+          }
         }
       }
     }
