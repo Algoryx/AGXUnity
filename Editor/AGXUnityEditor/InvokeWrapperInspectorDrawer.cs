@@ -1666,12 +1666,12 @@ namespace AGXUnityEditor
         if ( GUILayout.Toggle( yEnabled,
                                GUI.MakeLabel( "Y",
                                               yEnabled,
-                                              "Use sensor X value in output" ),
+                                              "Use sensor y value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
           state ^= OutputXYZ.Y;
         if ( GUILayout.Toggle( zEnabled,
                                GUI.MakeLabel( "Z",
-                                              yEnabled,
+                                              zEnabled,
                                               "Use sensor Z value in output" ),
                                skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
           state ^= OutputXYZ.Z;
