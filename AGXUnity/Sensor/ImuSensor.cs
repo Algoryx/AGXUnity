@@ -285,7 +285,7 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    public void GetOutput( IMUOutput output, double[] buffer )
+    private void GetOutput( IMUOutput output, double[] buffer )
     {
       if ( Native == null || buffer == null || output == null ) {
         Debug.LogError( "Null problem" );

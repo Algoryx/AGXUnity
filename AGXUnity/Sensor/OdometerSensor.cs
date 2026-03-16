@@ -195,7 +195,7 @@ namespace AGXUnity.Sensor
       return null;
     }
 
-    public double GetOutput( OdometerOutput output )
+    private double GetOutput( OdometerOutput output )
     {
       if ( Native == null || output == null )
         return 0;
