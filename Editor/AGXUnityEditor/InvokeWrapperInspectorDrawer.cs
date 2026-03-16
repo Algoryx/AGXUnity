@@ -1566,7 +1566,7 @@ namespace AGXUnityEditor
       var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
       using ( new InspectorGUI.IndentScope() ) {
         data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
-        data.CrossAxisSensitivity = EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity );
+        data.CrossAxisSensitivity = Mathf.Clamp01(EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity ));
         data.ZeroBias = EditorGUILayout.Vector3Field( "Zero Rate Bias", data.ZeroBias );
         EditorGUI.BeginChangeCheck();
         data.OutputFlags = OutputXYZGUI( data.OutputFlags );

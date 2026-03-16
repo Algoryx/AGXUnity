@@ -39,9 +39,9 @@ namespace AGXUnity.Sensor
     public TriaxialRangeData TriaxialRange;
 
     /// <summary>
-    /// Cross axis sensitivity
+    /// Cross axis sensitivity - how measurements in one axis affects the other axes. Ratio 0 to 1.
     /// </summary>
-    [Tooltip("Cross axis sensitivity")]
+    [Tooltip("Cross axis sensitivity - how measurements in one axis affects the other axes. Ratio 0 to 1.")]
     public float CrossAxisSensitivity;
 
     /// <summary>
