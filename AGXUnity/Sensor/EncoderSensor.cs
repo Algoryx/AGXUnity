@@ -58,7 +58,7 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     [Tooltip( "Which DoF to sample for 2-DoF constraints (Cylindrical)" )]
     [DisableInRuntimeInspector]
-    [DynamicallyShowInInspector( "HasTwoDof", true )]
+    [DynamicallyShowInInspector( nameof(HasTwoDof), true )]
     public TwoDofSample SampleTwoDof { get; set; } = TwoDofSample.Rotational;
 
     public enum WheelJointSample
@@ -71,7 +71,7 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     [Tooltip( "Which secondary constraint to sample for WheelJoint" )]
     [DisableInRuntimeInspector]
-    [DynamicallyShowInInspector( "IsWheelJoint", true )]
+    [DynamicallyShowInInspector( nameof(IsWheelJoint), true )]
     public WheelJointSample SampleWheelJoint { get; set; } = WheelJointSample.WheelAxle;
 
     /// <summary>
@@ -97,7 +97,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [Tooltip( "Gaussian noise RMS (position units: radians/meters)." )]
-    [DynamicallyShowInInspector( "EnableTotalGaussianNoise" )]
+    [DynamicallyShowInInspector( nameof(EnableTotalGaussianNoise) )]
     [DisableInRuntimeInspector]
     public float TotalGaussianNoiseRms { get; set; } = 0.0f;
 
@@ -110,7 +110,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [Tooltip( "Resolution/bin size (position units: radians/meters)." )]
-    [DynamicallyShowInInspector( "EnableSignalResolution" )]
+    [DynamicallyShowInInspector( nameof(EnableSignalResolution) )]
     [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
     public float SignalResolution { get; set; } = 0.01f;
@@ -124,7 +124,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [Tooltip( "Scaling factor applied to encoder outputs." )]
-    [DynamicallyShowInInspector( "EnableSignalScaling" )]
+    [DynamicallyShowInInspector( nameof(EnableSignalScaling) )]
     [DisableInRuntimeInspector]
     public float SignalScaling { get; set; } = 1.0f;
     [InspectorGroupEnd]

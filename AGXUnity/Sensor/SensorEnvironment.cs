@@ -58,7 +58,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Set the field vector of the uniform magnetic field used in the simulation [in Tesla]")]
     [HideInRuntimeInspector]
-    [DynamicallyShowInInspector( "UsingUniformMagneticField" )]
+    [DynamicallyShowInInspector( nameof(UsingUniformMagneticField) )]
     public Vector3 MagneticFieldVector = new Vector3( 19.462e-6f, 44.754e-6f, 7.8426e-6f );
 
     /// <summary>
@@ -66,7 +66,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Magnetic dipole moment vector [in m^2 * A]")]
     [HideInRuntimeInspector]
-    [DynamicallyShowInInspector( "UsingDipoleMagneticField" )]
+    [DynamicallyShowInInspector( nameof(UsingDipoleMagneticField) )]
     public Vector3 MagneticMoment = new Vector3( -2.69e19f, -7.65e22f, 1.5e22f );
 
     /// <summary>
@@ -74,7 +74,7 @@ namespace AGXUnity.Sensor
     /// </summary>
     [Tooltip("Magnetic dipole center")]
     [HideInRuntimeInspector]
-    [DynamicallyShowInInspector( "UsingDipoleMagneticField" )]
+    [DynamicallyShowInInspector( nameof(UsingDipoleMagneticField) )]
     public Vector3 DipoleCenter = new Vector3( 1.9e-10f, 20.79e3f, -6.369e6f );
 
     [InspectorGroupEnd]
