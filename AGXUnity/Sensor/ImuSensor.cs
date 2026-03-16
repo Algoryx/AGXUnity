@@ -278,7 +278,7 @@ namespace AGXUnity.Sensor
 
       OutputBuffer = new double[ outputCount ];
 
-      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 
       SensorEnvironment.Instance.Native.add( Native );
 
@@ -335,7 +335,7 @@ namespace AGXUnity.Sensor
       }
     }
 
-    private void OnPostStepForward()
+    private void OnPostSynchronizeTransforms()
     {
       if ( !gameObject.activeInHierarchy )
         return;
@@ -371,7 +371,7 @@ namespace AGXUnity.Sensor
         SensorEnvironment.Instance.Native?.remove( Native );
 
       if ( Simulation.HasInstance ) {
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
       }
 
       Native?.Dispose();

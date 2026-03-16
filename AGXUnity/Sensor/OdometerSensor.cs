@@ -169,7 +169,7 @@ namespace AGXUnity.Sensor
       var output = new OdometerOutputDistance();
       Native.getOutputHandler().add( m_outputID, output );
 
-      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 
       SensorEnvironment.Instance.Native.add( Native );
 
@@ -204,7 +204,7 @@ namespace AGXUnity.Sensor
       return view[ 0 ];
     }
 
-    private void OnPostStepForward()
+    private void OnPostSynchronizeTransforms()
     {
       if ( !gameObject.activeInHierarchy )
         return;
@@ -231,7 +231,7 @@ namespace AGXUnity.Sensor
         SensorEnvironment.Instance.Native?.remove( Native );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
 
       Native?.Dispose();
       Native = null;

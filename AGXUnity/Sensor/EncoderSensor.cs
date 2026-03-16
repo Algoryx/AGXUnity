@@ -225,7 +225,7 @@ namespace AGXUnity.Sensor
 
         Native.getOutputHandler().add( m_outputID, output );
 
-        Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
       }
       else {
         Debug.LogWarning( "No output configured for encoder" );
@@ -279,7 +279,7 @@ namespace AGXUnity.Sensor
     }
 
     // Will only run if there is an output
-    private void OnPostStepForward()
+    private void OnPostSynchronizeTransforms()
     {
       if ( !gameObject.activeInHierarchy || Native == null )
         return;
@@ -321,7 +321,7 @@ namespace AGXUnity.Sensor
         SensorEnvironment.Instance.Native?.remove( Native );
 
       if ( Simulation.HasInstance )
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
 
       Native?.Dispose();
       Native = null;
