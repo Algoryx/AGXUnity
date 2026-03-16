@@ -116,7 +116,7 @@ namespace AGXUnity.Sensor
     /// Accelerometer sensor attachment
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector( nameof(EnableAccelerometer) )]
+    [DynamicallyShowInInspector( nameof( EnableAccelerometer ) )]
     [DisableInRuntimeInspector]
     public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Accelerometer,
@@ -136,7 +136,7 @@ namespace AGXUnity.Sensor
     /// Gyroscope sensor attachment
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector( nameof(EnableGyroscope) )]
+    [DynamicallyShowInInspector( nameof( EnableGyroscope ) )]
     [DisableInRuntimeInspector]
     public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Gyroscope,
@@ -156,7 +156,7 @@ namespace AGXUnity.Sensor
     /// Magnetometer sensor attachment
     /// </summary>
     [field: SerializeField]
-    [DynamicallyShowInInspector( nameof(EnableMagnetometer) )]
+    [DynamicallyShowInInspector( nameof( EnableMagnetometer ) )]
     [DisableInRuntimeInspector]
     public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Magnetometer,
