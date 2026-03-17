@@ -24,7 +24,7 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.PreIntegratePositions = true;
       m_keep.Add( Simulation.Instance.gameObject );
 
-      SensorEnvironment.Instance.FieldType = SensorEnvironment.MagneticFieldType.UNIFORM;
+      SensorEnvironment.Instance.FieldType = SensorEnvironment.MagneticFieldType.Uniform;
       SensorEnvironment.Instance.MagneticFieldVector = Vector3.one;
       m_keep.Add( SensorEnvironment.Instance.gameObject );
     }
