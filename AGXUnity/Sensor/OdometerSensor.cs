@@ -80,7 +80,7 @@ namespace AGXUnity.Sensor
     [InspectorGroupEnd]
 
     [HideInInspector]
-    public bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
+    private bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
 
     [RuntimeValue] public float SensorValue { get; private set; }
 
@@ -127,7 +127,7 @@ namespace AGXUnity.Sensor
         modifiers.Add( new MonoaxialGaussianNoise( (double)TotalGaussianNoiseRms ) );
 
       if ( EnableSignalResolution )
-        modifiers.Add( new MonoaxialSignalResolution( GetSignalResolution() ) );
+        modifiers.Add( new MonoaxialSignalResolution( SignalResolution ) );
 
       if ( EnableSignalScaling )
         modifiers.Add( new MonoaxialSignalScaling( (double)SignalScaling ) );

@@ -141,10 +141,10 @@ namespace AGXUnity.Sensor
     public double SpeedBuffer { get; private set; }
 
     [HideInInspector]
-    public bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
+    private bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
 
     [HideInInspector]
-    public bool HasTwoDof => ConstraintComponent == null || ( ConstraintComponent is Constraint constraint && constraint.Type == ConstraintType.CylindricalJoint );
+    private bool HasTwoDof => ConstraintComponent == null || ( ConstraintComponent is Constraint constraint && constraint.Type == ConstraintType.CylindricalJoint );
 
     private ScriptComponent FindParentJoint()
     {
