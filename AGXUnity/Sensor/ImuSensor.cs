@@ -35,26 +35,22 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Detectable measurement range, in m/s^2 / radians/s / T
     /// </summary>
-    [Tooltip("Measurement range - values outside of range will be truncated")]
     public TriaxialRangeData TriaxialRange;
 
     /// <summary>
     /// Cross axis sensitivity - how measurements in one axis affects the other axes. Ratio 0 to 1.
     /// </summary>
-    [Tooltip("Cross axis sensitivity - how measurements in one axis affects the other axes. Ratio 0 to 1.")]
     public float CrossAxisSensitivity;
 
     /// <summary>
     /// Bias reported in each axis under conditions without externally applied transformation
     /// </summary>
-    [Tooltip("Bias reported in each axis under conditions without externally applied transformation")]
     public Vector3 ZeroBias;
 
     public bool EnableLinearAccelerationEffects = false;
     /// <summary>
     /// Applies an offset to the zero rate bias depending on the linear acceleration that the gyroscope is exposed to
     /// </summary>
-    [Tooltip("Offset to the zero rate bias depending on the linear acceleration")]
     public Vector3 LinearAccelerationEffects;
 
     public bool EnableTotalGaussianNoise = false;

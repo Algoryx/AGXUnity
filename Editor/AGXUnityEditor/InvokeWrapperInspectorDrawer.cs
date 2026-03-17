@@ -1566,8 +1566,12 @@ namespace AGXUnityEditor
       var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
       using ( new InspectorGUI.IndentScope() ) {
         data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
-        data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( "Cross Axis Sensitivity", data.CrossAxisSensitivity ) );
-        data.ZeroBias = EditorGUILayout.Vector3Field( "Zero Rate Bias", data.ZeroBias );
+        data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( GUI.MakeLabel(
+          "Cross Axis Sensitivity", false, "How measurements in one axis affects the other axes. Ratio 0 to 1." ),
+          data.CrossAxisSensitivity ) );
+        data.ZeroBias = EditorGUILayout.Vector3Field( GUI.MakeLabel(
+          "Zero Rate Bias", false, "Value reported per axis when there is no signal input (zero measurement)" ),
+          data.ZeroBias );
         EditorGUI.BeginChangeCheck();
         data.OutputFlags = OutputXYZGUI( data.OutputFlags );
         if ( EditorGUI.EndChangeCheck() )
@@ -1580,23 +1584,23 @@ namespace AGXUnityEditor
               data.EnableTotalGaussianNoise,
               data.TotalGaussianNoise,
               "Total Gaussian Noise",
-              "" );
+              "Base level noise in the measurement signal (RMS)" );
             (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
               data.EnableSignalScaling,
               data.SignalScaling,
               "Signal Scaling",
-              "" );
+              "Linear scaling to each axis of the triaxial signal" );
             (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
               data.EnableGaussianSpectralNoise,
               data.GaussianSpectralNoise,
               "Gaussian Spectral Noise",
-              "" );
+              "Gaussian noise dependent on the sample frequency" );
             if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
               (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
               data.EnableLinearAccelerationEffects,
               data.LinearAccelerationEffects,
               "Linear Acceleration Effects",
-              "" );
+              "Offset to the zero rate bias depending on the linear acceleration" );
             }
           }
         }
@@ -1626,7 +1630,9 @@ namespace AGXUnityEditor
 
     private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
     {
-      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( "Sensor Measurement Range", data.Mode );
+      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( GUI.MakeLabel(
+        "Sensor Measurement Range", false, "Measurement range - values outside of range will be truncated. Default units m/s^2, radians/s, T" ),
+        data.Mode );
 
       using ( new InspectorGUI.IndentScope() ) {
         switch ( data.Mode ) {
