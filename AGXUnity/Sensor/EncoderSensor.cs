@@ -126,9 +126,9 @@ namespace AGXUnity.Sensor
     [Tooltip( "Include speed in the output" )]
     public bool OutputSpeed { get; set; } = false;
 
-    [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
     [SerializeField]
     private bool m_enableTotalGaussianNoise = false;
+    [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
     public bool EnableTotalGaussianNoise
     {
       get => m_enableTotalGaussianNoise;
@@ -214,6 +214,7 @@ namespace AGXUnity.Sensor
         SynchronizeSignalScalingModifier();
       }
     }
+
     [InspectorGroupEnd]
 
     [RuntimeValue] public float PositionValue { get; private set; }

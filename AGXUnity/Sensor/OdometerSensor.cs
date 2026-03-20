@@ -14,6 +14,10 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://www.algoryx.se/documentation/complete/agx/tags/latest/doc/UserManual/source/agxsensor.html#odometer" )]
   public class OdometerSensor : ScriptComponent
   {
+    private const double DisabledTotalGaussianNoiseRms = 0.0;
+    private const double DisabledSignalResolution = 1e-4;
+    private const double DisabledSignalScaling = 1.0;
+
     /// <summary>
     /// Native instance
     /// </summary>
@@ -25,57 +29,114 @@ namespace AGXUnity.Sensor
     /// If left empty the component will use the first compatible parent.
     /// Compatible with: Hinge, CylindricalJoint, WheelJoint
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
     [Tooltip( "Constraint / WheelJoint component to attach odometer to: Hinge, CylindricalJoint, WheelJoint. If unset, the first compatible parent is used." )]
-    [DisableInRuntimeInspector]
     public ScriptComponent ConstraintComponent { get; set; } = null;
 
     /// <summary>
     /// Wheel radius in meters
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_wheelRadius = 0.5f;
     [Tooltip( "Wheel radius in meters" )]
-    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
-    public float WheelRadius { get; set; } = 0.5f;
+    public float WheelRadius
+    {
+      get => m_wheelRadius;
+      set
+      {
+        m_wheelRadius = value;
+        if ( Native != null )
+          Native.getModel().setWheelRadius( m_wheelRadius );
+        SynchronizeSignalResolutionModifier();
+      }
+    }
 
+    [SerializeField]
+    private bool m_enableTotalGaussianNoise = false;
     [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableTotalGaussianNoise { get; set; } = false;
+    public bool EnableTotalGaussianNoise
+    {
+      get => m_enableTotalGaussianNoise;
+      set
+      {
+        m_enableTotalGaussianNoise = value;
+        SynchronizeTotalGaussianNoiseModifier();
+      }
+    }
     /// <summary>
     /// Noise RMS in meters.
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_totalGaussianNoiseRms = 0.0f;
     [Tooltip( "Gaussian noise RMS" )]
     [DynamicallyShowInInspector( nameof(EnableTotalGaussianNoise) )]
-    [DisableInRuntimeInspector]
-    public float TotalGaussianNoiseRms { get; set; } = 0.0f;
+    public float TotalGaussianNoiseRms
+    {
+      get => m_totalGaussianNoiseRms;
+      set
+      {
+        m_totalGaussianNoiseRms = value;
+        SynchronizeTotalGaussianNoiseModifier();
+      }
+    }
 
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableSignalResolution { get; set; } = false;
+    [SerializeField]
+    private bool m_enableSignalResolution = false;
+    public bool EnableSignalResolution
+    {
+      get => m_enableSignalResolution;
+      set
+      {
+        m_enableSignalResolution = value;
+        SynchronizeSignalResolutionModifier();
+      }
+    }
     /// <summary>
     /// Pulses per wheel revolution.
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private int m_pulsesPerRevolution = 1024;
     [Tooltip( "Pulses per wheel revolution" )]
     [DynamicallyShowInInspector( nameof(EnableSignalResolution) )]
-    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
-    public int PulsesPerRevolution { get; set; } = 1024;
+    public int PulsesPerRevolution
+    {
+      get => m_pulsesPerRevolution;
+      set
+      {
+        m_pulsesPerRevolution = value;
+        SynchronizeSignalResolutionModifier();
+      }
+    }
 
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableSignalScaling { get; set; } = false;
+    [SerializeField]
+    private bool m_enableSignalScaling = false;
+    public bool EnableSignalScaling
+    {
+      get => m_enableSignalScaling;
+      set
+      {
+        m_enableSignalScaling = value;
+        SynchronizeSignalScalingModifier();
+      }
+    }
     /// <summary>
     /// Constant scaling factor.
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_signalScaling = 1.0f;
     [Tooltip( "Scaling factor applied to the distance signal" )]
     [DynamicallyShowInInspector( nameof(EnableSignalScaling) )]
-    [DisableInRuntimeInspector]
-    public float SignalScaling { get; set; } = 1.0f;
+    public float SignalScaling
+    {
+      get => m_signalScaling;
+      set
+      {
+        m_signalScaling = value;
+        SynchronizeSignalScalingModifier();
+      }
+    }
 
     [InspectorGroupEnd]
 
@@ -83,6 +144,11 @@ namespace AGXUnity.Sensor
     private bool IsWheelJoint => ConstraintComponent == null || ConstraintComponent is WheelJoint;
 
     [RuntimeValue] public float SensorValue { get; private set; }
+
+    private IMonoaxialSignalSystemNodeRefVector m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
+    private MonoaxialGaussianNoise m_totalGaussianNoiseModifier = null;
+    private MonoaxialSignalResolution m_signalResolutionModifier = null;
+    private MonoaxialSignalScaling m_signalScalingModifier = null;
 
     private uint m_outputID = 0;
     [HideInInspector]
@@ -121,18 +187,16 @@ namespace AGXUnity.Sensor
         return false;
       }
 
-      var modifiers = new IMonoaxialSignalSystemNodeRefVector();
+      m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
+      m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
+      m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
+      m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
 
-      if ( EnableTotalGaussianNoise )
-        modifiers.Add( new MonoaxialGaussianNoise( (double)TotalGaussianNoiseRms ) );
+      m_modifiers.Add( m_totalGaussianNoiseModifier );
+      m_modifiers.Add( m_signalResolutionModifier );
+      m_modifiers.Add( m_signalScalingModifier );
 
-      if ( EnableSignalResolution )
-        modifiers.Add( new MonoaxialSignalResolution( SignalResolution ) );
-
-      if ( EnableSignalScaling )
-        modifiers.Add( new MonoaxialSignalScaling( (double)SignalScaling ) );
-
-      m_nativeModel = new OdometerModel( (double)WheelRadius, modifiers );
+      m_nativeModel = new OdometerModel( (double)WheelRadius, m_modifiers );
 
       if ( m_nativeModel == null ) {
         Debug.LogWarning( "Could not create native odometer model, odometer will be inactive" );
@@ -176,7 +240,28 @@ namespace AGXUnity.Sensor
       return true;
     }
 
-    private double SignalResolution => 2.0 * System.Math.PI * WheelRadius / PulsesPerRevolution;
+    private double SignalResolutionValue => 2.0 * System.Math.PI * WheelRadius / PulsesPerRevolution;
+
+    private void SynchronizeTotalGaussianNoiseModifier()
+    {
+      m_totalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoiseRms() );
+    }
+
+    private void SynchronizeSignalResolutionModifier()
+    {
+      m_signalResolutionModifier?.setResolution( GetSignalResolutionValue() );
+    }
+
+    private void SynchronizeSignalScalingModifier()
+    {
+      m_signalScalingModifier?.setScaling( GetSignalScalingValue() );
+    }
+
+    private double GetTotalGaussianNoiseRms() => EnableTotalGaussianNoise ? TotalGaussianNoiseRms : DisabledTotalGaussianNoiseRms;
+
+    private double GetSignalResolutionValue() => EnableSignalResolution ? SignalResolutionValue : DisabledSignalResolution;
+
+    private double GetSignalScalingValue() => EnableSignalScaling ? SignalScaling : DisabledSignalScaling;
 
     private static Odometer CreateNativeOdometerFromConstraint( agx.Constraint nativeConstraint, OdometerModel model )
     {
