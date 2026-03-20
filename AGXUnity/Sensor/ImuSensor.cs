@@ -294,6 +294,10 @@ namespace AGXUnity.Sensor
         return;
       }
 
+      // Usually only at first timestep
+      if ( views.size() == 0 )
+        return;
+
       NineDoFValue view = views[ 0 ];
 
       // This is all kind of a workaround to use a ninedof buffer with an arbitrary number
@@ -333,7 +337,7 @@ namespace AGXUnity.Sensor
 
     private void OnPostSynchronizeTransforms()
     {
-      if ( !gameObject.activeInHierarchy )
+      if ( !gameObject.activeInHierarchy || Native == null )
         return;
 
       GetOutput( Native.getOutputHandler().get( m_outputID ), OutputBuffer );

@@ -25,7 +25,7 @@ namespace AGXUnity.Sensor
     /// If left empty the component will use the first compatible parent.
     /// Compatible with: Hinge, Prismatic, CylindricalJoint, WheelJoint
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
     [Tooltip( "Constraint / WheelJoint component to attach encoder to. If unset, the first compatible parent is used" )]
     [DisableInRuntimeInspector]
     public ScriptComponent ConstraintComponent { get; set; } = null;
@@ -34,10 +34,19 @@ namespace AGXUnity.Sensor
     /// Accumulation mode of the encoder
     /// INCREMENTAL wraps within the cycle range, ABSOLUTE is single-turn absolute
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private EncoderModel.Mode m_mode = EncoderModel.Mode.ABSOLUTE;
     [Tooltip( "Encoder accumulation mode. INCREMENTAL wraps within the cycle range; ABSOLUTE is single-turn absolute" )]
-    [DisableInRuntimeInspector]
-    public EncoderModel.Mode Mode { get; set; } = EncoderModel.Mode.ABSOLUTE;
+    public EncoderModel.Mode Mode
+    {
+      get => m_mode;
+      set
+      {
+        m_mode = value;
+        if ( Native != null )
+          Native.getModel().setMode( m_mode );
+      }
+    }
 
     /// <summary>
     /// Cycle range [min, max] in sensor units.
@@ -46,8 +55,17 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [Tooltip( "Cycle range [min, max] in sensor units. Rotary: radians (commonly [0, 2π]). Linear: meters." )]
-    [DisableInRuntimeInspector]
-    public RangeReal MeasurementRange { get; set; } = new RangeReal( float.MinValue, float.MaxValue );
+    private RangeReal m_measurementRange = new RangeReal( float.MinValue, float.MaxValue );
+    public RangeReal MeasurementRange
+    {
+      get => m_measurementRange;
+      set
+      {
+        m_measurementRange = value;
+        if ( Native != null )
+          Native.getModel().setRange( m_measurementRange.Native );
+      }
+    }
 
     public enum TwoDofSample
     {
@@ -55,11 +73,20 @@ namespace AGXUnity.Sensor
       Translational
     }
 
-    [field: SerializeField]
+    [SerializeField]
+    private TwoDofSample m_sampleTwoDof = TwoDofSample.Rotational;
     [Tooltip( "Which DoF to sample for 2-DoF constraints (Cylindrical)" )]
-    [DisableInRuntimeInspector]
     [DynamicallyShowInInspector( nameof( HasTwoDof ), true )]
-    public TwoDofSample SampleTwoDof { get; set; } = TwoDofSample.Rotational;
+    public TwoDofSample SampleTwoDof
+    {
+      get => m_sampleTwoDof;
+      set
+      {
+        m_sampleTwoDof = value;
+        if ( Native != null && Native.getConstraint() is agx.CylindricalJoint )
+          Native.setConstraintSampleDof( (ulong)ToConstraint2Dof( m_sampleTwoDof ) );
+      }
+    }
 
     public enum WheelJointSample
     {
@@ -68,23 +95,31 @@ namespace AGXUnity.Sensor
       Suspension
     }
 
-    [field: SerializeField]
+    [SerializeField]
+    private WheelJointSample m_sampleWheelJoint = WheelJointSample.WheelAxle;
     [Tooltip( "Which secondary constraint to sample for WheelJoint" )]
     [DisableInRuntimeInspector]
     [DynamicallyShowInInspector( nameof( IsWheelJoint ), true )]
-    public WheelJointSample SampleWheelJoint { get; set; } = WheelJointSample.WheelAxle;
+    public WheelJointSample SampleWheelJoint
+    {
+      get => m_sampleWheelJoint;
+      set
+      {
+        m_sampleWheelJoint = value;
+        if ( Native != null && Native.getConstraint() is agxVehicle.WheelJoint )
+          Native.setConstraintSampleDof( (ulong)ToWheelSecondaryConstraint( m_sampleWheelJoint ) );
+      }
+    }
 
     /// <summary>
     /// Output selection
     /// </summary>
     [field: SerializeField]
     [Tooltip( "Include position in the output" )]
-    [DisableInRuntimeInspector]
     public bool OutputPosition { get; set; } = true;
 
     [field: SerializeField]
     [Tooltip( "Include speed in the output" )]
-    [DisableInRuntimeInspector]
     public bool OutputSpeed { get; set; } = false;
 
     [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]

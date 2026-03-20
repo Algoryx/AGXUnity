@@ -198,7 +198,11 @@ namespace AGXUnity.Sensor
         return 0;
 
       var view = output.view();
-      return view[ 0 ];
+
+      if ( view.size() > 0 )
+        return view[ 0 ];
+      else
+        return 0;
     }
 
     private void OnPostSynchronizeTransforms()
