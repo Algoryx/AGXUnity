@@ -14,6 +14,10 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://www.algoryx.se/documentation/complete/agx/tags/latest/doc/UserManual/source/agxsensor.html#encoder" )]
   public class EncoderSensor : ScriptComponent
   {
+    private const double DisabledTotalGaussianNoiseRms = 0.0;
+    private const double DisabledSignalResolution = 1e-4; // TODO hard to give this a good default value...
+    private const double DisabledSignalScaling = 1.0;
+
     /// <summary>
     /// Native instance
     /// </summary>
@@ -123,49 +127,102 @@ namespace AGXUnity.Sensor
     public bool OutputSpeed { get; set; } = false;
 
     [InspectorGroupBegin( Name = "Modifiers", DefaultExpanded = true )]
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableTotalGaussianNoise { get; set; } = false;
+    [SerializeField]
+    private bool m_enableTotalGaussianNoise = false;
+    public bool EnableTotalGaussianNoise
+    {
+      get => m_enableTotalGaussianNoise;
+      set
+      {
+        m_enableTotalGaussianNoise = value;
+        SynchronizeTotalGaussianNoiseModifier();
+      }
+    }
 
     /// <summary>
     /// Noise RMS in sensor units (position units: radians/meters).
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_totalGaussianNoiseRms = 0.0f;
     [Tooltip( "Gaussian noise RMS (position units: radians/meters)." )]
     [DynamicallyShowInInspector( nameof( EnableTotalGaussianNoise ) )]
-    [DisableInRuntimeInspector]
-    public float TotalGaussianNoiseRms { get; set; } = 0.0f;
+    public float TotalGaussianNoiseRms
+    {
+      get => m_totalGaussianNoiseRms;
+      set
+      {
+        m_totalGaussianNoiseRms = value;
+        SynchronizeTotalGaussianNoiseModifier();
+      }
+    }
 
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableSignalResolution { get; set; } = false;
+    [SerializeField]
+    private bool m_enableSignalResolution = false;
+    public bool EnableSignalResolution
+    {
+      get => m_enableSignalResolution;
+      set
+      {
+        m_enableSignalResolution = value;
+        SynchronizeSignalResolutionModifier();
+      }
+    }
 
     /// <summary>
     /// Resolution/bin size in sensor units (position units: radians/meters).
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_signalResolution = 0.01f;
     [Tooltip( "Resolution/bin size (position units: radians/meters)." )]
     [DynamicallyShowInInspector( nameof( EnableSignalResolution ) )]
-    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
-    public float SignalResolution { get; set; } = 0.01f;
+    public float SignalResolution
+    {
+      get => m_signalResolution;
+      set
+      {
+        m_signalResolution = value;
+        SynchronizeSignalResolutionModifier();
+      }
+    }
 
-    [field: SerializeField]
-    [DisableInRuntimeInspector]
-    public bool EnableSignalScaling { get; set; } = false;
+    [SerializeField]
+    private bool m_enableSignalScaling = false;
+    public bool EnableSignalScaling
+    {
+      get => m_enableSignalScaling;
+      set
+      {
+        m_enableSignalScaling = value;
+        SynchronizeSignalScalingModifier();
+      }
+    }
 
     /// <summary>
     /// Constant scaling factor.
     /// </summary>
-    [field: SerializeField]
+    [SerializeField]
+    private float m_signalScaling = 1.0f;
     [Tooltip( "Scaling factor applied to encoder outputs." )]
     [DynamicallyShowInInspector( nameof( EnableSignalScaling ) )]
-    [DisableInRuntimeInspector]
-    public float SignalScaling { get; set; } = 1.0f;
+    public float SignalScaling
+    {
+      get => m_signalScaling;
+      set
+      {
+        m_signalScaling = value;
+        SynchronizeSignalScalingModifier();
+      }
+    }
     [InspectorGroupEnd]
 
     [RuntimeValue] public float PositionValue { get; private set; }
     [RuntimeValue] public float SpeedValue { get; private set; }
+
+    private IMonoaxialSignalSystemNodeRefVector m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
+    private MonoaxialGaussianNoise m_totalGaussianNoiseModifier = null;
+    private MonoaxialSignalResolution m_signalResolutionModifier = null;
+    private MonoaxialSignalScaling m_signalScalingModifier = null;
 
     private uint m_outputID = 0;
 
@@ -180,6 +237,28 @@ namespace AGXUnity.Sensor
 
     [HideInInspector]
     private bool HasTwoDof => ConstraintComponent == null || ( ConstraintComponent is Constraint constraint && constraint.Type == ConstraintType.CylindricalJoint );
+
+    private void SynchronizeTotalGaussianNoiseModifier()
+    {
+      m_totalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoiseRms() );
+    }
+
+    private void SynchronizeSignalResolutionModifier()
+    {
+      m_signalResolutionModifier?.setResolution( GetSignalResolutionValue() );
+    }
+
+    private void SynchronizeSignalScalingModifier()
+    {
+      m_signalScalingModifier?.setScaling( GetSignalScalingValue() );
+    }
+
+    private double GetTotalGaussianNoiseRms() => EnableTotalGaussianNoise ? TotalGaussianNoiseRms : DisabledTotalGaussianNoiseRms;
+
+    private double GetSignalResolutionValue() => EnableSignalResolution ? SignalResolution : DisabledSignalResolution;
+
+    private double GetSignalScalingValue() => EnableSignalScaling ? SignalScaling : DisabledSignalScaling;
+
 
     private ScriptComponent FindParentJoint()
     {
@@ -209,18 +288,16 @@ namespace AGXUnity.Sensor
         return false;
       }
 
-      var modifiers = new IMonoaxialSignalSystemNodeRefVector();
+      m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
+      m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
+      m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
+      m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
 
-      if ( EnableTotalGaussianNoise )
-        modifiers.Add( new MonoaxialGaussianNoise( (double)TotalGaussianNoiseRms ) );
+      m_modifiers.Add( m_totalGaussianNoiseModifier );
+      m_modifiers.Add( m_signalResolutionModifier );
+      m_modifiers.Add( m_signalScalingModifier );
 
-      if ( EnableSignalResolution )
-        modifiers.Add( new MonoaxialSignalResolution( (double)SignalResolution ) );
-
-      if ( EnableSignalScaling )
-        modifiers.Add( new MonoaxialSignalScaling( (double)SignalScaling ) );
-
-      m_nativeModel = new EncoderModel( Mode, MeasurementRange.Native, modifiers );
+      m_nativeModel = new EncoderModel( Mode, MeasurementRange.Native, m_modifiers );
 
       if ( m_nativeModel == null ) {
         Debug.LogWarning( "Could not create native encoder model, encoder will be inactive" );
