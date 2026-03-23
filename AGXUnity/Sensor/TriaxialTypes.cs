@@ -9,6 +9,9 @@ namespace AGXUnity.Sensor
   [Serializable]
   public class TriaxialRangeData
   {
+    [NonSerialized]
+    private Action m_onChanged = null;
+
     public enum ConfigurationMode
     {
       MaxRange,
@@ -17,15 +20,69 @@ namespace AGXUnity.Sensor
     }
 
     [SerializeField]
-    public ConfigurationMode Mode = ConfigurationMode.MaxRange;
+    private ConfigurationMode m_mode = ConfigurationMode.MaxRange;
+    public ConfigurationMode Mode
+    {
+      get => m_mode;
+      set
+      {
+        m_mode = value;
+        m_onChanged?.Invoke();
+      }
+    }
 
     [SerializeField]
-    public Vector2 EqualAxesRange = new(float.MinValue, float.MaxValue);
+    private Vector2 m_equalAxesRange = new( float.MinValue, float.MaxValue );
+    public Vector2 EqualAxesRange
+    {
+      get => m_equalAxesRange;
+      set
+      {
+        m_equalAxesRange = value;
+        m_onChanged?.Invoke();
+      }
+    }
 
     [SerializeField]
-    public Vector2 RangeX = new(float.MinValue, float.MaxValue);
-    public Vector2 RangeY = new(float.MinValue, float.MaxValue);
-    public Vector2 RangeZ = new(float.MinValue, float.MaxValue);
+    private Vector2 m_rangeX = new( float.MinValue, float.MaxValue );
+    public Vector2 RangeX
+    {
+      get => m_rangeX;
+      set
+      {
+        m_rangeX = value;
+        m_onChanged?.Invoke();
+      }
+    }
+
+    [SerializeField]
+    private Vector2 m_rangeY = new( float.MinValue, float.MaxValue );
+    public Vector2 RangeY
+    {
+      get => m_rangeY;
+      set
+      {
+        m_rangeY = value;
+        m_onChanged?.Invoke();
+      }
+    }
+
+    [SerializeField]
+    private Vector2 m_rangeZ = new( float.MinValue, float.MaxValue );
+    public Vector2 RangeZ
+    {
+      get => m_rangeZ;
+      set
+      {
+        m_rangeZ = value;
+        m_onChanged?.Invoke();
+      }
+    }
+
+    internal void SetOnChanged( Action onChanged )
+    {
+      m_onChanged = onChanged;
+    }
 
     public agxSensor.TriaxialRange GenerateTriaxialRange()
     {

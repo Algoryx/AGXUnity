@@ -19,6 +19,11 @@ namespace AGXUnity.Sensor
   // Data class to store IMU sensor attachment configuration
   public class ImuAttachment
   {
+    [NonSerialized]
+    private Action m_onBaseSettingsChanged = null;
+    [NonSerialized]
+    private Action m_onModifierSettingsChanged = null;
+
     public enum ImuAttachmentType
     {
       Accelerometer,
@@ -35,41 +40,152 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// Detectable measurement range, in m/s^2 / radians/s / T
     /// </summary>
-    public TriaxialRangeData TriaxialRange;
+    [SerializeField]
+    private TriaxialRangeData m_triaxialRange;
+    public TriaxialRangeData TriaxialRange
+    {
+      get => m_triaxialRange;
+      set
+      {
+        m_triaxialRange = value;
+        m_triaxialRange?.SetOnChanged( m_onBaseSettingsChanged );
+        m_onBaseSettingsChanged?.Invoke();
+      }
+    }
 
     /// <summary>
     /// Cross axis sensitivity - how measurements in one axis affects the other axes. Ratio 0 to 1.
     /// </summary>
-    public float CrossAxisSensitivity;
+    [SerializeField]
+    private float m_crossAxisSensitivity;
+    public float CrossAxisSensitivity
+    {
+      get => m_crossAxisSensitivity;
+      set
+      {
+        m_crossAxisSensitivity = value;
+        m_onBaseSettingsChanged?.Invoke();
+      }
+    }
 
     /// <summary>
     /// Bias reported in each axis under conditions without externally applied transformation
     /// </summary>
-    public Vector3 ZeroBias;
+    [SerializeField]
+    private Vector3 m_zeroBias;
+    public Vector3 ZeroBias
+    {
+      get => m_zeroBias;
+      set
+      {
+        m_zeroBias = value;
+        m_onBaseSettingsChanged?.Invoke();
+      }
+    }
 
-    public bool EnableLinearAccelerationEffects = false;
+    [SerializeField]
+    private bool m_enableLinearAccelerationEffects = false;
+    public bool EnableLinearAccelerationEffects
+    {
+      get => m_enableLinearAccelerationEffects;
+      set
+      {
+        m_enableLinearAccelerationEffects = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
     /// <summary>
     /// Applies an offset to the zero rate bias depending on the linear acceleration that the gyroscope is exposed to
     /// </summary>
-    public Vector3 LinearAccelerationEffects;
+    [SerializeField]
+    private Vector3 m_linearAccelerationEffects;
+    public Vector3 LinearAccelerationEffects
+    {
+      get => m_linearAccelerationEffects;
+      set
+      {
+        m_linearAccelerationEffects = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
 
-    public bool EnableTotalGaussianNoise = false;
+    [SerializeField]
+    private bool m_enableTotalGaussianNoise = false;
+    public bool EnableTotalGaussianNoise
+    {
+      get => m_enableTotalGaussianNoise;
+      set
+      {
+        m_enableTotalGaussianNoise = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
     /// <summary>
     /// Base level noise in the measurement signal 
     /// </summary>
-    public Vector3 TotalGaussianNoise;
+    [SerializeField]
+    private Vector3 m_totalGaussianNoise = Vector3.zero;
+    public Vector3 TotalGaussianNoise
+    {
+      get => m_totalGaussianNoise;
+      set
+      {
+        m_totalGaussianNoise = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
 
-    public bool EnableSignalScaling = false;
+    [SerializeField]
+    private bool m_enableSignalScaling = false;
+    public bool EnableSignalScaling
+    {
+      get => m_enableSignalScaling;
+      set
+      {
+        m_enableSignalScaling = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
     /// <summary>
     /// Constant scaling to the triaxial signal
     /// </summary>
-    public Vector3 SignalScaling = Vector3.one;
+    [SerializeField]
+    private Vector3 m_signalScaling = Vector3.one;
+    public Vector3 SignalScaling
+    {
+      get => m_signalScaling;
+      set
+      {
+        m_signalScaling = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
 
-    public bool EnableGaussianSpectralNoise = false;
+    [SerializeField]
+    private bool m_enableGaussianSpectralNoise = false;
+    public bool EnableGaussianSpectralNoise
+    {
+      get => m_enableGaussianSpectralNoise;
+      set
+      {
+        m_enableGaussianSpectralNoise = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
     /// <summary>
     /// Sample frequency dependent Gaussian noise
     /// </summary>
-    public Vector3 GaussianSpectralNoise;
+    [SerializeField]
+    private Vector3 m_gaussianSpectralNoise = Vector3.zero;
+    public Vector3 GaussianSpectralNoise
+    {
+      get => m_gaussianSpectralNoise;
+      set
+      {
+        m_gaussianSpectralNoise = value;
+        m_onModifierSettingsChanged?.Invoke();
+      }
+    }
 
     /// <summary>
     /// Output flags - which, if any, of x y z should be used in output view
@@ -84,6 +200,13 @@ namespace AGXUnity.Sensor
       CrossAxisSensitivity = crossAxisSensitivity;
       ZeroBias = zeroRateBias;
     }
+
+    internal void SetRuntimeCallbacks( Action onBaseSettingsChanged, Action onModifierSettingsChanged )
+    {
+      m_onBaseSettingsChanged = onBaseSettingsChanged;
+      m_onModifierSettingsChanged = onModifierSettingsChanged;
+      m_triaxialRange?.SetOnChanged( m_onBaseSettingsChanged );
+    }
   }
 
   /// <summary>
@@ -94,11 +217,37 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-imu-sensors" )]
   public class ImuSensor : ScriptComponent
   {
+    private static readonly Vector3 DisabledTotalGaussianNoise = Vector3.zero;
+    private static readonly Vector3 DisabledSignalScaling = Vector3.one;
+    private static readonly Vector3 DisabledGaussianSpectralNoise = Vector3.zero;
+    private static readonly Vector3 DisabledLinearAccelerationEffects = Vector3.zero;
+
     /// <summary>
     /// Native instance, created in Start/Initialize.
     /// </summary>
     public IMU Native { get; private set; } = null;
     private IMUModel m_nativeModel = null;
+
+    private AccelerometerModel m_accelerometerModel = null;
+    private GyroscopeModel m_gyroscopeModel = null;
+    private MagnetometerModel m_magnetometerModel = null;
+
+    private ITriaxialSignalSystemNodeRefVector m_accelerometerModifiers = null;
+    private ITriaxialSignalSystemNodeRefVector m_gyroscopeModifiers = null;
+    private ITriaxialSignalSystemNodeRefVector m_magnetometerModifiers = null;
+
+    private TriaxialGaussianNoise m_accelerometerTotalGaussianNoiseModifier = null;
+    private TriaxialSignalScaling m_accelerometerSignalScalingModifier = null;
+    private TriaxialSpectralGaussianNoise m_accelerometerGaussianSpectralNoiseModifier = null;
+
+    private TriaxialGaussianNoise m_gyroscopeTotalGaussianNoiseModifier = null;
+    private TriaxialSignalScaling m_gyroscopeSignalScalingModifier = null;
+    private TriaxialSpectralGaussianNoise m_gyroscopeGaussianSpectralNoiseModifier = null;
+    private GyroscopeLinearAccelerationEffects m_gyroscopeLinearAccelerationEffectsModifier = null;
+
+    private TriaxialGaussianNoise m_magnetometerTotalGaussianNoiseModifier = null;
+    private TriaxialSignalScaling m_magnetometerSignalScalingModifier = null;
+    private TriaxialSpectralGaussianNoise m_magnetometerGaussianSpectralNoiseModifier = null;
 
     /// <summary>
     /// When enabled, show configuration for the IMU attachment and create attachment when initializing object
@@ -113,7 +262,6 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( nameof( EnableAccelerometer ) )]
-    [DisableInRuntimeInspector]
     public ImuAttachment AccelerometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Accelerometer,
       new TriaxialRangeData(),
@@ -133,7 +281,6 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( nameof( EnableGyroscope ) )]
-    [DisableInRuntimeInspector]
     public ImuAttachment GyroscopeAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Gyroscope,
       new TriaxialRangeData(),
@@ -153,7 +300,6 @@ namespace AGXUnity.Sensor
     /// </summary>
     [field: SerializeField]
     [DynamicallyShowInInspector( nameof( EnableMagnetometer ) )]
-    [DisableInRuntimeInspector]
     public ImuAttachment MagnetometerAttachment { get; private set; } = new ImuAttachment(
       ImuAttachment.ImuAttachmentType.Magnetometer,
       new TriaxialRangeData(),
@@ -172,6 +318,10 @@ namespace AGXUnity.Sensor
     {
       SensorEnvironment.Instance.GetInitialized();
 
+      AccelerometerAttachment.SetRuntimeCallbacks( SynchronizeAccelerometerSettings, SynchronizeAccelerometerModifiers );
+      GyroscopeAttachment.SetRuntimeCallbacks( SynchronizeGyroscopeSettings, SynchronizeGyroscopeModifiers );
+      MagnetometerAttachment.SetRuntimeCallbacks( SynchronizeMagnetometerSettings, SynchronizeMagnetometerModifiers );
+
       var rigidBody = GetComponentInParent<RigidBody>();
       if ( rigidBody == null ) {
         Debug.LogWarning( "No Rigidbody found in this object or parents, IMU will be inactive" );
@@ -179,63 +329,68 @@ namespace AGXUnity.Sensor
       }
       TrackedRigidBody = rigidBody;
 
-      Func<ImuAttachment, ITriaxialSignalSystemNodeRefVector> buildModifiers = a =>
-      {
-        var modifiers = new ITriaxialSignalSystemNodeRefVector();
-
-        if ( a.EnableTotalGaussianNoise )
-          modifiers.Add(new TriaxialGaussianNoise(a.TotalGaussianNoise.ToHandedVec3()));
-        if ( a.EnableSignalScaling )
-          modifiers.Add(new TriaxialSignalScaling(a.SignalScaling.ToHandedVec3()));
-        if ( a.EnableGaussianSpectralNoise )
-          modifiers.Add(new TriaxialSpectralGaussianNoise(a.GaussianSpectralNoise.ToHandedVec3()) );
-        if ( a.EnableLinearAccelerationEffects && a.Type == ImuAttachment.ImuAttachmentType.Gyroscope )
-          modifiers.Add( new GyroscopeLinearAccelerationEffects(a.LinearAccelerationEffects.ToHandedVec3()) );
-
-        return modifiers;
-      };
       var imu_attachments = new IMUModelSensorAttachmentRefVector();
 
       // Accelerometer
       if ( EnableAccelerometer ) {
-        var modifiers = buildModifiers(AccelerometerAttachment);
+        m_accelerometerModifiers = CreateModifiersVectorForAttachment( AccelerometerAttachment );
+        m_accelerometerTotalGaussianNoiseModifier = new TriaxialGaussianNoise( GetTotalGaussianNoise( AccelerometerAttachment ).ToHandedVec3() );
+        m_accelerometerSignalScalingModifier = new TriaxialSignalScaling( GetSignalScaling( AccelerometerAttachment ).ToHandedVec3() );
+        m_accelerometerGaussianSpectralNoiseModifier = new TriaxialSpectralGaussianNoise( GetGaussianSpectralNoise( AccelerometerAttachment ).ToHandedVec3() );
+        m_accelerometerModifiers.Add( m_accelerometerTotalGaussianNoiseModifier );
+        m_accelerometerModifiers.Add( m_accelerometerSignalScalingModifier );
+        m_accelerometerModifiers.Add( m_accelerometerGaussianSpectralNoiseModifier );
 
-        var accelerometer = new AccelerometerModel(
+        m_accelerometerModel = new AccelerometerModel(
           AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ),
           AccelerometerAttachment.ZeroBias.ToHandedVec3(),
-          modifiers
+          m_accelerometerModifiers
         );
 
-        imu_attachments.Add( new IMUModelAccelerometerAttachment( AffineMatrix4x4.identity(), accelerometer ) );
+        imu_attachments.Add( new IMUModelAccelerometerAttachment( AffineMatrix4x4.identity(), m_accelerometerModel ) );
       }
 
       // Gyroscope
       if ( EnableGyroscope ) {
-        var modifiers = buildModifiers(GyroscopeAttachment);
+        m_gyroscopeModifiers = CreateModifiersVectorForAttachment( GyroscopeAttachment );
+        m_gyroscopeTotalGaussianNoiseModifier = new TriaxialGaussianNoise( GetTotalGaussianNoise( GyroscopeAttachment ).ToHandedVec3() );
+        m_gyroscopeSignalScalingModifier = new TriaxialSignalScaling( GetSignalScaling( GyroscopeAttachment ).ToHandedVec3() );
+        m_gyroscopeGaussianSpectralNoiseModifier = new TriaxialSpectralGaussianNoise( GetGaussianSpectralNoise( GyroscopeAttachment ).ToHandedVec3() );
+        m_gyroscopeLinearAccelerationEffectsModifier = new GyroscopeLinearAccelerationEffects( GetLinearAccelerationEffects( GyroscopeAttachment ).ToHandedVec3() );
+        m_gyroscopeModifiers.Add( m_gyroscopeTotalGaussianNoiseModifier );
+        m_gyroscopeModifiers.Add( m_gyroscopeSignalScalingModifier );
+        m_gyroscopeModifiers.Add( m_gyroscopeGaussianSpectralNoiseModifier );
+        m_gyroscopeModifiers.Add( m_gyroscopeLinearAccelerationEffectsModifier );
 
-        var gyroscope = new GyroscopeModel(
+        m_gyroscopeModel = new GyroscopeModel(
           GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ),
           GyroscopeAttachment.ZeroBias.ToHandedVec3(),
-          modifiers
+          m_gyroscopeModifiers
         );
 
-        imu_attachments.Add( new IMUModelGyroscopeAttachment( AffineMatrix4x4.identity(), gyroscope ) );
+        imu_attachments.Add( new IMUModelGyroscopeAttachment( AffineMatrix4x4.identity(), m_gyroscopeModel ) );
       }
 
       // Magnetometer
       if ( EnableMagnetometer ) {
-        var modifiers = buildModifiers(MagnetometerAttachment);
+        m_magnetometerModifiers = CreateModifiersVectorForAttachment( MagnetometerAttachment );
+        m_magnetometerTotalGaussianNoiseModifier = new TriaxialGaussianNoise( GetTotalGaussianNoise( MagnetometerAttachment ).ToHandedVec3() );
+        m_magnetometerSignalScalingModifier = new TriaxialSignalScaling( GetSignalScaling( MagnetometerAttachment ).ToHandedVec3() );
+        m_magnetometerGaussianSpectralNoiseModifier = new TriaxialSpectralGaussianNoise( GetGaussianSpectralNoise( MagnetometerAttachment ).ToHandedVec3() );
+        m_magnetometerModifiers.Add( m_magnetometerTotalGaussianNoiseModifier );
+        m_magnetometerModifiers.Add( m_magnetometerSignalScalingModifier );
+        m_magnetometerModifiers.Add( m_magnetometerGaussianSpectralNoiseModifier );
 
-        var magnetometer = new MagnetometerModel(
+        m_magnetometerModel = new MagnetometerModel(
           MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange(),
           new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ),
           MagnetometerAttachment.ZeroBias.ToHandedVec3(),
-          modifiers
+          m_magnetometerModifiers
         );
 
-        imu_attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), magnetometer ) );
+        imu_attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), m_magnetometerModel ) );
       }
 
       if ( imu_attachments.Count == 0 ) {
@@ -280,6 +435,71 @@ namespace AGXUnity.Sensor
 
       return true;
     }
+
+    private static ITriaxialSignalSystemNodeRefVector CreateModifiersVectorForAttachment( ImuAttachment attachment )
+    {
+      return new ITriaxialSignalSystemNodeRefVector();
+    }
+
+    private void SynchronizeAccelerometerSettings()
+    {
+      if ( m_accelerometerModel == null )
+        return;
+
+      m_accelerometerModel.setRange( AccelerometerAttachment.TriaxialRange.GenerateTriaxialRange() );
+      m_accelerometerModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( AccelerometerAttachment.CrossAxisSensitivity ) );
+      m_accelerometerModel.setZeroGBias( AccelerometerAttachment.ZeroBias.ToHandedVec3() );
+    }
+
+    private void SynchronizeGyroscopeSettings()
+    {
+      if ( m_gyroscopeModel == null )
+        return;
+
+      m_gyroscopeModel.setRange( GyroscopeAttachment.TriaxialRange.GenerateTriaxialRange() );
+      m_gyroscopeModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( GyroscopeAttachment.CrossAxisSensitivity ) );
+      m_gyroscopeModel.setZeroRateBias( GyroscopeAttachment.ZeroBias.ToHandedVec3() );
+    }
+
+    private void SynchronizeMagnetometerSettings()
+    {
+      if ( m_magnetometerModel == null )
+        return;
+
+      m_magnetometerModel.setRange( MagnetometerAttachment.TriaxialRange.GenerateTriaxialRange() );
+      m_magnetometerModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( MagnetometerAttachment.CrossAxisSensitivity ) );
+      m_magnetometerModel.setZeroFluxBias( MagnetometerAttachment.ZeroBias.ToHandedVec3() );
+    }
+
+    private void SynchronizeAccelerometerModifiers()
+    {
+      m_accelerometerTotalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoise( AccelerometerAttachment ).ToHandedVec3() );
+      m_accelerometerSignalScalingModifier?.setScaling( GetSignalScaling( AccelerometerAttachment ).ToHandedVec3() );
+      m_accelerometerGaussianSpectralNoiseModifier?.setNoiseDensity( GetGaussianSpectralNoise( AccelerometerAttachment ).ToHandedVec3() );
+    }
+
+    private void SynchronizeGyroscopeModifiers()
+    {
+      m_gyroscopeTotalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoise( GyroscopeAttachment ).ToHandedVec3() );
+      m_gyroscopeSignalScalingModifier?.setScaling( GetSignalScaling( GyroscopeAttachment ).ToHandedVec3() );
+      m_gyroscopeGaussianSpectralNoiseModifier?.setNoiseDensity( GetGaussianSpectralNoise( GyroscopeAttachment ).ToHandedVec3() );
+      m_gyroscopeLinearAccelerationEffectsModifier?.setAccelerationEffects( GetLinearAccelerationEffects( GyroscopeAttachment ).ToHandedVec3() );
+    }
+
+    private void SynchronizeMagnetometerModifiers()
+    {
+      m_magnetometerTotalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoise( MagnetometerAttachment ).ToHandedVec3() );
+      m_magnetometerSignalScalingModifier?.setScaling( GetSignalScaling( MagnetometerAttachment ).ToHandedVec3() );
+      m_magnetometerGaussianSpectralNoiseModifier?.setNoiseDensity( GetGaussianSpectralNoise( MagnetometerAttachment ).ToHandedVec3() );
+    }
+
+    private static Vector3 GetTotalGaussianNoise( ImuAttachment attachment ) => attachment.EnableTotalGaussianNoise ? attachment.TotalGaussianNoise : DisabledTotalGaussianNoise;
+
+    private static Vector3 GetSignalScaling( ImuAttachment attachment ) => attachment.EnableSignalScaling ? attachment.SignalScaling : DisabledSignalScaling;
+
+    private static Vector3 GetGaussianSpectralNoise( ImuAttachment attachment ) => attachment.EnableGaussianSpectralNoise ? attachment.GaussianSpectralNoise : DisabledGaussianSpectralNoise;
+
+    private static Vector3 GetLinearAccelerationEffects( ImuAttachment attachment ) => attachment.EnableLinearAccelerationEffects ? attachment.LinearAccelerationEffects : DisabledLinearAccelerationEffects;
 
     private void GetOutput( IMUOutput output, double[] buffer )
     {
