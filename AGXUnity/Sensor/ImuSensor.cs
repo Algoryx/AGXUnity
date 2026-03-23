@@ -427,8 +427,6 @@ namespace AGXUnity.Sensor
 
       OutputBuffer = new double[ outputCount ];
 
-      PropertySynchronizer.Synchronize( this );
-
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 
       SensorEnvironment.Instance.Native.add( Native );

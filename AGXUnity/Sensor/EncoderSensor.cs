@@ -342,8 +342,6 @@ namespace AGXUnity.Sensor
         Debug.LogWarning( "No output configured for encoder" );
       }
 
-      PropertySynchronizer.Synchronize( this );
-
       SensorEnvironment.Instance.Native.add( Native );
 
       return true;

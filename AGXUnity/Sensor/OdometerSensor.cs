@@ -231,8 +231,6 @@ namespace AGXUnity.Sensor
       var output = new OdometerOutputDistance();
       Native.getOutputHandler().add( m_outputID, output );
 
-      PropertySynchronizer.Synchronize( this );
-
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
 
       SensorEnvironment.Instance.Native.add( Native );
