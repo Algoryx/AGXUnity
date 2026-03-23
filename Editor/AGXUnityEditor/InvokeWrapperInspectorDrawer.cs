@@ -1655,8 +1655,10 @@ namespace AGXUnityEditor
     {
       var skin = InspectorEditor.Skin;
 
+      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+
       using ( new EditorGUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false ),
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false, "Disabled during runtime" ),
                                       InspectorEditor.Skin.LabelMiddleLeft );
 
         var xEnabled = state.HasFlag(OutputXYZ.X);
