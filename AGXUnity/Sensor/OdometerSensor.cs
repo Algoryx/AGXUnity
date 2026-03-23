@@ -45,7 +45,7 @@ namespace AGXUnity.Sensor
       get => m_wheelRadius;
       set
       {
-        m_wheelRadius = value;
+        m_wheelRadius = value > 0 ? value : m_wheelRadius;
         if ( Native != null )
           Native.getModel().setWheelRadius( m_wheelRadius );
         SynchronizeSignalResolutionModifier();
@@ -105,7 +105,7 @@ namespace AGXUnity.Sensor
       get => m_pulsesPerRevolution;
       set
       {
-        m_pulsesPerRevolution = value;
+        m_pulsesPerRevolution = value > 0 ? value : m_pulsesPerRevolution;
         SynchronizeSignalResolutionModifier();
       }
     }

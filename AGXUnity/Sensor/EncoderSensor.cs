@@ -181,7 +181,7 @@ namespace AGXUnity.Sensor
       get => m_signalResolution;
       set
       {
-        m_signalResolution = value;
+        m_signalResolution = value > 0 ? value : m_signalResolution;
         SynchronizeSignalResolutionModifier();
       }
     }
