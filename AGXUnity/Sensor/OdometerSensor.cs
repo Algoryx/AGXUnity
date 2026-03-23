@@ -70,7 +70,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_totalGaussianNoiseRms = 0.0f;
     [Tooltip( "Gaussian noise RMS" )]
-    [DynamicallyShowInInspector( nameof(EnableTotalGaussianNoise) )]
+    [DynamicallyShowInInspector( nameof( EnableTotalGaussianNoise ) )]
     public float TotalGaussianNoiseRms
     {
       get => m_totalGaussianNoiseRms;
@@ -98,7 +98,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private int m_pulsesPerRevolution = 1024;
     [Tooltip( "Pulses per wheel revolution" )]
-    [DynamicallyShowInInspector( nameof(EnableSignalResolution) )]
+    [DynamicallyShowInInspector( nameof( EnableSignalResolution ) )]
     [ClampAboveZeroInInspector]
     public int PulsesPerRevolution
     {
@@ -127,7 +127,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_signalScaling = 1.0f;
     [Tooltip( "Scaling factor applied to the distance signal" )]
-    [DynamicallyShowInInspector( nameof(EnableSignalScaling) )]
+    [DynamicallyShowInInspector( nameof( EnableSignalScaling ) )]
     public float SignalScaling
     {
       get => m_signalScaling;
