@@ -436,25 +436,5 @@ namespace AGXUnity.Sensor
 
       base.OnDestroy();
     }
-
-    [NonSerialized]
-    private Mesh m_nodeGizmoMesh = null;
-
-    private void OnDrawGizmosSelected()
-    {
-#if UNITY_EDITOR
-      if ( m_nodeGizmoMesh == null )
-        m_nodeGizmoMesh = Resources.Load<Mesh>( @"Debug/Models/Icosahedron" );
-
-      if ( m_nodeGizmoMesh == null )
-        return;
-
-      Gizmos.color = Color.yellow;
-      Gizmos.DrawWireMesh( m_nodeGizmoMesh,
-                           transform.position,
-                           transform.rotation,
-                           Vector3.one * 0.2f );
-#endif
-    }
   }
 }
