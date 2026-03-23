@@ -15,7 +15,6 @@ namespace AGXUnity.Sensor
   public class EncoderSensor : ScriptComponent
   {
     private const double DisabledTotalGaussianNoiseRms = 0.0;
-    private const double DisabledSignalResolution = 1e-4; // TODO hard to give this a good default value...
     private const double DisabledSignalScaling = 1.0;
 
     /// <summary>
@@ -158,6 +157,7 @@ namespace AGXUnity.Sensor
 
     [SerializeField]
     private bool m_enableSignalResolution = false;
+    [DisableInRuntimeInspector]
     public bool EnableSignalResolution
     {
       get => m_enableSignalResolution;
@@ -256,7 +256,7 @@ namespace AGXUnity.Sensor
 
     private double GetTotalGaussianNoiseRms() => EnableTotalGaussianNoise ? TotalGaussianNoiseRms : DisabledTotalGaussianNoiseRms;
 
-    private double GetSignalResolutionValue() => EnableSignalResolution ? SignalResolution : DisabledSignalResolution;
+    private double GetSignalResolutionValue() => SignalResolution;
 
     private double GetSignalScalingValue() => EnableSignalScaling ? SignalScaling : DisabledSignalScaling;
 
