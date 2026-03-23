@@ -555,8 +555,8 @@ namespace AGXUnityTesting.Runtime
       Assert.That( steeringComp.Mechanism, Is.EqualTo( Steering.SteeringMechanism.Ackermann ), "Specific steering mechanisms should map to proper enum flag" );
 
       var signals = root.GetComponent<OpenPLXSignals>();
-      var steeringInput = signals.FindInputTarget( "WheelScene.steering.steering_angle_input" );
-      var steeringOutput = signals.FindOutputSource( "WheelScene.steering.steering_angle_output" );
+      var steeringInput = signals.FindInputTarget( "WheelScene.steering.interaction.steering_angle_input" );
+      var steeringOutput = signals.FindOutputSource( "WheelScene.steering.interaction.steering_angle_output" );
 
       yield return TestUtils.Step();
 

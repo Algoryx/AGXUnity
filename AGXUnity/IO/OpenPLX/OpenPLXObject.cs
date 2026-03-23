@@ -39,32 +39,49 @@ namespace AGXUnity.IO.OpenPLX
       };
     }
 
-    internal agx.Referenced FindCorrespondingNative( OpenPLX.OpenPLXRoot root, openplx.Core.Object obj ) => obj switch
+    internal agx.Referenced FindCorrespondingNative( OpenPLX.OpenPLXRoot root, openplx.Core.Object obj )
     {
-      Interactions.Lock => GetNativeConstraint().asLockJoint(),
-      Interactions.Hinge => GetNativeConstraint().asHinge(),
-      Interactions.Prismatic => GetNativeConstraint().asPrismatic(),
-      Interactions.Cylindrical => GetNativeConstraint().asCylindricalJoint(),
-      Interactions.Ball => GetNativeConstraint().asBallJoint(),
-      Interactions.Distance => GetNativeConstraint().asDistanceJoint(),
-      Interactions.RotationalRange => GetGeneric1DOFNative().getRange1D(),
-      Interactions.TorsionSpring => GetGeneric1DOFNative().getLock1D(),
-      Interactions.RotationalVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
-      Interactions.TorqueMotor => GetGeneric1DOFNative().getMotor1D(),
-      Interactions.LinearRange => GetGeneric1DOFNative().getRange1D(),
-      Interactions.LinearSpring => GetGeneric1DOFNative().getLock1D(),
-      Interactions.LinearVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
-      Interactions.ForceMotor => GetGeneric1DOFNative().getMotor1D(),
-      openplx.Physics.Geometries.ContactGeometry => gameObject.GetInitializedComponent<Shape>().NativeGeometry,
-      Interactions.MateConnector => gameObject.GetInitializedComponent<ObserverFrame>().Native,
-      openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
-      openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
-      openplx.Terrain.Shovel => gameObject.GetInitializedComponent<DeformableTerrainShovel>().Native,
-      openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
-      openplx.Vehicles.Steering.Interactions.DualSuspensionSteering => gameObject.GetInitializedComponent<Steering>().Native,
-      openplx.Vehicles.Suspensions.Interactions.LinearSpringDamperMate => gameObject.GetInitializedComponent<WheelJoint>().Native,
-      _ => DefaultHandling( obj )
-    };
+      if ( obj.getOwner() is openplx.Vehicles.Suspensions.SingleMate.Base wj ) {
+        if ( obj == wj.range() )
+          return gameObject.GetInitializedComponent<WheelJoint>().GetController<RangeController>( WheelJoint.WheelDimension.Suspension ).Native;
+        else if ( obj == wj.mate() )
+          return gameObject.GetInitializedComponent<WheelJoint>().Native;
+      }
+
+      if ( obj.getOwner() is openplx.Vehicles.Steering.Kinematic.Base steer ) {
+        if ( obj == steer.interaction() )
+          return gameObject.GetInitializedComponent<Steering>().Native;
+      }
+
+      return obj switch
+      {
+        Interactions.Lock => GetNativeConstraint().asLockJoint(),
+        Interactions.Hinge => GetNativeConstraint().asHinge(),
+        Interactions.Prismatic => GetNativeConstraint().asPrismatic(),
+        Interactions.Cylindrical => GetNativeConstraint().asCylindricalJoint(),
+        Interactions.Ball => GetNativeConstraint().asBallJoint(),
+        Interactions.Distance => GetNativeConstraint().asDistanceJoint(),
+        Interactions.RotationalRange => GetGeneric1DOFNative().getRange1D(),
+        Interactions.TorsionSpring => GetGeneric1DOFNative().getLock1D(),
+        Interactions.RotationalVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
+        Interactions.TorqueMotor => GetGeneric1DOFNative().getMotor1D(),
+        Interactions.LinearRange => GetGeneric1DOFNative().getRange1D(),
+        Interactions.LinearSpring => GetGeneric1DOFNative().getLock1D(),
+        Interactions.LinearVelocityMotor => GetGeneric1DOFNative().getMotor1D(),
+        Interactions.ForceMotor => GetGeneric1DOFNative().getMotor1D(),
+        openplx.Physics.Geometries.ContactGeometry => gameObject.GetInitializedComponent<Shape>().NativeGeometry,
+        Interactions.MateConnector => gameObject.GetInitializedComponent<ObserverFrame>().Native,
+        openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
+        openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
+        openplx.Terrain.Shovel => gameObject.GetInitializedComponent<DeformableTerrainShovel>().Native,
+        openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
+        openplx.Vehicles.Steering.Kinematic.Base => gameObject.GetInitializedComponent<Steering>().Native,
+        openplx.Vehicles.Steering.Kinematic.Interactions.Base => gameObject.GetInitializedComponent<Steering>().Native,
+        openplx.Vehicles.Suspensions.SingleMate.Base => gameObject.GetInitializedComponent<WheelJoint>().Native,
+        openplx.Vehicles.Suspensions.SingleMate.Interactions.Base => gameObject.GetInitializedComponent<WheelJoint>().Native,
+        _ => DefaultHandling( obj )
+      };
+    }
 
     [field: SerializeField]
     [DisableInRuntimeInspector]
