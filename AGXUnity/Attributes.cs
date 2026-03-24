@@ -247,8 +247,7 @@ namespace AGXUnity
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
   public class RuntimeValue : Attribute
   {
-    public string Unit { get; private set; }
-    public RuntimeValue( string unit = "" ) { this.Unit = unit; }
+    public RuntimeValue() { }
   }
 
 }
