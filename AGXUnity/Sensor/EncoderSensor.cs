@@ -1,7 +1,5 @@
 using agxSensor;
-using AGXUnity.Utils;
 using UnityEngine;
-using System;
 using AGXUnity.Model;
 
 namespace AGXUnity.Sensor
