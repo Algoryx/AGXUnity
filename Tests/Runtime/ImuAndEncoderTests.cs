@@ -1,12 +1,8 @@
-using agx;
-using agxSensor;
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Sensor;
 using NUnit.Framework;
 using System.Collections;
-using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -169,7 +165,24 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step();
       yield return TestUtils.Step();
 
-      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.001f ), "Testing" );
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.001f ), "Testing odometer output" );
+    }
+
+
+    [UnityTest]
+    public IEnumerator TestOdometerDisable()
+    {
+      var constraint = CreateTestHinge();
+      var odometer = constraint.gameObject.AddComponent<OdometerSensor>();
+      odometer.enabled = false;
+      var controller = constraint.GetController<AGXUnity.TargetSpeedController>();
+      controller.Speed = 1;
+      controller.Enable = true;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.0 ), "Should be 0 when disabled" );
     }
   }
 }
