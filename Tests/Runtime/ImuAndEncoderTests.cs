@@ -169,7 +169,7 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step(); // NaN first timestep
       yield return TestUtils.Step();
       yield return TestUtils.Step();
-      
+
 
       Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.02f ), "Testing odometer output" );
     }
