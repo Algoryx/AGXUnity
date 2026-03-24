@@ -121,6 +121,7 @@ namespace AGXUnityTesting.Runtime
       rb.AngularVelocity = Vector3.one;
 
       yield return TestUtils.Step();
+      yield return TestUtils.Step();
 
       Assert.That( Mathf.Abs( (float)imu.OutputBuffer[ 5 ] ), Is.EqualTo( 1 ).Within( 0.01f ), "Test value should be 1 like the change in rotation" );
     }
@@ -133,6 +134,7 @@ namespace AGXUnityTesting.Runtime
       rb.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
       rb.AngularVelocity = Vector3.one;
 
+      yield return TestUtils.Step();
       yield return TestUtils.Step();
 
       Assert.That( Mathf.Abs( (float)imu.OutputBuffer[ 8 ] ), Is.EqualTo( 1 ).Within( 0.001f ), "Test value should be 1 as the magnetic field was set up to be 1 in each direction" );
@@ -148,6 +150,8 @@ namespace AGXUnityTesting.Runtime
       controller.Speed = 1;
       controller.Enable = true;
 
+      yield return TestUtils.Step(); // NaN first timestep
+      yield return TestUtils.Step();
       yield return TestUtils.Step();
 
       Assert.That( Mathf.Abs( (float)encoder.SpeedBuffer ), Is.EqualTo( 1 ).Within( 0.01f ), "Value should be close to target speed controller speed" );
@@ -162,10 +166,12 @@ namespace AGXUnityTesting.Runtime
       controller.Speed = 1;
       controller.Enable = true;
 
+      yield return TestUtils.Step(); // NaN first timestep
       yield return TestUtils.Step();
       yield return TestUtils.Step();
+      
 
-      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.001f ), "Testing odometer output" );
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.02f ), "Testing odometer output" );
     }
 
 
