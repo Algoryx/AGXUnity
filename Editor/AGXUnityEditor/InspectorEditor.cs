@@ -98,24 +98,25 @@ namespace AGXUnityEditor
         group.Dispose();
 
         // Draw runtime values in one disabled block
-        // TODO style etc
         if ( runtimeValues.Count > 0 ) {
 
           InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
-          var style = GUI.Align( GUI.Skin.label, TextAnchor.MiddleLeft );
-          GUILayout.Label( GUI.MakeLabel( "Runtime Values", true, "" ), style );
 
-          using ( new GUI.EnabledBlock( false ) ) {
-            group = InspectorGroupHandler.Create();
-            foreach ( var wrapper in runtimeValues ) {
-              group.Update( wrapper, objects[ 0 ] );
+          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( targets[ 0 ], targets[ 0 ].name ),
+              GUI.MakeLabel( "Runtime Values", true, "" ) ) ) {
 
-              if ( group.IsHidden )
-                continue;
+            using ( new GUI.EnabledBlock( false ) ) {
+              group = InspectorGroupHandler.Create();
+              foreach ( var wrapper in runtimeValues ) {
+                group.Update( wrapper, objects[ 0 ] );
 
-              HandleType( wrapper, objects, fallback );
+                if ( group.IsHidden )
+                  continue;
+
+                HandleType( wrapper, objects, fallback );
+              }
+              group.Dispose();
             }
-            group.Dispose();
           }
         }
       }
