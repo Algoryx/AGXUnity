@@ -555,35 +555,32 @@ namespace AGXUnityEditor
                                    Action<string> onNewFileSelected,
                                    bool folder = false )
     {
-      var selectNewFolderButtonWidth = 28.0f;
-
-      EditorGUILayout.PrefixLabel( label );
-
-      EditorGUILayout.TextField( currentFile, InspectorEditor.Skin.TextField );
-      if ( UnityEngine.GUILayout.Button( GUI.MakeLabel( "...",
-                                                        InspectorGUISkin.BrandColor,
-                                                        true ),
-                                         InspectorEditor.Skin.ButtonMiddle,
-
-                                         GUILayout.Width( selectNewFolderButtonWidth ) ) ) {
-        string result;
-        if ( folder )
-          result = EditorUtility.OpenFolderPanel( openFileTitle,
-                                                  openFileDirectory,
-                                                  "" );
-        else
-          result = EditorUtility.OpenFilePanel( openFileTitle,
-                                                openFileDirectory,
-                                                "" );
-        if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
-          onNewFileSelected?.Invoke( result );
-          // Remove focus from any control so that the field is updated.
-          UnityEngine.GUI.FocusControl( "" );
-          return true;
-        }
-      }
-
-      return false;
+      var updated = false;
+      SelectableTextField( label,
+                           currentFile,
+                           MiscButtonData.Create( GUI.MakeLabel( "...",
+                                                                 InspectorGUISkin.BrandColor,
+                                                                 true ),
+                                                  () => {
+                                                    string result;
+                                                    if ( folder )
+                                                      result = EditorUtility.OpenFolderPanel( openFileTitle,
+                                                                                              openFileDirectory,
+                                                                                              "" );
+                                                    else
+                                                      result = EditorUtility.OpenFilePanel( openFileTitle,
+                                                                                            openFileDirectory,
+                                                                                            "" );
+                                                    if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
+                                                      onNewFileSelected?.Invoke( result );
+                                                      // Remove focus from any control so that the field is updated.
+                                                      UnityEngine.GUI.FocusControl( "" );
+                                                      updated = true;
+                                                    }
+                                                  },
+                                                  UnityEngine.GUI.enabled,
+                                                  "Open select file panel." ) );
+      return updated;
     }
 
     public static string ToggleSaveFile( GUIContent label,
