@@ -171,24 +171,32 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step();
 
 
-      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.02 ).Within( 0.02f ), "Testing odometer output" );
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
     }
 
 
     [UnityTest]
-    public IEnumerator TestOdometerDisable()
+    public IEnumerator TestOdometerDisableToggling()
     {
       var constraint = CreateTestHinge();
       var odometer = constraint.gameObject.AddComponent<OdometerSensor>();
-      odometer.enabled = false;
       var controller = constraint.GetController<AGXUnity.TargetSpeedController>();
       controller.Speed = 1;
       controller.Enable = true;
+
+      odometer.enabled = false;
 
       yield return TestUtils.Step();
       yield return TestUtils.Step();
 
       Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.0 ), "Should be 0 when disabled" );
+
+      odometer.enabled = true;
+
+      yield return TestUtils.Step();
+
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
+
     }
   }
 }
