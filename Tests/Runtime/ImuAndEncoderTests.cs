@@ -174,13 +174,12 @@ namespace AGXUnityTesting.Runtime
       Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
     }
 
-
     [UnityTest]
     public IEnumerator TestOdometerDisableToggling()
     {
       var constraint = CreateTestHinge();
       var odometer = constraint.gameObject.AddComponent<OdometerSensor>();
-      var controller = constraint.GetController<AGXUnity.TargetSpeedController>();
+      var controller = constraint.GetController<TargetSpeedController>();
       controller.Speed = 1;
       controller.Enable = true;
 
@@ -196,7 +195,29 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.Step();
 
       Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
+    }
 
+    [UnityTest]
+    public IEnumerator TestEncoderDisableToggling()
+    {
+      var constraint = CreateTestHinge();
+      var encoder = constraint.gameObject.AddComponent<EncoderSensor>();
+      var controller = constraint.GetController<TargetSpeedController>();
+      controller.Speed = 1;
+      controller.Enable = true;
+
+      encoder.enabled = false;
+
+      yield return TestUtils.Step();
+      yield return TestUtils.Step();
+
+      Assert.That( Mathf.Abs( (float)encoder.PositionBuffer ), Is.EqualTo( 0.0 ), "Should be 0 when disabled" );
+
+      encoder.enabled = true;
+
+      yield return TestUtils.Step();
+
+      Assert.That( Mathf.Abs( (float)encoder.PositionBuffer ), Is.EqualTo( 0.07 ).Within( 0.005f ), "Testing odometer output" );
     }
   }
 }
