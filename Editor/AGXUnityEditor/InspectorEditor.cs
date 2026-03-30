@@ -102,8 +102,8 @@ namespace AGXUnityEditor
 
           InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
 
-          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( targets[ 0 ], targets[ 0 ].name ),
-              GUI.MakeLabel( "Runtime Values", true, "" ) ) ) {
+          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( targets[ 0 ], targets[ 0 ].name + "_runtimeValues" ),
+              GUI.MakeLabel( "Runtime Values", false, "" ) ) ) {
 
             using ( new GUI.EnabledBlock( false ) ) {
               group = InspectorGroupHandler.Create();
