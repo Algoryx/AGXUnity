@@ -323,7 +323,10 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( 1, signals.GetValue<float>( "SignalScene.angularVelocity" ), 1e-10 );
       Assert.AreEqual( 1, signals.GetValue<double>( "SignalScene.angularVelocity" ), 1e-10 );
 
-      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(),agx.EulerConvention.ZYXs);
+      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(),agx.EulerConvention.XYZs);
+      // Pitch and yaw are inverted from what agx returns
+      groundTruth.y *= -1;
+      groundTruth.z *= -1;
 
       var vec3Result = signals.GetValue<agx.Vec3>("SignalScene.boxRPY");
       Assert.AreEqual( groundTruth.x, vec3Result.x, 1e-10 );
@@ -363,7 +366,10 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( -1, velocityOutput.GetValue<float>(), 1e-10 );
       Assert.AreEqual( -1, velocityOutput.GetValue<double>(), 1e-10 );
 
-      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(), agx.EulerConvention.ZYXs);
+      var groundTruth = new agx.EulerAngles(signals.Root.FindMappedObject("SignalScene.box").GetComponent<RigidBody>().Native.getRotation(), agx.EulerConvention.XYZs);
+      // Pitch and yaw are inverted from what agx returns
+      groundTruth.y *= -1;
+      groundTruth.z *= -1;
 
       var vec3Result = boxRPY.GetValue<agx.Vec3>();
       Assert.AreEqual( groundTruth.x, vec3Result.x, 1e-10 );
