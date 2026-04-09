@@ -1,6 +1,6 @@
 using agxSensor;
-using UnityEngine;
 using AGXUnity.Model;
+using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
@@ -26,7 +26,7 @@ namespace AGXUnity.Sensor
     /// If left empty the component will use the first compatible parent.
     /// Compatible with: Hinge, CylindricalJoint, WheelJoint
     /// </summary>
-    [SerializeField]
+    [field: SerializeField]
     [Tooltip( "Constraint / WheelJoint component to attach odometer to: Hinge, CylindricalJoint, WheelJoint. If unset, the first compatible parent is used." )]
     public ScriptComponent ConstraintComponent { get; set; } = null;
 

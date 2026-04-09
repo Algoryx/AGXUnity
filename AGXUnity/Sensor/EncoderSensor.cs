@@ -1,6 +1,6 @@
 using agxSensor;
-using UnityEngine;
 using AGXUnity.Model;
+using UnityEngine;
 
 namespace AGXUnity.Sensor
 {
@@ -26,7 +26,7 @@ namespace AGXUnity.Sensor
     /// If left empty the component will use the first compatible parent.
     /// Compatible with: Hinge, Prismatic, CylindricalJoint, WheelJoint
     /// </summary>
-    [SerializeField]
+    [field: SerializeField]
     [Tooltip( "Constraint / WheelJoint component to attach encoder to. If unset, the first compatible parent is used" )]
     [DisableInRuntimeInspector]
     public ScriptComponent ConstraintComponent { get; set; } = null;
