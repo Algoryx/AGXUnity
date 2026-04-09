@@ -22,7 +22,11 @@ namespace AGXUnity.IO.OpenPLX
     TraitNotImportable = 15,
     NonPrincipalAxis = 16,
     MultipleDistanceDistortions = 17,
-    NonSymmetricSweepPattern = 18,
+    MissingTrackSystem = 18,
+    DuplicateTrackConnection = 19,
+    InvalidLinkDescription = 20,
+    InsufficientTrackWheels = 21,
+    MissingTrackWheelBody = 22,
   }
 
   public class BaseError : openplx.Error
@@ -281,12 +285,52 @@ namespace AGXUnity.IO.OpenPLX
     protected override string createErrorMessage() => $"AGXUnity only supports a single distance distortion";
   }
 
-  public class NonSymmetricSweepPatternError : BaseError
+  public class MissingTrackSystemError : BaseError
   {
-    public NonSymmetricSweepPatternError( openplx.Math.Vec2 FoV )
-      : base( FoV, AgxUnityOpenPLXErrors.NonSymmetricSweepPattern )
+    public MissingTrackSystemError( openplx.Vehicles.TrackSystem.Connections.Base source )
+      : base( source, AgxUnityOpenPLXErrors.MissingTrackSystem )
     { }
 
-    protected override string createErrorMessage() => $"AGXUnity only supports symmetrical sweep patterns";
+    protected override string createErrorMessage() => $"Track connection does not specify a track system";
+  }
+
+  public class DuplicateTrackConnectionError : BaseError
+  {
+    private openplx.Vehicles.TrackSystem.Base m_system;
+
+    public DuplicateTrackConnectionError( openplx.Vehicles.TrackSystem.Connections.Base source, openplx.Vehicles.TrackSystem.Base system )
+      : base( source, AgxUnityOpenPLXErrors.DuplicateTrackConnection )
+    {
+      m_system = system;
+    }
+
+    protected override string createErrorMessage() => $"Track system '{m_system.getName()}' is specified in multiple track connections";
+  }
+
+  public class InvalidLinkDescriptionError : BaseError
+  {
+    public InvalidLinkDescriptionError( openplx.Vehicles.TrackSystem.Components.Tracks.LinkDescription.Base source )
+      : base( source, AgxUnityOpenPLXErrors.InvalidLinkDescription )
+    { }
+
+    protected override string createErrorMessage() => $"Link description needs to have non-zero, positive width and height";
+  }
+
+  public class InsufficientTrackWheelsError : BaseError
+  {
+    public InsufficientTrackWheelsError( openplx.Vehicles.TrackSystem.Base source )
+      : base( source, AgxUnityOpenPLXErrors.InsufficientTrackWheels )
+    { }
+
+    protected override string createErrorMessage() => $"Track system needs to have at least two track wheels";
+  }
+
+  public class MissingTrackWheelBodyError : BaseError
+  {
+    public MissingTrackWheelBodyError( openplx.Vehicles.TrackSystem.Components.TrackWheels.Base source )
+      : base( source, AgxUnityOpenPLXErrors.MissingTrackWheelBody )
+    { }
+
+    protected override string createErrorMessage() => $"Track wheel's body was not properly mapped to a RigidBody";
   }
 }

@@ -49,7 +49,7 @@ namespace AGXUnity.IO.OpenPLX
       Options = options;
 
       InteractionMapper = new InteractionMapper( Data );
-      VehicleMapper = new VehicleMapper( Data );
+      VehicleMapper = new VehicleMapper( Data, InteractionMapper );
       SensorMapper = new SensorMapper( Data );
     }
 
@@ -851,6 +851,8 @@ namespace AGXUnity.IO.OpenPLX
     {
       var s = MapSystemPass1( system );
       MapSystemPass2( system );
+      // This method performs actual mapping of previously discovered tracks and is not recursive
+      VehicleMapper.MapTrackSystems();
       MapSystemPass3( system );
       MapSystemPass4( system );
       MapSystemPass5( system );
@@ -884,14 +886,8 @@ namespace AGXUnity.IO.OpenPLX
             Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
         }
       }
-      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() ) {
-        if ( trackSystem.belt().link_description() is openplx.Vehicles.Tracks.BoxLinkDescription desc ) {
-          var mat = desc.contact_geometry().material();
-          if ( !Data.MaterialCache.ContainsKey( mat ) ) {
-            Data.MaterialCache[ mat ] = InteractionMapper.MapMaterial( mat );
-          }
-        }
-      }
+
+      VehicleMapper.MapSystemPass1( system );
 
       return s;
     }
@@ -919,6 +915,8 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
         Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
+
+      VehicleMapper.MapSystemPass2( system );
     }
 
     void MapSystemPass3( openplx.Physics3D.System system )
@@ -927,9 +925,6 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass3( subSystem );
-
-      foreach ( var trackSystem in system.getNonReferenceValues<openplx.Vehicles.Tracks.System>() )
-        VehicleMapper.MapTrackSystem( trackSystem );
 
       foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
         InteractionMapper.MapMateConnector( mateConnector );
@@ -946,8 +941,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass4( subSystem );
 
-      if ( system is openplx.Vehicles.Suspensions.SingleMate.Base suspension )
-        VehicleMapper.MapSingleMateSuspensionOnto( suspension, s );
+      VehicleMapper.MapSystemPass4( system );
 
       foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
         Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
@@ -985,11 +979,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass5( subSystem );
 
-      if ( system is openplx.Vehicles.Steering.Kinematic.Base steering )
-        VehicleMapper.MapSteeringOnto( steering, s );
-
-      foreach ( var wheel in system.getNonReferenceValues<openplx.Vehicles.Wheels.ElasticWheel>() )
-        VehicleMapper.MapElasticWheel( wheel );
+      VehicleMapper.MapSystemPass5( system );
     }
   }
 }

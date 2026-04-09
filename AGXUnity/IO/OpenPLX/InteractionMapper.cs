@@ -507,6 +507,9 @@ namespace AGXUnity.IO.OpenPLX
         fm = Data.DefaultFriction;
       }
 
+      if ( friction.HasTrait<openplx.Vehicles.TrackSystem.SurfaceContact.Traits.TrackFriction>() )
+        fm.TrackFrictionModel = true;
+
       var solveType = FrictionModel.ESolveType.Direct;
       var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");
       var approximateConeAnnotation = friction.findAnnotations("agx_approximate_cone_friction");
