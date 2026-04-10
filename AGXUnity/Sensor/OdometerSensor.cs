@@ -186,13 +186,18 @@ namespace AGXUnity.Sensor
       }
 
       m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
-      m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
-      m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
-      m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
-
-      m_modifiers.Add( m_totalGaussianNoiseModifier );
-      m_modifiers.Add( m_signalResolutionModifier );
-      m_modifiers.Add( m_signalScalingModifier );
+      if ( EnableTotalGaussianNoise ) {
+        m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
+        m_modifiers.Add( m_totalGaussianNoiseModifier );
+      }
+      if ( EnableSignalResolution ) {
+        m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
+        m_modifiers.Add( m_signalResolutionModifier );
+      }
+      if ( EnableSignalScaling ) {
+        m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
+        m_modifiers.Add( m_signalScalingModifier );
+      }
 
       m_nativeModel = new OdometerModel( (double)WheelRadius, m_modifiers );
 
@@ -288,7 +293,7 @@ namespace AGXUnity.Sensor
 
     private void OnPostSynchronizeTransforms()
     {
-      if ( !gameObject.activeInHierarchy )
+      if ( !isActiveAndEnabled )
         return;
 
       OutputBuffer = GetOutput( Native.getOutputHandler().get( m_outputID ) );

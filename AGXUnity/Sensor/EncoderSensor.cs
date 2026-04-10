@@ -288,15 +288,22 @@ namespace AGXUnity.Sensor
       }
 
       m_modifiers = new IMonoaxialSignalSystemNodeRefVector();
-      m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
-      m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
-      m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
+      if ( EnableTotalGaussianNoise ) {
+        m_totalGaussianNoiseModifier = new MonoaxialGaussianNoise( GetTotalGaussianNoiseRms() );
+        m_modifiers.Add( m_totalGaussianNoiseModifier );
+      }
 
-      m_modifiers.Add( m_totalGaussianNoiseModifier );
-      m_modifiers.Add( m_signalResolutionModifier );
-      m_modifiers.Add( m_signalScalingModifier );
+      if ( EnableSignalResolution ) {
+        m_modifiers.Add( m_signalResolutionModifier );
+        m_signalResolutionModifier = new MonoaxialSignalResolution( GetSignalResolutionValue() );
+      }
 
-      m_nativeModel = new EncoderModel( Mode, MeasurementRange.Native, m_modifiers );
+      if ( EnableSignalScaling ) {
+        m_modifiers.Add( m_signalScalingModifier );
+        m_signalScalingModifier = new MonoaxialSignalScaling( GetSignalScalingValue() );
+      }
+
+      m_nativeModel = new EncoderModel( Mode, MeasurementRange.Native );
 
       if ( m_nativeModel == null ) {
         Debug.LogWarning( "Could not create native encoder model, encoder will be inactive" );
@@ -388,7 +395,7 @@ namespace AGXUnity.Sensor
     // Will only run if there is an output
     private void OnPostSynchronizeTransforms()
     {
-      if ( !gameObject.activeInHierarchy || Native == null )
+      if ( !isActiveAndEnabled || Native == null )
         return;
 
       var output = Native.getOutputHandler().get( m_outputID );

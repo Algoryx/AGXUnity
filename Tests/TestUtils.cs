@@ -24,9 +24,6 @@ namespace AGXUnityTesting
       else {
         while ( !sceneToWaitFor.isLoaded )
           yield return new WaitUntil( () => sceneToWaitFor.isLoaded );
-#if !TEST_REALTIME_SYNC
-        Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
-#endif
       }
     }
 
@@ -34,12 +31,8 @@ namespace AGXUnityTesting
     {
       if ( !Application.isPlaying )
         Debug.LogError( "TestUtils are not supported in edit-mode" );
-      else {
-#if !TEST_REALTIME_SYNC
-        Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
-#endif
+      else
         yield return null;
-      }
     }
 
     public static IEnumerator SimulateSeconds( float time )
@@ -60,12 +53,12 @@ namespace AGXUnityTesting
       if ( !Application.isPlaying )
         Debug.LogError( "TestUtils are not supported in edit-mode" );
       else {
+        float startTime = Time.time;
         yield return WaitUntilLoaded();
-#if TEST_REALTIME_SYNC
-        yield return new WaitForFixedUpdate();
-#else
         Simulation.Instance.DoStep();
-        yield return null;
+#if TEST_REALTIME_SYNC
+        while ( Time.time - startTime < Simulation.Instance.TimeStep )
+          yield return null;
 #endif
       }
     }

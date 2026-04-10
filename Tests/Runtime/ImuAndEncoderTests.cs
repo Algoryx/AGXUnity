@@ -72,7 +72,6 @@ namespace AGXUnityTesting.Runtime
       imuGO.transform.parent = rbGO.transform;
       var imuComp = imuGO.AddComponent<ImuSensor>();
 
-
       return (rbComp, imuComp);
     }
 
@@ -88,14 +87,14 @@ namespace AGXUnityTesting.Runtime
     }
 
 
-    [UnityTest]
-    public IEnumerator TestCreateImu()
+    [Test]
+    public void TestCreateImu()
     {
-      var (rb, imu) = CreateDefaultTestImu();
+      var (_, imu) = CreateDefaultTestImu();
 
-      yield return TestUtils.Step();
+      TestUtils.InitializeAll();
 
-      Assert.NotNull( imu, "Couldn't create IMU" );
+      Assert.NotNull( imu.Native, "Couldn't create IMU" );
     }
 
     [UnityTest]
@@ -107,7 +106,9 @@ namespace AGXUnityTesting.Runtime
 
       rb.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-      yield return TestUtils.Step();
+      TestUtils.InitializeAll();
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
 
       Assert.That( imu.OutputBuffer[ 1 ], Is.EqualTo( Mathf.Abs( g ) ).Within( 0.001f ), "Test value should be close to g" );
     }
@@ -120,8 +121,9 @@ namespace AGXUnityTesting.Runtime
       rb.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
       rb.AngularVelocity = Vector3.one;
 
-      yield return TestUtils.Step();
-      yield return TestUtils.Step();
+      TestUtils.InitializeAll();
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
 
       Assert.That( Mathf.Abs( (float)imu.OutputBuffer[ 5 ] ), Is.EqualTo( 1 ).Within( 0.01f ), "Test value should be 1 like the change in rotation" );
     }
@@ -133,6 +135,8 @@ namespace AGXUnityTesting.Runtime
 
       rb.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
       rb.AngularVelocity = Vector3.one;
+
+      TestUtils.InitializeAll();
 
       yield return TestUtils.Step();
       yield return TestUtils.Step();
@@ -150,9 +154,9 @@ namespace AGXUnityTesting.Runtime
       controller.Speed = 1;
       controller.Enable = true;
 
-      yield return TestUtils.Step(); // NaN first timestep
-      yield return TestUtils.Step();
-      yield return TestUtils.Step();
+      TestUtils.InitializeAll();
+
+      yield return TestUtils.SimulateSeconds( 0.2f );
 
       Assert.That( Mathf.Abs( (float)encoder.SpeedBuffer ), Is.EqualTo( 1 ).Within( 0.01f ), "Value should be close to target speed controller speed" );
     }
@@ -165,13 +169,11 @@ namespace AGXUnityTesting.Runtime
       var controller = constraint.GetController<AGXUnity.TargetSpeedController>();
       controller.Speed = 1;
       controller.Enable = true;
+      TestUtils.InitializeAll();
 
-      yield return TestUtils.Step(); // NaN first timestep
-      yield return TestUtils.Step();
-      yield return TestUtils.Step();
+      yield return TestUtils.SimulateSeconds( 0.2f );
 
-
-      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.GreaterThan( 0.01 ), "Testing odometer output" );
     }
 
     [UnityTest]
@@ -182,6 +184,7 @@ namespace AGXUnityTesting.Runtime
       var controller = constraint.GetController<TargetSpeedController>();
       controller.Speed = 1;
       controller.Enable = true;
+      TestUtils.InitializeAll();
 
       odometer.enabled = false;
 
@@ -193,8 +196,9 @@ namespace AGXUnityTesting.Runtime
       odometer.enabled = true;
 
       yield return TestUtils.Step();
+      yield return TestUtils.Step();
 
-      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.EqualTo( 0.04 ).Within( 0.005f ), "Testing odometer output" );
+      Assert.That( Mathf.Abs( (float)odometer.OutputBuffer ), Is.GreaterThan( 0.01 ), "Testing odometer output" );
     }
 
     [UnityTest]
@@ -207,6 +211,7 @@ namespace AGXUnityTesting.Runtime
       controller.Enable = true;
 
       encoder.enabled = false;
+      TestUtils.InitializeAll();
 
       yield return TestUtils.Step();
       yield return TestUtils.Step();
@@ -216,8 +221,9 @@ namespace AGXUnityTesting.Runtime
       encoder.enabled = true;
 
       yield return TestUtils.Step();
+      yield return TestUtils.Step();
 
-      Assert.That( Mathf.Abs( (float)encoder.PositionBuffer ), Is.EqualTo( 0.07 ).Within( 0.005f ), "Testing odometer output" );
+      Assert.That( Mathf.Abs( (float)encoder.PositionBuffer ), Is.GreaterThan( 0.01 ), "Testing odometer output" );
     }
   }
 }

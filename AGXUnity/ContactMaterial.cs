@@ -488,8 +488,12 @@ namespace AGXUnity
 
     public override void Destroy()
     {
-      if ( Simulation.HasInstance )
-        GetSimulation().getMaterialManager().remove( m_contactMaterial );
+      if ( Simulation.HasInstance ) {
+        var matManager = GetSimulation().getMaterialManager();
+        // AGX logs a warning if we try to remove a CM that is present so ensure that CM is actually added
+        if ( matManager.getContactMaterialVector().Contains( m_contactMaterial ) )
+          GetSimulation().getMaterialManager().remove( m_contactMaterial );
+      }
       m_contactMaterial = null;
     }
 
