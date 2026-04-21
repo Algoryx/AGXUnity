@@ -17,11 +17,13 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.LogEnabled = true;
       Simulation.Instance.AGXUnityLogLevel = LogLevel.Warning;
       Simulation.Instance.LogToUnityConsole = true;
+      Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
     }
 
     [OneTimeTearDown]
     public void TeardownSimulationInstance()
     {
+      GameObject.Destroy( ContactMaterialManager.Instance.gameObject );
       GameObject.Destroy( Simulation.Instance.gameObject );
     }
   }

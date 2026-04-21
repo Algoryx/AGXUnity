@@ -74,6 +74,58 @@ namespace AGXUnity.IO.OpenPLX
       string traitName = typeof( T ).FullName.Substring( 8 );
       return obj.hasTrait( traitName );
     }
+
+    public static bool TryGetBoolAnnotation( this openplx.Core.Object obj, string name, out bool value )
+    {
+      value = true; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isTrue() ) {
+          value = true;
+          return true;
+        }
+        if ( annot.isFalse() ) {
+          value = false;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static bool TryGetRealAnnotation( this openplx.Core.Object obj, string name, out float value )
+    {
+      value = 0.0f; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isNumber() ) {
+          value = (float)annot.asReal();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static bool TryGetStringAnnotation( this openplx.Core.Object obj, string name, out string value )
+    {
+      value = ""; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isString() ) {
+          value = annot.asString();
+          return true;
+        }
+      }
+      return false;
+    }
   }
   public static class Utils
   {
@@ -96,6 +148,11 @@ namespace AGXUnity.IO.OpenPLX
     {
       err.reportError( new UnimplementedError( obj ) );
       return null;
+    }
+
+    public static void ReportUnimplemented( openplx.Core.Object obj, openplx.ErrorReporter err )
+    {
+      err.reportError( new UnimplementedError( obj ) );
     }
 
     public static void AddChild( GameObject parent, GameObject child, openplx.ErrorReporter err, openplx.Core.Object obj )

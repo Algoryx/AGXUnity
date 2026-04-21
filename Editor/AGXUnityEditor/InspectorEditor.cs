@@ -2,6 +2,7 @@
 using AGXUnity.Utils;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -70,9 +71,19 @@ namespace AGXUnityEditor
 
         InvokeWrapper[] fieldsAndProperties = InvokeWrapper.FindFieldsAndProperties( objects[ 0 ].GetType() );
         var group = InspectorGroupHandler.Create();
+
+        var runtimeValues = new List<InvokeWrapper>();
+
         foreach ( var wrapper in fieldsAndProperties ) {
           if ( !ShouldBeShownInInspector( wrapper.Member, objects ) )
             continue;
+
+          // Runtimevalues are drawn separately
+          bool isRuntimeValue = wrapper.Member.IsDefined( typeof( RuntimeValue ), true );
+          if ( isRuntimeValue ) {
+            runtimeValues.Add( wrapper );
+            continue;
+          }
 
           group.Update( wrapper, objects[ 0 ] );
 
@@ -85,6 +96,29 @@ namespace AGXUnityEditor
             HandleType( wrapper, objects, fallback );
         }
         group.Dispose();
+
+        // Draw runtime values in one disabled block
+        if ( runtimeValues.Count > 0 ) {
+
+          InspectorGUI.Separator( 1, EditorGUIUtility.singleLineHeight );
+
+          if ( InspectorGUI.Foldout( EditorData.Instance.GetData( targets[ 0 ], targets[ 0 ].name + "_runtimeValues" ),
+              GUI.MakeLabel( "Runtime Values", false, "" ) ) ) {
+
+            using ( new GUI.EnabledBlock( false ) ) {
+              group = InspectorGroupHandler.Create();
+              foreach ( var wrapper in runtimeValues ) {
+                group.Update( wrapper, objects[ 0 ] );
+
+                if ( group.IsHidden )
+                  continue;
+
+                HandleType( wrapper, objects, fallback );
+              }
+              group.Dispose();
+            }
+          }
+        }
       }
     }
 

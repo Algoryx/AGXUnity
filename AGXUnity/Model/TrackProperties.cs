@@ -173,7 +173,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private Vector3 m_hingeAttenuationRotational = 2.0f * Vector2.one;
+    private Vector3 m_hingeAttenuationRotational = 2.0f * Vector3.one;
 
     /// <summary>
     /// Damping for the rotational degrees of freedom in the

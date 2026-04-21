@@ -25,7 +25,12 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    public static string TransformOpenPLXPath( string path ) => System.IO.Path.IsPathRooted( path ) ? path : path.Replace( "Assets/", OpenPLXRoot + "/" );
+    public static string TransformOpenPLXPath( string path )
+    {
+      if ( System.IO.Path.IsPathRooted( path ) || !path.StartsWith( "Assets/" ) )
+        return path;
+      return OpenPLXRoot + path.Substring( 6 );
+    }
 
     public static List<string> FindDeclaredModels( string path )
     {

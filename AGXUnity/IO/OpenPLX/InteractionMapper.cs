@@ -165,8 +165,11 @@ namespace AGXUnity.IO.OpenPLX
     {
       if ( flexibility is openplx.Physics.Interactions.Flexibility.Rigid )
         return float.Epsilon;
-      else if ( flexibility is openplx.Physics.Interactions.Flexibility.LinearElastic elastic )
+      else if ( flexibility is openplx.Physics.Interactions.Flexibility.LinearElastic elastic ) {
+        if ( elastic.stiffness() == 0.0 )
+          return float.MaxValue;
         return (float)( 1.0 / elastic.stiffness() );
+      }
       return null;
     }
 
@@ -503,6 +506,9 @@ namespace AGXUnity.IO.OpenPLX
         }
         fm = Data.DefaultFriction;
       }
+
+      if ( friction.HasTrait<openplx.Vehicles.TrackSystem.SurfaceContact.Traits.TrackFriction>() )
+        fm.TrackFrictionModel = true;
 
       var solveType = FrictionModel.ESolveType.Direct;
       var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");

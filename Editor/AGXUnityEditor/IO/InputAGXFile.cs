@@ -968,8 +968,8 @@ namespace AGXUnityEditor.IO
       var metallic = 0.3f;
       var smoothness = 0.8f;
 
-      if ( nativeMaterial.hasShininess() )
-        smoothness = nativeMaterial.getShininess();
+      if ( nativeMaterial.hasRoughness() )
+        smoothness = 1 - nativeMaterial.getRoughness();
 
       if ( nativeMaterial.hasEmissiveColor() )
         thisMaterial.SetVector( "_EmissiveColor", nativeMaterial.getEmissiveColor().ToColor() );

@@ -1568,5 +1568,143 @@ namespace AGXUnityEditor
 
       return null;
     }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
+    public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var target = objects[ 0 ] as Object;
+
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
+        return null;
+      }
+
+      var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
+      using ( new InspectorGUI.IndentScope() ) {
+        data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
+        data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( GUI.MakeLabel(
+          "Cross Axis Sensitivity", false, "How measurements in one axis affects the other axes. Ratio 0 to 1." ),
+          data.CrossAxisSensitivity ) );
+        data.ZeroBias = EditorGUILayout.Vector3Field( GUI.MakeLabel(
+          "Zero Rate Bias", false, "Value reported per axis when there is no signal input (zero measurement)" ),
+          data.ZeroBias );
+        EditorGUI.BeginChangeCheck();
+        data.OutputFlags = OutputXYZGUI( data.OutputFlags );
+        if ( EditorGUI.EndChangeCheck() )
+          EditorUtility.SetDirty( target );
+
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+            GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
+          using ( new InspectorGUI.IndentScope() ) {
+            (data.EnableTotalGaussianNoise, data.TotalGaussianNoise) = OptionalVector3GUI(
+              data.EnableTotalGaussianNoise,
+              data.TotalGaussianNoise,
+              "Total Gaussian Noise",
+              "Base level noise in the measurement signal (RMS)" );
+            (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
+              data.EnableSignalScaling,
+              data.SignalScaling,
+              "Signal Scaling",
+              "Linear scaling to each axis of the triaxial signal" );
+            (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
+              data.EnableGaussianSpectralNoise,
+              data.GaussianSpectralNoise,
+              "Gaussian Spectral Noise",
+              "Gaussian noise dependent on the sample frequency" );
+            if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
+              (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
+              data.EnableLinearAccelerationEffects,
+              data.LinearAccelerationEffects,
+              "Linear Acceleration Effects",
+              "Offset to the zero rate bias depending on the linear acceleration" );
+            }
+          }
+        }
+      }
+
+      InspectorGUI.Separator();
+
+      return null;
+    }
+
+    private static (bool, Vector3) OptionalVector3GUI( bool toggle, Vector3 value, string label, string tooltip )
+    {
+      using ( new GUILayout.HorizontalScope() ) {
+        var rect = EditorGUILayout.GetControlRect();
+        var xMaxOriginal = rect.xMax;
+        rect.xMax = EditorGUIUtility.labelWidth + 20;
+        //InspectorGUI.MakeLabel( wrapper.Member );
+        toggle = EditorGUI.ToggleLeft( rect, GUI.MakeLabel( label, false, tooltip ), toggle );
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && toggle ) ) {
+          rect.x = rect.xMax - 30;
+          rect.xMax = xMaxOriginal;
+          value = EditorGUI.Vector3Field( rect, "", value );
+        }
+      }
+      return (toggle, value);
+    }
+
+    private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    {
+      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( GUI.MakeLabel(
+        "Sensor Measurement Range", false, "Measurement range - values outside of range will be truncated. Default units m/s^2, radians/s, T" ),
+        data.Mode );
+
+      using ( new InspectorGUI.IndentScope() ) {
+        switch ( data.Mode ) {
+          case TriaxialRangeData.ConfigurationMode.MaxRange:
+            break;
+          case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
+            data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
+            break;
+          case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
+            data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
+            data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
+            data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
+            break;
+        }
+      }
+      return data;
+    }
+
+    private static OutputXYZ OutputXYZGUI( OutputXYZ state )
+    {
+      var skin = InspectorEditor.Skin;
+
+      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false, "Disabled during runtime" ),
+                                      InspectorEditor.Skin.LabelMiddleLeft );
+
+        var xEnabled = state.HasFlag(OutputXYZ.X);
+        var yEnabled = state.HasFlag(OutputXYZ.Y);
+        var zEnabled = state.HasFlag(OutputXYZ.Z);
+
+        if ( GUILayout.Toggle( xEnabled,
+                               GUI.MakeLabel( "X",
+                                              xEnabled,
+                                              "Use sensor X value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ) ) != xEnabled )
+          state ^= OutputXYZ.X;
+        if ( GUILayout.Toggle( yEnabled,
+                               GUI.MakeLabel( "Y",
+                                              yEnabled,
+                                              "Use sensor y value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
+          state ^= OutputXYZ.Y;
+        if ( GUILayout.Toggle( zEnabled,
+                               GUI.MakeLabel( "Z",
+                                              zEnabled,
+                                              "Use sensor Z value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
+          state ^= OutputXYZ.Z;
+      }
+
+      return state;
+    }
+
+
   }
 }
+
