@@ -6,6 +6,8 @@ using System.Collections.Generic;
 
 using Mesh = UnityEngine.Mesh;
 using UnityEngine.Serialization;
+using agxTerrain;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -195,6 +197,25 @@ namespace AGXUnity.Model
     [field: SerializeField]
     [Tooltip( "The compaction that all terrain cells are initialized to." )]
     public float InitialCompaction { get; set; } = 1.0f;
+
+    [field: SerializeField]
+    private bool m_enableDynamicMassUpdates = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [InspectorPriority( -1 )]
+    [Tooltip( "" )]
+    public bool EnableDynamicMassUpdates
+    {
+      get => m_enableDynamicMassUpdates;
+      set
+      {
+        m_enableDynamicMassUpdates = value;
+        if ( Native != null )
+          Native.getProperties().setEnableUpdateDynamicBodyMass( m_enableDynamicMassUpdates );
+      }
+    }
 
     [field: SerializeField]
     private float m_terrainBedMargin = 0.01f;
@@ -485,7 +506,9 @@ namespace AGXUnity.Model
         geoms.Add( temp );
         temps.Add( temp );
       }
-      var terrain = agxTerrain.Terrain.createTerrainBedFromGeometries( (uint)Resolution, geoms, TerrainBedMargin, TerrainBedHeightOffset, true );
+      var terrain = agxTerrainSWIG.createTerrainBedFromGeometries( (uint)Resolution, geoms, TerrainBedMargin, TerrainBedHeightOffset, true );
+      // Creator method does not properly increment the reference count, do it manually instead
+      terrain.reference();
 
       if ( MaxDepthAsInitialHeight ) {
         int numCells = (int)(terrain.getResolutionX() * terrain.getResolutionY());
@@ -567,8 +590,18 @@ namespace AGXUnity.Model
       Simulation.Instance.Native.add( Native );
 
       var rb = RigidBody;
-      if ( rb != null )
+      if ( rb != null ) {
         RigidBody.GetInitialized<RigidBody>().Native.add( Native.getGeometry(), GetTerrainOffset() );
+        if ( EnableDynamicMassUpdates ) {
+          var mp = RigidBody.MassProperties;
+          if (
+            !mp.Mass.UseDefault ||
+            !mp.InertiaDiagonal.UseDefault ||
+            !mp.InertiaOffDiagonal.UseDefault ||
+            !mp.CenterOfMassOffset.UseDefault )
+            Debug.LogWarning( $"Terrain '{name}' has dynamic mass updates enabled while parent RigidBody specifies an explicit mass, this might cause discrepencies" );
+        }
+      }
       else
         Native.setTransform( GetTerrainOffset() * new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
                                                                            transform.position.ToHandedVec3() ) );
@@ -579,6 +612,9 @@ namespace AGXUnity.Model
     {
       if ( Native == null )
         return;
+
+      if ( EnableDynamicMassUpdates )
+        RigidBody.UpdateMassProperties();
 
       UpdateHeights( Native.getModifiedVertices() );
     }
