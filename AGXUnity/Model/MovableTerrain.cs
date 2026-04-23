@@ -202,10 +202,10 @@ namespace AGXUnity.Model
     private bool m_enableDynamicMassUpdates = true;
 
     /// <summary>
-    /// 
+    /// When enabled, the dynamic mass of the terrain will be calculated and used to update the mass properties of its parent RigidBody
     /// </summary>
     [InspectorPriority( -1 )]
-    [Tooltip( "" )]
+    [Tooltip( "When enabled, the dynamic mass of the terrain will be calculated and used to update the mass properties of its parent RigidBody" )]
     public bool EnableDynamicMassUpdates
     {
       get => m_enableDynamicMassUpdates;
