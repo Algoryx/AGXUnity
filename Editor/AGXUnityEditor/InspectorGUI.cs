@@ -779,7 +779,7 @@ namespace AGXUnityEditor
       using ( IndentScope.Single ) {
         foreach ( var item in items ) {
           if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
-                                                      item.GetInstanceID().ToString() ),
+                                                      item.GetEntityId().ToString() ),
                          GUI.MakeLabel( InspectorEditor.Skin.TagTypename( getTypename( item ) ) +
                                         ' ' +
                                         item.name ) ) ) {
@@ -950,7 +950,7 @@ namespace AGXUnityEditor
                                                            Object item,
                                                            Action<EditorDataEntry> onCreate = null )
     {
-      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString(), onCreate );
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetEntityId().ToString(), onCreate );
     }
 
     private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )

@@ -118,7 +118,7 @@ namespace AGXUnity
 
     private static string GetName( MonoBehaviour script )
     {
-      return script.name + "_ro_" + script.GetInstanceID().ToString();
+      return script.name + "_ro_" + script.GetEntityId().ToString();
     }
 
     private static RuntimeObjects RecoverAndGetInstance()

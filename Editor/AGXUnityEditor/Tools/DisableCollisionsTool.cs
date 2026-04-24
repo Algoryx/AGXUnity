@@ -95,10 +95,10 @@ namespace AGXUnityEditor.Tools
                                                                    "Cancel" );
 
       if ( applyCancelState == InspectorGUI.PositiveNegativeResult.Positive ) {
-        string selectedGroupName = m_mainObject.GetInstanceID().ToString();
+        string selectedGroupName = m_mainObject.GetEntityId().ToString();
         string mainObjectGroupName = "";
         for ( int i = 0; i < m_selected.Count; ++i )
-          mainObjectGroupName += m_selected[ i ].GetInstanceID().ToString() +
+          mainObjectGroupName += m_selected[ i ].GetEntityId().ToString() +
                                  ( i != m_selected.Count - 1 ? "_" : "" );
 
         Undo.SetCurrentGroupName( "Disabling collisions" );
