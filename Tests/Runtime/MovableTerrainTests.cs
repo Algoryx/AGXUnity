@@ -147,7 +147,7 @@ namespace AGXUnityTesting.Runtime
       var preInertiaOffDiag = rb.MassProperties.InertiaOffDiagonal.Value;
 
       var t1 = Simulation.Instance.Native.getTimeStamp();
-      while ( Simulation.Instance.Native.getTimeStamp() - t1 < 2 ) {
+      while ( Simulation.Instance.Native.getTimeStamp() - t1 < 3 ) {
         var particle = terr.GetSoilSimulationInterface().createSoilParticle( 0.1, new agx.Vec3( 1, 1, 1 ) );
         yield return TestUtils.Step();
       }
