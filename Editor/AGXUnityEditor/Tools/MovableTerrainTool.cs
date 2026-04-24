@@ -1,8 +1,8 @@
-﻿using AGXUnity.Model;
+﻿using AGXUnity.Collide;
+using AGXUnity.Model;
 using UnityEditor;
 using UnityEngine;
-
-using GUI = AGXUnity.Utils.GUI;
+using static AGXUnityEditor.InspectorGUI;
 
 namespace AGXUnityEditor.Tools
 {
@@ -16,6 +16,15 @@ namespace AGXUnityEditor.Tools
     {
     }
 
+    private Shape[] m_availableBedGeometries;
+
+    public override void OnAdd()
+    {
+      m_availableBedGeometries = null;
+      if ( !EditorApplication.isPlayingOrWillChangePlaymode )
+        m_availableBedGeometries = GameObject.FindObjectsByType<Shape>( FindObjectsSortMode.None );
+    }
+
     public enum SizeUnit
     {
       Meters, CellCount
@@ -26,22 +35,44 @@ namespace AGXUnityEditor.Tools
     public override void OnPreTargetMembersGUI()
     {
       EditorGUILayout.Space();
-      sizeToUse = (SizeUnit)EditorGUILayout.EnumPopup( "Size Units", sizeToUse );
 
-      using ( new InspectorGUI.IndentScope() ) {
+      DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.PlacementMode ) );
+
+      if ( MovableTerrain.PlacementMode == MovableTerrain.Placement.Automatic ) {
+        using var _ = new InspectorGUI.IndentScope();
+        InspectorGUI.ToolListGUI( this, MovableTerrain.BedGeometries, "Bed Geometries", m_availableBedGeometries, geom => MovableTerrain.AddBedGeometry( geom ), geom => MovableTerrain.RemoveBedGeometry( geom ) );
+        DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.Resolution ) );
+
+        EditorGUILayout.LabelField( new GUIContent(
+              $"Terrain size is {MovableTerrain.SizeCells.x} x {MovableTerrain.SizeCells.y} cells sized {MovableTerrain.ElementSize:F2} m",
+              $"Cell size is {MovableTerrain.ElementSize:F5} m"
+              ) );
+
+        DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.TerrainBedMargin ) );
+        DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.TerrainBedHeightOffset ) );
+
+        if ( GUILayout.Button( "Recompute" ) )
+          MovableTerrain.RecalculateAutomaticBed();
+      }
+      else {
+        sizeToUse = (SizeUnit)EditorGUILayout.EnumPopup( "Size Units", sizeToUse );
+
+        using var _ = new InspectorGUI.IndentScope();
         if ( sizeToUse == SizeUnit.Meters ) {
-          var newSize = InspectorGUI.Vector2Field( GUI.MakeLabel("Size"), MovableTerrain.SizeMeters );
-          newSize = new Vector2( Mathf.Clamp( newSize.x, 0.1f, float.MaxValue ), Mathf.Clamp( newSize.y, 0.1f, float.MaxValue ) );
-          MovableTerrain.SizeMeters = newSize;
-          MovableTerrain.Resolution = Mathf.Clamp( EditorGUILayout.IntField( "Resolution", MovableTerrain.Resolution ), 1, int.MaxValue );
-          EditorGUILayout.LabelField( $"Terrain size is {MovableTerrain.SizeCells.x} x {MovableTerrain.SizeCells.y} cells sized {MovableTerrain.ElementSize:F2} m" );
+          DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.SizeMeters ) );
+          DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.Resolution ) );
+          EditorGUILayout.LabelField( new GUIContent(
+            $"Terrain size is {MovableTerrain.SizeCells.x} x {MovableTerrain.SizeCells.y} cells sized {MovableTerrain.ElementSize:F2} m",
+            $"Cell size is {MovableTerrain.ElementSize} m"
+            ) );
         }
         else {
-          var newSize = InspectorGUI.Vector2IntField( GUI.MakeLabel("Count"), MovableTerrain.SizeCells );
-          newSize = new Vector2Int( Mathf.Clamp( newSize.x, 1, int.MaxValue ), Mathf.Clamp( newSize.y, 1, int.MaxValue ) );
-          MovableTerrain.SizeCells = newSize;
-          MovableTerrain.ElementSize = Mathf.Clamp( EditorGUILayout.FloatField( "Element Size", MovableTerrain.ElementSize ), 0.001f, float.MaxValue );
-          EditorGUILayout.LabelField( $"Terrain size is {MovableTerrain.SizeMeters.x:F1} x {MovableTerrain.SizeMeters.y:F1} m" );
+          DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.SizeCells ) );
+          DefaultInspector<MovableTerrain>( Targets, nameof( MovableTerrain.ElementSize ) );
+          EditorGUILayout.LabelField( new GUIContent(
+            $"Terrain size is {MovableTerrain.SizeMeters.x:F3} x {MovableTerrain.SizeMeters.y:F3} m",
+            $"Terrain size is {MovableTerrain.SizeMeters.x} x {MovableTerrain.SizeMeters.y} m"
+            ) );
         }
       }
     }

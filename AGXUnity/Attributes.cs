@@ -196,10 +196,10 @@ namespace AGXUnity
 
     public bool OptionalOverrideIsValid( object value )
     {
-      var wrappedType = value.GetType().GenericTypeArguments[ 0 ];
-      var ooType = typeof( OptionalOverrideValue<> ).MakeGenericType( wrappedType );
-      var wrappedVal = ooType.GetProperty( "OverrideValue" ).GetValue( value );
-      var validator = this.GetType().GetMethod( "IsValid", new Type[] { wrappedType } );
+      var wrappedType = value.GetType().GenericTypeArguments[0];
+      var ooType = typeof(OptionalOverrideValue<>).MakeGenericType(wrappedType);
+      var wrappedVal = ooType.GetProperty("OverrideValue").GetValue(value);
+      var validator = this.GetType().GetMethod("IsValid", new Type[] { wrappedType });
       if ( validator == null )
         return true;
       return (bool)validator.Invoke( this, new object[] { wrappedVal } );
@@ -242,6 +242,14 @@ namespace AGXUnity
     public bool IsMethod { get; private set; }
     public string Name { get; private set; }
     public bool Invert { get; private set; }
+  }
+
+  [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
+  public class DelayedInspectorAttribute : Attribute
+  {
+    public DelayedInspectorAttribute()
+    {
+    }
   }
 
   [AttributeUsage( AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false )]
