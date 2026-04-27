@@ -175,7 +175,7 @@ namespace AGXUnity
 #if UNITY_6000_3_OR_NEWER
       var baseGroupName = $"es_{Shape.GetEntityId().ToString()}";
 #else
-      var baseGroupName = $"es_{Shape.GetEntityId().ToString()}";
+      var baseGroupName = $"es_{Shape.GetInstanceID()}";
 #endif
       foreach ( var template in m_templates ) {
         foreach ( var emitter in m_emitters ) {

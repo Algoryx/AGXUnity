@@ -121,7 +121,7 @@ namespace AGXUnity
 #if UNITY_6000_3_OR_NEWER
       return script.name + "_ro_" + script.GetEntityId().ToString();
 #else
-      return script.name + "_ro_" + script.GetEntityId().ToString();
+      return script.name + "_ro_" + script.GetInstanceID().ToString();
 #endif
     }
 
