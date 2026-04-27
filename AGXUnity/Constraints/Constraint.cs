@@ -824,7 +824,11 @@ namespace AGXUnity
 
         // Not possible to handle collisions if connected frame parent is null/world.
         if ( CollisionsState != ECollisionsState.KeepExternalState && AttachmentPair.ConnectedObject != null ) {
-          string groupName = gameObject.name + "_" + gameObject.GetEntityId().ToString();
+#if UNITY_6000_3_OR_NEWER
+          string groupName = gameObject.name + "_" + gameObject.GetEntityId();
+#else
+          string groupName = gameObject.name + "_" + gameObject.GetInstanceID().ToString();
+#endif
           GameObject go1   = null;
           GameObject go2   = null;
           if ( CollisionsState == ECollisionsState.DisableReferenceVsConnected ) {

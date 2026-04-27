@@ -10,7 +10,11 @@ namespace AGXUnityEditor
   {
     public static uint CalculateKey( UnityEngine.Object target, string identifier )
     {
-      return ( ( target == null ? "0" : target.GetEntityId().ToString() ) + "_" + identifier ).To32BitFnv1aHash();
+#if UNITY_6000_3_OR_NEWER
+      return ( ( target == null ? "0" : target.GetEntityId() ) + "_" + identifier ).To32BitFnv1aHash();
+#else
+      return ( ( target == null ? "0" : target.GetInstanceID().ToString() ) + "_" + identifier ).To32BitFnv1aHash();
+#endif
     }
 
     [SerializeField]

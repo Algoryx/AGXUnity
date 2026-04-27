@@ -103,7 +103,6 @@ namespace AGXUnityEditor.Utils
 #else
             var bodies = UnityEngine.Object.FindObjectsOfType<RigidBody>();
 #endif
-            Array.Sort( bodies, ( b1, b2 ) => { return b1.GetEntityId() > b2.GetEntityId() ? -1 : 1; } );
 
             foreach ( var body in bodies ) {
               // Create the color for all bodies for the colors to be consistent.
