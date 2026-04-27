@@ -778,8 +778,13 @@ namespace AGXUnityEditor
                                                      getDefaultTypename;
       using ( IndentScope.Single ) {
         foreach ( var item in items ) {
+#if UNITY_6000_3_OR_NEWER
+          if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
+                                                      item.GetEntityId().ToString() ),
+#else
           if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                       item.GetInstanceID().ToString() ),
+#endif
                          GUI.MakeLabel( InspectorEditor.Skin.TagTypename( getTypename( item ) ) +
                                         ' ' +
                                         item.name ) ) ) {
@@ -950,7 +955,11 @@ namespace AGXUnityEditor
                                                            Object item,
                                                            Action<EditorDataEntry> onCreate = null )
     {
+#if UNITY_6000_3_OR_NEWER
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetEntityId().ToString(), onCreate );
+#else
       return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString(), onCreate );
+#endif
     }
 
     private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )
