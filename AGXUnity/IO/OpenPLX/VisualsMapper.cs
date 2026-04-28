@@ -71,23 +71,27 @@ namespace AGXUnity.IO.OpenPLX
       return Tuple.Create( go, false );
     }
 
-    public GameObject MapVisualNode( openplx.Visuals.Node node )
+    public GameObject MapVisualNode( openplx.Visuals.Node node, openplx.Physics.Optics.Material materialOverride = null )
     {
       GameObject go;
+
+      if ( node.HasTrait<openplx.Visuals.Materials.VisualMaterialOverrideTrait>() )
+        materialOverride = node.getDynamic( "material_override" ).asObject() as openplx.Physics.Optics.Material;
+
       if ( node is openplx.Visuals.Geometries.Geometry geom )
-        go = MapVisualGeometry( geom );
+        go = MapVisualGeometry( geom, materialOverride );
       else
         go = Data.CreateOpenPLXObject( node.getName() );
 
       Utils.MapLocalTransform( go.transform, node.local_transform() );
 
       foreach ( var subnode in node.getValues<openplx.Visuals.Node>() )
-        Utils.AddChild( go, MapVisualNode( subnode ), Data.ErrorReporter, subnode );
+        Utils.AddChild( go, MapVisualNode( subnode, materialOverride ), Data.ErrorReporter, subnode );
 
       return go;
     }
 
-    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual )
+    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual, openplx.Physics.Optics.Material materialOverride = null )
     {
       GameObject go = null;
       bool cachedMat = false;
@@ -145,8 +149,9 @@ namespace AGXUnity.IO.OpenPLX
         if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
 #endif
         //foreach(var mat in visual.getValues<openplx.Visuals.Materials.>())
+        var material = materialOverride ?? visual.material();
         foreach ( var renderer in go.GetComponentsInChildren<MeshRenderer>() )
-          renderer.material = MapVisualMaterial( visual.material() );
+          renderer.material = MapVisualMaterial( material );
       }
 
       return go;
