@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
 using Bodies = openplx.Physics3D.Bodies;
 using Geometries = openplx.Physics3D.Geometries;
 using Object = openplx.Core.Object;
@@ -17,18 +16,13 @@ namespace AGXUnity.IO.OpenPLX
 {
   public struct MapperOptions
   {
-    public MapperOptions( bool hideMeshes = false, bool hideVisuals = false, bool ignoreDisabledMeshes = false, bool rotateUp = true )
-    {
-      HideMeshesInHierarchy = hideMeshes;
-      HideVisualMaterialsInHierarchy = hideVisuals;
-      IgnoreDisabledMeshes = ignoreDisabledMeshes;
-      RotateUp = rotateUp;
-    }
-
     public bool HideMeshesInHierarchy;
-    public bool HideVisualMaterialsInHierarchy;
     public bool IgnoreDisabledMeshes;
     public bool RotateUp;
+
+    public bool HideVisualMaterialsInHierarchy;
+    public bool HideTexturesInHierarchy;
+    public bool HideVisualMeshesInHierarchy;
   }
 
   public class OpenPLXUnityMapper
@@ -40,6 +34,7 @@ namespace AGXUnity.IO.OpenPLX
     private InteractionMapper InteractionMapper { get; set; }
     private VehicleMapper VehicleMapper { get; set; }
     private SensorMapper SensorMapper { get; set; }
+    private VisualsMapper VisualsMapper { get; set; }
 
     MapperOptions Options;
 
@@ -51,6 +46,7 @@ namespace AGXUnity.IO.OpenPLX
       InteractionMapper = new InteractionMapper( Data );
       VehicleMapper = new VehicleMapper( Data, InteractionMapper );
       SensorMapper = new SensorMapper( Data );
+      VisualsMapper = new VisualsMapper( Data, Options );
     }
 
     public UnityEngine.Object MapObject( Object obj, string path )
@@ -58,8 +54,8 @@ namespace AGXUnity.IO.OpenPLX
       try {
         if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
           return MapSimulatable( obj, path );
-        else if ( obj is openplx.Visuals.Materials.Material mat )
-          return MapVisualMaterial( mat );
+        else if ( obj is openplx.Physics.Optics.Material mat )
+          return VisualsMapper.MapVisualMaterial( mat );
         else
           Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
       }
@@ -155,112 +151,6 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
-    {
-      GameObject go = Data.CreateGameObject();
-
-      var rd      = shape.getRenderData();
-
-      var filter = go.AddComponent<MeshFilter>();
-      var renderer = go.AddComponent<MeshRenderer>();
-
-      renderer.enabled = rd.getShouldRender();
-
-      // TODO: Should these be cached? Can they?
-      var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
-      if ( Options.HideMeshesInHierarchy )
-        mesh.hideFlags = HideFlags.HideInHierarchy;
-      mesh.name = visual.getName();
-      Data.MappedMeshes.Add( mesh );
-      filter.mesh = mesh;
-
-      var rm = rd.getRenderMaterial();
-      if ( rm != null ) {
-        if ( !Data.NativeMappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
-          mat = new Material( Shader.Find( "Standard" ) );
-          mat.RestoreLocalDataFrom( rm );
-          if ( rm.getName() != "" )
-            mat.name = $"{rm.getName()}#{rm.getHash()}";
-          else
-            mat.name = rm.getHash().ToString();
-          if ( Options.HideVisualMaterialsInHierarchy )
-            mat.hideFlags = HideFlags.HideInHierarchy;
-          Data.NativeMappedRenderMaterialCache[ rm.getHash() ] = mat;
-          Data.MappedMaterials.Add( mat );
-        }
-
-        renderer.material = mat;
-        return Tuple.Create( go, true );
-      }
-
-      return Tuple.Create( go, false );
-    }
-
-    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual )
-    {
-      GameObject go = null;
-      bool cachedMat = false;
-      var uuid_annots = visual.findAnnotations("uuid");
-      foreach ( var uuid_annot in uuid_annots ) {
-        if ( uuid_annot.isString() ) {
-          var uuid = uuid_annot.asString();
-          var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
-          if ( shape != null )
-            (go, cachedMat) = MapCachedVisual( shape.first, shape.second, visual );
-        }
-      }
-
-      if ( go == null ) {
-        go = visual switch
-        {
-          openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
-          openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
-          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
-          openplx.Visuals.Geometries.ConvexMesh cm => MapConvex( cm ),
-          openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
-          _ => null
-        };
-
-        switch ( visual ) {
-          case openplx.Visuals.Geometries.Box box:
-            go.transform.localScale = box.size().ToVector3();
-            break;
-          case openplx.Visuals.Geometries.Cylinder cyl:
-            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height()/2, (float)cyl.radius() );
-            break;
-          case openplx.Visuals.Geometries.Sphere sphere:
-            go.transform.localScale = Vector3.one * (float)sphere.radius();
-            break;
-          default:
-            break;
-        }
-      }
-
-
-      if ( go == null ) {
-        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
-        if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
-          return null;
-
-        return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
-      }
-
-      Data.RegisterOpenPLXObject( visual.getName(), go );
-      Utils.MapLocalTransform( go.transform, visual.local_transform() );
-      if ( !cachedMat ) {
-        // TODO: Find a better way to check whether to use material
-        // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
-        // TODO: This is only relevant when using editor assets which is currently disabled
-#if false
-        if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
-#endif
-        foreach ( var renderer in go.GetComponentsInChildren<MeshRenderer>() )
-          renderer.material = MapVisualMaterial( visual.material() );
-      }
-
-      return go;
-    }
-
     GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
       where UnityType : Shape
       where OpenPLXType : Geometries.ContactGeometry
@@ -317,37 +207,6 @@ namespace AGXUnity.IO.OpenPLX
       return outMesh;
     }
 
-    Material MapVisualMaterial( openplx.Visuals.Materials.Material mat )
-    {
-      if ( Data.RenderMaterialCache.TryGetValue( mat, out var renderMat ) )
-        return renderMat;
-
-      if ( mat is openplx.Visuals.Materials.TextureMaterial texMat ) {
-        renderMat = RenderingUtils.CreateDefaultMaterial();
-        renderMat.name = mat.getName();
-
-        var path = texMat.path();
-        if ( !VerifyAssetPath( path, texMat ) )
-          return null;
-#if UNITY_EDITOR
-        var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
-        var source = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture>(assetPath);
-#else
-        var converted = OpenPLXImporter.TransformOpenPLXPath(path);
-        byte[] data = System.IO.File.ReadAllBytes(converted);
-        var source = new Texture2D(2, 2);
-        source.LoadImage( data );
-#endif
-        renderMat.SetTexture( "_MainTex", source );
-        renderMat.SetTextureScale( "_MainTex", new Vector2( (float)texMat.scale_u(), (float)texMat.scale_v() ) );
-        Data.RenderMaterialCache[ mat ] = renderMat;
-        Data.MappedMaterials.Add( renderMat );
-        return renderMat;
-      }
-      else
-        return Data.DefaultVisualMaterial;
-    }
-
     GameObject MapConvex( Geometries.ConvexMesh convex )
     {
       var go = Data.CreateOpenPLXObject(convex.getName());
@@ -356,17 +215,6 @@ namespace AGXUnity.IO.OpenPLX
 
       meshComp.AddSourceObject( mesh );
       return go;
-    }
-
-    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex )
-    {
-      var go = Data.CreateOpenPLXObject(convex.getName());
-      var mr = go.AddComponent<MeshRenderer>();
-      var mf = go.AddComponent<MeshFilter>();
-      var mesh = MapConvex( convex.vertices(), convex.getName() );
-
-      mf.mesh = mesh;
-      return mf.gameObject;
     }
 
     UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
@@ -382,51 +230,6 @@ namespace AGXUnity.IO.OpenPLX
       Data.MappedMeshes.Add( mesh );
 
       return mesh;
-    }
-
-    GameObject MapExternalTriMesh( openplx.Visuals.Geometries.ExternalTriMeshGeometry objGeom )
-    {
-      string path = objGeom.path();
-
-      GameObject go = Data.CreateGameObject();
-
-      if ( !VerifyAssetPath( path, objGeom ) )
-        return go;
-
-      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
-      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
-#if false
-      var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
-
-      var prefab = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab( UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ) );
-
-      var rot = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
-      var m = new Matrix4x4();
-      m.SetTRS( Vector3.zero, rot, Vector3.one );
-      prefab.transform.localPosition = m.MultiplyPoint( prefab.transform.localPosition );
-      //prefab.transform.localRotation = rot * prefab.transform.localRotation;
-      prefab.transform.SetParent( go.transform, false );
-#else
-      var mf = go.AddComponent<MeshFilter>();
-      var mr = go.AddComponent<MeshRenderer>();
-
-      var mesh = new UnityEngine.Mesh();
-
-      var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-      mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
-      mesh.name = objGeom.getName() + "_mesh";
-      Data.MappedMeshes.Add( mesh );
-
-      if ( mesh == null ) {
-        var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
-      }
-      else
-        mf.mesh = mesh;
-#endif
-      go.transform.localScale = objGeom.scale().ToVector3();
-
-      return go;
     }
 
     GameObject MapExternalTriMesh( Geometries.ExternalTriMeshGeometry objGeom )
@@ -702,9 +505,10 @@ namespace AGXUnity.IO.OpenPLX
       rbComp.AngularVelocity = transform.transform_vec3_vector( kinematics.initial_local_angular_velocity() ).ToHandedVector3();
 
       bool hasVisuals = false;
-      foreach ( var visual in body.getValues<openplx.Visuals.Geometries.Geometry>() ) {
+
+      foreach ( var node in body.getValues<openplx.Visuals.Node>() ) {
         hasVisuals = true;
-        Utils.AddChild( rb, MapVisualGeometry( visual ), Data.ErrorReporter, visual );
+        Utils.AddChild( rb, VisualsMapper.MapVisualNode( node ), Data.ErrorReporter, node );
       }
 
       foreach ( var geom in body.getValues<Geometries.ContactGeometry>() )
@@ -889,6 +693,10 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       VehicleMapper.MapSystemPass1( system );
+
+      foreach ( var visual in system.getNonReferenceValues<openplx.Visuals.Node>() ) {
+        Utils.AddChild( s, VisualsMapper.MapVisualNode( visual ), Data.ErrorReporter, visual );
+      }
 
       return s;
     }

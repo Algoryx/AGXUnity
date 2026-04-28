@@ -70,12 +70,17 @@ namespace AGXUnityEditor.IO.OpenPLX
     public bool SkipImport = false;
     [Tooltip("When importing large models there might be a large amount of meshes being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported meshes in the subasset view.")]
     public bool HideImportedMeshes = true;
-    [Tooltip("When importing large models there might be a large amount of materials being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported materials in the subasset view.")]
-    public bool HideImportedVisualMaterials = false;
     [Tooltip("When importing OpenPLX files that in turn import .agx archives, the visual meshes are sometimes attached to a disabled collision mesh with the same source mesh. When enabled, this option skips the import of these disabled meshes when mapping to AGXUnity objects.")]
     public bool IgnoreDisabledMeshes = false;
     [Tooltip("Since AGX use Z-up by default, many OpenPLX models might be built using Z-Up. This option applies a rotation to move the model Z-axis to the Unity Y-axis.")]
     public bool RotateUp = true;
+
+    [Tooltip("When importing large models there might be a large amount of materials being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported materials in the subasset view.")]
+    public bool HideImportedVisualMaterials = false;
+    [Tooltip("When importing large models there might be a large amount of materials being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported visual meshes in the subasset view.")]
+    public bool HideImportedVisualMeshes = false;
+    [Tooltip("When importing large models there might be a large amount of materials being imported which can make it hard to navigate the subassets of the imported OpenPLX file. This option hides the imported textures in the subasset view.")]
+    public bool HideImportedTextures = false;
 
     private bool m_nonImportable = false;
     private ScriptedImportData m_data;
@@ -121,7 +126,15 @@ namespace AGXUnityEditor.IO.OpenPLX
       var start = DateTime.Now;
       var importer = new OpenPLXImporter();
       importer.ErrorReporter = ReportErrors;
-      importer.Options = new MapperOptions( HideImportedMeshes, HideImportedVisualMaterials, IgnoreDisabledMeshes, RotateUp );
+      importer.Options = new MapperOptions()
+      {
+        HideMeshesInHierarchy = HideImportedMeshes,
+        IgnoreDisabledMeshes = IgnoreDisabledMeshes,
+        RotateUp = RotateUp,
+        HideVisualMaterialsInHierarchy = HideImportedVisualMaterials,
+        HideTexturesInHierarchy = HideImportedTextures,
+        HideVisualMeshesInHierarchy = HideImportedVisualMeshes,
+      };
       importer.SuccessCallback = data => OnSuccess( ctx, data );
       importer.ErrorCallback = () => {
         if ( !m_nonImportable )
@@ -165,6 +178,8 @@ namespace AGXUnityEditor.IO.OpenPLX
         ctx.AddObjectToAsset( mesh.name, mesh );
       foreach ( var mat in data.MappedMaterials )
         ctx.AddObjectToAsset( mat.name, mat );
+      foreach ( var tex in data.TextureCache )
+        ctx.AddObjectToAsset( tex.Value.name, tex.Value );
       if ( data.HasDefaultMaterial )
         ctx.AddObjectToAsset( data.DefaultMaterial.name, data.DefaultMaterial );
       foreach ( var mat in data.MaterialCache.Values )

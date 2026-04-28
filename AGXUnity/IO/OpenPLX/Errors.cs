@@ -27,6 +27,7 @@ namespace AGXUnity.IO.OpenPLX
     InvalidLinkDescription = 20,
     InsufficientTrackWheels = 21,
     MissingTrackWheelBody = 22,
+    IncompatibleSamplers = 23,
   }
 
   public class BaseError : openplx.Error
@@ -332,5 +333,14 @@ namespace AGXUnity.IO.OpenPLX
     { }
 
     protected override string createErrorMessage() => $"Track wheel's body was not properly mapped to a RigidBody";
+  }
+
+  public class IncompatibleSamplersError : BaseError
+  {
+    public IncompatibleSamplersError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.IncompatibleSamplers )
+    { }
+
+    protected override string createErrorMessage() => $"Base Color map and Alpha map sampler traits need to match or be unspecified";
   }
 }

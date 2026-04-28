@@ -39,12 +39,14 @@ namespace AGXUnity.Utils
 
       Vector3 posBefore = child.transform.position;
       Quaternion rotBefore = child.transform.rotation;
+      Vector3 scaleBefore = child.transform.lossyScale;
 
       child.transform.parent = parent.transform;
 
       if ( makeCurrentTransformLocal ) {
         child.transform.localPosition = posBefore;
         child.transform.localRotation = rotBefore;
+        child.transform.localScale = scaleBefore;
       }
 
       return parent;

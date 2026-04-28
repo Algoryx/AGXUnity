@@ -90,14 +90,19 @@ namespace AGXUnityEditor.IO.OpenPLX
     {
       var ve = new VisualElement();
       ve.SetPadding( 10, 0, 0, 0 );
-      ve.Add( new PropertyField( serializedObject.FindProperty( "SkipImport" ) ) );
-      var skipImport = serializedObject.FindProperty( "SkipImport" ).boolValue;
+      ve.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.SkipImport ) ) ) );
+      var skipImport = serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.SkipImport) ).boolValue;
       var skipContainer = new VisualElement();
       skipContainer.SetEnabled( !skipImport );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "RotateUp" ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedMeshes ) ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.RotateUp ) ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.IgnoreDisabledMeshes ) ) ) );
+      var visualsFoldout = new Foldout();
+      visualsFoldout.text = "Visual options";
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedVisualMeshes ) ) ) );
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedVisualMaterials ) ) ) );
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedTextures ) ) ) );
+      skipContainer.Add( visualsFoldout );
 
       if ( !skipImport ) {
 
@@ -105,7 +110,7 @@ namespace AGXUnityEditor.IO.OpenPLX
         models.Add( "Default" );
         var modelSelection = new DropdownField( "Imported Model", models, ScriptedOpenPLXImporter.ImportedModel );
         modelSelection.RegisterValueChangedCallback( ce => ScriptedOpenPLXImporter.ImportedModel = ce.newValue );
-        modelSelection.BindProperty( serializedObject.FindProperty( "ImportedModel" ) );
+        modelSelection.BindProperty( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.ImportedModel ) ) );
         skipContainer.Add( modelSelection );
 
         if ( ScriptedOpenPLXImporter.Errors.Length > 0 ) {

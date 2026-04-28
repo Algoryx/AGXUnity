@@ -129,7 +129,6 @@ namespace AGXUnity.IO.OpenPLX
   }
   public static class Utils
   {
-
     public static void MapLocalTransform( Transform transform, openplx.Math.AffineTransform local_transform )
     {
       transform.localPosition = local_transform.position().ToHandedVector3();

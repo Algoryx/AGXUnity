@@ -64,7 +64,8 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings> ShovelSettingsCache { get; } = new Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
-    public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };
+    public Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D> TextureCache { get; } = new Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D>();
+    public Dictionary<openplx.Physics.Optics.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Physics.Optics.Material, Material> { };
 
     public List<ContactMaterial> MappedContactMaterials { get; } = new List<ContactMaterial>();
     public List<FrictionModel> MappedFrictionModels { get; } = new List<FrictionModel>();
