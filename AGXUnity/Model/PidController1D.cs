@@ -14,27 +14,35 @@ namespace AGXUnity.Model
     public class FloatEvent : UnityEvent<float> { }
 
     /// <summary>
-    /// Stores a reference to a component and the name of a writable float property or field on it.
+    /// Stores a reference to a component and the name of a writable float or Vector3 property or
+    /// field on it. For Vector3 members, Axis selects which component receives the output value.
     /// Call Bind() once at runtime to cache reflection data, then Set(value) to write.
     /// </summary>
     [Serializable]
     public class ComponentFloatProperty
     {
+      public enum Vector3Axis { X, Y, Z }
+
       [SerializeField]
       public Component Target = null;
 
       [SerializeField]
       public string MemberName = string.Empty;
 
+      [SerializeField]
+      public Vector3Axis Axis = Vector3Axis.X;
+
       private PropertyInfo m_property;
-      private FieldInfo m_field;
+      private FieldInfo    m_field;
+      private bool         m_isVector3;
 
       public bool IsValid => Target != null && ( m_property != null || m_field != null );
 
       public void Bind()
       {
-        m_property = null;
-        m_field    = null;
+        m_property  = null;
+        m_field     = null;
+        m_isVector3 = false;
 
         if ( Target == null || string.IsNullOrEmpty( MemberName ) )
           return;
@@ -43,20 +51,41 @@ namespace AGXUnity.Model
         var type = Target.GetType();
 
         var prop = type.GetProperty( MemberName, flags );
-        if ( prop != null && prop.CanWrite && prop.PropertyType == typeof( float ) ) {
-          m_property = prop;
-          return;
+        if ( prop != null && prop.CanWrite ) {
+          if ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) {
+            m_property  = prop;
+            m_isVector3 = prop.PropertyType == typeof( Vector3 );
+            return;
+          }
         }
 
         var field = type.GetField( MemberName, flags );
-        if ( field != null && field.FieldType == typeof( float ) )
-          m_field = field;
+        if ( field != null && ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) ) {
+          m_field     = field;
+          m_isVector3 = field.FieldType == typeof( Vector3 );
+        }
       }
 
       public void Set( float value )
       {
-        m_property?.SetValue( Target, value );
-        m_field?.SetValue( Target, value );
+        if ( m_isVector3 ) {
+          var v = m_property != null
+            ? (Vector3)m_property.GetValue( Target )
+            : (Vector3)m_field.GetValue( Target );
+
+          switch ( Axis ) {
+            case Vector3Axis.X: v.x = value; break;
+            case Vector3Axis.Y: v.y = value; break;
+            case Vector3Axis.Z: v.z = value; break;
+          }
+
+          m_property?.SetValue( Target, v );
+          m_field?.SetValue( Target, v );
+        }
+        else {
+          m_property?.SetValue( Target, value );
+          m_field?.SetValue( Target, value );
+        }
       }
     }
 
