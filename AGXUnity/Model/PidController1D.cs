@@ -333,7 +333,6 @@ namespace AGXUnity.Model
     /// Invoked with the output value each time WriteProcessValueToOutput runs (OutputTarget.UnityEvent).
     /// </summary>
     [DynamicallyShowInInspector( nameof( IsOutputUnityEvent ) )]
-    [InspectorGroupEnd]
     public FloatEvent OnOutput => m_onOutput;
 
     [SerializeField]
@@ -356,6 +355,7 @@ namespace AGXUnity.Model
     /// Component property or field to write the output value to (OutputTarget.ComponentProperty).
     /// </summary>
     [DynamicallyShowInInspector( nameof( IsOutputComponentProperty ) )]
+    [InspectorGroupEnd]
     public ComponentFloatProperty TargetProperty => m_componentProperty;
 
     [RuntimeValue]

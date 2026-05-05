@@ -1704,6 +1704,85 @@ namespace AGXUnityEditor
       return state;
     }
 
+    [InspectorDrawer( typeof( PidController1D.ComponentFloatProperty ) )]
+    public static object ComponentFloatPropertyDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var unityObj = objects[ 0 ] as Object;
+      var data     = wrapper.Get<PidController1D.ComponentFloatProperty>( objects[ 0 ] );
+
+      EditorGUI.BeginChangeCheck();
+      var newTarget = (Component)EditorGUILayout.ObjectField( "Target",
+                                                              data.Target,
+                                                              typeof( Component ),
+                                                              true );
+      if ( EditorGUI.EndChangeCheck() ) {
+        data.Target     = newTarget;
+        data.MemberName = string.Empty;
+        EditorUtility.SetDirty( unityObj );
+      }
+
+      if ( data.Target == null ) {
+        using ( new GUI.EnabledBlock( false ) )
+          EditorGUILayout.Popup( "Member", 0, new[] { "— select Target first —" } );
+        return null;
+      }
+
+      var members = GetWritableFloatMembers( data.Target.GetType() );
+      if ( members.Length == 0 ) {
+        using ( new GUI.EnabledBlock( false ) )
+          EditorGUILayout.Popup( "Member", 0, new[] { "— no writable float members —" } );
+        return null;
+      }
+
+      var names        = members.Select( m => m.Name ).ToArray();
+      int currentIndex = Mathf.Max( 0, Array.IndexOf( names, data.MemberName ) );
+
+      EditorGUI.BeginChangeCheck();
+      int newIndex = EditorGUILayout.Popup( "Member", currentIndex, names );
+      if ( EditorGUI.EndChangeCheck() ) {
+        data.MemberName = names[ newIndex ];
+        EditorUtility.SetDirty( unityObj );
+      }
+
+      return null;
+    }
+
+    [InspectorDrawer( typeof( PidController1D.FloatEvent ) )]
+    public static object FloatEventDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( objects.Length != 1 )
+        return null;
+
+      var unityObj = objects[ 0 ] as Object;
+      if ( unityObj == null )
+        return null;
+
+      var name      = wrapper.Member.Name;
+      var fieldName = "m_" + char.ToLower( name[ 0 ] ) + name.Substring( 1 );
+
+      var serializedObj = new SerializedObject( unityObj );
+      serializedObj.Update();
+      var prop = serializedObj.FindProperty( fieldName );
+      if ( prop == null )
+        return null;
+
+      EditorGUILayout.PropertyField( prop, InspectorGUI.MakeLabel( wrapper.Member ), true );
+      serializedObj.ApplyModifiedProperties();
+
+      return null;
+    }
+
+    private static MemberInfo[] GetWritableFloatMembers( Type type )
+    {
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      var props  = type.GetProperties( flags )
+                       .Where( p => p.CanWrite && p.PropertyType == typeof( float ) )
+                       .Cast<MemberInfo>();
+      var fields = type.GetFields( flags )
+                       .Where( f => f.FieldType == typeof( float ) )
+                       .Cast<MemberInfo>();
+      return props.Concat( fields ).OrderBy( m => m.Name ).ToArray();
+    }
 
   }
 }
