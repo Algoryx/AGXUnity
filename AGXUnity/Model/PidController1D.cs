@@ -1,4 +1,8 @@
+using System;
+using System.Reflection;
+using AGXUnity.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace AGXUnity.Model
 {
@@ -6,11 +10,69 @@ namespace AGXUnity.Model
   [DisallowMultipleComponent]
   public class PidController1D : ScriptComponent
   {
+    [Serializable]
+    public class FloatEvent : UnityEvent<float> { }
+
+    /// <summary>
+    /// Stores a reference to a component and the name of a writable float property or field on it.
+    /// Call Bind() once at runtime to cache reflection data, then Set(value) to write.
+    /// </summary>
+    [Serializable]
+    public class ComponentFloatProperty
+    {
+      [SerializeField]
+      public Component Target = null;
+
+      [SerializeField]
+      public string MemberName = string.Empty;
+
+      private PropertyInfo m_property;
+      private FieldInfo m_field;
+
+      public bool IsValid => Target != null && ( m_property != null || m_field != null );
+
+      public void Bind()
+      {
+        m_property = null;
+        m_field    = null;
+
+        if ( Target == null || string.IsNullOrEmpty( MemberName ) )
+          return;
+
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+        var type = Target.GetType();
+
+        var prop = type.GetProperty( MemberName, flags );
+        if ( prop != null && prop.CanWrite && prop.PropertyType == typeof( float ) ) {
+          m_property = prop;
+          return;
+        }
+
+        var field = type.GetField( MemberName, flags );
+        if ( field != null && field.FieldType == typeof( float ) )
+          m_field = field;
+      }
+
+      public void Set( float value )
+      {
+        m_property?.SetValue( Target, value );
+        m_field?.SetValue( Target, value );
+      }
+    }
+
     public enum OutputWriteCallback
     {
       Manual,
       PreSynchronizeTransforms,
       PostSynchronizeTransforms
+    }
+
+    public enum OutputTarget
+    {
+      Field,
+      UnityEvent,
+      OpenPLX,
+      ComponentProperty
     }
 
     /// <summary>
@@ -249,6 +311,53 @@ namespace AGXUnity.Model
       set => m_outputValue = value;
     }
 
+    [SerializeField]
+    private OutputTarget m_outputTarget = OutputTarget.Field;
+
+    [InspectorSeparator]
+    [InspectorGroupBegin( Name = "Output", DefaultExpanded = true )]
+    public OutputTarget Output
+    {
+      get => m_outputTarget;
+      set => m_outputTarget = value;
+    }
+
+    private bool IsOutputUnityEvent      => m_outputTarget == OutputTarget.UnityEvent;
+    private bool IsOutputOpenPLX         => m_outputTarget == OutputTarget.OpenPLX;
+    private bool IsOutputComponentProperty => m_outputTarget == OutputTarget.ComponentProperty;
+
+    [SerializeField]
+    private FloatEvent m_onOutput = new FloatEvent();
+
+    /// <summary>
+    /// Invoked with the output value each time WriteProcessValueToOutput runs (OutputTarget.UnityEvent).
+    /// </summary>
+    [DynamicallyShowInInspector( nameof( IsOutputUnityEvent ) )]
+    [InspectorGroupEnd]
+    public FloatEvent OnOutput => m_onOutput;
+
+    [SerializeField]
+    private string m_openPLXSignalName = string.Empty;
+
+    /// <summary>
+    /// Full path of the OpenPLX input signal to send the output to (OutputTarget.OpenPLX).
+    /// </summary>
+    [DynamicallyShowInInspector( nameof( IsOutputOpenPLX ) )]
+    public string OpenPLXSignalName
+    {
+      get => m_openPLXSignalName;
+      set => m_openPLXSignalName = value;
+    }
+
+    [SerializeField]
+    private ComponentFloatProperty m_componentProperty = new ComponentFloatProperty();
+
+    /// <summary>
+    /// Component property or field to write the output value to (OutputTarget.ComponentProperty).
+    /// </summary>
+    [DynamicallyShowInInspector( nameof( IsOutputComponentProperty ) )]
+    public ComponentFloatProperty TargetProperty => m_componentProperty;
+
     [RuntimeValue]
     public bool RuntimeEnabled { get; private set; } = false;
 
@@ -271,7 +380,7 @@ namespace AGXUnity.Model
     public float RuntimeDerivativeTerm { get; private set; } = 0.0f;
 
     /// <summary>
-    /// Feeds the current ProcessValue into the controller and writes the result to OutputValue.
+    /// Feeds the current ProcessValue into the controller and dispatches the result to the configured output.
     /// </summary>
     /// <returns>The new OutputValue.</returns>
     public float WriteProcessValueToOutput()
@@ -280,7 +389,7 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Feeds <paramref name="processValue"/> into the controller and writes the result to OutputValue.
+    /// Feeds <paramref name="processValue"/> into the controller and dispatches the result to the configured output.
     /// </summary>
     /// <returns>The new OutputValue.</returns>
     public float WriteProcessValueToOutput( float processValue )
@@ -294,6 +403,7 @@ namespace AGXUnity.Model
       m_outputValue = (float)Native.getManipulatedVariable();
 
       UpdateRuntimeValues();
+      DispatchOutput( m_outputValue );
 
       return m_outputValue;
     }
@@ -309,13 +419,17 @@ namespace AGXUnity.Model
       try {
         Native = new agxModel.PidController1D();
       }
-      catch ( System.Exception exception ) {
+      catch ( Exception exception ) {
         Debug.LogException( exception, this );
         return false;
       }
 
       SynchronizePropertiesToNative();
       UpdateRuntimeValues();
+
+      InitializeOpenPLXTarget();
+      m_componentProperty.Bind();
+
       UpdateCallbackRegistration();
 
       return base.Initialize();
@@ -341,6 +455,38 @@ namespace AGXUnity.Model
       Native?.Dispose();
       Native = null;
       base.OnDestroy();
+    }
+
+    private void DispatchOutput( float value )
+    {
+      switch ( m_outputTarget ) {
+        case OutputTarget.UnityEvent:
+          m_onOutput.Invoke( value );
+          break;
+
+        case OutputTarget.OpenPLX:
+          m_openPLXInputTarget?.SendSignal( value );
+          break;
+
+        case OutputTarget.ComponentProperty:
+          m_componentProperty.Set( value );
+          break;
+      }
+    }
+
+    private void InitializeOpenPLXTarget()
+    {
+      if ( m_outputTarget != OutputTarget.OpenPLX || string.IsNullOrEmpty( m_openPLXSignalName ) )
+        return;
+
+      var signals = gameObject.GetInitializedComponentInParent<IO.OpenPLX.OpenPLXSignals>();
+      if ( signals == null )
+        signals = FindObjectOfType<IO.OpenPLX.OpenPLXSignals>()?.GetInitialized<IO.OpenPLX.OpenPLXSignals>();
+
+      m_openPLXInputTarget = signals?.FindInputTarget( m_openPLXSignalName );
+
+      if ( m_openPLXInputTarget == null )
+        Debug.LogWarning( $"PidController1D: OpenPLX input signal '{m_openPLXSignalName}' not found.", this );
     }
 
     private void SynchronizePropertiesToNative()
@@ -403,25 +549,26 @@ namespace AGXUnity.Model
     private void UpdateRuntimeValues()
     {
       if ( Native == null ) {
-        RuntimeEnabled = false;
-        RuntimeError = 0.0f;
-        RuntimeMeasuredProcessValue = 0.0f;
-        RuntimeManipulatedVariable = m_outputValue;
-        RuntimeProportionalTerm = 0.0f;
-        RuntimeIntegralTerm = 0.0f;
-        RuntimeDerivativeTerm = 0.0f;
+        RuntimeEnabled                = false;
+        RuntimeError                  = 0.0f;
+        RuntimeMeasuredProcessValue   = 0.0f;
+        RuntimeManipulatedVariable    = m_outputValue;
+        RuntimeProportionalTerm       = 0.0f;
+        RuntimeIntegralTerm           = 0.0f;
+        RuntimeDerivativeTerm         = 0.0f;
         return;
       }
 
-      RuntimeEnabled = Native.isEnabled();
-      RuntimeError = (float)Native.getError();
+      RuntimeEnabled              = Native.isEnabled();
+      RuntimeError                = (float)Native.getError();
       RuntimeMeasuredProcessValue = (float)Native.getMeasuredProcessVariable();
-      RuntimeManipulatedVariable = (float)Native.getManipulatedVariable();
-      RuntimeProportionalTerm = (float)Native.getProportionalTerm();
-      RuntimeIntegralTerm = (float)Native.getIntegraTerm();
-      RuntimeDerivativeTerm = (float)Native.getDerivativeTerm();
+      RuntimeManipulatedVariable  = (float)Native.getManipulatedVariable();
+      RuntimeProportionalTerm     = (float)Native.getProportionalTerm();
+      RuntimeIntegralTerm         = (float)Native.getIntegraTerm();
+      RuntimeDerivativeTerm       = (float)Native.getDerivativeTerm();
     }
 
+    private IO.OpenPLX.InputTarget m_openPLXInputTarget = null;
     private bool m_callbackRegistered = false;
   }
 }
