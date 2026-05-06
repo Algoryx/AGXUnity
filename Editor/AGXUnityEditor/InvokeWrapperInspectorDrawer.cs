@@ -1712,59 +1712,121 @@ namespace AGXUnityEditor
 
       EditorGUI.BeginChangeCheck();
       var newTarget = (Component)EditorGUILayout.ObjectField( "Target",
-                                                              data.Target,
+                                                              data.TargetComponent,
                                                               typeof( Component ),
                                                               true );
       if ( EditorGUI.EndChangeCheck() ) {
-        data.Target     = newTarget;
-        data.MemberName = string.Empty;
+        data.TargetComponent       = newTarget;
+        data.MemberName   = string.Empty;
+        data.ECIndex      = 0;
+        data.ECMemberName = string.Empty;
         EditorUtility.SetDirty( unityObj );
       }
 
-      if ( data.Target == null ) {
+      if ( data.TargetComponent == null ) {
         using ( new GUI.EnabledBlock( false ) )
           EditorGUILayout.Popup( "Member", 0, new[] { "— select Target first —" } );
         return null;
       }
 
-      var members = GetAccessibleFloatMembers( data.Target.GetType() );
-      if ( members.Length == 0 ) {
+      var targetType  = data.TargetComponent.GetType();
+      var allMembers  = GetAccessibleFloatMembers( targetType )
+                          .Concat( GetECArrayMembers( targetType ) )
+                          .OrderBy( m => m.Name )
+                          .ToArray();
+
+      if ( allMembers.Length == 0 ) {
         using ( new GUI.EnabledBlock( false ) )
-          EditorGUILayout.Popup( "Member", 0, new[] { "— no float or Vector3 members —" } );
+          EditorGUILayout.Popup( "Member", 0, new[] { "— no compatible members —" } );
         return null;
       }
 
-      var names        = members.Select( m => m.Name ).ToArray();
+      var names        = allMembers.Select( m => m.Name ).ToArray();
       int currentIndex = Mathf.Max( 0, Array.IndexOf( names, data.MemberName ) );
 
       EditorGUI.BeginChangeCheck();
       int newIndex = EditorGUILayout.Popup( "Member", currentIndex, names );
       if ( EditorGUI.EndChangeCheck() ) {
-        data.MemberName = names[ newIndex ];
+        data.MemberName   = names[ newIndex ];
+        data.ECIndex      = 0;
+        data.ECMemberName = string.Empty;
         EditorUtility.SetDirty( unityObj );
       }
 
-      if ( !string.IsNullOrEmpty( data.MemberName ) &&
-           IsVector3Member( data.Target.GetType(), data.MemberName ) ) {
-        var prevAxis = data.Axis;
-        var skin     = InspectorEditor.Skin;
-        using ( new GUILayout.HorizontalScope() ) {
-          EditorGUILayout.PrefixLabel( "Axis" );
-          var xSel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.X;
-          var ySel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.Y;
-          var zSel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.Z;
-          if ( GUILayout.Toggle( xSel, GUI.MakeLabel( "X", xSel ), skin.GetButton( InspectorGUISkin.ButtonType.Left   ), GUILayout.Width( 20 ) ) != xSel )
-            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.X;
-          if ( GUILayout.Toggle( ySel, GUI.MakeLabel( "Y", ySel ), skin.GetButton( InspectorGUISkin.ButtonType.Middle ), GUILayout.Width( 20 ) ) != ySel )
-            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.Y;
-          if ( GUILayout.Toggle( zSel, GUI.MakeLabel( "Z", zSel ), skin.GetButton( InspectorGUISkin.ButtonType.Right  ), GUILayout.Width( 20 ) ) != zSel )
-            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.Z;
+      if ( string.IsNullOrEmpty( data.MemberName ) )
+        return null;
+
+      if ( IsECArrayMember( targetType, data.MemberName ) ) {
+        var ecArray = GetECArrayValue( data.TargetComponent, data.MemberName );
+        if ( ecArray == null || ecArray.Length == 0 ) {
+          using ( new GUI.EnabledBlock( false ) )
+            EditorGUILayout.Popup( "Element", 0, new[] { "— no elements (run Play to populate) —" } );
+          return null;
         }
-        if ( data.Axis != prevAxis )
+
+        var ecLabels = ecArray.Select( ( ec, i ) => {
+          var typeName   = ec.GetType().Name;
+          var nativeName = ec.NativeName;
+          return string.IsNullOrEmpty( nativeName ) ? $"{i}: {typeName}" : $"{i}: {nativeName} ({typeName})";
+        } ).ToArray();
+
+        int clampedIdx = Mathf.Clamp( data.ECIndex, 0, ecArray.Length - 1 );
+        EditorGUI.BeginChangeCheck();
+        int newECIndex = EditorGUILayout.Popup( "Element", clampedIdx, ecLabels );
+        if ( EditorGUI.EndChangeCheck() ) {
+          data.ECIndex      = newECIndex;
+          data.ECMemberName = string.Empty;
           EditorUtility.SetDirty( unityObj );
+        }
+
+        var selectedEC   = ecArray[ Mathf.Clamp( data.ECIndex, 0, ecArray.Length - 1 ) ];
+        var ecType       = selectedEC.GetType();
+        var ecMembers    = GetAccessibleFloatMembers( ecType );
+        if ( ecMembers.Length == 0 ) {
+          using ( new GUI.EnabledBlock( false ) )
+            EditorGUILayout.Popup( "Property", 0, new[] { "— no float or Vector3 members —" } );
+          return null;
+        }
+
+        var ecMemberNames = ecMembers.Select( m => m.Name ).ToArray();
+        int ecMemberIdx   = Mathf.Max( 0, Array.IndexOf( ecMemberNames, data.ECMemberName ) );
+        EditorGUI.BeginChangeCheck();
+        int newECMemberIdx = EditorGUILayout.Popup( "Property", ecMemberIdx, ecMemberNames );
+        if ( EditorGUI.EndChangeCheck() ) {
+          data.ECMemberName = ecMemberNames[ newECMemberIdx ];
+          EditorUtility.SetDirty( unityObj );
+        }
+
+        if ( !string.IsNullOrEmpty( data.ECMemberName ) && IsVector3Member( ecType, data.ECMemberName ) )
+          DrawAxisToggle( ref data.ECAxis, unityObj );
+      }
+      else {
+        if ( IsVector3Member( targetType, data.MemberName ) )
+          DrawAxisToggle( ref data.Axis, unityObj );
       }
 
       return null;
+    }
+
+    private static void DrawAxisToggle( ref PidController1D.ComponentFloatProperty.Vector3Axis axis,
+                                        Object unityObj )
+    {
+      var prev = axis;
+      var skin = InspectorEditor.Skin;
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( "Axis" );
+        var xSel = prev == PidController1D.ComponentFloatProperty.Vector3Axis.X;
+        var ySel = prev == PidController1D.ComponentFloatProperty.Vector3Axis.Y;
+        var zSel = prev == PidController1D.ComponentFloatProperty.Vector3Axis.Z;
+        if ( GUILayout.Toggle( xSel, GUI.MakeLabel( "X", xSel ), skin.GetButton( InspectorGUISkin.ButtonType.Left   ), GUILayout.Width( 20 ) ) != xSel )
+          axis = PidController1D.ComponentFloatProperty.Vector3Axis.X;
+        if ( GUILayout.Toggle( ySel, GUI.MakeLabel( "Y", ySel ), skin.GetButton( InspectorGUISkin.ButtonType.Middle ), GUILayout.Width( 20 ) ) != ySel )
+          axis = PidController1D.ComponentFloatProperty.Vector3Axis.Y;
+        if ( GUILayout.Toggle( zSel, GUI.MakeLabel( "Z", zSel ), skin.GetButton( InspectorGUISkin.ButtonType.Right  ), GUILayout.Width( 20 ) ) != zSel )
+          axis = PidController1D.ComponentFloatProperty.Vector3Axis.Z;
+      }
+      if ( axis != prev )
+        EditorUtility.SetDirty( unityObj );
     }
 
     [InspectorDrawer( typeof( PidController1D.FloatEvent ) )]
@@ -1803,6 +1865,38 @@ namespace AGXUnityEditor
                        .Where( f => f.FieldType == typeof( float ) || f.FieldType == typeof( Vector3 ) )
                        .Cast<MemberInfo>();
       return props.Concat( fields ).OrderBy( m => m.Name ).ToArray();
+    }
+
+    private static MemberInfo[] GetECArrayMembers( Type type )
+    {
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      var props  = type.GetProperties( flags )
+                       .Where( p => p.CanRead && p.PropertyType == typeof( ElementaryConstraint[] ) )
+                       .Cast<MemberInfo>();
+      var fields = type.GetFields( flags )
+                       .Where( f => f.FieldType == typeof( ElementaryConstraint[] ) )
+                       .Cast<MemberInfo>();
+      return props.Concat( fields ).OrderBy( m => m.Name ).ToArray();
+    }
+
+    private static bool IsECArrayMember( Type type, string memberName )
+    {
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      var prop = type.GetProperty( memberName, flags );
+      if ( prop != null ) return prop.PropertyType == typeof( ElementaryConstraint[] );
+      var field = type.GetField( memberName, flags );
+      return field != null && field.FieldType == typeof( ElementaryConstraint[] );
+    }
+
+    private static ElementaryConstraint[] GetECArrayValue( Component target, string memberName )
+    {
+      if ( target == null || string.IsNullOrEmpty( memberName ) ) return null;
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      var type = target.GetType();
+      var prop = type.GetProperty( memberName, flags );
+      if ( prop != null && prop.CanRead ) return prop.GetValue( target ) as ElementaryConstraint[];
+      var field = type.GetField( memberName, flags );
+      return field?.GetValue( target ) as ElementaryConstraint[];
     }
 
     private static bool IsVector3Member( Type type, string memberName )

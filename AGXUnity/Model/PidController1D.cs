@@ -14,9 +14,9 @@ namespace AGXUnity.Model
     public class FloatEvent : UnityEvent<float> { }
 
     /// <summary>
-    /// Stores a reference to a component and the name of a writable float or Vector3 property or
-    /// field on it. For Vector3 members, Axis selects which component receives the output value.
-    /// Call Bind() once at runtime to cache reflection data, then Set(value) to write.
+    /// Stores a reference to a component and a path to a float or Vector3 member, with optional
+    /// drilling through an ElementaryConstraint[] member to reach a property on a specific constraint.
+    /// Call Bind() once at runtime to cache reflection data, then Get()/Set() to read/write.
     /// </summary>
     [Serializable]
     public class ComponentFloatProperty
@@ -24,93 +24,217 @@ namespace AGXUnity.Model
       public enum Vector3Axis { X, Y, Z }
 
       [SerializeField]
-      public Component Target = null;
+      public Component TargetComponent = null;
 
+      // Level-1 member on Target (float, Vector3, or ElementaryConstraint[])
       [SerializeField]
       public string MemberName = string.Empty;
 
       [SerializeField]
       public Vector3Axis Axis = Vector3Axis.X;
 
+      // Level-2: used when MemberName resolves to ElementaryConstraint[]
+      [SerializeField]
+      public int ECIndex = 0;
+
+      [SerializeField]
+      public string ECMemberName = string.Empty;
+
+      [SerializeField]
+      public Vector3Axis ECAxis = Vector3Axis.X;
+
       private PropertyInfo m_property;
       private FieldInfo    m_field;
       private bool         m_isVector3;
+      private bool         m_isECArray;
 
-      public bool IsValid => Target != null && ( m_property != null || m_field != null );
+      private PropertyInfo m_ecProperty;
+      private FieldInfo    m_ecField;
+      private bool         m_ecIsVector3;
+
+      public bool IsValid => TargetComponent != null && (
+        m_isECArray
+          ? ( ( m_property != null || m_field != null ) && ( m_ecProperty != null || m_ecField != null ) )
+          : ( m_property != null || m_field != null )
+      );
 
       public void Bind()
       {
-        m_property  = null;
-        m_field     = null;
-        m_isVector3 = false;
+        m_property    = null;
+        m_field       = null;
+        m_isVector3   = false;
+        m_isECArray   = false;
+        m_ecProperty  = null;
+        m_ecField     = null;
+        m_ecIsVector3 = false;
 
-        if ( Target == null || string.IsNullOrEmpty( MemberName ) )
+        if ( TargetComponent == null || string.IsNullOrEmpty( MemberName ) )
           return;
 
         const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
-        var type = Target.GetType();
+        var type = TargetComponent.GetType();
 
         var prop = type.GetProperty( MemberName, flags );
-        if ( prop != null && prop.CanRead &&
-             ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) ) {
-          m_property  = prop;
-          m_isVector3 = prop.PropertyType == typeof( Vector3 );
-          return;
+        //Debug.Log( "Bind prop " + (prop != null) + ", " + prop.CanRead );
+        if ( prop != null && prop.CanRead ) {
+          if ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) {
+            m_property  = prop;
+            m_isVector3 = prop.PropertyType == typeof( Vector3 );
+            return;
+          }
+          if ( prop.PropertyType == typeof( ElementaryConstraint[] ) ) {
+            m_property  = prop;
+            m_isECArray = true;
+            BindECMember();
+            return;
+          }
+          Debug.Log( "Property: " + m_property.ToString() );
         }
 
         var field = type.GetField( MemberName, flags );
-        if ( field != null && ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) ) {
-          m_field     = field;
-          m_isVector3 = field.FieldType == typeof( Vector3 );
+        if ( field != null ) {
+          if ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) {
+            m_field     = field;
+            m_isVector3 = field.FieldType == typeof( Vector3 );
+          }
+          else if ( field.FieldType == typeof( ElementaryConstraint[] ) ) {
+            m_field     = field;
+            m_isECArray = true;
+            BindECMember();
+          }
+          Debug.Log( "Field: " + m_field.ToString() );
         }
       }
 
       public float Get()
       {
-        if ( m_property == null && m_field == null )
-          return 0.0f;
+        if ( m_isECArray ) {
+          var arr = GetECArray();
+          if ( arr == null || ECIndex < 0 || ECIndex >= arr.Length ) return 0.0f;
+          var ec = arr[ ECIndex ];
+          if ( m_ecIsVector3 ) {
+            var v = m_ecProperty != null
+              ? (Vector3)m_ecProperty.GetValue( ec )
+              : (Vector3)m_ecField.GetValue( ec );
+            switch ( ECAxis ) {
+              case Vector3Axis.X: return v.x;
+              case Vector3Axis.Y: return v.y;
+              case Vector3Axis.Z: return v.z;
+              default:            return v.x;
+            }
+          }
+          return m_ecProperty != null
+            ? (float)m_ecProperty.GetValue( ec )
+            : (float)m_ecField.GetValue( ec );
+        }
+
+        if ( m_property == null && m_field == null ) return 0.0f;
 
         if ( m_isVector3 ) {
           var v = m_property != null
-            ? (Vector3)m_property.GetValue( Target )
-            : (Vector3)m_field.GetValue( Target );
+            ? (Vector3)m_property.GetValue( TargetComponent )
+            : (Vector3)m_field.GetValue( TargetComponent );
           switch ( Axis ) {
             case Vector3Axis.X: return v.x;
             case Vector3Axis.Y: return v.y;
             case Vector3Axis.Z: return v.z;
-            default: return v.x;
+            default:            return v.x;
           }
         }
 
         return m_property != null
-          ? (float)m_property.GetValue( Target )
-          : (float)m_field.GetValue( Target );
+          ? (float)m_property.GetValue( TargetComponent )
+          : (float)m_field.GetValue( TargetComponent );
       }
 
       public void Set( float value )
       {
+        if ( m_isECArray ) {
+          var arr = GetECArray();
+          if ( arr == null || ECIndex < 0 || ECIndex >= arr.Length ) return;
+          var ec = arr[ ECIndex ];
+          if ( m_ecIsVector3 ) {
+            var v = m_ecProperty != null
+              ? (Vector3)m_ecProperty.GetValue( ec )
+              : (Vector3)m_ecField.GetValue( ec );
+            switch ( ECAxis ) {
+              case Vector3Axis.X: v.x = value; break;
+              case Vector3Axis.Y: v.y = value; break;
+              case Vector3Axis.Z: v.z = value; break;
+            }
+            if ( m_ecProperty != null && m_ecProperty.CanWrite )
+              m_ecProperty.SetValue( ec, v );
+            else
+              m_ecField?.SetValue( ec, v );
+          }
+          else {
+            if ( m_ecProperty != null && m_ecProperty.CanWrite )
+              m_ecProperty.SetValue( ec, value );
+            else
+              m_ecField?.SetValue( ec, value );
+          }
+          return;
+        }
+
         if ( m_isVector3 ) {
           var v = m_property != null
-            ? (Vector3)m_property.GetValue( Target )
-            : (Vector3)m_field.GetValue( Target );
-
+            ? (Vector3)m_property.GetValue( TargetComponent )
+            : (Vector3)m_field.GetValue( TargetComponent );
           switch ( Axis ) {
             case Vector3Axis.X: v.x = value; break;
             case Vector3Axis.Y: v.y = value; break;
             case Vector3Axis.Z: v.z = value; break;
           }
-
           if ( m_property != null && m_property.CanWrite )
-            m_property.SetValue( Target, v );
+            m_property.SetValue( TargetComponent, v );
           else
-            m_field?.SetValue( Target, v );
+            m_field?.SetValue( TargetComponent, v );
         }
         else {
           if ( m_property != null && m_property.CanWrite )
-            m_property.SetValue( Target, value );
+            m_property.SetValue( TargetComponent, value );
           else
-            m_field?.SetValue( Target, value );
+            m_field?.SetValue( TargetComponent, value );
         }
+      }
+
+      private void BindECMember()
+      {
+        m_ecProperty  = null;
+        m_ecField     = null;
+        m_ecIsVector3 = false;
+
+        if ( string.IsNullOrEmpty( ECMemberName ) )
+          return;
+
+        var arr = GetECArray();
+        if ( arr == null || ECIndex < 0 || ECIndex >= arr.Length )
+          return;
+
+        var ecType = arr[ ECIndex ].GetType();
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+
+        var prop = ecType.GetProperty( ECMemberName, flags );
+        if ( prop != null && prop.CanRead &&
+             ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) ) {
+          m_ecProperty  = prop;
+          m_ecIsVector3 = prop.PropertyType == typeof( Vector3 );
+          return;
+        }
+
+        var field = ecType.GetField( ECMemberName, flags );
+        if ( field != null && ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) ) {
+          m_ecField     = field;
+          m_ecIsVector3 = field.FieldType == typeof( Vector3 );
+        }
+      }
+
+      private ElementaryConstraint[] GetECArray()
+      {
+        if ( TargetComponent == null ) return null;
+        if ( m_property != null ) return m_property.GetValue( TargetComponent ) as ElementaryConstraint[];
+        if ( m_field    != null ) return m_field.GetValue( TargetComponent ) as ElementaryConstraint[];
+        return null;
       }
     }
 
@@ -627,8 +751,11 @@ namespace AGXUnity.Model
 
     private void OnWriteCallback()
     {
-      if ( m_inputSource == InputSource.ComponentProperty && m_inputProperty.IsValid )
+      if ( m_inputSource == InputSource.ComponentProperty && m_inputProperty.IsValid ) {
+        var x = m_inputProperty.Get();
+        Debug.Log( "test: " + x );
         WriteProcessValueToOutput( m_inputProperty.Get() );
+      }
       else
         WriteProcessValueToOutput();
     }
