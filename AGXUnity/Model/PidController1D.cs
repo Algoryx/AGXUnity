@@ -51,12 +51,11 @@ namespace AGXUnity.Model
         var type = Target.GetType();
 
         var prop = type.GetProperty( MemberName, flags );
-        if ( prop != null && prop.CanWrite ) {
-          if ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) {
-            m_property  = prop;
-            m_isVector3 = prop.PropertyType == typeof( Vector3 );
-            return;
-          }
+        if ( prop != null && prop.CanRead &&
+             ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) ) {
+          m_property  = prop;
+          m_isVector3 = prop.PropertyType == typeof( Vector3 );
+          return;
         }
 
         var field = type.GetField( MemberName, flags );
@@ -64,6 +63,28 @@ namespace AGXUnity.Model
           m_field     = field;
           m_isVector3 = field.FieldType == typeof( Vector3 );
         }
+      }
+
+      public float Get()
+      {
+        if ( m_property == null && m_field == null )
+          return 0.0f;
+
+        if ( m_isVector3 ) {
+          var v = m_property != null
+            ? (Vector3)m_property.GetValue( Target )
+            : (Vector3)m_field.GetValue( Target );
+          switch ( Axis ) {
+            case Vector3Axis.X: return v.x;
+            case Vector3Axis.Y: return v.y;
+            case Vector3Axis.Z: return v.z;
+            default: return v.x;
+          }
+        }
+
+        return m_property != null
+          ? (float)m_property.GetValue( Target )
+          : (float)m_field.GetValue( Target );
       }
 
       public void Set( float value )
@@ -79,12 +100,16 @@ namespace AGXUnity.Model
             case Vector3Axis.Z: v.z = value; break;
           }
 
-          m_property?.SetValue( Target, v );
-          m_field?.SetValue( Target, v );
+          if ( m_property != null && m_property.CanWrite )
+            m_property.SetValue( Target, v );
+          else
+            m_field?.SetValue( Target, v );
         }
         else {
-          m_property?.SetValue( Target, value );
-          m_field?.SetValue( Target, value );
+          if ( m_property != null && m_property.CanWrite )
+            m_property.SetValue( Target, value );
+          else
+            m_field?.SetValue( Target, value );
         }
       }
     }
@@ -100,7 +125,13 @@ namespace AGXUnity.Model
     {
       Field,
       UnityEvent,
-      OpenPLX,
+      OpenPLXSignal,
+      ComponentProperty
+    }
+
+    public enum InputSource
+    {
+      Field,
       ComponentProperty
     }
 
@@ -301,20 +332,23 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private OutputWriteCallback m_outputWriteCallback = OutputWriteCallback.PostSynchronizeTransforms;
+    private InputSource m_inputSource = InputSource.Field;
 
-    /// <summary>
-    /// When to automatically call WriteProcessValueToOutput. Set to Manual to drive it yourself.
-    /// </summary>
-    public OutputWriteCallback Callback
+    [SerializeField]
+    private ComponentFloatProperty m_inputProperty = new ComponentFloatProperty();
+
+    [InspectorSeparator]
+    [InspectorGroupBegin( Name = "Input", DefaultExpanded = true )]
+    public InputSource InputSourceType
     {
-      get => m_outputWriteCallback;
-      set
-      {
-        m_outputWriteCallback = value;
-        UpdateCallbackRegistration();
-      }
+      get => m_inputSource;
+      set => m_inputSource = value;
     }
+
+    private bool IsInputComponentProperty => m_inputSource == InputSource.ComponentProperty;
+
+    [DynamicallyShowInInspector( nameof( IsInputComponentProperty ) )]
+    public ComponentFloatProperty SourceProperty => m_inputProperty;
 
     [SerializeField]
     private float m_processValue = 0.0f;
@@ -328,31 +362,21 @@ namespace AGXUnity.Model
       set => m_processValue = value;
     }
 
-    [SerializeField]
-    private float m_outputValue = 0.0f;
-
-    /// <summary>
-    /// Manipulated variable (output) written by WriteProcessValueToOutput.
-    /// </summary>
-    public float OutputValue
-    {
-      get => m_outputValue;
-      set => m_outputValue = value;
-    }
+    [InspectorGroupEnd]
 
     [SerializeField]
     private OutputTarget m_outputTarget = OutputTarget.Field;
 
     [InspectorSeparator]
     [InspectorGroupBegin( Name = "Output", DefaultExpanded = true )]
-    public OutputTarget Output
+    public OutputTarget OutputTargetType
     {
       get => m_outputTarget;
       set => m_outputTarget = value;
     }
 
-    private bool IsOutputUnityEvent      => m_outputTarget == OutputTarget.UnityEvent;
-    private bool IsOutputOpenPLX         => m_outputTarget == OutputTarget.OpenPLX;
+    private bool IsOutputUnityEvent => m_outputTarget == OutputTarget.UnityEvent;
+    private bool IsOutputOpenPLX => m_outputTarget == OutputTarget.OpenPLXSignal;
     private bool IsOutputComponentProperty => m_outputTarget == OutputTarget.ComponentProperty;
 
     [SerializeField]
@@ -384,8 +408,37 @@ namespace AGXUnity.Model
     /// Component property or field to write the output value to (OutputTarget.ComponentProperty).
     /// </summary>
     [DynamicallyShowInInspector( nameof( IsOutputComponentProperty ) )]
-    [InspectorGroupEnd]
     public ComponentFloatProperty TargetProperty => m_componentProperty;
+
+    [InspectorGroupEnd]
+
+    [SerializeField]
+    private float m_outputValue = 0.0f;
+
+    /// <summary>
+    /// Manipulated variable (output) written by WriteProcessValueToOutput.
+    /// </summary>
+    public float OutputValue
+    {
+      get => m_outputValue;
+      set => m_outputValue = value;
+    }
+
+    [SerializeField]
+    private OutputWriteCallback m_outputWriteCallback = OutputWriteCallback.PostSynchronizeTransforms;
+
+    /// <summary>
+    /// When to automatically call WriteProcessValueToOutput. Set to Manual if wanting to update it from a custom script.
+    /// </summary>
+    public OutputWriteCallback OutputCallback
+    {
+      get => m_outputWriteCallback;
+      set
+      {
+        m_outputWriteCallback = value;
+        UpdateCallbackRegistration();
+      }
+    }
 
     [RuntimeValue]
     public bool RuntimeEnabled { get; private set; } = false;
@@ -428,8 +481,9 @@ namespace AGXUnity.Model
       if ( Native == null )
         return m_outputValue;
 
-      Native.update( m_processValue, Simulation.HasInstance ? Simulation.Instance.TimeStep : 0.0 );
+      Native.update( Simulation.HasInstance ? Simulation.Instance.TimeStep : 0.0, m_processValue );
       m_outputValue = (float)Native.getManipulatedVariable();
+      //Debug.Log( "MP: " + m_outputValue );
 
       UpdateRuntimeValues();
       DispatchOutput( m_outputValue );
@@ -458,6 +512,7 @@ namespace AGXUnity.Model
 
       InitializeOpenPLXTarget();
       m_componentProperty.Bind();
+      m_inputProperty.Bind();
 
       UpdateCallbackRegistration();
 
@@ -493,7 +548,7 @@ namespace AGXUnity.Model
           m_onOutput.Invoke( value );
           break;
 
-        case OutputTarget.OpenPLX:
+        case OutputTarget.OpenPLXSignal:
           m_openPLXInputTarget?.SendSignal( value );
           break;
 
@@ -505,7 +560,7 @@ namespace AGXUnity.Model
 
     private void InitializeOpenPLXTarget()
     {
-      if ( m_outputTarget != OutputTarget.OpenPLX || string.IsNullOrEmpty( m_openPLXSignalName ) )
+      if ( m_outputTarget != OutputTarget.OpenPLXSignal || string.IsNullOrEmpty( m_openPLXSignalName ) )
         return;
 
       var signals = gameObject.GetInitializedComponentInParent<IO.OpenPLX.OpenPLXSignals>();
@@ -572,7 +627,10 @@ namespace AGXUnity.Model
 
     private void OnWriteCallback()
     {
-      WriteProcessValueToOutput();
+      if ( m_inputSource == InputSource.ComponentProperty && m_inputProperty.IsValid )
+        WriteProcessValueToOutput( m_inputProperty.Get() );
+      else
+        WriteProcessValueToOutput();
     }
 
     private void UpdateRuntimeValues()

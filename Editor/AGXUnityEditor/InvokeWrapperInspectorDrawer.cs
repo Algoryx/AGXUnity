@@ -1727,10 +1727,10 @@ namespace AGXUnityEditor
         return null;
       }
 
-      var members = GetWritableFloatMembers( data.Target.GetType() );
+      var members = GetAccessibleFloatMembers( data.Target.GetType() );
       if ( members.Length == 0 ) {
         using ( new GUI.EnabledBlock( false ) )
-          EditorGUILayout.Popup( "Member", 0, new[] { "— no writable float members —" } );
+          EditorGUILayout.Popup( "Member", 0, new[] { "— no float or Vector3 members —" } );
         return null;
       }
 
@@ -1742,6 +1742,26 @@ namespace AGXUnityEditor
       if ( EditorGUI.EndChangeCheck() ) {
         data.MemberName = names[ newIndex ];
         EditorUtility.SetDirty( unityObj );
+      }
+
+      if ( !string.IsNullOrEmpty( data.MemberName ) &&
+           IsVector3Member( data.Target.GetType(), data.MemberName ) ) {
+        var prevAxis = data.Axis;
+        var skin     = InspectorEditor.Skin;
+        using ( new GUILayout.HorizontalScope() ) {
+          EditorGUILayout.PrefixLabel( "Axis" );
+          var xSel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.X;
+          var ySel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.Y;
+          var zSel = prevAxis == PidController1D.ComponentFloatProperty.Vector3Axis.Z;
+          if ( GUILayout.Toggle( xSel, GUI.MakeLabel( "X", xSel ), skin.GetButton( InspectorGUISkin.ButtonType.Left   ), GUILayout.Width( 20 ) ) != xSel )
+            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.X;
+          if ( GUILayout.Toggle( ySel, GUI.MakeLabel( "Y", ySel ), skin.GetButton( InspectorGUISkin.ButtonType.Middle ), GUILayout.Width( 20 ) ) != ySel )
+            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.Y;
+          if ( GUILayout.Toggle( zSel, GUI.MakeLabel( "Z", zSel ), skin.GetButton( InspectorGUISkin.ButtonType.Right  ), GUILayout.Width( 20 ) ) != zSel )
+            data.Axis = PidController1D.ComponentFloatProperty.Vector3Axis.Z;
+        }
+        if ( data.Axis != prevAxis )
+          EditorUtility.SetDirty( unityObj );
       }
 
       return null;
@@ -1772,16 +1792,27 @@ namespace AGXUnityEditor
       return null;
     }
 
-    private static MemberInfo[] GetWritableFloatMembers( Type type )
+    private static MemberInfo[] GetAccessibleFloatMembers( Type type )
     {
       const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
       var props  = type.GetProperties( flags )
-                       .Where( p => p.CanWrite && p.PropertyType == typeof( float ) )
+                       .Where( p => p.CanRead &&
+                                    ( p.PropertyType == typeof( float ) || p.PropertyType == typeof( Vector3 ) ) )
                        .Cast<MemberInfo>();
       var fields = type.GetFields( flags )
-                       .Where( f => f.FieldType == typeof( float ) )
+                       .Where( f => f.FieldType == typeof( float ) || f.FieldType == typeof( Vector3 ) )
                        .Cast<MemberInfo>();
       return props.Concat( fields ).OrderBy( m => m.Name ).ToArray();
+    }
+
+    private static bool IsVector3Member( Type type, string memberName )
+    {
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      var prop = type.GetProperty( memberName, flags );
+      if ( prop != null )
+        return prop.PropertyType == typeof( Vector3 );
+      var field = type.GetField( memberName, flags );
+      return field != null && field.FieldType == typeof( Vector3 );
     }
 
   }
