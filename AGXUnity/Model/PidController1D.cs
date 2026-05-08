@@ -33,6 +33,10 @@ namespace AGXUnity.Model
       [SerializeField]
       public Vector3Axis Axis = Vector3Axis.X;
 
+      // Enum argument values for top-level method (one int per parameter, cast to/from enum)
+      [SerializeField]
+      public int[] MethodArgs = new int[ 0 ];
+
       // Level-2: used when MemberName resolves to ElementaryConstraint[]
       [SerializeField]
       public int ECIndex = 0;
@@ -43,19 +47,27 @@ namespace AGXUnity.Model
       [SerializeField]
       public Vector3Axis ECAxis = Vector3Axis.X;
 
+      // Enum argument values for EC-level method
+      [SerializeField]
+      public int[] ECMethodArgs = new int[ 0 ];
+
       private PropertyInfo m_property;
       private FieldInfo    m_field;
       private bool         m_isVector3;
       private bool         m_isECArray;
+      private MethodInfo   m_method;
 
       private PropertyInfo m_ecProperty;
       private FieldInfo    m_ecField;
       private bool         m_ecIsVector3;
+      private MethodInfo   m_ecMethod;
 
       public bool IsValid => TargetComponent != null && (
-        m_isECArray
-          ? ( ( m_property != null || m_field != null ) && ( m_ecProperty != null || m_ecField != null ) )
-          : ( m_property != null || m_field != null )
+        m_method != null ||
+        ( m_isECArray
+          ? ( ( m_property != null || m_field != null ) &&
+              ( m_ecProperty != null || m_ecField != null || m_ecMethod != null ) )
+          : ( m_property != null || m_field != null ) )
       );
 
       public void Bind()
@@ -64,9 +76,11 @@ namespace AGXUnity.Model
         m_field       = null;
         m_isVector3   = false;
         m_isECArray   = false;
+        m_method      = null;
         m_ecProperty  = null;
         m_ecField     = null;
         m_ecIsVector3 = false;
+        m_ecMethod    = null;
 
         if ( TargetComponent == null || string.IsNullOrEmpty( MemberName ) )
           return;
@@ -75,7 +89,6 @@ namespace AGXUnity.Model
         var type = TargetComponent.GetType();
 
         var prop = type.GetProperty( MemberName, flags );
-        //Debug.Log( "Bind prop " + (prop != null) + ", " + prop.CanRead );
         if ( prop != null && prop.CanRead ) {
           if ( prop.PropertyType == typeof( float ) || prop.PropertyType == typeof( Vector3 ) ) {
             m_property  = prop;
@@ -88,7 +101,6 @@ namespace AGXUnity.Model
             BindECMember();
             return;
           }
-          Debug.Log( "Property: " + m_property.ToString() );
         }
 
         var field = type.GetField( MemberName, flags );
@@ -96,22 +108,30 @@ namespace AGXUnity.Model
           if ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) {
             m_field     = field;
             m_isVector3 = field.FieldType == typeof( Vector3 );
+            return;
           }
-          else if ( field.FieldType == typeof( ElementaryConstraint[] ) ) {
+          if ( field.FieldType == typeof( ElementaryConstraint[] ) ) {
             m_field     = field;
             m_isECArray = true;
             BindECMember();
+            return;
           }
-          Debug.Log( "Field: " + m_field.ToString() );
         }
+
+        m_method = FindFloatMethod( type, MemberName );
       }
 
       public float Get()
       {
+        if ( m_method != null )
+          return (float)m_method.Invoke( TargetComponent, BuildInvokeArgs( m_method, MethodArgs ) );
+
         if ( m_isECArray ) {
           var arr = GetECArray();
           if ( arr == null || ECIndex < 0 || ECIndex >= arr.Length ) return 0.0f;
           var ec = arr[ ECIndex ];
+          if ( m_ecMethod != null )
+            return (float)m_ecMethod.Invoke( ec, BuildInvokeArgs( m_ecMethod, ECMethodArgs ) );
           if ( m_ecIsVector3 ) {
             var v = m_ecProperty != null
               ? (Vector3)m_ecProperty.GetValue( ec )
@@ -149,6 +169,10 @@ namespace AGXUnity.Model
 
       public void Set( float value )
       {
+        // Methods are read-only; skip silently
+        if ( m_method != null || ( m_isECArray && m_ecMethod != null ) )
+          return;
+
         if ( m_isECArray ) {
           var arr = GetECArray();
           if ( arr == null || ECIndex < 0 || ECIndex >= arr.Length ) return;
@@ -203,6 +227,7 @@ namespace AGXUnity.Model
         m_ecProperty  = null;
         m_ecField     = null;
         m_ecIsVector3 = false;
+        m_ecMethod    = null;
 
         if ( string.IsNullOrEmpty( ECMemberName ) )
           return;
@@ -226,7 +251,37 @@ namespace AGXUnity.Model
         if ( field != null && ( field.FieldType == typeof( float ) || field.FieldType == typeof( Vector3 ) ) ) {
           m_ecField     = field;
           m_ecIsVector3 = field.FieldType == typeof( Vector3 );
+          return;
         }
+
+        m_ecMethod = FindFloatMethod( ecType, ECMemberName );
+      }
+
+      private static MethodInfo FindFloatMethod( Type type, string name )
+      {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+        foreach ( var m in type.GetMethods( flags ) ) {
+          if ( m.Name != name || m.ReturnType != typeof( float ) ) continue;
+          bool allOptional = true;
+          foreach ( var p in m.GetParameters() )
+            if ( !p.IsOptional ) { allOptional = false; break; }
+          if ( allOptional ) return m;
+        }
+        return null;
+      }
+
+      private static object[] BuildInvokeArgs( MethodInfo method, int[] storedArgs )
+      {
+        var parms = method.GetParameters();
+        if ( parms.Length == 0 ) return null;
+        var args = new object[ parms.Length ];
+        for ( int i = 0; i < parms.Length; i++ ) {
+          if ( storedArgs != null && i < storedArgs.Length && parms[ i ].ParameterType.IsEnum )
+            args[ i ] = Enum.ToObject( parms[ i ].ParameterType, storedArgs[ i ] );
+          else
+            args[ i ] = parms[ i ].DefaultValue;
+        }
+        return args;
       }
 
       private ElementaryConstraint[] GetECArray()
@@ -283,10 +338,10 @@ namespace AGXUnity.Model
     [SerializeField]
     private float m_proportionalGain = 1.0f;
 
+    [InspectorGroupBegin( Name = "Gains", DefaultExpanded = true )]
     /// <summary>
     /// Proportional gain (Kp).
     /// </summary>
-    [ClampAboveZeroInInspector( true )]
     public float ProportionalGain
     {
       get => m_proportionalGain;
@@ -303,7 +358,6 @@ namespace AGXUnity.Model
     /// <summary>
     /// Integral gain (Ki).
     /// </summary>
-    [ClampAboveZeroInInspector( true )]
     public float IntegralGain
     {
       get => m_integralGain;
@@ -320,7 +374,6 @@ namespace AGXUnity.Model
     /// <summary>
     /// Derivative gain (Kd).
     /// </summary>
-    [ClampAboveZeroInInspector( true )]
     public float DerivativeGain
     {
       get => m_derivativeGain;
@@ -330,10 +383,10 @@ namespace AGXUnity.Model
         Native?.setDerivativeGain( m_derivativeGain );
       }
     }
-
     [SerializeField]
     private float m_frequency = 60.0f;
 
+    [InspectorGroupEnd]
     /// <summary>
     /// Update frequency of the controller in Hz.
     /// </summary>
@@ -345,40 +398,6 @@ namespace AGXUnity.Model
       {
         m_frequency = value;
         Native?.setFrequency( m_frequency );
-      }
-    }
-
-    [SerializeField]
-    private float m_integralTime = 0.0f;
-
-    /// <summary>
-    /// Integral time constant (Ti). Zero disables integral action.
-    /// </summary>
-    [ClampAboveZeroInInspector( true )]
-    public float IntegralTime
-    {
-      get => m_integralTime;
-      set
-      {
-        m_integralTime = value;
-        Native?.setIntegralTime( m_integralTime );
-      }
-    }
-
-    [SerializeField]
-    private float m_derivativeTime = 0.0f;
-
-    /// <summary>
-    /// Derivative time constant (Td). Zero disables derivative action.
-    /// </summary>
-    [ClampAboveZeroInInspector( true )]
-    public float DerivativeTime
-    {
-      get => m_derivativeTime;
-      set
-      {
-        m_derivativeTime = value;
-        Native?.setDerivativeTime( m_derivativeTime );
       }
     }
 
@@ -469,6 +488,7 @@ namespace AGXUnity.Model
       set => m_inputSource = value;
     }
 
+    private bool IsInputField             => m_inputSource == InputSource.Field;
     private bool IsInputComponentProperty => m_inputSource == InputSource.ComponentProperty;
 
     [DynamicallyShowInInspector( nameof( IsInputComponentProperty ) )]
@@ -480,13 +500,22 @@ namespace AGXUnity.Model
     /// <summary>
     /// Measured process variable fed into the controller each update.
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsInputField ) )]
     public float ProcessValue
     {
       get => m_processValue;
       set => m_processValue = value;
     }
 
+    [SerializeField]
+    private float m_inputScale = 1.0f;
+
     [InspectorGroupEnd]
+    public float InputScale
+    {
+      get => m_inputScale;
+      set => m_inputScale = value;
+    }
 
     [SerializeField]
     private OutputTarget m_outputTarget = OutputTarget.Field;
@@ -534,7 +563,15 @@ namespace AGXUnity.Model
     [DynamicallyShowInInspector( nameof( IsOutputComponentProperty ) )]
     public ComponentFloatProperty TargetProperty => m_componentProperty;
 
+    [SerializeField]
+    private float m_outputScale = 1.0f;
+
     [InspectorGroupEnd]
+    public float OutputScale
+    {
+      get => m_outputScale;
+      set => m_outputScale = value;
+    }
 
     [SerializeField]
     private float m_outputValue = 0.0f;
@@ -565,7 +602,7 @@ namespace AGXUnity.Model
     }
 
     [RuntimeValue]
-    public bool RuntimeEnabled { get; private set; } = false;
+    public bool NativeEnabled { get; private set; } = false;
 
     [RuntimeValue]
     public float RuntimeError { get; private set; } = 0.0f;
@@ -605,9 +642,9 @@ namespace AGXUnity.Model
       if ( Native == null )
         return m_outputValue;
 
-      Native.update( Simulation.HasInstance ? Simulation.Instance.TimeStep : 0.0, m_processValue );
-      m_outputValue = (float)Native.getManipulatedVariable();
-      //Debug.Log( "MP: " + m_outputValue );
+      var time = Simulation.HasInstance ? Simulation.Instance.Native.getTimeStamp() : 0;
+      Native.update( time, m_processValue * m_inputScale );
+      m_outputValue = (float)Native.getManipulatedVariable() * m_outputScale;
 
       UpdateRuntimeValues();
       DispatchOutput( m_outputValue );
@@ -707,8 +744,6 @@ namespace AGXUnity.Model
       Native.setIntegralGain( m_integralGain );
       Native.setDerivativeGain( m_derivativeGain );
       Native.setFrequency( m_frequency );
-      Native.setIntegralTime( m_integralTime );
-      Native.setDerivativeTime( m_derivativeTime );
       Native.setDerivationType( m_derivationMethod );
       Native.setIntegralWindupProtection( m_enableIntegralWindupProtection );
       Native.setIntegralWindupClamping( m_integralWindupClamping.x, m_integralWindupClamping.y );
@@ -751,11 +786,8 @@ namespace AGXUnity.Model
 
     private void OnWriteCallback()
     {
-      if ( m_inputSource == InputSource.ComponentProperty && m_inputProperty.IsValid ) {
-        var x = m_inputProperty.Get();
-        Debug.Log( "test: " + x );
+      if ( m_inputSource == InputSource.ComponentProperty && m_inputProperty.IsValid )
         WriteProcessValueToOutput( m_inputProperty.Get() );
-      }
       else
         WriteProcessValueToOutput();
     }
@@ -763,7 +795,7 @@ namespace AGXUnity.Model
     private void UpdateRuntimeValues()
     {
       if ( Native == null ) {
-        RuntimeEnabled                = false;
+        NativeEnabled                = false;
         RuntimeError                  = 0.0f;
         RuntimeMeasuredProcessValue   = 0.0f;
         RuntimeManipulatedVariable    = m_outputValue;
@@ -773,7 +805,7 @@ namespace AGXUnity.Model
         return;
       }
 
-      RuntimeEnabled              = Native.isEnabled();
+      NativeEnabled               = Native.isEnabled();
       RuntimeError                = (float)Native.getError();
       RuntimeMeasuredProcessValue = (float)Native.getMeasuredProcessVariable();
       RuntimeManipulatedVariable  = (float)Native.getManipulatedVariable();

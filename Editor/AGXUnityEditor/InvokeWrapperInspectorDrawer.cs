@@ -1729,9 +1729,16 @@ namespace AGXUnityEditor
         return null;
       }
 
-      var targetType  = data.TargetComponent.GetType();
+      Type targetType;
+      try {
+        targetType = data.TargetComponent.GetType();
+      }
+      catch ( MissingReferenceException ) {
+        return null;
+      }
       var allMembers  = GetAccessibleFloatMembers( targetType )
                           .Concat( GetECArrayMembers( targetType ) )
+                          .Concat( GetFloatMethods( targetType ).Cast<MemberInfo>() )
                           .OrderBy( m => m.Name )
                           .ToArray();
 
@@ -1744,20 +1751,33 @@ namespace AGXUnityEditor
       var names        = allMembers.Select( m => m.Name ).ToArray();
       int currentIndex = Mathf.Max( 0, Array.IndexOf( names, data.MemberName ) );
 
-      EditorGUI.BeginChangeCheck();
-      int newIndex = EditorGUILayout.Popup( "Member", currentIndex, names );
-      if ( EditorGUI.EndChangeCheck() ) {
-        data.MemberName   = names[ newIndex ];
+      // Keep data in sync with the displayed popup selection (e.g. after Target reset)
+      if ( names.Length > 0 && data.MemberName != names[ currentIndex ] ) {
+        data.MemberName   = names[ currentIndex ];
+        data.MethodArgs   = DefaultMethodArgs( targetType, data.MemberName );
         data.ECIndex      = 0;
         data.ECMemberName = string.Empty;
         EditorUtility.SetDirty( unityObj );
       }
 
-      if ( string.IsNullOrEmpty( data.MemberName ) )
-        return null;
+      EditorGUI.BeginChangeCheck();
+      int newIndex = EditorGUILayout.Popup( "Member", currentIndex, names );
+      if ( EditorGUI.EndChangeCheck() ) {
+        data.MemberName   = names[ newIndex ];
+        data.MethodArgs   = DefaultMethodArgs( targetType, data.MemberName );
+        data.ECIndex      = 0;
+        data.ECMemberName = string.Empty;
+        EditorUtility.SetDirty( unityObj );
+      }
 
       if ( IsECArrayMember( targetType, data.MemberName ) ) {
-        var ecArray = GetECArrayValue( data.TargetComponent, data.MemberName );
+        ElementaryConstraint[] ecArray;
+        try {
+          ecArray = GetECArrayValue( data.TargetComponent, data.MemberName );
+        }
+        catch ( MissingReferenceException ) {
+          return null;
+        }
         if ( ecArray == null || ecArray.Length == 0 ) {
           using ( new GUI.EnabledBlock( false ) )
             EditorGUILayout.Popup( "Element", 0, new[] { "— no elements (run Play to populate) —" } );
@@ -1781,7 +1801,10 @@ namespace AGXUnityEditor
 
         var selectedEC   = ecArray[ Mathf.Clamp( data.ECIndex, 0, ecArray.Length - 1 ) ];
         var ecType       = selectedEC.GetType();
-        var ecMembers    = GetAccessibleFloatMembers( ecType );
+        var ecMembers    = GetAccessibleFloatMembers( ecType )
+                             .Concat( GetFloatMethods( ecType ).Cast<MemberInfo>() )
+                             .OrderBy( m => m.Name )
+                             .ToArray();
         if ( ecMembers.Length == 0 ) {
           using ( new GUI.EnabledBlock( false ) )
             EditorGUILayout.Popup( "Property", 0, new[] { "— no float or Vector3 members —" } );
@@ -1790,22 +1813,68 @@ namespace AGXUnityEditor
 
         var ecMemberNames = ecMembers.Select( m => m.Name ).ToArray();
         int ecMemberIdx   = Mathf.Max( 0, Array.IndexOf( ecMemberNames, data.ECMemberName ) );
+
+        // Keep EC member in sync after Element reset
+        if ( ecMemberNames.Length > 0 && data.ECMemberName != ecMemberNames[ ecMemberIdx ] ) {
+          data.ECMemberName = ecMemberNames[ ecMemberIdx ];
+          data.ECMethodArgs = DefaultMethodArgs( ecType, data.ECMemberName );
+          EditorUtility.SetDirty( unityObj );
+        }
+
         EditorGUI.BeginChangeCheck();
         int newECMemberIdx = EditorGUILayout.Popup( "Property", ecMemberIdx, ecMemberNames );
         if ( EditorGUI.EndChangeCheck() ) {
           data.ECMemberName = ecMemberNames[ newECMemberIdx ];
+          data.ECMethodArgs = DefaultMethodArgs( ecType, data.ECMemberName );
           EditorUtility.SetDirty( unityObj );
         }
 
+        DrawMethodArgs( ecType, data.ECMemberName, data.ECMethodArgs, unityObj );
         if ( !string.IsNullOrEmpty( data.ECMemberName ) && IsVector3Member( ecType, data.ECMemberName ) )
           DrawAxisToggle( ref data.ECAxis, unityObj );
       }
       else {
+        DrawMethodArgs( targetType, data.MemberName, data.MethodArgs, unityObj );
         if ( IsVector3Member( targetType, data.MemberName ) )
           DrawAxisToggle( ref data.Axis, unityObj );
       }
 
       return null;
+    }
+
+    private static void DrawMethodArgs( Type type, string memberName, int[] storedArgs, Object unityObj )
+    {
+      if ( string.IsNullOrEmpty( memberName ) ) return;
+      var method = GetFloatMethods( type ).FirstOrDefault( m => m.Name == memberName );
+      if ( method == null ) return;
+      var parms = method.GetParameters();
+      if ( storedArgs == null || storedArgs.Length != parms.Length ) return;
+      for ( int i = 0; i < parms.Length; i++ ) {
+        var paramType = parms[ i ].ParameterType;
+        if ( !paramType.IsEnum ) continue;
+        var enumNames = Enum.GetNames( paramType );
+        EditorGUI.BeginChangeCheck();
+        int newVal = EditorGUILayout.Popup( ObjectNames.NicifyVariableName( parms[ i ].Name ),
+                                            Mathf.Clamp( storedArgs[ i ], 0, enumNames.Length - 1 ),
+                                            enumNames );
+        if ( EditorGUI.EndChangeCheck() ) {
+          storedArgs[ i ] = newVal;
+          EditorUtility.SetDirty( unityObj );
+        }
+      }
+    }
+
+    private static int[] DefaultMethodArgs( Type type, string memberName )
+    {
+      var method = GetFloatMethods( type ).FirstOrDefault( m => m.Name == memberName );
+      if ( method == null ) return new int[ 0 ];
+      var parms = method.GetParameters();
+      var args  = new int[ parms.Length ];
+      for ( int i = 0; i < parms.Length; i++ )
+        args[ i ] = parms[ i ].ParameterType.IsEnum && parms[ i ].DefaultValue != DBNull.Value
+                      ? (int)parms[ i ].DefaultValue
+                      : 0;
+      return args;
     }
 
     private static void DrawAxisToggle( ref PidController1D.ComponentFloatProperty.Vector3Axis axis,
@@ -1852,6 +1921,16 @@ namespace AGXUnityEditor
       serializedObj.ApplyModifiedProperties();
 
       return null;
+    }
+
+    private static MethodInfo[] GetFloatMethods( Type type )
+    {
+      const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+      return System.Array.FindAll(
+        type.GetMethods( flags ),
+        m => m.ReturnType == typeof( float ) &&
+             System.Array.TrueForAll( m.GetParameters(), p => p.IsOptional )
+      );
     }
 
     private static MemberInfo[] GetAccessibleFloatMembers( Type type )
