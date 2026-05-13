@@ -30,7 +30,7 @@ namespace AGXUnityTesting.Runtime.Aux
   {
     OpenPLXSignals signal = null;
 
-    InputTarget motor_input = null;
+    InputWrapper<double> motor_input = null;
     PDController cart;
     PDController pole;
 
@@ -39,7 +39,7 @@ namespace AGXUnityTesting.Runtime.Aux
     protected override bool Initialize()
     {
       signal = gameObject.GetInitializedComponent<OpenPLXSignals>();
-      motor_input = signal.FindInputTarget( "PendulumScene.motor_input" );
+      motor_input = signal.FindInputTarget<double>( "PendulumScene.motor_input" );
 
       if ( motor_input == null )
         Debug.LogWarning( "Could not find motor input" );
@@ -49,18 +49,18 @@ namespace AGXUnityTesting.Runtime.Aux
 
       Simulation.Instance.StepCallbacks.PreStepForward += Pre;
 
-      hao = signal.FindOutputSource( "PendulumScene.hinge_angle_output" );
-      havo = signal.FindOutputSource( "PendulumScene.hinge_angular_velocity_output" );
-      poso = signal.FindOutputSource( "PendulumScene.cart_position_output" );
-      velo = signal.FindOutputSource( "PendulumScene.cart_velocity_output" );
+      hao = signal.FindOutputSource<float>( "PendulumScene.hinge_angle_output" );
+      havo = signal.FindOutputSource<float>( "PendulumScene.hinge_angular_velocity_output" );
+      poso = signal.FindOutputSource<Vector3>( "PendulumScene.cart_position_output" );
+      velo = signal.FindOutputSource<Vector3>( "PendulumScene.cart_velocity_output" );
 
       return true;
     }
 
-    OutputSource hao;
-    OutputSource havo;
-    OutputSource poso;
-    OutputSource velo;
+    OutputWrapper<float> hao;
+    OutputWrapper<float> havo;
+    OutputWrapper<Vector3> poso;
+    OutputWrapper<Vector3> velo;
 
     double ha = 0.0f;
     double hav = 0.0f;
@@ -73,10 +73,10 @@ namespace AGXUnityTesting.Runtime.Aux
     private void Pre()
     {
       try {
-        ha = hao.GetValue<double>();
-        hav = havo.GetValue<double>();
-        xpos = poso.GetValue<Vector3>().x;
-        xvel = velo.GetValue<Vector3>().x;
+        ha = hao.Read();
+        hav = havo.Read();
+        xpos = poso.Read().x;
+        xvel = velo.Read().x;
       }
       catch {
         return;
@@ -87,7 +87,13 @@ namespace AGXUnityTesting.Runtime.Aux
 
       raw = -u_cart - u_pole;
 
-      motor_input.SendSignal( Math.Clamp( raw, -1000, 1000 ) );
+      motor_input.Write( Math.Clamp( raw, -1000, 1000 ) );
+    }
+
+    protected override void OnDestroy()
+    {
+      base.OnDestroy();
+      Simulation.Instance.StepCallbacks.PreStepForward -= Pre;
     }
 
     private void OnGUI()
