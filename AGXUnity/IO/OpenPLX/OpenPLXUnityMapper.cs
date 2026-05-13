@@ -377,7 +377,7 @@ namespace AGXUnity.IO.OpenPLX
     GameObject MapContactGeometry( Geometries.ContactGeometry geom, bool addVisuals )
     {
       GameObject go = null;
-      var uuid_annots = geom.findAnnotations("uuid");
+      var uuid_annots = geom.findAnnotations("agx_uuid");
       foreach ( var uuid_annot in uuid_annots ) {
         if ( uuid_annot.isString() ) {
           var uuid = uuid_annot.asString();
