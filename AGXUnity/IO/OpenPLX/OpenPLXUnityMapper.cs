@@ -96,30 +96,12 @@ namespace AGXUnity.IO.OpenPLX
       return Data.RootNode;
     }
 
-    private void FindOutputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
-      where T : openplx.Core.Object
-    {
-      foreach ( var (objName, obj) in system.getEntries<T>() ) {
-        foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
-          signals.RegisterSignal( prefix + "." + objName + "." + name, output );
-      }
-    }
-
-    private void FindInputsOf<T>( openplx.Physics3D.System system, OpenPLXSignals signals, string prefix = "" )
-      where T : openplx.Core.Object
-    {
-      foreach ( var (objName, obj) in system.getEntries<T>() ) {
-        foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
-          signals.RegisterSignal( prefix + "." + objName + "." + name, input );
-      }
-    }
-
     private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
     {
       foreach ( var (name, sigInterface) in obj.getEntries<openplx.Physics.Signals.SignalInterface>() ) {
         var sigInt = new SignalInterface();
         sigInt.Name = name;
-        sigInt.Path = obj.getName();
+        sigInt.Path = prefix;
         sigInt.Enabled = sigInterface.enable();
         sigInt.Inputs = new List<InputTarget>();
         foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
@@ -131,24 +113,14 @@ namespace AGXUnity.IO.OpenPLX
         signals.RegisterInterface( sigInt );
       }
 
-      foreach ( var (name, subsystem) in obj.getEntries<openplx.Physics3D.System>() )
-        MapSignals( subsystem, signals, prefix + "." + name );
+      foreach ( var (name, subobject) in obj.getNonReferenceEntries<openplx.Core.Object>() )
+        MapSignals( subobject, signals, prefix + "." + name );
 
       foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
         signals.RegisterSignal( prefix + "." + name, output );
 
       foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
         signals.RegisterSignal( prefix + "." + name, input );
-
-      if ( obj is openplx.Physics3D.System system ) {
-        FindOutputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
-        FindOutputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
-        FindOutputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
-
-        FindInputsOf<openplx.Physics.Interactions.Interaction>( system, signals, prefix );
-        FindInputsOf<openplx.Physics.Bodies.Body>( system, signals, prefix );
-        FindInputsOf<openplx.Robotics.EndEffectors.VacuumGripper>( system, signals, prefix );
-      }
     }
 
     GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
