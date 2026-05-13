@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using Input = openplx.Physics.Signals.Input;
+using Output = openplx.Physics.Signals.Output;
 
 namespace AGXUnity.IO.OpenPLX
 {
@@ -57,6 +59,55 @@ namespace AGXUnity.IO.OpenPLX
     {
       SignalRoot = signalRoot;
       return true;
+    }
+
+    internal void Invalidate()
+    {
+      SignalRoot = null;
+    }
+
+    public bool IsValid => SignalRoot != null;
+  }
+
+  [Serializable]
+  public class InputTarget : SignalEndpoint
+  {
+    public Input Native { get; private set; }
+
+    public InputTarget( string name, Input input )
+    {
+      Name = name;
+      Enabled = true;
+      m_serializedType = new SerializedType( input.GetType() );
+      ValueTypeCode = input.type();
+    }
+
+    internal override bool Initialize( OpenPLXSignals signalRoot )
+    {
+      base.Initialize( signalRoot );
+      Native = signalRoot.InitializeNativeEndpoint( Name ) as Input;
+      return Native != null;
+    }
+  }
+
+  [Serializable]
+  public class OutputSource : SignalEndpoint
+  {
+    public Output Native { get; private set; }
+
+    public OutputSource( string name, Output output )
+    {
+      Name = name;
+      Enabled = output.enabled();
+      m_serializedType = new SerializedType( output.GetType() );
+      ValueTypeCode = output.type();
+    }
+
+    internal override bool Initialize( OpenPLXSignals signalRoot )
+    {
+      base.Initialize( signalRoot );
+      Native = signalRoot.InitializeNativeEndpoint( Name ) as Output;
+      return Native != null;
     }
   }
 }
