@@ -135,23 +135,23 @@ namespace AGXUnity.IO.OpenPLX
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
-    public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
+    public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, MapperData data )
       where T : struct
     {
-      err.reportError( new UnimplementedError( obj ) );
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
       return null;
     }
 
-    public static T ReportUnimplemented<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
+    public static T ReportUnimplemented<T>( openplx.Core.Object obj, MapperData data )
       where T : class
     {
-      err.reportError( new UnimplementedError( obj ) );
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
       return null;
     }
 
-    public static void ReportUnimplemented( openplx.Core.Object obj, openplx.ErrorReporter err )
+    public static void ReportUnimplemented( openplx.Core.Object obj, MapperData data )
     {
-      err.reportError( new UnimplementedError( obj ) );
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
     }
 
     public static void AddChild( GameObject parent, GameObject child, openplx.ErrorReporter err, openplx.Core.Object obj )

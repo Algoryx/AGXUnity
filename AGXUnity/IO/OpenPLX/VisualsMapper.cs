@@ -137,7 +137,7 @@ namespace AGXUnity.IO.OpenPLX
         if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
           return null;
 
-        return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( visual, Data );
       }
 
       Data.RegisterOpenPLXObject( visual.getName(), go );

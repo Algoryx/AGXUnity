@@ -11,23 +11,30 @@ namespace AGXUnityEditor.IO.OpenPLX
   [ScriptedImporter( 0, ".openplx" )]
   public class ScriptedOpenPLXImporter : ScriptedImporter
   {
+    public enum MessageSeverity
+    {
+      Warning,
+      Error
+    }
+
     [Serializable]
-    public struct Error
+    public struct Message
     {
       public string raw;
       public string message;
       public string document;
+      public MessageSeverity severity;
       public readonly string Location => $"{line}:{column}";
       public int line;
       public int column;
     }
 
     [SerializeField]
-    private List<Error> m_errors;
+    private List<Message> m_messages;
     [SerializeField]
     private List<string> m_declaredModels;
 
-    public Error[] Errors => m_errors.ToArray();
+    public Message[] Messages => m_messages.ToArray();
     public string[] Dependencies
     {
       get
@@ -102,7 +109,7 @@ namespace AGXUnityEditor.IO.OpenPLX
     public override void OnImportAsset( AssetImportContext ctx )
     {
       m_nonImportable = true;
-      m_errors = new List<Error>();
+      m_messages = new List<Message>();
 
       m_data = ScriptableObject.CreateInstance<ScriptedImportData>();
       m_data.hideFlags = HideFlags.HideInHierarchy;
@@ -146,7 +153,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       var end = DateTime.Now;
       m_data.ImportTime = (float)( end - start ).TotalSeconds;
 
-      if ( m_errors.Count > 0 ) {
+      if ( m_messages.Count > 0 ) {
         if ( m_nonImportable )
           SkipImport = true;
       }
@@ -209,11 +216,12 @@ namespace AGXUnityEditor.IO.OpenPLX
     {
       if ( error.getErrorCode() != CoreSWIG.ModelDeclarationNotFound && error.getErrorCode() != (uint)AgxUnityOpenPLXErrors.TraitNotImportable )
         m_nonImportable = false;
-      m_errors.Add( new Error
+      m_messages.Add( new Message
       {
         raw       = error.getMessage( true ),
         message   = error.getMessage( false ).Replace( "\\", "/" ),
         document  = error.getSourceId(),
+        severity  = error is BaseWarning ? MessageSeverity.Warning : MessageSeverity.Error,
         line      = (int)error.getLine(),
         column    = (int)error.getColumn()
       } );

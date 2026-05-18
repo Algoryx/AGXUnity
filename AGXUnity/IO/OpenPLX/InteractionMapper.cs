@@ -297,7 +297,7 @@ namespace AGXUnity.IO.OpenPLX
       else if ( spring is Interactions.LinearSpring ls )
         agxLock.Position = (float)ls.position();
       else
-        Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
+        Utils.ReportUnimplemented<System.Object>( spring, Data );
 
       MapControllerDissipation( spring.dissipation(), spring.flexibility(), agxLock );
       MapControllerFlexibility( spring.flexibility(), agxLock );
@@ -357,7 +357,7 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.LinearVelocityMotor => ConstraintType.GenericConstraint1DOF,
         Interactions.ForceMotor => ConstraintType.GenericConstraint1DOF,
         // Unknown
-        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
+        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data )
       };
 
       if ( type == null )
@@ -403,7 +403,7 @@ namespace AGXUnity.IO.OpenPLX
       };
 
       if ( angleType == null )
-        return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( interaction, Data );
 
       g1dof.DOFType = angleType.Value;
 
@@ -429,7 +429,7 @@ namespace AGXUnity.IO.OpenPLX
           EnableForceMotorInteraction( constraint.GetController<TargetSpeedController>(), fm );
           break;
         default:
-          return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+          return Utils.ReportUnimplemented<GameObject>( interaction, Data );
       }
 
       return constraint.gameObject;
