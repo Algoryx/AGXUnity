@@ -183,7 +183,7 @@ namespace AGXUnity.IO.OpenPLX
         };
 
         if ( type == null ) {
-          Utils.ReportUnimplemented( wheel, Data.ErrorReporter );
+          Utils.ReportUnimplemented( wheel, Data );
           continue;
         }
 
@@ -349,7 +349,7 @@ namespace AGXUnity.IO.OpenPLX
         return new AGXUnity.Model.DiscretePulseVariation( (float)disc.amplitude(), (int)disc.period() );
       if ( variation.GetType() == typeof( openplx.Math.Distributions.Cyclic.Base ) )
         return null;
-      return Utils.ReportUnimplemented<TrackNodeVariation>( variation, Data.ErrorReporter );
+      return Utils.ReportUnimplemented<TrackNodeVariation>( variation, Data );
     }
 
     private void MapElasticWheel( Wheels.ElasticWheel wheel )

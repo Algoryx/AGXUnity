@@ -99,6 +99,9 @@ namespace AGXUnity.IO.OpenPLX
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
         importedObject = mapper.MapObject( loadedModel, path );
+        foreach ( var warning in mapper.Data.Warnings )
+          ErrorReporter?.Invoke( warning );
+
         if ( importedObject == null || mapper.Data.ErrorReporter.getErrorCount() > 0 ) {
           foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
             ErrorReporter?.Invoke( error );

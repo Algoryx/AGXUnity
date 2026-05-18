@@ -391,7 +391,7 @@ namespace AGXUnity.IO.OpenPLX
         if ( geom is Geometries.ExternalTriMeshGeometry )
           return null;
 
-        return Utils.ReportUnimplemented<GameObject>( geom, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( geom, Data );
       }
 
       Data.RegisterOpenPLXObject( geom.getName(), go );

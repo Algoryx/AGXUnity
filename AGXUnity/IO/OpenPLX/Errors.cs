@@ -89,6 +89,17 @@ namespace AGXUnity.IO.OpenPLX
     { }
   }
 
+  public class BaseWarning : BaseError
+  {
+    protected BaseWarning( openplx.Core.Object source, AgxUnityOpenPLXErrors code )
+      : base( source, code )
+    { }
+
+    protected BaseWarning( string sourceID, AgxUnityOpenPLXErrors code )
+      : base( sourceID, code )
+    { }
+  }
+
   public class InternalMapperError : BaseError
   {
     string m_error;
@@ -102,11 +113,11 @@ namespace AGXUnity.IO.OpenPLX
     protected override string createErrorMessage() => m_error;
   }
 
-  public class UnimplementedError : BaseError
+  public class UnimplementedWarning : BaseWarning
   {
     string m_modelName;
 
-    public UnimplementedError( openplx.Core.Object source )
+    public UnimplementedWarning( openplx.Core.Object source )
       : base( source, AgxUnityOpenPLXErrors.Unimplemented )
     {
       m_modelName = source.getType().getNameWithNamespace( "." );

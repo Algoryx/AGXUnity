@@ -75,6 +75,8 @@ namespace AGXUnity.IO.OpenPLX
     public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
     public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
 
+    public List<Error> Warnings { get; } = new List<Error>();
+
     public bool TerrainParticleRendererAdded { get; set; } = false;
 
     public GameObject CreateGameObject( string name = null )
