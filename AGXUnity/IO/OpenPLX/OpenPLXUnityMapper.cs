@@ -694,6 +694,9 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
+      foreach ( var geom in system.getNonReferenceValues<Geometries.ContactGeometry>() )
+        Utils.AddChild( s, MapContactGeometry( geom, true ), Data.ErrorReporter, geom );
+
       foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
         Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
 
