@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AGXUnity.Utils;
+using System;
 using UnityEngine;
 
 namespace AGXUnity.Model
@@ -247,11 +248,15 @@ namespace AGXUnity.Model
         // Assuming RigidBody is printing relevant error message.
         return false;
       }
+      var wheelToRB = transform.worldToLocalMatrix * Frame.Parent.transform.localToWorldMatrix;
+
+      var RBLocalPosition = wheelToRB.MultiplyPoint( Frame.LocalPosition );
+      var RBLocalRotation = wheelToRB.rotation * Frame.LocalRotation;
 
       Native = new agxVehicle.TrackWheel( ToNative( Model ),
                                           Radius,
                                           RigidBody.Native,
-                                          Frame.NativeMatrix * RigidBody.Native.getTransform().inverse() );
+                                          new agx.AffineMatrix4x4( RBLocalRotation.ToHandedQuat(), RBLocalPosition.ToHandedVec3() ) );
 
       return true;
     }
