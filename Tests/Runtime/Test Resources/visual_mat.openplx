@@ -1,2 +1,7 @@
-TestMaterial is Visuals.Materials.TextureMaterial:
-    path: @"simple_checkerboard.png"
+TestMaterial is Visuals.Materials.Material:
+    with Visuals.Materials.SurfaceFeatures.BaseColor
+    with Visuals.Materials.SurfaceFeatures.Roughness
+    with Visuals.Materials.SurfaceFeatures.Metallic
+    base_color_tint: {1,0,0,1}
+    roughness: 0.2
+    metallic: 0.4

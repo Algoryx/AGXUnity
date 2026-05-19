@@ -1,0 +1,4 @@
+import @"Icosahedron.obj" as Mesh
+
+Scene is Physics3D.System:
+    mesh is Mesh

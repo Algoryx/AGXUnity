@@ -15,7 +15,7 @@ namespace AGXUnityEditor.IO.OpenPLX
   {
     private ScriptedOpenPLXImporter ScriptedOpenPLXImporter => target as ScriptedOpenPLXImporter;
 
-    private VisualElement TableRowUI( ScriptedOpenPLXImporter.Error err )
+    private VisualElement TableRowUI( ScriptedOpenPLXImporter.Message err )
     {
       var row = new VisualElement();
       row.SetPadding( 3, 3, 3, 0 );
@@ -31,7 +31,10 @@ namespace AGXUnityEditor.IO.OpenPLX
       StatusIcon.style.width = 16;
       StatusIcon.style.flexGrow = 0;
       StatusIcon.style.flexShrink = 0;
-      StatusIcon.AddToClassList( HelpBox.iconErrorUssClassName );
+      if ( err.severity == ScriptedOpenPLXImporter.MessageSeverity.Error )
+        StatusIcon.AddToClassList( HelpBox.iconErrorUssClassName );
+      else if ( err.severity == ScriptedOpenPLXImporter.MessageSeverity.Warning )
+        StatusIcon.AddToClassList( HelpBox.iconwarningUssClassName );
 
       var nameLabel = new Label( err.message );
       nameLabel.style.flexGrow = 1;
@@ -90,14 +93,19 @@ namespace AGXUnityEditor.IO.OpenPLX
     {
       var ve = new VisualElement();
       ve.SetPadding( 10, 0, 0, 0 );
-      ve.Add( new PropertyField( serializedObject.FindProperty( "SkipImport" ) ) );
-      var skipImport = serializedObject.FindProperty( "SkipImport" ).boolValue;
+      ve.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.SkipImport ) ) ) );
+      var skipImport = serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.SkipImport) ).boolValue;
       var skipContainer = new VisualElement();
       skipContainer.SetEnabled( !skipImport );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedMeshes" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "HideImportedVisualMaterials" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "IgnoreDisabledMeshes" ) ) );
-      skipContainer.Add( new PropertyField( serializedObject.FindProperty( "RotateUp" ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedMeshes ) ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.RotateUp ) ) ) );
+      skipContainer.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.IgnoreDisabledMeshes ) ) ) );
+      var visualsFoldout = new Foldout();
+      visualsFoldout.text = "Visual options";
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedVisualMeshes ) ) ) );
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedVisualMaterials ) ) ) );
+      visualsFoldout.Add( new PropertyField( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.HideImportedTextures ) ) ) );
+      skipContainer.Add( visualsFoldout );
 
       if ( !skipImport ) {
 
@@ -105,11 +113,11 @@ namespace AGXUnityEditor.IO.OpenPLX
         models.Add( "Default" );
         var modelSelection = new DropdownField( "Imported Model", models, ScriptedOpenPLXImporter.ImportedModel );
         modelSelection.RegisterValueChangedCallback( ce => ScriptedOpenPLXImporter.ImportedModel = ce.newValue );
-        modelSelection.BindProperty( serializedObject.FindProperty( "ImportedModel" ) );
+        modelSelection.BindProperty( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.ImportedModel ) ) );
         skipContainer.Add( modelSelection );
 
-        if ( ScriptedOpenPLXImporter.Errors.Length > 0 ) {
-          var sorted = new List<ScriptedOpenPLXImporter.Error>(ScriptedOpenPLXImporter.Errors);
+        if ( ScriptedOpenPLXImporter.Messages.Length > 0 ) {
+          var sorted = new List<ScriptedOpenPLXImporter.Message>(ScriptedOpenPLXImporter.Messages);
           sorted.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
 
           skipContainer.Add( new Label() { text = $"<b>Errors ({sorted.Count})</b>" } );

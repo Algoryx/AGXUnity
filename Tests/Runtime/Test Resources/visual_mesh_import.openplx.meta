@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 51e616ea3f2058a49a281d29caf2e8e3
+guid: 185186d5267ce57498f4ba3116edf1f2
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -10,20 +10,7 @@ ScriptedImporter:
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
   errors: []
   declaredModels:
-  - BoxComponent
-  - MySprocket
-  - MyIdler
-  - MyBoxLinkVariation
-  - LinkMaterial
-  - MyLinkDescription
-  - DefaultBelt
-  - MyAdvancedBelt
-  - MyDefaultTracks
-  - MyAdvancedTracks
-  - OneTrackVehicle
-  - AdvancedOneTrackVehicle
-  - BoxToFloorSCD
-  - Scene
+  - TestMaterial
   ImportedModel: Default
   SkipImport: 0
   HideImportedMeshes: 1

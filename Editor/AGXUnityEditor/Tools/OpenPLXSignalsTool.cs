@@ -10,19 +10,30 @@ public class OpenPLXSignalsTool : CustomTargetTool
 {
   public OpenPLXSignals OpenPLXSignals => Targets[ 0 ] as OpenPLXSignals;
 
+  private string m_rootDecl;
+
   public OpenPLXSignalsTool( Object[] targets )
       : base( targets )
   {
     IsSingleInstanceTool = true;
+    m_rootDecl = OpenPLXSignals.GetComponentInChildren<OpenPLXObject>().SourceDeclarations[ 0 ];
   }
 
   private void RenderSignalList( IEnumerable<SignalEndpoint> endpoints, string interfacePrefix = "" )
   {
     var style = new GUIStyle(InspectorGUISkin.Instance.Label);
     style.alignment = TextAnchor.MiddleRight;
+
+    var buttonStyle = InspectorGUISkin.Instance.Button;
+    buttonStyle.border = new RectOffset( 0, 0, 0, 0 );
+    buttonStyle.padding = new RectOffset( 4, 4, 0, 0 );
+    var buttonContent = new GUIContent(EditorGUIUtility.FindTexture( "Clipboard" ), "Copy full signal name to clipboard");
+
     foreach ( var endpoint in endpoints ) {
       GUILayout.BeginHorizontal();
+
       var name = endpoint.Name;
+
       if ( interfacePrefix != "" ) {
         var interfaceName = interfacePrefix + ".";
         if ( !name.StartsWith( interfaceName ) )
@@ -30,23 +41,22 @@ public class OpenPLXSignalsTool : CustomTargetTool
 
         name = name.Replace( interfaceName, "" );
       }
+      else if ( name.StartsWith( m_rootDecl + "." ) )
+        name = name.Substring( m_rootDecl.Length + 1 );
+
       EditorGUILayout.LabelField( name );
-      GUILayout.Label( endpoint.Type.Name, style, GUILayout.ExpandWidth( false ) );
+
+      var typeName = endpoint.Type.Name;
+      if ( typeName.EndsWith( "Input" ) )
+        typeName = typeName.Substring( 0, typeName.Length - "Input".Length );
+      if ( typeName.EndsWith( "Output" ) )
+        typeName = typeName.Substring( 0, typeName.Length - "Output".Length );
+      GUILayout.Label( typeName, GUILayout.ExpandWidth( false ) );
+
+      if ( GUILayout.Button( buttonContent, buttonStyle, GUILayout.ExpandWidth( false ) ) )
+        GUIUtility.systemCopyBuffer = endpoint.Name;
+
       GUILayout.EndHorizontal();
-      if ( endpoint is OutputSource output && output.HasSentSignal ) {
-        GUILayout.BeginHorizontal();
-        GUILayout.FlexibleSpace();
-        var type = OpenPLXSignals.GetOpenPLXTypeEnum( endpoint.ValueTypeCode );
-        switch ( type ) {
-          case OpenPLXSignals.ValueType.Integer: GUILayout.Label( $"{output.GetValue<int>()}" ); break;
-          case OpenPLXSignals.ValueType.Real: GUILayout.Label( $"{output.GetValue<double>()}" ); break;
-          case OpenPLXSignals.ValueType.Vec3: GUILayout.Label( $"{output.GetValue<Vector3>()}" ); break;
-          case OpenPLXSignals.ValueType.Vec2: GUILayout.Label( $"{output.GetValue<Vector2>()}" ); break;
-          case OpenPLXSignals.ValueType.Boolean: GUILayout.Label( $"{output.GetValue<bool>()}" ); break;
-          default: break;
-        }
-        GUILayout.EndHorizontal();
-      }
     }
   }
 
@@ -69,7 +79,8 @@ public class OpenPLXSignalsTool : CustomTargetTool
       }
     }
 
-    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "advanced_foldout", entry => entry.Bool = false ), AGXUnity.Utils.GUI.MakeLabel( "Advanced", true ) ) ) {
+    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "advanced_foldout", entry => entry.Bool = false ), AGXUnity.Utils.GUI.MakeLabel( "Full signal list", true ) ) ) {
+      GUILayout.Label( $"Root object prefix omitted for brevity: <b>{m_rootDecl}</b>", InspectorGUISkin.Instance.Label );
       using var indent = new InspectorGUI.IndentScope();
       if ( InspectorGUI.Foldout( EditorData.Instance.GetData( OpenPLXSignals, "input_signal_foldout", entry => entry.Bool = true ), AGXUnity.Utils.GUI.MakeLabel( "Inputs", false ) ) )
         RenderSignalList( OpenPLXSignals.Inputs );
