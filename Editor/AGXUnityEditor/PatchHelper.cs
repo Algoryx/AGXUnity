@@ -291,7 +291,7 @@ namespace AGXUnityEditor
               ( newEc as ElectricMotorController ).TorqueConstant = emc.TorqueConstant;
               break;
             default: break;
-          };
+          }
 
           newEc.Enable = ec.Enable;
 

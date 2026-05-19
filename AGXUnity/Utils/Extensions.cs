@@ -39,12 +39,14 @@ namespace AGXUnity.Utils
 
       Vector3 posBefore = child.transform.position;
       Quaternion rotBefore = child.transform.rotation;
+      Vector3 scaleBefore = child.transform.lossyScale;
 
       child.transform.parent = parent.transform;
 
       if ( makeCurrentTransformLocal ) {
         child.transform.localPosition = posBefore;
         child.transform.localRotation = rotBefore;
+        child.transform.localScale = scaleBefore;
       }
 
       return parent;
@@ -285,6 +287,78 @@ namespace AGXUnity.Utils
     public static Vector3 ToLeftHanded( this Vector3 v )
     {
       return new Vector3( -v.x, v.y, v.z );
+    }
+
+    /// <summary>
+    /// Converts from a Left-handed, column major Unity matrix to a right-handed, row major AGX matrix such that 
+    /// given a matrix constructed with TRS(uPos,uRot,(1,1,1)) the resulting agx matrix will be equivalent to first 
+    /// converting uPos and uRot individually and then constructing the agx matrix from the converted values.
+    /// Note that using this method with a non-affine matrix is not defined.
+    /// </summary>
+    /// <param name="m">The unity matrix to convert</param>
+    /// <returns>The converted AGX matrix</returns>
+    public static agx.AffineMatrix4x4 ToAffine4x4( this Matrix4x4 m )
+    {
+      return new agx.AffineMatrix4x4(
+         m.m00, -m.m10, -m.m20, -m.m30,
+        -m.m01, m.m11, m.m21, m.m31,
+        -m.m02, m.m12, m.m22, m.m32,
+        -m.m03, m.m13, m.m23, m.m33
+      );
+    }
+
+    /// <summary>
+    /// Converts from a Left-handed, column major Unity matrix to a right-handed, row major AGX matrix such that 
+    /// given a matrix constructed with TRS(uPos,uRot,(1,1,1)) the resulting agx matrix will be equivalent to first 
+    /// converting uPos and uRot individually and then constructing the agx matrix from the converted values.
+    /// Note that using this method with a non-affine matrix is not defined.
+    /// </summary>
+    /// <param name="m">The unity matrix to convert</param>
+    /// <returns>The converted AGX matrix</returns>
+    public static agx.AffineMatrix4x4f ToAffine4x4f( this Matrix4x4 m )
+    {
+      return new agx.AffineMatrix4x4f(
+         m.m00, -m.m10, -m.m20, -m.m30,
+        -m.m01, m.m11, m.m21, m.m31,
+        -m.m02, m.m12, m.m22, m.m32,
+        -m.m03, m.m13, m.m23, m.m33
+      );
+    }
+
+    /// <summary>
+    /// Converts from a right-handed, row major AGX matrix to a left-handed, column major Unity matrix such that 
+    /// given a matrix constructed with aPos and aRot the resulting unity matrix will be equivalent to first 
+    /// converting aPos and aRot individually and then constructing the Unity matrix from the converted values using TRS.
+    /// </summary>
+    /// <param name="m">The AGX matrix to convert</param>
+    /// <returns>The converted Unity matrix</returns>
+    public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4 m )
+    {
+      // Copy AGX matrix into a Unity Matrix4x4
+      return new Matrix4x4(
+         new Vector4( (float)m.e00, -(float)m.e01, -(float)m.e02, -(float)m.e03 ),
+         new Vector4( -(float)m.e10, (float)m.e11, (float)m.e12, (float)m.e13 ),
+         new Vector4( -(float)m.e20, (float)m.e21, (float)m.e22, (float)m.e23 ),
+         new Vector4( -(float)m.e30, (float)m.e31, (float)m.e32, (float)m.e33 )
+      );
+    }
+
+    /// <summary>
+    /// Converts from a right-handed, row major AGX matrix to a left-handed, column major Unity matrix such that 
+    /// given a matrix constructed with aPos and aRot the resulting unity matrix will be equivalent to first 
+    /// converting aPos and aRot individually and then constructing the Unity matrix from the converted values using TRS.
+    /// </summary>
+    /// <param name="m">The AGX matrix to convert</param>
+    /// <returns>The converted Unity matrix</returns>
+    public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4f m )
+    {
+      // Copy AGX matrix into a Unity Matrix4x4
+      return new Matrix4x4(
+         new Vector4( m.e00, -m.e01, -m.e02, -m.e03 ),
+         new Vector4( -m.e10, m.e11, m.e12, m.e13 ),
+         new Vector4( -m.e20, m.e21, m.e22, m.e23 ),
+         new Vector4( -m.e30, m.e31, m.e32, m.e33 )
+      );
     }
 
     /// <summary>

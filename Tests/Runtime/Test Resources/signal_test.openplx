@@ -1,0 +1,28 @@
+Box is Physics3D.Bodies.RigidBody:
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+
+  connector is Physics3D.Interactions.MateConnector:
+    position: Math.Vec3.from_xyz(0,0,0)
+
+SignalScene is Physics3D.System:
+  box is Box
+
+  wc is Physics3D.Interactions.MateConnector:
+    position: Math.Vec3.from_xyz(0,0,0)
+
+  hinge is Physics3D.Interactions.Hinge:
+    connectors: [wc, box.connector]
+
+  motor is Physics3D.Interactions.RotationalVelocityMotor:
+    connectors: hinge.connectors
+    target_speed: 0
+
+  motorSpeedInput is Physics.Signals.AngularVelocity1DInput:
+    source: motor
+
+  angularVelocity is Physics.Signals.AngularVelocity1DOutput:
+    source: hinge
+
+  boxRPY is Physics3D.Signals.RPYOutput:
+    source: box

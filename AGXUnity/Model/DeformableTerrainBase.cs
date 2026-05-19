@@ -122,6 +122,7 @@ namespace AGXUnity.Model
     [IgnoreSynchronization]
     [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector( true )]
+    [DelayedInspector]
     public float MaximumDepth
     {
       get { return m_maximumDepth; }

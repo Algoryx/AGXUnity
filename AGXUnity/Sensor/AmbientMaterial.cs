@@ -58,7 +58,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The visibility of objects as defined by the meterological optical range (MOR) of the medium.
     /// </summary>
-    [DynamicallyShowInInspector( "HasVisibility", true )]
+    [DynamicallyShowInInspector( nameof( HasVisibility ), true )]
     [ClampAboveZeroInInspector()]
     [Tooltip( "The visibility of objects as defined by the meterological optical range (MOR) of the medium." )]
     public float Visibility
@@ -79,7 +79,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The rate of percipitation in the atmosphere.
     /// </summary>
-    [DynamicallyShowInInspector( "HasRate", true )]
+    [DynamicallyShowInInspector( nameof( HasRate ), true )]
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "The rate of percipitation in the atmosphere." )]
     public float Rate
@@ -100,7 +100,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// The signal wavelength used to configure the medium.
     /// </summary>
-    [DynamicallyShowInInspector( "HasWavelength", true )]
+    [DynamicallyShowInInspector( nameof( HasWavelength ), true )]
     [ClampAboveZeroInInspector()]
     [Tooltip( "The signal wavelength used to configure the medium." )]
     public float Wavelength
@@ -121,7 +121,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// A maritimeness parameter used to specify an interpolation value between fine droplet continental radiation fog (0.0) and large droplet maritime fog (1.0).
     /// </summary>
-    [DynamicallyShowInInspector( "HasMaritimeness", true )]
+    [DynamicallyShowInInspector( nameof( HasMaritimeness ), true )]
     [FloatSliderInInspector( 0, 1 )]
     [Tooltip( "A maritimeness parameter used to specify an interpolation value between fine droplet continental radiation fog (0.0) and large droplet maritime fog (1.0)." )]
     public float Maritimeness
@@ -142,7 +142,7 @@ namespace AGXUnity.Sensor
     /// <summary>
     /// A tropicalness parameter used to specify an interpolation value between common rain of smaller drop size (0.0) and tropical rain of larger drop size (1.0).
     /// </summary>
-    [DynamicallyShowInInspector( "HasTropicalness", true )]
+    [DynamicallyShowInInspector( nameof( HasTropicalness ), true )]
     [FloatSliderInInspector( 0, 1 )]
     [Tooltip( "A tropicalness parameter used to specify an interpolation value between common rain of smaller drop size (0.0) and tropical rain of larger drop size (1.0)." )]
     public float Tropicalness

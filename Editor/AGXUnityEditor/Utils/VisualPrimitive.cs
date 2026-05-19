@@ -109,13 +109,13 @@ namespace AGXUnityEditor.Utils
       }
     }
 
-    protected VisualPrimitive( AGXUnity.Rendering.Spawner.Primitive primitiveType, string shader = "Unlit/Color" )
+    protected VisualPrimitive( AGXUnity.Rendering.Spawner.Primitive primitiveType, string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
     {
       m_primitiveType = primitiveType;
       ShaderName = shader;
     }
 
-    protected VisualPrimitive( bool dummy_IsMeshSetToTrue, string shader = "Unlit/Color" )
+    protected VisualPrimitive( bool dummy_IsMeshSetToTrue, string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
     {
       m_isMesh = true;
       ShaderName = shader;
@@ -160,7 +160,7 @@ namespace AGXUnityEditor.Utils
       Node.transform.localScale = 2f * halfExtents;
     }
 
-    public VisualPrimitiveBox( string shader = "Unlit/Color" )
+    public VisualPrimitiveBox( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Box, shader )
     {
     }
@@ -181,7 +181,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveCylinder( string shader = "Unlit/Color" )
+    public VisualPrimitiveCylinder( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Cylinder, shader )
     {
     }
@@ -194,7 +194,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveHollowCylinder( string shader = "Unlit/Color" )
+    public VisualPrimitiveHollowCylinder( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.HollowCylinder, shader )
     {
     }
@@ -207,7 +207,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveCone( string shader = "Unlit/Color" )
+    public VisualPrimitiveCone( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Cone, shader )
     {
     }
@@ -220,7 +220,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.Spawner.Utils.SetCylinderTransform( Node, start, end, radius, constantScreenSize );
     }
 
-    public VisualPrimitiveHollowCone( string shader = "Unlit/Color" )
+    public VisualPrimitiveHollowCone( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.HollowCone, shader )
     {
     }
@@ -233,7 +233,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.ShapeDebugRenderData.SetCapsuleSize( Node, radius, height );
     }
 
-    public VisualPrimitiveCapsule( string shader = "Unlit/Color" )
+    public VisualPrimitiveCapsule( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Capsule, shader )
     {
     }
@@ -254,7 +254,7 @@ namespace AGXUnityEditor.Utils
       AGXUnity.Rendering.Spawner.Utils.SetSphereTransform( Node, position, rotation, radius, constantScreenSize, minRadius, maxRadius );
     }
 
-    public VisualPrimitiveSphere( string shader = "Unlit/Color" )
+    public VisualPrimitiveSphere( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Sphere, shader )
     {
     }
@@ -283,7 +283,7 @@ namespace AGXUnityEditor.Utils
       UpdateColor();
     }
 
-    public VisualPrimitiveMesh( string shader = "Unlit/Color" )
+    public VisualPrimitiveMesh( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( true, shader )
     {
     }
@@ -315,7 +315,7 @@ namespace AGXUnityEditor.Utils
         CurrentMoveToAction = new MoveToAction() { TargetPosition = newTarget, ApproxTime = approxTime };
     }
 
-    public VisualPrimitivePlane( string shader = "Unlit/Color" )
+    public VisualPrimitivePlane( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Plane, shader )
     {
     }
@@ -365,7 +365,7 @@ namespace AGXUnityEditor.Utils
       cone.transform.localScale = new Vector3( 0.75f * sizeScale * size, sizeScale * size, 0.75f * sizeScale * size );
     }
 
-    public VisualPrimitiveArrow( string shader = "Unlit/Color" )
+    public VisualPrimitiveArrow( string shader = "AGXUnity/Shader Graph/UnlitCrossRP" )
       : base( AGXUnity.Rendering.Spawner.Primitive.Constraint, shader )
     {
     }

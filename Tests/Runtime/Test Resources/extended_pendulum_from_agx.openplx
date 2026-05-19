@@ -1,0 +1,37 @@
+import @"inverted_pendulum.agx"
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Geometries.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    connector is Physics3D.Interactions.MateConnector:
+        position.z: -geometry.size.z * 0.7
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+ExtendedRod is Physics3D.Bodies.RigidBody:
+    top_connector is Physics3D.Interactions.MateConnector:
+        position.z: 0.6
+        main_axis: Math.Vec3.from_xyz(0, -1, 0)
+        normal: Math.Vec3.Z_AXIS()
+
+# inverted_pendulum is defined from the filename @"inverted_pendulum.agx" and refers to the top AGX System
+InvertedPendulum is inverted_pendulum:
+    # PendulumScene_rod is defined in @"inverted_pendulum.agx", it has uuid "e7477154-09f7-5d4b-e406-0fd10fb911b9".
+    # and we want to specialize it with our ExtendedRod
+    PendulumScene_rod becomes ExtendedRod
+
+    top_extension is Rod
+    internal_hinge is Physics3D.Interactions.Hinge:
+        initial_angle: Math.PI / 3.0
+        connectors: [PendulumScene_rod.top_connector, top_extension.connector]
+
+MyScene is Physics3D.System:
+    inv_pendulum is InvertedPendulum
+
+

@@ -1,0 +1,65 @@
+DoubleDistanceDistortionLidar is Physics3D.System:
+    sensor_mc is Physics3D.Interactions.MateConnector
+
+    sensor is Sensors.PulsedLidarLogic:
+        mate_connector_attachment: sensor_mc
+        wavelength: 865
+
+        distance_noise1 is Sensors.LidarDetectionDistanceGaussianNoise:
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+            standard_deviation_slope: 0.02
+
+        distance_noise2 is Sensors.LidarDetectionDistanceGaussianNoise:
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+            standard_deviation_slope: 0.02
+
+        sensing_distortions: [sensor.distance_noise1, sensor.distance_noise2]
+
+MySystem is Physics3D.System:
+    mylidar is DoubleDistanceDistortionLidar
+
+NonPrincipalNoiseLidar is Physics3D.System:
+    sensor_mc is Physics3D.Interactions.MateConnector
+
+    sensor is Sensors.PulsedLidarLogic:
+        mate_connector_attachment: sensor_mc
+        wavelength: 865
+        off_axis_noise is Sensors.Optics.RayEmissionAngleGaussianNoise: 
+            rotation_axis: {1/Math.Functions.sqrt(2),1/Math.Functions.sqrt(2),0}
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+
+        ray_emission_distortions: [sensor.off_axis_noise]
+
+ValidLidar is Physics3D.System:
+    sensor_mc is Physics3D.Interactions.MateConnector
+
+    sensor is Sensors.PulsedLidarLogic:
+        mate_connector_attachment: sensor_mc
+        wavelength: 865
+
+        beam_divergence becomes Sensors.Optics.ConicalBeamDivergence:
+            divergence_angle: 0.01
+            waist_radius: 0.001
+
+        distance_noise is Sensors.LidarDetectionDistanceGaussianNoise:
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+            standard_deviation_slope: 0.02
+
+        sensing_distortions: [sensor.distance_noise]
+
+        x_axis_noise is Sensors.Optics.RayEmissionAngleGaussianNoise: 
+            rotation_axis: Math.Vec3.X_AXIS()
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+
+        y_axis_noise is Sensors.Optics.RayEmissionAngleGaussianNoise: 
+            rotation_axis: Math.Vec3.Y_AXIS()
+            gaussian_distribution.mean: 0.0
+            gaussian_distribution.standard_deviation: 0.01
+
+        ray_emission_distortions: [sensor.x_axis_noise, sensor.y_axis_noise]
+        

@@ -1,10 +1,10 @@
 ﻿using AGXUnity;
+using AGXUnity.Rendering;
 using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
-using AGXUnity.Rendering;
 
 namespace AGXUnityEditor.Tools
 {

@@ -31,7 +31,7 @@ namespace AGXUnity.Rendering
         if ( gameObject == null )
           return;
 
-        Shader shader = Shader.Find( shaderName ) ?? Shader.Find( "Diffuse" );
+        Shader shader = Shader.Find( shaderName ) ?? Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" );
         if ( shader == null )
           throw new AGXUnity.Exception( "Enable to load shader: " + shaderName );
 

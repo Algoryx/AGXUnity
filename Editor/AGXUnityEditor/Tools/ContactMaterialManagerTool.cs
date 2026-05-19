@@ -53,15 +53,23 @@ namespace AGXUnityEditor.Tools
                                                              entries[ index ].IsOriented );
           if ( entries[ index ].IsOriented ) {
             using ( InspectorGUI.IndentScope.Single ) {
-              entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
-                                                                                          entries[ index ].ReferenceObject,
-                                                                                          typeof( GameObject ),
-                                                                                          true );
-              entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
-                                                                                                                            false,
-                                                                                                                            "Primary direction in object local frame." ),
-                                                                                                             entries[ index ].PrimaryDirection,
-                                                                                                             InspectorEditor.Skin.Popup );
+              if ( entries[ index ].ContactMaterial.FrictionModel.TrackFrictionModel ) {
+                EditorGUILayout.HelpBox( "Contact Materials with a Track friction model cannot be oriented. " +
+                                         "These models automatically construct the friction frame from the tracks. " +
+                                         "This option will be ignored",
+                                         MessageType.Warning );
+              }
+              else {
+                entries[ index ].ReferenceObject = (GameObject)EditorGUILayout.ObjectField( GUI.MakeLabel( "Reference Object" ),
+                                                                                            entries[ index ].ReferenceObject,
+                                                                                            typeof( GameObject ),
+                                                                                            true );
+                entries[ index ].PrimaryDirection = (FrictionModel.PrimaryDirection)EditorGUILayout.EnumPopup( GUI.MakeLabel( "Primary Direction",
+                                                                                                                              false,
+                                                                                                                              "Primary direction in object local frame." ),
+                                                                                                               entries[ index ].PrimaryDirection,
+                                                                                                               InspectorEditor.Skin.Popup );
+              }
             }
           }
         }

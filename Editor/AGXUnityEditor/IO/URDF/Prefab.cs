@@ -367,8 +367,13 @@ namespace AGXUnityEditor.IO.URDF
 
     private static bool IsAsset( Object @object )
     {
+#if UNITY_6000_3_OR_NEWER
+      return @object != null &&
+             !string.IsNullOrEmpty( AssetDatabase.GetAssetPath( @object.GetEntityId() ) );
+#else 
       return @object != null &&
              !string.IsNullOrEmpty( AssetDatabase.GetAssetPath( @object.GetInstanceID() ) );
+#endif
     }
 
     public static GameObject FindModelGameObject( Model model, GameObject rootGameObject )

@@ -11,12 +11,19 @@ using UnityEngine.Profiling;
 namespace AGXUnity.Sensor
 {
   /// <summary>
-  /// WIP component for streaming data to agx sensor environment
+  /// Component for streaming data to agx sensor environment
   /// </summary>
   [AddComponentMenu( "AGXUnity/Sensors/Sensor Environment" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#sensor-environment" )]
   public class SensorEnvironment : UniqueGameObject<SensorEnvironment>
   {
+    public enum MagneticFieldType
+    {
+      None,
+      Uniform,
+      Dipole
+    }
+
     /// <summary>
     /// Native instance, created in Start/Initialize.
     /// </summary>
@@ -34,6 +41,44 @@ namespace AGXUnity.Sensor
     [Tooltip("Show log messages on each thing added to the sensor environment")]
     public bool DebugLogOnAdd = false;
 
+    [InspectorGroupBegin(Name = "Magnetic Field", DefaultExpanded = true)]
+
+    /// <summary>
+    /// Set type of magnetic field used in the simulation
+    /// </summary>
+    [Tooltip("Set type of magnetic field used in the simulation")]
+    [HideInRuntimeInspector]
+    public MagneticFieldType FieldType = MagneticFieldType.Uniform;
+
+    private bool UsingUniformMagneticField => FieldType == MagneticFieldType.Uniform;
+    private bool UsingDipoleMagneticField => FieldType == MagneticFieldType.Dipole;
+
+    /// <summary>
+    /// Set the field vector of the uniform magnetic field used in the simulation [in Tesla]
+    /// </summary>
+    [Tooltip("Set the field vector of the uniform magnetic field used in the simulation [in Tesla]")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( nameof(UsingUniformMagneticField) )]
+    public Vector3 MagneticFieldVector = new Vector3( 19.462e-6f, 44.754e-6f, 7.8426e-6f );
+
+    /// <summary>
+    /// Magnetic moment vector [in m^2 * A]
+    /// </summary>
+    [Tooltip("Magnetic dipole moment vector [in m^2 * A]")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( nameof(UsingDipoleMagneticField) )]
+    public Vector3 MagneticMoment = new Vector3( -2.69e19f, -7.65e22f, 1.5e22f );
+
+    /// <summary>
+    /// Magnetic dipole center
+    /// </summary>
+    [Tooltip("Magnetic dipole center")]
+    [HideInRuntimeInspector]
+    [DynamicallyShowInInspector( nameof(UsingDipoleMagneticField) )]
+    public Vector3 DipoleCenter = new Vector3( 1.9e-10f, 20.79e3f, -6.369e6f );
+
+    [InspectorGroupEnd]
+
     /// <summary>
     /// Select which layers to include game objects from
     /// </summary>
@@ -47,11 +92,14 @@ namespace AGXUnity.Sensor
     private readonly HashSet<UnityEngine.MeshFilter> m_ignoredMeshes = new();
 
     private readonly Dictionary<DeformableTerrain,agxTerrain.Terrain> m_deformableTerrains = new();
+    private readonly Dictionary<MovableTerrain,agxTerrain.Terrain> m_movableTerrains = new();
     private readonly Dictionary<DeformableTerrainPager,agxTerrain.TerrainPager> m_deformableTerrainPagers = new();
     private readonly Dictionary<HeightField,agxCollide.HeightField> m_heightfields = new();
     private readonly Dictionary<Wire,agxWire.Wire> m_wires = new();
     private readonly Dictionary<Cable,agxCable.Cable> m_cables = new();
     private readonly Dictionary<Track,agxVehicle.Track> m_tracks = new();
+    private readonly Dictionary<GameObject, ExplicitSensorEnvironmentInclusion> m_explicitInclusions = new();
+    private readonly Dictionary<ExplicitSensorEnvironmentInclusion,GameObject> m_transformMap = new();
 
     private readonly Dictionary<ScriptComponent, bool> m_agxComponents = new();
     private readonly List<GameObject> m_newlyAdded = new();
@@ -59,11 +107,13 @@ namespace AGXUnity.Sensor
     private static readonly System.Type[] s_supportedComponents = new[]
     {
       typeof(DeformableTerrain),
+      typeof(MovableTerrain),
       typeof(DeformableTerrainPager),
       typeof(HeightField),
       typeof(Cable),
       typeof(Wire),
-      typeof(Track)
+      typeof(Track),
+      typeof(ExplicitSensorEnvironmentInclusion)
     };
 
     [SerializeField]
@@ -151,6 +201,11 @@ namespace AGXUnity.Sensor
 
       var layer = meshFilter.gameObject.layer;
       if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 ) {
+        m_ignoredMeshes.Add( meshFilter );
+        return;
+      }
+
+      if ( meshFilter.GetComponent<MovableTerrain>() != null ) {
         m_ignoredMeshes.Add( meshFilter );
         return;
       }
@@ -246,10 +301,36 @@ namespace AGXUnity.Sensor
       return shapeInstance;
     }
 
+    private bool IsVisible( GameObject gameObject, bool componentVisible )
+    {
+      if ( !m_explicitInclusions.ContainsKey( gameObject ) )
+        m_explicitInclusions.Add( gameObject, ExplicitSensorEnvironmentInclusion.FindClosest( gameObject ) );
+
+      var inclusion = m_explicitInclusions[gameObject];
+
+      return inclusion != null ? inclusion.Include : componentVisible;
+    }
+
     private bool AddAGXModel( ScriptComponent scriptComponent )
     {
       if ( scriptComponent == null )
         return false;
+
+      if ( scriptComponent is ExplicitSensorEnvironmentInclusion incComp ) {
+        Queue<Transform> iterqueue = new Queue<Transform>();
+        iterqueue.Enqueue( incComp.transform );
+        while ( iterqueue.TryDequeue( out var res ) ) {
+          if ( res.TryGetComponent<ExplicitSensorEnvironmentInclusion>( out var subInc ) && subInc != incComp )
+            continue;
+
+          m_explicitInclusions[ res.gameObject ] = incComp;
+          if ( incComp.PropagateToChildrenRecusively )
+            foreach ( Transform child in res )
+              iterqueue.Enqueue( child );
+        }
+
+        m_transformMap[ incComp ] = incComp.gameObject;
+      }
 
       var layer = scriptComponent.gameObject.layer;
       if ( ( IncludedLayers.value & ( 1 << layer ) ) == 0 )
@@ -272,6 +353,12 @@ namespace AGXUnity.Sensor
         RtSurfaceMaterial.set( c, rtMaterial );
         added = Native.add( c );
         m_deformableTerrains.Add( dt, c );
+      }
+      if ( scriptComponent is MovableTerrain mt ) {
+        var c = mt.Native;
+        RtSurfaceMaterial.set( c, rtMaterial );
+        added = Native.add( c );
+        m_movableTerrains.Add( mt, c );
       }
       else if ( scriptComponent is DeformableTerrainPager dtp ) {
         var c = dtp.Native;
@@ -317,6 +404,11 @@ namespace AGXUnity.Sensor
         Native.remove( c );
         m_deformableTerrains.Remove( dt );
       }
+      if ( scriptComponent is MovableTerrain mt ) {
+        var c = mt.Native ?? m_movableTerrains.GetValueOrDefault(mt);
+        Native.remove( c );
+        m_movableTerrains.Remove( mt );
+      }
       else if ( scriptComponent is DeformableTerrainPager dtp ) {
         var c = dtp.Native ?? m_deformableTerrainPagers.GetValueOrDefault( dtp );
         Native.remove( c );
@@ -341,6 +433,27 @@ namespace AGXUnity.Sensor
         var c = hf.Native ?? m_heightfields.GetValueOrDefault( hf );
         Native.remove( c );
         m_heightfields.Remove( hf );
+      }
+      else if ( scriptComponent is ExplicitSensorEnvironmentInclusion inc ) {
+        if ( !m_transformMap.TryGetValue( inc, out var go ) )
+          go = inc.gameObject;
+        if ( go == null )
+          return false;
+
+        var newInc = ExplicitSensorEnvironmentInclusion.FindClosest(go.transform.parent.gameObject);
+        while ( newInc != null && !newInc.PropagateToChildrenRecusively )
+          newInc = ExplicitSensorEnvironmentInclusion.FindClosest( newInc.transform.parent.gameObject );
+
+        Queue<Transform> iterqueue = new Queue<Transform>();
+        iterqueue.Enqueue( inc.transform );
+        while ( iterqueue.TryDequeue( out var res ) ) {
+          if ( res.TryGetComponent<ExplicitSensorEnvironmentInclusion>( out var subInc ) && subInc != inc )
+            continue;
+
+          m_explicitInclusions[ res.gameObject ] = newInc;
+          foreach ( Transform child in res )
+            iterqueue.Enqueue( child );
+        }
       }
       else {
         Debug.LogWarning( "AGX type not handled by this method" );
@@ -389,6 +502,17 @@ namespace AGXUnity.Sensor
       FindValidComponents<MeshFilter>( true ).ForEach( RegisterMeshfilter );
 
       FindValidComponents<ScriptComponent>( true ).ForEach( c => TrackIfSupported( c ) );
+
+      switch ( FieldType ) {
+        case MagneticFieldType.Uniform:
+          Native.setMagneticField( new UniformMagneticField( MagneticFieldVector.ToHandedVec3() ) );
+          break;
+        case MagneticFieldType.Dipole:
+          Native.setMagneticField( new DipoleMagneticField( MagneticMoment.ToHandedVec3(), DipoleCenter.ToHandedVec3() ) );
+          break;
+        default:
+          break;
+      }
 
       UpdateEnvironment();
 
@@ -450,7 +574,9 @@ namespace AGXUnity.Sensor
         }
 
         // Update object visibility
-        bool currentlyVisible = component.gameObject.activeInHierarchy || DisabledObjectsVisibleToSensors;
+        bool currentlyVisible = IsVisible(component.gameObject, component.isActiveAndEnabled);
+        if ( component is ExplicitSensorEnvironmentInclusion )
+          currentlyVisible = component.isActiveAndEnabled;
         bool previouslyVisible = entry.Value;
         if ( currentlyVisible != previouslyVisible ) {
           if ( currentlyVisible )
@@ -485,16 +611,13 @@ namespace AGXUnity.Sensor
           continue;
         }
 
-        // Handle invisible objects
-        if ( !DisabledObjectsVisibleToSensors ) {
-          bool visible = meshFilter.gameObject.activeInHierarchy;
-          bool containsKey = m_rtShapeInstances.ContainsKey(meshFilter);
+        bool visible = IsVisible(meshFilter.gameObject, meshFilter.gameObject.activeInHierarchy || DisabledObjectsVisibleToSensors);
+        bool containsKey = m_rtShapeInstances.ContainsKey(meshFilter);
 
-          if ( visible && !containsKey )
-            RegisterMeshfilter( meshFilter );
-          else if ( !visible && containsKey )
-            RemoveInstance( meshFilter );
-        }
+        if ( visible && !containsKey )
+          RegisterMeshfilter( meshFilter );
+        else if ( !visible && containsKey )
+          RemoveInstance( meshFilter );
       }
 
       foreach ( var shapeInstance in m_rtShapeInstances ) {
@@ -514,6 +637,10 @@ namespace AGXUnity.Sensor
       foreach ( var (_, dt) in m_deformableTerrains )
         Native.remove( dt );
       m_deformableTerrains.Clear();
+
+      foreach ( var (_, mt) in m_movableTerrains )
+        Native.remove( mt );
+      m_movableTerrains.Clear();
 
       foreach ( var (_, dtp) in m_deformableTerrainPagers )
         Native.remove( dtp );
@@ -544,6 +671,14 @@ namespace AGXUnity.Sensor
 
       m_rtShapes.Clear();
       m_meshFilters.Clear();
+      m_explicitInclusions.Clear();
+
+      if ( Simulation.HasInstance ) {
+        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
+        Simulation.Instance.StepCallbacks.PreStepForward -= AddNew;
+      }
+
+      ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
 
       Native?.Dispose();
       Native = null;
@@ -551,12 +686,7 @@ namespace AGXUnity.Sensor
 
     protected override void OnDestroy()
     {
-      if ( Simulation.HasInstance ) {
-        Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= UpdateEnvironment;
-        Simulation.Instance.StepCallbacks.PreStepForward -= AddNew;
-      }
-
-      ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
+      DisposeRT();
 
       base.OnDestroy();
     }

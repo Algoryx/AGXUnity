@@ -1,0 +1,49 @@
+
+Rod is Physics3D.Bodies.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Geometries.Box:
+        size: Math.Vec3.from_xyz(0.1, 0.1, 1)
+    arrow is Physics3D.Geometries.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angle_axis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.from_xyz(0.071, 0.1, 0.071)
+    mate_connector is Physics3D.Interactions.MateConnector:
+        position.z: -geometry.size.z * 0.5
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+Pendulum is Physics3D.System:
+    rod is Rod
+    motor_shaft is DriveTrain.Shaft:
+        inertia.inertia: 1.0
+    braked_shaft is DriveTrain.Shaft:
+        inertia.inertia: 1.0
+    motor is Physics1D.Interactions.RotationalVelocityMotor:
+        min_effort: -1e5
+        max_effort: 1e5
+        target_speed: 1
+        connectors: [motor_shaft.input]
+
+    brake is DriveTrain.AutomaticBrake:
+        engaged_output.enabled: true
+        initially_engaged: false
+        initial_engagement_fraction: 1
+        torque_capacity: 1e6
+        min_relative_slip_ratio: 1
+        connectors: [motor_shaft.output, braked_shaft.input]
+
+    hinge_actuator is DriveTrain.HingeActuator:
+        connector_1d: braked_shaft.output
+        mate_3d: hinge
+    hinge is Physics3D.Interactions.Hinge:
+        initial_angle: Math.PI * 0.3
+        angular_velocity_output.enabled: true
+
+PendulumScene is Physics3D.System:
+    world_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.X_AXIS()
+        position.x: 1
+    pendulum is Pendulum:
+        hinge.connectors: [pendulum.rod.mate_connector, world_connector]

@@ -17,12 +17,12 @@ namespace AGXUnity.Rendering
       HollowCone
     }
 
-    public static GameObject Create( Primitive type, string name = "", HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "Diffuse" )
+    public static GameObject Create( Primitive type, string name = "", HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "AGXUnity/Shader Graph/CrossRPDefault" )
     {
       return Create( name, @"Debug/" + type.ToString() + "Renderer", hideFlags, shaderName );
     }
 
-    public static GameObject CreateUnique( Primitive type, string name = "", HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "Diffuse" )
+    public static GameObject CreateUnique( Primitive type, string name = "", HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "AGXUnity/Shader Graph/CrossRPDefault" )
     {
       return CreateUnique( name, @"Debug/" + type.ToString() + "Renderer", hideFlags, shaderName );
     }
@@ -39,7 +39,7 @@ namespace AGXUnity.Rendering
       GameObject.DestroyImmediate( gameObject );
     }
 
-    private static GameObject Create( string name, string objPath, HideFlags hideFlags = HideFlags.HideInHierarchy, string shaderName = "Diffuse" )
+    private static GameObject Create( string name, string objPath, HideFlags hideFlags = HideFlags.HideInHierarchy, string shaderName = "AGXUnity/Shader Graph/CrossRPDefault" )
     {
       GameObject gameObject = PrefabLoader.Instantiate<GameObject>( objPath );
       if ( gameObject == null )
@@ -53,7 +53,7 @@ namespace AGXUnity.Rendering
       return gameObject;
     }
 
-    private static GameObject CreateUnique( string name, string objPath, HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "Diffuse" )
+    private static GameObject CreateUnique( string name, string objPath, HideFlags hideFlags = HideFlags.HideAndDontSave, string shaderName = "AGXUnity/Shader Graph/CrossRPDefault" )
     {
       GameObject shouldNotBeHere = GameObject.Find( name );
       if ( shouldNotBeHere != null )

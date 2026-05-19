@@ -3,13 +3,13 @@ using UnityEngine;
 namespace AGXUnity.Utils
 {
   [DisallowMultipleComponent]
+  [AddComponentMenu( "AGXUnity/Plot" )]
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#plotting-and-data-acquisition" )]
   public class Plot : ScriptComponent
   {
     /// <summary>
     /// Native AGXPlot.System object.
     /// </summary>
-    [SerializeField]
     public agxPlot.System Native { get; private set; } = null;
 
     /// <summary>

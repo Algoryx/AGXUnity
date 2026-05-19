@@ -1,0 +1,10 @@
+import @"checkerboardRGBA.png" as Checkerboard
+
+const SwizzledCheckerboard is Checkerboard:
+    with Visuals.Textures.Swizzle
+
+    swizzle: "r"
+
+TestMaterial is Visuals.Materials.Material:
+    with Visuals.Materials.SurfaceFeatures.Metallic
+    metallic_map: SwizzledCheckerboard

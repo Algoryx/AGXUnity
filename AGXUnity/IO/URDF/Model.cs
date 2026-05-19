@@ -528,7 +528,7 @@ namespace AGXUnity.IO.URDF
 
     private UnityEngine.Material CreateRenderMaterial( Material material )
     {
-      var renderMaterial   = new UnityEngine.Material( Shader.Find( "Standard" ) );
+      var renderMaterial   = new UnityEngine.Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
       renderMaterial.name  = material.Name;
       renderMaterial.color = material.Color;
 

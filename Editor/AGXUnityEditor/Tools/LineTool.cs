@@ -23,6 +23,8 @@ namespace AGXUnityEditor.Tools
 
     public string Name { get; set; } = "Line";
 
+    public bool EnableRendering { get; set; } = true;
+
     public UnityEngine.Object UndoRedoRecordObject { get; set; }
 
     public Func<EdgeDetectionTool.EdgeSelectResult, EdgeDetectionTool.EdgeSelectResult> TransformResult = null;
@@ -69,7 +71,8 @@ namespace AGXUnityEditor.Tools
       var renderOnSceneView  = !ConfigurationToolActive() &&
                                 Line.Valid && (
                                !EditorApplication.isPlaying ||
-                                EditorApplication.isPaused );
+                                EditorApplication.isPaused ) &&
+                                EnableRendering;
       var startEnabled = renderOnSceneView && GetFrameToggleEnable( StartFrameNameId );
       var endEnabled   = renderOnSceneView && GetFrameToggleEnable( EndFrameNameId );
 

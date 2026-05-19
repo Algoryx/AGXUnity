@@ -1,0 +1,77 @@
+FrictionCM is Physics.Interactions.SurfaceContact.Model:
+  friction becomes Physics.Interactions.Dissipation.DefaultDryFriction
+
+const BoxMaterial1 is Physics.Geometries.Material:
+  density: 1500
+
+const BoxMaterial2 is Physics.Geometries.Material:
+  density: 2000
+
+const GroundMaterial is Physics.Geometries.Material
+
+SlidingBox is Physics3D.Bodies.RigidBody:
+  kinematics.local_transform.position: Math.Vec3.from_xyz(0,0.3,0.1)
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+
+GroundBox is Physics3D.Bodies.RigidBody:
+  gm is GroundMaterial
+
+  floor_mc is Physics3D.Interactions.MateConnector:
+    main_axis: Math.Vec3.from_xyz(1,0,0)
+
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(1,1,0.1)
+    material: gm
+
+MaterialScene is Physics3D.System:
+  mat1 is BoxMaterial1
+  mat2 is BoxMaterial2
+
+  Box1 is SlidingBox:
+    kinematics.local_transform.position.x: -0.3
+    geometry.material: mat1
+
+  Box2 is SlidingBox:
+    kinematics.local_transform.position.x: 0
+    geometry.material: mat2
+
+  BoxInline is SlidingBox:
+    kinematics.local_transform.position.x: 0.3
+    geometry.material.density: 500
+
+  Ground is GroundBox
+
+  world_mc is Physics3D.Interactions.MateConnector:
+      main_axis: Math.Vec3.from_xyz(1,0,0)
+
+  GroundHinge is Physics3D.Interactions.Hinge:
+    connectors: [ world_mc, Ground.floor_mc ]
+
+  GroundMotor is Physics3D.Interactions.RotationalVelocityMotor:
+    connectors: GroundHinge.connectors
+    target_speed: 0.1
+
+  GroundBox1CM is FrictionCM:
+    material_1: Ground.gm
+    material_2: mat1
+    tangential_restitution: 0.1
+    normal_restitution: 0.2
+    friction.coefficient: 0.1
+
+  GroundBox2CM is FrictionCM:
+    material_1: Ground.gm
+    material_2: mat2
+    tangential_restitution: 0.3
+    normal_restitution: 0.4
+    friction.coefficient: 0.5
+
+  GroundInlineCM is FrictionCM:
+    material_1: Ground.gm
+    material_2: BoxInline.geometry.material
+    tangential_restitution: 0.5
+    normal_restitution: 0.6
+    friction.coefficient: 1.0
+
+
+

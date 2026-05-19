@@ -422,7 +422,7 @@ namespace AGXUnityEditor.Tools
         m_children[ m_children.Count - 1 ].PerformRemoveFromParent();
     }
 
-    protected T GetOrCreateVisualPrimitive<T>( string name, string shader = "Unlit/Color" ) where T : Utils.VisualPrimitive
+    protected T GetOrCreateVisualPrimitive<T>( string name, string shader = "AGXUnity/Shader Graph/UnlitCrossRP" ) where T : Utils.VisualPrimitive
     {
       T primitive = GetVisualPrimitive<T>( name );
       if ( primitive != null )

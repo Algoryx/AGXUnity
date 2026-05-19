@@ -1,9 +1,5 @@
-using agx.extensions;
-using AGXUnity;
 using AGXUnity.Utils;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -107,7 +103,7 @@ namespace AGXUnity.Rendering
         m_sourceMesh = cable.RouteMeshSource;
         Material = cable.RouteMeshMaterial;
       }
-      m_defaultMaterial = new Material( Shader.Find( "Standard" ) );
+      m_defaultMaterial = new Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
     }
 
     // OnEnable is called before the first frame update and on enables afterwards

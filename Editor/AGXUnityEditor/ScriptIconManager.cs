@@ -16,9 +16,9 @@ namespace AGXUnityEditor
 
     static ScriptIconManager()
     {
-      foreach ( var t in Assembly.GetAssembly( typeof( AGXUnity.ScriptComponent ) ).DefinedTypes ) {
+      foreach ( var t in TypeCache.GetTypesDerivedFrom( typeof( MonoBehaviour ), "AGXUnity" ) ) {
         if ( t.IsSubclassOf( typeof( AGXUnity.ScriptComponent ) ) && !s_ignored.Contains( t ) )
-          SetGizmoIconEnabled( t.AsType(), true, false );
+          SetGizmoIconEnabled( t, true, false );
       }
     }
 

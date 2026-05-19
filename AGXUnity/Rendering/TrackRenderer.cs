@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+using agx;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -137,12 +138,14 @@ namespace AGXUnity.Rendering
 
         if ( track.Native != null ) {
           foreach ( var node in track.Native.nodes() ) {
+            var applied = Model.VariationUtils.ApplyVariations( track.WidthVariation, track.ThicknessVariation, node.getHalfExtents(), nodeCounter );
             var renderInstance = m_root.transform.GetChild( nodeCounter++ );
             renderInstance.rotation = node.getRigidBody().getRotation().ToHandedQuaternion();
             renderInstance.position = node.getBeginPosition().ToHandedVector3() +
+                                      node.getRigidBody().getRotation().ToHandedQuaternion() * applied.Item2.ToHandedVector3() +
                                       renderInstance.TransformDirection( 0.5f * (float)node.getLength() * Vector3.forward );
             if ( AutomaticScaling )
-              renderInstance.localScale = 2.0f * node.getHalfExtents().ToVector3();
+              renderInstance.localScale = 2.0f * applied.Item1.ToVector3();
             else
               renderInstance.localScale = new Vector3( 1, 1, 1 );
           }
@@ -252,6 +255,8 @@ namespace AGXUnity.Rendering
       public float Width;
       public float Thickness;
       public float InitialTensionDistance;
+      public Model.TrackNodeVariation ThicnessVariation;
+      public Model.TrackNodeVariation WidthVariation;
     }
 
     public struct TrackWheelDesc
@@ -262,17 +267,20 @@ namespace AGXUnity.Rendering
       public Quaternion Rotation;
       public Vector3 LocalPosition;
       public Quaternion LocalRotation;
+      public agx.AffineMatrix4x4 WheelTransform;
+      public agx.AffineMatrix4x4 LocalTransform;
 
       public agxVehicle.TrackWheelDesc Native
       {
         get
         {
+          var RBtrans = new agx.AffineMatrix4x4( Rotation.ToHandedQuat(), Position.ToHandedVec3() );
+          var localXform = new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(), LocalPosition.ToHandedVec3() );
+
           return new agxVehicle.TrackWheelDesc( Model.TrackWheel.ToNative( WheelModel ),
                                                 Radius,
-                                                new agx.AffineMatrix4x4( Rotation.ToHandedQuat(),
-                                                                         Position.ToHandedVec3() ),
-                                                new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(),
-                                                                         LocalPosition.ToHandedVec3() ) );
+                                                RBtrans,
+                                                localXform );
         }
       }
     }
@@ -304,6 +312,8 @@ namespace AGXUnity.Rendering
       {
         var reqUpdate = TrackWheels.Length != track.Wheels.Length ||
                         Track.NumberOfNodes != track.NumberOfNodes ||
+                        Track.WidthVariation != track.WidthVariation ||
+                        Track.ThicnessVariation != track.ThicknessVariation ||
                        !Math.Approximately( Track.Width, track.Width ) ||
                        !Math.Approximately( Track.Thickness, track.Thickness ) ||
                        !Math.Approximately( Track.InitialTensionDistance, track.InitialTensionDistance );
@@ -332,12 +342,15 @@ namespace AGXUnity.Rendering
         };
         TrackWheels = new TrackWheelDesc[ track.Wheels.Length ];
         for ( int i = 0; i < TrackWheels.Length; ++i ) {
-          TrackWheels[ i ].WheelModel    = track.Wheels[ i ].Model;
-          TrackWheels[ i ].Radius        = track.Wheels[ i ].Radius;
-          TrackWheels[ i ].Position      = track.Wheels[ i ].transform.position;
-          TrackWheels[ i ].Rotation      = track.Wheels[ i ].transform.rotation;
-          TrackWheels[ i ].LocalPosition = track.Wheels[ i ].Frame.LocalPosition;
-          TrackWheels[ i ].LocalRotation = track.Wheels[ i ].Frame.LocalRotation;
+          var wheel = track.Wheels[ i ];
+          var wheelToRB = wheel.transform.worldToLocalMatrix * wheel.Frame.Parent.transform.localToWorldMatrix;
+
+          TrackWheels[ i ].WheelModel     = wheel.Model;
+          TrackWheels[ i ].Radius         = wheel.Radius;
+          TrackWheels[ i ].Position       = wheel.transform.position;
+          TrackWheels[ i ].Rotation       = wheel.transform.rotation;
+          TrackWheels[ i ].LocalPosition  = wheelToRB.MultiplyPoint( wheel.Frame.LocalPosition );
+          TrackWheels[ i ].LocalRotation  = wheelToRB.GetRotation() * wheel.Frame.LocalRotation;
         }
 
         var nodes = agxVehicle.agxVehicleSWIG.findTrackNodeConfiguration( new agxVehicle.TrackDesc( (ulong)Track.NumberOfNodes,
@@ -345,6 +358,16 @@ namespace AGXUnity.Rendering
                                                                                                     Track.Thickness,
                                                                                                     Track.InitialTensionDistance ),
                                                                           new agxVehicle.TrackWheelDescVector( ( from wheelDef in TrackWheels select wheelDef.Native ).ToArray() ) );
+        if ( track.ThicknessVariation != null || track.WidthVariation != null ) {
+          for ( int i = 0; i < nodes.Count; i++ ) {
+            var applied = Model.VariationUtils.ApplyVariations( track.WidthVariation, track.ThicknessVariation, nodes[ i ].halfExtents, i );
+            var transform = nodes[i].transform;
+            transform = AffineMatrix4x4.translate( applied.Item2 ) * transform;
+            nodes[ i ].transform = transform;
+            nodes[ i ].halfExtents = applied.Item1;
+          }
+        }
+
         TrackNodes = ( from node in nodes select TrackNodeDesc.Create( node ) ).ToArray();
       }
     }
