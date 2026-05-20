@@ -996,6 +996,332 @@ namespace AGXUnity.Model
     }
     #endregion
 
+    #region Terramechanics Properties
+    [SerializeField]
+    private float m_sinkageExponentParameterA = 0.0f;
+
+    /// <summary>
+    /// Sinkage exponent parameter A for the terramechanics pressure-sinkage model.
+    /// </summary>
+    [InspectorGroupBegin( Name = "Terramechanics Properties" )]
+    [Tooltip( "Sinkage exponent parameter A for the terramechanics pressure-sinkage model." )]
+    public float SinkageExponentParameterA
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getSinkageExponentParameterA() ) :
+                 m_sinkageExponentParameterA;
+      }
+      set
+      {
+        m_sinkageExponentParameterA = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setSinkageExponentParameterA( m_sinkageExponentParameterA );
+      }
+    }
+
+    [SerializeField]
+    private float m_sinkageExponentParameterB = 0.0f;
+
+    /// <summary>
+    /// Sinkage exponent parameter B for the terramechanics pressure-sinkage model.
+    /// </summary>
+    [Tooltip( "Sinkage exponent parameter B for the terramechanics pressure-sinkage model." )]
+    public float SinkageExponentParameterB
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getSinkageExponentParameterB() ) :
+                 m_sinkageExponentParameterB;
+      }
+      set
+      {
+        m_sinkageExponentParameterB = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setSinkageExponentParameterB( m_sinkageExponentParameterB );
+      }
+    }
+
+    [SerializeField]
+    private float m_shearModulusTangentialParameterA = 0.0f;
+
+    /// <summary>
+    /// Tangential (longitudinal) shear modulus parameter A for the terramechanics model.
+    /// </summary>
+    [Tooltip( "Tangential (longitudinal) shear modulus parameter A for the terramechanics model." )]
+    public float ShearModulusTangentialParameterA
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getShearModulusTangentialParameterA() ) :
+                 m_shearModulusTangentialParameterA;
+      }
+      set
+      {
+        m_shearModulusTangentialParameterA = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setShearModulusTangentialParameterA( m_shearModulusTangentialParameterA );
+      }
+    }
+
+    [SerializeField]
+    private float m_shearModulusTangentialParameterB = 0.0f;
+
+    /// <summary>
+    /// Tangential (longitudinal) shear modulus parameter B for the terramechanics model.
+    /// </summary>
+    [Tooltip( "Tangential (longitudinal) shear modulus parameter B for the terramechanics model." )]
+    public float ShearModulusTangentialParameterB
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getShearModulusTangentialParameterB() ) :
+                 m_shearModulusTangentialParameterB;
+      }
+      set
+      {
+        m_shearModulusTangentialParameterB = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setShearModulusTangentialParameterB( m_shearModulusTangentialParameterB );
+      }
+    }
+
+    [SerializeField]
+    private float m_shearModulusLateralParameterA = 0.0f;
+
+    /// <summary>
+    /// Lateral shear modulus parameter A for the terramechanics model.
+    /// </summary>
+    [Tooltip( "Lateral shear modulus parameter A for the terramechanics model." )]
+    public float ShearModulusLateralParameterA
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getShearModulusLateralParameterA() ) :
+                 m_shearModulusLateralParameterA;
+      }
+      set
+      {
+        m_shearModulusLateralParameterA = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setShearModulusLateralParameterA( m_shearModulusLateralParameterA );
+      }
+    }
+
+    [SerializeField]
+    private float m_shearModulusLateralParameterB = 0.0f;
+
+    /// <summary>
+    /// Lateral shear modulus parameter B for the terramechanics model.
+    /// </summary>
+    [Tooltip( "Lateral shear modulus parameter B for the terramechanics model." )]
+    public float ShearModulusLateralParameterB
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getShearModulusLateralParameterB() ) :
+                 m_shearModulusLateralParameterB;
+      }
+      set
+      {
+        m_shearModulusLateralParameterB = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setShearModulusLateralParameterB( m_shearModulusLateralParameterB );
+      }
+    }
+
+    [SerializeField]
+    private float m_cohesiveModulusBekker = 0.0f;
+
+    /// <summary>
+    /// Cohesive modulus (kc) in the Bekker pressure-sinkage model (Pa/m^n).
+    /// </summary>
+    [Tooltip( "Cohesive modulus (kc) in the Bekker pressure-sinkage model." )]
+    public float CohesiveModulusBekker
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getCohesiveModulusBekker() ) :
+                 m_cohesiveModulusBekker;
+      }
+      set
+      {
+        m_cohesiveModulusBekker = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setCohesiveModulusBekker( m_cohesiveModulusBekker );
+      }
+    }
+
+    [SerializeField]
+    private float m_frictionalModulusBekker = 0.0f;
+
+    /// <summary>
+    /// Frictional modulus (kphi) in the Bekker pressure-sinkage model (Pa/m^(n+1)).
+    /// </summary>
+    [Tooltip( "Frictional modulus (kphi) in the Bekker pressure-sinkage model." )]
+    public float FrictionalModulusBekker
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getFrictionalModulusBekker() ) :
+                 m_frictionalModulusBekker;
+      }
+      set
+      {
+        m_frictionalModulusBekker = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setFrictionalModulusBekker( m_frictionalModulusBekker );
+      }
+    }
+
+    [SerializeField]
+    private float m_cohesiveModulusReece = 0.0f;
+
+    /// <summary>
+    /// Cohesive modulus (ck) in the Reece pressure-sinkage model (Pa).
+    /// </summary>
+    [Tooltip( "Cohesive modulus (ck) in the Reece pressure-sinkage model." )]
+    public float CohesiveModulusReece
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getCohesiveModulusReece() ) :
+                 m_cohesiveModulusReece;
+      }
+      set
+      {
+        m_cohesiveModulusReece = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setCohesiveModulusReece( m_cohesiveModulusReece );
+      }
+    }
+
+    [SerializeField]
+    private float m_frictionalModulusReece = 0.0f;
+
+    /// <summary>
+    /// Frictional modulus (cgamma) in the Reece pressure-sinkage model (Pa).
+    /// </summary>
+    [Tooltip( "Frictional modulus (cgamma) in the Reece pressure-sinkage model." )]
+    public float FrictionalModulusReece
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getFrictionalModulusReece() ) :
+                 m_frictionalModulusReece;
+      }
+      set
+      {
+        m_frictionalModulusReece = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setFrictionalModulusReece( m_frictionalModulusReece );
+      }
+    }
+
+    [SerializeField]
+    private float m_maximumNormalStressAngleParameterA = 0.0f;
+
+    /// <summary>
+    /// Parameter A for the maximum normal stress angle in the terramechanics model.
+    /// </summary>
+    [Tooltip( "Parameter A for the maximum normal stress angle in the terramechanics model." )]
+    public float MaximumNormalStressAngleParameterA
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getMaximumNormalStressAngleParameterA() ) :
+                 m_maximumNormalStressAngleParameterA;
+      }
+      set
+      {
+        m_maximumNormalStressAngleParameterA = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setMaximumNormalStressAngleParameterA( m_maximumNormalStressAngleParameterA );
+      }
+    }
+
+    [SerializeField]
+    private float m_maximumNormalStressAngleParameterB = 0.0f;
+
+    /// <summary>
+    /// Parameter B for the maximum normal stress angle in the terramechanics model.
+    /// </summary>
+    [Tooltip( "Parameter B for the maximum normal stress angle in the terramechanics model." )]
+    public float MaximumNormalStressAngleParameterB
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getMaximumNormalStressAngleParameterB() ) :
+                 m_maximumNormalStressAngleParameterB;
+      }
+      set
+      {
+        m_maximumNormalStressAngleParameterB = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setMaximumNormalStressAngleParameterB( m_maximumNormalStressAngleParameterB );
+      }
+    }
+
+    [SerializeField]
+    private float m_rearAngleParameterA = 0.0f;
+
+    /// <summary>
+    /// Parameter A for the rear contact angle in the terramechanics model.
+    /// </summary>
+    [Tooltip( "Parameter A for the rear contact angle in the terramechanics model." )]
+    public float RearAngleParameterA
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getRearAngleParameterA() ) :
+                 m_rearAngleParameterA;
+      }
+      set
+      {
+        m_rearAngleParameterA = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setRearAngleParameterA( m_rearAngleParameterA );
+      }
+    }
+
+    [SerializeField]
+    private float m_rearAngleParameterB = 0.0f;
+
+    /// <summary>
+    /// Parameter B for the rear contact angle in the terramechanics model.
+    /// </summary>
+    [InspectorGroupEnd]
+    [Tooltip( "Parameter B for the rear contact angle in the terramechanics model." )]
+    public float RearAngleParameterB
+    {
+      get
+      {
+        return m_temporaryNative != null ?
+                 Convert.ToSingle( m_temporaryNative.getTerramechanicsProperties().getRearAngleParameterB() ) :
+                 m_rearAngleParameterB;
+      }
+      set
+      {
+        m_rearAngleParameterB = value;
+        if ( Native != null )
+          Native.getTerramechanicsProperties().setRearAngleParameterB( m_rearAngleParameterB );
+      }
+    }
+    #endregion
+
     /// <summary>
     /// Assign new preset name without updating any values.
     /// </summary>
