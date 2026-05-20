@@ -460,7 +460,7 @@ namespace AGXUnity.Model
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        OnModification?.Invoke( terrain.get(), index, tile, unityIndex );
+        OnModification?.Invoke( terrain, index, tile, unityIndex );
         m_updatedTerrains.Add( tile );
       };
 
@@ -850,9 +850,9 @@ namespace AGXUnity.Model
       if ( oldMat == null || newMat == null )
         return false;
 
-      var success = Native.getTemplateTerrain().exchangeTerrainMaterial( oldMat.Native, newMat.Native );
-      Native.applyChangesToTemplateTerrain();
-      return success;
+      //var success = Native.getTemplateTerrain().exchangeTerrainMaterial( oldMat.Native, newMat.Native );
+      //Native.applyChangesToTemplateTerrain();
+      return true;
     }
 
     public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
@@ -860,8 +860,9 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      Native.getTemplateTerrain().setAssociatedMaterial( terrMat.Native, shapeMat.Native );
-      Native.applyChangesToTemplateTerrain();
+      m_terrainDataSource.setAssociatedMaterial( shapeMat.Native, terrMat.Native );
+      //Native.getTemplateTerrain().setAssociatedMaterial( terrMat.Native, shapeMat.Native );
+      //Native.applyChangesToTemplateTerrain();
     }
 
     public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
@@ -869,14 +870,10 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      var template = Native.getTemplateTerrain();
-      var idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
-      if ( idx == uint.MaxValue ) {
-        template.addTerrainMaterial( terrMat.Native );
-        idx = template.getMaterialController().getTerrainMaterialIndex( terrMat.Native );
-      }
       if ( shape != null )
-        m_terrainDataSource.addTerrainMaterialSourceGeometry( shape.NativeGeometry, idx );
+        m_terrainDataSource.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
+      else
+        m_terrainDataSource.addTerrainMaterial( terrMat.Native );
 
       Native.applyChangesToTemplateTerrain();
     }
@@ -884,14 +881,17 @@ namespace AGXUnity.Model
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
     {
-      Native?.getTemplateTerrain().setMaterial( material, type );
+      //Native?.getTemplateTerrain().setMaterial( material, type );
       OnPropertiesUpdated();
     }
 
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material )
     {
-      Native?.getTemplateTerrain().setTerrainMaterial( material );
-      OnPropertiesUpdated();
+      //Native?.getTemplateTerrain().setTerrainMaterial( material );
+      m_terrainDataSource?.setDefaultTerrainMaterial( material );
+      if ( Material != null )
+        m_terrainDataSource.setAssociatedMaterial( Material.Native, material );
+      //OnPropertiesUpdated();
     }
 
     protected override void SetEnable( bool enable )
