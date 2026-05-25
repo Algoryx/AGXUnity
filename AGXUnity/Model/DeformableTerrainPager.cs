@@ -850,9 +850,8 @@ namespace AGXUnity.Model
       if ( oldMat == null || newMat == null )
         return false;
 
-      //var success = Native.getTemplateTerrain().exchangeTerrainMaterial( oldMat.Native, newMat.Native );
-      //Native.applyChangesToTemplateTerrain();
-      return true;
+      var success = m_terrainDataSource.exchangeTerrainMaterial(oldMat.GetInitialized().Native, newMat.GetInitialized().Native);
+      return success;
     }
 
     public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
@@ -860,9 +859,7 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      m_terrainDataSource.setAssociatedMaterial( shapeMat.Native, terrMat.Native );
-      //Native.getTemplateTerrain().setAssociatedMaterial( terrMat.Native, shapeMat.Native );
-      //Native.applyChangesToTemplateTerrain();
+      m_terrainDataSource.setAssociatedMaterial( shapeMat.GetInitialized().Native, terrMat.GetInitialized().Native );
     }
 
     public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
@@ -871,27 +868,23 @@ namespace AGXUnity.Model
         return;
 
       if ( shape != null )
-        m_terrainDataSource.addTerrainMaterial( terrMat.Native, shape.NativeGeometry );
+        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native, shape.GetInitialized().NativeGeometry );
       else
-        m_terrainDataSource.addTerrainMaterial( terrMat.Native );
-
-      Native.applyChangesToTemplateTerrain();
+        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native )
     }
 
     protected override bool IsNativeNull() { return Native == null; }
     protected override void SetShapeMaterial( agx.Material material, agxTerrain.Terrain.MaterialType type )
     {
-      //Native?.getTemplateTerrain().setMaterial( material, type );
+      Native?.getTemplateTerrain().setMaterial( material, type );
       OnPropertiesUpdated();
     }
 
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material )
     {
-      //Native?.getTemplateTerrain().setTerrainMaterial( material );
-      m_terrainDataSource?.setDefaultTerrainMaterial( material );
+      m_terrainDataSource.setDefaultTerrainMaterial( material );
       if ( Material != null )
         m_terrainDataSource.setAssociatedMaterial( Material.Native, material );
-      //OnPropertiesUpdated();
     }
 
     protected override void SetEnable( bool enable )

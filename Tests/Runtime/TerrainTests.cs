@@ -1,8 +1,10 @@
 using AGXUnity;
+using AGXUnity.Collide;
 using AGXUnity.Model;
-
 using NUnit.Framework;
+using System;
 using System.Collections;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -158,9 +160,48 @@ namespace AGXUnityTesting.Runtime
       LogAssert.Expect( LogType.Warning, $"Terrain heights were clamped! Max allowed: 10, Max Encountered: 15 and AGXUnity.Model.DeformableTerrain.MaximumDepth = 10. Resolve this by increasing max height and lower the terrain or decrease Maximum Depth." );
       testTerrain.GetInitialized();
     }
+
+    [UnityTest]
+    [TestMustExpectAllLogs( false )]
+    public IEnumerator TestPagerDifferentMaterials()
+    {
+      var patchGO = new GameObject("Material Patch");
+      var patch = patchGO.AddComponent<TerrainMaterialPatch>();
+
+      var patchGeom = new GameObject("Patch Geometry");
+      patchGeom.AddComponent<Box>().HalfExtents = new Vector3( 2.5f, 2, 2.5f );
+
+      patchGeom.transform.parent = patchGO.transform;
+      patchGO.transform.parent = testTerrain.transform;
+      patchGO.transform.position = new Vector3( 15, 2, 15 );
+
+      var patchTM = DeformableTerrainMaterial.CreateInstance<DeformableTerrainMaterial>();
+      patchTM.name = "Patch terrain material";
+      patchTM.GetInitialized().Native.setDescription( "Material patch Terrain Material" );
+      var defaultTM = DeformableTerrainMaterial.CreateInstance<DeformableTerrainMaterial>();
+      defaultTM.name = "Default terrain material";
+      defaultTM.GetInitialized().Native.setDescription( "Default Terrain Material" );
+
+      patch.TerrainMaterial = patchTM;
+      testTerrain.DefaultTerrainMaterial = defaultTM;
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      var tile = testTerrain.Native;
+
+      var probedMat = tile.getTerrainMaterial( tile.getWorldPositionFromVoxelIndex( tile.getSurfaceVoxelIndexFromTerrainIndex( new agx.Vec2i( 15, 15 ) ) ) );
+      Assert.That( probedMat, Is.EqualTo( patchTM.Native ) );
+
+      probedMat = tile.getTerrainMaterial( tile.getWorldPositionFromVoxelIndex( tile.getSurfaceVoxelIndexFromTerrainIndex( new agx.Vec2i( 2, 2 ) ) ) );
+      Assert.That( probedMat.getDescription(), Is.EqualTo( defaultTM.Native.getDescription() ) );
+    }
   }
+
+
   public class PagerTests : AGXUnityFixture
   {
+    private class NoInitAttribute : Attribute { }
+
     private DeformableTerrainPager testTerrain;
     private Terrain unityTerrain;
     private GameObject pagerProbe;
@@ -203,8 +244,12 @@ namespace AGXUnityTesting.Runtime
 
       testTerrain.Add( pagerProbe.GetComponent<RigidBody>() );
 
-      // Ensure that the middle tile is paged in
-      yield return TestUtils.SimulateSeconds( 0.2f );
+      var method = this.GetType().GetMethod( TestContext.CurrentContext.Test.MethodName );
+
+      if ( method.GetCustomAttribute<NoInitAttribute>() == null ) {
+        // Ensure that the middle tile is paged in
+        yield return TestUtils.SimulateSeconds( 0.2f );
+      }
     }
 
     [UnityTearDown]
@@ -315,6 +360,42 @@ namespace AGXUnityTesting.Runtime
       for ( int y = 0; y < 10; y++ )
         for ( int x = 0; x < 10; x++ )
           Assert.AreEqual( initial[ y, x ], results[ y, x ], HEIGHT_DELTA );
+    }
+
+    [UnityTest]
+    [NoInit]
+    [TestMustExpectAllLogs( false )]
+    public IEnumerator TestPagerDifferentMaterials()
+    {
+      var patchGO = new GameObject("Material Patch");
+      var patch = patchGO.AddComponent<TerrainMaterialPatch>();
+
+      var patchGeom = new GameObject("Patch Geometry");
+      patchGeom.AddComponent<Box>().HalfExtents = new Vector3( 2.5f, 2, 2.5f );
+
+      patchGeom.transform.parent = patchGO.transform;
+      patchGO.transform.parent = testTerrain.transform;
+      patchGO.transform.position = new Vector3( 15, 2, 15 );
+
+      var patchTM = DeformableTerrainMaterial.CreateInstance<DeformableTerrainMaterial>();
+      patchTM.name = "Patch terrain material";
+      patchTM.GetInitialized().Native.setDescription( "Material patch Terrain Material" );
+      var defaultTM = DeformableTerrainMaterial.CreateInstance<DeformableTerrainMaterial>();
+      defaultTM.name = "Default terrain material";
+      defaultTM.GetInitialized().Native.setDescription( "Default Terrain Material" );
+
+      patch.TerrainMaterial = patchTM;
+      testTerrain.DefaultTerrainMaterial = defaultTM;
+
+      yield return TestUtils.SimulateSeconds( 0.5f );
+
+      var tile = testTerrain.Native.getActiveTileAttachments()[ 0 ].m_terrainTile;
+
+      var probedMat = tile.getTerrainMaterial( tile.getWorldPositionFromVoxelIndex( tile.getSurfaceVoxelIndexFromTerrainIndex( new agx.Vec2i( 15, 15 ) ) ) );
+      Assert.That( probedMat, Is.EqualTo( patchTM.Native ) );
+
+      probedMat = tile.getTerrainMaterial( tile.getWorldPositionFromVoxelIndex( tile.getSurfaceVoxelIndexFromTerrainIndex( new agx.Vec2i( 2, 2 ) ) ) );
+      Assert.That( probedMat.getDescription(), Is.EqualTo( defaultTM.Native.getDescription() ) );
     }
   }
 }
