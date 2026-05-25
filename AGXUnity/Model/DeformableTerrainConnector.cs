@@ -25,7 +25,7 @@ namespace AGXUnity.Model
       var resolution = TerrainUtils.TerrainDataResolution(Terrain.terrainData);
       if ( InitialHeights != null )
         return needsReturnData ? Terrain.terrainData.GetHeights( 0, 0, resolution, resolution ) : null;
-        
+
       Terrain.terrainData = Instantiate( Terrain.terrainData );
 
       if ( float.IsNaN( MaximumDepth ) ) {
