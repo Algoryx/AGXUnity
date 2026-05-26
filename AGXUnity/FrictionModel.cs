@@ -22,7 +22,8 @@ namespace AGXUnity
       IterativeProjectedFriction = 0,
       ScaleBoxFriction,
       BoxFriction,
-      ConstantNormalForceBoxFriction
+      ConstantNormalForceBoxFriction,
+      TerrainWheelForceModel
     }
 
     public enum PrimaryDirection
@@ -86,6 +87,8 @@ namespace AGXUnity
     {
       if ( native == null || native.asIterativeProjectedConeFriction() != null )
         return EType.IterativeProjectedFriction;
+      else if ( native.asTerrainWheelForceModel() != null )
+        return EType.TerrainWheelForceModel;
       else if ( native.asScaleBoxFrictionModel() != null )
         return EType.ScaleBoxFriction;
       else if ( native.asConstantNormalForceOrientedBoxFrictionModel() != null )
@@ -112,6 +115,7 @@ namespace AGXUnity
     /// <summary>
     /// Get or set solve type of this friction model.
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "Get or set solve type of this friction model." )]
     public ESolveType SolveType
     {
@@ -148,12 +152,14 @@ namespace AGXUnity
     /// * Scale Box - Will attempt to scale the friction bounds throughout the solve stage.
     /// * Box - Has fixed friction bounds throughout the solve stage, performant but low accuracy. Makes a guess at the normal force to solve for friction.
     /// * Constant Normal Force Box - Like Box, but will use a provided constant normal force magnitude.
+    /// * Terrain Wheel Force Model - Special model used for cylinder / terrain frictions. Used with TerrainWheel component.
     /// </summary>
     [Tooltip( "Specifies the friction model to use for this contact materials using this asset.\n" +
               "* Iterative Projected Cone - The default model. Provides a good base model which handles anisotripic frictions better than the box models.\n" +
               "* Scale Box - Will attempt to scale the friction bounds throughout the solve stage.\n" +
               "* Box - Has fixed friction bounds throughout the solve stage, performant but low accuracy. Makes a guess at the normal force to solve for friction.\n" +
-              "* Constant Normal Force Box - Like Box, but will use a provided constant normal force magnitude." )]
+              "* Constant Normal Force Box - Like Box, but will use a provided constant normal force magnitude." +
+              "* Terrain Wheel Force Model - Special model used for cylinder / terrain frictions. Used with TerrainWheel component." )]
     public EType Type
     {
       get { return m_type; }
@@ -177,6 +183,8 @@ namespace AGXUnity
     /// Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials.
     /// </summary>
     [Tooltip( "Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials" )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
+
     public bool TrackFrictionModel { get; set; } = false;
 
     /// <summary>
@@ -187,6 +195,7 @@ namespace AGXUnity
     private float m_normalForceMagnitude = 100.0f;
 
     private bool IsConstantNormalForceModel => Type == EType.ConstantNormalForceBoxFriction;
+    private bool IsNotTerrainWheelForceModel => Type != EType.TerrainWheelForceModel;
 
     /// <summary>
     /// Normal force magnitude used in ConstantNormalForceBoxFriction.
@@ -269,7 +278,10 @@ namespace AGXUnity
 
       agx.FrictionModel frictionModel = null;
 
-      if ( TrackFrictionModel ) {
+      if ( type == EType.TerrainWheelForceModel) {
+        frictionModel = new agx.TerrainWheelForceModel();        
+      }
+      else if ( TrackFrictionModel ) {
         frictionModel = type switch
         {
           EType.IterativeProjectedFriction => new agxVehicle.TrackIterativeProjectedConeFrictionModel( Convert( solveType ) ),
