@@ -235,6 +235,125 @@ namespace AGXUnity.Model
     }
     #endregion
 
+    #region Terrain Wheel Settings
+    [SerializeField]
+    private float m_angularIntegrationStep = 0.001f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Angular integration step size in degrees.
+    /// </summary>
+    [InspectorGroupBegin( Name = "Terrain Wheel Settings" )]
+    [ClampAboveZeroInInspector]
+    [Tooltip( "Angular integration step size in degrees." )]
+    public float AngularIntegrationStep
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getAngularIntegrationStep() :
+               m_angularIntegrationStep;
+      }
+      set
+      {
+        m_angularIntegrationStep = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setAngularIntegrationStep( Mathf.Deg2Rad * m_angularIntegrationStep );
+      }
+    }
+
+    [SerializeField]
+    private agxTerrain.TerrainWheelSettings.PressureSinkageModel m_pressureSinkageModel = agxTerrain.TerrainWheelSettings.PressureSinkageModel.BEKKER;
+
+    /// <summary>
+    /// Pressure-sinkage model used by the terrain wheel.
+    /// </summary>
+    [Tooltip( "Pressure-sinkage model used by the terrain wheel." )]
+    public agxTerrain.TerrainWheelSettings.PressureSinkageModel PressureSinkageModel
+    {
+      get
+      {
+        return Native != null ?
+               Native.getTerrainWheelSettings().getPressureSinkageModel() :
+               m_pressureSinkageModel;
+      }
+      set
+      {
+        m_pressureSinkageModel = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setPressureSinkageModel( m_pressureSinkageModel );
+      }
+    }
+
+    [SerializeField]
+    private bool m_enableComputeRearAngleFromFrontAngle = false;
+
+    /// <summary>
+    /// When enabled, the rear contact angle theta_r is derived from the front contact angle theta_f.
+    /// </summary>
+    [Tooltip( "When enabled, the rear contact angle theta_r is derived from the front contact angle theta_f." )]
+    public bool EnableComputeRearAngleFromFrontAngle
+    {
+      get
+      {
+        return Native != null ?
+               Native.getTerrainWheelSettings().getEnableComputeRearAngleFromFrontAngle() :
+               m_enableComputeRearAngleFromFrontAngle;
+      }
+      set
+      {
+        m_enableComputeRearAngleFromFrontAngle = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setEnableComputeRearAngleFromFrontAngle( m_enableComputeRearAngleFromFrontAngle );
+      }
+    }
+
+    [SerializeField]
+    private bool m_enableComputeMaximumNormalStressAngleFromFrontAngle = true;
+
+    /// <summary>
+    /// When enabled, the maximum normal stress angle is derived from the front contact angle.
+    /// </summary>
+    [Tooltip( "When enabled, the maximum normal stress angle is derived from the front contact angle." )]
+    public bool EnableComputeMaximumNormalStressAngleFromFrontAngle
+    {
+      get
+      {
+        return Native != null ?
+               Native.getTerrainWheelSettings().getEnableComputeMaximumNormalStressAngleFromFrontAngle() :
+               m_enableComputeMaximumNormalStressAngleFromFrontAngle;
+      }
+      set
+      {
+        m_enableComputeMaximumNormalStressAngleFromFrontAngle = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setEnableComputeMaximumNormalStressAngleFromFrontAngle( m_enableComputeMaximumNormalStressAngleFromFrontAngle );
+      }
+    }
+
+    [SerializeField]
+    private float m_rearAndFrontAngleMaxMagnitude = 90.0f;
+
+    /// <summary>
+    /// Maximum allowed magnitude for the rear and front contact angles in degrees.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Maximum allowed magnitude for the rear and front contact angles in degrees." )]
+    public float RearAndFrontAngleMaxMagnitude
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getRearAndFrontAngleMaxMagnitude() :
+               m_rearAndFrontAngleMaxMagnitude;
+      }
+      set
+      {
+        m_rearAndFrontAngleMaxMagnitude = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setRearAndFrontAngleMaxMagnitude( Mathf.Deg2Rad * m_rearAndFrontAngleMaxMagnitude );
+      }
+    }
+
     [SerializeField]
     private float m_slipRatioVxThreshold = 0.01f * Mathf.Rad2Deg;
 
@@ -244,6 +363,7 @@ namespace AGXUnity.Model
     /// below their respective thresholds.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Longitudinal velocity threshold for the slip-ratio dead-band in degrees/s angular equivalent." )]
     public float SlipRatioVxThreshold
     {
       get
@@ -268,6 +388,7 @@ namespace AGXUnity.Model
     /// Corresponds to |omegaY| in the slip-ratio logic.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Rotational speed threshold for the slip-ratio dead-band in degrees/s." )]
     public float SlipRatioOmegaYRThreshold
     {
       get
@@ -291,6 +412,7 @@ namespace AGXUnity.Model
     /// Minimum angular speed used to smooth the slip-ratio computation near standstill (degrees/s).
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Minimum angular speed used to smooth the slip-ratio computation near standstill in degrees/s." )]
     public float SlipRatioSmoothingSpeed
     {
       get
@@ -308,27 +430,310 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private bool m_enableComputeRearAngleFromFrontAngle = false;
+    private float m_slipRatioMaxMagnitude = 1.0f;
 
     /// <summary>
-    /// When enabled, the rear contact angle theta_r is derived from the front contact angle
-    /// theta_f using an empirical slip-dependent relation rather than from wheel-terrain geometry.
+    /// Maximum allowed magnitude of the computed slip ratio.
     /// </summary>
-    public bool EnableComputeRearAngleFromFrontAngle
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Maximum allowed magnitude of the computed slip ratio." )]
+    public float SlipRatioMaxMagnitude
     {
       get
       {
         return Native != null ?
-               Native.getTerrainWheelSettings().getEnableComputeRearAngleFromFrontAngle() :
-               m_enableComputeRearAngleFromFrontAngle;
+               (float)Native.getTerrainWheelSettings().getSlipRatioMaxMagnitude() :
+               m_slipRatioMaxMagnitude;
       }
       set
       {
-        m_enableComputeRearAngleFromFrontAngle = value;
+        m_slipRatioMaxMagnitude = value;
         if ( Native != null )
-          Native.getTerrainWheelSettings().setEnableComputeRearAngleFromFrontAngle( m_enableComputeRearAngleFromFrontAngle );
+          Native.getTerrainWheelSettings().setSlipRatioMaxMagnitude( m_slipRatioMaxMagnitude );
       }
     }
+
+    [SerializeField]
+    private float m_slipRatioFallbackValue = 0.1f;
+
+    /// <summary>
+    /// Slip ratio fallback value when the angular equivalent of vX and omegaY are below their thresholds.
+    /// </summary>
+    [Tooltip( "Slip ratio fallback value when the angular equivalent of vX and omegaY are below their thresholds." )]
+    public float SlipRatioFallbackValue
+    {
+      get
+      {
+        return Native != null ?
+               (float)Native.getTerrainWheelSettings().getSlipRatioFallbackValue() :
+               m_slipRatioFallbackValue;
+      }
+      set
+      {
+        m_slipRatioFallbackValue = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setSlipRatioFallbackValue( m_slipRatioFallbackValue );
+      }
+    }
+
+    [SerializeField]
+    private float m_slipAngleVxAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Longitudinal velocity angular equivalent threshold used by slip-angle computation in degrees/s.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Longitudinal velocity angular equivalent threshold used by slip-angle computation in degrees/s." )]
+    public float SlipAngleVxAngularEquivalentThreshold
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getSlipAngleVxAngularEquivalentThreshold() :
+               m_slipAngleVxAngularEquivalentThreshold;
+      }
+      set
+      {
+        m_slipAngleVxAngularEquivalentThreshold = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setSlipAngleVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipAngleVxAngularEquivalentThreshold );
+      }
+    }
+
+    [SerializeField]
+    private float m_slipAngleVyAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Lateral velocity angular equivalent threshold used by slip-angle computation in degrees/s.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Lateral velocity angular equivalent threshold used by slip-angle computation in degrees/s." )]
+    public float SlipAngleVyAngularEquivalentThreshold
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getSlipAngleVyAngularEquivalentThreshold() :
+               m_slipAngleVyAngularEquivalentThreshold;
+      }
+      set
+      {
+        m_slipAngleVyAngularEquivalentThreshold = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setSlipAngleVyAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipAngleVyAngularEquivalentThreshold );
+      }
+    }
+
+    [SerializeField]
+    private float m_slipAngleMaxMagnitude = 45.0f;
+
+    /// <summary>
+    /// Maximum allowed slip-angle magnitude in degrees.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Maximum allowed slip-angle magnitude in degrees." )]
+    public float SlipAngleMaxMagnitude
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getSlipAngleMaxMagnitude() :
+               m_slipAngleMaxMagnitude;
+      }
+      set
+      {
+        m_slipAngleMaxMagnitude = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setSlipAngleMaxMagnitude( Mathf.Deg2Rad * m_slipAngleMaxMagnitude );
+      }
+    }
+
+    [SerializeField]
+    private float m_slipAngleFallbackValue = 4.5f;
+
+    /// <summary>
+    /// Slip-angle fallback value in degrees when vX and vY are below their thresholds.
+    /// </summary>
+    [Tooltip( "Slip-angle fallback value in degrees when vX and vY are below their thresholds." )]
+    public float SlipAngleFallbackValue
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getSlipAngleFallbackValue() :
+               m_slipAngleFallbackValue;
+      }
+      set
+      {
+        m_slipAngleFallbackValue = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setSlipAngleFallbackValue( Mathf.Deg2Rad * m_slipAngleFallbackValue );
+      }
+    }
+
+    [SerializeField]
+    private float m_rollingModeVxAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Longitudinal velocity angular equivalent threshold used for rolling-mode classification in degrees/s.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Longitudinal velocity angular equivalent threshold used for rolling-mode classification in degrees/s." )]
+    public float RollingModeVxAngularEquivalentThreshold
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getRollingModeVxAngularEquivalentThreshold() :
+               m_rollingModeVxAngularEquivalentThreshold;
+      }
+      set
+      {
+        m_rollingModeVxAngularEquivalentThreshold = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setRollingModeVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_rollingModeVxAngularEquivalentThreshold );
+      }
+    }
+
+    [SerializeField]
+    private float m_rollingModeOmegaYThreshold = 0.017453293f * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// Wheel axle angular velocity magnitude threshold used for rolling-mode classification in degrees/s.
+    /// </summary>
+    [ClampAboveZeroInInspector( true )]
+    [Tooltip( "Wheel axle angular velocity magnitude threshold used for rolling-mode classification in degrees/s." )]
+    public float RollingModeOmegaYThreshold
+    {
+      get
+      {
+        return Native != null ?
+               Mathf.Rad2Deg * (float)Native.getTerrainWheelSettings().getRollingModeOmegaYThreshold() :
+               m_rollingModeOmegaYThreshold;
+      }
+      set
+      {
+        m_rollingModeOmegaYThreshold = value;
+        if ( Native != null )
+          Native.getTerrainWheelSettings().setRollingModeOmegaYThreshold( Mathf.Deg2Rad * m_rollingModeOmegaYThreshold );
+      }
+    }
+
+    //[SerializeField]
+    //private bool m_enableDebugGeneralInfo = false;
+
+    ///// <summary>
+    ///// Enable debug printing of general terrain wheel information.
+    ///// </summary>
+    //[Tooltip( "Enable debug printing of general terrain wheel information." )]
+    //public bool EnableDebugGeneralInfo
+    //{
+    //  get
+    //  {
+    //    return Native != null ?
+    //           Native.getTerrainWheelSettings().getEnableDebugGeneralInfo() :
+    //           m_enableDebugGeneralInfo;
+    //  }
+    //  set
+    //  {
+    //    m_enableDebugGeneralInfo = value;
+    //    if ( Native != null )
+    //      Native.getTerrainWheelSettings().setEnableDebugGeneralInfo( m_enableDebugGeneralInfo );
+    //  }
+    //}
+
+    //[SerializeField]
+    //private bool m_enableDebugRegressionPlanes = false;
+
+    ///// <summary>
+    ///// Enable debug rendering of regression planes.
+    ///// </summary>
+    //[Tooltip( "Enable debug rendering of regression planes." )]
+    //public bool EnableDebugRegressionPlanes
+    //{
+    //  get
+    //  {
+    //    return Native != null ?
+    //           Native.getTerrainWheelSettings().getEnableDebugRegressionPlanes() :
+    //           m_enableDebugRegressionPlanes;
+    //  }
+    //  set
+    //  {
+    //    m_enableDebugRegressionPlanes = value;
+    //    if ( Native != null )
+    //      Native.getTerrainWheelSettings().setEnableDebugRegressionPlanes( m_enableDebugRegressionPlanes );
+    //  }
+    //}
+
+    //[SerializeField]
+    //private bool m_enableDebugSimulationStages = false;
+
+    ///// <summary>
+    ///// Enable debug printing of simulation stages.
+    ///// </summary>
+    //[Tooltip( "Enable debug printing of simulation stages." )]
+    //public bool EnableDebugSimulationStages
+    //{
+    //  get
+    //  {
+    //    return Native != null ?
+    //           Native.getTerrainWheelSettings().getEnableDebugSimulationStages() :
+    //           m_enableDebugSimulationStages;
+    //  }
+    //  set
+    //  {
+    //    m_enableDebugSimulationStages = value;
+    //    if ( Native != null )
+    //      Native.getTerrainWheelSettings().setEnableDebugSimulationStages( m_enableDebugSimulationStages );
+    //  }
+    //}
+
+    //[SerializeField]
+    //private bool m_enableDebugContactEventInfo = false;
+
+    ///// <summary>
+    ///// Enable debug printing of contact event information.
+    ///// </summary>
+    //[Tooltip( "Enable debug printing of contact event information." )]
+    //public bool EnableDebugContactEventInfo
+    //{
+    //  get
+    //  {
+    //    return Native != null ?
+    //           Native.getTerrainWheelSettings().getEnableDebugContactEventInfo() :
+    //           m_enableDebugContactEventInfo;
+    //  }
+    //  set
+    //  {
+    //    m_enableDebugContactEventInfo = value;
+    //    if ( Native != null )
+    //      Native.getTerrainWheelSettings().setEnableDebugContactEventInfo( m_enableDebugContactEventInfo );
+    //  }
+    //}
+
+    //[SerializeField]
+    //private bool m_enableDebugBoundsInfo = false;
+
+    ///// <summary>
+    ///// Enable debug printing of bounds information.
+    ///// </summary>
+    //[Tooltip( "Enable debug printing of bounds information." )]
+    //public bool EnableDebugBoundsInfo
+    //{
+    //  get
+    //  {
+    //    return Native != null ?
+    //           Native.getTerrainWheelSettings().getEnableDebugBoundsInfo() :
+    //           m_enableDebugBoundsInfo;
+    //  }
+    //  set
+    //  {
+    //    m_enableDebugBoundsInfo = value;
+    //    if ( Native != null )
+    //      Native.getTerrainWheelSettings().setEnableDebugBoundsInfo( m_enableDebugBoundsInfo );
+    //  }
+    //}
+    #endregion
 
     public ContactMaterial contactMaterial;
 
@@ -368,10 +773,28 @@ namespace AGXUnity.Model
       wheelDeformationProperties.setLateralDisplacementDistScaling( m_lateralDisplacementDistScaling );
       wheelDeformationProperties.setForwardDisplacementDistScaling( m_forwardDisplacementDistScaling );
       wheelDeformationProperties.setBackwardDisplacementDistScaling( m_backwardDisplacementDistScaling );
-      Native.getTerrainWheelSettings().setSlipRatioVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipRatioVxThreshold );
-      Native.getTerrainWheelSettings().setSlipRatioOmegaYThreshold( Mathf.Deg2Rad * m_slipRatioOmegaYRThreshold );
-      Native.getTerrainWheelSettings().setSlipRatioSmoothingAngularSpeed( Mathf.Deg2Rad * m_slipRatioSmoothingSpeed );
-      Native.getTerrainWheelSettings().setEnableComputeRearAngleFromFrontAngle( m_enableComputeRearAngleFromFrontAngle );
+      var terrainWheelSettings = Native.getTerrainWheelSettings();
+      terrainWheelSettings.setAngularIntegrationStep( Mathf.Deg2Rad * m_angularIntegrationStep );
+      terrainWheelSettings.setPressureSinkageModel( m_pressureSinkageModel );
+      terrainWheelSettings.setEnableComputeRearAngleFromFrontAngle( m_enableComputeRearAngleFromFrontAngle );
+      terrainWheelSettings.setEnableComputeMaximumNormalStressAngleFromFrontAngle( m_enableComputeMaximumNormalStressAngleFromFrontAngle );
+      terrainWheelSettings.setRearAndFrontAngleMaxMagnitude( Mathf.Deg2Rad * m_rearAndFrontAngleMaxMagnitude );
+      terrainWheelSettings.setSlipRatioVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipRatioVxThreshold );
+      terrainWheelSettings.setSlipRatioOmegaYThreshold( Mathf.Deg2Rad * m_slipRatioOmegaYRThreshold );
+      terrainWheelSettings.setSlipRatioSmoothingAngularSpeed( Mathf.Deg2Rad * m_slipRatioSmoothingSpeed );
+      terrainWheelSettings.setSlipRatioMaxMagnitude( m_slipRatioMaxMagnitude );
+      terrainWheelSettings.setSlipRatioFallbackValue( m_slipRatioFallbackValue );
+      terrainWheelSettings.setSlipAngleVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipAngleVxAngularEquivalentThreshold );
+      terrainWheelSettings.setSlipAngleVyAngularEquivalentThreshold( Mathf.Deg2Rad * m_slipAngleVyAngularEquivalentThreshold );
+      terrainWheelSettings.setSlipAngleMaxMagnitude( Mathf.Deg2Rad * m_slipAngleMaxMagnitude );
+      terrainWheelSettings.setSlipAngleFallbackValue( Mathf.Deg2Rad * m_slipAngleFallbackValue );
+      terrainWheelSettings.setRollingModeVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_rollingModeVxAngularEquivalentThreshold );
+      terrainWheelSettings.setRollingModeOmegaYThreshold( Mathf.Deg2Rad * m_rollingModeOmegaYThreshold );
+      //terrainWheelSettings.setEnableDebugGeneralInfo( m_enableDebugGeneralInfo );
+      //terrainWheelSettings.setEnableDebugRegressionPlanes( m_enableDebugRegressionPlanes );
+      //terrainWheelSettings.setEnableDebugSimulationStages( m_enableDebugSimulationStages );
+      //terrainWheelSettings.setEnableDebugContactEventInfo( m_enableDebugContactEventInfo );
+      //terrainWheelSettings.setEnableDebugBoundsInfo( m_enableDebugBoundsInfo );
 
       GetSimulation().add( Native );
 
