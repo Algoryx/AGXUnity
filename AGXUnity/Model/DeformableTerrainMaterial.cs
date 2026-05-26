@@ -1303,7 +1303,6 @@ namespace AGXUnity.Model
     /// <summary>
     /// Parameter B for the rear contact angle in the terramechanics model.
     /// </summary>
-    [InspectorGroupEnd]
     [Tooltip( "Parameter B for the rear contact angle in the terramechanics model." )]
     public float RearAngleParameterB
     {
