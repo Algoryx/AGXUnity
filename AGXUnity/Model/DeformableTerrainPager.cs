@@ -870,7 +870,7 @@ namespace AGXUnity.Model
       if ( shape != null )
         m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native, shape.GetInitialized().NativeGeometry );
       else
-        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native )
+        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native );
     }
 
     protected override bool IsNativeNull() { return Native == null; }
