@@ -264,6 +264,8 @@ namespace AGXUnity
                            m_orientedFrictionReferenceObject.GetComponent<RigidBody>().Native.getFrame() :
                          m_orientedFrictionReferenceObject.GetComponent<Collide.Shape>() != null ?
                            m_orientedFrictionReferenceObject.GetComponent<Collide.Shape>().NativeGeometry.getFrame() :
+                         m_orientedFrictionReferenceObject.GetComponent<ObserverFrame>() != null ?
+                           m_orientedFrictionReferenceObject.GetComponent<ObserverFrame>().Native.getFrame() :
                            null;
       }
 
