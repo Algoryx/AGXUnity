@@ -37,6 +37,8 @@ namespace AGXUnity.Model
         HingeStiffnessRotational = new Vector3( convertCompliance( m_hingeComplianceRotational.x ), convertCompliance( m_hingeComplianceRotational.y ), 100.0f );
         HingeAttenuationRotational = new Vector3( convertDamping( m_hingeDampingRotational.x ), convertDamping( m_hingeDampingRotational.y ), 2.0f );
 
+        FullDoF = true;
+
         return true;
       }
 
