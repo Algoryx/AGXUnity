@@ -499,7 +499,48 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 3f );
 
       Assert.That( box.transform.position.y, Is.GreaterThan( 0 ), "Conveyor should carry the box" );
-      Assert.That( box.transform.position.x, Is.LessThan( -0.5 ), "Conveyor should not move the box" );
+      Assert.That( box.transform.position.x, Is.LessThan( -0.5 ), "Conveyor should move the box" );
+    }
+
+    [UnityTest]
+    public IEnumerator TestTrackSupportGeometry()
+    {
+      var track = CreateSimpleTrack();
+
+      yield return TestUtils.SimulateSeconds( 1f );
+
+      double distSum = 0;
+      foreach ( var node in track.Native.nodes() )
+        distSum += node.getCenterPosition().length();
+
+      var box = CreateBox(Vector3.down * 0.24f);
+      box.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      var boxGeom = box.GetComponentInChildren<Box>().HalfExtents = Vector3.one * 0.1f;
+
+      track.Add( box.GetComponentInChildren<Box>() );
+
+      yield return TestUtils.SimulateSeconds( 1f );
+
+      double supportDistSum = 0.0f;
+      foreach ( var node in track.Native.nodes() )
+        supportDistSum += node.getCenterPosition().length();
+
+      Assert.That( supportDistSum, Is.GreaterThan( distSum + 0.5f ) );
+
+      track.Remove( box.GetComponentInChildren<Box>() );
+
+      yield return TestUtils.SimulateSeconds( 1f );
+
+      double noSupportDistSum = 0.0f;
+      foreach ( var node in track.Native.nodes() )
+        noSupportDistSum += node.getCenterPosition().length();
+
+      Assert.That( noSupportDistSum, Is.LessThan( distSum - 0.5f ) );
+
+      // Sanity check that tracks have not blown up
+      Assert.That( supportDistSum, Is.EqualTo( distSum ).Within( 1f ) );
+      Assert.That( noSupportDistSum, Is.EqualTo( distSum ).Within( 1f ) );
     }
   }
 }

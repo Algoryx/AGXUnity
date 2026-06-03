@@ -332,7 +332,7 @@ namespace AGXUnity.Model
       m_supportGeometries.Add( supportGeometry );
 
       if ( Native != null )
-        Native.addSupportGroupId( supportGeometry.NativeGeometry );
+        Native.addSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
 
       return true;
     }
@@ -348,7 +348,7 @@ namespace AGXUnity.Model
         return false;
 
       if ( Native != null )
-        Native.removeSupportGroupId( supportGeometry.NativeGeometry );
+        Native.removeSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
 
       return m_supportGeometries.Remove( supportGeometry );
     }
@@ -439,7 +439,7 @@ namespace AGXUnity.Model
         Native.add( wheel.Native );
 
       foreach ( var geom in SupportGeometries )
-        Native.addSupportGroupId( geom.NativeGeometry );
+        Native.addSupportGroupId( geom.GetInitialized().NativeGeometry );
 
       if ( WidthVariation != null || ThicknessVariation != null )
         Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
