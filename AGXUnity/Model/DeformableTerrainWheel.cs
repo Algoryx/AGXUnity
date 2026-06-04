@@ -735,6 +735,13 @@ namespace AGXUnity.Model
     //}
     #endregion
 
+    /// <summary>
+    /// Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model.
+    /// NB: if using multiple shape materials on the terrain this is not reliable!
+    /// </summary>
+    [Tooltip( "Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
+    public bool WarnIfNotUsingCorrectForceModel = false;
+
     public ContactMaterial contactMaterial;
 
     protected override bool Initialize()
@@ -799,6 +806,32 @@ namespace AGXUnity.Model
       GetSimulation().add( Native );
 
       return true;
+    }
+
+    private void LateUpdate()
+    {
+      if ( Native?.getActiveTerrain() == null )
+        return;
+      
+      if (!ActiveContactMaterialUsesTerrainWheelForceModel)
+        Debug.LogWarning( "Active Contact Material is NOT using terrainWheelForceModel!" );
+    }
+
+    private bool ActiveContactMaterialUsesTerrainWheelForceModel => GetActiveContactMaterial()?.getFrictionModel()?.asTerrainWheelForceModel() != null;
+
+    private agx.ContactMaterial GetActiveContactMaterial()
+    {
+      if ( Native == null || GetSimulation() == null )
+        return null;
+
+      var wheelShapeMaterial = Native.getWheelGeometry()?.getMaterial();
+      var terrainShapeMaterial = Native.getActiveTerrain()?.getMaterial();
+
+      if ( wheelShapeMaterial == null || terrainShapeMaterial == null )
+        return null;
+
+      var cm = GetSimulation()?.getMaterialManager()?.getContactMaterial( wheelShapeMaterial, terrainShapeMaterial );
+      return cm;
     }
 
     protected override void OnDestroy()
