@@ -488,7 +488,13 @@ namespace AGXUnity
       m_contactMaterial = GetSimulation().getMaterialManager().getOrCreateContactMaterial( m1, m2 );
 
       if ( FrictionModel != null ) {
-        m_contactMaterial.setFrictionModel( FrictionModel.GetInitialized<FrictionModel>().Native );
+        if ( FrictionModel.Type == FrictionModel.EType.TerrainWheelForceModel ) {
+          agxTerrain.TerrainWheel.configureContactMaterial( m_contactMaterial );
+        }
+        else {
+          m_contactMaterial.setFrictionModel( FrictionModel.GetInitialized<FrictionModel>().Native );
+        }
+
         // When the user changes friction model type (enum = BoxFriction, ScaleBoxFriction etc.)
         // the friction model object will create a new native instance. We'll receive callbacks
         // when this happens so we can assign it to our native contact material.
