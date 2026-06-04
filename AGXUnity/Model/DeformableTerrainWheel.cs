@@ -618,121 +618,6 @@ namespace AGXUnity.Model
           Native.getTerrainWheelSettings().setRollingModeOmegaYThreshold( Mathf.Deg2Rad * m_rollingModeOmegaYThreshold );
       }
     }
-
-    //[SerializeField]
-    //private bool m_enableDebugGeneralInfo = false;
-
-    ///// <summary>
-    ///// Enable debug printing of general terrain wheel information.
-    ///// </summary>
-    //[Tooltip( "Enable debug printing of general terrain wheel information." )]
-    //public bool EnableDebugGeneralInfo
-    //{
-    //  get
-    //  {
-    //    return Native != null ?
-    //           Native.getTerrainWheelSettings().getEnableDebugGeneralInfo() :
-    //           m_enableDebugGeneralInfo;
-    //  }
-    //  set
-    //  {
-    //    m_enableDebugGeneralInfo = value;
-    //    if ( Native != null )
-    //      Native.getTerrainWheelSettings().setEnableDebugGeneralInfo( m_enableDebugGeneralInfo );
-    //  }
-    //}
-
-    //[SerializeField]
-    //private bool m_enableDebugRegressionPlanes = false;
-
-    ///// <summary>
-    ///// Enable debug rendering of regression planes.
-    ///// </summary>
-    //[Tooltip( "Enable debug rendering of regression planes." )]
-    //public bool EnableDebugRegressionPlanes
-    //{
-    //  get
-    //  {
-    //    return Native != null ?
-    //           Native.getTerrainWheelSettings().getEnableDebugRegressionPlanes() :
-    //           m_enableDebugRegressionPlanes;
-    //  }
-    //  set
-    //  {
-    //    m_enableDebugRegressionPlanes = value;
-    //    if ( Native != null )
-    //      Native.getTerrainWheelSettings().setEnableDebugRegressionPlanes( m_enableDebugRegressionPlanes );
-    //  }
-    //}
-
-    //[SerializeField]
-    //private bool m_enableDebugSimulationStages = false;
-
-    ///// <summary>
-    ///// Enable debug printing of simulation stages.
-    ///// </summary>
-    //[Tooltip( "Enable debug printing of simulation stages." )]
-    //public bool EnableDebugSimulationStages
-    //{
-    //  get
-    //  {
-    //    return Native != null ?
-    //           Native.getTerrainWheelSettings().getEnableDebugSimulationStages() :
-    //           m_enableDebugSimulationStages;
-    //  }
-    //  set
-    //  {
-    //    m_enableDebugSimulationStages = value;
-    //    if ( Native != null )
-    //      Native.getTerrainWheelSettings().setEnableDebugSimulationStages( m_enableDebugSimulationStages );
-    //  }
-    //}
-
-    //[SerializeField]
-    //private bool m_enableDebugContactEventInfo = false;
-
-    ///// <summary>
-    ///// Enable debug printing of contact event information.
-    ///// </summary>
-    //[Tooltip( "Enable debug printing of contact event information." )]
-    //public bool EnableDebugContactEventInfo
-    //{
-    //  get
-    //  {
-    //    return Native != null ?
-    //           Native.getTerrainWheelSettings().getEnableDebugContactEventInfo() :
-    //           m_enableDebugContactEventInfo;
-    //  }
-    //  set
-    //  {
-    //    m_enableDebugContactEventInfo = value;
-    //    if ( Native != null )
-    //      Native.getTerrainWheelSettings().setEnableDebugContactEventInfo( m_enableDebugContactEventInfo );
-    //  }
-    //}
-
-    //[SerializeField]
-    //private bool m_enableDebugBoundsInfo = false;
-
-    ///// <summary>
-    ///// Enable debug printing of bounds information.
-    ///// </summary>
-    //[Tooltip( "Enable debug printing of bounds information." )]
-    //public bool EnableDebugBoundsInfo
-    //{
-    //  get
-    //  {
-    //    return Native != null ?
-    //           Native.getTerrainWheelSettings().getEnableDebugBoundsInfo() :
-    //           m_enableDebugBoundsInfo;
-    //  }
-    //  set
-    //  {
-    //    m_enableDebugBoundsInfo = value;
-    //    if ( Native != null )
-    //      Native.getTerrainWheelSettings().setEnableDebugBoundsInfo( m_enableDebugBoundsInfo );
-    //  }
-    //}
     #endregion
 
     /// <summary>
@@ -780,6 +665,7 @@ namespace AGXUnity.Model
       wheelDeformationProperties.setLateralDisplacementDistScaling( m_lateralDisplacementDistScaling );
       wheelDeformationProperties.setForwardDisplacementDistScaling( m_forwardDisplacementDistScaling );
       wheelDeformationProperties.setBackwardDisplacementDistScaling( m_backwardDisplacementDistScaling );
+      Native.setWheelDeformationProperties( wheelDeformationProperties );
       var terrainWheelSettings = Native.getTerrainWheelSettings();
       terrainWheelSettings.setAngularIntegrationStep( Mathf.Deg2Rad * m_angularIntegrationStep );
       terrainWheelSettings.setPressureSinkageModel( m_pressureSinkageModel );
@@ -797,11 +683,8 @@ namespace AGXUnity.Model
       terrainWheelSettings.setSlipAngleFallbackValue( Mathf.Deg2Rad * m_slipAngleFallbackValue );
       terrainWheelSettings.setRollingModeVxAngularEquivalentThreshold( Mathf.Deg2Rad * m_rollingModeVxAngularEquivalentThreshold );
       terrainWheelSettings.setRollingModeOmegaYThreshold( Mathf.Deg2Rad * m_rollingModeOmegaYThreshold );
-      //terrainWheelSettings.setEnableDebugGeneralInfo( m_enableDebugGeneralInfo );
-      //terrainWheelSettings.setEnableDebugRegressionPlanes( m_enableDebugRegressionPlanes );
-      //terrainWheelSettings.setEnableDebugSimulationStages( m_enableDebugSimulationStages );
-      //terrainWheelSettings.setEnableDebugContactEventInfo( m_enableDebugContactEventInfo );
-      //terrainWheelSettings.setEnableDebugBoundsInfo( m_enableDebugBoundsInfo );
+      Native.setTerrainWheelSettings( terrainWheelSettings );
+
 
       GetSimulation().add( Native );
 
