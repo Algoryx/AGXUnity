@@ -194,8 +194,10 @@ namespace AGXUnity
     [SerializeField]
     private float m_normalForceMagnitude = 100.0f;
 
+    [HideInInspector]
     private bool IsConstantNormalForceModel => Type == EType.ConstantNormalForceBoxFriction;
-    private bool IsNotTerrainWheelForceModel => Type != EType.TerrainWheelForceModel;
+    [HideInInspector]
+    public bool IsNotTerrainWheelForceModel => Type != EType.TerrainWheelForceModel;
 
     /// <summary>
     /// Normal force magnitude used in ConstantNormalForceBoxFriction.
