@@ -1,5 +1,6 @@
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -60,8 +61,16 @@ namespace AGXUnity.Model
     /// Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model.
     /// NB: if using multiple shape materials on the terrain this is not reliable!
     /// </summary>
+    [SerializeField]
+    [FormerlySerializedAs( "WarnIfNotUsingCorrectForceModel" )]
+    private bool m_warnIfNotUsingCorrectForceModel = false;
+
     [Tooltip( "Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
-    public bool WarnIfNotUsingCorrectForceModel = false;
+    public bool WarnIfNotUsingCorrectForceModel
+    {
+      get { return m_warnIfNotUsingCorrectForceModel; }
+      set { m_warnIfNotUsingCorrectForceModel = value; }
+    }
 
     protected override bool Initialize()
     {
@@ -115,7 +124,7 @@ namespace AGXUnity.Model
 
     private void LateUpdate()
     {
-      if ( Native?.getActiveTerrain() == null )
+      if ( !WarnIfNotUsingCorrectForceModel || Native?.getActiveTerrain() == null )
         return;
 
       if ( !ActiveContactMaterialUsesTerrainWheelForceModel )
