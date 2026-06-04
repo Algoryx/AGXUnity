@@ -13,6 +13,7 @@ using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
 
 namespace AGXUnityTesting.Runtime
 {
+  [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
   public class LidarTests : AGXUnityFixture
   {
     private GOList m_keep = new GOList();
