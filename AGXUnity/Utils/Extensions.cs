@@ -39,12 +39,14 @@ namespace AGXUnity.Utils
 
       Vector3 posBefore = child.transform.position;
       Quaternion rotBefore = child.transform.rotation;
+      Vector3 scaleBefore = child.transform.lossyScale;
 
       child.transform.parent = parent.transform;
 
       if ( makeCurrentTransformLocal ) {
         child.transform.localPosition = posBefore;
         child.transform.localRotation = rotBefore;
+        child.transform.localScale = scaleBefore;
       }
 
       return parent;
@@ -287,14 +289,6 @@ namespace AGXUnity.Utils
       return new Vector3( -v.x, v.y, v.z );
     }
 
-    // Cache a basis change matrix to apply the X-Flip to handle handedness
-    private static readonly Matrix4x4 BasisChange = new Matrix4x4(
-      new Vector4(-1, 0, 0, 0),
-      new Vector4( 0, 1, 0, 0),
-      new Vector4( 0, 0, 1, 0),
-      new Vector4( 0, 0, 0, 1)
-    );
-
     /// <summary>
     /// Converts from a Left-handed, column major Unity matrix to a right-handed, row major AGX matrix such that 
     /// given a matrix constructed with TRS(uPos,uRot,(1,1,1)) the resulting agx matrix will be equivalent to first 
@@ -305,15 +299,11 @@ namespace AGXUnity.Utils
     /// <returns>The converted AGX matrix</returns>
     public static agx.AffineMatrix4x4 ToAffine4x4( this Matrix4x4 m )
     {
-      // Apply basis change and transpose
-      Matrix4x4 c = BasisChange * m.transpose * BasisChange;
-
-      // Build AGX AffineMatrix4x4.
       return new agx.AffineMatrix4x4(
-        c.m00, c.m01, c.m02, c.m03,
-        c.m10, c.m11, c.m12, c.m13,
-        c.m20, c.m21, c.m22, c.m23,
-        c.m30, c.m31, c.m32, c.m33
+         m.m00, -m.m10, -m.m20, -m.m30,
+        -m.m01, m.m11, m.m21, m.m31,
+        -m.m02, m.m12, m.m22, m.m32,
+        -m.m03, m.m13, m.m23, m.m33
       );
     }
 
@@ -327,15 +317,11 @@ namespace AGXUnity.Utils
     /// <returns>The converted AGX matrix</returns>
     public static agx.AffineMatrix4x4f ToAffine4x4f( this Matrix4x4 m )
     {
-      // Apply basis change and transpose
-      Matrix4x4 c = BasisChange * m.transpose * BasisChange;
-
-      // Build AGX AffineMatrix4x4 from
       return new agx.AffineMatrix4x4f(
-        c.m00, c.m01, c.m02, c.m03,
-        c.m10, c.m11, c.m12, c.m13,
-        c.m20, c.m21, c.m22, c.m23,
-        c.m30, c.m31, c.m32, c.m33
+         m.m00, -m.m10, -m.m20, -m.m30,
+        -m.m01, m.m11, m.m21, m.m31,
+        -m.m02, m.m12, m.m22, m.m32,
+        -m.m03, m.m13, m.m23, m.m33
       );
     }
 
@@ -349,15 +335,12 @@ namespace AGXUnity.Utils
     public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4 m )
     {
       // Copy AGX matrix into a Unity Matrix4x4
-      Matrix4x4 C = new Matrix4x4();
-      C.m00 = (float)m.at( 0, 0 ); C.m01 = (float)m.at( 0, 1 ); C.m02 = (float)m.at( 0, 2 ); C.m03 = (float)m.at( 0, 3 );
-      C.m10 = (float)m.at( 1, 0 ); C.m11 = (float)m.at( 1, 1 ); C.m12 = (float)m.at( 1, 2 ); C.m13 = (float)m.at( 1, 3 );
-      C.m20 = (float)m.at( 2, 0 ); C.m21 = (float)m.at( 2, 1 ); C.m22 = (float)m.at( 2, 2 ); C.m23 = (float)m.at( 2, 3 );
-      C.m30 = (float)m.at( 3, 0 ); C.m31 = (float)m.at( 3, 1 ); C.m32 = (float)m.at( 3, 2 ); C.m33 = (float)m.at( 3, 3 );
-
-      // Apply basis change and transpose
-      Matrix4x4 unityM = BasisChange * C.transpose * BasisChange;
-      return unityM;
+      return new Matrix4x4(
+         new Vector4( (float)m.e00, -(float)m.e01, -(float)m.e02, -(float)m.e03 ),
+         new Vector4( -(float)m.e10, (float)m.e11, (float)m.e12, (float)m.e13 ),
+         new Vector4( -(float)m.e20, (float)m.e21, (float)m.e22, (float)m.e23 ),
+         new Vector4( -(float)m.e30, (float)m.e31, (float)m.e32, (float)m.e33 )
+      );
     }
 
     /// <summary>
@@ -370,15 +353,12 @@ namespace AGXUnity.Utils
     public static Matrix4x4 ToMatrix4x4( this agx.AffineMatrix4x4f m )
     {
       // Copy AGX matrix into a Unity Matrix4x4
-      Matrix4x4 C = new Matrix4x4();
-      C.m00 = m.at( 0, 0 ); C.m01 = m.at( 0, 1 ); C.m02 = m.at( 0, 2 ); C.m03 = m.at( 0, 3 );
-      C.m10 = m.at( 1, 0 ); C.m11 = m.at( 1, 1 ); C.m12 = m.at( 1, 2 ); C.m13 = m.at( 1, 3 );
-      C.m20 = m.at( 2, 0 ); C.m21 = m.at( 2, 1 ); C.m22 = m.at( 2, 2 ); C.m23 = m.at( 2, 3 );
-      C.m30 = m.at( 3, 0 ); C.m31 = m.at( 3, 1 ); C.m32 = m.at( 3, 2 ); C.m33 = m.at( 3, 3 );
-
-      // Apply basis change
-      Matrix4x4 unityM = BasisChange * C.transpose * BasisChange;
-      return unityM;
+      return new Matrix4x4(
+         new Vector4( m.e00, -m.e01, -m.e02, -m.e03 ),
+         new Vector4( -m.e10, m.e11, m.e12, m.e13 ),
+         new Vector4( -m.e20, m.e21, m.e22, m.e23 ),
+         new Vector4( -m.e30, m.e31, m.e32, m.e33 )
+      );
     }
 
     /// <summary>

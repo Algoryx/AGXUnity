@@ -391,6 +391,13 @@ namespace AGXUnity.Model
 
       if ( WidthVariation != null || ThicknessVariation != null )
         Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
+      else
+        Native.initialize();
+
+      if ( !Native.isInitialized() ) {
+        Debug.LogError( "Component: Track failed to initialize - please refer to the AGX dynamics logs for more information.", this );
+        return false;
+      }
 
       if ( isActiveAndEnabled )
         GetSimulation().add( Native );

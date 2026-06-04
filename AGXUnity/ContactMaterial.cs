@@ -420,13 +420,13 @@ namespace AGXUnity
                                             GameObject referenceObject,
                                             FrictionModel.PrimaryDirection primaryDirection )
     {
-      if ( isOriented && FrictionModel.TrackFrictionModel ) {
-        Debug.LogWarning( "Setting IsOriented on a ContactMaterial with a track FrictionModel is reduntant and will be ignored." );
-        return;
-      }
-
       if ( !isOriented || referenceObject == null || FrictionModel == null )
         return;
+
+      if ( isOriented && FrictionModel.TrackFrictionModel ) {
+        Debug.LogWarning( "Setting IsOriented on a ContactMaterial with a track FrictionModel is redundant and will be ignored." );
+        return;
+      }
 
       if ( !Application.isPlaying ) {
         Debug.LogError( "Oriented friction: Invalid to initialize oriented friction in edit mode.", this );
@@ -462,8 +462,10 @@ namespace AGXUnity
 
       if ( rb != null )
         FrictionModel.InitializeOriented( rb, primaryDirection );
-      else
+      else if ( shape != null )
         FrictionModel.InitializeOriented( shape, primaryDirection );
+      else if ( observer != null )
+        FrictionModel.InitializeOriented( observer, primaryDirection );
     }
 
     protected override void Construct()

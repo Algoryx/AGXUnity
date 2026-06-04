@@ -467,9 +467,9 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
-    public void TestImportVisualMaterial()
+    public void TestImportTexturedVisualMaterial()
     {
-      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/visual_mat.openplx" );
+      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/textured_mat.openplx" );
       Assert.NotNull( material );
 
       byte[] data = System.IO.File.ReadAllBytes( OpenPLXImporter.TransformOpenPLXPath(TestDataFolder + "/simple_checkerboard.png") );
@@ -485,6 +485,49 @@ namespace AGXUnityTesting.Runtime
       for ( int y = 0; y < plxTex.height; y++ )
         for ( int x = 0; x < plxTex.width; x++ )
           Assert.That( plxTex.GetPixel( x, y ), Is.EqualTo( groundTruthTexture.GetPixel( x, y ) ) );
+    }
+
+    [Test]
+    public void TestImportSwizzledVisualMaterial()
+    {
+      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/swizzle_mat.openplx" );
+      Assert.NotNull( material );
+
+      byte[] data = System.IO.File.ReadAllBytes( OpenPLXImporter.TransformOpenPLXPath(TestDataFolder + "/checkerboardRGBA.png") );
+      Assert.NotNull( data );
+      var groundTruthTexture = new Texture2D(2, 2);
+      ImageConversion.LoadImage( groundTruthTexture, data );
+
+      var plxTex = material.GetTexture("_Metallic_Map") as Texture2D;
+      Assert.NotNull( plxTex );
+      Assert.That( plxTex.height, Is.EqualTo( groundTruthTexture.height ) );
+      Assert.That( plxTex.width, Is.EqualTo( groundTruthTexture.width ) );
+      Assert.That( plxTex.format, Is.EqualTo( TextureFormat.R8 ) );
+
+      for ( int y = 0; y < plxTex.height; y++ )
+        for ( int x = 0; x < plxTex.width; x++ )
+          Assert.That( plxTex.GetPixel( x, y ).r, Is.EqualTo( groundTruthTexture.GetPixel( x, y ).r ) );
+    }
+
+    [Test]
+    public void TestImportVisualMaterial()
+    {
+      var material = OpenPLXImporter.ImportOpenPLXFile<Material>( TestDataFolder + "/visual_mat.openplx" );
+      Assert.NotNull( material );
+
+      Assert.That( material.GetFloat( "_Smoothness" ), Is.EqualTo( 0.8f ).Within( 1 ).Ulps );
+      Assert.That( material.GetFloat( "_Metallic" ), Is.EqualTo( 0.4f ).Within( 1 ).Ulps );
+    }
+
+    [Test]
+    public void TestImportVisualMesh()
+    {
+      var scene = OpenPLXImporter.ImportOpenPLXFile<GameObject>( TestDataFolder + "/visual_mesh_import.openplx" );
+      Assert.NotNull( scene );
+
+      var mf = scene.GetComponentInChildren<MeshFilter>();
+      Assert.NotNull( mf );
+      Assert.NotNull( mf.sharedMesh );
     }
 
     [Test]

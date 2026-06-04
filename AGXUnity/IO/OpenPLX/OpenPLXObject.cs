@@ -32,7 +32,7 @@ namespace AGXUnity.IO.OpenPLX
         return false;
       return obj switch
       {
-        openplx.Visuals.Geometries.Geometry => false,
+        openplx.Visuals.Node => false,
         openplx.Physics.System => false,
         openplx.Physics.KinematicLock => false,
         _ => true

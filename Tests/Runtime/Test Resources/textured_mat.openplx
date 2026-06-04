@@ -1,0 +1,10 @@
+import @"simple_checkerboard.png" as Checkerboard
+
+const PointSampledCheckerboard is Checkerboard:
+    with Visuals.Textures.Sampler
+
+    filter_mode: Visuals.Textures.FilterMode.Point
+
+TestMaterial is Visuals.Materials.Material:
+    with Visuals.Materials.SurfaceFeatures.BaseColor
+    base_color_map: PointSampledCheckerboard
