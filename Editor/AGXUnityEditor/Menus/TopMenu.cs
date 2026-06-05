@@ -299,6 +299,13 @@ namespace AGXUnityEditor
       return Selection.activeGameObject = CreateModel<Track>( command );
     }
 
+    [MenuItem( "AGXUnity/Model/Deformable Terrain Wheel", priority = 50 )]
+    [MenuItem( "GameObject/AGXUnity/Model/Deformable Terrain Wheel", validate = false, priority = 10 )]
+    public static GameObject CreateDeformableTerrainWheel( MenuCommand command )
+    {
+      return Selection.activeGameObject = CreateModel<DeformableTerrainWheel>( command );
+    }
+
     [MenuItem( "AGXUnity/Model/Deformable Terrain", priority = 50 )]
     [MenuItem( "GameObject/AGXUnity/Model/Deformable Terrain", validate = false, priority = 10 )]
     public static GameObject CreateDeformableTerrain( MenuCommand command )
