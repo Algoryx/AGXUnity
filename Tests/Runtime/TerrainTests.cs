@@ -52,12 +52,6 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.WaitUntilLoaded();
     }
 
-    [UnityTearDown]
-    public IEnumerator TearDownTerrainScene()
-    {
-      yield return TestUtils.DestroyAndWait( unityTerrain.gameObject );
-    }
-
     [Test]
     public void TestTerrainGetSingleHeight()
     {
@@ -250,14 +244,6 @@ namespace AGXUnityTesting.Runtime
         // Ensure that the middle tile is paged in
         yield return TestUtils.SimulateSeconds( 0.2f );
       }
-    }
-
-    [UnityTearDown]
-    public IEnumerator TearDownTerrainScene()
-    {
-      GameObject.Destroy( unityTerrain.gameObject );
-      GameObject.Destroy( pagerProbe );
-      yield return null;
     }
 
     [Test]

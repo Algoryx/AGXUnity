@@ -79,16 +79,6 @@ namespace AGXUnityTesting.Runtime
 #endif
     }
 
-    [UnityTearDown]
-    public IEnumerator TearDownWireScene()
-    {
-      foreach ( var wire in FindWires() )
-        yield return TestUtils.DestroyAndWait( wire.gameObject );
-      yield return TestUtils.DestroyAndWait( Weight1.gameObject );
-      yield return TestUtils.DestroyAndWait( Weight2.gameObject );
-      yield return TestUtils.DestroyAndWait( Pulley.gameObject );
-    }
-
     [UnityTest]
     public IEnumerator SlipsWithoutPulleyProperty()
     {
@@ -130,13 +120,6 @@ namespace AGXUnityTesting.Runtime
 #else
       return UnityEngine.Object.FindObjectsOfType<Wire>();
 #endif
-    }
-
-    [TearDown]
-    public void TearDownWireScene()
-    {
-      foreach ( var wire in FindWires() )
-        Object.Destroy( wire.gameObject );
     }
 
     [Test]

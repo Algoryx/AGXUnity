@@ -5,12 +5,10 @@ using AGXUnity.Rendering;
 using NUnit.Framework;
 using System;
 using System.Collections;
-using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.TestTools.Utils;
-using Object = UnityEngine.Object;
 
 namespace AGXUnityTesting.Runtime
 {
@@ -72,22 +70,6 @@ namespace AGXUnityTesting.Runtime
         LeftJoint = left,
         RightJoint = right,
       };
-    }
-
-    [UnityTearDown]
-    public IEnumerator CleanVehicleScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
-#else
-      var objects = Object.FindObjectsOfType<ScriptComponent>( );
-#endif
-
-      var toDelete = objects.Where(x => x is not Simulation).Select(x => x.gameObject).ToArray();
-
-      yield return TestUtils.DestroyAndWait( toDelete );
-
-      yield return TestUtils.DestroyAndWait( GameObject.Find( "Simple Track" ) );
     }
 
     [Test]
