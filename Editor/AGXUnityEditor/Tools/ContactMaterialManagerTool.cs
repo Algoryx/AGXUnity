@@ -53,7 +53,7 @@ namespace AGXUnityEditor.Tools
                                                              entries[ index ].IsOriented );
           if ( entries[ index ].IsOriented ) {
             using ( InspectorGUI.IndentScope.Single ) {
-              if ( entries[ index ].ContactMaterial.FrictionModel.TrackFrictionModel ) {
+              if ( entries[ index ].ContactMaterial.FrictionModel != null && entries[ index ].ContactMaterial.FrictionModel.TrackFrictionModel ) {
                 EditorGUILayout.HelpBox( "Contact Materials with a Track friction model cannot be oriented. " +
                                          "These models automatically construct the friction frame from the tracks. " +
                                          "This option will be ignored",
