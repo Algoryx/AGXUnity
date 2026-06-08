@@ -1,3 +1,4 @@
+using AGXUnity.Collide;
 using AGXUnity.Utils;
 using agxVehicle;
 using System.Collections.Generic;
@@ -266,19 +267,7 @@ namespace AGXUnity.Model
     /// Registered track wheel instances.
     /// </summary>
     [HideInInspector]
-    public TrackWheel[] Wheels
-    {
-      get { return m_wheels.ToArray(); }
-    }
-
-    protected override bool PerformMigration()
-    {
-      if ( m_serializationVersion < 2 ) {
-        FullDoF = true;
-        return true;
-      }
-      return false;
-    }
+    public TrackWheel[] Wheels => m_wheels.ToArray();
 
     /// <summary>
     /// Associate track wheel instance to this track.
@@ -313,18 +302,77 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="wheel">Track wheel instance.</param>
     /// <returns>True if <paramref name="wheel"/> is associated to this track.</returns>
-    public bool Contains( TrackWheel wheel )
-    {
-      return m_wheels.Contains( wheel );
-    }
+    public bool Contains( TrackWheel wheel ) => m_wheels.Contains( wheel );
 
     /// <summary>
     /// Verifies so that all added track wheels still exists. Wheels that
     /// has been deleted are removed.
     /// </summary>
-    public void RemoveInvalidWheels()
+    public void RemoveInvalidWheels() => m_wheels.RemoveAll( wheel => wheel == null );
+
+    [SerializeField]
+    private List<Shape> m_supportGeometries = new List<Shape>();
+
+    /// <summary>
+    /// Registered support geometry instances.
+    /// </summary>
+    [HideInInspector]
+    public Shape[] SupportGeometries => m_supportGeometries.ToArray();
+
+    /// <summary>
+    /// Associate support geometry instance to this track.
+    /// </summary>
+    /// <param name="supportGeometry">support geometry instance to add.</param>
+    /// <returns>True if added, false if null or already added.</returns>
+    public bool Add( Shape supportGeometry )
     {
-      m_wheels.RemoveAll( wheel => wheel == null );
+      if ( supportGeometry == null || m_supportGeometries.Contains( supportGeometry ) )
+        return false;
+
+      m_supportGeometries.Add( supportGeometry );
+
+      if ( Native != null )
+        Native.addSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
+
+      return true;
+    }
+
+    /// <summary>
+    /// Disassociate support geometry instance from this track.
+    /// </summary>
+    /// <param name="supportGeometry">Support geometry instance to remove.</param>
+    /// <returns>True if removed, false if null or not associated to this track.</returns>
+    public bool Remove( Shape supportGeometry )
+    {
+      if ( supportGeometry == null )
+        return false;
+
+      if ( Native != null )
+        Native.removeSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
+
+      return m_supportGeometries.Remove( supportGeometry );
+    }
+
+    /// <summary>
+    /// True if <paramref name="supportGeometry"/> is associated to this track.
+    /// </summary>
+    /// <param name="supportGeometry">Support geometry instance.</param>
+    /// <returns>True if <paramref name="supportGeometry"/> is associated to this track.</returns>
+    public bool Contains( Shape supportGeometry ) => m_supportGeometries.Contains( supportGeometry );
+
+    /// <summary>
+    /// Verifies so that all added support geometries still exists. Geometries that
+    /// has been deleted are removed.
+    /// </summary>
+    public void RemoveInvalidSupportGeometries() => m_supportGeometries.RemoveAll( geom => geom == null );
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        FullDoF = true;
+        return true;
+      }
+      return false;
     }
 
     private class OnInitializeAdapter : TrackNodeOnInitializeCallback
@@ -354,6 +402,7 @@ namespace AGXUnity.Model
         return false;
 
       RemoveInvalidWheels();
+      RemoveInvalidSupportGeometries();
 
       if ( m_wheels.Count == 0 ) {
         Debug.LogError( "Component: Track requires at least one wheel to initialize.", this );
@@ -388,6 +437,9 @@ namespace AGXUnity.Model
 
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
+
+      foreach ( var geom in SupportGeometries )
+        Native.addSupportGroupId( geom.GetInitialized().NativeGeometry );
 
       if ( WidthVariation != null || ThicknessVariation != null )
         Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );

@@ -34,12 +34,6 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( expected, normalized, delta, message );
     }
 
-    [UnityTearDown]
-    public IEnumerator RemoveLoadedObjects()
-    {
-      yield return TestUtils.DestroyAndWait( Object.FindObjectsByType<OpenPLXRoot>( FindObjectsSortMode.None ).Select( r => r.gameObject ).ToArray() );
-    }
-
     public OpenPLXRoot LoadOpenPLX( string source, string modelName = null )
     {
       var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ), default, null, modelName );
@@ -651,6 +645,7 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
+    [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
     public void TestDoubleDistanceDistortionLidarError()
     {
       var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(

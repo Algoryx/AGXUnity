@@ -2,7 +2,6 @@ using AGXUnity;
 using AGXUnity.Collide;
 using NUnit.Framework;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -36,16 +35,6 @@ namespace AGXUnityTesting.Runtime
       AGXUnity.Rendering.ShapeVisual.Create( boxComp );
 
       yield return TestUtils.WaitUntilLoaded();
-    }
-
-    [UnityTearDown]
-    public IEnumerator TearDownFrictionScene()
-    {
-      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
-
-      var toDelete = objects.Where(x => x is not Simulation).Select(x => x.gameObject).ToArray();
-
-      yield return TestUtils.DestroyAndWait( toDelete );
     }
 
     private (ShapeMaterial, RigidBody, Shape, ObserverFrame) CreateSlidingBox()

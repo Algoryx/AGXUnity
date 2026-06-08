@@ -83,7 +83,7 @@ namespace AGXUnityEditor.Tools
       AddKeyHandler( "SelectObject", SelectGameObjectKeyHandler );
       AddKeyHandler( "SelectRigidBody", SelectRigidBodyKeyHandler );
       AddKeyHandler( "PickHandler", PickHandlerKeyHandler );
-#if UNITY_6000_3_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
       EditorApplication.hierarchyWindowItemByEntityIdOnGUI += HandleHierarchyDragDrop;
 #else
       EditorApplication.hierarchyWindowItemOnGUI += HandleHierarchyDragDrop;
@@ -227,7 +227,7 @@ namespace AGXUnityEditor.Tools
         assignAll();
     }
 
-#if UNITY_6000_3_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
     private void HandleHierarchyDragDrop( EntityId entityId, Rect pos )
     {
       InspectorGUI.HandleDragDrop<AGXUnity.ShapeMaterial>( pos,
@@ -239,7 +239,8 @@ namespace AGXUnityEditor.Tools
                                                                              material );
                                                            } );
     }
-#else 
+#else
+#pragma warning disable CS0618
     private void HandleHierarchyDragDrop( int instanceId, Rect pos )
     {
       InspectorGUI.HandleDragDrop<AGXUnity.ShapeMaterial>( pos,
@@ -251,6 +252,7 @@ namespace AGXUnityEditor.Tools
                                                                              material );
                                                            } );
     }
+#pragma warning restore
 #endif
 
     private void HandleSceneViewDragDrop( Event current, SceneView sceneView )

@@ -119,6 +119,7 @@ namespace AGXUnity.IO.OpenPLX
       else
         ErrorCallback?.Invoke();
 
+      GC.Collect();
       return importedObject;
     }
 

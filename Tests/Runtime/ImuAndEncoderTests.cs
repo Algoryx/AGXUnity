@@ -6,59 +6,15 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
-
 namespace AGXUnityTesting.Runtime
 {
   public class ImuAndEncoderTests : AGXUnityFixture
   {
-    private GOList m_keep = new GOList();
-
-    [OneTimeSetUp]
+    [SetUp]
     public void SetupSensorScene()
     {
-      Simulation.Instance.PreIntegratePositions = true;
-      m_keep.Add( Simulation.Instance.gameObject );
-
       SensorEnvironment.Instance.FieldType = SensorEnvironment.MagneticFieldType.Uniform;
       SensorEnvironment.Instance.MagneticFieldVector = Vector3.one;
-      m_keep.Add( SensorEnvironment.Instance.gameObject );
-    }
-
-    [UnityTearDown]
-    public IEnumerator CleanSensorScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
-#else
-      var objects = Object.FindObjectsOfType<ScriptComponent>( );
-#endif
-      GOList toDestroy = new GOList();
-
-      foreach ( var obj in objects ) {
-        var root = obj.gameObject;
-        while ( root.transform.parent != null )
-          root = root.transform.parent.gameObject;
-        if ( !m_keep.Contains( root ) )
-          toDestroy.Add( root );
-      }
-
-      yield return TestUtils.DestroyAndWait( toDestroy.ToArray() );
-    }
-
-    [OneTimeTearDown]
-    public void TearDownSensorScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var geoms = Object.FindObjectsByType<Shape>( FindObjectsSortMode.None );
-#else
-      var geoms = Object.FindObjectsOfType<Shape>( );
-#endif      
-
-      foreach ( var g in geoms )
-        GameObject.Destroy( g.gameObject );
-
-      GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
 
     private (AGXUnity.RigidBody, ImuSensor) CreateDefaultTestImu( Vector3 position = default )
