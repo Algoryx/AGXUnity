@@ -40,23 +40,6 @@ namespace AGXUnity.Model
       }
     }
 
-    [SerializeField]
-    private bool m_enableDebugRendering = false;
-
-    /// <summary>
-    /// Adds a runtime Unity debug renderer for this terrain wheel.
-    /// </summary>
-    [Tooltip( "Adds a runtime Unity debug renderer for this terrain wheel." )]
-    public bool EnableDebugRendering
-    {
-      get { return m_enableDebugRendering; }
-      set
-      {
-        m_enableDebugRendering = value;
-        ApplyDebugRendererState();
-      }
-    }
-
     /// <summary>
     /// Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model.
     /// NB: if using multiple shape materials on the terrain this is not reliable!
@@ -103,22 +86,16 @@ namespace AGXUnity.Model
 
       GetSimulation().add( Native );
 
-      ApplyDebugRendererState();
-
       return true;
     }
 
     protected override void OnEnable()
     {
-      if ( State == States.INITIALIZED )
-        ApplyDebugRendererState();
-
       base.OnEnable();
     }
 
     protected override void OnDisable()
     {
-      RemoveDebugRenderer();
       base.OnDisable();
     }
 
@@ -150,8 +127,6 @@ namespace AGXUnity.Model
 
     protected override void OnDestroy()
     {
-      RemoveDebugRenderer();
-
       if ( Settings != null )
         Settings.Unregister( this );
 
@@ -167,41 +142,6 @@ namespace AGXUnity.Model
     {
       if ( GetComponent<RigidBody>() == null )
         Debug.LogError( "Component: DeformableTerrainWheel requires a RigidBody component.", this );
-    }
-
-    private void ApplyDebugRendererState()
-    {
-      if ( !Application.isPlaying )
-        return;
-
-      if ( m_enableDebugRendering )
-        EnsureDebugRenderer();
-      else
-        RemoveDebugRenderer();
-    }
-
-    private void EnsureDebugRenderer()
-    {
-      var renderer = GetComponent<Rendering.DeformableTerrainWheelDebugRenderer>();
-      if ( renderer == null )
-        renderer = gameObject.AddComponent<Rendering.DeformableTerrainWheelDebugRenderer>();
-
-      renderer.enabled = true;
-
-      if ( State == States.INITIALIZED )
-        renderer.GetInitialized<Rendering.DeformableTerrainWheelDebugRenderer>();
-    }
-
-    private void RemoveDebugRenderer()
-    {
-      if ( !Application.isPlaying )
-        return;
-
-      var renderer = GetComponent<Rendering.DeformableTerrainWheelDebugRenderer>();
-      if ( renderer == null )
-        return;
-
-      Destroy( renderer );
     }
 
     private DeformableTerrainWheelSettings CreateSettingsFromLegacyValues()
