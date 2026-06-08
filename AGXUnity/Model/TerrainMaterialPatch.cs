@@ -38,7 +38,11 @@ namespace AGXUnity.Model
           return;
         }
 
-        if ( (bool)ParentTerrain?.ReplaceTerrainMaterial( m_terrainMaterial, value ) )
+        if ( m_terrainMaterial == null ) {
+          ParentTerrain?.AddTerrainMaterial( value );
+          m_terrainMaterial = value;
+        }
+        else if ( (bool)ParentTerrain?.ReplaceTerrainMaterial( m_terrainMaterial, value ) )
           m_terrainMaterial = value;
       }
     }
@@ -51,7 +55,8 @@ namespace AGXUnity.Model
     public void AddShape( Shape shape )
     {
       shape.enabled &= !DisableShapes;
-      shape.Visual.GetComponent<MeshRenderer>().enabled &= !DisableVisuals;
+      if ( shape.Visual != null )
+        shape.Visual.GetComponent<MeshRenderer>().enabled &= !DisableVisuals;
       ParentTerrain?.AddTerrainMaterial( m_terrainMaterial, shape.GetInitialized<Shape>() );
     }
 

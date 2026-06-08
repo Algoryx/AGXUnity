@@ -18,6 +18,7 @@ namespace AGXUnityEditor.Tools
     public override void OnAdd()
     {
       Track.RemoveInvalidWheels();
+      Track.RemoveInvalidSupportGeometries();
     }
 
     public override void OnRemove()
@@ -28,6 +29,7 @@ namespace AGXUnityEditor.Tools
     public override void OnPreTargetMembersGUI()
     {
       Track.RemoveInvalidWheels();
+      Track.RemoveInvalidSupportGeometries();
 
       bool toggleSelectWheel = false;
       bool toggleDisableCollisions = false;
@@ -78,6 +80,14 @@ namespace AGXUnityEditor.Tools
                                 "Wheels",
                                 wheel => Track.Add( wheel ),
                                 wheel => Track.Remove( wheel ) );
+
+      if ( !Track.FullDoF ) {
+        InspectorGUI.ToolListGUI( this,
+                                Track.SupportGeometries,
+                                "Support Geometries",
+                                geom => Track.Add( geom ),
+                                geom => Track.Remove( geom ) );
+      }
     }
 
     private TrackNodeVariation VariationGUI( string name, TrackNodeVariation variation )

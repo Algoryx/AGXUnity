@@ -9,14 +9,11 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-using GOList = System.Collections.Generic.List<UnityEngine.GameObject>;
-
 namespace AGXUnityTesting.Runtime
 {
+  [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
   public class LidarTests : AGXUnityFixture
   {
-    private GOList m_keep = new GOList();
-
     private GameObject CreateShape<T>( Vector3 transform = new Vector3() )
       where T : Shape
     {
@@ -43,55 +40,16 @@ namespace AGXUnityTesting.Runtime
       return material;
     }
 
-    [OneTimeSetUp]
+    [SetUp]
     public void SetupLidarScene()
     {
-      m_keep.Add( CreateShape<Box>( new Vector3( 3, 0, 3 ) ) );
-      m_keep.Add( CreateShape<Sphere>( new Vector3( -3, 0, 3 ) ) );
-      m_keep.Add( CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) ) );
-      m_keep.Add( CreateShape<Cone>( new Vector3( 3, 0, -3 ) ) );
-      Simulation.Instance.PreIntegratePositions = true;
-      m_keep.Add( Simulation.Instance.gameObject );
-      m_keep.Add( SensorEnvironment.Instance.gameObject );
+      CreateShape<Box>( new Vector3( 3, 0, 3 ) );
+      CreateShape<Sphere>( new Vector3( -3, 0, 3 ) );
+      CreateShape<Cylinder>( new Vector3( -3, 0, -3 ) );
+      CreateShape<Cone>( new Vector3( 3, 0, -3 ) );
 
       // Lidar ray intervals are sensitive to time step so ensure that the timestep is exact here
       Simulation.Instance.Native.setTimeStep( 0.02 );
-    }
-
-    [UnityTearDown]
-    public IEnumerator CleanLidarScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
-#else
-      var objects = Object.FindObjectsOfType<ScriptComponent>( );
-#endif
-      GOList toDestroy = new GOList();
-
-      foreach ( var obj in objects ) {
-        var root = obj.gameObject;
-        while ( root.transform.parent != null )
-          root = root.transform.parent.gameObject;
-        if ( !m_keep.Contains( root ) )
-          toDestroy.Add( root );
-      }
-
-      yield return TestUtils.DestroyAndWait( toDestroy.ToArray() );
-    }
-
-    [OneTimeTearDown]
-    public void TearDownLidarScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var geoms = Object.FindObjectsByType<Shape>( FindObjectsSortMode.None );
-#else
-      var geoms = Object.FindObjectsOfType<Shape>( );
-#endif      
-
-      foreach ( var g in geoms )
-        GameObject.Destroy( g.gameObject );
-
-      GameObject.Destroy( SensorEnvironment.Instance.gameObject );
     }
 
     private (LidarSensor, GenericSweepData) CreateDefaultTestLidar( Vector3 position = default )

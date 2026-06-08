@@ -3,7 +3,6 @@ using AGXUnity.Collide;
 using AGXUnity.Model;
 using NUnit.Framework;
 using System.Collections;
-using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -12,21 +11,6 @@ namespace AGXUnityTesting.Runtime
 {
   public class MovableTerrainTests : AGXUnityFixture
   {
-
-    [UnityTearDown]
-    public IEnumerator CleanScene()
-    {
-#if UNITY_2022_2_OR_NEWER
-      var objects = Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None );
-#else
-      var objects = Object.FindObjectsOfType<ScriptComponent>( );
-#endif
-
-      var toDelete = objects.Where(x => x is not Simulation).Select(x => x.gameObject).ToArray();
-
-      yield return TestUtils.DestroyAndWait( toDelete );
-    }
-
     [Test]
     public void TestCreateMovable()
     {

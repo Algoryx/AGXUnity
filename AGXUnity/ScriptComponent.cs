@@ -40,6 +40,7 @@ namespace AGXUnity
     // 1 - Migrate shovel cutting direction to tooth direction
     // 2 - Migrate Range, Beam Divergence, and Beam Exit Radius into the LiDAR model
     //   - Migrate old tracks into FullDoF tracks
+    //   - Add automatic positioning mode
     private const int CurrentSerializationVersion = 2;
 
     [SerializeField]
