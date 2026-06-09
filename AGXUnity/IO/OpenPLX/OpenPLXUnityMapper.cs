@@ -81,8 +81,6 @@ namespace AGXUnity.IO.OpenPLX
       Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
       var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
       rootComp.Native = obj;
-      if ( Options.RotateUp )
-        Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
 
       if ( obj is openplx.Physics3D.System system )
@@ -92,6 +90,9 @@ namespace AGXUnity.IO.OpenPLX
 
       var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
       MapSignals( obj, signals, obj.getName() );
+
+      if ( Options.RotateUp )
+        Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
 
       return Data.RootNode;
     }
@@ -642,13 +643,7 @@ namespace AGXUnity.IO.OpenPLX
       Utils.MapLocalTransform( s.transform, system.local_transform() );
 
       Data.SystemCache[ system ] = s;
-      // TODO: Replace with single world body
-      var dummyRB = Factory.Create<RigidBody>();
-      Data.RegisterGameObject( dummyRB );
-      dummyRB.transform.SetParent( s.transform, false );
-      dummyRB.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
-      dummyRB.name = "System Dummy RB";
-      Data.FrameCache[ system ] = dummyRB;
+      Data.FrameCache[ system ] = s;
 
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );

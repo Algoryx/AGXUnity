@@ -11,6 +11,21 @@ namespace AGXUnity.IO.OpenPLX
   {
     public GameObject RootNode { get; set; } = null;
 
+    private GameObject m_worldProxyBody;
+    public GameObject WorldProxyBody
+    {
+      get
+      {
+        if ( m_worldProxyBody == null ) {
+          m_worldProxyBody = Factory.Create<RigidBody>();
+          RegisterGameObject( m_worldProxyBody );
+          m_worldProxyBody.transform.SetParent( RootNode.transform, false );
+          m_worldProxyBody.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
+          m_worldProxyBody.name = "World Proxy Body";
+        }
+        return m_worldProxyBody;
+      }
+    }
     public HashSet<GameObject> CreatedGameObjects { get; } = new HashSet<GameObject>();
 
     public HashSet<string> RegisteredDocuments { get; } = new HashSet<string>();
