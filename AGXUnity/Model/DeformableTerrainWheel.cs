@@ -79,6 +79,13 @@ namespace AGXUnity.Model
         return false;
       }
 
+      // TODO - this is needed because of a bug in agx. Remove this is that is fixed.
+      var shapeMaterial = cylinder.getGeometry().getMaterial();
+      if ( shapeMaterial == null ) {
+        Debug.LogWarning( "Unable to initialize Cylinder shape for DeformableTerrainWheel - ShapeMaterial needs to be set!", this );
+        return false;
+      }
+
       Native = new agxTerrain.TerrainWheel( cylinder );
 
       if ( Settings == null )
