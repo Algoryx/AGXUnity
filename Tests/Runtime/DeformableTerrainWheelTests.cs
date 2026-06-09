@@ -78,6 +78,23 @@ namespace AGXUnityTesting.Runtime
       Assert.That( wheel.ActiveContactMaterialUsesTerrainWheelForceModel, Is.False );
     }
 
+    [UnityTest]
+    public IEnumerator WheelWithCorrectFrictionModel()
+    {
+      var frictionModel = FrictionModel.CreateInstance<FrictionModel>();
+      frictionModel.Type = FrictionModel.EType.TerrainWheelForceModel;
+      var (terrain, wheel) = CreateTerrainWheelAndContactMaterial( frictionModel );
+
+      TestUtils.InitializeAll();
+
+      for ( int i = 0; i < 20; ++i )
+        yield return TestUtils.Step();
+
+      Assert.That( terrain.Native, Is.Not.Null );
+      Assert.That( wheel.Native, Is.Not.Null );
+      Assert.That( wheel.ActiveContactMaterialUsesTerrainWheelForceModel, Is.True );
+    }
+
     private (DeformableTerrain terrain, DeformableTerrainWheel wheel) CreateTerrainAndWheel()
     {
       var terrainGO = new GameObject( "Deformable Terrain" );
@@ -104,7 +121,7 @@ namespace AGXUnityTesting.Runtime
       return (terrain, wheel);
     }
 
-    private (DeformableTerrain terrain, DeformableTerrainWheel wheel) CreateTerrainWheelAndContactMaterial()
+    private (DeformableTerrain terrain, DeformableTerrainWheel wheel) CreateTerrainWheelAndContactMaterial( FrictionModel frictionModel = null )
     {
       var (terrain, wheel) = CreateTerrainAndWheel();
 
@@ -117,6 +134,7 @@ namespace AGXUnityTesting.Runtime
       var contactMaterial = ContactMaterial.CreateInstance<ContactMaterial>();
       contactMaterial.Material1 = wheelMaterial;
       contactMaterial.Material2 = terrainMaterial;
+      contactMaterial.FrictionModel = frictionModel;
 
       ContactMaterialManager.Instance.Add( contactMaterial );
 
