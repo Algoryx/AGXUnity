@@ -66,31 +66,31 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    [Range( 0.0f, 1.0f )]
     private float m_forwardDisplacementWeight = 0.5f;
 
-    [Range( 0.0f, 1.0f )]
     [Tooltip( "Weight [0, 1] determining how much of the bulldozed mass is distributed forward vs. laterally." )]
     public float ForwardDisplacementWeight
     {
       get { return m_forwardDisplacementWeight; }
       set
       {
-        m_forwardDisplacementWeight = value;
+        m_forwardDisplacementWeight = Mathf.Clamp01(value);
         Propagate( wheel => wheel.getWheelDeformationProperties().setForwardDisplacementWeight( m_forwardDisplacementWeight ) );
       }
     }
 
     [SerializeField]
+    [Range( 0.0f, 1.0f )]
     private float m_bulldozeDisplacementAmountFactor = 0.5f;
 
-    [Range( 0.0f, 1.0f )]
     [Tooltip( "Fraction [0, 1] of removed mass allocated to bulldozing. The remainder is used for slip displacement." )]
     public float BulldozeDisplacementAmountFactor
     {
       get { return m_bulldozeDisplacementAmountFactor; }
       set
       {
-        m_bulldozeDisplacementAmountFactor = value;
+        m_bulldozeDisplacementAmountFactor = Mathf.Clamp01(value);
         Propagate( wheel => wheel.getWheelDeformationProperties().setBulldozeDisplacementAmountFactor( m_bulldozeDisplacementAmountFactor ) );
       }
     }

@@ -134,7 +134,7 @@ namespace AGXUnity.Rendering
     [field: SerializeField]
     [Range( 0.0f, 1.0f )]
     [Tooltip( "Blend weight of the debug layer over the original terrain paint." )]
-    public float PaintStrength { get; set; } = 0.7f;
+    public float PaintStrength = 0.7f;
 
     [field: SerializeField]
     [ClampAboveZeroInInspector( true )]
@@ -144,7 +144,7 @@ namespace AGXUnity.Rendering
     [field: SerializeField]
     [Min( 0 )]
     [Tooltip( "Paint radius in heightmap samples around each modified terrain vertex." )]
-    public int BrushRadius { get; set; } = 0;
+    public int BrushRadius = 0;
 
     public void Clear()
     {
