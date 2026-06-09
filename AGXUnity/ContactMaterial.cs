@@ -387,7 +387,7 @@ namespace AGXUnity
       }
     }
 
-    private bool IsNotTerrainWheelForceModel => FrictionModel.IsNotTerrainWheelForceModel;
+    private bool IsNotTerrainWheelForceModel => (FrictionModel != null) ? FrictionModel.IsNotTerrainWheelForceModel : true;
 
     public ContactMaterial RestoreLocalDataFrom( agx.ContactMaterial contactMaterial )
     {
