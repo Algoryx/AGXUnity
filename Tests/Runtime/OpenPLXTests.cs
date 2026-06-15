@@ -679,5 +679,41 @@ namespace AGXUnityTesting.Runtime
 
       LogAssert.Expect( LogType.Error, new Regex( ".*distance distortion.*" ) );
     }
+
+    [Test]
+    public void TestImportSimpleTrack()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "Scene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "Scene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.False( track.FullDoF );
+    }
+
+    [Test]
+    public void TestImportFullDoFTrack()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "FullDoFScene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "FullDoFScene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.True( track.FullDoF );
+    }
+
+    [Test]
+    public void TestTrackImportMaterials()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "FullDoFScene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "FullDoFScene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.True( track.Material != null );
+    }
   }
 }
