@@ -333,8 +333,8 @@ namespace AGXUnity.IO.OpenPLX
       track_props.StabilizingHingeFrictionParameter = (float)oProps.damping().bending_friction_coefficient();
       track_props.MinStabilizingHingeNormalForce = (float)oProps.damping().min_normal_force();
       track_props.HingeRangeRange = new RangeReal(
-        (float)oProps.bending_rotational_range_min() * Mathf.Deg2Rad,
-        (float)oProps.bending_rotational_range_max() * Mathf.Deg2Rad
+        (float)oProps.bending_rotational_range_min() * Mathf.Rad2Deg,
+        (float)oProps.bending_rotational_range_max() * Mathf.Rad2Deg
       );
       track_props.HingeRangeEnabled = true;
 
