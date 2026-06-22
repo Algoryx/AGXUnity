@@ -670,10 +670,6 @@ namespace AGXUnityEditor.IO
         return false;
       }
 
-      // Scaling damping to our (sigh) hard coded time step.
-      float fixedStepTime = Time.fixedDeltaTime;
-      float readTimeStep  = Convert.ToSingle( Simulation.getTimeStep() );
-      float timeStepRatio = fixedStepTime / readTimeStep;
       if ( !AGXUnity.Utils.Math.Approximately( timeStepRatio, 1.0f ) ) {
         foreach ( var ec in constraint.ElementaryConstraints ) {
           foreach ( var rowData in ec.RowData ) {
@@ -689,7 +685,6 @@ namespace AGXUnityEditor.IO
                                 " has too high compliance: " + rowData.Compliance + ". Setting to a large value." );
               rowData.Compliance = 0.5f * float.MaxValue;
             }
-            rowData.Damping *= timeStepRatio;
           }
         }
       }

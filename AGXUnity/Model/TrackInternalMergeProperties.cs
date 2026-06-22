@@ -119,21 +119,21 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lockToReachMergeConditionDamping = 0.06f;
+    private float m_lockToReachMergeConditionAttenuation = 0.06f;
 
     /// <summary>
     /// Damping of the hinge lock used to reach merge condition.
     /// Default: 0.06
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "Damping of the hinge lock used to reach merge condition." )]
-    public float LockToReachMergeConditionDamping
+    [Tooltip( "Attenuation of the hinge lock used to reach merge condition." )]
+    public float LockToReachMergeConditionAttenuation
     {
-      get { return m_lockToReachMergeConditionDamping; }
+      get { return m_lockToReachMergeConditionAttenuation; }
       set
       {
-        m_lockToReachMergeConditionDamping = value;
-        Propagate( properties => properties.setLockToReachMergeConditionDamping( m_lockToReachMergeConditionDamping ) );
+        m_lockToReachMergeConditionAttenuation = value;
+        Propagate( properties => properties.setLockToReachMergeConditionAttenuation( m_lockToReachMergeConditionAttenuation ) );
       }
     }
 

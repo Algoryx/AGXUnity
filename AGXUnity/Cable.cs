@@ -516,7 +516,7 @@ namespace AGXUnity
     {
       if ( Native != null ) {
         Native.getCableProperties().setYoungsModulus( Convert.ToDouble( Properties[ dir ].YoungsModulus ), CableProperties.ToNative( dir ) );
-        Native.getCableProperties().setDamping( Convert.ToDouble( Properties[ dir ].Damping ), CableProperties.ToNative( dir ) );
+        Native.getCableProperties().setAttenuation( Convert.ToDouble( Properties[ dir ].Attenuation ), CableProperties.ToNative( dir ) );
         Native.getCableProperties().setPoissonsRatio( Convert.ToDouble( Properties[ dir ].PoissonsRatio ), CableProperties.ToNative( dir ) );
 
         var plasticityComponent = Native.getCablePlasticity();

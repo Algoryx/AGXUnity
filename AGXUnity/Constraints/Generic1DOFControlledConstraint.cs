@@ -55,7 +55,7 @@ namespace AGXUnity
       if ( old != null ) {
         ConstraintController.Enable = old.Enable;
         ConstraintController.Compliance = old.Compliance;
-        ConstraintController.Damping = old.Damping;
+        ConstraintController.Attenuation = old.Attenuation;
         ConstraintController.ForceRange = old.ForceRange;
       }
 

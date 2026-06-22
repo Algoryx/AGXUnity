@@ -211,24 +211,24 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Damping of the contact constraint, paired with property Damping.
+    /// Attenuation of the contact constraint, paired with property Attenuation.
     /// </summary>
     [SerializeField]
-    private float m_damping = 4.5f / 60.0f;
+    private float m_attenuation = 4.5f / 60.0f;
 
     /// <summary>
-    /// Damping of the contact constraint. Default: 4.5 / 60 = 0.075.
+    /// Attenuation of the contact constraint. Default: 2.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "This defines the time it should take for the solver to restore an overlap. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
-    public float Damping
+    [Tooltip( "This defines the number of integration steps the solver is given to satisfy the constraint. A lower value will lead to higher restoration forces as overlaps should be minimized faster" )]
+    public float Attenuation
     {
-      get { return m_damping; }
+      get { return m_attenuation; }
       set
       {
-        m_damping = value;
+        m_attenuation = value;
         if ( Native != null )
-          Native.setDamping( m_damping );
+          Native.setAttenuation( m_attenuation );
       }
     }
 
@@ -385,7 +385,7 @@ namespace AGXUnity
       FrictionCoefficients  = new Vector2( Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
                                            Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
       Restitution           = Convert.ToSingle( contactMaterial.getRestitution() );
-      Damping               = Convert.ToSingle( contactMaterial.getDamping() );
+      Attenuation           = Convert.ToSingle( contactMaterial.getAttenuation() );
       AdhesiveForce         = Convert.ToSingle( contactMaterial.getAdhesion() );
       AdhesiveOverlap       = Convert.ToSingle( contactMaterial.getAdhesiveOverlap() );
       UseContactArea        = contactMaterial.getUseContactAreaApproach();

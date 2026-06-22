@@ -3,6 +3,7 @@ using openplx.Physics3D.Interactions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Connector = openplx.Physics.Interactions.Connector;
 using InteractionKey = std.PhysicsInteractionsConnectorVector;
@@ -182,20 +183,20 @@ namespace AGXUnity.IO.OpenPLX
 
     public static float? MapDissipation( openplx.Physics.Interactions.Dissipation.DefaultDissipation dissipation, openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation )
     {
+      float? relaxation_time = null;
       if ( dissipation is openplx.Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping crtd )
-        return (float)crtd.relaxation_time();
+        relaxation_time = (float)crtd.relaxation_time();
 
-      else if ( dissipation is openplx.Physics.Interactions.Dissipation.MechanicalDamping mechanical ) {
-        if ( deformation is openplx.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0 )
-          return (float)( mechanical.damping_constant() / elastic.stiffness() );
-        return null;
+      else if ( dissipation is openplx.Physics.Interactions.Dissipation.MechanicalDamping mechanical && deformation is openplx.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0) {
+          relaxation_time = (float)( mechanical.damping_constant() / elastic.stiffness() );
+      } else
+      {
+        var agx_relaxation_time_annotations = dissipation.findAnnotations("agx_relaxation_time");
+        if ( agx_relaxation_time_annotations.Count == 1 && agx_relaxation_time_annotations[ 0 ].isNumber() )
+          relaxation_time =(float)agx_relaxation_time_annotations[ 0 ].asReal();
       }
 
-      var agx_relaxation_time_annotations = dissipation.findAnnotations("agx_relaxation_time");
-      if ( agx_relaxation_time_annotations.Count == 1 && agx_relaxation_time_annotations[ 0 ].isNumber() )
-        return (float)agx_relaxation_time_annotations[ 0 ].asReal();
-
-      return null;
+      return relaxation_time / time_step;
     }
 
     Constraint.RotationalDof MapRotationalDOF( string axisName )
@@ -220,17 +221,17 @@ namespace AGXUnity.IO.OpenPLX
       };
     }
 
-    void MapMateDissipation( Interactions.Dissipation.DefaultMateDissipation damping, Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
+    void MapMateDissipation( Interactions.Dissipation.DefaultMateDissipation attenuation, Interactions.Flexibility.DefaultMateFlexibility deformation, Constraint target )
     {
-      foreach ( var (key, damp) in damping.getEntries<openplx.Physics.Interactions.Dissipation.DefaultDissipation>() ) {
+      foreach ( var (key, damp) in attenuation.getEntries<openplx.Physics.Interactions.Dissipation.DefaultDissipation>() ) {
         var def = deformation.getDynamic( key ).asObject() as openplx.Physics.Interactions.Flexibility.DefaultFlexibility;
         float? mapped = MapDissipation(damp, def);
         if ( mapped == null )
           continue;
         if ( key.StartsWith( "along_" ) )
-          target.SetDamping( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetAttenuation( mapped.Value, MapRotationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
         else if ( key.StartsWith( "around_" ) )
-          target.SetDamping( mapped.Value, MapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
+          target.SetAttenuation( mapped.Value, MapTranslationalDOF( key.Substring( key.LastIndexOf( '_' ) + 1 ) ) );
       }
     }
 
@@ -247,12 +248,12 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    void MapControllerDissipation( openplx.Physics.Interactions.Dissipation.DefaultDissipation damping, openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
+    void MapControllerDissipation( openplx.Physics.Interactions.Dissipation.DefaultDissipation attenuation, openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
     {
-      float? mapped = MapDissipation(damping, deformation);
+      float? mapped = MapDissipation(attenuation, deformation);
       if ( mapped == null )
         return;
-      target.Damping = mapped.Value;
+      target.Attenuation = mapped.Value;
     }
 
     void MapControllerFlexibility( openplx.Physics.Interactions.Flexibility.DefaultFlexibility deformation, ElementaryConstraintController target )
@@ -588,16 +589,15 @@ namespace AGXUnity.IO.OpenPLX
       if ( contactModel.normal_flexibility() is openplx.Physics.Interactions.Flexibility.Rigid rigid ) {
         // Set the contact as stiff as agx handle
         cm.YoungsModulus = 1e16f;
-        // Set the damping to two times the time step, which is the recommended minimum.
-        // Will override any other damping defined
-        // TODO: We dont know the timestep at import time so this needs to be revised
-        cm.Damping = ( 1.0f/60.0f ) * 2.0f;
+        // Set attenuation to 2 which is the recommended minumum for 60hz (assumed here)
+        // Will override any other attenuation defined
+        cm.Attenuation = 2.0f;
       }
       else if ( contactModel.normal_flexibility() is openplx.Physics.Interactions.Flexibility.LinearElastic elastic ) {
         cm.YoungsModulus = (float)elastic.stiffness();
         var time = MapDissipation(contactModel.dissipation(), contactModel.normal_flexibility());
         if ( time.HasValue )
-          cm.Damping = time.Value;
+          cm.Attenuation = time.Value;
         if ( elastic is openplx.Physics.Interactions.SurfaceContact.PatchElasticity )
           cm.UseContactArea = true;
       }

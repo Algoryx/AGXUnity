@@ -39,9 +39,9 @@ namespace AGXUnity
     public void SetCompliance( float compliance );
     public void SetCompliance( float compliance, TranslationalDof dof );
     public void SetCompliance( float compliance, RotationalDof dof );
-    public void SetDamping( float damping );
-    public void SetDamping( float damping, TranslationalDof dof );
-    public void SetDamping( float damping, RotationalDof dof );
+    public void SetAttenuation( float attenuation );
+    public void SetAttenuation( float attenuation, TranslationalDof dof );
+    public void SetAttenuation( float attenuation, RotationalDof dof );
     public void SetForceRange( RangeReal forceRange );
     public void SetForceRange( RangeReal forceRange, TranslationalDof dof );
     public void SetForceRange( RangeReal forceRange, RotationalDof dof );
@@ -480,36 +480,36 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Set damping to all ordinary degrees of freedom (not including controllers)
+    /// Set attenuation to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
-    public void SetDamping( float damping )
+    /// <param name="attenuation">New attenuation.</param>
+    public void SetAttenuation( float attenuation )
     {
-      TraverseRowData( data => data.Damping = damping, TranslationalDof.All );
-      TraverseRowData( data => data.Damping = damping, RotationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, TranslationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, RotationalDof.All );
     }
 
     /// <summary>
-    /// Set damping to one or all translational ordinary degrees of freedom
+    /// Set attenuation to one or all translational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetDamping( float damping, TranslationalDof dof )
+    public void SetAttenuation( float attenuation, TranslationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>
-    /// Set damping to one or all rotational ordinary degrees of freedom
+    /// Set attenuation to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetDamping( float damping, RotationalDof dof )
+    public void SetAttenuation( float attenuation, RotationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>

@@ -111,14 +111,14 @@ namespace AGXUnity.Deprecated
     public int NumRows { get { return m_rowData.Length; } }
 
     /// <summary>
-    /// Data (compliance, damping etc.) for each row in this elementary constraint.
+    /// Data (compliance, attenuation etc.) for each row in this elementary constraint.
     /// Paired with property RowData.
     /// </summary>
     [SerializeField]
     private ElementaryConstraintRowData[] m_rowData = null;
 
     /// <summary>
-    /// Data (compliance, damping etc.) for each row in this elementary constraint.
+    /// Data (compliance, attenuation etc.) for each row in this elementary constraint.
     /// </summary>
     public ElementaryConstraintRowData[] RowData { get { return m_rowData; } }
 

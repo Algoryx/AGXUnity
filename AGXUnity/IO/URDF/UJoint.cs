@@ -116,7 +116,7 @@ namespace AGXUnity.IO.URDF
     public struct DynamicsData
     {
       /// <summary>
-      /// Read "dynamics" given parent. Defaults to Damping = 0.0 and Friction = 0.0
+      /// Read "dynamics" given parent. Defaults to Attenuation = 0.0 and Friction = 0.0
       /// if "dynamics" is null.
       /// </summary>
       /// <param name="parent">Parent element.</param>
@@ -129,16 +129,16 @@ namespace AGXUnity.IO.URDF
 
         return new DynamicsData()
         {
-          Damping  = Utils.ReadFloat( element, "damping" ),
+          Attenuation  = Utils.ReadFloat( element, "attenuation" ),
           Friction = Utils.ReadFloat( element, "friction" ),
           Enabled  = true
         };
       }
 
       /// <summary>
-      /// Damping of the joint.
+      /// Attenuation of the joint.
       /// </summary>
-      public float Damping;
+      public float Attenuation;
 
       /// <summary>
       /// Minimum static friction force in the joint.

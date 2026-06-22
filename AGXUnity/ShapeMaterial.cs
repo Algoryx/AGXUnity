@@ -93,50 +93,50 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// damping for wire stretching modulus stretch for wires.
+    /// attenuation for wire stretching modulus stretch for wires.
     /// Default value: 0.06
     /// </summary>
     [SerializeField]
-    private float m_dampingStretch = 0.06f;
+    private float m_attenuationStretch = 0.06f;
 
     /// <summary>
-    /// Get or set stretch damping for wires.
+    /// Get or set stretch attenuation for wires.
     /// Default value: 0.06
     /// </summary>
     [ClampAboveZeroInInspector]
-    [Tooltip( "The damping of the stretch contstraint when this material is used as a wire" )]
-    public float DampingStretch
+    [Tooltip( "The attenuation of the stretch contstraint when this material is used as a wire" )]
+    public float AttenuationStretch
     {
-      get { return m_dampingStretch; }
+      get { return m_attenuationStretch; }
       set
       {
-        m_dampingStretch = value;
+        m_attenuationStretch = value;
         if ( Native != null )
-          Native.getWireMaterial().setDampingStretch( m_dampingStretch );
+          Native.getWireMaterial().setAttenuationStretch( m_attenuationStretch );
       }
     }
 
     /// <summary>
-    /// Bend damping of this material.
+    /// Bend attenuation of this material.
     /// Default value: 0.12
     /// </summary>
     [SerializeField]
-    private float m_dampingBend = 0.12f;
+    private float m_attenuationBend = 0.12f;
 
     /// <summary>
-    /// Get or set bend damping of this material.
+    /// Get or set bend attenuation of this material.
     /// Default value: 0.12
     /// </summary>
     [ClampAboveZeroInInspector]
-    [Tooltip( "The damping of the bend contstraint when this material is used as a wire" )]
-    public float DampingBend
+    [Tooltip( "The attenuation of the bend contstraint when this material is used as a wire" )]
+    public float AttenuationBend
     {
-      get { return m_dampingBend; }
+      get { return m_attenuationBend; }
       set
       {
-        m_dampingBend = value;
+        m_attenuationBend = value;
         if ( Native != null )
-          Native.getWireMaterial().setDampingBend( m_dampingBend );
+          Native.getWireMaterial().setAttenuationBend( m_attenuationBend );
       }
     }
 
@@ -163,8 +163,8 @@ namespace AGXUnity
       Density           = Convert.ToSingle( native.getBulkMaterial().getDensity() );
       YoungsWireStretch = Convert.ToSingle( native.getWireMaterial().getYoungsModulusStretch() );
       YoungsWireBend    = Convert.ToSingle( native.getWireMaterial().getYoungsModulusBend() );
-      DampingStretch    = Convert.ToSingle( native.getWireMaterial().getDampingStretch() );
-      DampingBend       = Convert.ToSingle( native.getWireMaterial().getDampingBend() );
+      AttenuationStretch    = Convert.ToSingle( native.getWireMaterial().getAttenuationStretch() );
+      AttenuationBend       = Convert.ToSingle( native.getWireMaterial().getAttenuationBend() );
 
       return this;
     }
