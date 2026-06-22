@@ -179,7 +179,12 @@ namespace AGXUnity.IO.OpenPLX
             oChassis = redirected.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
           else
             oChassis = connector.getOwner() as openplx.Physics3D.Bodies.RigidBody;
-          if ( oChassis != null && oChassis != wheels[ 0 ].body() )
+
+          // Reject chassis body if it is the wheel body
+          if ( oChassis == wheels[ 0 ].body() )
+            oChassis = null;
+
+          if ( oChassis != null )
             break; // Found the chassis body
         }
       }
@@ -191,14 +196,16 @@ namespace AGXUnity.IO.OpenPLX
         fullDoF = true;
       }
 
-      if ( !Data.BodyCache.TryGetValue( oChassis, out var chassis ) && !forceFullDoF ) {
-        Data.Warnings.Add( new MissingChassisBodyWarning( system ) );
-        track.FullDoF = true;
-        fullDoF = true;
-      }
+      if ( !fullDoF ) {
+        if ( oChassis == null || !Data.BodyCache.ContainsKey( oChassis ) ) {
+          Data.Warnings.Add( new MissingChassisBodyWarning( system ) );
+          track.FullDoF = true;
+          fullDoF = true;
+        }
 
-      if ( chassis != null )
-        track.ReferenceObject = chassis.gameObject;
+        else if ( Data.BodyCache.TryGetValue( oChassis, out var chassis ) && chassis != null )
+          track.ReferenceObject = chassis.gameObject;
+      }
 
       MapInternalMergeProperties( system, track );
       MapTrackProperties( system, track, fullDoF );
