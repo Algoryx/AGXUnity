@@ -187,10 +187,10 @@ namespace AGXUnity.IO.OpenPLX
       if ( dissipation is openplx.Physics.Interactions.Dissipation.ConstraintRelaxationTimeDamping crtd )
         relaxation_time = (float)crtd.relaxation_time();
 
-      else if ( dissipation is openplx.Physics.Interactions.Dissipation.MechanicalDamping mechanical && deformation is openplx.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0) {
-          relaxation_time = (float)( mechanical.damping_constant() / elastic.stiffness() );
-      } else
-      {
+      else if ( dissipation is openplx.Physics.Interactions.Dissipation.MechanicalDamping mechanical && deformation is openplx.Physics.Interactions.Flexibility.LinearElastic elastic && elastic.stiffness() != 0.0 ) {
+        relaxation_time = (float)( mechanical.damping_constant() / elastic.stiffness() );
+      }
+      else {
         var agx_relaxation_time_annotations = dissipation.findAnnotations("agx_relaxation_time");
         if ( agx_relaxation_time_annotations.Count == 1 && agx_relaxation_time_annotations[ 0 ].isNumber() )
           relaxation_time =(float)agx_relaxation_time_annotations[ 0 ].asReal();

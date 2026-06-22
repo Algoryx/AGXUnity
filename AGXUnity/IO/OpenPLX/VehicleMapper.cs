@@ -533,7 +533,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( suspension is Suspensions.SingleMate.LinearSpringDamper lsd ) {
         var attenuation = InteractionMapper.MapDissipation(lsd.mate().spring_damping(), lsd.mate().spring_constant());
         if ( attenuation.HasValue )
-          wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Attenuation = attenuation  .Value;
+          wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Attenuation = attenuation.Value;
         var compliance = InteractionMapper.MapFlexibility(lsd.mate().spring_constant());
         if ( compliance.HasValue )
           wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Compliance = compliance.Value;
