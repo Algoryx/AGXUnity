@@ -220,7 +220,7 @@ namespace AGXUnity
     /// Attenuation of the contact constraint. Default: 2.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "This defines the number of integration steps the solver is given to satisfy the constraint. A lower value will lead to higher restoration forces as overlaps should be minimized faster" )]
+    [Tooltip( "This defines the number of integration steps the solver is given to satisfy the constraint. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
     public float Attenuation
     {
       get { return m_attenuation; }
@@ -266,7 +266,7 @@ namespace AGXUnity
     /// at higher overlap, the (usual) contact force.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
+    [Tooltip( "Allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
     public float AdhesiveOverlap
     {
       get { return m_adhesiveOverlap; }
