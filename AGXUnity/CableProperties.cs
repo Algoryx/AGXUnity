@@ -79,7 +79,7 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private float m_attenuation = 2.0f / 50;
+    private float m_attenuation = 2.0f;
 
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "The attenuation of the constraint" )]

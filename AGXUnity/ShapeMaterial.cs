@@ -94,14 +94,14 @@ namespace AGXUnity
 
     /// <summary>
     /// attenuation for wire stretching modulus stretch for wires.
-    /// Default value: 0.06
+    /// Default value: 3
     /// </summary>
     [SerializeField]
-    private float m_attenuationStretch = 0.06f;
+    private float m_attenuationStretch = 3.0f;
 
     /// <summary>
     /// Get or set stretch attenuation for wires.
-    /// Default value: 0.06
+    /// Default value: 3
     /// </summary>
     [ClampAboveZeroInInspector]
     [Tooltip( "The attenuation of the stretch contstraint when this material is used as a wire" )]
@@ -118,14 +118,14 @@ namespace AGXUnity
 
     /// <summary>
     /// Bend attenuation of this material.
-    /// Default value: 0.12
+    /// Default value: 6
     /// </summary>
     [SerializeField]
-    private float m_attenuationBend = 0.12f;
+    private float m_attenuationBend = 6.0f;
 
     /// <summary>
     /// Get or set bend attenuation of this material.
-    /// Default value: 0.12
+    /// Default value: 6
     /// </summary>
     [ClampAboveZeroInInspector]
     [Tooltip( "The attenuation of the bend contstraint when this material is used as a wire" )]

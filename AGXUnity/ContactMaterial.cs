@@ -214,7 +214,7 @@ namespace AGXUnity
     /// Attenuation of the contact constraint, paired with property Attenuation.
     /// </summary>
     [SerializeField]
-    private float m_attenuation = 4.5f / 60.0f;
+    private float m_attenuation = 4.5f;
 
     /// <summary>
     /// Attenuation of the contact constraint. Default: 2.

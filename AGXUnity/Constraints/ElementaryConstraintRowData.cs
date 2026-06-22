@@ -66,7 +66,7 @@ namespace AGXUnity
     /// Attenuation of this row in the elementary constraint. Paired with property Attenuation.
     /// </summary>
     [SerializeField]
-    private float m_attenuation = 2.0f / 50.0f;
+    private float m_attenuation = 2.0f;
 
     /// <summary>
     /// Attenuation of this row in the elementary constraint.

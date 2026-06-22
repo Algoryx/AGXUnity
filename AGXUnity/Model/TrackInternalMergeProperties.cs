@@ -119,11 +119,11 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lockToReachMergeConditionAttenuation = 0.06f;
+    private float m_lockToReachMergeConditionAttenuation = 3.0f;
 
     /// <summary>
     /// Damping of the hinge lock used to reach merge condition.
-    /// Default: 0.06
+    /// Default: 3
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Attenuation of the hinge lock used to reach merge condition." )]
