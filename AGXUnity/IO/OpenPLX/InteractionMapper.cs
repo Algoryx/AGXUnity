@@ -196,7 +196,8 @@ namespace AGXUnity.IO.OpenPLX
           relaxation_time =(float)agx_relaxation_time_annotations[ 0 ].asReal();
       }
 
-      return relaxation_time / time_step;
+      // We assume that the simulation will run at 50Hz to calculate the attenuation at "import time"
+      return relaxation_time / 50.0f;
     }
 
     Constraint.RotationalDof MapRotationalDOF( string axisName )
