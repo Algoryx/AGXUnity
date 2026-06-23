@@ -34,7 +34,7 @@ public static class ResourceHelper
     Directory.CreateDirectory( targetDataPath );
 
     foreach ( var f in s_trackedResources )
-      File.Copy( Path.Combine( ResourcePath, f ), Path.Combine( targetDataPath, f ) );
+      File.Copy( Path.Combine( ResourcePath, f ), Path.Combine( targetDataPath, f ), true );
   }
 #endif
 

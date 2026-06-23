@@ -1,3 +1,4 @@
+using AGXUnity.Collide;
 using AGXUnity.Model;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
@@ -16,7 +17,7 @@ namespace AGXUnity.IO.OpenPLX
     private MapperData Data;
     private InteractionMapper m_interactionMapper;
 
-    private Dictionary<Suspensions.SingleMate.Base, WheelJoint> m_mappedWheels = new Dictionary<Suspensions.SingleMate.Base, WheelJoint> ();
+    private Dictionary<Suspensions.SingleMate.Base, WheelJoint> m_mappedWheels = new Dictionary<Suspensions.SingleMate.Base, WheelJoint>();
     private Dictionary<TrackSystem.Base, TrackSystem.Connections.Base> m_connectionMap = new Dictionary<TrackSystem.Base, TrackSystem.Connections.Base>();
 
     public VehicleMapper( MapperData cache, InteractionMapper interactionMapper )
@@ -68,6 +69,33 @@ namespace AGXUnity.IO.OpenPLX
     {
       foreach ( var (ts, connection) in m_connectionMap )
         MapTrackSystem( ts, connection );
+
+      foreach ( var (oSys, sys) in Data.SystemCache ) {
+        if ( oSys is openplx.Physics3D.System sys3d && oSys.HasTrait<TrackSystem.Components.Traits.TrackSupportGeometry>() ) {
+          var oTrack = oSys.getObject("track_system") as TrackSystem.Base;
+          if ( Data.TrackCache.TryGetValue( oTrack, out Track track ) )
+            MapTrackSupportSystem( sys3d, track );
+        }
+      }
+
+      foreach ( var (oBody, rb) in Data.BodyCache ) {
+        if ( oBody.HasTrait<TrackSystem.Components.Traits.TrackSupportGeometry>() ) {
+          var oTrack = oBody.getObject("track_system") as TrackSystem.Base;
+          if ( Data.TrackCache.TryGetValue( oTrack, out Track track ) ) {
+            var shapes = rb.GetComponentsInChildren<Shape>();
+            foreach ( var shape in shapes )
+              track.Add( shape );
+          }
+        }
+      }
+
+      foreach ( var (oGeom, geom) in Data.GeometryCache ) {
+        if ( oGeom.HasTrait<TrackSystem.Components.Traits.TrackSupportGeometry>() ) {
+          var oTrack = oGeom.getObject("track_system") as TrackSystem.Base;
+          if ( Data.TrackCache.TryGetValue( oTrack, out Track track ) )
+            track.Add( geom );
+        }
+      }
     }
 
     public void MapSystemPass4( openplx.Physics3D.System system )
@@ -89,6 +117,21 @@ namespace AGXUnity.IO.OpenPLX
         MapElasticWheel( wheel );
     }
 
+    private void MapTrackSupportSystem( openplx.Physics3D.System system, Track track )
+    {
+      foreach ( var body in system.getNonReferenceValues<openplx.Physics3D.Bodies.RigidBody>() ) {
+        if ( !Data.BodyCache.TryGetValue( body, out RigidBody rb ) )
+          continue;
+
+        var shapes = rb.GetComponentsInChildren<Shape>();
+        foreach ( var shape in shapes )
+          track.Add( shape );
+      }
+
+      foreach ( var subsystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapTrackSupportSystem( system, track );
+    }
+
     private void MapTrackSystem( TrackSystem.Base system, TrackSystem.Connections.Base connection )
     {
       GameObject s = Data.SystemCache[system];
@@ -99,9 +142,8 @@ namespace AGXUnity.IO.OpenPLX
       s.AddComponent<TrackRenderer>();
 
       track.NumberOfNodes = (int)oTracks.link_count();
-      // TODO: Uncomment when swigged
-      // TODO: Add force tension
-      //track.InitialTensionDistance = (float)system.tension_initialization().node_distance();
+      if ( system.tension_initialization().node_distance().HasValue )
+        track.InitialTensionDistance = (float)system.tension_initialization().node_distance().Value;
 
       var wheels = system.track_wheels();
       if ( wheels.Count < 2 ) {
@@ -114,7 +156,6 @@ namespace AGXUnity.IO.OpenPLX
         Data.ErrorReporter.reportError( new LocalOffsetNotSupportedError( linkDesc.local_cm_transform().position() ) );
 
       if ( linkDesc.width() <= 0 || linkDesc.height() <= 0 ) {
-        // TODO: convert to warning?
         Data.ErrorReporter.reportError( new InvalidLinkDescriptionError( linkDesc ) );
       }
       else {
@@ -135,34 +176,45 @@ namespace AGXUnity.IO.OpenPLX
         var hinge = connection.hinge_1().hinge();
         foreach ( var connector in hinge.connectors() ) {
           if ( connector is RedirectedMateConnector redirected )
-            oChassis =  redirected.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+            oChassis = redirected.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
           else
             oChassis = connector.getOwner() as openplx.Physics3D.Bodies.RigidBody;
-          if ( oChassis != null && oChassis != wheels[ 0 ].body() )
+
+          // Reject chassis body if it is the wheel body
+          if ( oChassis == wheels[ 0 ].body() )
+            oChassis = null;
+
+          if ( oChassis != null )
             break; // Found the chassis body
         }
       }
 
-      if ( system.TryGetBoolAnnotation( "agx_enable_full_dof", out bool forceFullDoF ) && forceFullDoF )
-        track.FullDoF = true;
+      var fullDoF = false;
 
-      if ( !Data.BodyCache.TryGetValue( oChassis, out var chassis ) && !forceFullDoF ) {
-        // TODO: Warn that no chassis could be found
+      if ( system.TryGetBoolAnnotation( "agx_enable_full_dof", out bool forceFullDoF ) && forceFullDoF ) {
         track.FullDoF = true;
+        fullDoF = true;
       }
 
-      if ( chassis != null )
-        track.ReferenceObject = chassis.gameObject;
+      if ( !fullDoF ) {
+        if ( oChassis == null || !Data.BodyCache.ContainsKey( oChassis ) ) {
+          Data.Warnings.Add( new MissingChassisBodyWarning( system ) );
+          track.FullDoF = true;
+          fullDoF = true;
+        }
+
+        else if ( Data.BodyCache.TryGetValue( oChassis, out var chassis ) && chassis != null )
+          track.ReferenceObject = chassis.gameObject;
+      }
 
       MapInternalMergeProperties( system, track );
-      MapTrackProperties( system, track );
+      MapTrackProperties( system, track, fullDoF );
 
       foreach ( var wheel in wheels ) {
         if ( !Data.BodyCache.TryGetValue( wheel.body(), out var parent ) ) {
           Data.ErrorReporter.reportError( new MissingTrackWheelBodyError( wheel ) );
           continue;
         }
-
 
         var system_relative_transform = new agx.AffineMatrix4x4();
         var to_center_axis_transform = new agx.AffineMatrix4x4();
@@ -190,6 +242,8 @@ namespace AGXUnity.IO.OpenPLX
         track.Add( CreateTrackWheel( type.Value, (float)wheel.radius(), parent.gameObject, position, rotation ) );
       }
 
+      Data.TrackCache.Add( system, track );
+
       return;
     }
 
@@ -216,7 +270,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( track_system.TryGetRealAnnotation( "agx_set_lock_to_reach_merge_condition_compliance", out float LockToReachMergeConditionCompliance ) )
         merge_props.LockToReachMergeConditionCompliance = LockToReachMergeConditionCompliance;
       if ( track_system.TryGetRealAnnotation( "agx_set_lock_to_reach_merge_condition_relaxation_time", out float LockToReachMergeConditionDamping ) )
-        merge_props.LockToReachMergeConditionDamping =LockToReachMergeConditionDamping;
+        merge_props.LockToReachMergeConditionDamping = LockToReachMergeConditionDamping;
       if ( track_system.TryGetRealAnnotation( "agx_set_num_nodes_per_merge_segment", out float NumNodesPerMergeSegment ) )
         merge_props.NumNodesPerMergeSegment = (int)NumNodesPerMergeSegment;
       if ( track_system.TryGetRealAnnotation( "agx_set_max_angle_merge_condition", out float MaxAngleMergeCondition ) )
@@ -227,9 +281,11 @@ namespace AGXUnity.IO.OpenPLX
       Data.MappedTrackInternalMergeProperties.Add( merge_props );
     }
 
-    private void MapTrackProperties( TrackSystem.Base track_system, Track track )
+    private void MapTrackProperties( TrackSystem.Base track_system, Track track, bool fullDof )
     {
       var track_props = ScriptableObject.CreateInstance<TrackProperties>();
+
+      track_props.FullDoF = fullDof;
 
       var oProps = track_system.properties();
 
@@ -281,6 +337,31 @@ namespace AGXUnity.IO.OpenPLX
       track_props.HingeAttenuationRotational = rotationalAttenuation;
       track_props.HingeAttenuationTranslational = translationalAttenuation;
 
+      track_props.StabilizingHingeFrictionParameter = (float)oProps.damping().bending_friction_coefficient();
+      track_props.MinStabilizingHingeNormalForce = (float)oProps.damping().min_normal_force();
+      track_props.HingeRangeRange = new RangeReal(
+        (float)oProps.bending_rotational_range_min() * Mathf.Rad2Deg,
+        (float)oProps.bending_rotational_range_max() * Mathf.Rad2Deg
+      );
+      track_props.HingeRangeEnabled = true;
+
+      // TODO: Map new stiffness/attenuation parameters
+      //var track_hinge_compliance_annots = track_system.findAnnotations("agx_track_hinge_compliance");
+      //if ( track_hinge_compliance_annots.Count != 0 ) {
+      //  if ( track_hinge_compliance_annots[ 0 ].isNumber() ) {
+      //    track_props.HingeStiffnessRotational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+      //    track_props.HingeComplianceTranslational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
+      //  }
+      //}
+
+      //var track_hinge_relaxation_time = track_system.findAnnotations("agx_track_hinge_relaxation_time");
+      //if ( track_hinge_relaxation_time.Count != 0 ) {
+      //  if ( track_hinge_relaxation_time[ 0 ].isNumber() ) {
+      //    track_props.HingeDampingRotational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+      //    track_props.HingeAttenuationTranslational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
+      //  }
+      //}
+
       if ( track_system.TryGetRealAnnotation( "agx_track_node_wheel_overlap", out float overlap ) )
         track_props.TransformNodesToWheelsOverlap = overlap;
 
@@ -303,25 +384,8 @@ namespace AGXUnity.IO.OpenPLX
       }
       if ( hasRange ) {
         track_props.HingeRangeEnabled = true;
-        track_props.HingeRangeRange = new AGXUnity.RangeReal( min * 180.0f/Mathf.PI, max * 180.0f/Mathf.PI );
+        track_props.HingeRangeRange = new AGXUnity.RangeReal( min * 180.0f / Mathf.PI, max * 180.0f / Mathf.PI );
       }
-
-      // TODO: Map new stiffness/attenuation parameters
-      //var track_hinge_compliance_annots = track_system.findAnnotations("agx_track_hinge_compliance");
-      //if ( track_hinge_compliance_annots.Count != 0 ) {
-      //  if ( track_hinge_compliance_annots[ 0 ].isNumber() ) {
-      //    track_props.HingeStiffnessRotational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
-      //    track_props.HingeComplianceTranslational = Vector2.one * (float)track_hinge_compliance_annots[ 0 ].asReal();
-      //  }
-      //}
-
-      //var track_hinge_relaxation_time = track_system.findAnnotations("agx_track_hinge_relaxation_time");
-      //if ( track_hinge_relaxation_time.Count != 0 ) {
-      //  if ( track_hinge_relaxation_time[ 0 ].isNumber() ) {
-      //    track_props.HingeDampingRotational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
-      //    track_props.HingeAttenuationTranslational = Vector2.one * (float)track_hinge_relaxation_time[ 0 ].asReal();
-      //  }
-      //}
 
       if ( track_system.TryGetRealAnnotation( "agx_track_stabilizing_friction_parameter", out float StabilizingHingeFrictionParameter ) )
         track_props.StabilizingHingeFrictionParameter = StabilizingHingeFrictionParameter;
@@ -333,8 +397,6 @@ namespace AGXUnity.IO.OpenPLX
         track_props.NodesToWheelsSplitThreshold = NodesToWheelsSplitThreshold;
       if ( track_system.TryGetRealAnnotation( "agx_track_num_nodes_in_average_direction", out float NumNodesIncludedInAverageDirection ) )
         track_props.NumNodesIncludedInAverageDirection = (int)NumNodesIncludedInAverageDirection;
-
-      // TODO: Map reduced order annotations
 
       track_props.name = track_system.getName() + "_TP";
       track.Properties = track_props;
@@ -374,7 +436,7 @@ namespace AGXUnity.IO.OpenPLX
       twoBodyTire.TireRigidBody = tireBody;
       twoBodyTire.TireRadius = (float)outerRadius;
       twoBodyTire.RimRigidBody = rimBody;
-      twoBodyTire.RimRadius  = (float)innerRadius;
+      twoBodyTire.RimRadius = (float)innerRadius;
 
       twoBodyTire.TireRimConstraint = Data.MateCache[ wheel.tire_mate() ];
 
@@ -386,14 +448,14 @@ namespace AGXUnity.IO.OpenPLX
         properties.name = wheel.getName();
 
         properties.TorsionalStiffness = (float)wheel.flexibility().around_radial().stiffness();
-        properties.RadialStiffness    = (float)wheel.flexibility().along_radial().stiffness();
-        properties.LateralStiffness   = (float)wheel.flexibility().along_axial().stiffness();
-        properties.BendingStiffness   = (float)wheel.flexibility().around_axial().stiffness();
+        properties.RadialStiffness = (float)wheel.flexibility().along_radial().stiffness();
+        properties.LateralStiffness = (float)wheel.flexibility().along_axial().stiffness();
+        properties.BendingStiffness = (float)wheel.flexibility().around_axial().stiffness();
 
         properties.TorsionalDampingCoefficient = (float)wheel.dissipation().around_radial().damping_constant();
-        properties.RadialDampingCoefficient    = (float)wheel.dissipation().along_radial().damping_constant();
-        properties.LateralDampingCoefficient   = (float)wheel.dissipation().along_axial().damping_constant();
-        properties.BendingDampingCoefficient   = (float)wheel.dissipation().around_axial().damping_constant();
+        properties.RadialDampingCoefficient = (float)wheel.dissipation().along_radial().damping_constant();
+        properties.LateralDampingCoefficient = (float)wheel.dissipation().along_axial().damping_constant();
+        properties.BendingDampingCoefficient = (float)wheel.dissipation().around_axial().damping_constant();
 
         Data.TirePropertyCache[ wheel ] = properties;
       }
@@ -457,19 +519,19 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       // OpenPLX assumes axes N = Wheel and U = Suspension, in agx N = Suspension, V = Wheel is used. Apply a local rotation to correct for this from the precalculated frame.
-      Quaternion frameCorrection = Quaternion.Euler( 0, -90, -90 );
-      var chassisXForm  = chassis.transform.worldToLocalMatrix * Data.MateConnectorCache[ suspension.chassis_connector() ].transform.localToWorldMatrix;
-      var wheelXForm    = wheel.transform.worldToLocalMatrix * Data.MateConnectorCache[ suspension.attachment_connector() ].transform.localToWorldMatrix;
+      Quaternion frameCorrection = Quaternion.Euler(0, -90, -90);
+      var chassisXForm = chassis.transform.worldToLocalMatrix * Data.MateConnectorCache[suspension.chassis_connector()].transform.localToWorldMatrix;
+      var wheelXForm = wheel.transform.worldToLocalMatrix * Data.MateConnectorCache[suspension.attachment_connector()].transform.localToWorldMatrix;
 
-      var chassisFrame    = new ConstraintFrame( chassis.gameObject, chassisXForm.GetTranslate(), chassisXForm.GetRotation() * frameCorrection);
-      var wheelFrame      = new ConstraintFrame( wheel.gameObject, wheelXForm.GetTranslate(), wheelXForm.GetRotation() * frameCorrection );
+      var chassisFrame = new ConstraintFrame(chassis.gameObject, chassisXForm.GetTranslate(), chassisXForm.GetRotation() * frameCorrection);
+      var wheelFrame = new ConstraintFrame(wheel.gameObject, wheelXForm.GetTranslate(), wheelXForm.GetRotation() * frameCorrection);
 
       var wheelJoint = WheelJoint.Create(wheelFrame, chassisFrame, onto);
       if ( !suspension.HasTrait<Suspensions.Properties.Steering>() )
         wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable = true;
 
       if ( suspension is Suspensions.SingleMate.LinearSpringDamper lsd ) {
-        var damping = InteractionMapper.MapDissipation( lsd.mate().spring_damping(), lsd.mate().spring_constant() );
+        var damping = InteractionMapper.MapDissipation(lsd.mate().spring_damping(), lsd.mate().spring_constant());
         if ( damping.HasValue )
           wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Damping = damping.Value;
         var compliance = InteractionMapper.MapFlexibility(lsd.mate().spring_constant());
@@ -479,12 +541,12 @@ namespace AGXUnity.IO.OpenPLX
         wheelJoint.enabled = lsd.mate().enabled();
       }
 
-      var range = wheelJoint.GetController<RangeController>( WheelJoint.WheelDimension.Suspension );
+      var range = wheelJoint.GetController<RangeController>(WheelJoint.WheelDimension.Suspension);
       range.Enable = suspension.range().enabled();
       var rangeCompliance = InteractionMapper.MapFlexibility(suspension.range().flexibility());
       if ( rangeCompliance.HasValue )
         range.Compliance = rangeCompliance.Value;
-      var rangeDamping = InteractionMapper.MapDissipation(suspension.range().dissipation(),suspension.range().flexibility());
+      var rangeDamping = InteractionMapper.MapDissipation(suspension.range().dissipation(), suspension.range().flexibility());
       if ( rangeDamping.HasValue )
         range.Damping = rangeDamping.Value;
       range.Range = new RangeReal( (float)suspension.range().start(), (float)suspension.range().end() );
@@ -537,21 +599,21 @@ namespace AGXUnity.IO.OpenPLX
 
       if ( steering is Steering.Kinematic.Ackermann ackermann ) {
         steeringComp.Phi0 = (float)ackermann.knuckle_angle();
-        steeringComp.L    = (float)ackermann.knuckle_length();
+        steeringComp.L = (float)ackermann.knuckle_length();
       }
       else if ( steering is Steering.Kinematic.BellCrank bellCrank ) {
-        steeringComp.Phi0   = (float)bellCrank.knuckle_angle();
-        steeringComp.L      = (float)bellCrank.knuckle_length();
-        steeringComp.Lc     = (float)bellCrank.steering_column_distance();
-        steeringComp.Gear   = (float)bellCrank.gear();
+        steeringComp.Phi0 = (float)bellCrank.knuckle_angle();
+        steeringComp.L = (float)bellCrank.knuckle_length();
+        steeringComp.Lc = (float)bellCrank.steering_column_distance();
+        steeringComp.Gear = (float)bellCrank.gear();
         steeringComp.Alpha0 = (float)bellCrank.initial_angle_right_tie_rod();
       }
       else if ( steering is Steering.Kinematic.RackAndPinion rackPinion ) {
-        steeringComp.Phi0   = (float)rackPinion.knuckle_angle();
-        steeringComp.L      = (float)rackPinion.knuckle_length();
-        steeringComp.Lc     = (float)rackPinion.steering_column_distance();
-        steeringComp.Lr     = (float)rackPinion.rack_length();
-        steeringComp.Gear   = (float)rackPinion.gear();
+        steeringComp.Phi0 = (float)rackPinion.knuckle_angle();
+        steeringComp.L = (float)rackPinion.knuckle_length();
+        steeringComp.Lc = (float)rackPinion.steering_column_distance();
+        steeringComp.Lr = (float)rackPinion.rack_length();
+        steeringComp.Gear = (float)rackPinion.gear();
         steeringComp.Alpha0 = (float)rackPinion.initial_angle_right_tie_rod();
       }
 

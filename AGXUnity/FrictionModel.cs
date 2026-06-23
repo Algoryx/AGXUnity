@@ -177,6 +177,7 @@ namespace AGXUnity
     /// Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials.
     /// </summary>
     [Tooltip( "Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials" )]
+    [field: SerializeField]
     public bool TrackFrictionModel { get; set; } = false;
 
     /// <summary>

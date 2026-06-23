@@ -77,6 +77,7 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
     public Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties> TirePropertyCache { get; } = new Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties>();
     public Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings> ShovelSettingsCache { get; } = new Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings>();
+    public Dictionary<openplx.Vehicles.TrackSystem.Base, Track> TrackCache { get; } = new Dictionary<openplx.Vehicles.TrackSystem.Base, Track>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
     public Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D> TextureCache { get; } = new Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D>();
