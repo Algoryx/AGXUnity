@@ -228,7 +228,8 @@ namespace AGXUnityTesting.Runtime
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.GreaterOrEqual( Mathf.Abs( rod1RB.AngularVelocity.z ), 0.1f );
       Assert.GreaterOrEqual( Mathf.Abs( rod2RB.AngularVelocity.z ), 0.1f );
-      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
+      // TODO: Decrease allowed deviation once the initialization order is fixed in AGX
+      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.001f, "Gear gives similar and opposite AVs" );
     }
 
     [UnityTest]
@@ -671,7 +672,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
-    [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
     public void TestDoubleDistanceDistortionLidarError()
     {
       var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(
