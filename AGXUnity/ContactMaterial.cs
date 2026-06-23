@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -214,6 +215,7 @@ namespace AGXUnity
     /// Attenuation of the contact constraint, paired with property Attenuation.
     /// </summary>
     [SerializeField]
+    [FormerlySerializedAs( "m_damping" )]
     private float m_attenuation = 4.5f;
 
     /// <summary>
@@ -507,6 +509,16 @@ namespace AGXUnity
     {
       if ( Native != null )
         Native.setFrictionModel( frictionModel );
+    }
+
+    protected override bool PerformMigration()
+    {
+      if(m_serializationVersion < 3) 
+      {
+        m_attenuation *= Time.fixedDeltaTime;
+        return true;
+      }
+      return false;
     }
   }
 }

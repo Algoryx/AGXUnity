@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Xml.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.IO.URDF
 {
@@ -138,6 +139,7 @@ namespace AGXUnity.IO.URDF
       /// <summary>
       /// Attenuation of the joint.
       /// </summary>
+      /// TODO: Make sure this is migrated correctly when deserialized from an old version of AGXUnity (used to be damping, should be multiplies by Time.fixedDeltaTime).
       public float Attenuation;
 
       /// <summary>

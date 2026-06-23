@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -79,6 +80,7 @@ namespace AGXUnity
     }
 
     [SerializeField]
+    [FormerlySerializedAs( "m_damping" )]
     private float m_attenuation = 2.0f;
 
     [ClampAboveZeroInInspector( true )]

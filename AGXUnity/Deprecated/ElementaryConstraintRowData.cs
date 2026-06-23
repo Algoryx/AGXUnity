@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Deprecated
 {
@@ -73,6 +74,7 @@ namespace AGXUnity.Deprecated
     /// Attenuation of this row in the elementary constraint. Paired with property Damping.
     /// </summary>
     [SerializeField]
+    [FormerlySerializedAs( "m_damping" )]
     private float m_attenuation = 2.0f;
 
     /// <summary>

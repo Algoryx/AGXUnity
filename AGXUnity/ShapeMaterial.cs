@@ -1,5 +1,7 @@
-﻿using System;
+﻿using openplx.Vehicles.TrackSystem.Interactions.Dissipation;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -97,6 +99,7 @@ namespace AGXUnity
     /// Default value: 3
     /// </summary>
     [SerializeField]
+    [FormerlySerializedAs( "m_dampingStretch" )]
     private float m_attenuationStretch = 3.0f;
 
     /// <summary>
@@ -121,6 +124,7 @@ namespace AGXUnity
     /// Default value: 6
     /// </summary>
     [SerializeField]
+    [FormerlySerializedAs( "m_dampingBend" )]
     private float m_attenuationBend = 6.0f;
 
     /// <summary>
@@ -204,6 +208,16 @@ namespace AGXUnity
         }
         return m_defaultMaterial;
       }
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        m_attenuationBend *= Time.fixedDeltaTime;
+        m_attenuationStretch *= Time.fixedDeltaTime;
+        return true;
+      }
+      return false;
     }
   }
 }

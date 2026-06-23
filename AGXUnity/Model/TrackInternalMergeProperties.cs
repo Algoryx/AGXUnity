@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -119,6 +120,7 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    [FormerlySerializedAs( "m_lockToReachMergeConditionDamping" )]
     private float m_lockToReachMergeConditionAttenuation = 3.0f;
 
     /// <summary>
@@ -229,5 +231,14 @@ namespace AGXUnity.Model
 
     [NonSerialized]
     private Track m_singleSynchronizeInstance = null;
+
+    protected override bool PerformMigration()
+    {
+      if(m_serializationVersion < 3) {
+        m_lockToReachMergeConditionAttenuation *= Time.fixedDeltaTime;
+        return true;
+      }
+      return true;
+    }
   }
 }

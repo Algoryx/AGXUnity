@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+﻿using agxCable;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -565,6 +566,15 @@ namespace AGXUnity
       }
 
       return new PointCurve.SegmentationResult() { Error = float.PositiveInfinity, Successful = false };
+    }
+    protected override bool PerformMigration()
+    {
+      if(m_serializationVersion < 3) {
+        foreach( CableProperties.Direction dir in Enum.GetValues( typeof( CableProperties.Direction ) ))
+          Properties[ dir ].Attenuation *= Time.fixedDeltaTime; 
+        return true;
+      }
+      return false;
     }
   }
 }
