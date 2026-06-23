@@ -569,9 +569,9 @@ namespace AGXUnity
     }
     protected override bool PerformMigration()
     {
-      if(m_serializationVersion < 3) {
-        foreach( CableProperties.Direction dir in Enum.GetValues( typeof( CableProperties.Direction ) ))
-          Properties[ dir ].Attenuation *= Time.fixedDeltaTime; 
+      if ( m_serializationVersion < 3 ) {
+        foreach ( CableProperties.Direction dir in Enum.GetValues( typeof( CableProperties.Direction ) ) )
+          Properties[ dir ].Attenuation *= Time.fixedDeltaTime;
         return true;
       }
       return false;

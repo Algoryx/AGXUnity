@@ -234,7 +234,7 @@ namespace AGXUnity.Model
 
     protected override bool PerformMigration()
     {
-      if(m_serializationVersion < 3) {
+      if ( m_serializationVersion < 3 ) {
         m_lockToReachMergeConditionAttenuation *= Time.fixedDeltaTime;
         return true;
       }

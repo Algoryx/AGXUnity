@@ -513,8 +513,7 @@ namespace AGXUnity
 
     protected override bool PerformMigration()
     {
-      if(m_serializationVersion < 3) 
-      {
+      if ( m_serializationVersion < 3 ) {
         m_attenuation *= Time.fixedDeltaTime;
         return true;
       }

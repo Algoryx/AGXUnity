@@ -1031,9 +1031,9 @@ namespace AGXUnity
 
     protected override bool PerformMigration()
     {
-      if(m_serializationVersion < 3) {
+      if ( m_serializationVersion < 3 ) {
         // Migrate from damping to attenuation
-        TraverseRowData( data => data.Attenuation *= Time.fixedDeltaTime , TranslationalDof.All);
+        TraverseRowData( data => data.Attenuation *= Time.fixedDeltaTime, TranslationalDof.All );
         TraverseRowData( data => data.Attenuation *= Time.fixedDeltaTime, RotationalDof.All );
         return true;
       }
