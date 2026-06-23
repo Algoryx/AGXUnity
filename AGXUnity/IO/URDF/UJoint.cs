@@ -130,17 +130,16 @@ namespace AGXUnity.IO.URDF
 
         return new DynamicsData()
         {
-          Attenuation  = Utils.ReadFloat( element, "attenuation" ),
+          Damping  = Utils.ReadFloat( element, "damping" ),
           Friction = Utils.ReadFloat( element, "friction" ),
           Enabled  = true
         };
       }
 
       /// <summary>
-      /// Attenuation of the joint.
-      /// </summary>
-      /// TODO: Make sure this is migrated correctly when deserialized from an old version of AGXUnity (used to be damping, should be multiplies by Time.fixedDeltaTime).
-      public float Attenuation;
+      /// Damping of the joint.
+      /// </summary>      
+      public float Damping;
 
       /// <summary>
       /// Minimum static friction force in the joint.
