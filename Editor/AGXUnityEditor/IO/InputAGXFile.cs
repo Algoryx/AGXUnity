@@ -670,26 +670,19 @@ namespace AGXUnityEditor.IO
         return false;
       }
 
-      // Scaling damping to our (sigh) hard coded time step.
-      float fixedStepTime = Time.fixedDeltaTime;
-      float readTimeStep  = Convert.ToSingle( Simulation.getTimeStep() );
-      float timeStepRatio = fixedStepTime / readTimeStep;
-      if ( !AGXUnity.Utils.Math.Approximately( timeStepRatio, 1.0f ) ) {
-        foreach ( var ec in constraint.ElementaryConstraints ) {
-          foreach ( var rowData in ec.RowData ) {
-            if ( rowData.Compliance < -float.Epsilon ) {
-              Debug.LogWarning( "Constraint: " + constraint.name +
-                                " (ec name: " + rowData.ElementaryConstraint.NativeName + ")," +
-                                " has too low compliance: " + rowData.Compliance + ". Setting to zero." );
-              rowData.Compliance = 0.0f;
-            }
-            else if ( rowData.Compliance > float.MaxValue ) {
-              Debug.LogWarning( "Constraint: " + constraint.name +
-                                " (ec name: " + rowData.ElementaryConstraint.NativeName + ")," +
-                                " has too high compliance: " + rowData.Compliance + ". Setting to a large value." );
-              rowData.Compliance = 0.5f * float.MaxValue;
-            }
-            rowData.Damping *= timeStepRatio;
+      foreach ( var ec in constraint.ElementaryConstraints ) {
+        foreach ( var rowData in ec.RowData ) {
+          if ( rowData.Compliance < -float.Epsilon ) {
+            Debug.LogWarning( "Constraint: " + constraint.name +
+                              " (ec name: " + rowData.ElementaryConstraint.NativeName + ")," +
+                              " has too low compliance: " + rowData.Compliance + ". Setting to zero." );
+            rowData.Compliance = 0.0f;
+          }
+          else if ( rowData.Compliance > float.MaxValue ) {
+            Debug.LogWarning( "Constraint: " + constraint.name +
+                              " (ec name: " + rowData.ElementaryConstraint.NativeName + ")," +
+                              " has too high compliance: " + rowData.Compliance + ". Setting to a large value." );
+            rowData.Compliance = 0.5f * float.MaxValue;
           }
         }
       }

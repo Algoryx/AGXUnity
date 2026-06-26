@@ -41,7 +41,8 @@ namespace AGXUnity
     // 2 - Migrate Range, Beam Divergence, and Beam Exit Radius into the LiDAR model
     //   - Migrate old tracks into FullDoF tracks
     //   - Add automatic positioning mode
-    private const int CurrentSerializationVersion = 2;
+    // 3 - Migrate damping into attenuation
+    private const int CurrentSerializationVersion = 3;
 
     [SerializeField]
     [HideInInspector]

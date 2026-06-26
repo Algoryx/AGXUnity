@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Deprecated
 {
@@ -70,23 +71,24 @@ namespace AGXUnity.Deprecated
     }
 
     /// <summary>
-    /// Damping of this row in the elementary constraint. Paired with property Damping.
+    /// Attenuation of this row in the elementary constraint. Paired with property Damping.
     /// </summary>
     [SerializeField]
-    private float m_damping = 2.0f / 50.0f;
+    [FormerlySerializedAs( "m_damping" )]
+    private float m_attenuation = 2.0f;
 
     /// <summary>
-    /// Damping of this row in the elementary constraint.
+    /// Attenuation of this row in the elementary constraint.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    public float Damping
+    public float Attenuation
     {
-      get { return m_damping; }
+      get { return m_attenuation; }
       set
       {
-        m_damping = value;
+        m_attenuation = value;
         if ( ElementaryConstraint.Native != null )
-          ElementaryConstraint.Native.setDamping( m_damping, Row );
+          ElementaryConstraint.Native.setAttenuation( m_attenuation, Row );
       }
     }
 
@@ -123,10 +125,7 @@ namespace AGXUnity.Deprecated
       m_row = row;
       if ( tmpEc != null ) {
         m_compliance = Convert.ToSingle( tmpEc.getCompliance( RowUInt ) );
-        // AGX Dynamics damping is optimized for 60 Hz simulations. Assuming
-        // a fixed update of 50 Hz in Unity we scale the damping by 60 / 50 = 1.2
-        // to transform the damping to 50 Hz.
-        m_damping = 1.2f * Convert.ToSingle( tmpEc.getDamping( RowUInt ) );
+        m_attenuation = Convert.ToSingle( tmpEc.getAttenuation( RowUInt ) );
         m_forceRange = new RangeReal( tmpEc.getForceRange( RowUInt ) );
       }
     }
@@ -146,7 +145,7 @@ namespace AGXUnity.Deprecated
     public void CopyFrom( ElementaryConstraintRowData source )
     {
       m_compliance = source.m_compliance;
-      m_damping = source.m_damping;
+      m_attenuation = source.m_attenuation;
       m_forceRange = new RangeReal( source.m_forceRange );
     }
   }

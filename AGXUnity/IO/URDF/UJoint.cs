@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Xml.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.IO.URDF
 {
@@ -116,7 +117,7 @@ namespace AGXUnity.IO.URDF
     public struct DynamicsData
     {
       /// <summary>
-      /// Read "dynamics" given parent. Defaults to Damping = 0.0 and Friction = 0.0
+      /// Read "dynamics" given parent. Defaults to Attenuation = 0.0 and Friction = 0.0
       /// if "dynamics" is null.
       /// </summary>
       /// <param name="parent">Parent element.</param>
@@ -137,7 +138,7 @@ namespace AGXUnity.IO.URDF
 
       /// <summary>
       /// Damping of the joint.
-      /// </summary>
+      /// </summary>      
       public float Damping;
 
       /// <summary>

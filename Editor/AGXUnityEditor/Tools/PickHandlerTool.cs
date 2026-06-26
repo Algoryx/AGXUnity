@@ -49,7 +49,7 @@ namespace AGXUnityEditor.Tools
 
       constraint.AttachmentPair.ConnectedFrame.Position = HandleUtility.GUIPointToWorldRay( Event.current.mousePosition ).GetPoint( m_distanceFromCamera );
 
-      PickHandler.SetComplianceDamping( constraint );
+      PickHandler.SetComplianceAttenuation( constraint );
     }
 
     private float m_distanceFromCamera = -1f;
@@ -83,7 +83,7 @@ namespace AGXUnityEditor.Tools
       VisualSphereConnected.Pickable = false;
       VisualCylinder.Pickable        = false;
 
-      PickHandler.SetComplianceDamping( Constraint );
+      PickHandler.SetComplianceAttenuation( Constraint );
     }
 
     private void UpdateVisual( Constraint constraint )
