@@ -24,11 +24,9 @@ namespace AGXUnity
     private const int CurrentSerializationVersion = 2;
 
     // Serialization version is currently unused
-#pragma warning disable 0414
     [SerializeField]
     [HideInInspector]
     protected int m_serializationVersion = -1;
-#pragma warning restore 0414
 
     public void OnBeforeSerialize()
     {

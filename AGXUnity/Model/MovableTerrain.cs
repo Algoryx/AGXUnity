@@ -450,6 +450,15 @@ namespace AGXUnity.Model
 #endif
     }
 
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        PlacementMode = Placement.Manual;
+        return true;
+      }
+      return false;
+    }
+
     protected override bool Initialize()
     {
       // Only printing the errors if something is wrong.

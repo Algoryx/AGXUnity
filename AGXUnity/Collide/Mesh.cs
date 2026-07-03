@@ -321,7 +321,11 @@ namespace AGXUnity.Collide
         var renderColors = new List<Color>();
 
         var prevState = Random.state;
+#if UNITY_6000_3_OR_NEWER
+        Random.InitState( GetEntityId().GetHashCode() );
+#else
         Random.InitState( GetInstanceID() );
+#endif
         foreach ( var collisionMesh in PrecomputedCollisionMeshes ) {
           var meshes = collisionMesh.CreateRenderMeshes( transform );
           renderMeshes.AddRange( meshes );

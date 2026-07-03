@@ -269,6 +269,7 @@ namespace AGXUnity
         }
 
         MassProperties.SetDefaultCalculated( rb );
+        PropertySynchronizer.Synchronize( MassProperties );
       } );
     }
 

@@ -153,6 +153,30 @@ namespace AGXUnity.Collide
       }
     }
 
+    [SerializeField]
+    private bool m_isPulley = false;
+
+    /// <summary>
+    /// When enabled, Wires will snap onto this geometry to simulate a sheave or pulley geometry without having to rely on contacts
+    /// </summary>
+    [Tooltip( "When enabled, Wires will snap onto this geometry to simulate a sheave or pulley geometry without having to rely on contacts" )]
+    [InspectorGroupBegin( Name = "Extra Properties" )]
+    [InspectorGroupEnd]
+    public bool IsPulley
+    {
+      get => m_isPulley;
+      set
+      {
+        m_isPulley = value;
+        if ( NativeGeometry != null ) {
+          if ( m_isPulley )
+            NativeGeometry.getPropertyContainer().addPropertyBool( "Pulley", true );
+          else
+            NativeGeometry.getPropertyContainer().removePropertyBool( "Pulley" );
+        }
+      }
+    }
+
     /// <summary>
     /// Native geometry object, if initialized.
     /// </summary>

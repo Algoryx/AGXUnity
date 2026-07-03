@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: fbd20f30959a6cb4cbb06bdc0717afaa
+guid: 2be86cf495d3e3747a7106deff1d299b
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -10,15 +10,13 @@ ScriptedImporter:
   script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
   messages: []
   declaredModels:
-  - Rod
-  - Pendulum
-  - PendulumsDriveTrain
-  - PendulumScene
+  - LocallyAttachedBox
+  - SignalScene
   ImportedModel: Default
   SkipImport: 0
   HideImportedMeshes: 1
   IgnoreDisabledMeshes: 0
-  RotateUp: 1
+  RotateUp: 0
   HideImportedVisualMaterials: 0
   HideImportedVisualMeshes: 0
   HideImportedTextures: 0

@@ -15,7 +15,7 @@ namespace AGXUnityEditor.IO.OpenPLX
   {
     private ScriptedOpenPLXImporter ScriptedOpenPLXImporter => target as ScriptedOpenPLXImporter;
 
-    private VisualElement TableRowUI( ScriptedOpenPLXImporter.Error err )
+    private VisualElement TableRowUI( ScriptedOpenPLXImporter.Message err )
     {
       var row = new VisualElement();
       row.SetPadding( 3, 3, 3, 0 );
@@ -31,7 +31,10 @@ namespace AGXUnityEditor.IO.OpenPLX
       StatusIcon.style.width = 16;
       StatusIcon.style.flexGrow = 0;
       StatusIcon.style.flexShrink = 0;
-      StatusIcon.AddToClassList( HelpBox.iconErrorUssClassName );
+      if ( err.severity == ScriptedOpenPLXImporter.MessageSeverity.Error )
+        StatusIcon.AddToClassList( HelpBox.iconErrorUssClassName );
+      else if ( err.severity == ScriptedOpenPLXImporter.MessageSeverity.Warning )
+        StatusIcon.AddToClassList( HelpBox.iconwarningUssClassName );
 
       var nameLabel = new Label( err.message );
       nameLabel.style.flexGrow = 1;
@@ -113,8 +116,8 @@ namespace AGXUnityEditor.IO.OpenPLX
         modelSelection.BindProperty( serializedObject.FindProperty( nameof( ScriptedOpenPLXImporter.ImportedModel ) ) );
         skipContainer.Add( modelSelection );
 
-        if ( ScriptedOpenPLXImporter.Errors.Length > 0 ) {
-          var sorted = new List<ScriptedOpenPLXImporter.Error>(ScriptedOpenPLXImporter.Errors);
+        if ( ScriptedOpenPLXImporter.Messages.Length > 0 ) {
+          var sorted = new List<ScriptedOpenPLXImporter.Message>(ScriptedOpenPLXImporter.Messages);
           sorted.Sort( ( e1, e2 ) => e1.document.CompareTo( e2.document ) );
 
           skipContainer.Add( new Label() { text = $"<b>Errors ({sorted.Count})</b>" } );

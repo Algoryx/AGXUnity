@@ -50,7 +50,7 @@ namespace AGXUnityEditor
       while ( index < m_data.Count ) {
         var data = m_data[ index ];
 #if UNITY_6000_3_OR_NEWER
-        var obj = EditorUtility.EntityIdToObject( data.InstanceId );
+        var obj = EditorUtility.EntityIdToObject( data.EntityId );
 #else
         var obj = EditorUtility.InstanceIDToObject( data.InstanceId );
 #endif

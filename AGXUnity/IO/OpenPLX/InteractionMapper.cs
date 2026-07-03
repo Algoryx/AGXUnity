@@ -85,6 +85,13 @@ namespace AGXUnity.IO.OpenPLX
       var up = main_axis_n.cross(normal_n).normal();
       mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), up.ToHandedVector3() );
 
+      // If this MC is connected to the system rather than a body, move it to the world proxy body
+      // but keep the transform calculated in the local frame.
+      if ( current is openplx.Physics3D.System ) {
+        mcObject.transform.SetParent( Data.WorldProxyBody.transform, true );
+        mcObject.name =  mc.getName();
+      }
+
       Data.MateConnectorCache[ mc ] = mcObject;
     }
 
@@ -297,7 +304,7 @@ namespace AGXUnity.IO.OpenPLX
       else if ( spring is Interactions.LinearSpring ls )
         agxLock.Position = (float)ls.position();
       else
-        Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
+        Utils.ReportUnimplemented<System.Object>( spring, Data );
 
       MapControllerDissipation( spring.dissipation(), spring.flexibility(), agxLock );
       MapControllerFlexibility( spring.flexibility(), agxLock );
@@ -357,7 +364,7 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.LinearVelocityMotor => ConstraintType.GenericConstraint1DOF,
         Interactions.ForceMotor => ConstraintType.GenericConstraint1DOF,
         // Unknown
-        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
+        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data )
       };
 
       if ( type == null )
@@ -403,7 +410,7 @@ namespace AGXUnity.IO.OpenPLX
       };
 
       if ( angleType == null )
-        return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( interaction, Data );
 
       g1dof.DOFType = angleType.Value;
 
@@ -429,7 +436,7 @@ namespace AGXUnity.IO.OpenPLX
           EnableForceMotorInteraction( constraint.GetController<TargetSpeedController>(), fm );
           break;
         default:
-          return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+          return Utils.ReportUnimplemented<GameObject>( interaction, Data );
       }
 
       return constraint.gameObject;

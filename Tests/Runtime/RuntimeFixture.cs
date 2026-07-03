@@ -1,5 +1,6 @@
 using AGXUnity;
-using NUnit.Framework;
+using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -9,8 +10,8 @@ namespace AGXUnityTesting.Runtime
 {
   public class AGXUnityFixture
   {
-    [OneTimeSetUp]
-    public void SetupSimulationInstance()
+    [UnitySetUp]
+    public IEnumerator SetupSimulationInstance()
     {
       Simulation.Instance.GetInitialized();
       Simulation.Instance.PreIntegratePositions = true;
@@ -18,13 +19,14 @@ namespace AGXUnityTesting.Runtime
       Simulation.Instance.AGXUnityLogLevel = LogLevel.Warning;
       Simulation.Instance.LogToUnityConsole = true;
       Simulation.Instance.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
+
+      yield return TestUtils.WaitUntilLoaded();
     }
 
-    [OneTimeTearDown]
-    public void TeardownSimulationInstance()
+    [UnityTearDown]
+    public IEnumerator TeardownSimulationInstance()
     {
-      GameObject.Destroy( ContactMaterialManager.Instance.gameObject );
-      GameObject.Destroy( Simulation.Instance.gameObject );
+      yield return TestUtils.DestroyAndWait( Object.FindObjectsByType<ScriptComponent>( FindObjectsSortMode.None ).Select( c => c.gameObject ).ToArray() );
     }
   }
 }

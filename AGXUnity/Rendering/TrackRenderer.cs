@@ -267,17 +267,20 @@ namespace AGXUnity.Rendering
       public Quaternion Rotation;
       public Vector3 LocalPosition;
       public Quaternion LocalRotation;
+      public agx.AffineMatrix4x4 WheelTransform;
+      public agx.AffineMatrix4x4 LocalTransform;
 
       public agxVehicle.TrackWheelDesc Native
       {
         get
         {
+          var RBtrans = new agx.AffineMatrix4x4( Rotation.ToHandedQuat(), Position.ToHandedVec3() );
+          var localXform = new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(), LocalPosition.ToHandedVec3() );
+
           return new agxVehicle.TrackWheelDesc( Model.TrackWheel.ToNative( WheelModel ),
                                                 Radius,
-                                                new agx.AffineMatrix4x4( Rotation.ToHandedQuat(),
-                                                                         Position.ToHandedVec3() ),
-                                                new agx.AffineMatrix4x4( LocalRotation.ToHandedQuat(),
-                                                                         LocalPosition.ToHandedVec3() ) );
+                                                RBtrans,
+                                                localXform );
         }
       }
     }
@@ -339,12 +342,15 @@ namespace AGXUnity.Rendering
         };
         TrackWheels = new TrackWheelDesc[ track.Wheels.Length ];
         for ( int i = 0; i < TrackWheels.Length; ++i ) {
-          TrackWheels[ i ].WheelModel    = track.Wheels[ i ].Model;
-          TrackWheels[ i ].Radius        = track.Wheels[ i ].Radius;
-          TrackWheels[ i ].Position      = track.Wheels[ i ].transform.position;
-          TrackWheels[ i ].Rotation      = track.Wheels[ i ].transform.rotation;
-          TrackWheels[ i ].LocalPosition = track.Wheels[ i ].Frame.LocalPosition;
-          TrackWheels[ i ].LocalRotation = track.Wheels[ i ].Frame.LocalRotation;
+          var wheel = track.Wheels[ i ];
+          var wheelToRB = wheel.transform.worldToLocalMatrix * wheel.Frame.Parent.transform.localToWorldMatrix;
+
+          TrackWheels[ i ].WheelModel     = wheel.Model;
+          TrackWheels[ i ].Radius         = wheel.Radius;
+          TrackWheels[ i ].Position       = wheel.transform.position;
+          TrackWheels[ i ].Rotation       = wheel.transform.rotation;
+          TrackWheels[ i ].LocalPosition  = wheelToRB.MultiplyPoint( wheel.Frame.LocalPosition );
+          TrackWheels[ i ].LocalRotation  = wheelToRB.GetRotation() * wheel.Frame.LocalRotation;
         }
 
         var nodes = agxVehicle.agxVehicleSWIG.findTrackNodeConfiguration( new agxVehicle.TrackDesc( (ulong)Track.NumberOfNodes,

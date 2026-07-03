@@ -1,4 +1,6 @@
 using AGXUnity;
+using AGXUnity.Collide;
+using AGXUnity.Rendering;
 using NUnit.Framework;
 using System.Collections;
 using System.Text.RegularExpressions;
@@ -7,6 +9,95 @@ using UnityEngine.TestTools;
 
 namespace AGXUnityTesting.Runtime
 {
+  public class PulleyTests : AGXUnityFixture
+  {
+    private Wire SourceWire;
+    private Cylinder Pulley;
+    private GameObject Weight1;
+    private GameObject Weight2;
+
+    private GameObject CreateWeight( Vector3 pos )
+    {
+      var weight = new GameObject( "Weight" );
+      weight.AddComponent<RigidBody>();
+      var wireWeightBoxGO = new GameObject("Box");
+
+      var wireWeightBox = wireWeightBoxGO.AddComponent<Box>();
+      wireWeightBox.HalfExtents = new Vector3( 0.1f, 0.1f, 0.1f );
+      wireWeightBoxGO.transform.parent = weight.transform;
+
+      weight.transform.position = pos;
+
+      ShapeVisual.Create( wireWeightBox );
+
+      return weight;
+    }
+
+    [UnitySetUp]
+    public IEnumerator SetupWireScene()
+    {
+      var wireObject = new GameObject("Source Wire");
+      SourceWire = wireObject.AddComponent<Wire>();
+
+      Weight1 = CreateWeight( Vector3.left );
+      Weight2 = CreateWeight( Vector3.right );
+
+      SourceWire.Route.Add( Wire.NodeType.BodyFixedNode, Weight1, Vector3.right * 0.1f );
+      SourceWire.Route.Add( Wire.NodeType.BodyFixedNode, Weight2, Vector3.left * 0.1f );
+
+      SourceWire.Diameter = 0.01f;
+      SourceWire.ResolutionPerUnitLength = 10;
+      SourceWire.gameObject.AddComponent<WireRenderer>();
+
+      SourceWire.Material = ShapeMaterial.CreateInstance<ShapeMaterial>();
+
+      var pulleyGO = new GameObject( "Pulley" );
+      Pulley = pulleyGO.AddComponent<Cylinder>();
+      pulleyGO.transform.rotation = Quaternion.AngleAxis( 70, Vector3.left );
+      pulleyGO.transform.position = Vector3.down * 0.2f;
+      Pulley.Radius = 0.2f;
+      Pulley.Material = ShapeMaterial.CreateInstance<ShapeMaterial>();
+
+      var cm = ContactMaterial.CreateInstance<ContactMaterial>();
+      cm.Material1 = SourceWire.Material;
+      cm.Material2 = Pulley.Material;
+      cm.FrictionCoefficients = Vector2.zero;
+      cm.WireFrictionCoefficients = Vector2.zero;
+      ContactMaterialManager.Instance.Add( cm );
+
+      ShapeVisual.Create( Pulley );
+
+      yield return TestUtils.WaitUntilLoaded();
+    }
+
+    private Wire[] FindWires()
+    {
+#if UNITY_2022_2_OR_NEWER
+      return UnityEngine.Object.FindObjectsByType<Wire>( FindObjectsSortMode.None );
+#else
+      return UnityEngine.Object.FindObjectsOfType<Wire>();
+#endif
+    }
+
+    [UnityTest]
+    public IEnumerator SlipsWithoutPulleyProperty()
+    {
+      yield return TestUtils.SimulateSeconds( 5 );
+
+      Assert.That( Weight1.transform.position.y, Is.LessThan( -2 ) );
+    }
+
+    [UnityTest]
+    public IEnumerator SticksWithPulleyProperty()
+    {
+      Pulley.IsPulley = true;
+
+      yield return TestUtils.SimulateSeconds( 5 );
+
+      Assert.That( Weight1.transform.position.y, Is.GreaterThan( -2 ) );
+    }
+  }
+
   public class WireCutMergeTests : AGXUnityFixture
   {
     private Wire SourceWire;
@@ -29,13 +120,6 @@ namespace AGXUnityTesting.Runtime
 #else
       return UnityEngine.Object.FindObjectsOfType<Wire>();
 #endif
-    }
-
-    [TearDown]
-    public void TearDownWireScene()
-    {
-      foreach ( var wire in FindWires() )
-        Object.Destroy( wire.gameObject );
     }
 
     [Test]

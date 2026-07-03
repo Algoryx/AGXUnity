@@ -177,6 +177,7 @@ namespace AGXUnity
     /// Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials.
     /// </summary>
     [Tooltip( "Enable to mark that this friction model will be used for ContactMaterials involving track. This allows the friction frame to be set up automatically for these materials" )]
+    [field: SerializeField]
     public bool TrackFrictionModel { get; set; } = false;
 
     /// <summary>
@@ -264,6 +265,8 @@ namespace AGXUnity
                            m_orientedFrictionReferenceObject.GetComponent<RigidBody>().Native.getFrame() :
                          m_orientedFrictionReferenceObject.GetComponent<Collide.Shape>() != null ?
                            m_orientedFrictionReferenceObject.GetComponent<Collide.Shape>().NativeGeometry.getFrame() :
+                         m_orientedFrictionReferenceObject.GetComponent<ObserverFrame>() != null ?
+                           m_orientedFrictionReferenceObject.GetComponent<ObserverFrame>().Native.getFrame() :
                            null;
       }
 

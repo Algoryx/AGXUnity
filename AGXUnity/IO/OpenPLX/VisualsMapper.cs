@@ -137,7 +137,7 @@ namespace AGXUnity.IO.OpenPLX
         if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
           return null;
 
-        return Utils.ReportUnimplemented<GameObject>( visual, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( visual, Data );
       }
 
       Data.RegisterOpenPLXObject( visual.getName(), go );
@@ -516,7 +516,7 @@ namespace AGXUnity.IO.OpenPLX
       renderMat.mainTexture = MapColorTexture( visibleBand ); // Alpha map is baked into a color texture if present
 
       // Normals
-      if ( visibleBand.HasTrait<openplx.Visuals.Optics.SurfaceFeatures.Normals>() ) {
+      if ( visibleBand.HasTrait<openplx.Visuals.Optics.SurfaceFeatures.Normal>() ) {
         var normalTex = visibleBand.getDynamic( "normal_map" ).asObject() as openplx.Visuals.Textures.DefaultTexture;
         renderMat.SetTexture( "_BumpMap", MapTexture( normalTex, ( offset, scale ) => {
           renderMat.SetTextureOffset( "_BumpMap", offset );

@@ -10,16 +10,17 @@ namespace AGXUnityEditor
   {
     public static uint CalculateKey( UnityEngine.Object target, string identifier )
     {
+#if UNITY_6000_3_OR_NEWER
+      return ( ( target == null ? "0" : target.GetEntityId() ) + "_" + identifier ).To32BitFnv1aHash();
+#else
       return ( ( target == null ? "0" : target.GetInstanceID().ToString() ) + "_" + identifier ).To32BitFnv1aHash();
+#endif
     }
 
     [SerializeField]
     private uint m_key = uint.MaxValue;
     [SerializeField]
-    private int m_instanceId = int.MaxValue;
-    [SerializeField]
     private bool m_isStatic = false;
-
     [SerializeField]
     private bool m_bool = false;
     [SerializeField]
@@ -164,15 +165,27 @@ namespace AGXUnityEditor
 
     public uint Key { get { return m_key; } private set { m_key = value; } }
 
-    public int InstanceId { get { return m_instanceId; } private set { m_instanceId = value; } }
+#if UNITY_6000_3_OR_NEWER
+    [SerializeField]
+    private EntityId m_instanceId = new EntityId();
+    public EntityId EntityId { get { return m_instanceId; } private set { m_instanceId = value; } }
+#else
+    [SerializeField]
+    private int m_instanceId = int.MaxValue;
 
+    public int InstanceId { get { return m_instanceId; } private set { m_instanceId = value; } }
+#endif
     public bool IsStatic { get { return m_isStatic; } }
 
     public EditorDataEntry( UnityEngine.Object target, uint key )
     {
       Key = key;
       if ( target != null )
+#if UNITY_6000_3_OR_NEWER
+        EntityId = target.GetEntityId();
+#else
         InstanceId = target.GetInstanceID();
+#endif
       else
         m_isStatic = true;
     }
@@ -192,7 +205,7 @@ namespace AGXUnityEditor
       // This is to trigger an update of the target GUI when the value has been changed.
       // E.g., clicking expand/collapse on a foldout we'd like the GUI to instantly respond.
 #if UNITY_6000_3_OR_NEWER
-      UnityEngine.Object obj = EditorUtility.EntityIdToObject( InstanceId );
+      UnityEngine.Object obj = EditorUtility.EntityIdToObject( EntityId );
 #else
       UnityEngine.Object obj = EditorUtility.InstanceIDToObject( InstanceId );
 #endif
