@@ -23,7 +23,7 @@ namespace AGXUnity
       return camera.WorldToViewportPoint( worldPoint ).z;
     }
 
-    public static void SetComplianceDamping( Constraint constraint )
+    public static void SetComplianceAttenuation( Constraint constraint )
     {
       if ( constraint == null )
         return;
@@ -38,7 +38,8 @@ namespace AGXUnity
 
       float translationalCompliance = 1.0E-3f / ( distVal * Mathf.Max( mass, 1.0f ) );
       float rotationalCompliance    = 1.0E-10f / ( Mathf.Max( mass, 1.0f ) );
-      float damping                 = 10.0f / 60.0f;
+      //TODO: Address timestep scaling since new attenuation scales
+      float attenuation             = 2.0f;
 
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( constraint.GetOrdinaryElementaryConstraints() );
       if ( rowParser == null )
@@ -49,7 +50,7 @@ namespace AGXUnity
           continue;
 
         translationalRow.RowData.Compliance = translationalCompliance;
-        translationalRow.RowData.Damping = damping;
+        translationalRow.RowData.Attenuation = attenuation;
       }
 
       foreach ( var rotationalRow in rowParser.RotationalRows ) {
@@ -57,7 +58,7 @@ namespace AGXUnity
           continue;
 
         rotationalRow.RowData.Compliance = rotationalCompliance;
-        rotationalRow.RowData.Damping = damping;
+        rotationalRow.RowData.Attenuation = attenuation;
       }
     }
 
@@ -300,7 +301,7 @@ namespace AGXUnity
                                                                                                       Input.mousePosition.y,
                                                                                                       m_distanceFromCamera ) );
 
-        SetComplianceDamping( Constraint );
+        SetComplianceAttenuation( Constraint );
 
         ConstraintGameObject.GetComponent<Rendering.PickHandlerRenderer>().ThisMethodIsntAllowedToBeNamedUpdateByUnity( Constraint, m_camera );
       }

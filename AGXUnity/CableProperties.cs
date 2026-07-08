@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -79,16 +80,17 @@ namespace AGXUnity
     }
 
     [SerializeField]
-    private float m_damping = 2.0f / 50;
+    [FormerlySerializedAs( "m_damping" )]
+    private float m_attenuation = 2.0f;
 
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "The damping of the constraint" )]
-    public float Damping
+    [Tooltip( "The attenuation of the constraint" )]
+    public float Attenuation
     {
-      get { return m_damping; }
+      get { return m_attenuation; }
       set
       {
-        m_damping = value;
+        m_attenuation = value;
 
         OnValueCanged( Direction );
       }
@@ -130,7 +132,7 @@ namespace AGXUnity
 
       foreach ( Direction dir in Directions ) {
         this[ dir ].YoungsModulus = Convert.ToSingle( native.getYoungsModulus( ToNative( dir ) ) );
-        this[ dir ].Damping       = Convert.ToSingle( native.getDamping( ToNative( dir ) ) );
+        this[ dir ].Attenuation       = Convert.ToSingle( native.getAttenuation( ToNative( dir ) ) );
         this[ dir ].PoissonsRatio = Convert.ToSingle( native.getPoissonsRatio( ToNative( dir ) ) );
         this[ dir ].YieldPoint    = plasticity != null ?
                                       Convert.ToSingle( plasticity.getYieldPoint( ToNative( dir ) ) ) :

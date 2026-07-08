@@ -117,7 +117,7 @@ namespace AGXUnity.IO.OpenPLX
 
       RuntimeMapped = new Dictionary<string, agx.Referenced>();
 
-      agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System);
+      agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System, Time.fixedDeltaTime);
       // TODO: Fix null return from this method
       if ( powerline != null && powerline.get() != null ) {
         Simulation.Instance.Native.add( powerline.get() );

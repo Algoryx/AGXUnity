@@ -1,5 +1,7 @@
-﻿using System;
+﻿using openplx.Vehicles.TrackSystem.Interactions.Dissipation;
+using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -93,50 +95,52 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// damping for wire stretching modulus stretch for wires.
-    /// Default value: 0.06
+    /// attenuation for wire stretching modulus stretch for wires.
+    /// Default value: 3
     /// </summary>
     [SerializeField]
-    private float m_dampingStretch = 0.06f;
+    [FormerlySerializedAs( "m_dampingStretch" )]
+    private float m_attenuationStretch = 3.0f;
 
     /// <summary>
-    /// Get or set stretch damping for wires.
-    /// Default value: 0.06
+    /// Get or set stretch attenuation for wires.
+    /// Default value: 3
     /// </summary>
     [ClampAboveZeroInInspector]
-    [Tooltip( "The damping of the stretch contstraint when this material is used as a wire" )]
-    public float DampingStretch
+    [Tooltip( "The attenuation of the stretch contstraint when this material is used as a wire" )]
+    public float AttenuationStretch
     {
-      get { return m_dampingStretch; }
+      get { return m_attenuationStretch; }
       set
       {
-        m_dampingStretch = value;
+        m_attenuationStretch = value;
         if ( Native != null )
-          Native.getWireMaterial().setDampingStretch( m_dampingStretch );
+          Native.getWireMaterial().setAttenuationStretch( m_attenuationStretch );
       }
     }
 
     /// <summary>
-    /// Bend damping of this material.
-    /// Default value: 0.12
+    /// Bend attenuation of this material.
+    /// Default value: 6
     /// </summary>
     [SerializeField]
-    private float m_dampingBend = 0.12f;
+    [FormerlySerializedAs( "m_dampingBend" )]
+    private float m_attenuationBend = 6.0f;
 
     /// <summary>
-    /// Get or set bend damping of this material.
-    /// Default value: 0.12
+    /// Get or set bend attenuation of this material.
+    /// Default value: 6
     /// </summary>
     [ClampAboveZeroInInspector]
-    [Tooltip( "The damping of the bend contstraint when this material is used as a wire" )]
-    public float DampingBend
+    [Tooltip( "The attenuation of the bend contstraint when this material is used as a wire" )]
+    public float AttenuationBend
     {
-      get { return m_dampingBend; }
+      get { return m_attenuationBend; }
       set
       {
-        m_dampingBend = value;
+        m_attenuationBend = value;
         if ( Native != null )
-          Native.getWireMaterial().setDampingBend( m_dampingBend );
+          Native.getWireMaterial().setAttenuationBend( m_attenuationBend );
       }
     }
 
@@ -163,8 +167,8 @@ namespace AGXUnity
       Density           = Convert.ToSingle( native.getBulkMaterial().getDensity() );
       YoungsWireStretch = Convert.ToSingle( native.getWireMaterial().getYoungsModulusStretch() );
       YoungsWireBend    = Convert.ToSingle( native.getWireMaterial().getYoungsModulusBend() );
-      DampingStretch    = Convert.ToSingle( native.getWireMaterial().getDampingStretch() );
-      DampingBend       = Convert.ToSingle( native.getWireMaterial().getDampingBend() );
+      AttenuationStretch    = Convert.ToSingle( native.getWireMaterial().getAttenuationStretch() );
+      AttenuationBend       = Convert.ToSingle( native.getWireMaterial().getAttenuationBend() );
 
       return this;
     }
@@ -204,6 +208,16 @@ namespace AGXUnity
         }
         return m_defaultMaterial;
       }
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        m_attenuationBend *= Time.fixedDeltaTime;
+        m_attenuationStretch *= Time.fixedDeltaTime;
+        return true;
+      }
+      return false;
     }
   }
 }

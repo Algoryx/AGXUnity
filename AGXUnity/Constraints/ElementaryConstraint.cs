@@ -118,7 +118,7 @@ namespace AGXUnity
     public int NumRows => RowData.Length;
 
     /// <summary>
-    /// Data (compliance, damping etc.) for each row in this elementary constraint.
+    /// Data (compliance, attenuation etc.) for each row in this elementary constraint.
     /// </summary>
     [field: SerializeField]
     public ElementaryConstraintRowData[] RowData { get; private set; }
@@ -174,7 +174,7 @@ namespace AGXUnity
           newRDs.Add( newRowData );
         }
         newRowData.Compliance = row.Compliance;
-        newRowData.Damping = row.Damping;
+        newRowData.Attenuation = row.Attenuation;
         newRowData.ForceRange = row.ForceRange;
       }
       if ( newRDs.Count > 0 )
