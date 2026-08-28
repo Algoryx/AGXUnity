@@ -45,7 +45,6 @@ namespace AGXUnity.Model
     /// NB: if using multiple shape materials on the terrain this is not reliable!
     /// </summary>
     [SerializeField]
-    [FormerlySerializedAs( "WarnIfNotUsingCorrectForceModel" )]
     private bool m_warnIfNotUsingCorrectForceModel = false;
 
     [Tooltip( "Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
@@ -115,7 +114,7 @@ namespace AGXUnity.Model
         Debug.LogWarning( "Active Contact Material is NOT using terrainWheelForceModel!" );
     }
 
-    private bool ActiveContactMaterialUsesTerrainWheelForceModel => GetActiveContactMaterial()?.getFrictionModel()?.asTerrainWheelForceModel() != null;
+    public bool ActiveContactMaterialUsesTerrainWheelForceModel => GetActiveContactMaterial()?.getFrictionModel()?.asTerrainWheelForceModel() != null;
 
     private agx.ContactMaterial GetActiveContactMaterial()
     {

@@ -132,7 +132,7 @@ namespace AGXUnity.Rendering
     public float HeightThreshold { get; set; } = 0.01f;
 
     [field: SerializeField]
-    [Range( 0.0f, 1.0f )]
+    [FloatSliderInInspector( 0.0f, 1.0f )]
     [Tooltip( "Blend weight of the debug layer over the original terrain paint." )]
     public float PaintStrength = 0.7f;
 
@@ -142,7 +142,7 @@ namespace AGXUnity.Rendering
     public float FullStrengthHeightChange { get; set; } = 0.1f;
 
     [field: SerializeField]
-    [Min( 0 )]
+    [ClampAboveZeroInInspector]
     [Tooltip( "Paint radius in heightmap samples around each modified terrain vertex." )]
     public int BrushRadius = 0;
 
