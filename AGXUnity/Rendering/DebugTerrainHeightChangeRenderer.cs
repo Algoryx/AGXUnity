@@ -141,11 +141,6 @@ namespace AGXUnity.Rendering
     [Tooltip( "Absolute height change in meters where the debug layer reaches Paint Strength." )]
     public float FullStrengthHeightChange { get; set; } = 0.1f;
 
-    [field: SerializeField]
-    [ClampAboveZeroInInspector]
-    [Tooltip( "Paint radius in heightmap samples around each modified terrain vertex." )]
-    public int BrushRadius = 0;
-
     public void Clear()
     {
       s_clearSampler.Begin();
@@ -389,10 +384,10 @@ namespace AGXUnity.Rendering
         var heightmapMaxX = td.heightmapResolution - 1;
         var heightmapMaxY = td.heightmapResolution - 1;
 
-        var minAlphaX = Mathf.FloorToInt( ( heightIndex.x - 0.5f - BrushRadius ) / heightmapMaxX * alphamapWidth );
-        var minAlphaY = Mathf.FloorToInt( ( heightIndex.y - 0.5f - BrushRadius ) / heightmapMaxY * alphamapHeight );
-        var maxAlphaX = Mathf.CeilToInt( ( heightIndex.x + 0.5f + BrushRadius ) / heightmapMaxX * alphamapWidth );
-        var maxAlphaY = Mathf.CeilToInt( ( heightIndex.y + 0.5f + BrushRadius ) / heightmapMaxY * alphamapHeight );
+        var minAlphaX = Mathf.FloorToInt( ( heightIndex.x - 0.5f ) / heightmapMaxX * alphamapWidth );
+        var minAlphaY = Mathf.FloorToInt( ( heightIndex.y - 0.5f ) / heightmapMaxY * alphamapHeight );
+        var maxAlphaX = Mathf.CeilToInt( ( heightIndex.x + 0.5f ) / heightmapMaxX * alphamapWidth );
+        var maxAlphaY = Mathf.CeilToInt( ( heightIndex.y + 0.5f ) / heightmapMaxY * alphamapHeight );
 
         minAlphaX = Mathf.Clamp( minAlphaX, 0, alphamapWidth );
         minAlphaY = Mathf.Clamp( minAlphaY, 0, alphamapHeight );
