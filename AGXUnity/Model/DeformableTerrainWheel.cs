@@ -77,8 +77,10 @@ namespace AGXUnity.Model
 
       Native = new agxTerrain.TerrainWheel( cylinder );
 
-      if ( Settings == null )
-        Settings = CreateSettingsFromLegacyValues();
+      if ( Settings == null ) {
+        var settings = ScriptAsset.Create<DeformableTerrainWheelSettings>();
+        Settings = settings;
+      }
 
       GetSimulation().add( Native );
 
@@ -140,115 +142,6 @@ namespace AGXUnity.Model
         Debug.LogError( "Component: DeformableTerrainWheel requires a RigidBody component.", this );
     }
 
-    private DeformableTerrainWheelSettings CreateSettingsFromLegacyValues()
-    {
-      var settings = ScriptAsset.Create<DeformableTerrainWheelSettings>();
-      settings.name = "[Temporary]Wheel Settings";
-      settings.EnableTerrainDeformation = m_enableTerrainDeformation;
-      settings.EnableTerrainDisplacement = m_enableTerrainDisplacement;
-      settings.SlipDependenceBulldozing = m_slipDependenceBulldozing;
-      settings.SlipDependenceSlipDisplacement = m_slipDependenceSlipDisplacement;
-      settings.ForwardDisplacementWeight = m_forwardDisplacementWeight;
-      settings.BulldozeDisplacementAmountFactor = m_bulldozeDisplacementAmountFactor;
-      settings.LateralDisplacementDistScaling = m_lateralDisplacementDistScaling;
-      settings.ForwardDisplacementDistScaling = m_forwardDisplacementDistScaling;
-      settings.BackwardDisplacementDistScaling = m_backwardDisplacementDistScaling;
-      settings.AngularIntegrationStep = m_angularIntegrationStep;
-      settings.PressureSinkageModel = m_pressureSinkageModel;
-      settings.EnableComputeRearAngleFromFrontAngle = m_enableComputeRearAngleFromFrontAngle;
-      settings.EnableComputeMaximumNormalStressAngleFromFrontAngle = m_enableComputeMaximumNormalStressAngleFromFrontAngle;
-      settings.RearAndFrontAngleMaxMagnitude = m_rearAndFrontAngleMaxMagnitude;
-      settings.SlipRatioVxThreshold = m_slipRatioVxThreshold;
-      settings.SlipRatioOmegaYRThreshold = m_slipRatioOmegaYRThreshold;
-      settings.SlipRatioSmoothingSpeed = m_slipRatioSmoothingSpeed;
-      settings.SlipRatioMaxMagnitude = m_slipRatioMaxMagnitude;
-      settings.SlipRatioFallbackValue = m_slipRatioFallbackValue;
-      settings.SlipAngleVxAngularEquivalentThreshold = m_slipAngleVxAngularEquivalentThreshold;
-      settings.SlipAngleVyAngularEquivalentThreshold = m_slipAngleVyAngularEquivalentThreshold;
-      settings.SlipAngleMaxMagnitude = m_slipAngleMaxMagnitude;
-      settings.SlipAngleFallbackValue = m_slipAngleFallbackValue;
-      settings.RollingModeVxAngularEquivalentThreshold = m_rollingModeVxAngularEquivalentThreshold;
-      settings.RollingModeOmegaYThreshold = m_rollingModeOmegaYThreshold;
-      return settings;
-    }
-
     private RigidBody m_rb = null;
-
-    #region Legacy Serialized Settings
-    [SerializeField, HideInInspector]
-    private bool m_enableTerrainDeformation = true;
-
-    [SerializeField, HideInInspector]
-    private bool m_enableTerrainDisplacement = true;
-
-    [SerializeField, HideInInspector]
-    private bool m_slipDependenceBulldozing = false;
-
-    [SerializeField, HideInInspector]
-    private bool m_slipDependenceSlipDisplacement = true;
-
-    [SerializeField, HideInInspector]
-    private float m_forwardDisplacementWeight = 0.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_bulldozeDisplacementAmountFactor = 0.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_lateralDisplacementDistScaling = 0.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_forwardDisplacementDistScaling = 0.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_backwardDisplacementDistScaling = 0.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_angularIntegrationStep = 0.001f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private agxTerrain.TerrainWheelSettings.PressureSinkageModel m_pressureSinkageModel = agxTerrain.TerrainWheelSettings.PressureSinkageModel.BEKKER;
-
-    [SerializeField, HideInInspector]
-    private bool m_enableComputeRearAngleFromFrontAngle = false;
-
-    [SerializeField, HideInInspector]
-    private bool m_enableComputeMaximumNormalStressAngleFromFrontAngle = true;
-
-    [SerializeField, HideInInspector]
-    private float m_rearAndFrontAngleMaxMagnitude = 90.0f;
-
-    [SerializeField, HideInInspector]
-    private float m_slipRatioVxThreshold = 0.01f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_slipRatioOmegaYRThreshold = 0.01f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_slipRatioSmoothingSpeed = 0.0001f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_slipRatioMaxMagnitude = 1.0f;
-
-    [SerializeField, HideInInspector]
-    private float m_slipRatioFallbackValue = 0.1f;
-
-    [SerializeField, HideInInspector]
-    private float m_slipAngleVxAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_slipAngleVyAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_slipAngleMaxMagnitude = 45.0f;
-
-    [SerializeField, HideInInspector]
-    private float m_slipAngleFallbackValue = 4.5f;
-
-    [SerializeField, HideInInspector]
-    private float m_rollingModeVxAngularEquivalentThreshold = 0.017453293f * Mathf.Rad2Deg;
-
-    [SerializeField, HideInInspector]
-    private float m_rollingModeOmegaYThreshold = 0.017453293f * Mathf.Rad2Deg;
-    #endregion
   }
 }
