@@ -1,6 +1,5 @@
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -56,17 +55,14 @@ namespace AGXUnity.Model
         return false;
       }
 
-      var cylinders = RigidBody.GetComponentsInChildren<Collide.Cylinder>()
-                               .Where( c => c.GetComponentInParent<RigidBody>() == RigidBody )
-                               .ToArray();
+      var cylinders = RigidBody.Shapes.Where( s => s is Collide.Cylinder );
 
-      if ( cylinders.Length != 1 ) {
-        Debug.LogWarning( $"DeformableTerrainWheel requires exactly 1 Cylinder shape in the RigidBody, found {cylinders.Length}.", this );
+      if ( cylinders.Count() != 1 ) {
+        Debug.LogWarning( $"DeformableTerrainWheel requires exactly 1 Cylinder shape in the RigidBody, found {cylinders.Count()}.", this );
         return false;
       }
 
-      cylinders[ 0 ].GetInitialized<Collide.Cylinder>();
-      var cylinder = cylinders[ 0 ].Native;
+      var cylinder = (cylinders.First() as Collide.Cylinder).GetInitialized<Collide.Cylinder>().Native;
       if ( cylinder == null ) {
         Debug.LogWarning( "Unable to initialize Cylinder shape for DeformableTerrainWheel.", this );
         return false;
