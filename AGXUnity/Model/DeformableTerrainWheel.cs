@@ -44,15 +44,9 @@ namespace AGXUnity.Model
     /// Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model.
     /// NB: if using multiple shape materials on the terrain this is not reliable!
     /// </summary>
-    [SerializeField]
-    private bool m_warnIfNotUsingCorrectForceModel = false;
-
+    [field: SerializeField]
     [Tooltip( "Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
-    public bool WarnIfNotUsingCorrectForceModel
-    {
-      get { return m_warnIfNotUsingCorrectForceModel; }
-      set { m_warnIfNotUsingCorrectForceModel = value; }
-    }
+    public bool WarnIfNotUsingCorrectForceModel { get; set; } = false;
 
     protected override bool Initialize()
     {
