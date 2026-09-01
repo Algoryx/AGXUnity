@@ -10,6 +10,7 @@ namespace AGXUnity.Rendering
   [RequireComponent( typeof( DeformableTerrainBase ) )]
   [DisallowMultipleComponent]
   [AddComponentMenu( "AGXUnity/Rendering/Debug Terrain Height Change Renderer" )]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#deformable-terrain-wheel" )]
   public class DebugTerrainHeightChangeRenderer : ScriptComponent
   {
     private class TerrainDebugData
