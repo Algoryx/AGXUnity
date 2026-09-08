@@ -85,7 +85,9 @@ public static class Tests
       FailedRuntimeActivationSkipsRefreshAndFloatingFallback, SuccessfulLoadsAndRuntimeActivation,
       AcceptedLoadRequiresValidLicense, LoadExceptionsRefreshValidity,
       SearchPreservesValidNativeLicense, FailedSearchUsesNativeState, EmptySearchUsesNativeState,
-      AssetImportWorkersCannotAccessLicensing
+      AssetImportWorkersCannotAccessLicensing,
+      EditorStartupPrefersProjectFloating, EditorStartupPreservesNativeFallback,
+      EditorStartupFloatingFailureUsesNativeState
     };
     var root = Path.Combine(Path.GetTempPath(), "agx-license-fixtures-" + Guid.NewGuid().ToString("N"));
     Directory.CreateDirectory(root);
@@ -192,21 +194,72 @@ public static class Tests
   }
   private static void ReturnSurvivesEditorTransitions()
   {
-    var path = FileFor("floating.lfx"); Connect(path); Return();
+    var path = FileFor("Assets/floating.lfx");
+    Check(LicenseManager.AutomaticFloatingCheckoutEnabled, "Fresh editor disabled auto checkout");
+    Check(LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true), "Editor startup did not auto-connect");
+    Check(Native.OpenCalls == 1 && Native.LoadCalls == 0 && Native.ActivateCalls == 0 && Native.RefreshCalls == 0 && NativeHandler.Instance.HasValidLicense, "Startup did not acquire a valid floating seat using a network session");
+    Check(LicenseManager.ActiveFloatingLicenseFilename == path.Replace('\\', '/'), "Startup lost the floating source path");
+    Check(LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true) && Native.OpenCalls == 1, "Repeated initialization acquired another seat");
+    Check(Return(), "Temporarily returning the startup seat failed");
     AssemblyReloadEvents.Reload();
     Set(typeof(LicenseManager), "s_pendingFloatingSessionState", 0); // New domain; SessionState survives.
     Check(!LicenseManager.AutomaticFloatingCheckoutEnabled, "Reload forgot manual return");
-    Check(!LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled), "Reload acquired a seat");
+    Check(!LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true), "Reload acquired a seat");
     EditorApplication.PlayTransition(PlayModeStateChange.ExitingEditMode);
     EditorApplication.PlayTransition(PlayModeStateChange.ExitingPlayMode);
-    Check(!LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled) && Native.OpenCalls == 1, "Play transition acquired a seat");
+    Check(!LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true) && Native.OpenCalls == 1, "Play transition acquired a seat");
     Capture(); LicenseWarnings.ScheduleStartupWarning(); EditorApplication.Tick();
     Check(TestUI.Dialogs.Count == 0 && string.IsNullOrEmpty(LicenseWarnings.GetWarningMessage(LicenseWarnings.CurrentLicense)), "Intentional return displayed a persistent message or startup warning");
     Native.OpenResult = false; Check(!Connect(path) && !LicenseManager.AutomaticFloatingCheckoutEnabled, "Failed connect enabled auto checkout");
     Native.OpenResult = true; Check(Connect(path), "Explicit reconnect failed"); EditorApplication.Tick();
     Check(LicenseManager.AutomaticFloatingCheckoutEnabled, "Explicit connect did not enable checkout");
-    Return(); EditorApplication.Tick(); SessionState.Values.Clear(); // Editor restart.
-    Check(LicenseManager.AutomaticFloatingCheckoutEnabled && LicenseManager.LoadFile(), "Fresh session did not auto-connect");
+    Return(); EditorApplication.Tick();
+    // Editor restart clears session storage and creates a new native runtime.
+    SessionState.Values.Clear();
+    agx.Runtime.Current = new agx.Runtime();
+    Set(typeof(LicenseManager), "s_pendingFloatingSessionState", 0);
+    Set(typeof(LicenseManager), "s_activeFloatingLicenseFilename", null);
+    Capture();
+    Check(LicenseManager.AutomaticFloatingCheckoutEnabled && LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true), "Fresh session did not auto-connect");
+    Check(Native.OpenCalls == 1 && NativeHandler.Instance.HasValidLicense, "Restart did not acquire a valid seat");
+  }
+  private static void EditorStartupPrefersProjectFloating()
+  {
+    Native.CurrentType = 0; Native.CurrentId = "native-installation-fallback"; Native.Valid = true; Capture();
+    FileFor("service.lfx", "<SoftwareKey>service:project");
+    var floating = FileFor("Assets/floating.lfx");
+    Check(LicenseManager.LoadFile() && Native.OpenCalls == 0, "Default search replaced a valid native license");
+    Check(LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true), "Editor startup rejected project floating license");
+    Check(Native.OpenCalls == 1 && Native.LoadCalls == 0 && Native.RefreshCalls == 0 && Native.ActivateCalls == 0, "Editor startup skipped checkout or loaded a non-floating file");
+    Check(LicenseManager.HasFloatingSession && NativeHandler.Instance.HasValidLicense && LicenseManager.ActiveFloatingLicenseFilename == floating.Replace('\\', '/'), "Native fallback prevented project checkout");
+    FileFor("another-floating.lfx");
+    Check(LicenseManager.LoadFile(true, true) && Native.OpenCalls == 1 && Native.CloseCalls == 0, "Repeated startup replaced a held seat");
+  }
+  private static void EditorStartupPreservesNativeFallback()
+  {
+    Native.CurrentType = 0; Native.CurrentId = "native-installation-fallback"; Native.Valid = true; Capture();
+    FileFor("service.lfx", "<SoftwareKey>service:project");
+    Check(LicenseManager.LoadFile(true, true) && Native.CurrentId == "native-installation-fallback" && Native.LoadCalls == 0, "Search without a floating file replaced the native fallback");
+    var floating = FileFor("Assets/floating.lfx");
+    Check(Connect(floating) && Return(), "Unable to temporarily return a seat");
+    AssemblyReloadEvents.Reload();
+    Set(typeof(LicenseManager), "s_pendingFloatingSessionState", 0);
+    // Native initialization on reload finds a valid non-floating fallback again.
+    Native.CurrentType = 0; Native.CurrentId = "native-installation-fallback"; Native.Valid = true; Capture();
+    Check(LicenseManager.LoadFile(allowFloating: LicenseManager.AutomaticFloatingCheckoutEnabled, preferFloating: true), "Disabled checkout discarded the native fallback");
+    Check(!LicenseManager.HasFloatingSession && Native.OpenCalls == 1 && Native.CurrentId == "native-installation-fallback", "Native fallback caused a returned seat to be reacquired");
+  }
+  private static void EditorStartupFloatingFailureUsesNativeState()
+  {
+    Native.CurrentType = 0; Native.CurrentId = "native-installation-fallback"; Native.Valid = true; Capture();
+    var floating = FileFor("Assets/floating.lfx");
+    Native.OpenResult = false; Native.BeforeOpen = Native.clear; // Native open clears the previous license before connecting.
+    Check(!LicenseManager.LoadFile(true, true), "Failed startup checkout borrowed fallback validity");
+    Check(Native.OpenCalls == 1 && !LicenseManager.LicenseInfo.IsValid && !NativeHandler.Instance.HasValidLicense, "Failed checkout left a stale valid license");
+    Check(LicenseManager.LastOperationError.Contains(Native.Failure) && File.Exists(floating) && File.Exists(floating + ".meta"), "Failed startup checkout lost its error or license file");
+    var window = Window();
+    for (int i = 0; i < 3; ++i) { Call(window, "OnGUI"); Call(window, "StartUpdateLicenseInformation"); Wait(window); }
+    Check(Native.OpenCalls == 1, "Scanning after startup failure retried checkout");
   }
   private static void DisabledLoadingSkipsFallback()
   {
@@ -462,7 +515,7 @@ public static class Tests
       Check(!LicenseManager.CanAccessRuntime && !LicenseManager.HasFloatingSession, "Asset worker can access native session state");
       Check(!LicenseInfo.Create().IsParsed && !LicenseManager.LicenseInfo.IsParsed && !LicenseManager.UpdateLicenseInformation().IsParsed, "Asset worker obtained license information");
       Check(!LicenseManager.QueryInfo(floating).IsParsed, "Asset worker queried a license");
-      Check(!LicenseManager.LoadFile() && !LicenseManager.LoadFile(false) && !LicenseManager.LoadFile(floating) && !LicenseManager.Load("<SoftwareKey>service:synthetic"), "Asset worker loaded a license");
+      Check(!LicenseManager.LoadFile() && !LicenseManager.LoadFile(false) && !LicenseManager.LoadFile(true, true) && !LicenseManager.LoadFile(floating) && !LicenseManager.Load("<SoftwareKey>service:synthetic"), "Asset worker loaded a license");
       var previousTask = Get(typeof(LicenseManager), "s_operationTask");
       var rejected = 0;
       Action<bool> reject = success => { Check(!success, "Asset worker operation succeeded"); ++rejected; };

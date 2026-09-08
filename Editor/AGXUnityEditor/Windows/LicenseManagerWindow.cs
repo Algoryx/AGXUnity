@@ -117,7 +117,7 @@ namespace AGXUnityEditor.Windows
         if ( LicenseWarnings.CurrentLicense.IsFloating ) {
           EditorGUILayout.HelpBox( "A floating license seat is held. Return it before connecting, activating, refreshing, or loading another license.", MessageType.Info, true );
           using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
-            if ( GUILayout.Button( GUI.MakeLabel( "Return Seat", false, "Return the current floating seat to the server." ), InspectorEditor.Skin.Button ) )
+            if ( GUILayout.Button( GUI.MakeLabel( "Return Seat", false, "Temporarily release the floating seat until you select Connect or restart the editor." ), InspectorEditor.Skin.Button ) )
               ReturnSeat();
           }
           GUILayout.Space( 6 );
@@ -331,7 +331,7 @@ namespace AGXUnityEditor.Windows
       if ( floating ) {
         using ( new GUI.EnabledBlock( canChange && !LicenseWarnings.CurrentLicense.IsFloating ) ) {
           if ( GUILayout.Button( GUI.MakeLabel( "Connect", false,
-                                 LicenseWarnings.CurrentLicense.IsFloating ? "Return the current seat before connecting." : "Request a floating license seat from this file's server." ),
+                                 LicenseWarnings.CurrentLicense.IsFloating ? "Return the current seat before connecting." : "Request a floating license seat from this file's server. Floating licenses connect automatically when the editor starts." ),
                                  InspectorEditor.Skin.Button ) )
             ConnectLicense( data.Filename );
         }

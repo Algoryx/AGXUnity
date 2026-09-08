@@ -208,6 +208,17 @@ namespace AGXUnity
     /// </summary>
     public static bool LoadFile( bool allowFloating )
     {
+      return LoadFile( allowFloating, preferFloating: false );
+    }
+
+    /// <summary>
+    /// Search for a license, optionally preferring a project floating file over
+    /// a valid non-floating license discovered by native initialization. Existing
+    /// floating sessions are always preserved. Used by editor startup so an
+    /// installed AGX license doesn't prevent checkout of a project floating file.
+    /// </summary>
+    public static bool LoadFile( bool allowFloating, bool preferFloating )
+    {
       if ( !CanAccessRuntime || IsBusy )
         return false;
 
@@ -215,22 +226,26 @@ namespace AGXUnity
       // Preserve the actual native license instead of clearing it and later
       // restoring only a snapshot of its information.
       var currentLicense = UpdateLicenseInformation();
-      if ( currentLicense.IsValid || HasFloatingSession )
+      if ( HasFloatingSession || ( currentLicense.IsValid && !( allowFloating && preferFloating ) ) )
         return currentLicense.IsValid;
 
-      Reset();
+      if ( !currentLicense.IsValid )
+        Reset();
 
       var licenseFiles = FindLicenseFiles();
       foreach ( var licenseFile in licenseFiles ) {
         var file = licenseFile.PrettyPath();
         if ( LoadFile( file,
                        $"License file \"{file}\" found in search from application root.",
-                       allowFloating ) )
+                       allowFloating,
+                       floatingOnly: currentLicense.IsValid ) )
           return true;
       }
 
       UpdateLicenseInformation();
-      return false;
+      // With no floating candidate, retain the native fallback. A failed
+      // checkout may clear it; always use its actual validity after the search.
+      return currentLicense.IsValid && LicenseInfo.IsValid;
     }
 
     public static LicenseInfo QueryInfo( string filename )
@@ -904,7 +919,7 @@ namespace AGXUnity
     /// <param name="filename">Filename, including path, to load.</param>
     /// <param name="context">Context of the call to this method.</param>
     /// <returns>True if successfully loaded, otherwise false.</returns>
-    private static bool LoadFile( string filename, string context, bool allowFloating = true )
+    private static bool LoadFile( string filename, string context, bool allowFloating = true, bool floatingOnly = false )
     {
       if ( !CanAccessRuntime )
         return false;
@@ -927,6 +942,8 @@ namespace AGXUnity
         text = File.ReadAllText( filename );
         if ( GetLicenseType( filename ) == LicenseInfo.LicenseType.Service && QueryInfo( filename ).IsFloating )
           return allowFloating && LoadFloating( filename, context );
+        if ( floatingOnly )
+          return false;
       }
       catch ( System.Exception e ) {
         IssueLoadWarning( $"Caught exception reading text from file: {filename}.", context );

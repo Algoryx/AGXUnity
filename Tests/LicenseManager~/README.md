@@ -6,4 +6,6 @@ The checks exercise asynchronous success, failure, exceptions and overlap; manua
 
 Loading regressions cover rejected service and legacy loads while an older license remains valid, preservation of failed runtime activation requests, cache refresh after exceptions, and automatic searches preserving valid native licenses without restoring stale metadata after failure.
 
+The editor lifecycle checks use the same loading options as editor initialization: a floating file under Assets connects at startup even if native initialization found a valid non-floating license in the AGX installation. Repeated initialization preserves an existing seat, and manual return pauses checkout until Connect succeeds or a simulated editor restart clears session storage. Checks also cover preserving the native fallback when checkout is disabled or no floating file exists, and refreshing actual native validity when checkout fails after clearing that fallback.
+
 Asset-import worker checks reject all license operations before native runtime access. The simulated editor API also rejects calls from background threads, exercising the cached process check used by asynchronous operations.
