@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,11 +39,15 @@ namespace AGXUnityEditor.Windows
       }
     }
 
-    public bool IsUpdatingLicenseInformation { get { return m_updateLicenseInfoTask != null; } }
+    public bool IsUpdatingLicenseInformation => m_updateLicenseInformationRequested || m_updateLicenseInfoTask != null;
+
+    private bool IsBusy => AGXUnity.LicenseManager.IsBusy || m_licenseOperationTask != null;
 
     private void OnEnable()
     {
       m_activeLicenseStyle = null;
+      m_checkLicenseValidity = true;
+      EditorApplication.update += OnEditorUpdate;
 
       ValidateLicenseDirectory();
 
@@ -52,13 +56,24 @@ namespace AGXUnityEditor.Windows
 
     private void OnDisable()
     {
-      AGXUnity.LicenseManager.AwaitTasks();
-      m_updateLicenseInfoTask?.Wait( 0 );
+      EditorApplication.update -= OnEditorUpdate;
+      // Native operations may finish after the window closes. Their callbacks
+      // only complete a task and never retain or access this window.
+      m_licenseOperationTask = null;
+    }
+
+    private void OnFocus()
+    {
+      m_checkLicenseValidity = true;
     }
 
     private void OnGUI()
     {
       ValidateLicenseDirectory();
+      if ( m_clearFocus ) {
+        UnityEngine.GUI.FocusControl( "" );
+        m_clearFocus = false;
+      }
 
       using ( GUI.AlignBlock.Center )
         GUILayout.Box( IconManager.GetAGXUnityLogo(),
@@ -75,17 +90,25 @@ namespace AGXUnityEditor.Windows
 
       if ( IsUpdatingLicenseInformation )
         ShowNotification( GUI.MakeLabel( "Reading..." ) );
-      else if ( AGXUnity.LicenseManager.IsBusy )
-        ShowNotification( GUI.MakeLabel( AGXUnity.LicenseManager.IsActivating ?
+      else if ( IsBusy )
+        ShowNotification( GUI.MakeLabel( AGXUnity.LicenseManager.IsActivating || m_operationIsActivation ?
                                            "Activating..." :
                                            "Refreshing..." ) );
 
-      if ( !AGXUnity.LicenseManager.LicenseInfo.IsValid ) {
-        EditorGUILayout.HelpBox( "If you have activated your license previously on this machine, consider importing the .lfx file instead of reactivating the license.", MessageType.Info, true );
+      if ( !IsUpdatingLicenseInformation && !IsBusy &&
+           AGXUnity.NativeHandler.HasInstance && AGXUnity.NativeHandler.Instance.Initialized &&
+           !LicenseWarnings.CurrentLicense.IsValid ) {
+        var hasFloatingLicense = m_licenseData.Any( data => LicenseWarnings.IsFloating( data.LicenseInfo ) );
+        EditorGUILayout.HelpBox( LicenseWarnings.GetWarningMessage( LicenseWarnings.CurrentLicense, hasFloatingLicense ), MessageType.Warning, true );
+        if ( !hasFloatingLicense && !LicenseWarnings.IsFloating( LicenseWarnings.CurrentLicense ) )
+          EditorGUILayout.HelpBox( "If you have activated your license previously on this machine, consider importing the .lfx file instead of reactivating the license.", MessageType.Info, true );
         GUILayout.Space( 6 );
       }
 
-      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !AGXUnity.LicenseManager.IsBusy ) ) {
+      if ( !string.IsNullOrEmpty( m_licenseReadError ) )
+        EditorGUILayout.HelpBox( m_licenseReadError, MessageType.Error, true );
+
+      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !IsBusy ) ) {
         for ( int i = 0; i < m_licenseData.Count; ++i ) {
           var data = m_licenseData[ i ];
           LicenseDataGUI( data );
@@ -118,7 +141,7 @@ namespace AGXUnityEditor.Windows
 
       EditorGUILayout.EndScrollView();
 
-      if ( AGXUnity.LicenseManager.IsBusy || IsUpdatingLicenseInformation )
+      if ( IsBusy || IsUpdatingLicenseInformation )
         Repaint();
     }
 
@@ -147,6 +170,9 @@ namespace AGXUnityEditor.Windows
                                           "Cancel" ) ) {
             try {
               File.Copy( sourceLicense, targetLicense, false );
+              if ( AGXUnity.LicenseManager.LoadFile( targetLicense ) )
+                m_activationError = null;
+              LicenseWarnings.Capture( AGXUnity.LicenseInfo.Create() );
               StartUpdateLicenseInformation();
               GUIUtility.ExitGUI();
             }
@@ -189,30 +215,50 @@ namespace AGXUnityEditor.Windows
                                      LicenseDirectory = newDirectory;
                                    } );
 
-        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled &&
-                                      m_licenseActivateData.Id.Length > 0 &&
+        var validId = int.TryParse( m_licenseActivateData.Id, out var licenseId ) && licenseId > 0;
+        if ( m_licenseActivateData.Id.Length > 0 && !validId )
+          EditorGUILayout.HelpBox( "Enter a license ID between 1 and 2147483647.", MessageType.Error, true );
+
+        if ( !string.IsNullOrEmpty( m_activationError ) )
+          EditorGUILayout.HelpBox( m_activationError, MessageType.Error, true );
+
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && validId &&
                                       m_licenseActivateData.Password.Length > 0 ) ) {
           // It isn't possible to press this button during activation.
           if ( UnityEngine.GUI.Button( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() ),
-                                       GUI.MakeLabel( AGXUnity.LicenseManager.IsBusy ?
+                                       GUI.MakeLabel( IsBusy ?
                                                         "Activating..." :
                                                         "Activate" ),
                                                       InspectorEditor.Skin.Button ) ) {
-            AGXUnity.LicenseManager.ActivateAsync( System.Convert.ToInt32( m_licenseActivateData.Id ),
-                                                   m_licenseActivateData.Password,
-                                                   LicenseDirectory,
-                                                   success => {
-                                                     if ( success )
-                                                       m_licenseActivateData = IdPassword.Empty();
-                                                     else
-                                                       Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
-
-                                                     StartUpdateLicenseInformation();
-
-                                                     UnityEngine.GUI.FocusControl( "" );
-                                                   } );
+            ActivateLicense( licenseId );
           }
         }
+      }
+    }
+
+    private void ActivateLicense( int licenseId )
+    {
+      m_activationError = null;
+      m_operationIsActivation = true;
+      var completion = new TaskCompletionSource<LicenseOperationResult>();
+      m_licenseOperationTask = completion.Task;
+      try {
+        AGXUnity.LicenseManager.ActivateAsync( licenseId,
+                                             m_licenseActivateData.Password,
+                                             LicenseDirectory,
+                                             success => {
+                                               var info = AGXUnity.LicenseInfo.Create();
+                                               if ( !success )
+                                                 Debug.LogError( "License Error: ".Color( Color.red ) + LicenseWarnings.GetActivationError( info ) );
+                                               completion.TrySetResult( new LicenseOperationResult { Success = success, LicenseInfo = info } );
+                                             } );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
+        completion.TrySetResult( new LicenseOperationResult {
+          LicenseInfo = AGXUnity.LicenseInfo.Create(),
+          Error = LicenseWarnings.GetActivationError( new AGXUnity.LicenseInfo() )
+        } );
       }
     }
 
@@ -220,7 +266,7 @@ namespace AGXUnityEditor.Windows
     {
       var highlight = m_licenseData.Count > 1 &&
                       !IsUpdatingLicenseInformation &&
-                      !AGXUnity.LicenseManager.IsBusy &&
+                      !IsBusy &&
                       data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId;
       if ( highlight && m_activeLicenseStyle == null )
         m_activeLicenseStyle = new GUIStyle( InspectorEditor.Skin.Label );
@@ -266,8 +312,10 @@ namespace AGXUnityEditor.Windows
                                               else if ( deleteOnly )
                                                 AGXUnity.LicenseManager.DeleteFile( data.Filename );
 
-                                              if ( deactivateAndDelete || deleteOnly )
+                                              if ( deactivateAndDelete || deleteOnly ) {
+                                                LicenseWarnings.Capture( AGXUnity.LicenseInfo.Create() );
                                                 StartUpdateLicenseInformation();
+                                              }
                                             },
                                             UnityEngine.GUI.enabled,
                                             "Deactivate and erase license file from project." )
@@ -312,60 +360,108 @@ namespace AGXUnityEditor.Windows
 
     private void StartUpdateLicenseInformation()
     {
-      if ( IsUpdatingLicenseInformation )
-        return;
-
-      var currentLicense = AGXUnity.LicenseManager.LicenseInfo.UniqueId;
-      var licenseData = new List<LicenseData>();
-      m_updateLicenseInfoTask = Task.Run( () => {
-        foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
-          var info = AGXUnity.LicenseManager.QueryInfo( licenseFile );
-
-          licenseData.Add( new LicenseData()
-          {
-            Filename = licenseFile,
-            LicenseInfo = info
-          } );
-        }
-
-        return licenseData;
-      } );
-
-      EditorApplication.update += OnUpdateLicenseInformation;
+      m_updateLicenseInformationRequested = true;
+      m_licenseReadError = null;
     }
 
-    private void OnUpdateLicenseInformation()
+    private void OnEditorUpdate()
     {
-      if ( m_updateLicenseInfoTask != null && m_updateLicenseInfoTask.IsCompleted ) {
-        m_licenseData = m_updateLicenseInfoTask.Result;
-        m_updateLicenseInfoTask = null;
+      // ActivateAsync and RefreshAsync invoke callbacks from worker threads.
+      // Wait until the native task has finished before reading files or UI state.
+      if ( AGXUnity.LicenseManager.IsBusy )
+        return;
+
+      if ( m_licenseOperationTask != null && m_licenseOperationTask.IsCompleted ) {
+        var result = m_licenseOperationTask.Result;
+        m_licenseOperationTask = null;
+        LicenseWarnings.Capture( result.LicenseInfo );
+        if ( m_operationIsActivation ) {
+          if ( result.Success ) {
+            m_licenseActivateData = IdPassword.Empty();
+            m_activationError = null;
+          }
+          else
+            m_activationError = result.Error ?? LicenseWarnings.GetActivationError( result.LicenseInfo );
+          m_clearFocus = true;
+        }
+        else if ( result.Success && result.LicenseInfo.IsValid )
+          m_activationError = null;
+        m_operationIsActivation = false;
+        RemoveNotification();
+        StartUpdateLicenseInformation();
+        Repaint();
       }
 
-      if ( m_updateLicenseInfoTask == null )
-        EditorApplication.update -= OnUpdateLicenseInformation;
+      if ( IsBusy )
+        return;
+
+      if ( m_updateLicenseInfoTask != null && m_updateLicenseInfoTask.IsCompleted ) {
+        var licenseData = m_updateLicenseInfoTask.Result;
+        m_updateLicenseInfoTask = null;
+        if ( licenseData != null )
+          m_licenseData = licenseData;
+        else
+          m_licenseReadError = "Unable to read license information. Check the Console for details.";
+        RemoveNotification();
+        Repaint();
+      }
+
+      if ( m_updateLicenseInfoTask != null )
+        return;
+
+      if ( m_checkLicenseValidity && AGXUnity.NativeHandler.HasInstance && AGXUnity.NativeHandler.Instance.Initialized ) {
+        m_checkLicenseValidity = false;
+        var info = AGXUnity.LicenseInfo.Create();
+        if ( info.IsValid != LicenseWarnings.CurrentLicense.IsValid ) {
+          LicenseWarnings.Capture( info );
+          if ( info.IsValid )
+            m_activationError = null;
+          Repaint();
+        }
+      }
+
+      if ( m_updateLicenseInformationRequested ) {
+        m_updateLicenseInformationRequested = false;
+        m_updateLicenseInfoTask = Task.Run( () => {
+          try {
+            var licenseData = new List<LicenseData>();
+            foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
+              var info = AGXUnity.LicenseManager.QueryInfo( licenseFile );
+              licenseData.Add( new LicenseData { Filename = licenseFile, LicenseInfo = info } );
+            }
+            return licenseData;
+          }
+          catch ( System.Exception e ) {
+            Debug.LogException( e );
+            return null;
+          }
+        } );
+      }
     }
 
     private void RefreshLicense( LicenseData licenseData )
     {
       var prevLicense = m_licenseData.Find( data => data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId );
-      AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
-                                            success => {
-                                              if ( !success )
-                                                Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
-
-                                              UpdateLicenseInfo( licenseData.Filename, AGXUnity.LicenseManager.LicenseInfo );
-                                              if ( prevLicense.Filename != licenseData.Filename )
-                                                AGXUnity.LicenseManager.LoadFile( prevLicense.Filename );
-
-                                              StartUpdateLicenseInformation();
-                                            } );
-    }
-
-    private void UpdateLicenseInfo( string filename, AGXUnity.LicenseInfo licenseInfo )
-    {
-      for ( int i = 0; i < m_licenseData.Count; ++i ) {
-        if ( m_licenseData[ i ].Filename == filename )
-          m_licenseData[ i ] = new LicenseData() { Filename = filename, LicenseInfo = licenseInfo };
+      m_operationIsActivation = false;
+      var completion = new TaskCompletionSource<LicenseOperationResult>();
+      m_licenseOperationTask = completion.Task;
+      try {
+        AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
+                                             success => {
+                                               try {
+                                                 if ( !success )
+                                                   Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
+                                                 if ( !string.IsNullOrEmpty( prevLicense.Filename ) && prevLicense.Filename != licenseData.Filename )
+                                                   AGXUnity.LicenseManager.LoadFile( prevLicense.Filename );
+                                               }
+                                               finally {
+                                                 completion.TrySetResult( new LicenseOperationResult { Success = success, LicenseInfo = AGXUnity.LicenseInfo.Create() } );
+                                               }
+                                             } );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
+        completion.TrySetResult( new LicenseOperationResult { LicenseInfo = AGXUnity.LicenseInfo.Create() } );
       }
     }
 
@@ -382,11 +478,25 @@ namespace AGXUnityEditor.Windows
       public AGXUnity.LicenseInfo LicenseInfo;
     }
 
+    private struct LicenseOperationResult
+    {
+      public bool Success;
+      public AGXUnity.LicenseInfo LicenseInfo;
+      public string Error;
+    }
+
     private IdPassword m_licenseActivateData = IdPassword.Empty();
     private Vector2 m_scroll = Vector2.zero;
     [System.NonSerialized]
     private List<LicenseData> m_licenseData = new List<LicenseData>();
     private Task<List<LicenseData>> m_updateLicenseInfoTask = null;
+    private Task<LicenseOperationResult> m_licenseOperationTask = null;
+    private bool m_updateLicenseInformationRequested = false;
+    private bool m_operationIsActivation = false;
+    private bool m_checkLicenseValidity = false;
+    private bool m_clearFocus = false;
+    private string m_activationError = null;
+    private string m_licenseReadError = null;
     [System.NonSerialized]
     private GUIStyle m_activeLicenseStyle = null;
 
