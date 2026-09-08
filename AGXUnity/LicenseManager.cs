@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -86,6 +87,8 @@ namespace AGXUnity
     {
       get
       {
+        if ( !CanAccessRuntime )
+          return new LicenseInfo();
         if ( !s_licenseInfo.IsParsed )
           LicenseInfo = LicenseInfo.Create();
         return s_licenseInfo;
@@ -93,11 +96,13 @@ namespace AGXUnity
       private set
       {
         s_licenseInfo = value;
+        if ( !value.IsFloating )
+          s_activeFloatingLicenseFilename = null;
 
         // We could end up here during instantiation of the
         // NativeHandler. Only validate license in the native
         // handler if it has an instance.
-        if ( NativeHandler.HasInstance )
+        if ( CanAccessRuntime && NativeHandler.HasInstance )
           NativeHandler.Instance.ValidateLicense();
       }
     }
@@ -121,35 +126,97 @@ namespace AGXUnity
     /// <summary>
     /// True if a license is being refreshed.
     /// </summary>
-    public static bool IsRefreshing => s_refreshTask != null && !s_refreshTask.IsCompleted;
+    public static bool IsRefreshing => IsOperationRunning( LicenseOperation.Refresh );
 
     /// <summary>
     /// True if a license is being activated.
     /// </summary>
-    public static bool IsActivating => s_activationTask != null && !s_activationTask.IsCompleted;
+    public static bool IsActivating => IsOperationRunning( LicenseOperation.Activate );
+
+    public static bool IsConnecting => IsOperationRunning( LicenseOperation.Connect );
+
+    public static bool IsReturning => IsOperationRunning( LicenseOperation.Return );
 
     /// <summary>
-    /// True if the activation task is running, otherwise false.
+    /// True while any asynchronous license operation or its callback is running.
     /// </summary>
-    public static bool IsBusy => IsActivating || IsRefreshing;
+    public static bool IsBusy
+    {
+      get { lock ( s_operationLock ) return s_operationTask != null && !s_operationTask.IsCompleted; }
+    }
 
     /// <summary>
-    /// Load license file (service or legacy) located in any directory
-    /// under application/project root. Service (*.lfx) is searched
-    /// for before legacy (*.lic). The first valid license found is loaded.
+    /// Whether AGX has a floating session, including one opened outside the plugin.
+    /// </summary>
+    public static bool HasFloatingSession => CanAccessRuntime && Runtime.isFloatingLicense();
+
+    /// <summary>
+    /// Normalized absolute source path of a floating session opened by this plugin.
+    /// Null when no session is held or its source is unknown. License IDs cannot
+    /// identify a floating file: they may be empty or shared by multiple files.
+    /// </summary>
+    public static string ActiveFloatingLicenseFilename
+    {
+      get
+      {
+        if ( !IsBusy && !HasFloatingSession )
+          s_activeFloatingLicenseFilename = null;
+        return s_activeFloatingLicenseFilename;
+      }
+    }
+
+    /// <summary>
+    /// Failure details captured before querying license information changes native status.
+    /// </summary>
+    public static string LastOperationError { get; private set; }
+
+    /// <summary>
+    /// Manual return disables automatic checkout for the remainder of this editor
+    /// session, until an explicit Connect succeeds. Standalone defaults are unchanged.
+    /// </summary>
+    public static bool AutomaticFloatingCheckoutEnabled
+    {
+      get
+      {
+#if UNITY_EDITOR
+        var pending = Volatile.Read( ref s_pendingFloatingSessionState );
+        return pending == 2 || ( pending == 0 && !UnityEditor.SessionState.GetBool( s_floatingReturnedKey, false ) );
+#else
+        return true;
+#endif
+      }
+    }
+
+    /// <summary>
+    /// Keep an already valid native license, or load a license file (service
+    /// or legacy) located under application/project root. Service (*.lfx) is
+    /// searched for before legacy (*.lic). The first valid file found is loaded.
     /// </summary>
     /// <returns>
-    /// True if successful, false if license files weren't found
-    /// or if the loaded license isn't valid.
+    /// True if an existing valid license was retained or a valid file was loaded,
+    /// otherwise false.
     /// </returns>
     public static bool LoadFile()
     {
-      if ( !CanAccessRuntime )
+      return LoadFile( allowFloating: true );
+    }
+
+    /// <summary>
+    /// Keep an already valid native license, otherwise search for a license,
+    /// optionally excluding floating checkout and its fallback. An existing
+    /// floating session is preserved; return it before replacing it.
+    /// </summary>
+    public static bool LoadFile( bool allowFloating )
+    {
+      if ( !CanAccessRuntime || IsBusy )
         return false;
 
-      // This is potentially a license unlock by a script. It's not
-      // possible to know if it exists scripts that manually unlocks AGX.
-      var potentialScriptLoaded = LicenseInfo.Create();
+      // Scripts or native initialization may have already loaded a license.
+      // Preserve the actual native license instead of clearing it and later
+      // restoring only a snapshot of its information.
+      var currentLicense = UpdateLicenseInformation();
+      if ( currentLicense.IsValid || HasFloatingSession )
+        return currentLicense.IsValid;
 
       Reset();
 
@@ -157,18 +224,12 @@ namespace AGXUnity
       foreach ( var licenseFile in licenseFiles ) {
         var file = licenseFile.PrettyPath();
         if ( LoadFile( file,
-                       $"License file \"{file}\" found in search from application root." ) )
+                       $"License file \"{file}\" found in search from application root.",
+                       allowFloating ) )
           return true;
       }
 
-      // Recover the last license if parsed, i.e., there were a license
-      // loaded before calling this method. Note that all license files
-      // (if any) failed to load before this.
-      if ( potentialScriptLoaded.IsParsed ) {
-        LicenseInfo = potentialScriptLoaded;
-        return LicenseInfo.IsValid;
-      }
-
+      UpdateLicenseInformation();
       return false;
     }
 
@@ -329,6 +390,8 @@ namespace AGXUnity
     /// <returns>True if successfully activated, otherwise false.</returns>
     public static bool ActivateEncryptedRuntime( string targetDirectory )
     {
+      if ( !CanAccessRuntime )
+        return false;
       var filename = FindRuntimeActivationFiles().FirstOrDefault();
       if ( string.IsNullOrEmpty( filename ) ) {
         IssueLoadWarning( "Unable to activate runtime license, license file not found.",
@@ -350,6 +413,8 @@ namespace AGXUnity
     /// <returns>True if successfully activated and written, otherwise false.</returns>
     public static bool ActivateEncryptedRuntime( string filename, string targetDirectory )
     {
+      if ( !CanAccessRuntime )
+        return false;
       if ( string.IsNullOrEmpty( filename ) || !File.Exists( filename ) ) {
         IssueLoadWarning( "Unable to activate runtime license, filename not given or doesn't exist.",
                           $"Explicit runtime activation with filename: \"{filename}\"" );
@@ -437,6 +502,9 @@ namespace AGXUnity
       var success = false;
 
       try {
+        if ( IsBusy )
+          throw new AGXUnity.Exception( "The license manager is busy." );
+        RequireNoFloatingSession();
         if ( Path.GetExtension( licenseFilename ) != GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
           licenseFilename += GetLicenseExtension( LicenseInfo.LicenseType.Service );
 
@@ -486,32 +554,11 @@ namespace AGXUnity
                                       string targetDirectory,
                                       Action<bool> onDone )
     {
-      if ( !CanAccessRuntime ) {
-        onDone?.Invoke( false );
-        return;
-      }
-
-      if ( IsBusy ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to activate license with id {licenseId} - activation is still in progress." );
-        onDone?.Invoke( false );
-        return;
-      }
-
-      var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
-      s_activationTask = Task.Run( () => {
-        var success = false;
-        try {
-          success = Runtime.activateAgxLicense( licenseId,
-                                                               licensePassword,
-                                                               licenseFilename );
-          UpdateLicenseInformation();
-        }
-        catch ( Exception e ) {
-          Debug.LogException( e );
-          success = false;
-        }
-        onDone?.Invoke( success );
-      } );
+      StartOperation( LicenseOperation.Activate, () => {
+        RequireNoFloatingSession();
+        var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
+        return Runtime.activateAgxLicense( licenseId, licensePassword, licenseFilename );
+      }, onDone );
     }
 
     /// <summary>
@@ -527,8 +574,14 @@ namespace AGXUnity
                                  string targetDirectory )
     {
       var success = false;
-      ActivateAsync( licenseId, licensePassword, targetDirectory, isSuccess => success = isSuccess );
-      s_activationTask?.Wait();
+      Task task;
+      lock ( s_operationLock ) {
+        if ( !CanAccessRuntime || IsBusy )
+          return false;
+        ActivateAsync( licenseId, licensePassword, targetDirectory, result => success = result );
+        task = s_operationTask;
+      }
+      task.GetAwaiter().GetResult();
       return success;
     }
 
@@ -541,45 +594,15 @@ namespace AGXUnity
     public static void RefreshAsync( string filename,
                                      Action<bool> onDone )
     {
-      if ( !CanAccessRuntime ) {
-        onDone?.Invoke( false );
-        return;
-      }
-
-      var isBusy     = IsBusy;
-      var seemsValid = !string.IsNullOrEmpty( filename ) &&
-                       !isBusy &&
-                       File.Exists( filename ) &&
-                       GetLicenseType( filename ) == LicenseInfo.LicenseType.Service;
-      if ( !seemsValid ) {
-        var warning = $"AGXUnity.LicenseManager: Unable to refresh license file \"{filename}\" - ";
-        if ( string.IsNullOrEmpty( filename ) )
-          warning += "the license file is null or empty.";
-        else if ( isBusy )
-          warning += "the license manager is busy activating or refreshing another license.";
-        else if ( !File.Exists( filename ) )
-          warning += "the license file doesn't exist.";
-        else
-          warning += "the license file doesn't support refresh.";
-
-        Debug.LogWarning( warning );
-        onDone?.Invoke( false );
-
-        return;
-      }
-
-      s_refreshTask = Task.Run( () => {
-        var success = false;
-        try {
-          success = Runtime.loadLicenseFile( filename, true );
-          UpdateLicenseInformation();
-        }
-        catch ( Exception e ) {
-          Debug.LogException( e );
-          success = false;
-        }
-        onDone?.Invoke( success );
-      } );
+      StartOperation( LicenseOperation.Refresh, () => {
+        RequireNoFloatingSession();
+        var info = QueryInfo( filename );
+        if ( info.IsFloating )
+          throw new AGXUnity.Exception( "Use Connect to check out a floating license seat." );
+        if ( GetLicenseType( filename ) != LicenseInfo.LicenseType.Service || !File.Exists( filename ) )
+          throw new AGXUnity.Exception( "The license file doesn't support refresh or doesn't exist." );
+        return Runtime.loadLicenseFile( filename, true );
+      }, onDone );
     }
 
     /// <summary>
@@ -590,9 +613,42 @@ namespace AGXUnity
     public static bool Refresh( string filename )
     {
       var success = false;
-      RefreshAsync( filename, isSuccess => success = isSuccess );
-      s_refreshTask?.Wait();
+      Task task;
+      lock ( s_operationLock ) {
+        if ( !CanAccessRuntime || IsBusy )
+          return false;
+        RefreshAsync( filename, result => success = result );
+        task = s_operationTask;
+      }
+      task.GetAwaiter().GetResult();
       return success;
+    }
+
+    /// <summary>
+    /// Explicitly connect using floating file metadata, without activation or refresh.
+    /// The callback runs on the worker thread (or immediately if busy).
+    /// </summary>
+    public static void ConnectFloatingAsync( string filename, Action<bool> onDone )
+    {
+      StartOperation( LicenseOperation.Connect, () => {
+        RequireNoFloatingSession();
+        if ( !QueryInfo( filename ).IsFloating )
+          throw new AGXUnity.Exception( "The selected file isn't an identified floating license." );
+        return OpenFloatingSession( filename );
+      }, onDone );
+    }
+
+    /// <summary>
+    /// Return the current floating seat, including sessions whose source is unknown.
+    /// The callback runs on the worker thread (or immediately if busy).
+    /// </summary>
+    public static void ReturnFloatingAsync( Action<bool> onDone )
+    {
+      StartOperation( LicenseOperation.Return, () => {
+        if ( !HasFloatingSession )
+          throw new AGXUnity.Exception( "There is no floating license seat to return." );
+        return CloseFloatingSession();
+      }, onDone );
     }
 
     /// <summary>
@@ -603,6 +659,9 @@ namespace AGXUnity
     /// <returns>True if the license were successfully deactivated and deleted.</returns>
     public static bool DeactivateAndDelete( string filename )
     {
+      if ( !CanAccessRuntime || IsBusy )
+        return false;
+
       if ( !File.Exists( filename ) ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - file doesn't exist." );
         return false;
@@ -611,6 +670,20 @@ namespace AGXUnity
       var licenseType = GetLicenseType( filename );
       if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - unknown file extension." );
+        return false;
+      }
+
+      // Inspect the file before loading it: a failed checkout must never turn
+      // into deactivation of a different, currently loaded license.
+      try {
+        var info = QueryInfo( filename );
+        if ( info.IsFloating || !info.IsParsed || HasFloatingSession ) {
+          Debug.LogWarning( "AGXUnity.LicenseManager: Cannot deactivate an unidentified or floating license, or replace a held floating seat." );
+          return false;
+        }
+      }
+      catch ( System.Exception e ) {
+        Debug.LogException( e );
         return false;
       }
 
@@ -640,6 +713,10 @@ namespace AGXUnity
     {
       if ( !CanAccessRuntime )
         return false;
+      if ( IsBusy || HasFloatingSession || UpdateLicenseInformation().Type != LicenseInfo.LicenseType.Service ) {
+        Debug.LogWarning( "AGXUnity.LicenseManager: Only an identified non-floating service license can be deactivated." );
+        return false;
+      }
 
       var success = false;
       try {
@@ -650,7 +727,7 @@ namespace AGXUnity
         else
           Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate loaded license - {Runtime.getStatus()}" );
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         Debug.LogException( e );
       }
       return success;
@@ -661,13 +738,12 @@ namespace AGXUnity
     /// </summary>
     public static void Reset()
     {
-      if ( !CanAccessRuntime )
+      if ( !CanAccessRuntime || IsBusy || HasFloatingSession )
         return;
-
       try {
         Runtime.clear();
       }
-      catch ( Exception ) {
+      catch ( System.Exception ) {
       }
       finally {
         LicenseInfo = new LicenseInfo();
@@ -752,9 +828,10 @@ namespace AGXUnity
     /// </summary>
     public static void AwaitTasks()
     {
-      if ( s_activationTask != null && s_activationTask.Status == TaskStatus.Running )
-        s_activationTask.Wait();
-      s_activationTask = null;
+      Task task;
+      lock ( s_operationLock )
+        task = s_operationTask;
+      task?.GetAwaiter().GetResult();
     }
 
     public enum LicenseContentType
@@ -794,6 +871,17 @@ namespace AGXUnity
     public static bool DeleteFile( string filename )
     {
       try {
+        if ( !CanAccessRuntime || IsBusy )
+          return false;
+        if ( HasFloatingSession && QueryInfo( filename ).IsFloating ) {
+          var active = ActiveFloatingLicenseFilename;
+          if ( string.IsNullOrEmpty( active ) ||
+               string.Equals( Path.GetFullPath( filename ).Replace( '\\', '/' ), active,
+                              Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal ) ) {
+            Debug.LogWarning( "AGXUnity.LicenseManager: Return the current floating seat before deleting this file." );
+            return false;
+          }
+        }
         File.Delete( filename );
 #if UNITY_EDITOR
         if ( File.Exists( $"{filename}.meta" ) ) {
@@ -802,8 +890,9 @@ namespace AGXUnity
         }
 #endif
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         Debug.LogException( e );
+        return false;
       }
 
       return !File.Exists( filename );
@@ -815,11 +904,14 @@ namespace AGXUnity
     /// <param name="filename">Filename, including path, to load.</param>
     /// <param name="context">Context of the call to this method.</param>
     /// <returns>True if successfully loaded, otherwise false.</returns>
-    private static bool LoadFile( string filename, string context )
+    private static bool LoadFile( string filename, string context, bool allowFloating = true )
     {
       if ( !CanAccessRuntime )
         return false;
-
+      if ( IsBusy || HasFloatingSession ) {
+        IssueLoadWarning( "Return the floating seat and wait for any pending operation before loading a license.", context );
+        return false;
+      }
       if ( string.IsNullOrEmpty( filename ) ) {
         IssueLoadWarning( "Filename is null or empty.", context );
         return false;
@@ -833,14 +925,21 @@ namespace AGXUnity
       var text = string.Empty;
       try {
         text = File.ReadAllText( filename );
+        if ( GetLicenseType( filename ) == LicenseInfo.LicenseType.Service && QueryInfo( filename ).IsFloating )
+          return allowFloating && LoadFloating( filename, context );
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         IssueLoadWarning( $"Caught exception reading text from file: {filename}.", context );
         Debug.LogException( e );
         return false;
       }
 
       var loadSuccess = Load( text, context );
+
+      // Runtime activation owns its output file. Its request must survive a
+      // failure without being rewritten or used for a floating checkout.
+      if ( FindLicenseContentType( text ) == LicenseContentType.EncryptedRuntimeService )
+        return loadSuccess;
 
       // If the license has been refreshed we have to write the
       // new license content to 'filename' independent of 'loadSuccess'.
@@ -860,13 +959,14 @@ namespace AGXUnity
           Debug.LogError( $"AGXUnity.LicenseManager: Unable to write updated license information to {filename} - write access is required." );
         }
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         Debug.LogException( e );
       }
 
-      // We can't know prior to loading the license whether a license is floating or not, if the license loading fails and the status mentions 'floating'
-      // we check if the license is indeed a floating license and if so we update the license info
-      if ( !loadSuccess && LicenseInfo.Status.Contains( "floating" ) ) {
+      // Compatibility fallback for native versions that cannot query the file.
+      // Never use it when automatic floating checkout has been disabled.
+      if ( allowFloating && !loadSuccess &&
+           ( LicenseInfo.Status?.IndexOf( "floating", StringComparison.OrdinalIgnoreCase ) ?? -1 ) >= 0 ) {
         loadSuccess = LoadFloating( filename, context );
       }
 
@@ -883,7 +983,10 @@ namespace AGXUnity
     {
       if ( !CanAccessRuntime )
         return false;
-
+      if ( IsBusy || HasFloatingSession ) {
+        IssueLoadWarning( "Return the floating seat and wait for any pending operation before loading a license.", context );
+        return false;
+      }
       if ( string.IsNullOrEmpty( licenseContent ) ) {
         IssueLoadWarning( "License content is null or empty.", context );
         return false;
@@ -893,15 +996,15 @@ namespace AGXUnity
       if ( licenseContentType == LicenseContentType.Unknown ) {
         IssueLoadWarning( $"Unknown license content: \"{licenseContent}\".", context );
         return false;
-
-
       }
 
+      var success = false;
       try {
+        s_activeFloatingLicenseFilename = null;
         // Service type.
         if ( licenseContentType == LicenseContentType.Service ) {
-          Runtime.loadLicenseString( licenseContent );
-          LoadInfo( $"Loading service license successful: {Runtime.isValid()}.",
+          success = Runtime.loadLicenseString( licenseContent );
+          LoadInfo( $"Loading service license successful: {success && Runtime.isValid()}.",
                     context );
         }
         // Runtime license activation.
@@ -910,74 +1013,209 @@ namespace AGXUnity
           // to support non-ASCII input paths.
           var cwd = Directory.GetCurrentDirectory();
           agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cwd );
-          Runtime.activateEncryptedRuntime( licenseContent, context );
-          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( cwd );
+          try {
+            success = Runtime.activateEncryptedRuntime( licenseContent, context );
+          }
+          finally {
+            agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( cwd );
+          }
 
-          LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {Runtime.isValid()}.",
+          LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {success && Runtime.isValid()}.",
                     context );
         }
         // Legacy type.
         else if ( licenseContentType == LicenseContentType.Legacy ) {
-          Runtime.unlock( licenseContent );
-          LoadInfo( $"Loading legacy license successful: {Runtime.isValid()}.",
+          success = Runtime.unlock( licenseContent );
+          LoadInfo( $"Loading legacy license successful: {success && Runtime.isValid()}.",
                     context );
         }
         // Assume obfuscated legacy.
         else {
-          Runtime.verifyAndUnlock( licenseContent );
-          LoadInfo( $"Loading obfuscated legacy license successful: {Runtime.isValid()}.",
+          success = Runtime.verifyAndUnlock( licenseContent );
+          LoadInfo( $"Loading obfuscated legacy license successful: {success && Runtime.isValid()}.",
                     context );
         }
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
         Debug.LogException( e );
-        return false;
+        success = false;
+      }
+      finally {
+        UpdateInformationAfterOperation();
       }
 
-      UpdateLicenseInformation();
-
-      return LicenseInfo.IsValid;
+      return success && LicenseInfo.IsValid;
     }
 
     private static bool LoadFloating( string file, string context )
     {
       if ( !CanAccessRuntime )
         return false;
-
+      var success = false;
       try {
-        Runtime.openNetworkSession( file );
-        LoadInfo( $"Loading floating license successful: {Runtime.isValid()}.", context );
+        success = OpenFloatingSession( file );
+        LastOperationError = success ? null : GetNativeOperationError( LicenseOperation.Connect );
+        LoadInfo( $"Loading floating license successful: {success}.", context );
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
+        LastOperationError = e.Message;
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
         Debug.LogException( e );
-        return false;
       }
-
-      UpdateLicenseInformation();
-
-      return LicenseInfo.IsValid;
+      finally {
+        UpdateInformationAfterOperation();
+      }
+      return success;
     }
 
     public static bool ReturnFloating( string context )
     {
-      if ( !CanAccessRuntime )
+      if ( !CanAccessRuntime || IsBusy )
         return false;
-
-      bool success;
+      var success = false;
       try {
-        success = Runtime.closeNetworkSession();
+        success = CloseFloatingSession();
+        LastOperationError = success ? null : GetNativeOperationError( LicenseOperation.Return );
         LoadInfo( $"Returning floating license successful: {success}.", context );
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
+        LastOperationError = e.Message;
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
         Debug.LogException( e );
-        return false;
       }
-
+      finally {
+        UpdateInformationAfterOperation();
+      }
       return success;
     }
+
+    private static bool OpenFloatingSession( string filename )
+    {
+      var normalized = Path.GetFullPath( filename ).Replace( '\\', '/' );
+      var success = Runtime.openNetworkSession( normalized );
+      if ( success )
+        s_activeFloatingLicenseFilename = normalized;
+      return success;
+    }
+
+    private static bool CloseFloatingSession()
+    {
+      var success = Runtime.closeNetworkSession();
+      if ( success )
+        s_activeFloatingLicenseFilename = null;
+      return success;
+    }
+
+    private static void RequireNoFloatingSession()
+    {
+      if ( HasFloatingSession )
+        throw new AGXUnity.Exception( "Return the current floating license seat before connecting or loading another license." );
+    }
+
+    private enum LicenseOperation { Activate, Refresh, Connect, Return }
+
+    private static bool IsOperationRunning( LicenseOperation operation )
+    {
+      lock ( s_operationLock )
+        return IsBusy && s_operation == operation;
+    }
+
+    private static void StartOperation( LicenseOperation operation, Func<bool> execute, Action<bool> onDone )
+    {
+      // Check on the calling thread so no license task is started by an asset
+      // import worker, and normal editor tasks use the cached process state.
+      if ( !CanAccessRuntime ) {
+        onDone?.Invoke( false );
+        return;
+      }
+      lock ( s_operationLock ) {
+        if ( !IsBusy ) {
+          s_operation = operation;
+          // Publish the task before scheduling so two callers cannot both start.
+          s_operationTask = new Task( () => {
+            var success = false;
+            LastOperationError = null;
+            try {
+              success = execute();
+              if ( !success )
+                LastOperationError = GetNativeOperationError( operation );
+#if UNITY_EDITOR
+              if ( success && ( operation == LicenseOperation.Connect || operation == LicenseOperation.Return ) )
+                Interlocked.Exchange( ref s_pendingFloatingSessionState, operation == LicenseOperation.Return ? 1 : 2 );
+#endif
+            }
+            catch ( System.Exception e ) {
+              LastOperationError = $"{operation} failed. {e.Message}";
+              Debug.LogException( e );
+            }
+            finally {
+              UpdateInformationAfterOperation();
+            }
+            if ( !success )
+              Debug.LogWarning( $"AGXUnity.LicenseManager: {LastOperationError}" );
+            onDone?.Invoke( success );
+          } );
+          s_operationTask.Start( TaskScheduler.Default );
+          return;
+        }
+      }
+      Debug.LogWarning( "AGXUnity.LicenseManager: Another license operation is in progress." );
+      onDone?.Invoke( false );
+    }
+
+    private static void UpdateInformationAfterOperation()
+    {
+      try {
+        UpdateLicenseInformation();
+      }
+      catch ( System.Exception e ) {
+        // Deliver the native result even if shutdown races with information
+        // refresh. ReturnFloating is also called by NativeHandler's finalizer.
+        Debug.LogException( e );
+      }
+    }
+
+    private static string GetNativeOperationError( LicenseOperation operation )
+    {
+      var status = Runtime.getStatus();
+      var extended = Runtime.getExtendedStatus();
+      return $"{operation} failed." +
+             ( string.IsNullOrWhiteSpace( status ) ? string.Empty : $"\n\n{status.Trim()}" ) +
+             ( string.IsNullOrWhiteSpace( extended ) || extended == status ? string.Empty : $"\n\n{extended.Trim()}" );
+    }
+
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void InitializeEditorSessionHandling()
+    {
+      if ( !CanAccessRuntime )
+        return;
+      UnityEditor.EditorApplication.update += ApplyFloatingSessionState;
+      UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += () => {
+        AwaitTasks();
+        ApplyFloatingSessionState();
+      };
+      UnityEditor.EditorApplication.playModeStateChanged += state => {
+        if ( state == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+             state == UnityEditor.PlayModeStateChange.ExitingPlayMode ) {
+          AwaitTasks();
+          ApplyFloatingSessionState();
+        }
+      };
+    }
+
+    // Runs even if the License Manager window was closed during the request.
+    private static void ApplyFloatingSessionState()
+    {
+      var pending = Interlocked.Exchange( ref s_pendingFloatingSessionState, 0 );
+      if ( pending != 0 )
+        UnityEditor.SessionState.SetBool( s_floatingReturnedKey, pending == 1 );
+    }
+
+    private const string s_floatingReturnedKey = "AGXUnity.FloatingLicenseReturned";
+    private static int s_pendingFloatingSessionState;
+#endif
 
     private static void LoadInfo( string info, string context )
     {
@@ -995,7 +1233,9 @@ namespace AGXUnity
     private static string[] s_licenseExtensions = new string[] { null, ".lfx", ".lic" };
     private static string s_runtimeActivationExtension = ".rtlfx";
     private static LicenseInfo s_licenseInfo = new LicenseInfo();
-    private static Task s_activationTask = null;
-    private static Task s_refreshTask = null;
+    private static readonly object s_operationLock = new object();
+    private static Task s_operationTask;
+    private static LicenseOperation s_operation;
+    private static string s_activeFloatingLicenseFilename;
   }
 }

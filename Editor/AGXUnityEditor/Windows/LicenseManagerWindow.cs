@@ -91,15 +91,16 @@ namespace AGXUnityEditor.Windows
       if ( IsUpdatingLicenseInformation )
         ShowNotification( GUI.MakeLabel( "Reading..." ) );
       else if ( IsBusy )
-        ShowNotification( GUI.MakeLabel( AGXUnity.LicenseManager.IsActivating || m_operationIsActivation ?
-                                           "Activating..." :
-                                           "Refreshing..." ) );
+        ShowNotification( GUI.MakeLabel( m_operation == LicenseOperation.Connect || AGXUnity.LicenseManager.IsConnecting ? "Connecting..." :
+                                        m_operation == LicenseOperation.Return || AGXUnity.LicenseManager.IsReturning ? "Returning seat..." :
+                                        m_operation == LicenseOperation.Activate || AGXUnity.LicenseManager.IsActivating ? "Activating..." : "Refreshing..." ) );
 
       if ( !IsUpdatingLicenseInformation && !IsBusy &&
            AGXUnity.NativeHandler.HasInstance && AGXUnity.NativeHandler.Instance.Initialized &&
-           !LicenseWarnings.CurrentLicense.IsValid ) {
-        var hasFloatingLicense = m_licenseData.Any( data => LicenseWarnings.IsFloating( data.LicenseInfo ) );
-        EditorGUILayout.HelpBox( LicenseWarnings.GetWarningMessage( LicenseWarnings.CurrentLicense, hasFloatingLicense ), MessageType.Warning, true );
+           !LicenseWarnings.CurrentLicense.IsValid && AGXUnity.LicenseManager.AutomaticFloatingCheckoutEnabled ) {
+        var hasFloatingLicense = m_licenseData.Any( data => data.LicenseInfo.IsFloating );
+        EditorGUILayout.HelpBox( LicenseWarnings.GetWarningMessage( LicenseWarnings.CurrentLicense, hasFloatingLicense ),
+                                 MessageType.Warning, true );
         if ( !hasFloatingLicense && !LicenseWarnings.IsFloating( LicenseWarnings.CurrentLicense ) )
           EditorGUILayout.HelpBox( "If you have activated your license previously on this machine, consider importing the .lfx file instead of reactivating the license.", MessageType.Info, true );
         GUILayout.Space( 6 );
@@ -107,8 +108,22 @@ namespace AGXUnityEditor.Windows
 
       if ( !string.IsNullOrEmpty( m_licenseReadError ) )
         EditorGUILayout.HelpBox( m_licenseReadError, MessageType.Error, true );
+      if ( !string.IsNullOrEmpty( m_operationError ) )
+        EditorGUILayout.HelpBox( m_operationError, MessageType.Error, true );
+      if ( !string.IsNullOrEmpty( m_importMessage ) )
+        EditorGUILayout.HelpBox( m_importMessage, MessageType.Info, true );
 
       using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !IsBusy ) ) {
+        if ( LicenseWarnings.CurrentLicense.IsFloating ) {
+          EditorGUILayout.HelpBox( "A floating license seat is held. Return it before connecting, activating, refreshing, or loading another license.", MessageType.Info, true );
+          using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
+            if ( GUILayout.Button( GUI.MakeLabel( "Return Seat", false, "Return the current floating seat to the server." ), InspectorEditor.Skin.Button ) )
+              ReturnSeat();
+          }
+          GUILayout.Space( 6 );
+        }
+        if ( EditorApplication.isPlayingOrWillChangePlaymode )
+          EditorGUILayout.HelpBox( "Exit play mode to change license connections.", MessageType.Info, true );
         for ( int i = 0; i < m_licenseData.Count; ++i ) {
           var data = m_licenseData[ i ];
           LicenseDataGUI( data );
@@ -155,8 +170,8 @@ namespace AGXUnityEditor.Windows
       selectLicenseRect.y     -= EditorGUIUtility.standardVerticalSpacing;
       var selectLicensePressed = InspectorGUI.Button( selectLicenseRect,
                                                       MiscIcon.Locate,
-                                                      UnityEngine.GUI.enabled,
-                                                      "Select license file on this computer");
+                                                      UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode,
+                                                      "Copy and inspect a license file. Floating files are connected using Connect.");
       if ( selectLicensePressed ) {
         var sourceLicense = EditorUtility.OpenFilePanel( "Copy AGX Dynamics license file",
                                                          ".",
@@ -170,8 +185,13 @@ namespace AGXUnityEditor.Windows
                                           "Cancel" ) ) {
             try {
               File.Copy( sourceLicense, targetLicense, false );
-              if ( AGXUnity.LicenseManager.LoadFile( targetLicense ) )
+              var info = AGXUnity.LicenseManager.QueryInfo( targetLicense );
+              m_importMessage = info.IsFloating ? "Floating license imported. Select Connect to request a seat." :
+                                !info.IsParsed ? "License copied, but its type could not be identified. Check the file and the Console for details." : null;
+              if ( info.IsParsed && !info.IsFloating && !AGXUnity.LicenseManager.HasFloatingSession && AGXUnity.LicenseManager.LoadFile( targetLicense ) )
                 m_activationError = null;
+              else if ( !info.IsFloating && AGXUnity.LicenseManager.HasFloatingSession )
+                m_importMessage = "License copied. Return the current floating seat before loading this license.";
               LicenseWarnings.Capture( AGXUnity.LicenseInfo.Create() );
               StartUpdateLicenseInformation();
               GUIUtility.ExitGUI();
@@ -223,6 +243,7 @@ namespace AGXUnityEditor.Windows
           EditorGUILayout.HelpBox( m_activationError, MessageType.Error, true );
 
         using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && validId &&
+                                      !LicenseWarnings.CurrentLicense.IsFloating && !EditorApplication.isPlayingOrWillChangePlaymode &&
                                       m_licenseActivateData.Password.Length > 0 ) ) {
           // It isn't possible to press this button during activation.
           if ( UnityEngine.GUI.Button( EditorGUI.IndentedRect( EditorGUILayout.GetControlRect() ),
@@ -239,7 +260,8 @@ namespace AGXUnityEditor.Windows
     private void ActivateLicense( int licenseId )
     {
       m_activationError = null;
-      m_operationIsActivation = true;
+      m_operationError = null;
+      m_operation = LicenseOperation.Activate;
       var completion = new TaskCompletionSource<LicenseOperationResult>();
       m_licenseOperationTask = completion.Task;
       try {
@@ -267,7 +289,8 @@ namespace AGXUnityEditor.Windows
       var highlight = m_licenseData.Count > 1 &&
                       !IsUpdatingLicenseInformation &&
                       !IsBusy &&
-                      data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId;
+                      ( data.LicenseInfo.IsFloating ? IsActiveFloatingFile( data.Filename ) :
+                        data.Filename == FindActiveNonFloatingFile() );
       if ( highlight && m_activeLicenseStyle == null )
         m_activeLicenseStyle = new GUIStyle( InspectorEditor.Skin.Label );
       // The texture is deleted when hitting stop in the editor while
@@ -279,53 +302,40 @@ namespace AGXUnityEditor.Windows
                                                                                        Color.green,
                                                                                        0.025f ) );
 
-      var licenseFileButtons = new InspectorGUI.MiscButtonData[]
-      {
-        InspectorGUI.MiscButtonData.Create( MiscIcon.Update,
-                                            () =>
-                                            {
-                                              RefreshLicense( data );
-                                            },
-                                            UnityEngine.GUI.enabled &&
-                                            // Until AGX provides information on invalid (expired) licenses, we
-                                            // check the filename. Otherwise data.LicenseInfo.Type == Service would
-                                            // be the correct check here.
-                                            AGXUnity.LicenseManager.GetLicenseType( data.Filename ) == AGXUnity.LicenseInfo.LicenseType.Service,
-                                            "Refresh license from server." ),
-        InspectorGUI.MiscButtonData.Create( MiscIcon.EntryRemove,
-                                            () =>
-                                            {
-                                              // 0: Deactivate and Delete
-                                              // 1: Cancel
-                                              // 2: Delete
-                                              var filename = Path.GetFileName( data.Filename );
-                                              var choice = EditorUtility.DisplayDialogComplex( $"Delete or deactivate and delete \"{filename}\"?",
-                                                                                               $"Would you like to delete or deactivate and delete \"{filename}\"?\n\n" +
-                                                                                               $"Deactivating the license will contact the license server and remove " +
-                                                                                               $"the current installation, meaning the license can be activated again on " +
-                                                                                               $"other hardware or on this machine again later using License ID and Password.",
-                                                                                               "Deactivate and Delete", "Cancel", "Delete" );
-                                              var deactivateAndDelete = choice == 0;
-                                              var deleteOnly = choice == 2;
-                                              if ( deactivateAndDelete )
-                                                AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename );
-                                              else if ( deleteOnly )
-                                                AGXUnity.LicenseManager.DeleteFile( data.Filename );
-
-                                              if ( deactivateAndDelete || deleteOnly ) {
-                                                LicenseWarnings.Capture( AGXUnity.LicenseInfo.Create() );
-                                                StartUpdateLicenseInformation();
-                                              }
-                                            },
-                                            UnityEngine.GUI.enabled,
-                                            "Deactivate and erase license file from project." )
-      };
+      var canChange = UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode;
+      var floating = data.LicenseInfo.IsFloating;
+      var identifiedService = data.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service && !floating;
+      var unknownFloatingSource = floating && LicenseWarnings.CurrentLicense.IsFloating &&
+                                  string.IsNullOrEmpty( AGXUnity.LicenseManager.ActiveFloatingLicenseFilename );
+      var licenseFileButtons = new List<InspectorGUI.MiscButtonData>();
+      if ( !floating )
+        licenseFileButtons.Add( InspectorGUI.MiscButtonData.Create( MiscIcon.Update,
+                                  () => RefreshLicense( data ),
+                                  canChange && !LicenseWarnings.CurrentLicense.IsFloating &&
+                                  AGXUnity.LicenseManager.GetLicenseType( data.Filename ) == AGXUnity.LicenseInfo.LicenseType.Service,
+                                  LicenseWarnings.CurrentLicense.IsFloating ? "Return the floating seat before refreshing a license." : "Refresh license from server." ) );
+      licenseFileButtons.Add( InspectorGUI.MiscButtonData.Create( MiscIcon.EntryRemove,
+                                () => DeleteLicense( data ),
+                                canChange && !unknownFloatingSource,
+                                unknownFloatingSource ? "Return the current seat before deleting floating files: its source is unknown." :
+                                floating ? "Delete floating license file. A seat held from this file must be returned first." :
+                                identifiedService && !LicenseWarnings.CurrentLicense.IsFloating ? "Delete or deactivate and delete license file." : "Delete license file." ) );
 
       var highlightScope = highlight ? new EditorGUILayout.VerticalScope( m_activeLicenseStyle ) : null;
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "License file" ),
                                         data.Filename,
-                                        licenseFileButtons );
-      InspectorGUI.SelectableTextField( GUI.MakeLabel( "License type" ), data.LicenseInfo.TypeDescription );
+                                        licenseFileButtons.ToArray() );
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "License type" ),
+                                        floating ? "Floating" : data.LicenseInfo.TypeDescription );
+
+      if ( floating ) {
+        using ( new GUI.EnabledBlock( canChange && !LicenseWarnings.CurrentLicense.IsFloating ) ) {
+          if ( GUILayout.Button( GUI.MakeLabel( "Connect", false,
+                                 LicenseWarnings.CurrentLicense.IsFloating ? "Return the current seat before connecting." : "Request a floating license seat from this file's server." ),
+                                 InspectorEditor.Skin.Button ) )
+            ConnectLicense( data.Filename );
+        }
+      }
 
       InspectorGUI.Separator( 1, 6 );
 
@@ -344,6 +354,92 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "Contact" ), data.LicenseInfo.Contact );
       highlightScope?.Dispose();
+    }
+
+    private static bool IsActiveFloatingFile( string filename )
+    {
+      var active = AGXUnity.LicenseManager.ActiveFloatingLicenseFilename;
+      return !string.IsNullOrEmpty( active ) &&
+             string.Equals( Path.GetFullPath( filename ).Replace( '\\', '/' ), active,
+                            Path.DirectorySeparatorChar == '\\' ? System.StringComparison.OrdinalIgnoreCase : System.StringComparison.Ordinal );
+    }
+
+    private string FindActiveNonFloatingFile()
+    {
+      var active = LicenseWarnings.CurrentLicense;
+      if ( active.IsFloating || string.IsNullOrEmpty( active.UniqueId ) )
+        return null;
+      var matches = m_licenseData.Where( data => !data.LicenseInfo.IsFloating && data.LicenseInfo.IsParsed &&
+                                                 data.LicenseInfo.UniqueId == active.UniqueId ).ToArray();
+      return matches.Length == 1 ? matches[ 0 ].Filename : null;
+    }
+
+    private void DeleteLicense( LicenseData data )
+    {
+      var filename = Path.GetFileName( data.Filename );
+      m_operationError = null;
+      // Query again at the point of action in case the file changed after scanning.
+      var info = AGXUnity.LicenseManager.QueryInfo( data.Filename );
+      if ( info.IsFloating && AGXUnity.LicenseManager.HasFloatingSession ) {
+        if ( string.IsNullOrEmpty( AGXUnity.LicenseManager.ActiveFloatingLicenseFilename ) ) {
+          m_operationError = "Return the current floating seat before deleting floating files. Its source file is unknown.";
+          return;
+        }
+        if ( IsActiveFloatingFile( data.Filename ) ) {
+          if ( EditorUtility.DisplayDialog( $"Delete \"{filename}\"?",
+                                            "Return the floating seat to the server, then delete this license file? The file will be preserved if the return fails.",
+                                            "Return Seat and Delete", "Cancel" ) )
+            ReturnSeat( data.Filename );
+          return;
+        }
+      }
+
+      if ( info.Type == AGXUnity.LicenseInfo.LicenseType.Service && !info.IsFloating && !AGXUnity.LicenseManager.HasFloatingSession ) {
+        var choice = EditorUtility.DisplayDialogComplex( $"Delete or deactivate and delete \"{filename}\"?",
+                                                         "Deactivating contacts the license server and removes this installation, allowing the license to be activated again using its License ID and Password.",
+                                                         "Deactivate and Delete", "Cancel", "Delete" );
+        if ( choice == 1 )
+          return;
+        if ( !( choice == 0 ? AGXUnity.LicenseManager.DeactivateAndDelete( data.Filename ) : AGXUnity.LicenseManager.DeleteFile( data.Filename ) ) )
+          m_operationError = $"Unable to remove \"{filename}\". Check the Console for details.";
+      }
+      else {
+        if ( !EditorUtility.DisplayDialog( $"Delete \"{filename}\"?", "Delete this license file from the project?", "Delete", "Cancel" ) )
+          return;
+        if ( !AGXUnity.LicenseManager.DeleteFile( data.Filename ) )
+          m_operationError = $"Unable to delete \"{filename}\". Check the Console for details.";
+      }
+      LicenseWarnings.Capture( AGXUnity.LicenseManager.UpdateLicenseInformation() );
+      StartUpdateLicenseInformation();
+    }
+
+    private void ConnectLicense( string filename )
+    {
+      BeginFloatingOperation( LicenseOperation.Connect, done => AGXUnity.LicenseManager.ConnectFloatingAsync( filename, done ) );
+    }
+
+    private void ReturnSeat( string deleteAfterReturn = null )
+    {
+      m_deleteAfterReturn = deleteAfterReturn;
+      BeginFloatingOperation( LicenseOperation.Return, AGXUnity.LicenseManager.ReturnFloatingAsync );
+    }
+
+    private void BeginFloatingOperation( LicenseOperation operation, System.Action<System.Action<bool>> start )
+    {
+      m_operation = operation;
+      m_operationError = null;
+      var completion = new TaskCompletionSource<LicenseOperationResult>();
+      m_licenseOperationTask = completion.Task;
+      try {
+        start( success => completion.TrySetResult( new LicenseOperationResult {
+          Success = success,
+          Error = success ? null : AGXUnity.LicenseManager.LastOperationError ?? $"{operation} failed. Check the Console for details.",
+          LicenseInfo = AGXUnity.LicenseInfo.Create()
+        } ) );
+      }
+      catch ( System.Exception e ) {
+        completion.TrySetResult( new LicenseOperationResult { Error = $"{operation} failed. {e.Message}", LicenseInfo = AGXUnity.LicenseInfo.Create() } );
+      }
     }
 
     private static EditorDataEntry GetLicenseDirectoryData()
@@ -366,7 +462,7 @@ namespace AGXUnityEditor.Windows
 
     private void OnEditorUpdate()
     {
-      // ActivateAsync and RefreshAsync invoke callbacks from worker threads.
+      // License operations invoke callbacks from worker threads.
       // Wait until the native task has finished before reading files or UI state.
       if ( AGXUnity.LicenseManager.IsBusy )
         return;
@@ -375,7 +471,7 @@ namespace AGXUnityEditor.Windows
         var result = m_licenseOperationTask.Result;
         m_licenseOperationTask = null;
         LicenseWarnings.Capture( result.LicenseInfo );
-        if ( m_operationIsActivation ) {
+        if ( m_operation == LicenseOperation.Activate ) {
           if ( result.Success ) {
             m_licenseActivateData = IdPassword.Empty();
             m_activationError = null;
@@ -384,9 +480,27 @@ namespace AGXUnityEditor.Windows
             m_activationError = result.Error ?? LicenseWarnings.GetActivationError( result.LicenseInfo );
           m_clearFocus = true;
         }
+        else if ( m_operation == LicenseOperation.Connect || m_operation == LicenseOperation.Return ) {
+          m_operationError = result.Success ? null : result.Error;
+          if ( result.Success ) {
+            m_activationError = null;
+            m_importMessage = null;
+            if ( m_operation == LicenseOperation.Return && !string.IsNullOrEmpty( m_deleteAfterReturn ) &&
+                 !AGXUnity.LicenseManager.DeleteFile( m_deleteAfterReturn ) )
+              m_operationError = "The seat was returned, but the license file could not be deleted. Check the Console for details.";
+          }
+          m_deleteAfterReturn = null;
+        }
         else if ( result.Success && result.LicenseInfo.IsValid )
           m_activationError = null;
-        m_operationIsActivation = false;
+        else if ( !result.Success )
+          m_operationError = result.Error;
+        if ( m_operation == LicenseOperation.Refresh && !string.IsNullOrEmpty( m_restoreAfterRefresh ) ) {
+          AGXUnity.LicenseManager.LoadFile( m_restoreAfterRefresh );
+          LicenseWarnings.Capture( AGXUnity.LicenseManager.UpdateLicenseInformation() );
+          m_restoreAfterRefresh = null;
+        }
+        m_operation = LicenseOperation.None;
         RemoveNotification();
         StartUpdateLicenseInformation();
         Repaint();
@@ -409,15 +523,16 @@ namespace AGXUnityEditor.Windows
       if ( m_updateLicenseInfoTask != null )
         return;
 
-      if ( m_checkLicenseValidity && AGXUnity.NativeHandler.HasInstance && AGXUnity.NativeHandler.Instance.Initialized ) {
+      if ( AGXUnity.NativeHandler.HasInstance && AGXUnity.NativeHandler.Instance.Initialized &&
+           ( m_checkLicenseValidity ||
+             LicenseWarnings.CurrentLicense.IsFloating != AGXUnity.LicenseManager.HasFloatingSession ||
+             LicenseWarnings.CurrentLicense.IsValid != agx.Runtime.instance().isValid() ) ) {
         m_checkLicenseValidity = false;
-        var info = AGXUnity.LicenseInfo.Create();
-        if ( info.IsValid != LicenseWarnings.CurrentLicense.IsValid ) {
-          LicenseWarnings.Capture( info );
-          if ( info.IsValid )
-            m_activationError = null;
-          Repaint();
-        }
+        var info = AGXUnity.LicenseManager.UpdateLicenseInformation();
+        LicenseWarnings.Capture( info );
+        if ( info.IsValid )
+          m_activationError = null;
+        Repaint();
       }
 
       if ( m_updateLicenseInformationRequested ) {
@@ -441,27 +556,25 @@ namespace AGXUnityEditor.Windows
 
     private void RefreshLicense( LicenseData licenseData )
     {
-      var prevLicense = m_licenseData.Find( data => data.LicenseInfo.UniqueId == AGXUnity.LicenseManager.LicenseInfo.UniqueId );
-      m_operationIsActivation = false;
+      var previous = FindActiveNonFloatingFile();
+      m_restoreAfterRefresh = previous != licenseData.Filename ? previous : null;
+      m_operation = LicenseOperation.Refresh;
+      m_operationError = null;
       var completion = new TaskCompletionSource<LicenseOperationResult>();
       m_licenseOperationTask = completion.Task;
       try {
         AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
                                              success => {
-                                               try {
-                                                 if ( !success )
-                                                   Debug.LogError( "License Error: ".Color( Color.red ) + AGXUnity.LicenseManager.LicenseInfo.Status );
-                                                 if ( !string.IsNullOrEmpty( prevLicense.Filename ) && prevLicense.Filename != licenseData.Filename )
-                                                   AGXUnity.LicenseManager.LoadFile( prevLicense.Filename );
-                                               }
-                                               finally {
-                                                 completion.TrySetResult( new LicenseOperationResult { Success = success, LicenseInfo = AGXUnity.LicenseInfo.Create() } );
-                                               }
+                                               completion.TrySetResult( new LicenseOperationResult {
+                                                 Success = success,
+                                                 Error = success ? null : AGXUnity.LicenseManager.LastOperationError,
+                                                 LicenseInfo = AGXUnity.LicenseInfo.Create()
+                                               } );
                                              } );
       }
       catch ( System.Exception e ) {
         Debug.LogException( e );
-        completion.TrySetResult( new LicenseOperationResult { LicenseInfo = AGXUnity.LicenseInfo.Create() } );
+        completion.TrySetResult( new LicenseOperationResult { LicenseInfo = AGXUnity.LicenseInfo.Create(), Error = e.Message } );
       }
     }
 
@@ -485,6 +598,8 @@ namespace AGXUnityEditor.Windows
       public string Error;
     }
 
+    private enum LicenseOperation { None, Activate, Refresh, Connect, Return }
+
     private IdPassword m_licenseActivateData = IdPassword.Empty();
     private Vector2 m_scroll = Vector2.zero;
     [System.NonSerialized]
@@ -492,7 +607,11 @@ namespace AGXUnityEditor.Windows
     private Task<List<LicenseData>> m_updateLicenseInfoTask = null;
     private Task<LicenseOperationResult> m_licenseOperationTask = null;
     private bool m_updateLicenseInformationRequested = false;
-    private bool m_operationIsActivation = false;
+    private LicenseOperation m_operation = LicenseOperation.None;
+    private string m_deleteAfterReturn;
+    private string m_restoreAfterRefresh;
+    private string m_operationError;
+    private string m_importMessage;
     private bool m_checkLicenseValidity = false;
     private bool m_clearFocus = false;
     private string m_activationError = null;

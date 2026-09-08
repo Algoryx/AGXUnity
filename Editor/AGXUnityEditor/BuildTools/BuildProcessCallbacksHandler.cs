@@ -405,8 +405,7 @@ namespace AGXUnityEditor.Build
 
     private static void CheckGenerateEncryptedRuntime( FileInfo targetExecutableFileInfo )
     {
-      if ( AGXUnity.LicenseManager.LicenseInfo.Type == AGXUnity.LicenseInfo.LicenseType.Service &&
-           !Application.isBatchMode &&
+      if ( !Application.isBatchMode &&
            AskGenerateRuntimeLicense ) {
         var generateEncryptedRuntimeActivation = EditorUtility.DisplayDialogComplex( "AGX Dynamics for Unity - Runtime license",
                                                                                      "Open activation window to generate Runtime license for this build?",

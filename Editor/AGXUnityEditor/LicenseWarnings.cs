@@ -25,7 +25,7 @@ namespace AGXUnityEditor
 
     internal static string GetWarningMessage( LicenseInfo info, bool hasFloatingLicense = false )
     {
-      if ( info.IsValid )
+      if ( info.IsValid || !LicenseManager.AutomaticFloatingCheckoutEnabled )
         return string.Empty;
 
       var message = "No valid AGX Dynamics license is available.";
@@ -49,7 +49,7 @@ namespace AGXUnityEditor
 
     internal static void ScheduleStartupWarning()
     {
-      if ( Application.isBatchMode || CurrentLicense.IsValid ||
+      if ( Application.isBatchMode || CurrentLicense.IsValid || !LicenseManager.AutomaticFloatingCheckoutEnabled ||
            SessionState.GetBool( s_startupWarningShownKey, false ) )
         return;
 
@@ -59,7 +59,8 @@ namespace AGXUnityEditor
 
     private static void ShowStartupWarning()
     {
-      if ( Application.isBatchMode || SessionState.GetBool( s_startupWarningShownKey, false ) ) {
+      if ( Application.isBatchMode || !LicenseManager.AutomaticFloatingCheckoutEnabled ||
+           SessionState.GetBool( s_startupWarningShownKey, false ) ) {
         EditorApplication.update -= ShowStartupWarning;
         return;
       }

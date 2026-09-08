@@ -791,7 +791,7 @@ namespace AGXUnityEditor
       // Complete license loading (including floating checkout) before deciding
       // whether to notify the user. Native initialization failures are separate.
       try {
-        AGXUnity.LicenseManager.LoadFile();
+        AGXUnity.LicenseManager.LoadFile( allowFloating: AGXUnity.LicenseManager.AutomaticFloatingCheckoutEnabled );
 
         AGXUnity.NativeHandler.Instance.ValidateLicense();
         if ( AGXUnity.NativeHandler.Instance.Initialized ) {
