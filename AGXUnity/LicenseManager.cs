@@ -11,6 +11,74 @@ namespace AGXUnity
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#license-manager" )]
   public static class LicenseManager
   {
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void CacheEditorProcessState()
+    {
+      try {
+        s_isAssetImportWorkerProcess = UnityEditor.AssetDatabase.IsAssetImportWorkerProcess();
+      }
+      catch ( UnityEngine.UnityException ) {
+        s_isAssetImportWorkerProcess = LooksLikeAssetImportWorkerProcess();
+      }
+    }
+#endif
+
+    public static bool CanAccessRuntime => !IsAssetImportWorkerProcess;
+
+    internal static agx.Runtime Runtime
+    {
+      get
+      {
+        if ( !CanAccessRuntime )
+          throw new AGXUnity.Exception( "Runtime may not be accessed from a Unity asset import worker process." );
+
+        return agx.Runtime.instance();
+      }
+    }
+
+    public static bool IsAssetImportWorkerProcess
+    {
+      get
+      {
+#if UNITY_EDITOR
+        if ( s_isAssetImportWorkerProcess.HasValue )
+          return s_isAssetImportWorkerProcess.Value;
+
+        try {
+          s_isAssetImportWorkerProcess = UnityEditor.AssetDatabase.IsAssetImportWorkerProcess();
+          return s_isAssetImportWorkerProcess.Value;
+        }
+        catch ( UnityEngine.UnityException ) {
+          return LooksLikeAssetImportWorkerProcess();
+        }
+#else
+        return false;
+#endif
+      }
+    }
+
+#if UNITY_EDITOR
+    private static bool LooksLikeAssetImportWorkerProcess()
+    {
+      try {
+        var processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+        if ( processName.IndexOf( "AssetImportWorker", StringComparison.OrdinalIgnoreCase ) >= 0 )
+          return true;
+
+        foreach ( var arg in System.Environment.GetCommandLineArgs() )
+          if ( arg.IndexOf( "AssetImportWorker", StringComparison.OrdinalIgnoreCase ) >= 0 )
+            return true;
+      }
+      catch {
+      }
+
+      return false;
+    }
+
+    private static bool? s_isAssetImportWorkerProcess = null;
+#endif
+
     /// <summary>
     /// Current license information loaded in AGX Dynamics.
     /// </summary>
@@ -76,6 +144,9 @@ namespace AGXUnity
     /// </returns>
     public static bool LoadFile()
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       // This is potentially a license unlock by a script. It's not
       // possible to know if it exists scripts that manually unlocks AGX.
       var potentialScriptLoaded = LicenseInfo.Create();
@@ -110,6 +181,9 @@ namespace AGXUnity
         TypeDescription = "Unknown",
       };
 
+      if ( !CanAccessRuntime )
+        return info;
+
       if ( !File.Exists( filename ) ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - file doesn't exist." );
         return info;
@@ -125,7 +199,7 @@ namespace AGXUnity
       if ( licenseType == LicenseInfo.LicenseType.Legacy )
         return LicenseInfo.FromLegacy( licenseContent );
 
-      return LicenseInfo.FromNative( agx.Runtime.instance().queryLicenseInformation( licenseContent ) );
+      return LicenseInfo.FromNative( Runtime.queryLicenseInformation( licenseContent ) );
     }
 
     /// <summary>
@@ -146,6 +220,9 @@ namespace AGXUnity
     /// <returns>True if successfully loaded and is a valid license, otherwise false.</returns>
     public static bool Load( string licenseContent )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       var context = "Explicit license content.";
       // Loading encrypted runtime from script. AGX is writing the generated
       // file as given in 'context' here, see ActivateEncryptedRuntime.
@@ -184,6 +261,9 @@ namespace AGXUnity
                                                  string referenceApplicationFile,
                                                  Action<string> onSuccess = null )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       if ( !Directory.Exists( applicationRootDirectory ) ) {
         Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
                         $"application root directory \"{applicationRootDirectory}\" doesn't exist." );
@@ -205,7 +285,7 @@ namespace AGXUnity
 
       try {
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( applicationRootDirectory );
-        var encrypted = agx.Runtime.instance().encryptRuntimeActivation( runtimeLicenseId,
+        var encrypted = Runtime.encryptRuntimeActivation( runtimeLicenseId,
                                                                          runtimeLicensePassword,
                                                                          referenceApplicationFile );
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( applicationRootDirectory );
@@ -229,7 +309,7 @@ namespace AGXUnity
         }
 
         Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
-                        $"encryption failed with status: {agx.Runtime.instance().getStatus()}" );
+                        $"encryption failed with status: {Runtime.getStatus()}" );
       }
       catch ( System.Exception e ) {
         Debug.LogError( "AGXUnity.LicenseManager: Exception occurred during generate of encrypted runtime " +
@@ -309,12 +389,15 @@ namespace AGXUnity
                                                   string outputFilename,
                                                   bool throwOnError = true )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       var success = false;
 
       try {
-        var activationText = agx.Runtime.instance().generateOfflineActivationRequest( licenseId, licensePassword );
-        if ( !string.IsNullOrEmpty( agx.Runtime.instance().getStatus() ) )
-          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+        var activationText = Runtime.generateOfflineActivationRequest( licenseId, licensePassword );
+        if ( !string.IsNullOrEmpty( Runtime.getStatus() ) )
+          throw new AGXUnity.Exception( Runtime.getStatus() );
 
         File.WriteAllText( outputFilename, activationText );
 
@@ -348,6 +431,9 @@ namespace AGXUnity
                                              string licenseFilename,
                                              bool throwOnerror = true )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       var success = false;
 
       try {
@@ -357,10 +443,10 @@ namespace AGXUnity
         if ( File.Exists( webResponseFilenameOrContent ) )
           webResponseFilenameOrContent = File.ReadAllText( webResponseFilenameOrContent );
 
-        if ( !agx.Runtime.instance().processOfflineActivationRequest( webResponseFilenameOrContent ) )
-          throw new AGXUnity.Exception( agx.Runtime.instance().getStatus() );
+        if ( !Runtime.processOfflineActivationRequest( webResponseFilenameOrContent ) )
+          throw new AGXUnity.Exception( Runtime.getStatus() );
 
-        File.WriteAllText( licenseFilename, agx.Runtime.instance().readEncryptedLicense() );
+        File.WriteAllText( licenseFilename, Runtime.readEncryptedLicense() );
 
         success = File.Exists( licenseFilename );
       }
@@ -382,6 +468,9 @@ namespace AGXUnity
     /// </summary>
     public static LicenseInfo UpdateLicenseInformation()
     {
+      if ( !CanAccessRuntime )
+        return ( LicenseInfo = new LicenseInfo() );
+
       return ( LicenseInfo = LicenseInfo.Create() );
     }
 
@@ -397,6 +486,11 @@ namespace AGXUnity
                                       string targetDirectory,
                                       Action<bool> onDone )
     {
+      if ( !CanAccessRuntime ) {
+        onDone?.Invoke( false );
+        return;
+      }
+
       if ( IsBusy ) {
         Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to activate license with id {licenseId} - activation is still in progress." );
         onDone?.Invoke( false );
@@ -407,7 +501,7 @@ namespace AGXUnity
       s_activationTask = Task.Run( () => {
         var success = false;
         try {
-          success = agx.Runtime.instance().activateAgxLicense( licenseId,
+          success = Runtime.activateAgxLicense( licenseId,
                                                                licensePassword,
                                                                licenseFilename );
           UpdateLicenseInformation();
@@ -447,6 +541,11 @@ namespace AGXUnity
     public static void RefreshAsync( string filename,
                                      Action<bool> onDone )
     {
+      if ( !CanAccessRuntime ) {
+        onDone?.Invoke( false );
+        return;
+      }
+
       var isBusy     = IsBusy;
       var seemsValid = !string.IsNullOrEmpty( filename ) &&
                        !isBusy &&
@@ -472,7 +571,7 @@ namespace AGXUnity
       s_refreshTask = Task.Run( () => {
         var success = false;
         try {
-          success = agx.Runtime.instance().loadLicenseFile( filename, true );
+          success = Runtime.loadLicenseFile( filename, true );
           UpdateLicenseInformation();
         }
         catch ( Exception e ) {
@@ -539,14 +638,17 @@ namespace AGXUnity
     /// <returns>True if successfully deactivated, otherwise false.</returns>
     public static bool DeactivateLoaded()
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       var success = false;
       try {
-        success = agx.Runtime.instance().deactivateAgxLicense();
+        success = Runtime.deactivateAgxLicense();
 
         if ( success )
           Reset();
         else
-          Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate loaded license - {agx.Runtime.instance().getStatus()}" );
+          Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate loaded license - {Runtime.getStatus()}" );
       }
       catch ( Exception e ) {
         Debug.LogException( e );
@@ -559,8 +661,11 @@ namespace AGXUnity
     /// </summary>
     public static void Reset()
     {
+      if ( !CanAccessRuntime )
+        return;
+
       try {
-        agx.Runtime.instance().clear();
+        Runtime.clear();
       }
       catch ( Exception ) {
       }
@@ -712,6 +817,9 @@ namespace AGXUnity
     /// <returns>True if successfully loaded, otherwise false.</returns>
     private static bool LoadFile( string filename, string context )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       if ( string.IsNullOrEmpty( filename ) ) {
         IssueLoadWarning( "Filename is null or empty.", context );
         return false;
@@ -737,14 +845,14 @@ namespace AGXUnity
       // If the license has been refreshed we have to write the
       // new license content to 'filename' independent of 'loadSuccess'.
       try {
-        var isRefreshed = agx.Runtime.instance().isLicenseRefreshed();
+        var isRefreshed = Runtime.isLicenseRefreshed();
         var isRefreshedAndCanWrite = isRefreshed &&
                                      IO.Environment.CanWriteToExisting( filename );
         if ( isRefreshedAndCanWrite ) {
           LoadInfo( $"The license has been refreshed - rewriting license file {filename}.", context );
 
           using ( var str = new StreamWriter( filename, false ) )
-            str.WriteLine( agx.Runtime.instance().readEncryptedLicense() );
+            str.WriteLine( Runtime.readEncryptedLicense() );
 
           LoadInfo( $"Successfully updated license file {filename}.", context );
         }
@@ -773,6 +881,9 @@ namespace AGXUnity
     /// <returns>True if successful, otherwise false.</returns>
     private static bool Load( string licenseContent, string context )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       if ( string.IsNullOrEmpty( licenseContent ) ) {
         IssueLoadWarning( "License content is null or empty.", context );
         return false;
@@ -789,8 +900,8 @@ namespace AGXUnity
       try {
         // Service type.
         if ( licenseContentType == LicenseContentType.Service ) {
-          agx.Runtime.instance().loadLicenseString( licenseContent );
-          LoadInfo( $"Loading service license successful: {agx.Runtime.instance().isValid()}.",
+          Runtime.loadLicenseString( licenseContent );
+          LoadInfo( $"Loading service license successful: {Runtime.isValid()}.",
                     context );
         }
         // Runtime license activation.
@@ -799,22 +910,22 @@ namespace AGXUnity
           // to support non-ASCII input paths.
           var cwd = Directory.GetCurrentDirectory();
           agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( cwd );
-          agx.Runtime.instance().activateEncryptedRuntime( licenseContent, context );
+          Runtime.activateEncryptedRuntime( licenseContent, context );
           agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( cwd );
 
-          LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {agx.Runtime.instance().isValid()}.",
+          LoadInfo( $"Activating encrypted runtime license \"{context}\" successful: {Runtime.isValid()}.",
                     context );
         }
         // Legacy type.
         else if ( licenseContentType == LicenseContentType.Legacy ) {
-          agx.Runtime.instance().unlock( licenseContent );
-          LoadInfo( $"Loading legacy license successful: {agx.Runtime.instance().isValid()}.",
+          Runtime.unlock( licenseContent );
+          LoadInfo( $"Loading legacy license successful: {Runtime.isValid()}.",
                     context );
         }
         // Assume obfuscated legacy.
         else {
-          agx.Runtime.instance().verifyAndUnlock( licenseContent );
-          LoadInfo( $"Loading obfuscated legacy license successful: {agx.Runtime.instance().isValid()}.",
+          Runtime.verifyAndUnlock( licenseContent );
+          LoadInfo( $"Loading obfuscated legacy license successful: {Runtime.isValid()}.",
                     context );
         }
       }
@@ -831,9 +942,12 @@ namespace AGXUnity
 
     private static bool LoadFloating( string file, string context )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       try {
-        agx.Runtime.instance().openNetworkSession( file );
-        LoadInfo( $"Loading floating license successful: {agx.Runtime.instance().isValid()}.", context );
+        Runtime.openNetworkSession( file );
+        LoadInfo( $"Loading floating license successful: {Runtime.isValid()}.", context );
       }
       catch ( Exception e ) {
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
@@ -848,9 +962,12 @@ namespace AGXUnity
 
     public static bool ReturnFloating( string context )
     {
+      if ( !CanAccessRuntime )
+        return false;
+
       bool success;
       try {
-        success = agx.Runtime.instance().closeNetworkSession();
+        success = Runtime.closeNetworkSession();
         LoadInfo( $"Returning floating license successful: {success}.", context );
       }
       catch ( Exception e ) {
