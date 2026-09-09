@@ -228,8 +228,7 @@ namespace AGXUnityTesting.Runtime
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.GreaterOrEqual( Mathf.Abs( rod1RB.AngularVelocity.z ), 0.1f );
       Assert.GreaterOrEqual( Mathf.Abs( rod2RB.AngularVelocity.z ), 0.1f );
-      // TODO: Decrease allowed deviation once the initialization order is fixed in AGX
-      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.001f, "Gear gives similar and opposite AVs" );
+      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 1e-9f, "Gear gives similar and opposite AVs" );
     }
 
     [UnityTest]
