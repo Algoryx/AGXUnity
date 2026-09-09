@@ -248,7 +248,7 @@ namespace AGXUnity.Model
         // Assuming RigidBody is printing relevant error message.
         return false;
       }
-      var wheelToRB = transform.worldToLocalMatrix * Frame.Parent.transform.localToWorldMatrix;
+      var wheelToRB = RigidBody.transform.worldToLocalMatrix * Frame.Parent.transform.localToWorldMatrix;
 
       var RBLocalPosition = wheelToRB.MultiplyPoint( Frame.LocalPosition );
       var RBLocalRotation = wheelToRB.rotation * Frame.LocalRotation;

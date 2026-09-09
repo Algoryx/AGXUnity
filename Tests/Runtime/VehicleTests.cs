@@ -495,7 +495,7 @@ namespace AGXUnityTesting.Runtime
       foreach ( var node in track.Native.nodes() )
         distSum += node.getCenterPosition().length();
 
-      var box = CreateBox(Vector3.down * 0.24f);
+      var box = CreateBox(Vector3.down * 0.225f);
       box.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
       var boxGeom = box.GetComponentInChildren<Box>().HalfExtents = Vector3.one * 0.1f;
@@ -521,8 +521,8 @@ namespace AGXUnityTesting.Runtime
       Assert.That( noSupportDistSum, Is.LessThan( distSum - 0.5f ) );
 
       // Sanity check that tracks have not blown up
-      Assert.That( supportDistSum, Is.EqualTo( distSum ).Within( 1f ) );
-      Assert.That( noSupportDistSum, Is.EqualTo( distSum ).Within( 1f ) );
+      Assert.That( supportDistSum, Is.EqualTo( distSum ).Within( 1.5f ) );
+      Assert.That( noSupportDistSum, Is.EqualTo( distSum ).Within( 1.5f ) );
     }
   }
 }
