@@ -145,7 +145,7 @@ namespace AGXUnity.Model
         using ( BeginResourceRequests() ) {
           foreach ( var track in Tracks ) {
             AboutToChange( track );
-            track.InitialTensionDistance = InitialTensionDistance;
+            track.InitialTension = InitialTensionDistance;
           }
         }
       }
@@ -647,10 +647,11 @@ namespace AGXUnity.Model
             // instances on the game object. We only have to make
             // sure the first is property configured.
             if ( i == 0 ) {
+              track.TensionMode             = Track.TensionModes.Distance;
               track.Width                   = TrackWidth;
               track.Thickness               = Thickness;
               track.NumberOfNodes           = NumberOfNodes;
-              track.InitialTensionDistance  = InitialTensionDistance;
+              track.InitialTension          = InitialTensionDistance;
               track.Properties              = TrackProperties;
               track.InternalMergeProperties = InternalMergeProperties;
               track.Material                = Material;

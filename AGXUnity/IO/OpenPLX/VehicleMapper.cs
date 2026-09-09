@@ -142,8 +142,14 @@ namespace AGXUnity.IO.OpenPLX
       s.AddComponent<TrackRenderer>();
 
       track.NumberOfNodes = (int)oTracks.link_count();
-      if ( system.tension_initialization().node_distance().HasValue )
-        track.InitialTensionDistance = (float)system.tension_initialization().node_distance().Value;
+      if ( system.tension_initialization().node_distance().HasValue ) {
+        track.InitialTension = (float)system.tension_initialization().node_distance().Value;
+        track.TensionMode = Track.TensionModes.Distance;
+      }
+      else if ( system.tension_initialization().tension_force().HasValue ) {
+        track.InitialTension = (float)system.tension_initialization().tension_force().Value;
+        track.TensionMode = Track.TensionModes.Force;
+      }
 
       var wheels = system.track_wheels();
       if ( wheels.Count < 2 ) {

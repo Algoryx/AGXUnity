@@ -1,9 +1,11 @@
 using AGXUnity.Collide;
 using AGXUnity.Utils;
 using agxVehicle;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -165,34 +167,62 @@ namespace AGXUnity.Model
       }
     }
 
-    [SerializeField]
-    private float m_initialTensionDistance = 1.0E-3f;
+    public enum TensionModes
+    {
+      Distance,
+      Force
+    }
 
     /// <summary>
-    /// Value (distance) of how much shorter each node should be which causes tension in the
-    /// system of tracks and wheels. Ideal case
-    ///     track_tension = initialDistanceTension * track_constraint_compliance.
-    /// Since contacts and other factors are included it's not possible to know
-    /// the exact tension after the system has been created.
+    /// Selects whether the initial tension should be interpreted as a distance (m) or a force (N).
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [Tooltip( "Selects whether the initial tension should be interpreted as a distance (m) or a force (N).")]
+    public TensionModes TensionMode = TensionModes.Distance;
+
+    [SerializeField]
+    [FormerlySerializedAs("m_initialTensionDistance")]
+    private float m_initialTension = 1.0E-3f;
+
+    /// <summary>
+    /// The initial tension in the track system. The exact interpretation of this value depends on the value of TensionMode.
+    /// When TensionMode is set to TensionMode.Distance, this value is the distance that is subtracted from each node to create initial tension in the track.
+    /// When TensionMode is set to TensionMode.Force, the initial tension distance will instead be approximated.
     /// Default: 1.0E-3
     /// </summary>
     [IgnoreSynchronization]
     [DisableInRuntimeInspector]
-    [Tooltip( "Value (distance) of how much shorter each node should be which causes tension in the " +
-              "system of tracks and wheels. Ideal case\n" +
-              "  track_tension = initialDistanceTension * track_constraint_compliance.\n" +
-              "Since contacts and other factors are included it's not possible to know " +
-              "the exact tension after the system has been created." )]
-    public float InitialTensionDistance
+    [Tooltip( "The initial tension in the track system. The exact interpretation of this value depends on the value of TensionMode.\n" +
+              "When TensionMode is set to TensionMode.Distance, this value is the distance that is subtracted from each node to create initial tension in the track.\n" +
+              "When TensionMode is set to TensionMode.Force, the initial tension distance will instead be approximated." )]
+    public float InitialTension
     {
-      get { return m_initialTensionDistance; }
+      get { return m_initialTension; }
       set
       {
         if ( Native != null ) {
-          Debug.LogWarning( "Invalid to change initial tension distance on an initialized track.", this );
+          Debug.LogWarning( "Invalid to change initial tension on an initialized track.", this );
           return;
         }
-        m_initialTensionDistance = value;
+        m_initialTension = value;
+      }
+    }
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    [Obsolete( "InitialTensionDistance has been deprecated in favour of InitialTension and TensionMode properties, and will be removed in future versions" )]
+    public float InitialTensionDistance
+    {
+      get { return TensionMode == TensionModes.Distance ? m_initialTension : 0; }
+      set
+      {
+        Debug.LogWarning( "InitialTensionDistance has been deprecated in favour of InitialTension and TensionMode properties, and will be removed in future versions" );
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change initial tension on an initialized track.", this );
+          return;
+        }
+        TensionMode = TensionModes.Distance;
+        InitialTension = value;
       }
     }
 
@@ -430,7 +460,7 @@ namespace AGXUnity.Model
                                      (ulong)NumberOfNodes,
                                      Width,
                                      Thickness,
-                                     new agxVehicle.InitialTrackTension( InitialTensionDistance ) );
+                                     new agxVehicle.InitialTrackTension( InitialTension, TensionMode == TensionModes.Distance ) );
 
       if ( Properties != null )
         Native.setProperties( Properties.GetInitialized<TrackProperties>().Native );
@@ -440,6 +470,8 @@ namespace AGXUnity.Model
 
       foreach ( var geom in SupportGeometries )
         Native.addSupportGroupId( geom.GetInitialized().NativeGeometry );
+
+      Native.setEnableFullDegreeModel( FullDoF );
 
       if ( WidthVariation != null || ThicknessVariation != null )
         Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
@@ -497,7 +529,7 @@ namespace AGXUnity.Model
         NumberOfNodes           = otherTracks[ 0 ].NumberOfNodes;
         Thickness               = otherTracks[ 0 ].Thickness;
         Width                   = otherTracks[ 0 ].Width;
-        InitialTensionDistance  = otherTracks[ 0 ].InitialTensionDistance;
+        InitialTension          = otherTracks[ 0 ].InitialTension;
         Properties              = otherTracks[ 0 ].Properties;
         InternalMergeProperties = otherTracks[ 0 ].InternalMergeProperties;
         Material                = otherTracks[ 0 ].Material;
