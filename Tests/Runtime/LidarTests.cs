@@ -11,7 +11,6 @@ using UnityEngine.TestTools;
 
 namespace AGXUnityTesting.Runtime
 {
-  [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
   public class LidarTests : AGXUnityFixture
   {
     private GameObject CreateShape<T>( Vector3 transform = new Vector3() )

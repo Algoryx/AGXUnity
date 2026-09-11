@@ -5,7 +5,6 @@ namespace AGXUnity.IO.OpenPLX
   public enum AgxUnityOpenPLXErrors
   {
     InternalMapperError = 0,
-    Unimplemented = 1,
     NullChild = 2,
     LocalOffsetNotSupported = 3,
     MissingMaterial = 4,
@@ -28,6 +27,10 @@ namespace AGXUnity.IO.OpenPLX
     InsufficientTrackWheels = 21,
     MissingTrackWheelBody = 22,
     IncompatibleSamplers = 23,
+
+    //Warnings
+    MissingChassisBody = 98,
+    Unimplemented = 99,
   }
 
   public class BaseError : openplx.Error
@@ -353,5 +356,14 @@ namespace AGXUnity.IO.OpenPLX
     { }
 
     protected override string createErrorMessage() => $"Base Color map and Alpha map sampler traits need to match or be unspecified";
+  }
+
+  public class MissingChassisBodyWarning : BaseWarning
+  {
+    public MissingChassisBodyWarning( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.MissingChassisBody )
+    { }
+
+    protected override string createErrorMessage() => $"Track does not specify a chassis body, defaulting to full DoF simulation";
   }
 }

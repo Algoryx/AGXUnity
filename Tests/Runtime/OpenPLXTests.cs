@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.TestTools.Utils;
 using static AGXUnity.ContactMaterial;
 
 namespace AGXUnityTesting.Runtime
@@ -34,11 +35,18 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( expected, normalized, delta, message );
     }
 
-    public OpenPLXRoot LoadOpenPLX( string source, string modelName = null )
+    public OpenPLXRoot LoadOpenPLX( string source, string modelName = null, MapperOptions? options = null )
     {
-      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ), default, null, modelName );
+      MapperOptions localOptions;
+      if ( !options.HasValue ) {
+        localOptions = new MapperOptions();
+        localOptions.RotateUp = true;
+      }
+      else
+        localOptions = options.Value;
+
+      var openPLXObj = OpenPLXImporter.ImportOpenPLXFile<GameObject>( System.IO.Path.Combine( TestDataFolder, source ), localOptions, null, modelName );
       Assert.NotNull( openPLXObj, $"Failed to import OpenPLX file '{source}'" );
-      openPLXObj.transform.rotation = Quaternion.AngleAxis( -90, Vector3.right );
       openPLXObj.InitializeAll();
 
       return openPLXObj.GetComponent<OpenPLXRoot>();
@@ -68,6 +76,26 @@ namespace AGXUnityTesting.Runtime
       Assert.AreEqual( 0.0f, rodRB.LinearVelocity.y, 0.001f );
       // MC is offset by -0.5 and range is -0.5 = -1.0 total displacement
       Assert.AreEqual( -1f, rodRB.transform.position.y, 0.001f );
+    }
+
+    [Test]
+    public void TestWorldMCOffset()
+    {
+      LoadOpenPLX( "world_mc.openplx", null, new MapperOptions() );
+
+      var attach1 = GameObject.Find("world_mc/World Proxy Body/SignalScene.box1.local_attachment");
+      var attach2 = GameObject.Find("world_mc/World Proxy Body/SignalScene.box2.local_attachment");
+      Assert.That( attach1.transform.position, Is.EqualTo( new agx.Vec3( 1, 1, 1 ).ToHandedVector3() ) );
+      Assert.That(
+        attach1.transform.rotation,
+        Is.EqualTo(
+          new agx.Quat( new agx.Vec3( 0, 0, 1 ), new agx.Vec3( 0, 1, 0 ) )
+          .ToHandedQuaternion() )
+        .Using( QuaternionEqualityComparer.Instance ) );
+      Assert.That( attach2.transform.position, Is.EqualTo( new agx.Vec3( -1, -1, 1 ).ToHandedVector3() ) );
+      Assert.That( attach2.transform.rotation,
+        Is.EqualTo( Quaternion.identity )
+        .Using( QuaternionEqualityComparer.Instance ) );
     }
 
     [UnityTest]
@@ -148,7 +176,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-
     public IEnumerator TestDrivetrainVelocitySignal()
     {
       LoadOpenPLX( "drive_train_velocity_input.openplx" );
@@ -169,7 +196,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
-
     public IEnumerator TestDrivetrainTorqueSignal()
     {
       LoadOpenPLX( "drive_train_torque_input.openplx" );
@@ -202,7 +228,7 @@ namespace AGXUnityTesting.Runtime
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.GreaterOrEqual( Mathf.Abs( rod1RB.AngularVelocity.z ), 0.1f );
       Assert.GreaterOrEqual( Mathf.Abs( rod2RB.AngularVelocity.z ), 0.1f );
-      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
+      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 1e-9f, "Gear gives similar and opposite AVs" );
     }
 
     [UnityTest]
@@ -645,13 +671,48 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
-    [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
     public void TestDoubleDistanceDistortionLidarError()
     {
       var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(
         TestDataFolder + "/simple_lidar.openplx", default, null, "DoubleDistanceDistortionLidar" );
 
       LogAssert.Expect( LogType.Error, new Regex( ".*distance distortion.*" ) );
+    }
+
+    [Test]
+    public void TestImportSimpleTrack()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "Scene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "Scene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.False( track.FullDoF );
+    }
+
+    [Test]
+    public void TestImportFullDoFTrack()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "FullDoFScene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "FullDoFScene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.True( track.FullDoF );
+    }
+
+    [Test]
+    public void TestTrackImportMaterials()
+    {
+      var go = LoadOpenPLX("track_system.openplx", "FullDoFScene" );
+      Assert.NotNull( go.gameObject );
+
+      var track = go.FindMappedObject( "FullDoFScene.track_system" ).GetComponent<Track>();
+      Assert.NotNull( track );
+
+      Assert.True( track.Material != null );
     }
   }
 }

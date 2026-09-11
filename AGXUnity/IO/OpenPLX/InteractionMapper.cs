@@ -85,6 +85,13 @@ namespace AGXUnity.IO.OpenPLX
       var up = main_axis_n.cross(normal_n).normal();
       mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), up.ToHandedVector3() );
 
+      // If this MC is connected to the system rather than a body, move it to the world proxy body
+      // but keep the transform calculated in the local frame.
+      if ( current is openplx.Physics3D.System ) {
+        mcObject.transform.SetParent( Data.WorldProxyBody.transform, true );
+        mcObject.name =  mc.getName();
+      }
+
       Data.MateConnectorCache[ mc ] = mcObject;
     }
 

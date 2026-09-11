@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEditor;
 using Math = System.Math;
 
 namespace AGXUnity
@@ -87,6 +88,11 @@ namespace AGXUnity
     public static LicenseInfo Create()
     {
       var info = new LicenseInfo();
+
+#if UNITY_EDITOR
+      if ( AssetDatabase.IsAssetImportWorkerProcess() )
+        return info;
+#endif
 
       try {
         info.Version = agx.agxSWIG.agxGetVersion( false );

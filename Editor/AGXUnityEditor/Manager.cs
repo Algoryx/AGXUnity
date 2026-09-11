@@ -69,6 +69,9 @@ namespace AGXUnityEditor
     /// </summary>
     static Manager()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return;
+
       IO.Utils.VerifyDirectories();
 
       GetRequestScriptReloadData().Float = -1;
