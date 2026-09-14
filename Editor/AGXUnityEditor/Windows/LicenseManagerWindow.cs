@@ -295,7 +295,8 @@ namespace AGXUnityEditor.Windows
                                              } );
       }
       catch ( System.Exception e ) {
-        completion.TrySetResult( new LicenseOperationResult {
+        completion.TrySetResult( new LicenseOperationResult
+        {
           LicenseInfo = AGXUnity.LicenseInfo.Create(),
           Error = $"License activation failed. {e.Message}"
         } );
@@ -458,7 +459,8 @@ namespace AGXUnityEditor.Windows
       var completion = new TaskCompletionSource<LicenseOperationResult>();
       m_licenseOperationTask = completion.Task;
       try {
-        start( success => completion.TrySetResult( new LicenseOperationResult {
+        start( success => completion.TrySetResult( new LicenseOperationResult
+        {
           Success = success,
           Error = success ? null : AGXUnity.LicenseManager.LastOperationError ?? $"{operation} failed. Check the server connection and wait for other license operations to finish before retrying.",
           LicenseInfo = AGXUnity.LicenseInfo.Create()
@@ -573,7 +575,8 @@ namespace AGXUnityEditor.Windows
             foreach ( var licenseFile in AGXUnity.LicenseManager.FindLicenseFiles() ) {
               try {
                 var info = AGXUnity.LicenseManager.QueryInfo( licenseFile );
-                licenseData.Add( new LicenseData {
+                licenseData.Add( new LicenseData
+                {
                   Filename = licenseFile,
                   LicenseInfo = info,
                   ReadError = info.IsParsed ? null : $"Unable to identify \"{licenseFile}\". Check that the file exists and contains a complete license."
@@ -603,7 +606,8 @@ namespace AGXUnityEditor.Windows
       try {
         AGXUnity.LicenseManager.RefreshAsync( licenseData.Filename,
                                              success => {
-                                               completion.TrySetResult( new LicenseOperationResult {
+                                               completion.TrySetResult( new LicenseOperationResult
+                                               {
                                                  Success = success,
                                                  Error = success ? null : AGXUnity.LicenseManager.LastOperationError,
                                                  LicenseInfo = AGXUnity.LicenseInfo.Create()
