@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -171,6 +171,52 @@ namespace AGXUnity
     public static string LastOperationError { get; private set; }
 
     /// <summary>
+    /// Route licensing feedback to the caller's UI instead of the Console.
+    /// Dispose on the calling thread after starting the operation. Tasks started
+    /// inside the scope retain this setting; unrelated callers keep their logging.
+    /// Failure details remain available through LastOperationError.
+    /// </summary>
+    public static IDisposable SuppressConsoleLogging() => new ConsoleLoggingScope();
+
+    private static readonly AsyncLocal<int> s_consoleLoggingSuppression = new AsyncLocal<int>();
+
+    private sealed class ConsoleLoggingScope : IDisposable
+    {
+      private readonly int m_previous = s_consoleLoggingSuppression.Value;
+      private bool m_disposed;
+
+      public ConsoleLoggingScope() { s_consoleLoggingSuppression.Value = m_previous + 1; }
+
+      public void Dispose()
+      {
+        if ( m_disposed )
+          return;
+        s_consoleLoggingSuppression.Value = m_previous;
+        m_disposed = true;
+      }
+    }
+
+    private static void Log( string message )
+    {
+      if ( s_consoleLoggingSuppression.Value == 0 ) Debug.Log( message );
+    }
+
+    private static void LogWarning( string message )
+    {
+      if ( s_consoleLoggingSuppression.Value == 0 ) Debug.LogWarning( message );
+    }
+
+    private static void LogError( string message )
+    {
+      if ( s_consoleLoggingSuppression.Value == 0 ) Debug.LogError( message );
+    }
+
+    private static void LogException( System.Exception error )
+    {
+      if ( s_consoleLoggingSuppression.Value == 0 ) Debug.LogException( error );
+    }
+
+    /// <summary>
     /// Manual return disables automatic checkout for the remainder of this editor
     /// session, until an explicit Connect succeeds. Standalone defaults are unchanged.
     /// </summary>
@@ -261,13 +307,13 @@ namespace AGXUnity
         return info;
 
       if ( !File.Exists( filename ) ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - file doesn't exist." );
+        LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - file doesn't exist." );
         return info;
       }
 
       var licenseType = GetLicenseType( filename );
       if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - unknown file extension." );
+        LogWarning( $"AGXUnity.LicenseManager: Unable to query license info for license {filename} - unknown file extension." );
         return info;
       }
 
@@ -339,61 +385,45 @@ namespace AGXUnity
     {
       if ( !CanAccessRuntime )
         return false;
-
-      if ( !Directory.Exists( applicationRootDirectory ) ) {
-        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
-                        $"application root directory \"{applicationRootDirectory}\" doesn't exist." );
-        return false;
-      }
-
-      if ( !Path.IsPathRooted( applicationRootDirectory ) ) {
-        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
-                        $"application root directory \"{applicationRootDirectory}\" isn't rooted." );
-        return false;
-      }
-
-      var absolutePathToReferenceFile = $"{applicationRootDirectory}/{referenceApplicationFile}".Replace( '\\', '/' );
-      if ( !File.Exists( absolutePathToReferenceFile ) ) {
-        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
-                        $"reference file \"{referenceApplicationFile}\" doesn't exist relative to \"{applicationRootDirectory}\"." );
-        return false;
-      }
+      if ( IsBusy )
+        return RecordOperationError( "Wait for the current license operation before generating a runtime activation file." );
+      LastOperationError = null;
+      if ( runtimeLicenseId <= 0 || string.IsNullOrWhiteSpace( runtimeLicensePassword ) )
+        return RecordOperationError( "Enter a positive runtime license ID and an activation code." );
 
       try {
+        if ( !Directory.Exists( applicationRootDirectory ) || !Path.IsPathRooted( applicationRootDirectory ) )
+          return RecordOperationError( $"The build directory must be an existing absolute path: {applicationRootDirectory}" );
+        var buildRoot = Path.GetFullPath( applicationRootDirectory ).TrimEnd( '/', '\\' ) + Path.DirectorySeparatorChar;
+        var reference = Path.GetFullPath( Path.Combine( buildRoot, referenceApplicationFile ) );
+        if ( Path.IsPathRooted( referenceApplicationFile ) ||
+             !reference.StartsWith( buildRoot, Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal ) )
+          return RecordOperationError( "The reference file must be inside the selected build directory." );
+        if ( !File.Exists( reference ) )
+          return RecordOperationError( $"The reference file does not exist: {reference}" );
+
+        string encrypted;
         agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( applicationRootDirectory );
-        var encrypted = Runtime.encryptRuntimeActivation( runtimeLicenseId,
-                                                                         runtimeLicensePassword,
-                                                                         referenceApplicationFile );
-        agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( applicationRootDirectory );
-
-        if ( !string.IsNullOrEmpty( encrypted ) ) {
-          // Fall-back directory is application root but we'll try to find
-          // the AGX Dynamics binaries and place it there if applicationRootDirectory
-          // is part of the resources of AGX Dynamics.
-          var licenseTargetDirectory = Directory.GetFiles( applicationRootDirectory,
-                                                           "agxPhysics.dll",
-                                                           SearchOption.AllDirectories ).Select( file => new FileInfo( file ).Directory.FullName ).FirstOrDefault() ??
-                                       applicationRootDirectory;
-
-          var encryptedFilename = $"{licenseTargetDirectory}/agx{s_runtimeActivationExtension}".Replace( '\\', '/' );
-
-          File.WriteAllText( encryptedFilename, encrypted );
-
-          onSuccess?.Invoke( encryptedFilename );
-
-          return true;
+        try {
+          encrypted = Runtime.encryptRuntimeActivation( runtimeLicenseId, runtimeLicensePassword, referenceApplicationFile );
+          if ( string.IsNullOrEmpty( encrypted ) )
+            return RecordOperationError( GetNativeOperationError( "Runtime activation file generation" ) );
+        }
+        finally {
+          agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).removeFilePath( applicationRootDirectory );
         }
 
-        Debug.LogError( "AGXUnity.LicenseManager: Unable to generate encrypted runtime license - " +
-                        $"encryption failed with status: {Runtime.getStatus()}" );
+        var licenseTargetDirectory = Directory.GetFiles( applicationRootDirectory, "agxPhysics.dll", SearchOption.AllDirectories )
+                                              .Select( file => new FileInfo( file ).Directory.FullName ).FirstOrDefault() ?? applicationRootDirectory;
+        var encryptedFilename = $"{licenseTargetDirectory}/agx{s_runtimeActivationExtension}".Replace( '\\', '/' );
+        File.WriteAllText( encryptedFilename, encrypted );
+        onSuccess?.Invoke( encryptedFilename );
+        return true;
       }
       catch ( System.Exception e ) {
-        Debug.LogError( "AGXUnity.LicenseManager: Exception occurred during generate of encrypted runtime " +
-                        $"for application root \"{applicationRootDirectory}\"." );
-        Debug.LogException( e );
+        LogException( e );
+        return RecordOperationError( $"Unable to generate or save the runtime activation file for \"{applicationRootDirectory}\". {e.Message}" );
       }
-
-      return false;
     }
 
     /// <summary>
@@ -441,14 +471,21 @@ namespace AGXUnity
           Directory.CreateDirectory( targetDirectory );
       }
       catch ( System.Exception e ) {
-        Debug.LogError( $"AGXUnity.LicenseManager: Unable to create given target directory - \"{targetDirectory}\"." );
-        Debug.LogException( e );
+        RecordOperationError( $"Unable to create runtime license directory \"{targetDirectory}\". {e.Message}" );
+        LogException( e );
         return false;
       }
 
       var success = LoadFile( filename, $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
-      if ( success )
-        File.Delete( filename );
+      if ( success ) {
+        try {
+          File.Delete( filename );
+        }
+        catch ( System.Exception e ) {
+          RecordOperationError( $"Runtime activation succeeded, but the activation request \"{filename}\" could not be removed. {e.Message}" );
+          LogException( e );
+        }
+      }
 
       return success;
     }
@@ -475,21 +512,27 @@ namespace AGXUnity
       var success = false;
 
       try {
+        if ( IsBusy )
+          throw new AGXUnity.Exception( "Wait for the current license operation before generating an offline request." );
+        LastOperationError = null;
+        if ( licenseId <= 0 || string.IsNullOrWhiteSpace( licensePassword ) )
+          throw new AGXUnity.Exception( "Enter a positive license ID and an activation password." );
         var activationText = Runtime.generateOfflineActivationRequest( licenseId, licensePassword );
-        if ( !string.IsNullOrEmpty( Runtime.getStatus() ) )
-          throw new AGXUnity.Exception( Runtime.getStatus() );
+        if ( string.IsNullOrEmpty( activationText ) || !string.IsNullOrEmpty( Runtime.getStatus() ) )
+          throw new AGXUnity.Exception( GetNativeOperationError( "Offline activation request" ) );
 
         File.WriteAllText( outputFilename, activationText );
 
         success = File.Exists( outputFilename );
       }
       catch ( System.Exception e ) {
+        LastOperationError = $"Unable to generate or save the offline activation request. {e.Message}";
         if ( throwOnError )
           throw;
 
         success = false;
 
-        Debug.LogError( e.Message );
+        LogError( e.Message );
       }
 
       return success;
@@ -519,6 +562,7 @@ namespace AGXUnity
       try {
         if ( IsBusy )
           throw new AGXUnity.Exception( "The license manager is busy." );
+        LastOperationError = null;
         RequireNoFloatingSession();
         if ( Path.GetExtension( licenseFilename ) != GetLicenseExtension( LicenseInfo.LicenseType.Service ) )
           licenseFilename += GetLicenseExtension( LicenseInfo.LicenseType.Service );
@@ -527,19 +571,24 @@ namespace AGXUnity
           webResponseFilenameOrContent = File.ReadAllText( webResponseFilenameOrContent );
 
         if ( !Runtime.processOfflineActivationRequest( webResponseFilenameOrContent ) )
-          throw new AGXUnity.Exception( Runtime.getStatus() );
+          throw new AGXUnity.Exception( GetNativeOperationError( "Offline activation response" ) );
 
         File.WriteAllText( licenseFilename, Runtime.readEncryptedLicense() );
 
         success = File.Exists( licenseFilename );
       }
       catch ( System.Exception e ) {
+        LastOperationError = $"Unable to process or save the offline license. {e.Message}";
         if ( throwOnerror )
           throw;
 
         success = false;
 
-        Debug.LogError( e.Message );
+        LogError( e.Message );
+      }
+      finally {
+        if ( !IsBusy )
+          UpdateInformationAfterOperation();
       }
 
       return success;
@@ -571,6 +620,10 @@ namespace AGXUnity
     {
       StartOperation( LicenseOperation.Activate, () => {
         RequireNoFloatingSession();
+        if ( licenseId <= 0 || string.IsNullOrWhiteSpace( licensePassword ) )
+          throw new AGXUnity.Exception( "Enter a positive license ID and an activation password." );
+        if ( !Directory.Exists( targetDirectory ) )
+          throw new AGXUnity.Exception( $"The license output directory does not exist: {targetDirectory}" );
         var licenseFilename = IO.Environment.FindUniqueFilename( $"{targetDirectory}/agx{GetLicenseExtension( LicenseInfo.LicenseType.Service )}" );
         return Runtime.activateAgxLicense( licenseId, licensePassword, licenseFilename );
       }, onDone );
@@ -678,14 +731,12 @@ namespace AGXUnity
         return false;
 
       if ( !File.Exists( filename ) ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - file doesn't exist." );
-        return false;
+        return RecordOperationError( $"Unable to deactivate and delete \"{filename}\": the file does not exist." );
       }
 
       var licenseType = GetLicenseType( filename );
       if ( licenseType == LicenseInfo.LicenseType.Unknown ) {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate and delete license {filename} - unknown file extension." );
-        return false;
+        return RecordOperationError( $"Unable to deactivate \"{filename}\": unknown file extension. The file was preserved." );
       }
 
       // Inspect the file before loading it: a failed checkout must never turn
@@ -693,13 +744,12 @@ namespace AGXUnity
       try {
         var info = QueryInfo( filename );
         if ( info.IsFloating || !info.IsParsed || HasFloatingSession ) {
-          Debug.LogWarning( "AGXUnity.LicenseManager: Cannot deactivate an unidentified or floating license, or replace a held floating seat." );
-          return false;
+          return RecordOperationError( "Cannot deactivate an unidentified or floating license, or replace a held floating seat. The file was preserved." );
         }
       }
       catch ( System.Exception e ) {
-        Debug.LogException( e );
-        return false;
+        LogException( e );
+        return RecordOperationError( $"Unable to inspect \"{filename}\" before deactivation. The file was preserved. {e.Message}" );
       }
 
       if ( licenseType == LicenseInfo.LicenseType.Legacy ) {
@@ -710,14 +760,13 @@ namespace AGXUnity
       // If we're not able to load the license we cannot deactivate it because
       // we don't know if we're deactivating the given file or some other
       // license loaded.
-      if ( LoadFile( filename, $"Deactivating license: \"{filename}\"." ) )
-        DeactivateLoaded();
-      else {
-        Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate the license {filename} - the license has to be valid.\n" +
-                          LicenseInfo.Status );
-      }
-
-      return DeleteFile( filename );
+      if ( !LoadFile( filename, $"Deactivating license: \"{filename}\"." ) )
+        return RecordOperationError( $"Unable to load \"{filename}\" for deactivation. The file was preserved.\n\n{LastOperationError}" );
+      if ( !DeactivateLoaded() )
+        return RecordOperationError( $"The license file was preserved because deactivation failed.\n\n{LastOperationError}" );
+      if ( !DeleteFile( filename ) )
+        return RecordOperationError( $"The license was deactivated, but local file cleanup failed.\n\n{LastOperationError}" );
+      return true;
     }
 
     /// <summary>
@@ -729,21 +778,26 @@ namespace AGXUnity
       if ( !CanAccessRuntime )
         return false;
       if ( IsBusy || HasFloatingSession || UpdateLicenseInformation().Type != LicenseInfo.LicenseType.Service ) {
-        Debug.LogWarning( "AGXUnity.LicenseManager: Only an identified non-floating service license can be deactivated." );
-        return false;
+        return RecordOperationError( "Only an identified non-floating service license can be deactivated, with no other license operation in progress." );
       }
 
       var success = false;
+      LastOperationError = null;
       try {
         success = Runtime.deactivateAgxLicense();
 
         if ( success )
           Reset();
         else
-          Debug.LogWarning( $"AGXUnity.LicenseManager: Unable to deactivate loaded license - {Runtime.getStatus()}" );
+          RecordOperationError( GetNativeOperationError( "Deactivation" ) );
       }
       catch ( System.Exception e ) {
-        Debug.LogException( e );
+        success = false;
+        RecordOperationError( $"Deactivation failed. {e.Message}" );
+        LogException( e );
+      }
+      finally {
+        UpdateInformationAfterOperation();
       }
       return success;
     }
@@ -888,13 +942,13 @@ namespace AGXUnity
       try {
         if ( !CanAccessRuntime || IsBusy )
           return false;
+        LastOperationError = null;
         if ( HasFloatingSession && QueryInfo( filename ).IsFloating ) {
           var active = ActiveFloatingLicenseFilename;
           if ( string.IsNullOrEmpty( active ) ||
                string.Equals( Path.GetFullPath( filename ).Replace( '\\', '/' ), active,
                               Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal ) ) {
-            Debug.LogWarning( "AGXUnity.LicenseManager: Return the current floating seat before deleting this file." );
-            return false;
+            return RecordOperationError( "Return the current floating seat before deleting this file." );
           }
         }
         File.Delete( filename );
@@ -906,8 +960,8 @@ namespace AGXUnity
 #endif
       }
       catch ( System.Exception e ) {
-        Debug.LogException( e );
-        return false;
+        LogException( e );
+        return RecordOperationError( $"Unable to delete \"{filename}\" and its metadata. {e.Message}" );
       }
 
       return !File.Exists( filename );
@@ -923,6 +977,8 @@ namespace AGXUnity
     {
       if ( !CanAccessRuntime )
         return false;
+      if ( !IsBusy )
+        LastOperationError = null;
       if ( IsBusy || HasFloatingSession ) {
         IssueLoadWarning( "Return the floating seat and wait for any pending operation before loading a license.", context );
         return false;
@@ -946,12 +1002,13 @@ namespace AGXUnity
           return false;
       }
       catch ( System.Exception e ) {
-        IssueLoadWarning( $"Caught exception reading text from file: {filename}.", context );
-        Debug.LogException( e );
+        IssueLoadWarning( $"Unable to read license file \"{filename}\". {e.Message}", context );
+        LogException( e );
         return false;
       }
 
       var loadSuccess = Load( text, context );
+      var loadError = LastOperationError;
 
       // Runtime activation owns its output file. Its request must survive a
       // failure without being rewritten or used for a floating checkout.
@@ -973,11 +1030,14 @@ namespace AGXUnity
           LoadInfo( $"Successfully updated license file {filename}.", context );
         }
         else if ( isRefreshed ) {
-          Debug.LogError( $"AGXUnity.LicenseManager: Unable to write updated license information to {filename} - write access is required." );
+          RecordOperationError( ( string.IsNullOrEmpty( loadError ) ? string.Empty : loadError + "\n\n" ) +
+                                $"Updated license information could not be saved to \"{filename}\". Write access is required." );
         }
       }
       catch ( System.Exception e ) {
-        Debug.LogException( e );
+        RecordOperationError( ( string.IsNullOrEmpty( loadError ) ? string.Empty : loadError + "\n\n" ) +
+                              $"Unable to save refreshed license information to \"{filename}\". {e.Message}" );
+        LogException( e );
       }
 
       // Compatibility fallback for native versions that cannot query the file.
@@ -1000,6 +1060,8 @@ namespace AGXUnity
     {
       if ( !CanAccessRuntime )
         return false;
+      if ( !IsBusy )
+        LastOperationError = null;
       if ( IsBusy || HasFloatingSession ) {
         IssueLoadWarning( "Return the floating seat and wait for any pending operation before loading a license.", context );
         return false;
@@ -1011,7 +1073,7 @@ namespace AGXUnity
 
       var licenseContentType = FindLicenseContentType( licenseContent );
       if ( licenseContentType == LicenseContentType.Unknown ) {
-        IssueLoadWarning( $"Unknown license content: \"{licenseContent}\".", context );
+        IssueLoadWarning( "The license content could not be identified.", context );
         return false;
       }
 
@@ -1052,10 +1114,12 @@ namespace AGXUnity
           LoadInfo( $"Loading obfuscated legacy license successful: {success && Runtime.isValid()}.",
                     context );
         }
+        if ( !success || !Runtime.isValid() )
+          RecordOperationError( GetNativeOperationError( licenseContentType == LicenseContentType.EncryptedRuntimeService ? "Runtime activation" : "License loading" ) );
       }
       catch ( System.Exception e ) {
-        IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
-        Debug.LogException( e );
+        IssueLoadWarning( $"License loading failed. {e.Message}", context );
+        LogException( e );
         success = false;
       }
       finally {
@@ -1078,7 +1142,7 @@ namespace AGXUnity
       catch ( System.Exception e ) {
         LastOperationError = e.Message;
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
-        Debug.LogException( e );
+        LogException( e );
       }
       finally {
         UpdateInformationAfterOperation();
@@ -1099,7 +1163,7 @@ namespace AGXUnity
       catch ( System.Exception e ) {
         LastOperationError = e.Message;
         IssueLoadWarning( "Caught exception calling AGX Dynamics.", context );
-        Debug.LogException( e );
+        LogException( e );
       }
       finally {
         UpdateInformationAfterOperation();
@@ -1155,6 +1219,8 @@ namespace AGXUnity
             LastOperationError = null;
             try {
               success = execute();
+              if ( success && ( operation == LicenseOperation.Activate || operation == LicenseOperation.Refresh ) )
+                success = Runtime.isValid();
               if ( !success )
                 LastOperationError = GetNativeOperationError( operation );
 #if UNITY_EDITOR
@@ -1164,20 +1230,20 @@ namespace AGXUnity
             }
             catch ( System.Exception e ) {
               LastOperationError = $"{operation} failed. {e.Message}";
-              Debug.LogException( e );
+              LogException( e );
             }
             finally {
               UpdateInformationAfterOperation();
             }
             if ( !success )
-              Debug.LogWarning( $"AGXUnity.LicenseManager: {LastOperationError}" );
+              LogWarning( $"AGXUnity.LicenseManager: {LastOperationError}" );
             onDone?.Invoke( success );
           } );
           s_operationTask.Start( TaskScheduler.Default );
           return;
         }
       }
-      Debug.LogWarning( "AGXUnity.LicenseManager: Another license operation is in progress." );
+      LogWarning( "AGXUnity.LicenseManager: Another license operation is in progress." );
       onDone?.Invoke( false );
     }
 
@@ -1189,11 +1255,16 @@ namespace AGXUnity
       catch ( System.Exception e ) {
         // Deliver the native result even if shutdown races with information
         // refresh. ReturnFloating is also called by NativeHandler's finalizer.
-        Debug.LogException( e );
+        LogException( e );
       }
     }
 
     private static string GetNativeOperationError( LicenseOperation operation )
+    {
+      return GetNativeOperationError( operation.ToString() );
+    }
+
+    private static string GetNativeOperationError( string operation )
     {
       var status = Runtime.getStatus();
       var extended = Runtime.getExtendedStatus();
@@ -1237,13 +1308,21 @@ namespace AGXUnity
     private static void LoadInfo( string info, string context )
     {
       if ( !Application.isEditor )
-        Debug.Log( $"AGXUnity.LicenseManager: {info} (Context: {context})" );
+        Log( $"AGXUnity.LicenseManager: {info} (Context: {context})" );
     }
 
     private static void IssueLoadWarning( string warning, string context )
     {
+      LastOperationError = warning;
       if ( !Application.isEditor )
-        Debug.LogWarning( $"AGXUnity.LicenseManager: {warning} (Context: {context})" );
+        LogWarning( $"AGXUnity.LicenseManager: {warning} (Context: {context})" );
+    }
+
+    private static bool RecordOperationError( string error )
+    {
+      LastOperationError = error;
+      LogWarning( $"AGXUnity.LicenseManager: {error}" );
+      return false;
     }
 
 

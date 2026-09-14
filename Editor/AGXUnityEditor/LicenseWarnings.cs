@@ -44,7 +44,7 @@ namespace AGXUnityEditor
       return "License activation failed.\n\n" +
              ( !info.IsValid && !string.IsNullOrWhiteSpace( info.Status ) ?
                  info.Status.Trim() :
-                 "Check the Console for details, then verify your license ID, activation password, and connection before retrying." );
+                 "Verify your license ID, activation password, and connection before retrying." );
     }
 
     internal static void ScheduleStartupWarning()
