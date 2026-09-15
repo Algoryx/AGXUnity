@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -115,6 +116,7 @@ namespace AGXUnity.Model
       m_hasCheckedForceModel = false;
     }
 
+    [HideInInspector]
     public bool ActiveContactMaterialUsesTerrainWheelForceModel => GetActiveContactMaterial()?.getFrictionModel()?.asTerrainWheelForceModel() != null;
 
     private agx.ContactMaterial GetActiveContactMaterial()
