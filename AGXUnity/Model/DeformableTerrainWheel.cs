@@ -40,12 +40,12 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model.
+    /// Disable the startup warning if the contact material in use by the terrain wheel doesn't have the correct force model.
     /// NB: if using multiple shape materials on the terrain this is not reliable!
     /// </summary>
     [field: SerializeField]
-    [Tooltip( "Helper that will output a warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
-    public bool WarnIfNotUsingCorrectForceModel { get; set; } = false;
+    [Tooltip( "Disable the startup warning if the contact material in use by the terrain wheel doesn't have the correct force model." )]
+    public bool DisableForceModelWarning { get; set; } = false;
 
     protected override bool Initialize()
     {
@@ -90,20 +90,29 @@ namespace AGXUnity.Model
     protected override void OnEnable()
     {
       base.OnEnable();
+
+      Simulation.Instance.StepCallbacks.PostStepForward += CheckForceModel;
+    }
+
+    private void CheckForceModel()
+    {
+      if ( m_hasCheckedForceModel || Native?.getActiveTerrain() == null )
+        return;
+
+      m_hasCheckedForceModel = true;
+      Simulation.Instance.StepCallbacks.PostStepForward -= CheckForceModel;
+      if ( !DisableForceModelWarning && !ActiveContactMaterialUsesTerrainWheelForceModel )
+        Debug.LogWarning( "Active Contact Material is NOT using terrainWheelForceModel!", this );
     }
 
     protected override void OnDisable()
     {
       base.OnDisable();
-    }
 
-    private void LateUpdate()
-    {
-      if ( !WarnIfNotUsingCorrectForceModel || Native?.getActiveTerrain() == null )
-        return;
+      if ( Simulation.HasInstance )
+        Simulation.Instance.StepCallbacks.PostStepForward -= CheckForceModel;
 
-      if ( !ActiveContactMaterialUsesTerrainWheelForceModel )
-        Debug.LogWarning( "Active Contact Material is NOT using terrainWheelForceModel!" );
+      m_hasCheckedForceModel = false;
     }
 
     public bool ActiveContactMaterialUsesTerrainWheelForceModel => GetActiveContactMaterial()?.getFrictionModel()?.asTerrainWheelForceModel() != null;
@@ -142,6 +151,7 @@ namespace AGXUnity.Model
         Debug.LogError( "Component: DeformableTerrainWheel requires a RigidBody component.", this );
     }
 
+    private bool m_hasCheckedForceModel = false;
     private RigidBody m_rb = null;
   }
 }
