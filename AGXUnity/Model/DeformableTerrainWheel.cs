@@ -92,6 +92,9 @@ namespace AGXUnity.Model
     {
       base.OnEnable();
 
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().add( Native );
+
       Simulation.Instance.StepCallbacks.PostStepForward += CheckForceModel;
     }
 
@@ -109,6 +112,9 @@ namespace AGXUnity.Model
     protected override void OnDisable()
     {
       base.OnDisable();
+
+      if ( Native != null && Simulation.HasInstance )
+        GetSimulation().remove( Native );
 
       if ( Simulation.HasInstance )
         Simulation.Instance.StepCallbacks.PostStepForward -= CheckForceModel;
