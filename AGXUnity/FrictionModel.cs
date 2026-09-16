@@ -282,8 +282,8 @@ namespace AGXUnity
 
       agx.FrictionModel frictionModel = null;
 
-      if ( type == EType.TerrainWheelForceModel) {
-        frictionModel = new agx.TerrainWheelForceModel();        
+      if ( type == EType.TerrainWheelForceModel ) {
+        frictionModel = new agx.TerrainWheelForceModel();
       }
       else if ( TrackFrictionModel ) {
         frictionModel = type switch
