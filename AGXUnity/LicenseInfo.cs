@@ -129,7 +129,8 @@ namespace AGXUnity
 
         if ( info.IsFloating || agx.Runtime.instance().hasKey( "InstallationID" ) ) {
           info.Type = LicenseType.Service;
-          info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
+          if(agx.Runtime.instance().hasKey( "InstallationID" ))
+            info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
         }
         else if ( agx.Runtime.instance().hasKey( "License" ) ) {
           info.Type = LicenseType.Legacy;
@@ -155,7 +156,7 @@ namespace AGXUnity
       info.IsValid = native.licenseType != -1;
       LicenseInfo.ParseDate( ref info, native.endDate );
 
-      info.Type = native.licenseType == -1 ? LicenseType.Unknown : LicenseType.Service;
+      info.Type = info.IsValid ? LicenseType.Unknown : LicenseType.Service;
       info.TypeDescription = "Unknown";
       var subscriptionType = native.product.Split("-");
       if ( subscriptionType.Length == 2 )
