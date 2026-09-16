@@ -13,6 +13,7 @@ namespace AGXUnityTesting.Runtime
     private const float WheelRadius = 0.2f;
     private const float WheelHeight = 0.2f;
     private const float WheelClearance = 0.05f;
+    private const string ForceModelWarning = "Active Contact Material is NOT using terrainWheelForceModel!";
 
     [UnityTest]
     public IEnumerator CreateAndDestroyWithoutCylinder()
@@ -53,6 +54,8 @@ namespace AGXUnityTesting.Runtime
     {
       var (terrain, wheel) = CreateTerrainAndWheel();
 
+      LogAssert.Expect( LogType.Warning, ForceModelWarning );
+
       TestUtils.InitializeAll();
 
       for ( int i = 0; i < 20; ++i )
@@ -67,6 +70,8 @@ namespace AGXUnityTesting.Runtime
     public IEnumerator WheelWithWrongFrictionModel()
     {
       var (terrain, wheel) = CreateTerrainWheelAndContactMaterial();
+
+      LogAssert.Expect( LogType.Warning, ForceModelWarning );
 
       TestUtils.InitializeAll();
 
@@ -93,6 +98,47 @@ namespace AGXUnityTesting.Runtime
       Assert.That( terrain.Native, Is.Not.Null );
       Assert.That( wheel.Native, Is.Not.Null );
       Assert.That( wheel.ActiveContactMaterialUsesTerrainWheelForceModel, Is.True );
+    }
+
+    [UnityTest]
+    public IEnumerator ForceModelWarningWaitsForTerrainAndResetsOnDisable()
+    {
+      var warningCount = 0;
+      Application.LogCallback countWarnings = (message, stackTrace, type) => {
+        if ( type == LogType.Warning && message == ForceModelWarning )
+          ++warningCount;
+      };
+      Application.logMessageReceived += countWarnings;
+      try {
+        var (terrain, wheel) = CreateTerrainWheelAndContactMaterial();
+        Assert.That( wheel.Native, Is.Null );
+        LogAssert.Expect( LogType.Warning, ForceModelWarning );
+        TestUtils.InitializeAll();
+
+        for ( int i = 0; i < 40; ++i )
+          yield return TestUtils.Step();
+
+        Assert.That( warningCount, Is.EqualTo( 1 ) );
+
+        wheel.enabled = false;
+        LogAssert.Expect( LogType.Warning, ForceModelWarning );
+        wheel.enabled = true;
+        for ( int i = 0; i < 20; ++i )
+          yield return TestUtils.Step();
+
+        Assert.That( warningCount, Is.EqualTo( 2 ) );
+
+        wheel.enabled = false;
+        wheel.DisableForceModelWarning = true;
+        wheel.enabled = true;
+        for ( int i = 0; i < 20; ++i )
+          yield return TestUtils.Step();
+
+        Assert.That( warningCount, Is.EqualTo( 2 ) );
+      }
+      finally {
+        Application.logMessageReceived -= countWarnings;
+      }
     }
 
     private (DeformableTerrain terrain, DeformableTerrainWheel wheel) CreateTerrainAndWheel()
