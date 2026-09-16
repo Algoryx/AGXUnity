@@ -129,7 +129,7 @@ namespace AGXUnity
 
         if ( info.IsFloating || agx.Runtime.instance().hasKey( "InstallationID" ) ) {
           info.Type = LicenseType.Service;
-          if(agx.Runtime.instance().hasKey( "InstallationID" ))
+          if ( agx.Runtime.instance().hasKey( "InstallationID" ) )
             info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
         }
         else if ( agx.Runtime.instance().hasKey( "License" ) ) {
