@@ -156,7 +156,7 @@ namespace AGXUnity
       info.IsValid = native.licenseType != -1;
       LicenseInfo.ParseDate( ref info, native.endDate );
 
-      info.Type = info.IsValid ? LicenseType.Unknown : LicenseType.Service;
+      info.Type = info.IsValid ? LicenseType.Service : LicenseType.Unknown;
       info.TypeDescription = "Unknown";
       var subscriptionType = native.product.Split("-");
       if ( subscriptionType.Length == 2 )
