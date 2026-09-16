@@ -75,7 +75,7 @@ namespace AGXUnity.Model
       get { return m_forwardDisplacementWeight; }
       set
       {
-        m_forwardDisplacementWeight = Mathf.Clamp01(value);
+        m_forwardDisplacementWeight = Mathf.Clamp01( value );
         Propagate( wheel => wheel.getWheelDeformationProperties().setForwardDisplacementWeight( m_forwardDisplacementWeight ) );
       }
     }
@@ -90,7 +90,7 @@ namespace AGXUnity.Model
       get { return m_bulldozeDisplacementAmountFactor; }
       set
       {
-        m_bulldozeDisplacementAmountFactor = Mathf.Clamp01(value);
+        m_bulldozeDisplacementAmountFactor = Mathf.Clamp01( value );
         Propagate( wheel => wheel.getWheelDeformationProperties().setBulldozeDisplacementAmountFactor( m_bulldozeDisplacementAmountFactor ) );
       }
     }
