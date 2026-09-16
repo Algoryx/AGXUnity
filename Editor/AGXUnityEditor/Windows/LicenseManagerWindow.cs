@@ -89,7 +89,7 @@ namespace AGXUnityEditor.Windows
 
       m_scroll = EditorGUILayout.BeginScrollView( m_scroll );
 
-      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !IsBusy ) ) {
+      using ( new GUI.EnabledBlock( !IsUpdatingLicenseInformation && !IsBusy && !EditorApplication.isPlayingOrWillChangePlaymode ) ) {
         if ( GUILayout.Button( GUI.MakeLabel( "Rescan License Files", false,
                                              "Search the project again for license files added, removed, or changed while this window was open." ),
                                InspectorEditor.Skin.Button ) )
