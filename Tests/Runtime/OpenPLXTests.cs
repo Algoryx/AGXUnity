@@ -121,9 +121,6 @@ namespace AGXUnityTesting.Runtime
       var cartRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/cart");
       var rodRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/rod");
 
-      // SNAP does not work properly for this model so allow model to "settle" manually until this is fixed
-      yield return TestUtils.SimulateSeconds( 1.0f );
-
       rodRB.Native.addForceAtLocalPosition( new agx.Vec3( 25, 0, 0 ), new agx.Vec3( 0, 0, 1 ) );
 
       yield return TestUtils.SimulateSeconds( 4.0f );
