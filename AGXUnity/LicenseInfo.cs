@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using UnityEditor;
 using Math = System.Math;
 
 namespace AGXUnity
@@ -89,10 +88,8 @@ namespace AGXUnity
     {
       var info = new LicenseInfo();
 
-#if UNITY_EDITOR
-      if ( AssetDatabase.IsAssetImportWorkerProcess() )
+      if ( !LicenseManager.CanAccessRuntime )
         return info;
-#endif
 
       try {
         info.Version = agx.agxSWIG.agxGetVersion( false );
@@ -130,9 +127,10 @@ namespace AGXUnity
         if ( string.IsNullOrEmpty( info.TypeDescription ) )
           info.TypeDescription = "Unknown";
 
-        if ( agx.Runtime.instance().hasKey( "InstallationID" ) ) {
+        if ( info.IsFloating || agx.Runtime.instance().hasKey( "InstallationID" ) ) {
           info.Type = LicenseType.Service;
-          info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
+          if ( agx.Runtime.instance().hasKey( "InstallationID" ) )
+            info.UniqueId = agx.Runtime.instance().readValue( "InstallationID" );
         }
         else if ( agx.Runtime.instance().hasKey( "License" ) ) {
           info.Type = LicenseType.Legacy;
@@ -158,7 +156,8 @@ namespace AGXUnity
       info.IsValid = native.licenseType != -1;
       LicenseInfo.ParseDate( ref info, native.endDate );
 
-      info.Type = LicenseInfo.LicenseType.Service;
+      info.Type = info.IsValid ? LicenseType.Service : LicenseType.Unknown;
+      info.TypeDescription = "Unknown";
       var subscriptionType = native.product.Split("-");
       if ( subscriptionType.Length == 2 )
         info.TypeDescription = subscriptionType[ 1 ].Trim();

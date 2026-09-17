@@ -1,4 +1,4 @@
-﻿using AGXUnity.Utils;
+using AGXUnity.Utils;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -26,7 +26,7 @@ namespace AGXUnityEditor.Windows
       set
       {
         if ( string.IsNullOrEmpty( value ) ) {
-          Debug.LogWarning( "Invalid build directory - directory is null or empty." );
+          m_generationError = "Invalid build directory - directory is null or empty.";
           return;
         }
 
@@ -34,7 +34,7 @@ namespace AGXUnityEditor.Windows
           value = $"{Directory.GetCurrentDirectory()}/{value}";
 
         if ( !Directory.Exists( value ) ) {
-          Debug.LogWarning( $"Invalid build directory - directory \"{value}\" doesn't exist." );
+          m_generationError = $"Invalid build directory - directory \"{value}\" doesn't exist.";
           return;
         }
 
@@ -55,8 +55,8 @@ namespace AGXUnityEditor.Windows
         if ( tmp.StartsWith( BuildDirectory ) )
           tmp = tmp.MakeRelative( BuildDirectory, false );
         else if ( Path.IsPathRooted( tmp ) ) {
-          Debug.LogWarning( $"Reference file \"{tmp}\" doesn't seems to be in the build directory \"{BuildDirectory}\". " +
-                            "Make sure the build directory is correct before reference file is set." );
+          m_generationError = $"Reference file \"{tmp}\" is not in the build directory \"{BuildDirectory}\". " +
+                              "Check the build directory before selecting the reference file.";
           return;
         }
 
@@ -77,6 +77,8 @@ namespace AGXUnityEditor.Windows
 
     private void OnGUI()
     {
+      using var feedback = AGXUnity.LicenseManager.SuppressConsoleLogging();
+      m_scroll = EditorGUILayout.BeginScrollView( m_scroll );
       using ( GUI.AlignBlock.Center )
         GUILayout.Box( IconManager.GetAGXUnityLogo(),
                        GUI.Skin.customStyles[ 3 ],
@@ -104,7 +106,7 @@ namespace AGXUnityEditor.Windows
                                  "Build directory",
                                  newBuildDirectory => {
                                    if ( !Directory.Exists( newBuildDirectory ) ) {
-                                     Debug.LogWarning( $"Ignoring given build path {newBuildDirectory} doesn't exist." );
+                                     m_generationError = $"The build directory does not exist: {newBuildDirectory}";
                                      return;
                                    }
                                    BuildDirectory = newBuildDirectory;
@@ -121,15 +123,19 @@ namespace AGXUnityEditor.Windows
       m_idPassword.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Runtime License Id" ),
                                                    m_idPassword.Id,
                                                    InspectorEditor.Skin.TextField );
-      if ( m_idPassword.Id.Any( c => !char.IsDigit( c ) ) )
-        m_idPassword.Id = new string( m_idPassword.Id.Where( c => char.IsDigit( c ) ).ToArray() );
       m_idPassword.Password = EditorGUILayout.PasswordField( GUI.MakeLabel( "Runtime Activation Code" ),
                                                              m_idPassword.Password );
 
       var generateToolTip = string.Empty;
+      if ( !string.IsNullOrEmpty( m_idPassword.Id ) &&
+           ( !int.TryParse( m_idPassword.Id, out var enteredId ) || enteredId <= 0 ) )
+        EditorGUILayout.HelpBox( "Enter a license ID between 1 and 2147483647.", MessageType.Error, true );
+      if ( !string.IsNullOrEmpty( m_generationError ) )
+        EditorGUILayout.HelpBox( m_generationError, MessageType.Error, true );
       using ( new GUI.EnabledBlock( ValidateGenerate( ref generateToolTip ) ) ) {
         GUILayout.Space( 3 );
         if ( GUILayout.Button( GUI.MakeLabel( "Generate", false, generateToolTip ) ) ) {
+          m_generationError = null;
           var generatedFilename = string.Empty;
           if ( AGXUnity.LicenseManager.GenerateEncryptedRuntime( System.Convert.ToInt32( m_idPassword.Id ),
                                                                  m_idPassword.Password,
@@ -141,18 +147,24 @@ namespace AGXUnityEditor.Windows
                                          "Ok" );
             Close();
           }
+          else
+            m_generationError = AGXUnity.LicenseManager.LastOperationError ?? "Runtime activation file generation failed. Check the license details and that the build directory is writable.";
         }
       }
+      EditorGUILayout.EndScrollView();
     }
 
     private bool ValidateGenerate( ref string toolTip )
     {
-      var idGiven = !string.IsNullOrEmpty( m_idPassword.Id ) && m_idPassword.Id.Length > 1;
-      var passwordGiven = !string.IsNullOrEmpty( m_idPassword.Password ) && m_idPassword.Password.Length > 1;
+      var idGiven = int.TryParse( m_idPassword.Id, out var id ) && id > 0;
+      var passwordGiven = !string.IsNullOrWhiteSpace( m_idPassword.Password );
       var directoryValid = Directory.Exists( BuildDirectory );
       var fileExist = File.Exists( ReferenceFileInBuildFull );
+      var canGenerate = !AGXUnity.LicenseManager.IsBusy && !EditorApplication.isPlayingOrWillChangePlaymode;
+      if ( !canGenerate )
+        toolTip += "Wait for license operations to finish and exit play mode before generating.\n";
       if ( !idGiven )
-        toolTip += "Missing license id.\n";
+        toolTip += "Enter a license ID between 1 and 2147483647.\n";
       if ( !passwordGiven )
         toolTip += "Missing license password.\n";
       if ( !directoryValid )
@@ -165,7 +177,7 @@ namespace AGXUnityEditor.Windows
       else if ( string.IsNullOrEmpty( toolTip ) )
         toolTip = "Generate encrypted runtime license.";
 
-      return idGiven &&
+      return canGenerate && idGiven &&
              passwordGiven &&
              directoryValid &&
              fileExist;
@@ -174,5 +186,7 @@ namespace AGXUnityEditor.Windows
     private LicenseManagerWindow.IdPassword m_idPassword = LicenseManagerWindow.IdPassword.Empty();
     private string m_buildDirectory = string.Empty;
     private string m_referenceFileInBuild = string.Empty;
+    private string m_generationError;
+    private Vector2 m_scroll;
   }
 }
