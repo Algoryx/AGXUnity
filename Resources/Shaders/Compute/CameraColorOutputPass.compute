@@ -1,0 +1,158 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ColorOutputPass
+
+#include "WarningDisable.cginc"
+
+uniform Texture2D Source;
+uniform SamplerState samplerSource;
+RWBuffer<uint> Result;
+
+#define TYPE_I8 1
+#define TYPE_U8 2
+
+#define TYPE_I16 4
+#define TYPE_U16 5
+
+#define TYPE_I32 7
+#define TYPE_U32 8
+#define TYPE_F32 9
+
+#define TYPE_I64 10
+#define TYPE_U64 11
+#define TYPE_F64 12
+
+uniform uint2 OutputResolution;
+uniform float2 IlluminanceCutoff;
+uniform float GammaInv;
+uniform float4x4 ColorMapping;
+uniform uint ChannelCount;
+
+uniform uint OutputType;
+
+float colorToIntensityRec709(float3 color)
+{
+    return dot(color, float3(0.2126, 0.7152, 0.0722));
+}
+
+void writeFinalColor(uint pixelIndex, uint channels, float4 finalColor)
+{
+    for (uint i = 0; i < channels; ++i) {
+        uint elementIndex = pixelIndex * channels + i;
+
+        if(OutputType == TYPE_U8) {
+            uint dataIndex = elementIndex / 4;
+            uint dataOffsetBits = (elementIndex % 4) * 8;
+
+            uint oldValue = Result[dataIndex] & (0xffu << dataOffsetBits);
+            uint newValue = uint(0xffu * finalColor[i]) << dataOffsetBits;
+            //newValue = uint(0xffu * 1.0f);
+
+            InterlockedXor(Result[dataIndex], oldValue ^ newValue, oldValue);
+        } else if(OutputType == TYPE_I8) {
+            uint dataIndex = elementIndex / 4;
+            uint dataOffsetBits = (elementIndex % 4) * 8;
+        
+            uint valueBase = clamp(uint(0x7fu * abs(finalColor[i])), 0x00u, 0x7fu);
+            uint signMask = finalColor[i] < 0.0 ? 0x80u : 0x00u;
+
+            uint oldValue = Result[dataIndex] & (0xffu << dataOffsetBits);
+            uint newValue = (valueBase | signMask) << dataOffsetBits;
+
+            InterlockedXor(Result[dataIndex], oldValue ^ newValue, oldValue);
+        } else if(OutputType == TYPE_U16) {
+            uint dataIndex = elementIndex / 2;
+            uint dataOffsetBits = (elementIndex % 2) * 16;
+
+            uint oldValue = Result[dataIndex] & (0xffffu << dataOffsetBits);
+            uint newValue = uint(0xffffu * finalColor[i]) << dataOffsetBits;
+
+            InterlockedXor(Result[dataIndex], oldValue ^ newValue, oldValue);
+        } else if(OutputType == TYPE_I16) {
+            uint dataIndex = elementIndex / 2;
+            uint dataOffsetBits = (elementIndex % 2) * 16;
+
+            uint valueBase = clamp(uint(0x7fffu * abs(finalColor[i])), 
+                                    0x0000u, 
+                                    0x7fffu);
+            uint signMask = finalColor[i] < 0.0 ? 0x8000u : 0x0000u;
+
+            uint oldValue = Result[dataIndex] & (0xffffu << dataOffsetBits);
+            uint newValue = (valueBase | signMask) << dataOffsetBits;
+
+            InterlockedXor(Result[dataIndex], oldValue ^ newValue, oldValue);
+        } else if(OutputType == TYPE_U32) {
+            Result[elementIndex] = uint(0xffffffffu * finalColor[i]);
+        } else if(OutputType == TYPE_I32) {
+            uint valueBase = clamp(uint(0x7fffffffu * abs(finalColor[i])), 
+                               0x00000000u, 
+                               0x7fffffffu);
+            uint signMask = finalColor[i] < 0.0 ? 0x80000000u 
+                                                : 0x00000000u;
+
+            Result[elementIndex] = valueBase | signMask;
+        } else if(OutputType == TYPE_U64) {
+            uint dataIndex = elementIndex * 2;
+
+            double color = finalColor[i];
+
+            uint upper = uint(0xffffffffu * color);
+            double lower = (color - (upper * double(2.3283064e-10))) * 4.2949673e9;
+
+            Result[dataIndex] = uint(0xffffffffu * lower);
+            Result[dataIndex + 1] = upper;
+        } else if(OutputType == TYPE_I64) {
+            uint dataIndex = elementIndex * 2;
+
+            double color = abs(finalColor[i]);
+
+            uint upper = clamp(uint(0x7fffffffu * color),
+                               0x00000000u,
+                               0x7fffffffu);
+            double lower = (color - (upper * double(4.6566129e-10))) * 2.1474836e9;
+            uint signMask = finalColor[i] < 0.0 ? 0x80000000u 
+                                                : 0x00000000u;
+
+            Result[dataIndex] = uint(0xffffffffu * lower);
+            Result[dataIndex + 1] = upper | signMask;
+        } else if(OutputType == TYPE_F32) {
+            Result[elementIndex] = asuint(finalColor[i]);
+        } else if(OutputType == TYPE_F64) {
+            uint upper;
+            uint lower;
+            asuint(finalColor[i], upper, lower);
+            Result[elementIndex * 2] = lower;
+            Result[elementIndex * 2 + 1] = upper;
+        }
+    }
+}
+
+[numthreads(8,8,1)]
+void ColorOutputPass (uint3 id : SV_DispatchThreadID)
+{
+    // Early out if out of bounds
+    if(id.x >= OutputResolution.x || id.y >= OutputResolution.y)
+        return;
+
+    uint pixelIdx = (id.y * OutputResolution.x + id.x);
+
+    float2 uv = (float2)id / (float2)OutputResolution;
+    
+    float4 srcColor = float4(Source.SampleLevel(samplerSource, uv, 0).rgb,1.0f);
+    float illuminance = colorToIntensityRec709(srcColor.rgb);
+
+    if (illuminance <= IlluminanceCutoff.x)
+        writeFinalColor(pixelIdx, ChannelCount, float4(0.0, 0.0, 0.0, 0.0));
+    else if (illuminance >= IlluminanceCutoff.y)
+        writeFinalColor(pixelIdx, ChannelCount, float4(1.0, 1.0, 1.0, 1.0));
+    else {
+        float4 remappedColor = mul(ColorMapping, srcColor);
+        float4 finalColor =     
+            float4(
+                clamp(pow(abs(remappedColor.r), GammaInv), 0.0, 1.0),
+                clamp(pow(abs(remappedColor.g), GammaInv), 0.0, 1.0),
+                clamp(pow(abs(remappedColor.b), GammaInv), 0.0, 1.0),
+                clamp(pow(abs(remappedColor.a), GammaInv), 0.0, 1.0));
+
+        writeFinalColor(pixelIdx, ChannelCount, finalColor);
+    }
+}

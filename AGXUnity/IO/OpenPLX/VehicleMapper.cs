@@ -179,7 +179,7 @@ namespace AGXUnity.IO.OpenPLX
 
       var oChassis = system.chassis_body();
       if ( oChassis == null && connection != null ) {
-        var hinge = connection.hinge_1().hinge();
+        var hinge = connection.hinge_1().mate();
         foreach ( var connector in hinge.connectors() ) {
           if ( connector is RedirectedMateConnector redirected )
             oChassis = redirected.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
