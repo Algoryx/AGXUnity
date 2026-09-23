@@ -334,6 +334,9 @@ namespace AGXUnity.IO
 
     private static void OnCLI()
     {
+      if ( LicenseManager.IsAssetImportWorkerProcess )
+        return;
+
       if ( CommandLine.HasArg( CommandLine.Arg.GenerateOfflineActivation ) ) {
         try {
           var offlineLicenseIdCode = CommandLine.GetValues( CommandLine.Arg.GenerateOfflineActivation );

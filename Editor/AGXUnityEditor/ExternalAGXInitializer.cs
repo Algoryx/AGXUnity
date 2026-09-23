@@ -35,6 +35,9 @@ namespace AGXUnityEditor
 
     public bool ApplyData()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return false;
+
       IsApplied = true;
 
       Environment.Set( Environment.Variable.AGX_DIR, AGX_DIR );
@@ -139,6 +142,9 @@ namespace AGXUnityEditor
 
     public static bool Initialize()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return false;
+
 #if UNITY_EDITOR_WIN
       // Dependencies dir set and we're certain setup_env has been executed.
       if ( Environment.IsSet( Environment.Variable.AGX_DEPENDENCIES_DIR ) )
