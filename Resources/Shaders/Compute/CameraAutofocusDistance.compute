@@ -1,0 +1,24 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel SampleDepth
+
+uniform Texture2D<float4> DepthTexture;
+uniform SamplerState samplerDepthTexture;
+
+uniform float4 ZBufferParams;
+
+RWBuffer<float> Result;
+
+float bufferToDepth(float depth)
+{
+return 1.0 / (ZBufferParams.z * depth + ZBufferParams.w);
+}
+
+[numthreads(1,1,1)]
+void SampleDepth (uint3 id : SV_DispatchThreadID)
+{
+    float near = 0.3;
+    float far = 1000;
+
+    float raw = DepthTexture.SampleLevel(samplerDepthTexture, float2(0.5f,0.5f), 0).x;
+    Result[0] = bufferToDepth(raw);
+}

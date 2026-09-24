@@ -1,18 +1,106 @@
-using System;
+using AGXUnity.Rendering.PostProcessing;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using static UnityEngine.Rendering.RenderPipeline;
 
 namespace AGXUnity.Sensor
 {
+  internal class CameraAutofocuser
+  {
+    private RenderTexture Depth { get; set; }
+    private ComputeShader DepthSampler;
+    private int DepthSamplerKernel;
+    private ComputeBuffer DepthSamplerBuffer;
+    private float m_targetFocusDistance;
+    private float m_autofocusPeriod = 0.2f;
+    private float m_lastFocus = float.NegativeInfinity;
+    private Camera m_camera;
+
+    public float MinimumFocusDistance { get; set; } = 0.1f;
+    public float FocusDistance { get; private set; }
+
+    internal CameraAutofocuser( Camera cam, float initialFocusDistance = 10 )
+    {
+      m_camera = cam;
+      FocusDistance = initialFocusDistance;
+
+      var desc = new RenderTextureDescriptor(128, 128)
+      {
+        graphicsFormat = GraphicsFormat.None,
+        depthStencilFormat = GraphicsFormat.D32_SFloat,
+        msaaSamples = 1
+      };
+      Depth = new RenderTexture( desc );
+      Depth.Create();
+
+      DepthSampler ??= Resources.Load<ComputeShader>( "Shaders/Compute/CameraAutofocusDistance" );
+      DepthSamplerKernel = DepthSampler.FindKernel( "SampleDepth" );
+      DepthSamplerBuffer ??= new ComputeBuffer( 1, sizeof( float ) );
+
+      DepthSampler.SetBuffer( DepthSamplerKernel, "Result", DepthSamplerBuffer );
+      DepthSampler.SetTexture( DepthSamplerKernel, "DepthTexture", Depth, 0, RenderTextureSubElement.Depth );
+    }
+
+    internal void Update()
+    {
+      if ( Time.time > m_lastFocus + m_autofocusPeriod ) {
+        m_camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+        m_camera.GetUniversalAdditionalCameraData().renderShadows = false;
+        m_camera.GetUniversalAdditionalCameraData().requiresColorTexture = false;
+        //GetComponent<Volume>().enabled = false;
+        var request = new StandardRequest() {destination = Depth};
+        m_camera.SubmitRenderRequest( request );
+        //GetComponent<Volume>().enabled = true;
+        m_camera.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+        m_camera.GetUniversalAdditionalCameraData().renderShadows = true;
+        m_camera.GetUniversalAdditionalCameraData().requiresColorTexture = true;
+
+        Vector4 zBufferParams;
+
+        float n = m_camera.nearClipPlane;
+        float f = m_camera.farClipPlane;
+
+        if ( SystemInfo.usesReversedZBuffer ) {
+          float x = -1.0f + f / n;
+          zBufferParams = new Vector4( x, 1.0f, x / f, 1.0f / f );
+        }
+        else {
+          float x = 1.0f - f / n;
+          float y = f / n;
+
+          zBufferParams = new Vector4( x, y, x / f, y / f );
+        }
+
+        DepthSampler.SetVector( "ZBufferParams", zBufferParams );
+        DepthSampler.Dispatch( DepthSamplerKernel, 1, 1, 1 );
+
+        AsyncGPUReadback.Request( DepthSamplerBuffer, req => {
+          m_targetFocusDistance = req.GetData<float>()[ 0 ];
+        } );
+        m_lastFocus = Time.time;
+      }
+      FocusDistance = Mathf.Max( MinimumFocusDistance, Mathf.Lerp( FocusDistance, m_targetFocusDistance, 0.05f ) );
+    }
+  }
+
   [DisallowMultipleComponent]
   [RequireComponent( typeof( Camera ) )]
+  [RequireComponent( typeof( Volume ) )]
+  [RequireComponent( typeof( SphereCollider ) )]
   public class CameraSensor : ScriptComponent
   {
     public agxSensor.Camera Native { get; private set; }
+    public agxSensor.CameraLens NativeLens { get; private set; }
+    public agxSensor.CameraPhotodetector NativePhotodetector { get; private set; }
+
     public Camera CameraComponent => GetComponent<Camera>();
 
     public RenderTexture Output { get; private set; }
+
+    private CameraAutofocuser m_autofocuser;
 
     [SerializeField]
     private float m_focalLength;
@@ -23,21 +111,70 @@ namespace AGXUnity.Sensor
       get => m_focalLength;
       set
       {
+        if ( m_focalLength == value ) return;
         CameraComponent.focalLength = value * 1000;
         m_focalLength = value;
+        if ( NativeLens is agxSensor.CameraLensSingleElement lens )
+          lens.setFocalLength( m_focalLength );
+      }
+    }
+
+    [SerializeField]
+    private bool m_autofocus = true;
+    public bool Autofocus
+    {
+      get => m_autofocus;
+      set
+      {
+        if ( m_autofocus == value )
+          return;
+        m_autofocus = value;
+
+        if ( !m_autofocus )
+          m_autofocuser = null;
+
+        if ( NativeLens is agxSensor.CameraLensSingleElement lens ) {
+          if ( m_autofocus )
+            lens.setAutofocus( MinimumFocusDistance );
+          else
+            lens.setFocusDistance( FocusDistance );
+        }
+      }
+    }
+
+    [SerializeField]
+    private float m_minimumFocusDistance;
+
+    [DynamicallyShowInInspector( nameof( Autofocus ) )]
+    public float MinimumFocusDistance
+    {
+      get => m_minimumFocusDistance;
+      set
+      {
+        if ( m_minimumFocusDistance == value ) return;
+
+        m_minimumFocusDistance = value;
+        if ( Autofocus && NativeLens is agxSensor.CameraLensSingleElement lens )
+          lens.setAutofocus( m_minimumFocusDistance );
       }
     }
 
     [SerializeField]
     private float m_focusDistance;
 
+    [DynamicallyShowInInspector( nameof( Autofocus ), invert: false )]
     public float FocusDistance
     {
       get => m_focusDistance;
       set
       {
+        if ( m_focusDistance == value && !Autofocus ) return;
+
         CameraComponent.focusDistance = value;
         m_focusDistance = value;
+        Autofocus = false;
+        if ( NativeLens is agxSensor.CameraLensSingleElement lens )
+          lens.setFocusDistance( m_minimumFocusDistance );
       }
     }
 
@@ -49,11 +186,13 @@ namespace AGXUnity.Sensor
       get => m_fStop;
       set
       {
+        if ( m_fStop == value ) return;
         CameraComponent.aperture = value;
         m_fStop = value;
+        if ( NativeLens is agxSensor.CameraLensSingleElement lens )
+          lens.setFStop( m_fStop );
       }
     }
-
 
     [SerializeField]
     private Vector2 m_sensorSize;
@@ -205,11 +344,35 @@ namespace AGXUnity.Sensor
       SynchronizeIlluminators();
     }
 
+    private void SynchronizeVolume()
+    {
+      var volume = GetComponent<Volume>();
+      var profile = volume.sharedProfile;
+      if ( !profile.TryGet( out DepthOfField dof ) )
+        dof = profile.Add<DepthOfField>();
+      dof.active = true;
+      dof.mode.Override( DepthOfFieldMode.Bokeh );
+      dof.focusDistance.Override( FocusDistance );
+      dof.focalLength.Override( FocalLength * 1000 );
+      dof.aperture.Override( fStop );
+
+      if ( !profile.TryGet( out AGXLensDistortion distortion ) )
+        distortion = profile.Add<AGXLensDistortion>();
+      distortion.active = true;
+    }
+
     private void Update()
     {
       SynchronizeIlluminators();
       foreach ( var output in Outputs )
         output.PerformQueuedCapture();
+
+      if ( Autofocus ) {
+        m_autofocuser ??= new CameraAutofocuser( CameraComponent, FocusDistance );
+        m_autofocuser.MinimumFocusDistance = MinimumFocusDistance;
+        m_autofocuser.Update();
+        m_focusDistance = m_autofocuser.FocusDistance;
+      }
     }
 
     private void PreStep()
@@ -229,11 +392,16 @@ namespace AGXUnity.Sensor
       var frame = new agx.Frame();
 
       var lens = new agxSensor.CameraLensSingleElement();
+      NativeLens = lens;
       lens.setFocalLength( FocalLength );
-      lens.setFocusDistance( FocusDistance );
+      if ( Autofocus )
+        lens.setAutofocus( MinimumFocusDistance );
+      else
+        lens.setFocusDistance( FocusDistance );
       lens.setFStop( fStop );
 
       var detector = new agxSensor.CameraCMOSSensor();
+      NativePhotodetector = detector;
       detector.setSize( new agx.Vec2( SensorSize.x, SensorSize.y ) );
       detector.setISO( ISO );
       detector.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
@@ -247,7 +415,7 @@ namespace AGXUnity.Sensor
         illuminators.Add( new agxSensor.ICameraActiveIlluminationRef( illum.Native ) );
       }
 
-      var model = new agxSensor.CameraModel(lens, detector, illuminators);
+      var model = new agxSensor.CameraModel(NativeLens, NativePhotodetector, illuminators);
 
       Native = new agxSensor.Camera( frame, model, CameraBackend.Instance.createBackend() );
 
@@ -283,6 +451,8 @@ namespace AGXUnity.Sensor
       foreach ( var illum in Illuminators ) {
         illum.Flash();
       }
+
+      SynchronizeVolume();
 
       var request = new RenderPipeline.StandardRequest { destination = Output };
       CameraComponent.SubmitRenderRequest( request );

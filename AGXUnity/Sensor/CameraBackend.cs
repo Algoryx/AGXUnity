@@ -107,7 +107,8 @@ namespace AGXUnity.Sensor
       uCamera.fStop = (float)parameters.fStop;
 
       if ( parameters.autofocus ) {
-        Debug.LogWarning( "Autofocus is not yet supported" );
+        uCamera.Autofocus = true;
+        uCamera.MinimumFocusDistance = (float)lens.getMinimumFocusDistance();
       }
       else
         uCamera.FocusDistance = (float)lens.getFocusDistance();
