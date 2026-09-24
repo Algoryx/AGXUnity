@@ -39,6 +39,7 @@ namespace AGXUnity.Sensor
 
     private bool m_hasUnreadData = false;
     private double m_accumulatedCaptureTime = 0.0f;
+    private bool m_disposed = false;
 
     [HideInInspector]
     public agxSensor.CameraColorOutput Native { get; internal set; }
@@ -65,9 +66,10 @@ namespace AGXUnity.Sensor
         if ( m_resolution == value ) return;
 
         m_resolution = value;
-        RecreateTexture();
-        if ( Native != null )
+        if ( Native != null ) {
+          RecreateBuffer();
           Native.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
+        }
       }
     }
 
@@ -171,8 +173,9 @@ namespace AGXUnity.Sensor
       }
     }
 
-    private void RecreateTexture()
+    private void RecreateBuffer()
     {
+      OutputBuffer?.Release();
       OutputBuffer = new ComputeBuffer( (int)OutputSize32, sizeof( uint ) );
     }
 
@@ -193,7 +196,15 @@ namespace AGXUnity.Sensor
       Native.setChannelType( ChannelType );
       Native.setRelativeIlluminanceCutoff( new agx.RangeReal( IlluminanceCutoff.x, IlluminanceCutoff.y ) );
 
-      RecreateTexture();
+      RecreateBuffer();
+      m_disposed = false;
+    }
+
+    internal void Dispose()
+    {
+      m_disposed = true;
+      OutputBuffer?.Release();
+      Native = null;
     }
 
     public void Capture()
@@ -208,8 +219,10 @@ namespace AGXUnity.Sensor
       if ( !HasQueuedCapture )
         return;
 
-      if ( Parent == null )
+      if ( Parent == null || OutputBuffer == null ) {
+        Debug.LogWarning( "CameraColorOutput attempted to capture after being disposed" );
         return;
+      }
 
       Parent.EnsureHasOutput();
       HasQueuedCapture = false;
@@ -246,7 +259,7 @@ namespace AGXUnity.Sensor
       1 );
 
       AsyncGPUReadback.Request( OutputBuffer, req => {
-        if ( requestTime <= m_currentDataStamp )
+        if ( requestTime <= m_currentDataStamp || req.hasError || m_disposed )
           return;
 
         m_currentDataStamp = requestTime;

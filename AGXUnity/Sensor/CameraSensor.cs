@@ -8,40 +8,63 @@ using static UnityEngine.Rendering.RenderPipeline;
 
 namespace AGXUnity.Sensor
 {
-  internal class CameraAutofocuser
+  [System.Serializable]
+  public class CameraAutofocuser
   {
     private RenderTexture Depth { get; set; }
     private ComputeShader DepthSampler;
     private int DepthSamplerKernel;
     private ComputeBuffer DepthSamplerBuffer;
-    private float m_targetFocusDistance;
-    private float m_autofocusPeriod = 0.2f;
-    private float m_lastFocus = float.NegativeInfinity;
     private Camera m_camera;
+    private bool m_disposed = true;
+
+    public enum Mode
+    {
+      Progressive,
+      Instant
+    };
+
+    [SerializeField]
+    public Mode AutofocusMode = Mode.Progressive;
+
+    private float m_targetFocusDistance;
+    private float m_autofocusPeriod = 0.1f;
+    private float m_lastFocus = float.NegativeInfinity;
 
     public float MinimumFocusDistance { get; set; } = 0.1f;
     public float FocusDistance { get; private set; }
 
-    internal CameraAutofocuser( Camera cam, float initialFocusDistance = 10 )
+    internal void Activate( Camera cam, float initialFocusDistance )
     {
       m_camera = cam;
       FocusDistance = initialFocusDistance;
 
-      var desc = new RenderTextureDescriptor(128, 128)
-      {
-        graphicsFormat = GraphicsFormat.None,
-        depthStencilFormat = GraphicsFormat.D32_SFloat,
-        msaaSamples = 1
-      };
-      Depth = new RenderTexture( desc );
-      Depth.Create();
+      if ( m_disposed ) {
+        var desc = new RenderTextureDescriptor(128, 128)
+        {
+          graphicsFormat = GraphicsFormat.None,
+          depthStencilFormat = GraphicsFormat.D32_SFloat,
+          msaaSamples = 1
+        };
+        Depth = new RenderTexture( desc );
+        Depth.Create();
 
-      DepthSampler ??= Resources.Load<ComputeShader>( "Shaders/Compute/CameraAutofocusDistance" );
-      DepthSamplerKernel = DepthSampler.FindKernel( "SampleDepth" );
-      DepthSamplerBuffer ??= new ComputeBuffer( 1, sizeof( float ) );
+        DepthSampler ??= Resources.Load<ComputeShader>( "Shaders/Compute/CameraAutofocusDistance" );
+        DepthSamplerKernel = DepthSampler.FindKernel( "SampleDepth" );
+        DepthSamplerBuffer ??= new ComputeBuffer( 1, sizeof( float ) );
 
-      DepthSampler.SetBuffer( DepthSamplerKernel, "Result", DepthSamplerBuffer );
-      DepthSampler.SetTexture( DepthSamplerKernel, "DepthTexture", Depth, 0, RenderTextureSubElement.Depth );
+        DepthSampler.SetBuffer( DepthSamplerKernel, "Result", DepthSamplerBuffer );
+        DepthSampler.SetTexture( DepthSamplerKernel, "DepthTexture", Depth, 0, RenderTextureSubElement.Depth );
+      }
+
+      m_disposed = false;
+    }
+
+    internal void Dispose()
+    {
+      m_disposed = true;
+      Depth?.Release();
+      DepthSamplerBuffer?.Dispose();
     }
 
     internal void Update()
@@ -98,11 +121,14 @@ namespace AGXUnity.Sensor
         DepthSampler.Dispatch( DepthSamplerKernel, 1, 1, 1 );
 
         AsyncGPUReadback.Request( DepthSamplerBuffer, req => {
+          if ( req.hasError || m_disposed )
+            return;
           m_targetFocusDistance = req.GetData<float>()[ 0 ];
         } );
         m_lastFocus = Time.time;
       }
-      FocusDistance = Mathf.Max( MinimumFocusDistance, Mathf.Lerp( FocusDistance, m_targetFocusDistance, 0.05f ) );
+      FocusDistance = Mathf.Max( MinimumFocusDistance, Mathf.Lerp( FocusDistance, m_targetFocusDistance, 0.1f ) );
+      Debug.Log( FocusDistance-m_targetFocusDistance );
     }
   }
 
@@ -120,7 +146,8 @@ namespace AGXUnity.Sensor
 
     public RenderTexture Output { get; private set; }
 
-    private CameraAutofocuser m_autofocuser;
+    [field: SerializeField]
+    public CameraAutofocuser Autofocuser { get; private set; } = new CameraAutofocuser();
 
     [SerializeField]
     private float m_focalLength;
@@ -149,12 +176,11 @@ namespace AGXUnity.Sensor
           return;
         m_autofocus = value;
 
-        if ( !m_autofocus )
-          m_autofocuser = null;
-
         if ( NativeLens is agxSensor.CameraLensSingleElement lens ) {
-          if ( m_autofocus )
+          if ( m_autofocus ) {
+            Autofocuser.Activate( CameraComponent, FocusDistance );
             lens.setAutofocus( MinimumFocusDistance );
+          }
           else
             lens.setFocusDistance( FocusDistance );
         }
@@ -181,7 +207,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_focusDistance;
 
-    [DynamicallyShowInInspector( nameof( Autofocus ), invert: false )]
+    [DynamicallyShowInInspector( nameof( Autofocus ), invert: true )]
     [IgnoreSynchronization]
     public float FocusDistance
     {
@@ -191,10 +217,11 @@ namespace AGXUnity.Sensor
         if ( m_focusDistance == value && !Autofocus ) return;
 
         CameraComponent.focusDistance = value;
+
         m_focusDistance = value;
         Autofocus = false;
         if ( NativeLens is agxSensor.CameraLensSingleElement lens )
-          lens.setFocusDistance( m_minimumFocusDistance );
+          lens.setFocusDistance( m_focusDistance );
       }
     }
 
@@ -284,6 +311,7 @@ namespace AGXUnity.Sensor
 
     private void RecreateRenderTexture()
     {
+      Output?.Release();
       Output = new RenderTexture( Resolution.x, Resolution.y, 8, RenderTextureFormat.Default );
       Output.hideFlags = HideFlags.NotEditable;
       Output.name = name + "_Output";
@@ -341,7 +369,8 @@ namespace AGXUnity.Sensor
         lightComp.type = illum.IlluminatorType switch
         {
           Illuminator.Type.Spot => LightType.Spot,
-          Illuminator.Type.Point => LightType.Point
+          Illuminator.Type.Point => LightType.Point,
+          _ => lightComp.type
         };
 
         lightComp.color = illum.Color;
@@ -385,10 +414,9 @@ namespace AGXUnity.Sensor
         output.PerformQueuedCapture();
 
       if ( Autofocus ) {
-        m_autofocuser ??= new CameraAutofocuser( CameraComponent, FocusDistance );
-        m_autofocuser.MinimumFocusDistance = MinimumFocusDistance;
-        m_autofocuser.Update();
-        m_focusDistance = m_autofocuser.FocusDistance;
+        Autofocuser.MinimumFocusDistance = MinimumFocusDistance;
+        Autofocuser.Update();
+        m_focusDistance = Autofocuser.FocusDistance;
       }
     }
 
@@ -449,6 +477,8 @@ namespace AGXUnity.Sensor
       Simulation.Instance.StepCallbacks.PreStepForward += PreStep;
       Simulation.Instance.StepCallbacks.PostStepForward += PostStep;
 
+      Autofocuser.Activate( CameraComponent, FocusDistance );
+
       return base.Initialize();
     }
     protected override void OnDestroy()
@@ -457,6 +487,9 @@ namespace AGXUnity.Sensor
         Simulation.Instance.StepCallbacks.PreStepForward -= PreStep;
         Simulation.Instance.StepCallbacks.PostStepForward -= PostStep;
       }
+      Autofocuser?.Dispose();
+      foreach ( var output in Outputs )
+        output.Dispose();
       base.OnDestroy();
     }
 

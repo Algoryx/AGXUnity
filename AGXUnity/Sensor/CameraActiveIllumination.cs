@@ -33,8 +33,10 @@ namespace AGXUnity.Sensor
     [field: SerializeField]
     public float FlashDuration { get; set; } = Mathf.Infinity;
 
+    [HideInInspector]
     public CameraSensor Parent { get; private set; }
 
+    [HideInInspector]
     public Light UnityLight { get; internal set; }
 
     private float LastFlash { get; set; } = float.NegativeInfinity;
