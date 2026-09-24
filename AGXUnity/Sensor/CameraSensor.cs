@@ -47,16 +47,36 @@ namespace AGXUnity.Sensor
     internal void Update()
     {
       if ( Time.time > m_lastFocus + m_autofocusPeriod ) {
-        m_camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
-        m_camera.GetUniversalAdditionalCameraData().renderShadows = false;
-        m_camera.GetUniversalAdditionalCameraData().requiresColorTexture = false;
-        //GetComponent<Volume>().enabled = false;
-        var request = new StandardRequest() {destination = Depth};
-        m_camera.SubmitRenderRequest( request );
-        //GetComponent<Volume>().enabled = true;
-        m_camera.GetUniversalAdditionalCameraData().renderPostProcessing = true;
-        m_camera.GetUniversalAdditionalCameraData().renderShadows = true;
-        m_camera.GetUniversalAdditionalCameraData().requiresColorTexture = true;
+        var urpData = m_camera.GetUniversalAdditionalCameraData();
+
+        bool prePP = urpData.renderPostProcessing;
+        bool preShadows = urpData.renderShadows;
+        bool preReqColor = urpData.requiresColorTexture;
+        bool preReqDepth = urpData.requiresDepthTexture;
+        CameraClearFlags preClear = m_camera.clearFlags;
+        DepthTextureMode preDepthMode = m_camera.depthTextureMode;
+
+        try {
+          urpData.renderPostProcessing = false;
+          urpData.renderShadows = false;
+          urpData.requiresColorTexture = false;
+          urpData.requiresDepthTexture = false;
+
+          m_camera.clearFlags = CameraClearFlags.SolidColor;
+          m_camera.depthTextureMode = DepthTextureMode.None;
+
+          var request = new StandardRequest() {destination = Depth};
+          m_camera.SubmitRenderRequest( request );
+        }
+        finally {
+          urpData.renderPostProcessing = prePP;
+          urpData.renderShadows = preShadows;
+          urpData.requiresColorTexture = preReqColor;
+          urpData.requiresDepthTexture = preReqDepth;
+
+          m_camera.clearFlags = preClear;
+          m_camera.depthTextureMode = preDepthMode;
+        }
 
         Vector4 zBufferParams;
 
