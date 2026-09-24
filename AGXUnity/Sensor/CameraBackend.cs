@@ -7,8 +7,8 @@ namespace AGXUnity.Sensor
   internal sealed class CameraBackend : UnityCameraBackendImplementation
   {
     private Dictionary<agxSensor.Camera, CameraSensor> m_cameraMap = new Dictionary<agxSensor.Camera, CameraSensor>();
-    private Dictionary<agxSensor.ICameraActiveIllumination, CameraSensor.Illuminator> m_lightMap = new Dictionary<agxSensor.ICameraActiveIllumination, CameraSensor.Illuminator>();
-    private Dictionary<agxSensor.CameraColorOutput, CameraSensor.ColorOutput> m_colorOutputMap = new Dictionary<agxSensor.CameraColorOutput, CameraSensor.ColorOutput>();
+    private Dictionary<agxSensor.ICameraActiveIllumination, Illuminator> m_lightMap = new Dictionary<agxSensor.ICameraActiveIllumination, Illuminator>();
+    private Dictionary<agxSensor.CameraColorOutput, ColorOutput> m_colorOutputMap = new Dictionary<agxSensor.CameraColorOutput, ColorOutput>();
 
     public void MapCamera( agxSensor.Camera agxCamera, CameraSensor unityCamera )
     {
@@ -19,13 +19,13 @@ namespace AGXUnity.Sensor
         unityCamera.CameraComponent.usePhysicalProperties = true;
     }
 
-    public void MapLight( agxSensor.ICameraActiveIllumination agxLight, CameraSensor.Illuminator illuminator )
+    public void MapLight( agxSensor.ICameraActiveIllumination agxLight, Illuminator illuminator )
     {
       if ( !m_lightMap.ContainsKey( agxLight ) )
         m_lightMap.Add( agxLight, illuminator );
     }
 
-    public void MapColorOutput( agxSensor.CameraColorOutput agxOutput, CameraSensor.ColorOutput output )
+    public void MapColorOutput( agxSensor.CameraColorOutput agxOutput, ColorOutput output )
     {
       if ( !m_colorOutputMap.ContainsKey( agxOutput ) )
         m_colorOutputMap.Add( agxOutput, output );
@@ -41,9 +41,9 @@ namespace AGXUnity.Sensor
       return uCamera;
     }
 
-    public CameraSensor.Illuminator GetMappedLight( agxSensor.ICameraActiveIllumination agxLight )
+    public Illuminator GetMappedLight( agxSensor.ICameraActiveIllumination agxLight )
     {
-      if ( !m_lightMap.TryGetValue( agxLight, out CameraSensor.Illuminator illuminator ) ) {
+      if ( !m_lightMap.TryGetValue( agxLight, out Illuminator illuminator ) ) {
         Debug.LogWarning( "Unity camera backend got an agxSensor light that has not been registered." );
         return null;
       }
