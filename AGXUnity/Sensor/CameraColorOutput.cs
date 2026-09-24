@@ -8,13 +8,15 @@ namespace AGXUnity.Sensor
   {
     private ComputeBuffer OutputBuffer;
 
-    public uint[] m_stagingBuffer;
+    private uint[] m_stagingBuffer;
     private double m_currentDataStamp = -1.0f;
     private double m_lastCapture = -1.0f;
     private bool m_stagingBufferDirty = false;
 
-    private static ComputeShader OutputConversionCompute;
-    private static  int OutputConversionKernel;
+    private static ComputeShader s_conversionCompute;
+    private static int s_conversionKernel;
+    private static uint s_groupSizeX;
+    private static uint s_groupSizeY;
 
     private uint ChannelTypeSize => ChannelType switch
     {
@@ -219,21 +221,29 @@ namespace AGXUnity.Sensor
 
       m_lastCapture = requestTime;
 
-      if ( OutputConversionCompute == null ) {
-        OutputConversionCompute = Resources.Load<ComputeShader>( "Shaders/Compute/CameraColorOutputPass" );
-        OutputConversionKernel = OutputConversionCompute.FindKernel( "ColorOutputPass" );
+      if ( s_conversionCompute == null ) {
+        s_conversionCompute = Resources.Load<ComputeShader>( "Shaders/Compute/CameraColorOutputPass" );
+        s_conversionKernel = s_conversionCompute.FindKernel( "ColorOutputPass" );
+        s_conversionCompute.GetKernelThreadGroupSizes( s_conversionKernel,
+                                                         out s_groupSizeX,
+                                                         out s_groupSizeY,
+                                                         out _ );
       }
 
-      OutputConversionCompute.SetInts( "OutputResolution", Resolution.x, Resolution.y );
-      OutputConversionCompute.SetInt( "ChannelCount", (int)ChannelCount );
-      OutputConversionCompute.SetInt( "OutputType", (int)ChannelType );
-      OutputConversionCompute.SetFloats( "IlluminanceCutoff", IlluminanceCutoff.x, IlluminanceCutoff.y );
-      OutputConversionCompute.SetFloat( "GammaInv", 1 / Gamma );
-      OutputConversionCompute.SetMatrix( "ColorMapping", Matrix4x4.identity );
-      OutputConversionCompute.SetTexture( OutputConversionKernel, "Source", Parent.Output );
-      OutputConversionCompute.SetBuffer( OutputConversionKernel, "Result", OutputBuffer );
+      s_conversionCompute.SetInts( "OutputResolution", Resolution.x, Resolution.y );
+      s_conversionCompute.SetInt( "ChannelCount", (int)ChannelCount );
+      s_conversionCompute.SetInt( "OutputType", (int)ChannelType );
+      s_conversionCompute.SetFloats( "IlluminanceCutoff", IlluminanceCutoff.x, IlluminanceCutoff.y );
+      s_conversionCompute.SetFloat( "GammaInv", 1 / Gamma );
+      s_conversionCompute.SetMatrix( "ColorMapping", Matrix4x4.identity );
+      s_conversionCompute.SetTexture( s_conversionKernel, "Source", Parent.Output );
+      s_conversionCompute.SetBuffer( s_conversionKernel, "Result", OutputBuffer );
 
-      OutputConversionCompute.Dispatch( OutputConversionKernel, Resolution.x, Resolution.y, 1 );
+      s_conversionCompute.Dispatch(
+        s_conversionKernel,
+        Mathf.CeilToInt( Resolution.x / (float)s_groupSizeX ),
+        Mathf.CeilToInt( Resolution.y / (float)s_groupSizeY ),
+      1 );
 
       AsyncGPUReadback.Request( OutputBuffer, req => {
         if ( requestTime <= m_currentDataStamp )
