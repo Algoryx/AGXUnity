@@ -16,9 +16,7 @@ namespace AGXUnity.Rendering.PostProcessing
     // Add a [SerializeField] attribute so Unity serializes the property and includes it in builds.
     [SerializeField]
     [HideInInspector]
-    private Material m_Material;
-
-    // Declare the render pass that renders the effect.
+    private Material m_lensDistortionMaterial;
     private AGXLensDistortionPass m_lensDistortionPass;
 
     #endregion
@@ -29,22 +27,27 @@ namespace AGXUnity.Rendering.PostProcessing
     // Unity calls this method when the Scriptable Renderer Feature loads for the first time, and when you change a property.
     public override void Create()
     {
-      if ( m_Material == null )
-        m_Material = new Material( Shader.Find( "AGXUnity/Shader Graph/CameraLensDistortion" ) );
+      if ( m_lensDistortionMaterial == null )
+        m_lensDistortionMaterial = new Material( Shader.Find( "AGXUnity/Shader Graph/CameraLensDistortion" ) );
 
-      if ( m_Material )
-        m_lensDistortionPass = new AGXLensDistortionPass( name, m_Material );
+      if ( m_lensDistortionMaterial )
+        m_lensDistortionPass = new AGXLensDistortionPass( name, m_lensDistortionMaterial );
     }
 
     // Override the AddRenderPasses method to inject passes into the renderer. Unity calls AddRenderPasses once per camera.
     public override void AddRenderPasses( ScriptableRenderer renderer, ref RenderingData renderingData )
     {
-      // Skip rendering if m_Material or the pass instance are null.
-      if ( m_Material == null || m_lensDistortionPass == null )
-        return;
-
       // Skip rendering if the target is a Reflection Probe or a preview camera.
       if ( renderingData.cameraData.cameraType == CameraType.Preview || renderingData.cameraData.cameraType == CameraType.Reflection )
+        return;
+
+      AddLensDistortion( renderer );
+    }
+
+    private void AddLensDistortion( ScriptableRenderer renderer )
+    {
+      // Skip rendering if m_Material or the pass instance are null.
+      if ( m_lensDistortionMaterial == null || m_lensDistortionPass == null )
         return;
 
       // Skip rendering if the camera is outside the custom volume.
