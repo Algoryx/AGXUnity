@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -41,6 +42,9 @@ namespace AGXUnity.Rendering.PostProcessing
       if ( renderingData.cameraData.cameraType == CameraType.Preview || renderingData.cameraData.cameraType == CameraType.Reflection )
         return;
 
+      if ( !renderingData.postProcessingEnabled )
+        return;
+
       AddLensDistortion( renderer );
     }
 
@@ -67,12 +71,6 @@ namespace AGXUnity.Rendering.PostProcessing
       renderer.EnqueuePass( m_lensDistortionPass );
     }
 
-    protected override void Dispose( bool disposing )
-    {
-      // Free the resources the render pass uses.
-      m_lensDistortionPass.Dispose();
-    }
-
     #endregion
 
     // Create the custom render pass.
@@ -82,9 +80,6 @@ namespace AGXUnity.Rendering.PostProcessing
 
       // Declare the material used to render the post-processing effect.
       private Material m_Material;
-
-      // Declare a texture to use as a temporary color copy. This texture is used only in the Compatibility Mode path.
-      private RTHandle m_CopiedColor;
 
       // Declare a property block to set additional properties for the material.
       private static MaterialPropertyBlock s_SharedPropertyBlock = new MaterialPropertyBlock();
@@ -112,23 +107,33 @@ namespace AGXUnity.Rendering.PostProcessing
         requiresIntermediateTexture = kSampleActiveColor;
       }
 
-      #region PASS_SHARED_RENDERING_CODE
+      private static bool s_warned = false;
 
-      // Add a command to create the temporary color copy texture.
-      // This method is used in both the render graph system path and the Compatibility Mode path.
-      private static void ExecuteCopyColorPass( RasterCommandBuffer cmd, RTHandle sourceTexture )
+      [Obsolete( "Deprecated in favour of render graph implementation" )]
+      public override void Execute( ScriptableRenderContext context, ref RenderingData renderingData )
       {
-        Blitter.BlitTexture( cmd, sourceTexture, new Vector4( 1, 1, 0, 0 ), 0.0f, false );
+        if ( !s_warned ) {
+          Debug.LogWarning( "AGX camera sensor lens distortion will not work with URP compatiblity mode" );
+          s_warned = true;
+        }
       }
 
-      // Add commands to render the effect.
-      // This method is used in both the render graph system path and the Compatibility Mode path.
-      private static void ExecuteMainPass( RasterCommandBuffer cmd, RTHandle sourceTexture, Material material )
+      #region PASS_RENDER_GRAPH_PATH
+
+      // Declare the resources the main render pass uses.
+      // This method is used only in the render graph system path.
+      private class MainPassData
+      {
+        public Material material;
+        public TextureHandle inputTexture;
+      }
+
+      private static void ExecuteMainPass( MainPassData data, RasterGraphContext context )
       {
         // Clear the material properties.
         s_SharedPropertyBlock.Clear();
-        if ( sourceTexture != null )
-          s_SharedPropertyBlock.SetTexture( kSourceTexturePropertyId, sourceTexture );
+        if ( data.inputTexture.IsValid() )
+          s_SharedPropertyBlock.SetTexture( kSourceTexturePropertyId, data.inputTexture );
 
         // Set the material properties based on the blended values of the custom volume.
         // For more information, refer to https://docs.unity3d.com/Manual/urp/post-processing/custom-post-processing-with-volume.html
@@ -142,119 +147,7 @@ namespace AGXUnity.Rendering.PostProcessing
         }
 
         // Draw to the current render target.
-        cmd.DrawProcedural( Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3, 1, s_SharedPropertyBlock );
-      }
-
-      // Get the texture descriptor needed to create the temporary color copy texture.
-      // This method is used in both the render graph system path and the Compatibility Mode path.
-      private static RenderTextureDescriptor GetCopyPassTextureDescriptor( RenderTextureDescriptor desc )
-      {
-        // Avoid an unnecessary multisample anti-aliasing (MSAA) resolve before the main render pass.
-        desc.msaaSamples = 1;
-
-        // Avoid copying the depth buffer, as the main pass render in this example doesn't use depth.
-        desc.depthBufferBits = (int)DepthBits.None;
-
-        return desc;
-      }
-
-      #endregion
-
-      #region PASS_NON_RENDER_GRAPH_PATH
-
-      // Override the OnCameraSetup method to configure render targets and their clear states, and create temporary render target textures.
-      // Unity calls this method before executing the render pass.
-      // This method is used only in the Compatibility Mode path.
-      // Use ConfigureTarget or ConfigureClear in this method. Don't use CommandBuffer.SetRenderTarget.
-      [System.Obsolete( "This rendering path works in Compatibility Mode only, which is deprecated. Use the render graph API instead.", false )]
-      public override void OnCameraSetup( CommandBuffer cmd, ref RenderingData renderingData )
-      {
-        // Reset the render target to default.
-        ResetTarget();
-
-        // Allocate a temporary texture, and reallocate it if there's a change to camera settings, for example resolution.
-        if ( kSampleActiveColor )
-          RenderingUtils.ReAllocateHandleIfNeeded( ref m_CopiedColor, GetCopyPassTextureDescriptor( renderingData.cameraData.cameraTargetDescriptor ), name: "_CustomPostPassCopyColor" );
-      }
-
-      // Override the Execute method to implement the rendering logic. Use ScriptableRenderContext to issue drawing commands or execute command buffers.
-      // You don't need to call ScriptableRenderContext.Submit.
-      // This method is used only in the Compatibility Mode path.
-      [System.Obsolete( "This rendering path works in Compatibility Mode only, which is deprecated. Use the render graph API instead.", false )]
-      public override void Execute( ScriptableRenderContext context, ref RenderingData renderingData )
-      {
-
-        // Get the camera data and command buffer.
-        ref var cameraData = ref renderingData.cameraData;
-        var cmd = CommandBufferPool.Get();
-
-        // Add a profiling sampler.
-        using ( new ProfilingScope( cmd, profilingSampler ) ) {
-          // Create a command buffer to execute the render pass.
-          RasterCommandBuffer rasterCmd = CommandBufferHelpers.GetRasterCommandBuffer(cmd);
-          if ( kSampleActiveColor ) {
-            CoreUtils.SetRenderTarget( cmd, m_CopiedColor );
-            ExecuteCopyColorPass( rasterCmd, cameraData.renderer.cameraColorTargetHandle );
-          }
-
-          // Set the render target based on the depth-stencil attachment.
-          if ( kBindDepthStencilAttachment )
-            CoreUtils.SetRenderTarget( cmd, cameraData.renderer.cameraColorTargetHandle, cameraData.renderer.cameraDepthTargetHandle );
-          else
-            CoreUtils.SetRenderTarget( cmd, cameraData.renderer.cameraColorTargetHandle );
-
-          // Execute the main render pass.
-          ExecuteMainPass( rasterCmd, kSampleActiveColor ? m_CopiedColor : null, m_Material );
-        }
-
-        // Execute the command buffer.
-        context.ExecuteCommandBuffer( cmd );
-        cmd.Clear();
-
-        // Release the command buffer.
-        CommandBufferPool.Release( cmd );
-      }
-
-      // Free the resources the camera uses.
-      // This method is used only in the Compatibility Mode path.
-      public override void OnCameraCleanup( CommandBuffer cmd )
-      {
-      }
-
-      // Free the resources the texture uses.
-      // This method is used only in the Compatibility Mode path.
-      public void Dispose()
-      {
-        m_CopiedColor?.Release();
-      }
-
-      #endregion
-
-      #region PASS_RENDER_GRAPH_PATH
-
-      // Declare the resource the copy render pass uses.
-      // This method is used only in the render graph system path.
-      private class CopyPassData
-      {
-        public TextureHandle inputTexture;
-      }
-
-      // Declare the resources the main render pass uses.
-      // This method is used only in the render graph system path.
-      private class MainPassData
-      {
-        public Material material;
-        public TextureHandle inputTexture;
-      }
-
-      private static void ExecuteCopyColorPass( CopyPassData data, RasterGraphContext context )
-      {
-        ExecuteCopyColorPass( context.cmd, data.inputTexture );
-      }
-
-      private static void ExecuteMainPass( MainPassData data, RasterGraphContext context )
-      {
-        ExecuteMainPass( context.cmd, data.inputTexture.IsValid() ? data.inputTexture : null, data.material );
+        context.cmd.DrawProcedural( Matrix4x4.identity, data.material, 0, MeshTopology.Triangles, 3, 1, s_SharedPropertyBlock );
       }
 
       // Override the RecordRenderGraph method to implement the rendering logic.
