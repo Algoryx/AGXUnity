@@ -125,7 +125,6 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private float m_focalLength;
 
-    [InspectorGroupBegin( Name = "Lens Properties" )]
     public float FocalLength
     {
       get => m_focalLength;
@@ -183,6 +182,7 @@ namespace AGXUnity.Sensor
     private float m_focusDistance;
 
     [DynamicallyShowInInspector( nameof( Autofocus ), invert: false )]
+    [IgnoreSynchronization]
     public float FocusDistance
     {
       get => m_focusDistance;
@@ -217,7 +217,6 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private Vector2 m_sensorSize;
 
-    [InspectorGroupBegin( Name = "Sensor" )]
     public Vector2 SensorSize
     {
       get => m_sensorSize;
@@ -257,7 +256,6 @@ namespace AGXUnity.Sensor
     [SerializeField]
     private Vector2Int m_resolution;
 
-    [DelayedInspector]
     public Vector2Int Resolution
     {
       get => m_resolution;
@@ -277,7 +275,6 @@ namespace AGXUnity.Sensor
     public List<ColorOutput> Outputs = new List<ColorOutput>();
 
     [field: SerializeField]
-    [InspectorGroupEnd]
     public bool SynchronizeUnityChanges { get; set; } = true;
 
     [field: SerializeField]
@@ -300,7 +297,7 @@ namespace AGXUnity.Sensor
         FocalLength = cam.focalLength / 1000;
       if ( !Mathf.Approximately( cam.aperture, fStop ) )
         fStop = cam.aperture;
-      if ( !Mathf.Approximately( cam.focusDistance, FocusDistance ) )
+      if ( !Autofocus && !Mathf.Approximately( cam.focusDistance, FocusDistance ) )
         FocusDistance = cam.focusDistance;
 
       if ( !Mathf.Approximately( cam.iso, ISO ) )
@@ -474,8 +471,7 @@ namespace AGXUnity.Sensor
 
       SynchronizeVolume();
 
-      var request = new RenderPipeline.StandardRequest { destination = Output };
-      CameraComponent.SubmitRenderRequest( request );
+      CameraComponent.Render();
       LastRenderedFrame = Time.frameCount;
     }
 
