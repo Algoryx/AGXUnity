@@ -417,6 +417,19 @@ namespace AGXUnityEditor
       lidar.transform.localRotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
       return Selection.activeGameObject = lidar;
     }
+
+    [MenuItem( "AGXUnity/Sensor/IMU", priority = 51 )]
+    [MenuItem( "GameObject/AGXUnity/Sensor/IMU", validate = false, priority = 11 )]
+    public static GameObject IMU( MenuCommand command )
+    {
+      var imuObject = CreateModel<ImuSensor>( command );
+      var imu = imuObject.GetComponent<ImuSensor>();
+      Undo.RecordObject( imu, "Configure IMU" );
+      imu.Subcomponents.Add( new Accelerometer() );
+      imu.Subcomponents.Add( new AGXUnity.Sensor.Gyroscope() );
+      EditorUtility.SetDirty( imu );
+      return Selection.activeGameObject = imuObject;
+    }
     #endregion
 
     #region Managers
