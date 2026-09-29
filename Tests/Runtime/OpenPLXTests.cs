@@ -680,6 +680,37 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
+    public void TestValidImu()
+    {
+      var root = LoadOpenPLX( "simple_imu.openplx", "ValidImu" );
+      var imuObject = root.FindMappedObject( "ValidImu.imu" );
+      Assert.NotNull( imuObject );
+
+      var imu = imuObject.GetComponent<ImuSensor>();
+      Assert.NotNull( imu );
+      Assert.That( imu.MeasuredRigidBody, Is.EqualTo( root.FindMappedObject( "ValidImu.body" ).GetComponent<RigidBody>() ) );
+      Assert.That( imu.Subcomponents.Count, Is.EqualTo( 2 ) );
+
+      var accelerometer = imu.Subcomponents[ 0 ] as Accelerometer;
+      Assert.NotNull( accelerometer );
+      Assert.That( accelerometer.TriaxialRange.Mode, Is.EqualTo( TriaxialRangeData.ConfigurationMode.IndividualAxisRanges ) );
+      Assert.That( accelerometer.TriaxialRange.RangeX, Is.EqualTo( new Vector2( -1, 2 ) ) );
+      Assert.That( accelerometer.TriaxialRange.RangeY, Is.EqualTo( new Vector2( -3, 4 ) ) );
+      Assert.That( accelerometer.TriaxialRange.RangeZ, Is.EqualTo( new Vector2( -5, 6 ) ) );
+      Assert.That( accelerometer.UseCrossAxisSensitivityMatrix );
+      Assert.That( accelerometer.CrossAxisSensitivityMatrix.m01, Is.EqualTo( 0.1f ) );
+      Assert.That( accelerometer.ZeroBias, Is.EqualTo( new Vector3( -0.2f, 0.3f, 0.4f ) ) );
+      Assert.That( accelerometer.TotalGaussianNoise, Is.EqualTo( new Vector3( 0.01f, 0.02f, 0.03f ) ) );
+      Assert.That( accelerometer.TotalGaussianNoiseMean, Is.EqualTo( new Vector3( 0.1f, 0.2f, 0.3f ) ) );
+      Assert.That( accelerometer.GaussianSpectralNoise, Is.EqualTo( new Vector3( 0.4f, 0.5f, 0.6f ) ) );
+
+      var gyroscope = imu.Subcomponents[ 1 ] as AGXUnity.Sensor.Gyroscope;
+      Assert.NotNull( gyroscope );
+      Assert.That( gyroscope.EnableLinearAccelerationEffects );
+      Assert.That( gyroscope.LinearAccelerationEffects, Is.EqualTo( new Vector3( -0.7f, 0.8f, 0.9f ) ) );
+    }
+
+    [Test]
     public void TestImportSimpleTrack()
     {
       var go = LoadOpenPLX("track_system.openplx", "Scene" );

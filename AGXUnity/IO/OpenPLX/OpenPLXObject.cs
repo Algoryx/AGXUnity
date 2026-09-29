@@ -74,6 +74,7 @@ namespace AGXUnity.IO.OpenPLX
         openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
         openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
         openplx.Terrain.Shovel => gameObject.GetInitializedComponent<DeformableTerrainShovel>().Native,
+        openplx.Sensors.IMULogic => gameObject.GetInitializedComponent<ImuSensor>().Native,
         openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
         openplx.Vehicles.Steering.Kinematic.Base => gameObject.GetInitializedComponent<Steering>().Native,
         openplx.Vehicles.Steering.Kinematic.Interactions.Base => gameObject.GetInitializedComponent<Steering>().Native,

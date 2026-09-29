@@ -1,0 +1,36 @@
+ValidImu is Physics3D.System:
+    body is Physics3D.Bodies.RigidBody:
+        inertia.mass: 1.0
+        connector is Physics3D.Interactions.MateConnector:
+            position: {0.1, 0.2, 0.3}
+
+    imu is Sensors.IMULogic:
+        mate_connector_attachment: body.connector
+        accelerometer is Sensors.AccelerometerLogic:
+            mate_connector_attachment: body.connector
+            range:
+                x: {-1.0, 2.0}
+                y: {-3.0, 4.0}
+                z: {-5.0, 6.0}
+            cross_axis_sensitivity: Math.Matrix3x3.from_row_major(1.0, 0.1, 0.2, 0.3, 1.0, 0.4, 0.5, 0.6, 1.0)
+            zero_bias: {0.2, 0.3, 0.4}
+            gaussian is Sensors.AccelerometerSignalGaussianNoise:
+                distribution_x is Math.Distributions.Gaussian:
+                    mean: 0.1
+                    standard_deviation: 0.01
+                distribution_y is Math.Distributions.Gaussian:
+                    mean: 0.2
+                    standard_deviation: 0.02
+                distribution_z is Math.Distributions.Gaussian:
+                    mean: 0.3
+                    standard_deviation: 0.03
+            spectral is Sensors.AccelerometerSignalSpectralGaussianNoise:
+                noise_density_x: 0.4
+                noise_density_y: 0.5
+                noise_density_z: 0.6
+            sensing_distortions: [gaussian, spectral]
+        gyroscope is Sensors.GyroscopeLogic:
+            mate_connector_attachment: body.connector
+            linear_acceleration is Sensors.GyroscopeSignalLinearAccelectionEffect:
+                acceleration_effects: {0.7, 0.8, 0.9}
+            sensing_distortions: [linear_acceleration]

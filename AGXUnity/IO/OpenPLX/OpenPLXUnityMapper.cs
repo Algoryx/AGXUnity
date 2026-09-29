@@ -725,6 +725,9 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
         Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
 
+      foreach ( var imu in system.getNonReferenceValues<openplx.Sensors.IMULogic>() )
+        Utils.AddChild( s, SensorMapper.MapImu( imu ), Data.ErrorReporter, imu );
+
       foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
         Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
