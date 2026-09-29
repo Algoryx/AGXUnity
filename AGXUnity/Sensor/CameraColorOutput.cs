@@ -1,10 +1,11 @@
+using AGXUnity.Util;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace AGXUnity.Sensor
 {
   [System.Serializable]
-  public class ColorOutput
+  public class ColorOutput : Subcomponent<CameraSensor, agxSensor.CameraColorOutput>
   {
     private ComputeBuffer OutputBuffer;
 
@@ -40,9 +41,7 @@ namespace AGXUnity.Sensor
     private bool m_hasUnreadData = false;
     private double m_accumulatedCaptureTime = 0.0f;
     private bool m_disposed = false;
-
-    [HideInInspector]
-    public agxSensor.CameraColorOutput Native { get; internal set; }
+    private uint m_allocatedOutputSize32 = 0;
 
     private agxSensor.ByteSpan m_nativeOutputSpan;
     internal agxSensor.ByteSpan NativeOutputSpan
@@ -57,23 +56,18 @@ namespace AGXUnity.Sensor
     }
 
     [SerializeField]
+    [Tooltip( "Output image resolution." )]
     private Vector2Int m_resolution = new Vector2Int( 128, 128 );
     public Vector2Int Resolution
     {
       get => m_resolution;
-      set
-      {
-        if ( m_resolution == value ) return;
-
-        m_resolution = value;
-        if ( Native != null ) {
-          RecreateBuffer();
-          Native.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
-        }
-      }
+      set => PropertyUtil.Assign( ref m_resolution,
+                                  new Vector2Int( Mathf.Max( 1, value.x ), Mathf.Max( 1, value.y ) ),
+                                  this );
     }
 
     [SerializeField]
+    [Tooltip( "Number of output channels. Values are clamped to the range [1, 4]." )]
     private uint m_channelCount = 4;
 
     public uint ChannelCount
@@ -81,13 +75,10 @@ namespace AGXUnity.Sensor
       get => m_channelCount;
       set
       {
-        if ( m_channelCount == value ) return;
         var clamped = System.Math.Clamp(value, 1, 4);
         if ( clamped != value )
           Debug.LogWarning( $"Camera color output was passed an invalid channel count {value}, valid values are [1,4]. Clamping provided value to the valid range" );
-        m_channelCount = clamped;
-        if ( Native != null )
-          Native.setChannelCount( clamped );
+        PropertyUtil.Assign( ref m_channelCount, clamped, this );
       }
     }
 
@@ -97,26 +88,16 @@ namespace AGXUnity.Sensor
     public agxSensor.CameraColorOutput.ChannelType ChannelType
     {
       get => m_channelType;
-      set
-      {
-        if ( m_channelType == value ) return;
-        m_channelType = value;
-        if ( Native != null )
-          Native.setChannelType( value );
-      }
+      set => PropertyUtil.Assign( ref m_channelType, value, this );
     }
 
     [SerializeField]
+    [Min( 0.0001f )]
     private float m_gamma = 1.0f;
     public float Gamma
     {
       get => m_gamma;
-      set
-      {
-        if ( m_gamma == value ) return;
-        m_gamma = value;
-        Native.setGamma( value );
-      }
+      set => PropertyUtil.Assign( ref m_gamma, Mathf.Max( 0.0001f, value ), this );
     }
 
     [SerializeField]
@@ -125,13 +106,7 @@ namespace AGXUnity.Sensor
     public Vector2 IlluminanceCutoff
     {
       get => m_illuminanceCutoff;
-      set
-      {
-        if ( m_illuminanceCutoff == value ) return;
-        m_illuminanceCutoff = value;
-        if ( Native != null )
-          Native.setRelativeIlluminanceCutoff( new agx.RangeReal( value.x, value.y ) );
-      }
+      set => PropertyUtil.Assign( ref m_illuminanceCutoff, value, this );
     }
 
     [SerializeField]
@@ -139,37 +114,25 @@ namespace AGXUnity.Sensor
     public bool ConstantCapture
     {
       get => m_constantCapture;
-      set
-      {
-        if ( m_constantCapture == value ) return;
-        m_constantCapture = value;
-        if ( Native != null ) {
-          if ( m_constantCapture )
-            Native.setConstantCapture( Framerate );
-          else
-            Native.setManualCapture();
-        }
-      }
+      set => PropertyUtil.Assign( ref m_constantCapture, value, this );
     }
 
     [SerializeField]
+    [Min( 0.0f )]
     private float m_framerate = 50.0f;
-    [DynamicallyShowInInspector( nameof( ConstantCapture ) )]
     public float Framerate
     {
       get => m_framerate;
       set
       {
-        if ( m_framerate == value ) return;
-        if ( value == 0 ) {
-          ConstantCapture = false;
-          Native?.setManualCapture();
-        }
-        else {
+        value = Mathf.Max( 0.0f, value );
+        if ( m_framerate == value )
+          return;
+
+        if ( value > 0f )
           m_framerate = value;
-          ConstantCapture = true;
-          Native?.setConstantCapture( Framerate );
-        }
+        ConstantCapture = value > 0f;
+        SynchronizeConfiguration();
       }
     }
 
@@ -177,34 +140,58 @@ namespace AGXUnity.Sensor
     {
       OutputBuffer?.Release();
       OutputBuffer = new ComputeBuffer( (int)OutputSize32, sizeof( uint ) );
+      m_allocatedOutputSize32 = OutputSize32;
     }
 
-    [HideInInspector]
-    public CameraSensor Parent { get; internal set; }
-
-    internal void Initialize( CameraSensor parent )
+    protected override agxSensor.CameraColorOutput InitializeNative()
     {
-      Parent = parent;
-
-      Native = new agxSensor.CameraColorOutput();
-      if ( ConstantCapture )
-        Native.setConstantCapture( Framerate );
-      else
-        Native.setManualCapture();
-      Native.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
-      Native.setChannelCount( ChannelCount );
-      Native.setChannelType( ChannelType );
-      Native.setRelativeIlluminanceCutoff( new agx.RangeReal( IlluminanceCutoff.x, IlluminanceCutoff.y ) );
-
+      var native = new agxSensor.CameraColorOutput();
       RecreateBuffer();
       m_disposed = false;
+      CameraBackend.Instance.MapColorOutput( native, this );
+      return native;
     }
 
-    internal void Dispose()
+    internal void SynchronizeConfiguration( bool recreateBuffer = false )
+    {
+      m_resolution = new Vector2Int( Mathf.Max( 1, m_resolution.x ), Mathf.Max( 1, m_resolution.y ) );
+      m_channelCount = System.Math.Clamp( m_channelCount, 1, 4 );
+      m_gamma = Mathf.Max( 0.0001f, m_gamma );
+      m_framerate = Mathf.Max( 0.0f, m_framerate );
+      if ( m_framerate == 0.0f )
+        m_constantCapture = false;
+
+      if ( Native != null ) {
+        Native.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
+        Native.setChannelCount( ChannelCount );
+        Native.setChannelType( ChannelType );
+        Native.setGamma( Gamma );
+        Native.setRelativeIlluminanceCutoff( new agx.RangeReal( IlluminanceCutoff.x, IlluminanceCutoff.y ) );
+        if ( ConstantCapture )
+          Native.setConstantCapture( Framerate );
+        else
+          Native.setManualCapture();
+      }
+
+      if ( OutputBuffer != null && ( recreateBuffer || m_allocatedOutputSize32 != OutputSize32 ) )
+        RecreateBuffer();
+    }
+
+    protected override void SynchronizeNative() => SynchronizeConfiguration();
+
+    protected override void DisposeNative()
     {
       m_disposed = true;
+      HasQueuedCapture = false;
       OutputBuffer?.Release();
-      Native = null;
+      OutputBuffer = null;
+      m_allocatedOutputSize32 = 0;
+      if ( Native != null ) {
+        if ( Parent?.Native != null )
+          Parent.Native.getOutputHandler().removeChild( Native );
+        CameraBackend.Instance.UnmapColorOutput( Native );
+        Native.Dispose();
+      }
     }
 
     public void Capture()

@@ -19,16 +19,34 @@ namespace AGXUnity.Sensor
         unityCamera.CameraComponent.usePhysicalProperties = true;
     }
 
+    public void UnmapCamera( agxSensor.Camera agxCamera )
+    {
+      if ( agxCamera != null )
+        m_cameraMap.Remove( agxCamera );
+    }
+
     public void MapLight( agxSensor.ICameraActiveIllumination agxLight, Illuminator illuminator )
     {
       if ( !m_lightMap.ContainsKey( agxLight ) )
         m_lightMap.Add( agxLight, illuminator );
     }
 
+    public void UnmapLight( agxSensor.ICameraActiveIllumination agxLight )
+    {
+      if ( agxLight != null )
+        m_lightMap.Remove( agxLight );
+    }
+
     public void MapColorOutput( agxSensor.CameraColorOutput agxOutput, ColorOutput output )
     {
       if ( !m_colorOutputMap.ContainsKey( agxOutput ) )
         m_colorOutputMap.Add( agxOutput, output );
+    }
+
+    public void UnmapColorOutput( agxSensor.CameraColorOutput agxOutput )
+    {
+      if ( agxOutput != null )
+        m_colorOutputMap.Remove( agxOutput );
     }
 
     public CameraSensor GetMappedCamera( agxSensor.Camera agxCamera )
@@ -104,14 +122,16 @@ namespace AGXUnity.Sensor
         return;
 
       uCamera.FocalLength = (float)parameters.focalLength;
-      uCamera.fStop = (float)parameters.fStop;
+      uCamera.FStop = (float)parameters.fStop;
 
       if ( parameters.autofocus ) {
         uCamera.Autofocus = true;
         uCamera.MinimumFocusDistance = (float)lens.getMinimumFocusDistance();
       }
-      else
+      else {
+        uCamera.Autofocus = false;
         uCamera.FocusDistance = (float)lens.getFocusDistance();
+      }
     }
 
     protected override void setCameraCMOSSensor( agxSensor.Camera camera, CameraCMOSSensor sensor, CameraCMOSSensorParameters parameters )
@@ -135,17 +155,32 @@ namespace AGXUnity.Sensor
       //  }
     }
 
-    protected override void setCameraLensDistortionNone( agxSensor.Camera camera, CameraLens lens )
+    protected override void setCameraLensDistortionNone( agxSensor.Camera camera, agxSensor.CameraLens lens )
     {
-      //  if (auto neoCamera = getOrCreateBackendCameraFor(camera))
-      //    neoCamera->getLens()->setDistortionModelNone();
+      var unityCamera = GetMappedCamera( camera );
+      if ( unityCamera != null )
+        unityCamera.LensDistortion = null;
     }
 
-    protected override void setCameraLensDistortionBrownConrady( agxSensor.Camera camera, CameraLens lens, LensDistortionBrownConradyCoefficients coefficients )
+    protected override void setCameraLensDistortionBrownConrady( agxSensor.Camera camera, agxSensor.CameraLens lens, LensDistortionBrownConradyCoefficients coefficients )
     {
-      //  if (auto neoCamera = getOrCreateBackendCameraFor(camera))
-      //    neoCamera->getLens()->setDistortionModelBrownConrady(
-      //      coefficients->k1, coefficients->k2, coefficients->k3, coefficients->p1, coefficients->p2);
+      var unityCamera = GetMappedCamera( camera );
+      if ( unityCamera == null )
+        return;
+
+      LensDistortionBrownConrady distortion;
+      if ( unityCamera.LensDistortion is LensDistortionBrownConrady dist )
+        distortion = dist;
+      else {
+        distortion = new LensDistortionBrownConrady();
+        unityCamera.LensDistortion = distortion;
+      }
+
+      distortion.RadialCoefficients = new Vector3( (float)coefficients.k1,
+                                                   (float)coefficients.k2,
+                                                   (float)coefficients.k3 );
+      distortion.TangentialCoefficients = new Vector2( (float)coefficients.p1,
+                                                       (float)coefficients.p2 );
     }
 
     protected override void synhronizeGraphicsActiveIllumination( agxSensor.Camera camera, CameraActiveIllumination illumination, agxSensor.Matrix4x4 transform )
