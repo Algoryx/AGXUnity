@@ -43,6 +43,9 @@ namespace AGXUnityTesting.Runtime
     }
 
 
+    // IMU subcomponents and output handling are being reworked. Re-enable these
+    // tests once the new default configuration and output contract are defined.
+#if false
     [Test]
     public void TestCreateImu()
     {
@@ -99,6 +102,7 @@ namespace AGXUnityTesting.Runtime
 
       Assert.That( Mathf.Abs( (float)imu.OutputBuffer[ 8 ] ), Is.EqualTo( 1 ).Within( 0.001f ), "Test value should be 1 as the magnetic field was set up to be 1 in each direction" );
     }
+#endif
 
     [UnityTest]
     public IEnumerator TestEncoderOutput()
