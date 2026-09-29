@@ -18,6 +18,14 @@ namespace AGXUnityEditor.Editors
       container.Add( new PropertyField( property.FindPropertyRelative( "m_zeroBias" ), "Zero Bias" ) );
       container.Add( new PropertyField( property.FindPropertyRelative( "OutputFlags" ), "Output Values" ) );
 
+      var runtimeOutput = new Label();
+      runtimeOutput.style.marginTop = 4;
+      container.Add( runtimeOutput );
+      container.schedule.Execute( () => {
+        if ( property.managedReferenceValue is ImuSensorSubcomponent subcomponent )
+          runtimeOutput.text = $"Output: {subcomponent.Output}";
+      } ).Every( 100 );
+
       var modifiers = new Foldout { text = "Modifiers" };
       AddOptionalVector3( modifiers,
                           property.FindPropertyRelative( "m_enableTotalGaussianNoise" ),

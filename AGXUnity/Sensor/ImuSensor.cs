@@ -43,6 +43,7 @@ namespace AGXUnity.Sensor
     [SerializeField] private Vector3 m_gaussianSpectralNoise = Vector3.zero;
     public Vector3 GaussianSpectralNoise { get => m_gaussianSpectralNoise; set => PropertyUtil.Assign( ref m_gaussianSpectralNoise, value, this ); }
     [SerializeField] public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y | OutputXYZ.Z;
+    [RuntimeValue] public Vector3 Output { get; private set; }
 
     protected ITriaxialSignalSystemNodeRefVector Modifiers { get; private set; }
     protected TriaxialGaussianNoise TotalGaussianNoiseModifier { get; private set; }
@@ -50,6 +51,7 @@ namespace AGXUnity.Sensor
     protected TriaxialSpectralGaussianNoise GaussianSpectralNoiseModifier { get; private set; }
 
     internal abstract void AddNativeAttachment( IMUModelSensorAttachmentRefVector attachments );
+    internal void SetOutput( Vec3 output ) => Output = new Vector3( (float)output.x, (float)output.y, (float)output.z );
 
     protected void CreateCommonModifiers()
     {
@@ -182,10 +184,9 @@ namespace AGXUnity.Sensor
     public IMU Native { get; private set; }
     private IMUModel m_nativeModel;
     private List<ImuSensorSubcomponent> m_configuredSubcomponents = new List<ImuSensorSubcomponent>();
+    private uint m_outputID;
     [RuntimeValue] public RigidBody TrackedRigidBody { get; private set; }
 
-    // Output creation and decoding are intentionally deferred until the native API
-    // contract for more than three attachments has been established.
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
@@ -202,14 +203,37 @@ namespace AGXUnity.Sensor
       var rigidBodyFrame = measuredRigidBody.getFrame();
       if ( rigidBodyFrame == null ) { Debug.LogWarning( "Could not get rigid body frame, IMU will be inactive" ); return false; }
       Native = new IMU( rigidBodyFrame, m_nativeModel );
+      m_outputID = SensorEnvironment.Instance.GenerateOutputID();
+      Native.getOutputHandler().add( m_outputID, new IMUOutputNineDoF() );
+      Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
       SensorEnvironment.Instance.Native.add( Native );
       return true;
+    }
+
+    private void OnPostSynchronizeTransforms()
+    {
+      if ( !gameObject.activeInHierarchy || Native == null )
+        return;
+
+      var output = Native.getOutputHandler().get( m_outputID );
+      var views = output?.viewNineDoF();
+      if ( views == null || views.size() == 0 )
+        return;
+
+      var value = views[ 0 ];
+      // IMUOutputNineDoF exposes up to three triaxial values. Additional
+      // subcomponents remain at their default output until a general IMU output
+      // representation is introduced.
+      var count = Mathf.Min( 3, m_configuredSubcomponents.Count );
+      for ( var index = 0; index < count; ++index )
+        m_configuredSubcomponents[ index ].SetOutput( value.getTriplet( (uint)index ) );
     }
     protected override void OnEnable() => Native?.setEnable( true );
     protected override void OnDisable() => Native?.setEnable( false );
     protected override void OnDestroy()
     {
       if ( SensorEnvironment.HasInstance ) SensorEnvironment.Instance.Native?.remove( Native );
+      if ( Simulation.HasInstance ) Simulation.Instance.StepCallbacks.PostSynchronizeTransforms -= OnPostSynchronizeTransforms;
       base.OnDestroy();
     }
   }
