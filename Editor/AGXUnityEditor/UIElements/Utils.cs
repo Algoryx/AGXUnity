@@ -1,3 +1,9 @@
+using AGXUnity;
+using AGXUnityEditor.Editors;
+using System.Reflection;
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace AGXUnityEditor.UIElements
@@ -93,6 +99,71 @@ namespace AGXUnityEditor.UIElements
     {
       ve.SetBorderColor( color );
       ve.SetBorderWidth( width );
+    }
+
+    public static void AddUnityAlignment( this VisualElement ve )
+    {
+      ve.AddToClassList( "unity-base-field__aligned" );
+    }
+
+    private static bool IsDynamicallyShown( SerializedProperty sp, out MemberInfo member, out bool invert )
+    {
+      var propertyMember = sp.GetFieldInfo();
+
+      member = null;
+      invert = false;
+
+      if ( propertyMember == null )
+        return false;
+
+      var showInfo = propertyMember.GetCustomAttribute<DynamicallyShowInInspector>();
+      if ( showInfo == null )
+        return false;
+
+      invert = showInfo.Invert;
+
+      var bindings =  BindingFlags.Instance |
+                        BindingFlags.Static |
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic;
+      if ( showInfo.IsMethod )
+        bindings |=   BindingFlags.InvokeMethod;
+      else
+        bindings |=   BindingFlags.GetField |
+                      BindingFlags.GetProperty;
+
+      var members = propertyMember.DeclaringType.GetMember( showInfo.Name, bindings );
+      if ( members.Length == 0 ) {
+        Debug.LogWarning( $"No member '{showInfo.Name}' found to determine dynamic inspector status for member '{sp.name}', skipping" );
+        return false;
+      }
+      else if ( members.Length > 1 ) {
+        Debug.LogWarning( $"Multiple members '{showInfo.Name}' found to determine dynamic inspector status for member '{sp.name}', skipping" );
+        return false;
+      }
+
+      member = members[ 0 ];
+      if ( member.MemberType == MemberTypes.Method ) {
+        var method = (MethodInfo)member;
+        if ( method.GetParameters().Length != 0 ) {
+          Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{sp.name}', requires parameters, this is not supported, skipping" );
+          return false;
+        }
+        if ( method.ContainsGenericParameters ) {
+          Debug.LogWarning( $"Method '{method.Name}', used to dynamically show '{sp.name}', requires type parameters, sthis is not supported, skipping" );
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    public static VisualElement CreateDefaultInspector( this SerializedProperty sp )
+    {
+      if ( IsDynamicallyShown( sp, out MemberInfo member, out bool invert ) )
+        return new DynamicallyShowField( sp, member, invert );
+      else
+        return new PropertyField( sp );
     }
   }
 }
