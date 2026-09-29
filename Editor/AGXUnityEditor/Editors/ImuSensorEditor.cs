@@ -12,6 +12,7 @@ namespace AGXUnityEditor.Editors
     public override VisualElement CreateInspectorGUI()
     {
       var container = new VisualElement();
+      container.Add( new PropertyField( serializedObject.FindProperty( "m_measuredRigidBody" ), "Measured Rigid Body" ) );
       container.Add( new PropertyField( serializedObject.FindProperty( "m_subcomponents" ) ) );
       return container;
     }

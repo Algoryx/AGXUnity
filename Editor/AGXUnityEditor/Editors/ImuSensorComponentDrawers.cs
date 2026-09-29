@@ -15,7 +15,16 @@ namespace AGXUnityEditor.Editors
       container.Add( new Label( property.managedReferenceFullTypename.Split( ' ' )[ 1 ].Split( '.' )[ ^1 ] ) );
       container.Add( new PropertyField( property.FindPropertyRelative( "m_triaxialRange" ), "Sensor Measurement Range" ) );
       container.Add( new PropertyField( property.FindPropertyRelative( "m_crossAxisSensitivity" ) ) );
+      var useCrossAxisMatrix = property.FindPropertyRelative( "m_useCrossAxisSensitivityMatrix" );
+      var crossAxisMatrix = new PropertyField( property.FindPropertyRelative( "m_crossAxisSensitivityMatrix" ), "Cross-Axis Sensitivity Matrix" );
+      container.Add( new PropertyField( useCrossAxisMatrix, "Use Cross-Axis Sensitivity Matrix" ) );
+      crossAxisMatrix.style.display = useCrossAxisMatrix.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+      container.TrackPropertyValue( useCrossAxisMatrix,
+                                    changed => crossAxisMatrix.style.display = changed.boolValue ? DisplayStyle.Flex : DisplayStyle.None );
+      container.Add( crossAxisMatrix );
       container.Add( new PropertyField( property.FindPropertyRelative( "m_zeroBias" ), "Zero Bias" ) );
+      container.Add( new PropertyField( property.FindPropertyRelative( "m_attachmentPosition" ), "Attachment Position" ) );
+      container.Add( new PropertyField( property.FindPropertyRelative( "m_attachmentRotation" ), "Attachment Rotation" ) );
       container.Add( new PropertyField( property.FindPropertyRelative( "OutputFlags" ), "Output Values" ) );
 
       var runtimeOutput = new Label();
@@ -31,6 +40,13 @@ namespace AGXUnityEditor.Editors
                           property.FindPropertyRelative( "m_enableTotalGaussianNoise" ),
                           property.FindPropertyRelative( "m_totalGaussianNoise" ),
                           "Total Gaussian Noise" );
+      var totalGaussianNoiseEnabled = property.FindPropertyRelative( "m_enableTotalGaussianNoise" );
+      var totalGaussianNoiseMean = new PropertyField( property.FindPropertyRelative( "m_totalGaussianNoiseMean" ), "Total Gaussian Noise Mean" );
+      totalGaussianNoiseMean.style.marginLeft = 16;
+      totalGaussianNoiseMean.style.display = totalGaussianNoiseEnabled.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+      modifiers.TrackPropertyValue( totalGaussianNoiseEnabled,
+                                    changed => totalGaussianNoiseMean.style.display = changed.boolValue ? DisplayStyle.Flex : DisplayStyle.None );
+      modifiers.Add( totalGaussianNoiseMean );
       AddOptionalVector3( modifiers,
                           property.FindPropertyRelative( "m_enableSignalScaling" ),
                           property.FindPropertyRelative( "m_signalScaling" ),

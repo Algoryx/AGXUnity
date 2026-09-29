@@ -28,12 +28,31 @@ namespace AGXUnity.Sensor
     }
     [SerializeField] private float m_crossAxisSensitivity = 0.01f;
     public float CrossAxisSensitivity { get => m_crossAxisSensitivity; set => PropertyUtil.Assign( ref m_crossAxisSensitivity, value, this ); }
+    [SerializeField] private bool m_useCrossAxisSensitivityMatrix;
+    /// <summary>
+    /// When enabled, uses <see cref="CrossAxisSensitivityMatrix"/> instead of the
+    /// legacy scalar cross-axis sensitivity.
+    /// </summary>
+    public bool UseCrossAxisSensitivityMatrix { get => m_useCrossAxisSensitivityMatrix; set => PropertyUtil.Assign( ref m_useCrossAxisSensitivityMatrix, value, this ); }
+    [SerializeField] private UnityEngine.Matrix4x4 m_crossAxisSensitivityMatrix = UnityEngine.Matrix4x4.identity;
+    /// <summary>
+    /// The upper-left 3x3 cross-axis sensitivity matrix. The remaining elements
+    /// are ignored.
+    /// </summary>
+    public UnityEngine.Matrix4x4 CrossAxisSensitivityMatrix { get => m_crossAxisSensitivityMatrix; set => PropertyUtil.Assign( ref m_crossAxisSensitivityMatrix, value, this ); }
     [SerializeField] private Vector3 m_zeroBias = Vector3.zero;
     public Vector3 ZeroBias { get => m_zeroBias; set => PropertyUtil.Assign( ref m_zeroBias, value, this ); }
     [SerializeField] private bool m_enableTotalGaussianNoise;
     public bool EnableTotalGaussianNoise { get => m_enableTotalGaussianNoise; set => PropertyUtil.Assign( ref m_enableTotalGaussianNoise, value, this ); }
     [SerializeField] private Vector3 m_totalGaussianNoise = Vector3.zero;
     public Vector3 TotalGaussianNoise { get => m_totalGaussianNoise; set => PropertyUtil.Assign( ref m_totalGaussianNoise, value, this ); }
+    [SerializeField] private Vector3 m_totalGaussianNoiseMean = Vector3.zero;
+    /// <summary>
+    /// Per-axis mean of the total Gaussian noise. AGX represents this constant
+    /// offset through the model bias; it is added to <see cref="ZeroBias"/> when
+    /// total Gaussian noise is enabled.
+    /// </summary>
+    public Vector3 TotalGaussianNoiseMean { get => m_totalGaussianNoiseMean; set => PropertyUtil.Assign( ref m_totalGaussianNoiseMean, value, this ); }
     [SerializeField] private bool m_enableSignalScaling;
     public bool EnableSignalScaling { get => m_enableSignalScaling; set => PropertyUtil.Assign( ref m_enableSignalScaling, value, this ); }
     [SerializeField] private Vector3 m_signalScaling = Vector3.one;
@@ -44,6 +63,13 @@ namespace AGXUnity.Sensor
     public Vector3 GaussianSpectralNoise { get => m_gaussianSpectralNoise; set => PropertyUtil.Assign( ref m_gaussianSpectralNoise, value, this ); }
     [SerializeField] public OutputXYZ OutputFlags = OutputXYZ.X | OutputXYZ.Y | OutputXYZ.Z;
     [RuntimeValue] public Vector3 Output { get; private set; }
+
+    [SerializeField] private Vector3 m_attachmentPosition = Vector3.zero;
+    /// <summary>Position of this sensing element in the tracked rigid-body frame.</summary>
+    public Vector3 AttachmentPosition { get => m_attachmentPosition; set => PropertyUtil.Assign( ref m_attachmentPosition, value, this ); }
+    [SerializeField] private Quaternion m_attachmentRotation = Quaternion.identity;
+    /// <summary>Orientation of this sensing element in the tracked rigid-body frame.</summary>
+    public Quaternion AttachmentRotation { get => m_attachmentRotation; set => PropertyUtil.Assign( ref m_attachmentRotation, value, this ); }
 
     protected ITriaxialSignalSystemNodeRefVector Modifiers { get; private set; }
     protected TriaxialGaussianNoise TotalGaussianNoiseModifier { get; private set; }
@@ -71,6 +97,19 @@ namespace AGXUnity.Sensor
     }
     protected abstract void SynchronizeModel();
     private Vector3 GetTotalGaussianNoise() => EnableTotalGaussianNoise ? TotalGaussianNoise : DisabledTotalGaussianNoise;
+    protected Vector3 GetEffectiveZeroBias() => ZeroBias + ( EnableTotalGaussianNoise ? TotalGaussianNoiseMean : Vector3.zero );
+    protected agx.AffineMatrix4x4 GetAttachmentTransform() => new agx.AffineMatrix4x4( AttachmentRotation.ToHandedQuat(), AttachmentPosition.ToHandedVec3() );
+    protected TriaxialCrossSensitivity GetCrossAxisSensitivity()
+    {
+      if ( !UseCrossAxisSensitivityMatrix )
+        return new TriaxialCrossSensitivity( CrossAxisSensitivity );
+
+      var matrix = CrossAxisSensitivityMatrix;
+      return new TriaxialCrossSensitivity( new Matrix3x3(
+        matrix.m00, matrix.m01, matrix.m02,
+        matrix.m10, matrix.m11, matrix.m12,
+        matrix.m20, matrix.m21, matrix.m22 ) );
+    }
     private Vector3 GetSignalScaling() => EnableSignalScaling ? SignalScaling : DisabledSignalScaling;
     private Vector3 GetGaussianSpectralNoise() => EnableGaussianSpectralNoise ? GaussianSpectralNoise : DisabledGaussianSpectralNoise;
   }
@@ -82,15 +121,15 @@ namespace AGXUnity.Sensor
     internal override void AddNativeAttachment( IMUModelSensorAttachmentRefVector attachments )
     {
       CreateCommonModifiers();
-      m_nativeModel = new AccelerometerModel( TriaxialRange.GenerateTriaxialRange(), new TriaxialCrossSensitivity( CrossAxisSensitivity ), ZeroBias.ToHandedVec3(), Modifiers );
-      attachments.Add( new IMUModelAccelerometerAttachment( AffineMatrix4x4.identity(), m_nativeModel ) );
+      m_nativeModel = new AccelerometerModel( TriaxialRange.GenerateTriaxialRange(), GetCrossAxisSensitivity(), GetEffectiveZeroBias().ToHandedVec3(), Modifiers );
+      attachments.Add( new IMUModelAccelerometerAttachment( GetAttachmentTransform(), m_nativeModel ) );
     }
     protected override void SynchronizeModel()
     {
       if ( m_nativeModel == null ) return;
       m_nativeModel.setRange( TriaxialRange.GenerateTriaxialRange() );
-      m_nativeModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( CrossAxisSensitivity ) );
-      m_nativeModel.setZeroGBias( ZeroBias.ToHandedVec3() );
+      m_nativeModel.setCrossAxisSensitivity( GetCrossAxisSensitivity() );
+      m_nativeModel.setZeroGBias( GetEffectiveZeroBias().ToHandedVec3() );
     }
   }
 
@@ -109,15 +148,15 @@ namespace AGXUnity.Sensor
       CreateCommonModifiers();
       m_linearAccelerationEffectsModifier = new GyroscopeLinearAccelerationEffects( GetLinearAccelerationEffects().ToHandedVec3() );
       Modifiers.Add( m_linearAccelerationEffectsModifier );
-      m_nativeModel = new GyroscopeModel( TriaxialRange.GenerateTriaxialRange(), new TriaxialCrossSensitivity( CrossAxisSensitivity ), ZeroBias.ToHandedVec3(), Modifiers );
-      attachments.Add( new IMUModelGyroscopeAttachment( AffineMatrix4x4.identity(), m_nativeModel ) );
+      m_nativeModel = new GyroscopeModel( TriaxialRange.GenerateTriaxialRange(), GetCrossAxisSensitivity(), GetEffectiveZeroBias().ToHandedVec3(), Modifiers );
+      attachments.Add( new IMUModelGyroscopeAttachment( GetAttachmentTransform(), m_nativeModel ) );
     }
     protected override void SynchronizeModel()
     {
       if ( m_nativeModel == null ) return;
       m_nativeModel.setRange( TriaxialRange.GenerateTriaxialRange() );
-      m_nativeModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( CrossAxisSensitivity ) );
-      m_nativeModel.setZeroRateBias( ZeroBias.ToHandedVec3() );
+      m_nativeModel.setCrossAxisSensitivity( GetCrossAxisSensitivity() );
+      m_nativeModel.setZeroRateBias( GetEffectiveZeroBias().ToHandedVec3() );
       m_linearAccelerationEffectsModifier?.setAccelerationEffects( GetLinearAccelerationEffects().ToHandedVec3() );
     }
     private Vector3 GetLinearAccelerationEffects() => EnableLinearAccelerationEffects ? LinearAccelerationEffects : DisabledLinearAccelerationEffects;
@@ -130,15 +169,15 @@ namespace AGXUnity.Sensor
     internal override void AddNativeAttachment( IMUModelSensorAttachmentRefVector attachments )
     {
       CreateCommonModifiers();
-      m_nativeModel = new MagnetometerModel( TriaxialRange.GenerateTriaxialRange(), new TriaxialCrossSensitivity( CrossAxisSensitivity ), ZeroBias.ToHandedVec3(), Modifiers );
-      attachments.Add( new IMUModelMagnetometerAttachment( AffineMatrix4x4.identity(), m_nativeModel ) );
+      m_nativeModel = new MagnetometerModel( TriaxialRange.GenerateTriaxialRange(), GetCrossAxisSensitivity(), GetEffectiveZeroBias().ToHandedVec3(), Modifiers );
+      attachments.Add( new IMUModelMagnetometerAttachment( GetAttachmentTransform(), m_nativeModel ) );
     }
     protected override void SynchronizeModel()
     {
       if ( m_nativeModel == null ) return;
       m_nativeModel.setRange( TriaxialRange.GenerateTriaxialRange() );
-      m_nativeModel.setCrossAxisSensitivity( new TriaxialCrossSensitivity( CrossAxisSensitivity ) );
-      m_nativeModel.setZeroFluxBias( ZeroBias.ToHandedVec3() );
+      m_nativeModel.setCrossAxisSensitivity( GetCrossAxisSensitivity() );
+      m_nativeModel.setZeroFluxBias( GetEffectiveZeroBias().ToHandedVec3() );
     }
   }
 
@@ -185,12 +224,18 @@ namespace AGXUnity.Sensor
     private IMUModel m_nativeModel;
     private List<ImuSensorSubcomponent> m_configuredSubcomponents = new List<ImuSensorSubcomponent>();
     private uint m_outputID;
+    [SerializeField] private RigidBody m_measuredRigidBody;
+    /// <summary>
+    /// The rigid body measured by this IMU. If unset, the nearest rigid body in
+    /// this GameObject's parent hierarchy is used.
+    /// </summary>
+    public RigidBody MeasuredRigidBody { get => m_measuredRigidBody; set => m_measuredRigidBody = value; }
     [RuntimeValue] public RigidBody TrackedRigidBody { get; private set; }
 
     protected override bool Initialize()
     {
       SensorEnvironment.Instance.GetInitialized();
-      var rigidBody = GetComponentInParent<RigidBody>();
+      var rigidBody = MeasuredRigidBody ?? GetComponentInParent<RigidBody>();
       if ( rigidBody == null ) { Debug.LogWarning( "No Rigidbody found in this object or parents, IMU will be inactive" ); return false; }
       TrackedRigidBody = rigidBody;
       var attachments = new IMUModelSensorAttachmentRefVector();
