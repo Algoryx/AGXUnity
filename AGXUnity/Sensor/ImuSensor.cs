@@ -89,7 +89,7 @@ namespace AGXUnity.Sensor
       Modifiers.Add( TotalGaussianNoiseModifier ); Modifiers.Add( SignalScalingModifier ); Modifiers.Add( GaussianSpectralNoiseModifier );
     }
 
-    protected override void SynchronizeNative()
+    protected override void NativeSync()
     {
       SynchronizeModel();
       TotalGaussianNoiseModifier?.setNoiseRms( GetTotalGaussianNoise().ToHandedVec3() );
@@ -206,7 +206,7 @@ namespace AGXUnity.Sensor
       foreach ( var item in m_backing ) {
         if ( item == null ) { Debug.LogWarning( "The IMU sensor collection contains a null sensor. It will be ignored.", parent ); continue; }
         if ( !unique.Add( item ) ) { Debug.LogWarning( "The IMU sensor collection contains the same sensor more than once. Duplicate entries will be ignored.", parent ); continue; }
-        if ( item.Attach( parent ) ) result.Add( item );
+        if ( item.Bind( parent ) ) result.Add( item );
       }
       return result;
     }
