@@ -101,7 +101,7 @@ namespace AGXUnity.Sensor
     internal void SynchronizeConfiguration()
     {
       if ( Native != null && !NativeMatchesConfiguration ) {
-        Parent?.SynchronizeConfiguration();
+        Parent?.SynchronizeNative();
         return;
       }
 
@@ -121,7 +121,7 @@ namespace AGXUnity.Sensor
       SynchronizeUnityLight();
     }
 
-    protected override void SynchronizeNative()
+    protected override void NativeSync()
     {
       SynchronizeConfiguration();
     }
@@ -168,7 +168,7 @@ namespace AGXUnity.Sensor
       // Scaling based on flash duration throughout camera frame (t0.1, exponential falloff).
       float flashScale = 1.0f;
       if ( float.IsFinite( FlashDuration ) && FlashDuration > 0.0f ) {
-        float scaledTime = 2.302585093f * Parent.ShutterSpeed / FlashDuration;
+        float scaledTime = 2.302585093f * Parent.Photodetector.ShutterSpeed / FlashDuration;
         flashScale = ( 1.0f - Mathf.Exp( -scaledTime ) ) / scaledTime;
       }
 

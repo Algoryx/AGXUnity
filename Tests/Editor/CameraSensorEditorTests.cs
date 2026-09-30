@@ -50,7 +50,7 @@ namespace AGXUnityTesting.Editor
       serializedSensor.FindProperty( "m_resolution" ).vector2IntValue = new Vector2Int( 320, 200 );
       serializedSensor.ApplyModifiedPropertiesWithoutUndo();
 
-      Assert.DoesNotThrow( m_sensor.SynchronizeConfiguration );
+      Assert.DoesNotThrow( m_sensor.SynchronizeNative );
 
       var camera = m_sensor.CameraComponent;
       Assert.That( camera.focalLength, Is.EqualTo( 50.0f ).Within( 1.0e-5f ) );

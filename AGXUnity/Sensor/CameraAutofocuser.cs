@@ -9,7 +9,7 @@ using static UnityEngine.Rendering.RenderPipeline;
 namespace AGXUnity.Sensor
 {
   [Serializable]
-  public class CameraAutofocuser : Subcomponent<CameraSensor>
+  public class CameraAutofocuser : Subcomponent<CameraLens>
   {
     public enum Mode
     {
@@ -76,7 +76,6 @@ namespace AGXUnity.Sensor
       Depth?.Release();
       DepthSamplerBuffer?.Dispose();
       DepthSamplerBuffer = null;
-      base.Disconnect();
     }
 
     internal void Update()
@@ -137,7 +136,6 @@ namespace AGXUnity.Sensor
         AsyncGPUReadback.Request( DepthSamplerBuffer, req => {
           if ( req.hasError || m_disposed )
             return;
-          Debug.Log( "Focus" );
           m_targetFocusDistance = req.GetData<float>()[ 0 ];
         } );
         m_lastFocus = Time.time;
@@ -149,9 +147,9 @@ namespace AGXUnity.Sensor
         FocusDistance = Mathf.Max( MinimumFocusDistance, Mathf.Lerp( FocusDistance, m_targetFocusDistance, 0.1f ) );
     }
 
-    protected override void SynchronizeNative()
+    protected override void NativeSync()
     {
-      Parent?.SynchronizeConfiguration();
+      Parent?.SynchronizeNative();
     }
   }
 }

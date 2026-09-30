@@ -25,8 +25,14 @@ namespace AGXUnityEditor.Editors
       m_instanceProperty = m_wrappedProperty.GetParent();
       m_invert = invert;
 
-      contentContainer.TrackSerializedObjectValue( prop.serializedObject );
-      contentContainer.RegisterCallback<SerializedObjectChangeEvent>( _ => schedule.Execute( Update ) );
+      if ( m_instanceProperty != null ) {
+        contentContainer.TrackPropertyValue( m_instanceProperty );
+        contentContainer.RegisterCallback<SerializedPropertyChangeEvent>( _ => schedule.Execute( Update ) );
+      }
+      else {
+        contentContainer.TrackSerializedObjectValue( prop.serializedObject );
+        contentContainer.RegisterCallback<SerializedObjectChangeEvent>( _ => schedule.Execute( Update ) );
+      }
 
       m_wrappedElement = new PropertyField( prop );
       contentContainer.Add( m_wrappedElement );

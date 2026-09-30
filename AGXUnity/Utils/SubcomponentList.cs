@@ -108,7 +108,7 @@ namespace AGXUnity.Util
                             logContext );
           continue;
         }
-        if ( !item.Attach( parent ) )
+        if ( !item.Bind( parent ) )
           continue;
 
         result.Add( item );
