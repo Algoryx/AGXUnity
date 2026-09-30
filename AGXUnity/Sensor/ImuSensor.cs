@@ -81,6 +81,7 @@ namespace AGXUnity.Sensor
 
     protected void CreateCommonModifiers()
     {
+      m_triaxialRange.SetOnChanged( SynchronizeNative );
       Modifiers = new ITriaxialSignalSystemNodeRefVector();
       TotalGaussianNoiseModifier = new TriaxialGaussianNoise( GetTotalGaussianNoise().ToHandedVec3() );
       SignalScalingModifier = new TriaxialSignalScaling( GetSignalScaling().ToHandedVec3() );
