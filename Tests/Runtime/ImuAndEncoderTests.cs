@@ -31,6 +31,13 @@ namespace AGXUnityTesting.Runtime
       return (rbComp, imuComp);
     }
 
+    private static T AddSubcomponent<T>( ImuSensor imu ) where T : ImuSensorSubcomponent, new()
+    {
+      var subcomponent = new T();
+      imu.Subcomponents.Add( subcomponent );
+      return subcomponent;
+    }
+
     private AGXUnity.Constraint CreateTestHinge( Vector3 position = default )
     {
       var go1 = Factory.Create< AGXUnity.RigidBody >( Factory.Create<Box>() );
@@ -43,8 +50,65 @@ namespace AGXUnityTesting.Runtime
     }
 
 
-    // IMU subcomponents and output handling are being reworked. Re-enable these
-    // tests once the new default configuration and output contract are defined.
+    [Test]
+    public void InitializesWithParentRigidBody()
+    {
+      var (rigidBody, imu) = CreateDefaultTestImu();
+      AddSubcomponent<Accelerometer>( imu );
+      AddSubcomponent<AGXUnity.Sensor.Gyroscope>( imu );
+
+      TestUtils.InitializeAll();
+
+      Assert.That( imu.Native, Is.Not.Null );
+      Assert.That( imu.TrackedRigidBody, Is.EqualTo( rigidBody ) );
+    }
+
+    [Test]
+    public void ExplicitMeasuredRigidBodyOverridesHierarchy()
+    {
+      var (parentRigidBody, imu) = CreateDefaultTestImu();
+      var measuredObject = new GameObject( "Measured RB" );
+      var measuredRigidBody = measuredObject.AddComponent<AGXUnity.RigidBody>();
+      imu.MeasuredRigidBody = measuredRigidBody;
+      AddSubcomponent<Accelerometer>( imu );
+
+      TestUtils.InitializeAll();
+
+      Assert.That( imu.Native, Is.Not.Null );
+      Assert.That( imu.TrackedRigidBody, Is.EqualTo( measuredRigidBody ) );
+      Assert.That( imu.TrackedRigidBody, Is.Not.EqualTo( parentRigidBody ) );
+    }
+
+    [UnityTest]
+    public IEnumerator AccelerometerReportsGravity()
+    {
+      var (rigidBody, imu) = CreateDefaultTestImu();
+      var accelerometer = AddSubcomponent<Accelerometer>( imu );
+      rigidBody.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      TestUtils.InitializeAll();
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      Assert.That( accelerometer.Output.magnitude,
+                   Is.EqualTo( Mathf.Abs( Simulation.Instance.Gravity.y ) ).Within( 0.1f ) );
+    }
+
+    [UnityTest]
+    public IEnumerator GyroscopeReportsAngularVelocity()
+    {
+      var (rigidBody, imu) = CreateDefaultTestImu();
+      var gyroscope = AddSubcomponent<AGXUnity.Sensor.Gyroscope>( imu );
+      rigidBody.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+      rigidBody.AngularVelocity = Vector3.one;
+
+      TestUtils.InitializeAll();
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      Assert.That( gyroscope.Output.magnitude, Is.EqualTo( Vector3.one.magnitude ).Within( 0.1f ) );
+    }
+
+    // Legacy OutputBuffer tests are retained as historical reference. The
+    // current output contract is exposed by each configured subcomponent.
 #if false
     [Test]
     public void TestCreateImu()

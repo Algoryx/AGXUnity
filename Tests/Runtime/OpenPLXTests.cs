@@ -710,6 +710,18 @@ namespace AGXUnityTesting.Runtime
       Assert.That( gyroscope.LinearAccelerationEffects, Is.EqualTo( new Vector3( -0.7f, 0.8f, 0.9f ) ) );
     }
 
+    [UnityTest]
+    public IEnumerator ImportedImuInitializesAndSimulates()
+    {
+      var root = LoadOpenPLX( "simple_imu.openplx", "ValidImu" );
+      var imu = root.FindMappedObject( "ValidImu.imu" ).GetComponent<ImuSensor>();
+
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      Assert.That( imu.Native, Is.Not.Null );
+      Assert.That( imu.TrackedRigidBody, Is.EqualTo( root.FindMappedObject( "ValidImu.body" ).GetComponent<RigidBody>() ) );
+    }
+
     [Test]
     public void TestImportSimpleTrack()
     {
