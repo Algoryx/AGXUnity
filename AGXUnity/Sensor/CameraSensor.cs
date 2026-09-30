@@ -1,10 +1,13 @@
-using AGXUnity.Rendering.PostProcessing;
 using AGXUnity.Util;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+
+#if HAS_URP
+using AGXUnity.Rendering.PostProcessing;
 using UnityEngine.Rendering.Universal;
+#endif
 
 namespace AGXUnity.Sensor
 {
@@ -480,7 +483,7 @@ namespace AGXUnity.Sensor
       var profile = GetComponent<Volume>()?.sharedProfile;
       if ( profile == null )
         return;
-
+#if HAS_URP
       if ( !profile.TryGet( out DepthOfField depthOfField ) )
         depthOfField = profile.Add<DepthOfField>();
       depthOfField.active = true;
@@ -501,6 +504,7 @@ namespace AGXUnity.Sensor
       else {
         distortion.type.Override( LensDistortionModel.None );
       }
+#endif
     }
 
     private void OnValidate()
@@ -549,6 +553,9 @@ namespace AGXUnity.Sensor
     {
       m_illuminators.OnChange += SynchronizeNative;
       m_outputs.OnChange += SynchronizeNative;
+
+      if ( AGXUnity.Utils.RenderingUtils.DetectPipeline() != Utils.RenderingUtils.PipelineType.Universal )
+        Debug.LogWarning( "Camera sensors are designed to work with URP, which is not currently selected. Sensor might not work as intended" );
 
       Lens.Initialize( this );
       Photodetector.Initialize( this );

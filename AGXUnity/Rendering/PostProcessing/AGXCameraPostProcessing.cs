@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+#if HAS_URP
 using UnityEngine.Rendering.Universal;
 
 namespace AGXUnity.Rendering.PostProcessing
@@ -9,6 +10,7 @@ namespace AGXUnity.Rendering.PostProcessing
   // Create a Scriptable Renderer Feature that implements a post-processing effect when the camera is inside a custom volume.
   // For more information about creating scriptable renderer features, refer to https://docs.unity3d.com/Manual/urp/customizing-urp.html
   [DisallowMultipleRendererFeature]
+  [DoNotGenerateCustomEditor]
   public sealed class AGXCameraPostProcessing : ScriptableRendererFeature
   {
     #region FEATURE_FIELDS
@@ -205,3 +207,4 @@ namespace AGXUnity.Rendering.PostProcessing
     }
   }
 }
+#endif

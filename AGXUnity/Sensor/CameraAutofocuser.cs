@@ -3,8 +3,11 @@ using System;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using static UnityEngine.Rendering.RenderPipeline;
+
+#if HAS_URP
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace AGXUnity.Sensor
 {
@@ -85,36 +88,38 @@ namespace AGXUnity.Sensor
 
       if ( Time.time > m_lastFocus + m_autofocusPeriod ) {
 
+#if HAS_URP
         var urpData = m_camera.GetUniversalAdditionalCameraData();
 
         bool prePP = urpData.renderPostProcessing;
         bool preShadows = urpData.renderShadows;
         bool preReqColor = urpData.requiresColorTexture;
         bool preReqDepth = urpData.requiresDepthTexture;
+
+        urpData.renderPostProcessing = false;
+        urpData.renderShadows = false;
+        urpData.requiresColorTexture = false;
+        urpData.requiresDepthTexture = false;
+#endif
+
         CameraClearFlags preClear = m_camera.clearFlags;
         DepthTextureMode preDepthMode = m_camera.depthTextureMode;
 
-        try {
-          urpData.renderPostProcessing = false;
-          urpData.renderShadows = false;
-          urpData.requiresColorTexture = false;
-          urpData.requiresDepthTexture = false;
+        m_camera.clearFlags = CameraClearFlags.SolidColor;
+        m_camera.depthTextureMode = DepthTextureMode.None;
 
-          m_camera.clearFlags = CameraClearFlags.SolidColor;
-          m_camera.depthTextureMode = DepthTextureMode.None;
+        var request = new StandardRequest() { destination = Depth };
+        m_camera.SubmitRenderRequest( request );
 
-          var request = new StandardRequest() { destination = Depth };
-          m_camera.SubmitRenderRequest( request );
-        }
-        finally {
-          urpData.renderPostProcessing = prePP;
-          urpData.renderShadows = preShadows;
-          urpData.requiresColorTexture = preReqColor;
-          urpData.requiresDepthTexture = preReqDepth;
+#if HAS_URP
+        urpData.renderPostProcessing = prePP;
+        urpData.renderShadows = preShadows;
+        urpData.requiresColorTexture = preReqColor;
+        urpData.requiresDepthTexture = preReqDepth;
+#endif
 
-          m_camera.clearFlags = preClear;
-          m_camera.depthTextureMode = preDepthMode;
-        }
+        m_camera.clearFlags = preClear;
+        m_camera.depthTextureMode = preDepthMode;
 
         Vector4 zBufferParams;
         float n = m_camera.nearClipPlane;
