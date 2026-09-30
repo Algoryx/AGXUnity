@@ -1,8 +1,11 @@
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Sensor;
+using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -105,6 +108,68 @@ namespace AGXUnityTesting.Runtime
       yield return TestUtils.SimulateSeconds( 0.1f );
 
       Assert.That( gyroscope.Output.magnitude, Is.EqualTo( Vector3.one.magnitude ).Within( 0.1f ) );
+    }
+
+    [UnityTest]
+    public IEnumerator MagnetometerReportsConfiguredField()
+    {
+      var (rigidBody, imu) = CreateDefaultTestImu();
+      var magnetometer = AddSubcomponent<Magnetometer>( imu );
+      rigidBody.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      TestUtils.InitializeAll();
+      yield return TestUtils.SimulateSeconds( 0.1f );
+
+      Assert.That( magnetometer.Output.magnitude, Is.EqualTo( Vector3.one.magnitude ).Within( 0.1f ) );
+    }
+
+    [Test]
+    public void ConfigurationSynchronizesNativeModel()
+    {
+      var (rigidBody, imu) = CreateDefaultTestImu();
+      var accelerometer = AddSubcomponent<Accelerometer>( imu );
+      accelerometer.TriaxialRange.Mode = TriaxialRangeData.ConfigurationMode.IndividualAxisRanges;
+      accelerometer.TriaxialRange.RangeX = new Vector2( -2, 3 );
+      accelerometer.ZeroBias = new Vector3( 0.1f, 0.2f, 0.3f );
+
+      TestUtils.InitializeAll();
+
+      var model = typeof( Accelerometer )
+        .GetField( "m_nativeModel", BindingFlags.Instance | BindingFlags.NonPublic )
+        .GetValue( accelerometer ) as agxSensor.AccelerometerModel;
+      Assert.That( model, Is.Not.Null );
+      Assert.That( model.getZeroGBias().ToHandedVector3(), Is.EqualTo( accelerometer.ZeroBias ) );
+      accelerometer.TriaxialRange.RangeX = new Vector2( -4, 5 );
+      accelerometer.ZeroBias = new Vector3( 0.4f, 0.5f, 0.6f );
+      Assert.That( model.getRange().getRangeX().lower(), Is.EqualTo( -4 ).Within( 1e-6 ) );
+      Assert.That( model.getRange().getRangeX().upper(), Is.EqualTo( 5 ).Within( 1e-6 ) );
+      Assert.That( model.getZeroGBias().ToHandedVector3(), Is.EqualTo( accelerometer.ZeroBias ) );
+      Assert.That( imu.TrackedRigidBody, Is.EqualTo( rigidBody ) );
+    }
+
+    [Test]
+    public void ImuWithoutMeasuredRigidBodyReportsWarning()
+    {
+      var imu = new GameObject( "Unattached IMU" ).AddComponent<ImuSensor>();
+      AddSubcomponent<Accelerometer>( imu );
+      LogAssert.Expect( LogType.Warning, new Regex( "No Rigidbody found.*IMU will be inactive" ) );
+
+      TestUtils.InitializeAll();
+
+      Assert.That( imu.Native, Is.Null );
+    }
+
+    [Test]
+    public void EnableStateSynchronizesToNativeImu()
+    {
+      var (_, imu) = CreateDefaultTestImu();
+      AddSubcomponent<Accelerometer>( imu );
+      TestUtils.InitializeAll();
+
+      imu.enabled = false;
+      Assert.That( imu.Native.getEnable(), Is.False );
+      imu.enabled = true;
+      Assert.That( imu.Native.getEnable(), Is.True );
     }
 
     // Legacy OutputBuffer tests are retained as historical reference. The

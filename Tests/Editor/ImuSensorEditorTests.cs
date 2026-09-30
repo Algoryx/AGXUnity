@@ -55,5 +55,37 @@ namespace AGXUnityTesting.Editor
         Object.DestroyImmediate( created );
       }
     }
+
+    [Test]
+    public void SubcomponentDrawerShowsConditionalImportFields()
+    {
+      m_sensor.Subcomponents.Add( new Accelerometer() );
+      var serializedSensor = new SerializedObject( m_sensor );
+      var subcomponent = serializedSensor.FindProperty( "m_subcomponents" )
+                                          .FindPropertyRelative( "m_backing" )
+                                          .GetArrayElementAtIndex( 0 );
+      var drawer = new AGXUnityEditor.Editors.ImuSensorSubcomponentDrawer();
+
+      var defaultInspector = drawer.CreatePropertyGUI( subcomponent );
+      Assert.That( FindPropertyField( defaultInspector, "Cross-Axis Sensitivity Matrix" ).style.display.value, Is.EqualTo( DisplayStyle.None ) );
+      Assert.That( FindPropertyField( defaultInspector, "Total Gaussian Noise Mean" ).style.display.value, Is.EqualTo( DisplayStyle.None ) );
+
+      subcomponent.FindPropertyRelative( "m_useCrossAxisSensitivityMatrix" ).boolValue = true;
+      subcomponent.FindPropertyRelative( "m_enableTotalGaussianNoise" ).boolValue = true;
+      serializedSensor.ApplyModifiedPropertiesWithoutUndo();
+
+      var configuredInspector = drawer.CreatePropertyGUI( subcomponent );
+      Assert.That( FindPropertyField( configuredInspector, "Cross-Axis Sensitivity Matrix" ).style.display.value, Is.EqualTo( DisplayStyle.Flex ) );
+      Assert.That( FindPropertyField( configuredInspector, "Total Gaussian Noise Mean" ).style.display.value, Is.EqualTo( DisplayStyle.Flex ) );
+    }
+
+    private static PropertyField FindPropertyField( VisualElement root, string label )
+    {
+      foreach ( var field in root.Query<PropertyField>().ToList() )
+        if ( field.label == label )
+          return field;
+      Assert.Fail( $"Unable to find property field '{label}'." );
+      return default;
+    }
   }
 }
