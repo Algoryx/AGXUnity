@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,7 +6,7 @@ namespace AGXUnity.Util
 {
   public interface INativeSynchronizer
   {
-    internal void SynchronizeNative();
+    public void SynchronizeNative();
   }
 
   public static class PropertyUtil
@@ -23,28 +24,27 @@ namespace AGXUnity.Util
     INativeSynchronizer
     where ParentT : class
   {
+    [field: NonSerialized]
     public ParentT Parent { get; private set; }
 
-    internal bool Attach( ParentT parent )
+    internal bool Bind( ParentT parent )
     {
-      if ( Parent != null && !ReferenceEquals( Parent, parent ) ) {
-        Debug.LogError( "Subcomponents cannot be attached to multiple components" );
-        return false;
+      if ( Parent != null ) {
+        if ( !ReferenceEquals( Parent, parent ) ) {
+          Debug.LogError( "Subcomponents cannot be attached to multiple components" );
+          return false;
+        }
+        return true;
       }
 
       Parent = parent;
-      SynchronizeNative();
+      NativeSync();
       return true;
     }
 
-    internal void Disconnect()
-    {
-      Parent = default;
-    }
+    protected abstract void NativeSync();
 
-    protected abstract void SynchronizeNative();
-
-    void INativeSynchronizer.SynchronizeNative() => SynchronizeNative();
+    public void SynchronizeNative() => NativeSync();
   }
 
   public abstract class Subcomponent<ParentT, T> :
@@ -52,25 +52,34 @@ namespace AGXUnity.Util
     where ParentT : class
     where T : class
   {
+    [field: NonSerialized]
     public T Native { get; private set; }
 
-    internal bool Attach( ParentT parent, bool initializeNative = true )
+    internal bool Initialize( ParentT parent )
     {
-      if ( !base.Attach( parent ) )
+      if ( !Bind( parent ) )
         return false;
 
-      if ( initializeNative && Native == null )
-        Native = InitializeNative();
-      if ( initializeNative && Native != null )
-        SynchronizeNative();
-      return !initializeNative || Native != null;
+      if ( Native != null ) {
+        Debug.LogWarning( "Reinitializing subcomponents is not allowed" );
+        return false;
+      }
+
+      Native = InitializeNative();
+
+      if ( Native == null ) {
+        Debug.LogError( "Failed to initialize subcomponent" );
+        return false;
+      }
+
+      NativeSync();
+      return true;
     }
 
-    internal new void Disconnect()
+    internal void Disconnect()
     {
       DisposeNative();
       Native = default;
-      base.Disconnect();
     }
 
     protected virtual void DisposeNative() { }

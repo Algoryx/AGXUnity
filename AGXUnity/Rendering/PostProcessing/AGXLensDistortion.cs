@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+
+#if HAS_URP
 using UnityEngine.Rendering.Universal;
 
 namespace AGXUnity.Rendering.PostProcessing
@@ -29,3 +31,4 @@ namespace AGXUnity.Rendering.PostProcessing
     }
   }
 }
+#endif

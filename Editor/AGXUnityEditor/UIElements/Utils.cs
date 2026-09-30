@@ -1,5 +1,6 @@
 using AGXUnity;
 using AGXUnityEditor.Editors;
+using AGXUnityEditor.Utils;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;

@@ -177,7 +177,7 @@ namespace AGXUnity.Sensor
         RecreateBuffer();
     }
 
-    protected override void SynchronizeNative() => SynchronizeConfiguration();
+    protected override void NativeSync() => SynchronizeConfiguration();
 
     protected override void DisposeNative()
     {

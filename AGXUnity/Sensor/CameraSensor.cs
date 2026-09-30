@@ -1,18 +1,20 @@
-using AGXUnity.Rendering.PostProcessing;
 using AGXUnity.Util;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+
+#if HAS_URP
+using AGXUnity.Rendering.PostProcessing;
 using UnityEngine.Rendering.Universal;
+#endif
 
 namespace AGXUnity.Sensor
 {
   public interface ILensDistortion { }
 
-
   [Serializable]
-  public class LensDistortionBrownConrady : Subcomponent<CameraSensor, agxSensor.LensDistortionBrownConrady>, ILensDistortion
+  public class LensDistortionBrownConrady : Subcomponent<CameraLens, agxSensor.LensDistortionBrownConrady>, ILensDistortion
   {
     [SerializeField]
     private Vector3 m_radialCoefficients = Vector3.zero;
@@ -38,12 +40,11 @@ namespace AGXUnity.Sensor
       );
     }
 
-    protected override void SynchronizeNative()
+    protected override void NativeSync()
     {
       Native?.setCoefficients(
         RadialCoefficients.x, RadialCoefficients.y, RadialCoefficients.z,
         TangentialCoefficients.x, TangentialCoefficients.y );
-      Parent?.SynchronizeConfiguration();
     }
   }
 
@@ -53,7 +54,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     [Min( 0.0f )]
     [Tooltip( "Physical focal length in meters." )]
-    private float m_focalLength;
+    private float m_focalLength = 0.01f;
     public float FocalLength
     {
       get => m_focalLength;
@@ -71,6 +72,7 @@ namespace AGXUnity.Sensor
     [SerializeField]
     [DynamicallyShowInInspector(nameof(Autofocus))]
     private CameraAutofocuser m_autofocuser = new CameraAutofocuser();
+    public CameraAutofocuser Autofocuser => m_autofocuser;
 
     public float MinimumFocusDistance
     {
@@ -82,7 +84,7 @@ namespace AGXUnity.Sensor
     [Min( 0.0f )]
     [DynamicallyShowInInspector(nameof(Autofocus), invert: true)]
     [Tooltip( "Manual focus distance. Used when autofocus is disabled." )]
-    private float m_focusDistance;
+    private float m_focusDistance = 10.0f;
 
     public float FocusDistance
     {
@@ -92,7 +94,7 @@ namespace AGXUnity.Sensor
 
     [SerializeField]
     [Min( 0.0f )]
-    private float m_fStop;
+    private float m_fStop = 2f;
     public float FStop
     {
       get => m_fStop;
@@ -109,12 +111,127 @@ namespace AGXUnity.Sensor
 
     protected override agxSensor.CameraLens InitializeNative()
     {
-      throw new NotImplementedException();
+      return new agxSensor.CameraLensSingleElement();
     }
 
-    protected override void SynchronizeNative()
+    protected override void NativeSync()
     {
-      throw new NotImplementedException();
+      m_focalLength = Mathf.Max( 0.0f, m_focalLength );
+      MinimumFocusDistance = Mathf.Max( 0.0f, MinimumFocusDistance );
+      m_focusDistance = Mathf.Max( 0.0f, m_focusDistance );
+      m_fStop = Mathf.Max( 0.0f, m_fStop );
+
+      var camera = Parent?.CameraComponent;
+      if ( camera != null ) {
+        camera.focalLength = FocalLength * 1000.0f;
+        camera.aperture = FStop;
+        camera.focusDistance = FocusDistance;
+      }
+
+      if ( !Autofocus )
+        Autofocuser.Dispose();
+
+      if ( Native is not agxSensor.CameraLensSingleElement lens )
+        return;
+
+      lens.setFocalLength( FocalLength );
+      lens.setFStop( FStop );
+      if ( Autofocus ) {
+        Autofocuser.Activate( camera, FocusDistance );
+        lens.setAutofocus( MinimumFocusDistance );
+      }
+      else {
+        lens.setFocusDistance( FocusDistance );
+      }
+
+      if ( LensDistortion is LensDistortionBrownConrady brownConrady ) {
+        brownConrady.Initialize( this );
+        lens.setLensDistortion( brownConrady.Native );
+      }
+      else
+        lens.setLensDistortion( null );
+    }
+
+    protected override void DisposeNative()
+    {
+      Autofocuser?.Dispose();
+      ( m_lensDistortion as LensDistortionBrownConrady )?.Disconnect();
+    }
+
+    internal void Update()
+    {
+      if ( Autofocus ) {
+        Autofocuser.MinimumFocusDistance = MinimumFocusDistance;
+        Autofocuser.Update();
+        m_focusDistance = Autofocuser.FocusDistance;
+      }
+    }
+  }
+
+  [Serializable]
+  public class CameraPhotodetector : Subcomponent<CameraSensor, agxSensor.CameraPhotodetector>
+  {
+    [SerializeField]
+    [Tooltip( "Physical sensor size in meters." )]
+    private Vector2 m_sensorSize;
+    public Vector2 SensorSize
+    {
+      get => m_sensorSize;
+      set => PropertyUtil.Assign( ref m_sensorSize, value, this );
+    }
+
+    [SerializeField]
+    [Min( 0 )]
+    private int m_iso = 200;
+    public int ISO
+    {
+      get => m_iso;
+      set => PropertyUtil.Assign( ref m_iso, value, this );
+    }
+
+    [SerializeField]
+    [Min( 0.0f )]
+    private float m_shutterSpeed = 0.005f;
+    public float ShutterSpeed
+    {
+      get => m_shutterSpeed;
+      set => PropertyUtil.Assign( ref m_shutterSpeed, value, this );
+    }
+
+    [SerializeField]
+    private Vector2Int m_resolution = new Vector2Int(128,128);
+    public Vector2Int Resolution
+    {
+      get => m_resolution;
+      set => PropertyUtil.Assign( ref m_resolution, value, this );
+    }
+
+    protected override agxSensor.CameraPhotodetector InitializeNative()
+    {
+      return new agxSensor.CameraCMOSSensor();
+    }
+
+    protected override void NativeSync()
+    {
+      m_sensorSize = Vector2.Max( Vector2.zero, m_sensorSize );
+      m_iso = Mathf.Max( 0, m_iso );
+      m_shutterSpeed = Mathf.Max( 0.0f, m_shutterSpeed );
+      m_resolution = new Vector2Int( Mathf.Max( 1, m_resolution.x ),
+                                     Mathf.Max( 1, m_resolution.y ) );
+
+      var camera = Parent?.CameraComponent;
+      if ( camera != null ) {
+        camera.sensorSize = SensorSize * 1000.0f;
+        camera.iso = ISO;
+        camera.shutterSpeed = ShutterSpeed;
+      }
+
+      if ( Native is agxSensor.CameraCMOSSensor cmos ) {
+        cmos.setSize( new agx.Vec2( SensorSize.x, SensorSize.y ) );
+        cmos.setISO( ISO );
+        cmos.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
+        cmos.setShutterSpeed( ShutterSpeed );
+      }
     }
   }
 
@@ -131,99 +248,15 @@ namespace AGXUnity.Sensor
       BrownConrady = 1
     }
 
-    [Header( "Lens" )]
+    [Header("Lens")]
     [SerializeField]
-    [Min( 0.0f )]
-    [Tooltip( "Physical focal length in meters." )]
-    private float m_focalLength;
-    public float FocalLength
-    {
-      get => m_focalLength;
-      set => PropertyUtil.Assign( ref m_focalLength, value, this );
-    }
-
-    [SerializeField]
-    private bool m_autofocus = true;
-    public bool Autofocus
-    {
-      get => m_autofocus;
-      set => PropertyUtil.Assign( ref m_autofocus, value, this );
-    }
-
-    [SerializeField]
-    [DynamicallyShowInInspector(nameof(Autofocus))]
-    private CameraAutofocuser m_autofocuser = new CameraAutofocuser();
-
-    public float MinimumFocusDistance
-    {
-      get => m_autofocuser.MinimumFocusDistance;
-      set => m_autofocuser.MinimumFocusDistance = value;
-    }
-
-    [SerializeField]
-    [Min( 0.0f )]
-    [DynamicallyShowInInspector(nameof(Autofocus), invert: true)]
-    [Tooltip( "Manual focus distance. Used when autofocus is disabled." )]
-    private float m_focusDistance;
-
-    public float FocusDistance
-    {
-      get => m_focusDistance;
-      set => PropertyUtil.Assign( ref m_focusDistance, value, this );
-    }
-
-    [SerializeField]
-    [Min( 0.0f )]
-    private float m_fStop;
-    public float FStop
-    {
-      get => m_fStop;
-      set => PropertyUtil.Assign( ref m_fStop, value, this );
-    }
-
-    [SerializeReference]
-    private ILensDistortion m_lensDistortion = null;
-    public ILensDistortion LensDistortion
-    {
-      get => m_lensDistortion;
-      set => PropertyUtil.Assign( ref m_lensDistortion, value, this );
-    }
+    private CameraLens m_lens = new CameraLens();
+    public CameraLens Lens => m_lens;
 
     [Header( "Photodetector" )]
     [SerializeField]
-    [Tooltip( "Physical sensor size in meters." )]
-    private Vector2 m_sensorSize;
-    public Vector2 SensorSize
-    {
-      get => m_sensorSize;
-      set => PropertyUtil.Assign( ref m_sensorSize, value, this );
-    }
-
-    [SerializeField]
-    [Min( 0 )]
-    private int m_iso;
-    public int ISO
-    {
-      get => m_iso;
-      set => PropertyUtil.Assign( ref m_iso, value, this );
-    }
-
-    [SerializeField]
-    [Min( 0.0f )]
-    private float m_shutterSpeed;
-    public float ShutterSpeed
-    {
-      get => m_shutterSpeed;
-      set => PropertyUtil.Assign( ref m_shutterSpeed, value, this );
-    }
-
-    [SerializeField]
-    private Vector2Int m_resolution;
-    public Vector2Int Resolution
-    {
-      get => m_resolution;
-      set => PropertyUtil.Assign( ref m_resolution, value, this );
-    }
+    private CameraPhotodetector m_photoDetector = new CameraPhotodetector();
+    public CameraPhotodetector Photodetector => m_photoDetector;
 
     [Header( "Active Illumination" )]
     [SerializeField]
@@ -254,20 +287,18 @@ namespace AGXUnity.Sensor
     private List<ColorOutput> m_configuredOutputs = new List<ColorOutput>();
 
     public agxSensor.Camera Native { get; private set; }
-    public agxSensor.CameraLens NativeLens { get; private set; }
-    public agxSensor.CameraPhotodetector NativePhotodetector { get; private set; }
+    public agxSensor.CameraLens NativeLens => Lens.Native;
+    public agxSensor.CameraPhotodetector NativePhotodetector => Photodetector.Native;
 
     public Camera CameraComponent => GetComponent<Camera>();
 
     public RenderTexture Output { get; private set; }
 
-    public CameraAutofocuser Autofocuser => m_autofocuser;
-
     public SubcomponentList<Illuminator, CameraSensor> Illuminators => m_illuminators;
 
     public SubcomponentList<ColorOutput, CameraSensor> Outputs => m_outputs;
 
-    public void SynchronizeConfiguration()
+    public void SynchronizeNative()
     {
       if ( m_isSynchronizingConfiguration )
         return;
@@ -275,9 +306,9 @@ namespace AGXUnity.Sensor
       m_isSynchronizingConfiguration = true;
       try {
         m_configurationDirty = false;
-        NormalizeConfiguration();
-        SynchronizeLens();
-        SynchronizePhotodetector();
+        Photodetector.SynchronizeNative();
+        Lens.SynchronizeNative();
+        EnsureRenderTexture();
         ReconcileIlluminators();
         ReconcileOutputs();
         SynchronizeIlluminatorVisuals();
@@ -288,72 +319,9 @@ namespace AGXUnity.Sensor
       }
     }
 
-    void INativeSynchronizer.SynchronizeNative() => SynchronizeConfiguration();
-
-    private void NormalizeConfiguration()
-    {
-      m_focalLength = Mathf.Max( 0.0f, m_focalLength );
-      MinimumFocusDistance = Mathf.Max( 0.0f, MinimumFocusDistance );
-      m_focusDistance = Mathf.Max( 0.0f, m_focusDistance );
-      m_fStop = Mathf.Max( 0.0f, m_fStop );
-      m_sensorSize = Vector2.Max( Vector2.zero, m_sensorSize );
-      m_iso = Mathf.Max( 0, m_iso );
-      m_shutterSpeed = Mathf.Max( 0.0f, m_shutterSpeed );
-      m_resolution = new Vector2Int( Mathf.Max( 1, m_resolution.x ),
-                                     Mathf.Max( 1, m_resolution.y ) );
-    }
-
-    private void SynchronizeLens()
-    {
-      var camera = CameraComponent;
-      camera.focalLength = FocalLength * 1000.0f;
-      camera.aperture = FStop;
-      camera.focusDistance = FocusDistance;
-
-      if ( !Autofocus )
-        Autofocuser.Dispose();
-
-      if ( NativeLens is not agxSensor.CameraLensSingleElement lens )
-        return;
-
-      lens.setFocalLength( FocalLength );
-      lens.setFStop( FStop );
-      if ( Autofocus ) {
-        Autofocuser.Activate( camera, FocusDistance );
-        lens.setAutofocus( MinimumFocusDistance );
-      }
-      else
-        lens.setFocusDistance( FocusDistance );
-
-      if ( LensDistortion is LensDistortionBrownConrady brownConrady ) {
-        brownConrady.Attach( this );
-        lens.setLensDistortion( brownConrady.Native );
-      }
-      else {
-        lens.setLensDistortion( null );
-      }
-    }
-
-    private void SynchronizePhotodetector()
-    {
-      var camera = CameraComponent;
-      camera.sensorSize = SensorSize * 1000.0f;
-      camera.iso = ISO;
-      camera.shutterSpeed = ShutterSpeed;
-
-      if ( NativePhotodetector is agxSensor.CameraCMOSSensor detector ) {
-        detector.setSize( new agx.Vec2( SensorSize.x, SensorSize.y ) );
-        detector.setISO( ISO );
-        detector.setResolution( new agx.Vec2i( Resolution.x, Resolution.y ) );
-        detector.setShutterSpeed( ShutterSpeed );
-      }
-
-      EnsureRenderTexture();
-    }
-
     private void EnsureRenderTexture()
     {
-      if ( Output != null && Output.width == Resolution.x && Output.height == Resolution.y ) {
+      if ( Output != null && Output.width == Photodetector.Resolution.x && Output.height == Photodetector.Resolution.y ) {
         if ( CameraComponent.targetTexture != Output )
           CameraComponent.targetTexture = Output;
         return;
@@ -367,7 +335,7 @@ namespace AGXUnity.Sensor
           DestroyImmediate( Output );
       }
 
-      Output = new RenderTexture( Resolution.x, Resolution.y, 8, RenderTextureFormat.Default )
+      Output = new RenderTexture( Photodetector.Resolution.x, Photodetector.Resolution.y, 8, RenderTextureFormat.Default )
       {
         hideFlags = HideFlags.NotEditable,
         name = name + "_Output"
@@ -378,43 +346,24 @@ namespace AGXUnity.Sensor
     private void SynchronizeCameraFromUnity()
     {
       var camera = CameraComponent;
-      bool changed = false;
 
-      changed |= AssignIfDifferent( ref m_focalLength, camera.focalLength / 1000.0f );
-      changed |= AssignIfDifferent( ref m_fStop, camera.aperture );
-      if ( !Autofocus )
-        changed |= AssignIfDifferent( ref m_focusDistance, camera.focusDistance );
-      changed |= AssignIfDifferent( ref m_iso, camera.iso );
-      changed |= AssignIfDifferent( ref m_shutterSpeed, camera.shutterSpeed );
+      if ( !Mathf.Approximately( Lens.FocalLength, camera.focalLength / 1000.0f ) )
+        Lens.FocalLength = camera.focalLength / 1000.0f;
+      if ( !Mathf.Approximately( Lens.FStop, camera.aperture ) )
+        Lens.FStop = camera.aperture;
+      if ( !Lens.Autofocus && !Mathf.Approximately( Lens.FocusDistance, camera.focusDistance ) )
+        Lens.FocusDistance = camera.focusDistance;
 
-      var sensorSize = camera.sensorSize / 1000.0f;
-      if ( !Approximately( m_sensorSize, sensorSize ) ) {
-        m_sensorSize = sensorSize;
-        changed = true;
-      }
+      if ( !Mathf.Approximately( Photodetector.ISO, camera.iso ) )
+        Photodetector.ISO = camera.iso;
+      if ( !Mathf.Approximately( Photodetector.ShutterSpeed, camera.shutterSpeed ) )
+        Photodetector.ShutterSpeed = camera.shutterSpeed;
 
-      if ( changed )
-        SynchronizeConfiguration();
+      var cameraSensorSize = camera.sensorSize / 1000.0f;
+      if ( !Mathf.Approximately( Photodetector.SensorSize.x, cameraSensorSize.x ) ||
+           !Mathf.Approximately( Photodetector.SensorSize.y, cameraSensorSize.y ) )
+        Photodetector.SensorSize = cameraSensorSize;
     }
-
-    private static bool AssignIfDifferent( ref float destination, float value )
-    {
-      if ( Mathf.Approximately( destination, value ) )
-        return false;
-      destination = value;
-      return true;
-    }
-
-    private static bool AssignIfDifferent( ref int destination, int value )
-    {
-      if ( destination == value )
-        return false;
-      destination = value;
-      return true;
-    }
-
-    private static bool Approximately( Vector2 lhs, Vector2 rhs ) =>
-      Mathf.Approximately( lhs.x, rhs.x ) && Mathf.Approximately( lhs.y, rhs.y );
 
     private void ReconcileIlluminators()
     {
@@ -428,7 +377,7 @@ namespace AGXUnity.Sensor
 
       if ( Native != null ) {
         foreach ( var illuminator in current ) {
-          if ( !illuminator.Attach( this ) )
+          if ( !illuminator.Initialize( this ) )
             continue;
           nativeIlluminators.Add( new agxSensor.ICameraActiveIlluminationRef( illuminator.Native ) );
         }
@@ -463,7 +412,7 @@ namespace AGXUnity.Sensor
 
         foreach ( var output in current ) {
           if ( output.Native == null ) {
-            if ( !output.Attach( this ) )
+            if ( !output.Initialize( this ) )
               continue;
           }
           else
@@ -534,20 +483,20 @@ namespace AGXUnity.Sensor
       var profile = GetComponent<Volume>()?.sharedProfile;
       if ( profile == null )
         return;
-
+#if HAS_URP
       if ( !profile.TryGet( out DepthOfField depthOfField ) )
         depthOfField = profile.Add<DepthOfField>();
       depthOfField.active = true;
       depthOfField.mode.Override( DepthOfFieldMode.Bokeh );
-      depthOfField.focusDistance.Override( FocusDistance );
-      depthOfField.focalLength.Override( FocalLength * 1000.0f );
-      depthOfField.aperture.Override( FStop );
+      depthOfField.focusDistance.Override( Lens.FocusDistance );
+      depthOfField.focalLength.Override( Lens.FocalLength * 1000.0f );
+      depthOfField.aperture.Override( Lens.FStop );
 
       if ( !profile.TryGet( out AGXLensDistortion distortion ) )
         distortion = profile.Add<AGXLensDistortion>();
       distortion.active = true;
       distortion.hideFlags = HideFlags.NotEditable;
-      if ( LensDistortion is LensDistortionBrownConrady brownConrady ) {
+      if ( Lens.LensDistortion is LensDistortionBrownConrady brownConrady ) {
         distortion.type.Override( LensDistortionModel.BrownConrady );
         distortion.radialCoefficients.Override( brownConrady.RadialCoefficients );
         distortion.tangentialCoefficients.Override( brownConrady.TangentialCoefficients );
@@ -555,6 +504,7 @@ namespace AGXUnity.Sensor
       else {
         distortion.type.Override( LensDistortionModel.None );
       }
+#endif
     }
 
     private void OnValidate()
@@ -564,9 +514,10 @@ namespace AGXUnity.Sensor
 
     public override void EditorUpdate()
     {
-      if ( m_configurationDirty )
-        SynchronizeConfiguration();
-      else if ( SynchronizeUnityChanges )
+      Lens.Bind( this );
+      Photodetector.Bind( this );
+
+      if ( SynchronizeUnityChanges )
         SynchronizeCameraFromUnity();
 
       foreach ( var illuminator in m_configuredIlluminators )
@@ -575,17 +526,10 @@ namespace AGXUnity.Sensor
 
     private void Update()
     {
-      if ( m_configurationDirty )
-        SynchronizeConfiguration();
-
       foreach ( var output in m_configuredOutputs )
         output.PerformQueuedCapture();
 
-      if ( Autofocus ) {
-        Autofocuser.MinimumFocusDistance = MinimumFocusDistance;
-        Autofocuser.Update();
-        m_focusDistance = Autofocuser.FocusDistance;
-      }
+      Lens.Update();
 
       foreach ( var illuminator in m_configuredIlluminators )
         illuminator.UpdateLightIntensity();
@@ -593,10 +537,10 @@ namespace AGXUnity.Sensor
 
     private void PreStep()
     {
-      if ( m_configurationDirty )
-        SynchronizeConfiguration();
       if ( SynchronizeUnityChanges )
         SynchronizeCameraFromUnity();
+      if ( m_configurationDirty )
+        SynchronizeNative();
     }
 
     private void PostStep()
@@ -607,11 +551,14 @@ namespace AGXUnity.Sensor
 
     protected override bool Initialize()
     {
-      m_illuminators.OnChange += SynchronizeConfiguration;
-      m_outputs.OnChange += SynchronizeConfiguration;
+      m_illuminators.OnChange += SynchronizeNative;
+      m_outputs.OnChange += SynchronizeNative;
 
-      NativeLens = new agxSensor.CameraLensSingleElement();
-      NativePhotodetector = new agxSensor.CameraCMOSSensor();
+      if ( AGXUnity.Utils.RenderingUtils.DetectPipeline() != Utils.RenderingUtils.PipelineType.Universal )
+        Debug.LogWarning( "Camera sensors are designed to work with URP, which is not currently selected. Sensor might not work as intended" );
+
+      Lens.Initialize( this );
+      Photodetector.Initialize( this );
 
       var model = new agxSensor.CameraModel( NativeLens,
                                              NativePhotodetector,
@@ -621,7 +568,7 @@ namespace AGXUnity.Sensor
       SensorEnvironment.Instance.GetInitialized<SensorEnvironment>().Native.add( Native );
 
       m_configurationDirty = true;
-      SynchronizeConfiguration();
+      SynchronizeNative();
 
       Simulation.Instance.StepCallbacks.PreStepForward += PreStep;
       Simulation.Instance.StepCallbacks.PostStepForward += PostStep;
@@ -647,10 +594,8 @@ namespace AGXUnity.Sensor
         illuminator.Disconnect();
       m_configuredIlluminators.Clear();
 
-      Autofocuser?.Dispose();
-      if ( NativeLens is agxSensor.CameraLensSingleElement lens )
-        lens.setLensDistortion( null );
-      ( m_lensDistortion as LensDistortionBrownConrady )?.Disconnect();
+      Lens.Disconnect();
+      Photodetector.Disconnect();
 
       if ( Output != null ) {
         Output.Release();
@@ -664,8 +609,6 @@ namespace AGXUnity.Sensor
       CameraBackend.Instance.UnmapCamera( Native );
       Native?.Dispose();
       Native = null;
-      NativeLens = null;
-      NativePhotodetector = null;
       base.OnDestroy();
     }
 

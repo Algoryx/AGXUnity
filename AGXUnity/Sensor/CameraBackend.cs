@@ -121,16 +121,16 @@ namespace AGXUnity.Sensor
       if ( uCamera == null )
         return;
 
-      uCamera.FocalLength = (float)parameters.focalLength;
-      uCamera.FStop = (float)parameters.fStop;
+      uCamera.Lens.FocalLength = (float)parameters.focalLength;
+      uCamera.Lens.FStop = (float)parameters.fStop;
 
       if ( parameters.autofocus ) {
-        uCamera.Autofocus = true;
-        uCamera.MinimumFocusDistance = (float)lens.getMinimumFocusDistance();
+        uCamera.Lens.Autofocus = true;
+        uCamera.Lens.MinimumFocusDistance = (float)lens.getMinimumFocusDistance();
       }
       else {
-        uCamera.Autofocus = false;
-        uCamera.FocusDistance = (float)lens.getFocusDistance();
+        uCamera.Lens.Autofocus = false;
+        uCamera.Lens.FocusDistance = (float)lens.getFocusDistance();
       }
     }
 
@@ -140,11 +140,10 @@ namespace AGXUnity.Sensor
       if ( uCamera == null )
         return;
 
-      uCamera.SensorSize = new Vector2( (float)parameters.sizeX, (float)parameters.sizeY );
-      uCamera.ISO = (int)parameters.iso;
-      uCamera.ShutterSpeed = (float)parameters.shutterSpeed;
-
-      uCamera.Resolution = new Vector2Int( parameters.resolutionX, parameters.resolutionY );
+      uCamera.Photodetector.SensorSize = new Vector2( (float)parameters.sizeX, (float)parameters.sizeY );
+      uCamera.Photodetector.ISO = (int)parameters.iso;
+      uCamera.Photodetector.ShutterSpeed = (float)parameters.shutterSpeed;
+      uCamera.Photodetector.Resolution = new Vector2Int( parameters.resolutionX, parameters.resolutionY );
 
       //    if (parameters->autoExposure)
       //      neoCameraSensor->setAutoExposure(parameters->exposure.dynamicRange);
@@ -159,7 +158,7 @@ namespace AGXUnity.Sensor
     {
       var unityCamera = GetMappedCamera( camera );
       if ( unityCamera != null )
-        unityCamera.LensDistortion = null;
+        unityCamera.Lens.LensDistortion = null;
     }
 
     protected override void setCameraLensDistortionBrownConrady( agxSensor.Camera camera, agxSensor.CameraLens lens, LensDistortionBrownConradyCoefficients coefficients )
@@ -169,11 +168,11 @@ namespace AGXUnity.Sensor
         return;
 
       LensDistortionBrownConrady distortion;
-      if ( unityCamera.LensDistortion is LensDistortionBrownConrady dist )
+      if ( unityCamera.Lens.LensDistortion is LensDistortionBrownConrady dist )
         distortion = dist;
       else {
         distortion = new LensDistortionBrownConrady();
-        unityCamera.LensDistortion = distortion;
+        unityCamera.Lens.LensDistortion = distortion;
       }
 
       distortion.RadialCoefficients = new Vector3( (float)coefficients.k1,

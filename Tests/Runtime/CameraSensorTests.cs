@@ -10,15 +10,15 @@ namespace AGXUnityTesting.Runtime
     {
       var gameObject = new GameObject( "CameraSensorTest" );
       var sensor = gameObject.AddComponent<CameraSensor>();
-      sensor.FocalLength = 0.05f;
-      sensor.Autofocus = false;
-      sensor.MinimumFocusDistance = 0.2f;
-      sensor.FocusDistance = 4.0f;
-      sensor.FStop = 2.8f;
-      sensor.SensorSize = new Vector2( 0.036f, 0.024f );
-      sensor.ISO = 200;
-      sensor.ShutterSpeed = 0.01f;
-      sensor.Resolution = new Vector2Int( 64, 32 );
+      sensor.Lens.FocalLength = 0.05f;
+      sensor.Lens.Autofocus = false;
+      sensor.Lens.MinimumFocusDistance = 0.2f;
+      sensor.Lens.FocusDistance = 4.0f;
+      sensor.Lens.FStop = 2.8f;
+      sensor.Photodetector.SensorSize = new Vector2( 0.036f, 0.024f );
+      sensor.Photodetector.ISO = 200;
+      sensor.Photodetector.ShutterSpeed = 0.01f;
+      sensor.Photodetector.Resolution = new Vector2Int( 64, 32 );
       return sensor;
     }
 
