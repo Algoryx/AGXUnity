@@ -2,6 +2,7 @@ using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Sensor;
 using AGXUnity.Utils;
+using IMUOutput = agxSensor.IMUOutput;
 using NUnit.Framework;
 using System.Collections;
 using System.Reflection;
@@ -80,6 +81,35 @@ namespace AGXUnityTesting.Runtime
       Assert.That( imu.Native, Is.Not.Null );
       Assert.That( imu.TrackedRigidBody, Is.EqualTo( measuredRigidBody ) );
       Assert.That( imu.TrackedRigidBody, Is.Not.EqualTo( parentRigidBody ) );
+    }
+
+    [Test]
+    public void GenericOutputContainsConfiguredAxesForEverySubcomponent()
+    {
+      var (_, imu) = CreateDefaultTestImu();
+      var first = AddSubcomponent<Accelerometer>( imu );
+      first.OutputFlags = OutputXYZ.Z;
+      var second = AddSubcomponent<AGXUnity.Sensor.Gyroscope>( imu );
+      second.OutputFlags = OutputXYZ.X | OutputXYZ.Y;
+      var third = AddSubcomponent<Magnetometer>( imu );
+      third.OutputFlags = OutputXYZ.X;
+      var fourth = AddSubcomponent<Accelerometer>( imu );
+      fourth.OutputFlags = OutputXYZ.Y | OutputXYZ.Z;
+
+      TestUtils.InitializeAll();
+
+      var outputID = (uint)typeof( ImuSensor )
+        .GetField( "m_outputID", BindingFlags.Instance | BindingFlags.NonPublic )
+        .GetValue( imu );
+      var fields = imu.Native.getOutputHandler().get( outputID ).GetFields();
+      Assert.That( fields, Is.EqualTo( new[] {
+        IMUOutput.makeSensorField( 0, IMUOutput.SensorAxis.Z_AXIS ),
+        IMUOutput.makeSensorField( 1, IMUOutput.SensorAxis.X_AXIS ),
+        IMUOutput.makeSensorField( 1, IMUOutput.SensorAxis.Y_AXIS ),
+        IMUOutput.makeSensorField( 2, IMUOutput.SensorAxis.X_AXIS ),
+        IMUOutput.makeSensorField( 3, IMUOutput.SensorAxis.Y_AXIS ),
+        IMUOutput.makeSensorField( 3, IMUOutput.SensorAxis.Z_AXIS )
+      } ) );
     }
 
     [UnityTest]

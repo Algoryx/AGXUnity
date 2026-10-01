@@ -77,7 +77,14 @@ namespace AGXUnity.Sensor
     protected TriaxialSpectralGaussianNoise GaussianSpectralNoiseModifier { get; private set; }
 
     internal abstract void AddNativeAttachment( IMUModelSensorAttachmentRefVector attachments );
-    internal void SetOutput( Vec3 output ) => Output = new Vector3( (float)output.x, (float)output.y, (float)output.z );
+    internal void SetOutputAxis( int axis, double value )
+    {
+      var output = Output;
+      output[ axis ] = (float)value;
+      Output = output;
+    }
+
+    internal void ClearOutput() => Output = Vector3.zero;
 
     protected void CreateCommonModifiers()
     {
@@ -218,12 +225,26 @@ namespace AGXUnity.Sensor
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#simulating-imu-sensors" )]
   public class ImuSensor : ScriptComponent
   {
+    private struct OutputFieldBinding
+    {
+      public ImuSensorSubcomponent Subcomponent;
+      public int Axis;
+
+      public OutputFieldBinding( ImuSensorSubcomponent subcomponent, int axis )
+      {
+        Subcomponent = subcomponent;
+        Axis = axis;
+      }
+    }
+
     [Header( "Sensors" )]
     [SerializeField] private ImuSensorSubcomponentList m_subcomponents = new ImuSensorSubcomponentList();
     public ImuSensorSubcomponentList Subcomponents => m_subcomponents;
     public IMU Native { get; private set; }
     private IMUModel m_nativeModel;
     private List<ImuSensorSubcomponent> m_configuredSubcomponents = new List<ImuSensorSubcomponent>();
+    private readonly List<OutputFieldBinding> m_outputFieldBindings = new List<OutputFieldBinding>();
+    private double[] m_outputValues;
     private uint m_outputID;
     [SerializeField] private RigidBody m_measuredRigidBody;
     /// <summary>
@@ -250,7 +271,7 @@ namespace AGXUnity.Sensor
       if ( rigidBodyFrame == null ) { Debug.LogWarning( "Could not get rigid body frame, IMU will be inactive" ); return false; }
       Native = new IMU( rigidBodyFrame, m_nativeModel );
       m_outputID = SensorEnvironment.Instance.GenerateOutputID();
-      Native.getOutputHandler().add( m_outputID, new IMUOutputNineDoF() );
+      Native.getOutputHandler().add( m_outputID, CreateOutput() );
       Simulation.Instance.StepCallbacks.PostSynchronizeTransforms += OnPostSynchronizeTransforms;
       SensorEnvironment.Instance.Native.add( Native );
       return true;
@@ -262,17 +283,37 @@ namespace AGXUnity.Sensor
         return;
 
       var output = Native.getOutputHandler().get( m_outputID );
-      var views = output?.viewNineDoF();
-      if ( views == null || views.size() == 0 )
+      if ( output == null || m_outputFieldBindings.Count == 0 )
         return;
 
-      var value = views[ 0 ];
-      // IMUOutputNineDoF exposes up to three triaxial values. Additional
-      // subcomponents remain at their default output until a general IMU output
-      // representation is introduced.
-      var count = Mathf.Min( 3, m_configuredSubcomponents.Count );
-      for ( var index = 0; index < count; ++index )
-        m_configuredSubcomponents[ index ].SetOutput( value.getTriplet( (uint)index ) );
+      uint sampleCount;
+      m_outputValues = output.ReadValues( out sampleCount, m_outputValues );
+      if ( sampleCount == 0 )
+        return;
+
+      var firstValue = ( sampleCount - 1 ) * m_outputFieldBindings.Count;
+      for ( var index = 0; index < m_outputFieldBindings.Count; ++index ) {
+        var binding = m_outputFieldBindings[ index ];
+        binding.Subcomponent.SetOutputAxis( binding.Axis, m_outputValues[ firstValue + index ] );
+      }
+    }
+
+    private IMUOutput CreateOutput()
+    {
+      var output = new IMUOutput();
+      m_outputFieldBindings.Clear();
+      for ( var sensorIndex = 0; sensorIndex < m_configuredSubcomponents.Count; ++sensorIndex ) {
+        var subcomponent = m_configuredSubcomponents[ sensorIndex ];
+        subcomponent.ClearOutput();
+        for ( var axis = 0; axis < 3; ++axis ) {
+          if ( ( subcomponent.OutputFlags & (OutputXYZ)( 1 << axis ) ) == OutputXYZ.None )
+            continue;
+
+          output.add( IMUOutput.makeSensorField( (uint)sensorIndex, (IMUOutput.SensorAxis)axis ) );
+          m_outputFieldBindings.Add( new OutputFieldBinding( subcomponent, axis ) );
+        }
+      }
+      return output;
     }
     protected override void OnEnable() => Native?.setEnable( true );
     protected override void OnDisable() => Native?.setEnable( false );
