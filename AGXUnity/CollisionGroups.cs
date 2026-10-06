@@ -122,9 +122,17 @@ namespace AGXUnity
         if ( track.GetInitialized<Model.Track>() != null )
           entry.AddTo( track.Native );
 
-      foreach ( var terrain in data.Terrains )
-        if ( terrain.GetInitialized<Model.DeformableTerrain>() != null )
-          entry.AddTo( terrain.Native.getGeometry() );
+      foreach ( var terrain in data.Terrains ) {
+        if ( terrain is Model.DeformableTerrain standard ) {
+          entry.AddTo( standard.GetInitialized().Native.getGeometry() );
+        }
+        else if ( terrain is Model.MovableTerrain movable ) {
+          entry.AddTo( movable.GetInitialized().Native.getGeometry() );
+        }
+        else if ( terrain is Model.DeformableTerrainPager pager ) {
+          Debug.LogWarning( "DeformableTerrainPager does not currently support collision groups" );
+        }
+      }
     }
 
     private void RemoveGroup( CollisionGroupEntry entry, Find.LeafData data )
@@ -145,9 +153,14 @@ namespace AGXUnity
         if ( track.GetInitialized<Model.Track>() != null )
           entry.RemoveFrom( track.Native );
 
-      foreach ( var terrain in data.Terrains )
-        if ( terrain.GetInitialized<Model.DeformableTerrain>() != null )
-          entry.RemoveFrom( terrain.Native.getGeometry() );
+      foreach ( var terrain in data.Terrains ) {
+        if ( terrain is Model.DeformableTerrain standard ) {
+          entry.RemoveFrom( standard.GetInitialized().Native.getGeometry() );
+        }
+        else if ( terrain is Model.MovableTerrain movable ) {
+          entry.RemoveFrom( movable.GetInitialized().Native.getGeometry() );
+        }
+      }
     }
   }
 }

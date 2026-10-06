@@ -12,7 +12,7 @@ namespace AGXUnity.Utils
       public Wire[] Wires = new Wire[] { };
       public Cable[] Cables = new Cable[] { };
       public Model.Track[] Tracks = new Model.Track[] { };
-      public Model.DeformableTerrain[] Terrains = new Model.DeformableTerrain[] { };
+      public Model.DeformableTerrainBase[] Terrains = new Model.DeformableTerrainBase[] { };
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ namespace AGXUnity.Utils
 
       var terrain = rb != null || shape != null || wire != null || cable != null || tracks != null ?
                       null :
-                      parent.GetComponent<Model.DeformableTerrain>();
+                      parent.GetComponent<Model.DeformableTerrainBase>();
 
       bool allPredefinedAreNull = rb == null &&
                                   shape == null &&
@@ -63,7 +63,7 @@ namespace AGXUnity.Utils
         data.Wires    = parent.GetComponentsInChildren<Wire>();
         data.Cables   = parent.GetComponentsInChildren<Cable>();
         data.Tracks   = parent.GetComponentsInChildren<Model.Track>();
-        data.Terrains = parent.GetComponentsInChildren<Model.DeformableTerrain>();
+        data.Terrains = parent.GetComponentsInChildren<Model.DeformableTerrainBase>();
       }
       // A wire is by definition independent of PropagateToChildren, since
       // it's not defined to add children to a wire game object.
@@ -82,8 +82,8 @@ namespace AGXUnity.Utils
       }
       else if ( terrain != null ) {
         data.Terrains = searchChildren ?
-                          parent.GetComponentsInChildren<Model.DeformableTerrain>() :
-                          new Model.DeformableTerrain[] { terrain };
+                          parent.GetComponentsInChildren<Model.DeformableTerrainBase>() :
+                          new Model.DeformableTerrainBase[] { terrain };
       }
       // Bodies have shapes so if 'rb' != null we should collect all shape children
       // independent of 'propagate' flag.
