@@ -1,5 +1,6 @@
 ﻿using AGXUnity.Collide;
 using AGXUnity.Model;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using static AGXUnityEditor.InspectorGUI;
@@ -74,6 +75,31 @@ namespace AGXUnityEditor.Tools
             $"Terrain size is {MovableTerrain.SizeMeters.x} x {MovableTerrain.SizeMeters.y} m"
             ) );
         }
+      }
+    }
+
+    public override void OnPostTargetMembersGUI()
+    {
+      base.OnPostTargetMembersGUI();
+
+      if (
+        MovableTerrain.EnableDynamicMassUpdates &&
+        MovableTerrain.RigidBody != null ) {
+
+        var mp = MovableTerrain.RigidBody.MassProperties;
+        if ( !mp.Mass.UseDefault || !mp.InertiaDiagonal.UseDefault || !mp.InertiaOffDiagonal.UseDefault )
+          EditorGUILayout.HelpBox(
+            "This terrain's parent RigidBody has manually specified massproperties while this terrain is set to dynamically update its mass. " +
+            "This is not supported and dynamic mass updates will be disabled while running.",
+            MessageType.Error );
+
+        if ( MovableTerrain.RigidBody.Shapes.Any( shape => shape.EnableMassProperties ) )
+          EditorGUILayout.HelpBox(
+            "This terrain's parent RigidBody contains other shapes which contribute to the mass properties of the body. " +
+            "These shapes will be ignored when calculating the mass of the body. " +
+            "The recommended way of modelling a terrain bed with bed geometries is to separate the terrain and the bed geometries " +
+            "into separate bodies and lock them using the KinematicLock component",
+            MessageType.Warning );
       }
     }
   }

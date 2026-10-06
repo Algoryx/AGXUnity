@@ -60,6 +60,8 @@ namespace AGXUnity
     [field: SerializeField]
     public MassProperties MassProperties { get; private set; }
 
+    internal bool MassFromTerrain = false;
+
     /// <summary>
     /// Motion control of this rigid body, paired with property MotionControl.
     /// </summary>
@@ -262,7 +264,7 @@ namespace AGXUnity
     public void UpdateMassProperties()
     {
       PeekTemporaryNativeOrGetNative( ( rb, isTemp ) => {
-        if ( !isTemp ) {
+        if ( !isTemp && !MassFromTerrain ) {
           rb.getMassProperties().setAutoGenerateMask( (uint)agx.MassProperties.AutoGenerateFlags.AUTO_GENERATE_ALL );
           rb.updateMassProperties();
           rb.getMassProperties().setAutoGenerateMask( 0u );

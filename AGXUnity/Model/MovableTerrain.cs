@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Mesh = UnityEngine.Mesh;
 using UnityEngine.Serialization;
 using agxTerrain;
+using System.Linq;
 
 
 #if UNITY_EDITOR
@@ -600,16 +601,8 @@ namespace AGXUnity.Model
 
       var rb = RigidBody;
       if ( rb != null ) {
-        RigidBody.GetInitialized<RigidBody>().Native.add( Native.getGeometry(), GetTerrainOffset() );
-        if ( EnableDynamicMassUpdates ) {
-          var mp = RigidBody.MassProperties;
-          if (
-            !mp.Mass.UseDefault ||
-            !mp.InertiaDiagonal.UseDefault ||
-            !mp.InertiaOffDiagonal.UseDefault ||
-            !mp.CenterOfMassOffset.UseDefault )
-            Debug.LogWarning( $"Terrain '{name}' has dynamic mass updates enabled while parent RigidBody specifies an explicit mass, this might cause discrepencies" );
-        }
+        RigidBody.MassFromTerrain = EnableDynamicMassUpdates;
+        rb.GetInitialized<RigidBody>().Native.add( Native.getGeometry(), GetTerrainOffset() );
       }
       else
         Native.setTransform( GetTerrainOffset() * new agx.AffineMatrix4x4( transform.rotation.ToHandedQuat(),
@@ -622,10 +615,46 @@ namespace AGXUnity.Model
       if ( Native == null )
         return;
 
-      if ( EnableDynamicMassUpdates )
-        RigidBody.UpdateMassProperties();
-
       UpdateHeights( Native.getModifiedVertices() );
+
+      var rb = RigidBody;
+      if ( rb == null )
+        return;
+
+      RigidBody.MassFromTerrain = EnableDynamicMassUpdates;
+
+      if ( EnableDynamicMassUpdates ) {
+        if ( !rb.MassProperties.Mass.UseDefault ) {
+          Debug.LogWarning( $"RigidBody '{rb.name}' has manually specified mass while '{name}' wants to set this property itself. Disabling Dynamic Mass Updates." );
+          EnableDynamicMassUpdates = false;
+        }
+        if ( !rb.MassProperties.InertiaDiagonal.UseDefault ) {
+          Debug.LogWarning( $"RigidBody '{rb.name}' has manually specified inertia diagonal while '{name}' wants to set this property itself. Disabling Dynamic Mass Updates." );
+          EnableDynamicMassUpdates = false;
+        }
+        if ( !rb.MassProperties.InertiaOffDiagonal.UseDefault ) {
+          Debug.LogWarning( $"RigidBody '{rb.name}' has manually specified inertia off-diagonal while '{name}' wants to set this property itself. Disabling Dynamic Mass Updates." );
+          EnableDynamicMassUpdates = false;
+        }
+        if ( !rb.MassProperties.CenterOfMassOffset.UseDefault ) {
+          Debug.LogWarning( $"RigidBody '{rb.name}' has manually specified center of mass while '{name}' wants to set this property itself. Disabling Dynamic Mass Updates." );
+          EnableDynamicMassUpdates = false;
+        }
+
+        // Early out if we disabled dynamic mass updates above
+        if ( !EnableDynamicMassUpdates )
+          return;
+
+        if ( RigidBody.Shapes.Any( s => s.EnableMassProperties ) ) {
+          Debug.LogWarning(
+            $"Movable terrain '{name}' is part of a RigidBody ('{rb.name}') which contains other colliders. " +
+            $"Automatic mass calculations for this body will ignore these additional colliders. " +
+            $"The recommended process for modelling terrain beds is to separate the terrain and the bed geometries while " +
+            $"into separate bodies locked together with the {nameof( KinematicLock )} component." );
+        }
+
+        RigidBody.UpdateMassProperties();
+      }
     }
 
     /// <summary>
