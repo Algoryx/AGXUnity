@@ -205,7 +205,7 @@ namespace AGXUnity.IO.OpenPLX
         if ( boundValue == null )
           continue;
         if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
-          var path = boundValue.asConstant().getToken().lexeme.Trim('\"');
+          var path = boundValue.asConstant().getToken().lexeme().Trim('\"');
           if ( System.IO.File.Exists( path ) )
             addIfValid( path );
         }
