@@ -126,7 +126,18 @@ namespace AGXUnity.Utils
     /// <returns>A new material if the current render pipeline is recognized or null otherwise</returns>
     public static Material CreateDefaultMaterial()
     {
-      return new Material( Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" ) );
+       var shader = Shader.Find( "AGXUnity/Shader Graph/CrossRPDefault" );
+       if ( shader == null )
+       {
+          Debug.LogWarning( "AGXUnity/Shader Graph/CrossRPDefault shader not found. Falling back to Standard shader." );
+          shader = Shader.Find( "Standard" );
+       }
+       if ( shader == null )
+       {
+          Debug.LogError( "Failed to find any suitable shader for CreateDefaultMaterial." );
+          return null;
+       }
+       return new Material( shader );
     }
 
     /// <summary>
