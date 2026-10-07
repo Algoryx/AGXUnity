@@ -1,5 +1,6 @@
 using openplx;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Object = openplx.Core.Object;
 
@@ -29,10 +30,7 @@ namespace AGXUnity.IO.OpenPLX
       {
         if ( Native == null )
           throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
-        var prunedNativeName = Native.getName();
-        if ( prunedNativeName.Contains( "." ) )
-          prunedNativeName = prunedNativeName[ ( prunedNativeName.LastIndexOf( "." ) + 1 ).. ];
-        return prunedNativeName;
+        return Native.getName().Split( '.' ).Last();
       }
     }
 
@@ -42,18 +40,31 @@ namespace AGXUnity.IO.OpenPLX
     /// OpenPLX file needs to be updated accordingly.
     /// </summary>
     public string OpenPLXFile => OpenPLXImporter.TransformOpenPLXPath( OpenPLXAssetPath );
-    public Object Native { get; internal set; }
+    public Object Native { get; private set; }
+
+    internal void ExternalInitialize( Object native, Dictionary<string, Object> openplxMap )
+    {
+      Native = native;
+      m_openplxMap = openplxMap;
+    }
 
     public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
+    private Dictionary<string, Object> m_openplxMap;
     private Dictionary<string, GameObject> m_objectMap;
+
+    public Object FindNestedNative( string declaration )
+    {
+      if ( Native == null )
+        return null;
+      // First, assume that the declaration given is relative and prepend it with the root name
+      if ( m_openplxMap.TryGetValue( Native.getName() + "." + declaration, out Object obj ) )
+        return obj;
+      // Second, assume that the declaration give is absolute
+      return m_openplxMap.GetValueOrDefault( declaration );
+    }
 
     public GameObject FindMappedObject( string declaration )
     {
-      var relativeDeclaration = declaration.Replace( PrunedNativeName + ".", "" );
-      var nativeTarget = Native.getObject( relativeDeclaration );
-      if ( nativeTarget == null )
-        return null;
-      declaration = nativeTarget.getName();
       if ( Native != null ) {
         if ( m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];
@@ -68,23 +79,19 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    public object FindRuntimeMappedObject( string declaration )
-    {
-      return RuntimeMapped.GetValueOrDefault( declaration, null );
-    }
+    public object FindRuntimeMappedObject( string declaration ) => RuntimeMapped.GetValueOrDefault( declaration, null );
 
     public T FindRuntimeMappedObject<T>( string declaration )
       where T : class
-    {
-      return RuntimeMapped.GetValueOrDefault( declaration, null ) as T;
-    }
+    => RuntimeMapped.GetValueOrDefault( declaration, null ) as T;
 
     protected override bool Initialize()
     {
       if ( Native == null ) {
         var importer = new OpenPLXImporter();
         importer.ErrorReporter = ReportError;
-        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName );
+        m_openplxMap = new Dictionary<string, Object>();
+        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName, null, m_openplxMap );
 
         if ( Native == null ) {
           Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );

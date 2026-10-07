@@ -163,11 +163,7 @@ namespace AGXUnity.IO.OpenPLX
 
     internal Object InitializeNativeEndpoint( string endpoint )
     {
-      var rootName = Root.Native.getName() + ".";
-      if ( !endpoint.StartsWith( rootName ) )
-        rootName = rootName[ ( rootName.IndexOf( "." ) + 1 ).. ];
-      var relSigName = endpoint.Replace( rootName, "" ).Trim();
-      var signalObj = Root.Native.getObject(relSigName);
+      var signalObj = Root.FindNestedNative(endpoint);
       if ( signalObj != null )
         return signalObj;
       else {

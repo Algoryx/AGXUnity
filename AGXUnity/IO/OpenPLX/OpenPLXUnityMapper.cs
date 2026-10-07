@@ -49,11 +49,11 @@ namespace AGXUnity.IO.OpenPLX
       VisualsMapper = new VisualsMapper( Data, Options );
     }
 
-    public UnityEngine.Object MapObject( Object obj, string path )
+    public UnityEngine.Object MapObject( Object obj, string path, Dictionary<string, Object> objectMap )
     {
       try {
         if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
-          return MapSimulatable( obj, path );
+          return MapSimulatable( obj, path, objectMap );
         else if ( obj is openplx.Physics.Optics.Material mat )
           return VisualsMapper.MapVisualMaterial( mat );
         else
@@ -76,11 +76,11 @@ namespace AGXUnity.IO.OpenPLX
       return RootNode;
     }
 
-    private GameObject MapSimulatable( Object obj, string path )
+    private GameObject MapSimulatable( Object obj, string path, Dictionary<string, Object> objectMap )
     {
       Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
       var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
-      rootComp.Native = obj;
+      rootComp.ExternalInitialize( obj, objectMap );
       Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
 
       if ( obj is openplx.Physics3D.System system )

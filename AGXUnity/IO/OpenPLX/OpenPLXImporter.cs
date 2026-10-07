@@ -85,8 +85,9 @@ namespace AGXUnity.IO.OpenPLX
       var mapper = new OpenPLXUnityMapper(Options);
       var transformed = TransformOpenPLXPath(path);
       Object loadedModel = null;
+      Dictionary<string, Object> objectMap = new Dictionary<string, Object>();
       if ( System.IO.File.Exists( transformed ) )
-        loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data );
+        loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data, objectMap );
       else
         ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
 
@@ -98,7 +99,7 @@ namespace AGXUnity.IO.OpenPLX
 
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
-        importedObject = mapper.MapObject( loadedModel, path );
+        importedObject = mapper.MapObject( loadedModel, path, objectMap );
         foreach ( var warning in mapper.Data.Warnings )
           ErrorReporter?.Invoke( warning );
 
@@ -146,7 +147,7 @@ namespace AGXUnity.IO.OpenPLX
       return context;
     }
 
-    public Object ParseOpenPLXSource( string source, string model = null, MapperData data = null )
+    public Object ParseOpenPLXSource( string source, string model = null, MapperData data = null, Dictionary<string, Object> object_map = null )
     {
       var context = CreateContext(data?.AgxCache);
       Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
@@ -161,6 +162,14 @@ namespace AGXUnity.IO.OpenPLX
       else if ( data != null ) {
         foreach ( var dep in FindDependencies( loadedObj, context ) )
           data.RegisteredDocuments.Add( dep );
+      }
+
+      if ( object_map != null ) {
+        object_map.Clear();
+        var interalCtx = OpenPlxContextInternal.fromContext( context );
+        foreach ( var obj in interalCtx.getRegisteredObjects() ) {
+          object_map[ obj.getName() ] = obj;
+        }
       }
 
       return loadedObj;

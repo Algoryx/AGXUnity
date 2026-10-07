@@ -24,14 +24,12 @@ ExtendedRod is Physics3D.Bodies.RigidBody:
 InvertedPendulum is inverted_pendulum:
     # PendulumScene_rod is defined in @"inverted_pendulum.agx", it has uuid "e7477154-09f7-5d4b-e406-0fd10fb911b9".
     # and we want to specialize it with our ExtendedRod
-    PendulumScene_rod becomes ExtendedRod
+    `PendulumScene.rod` becomes ExtendedRod
 
     top_extension is Rod
     internal_hinge is Physics3D.Interactions.Hinge:
         initial_angle: Math.PI / 3.0
-        connectors: [PendulumScene_rod.top_connector, top_extension.connector]
+        connectors: [`PendulumScene.rod`.top_connector, top_extension.connector]
 
 MyScene is Physics3D.System:
     inv_pendulum is InvertedPendulum
-
-
