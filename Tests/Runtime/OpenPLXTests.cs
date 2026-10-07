@@ -717,5 +717,22 @@ namespace AGXUnityTesting.Runtime
 
       Assert.True( track.Material != null );
     }
+
+    [TestCase( "attribute_naming.openplx", "BaseScene.child.nested.backticks" )]
+    [TestCase( "attribute_naming.openplx", "child.nested.backticks" )]
+    [TestCase( "attribute_naming.openplx", "BaseScene.backtick.child.nested.backticks" )]
+    [TestCase( "attribute_naming.openplx", "backtick.child.nested.backticks" )]
+    [TestCase( "TestBundle/attribute_naming.openplx", "Test.BaseScene.child.nested.backticks" )]
+    [TestCase( "TestBundle/attribute_naming.openplx", "child.nested.backticks" )]
+    [TestCase( "TestBundle/attribute_naming.openplx", "Test.BaseScene.backtick.child.nested.backticks" )]
+    [TestCase( "TestBundle/attribute_naming.openplx", "backtick.child.nested.backticks" )]
+    public void TestFindNestedNativeFindsRelative( string openplxFile, string declaration )
+    {
+      var go = LoadOpenPLX(openplxFile);
+      Assert.NotNull( go, "Failed to import OpenPLX file" );
+
+      Assert.NotNull( go.FindMappedObject( declaration ), "A mapped representation of the declaration should be found" );
+      Assert.NotNull( go.FindNestedNative( declaration ), "A native OpenPLX object of the declaration should be found" );
+    }
   }
 }

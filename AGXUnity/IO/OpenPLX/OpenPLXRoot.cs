@@ -66,6 +66,7 @@ namespace AGXUnity.IO.OpenPLX
     public GameObject FindMappedObject( string declaration )
     {
       if ( Native != null ) {
+        declaration = FindNestedNative( declaration ).getName();
         if ( m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];
         else
