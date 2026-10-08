@@ -411,8 +411,7 @@ namespace AGXUnity.Model
       foreach ( var rb in m_rigidbodies )
         Native.add( rb.Body.GetInitialized<RigidBody>().Native, rb.requiredRadius, rb.preloadRadius );
 
-      if ( MaterialPatches.Length != 0 )
-        Debug.LogWarning( "Nonhomogenous terrain is not yet supported for DeformableTerrainPager.", this );
+      GetSimulation().add( Native );
     }
 
     protected override void OnDestroy()
@@ -444,7 +443,7 @@ namespace AGXUnity.Model
 
     private void UpdateTerrain( agxTerrain.TerrainPager.TileAttachments tile )
     {
-      var terrain = tile.m_terrainTile;
+      var terrain = tile.m_terrainTile.get();
       var modifications = terrain.getModifiedVertices();
       if ( modifications.Count == 0 )
         return;
@@ -456,12 +455,12 @@ namespace AGXUnity.Model
       var result = new float[,] { { 0.0f } };
 
       agx.Vec2i index = new agx.Vec2i(0,0);
-      Vector2Int tileIndex = GetTileIndex(terrain.get());
+      Vector2Int tileIndex = GetTileIndex(terrain);
 
       UnityTerrainAdapter.UnityModificationCallback modCallbackFn = ( Terrain tile, Vector2Int unityIndex ) =>
       {
         tile.terrainData.SetHeightsDelayLOD( unityIndex.x, unityIndex.y, result );
-        OnModification?.Invoke( terrain.get(), index, tile, unityIndex );
+        OnModification?.Invoke( terrain, index, tile, unityIndex );
         m_updatedTerrains.Add( tile );
       };
 
@@ -845,17 +844,33 @@ namespace AGXUnity.Model
 
     public override bool ReplaceTerrainMaterial( DeformableTerrainMaterial oldMat, DeformableTerrainMaterial newMat )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return true;
+
+      if ( oldMat == null || newMat == null )
+        return false;
+
+      var success = m_terrainDataSource.exchangeTerrainMaterial(oldMat.GetInitialized().Native, newMat.GetInitialized().Native);
+      return success;
     }
 
     public override void SetAssociatedMaterial( DeformableTerrainMaterial terrMat, ShapeMaterial shapeMat )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return;
+
+      m_terrainDataSource.setAssociatedMaterial( shapeMat.GetInitialized().Native, terrMat.GetInitialized().Native );
     }
 
     public override void AddTerrainMaterial( DeformableTerrainMaterial terrMat, Shape shape = null )
     {
-      throw new NotImplementedException( "Terrain pager does not yet support Inhomogeneous terrain" );
+      if ( Native == null )
+        return;
+
+      if ( shape != null )
+        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native, shape.GetInitialized().NativeGeometry );
+      else
+        m_terrainDataSource.addTerrainMaterial( terrMat.GetInitialized().Native );
     }
 
     protected override bool IsNativeNull() { return Native == null; }
@@ -867,8 +882,9 @@ namespace AGXUnity.Model
 
     protected override void SetTerrainMaterial( agxTerrain.TerrainMaterial material )
     {
-      Native?.getTemplateTerrain().setTerrainMaterial( material );
-      OnPropertiesUpdated();
+      m_terrainDataSource.setDefaultTerrainMaterial( material );
+      if ( Material != null )
+        m_terrainDataSource.setAssociatedMaterial( Material.Native, material );
     }
 
     protected override void SetEnable( bool enable )

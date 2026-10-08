@@ -38,6 +38,11 @@ namespace AGXUnity
     }
 
     /// <summary>
+    /// The body that the ReferenceObject is a child of, or null is a ReferenceObject is not set
+    /// </summary>
+    public RigidBody ReferenceBody => ReferenceObject != null ? ReferenceObject.GetComponentInParent<RigidBody>() : null;
+
+    /// <summary>
     /// Connected object, the object constrained with the reference object.
     /// Null means "World".
     /// </summary>
@@ -49,6 +54,11 @@ namespace AGXUnity
         m_connectedFrame.SetParent( value );
       }
     }
+
+    /// <summary>
+    /// The body that the ConnectedObject is a child of, or null is a ConnectedObject is not set
+    /// </summary>
+    public RigidBody ConnectedBody => ConnectedObject != null ? ConnectedObject.GetComponentInParent<RigidBody>() : null;
 
     /// <summary>
     /// Reference frame holding world and relative to reference object

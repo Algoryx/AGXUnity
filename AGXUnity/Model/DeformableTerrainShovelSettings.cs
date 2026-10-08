@@ -22,9 +22,23 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
+    private bool m_enableExcavationAtTeethEdge = false;
+
+    [Tooltip( "Whether or not to perform excavation at the teeth edge rather than the cutting edge" )]
+    public bool EnableExcavationAtTeethEdge
+    {
+      get => m_enableExcavationAtTeethEdge;
+      set
+      {
+        m_enableExcavationAtTeethEdge = value;
+        Propagate( shovel => shovel.getSettings().setEnableExcavationAtTeethEdge( m_enableExcavationAtTeethEdge ) );
+      }
+    }
+
+    [SerializeField]
     private float m_toothLength = 0.15f;
 
-    [ClampAboveZeroInInspector]
+    [ClampAboveZeroInInspector( true )]
     [Tooltip( "The length of the shovel's teeth" )]
     public float ToothLength
     {

@@ -10,7 +10,7 @@ namespace AGXUnityEditor.Windows
     public static AboutWindow Open()
     {
       // Get existing open window or if none, make a new one:
-      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 380 ),
+      var window = GetWindowWithRect<AboutWindow>( new Rect( 300, 300, 400, 400 ),
                                                    true,
                                                    "AGX Dynamics for Unity" );
       return window;
@@ -69,6 +69,13 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.SelectableTextField( GUI.MakeLabel( "AGX Dynamics version" ),
                                         agxDynamicsVersion,
+                                        InspectorEditor.Skin.Label );
+
+
+      var openplxVersion = GUI.AddColorTag( CoreSWIG.getOpenPlxCoreVersion(), fieldColor );
+
+      InspectorGUI.SelectableTextField( GUI.MakeLabel( "OpenPLX version" ),
+                                        openplxVersion,
                                         InspectorEditor.Skin.Label );
 
       InspectorGUI.LicenseEndDateField( s_agxInfo );

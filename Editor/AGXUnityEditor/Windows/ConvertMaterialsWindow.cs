@@ -63,9 +63,14 @@ namespace AGXUnityEditor.Windows
       var so =  new SerializedObject( mat );
       var sp = so.FindProperty( "m_Shader" );
       sp.Next( true );
-      var id = sp.intValue;
 
+#if UNITY_6000_3_OR_NEWER
+      var entityId = sp.entityIdValue;
+      AssetDatabase.TryGetGUIDAndLocalFileIdentifier( entityId, out string guid, out long _ );
+#else
+      var id = sp.intValue;
       AssetDatabase.TryGetGUIDAndLocalFileIdentifier( id, out string guid, out long _ );
+#endif
       return AssetDatabase.GUIDToAssetPath( guid ); ;
     }
 

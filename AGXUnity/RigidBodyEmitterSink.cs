@@ -172,12 +172,20 @@ namespace AGXUnity
       }
 
       var templateGroupNames = new List<string>();
-      var baseGroupName = $"es_{Shape.GetInstanceID().ToString()}";
+#if UNITY_6000_3_OR_NEWER
+      var baseGroupName = $"es_{Shape.GetEntityId().ToString()}";
+#else
+      var baseGroupName = $"es_{Shape.GetInstanceID()}";
+#endif
       foreach ( var template in m_templates ) {
         foreach ( var emitter in m_emitters ) {
           if ( !emitter.ContainsTemplate( template ) )
             continue;
+#if UNITY_6000_3_OR_NEWER
+          var templateGroupName = $"{baseGroupName}_{template.GetEntityId()}";
+#else
           var templateGroupName = $"{baseGroupName}_{template.GetInstanceID()}";
+#endif
           var nativeTemplate = emitter.GetNativeTemplate( template );
           if ( nativeTemplate != null ) {
             foreach ( var geometry in nativeTemplate.getGeometries() )

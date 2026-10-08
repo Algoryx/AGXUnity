@@ -1,0 +1,33 @@
+MyBox is Physics3D.Bodies.RigidBody:
+  geometry is Physics3D.Geometries.Box:
+    size: Math.Vec3.from_xyz(1,1,1)
+  mc is Physics3D.Interactions.MateConnector:
+    main_axis: Math.Vec3.from_xyz(1,0,0)
+
+ConnectorScene is Physics3D.System:
+  WorldConnectedBox is MyBox
+  
+  world_mc is Physics3D.Interactions.MateConnector:
+      main_axis: Math.Vec3.from_xyz(0,1,0)
+
+  WorldHinge is Physics3D.Interactions.Hinge:
+    connectors: [WorldConnectedBox.mc, world_mc]
+    initial_angle: 3
+  WorldMotor is Physics3D.Interactions.RotationalVelocityMotor:
+    connectors: WorldHinge.connectors
+
+  ReferenceBox is MyBox:
+    kinematics.local_transform.position.z: 2
+    mc.main_axis: Math.Vec3.from_xyz(0,1,0)
+  ConnectedBox is MyBox:
+    mc.position: Math.Vec3.from_xyz(1,0,0)
+    
+
+  NonWorldHinge is Physics3D.Interactions.Hinge:
+    connectors: [ConnectedBox.mc, ReferenceBox.mc]
+    initial_angle: 3
+  NonWorldMotor is Physics3D.Interactions.RotationalVelocityMotor:
+    connectors: NonWorldHinge.connectors
+
+  kinematically_controlled: [ReferenceBox]
+

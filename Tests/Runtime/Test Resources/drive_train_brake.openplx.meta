@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 51f6df4ffd55b54478640a483ea0c7ab
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  errors: []
+  declaredModels:
+  - Rod
+  - Pendulum
+  - PendulumScene
+  ImportedModel: Default
+  SkipImport: 0
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0
+  RotateUp: 1

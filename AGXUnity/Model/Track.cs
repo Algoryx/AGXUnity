@@ -1,6 +1,11 @@
-﻿using System.Collections.Generic;
+using AGXUnity.Collide;
+using AGXUnity.Utils;
+using agxVehicle;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -17,6 +22,38 @@ namespace AGXUnity.Model
     public agxVehicle.Track Native { get; private set; } = null;
 
     [SerializeField]
+    private bool m_fullDoF = false;
+
+    /// <summary>
+    /// When enabled, the track will simulate individual links in the track based on the track properties.
+    /// While this results in higher fidelity in the simulation results, it can also cause the simualation to become more unstable
+    /// under harsh conditions (heavy impacts, high speeds) or when the track properties is not properly configured for stability.
+    /// 
+    /// In general, the Low DoF model should be preferred unless the high fidelity simulation is a necessity.
+    /// </summary>
+    [Tooltip( "When enabled, the track will simulate individual links in the track based on the track properties. " +
+              "While this results in higher fidelity in the simulation results, it can also cause the simualation to become more unstable" +
+              " under harsh conditions (heavy impacts, high speeds) or when the track properties is not properly configured for stability. " +
+              "In general, the Low DoF model should be preferred unless the high fidelity simulation is a necessity." )]
+    public bool FullDoF
+    {
+      get => m_fullDoF;
+      set
+      {
+        m_fullDoF = value;
+        if ( Native != null )
+          Native.setEnableFullDegreeModel( m_fullDoF );
+      }
+    }
+
+    /// <summary>
+    /// An object which defines the reference frame which the track is attached to. Normally, this body should be the chassis of the vehicle
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [Tooltip("An object which defines the reference frame which the track is attached to. Normally, this body should be the chassis of the vehicle")]
+    public GameObject ReferenceObject;
+
+    [SerializeField]
     private int m_numberOfNodes = 64;
 
     /// <summary>
@@ -26,6 +63,8 @@ namespace AGXUnity.Model
     /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
+    [DisableInRuntimeInspector]
+    [Tooltip( "Approximate number of nodes in the track. The final value may differ depending on the configuration of the wheels." )]
     public int NumberOfNodes
     {
       get { return m_numberOfNodes; }
@@ -47,7 +86,9 @@ namespace AGXUnity.Model
     /// Default: 0.05
     /// </summary>
     [IgnoreSynchronization]
+    [DisableInRuntimeInspector]
     [ClampAboveZeroInInspector]
+    [Tooltip( "Thickness of this track" )]
     public float Thickness
     {
       get { return m_thickness; }
@@ -61,6 +102,27 @@ namespace AGXUnity.Model
       }
     }
 
+    [SerializeReference]
+    private TrackNodeVariation m_thicknessVariation = null;
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public TrackNodeVariation ThicknessVariation
+    {
+      get => m_thicknessVariation;
+      set
+      {
+        if ( value == m_thicknessVariation )
+          return;
+
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change thickness variation of nodes on an initialized track,", this );
+          return;
+        }
+        m_thicknessVariation = value;
+      }
+    }
+
     [SerializeField]
     private float m_width = 0.35f;
 
@@ -70,6 +132,7 @@ namespace AGXUnity.Model
     /// </summary>
     [IgnoreSynchronization]
     [ClampAboveZeroInInspector]
+    [Tooltip( "Width of this track" )]
     public float Width
     {
       get { return m_width; }
@@ -83,28 +146,83 @@ namespace AGXUnity.Model
       }
     }
 
-    [SerializeField]
-    private float m_initialTensionDistance = 1.0E-3f;
+    [SerializeReference]
+    private TrackNodeVariation m_widthVariation = null;
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    public TrackNodeVariation WidthVariation
+    {
+      get => m_widthVariation;
+      set
+      {
+        if ( value == m_widthVariation )
+          return;
+
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change width variation of nodes on an initialized track,", this );
+          return;
+        }
+        m_widthVariation = value;
+      }
+    }
+
+    public enum TensionModes
+    {
+      Distance,
+      Force
+    }
 
     /// <summary>
-    /// Value (distance) of how much shorter each node should be which causes tension in the
-    /// system of tracks and wheels. Ideal case
-    ///     track_tension = initialDistanceTension * track_constraint_compliance.
-    /// Since contacts and other factors are included it's not possible to know
-    /// the exact tension after the system has been created.
+    /// Selects whether the initial tension should be interpreted as a distance (m) or a force (N).
+    /// </summary>
+    [DisableInRuntimeInspector]
+    [Tooltip( "Selects whether the initial tension should be interpreted as a distance (m) or a force (N).")]
+    public TensionModes TensionMode = TensionModes.Distance;
+
+    [SerializeField]
+    [FormerlySerializedAs("m_initialTensionDistance")]
+    private float m_initialTension = 1.0E-3f;
+
+    /// <summary>
+    /// The initial tension in the track system. The exact interpretation of this value depends on the value of TensionMode.
+    /// When TensionMode is set to TensionMode.Distance, this value is the distance that is subtracted from each node to create initial tension in the track.
+    /// When TensionMode is set to TensionMode.Force, the initial tension distance will instead be approximated.
     /// Default: 1.0E-3
     /// </summary>
     [IgnoreSynchronization]
-    public float InitialTensionDistance
+    [DisableInRuntimeInspector]
+    [Tooltip( "The initial tension in the track system. The exact interpretation of this value depends on the value of TensionMode.\n" +
+              "When TensionMode is set to TensionMode.Distance, this value is the distance that is subtracted from each node to create initial tension in the track.\n" +
+              "When TensionMode is set to TensionMode.Force, the initial tension distance will instead be approximated." )]
+    public float InitialTension
     {
-      get { return m_initialTensionDistance; }
+      get { return m_initialTension; }
       set
       {
         if ( Native != null ) {
-          Debug.LogWarning( "Invalid to change initial tension distance on an initialized track.", this );
+          Debug.LogWarning( "Invalid to change initial tension on an initialized track.", this );
           return;
         }
-        m_initialTensionDistance = value;
+        m_initialTension = value;
+      }
+    }
+
+    [IgnoreSynchronization]
+    [HideInInspector]
+    [Obsolete( "InitialTensionDistance has been deprecated in favour of InitialTension and TensionMode properties, and will be removed in future versions" )]
+    public float InitialTensionDistance
+    {
+      get { return TensionMode == TensionModes.Distance ? m_initialTension : 0; }
+      set
+      {
+        Debug.LogWarning( "InitialTensionDistance has been deprecated in favour of InitialTension and TensionMode properties, and will be removed in future versions" );
+        if ( Native != null ) {
+          Debug.LogWarning( "Invalid to change initial tension on an initialized track.", this );
+          return;
+        }
+        TensionMode = TensionModes.Distance;
+        InitialTension = value;
       }
     }
 
@@ -136,6 +254,7 @@ namespace AGXUnity.Model
     /// Node to node merge properties of this track.
     /// </summary>
     [AllowRecursiveEditing]
+    [DynamicallyShowInInspector( nameof( FullDoF ) )]
     public TrackInternalMergeProperties InternalMergeProperties
     {
       get { return m_internalMergeProperties; }
@@ -178,10 +297,7 @@ namespace AGXUnity.Model
     /// Registered track wheel instances.
     /// </summary>
     [HideInInspector]
-    public TrackWheel[] Wheels
-    {
-      get { return m_wheels.ToArray(); }
-    }
+    public TrackWheel[] Wheels => m_wheels.ToArray();
 
     /// <summary>
     /// Associate track wheel instance to this track.
@@ -216,18 +332,98 @@ namespace AGXUnity.Model
     /// </summary>
     /// <param name="wheel">Track wheel instance.</param>
     /// <returns>True if <paramref name="wheel"/> is associated to this track.</returns>
-    public bool Contains( TrackWheel wheel )
-    {
-      return m_wheels.Contains( wheel );
-    }
+    public bool Contains( TrackWheel wheel ) => m_wheels.Contains( wheel );
 
     /// <summary>
     /// Verifies so that all added track wheels still exists. Wheels that
     /// has been deleted are removed.
     /// </summary>
-    public void RemoveInvalidWheels()
+    public void RemoveInvalidWheels() => m_wheels.RemoveAll( wheel => wheel == null );
+
+    [SerializeField]
+    private List<Shape> m_supportGeometries = new List<Shape>();
+
+    /// <summary>
+    /// Registered support geometry instances.
+    /// </summary>
+    [HideInInspector]
+    public Shape[] SupportGeometries => m_supportGeometries.ToArray();
+
+    /// <summary>
+    /// Associate support geometry instance to this track.
+    /// </summary>
+    /// <param name="supportGeometry">support geometry instance to add.</param>
+    /// <returns>True if added, false if null or already added.</returns>
+    public bool Add( Shape supportGeometry )
     {
-      m_wheels.RemoveAll( wheel => wheel == null );
+      if ( supportGeometry == null || m_supportGeometries.Contains( supportGeometry ) )
+        return false;
+
+      m_supportGeometries.Add( supportGeometry );
+
+      if ( Native != null )
+        Native.addSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
+
+      return true;
+    }
+
+    /// <summary>
+    /// Disassociate support geometry instance from this track.
+    /// </summary>
+    /// <param name="supportGeometry">Support geometry instance to remove.</param>
+    /// <returns>True if removed, false if null or not associated to this track.</returns>
+    public bool Remove( Shape supportGeometry )
+    {
+      if ( supportGeometry == null )
+        return false;
+
+      if ( Native != null )
+        Native.removeSupportGroupId( supportGeometry.GetInitialized().NativeGeometry );
+
+      return m_supportGeometries.Remove( supportGeometry );
+    }
+
+    /// <summary>
+    /// True if <paramref name="supportGeometry"/> is associated to this track.
+    /// </summary>
+    /// <param name="supportGeometry">Support geometry instance.</param>
+    /// <returns>True if <paramref name="supportGeometry"/> is associated to this track.</returns>
+    public bool Contains( Shape supportGeometry ) => m_supportGeometries.Contains( supportGeometry );
+
+    /// <summary>
+    /// Verifies so that all added support geometries still exists. Geometries that
+    /// has been deleted are removed.
+    /// </summary>
+    public void RemoveInvalidSupportGeometries() => m_supportGeometries.RemoveAll( geom => geom == null );
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 2 ) {
+        FullDoF = true;
+        return true;
+      }
+      return false;
+    }
+
+    private class OnInitializeAdapter : TrackNodeOnInitializeCallback
+    {
+      private int m_nodeIdx = 0;
+
+      private TrackNodeVariation m_widthVariation;
+      private TrackNodeVariation m_heightVariation;
+
+      public OnInitializeAdapter( float width, float height, TrackNodeVariation widthVariation, TrackNodeVariation heightVariation )
+      {
+        m_widthVariation = widthVariation;
+        m_heightVariation = heightVariation;
+      }
+
+      public override void onInitialize( TrackNode node )
+      {
+        var applied = VariationUtils.ApplyVariations(m_widthVariation, m_heightVariation, node.getHalfExtents(), m_nodeIdx);
+        node.getRigidBody().add( new agxCollide.Geometry( new agxCollide.Box( applied.Item1 ) ), agx.AffineMatrix4x4.translate( new agx.Vec3( applied.Item2.x, 0.0f, node.getHalfExtents().z ) ) );
+        m_nodeIdx++;
+      }
     }
 
     protected override bool Initialize()
@@ -236,6 +432,7 @@ namespace AGXUnity.Model
         return false;
 
       RemoveInvalidWheels();
+      RemoveInvalidSupportGeometries();
 
       if ( m_wheels.Count == 0 ) {
         Debug.LogError( "Component: Track requires at least one wheel to initialize.", this );
@@ -247,16 +444,44 @@ namespace AGXUnity.Model
         return false;
       }
 
-      Native = new agxVehicle.Track( (ulong)NumberOfNodes,
+      agx.RigidBody refBody = null;
+
+      if ( ReferenceObject != null )
+        refBody = ReferenceObject.gameObject.GetInitializedComponentInParent<RigidBody>().Native;
+
+      if ( !FullDoF && refBody == null )
+        Debug.LogWarning( $"Track '{this.name}' is using the reduced DoF model but does not specify a reference body. This is likely to cause errors in the simulation." );
+
+      if ( FullDoF && Properties != null && !Properties.FullDoF )
+        Debug.LogWarning( $"Track '{this.name}' is using the full DoF model but it's properties are configured for the reduced DoF model. " +
+                          $"While this is supported, it can lead to errors due to the properties not being fully specified for the model" );
+
+      Native = new agxVehicle.Track( refBody,
+                                     (ulong)NumberOfNodes,
                                      Width,
                                      Thickness,
-                                     InitialTensionDistance );
+                                     new agxVehicle.InitialTrackTension( InitialTension, TensionMode == TensionModes.Distance ) );
 
       if ( Properties != null )
         Native.setProperties( Properties.GetInitialized<TrackProperties>().Native );
 
       foreach ( var wheel in Wheels )
         Native.add( wheel.Native );
+
+      foreach ( var geom in SupportGeometries )
+        Native.addSupportGroupId( geom.GetInitialized().NativeGeometry );
+
+      Native.setEnableFullDegreeModel( FullDoF );
+
+      if ( WidthVariation != null || ThicknessVariation != null )
+        Native.initialize( new OnInitializeAdapter( Width, Thickness, WidthVariation, ThicknessVariation ) );
+      else
+        Native.initialize();
+
+      if ( !Native.isInitialized() ) {
+        Debug.LogError( "Component: Track failed to initialize - please refer to the AGX dynamics logs for more information.", this );
+        return false;
+      }
 
       if ( isActiveAndEnabled )
         GetSimulation().add( Native );
@@ -304,7 +529,7 @@ namespace AGXUnity.Model
         NumberOfNodes           = otherTracks[ 0 ].NumberOfNodes;
         Thickness               = otherTracks[ 0 ].Thickness;
         Width                   = otherTracks[ 0 ].Width;
-        InitialTensionDistance  = otherTracks[ 0 ].InitialTensionDistance;
+        InitialTension          = otherTracks[ 0 ].InitialTension;
         Properties              = otherTracks[ 0 ].Properties;
         InternalMergeProperties = otherTracks[ 0 ].InternalMergeProperties;
         Material                = otherTracks[ 0 ].Material;

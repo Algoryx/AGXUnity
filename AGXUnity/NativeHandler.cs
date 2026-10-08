@@ -84,8 +84,10 @@ namespace AGXUnity
         for ( int i = 0; i < (int)agxIO.Environment.Type.NUM_TYPES; ++i )
           envInstance.getFilePath( (agxIO.Environment.Type)i ).clear();
 
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAGXRuntimePath + "/data" );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAGXRuntimePath );
+
+        envInstance.setEnableEmbeddedComponents( true );
 
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
@@ -149,7 +151,7 @@ namespace AGXUnity
 
     public void ValidateLicense()
     {
-      HasValidLicense = m_isAgx.Initialized && agx.Runtime.instance().isValid();
+      HasValidLicense = m_isAgx.Initialized && LicenseManager.Runtime.isValid();
     }
 
     public void MakeMainThread()
@@ -219,6 +221,9 @@ namespace AGXUnity
     {
       get
       {
+        if ( !LicenseManager.CanAccessRuntime )
+          throw new AGXUnity.Exception( "NativeHandler.Instance may not be initialized from a Unity asset import worker process." );
+
         if ( s_instance == null )
           s_instance = new NativeHandler();
         return s_instance;

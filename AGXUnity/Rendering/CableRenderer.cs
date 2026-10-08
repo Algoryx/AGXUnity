@@ -304,7 +304,11 @@ namespace AGXUnity.Rendering
 
           var go = m_segmentSpawner.CreateSegment( prevEndPosition, endPosition, radius );
 
+#if UNITY_6000_3_OR_NEWER
+          int id = go.GetEntityId().GetHashCode();
+#else
           int id = go.GetInstanceID();
+#endif
 
           (MeshRenderer, MeshRenderer) meshRenderers;
           if ( m_segmentRenderers.TryGetValue( id, out meshRenderers ) && meshRenderers.Item1 != null ) {

@@ -1,0 +1,25 @@
+LocallyAttachedBox is Physics3D.System:
+  local_attachment is Physics3D.Interactions.MateConnector:
+    main_axis: {0,0,1}
+    normal: {1,0,0}
+  
+  box is Physics3D.Bodies.RigidBody:
+    geometry is Physics3D.Geometries.Box:
+      size: Math.Vec3.from_xyz(0.1,0.1,0.1)
+
+    connector is Physics3D.Interactions.MateConnector:
+      position: Math.Vec3.from_xyz(0,0,0)
+
+  hinge is Physics3D.Interactions.Hinge:
+    connectors: [local_attachment, box.connector]
+
+SignalScene is Physics3D.System:
+  box1 is LocallyAttachedBox:
+    local_transform:
+      position: {1,1,1}
+      rotation: Math.Quat.from_to({0,0,1},{0,1,0})
+
+  box2 is LocallyAttachedBox:
+    local_transform:
+      position: {-1,-1,1}
+

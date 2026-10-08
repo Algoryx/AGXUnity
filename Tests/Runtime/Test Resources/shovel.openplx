@@ -1,0 +1,44 @@
+Shovel is Physics3D.System:
+  shovel is Terrain.Shovel:
+    body: shovelBody
+    top_edge:
+      start: {shovelBody.topBox.size.x, shovelBody.topBox.size.y, shovelBody.topBox.size.z} / 2
+      end: {-shovelBody.topBox.size.x, shovelBody.topBox.size.y, shovelBody.topBox.size.z} / 2
+    
+    cutting_edge:
+      start: {shovelBody.topBox.size.x, 0.15, -0.22} / 2
+      end: {-shovelBody.topBox.size.x, 0.15, -0.22} / 2
+
+  shovelBody is Physics3D.Bodies.RigidBody:
+    topBox is Physics3D.Geometries.Box:
+      size: {0.1,0.01,0.1}
+
+    botBox is Physics3D.Geometries.Box:
+      size: {0.1,0.01,0.1}
+      local_transform:
+        position: {0,0.035,-0.08}
+        rotation: Math.Quat.from_euler_angles_xyzs(Math.PI / 4.0,0,0)
+
+    mc is Physics3D.Interactions.MateConnector:
+      main_axis: Math.Vec3.Y_AXIS()
+
+ShovelScene is Physics3D.System:
+  shovel is Shovel
+  
+  wc is Physics3D.Interactions.MateConnector:
+    position: {0,-0.4,0.07}
+    main_axis: Math.Vec3.Y_AXIS()
+
+  prismatic is Physics3D.Interactions.Prismatic:
+    connectors: [wc, shovel.shovelBody.mc]
+
+  motor is Physics3D.Interactions.LinearVelocityMotor:
+    target_speed: 0.1
+    connectors: prismatic.connectors
+
+  terrain is Terrain.Terrain:
+    num_elements_x: 50
+    num_elements_y: 50
+    element_size: 0.02
+    max_depth: 1
+

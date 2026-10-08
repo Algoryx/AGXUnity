@@ -1,0 +1,53 @@
+fileFormatVersion: 2
+guid: f7a9a5ccd8513c94688adacc3c33381c
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 2e722c612d1981948a75b738d33c88a3, type: 3}
+  errors:
+  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx:27:15 Type "Vehicles.Suspensions.Connector"
+      not found
+    message: Type "Vehicles.Suspensions.Connector" not found
+    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx
+    line: 27
+    column: 15
+  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx:33:15 Type "Vehicles.Suspensions.Connector"
+      not found
+    message: Type "Vehicles.Suspensions.Connector" not found
+    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx
+    line: 33
+    column: 15
+  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx:42:22 Type "Vehicles.Suspensions.LinearSpring"
+      not found
+    message: Type "Vehicles.Suspensions.LinearSpring" not found
+    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx
+    line: 42
+    column: 22
+  - raw: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx:46:23 Type "Vehicles.Suspensions.LinearSpring"
+      not found
+    message: Type "Vehicles.Suspensions.LinearSpring" not found
+    document: C:\Users\Filip\Dev\Unity\Brick Integration\Assets\AGXUnity\Tests\Runtime\Test
+      Resources\elastic_wheel.openplx
+    line: 46
+    column: 23
+  declaredModels:
+  - Chassis
+  - Wheel
+  - WheelScene
+  ImportedModel: Default
+  SkipImport: 0
+  HideImportedMeshes: 1
+  HideImportedVisualMaterials: 0
+  IgnoreDisabledMeshes: 0
+  RotateUp: 1

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using static AGXUnityEditor.InspectorGUI;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -93,8 +94,28 @@ namespace AGXUnityEditor
     [InspectorDrawer( typeof( int ) )]
     public static object IntDrawer( object[] objects, InvokeWrapper wrapper )
     {
-      return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                       wrapper.Get<int>( objects[ 0 ] ) );
+      if ( wrapper.IsDelayed )
+        return EditorGUILayout.DelayedIntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                wrapper.Get<int>( objects[ 0 ] ) );
+      else
+        return EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                         wrapper.Get<int>( objects[ 0 ] ) );
+    }
+
+
+    [InspectorDrawer( typeof( uint ) )]
+    public static object UIntDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      int result;
+      if ( wrapper.IsDelayed )
+        result = EditorGUILayout.DelayedIntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                  (int)wrapper.Get<uint>( objects[ 0 ] ) );
+      else
+        result = EditorGUILayout.IntField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                           (int)wrapper.Get<uint>( objects[ 0 ] ) );
+
+      // We need to clamp before we convert as the uint will simply wrap around otherwise, this loses some precision but should be fine in most cases.
+      return (uint)Mathf.Max( result, 0 );
     }
 
     [InspectorDrawer( typeof( Vector2Int ) )]
@@ -684,9 +705,90 @@ namespace AGXUnityEditor
           InspectorGUI.SelectFile( InspectorGUI.MakeLabel( wrapper.Member ), wrapper.Get<string>( objects[ 0 ] ), wrapper.Get<string>( objects[ 0 ] ), "Select file", s => result = s );
         return result;
       }
-      return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                        wrapper.Get<string>( objects[ 0 ] ),
-                                        InspectorEditor.Skin.TextField );
+      if ( wrapper.IsDelayed )
+        return EditorGUILayout.DelayedTextField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                 wrapper.Get<string>( objects[ 0 ] ),
+                                                 InspectorEditor.Skin.TextField );
+      else
+        return EditorGUILayout.TextField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                          wrapper.Get<string>( objects[ 0 ] ),
+                                          InspectorEditor.Skin.TextField );
+    }
+
+    [InspectorDrawer( typeof( agx.Angle.Axis ) )]
+    public static object AxisDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( !wrapper.GetContainingType().IsVisible )
+        return null;
+
+      var prev = wrapper.Get<agx.Angle.Axis>( objects[ 0 ] );
+      var newState = agx.Angle.Axis.U;
+
+
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
+
+        var xSel = prev == agx.Angle.Axis.U;
+        var ySel = prev == agx.Angle.Axis.V;
+        var zSel = prev == agx.Angle.Axis.N;
+
+        var skin = InspectorGUISkin.Instance;
+
+        var buttonWidth = 20;
+
+        if ( GUILayout.Toggle( xSel,
+                               GUI.MakeLabel( "X", xSel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                               GUILayout.Width( buttonWidth ) ) != xSel )
+          newState = agx.Angle.Axis.U;
+        if ( GUILayout.Toggle( ySel,
+                               GUI.MakeLabel( "Y", ySel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
+                               GUILayout.Width( buttonWidth ) ) != ySel )
+          newState = agx.Angle.Axis.V;
+        if ( GUILayout.Toggle( zSel,
+                               GUI.MakeLabel( "Z", zSel ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                               GUILayout.Width( buttonWidth ) ) != zSel )
+          newState = agx.Angle.Axis.N;
+      }
+
+      return newState;
+    }
+
+    [InspectorDrawer( typeof( agx.Angle.Type ) )]
+    public static object AngleTypeDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      if ( !wrapper.GetContainingType().IsVisible )
+        return null;
+
+      var prev = wrapper.Get<agx.Angle.Type>( objects[ 0 ] );
+      var newState = agx.Angle.Type.ROTATIONAL;
+
+
+      using ( new GUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( InspectorGUI.MakeLabel( wrapper.Member ) );
+
+        var rotSel = prev == agx.Angle.Type.ROTATIONAL;
+        var transSel = prev == agx.Angle.Type.TRANSLATIONAL;
+
+        var skin = InspectorGUISkin.Instance;
+
+        var buttonWidth = 30;
+
+        if ( GUILayout.Toggle( rotSel,
+                               GUI.MakeLabel( GUI.Symbols.CircleArrowAcw.ToString(), rotSel, "Control rotational DOF around the selected axis." ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+                               GUILayout.Width( buttonWidth ) ) != rotSel )
+          newState = agx.Angle.Type.ROTATIONAL;
+        if ( GUILayout.Toggle( transSel,
+                               GUI.MakeLabel( GUI.Symbols.ArrowRight.ToString(), transSel, "Control translational DOF around the selected axis." ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+                               GUILayout.Width( buttonWidth ) ) != transSel )
+          newState = agx.Angle.Type.TRANSLATIONAL;
+      }
+
+      return newState;
     }
 
     [InspectorDrawer( typeof( Enum ), IsBaseType = true )]
@@ -718,9 +820,14 @@ namespace AGXUnityEditor
                                        value,
                                        slider.Min,
                                        slider.Max );
-      else
-        return EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
-                                           value );
+      else {
+        if ( wrapper.IsDelayed )
+          return EditorGUILayout.DelayedFloatField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                                    value );
+        else
+          return EditorGUILayout.FloatField( InspectorGUI.MakeLabel( wrapper.Member ),
+                                             value );
+      }
     }
 
     private static void RenderLidarRayAngleGaussianNose( LidarRayAngleGaussianNoise noise )
@@ -867,6 +974,93 @@ namespace AGXUnityEditor
             data.Insert( data.IndexOf( insertElementBefore ), newObject );
         }
       }
+      return null;
+    }
+
+    [InspectorDrawer( typeof( List<string> ) )]
+    public static object StringListDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var list = wrapper.Get<List<string>>( objects[ 0 ] );
+      var target = objects[ 0 ] as Object;
+
+      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+                                 InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+        int insertElementBefore = -1;
+        int insertElementAfter = -1;
+        int eraseElement = -1;
+        var skin = InspectorEditor.Skin;
+        var buttonLayout = new GUILayoutOption[]
+        {
+          GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
+          GUILayout.Height( 1.0f * EditorGUIUtility.singleLineHeight )
+        };
+        for ( int i = 0; i < list.Count; i++ ) {
+          using ( InspectorGUI.IndentScope.Single ) {
+            GUILayout.BeginHorizontal();
+            {
+              InspectorGUI.Separator( 1.0f, EditorGUIUtility.singleLineHeight );
+
+              if ( InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+                                        true,
+                                        "Insert new element before this.",
+                                        buttonLayout ) )
+                insertElementBefore = i;
+              if ( InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                        true,
+                                        "Insert new element after this.",
+                                        buttonLayout ) )
+                insertElementAfter = i;
+              if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+                                        true,
+                                        "Remove this element.",
+                                        buttonLayout ) )
+                eraseElement = i;
+            }
+            GUILayout.EndHorizontal();
+
+            list[ i ] = EditorGUILayout.TextField( list[ i ] );
+          }
+        }
+
+        InspectorGUI.Separator( 1.0f, 0.5f * EditorGUIUtility.singleLineHeight );
+
+        if ( list.Count == 0 )
+          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
+
+        bool addElementToList = false;
+        GUILayout.BeginHorizontal();
+        {
+          GUILayout.FlexibleSpace();
+          addElementToList = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+                                                  true,
+                                                  "Add new element.",
+                                                  buttonLayout );
+        }
+        GUILayout.EndHorizontal();
+
+        string newObject = null;
+        if ( addElementToList || insertElementBefore != -1 || insertElementAfter != -1 )
+          newObject = "";
+
+        if ( eraseElement != -1 )
+          list.RemoveAt( eraseElement );
+        else if ( newObject != null ) {
+          if ( addElementToList || ( list.Count > 0 && insertElementAfter == list.Count - 1 ) )
+            list.Add( newObject );
+          else if ( insertElementAfter != -1 )
+            list.Insert( insertElementAfter + 1, newObject );
+          else if ( insertElementBefore != -1 )
+            list.Insert( insertElementBefore, newObject );
+        }
+
+        if ( eraseElement != -1 || newObject != null )
+          EditorUtility.SetDirty( target );
+      }
+
+      // A bit of a hack until I figure out how to handle multi-selection
+      // of lists, if that should be possible at all. We're handling the
+      // list from inside this drawer and by returning null the return
+      // value isn't propagated to any targets.
       return null;
     }
 
@@ -1262,26 +1456,71 @@ namespace AGXUnityEditor
       return null;
     }
 
-    private static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
-    {
-      var member = parentType.GetMember( memberName )[ 0 ];
-      return InspectorGUI.MakeLabel( member, postText );
-    }
-
     public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
     {
-      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "ChannelCount" ), data.ChannelCount );
-      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "BeamSpacing" ), data.BeamSpacing );
-      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), "LidarMode" ), data.LidarMode );
+      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ChannelCount ) ), data.ChannelCount );
+      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.BeamSpacing ) ), data.BeamSpacing );
+      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.LidarMode ) ), data.LidarMode );
     }
 
     public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
     {
-      data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency );
-      data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalFoV" ), data.HorizontalFoV );
-      data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalFoV" ), data.VerticalFoV );
-      data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "HorizontalResolution" ), data.HorizontalResolution );
-      data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "VerticalResolution" ), data.VerticalResolution );
+      bool isRuntime = EditorApplication.isPlayingOrWillChangePlaymode;
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !isRuntime ) ) {
+        data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.Frequency ) ), data.Frequency );
+        data.FoVMode       = (GenericSweepData.FoVModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.FoVMode ) ), data.FoVMode );
+        if ( data.FoVMode == GenericSweepData.FoVModes.Centered ) {
+          data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoV ) ), data.HorizontalFoV );
+          data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoV ) ), data.VerticalFoV );
+        }
+        else if ( data.FoVMode == GenericSweepData.FoVModes.Window ) {
+          var newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoVWindow ) ), data.HorizontalFoVWindow );
+          if ( newWindow.MaxChanged || newWindow.MinChanged )
+            data.HorizontalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+          newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoVWindow ) ), data.VerticalFoVWindow );
+          if ( newWindow.MaxChanged || newWindow.MinChanged )
+            data.VerticalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+        }
+        data.ResolutionMode = (GenericSweepData.ResolutionModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ResolutionMode ) ), data.ResolutionMode );
+        if ( data.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint ) {
+          data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
+          data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
+        }
+        else if ( data.ResolutionMode == GenericSweepData.ResolutionModes.TotalPoints ) {
+          data.HorizontalResolutionTotal = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolutionTotal ) ), data.HorizontalResolutionTotal );
+          data.VerticalResolutionTotal   = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolutionTotal ) ), data.VerticalResolutionTotal );
+        }
+
+      }
+      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+      if ( result.MaxChanged || result.MinChanged )
+        data.Range = new RangeReal( result.Min, result.Max );
+      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
+    }
+
+    public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
+    {
+      data.Frequency     = Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ) );
+      data.FrameSize     = (uint)Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ) );
+      data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
+      data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
+      data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
+      data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
+      var delimiterText = EditorGUILayout.TextField( FindGUIContentFor(data.GetType(), "Delimiter"),  data.Delimiter.ToString() );
+      if ( char.TryParse( delimiterText, out var delimiter ) )
+        data.Delimiter = delimiter;
+      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+      if ( result.MaxChanged || result.MinChanged )
+        data.Range = new RangeReal( result.Min, result.Max );
+      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
+    }
+
+    public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )
+    {
+      data.Downsample = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Downsample" ), data.Downsample );
     }
 
     [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
@@ -1300,6 +1539,12 @@ namespace AGXUnityEditor
             break;
           case AGXUnity.Sensor.GenericSweepData sweepData:
             DrawGenericSweepModelData( sweepData );
+            break;
+          case AGXUnity.Sensor.LivoxData livoxData:
+            DrawLivoxModelData( livoxData );
+            break;
+          case AGXUnity.Sensor.ReadFromFileData readFromFileData:
+            DrawReadFromFileModelData( readFromFileData );
             break;
         }
       }
@@ -1323,5 +1568,143 @@ namespace AGXUnityEditor
 
       return null;
     }
+
+    [InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
+    public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
+    {
+      var target = objects[ 0 ] as Object;
+
+      if ( objects.Length != 1 ) {
+        InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
+        return null;
+      }
+
+      var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
+      using ( new InspectorGUI.IndentScope() ) {
+        data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
+        data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( GUI.MakeLabel(
+          "Cross Axis Sensitivity", false, "How measurements in one axis affects the other axes. Ratio 0 to 1." ),
+          data.CrossAxisSensitivity ) );
+        data.ZeroBias = EditorGUILayout.Vector3Field( GUI.MakeLabel(
+          "Zero Rate Bias", false, "Value reported per axis when there is no signal input (zero measurement)" ),
+          data.ZeroBias );
+        EditorGUI.BeginChangeCheck();
+        data.OutputFlags = OutputXYZGUI( data.OutputFlags );
+        if ( EditorGUI.EndChangeCheck() )
+          EditorUtility.SetDirty( target );
+
+        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+            GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
+          using ( new InspectorGUI.IndentScope() ) {
+            (data.EnableTotalGaussianNoise, data.TotalGaussianNoise) = OptionalVector3GUI(
+              data.EnableTotalGaussianNoise,
+              data.TotalGaussianNoise,
+              "Total Gaussian Noise",
+              "Base level noise in the measurement signal (RMS)" );
+            (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
+              data.EnableSignalScaling,
+              data.SignalScaling,
+              "Signal Scaling",
+              "Linear scaling to each axis of the triaxial signal" );
+            (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
+              data.EnableGaussianSpectralNoise,
+              data.GaussianSpectralNoise,
+              "Gaussian Spectral Noise",
+              "Gaussian noise dependent on the sample frequency" );
+            if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
+              (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
+              data.EnableLinearAccelerationEffects,
+              data.LinearAccelerationEffects,
+              "Linear Acceleration Effects",
+              "Offset to the zero rate bias depending on the linear acceleration" );
+            }
+          }
+        }
+      }
+
+      InspectorGUI.Separator();
+
+      return null;
+    }
+
+    private static (bool, Vector3) OptionalVector3GUI( bool toggle, Vector3 value, string label, string tooltip )
+    {
+      using ( new GUILayout.HorizontalScope() ) {
+        var rect = EditorGUILayout.GetControlRect();
+        var xMaxOriginal = rect.xMax;
+        rect.xMax = EditorGUIUtility.labelWidth + 20;
+        //InspectorGUI.MakeLabel( wrapper.Member );
+        toggle = EditorGUI.ToggleLeft( rect, GUI.MakeLabel( label, false, tooltip ), toggle );
+        using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && toggle ) ) {
+          rect.x = rect.xMax - 30;
+          rect.xMax = xMaxOriginal;
+          value = EditorGUI.Vector3Field( rect, "", value );
+        }
+      }
+      return (toggle, value);
+    }
+
+    private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    {
+      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( GUI.MakeLabel(
+        "Sensor Measurement Range", false, "Measurement range - values outside of range will be truncated. Default units m/s^2, radians/s, T" ),
+        data.Mode );
+
+      using ( new InspectorGUI.IndentScope() ) {
+        switch ( data.Mode ) {
+          case TriaxialRangeData.ConfigurationMode.MaxRange:
+            break;
+          case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
+            data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
+            break;
+          case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
+            data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
+            data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
+            data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
+            break;
+        }
+      }
+      return data;
+    }
+
+    private static OutputXYZ OutputXYZGUI( OutputXYZ state )
+    {
+      var skin = InspectorEditor.Skin;
+
+      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+
+      using ( new EditorGUILayout.HorizontalScope() ) {
+        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false, "Disabled during runtime" ),
+                                      InspectorEditor.Skin.LabelMiddleLeft );
+
+        var xEnabled = state.HasFlag(OutputXYZ.X);
+        var yEnabled = state.HasFlag(OutputXYZ.Y);
+        var zEnabled = state.HasFlag(OutputXYZ.Z);
+
+        if ( GUILayout.Toggle( xEnabled,
+                               GUI.MakeLabel( "X",
+                                              xEnabled,
+                                              "Use sensor X value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Left ) ) != xEnabled )
+          state ^= OutputXYZ.X;
+        if ( GUILayout.Toggle( yEnabled,
+                               GUI.MakeLabel( "Y",
+                                              yEnabled,
+                                              "Use sensor y value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
+          state ^= OutputXYZ.Y;
+        if ( GUILayout.Toggle( zEnabled,
+                               GUI.MakeLabel( "Z",
+                                              zEnabled,
+                                              "Use sensor Z value in output" ),
+                               skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
+          state ^= OutputXYZ.Z;
+      }
+
+      return state;
+    }
+
+
   }
 }
+

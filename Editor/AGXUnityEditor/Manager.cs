@@ -69,6 +69,9 @@ namespace AGXUnityEditor
     /// </summary>
     static Manager()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return;
+
       IO.Utils.VerifyDirectories();
 
       GetRequestScriptReloadData().Float = -1;
@@ -775,8 +778,10 @@ namespace AGXUnityEditor
         // to RUNTIME_PATH (for entities and components). The license file is
         // searched for by the license manager.
         var dataAndRuntimePath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
-        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath );
+        envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath + "/data" );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAndRuntimePath );
+
+        envInstance.setEnableEmbeddedComponents( true );
       }
       // Check if user would like to initialize AGX Dynamics with an
       // installed (or Algoryx developer) version.
@@ -785,12 +790,19 @@ namespace AGXUnityEditor
           return EnvironmentState.Uninitialized;
       }
 
-      // This validate is only for "license status" window so
-      // the user will be noticed when something is wrong.
+      // Complete license loading (including floating checkout) before deciding
+      // whether to notify the user. Native initialization failures are separate.
       try {
-        AGXUnity.LicenseManager.LoadFile();
+        // Native initialization may find a license in the AGX installation.
+        // Prefer a floating file in this project unless the seat was returned.
+        AGXUnity.LicenseManager.LoadFile( allowFloating: AGXUnity.LicenseManager.AutomaticFloatingCheckoutEnabled,
+                                        preferFloating: true );
 
         AGXUnity.NativeHandler.Instance.ValidateLicense();
+        if ( AGXUnity.NativeHandler.Instance.Initialized ) {
+          LicenseWarnings.Capture( AGXUnity.LicenseInfo.Create() );
+          LicenseWarnings.ScheduleStartupWarning();
+        }
       }
       catch ( Exception ) {
         return EnvironmentState.Uninitialized;

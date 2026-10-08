@@ -18,6 +18,7 @@ namespace AGXUnityEditor.Tools
     public override void OnAdd()
     {
       Track.RemoveInvalidWheels();
+      Track.RemoveInvalidSupportGeometries();
     }
 
     public override void OnRemove()
@@ -28,6 +29,7 @@ namespace AGXUnityEditor.Tools
     public override void OnPreTargetMembersGUI()
     {
       Track.RemoveInvalidWheels();
+      Track.RemoveInvalidSupportGeometries();
 
       bool toggleSelectWheel = false;
       bool toggleDisableCollisions = false;
@@ -53,10 +55,23 @@ namespace AGXUnityEditor.Tools
         DisableCollisionsTool = !DisableCollisionsTool;
     }
 
+    enum VariationType
+    {
+      None,
+      Sinusoidal,
+      DiscretePulse
+    }
+
     public override void OnPostTargetMembersGUI()
     {
       if ( NumTargets > 1 )
         return;
+
+      EditorGUI.BeginChangeCheck();
+      Track.ThicknessVariation = VariationGUI( "Thickness Variation", Track.ThicknessVariation );
+      Track.WidthVariation     = VariationGUI( "Width Variation", Track.WidthVariation );
+      if ( EditorGUI.EndChangeCheck() )
+        EditorUtility.SetDirty( Track );
 
       Undo.RecordObject( Track, "Track wheel add/remove." );
 
@@ -65,6 +80,45 @@ namespace AGXUnityEditor.Tools
                                 "Wheels",
                                 wheel => Track.Add( wheel ),
                                 wheel => Track.Remove( wheel ) );
+
+      if ( !Track.FullDoF ) {
+        InspectorGUI.ToolListGUI( this,
+                                Track.SupportGeometries,
+                                "Support Geometries",
+                                geom => Track.Add( geom ),
+                                geom => Track.Remove( geom ) );
+      }
+    }
+
+    private TrackNodeVariation VariationGUI( string name, TrackNodeVariation variation )
+    {
+      var current = variation switch
+      {
+        SinusoidalVariation => VariationType.Sinusoidal,
+        DiscretePulseVariation => VariationType.DiscretePulse,
+        _ => VariationType.None
+      };
+      var next = (VariationType)EditorGUILayout.EnumPopup( name, current );
+
+      if ( next != current ) {
+        return next switch
+        {
+          VariationType.DiscretePulse => new DiscretePulseVariation(),
+          VariationType.Sinusoidal => new SinusoidalVariation(),
+          _ => null
+        };
+      }
+
+      if ( variation is SinusoidalVariation sin ) {
+        sin.Amplitude = Mathf.Max( EditorGUILayout.FloatField( "Amplitude", sin.Amplitude ), 0.0f );
+        sin.Period = Mathf.Max( EditorGUILayout.FloatField( "Period", sin.Period ), 0.01f );
+      }
+      else if ( variation is DiscretePulseVariation disc ) {
+        disc.Amplitude = Mathf.Max( EditorGUILayout.FloatField( "Amplitude", disc.Amplitude ), 0.0f );
+        disc.Period = Mathf.Max( EditorGUILayout.IntField( "Period", disc.Period ), 1 );
+      }
+
+      return variation;
     }
 
     private bool SelectWheelToolEnable

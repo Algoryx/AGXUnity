@@ -9,7 +9,7 @@ namespace AGXUnity
   /// Contact material list data.
   /// </summary>
   [Serializable]
-  public class ContactMaterialEntry
+  public class ContactMaterialEntry : IEquatable<ContactMaterialEntry>
   {
     public ContactMaterial ContactMaterial = null;
 
@@ -70,6 +70,13 @@ namespace AGXUnity
                                                   ReferenceObject,
                                                   PrimaryDirection );
     }
+
+    public bool Equals( ContactMaterialEntry other ) =>
+      other is not null &&
+      other.ContactMaterial == ContactMaterial &&
+      other.m_isOriented == m_isOriented &&
+      other.m_referenceObject == m_referenceObject &&
+      other.m_primaryDirection == m_primaryDirection;
   }
 
   /// <summary>
@@ -101,7 +108,18 @@ namespace AGXUnity
       if ( contactMaterial == null || ContactMaterials.Contains( contactMaterial ) )
         return;
 
-      m_contactMaterials.Add( new ContactMaterialEntry() { ContactMaterial = contactMaterial } );
+      Add( new ContactMaterialEntry() { ContactMaterial = contactMaterial } );
+    }
+
+    public void Add( ContactMaterialEntry entry )
+    {
+      if ( entry == null || ContactMaterialEntries.Contains( entry ) )
+        return;
+
+      m_contactMaterials.Add( entry );
+
+      if ( this.State == States.INITIALIZED )
+        Initialize( entry );
     }
 
     public void Remove( ContactMaterial contactMaterial )

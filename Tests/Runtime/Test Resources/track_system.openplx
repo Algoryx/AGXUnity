@@ -1,0 +1,53 @@
+MySprocket is Vehicles.TrackSystem.Components.TrackWheels.Sprocket:
+    with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape
+    radius: 0.15
+    width: 0.5
+
+MyIdler is Vehicles.TrackSystem.Components.TrackWheels.Idler:
+    with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape
+    radius: 0.1
+    width: 0.5
+
+const LinkMaterial is Physics.Geometries.Material:
+    density: 2000
+
+Scene is Physics3D.System:
+    chassis is Physics3D.Bodies.RigidBody:
+        is_dynamic: false
+        inertia.mass: 3.0
+        kinematics.local_transform.position: Math.Vec3.from_xyz(1, 0, 0.5)
+        geometry is Physics3D.Geometries.Box:
+            size: {2, 0.5, 0.1}
+
+    sprocket_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+        position: {0.000000, 0.000000, 0.000000}
+
+    idler_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+        position: {2.000000, 0.000000, 0.000000}
+
+    track_system is Vehicles.TrackSystem.Base:
+        tracks.link_count: 50
+
+        tracks.link_description becomes Vehicles.TrackSystem.Components.Tracks.LinkDescription.Box:
+            width: 0.5
+            height: 0.05
+            contact_geometry.material: LinkMaterial
+        track_wheels: [track_system.sprocket, track_system.idler]
+
+        sprocket is MySprocket
+        idler is MyIdler
+
+        chassis_body: chassis
+
+    tracks_connection is Vehicles.TrackSystem.Connections.Base with Vehicles.TrackSystem.Connections.Traits.TwoWheels:
+        track_system : track_system
+        connectors: [sprocket_connector,
+                     idler_connector]
+
+FullDoFScene is Scene:
+    track_system: 
+        .agx_enable_full_dof: true

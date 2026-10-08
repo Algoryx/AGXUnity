@@ -552,44 +552,35 @@ namespace AGXUnityEditor
                                    string currentFile,
                                    string openFileTitle,
                                    string openFileDirectory,
-                                   Action<string> onNewFileSelected )
+                                   Action<string> onNewFileSelected,
+                                   bool folder = false )
     {
-      var selectNewFolderButtonWidth = 28.0f;
-
-      var rect     = EditorGUILayout.GetControlRect();
-      var orgWidth = rect.width;
-      rect.width   = EditorGUIUtility.labelWidth;
-
-      EditorGUI.PrefixLabel( rect, label );
-
-      var indentOffset = IndentScope.PixelLevel - 2;
-
-      rect.x    += EditorGUIUtility.labelWidth - indentOffset;
-      rect.width = orgWidth -
-                   EditorGUIUtility.labelWidth -
-                   selectNewFolderButtonWidth + indentOffset;
-      EditorGUI.SelectableLabel( rect,
-                                 currentFile,
-                                 InspectorEditor.Skin.TextField );
-      rect.x    += rect.width;
-      rect.width = selectNewFolderButtonWidth;
-      if ( UnityEngine.GUI.Button( rect,
-                                   GUI.MakeLabel( "...",
-                                                  InspectorGUISkin.BrandColor,
-                                                  true ),
-                                   InspectorEditor.Skin.ButtonMiddle ) ) {
-        string result = EditorUtility.OpenFilePanel( openFileTitle,
-                                                     openFileDirectory,
-                                                     "" );
-        if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
-          onNewFileSelected?.Invoke( result );
-          // Remove focus from any control so that the field is updated.
-          UnityEngine.GUI.FocusControl( "" );
-          return true;
-        }
-      }
-
-      return false;
+      var updated = false;
+      SelectableTextField( label,
+                           currentFile,
+                           MiscButtonData.Create( GUI.MakeLabel( "...",
+                                                                 InspectorGUISkin.BrandColor,
+                                                                 true ),
+                                                  () => {
+                                                    string result;
+                                                    if ( folder )
+                                                      result = EditorUtility.OpenFolderPanel( openFileTitle,
+                                                                                              openFileDirectory,
+                                                                                              "" );
+                                                    else
+                                                      result = EditorUtility.OpenFilePanel( openFileTitle,
+                                                                                            openFileDirectory,
+                                                                                            "" );
+                                                    if ( !string.IsNullOrEmpty( result ) && result != currentFile ) {
+                                                      onNewFileSelected?.Invoke( result );
+                                                      // Remove focus from any control so that the field is updated.
+                                                      UnityEngine.GUI.FocusControl( "" );
+                                                      updated = true;
+                                                    }
+                                                  },
+                                                  UnityEngine.GUI.enabled,
+                                                  "Open select file panel." ) );
+      return updated;
     }
 
     public static string ToggleSaveFile( GUIContent label,
@@ -787,8 +778,13 @@ namespace AGXUnityEditor
                                                      getDefaultTypename;
       using ( IndentScope.Single ) {
         foreach ( var item in items ) {
+#if UNITY_6000_3_OR_NEWER
+          if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
+                                                      item.GetEntityId().ToString() ),
+#else
           if ( !Foldout( EditorData.Instance.GetData( context.Targets[ 0 ],
                                                       item.GetInstanceID().ToString() ),
+#endif
                          GUI.MakeLabel( InspectorEditor.Skin.TagTypename( getTypename( item ) ) +
                                         ' ' +
                                         item.name ) ) ) {
@@ -959,7 +955,11 @@ namespace AGXUnityEditor
                                                            Object item,
                                                            Action<EditorDataEntry> onCreate = null )
     {
+#if UNITY_6000_3_OR_NEWER
+      return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetEntityId().ToString(), onCreate );
+#else
       return EditorData.Instance.GetData( target, $"{identifier}_" + item.GetInstanceID().ToString(), onCreate );
+#endif
     }
 
     private static void HandleItemEditorDisable<T>( Tools.CustomTargetTool tool, T item )
@@ -1883,6 +1883,27 @@ namespace AGXUnityEditor
           return System.Tuple.Create( o1, o2 );
         }
       }
+    }
+
+    public static GUIContent FindGUIContentFor( Type parentType, string memberName, string postText = "" )
+    {
+      var member = parentType.GetMember( memberName )[ 0 ];
+      return InspectorGUI.MakeLabel( member, postText );
+    }
+
+    public static void DefaultInspector<T>( object[] objects, string name, bool isField = false )
+    {
+      InvokeWrapper wrapper;
+      if ( isField )
+        wrapper = new FieldWrapper( typeof( T ).GetField( name, InvokeWrapper.DefaultBindingFlags ) );
+      else
+        wrapper = new PropertyWrapper( typeof( T ).GetProperty( name, InvokeWrapper.DefaultBindingFlags ) );
+
+      var runtimeDisabled = EditorApplication.isPlayingOrWillChangePlaymode &&
+                              wrapper.Member.IsDefined( typeof( DisableInRuntimeInspectorAttribute ), true );
+
+      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !runtimeDisabled ) )
+        InspectorEditor.HandleType( wrapper, objects, null );
     }
   }
 }
