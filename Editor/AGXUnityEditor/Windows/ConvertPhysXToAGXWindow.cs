@@ -235,7 +235,8 @@ namespace AGXUnityEditor.Windows
       image.style.flexShrink = 0;
       image.style.marginRight = 4;
       line.Add( image );
-      var objectButton = new Button( () => { Selection.activeObject = source; EditorGUIUtility.PingObject( source ); } ) {
+      var objectButton = new Button( () => { Selection.activeObject = source; EditorGUIUtility.PingObject( source ); } )
+      {
         text = source.gameObject.name + " — " + candidate.Description
       };
       CompactObjectButton( objectButton );
@@ -276,7 +277,8 @@ namespace AGXUnityEditor.Windows
       toggle.style.width = 20;
       toggle.style.flexShrink = 0;
       line.Add( toggle );
-      var prefabButton = new Button( () => EditorGUIUtility.PingObject( AssetDatabase.LoadAssetAtPath<GameObject>( prefab.Path ) ) ) {
+      var prefabButton = new Button( () => EditorGUIUtility.PingObject( AssetDatabase.LoadAssetAtPath<GameObject>( prefab.Path ) ) )
+      {
         text = $"{prefab.Name} — {prefab.SupportedCount} eligible / {prefab.UnsupportedCount} unsupported components"
       };
       CompactObjectButton( prefabButton );

@@ -260,7 +260,8 @@ namespace AGXUnityTesting.Editor
     [Test]
     public void ReadableMeshAssetReferenceSurvivesPrefabReload()
     {
-      var mesh = new Mesh {
+      var mesh = new Mesh
+      {
         vertices = new[] { Vector3.zero, Vector3.right, Vector3.up },
         triangles = new[] { 0, 1, 2 }
       };

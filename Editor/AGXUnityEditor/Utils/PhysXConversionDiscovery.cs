@@ -34,7 +34,8 @@ namespace AGXUnityEditor.Utils
                                                       .SelectMany( p => AGXUnity.Utils.TerrainUtils.CollectTerrains( p.Terrain ) ) );
       var candidates = new List<Candidate>();
       foreach ( var body in bodies ) {
-        var candidate = new Candidate {
+        var candidate = new Candidate
+        {
           Source = body,
           Colliders = collidersByBody[ body ].ToArray()
         };
@@ -71,7 +72,8 @@ namespace AGXUnityEditor.Utils
         var candidates = Discover( new[] { root } );
         if ( candidates.Count == 0 )
           continue;
-        result.Add( new PrefabInfo {
+        result.Add( new PrefabInfo
+        {
           Path = path,
           Name = root.name,
           SupportedCount = candidates.Where( c => c.Supported ).Sum( c => c.ComponentCount ),
