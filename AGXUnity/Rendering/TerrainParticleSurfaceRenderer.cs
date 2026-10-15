@@ -21,6 +21,14 @@ namespace AGXUnity.Rendering
     [SerializeField] private float m_supportRadiusScale = 1.15f;
     [SerializeField, Range( 0, 0.5f ), Tooltip( "Existing connections survive this fraction beyond the support distance. 0 disables hysteresis; 0.05 gives a 5% release margin." )]
     private float m_connectionHysteresis = 0.05f;
+    [SerializeField, Tooltip( "Fill against nearby AGX boxes, planes, collision meshes and Unity/AGX terrains. Rendering only." )]
+    private bool m_boundaryAdhesion = true;
+    [SerializeField, Range( 0, 1 ), Tooltip( "Maximum gap between the physical sphere and a boundary, as a fraction of particle radius." )]
+    private float m_boundaryGap = 0.25f;
+    [SerializeField, Range( 0.1f, 2 ), Tooltip( "Boundary footprint radius as a fraction of particle radius." )]
+    private float m_boundarySpread = 1;
+    [SerializeField, Tooltip( "Optional boundary selection. Empty discovers supported AGX shapes and collision terrains automatically." )]
+    private Collide.Shape[] m_boundaryShapes = Array.Empty<Collide.Shape>();
     [SerializeField, Range( 0, 2 )] private float m_smoothing = 0.6f;
     [SerializeField] private float m_depthThreshold = 1;
     [SerializeField, Range( 0.25f, 1 )] private float m_resolutionScale = 1;
@@ -60,6 +68,12 @@ namespace AGXUnity.Rendering
       }
     }
     public float Smoothing { get => m_smoothing; set => m_smoothing = SoilParticleSelection.Range( value, 0, 2, m_smoothing ); }
+    public bool BoundaryAdhesion { get => m_boundaryAdhesion; set { if ( value != m_boundaryAdhesion ) { m_boundaryAdhesion = value; m_dirty = true; } } }
+    public float BoundaryGap { get => m_boundaryGap; set { m_boundaryGap = SoilParticleSelection.Range( value, 0, 1, m_boundaryGap ); m_dirty = true; } }
+    public float BoundarySpread { get => m_boundarySpread; set { m_boundarySpread = SoilParticleSelection.Range( value, 0.1f, 2, m_boundarySpread ); m_dirty = true; } }
+    public Collide.Shape[] BoundaryShapes { get => m_boundaryShapes; set { m_boundaryShapes = value ?? Array.Empty<Collide.Shape>(); InvalidateBoundaryCache(); } }
+    public SoilSurfaceBoundaries Boundaries { get; } = new SoilSurfaceBoundaries();
+    public void InvalidateBoundaryCache() { m_resetBoundaries = true; m_dirty = true; }
     public float DepthThreshold { get => m_depthThreshold; set => m_depthThreshold = SoilParticleSelection.Positive( value, m_depthThreshold ); }
     public float ResolutionScale { get => m_resolutionScale; set => m_resolutionScale = SoilParticleSelection.Range( value, 0.25f, 1, m_resolutionScale ); }
     public float InputNormalContribution { get => m_inputNormalContribution; set => m_inputNormalContribution = SoilParticleSelection.Range( value, 0, 1, m_inputNormalContribution ); }
@@ -116,11 +130,14 @@ namespace AGXUnity.Rendering
     private readonly SoilParticleFaces m_faces = new SoilParticleFaces();
     private bool m_dirty = true;
     private bool m_resetConnectionHistory;
+    private bool m_resetBoundaries;
+    private Bounds m_soilBounds = new Bounds( Vector3.zero, Vector3.one*1e10f );
     private bool m_prepareSurface = true, m_hasPreparedSurface;
     private bool m_warned;
     private Material m_defaultMaterial;
     private readonly List<Behaviour> m_suppressed = new List<Behaviour>();
     private static readonly ProfilerMarker s_pack = new ProfilerMarker( "AGX Soil.PackUpload" );
+    private static readonly ProfilerMarker s_boundaryPrepare = new ProfilerMarker( "AGX Soil.BoundaryPreparation" );
 
     private void OnEnable()
     {
@@ -157,6 +174,7 @@ namespace AGXUnity.Rendering
         SurfaceCount = IndividualCount = 0;
         m_bridges.Build( m_packed, 0, SupportRadiusScale );
         m_faces.Build( 0, m_bridges.Pairs, 0 );
+        Boundaries.Clear();
       }
     }
 
@@ -176,6 +194,7 @@ namespace AGXUnity.Rendering
       m_bridges.Build( m_packed, 0, SupportRadiusScale );
       m_bridges.Dispose();
       m_faces.Dispose();
+      Boundaries.Dispose();
       m_hasPreparedSurface = false;
       SurfaceCount = IndividualCount = 0;
       foreach ( var renderer in m_suppressed ) if ( renderer != null ) renderer.enabled = true;
@@ -188,6 +207,9 @@ namespace AGXUnity.Rendering
     {
       m_supportRadiusScale = SoilParticleSelection.Positive( m_supportRadiusScale, 1.15f );
       m_connectionHysteresis = SoilParticleSelection.Range( m_connectionHysteresis, 0, 0.5f, 0.05f );
+      m_boundaryGap = SoilParticleSelection.Range( m_boundaryGap, 0, 1, 0.25f );
+      m_boundarySpread = SoilParticleSelection.Range( m_boundarySpread, 0.1f, 2, 1 );
+      m_resetBoundaries = true;
       m_resetConnectionHistory = true;
       m_smoothing = SoilParticleSelection.Range( m_smoothing, 0, 2, 0.6f );
       m_depthThreshold = SoilParticleSelection.Positive( m_depthThreshold, 1 );
@@ -236,6 +258,14 @@ namespace AGXUnity.Rendering
         if ( m_resetConnectionHistory ) { m_bridges.ClearHistory(); m_resetConnectionHistory = false; }
         m_bridges.Build( m_packed, m_prepareSurface && SurfaceCount > 0 ? UploadedParticleCount : 0, SupportRadiusScale, ConnectionHysteresis );
         m_faces.Build( UploadedParticleCount, m_bridges.Pairs, m_bridges.Count );
+        if ( SurfaceCount > 0 ) {
+          m_soilBounds = new Bounds( m_packed[0].Position, Vector3.zero );
+          for ( int i = 0; i < SurfaceCount; ++i ) m_soilBounds.Encapsulate( new Bounds( m_packed[i].Position, Vector3.one*(2*m_packed[i].Radius*Mathf.Max( 3, 2*SupportRadiusScale )) ) );
+        }
+        using ( s_boundaryPrepare.Auto() ) {
+          if ( m_prepareSurface && SurfaceCount > 0 ) Boundaries.Build( m_packed, SurfaceCount, UploadedParticleCount, BoundaryAdhesion, BoundaryGap, BoundarySpread, SupportRadiusScale );
+          else Boundaries.Clear();
+        }
         if ( m_prepareSurface && SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders && SurfaceCount > 0 ) {
           if ( SurfaceBuffer == null || SurfaceBuffer.count < UploadedParticleCount ) {
             SurfaceBuffer?.Dispose();
@@ -286,6 +316,8 @@ namespace AGXUnity.Rendering
       if ( material == null || ParticleMesh == null ) return;
       bool surface = Display == DisplayMode.Surface && IsSurfaceMaterialValid && (CameraSupportsSurface?.Invoke( camera ) ?? false);
       m_prepareSurface = surface;
+      if ( m_resetBoundaries ) { Boundaries.Invalidate(); m_resetBoundaries = false; }
+      if ( surface && BoundaryAdhesion && Boundaries.Refresh( BoundaryShapes, m_soilBounds ) ) m_dirty = true;
       if ( m_dirty || m_version != Snapshot.Version || (surface && !m_hasPreparedSurface) ) Pack();
       if ( !surface && Display == DisplayMode.Surface && !m_warned ) {
         Debug.LogWarning( "Soil surface unavailable for this camera/configuration; using ordinary particles. See soil surface usage instructions.", this );

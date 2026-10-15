@@ -83,6 +83,7 @@ namespace AGXUnityEditor.Rendering
         }
         CompareTexture( faceTexture, Capture( shader, movedFaces, 8, false, true, "face-texture-rotated", true,
           readTexture: true, cameraRotation: rotation ), "face rotation" );
+        CheckBoundaries( shader );
         BenchmarkFaces();
         var compiledMaterial = new Material( shader );
         try {
@@ -90,7 +91,7 @@ namespace AGXUnityEditor.Rendering
         }
         finally { Object.DestroyImmediate( compiledMaterial ); }
         foreach ( var message in ShaderUtil.GetShaderMessages( shader ) ) {
-          s_results.Add( "Shader: " + message.message );
+          s_results.Add( $"Shader {message.severity}: {message.file}:{message.line}: {message.message}" );
           if ( message.severity == UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error ) throw new Exception( message.message );
         }
       }
@@ -101,6 +102,75 @@ namespace AGXUnityEditor.Rendering
       File.WriteAllLines( Path.Combine( directory, "bridges.txt" ), s_results );
       foreach ( var result in s_results ) Debug.Log( result );
       EditorApplication.Exit( exit );
+    }
+
+    private static void CheckBoundaries( Shader shader )
+    {
+      var floorObject = new GameObject( "Boundary regression floor" );
+      var wallObject = new GameObject( "Boundary regression wall" );
+      var bucketObject = new GameObject( "Boundary regression mesh" );
+      var mesh = new Mesh();
+      try {
+        floorObject.transform.position = new Vector3( 0, -0.5f, 0 );
+        var floor = floorObject.AddComponent<AGXUnity.Collide.Plane>();
+        var soil = new[] { Particle( new Vector3( 0, 0.6f, 0 ), 1 ) }; soil[0].Id = 100;
+        int added = 0;
+        Capture( shader, soil, 1.5f, false, true, "boundary-plane-adhesion", cameraRotation: Quaternion.Euler( 25, 0, 0 ),
+          boundaryShapes: new AGXUnity.Collide.Shape[] { floor }, checkBoundary: world => {
+            if ( world.y < -0.501f ) throw new Exception( "Soil penetrates plane" );
+            if ( Vector3.Distance( world, soil[0].Position ) > 1.01f && world.y < -0.39f ) ++added;
+          } );
+        if ( added < 10 ) throw new Exception( "Boundary adhesion did not fill the sphere/ground gap" );
+        s_results.Add( $"PASS boundary adhesion fills {added} pixels outside the physical sphere without entering the ground" );
+        soil[0].Position = new Vector3( 0, 0.2f, 0 );
+        wallObject.transform.SetPositionAndRotation( new Vector3( 0.8f, 0, 0 ), Quaternion.Euler( 0, 0, 90 ) );
+        var wall = wallObject.AddComponent<AGXUnity.Collide.Plane>();
+        Action<Vector3> corner = world => { if ( world.y < -0.501f || world.x > 0.801f ) throw new Exception( "Soil penetrates ground/wall corner at " + world ); };
+        Capture( shader, soil, 1.5f, true, true, "boundary-plane-corner", cameraRotation: Quaternion.Euler( 25, 0, 0 ),
+          boundaryShapes: new AGXUnity.Collide.Shape[] { floor, wall }, checkBoundary: corner );
+        floor.enabled = false; wall.enabled = false;
+        var vertices = new List<Vector3>(); var indices = new List<int>();
+        void Quad( Vector3 a, Vector3 b, Vector3 c, Vector3 d ) {
+          int start = vertices.Count; vertices.Add( a ); vertices.Add( b ); vertices.Add( c ); vertices.Add( d );
+          indices.AddRange( new[] { start, start+1, start+2, start+2, start+1, start+3 } );
+        }
+        Quad( new Vector3( -3, -0.5f, -3 ), new Vector3( -3, -0.5f, 0.8f ), new Vector3( 0.8f, -0.5f, -3 ), new Vector3( 0.8f, -0.5f, 0.8f ) );
+        Quad( new Vector3( 0.8f, -0.5f, -3 ), new Vector3( 0.8f, -0.5f, 0.8f ), new Vector3( 0.8f, 3, -3 ), new Vector3( 0.8f, 3, 0.8f ) );
+        Quad( new Vector3( -3, -0.5f, 0.8f ), new Vector3( -3, 3, 0.8f ), new Vector3( 0.8f, -0.5f, 0.8f ), new Vector3( 0.8f, 3, 0.8f ) );
+        mesh.SetVertices( vertices ); mesh.SetTriangles( indices, 0 ); mesh.RecalculateBounds();
+        var bucket = bucketObject.AddComponent<AGXUnity.Collide.Mesh>(); bucket.AddSourceObject( mesh );
+        Action<Vector3> bucketConstraint = world => {
+          corner( world ); if ( world.z > 0.801f ) throw new Exception( "Soil penetrates bucket back wall" );
+        };
+        Capture( shader, soil, 1.5f, false, true, "boundary-mesh-bucket", cameraRotation: Quaternion.Euler( 25, 0, 0 ),
+          boundaryShapes: new AGXUnity.Collide.Shape[] { bucket }, checkBoundary: bucketConstraint );
+        bucketObject.transform.SetPositionAndRotation( new Vector3( 0.4f, 0.1f, 0.2f ), Quaternion.Euler( 0, 35, 0 ) );
+        var transform = bucketObject.transform;
+        soil[0].Position = transform.TransformPoint( soil[0].Position ); soil[0].Rotation = transform.rotation;
+        Capture( shader, soil, 1.5f, true, true, "boundary-moving-bucket", cameraRotation: Quaternion.Euler( 25, 0, 0 ),
+          boundaryShapes: new AGXUnity.Collide.Shape[] { bucket }, checkBoundary: world => bucketConstraint( transform.InverseTransformPoint( world ) ) );
+        floor.enabled = true;
+        using var boundaries = new SoilSurfaceBoundaries();
+        boundaries.Refresh( new AGXUnity.Collide.Shape[] { floor }, new Bounds( Vector3.zero, Vector3.one*100 ), true );
+        var batch = new TerrainParticleSnapshotProvider.Particle[1024];
+        for ( int i = 0; i < batch.Length; ++i ) { batch[i] = Particle( new Vector3( (i%32)*0.1f, -0.445f, (i/32)*0.1f ), 0.05f ); batch[i].Id = (uint)(i+1); }
+        for ( int i = 0; i < 5; ++i ) boundaries.Build( batch, batch.Length, batch.Length, true, 0.25f, 1, 1.5f, false );
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        for ( int i = 0; i < 30; ++i ) boundaries.Build( batch, batch.Length, batch.Length, true, 0.25f, 1, 1.5f, false );
+        double stationary = timer.Elapsed.TotalMilliseconds/30;
+        timer.Restart();
+        for ( int step = 0; step < 30; ++step ) {
+          for ( int i = 0; i < batch.Length; ++i ) batch[i].Position.x += 0.005f;
+          boundaries.Build( batch, batch.Length, batch.Length, true, 0.25f, 1, 1.5f, false );
+        }
+        double moving = timer.Elapsed.TotalMilliseconds/30;
+        boundaries.Build( batch, batch.Length, batch.Length, true, 0.25f, 1, 1.5f );
+        timer.Restart();
+        for ( int i = 0; i < 30; ++i ) boundaries.Build( batch, batch.Length, batch.Length, true, 0.25f, 1, 1.5f );
+        double upload = timer.Elapsed.TotalMilliseconds/30;
+        s_results.Add( $"Boundary CPU, 1024 attached particles: cached={stationary:F4} ms; moving/rebuild={moving:F4} ms; cached+GPU upload={upload:F4} ms; patches={boundaries.PatchCount}; queries={boundaries.QueryCount}; GPU rendering not measured" );
+      }
+      finally { Object.DestroyImmediate( floorObject ); Object.DestroyImmediate( wallObject ); Object.DestroyImmediate( bucketObject ); Object.DestroyImmediate( mesh ); }
     }
 
     private static void BenchmarkFaces()
@@ -155,7 +225,8 @@ namespace AGXUnityEditor.Rendering
 
     private static Color[] Capture( Shader shader, TerrainParticleSnapshotProvider.Particle[] particles, float support,
                                     bool perspective, bool smooth, string name, bool expectBridge = false, bool near = false,
-                                    bool readTexture = false, Vector3 cameraOffset = default, Quaternion? cameraRotation = null )
+                                    bool readTexture = false, Vector3 cameraOffset = default, Quaternion? cameraRotation = null,
+                                    AGXUnity.Collide.Shape[] boundaryShapes = null, Action<Vector3> checkBoundary = null )
     {
       var go = new GameObject( "Soil bridge validation camera" );
       var camera = go.AddComponent<Camera>();
@@ -179,6 +250,10 @@ namespace AGXUnityEditor.Rendering
       if ( faces.Count > 0 ) faceBuffer.SetData( faces.Faces, 0, 0, faces.Count );
       var depth = new RenderTexture( Size, Size, 24, RenderTextureFormat.Depth ); depth.Create(); textures.Add( depth );
       var properties = new MaterialPropertyBlock();
+      using var boundaries = new SoilSurfaceBoundaries();
+      if ( boundaryShapes != null ) boundaries.Refresh( boundaryShapes, new Bounds( Vector3.zero, Vector3.one*100 ), true );
+      boundaries.Build( particles, particles.Length, particles.Length, boundaryShapes != null, 0.25f, 1, support );
+      boundaries.Bind( properties );
       properties.SetMatrix( "_SoilProjection", projection ); properties.SetMatrix( "_SoilInverseProjection", projection.inverse );
       properties.SetMatrix( "_SoilView", view ); properties.SetMatrix( "_SoilInverseView", view.inverse );
       properties.SetVector( "_SoilSize", new Vector4( Size, Size, 1f/Size, 1f/Size ) );
@@ -203,6 +278,7 @@ namespace AGXUnityEditor.Rendering
           properties.SetBuffer( "_SoilFaces", faceBuffer );
           command.DrawProcedural( Matrix4x4.identity, material, 6, MeshTopology.Triangles, 6, faces.Count, properties );
         }
+        if ( boundaries.PatchCount > 0 ) command.DrawProcedural( Matrix4x4.identity, material, 7, MeshTopology.Triangles, 21, boundaries.PatchCount, properties );
         Graphics.ExecuteCommandBuffer( command ); command.Clear();
         var output = raw;
         if ( smooth ) {
@@ -230,6 +306,7 @@ namespace AGXUnityEditor.Rendering
           var b = Unproject( inverse, u, v, 0.5f );
           var eye = a+(b-a)*((-d.r-a.z)/(b.z-a.z));
           var world = inverseView.MultiplyPoint( eye );
+          checkBoundary?.Invoke( world );
           // A convex hull's support in ANY direction is max(dot(center,n)+radius).
           // Exercise 96 directions, including the collision planes +/-X/Y/Z.
           for ( int k = 0; k < 102; ++k ) {
@@ -242,6 +319,9 @@ namespace AGXUnityEditor.Rendering
             }
             float bound = float.NegativeInfinity;
             foreach ( var p in particles ) bound = Mathf.Max( bound, Vector3.Dot( p.Position, n )+(p.RenderingEligible == SoilParticleBridges.CenterAnchor ? 0 : p.Radius) );
+            for ( int patch = 0; patch < boundaries.PatchCount; ++patch ) {
+              var t = boundaries.Patches[patch]; bound = Mathf.Max( bound, Mathf.Max( Vector3.Dot( t.A, n ), Mathf.Max( Vector3.Dot( t.B, n ), Vector3.Dot( t.C, n ) ) ) );
+            }
             if ( Vector3.Dot( world, n ) > bound+0.002f )
               throw new Exception( $"{name}: pixel ({x},{y}) at {world} exceeds physical hull in direction {n}" );
           }

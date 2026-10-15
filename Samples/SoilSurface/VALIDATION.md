@@ -1,5 +1,62 @@
 # Validation results
 
+## Collision boundary adhesion (15 October 2026)
+
+Boundary adhesion adds clipped collision-surface footprints and tangent faces
+joining them to nearby physical spheres. The input shader clips reconstructed
+geometry against those boundary constraints and locks constrained input depth
+through smoothing. Native simulation state is unchanged. Supported sources are
+AGX boxes, planes, collision meshes (including precomputed pieces), height fields,
+deformable terrain and Unity collision terrain. Automatic discovery excludes
+disabled collisions and sensors; explicit source selection is available. Other
+AGX primitives and complete AGX collision-filter replication are outside this
+implementation. Open mesh winding must be consistent; local nearest-surface
+sidedness is not a general volumetric classifier for nonmanifold triangle soups.
+
+The implementation caches rigid-local triangle BVHs, nearby 8x8-cell terrain
+tiles, collider-local footprints and reusable GPU buffers. Terrain height/hole
+notifications invalidate affected caches. Footprints refresh after relative
+movement exceeds 1% of particle radius, after geometry/settings changes, or when
+an attachment changes. Attachments use a 15%-of-radius release margin. Buried
+particle centers do not create new footprints through solid surfaces. The
+existing optional Burst assembly batches proximity queries over copied data;
+unchanged geometry remains resident in persistent native arrays. A managed
+fallback is retained, and no package dependency or plugin DLL was changed.
+
+The edit-mode suite covers GPU layouts, BVH-versus-exhaustive queries, transformed
+and updated managed/Burst proximity results, attachment hysteresis and reset,
+sensor/collision exclusion, box dimensions, rigid motion, precomputed AGX mesh
+handedness/scaling, closed-mesh orientation, and live terrain heights/holes. The
+existing particle/surface suite is included (43 tests total), including removing
+an explicit boundary without any particle movement.
+
+D3D12 GPU regressions passed actual sphere/ground gap filling, plane/wall corners,
+mesh bucket floors/walls and translated/rotated buckets. The adhesion case filled
+148 pixels outside the physical sphere while retaining the ground constraint.
+All existing hull, texture detail/motion and smoothing checks also passed. All
+eight shader passes compiled without shader messages in the final GPU run.
+
+For 1,024 particles attached to a plane, warm cached CPU preparation measured
+0.9599 ms; rebuilding footprints during relative movement measured 3.2043 ms;
+cached preparation plus GPU uploads measured 0.9351 ms. These are separate warm
+runs, so the small timing difference between cached measurements is noise.
+They exclude GPU drawing and native particle acquisition.
+
+On an identical frozen native grading snapshot, boundary preparation measured
+11.6445 ms managed versus 2.7712 ms with Burst (480 attached particles, 8,724
+footprint triangles, 2,335 queries). Both paths attached the same particles. The
+real URP integration passed automatic terrain conformance, runtime disable/restore,
+multi-camera/terrain rendering, resizing, fallback and disable/re-enable cleanup,
+without runtime or Render Graph errors. Later in that run, total pack/upload was
+4.9217 ms for 1,614 particles/anchors, including 9,509 boundary patches; the entire
+GPU input pass measured 0.3281 ms/draw over 34 samples at 960x640. Geometry, contact
+count and hardware affect these costs; cold BVH creation and moving/deforming
+boundary updates are not represented by the warm timings above.
+
+Reports and before/after captures are in `SoilBoundaryValidation` and its `Native`
+subdirectory in the task's visualization artifacts. Earlier timing tables predate
+boundary adhesion.
+
 ## Connection hysteresis (15 October 2026)
 
 `Connection Hysteresis` defaults to 0.05. Edges join at the existing support

@@ -13,6 +13,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
     StructuredBuffer<Particle> _SoilParticles;
     StructuredBuffer<uint2> _SoilBridges;
     StructuredBuffer<uint3> _SoilFaces;
+    #include "SoilBoundaryQueries.hlsl"
     TEXTURE2D(_SoilDepth); TEXTURE2D(_SoilColor); TEXTURE2D(_SoilNormal);
     TEXTURE2D(_SoilSceneDepth); TEXTURE2D(_SoilTexture);
     TEXTURE2D(_SoilAlbedo);
@@ -102,6 +103,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       nointerpolation uint material : TEXCOORD4;
       nointerpolation float3 centerWS : TEXCOORD5;
       nointerpolation float4 rotation : TEXCOORD6;
+      nointerpolation uint particle : TEXCOORD7;
     };
     InputVaryings SphereVertex(uint vertex : SV_VertexID, uint instance : SV_InstanceID)
     {
@@ -128,6 +130,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       output.eye = center; output.radius = radius; output.color = particle.color;
       output.material = particle.material;
       output.centerWS = particle.position; output.rotation = particle.rotation;
+      output.particle = instance;
       return output;
     }
     struct MeshAttributes { float3 positionOS : POSITION; float3 normalOS : NORMAL; uint instance : SV_InstanceID; };
@@ -142,6 +145,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       output.radius = particle.radius; output.color = particle.color;
       output.material = particle.material;
       output.centerWS = particle.position; output.rotation = particle.rotation;
+      output.particle = input.instance;
       return output;
     }
     struct AttributesOutput { float4 depthRadius : SV_Target0; float4 color : SV_Target1; float4 normal : SV_Target2; float4 albedo : SV_Target3; };
@@ -173,7 +177,9 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       float3 eye = origin + t * direction;
       float3 normal = mul((float3x3)_SoilInverseView, normalize(eye - input.eye));
       float3 world = mul(_SoilInverseView, float4(eye, 1)).xyz;
-      return MakeInput(uv, eye, normal, input.radius, input.color, input.material, -(origin + (-h + sqrt(discriminant)) * direction).z,
+      clip(SoilBoundaryClearance(world, input.particle));
+      float backDepth = SoilHasBoundary(input.particle) ? -eye.z : -(origin + (-h + sqrt(discriminant)) * direction).z;
+      return MakeInput(uv, eye, normal, input.radius, input.color, input.material, backDepth,
                        ParticleTexture(world, normal, input.centerWS, input.rotation));
     }
     InputOutput MeshFragment(InputVaryings input)
@@ -181,6 +187,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       // Mesh input has no analytic back face interval: retain its physical front
       // depth while filtering its color and normals. Bridges have analytic bounds.
       float3 world = mul(_SoilInverseView, float4(input.eye, 1)).xyz;
+      clip(SoilBoundaryClearance(world, input.particle));
       return MakeInput(input.positionCS.xy * _SoilSize.zw, input.eye, input.normalWS, input.radius, input.color, input.material, -input.eye.z,
                        ParticleTexture(world, normalize(input.normalWS), input.centerWS, input.rotation));
     }
@@ -287,9 +294,11 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       float3 world = mul(_SoilInverseView, float4(eye, 1)).xyz;
       float3 normalWS = mul((float3x3)_SoilInverseView, normal);
       Particle a = _SoilParticles[input.pair.x], b = _SoilParticles[input.pair.y];
+      clip(SoilBoundaryClearance(world, uint3(input.pair,0), 2));
       float3 textureColor = lerp(ParticleTexture(world, normalWS, a.position, a.rotation), ParticleTexture(world, normalWS, b.position, b.rotation), blend);
+      float backDepth = SoilHasBoundary(input.pair.x) || SoilHasBoundary(input.pair.y) ? -eye.z : -(origin+last*direction).z;
       return MakeInput(uv, eye, normalWS, lerp(input.a.w, input.b.w, blend),
-                       float4(lerp(input.colorA, input.colorB, blend), 1), input.material, -(origin+last*direction).z, textureColor);
+                       float4(lerp(input.colorA, input.colorB, blend), 1), input.material, backDepth, textureColor);
     }
 
     struct FaceVaryings
@@ -337,6 +346,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       Particle a = _SoilParticles[input.face.x], b = _SoilParticles[input.face.y], c = _SoilParticles[input.face.z];
       float3 w = input.barycentric;
       float3 world = mul(_SoilInverseView, float4(input.eye,1)).xyz;
+      clip(SoilBoundaryClearance(world, input.face, 3));
       float3 normal = normalize(input.normalWS);
       float3 textureColor = w.x*ParticleTexture(world,normal,a.position,a.rotation)
                           + w.y*ParticleTexture(world,normal,b.position,b.rotation)
@@ -345,6 +355,51 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       return MakeInput(input.positionCS.xy*_SoilSize.zw, input.eye, normal,
                        dot(w,float3(a.radius,b.radius,c.radius)),
                        w.x*a.color+w.y*b.color+w.z*c.color, a.material, -input.eye.z, textureColor);
+    }
+
+    struct BoundaryVaryings
+    {
+      float4 positionCS : SV_POSITION;
+      float3 eye : TEXCOORD0;
+      nointerpolation float3 normalWS : TEXCOORD1;
+      nointerpolation uint particle : TEXCOORD2;
+    };
+    BoundaryVaryings BoundaryVertex(uint vertex : SV_VertexID, uint instance : SV_InstanceID)
+    {
+      SoilBoundaryTriangle patch=_SoilBoundaryPatches[instance];
+      uint particle=(uint)patch.a.w;
+      Particle p=_SoilParticles[particle];
+      BoundaryVaryings output=(BoundaryVaryings)0; output.particle=particle;
+      float3 world, normal;
+      if(vertex<3) {
+        world=vertex==0 ? patch.a.xyz : vertex==1 ? patch.b.xyz : patch.c.xyz;
+        normal=normalize(cross(patch.b.xyz-patch.a.xyz,patch.c.xyz-patch.a.xyz));
+      }
+      else {
+        uint edge=(vertex-3)/6, local=(vertex-3)%6, corner=local%3;
+        float3 a=p.position, b=edge==0 ? patch.a.xyz : edge==1 ? patch.b.xyz : patch.c.xyz;
+        float3 c=edge==0 ? patch.b.xyz : edge==1 ? patch.c.xyz : patch.a.xyz;
+        float3 e=b-a, f=c-a, crossEF=cross(e,f);
+        float ee=dot(e,e), ef=dot(e,f), ff=dot(f,f), determinant=dot(crossEF,crossEF);
+        if(determinant<=max(ee*ff*1e-10,1e-30)) { output.positionCS=float4(2,2,0,1);return output; }
+        float3 baseNormal=p.radius*((ff-ef)*e+(ee-ef)*f)/determinant;
+        float remaining=1-dot(baseNormal,baseNormal);
+        if(remaining<=1e-8) { output.positionCS=float4(2,2,0,1);return output; }
+        normal=baseNormal+(local<3 ? 1 : -1)*sqrt(remaining/determinant)*crossEF;
+        world=corner==0 ? a+p.radius*normal : corner==1 ? b : c;
+      }
+      output.eye=mul(_SoilView,float4(world,1)).xyz;
+      output.positionCS=mul(_SoilProjection,float4(output.eye,1)); output.normalWS=normal;
+      return output;
+    }
+    InputOutput BoundaryFragment(BoundaryVaryings input)
+    {
+      Particle p=_SoilParticles[input.particle];
+      float3 world=mul(_SoilInverseView,float4(input.eye,1)).xyz;
+      clip(SoilBoundaryClearance(world,input.particle));
+      float3 normal=normalize(input.normalWS);
+      return MakeInput(input.positionCS.xy*_SoilSize.zw,input.eye,normal,p.radius,p.color,p.material,-input.eye.z,
+                       ParticleTexture(world,normal,p.position,p.rotation));
     }
 
     AttributesOutput FilterFragment(FullscreenVaryings input)
@@ -536,6 +591,15 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       HLSLPROGRAM
       #pragma vertex FaceVertex
       #pragma fragment FaceFragment
+      ENDHLSL
+    }
+    Pass
+    {
+      Name "BoundaryAdhesion"
+      ZWrite On ZTest LEqual
+      HLSLPROGRAM
+      #pragma vertex BoundaryVertex
+      #pragma fragment BoundaryFragment
       ENDHLSL
     }
   }

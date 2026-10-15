@@ -155,12 +155,18 @@ namespace AGXUnity.Rendering.URP
             builder.UseBuffer( graph.ImportBuffer( renderer.SurfaceBuffer ) );
             if ( renderer.BridgeCount > 0 ) builder.UseBuffer( graph.ImportBuffer( renderer.BridgeBuffer ) );
             if ( renderer.FaceCount > 0 ) builder.UseBuffer( graph.ImportBuffer( renderer.FaceBuffer ) );
+            builder.UseBuffer( graph.ImportBuffer( renderer.Boundaries.ContactBuffer ) );
+            builder.UseBuffer( graph.ImportBuffer( renderer.Boundaries.ShapeBuffer ) );
+            builder.UseBuffer( graph.ImportBuffer( renderer.Boundaries.NodeBuffer ) );
+            builder.UseBuffer( graph.ImportBuffer( renderer.Boundaries.TriangleBuffer ) );
+            builder.UseBuffer( graph.ImportBuffer( renderer.Boundaries.PatchBuffer ) );
             WriteTargets( builder, raw );
             builder.SetRenderAttachmentDepth( depth, AccessFlags.Write );
             builder.SetRenderFunc( static (PassData d, RasterGraphContext c) => {
               Configure( d );
               d.Properties.SetTexture( "_SoilSceneDepth", d.SceneDepth );
               d.Properties.SetBuffer( "_SoilParticles", d.Renderer.SurfaceBuffer );
+              d.Renderer.Boundaries.Bind( d.Properties );
               if ( d.Pass == 0 )
                 c.cmd.DrawProcedural( Matrix4x4.identity, d.Material, 0, MeshTopology.Triangles, 6, d.Renderer.SurfaceCount, d.Properties );
               else
@@ -173,6 +179,8 @@ namespace AGXUnity.Rendering.URP
                 d.Properties.SetBuffer( "_SoilFaces", d.Renderer.FaceBuffer );
                 c.cmd.DrawProcedural( Matrix4x4.identity, d.Material, 6, MeshTopology.Triangles, 6, d.Renderer.FaceCount, d.Properties );
               }
+              if ( d.Renderer.Boundaries.PatchCount > 0 )
+                c.cmd.DrawProcedural( Matrix4x4.identity, d.Material, 7, MeshTopology.Triangles, 21, d.Renderer.Boundaries.PatchCount, d.Properties );
             } );
           }
           var horizontal = Filter( graph, renderer, raw, resources.cameraDepthTexture, projection, view, size, Vector2.right );

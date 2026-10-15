@@ -82,7 +82,9 @@ Burst path uses persistent buffers and validates cached indices before ID lookup
 The faces support unequal radii and individual-rock point anchors, and retain
 their planar depth while smoothing normals and native color. Spline-shaped dips
 are not currently added. This fills gaps between nearby
-particles without extending beyond their convex outer envelope. An isolated
+particles without extending beyond their convex outer envelope. Boundary adhesion
+can additionally extend the rendered soil to a supported collision-surface footprint.
+An isolated
 particle keeps exactly the same size at every support scale. Individually rendered
 rocks contribute **point anchors at their centers** rather than full spheres.
 Nearby soil connects to those points, leaving the rocks protruding through the
@@ -99,6 +101,61 @@ Depth smoothing is clamped to the original front/back interval of each sphere or
 bridge. Mesh input and tangent triangles retain their front depth while smoothing color and normals.
 At reduced reconstruction resolution, upsampling still approximates boundaries
 within a reconstruction pixel; use full resolution for close contact inspection.
+
+## Boundary adhesion
+
+**Boundary Adhesion** is enabled by default. Nearby soil gains small footprints on
+collision surfaces, with tangent faces joining those footprints back to the
+physical spheres. This fills the visual gaps against ground and bucket walls.
+The same boundary data clips spheres, particle meshes, bridges and faces against
+solids. This is a visual adjustment; particle positions, collision radii, forces
+and native collision geometry are not changed.
+
+Supported sources are AGX **Box**, **Plane**, and **Mesh**, including precomputed
+collision meshes, plus AGX height fields/deformable terrains and Unity collision
+terrains. Other AGX primitives and arbitrary visual MeshRenderers are not currently
+discovered. Leave **Boundary Shapes** empty for automatic discovery, or populate
+it to restrict adhesion to particular AGX shapes. Disabled shapes, disabled
+collisions and sensors are excluded. Automatic discovery does not reproduce all
+AGX collision-group/material filtering; use the explicit selection where needed.
+
+- **Boundary Gap** defaults to `0.25`: the sphere may be up to 25% of its radius
+  away from the boundary before a new attachment forms.
+- **Boundary Spread** defaults to `1`: the footprint is approximately one particle
+  radius wide in each tangent direction. Lower it to reduce spreading.
+- Existing attachments tolerate an additional 15% of particle radius before
+  release. Cached footprints follow the collider's rigid transform and refresh
+  when relative particle movement exceeds 1% of its radius. Particle motion itself
+  is always rendered at its current position.
+
+Each particle considers at most four nearby boundary pieces. Mesh footprints can
+follow up to three substantially different nearby face normals, allowing a bucket
+floor and walls to contribute even when they belong to one mesh. Footprints are
+clipped from the actual triangles, rather than extended tangent planes. A small
+outward offset (0.5% of particle radius, minimum 0.1 mm) avoids coincident surfaces.
+Boundary-constrained input retains its depth during smoothing; normals and native
+color can still smooth and texture detail is preserved.
+
+Mesh BVHs are cached in rigid local coordinates. Terrain caches cover only nearby
+8x8-cell tiles and refresh on terrain height/hole notifications. Uniform planar
+terrain tiles use a cheap plane query on the GPU. Source discovery is throttled
+to once per second; moving existing sources are checked once per rendered frame,
+including when no new soil snapshot is available. Footprint and GPU buffers are
+reused. Profile **AGX Soil.BoundaryPreparation** inside **AGX Soil.PackUpload** to
+see CPU preparation cost.
+The existing optional Burst assembly batches proximity queries in parallel over
+copied BVHs; unchanged triangle data stays in persistent native buffers. AGX
+objects are never accessed from worker jobs. A managed query fallback is available.
+
+Call `InvalidateBoundaryCache()` after replacing or procedurally editing collision
+mesh data, or changing terrain data assets/resolution/size. Changing ordinary
+terrain heights and holes is handled automatically. Clean mesh winding is required
+for open surfaces; closed meshes are classified from their topology and orientation.
+The clipping uses local nearest-surface sidedness, not a robust volumetric SDF for
+arbitrary overlapping/nonmanifold triangle soups. Precomputed collision pieces
+are cached separately. Disable Boundary Adhesion to restore the particle-only path.
+Conformance follows the collision representation, which can differ from a visible
+mesh when collision reduction or convex decomposition is used.
 
 `PostStepForward` only marks the provider dirty. Before a relevant camera renders,
 the provider reads the latest completed simulation state; multiple physics steps

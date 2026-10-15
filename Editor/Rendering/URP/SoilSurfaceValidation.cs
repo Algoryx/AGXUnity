@@ -195,6 +195,12 @@ namespace AGXUnityEditor.Rendering
         Require( renderer.FaceCount > 0 && renderer.FaceBuffer != null, "Native soil contains filled local faces" );
         Record( $"Local tangent faces: {renderer.FaceCount}; backend={renderer.FaceBackend}; buffer capacity={renderer.FaceBuffer.count}" );
         Require( renderer.IndividualCount == 0, "Fraction zero excludes no particles" );
+        Record( $"Boundary adhesion: colliders={renderer.Boundaries.ColliderCount}; attached={renderer.Boundaries.AttachedParticleCount}; patches={renderer.Boundaries.PatchCount}; queries={renderer.Boundaries.QueryCount}" );
+        Require( renderer.Boundaries.AttachedParticleCount > 0 && renderer.Boundaries.PatchCount > 0, "Soil conforms to nearby collision terrain" );
+        renderer.BoundaryAdhesion = false; Capture( camera, request, target, "boundary-disabled" );
+        Require( renderer.Boundaries.PatchCount == 0 && !renderer.Boundaries.Enabled, "Boundary adhesion can be disabled at runtime" );
+        renderer.BoundaryAdhesion = true; Capture( camera, request, target, "boundary-restored" );
+        Require( renderer.Boundaries.PatchCount > 0, "Boundary adhesion restores at runtime" );
         float hysteresis = renderer.ConnectionHysteresis;
         renderer.ConnectionHysteresis = 0;
         Capture( camera, request, target, "hysteresis-disabled" );
@@ -252,7 +258,8 @@ namespace AGXUnityEditor.Rendering
         renderer.Snapshot.enabled = true; simulation.DoStep();
         renderer.enabled = false;
         Require( renderer.SurfaceBuffer == null && renderer.BridgeBuffer == null && renderer.FaceBuffer == null &&
-          renderer.BridgeCount == 0 && renderer.FaceCount == 0, "Disable releases particle, bridge and face buffers" );
+          renderer.BridgeCount == 0 && renderer.FaceCount == 0 && renderer.Boundaries.ContactBuffer == null && renderer.Boundaries.NodeBuffer == null &&
+          renderer.Boundaries.ShapeBuffer == null && renderer.Boundaries.TriangleBuffer == null && renderer.Boundaries.PatchBuffer == null, "Disable releases particle, bridge, face and boundary buffers" );
         renderer.enabled = true;
         Capture( camera, request, target, "reenabled" );
         Require( renderer.SurfaceCount > 0 && renderer.SurfaceBuffer != null, "Re-enable recreates resources" );
@@ -267,6 +274,16 @@ namespace AGXUnityEditor.Rendering
         Record( $"Acquisition on identical native state: scalar={scalarMilliseconds:F4} ms; optimized={captureMilliseconds:F4} ms; providers={scalarProviders}; records={scalarRecords}; speedup={scalarMilliseconds/Math.Max( captureMilliseconds, 1e-6 ):F2}x. All records match." );
         using var bridges = new SoilParticleBridges();
         var packed = (TerrainParticleSnapshotProvider.Particle[])typeof( TerrainParticleSurfaceRenderer ).GetField( "m_packed", BindingFlags.Instance | BindingFlags.NonPublic ).GetValue( renderer );
+        using ( var managedBoundaries = new SoilSurfaceBoundaries( false ) ) using ( var burstBoundaries = new SoilSurfaceBoundaries() ) {
+          var region = new Bounds( packed[0].Position, Vector3.one*100 );
+          managedBoundaries.Refresh( renderer.BoundaryShapes, region, true ); burstBoundaries.Refresh( renderer.BoundaryShapes, region, true );
+          double managedBoundaryTime = Measure( () => managedBoundaries.Build( packed, renderer.SurfaceCount, renderer.UploadedParticleCount, true,
+            renderer.BoundaryGap, renderer.BoundarySpread, renderer.SupportRadiusScale, false ), 30, out _ );
+          double burstBoundaryTime = Measure( () => burstBoundaries.Build( packed, renderer.SurfaceCount, renderer.UploadedParticleCount, true,
+            renderer.BoundaryGap, renderer.BoundarySpread, renderer.SupportRadiusScale, false ), 30, out _ );
+          Require( managedBoundaries.AttachedParticleCount == burstBoundaries.AttachedParticleCount, "Managed/Burst boundary queries attach the same native particles" );
+          Record( $"Boundary CPU on identical native snapshot: managed={managedBoundaryTime:F4} ms; {burstBoundaries.QueryBackend}={burstBoundaryTime:F4} ms; attached={burstBoundaries.AttachedParticleCount}; patches={burstBoundaries.PatchCount}; queries={burstBoundaries.QueryCount}; excludes upload/draw." );
+        }
         double bridgeMilliseconds = Measure( () => bridges.Build( packed, renderer.UploadedParticleCount, renderer.SupportRadiusScale ), 100, out long bridgeBytes );
         using var managedBridges = new SoilParticleBridges( false );
         double managedMilliseconds = Measure( () => managedBridges.Build( packed, renderer.UploadedParticleCount, renderer.SupportRadiusScale ), 30, out _ );
@@ -286,6 +303,7 @@ namespace AGXUnityEditor.Rendering
         Record( $"GPU particle/anchor buffer: {renderer.SurfaceBuffer?.count * 64} B; uploaded={renderer.UploadedParticleCount * 64} B/update." );
         Record( $"GPU bridge buffer: {renderer.BridgeBuffer?.count * 8} B; bridges={renderer.BridgeCount}; uploaded={renderer.BridgeCount * 8} B/update." );
         Record( $"GPU face buffer: {renderer.FaceBuffer?.count * 12} B; triangles={renderer.FaceCount}; uploaded={renderer.FaceCount * 12} B/update." );
+        Record( $"Boundary preparation: backend={renderer.Boundaries.QueryBackend}; colliders={renderer.Boundaries.ColliderCount}; attached={renderer.Boundaries.AttachedParticleCount}; patches={renderer.Boundaries.PatchCount}; queries={renderer.Boundaries.QueryCount}; patch buffer={renderer.Boundaries.PatchBuffer?.count*48} B." );
         Record( "960x640 reconstruction attachment working set: approximately 105.7 MB/terrain (3 attribute sets including half-precision texture color, plus input depth); half resolution approximately 26.4 MB. Render Graph may alias transient allocations. Full-precision texture-color fallback uses 120.4 MB / 30.1 MB." );
         foreach ( var message in ShaderUtil.GetShaderMessages( shader ) ) Record( "Shader after draws: " + message.message );
         Require( s_errors == 0, "No runtime or Render Graph errors" );
@@ -330,6 +348,8 @@ namespace AGXUnityEditor.Rendering
         s_perfTarget.Release(); Object.DestroyImmediate( s_perfTarget );
         s_perfRenderer.enabled = false;
         Require( s_perfRenderer.SurfaceBuffer == null && s_perfRenderer.BridgeBuffer == null && s_perfRenderer.FaceBuffer == null &&
+          s_perfRenderer.Boundaries.ContactBuffer == null && s_perfRenderer.Boundaries.NodeBuffer == null && s_perfRenderer.Boundaries.ShapeBuffer == null &&
+          s_perfRenderer.Boundaries.TriangleBuffer == null && s_perfRenderer.Boundaries.PatchBuffer == null &&
           !TerrainParticleSurfaceRenderer.Active.Contains( s_perfRenderer ), "Disable releases GPU buffers and registry entry" );
         Require( s_errors == 0, "No errors during profiling" );
         Record( "Integration checks completed." );
