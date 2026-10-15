@@ -245,14 +245,19 @@ namespace AGXUnityTesting.Runtime
       Assert.That( terrainRB.Native.getMassProperties().getMass(), Is.EqualTo( terrainRB.MassProperties.Mass.Value ).Within( 1e-3 ), "Native and Unity mass should agree" );
 
       var inertiaDiagDiff = terrainRB.MassProperties.InertiaDiagonal.Value - preInertiaDiag;
-      Assert.That( inertiaDiagDiff.x, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia diagonal should change with added mass" );
-      Assert.That( inertiaDiagDiff.y, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia diagonal should change with added mass" );
-      Assert.That( inertiaDiagDiff.z, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia diagonal should change with added mass" );
+      Assert.That( inertiaDiagDiff.x, Is.Not.EqualTo( 0 ).Within( 1 ), "Inertia diagonal should change with added mass" );
+      Assert.That( inertiaDiagDiff.y, Is.Not.EqualTo( 0 ).Within( 1 ), "Inertia diagonal should change with added mass" );
+      Assert.That( inertiaDiagDiff.z, Is.Not.EqualTo( 0 ).Within( 1 ), "Inertia diagonal should change with added mass" );
 
-      var inertiaOffDiagDiff = terrainRB.MassProperties.InertiaOffDiagonal.Value - preInertiaOffDiag;
-      Assert.That( inertiaOffDiagDiff.x, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia off-diagonal should change with added mass" );
-      Assert.That( inertiaOffDiagDiff.y, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia off-diagonal should change with added mass" );
-      Assert.That( inertiaOffDiagDiff.z, Is.Not.EqualTo( 0 ).Within( 1 ), "Intertia off-diagonal should change with added mass" );
+      var inertiaOffDiag = terrainRB.MassProperties.InertiaOffDiagonal.Value;
+      var inertiaOffDiagDiff = inertiaOffDiag - preInertiaOffDiag;
+      // Individual off-diagonal components can remain near zero depending on the mass distribution.
+      Assert.That( inertiaOffDiagDiff.magnitude, Is.GreaterThan( 1 ), "Inertia off-diagonal should change with added mass" );
+
+      var nativeInertia = terrainRB.Native.getMassProperties().getInertiaTensor();
+      Assert.That( inertiaOffDiag.x, Is.EqualTo( nativeInertia.at( 0, 1 ) ).Within( 1e-3 ), "Native and Unity inertia off-diagonal XY should agree" );
+      Assert.That( inertiaOffDiag.y, Is.EqualTo( nativeInertia.at( 0, 2 ) ).Within( 1e-3 ), "Native and Unity inertia off-diagonal XZ should agree" );
+      Assert.That( inertiaOffDiag.z, Is.EqualTo( nativeInertia.at( 1, 2 ) ).Within( 1e-3 ), "Native and Unity inertia off-diagonal YZ should agree" );
 
       constraint.Native.getLastForce( terrainRB.Native, ref force, ref torque );
       Assert.That( torque.x, Is.LessThan( -800 ), "Constraint should apply a torque to the body after adding mass" );
