@@ -57,7 +57,7 @@ namespace AGXUnity.IO.OpenPLX
         else if ( obj is openplx.Physics.Optics.Material mat )
           return VisualsMapper.MapVisualMaterial( mat );
         else
-          Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
+          Data.ReportError( new UnmappableRootModelError( obj ) );
       }
       catch ( System.Exception e ) {
         Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
@@ -138,12 +138,12 @@ namespace AGXUnity.IO.OpenPLX
     {
       if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
         var errorData = BaseError.CreateErrorData( obj );
-        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        Data.ReportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
         return false;
       }
 
       if ( !System.IO.File.Exists( path ) ) {
-        Data.ErrorReporter.reportError( new FileDoesNotExistError( obj, path ) );
+        Data.ReportError( new FileDoesNotExistError( obj, path ) );
         return false;
       }
 
@@ -249,7 +249,7 @@ namespace AGXUnity.IO.OpenPLX
 #endif
       if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        Data.ReportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
       }
       else
         meshComp.AddSourceObject( mesh );
@@ -431,7 +431,7 @@ namespace AGXUnity.IO.OpenPLX
 
       else if ( inertia.mass() < 0.0 ) {
         var errorData = BaseError.CreateErrorData(inertia);
-        Data.ErrorReporter.reportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
+        Data.ReportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
         return false;
       }
       var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
@@ -680,7 +680,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
           if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
-            Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
+            Data.ReportError( new RigidBodyOwnerNotSystemError( body ) );
             continue;
           }
 

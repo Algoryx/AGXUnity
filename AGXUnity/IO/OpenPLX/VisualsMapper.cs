@@ -226,7 +226,7 @@ namespace AGXUnity.IO.OpenPLX
 
       if ( swizzle.Any( c => !allowedSwizzles.Contains( c ) ) ) {
         var errorData = BaseError.CreateErrorData(oTex);
-        Data.ErrorReporter.reportError( new agxopenplx.InvalidSwizzle( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, swizzle ) );
+        Data.ReportError( new agxopenplx.InvalidSwizzle( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, swizzle ) );
         return;
       }
       else {
@@ -407,7 +407,7 @@ namespace AGXUnity.IO.OpenPLX
               alphaOTex.getDynamic( "offset_v" ).asReal() == colorOTex.getDynamic( "offset_v" ).asReal();
 
             if ( !equal ) {
-              Data.ErrorReporter.reportError( new IncompatibleSamplersError( band ) );
+              Data.ReportError( new IncompatibleSamplersError( band ) );
               return null;
             }
           }
@@ -592,7 +592,7 @@ namespace AGXUnity.IO.OpenPLX
 
       if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        Data.ReportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
       }
       else
         mf.mesh = mesh;
@@ -627,7 +627,7 @@ namespace AGXUnity.IO.OpenPLX
           var vertexBytes = Convert.FromBase64String(attr.data());
           if ( vertexBytes.Length / sizeof( float ) / 3.0f != numVertices ) {
             var errorData = BaseError.CreateErrorData(attr);
-            Data.ErrorReporter.reportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
+            Data.ReportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
             continue;
           }
 
@@ -647,7 +647,7 @@ namespace AGXUnity.IO.OpenPLX
           var normalBytes = Convert.FromBase64String(attr.data());
           if ( normalBytes.Length / sizeof( float ) / 3.0f != numVertices ) {
             var errorData = BaseError.CreateErrorData(attr);
-            Data.ErrorReporter.reportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
+            Data.ReportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
             continue;
           }
           var normals = new Vector3[numVertices];
@@ -662,7 +662,7 @@ namespace AGXUnity.IO.OpenPLX
           var uvBytes = Convert.FromBase64String(attr.data());
           if ( uvBytes.Length / sizeof( float ) / 3.0f != numVertices ) {
             var errorData = BaseError.CreateErrorData(attr);
-            Data.ErrorReporter.reportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
+            Data.ReportError( new agxopenplx.MeshAttributeVertexCountMismatch( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom, attr ) );
             continue;
           }
           var uvs = new Vector2[numVertices];
@@ -678,7 +678,7 @@ namespace AGXUnity.IO.OpenPLX
 
       if ( !hasPositions || indexBytes.Length / sizeof( Int32 ) != numIndices ) {
         var errorData = BaseError.CreateErrorData(objGeom);
-        Data.ErrorReporter.reportError( new agxopenplx.InvalidBase64Mesh( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom ) );
+        Data.ReportError( new agxopenplx.InvalidBase64Mesh( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom ) );
       }
 
       var indices = new int[numIndices];

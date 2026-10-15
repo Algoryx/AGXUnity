@@ -120,6 +120,8 @@ namespace AGXUnity.IO.OpenPLX
       else
         ErrorCallback?.Invoke();
 
+      // Native error messages may call back into managed errors retained by the mapper.
+      GC.KeepAlive( mapper );
       GC.Collect();
       return importedObject;
     }

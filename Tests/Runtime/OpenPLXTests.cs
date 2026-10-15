@@ -676,10 +676,36 @@ namespace AGXUnityTesting.Runtime
     [Test]
     public void TestDoubleDistanceDistortionLidarError()
     {
+      LogAssert.Expect( LogType.Error, new Regex( ".*distance distortion.*" ) );
+
       var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(
         TestDataFolder + "/simple_lidar.openplx", default, null, "DoubleDistanceDistortionLidar" );
+    }
 
-      LogAssert.Expect( LogType.Error, new Regex( ".*distance distortion.*" ) );
+    [Test]
+    public void TestMapperErrorsSurviveGarbageCollection()
+    {
+      var data = new MapperData();
+      data.ErrorReporter = new openplx.ErrorReporter();
+      var errorReference = ReportErrorForGarbageCollectionTest( data );
+
+      System.GC.Collect();
+      System.GC.WaitForPendingFinalizers();
+      System.GC.Collect();
+
+      Assert.That( errorReference.IsAlive, Is.True, "Managed error callbacks must stay alive while the mapper retains native errors" );
+      var errors = data.ErrorReporter.getErrors();
+      Assert.That( errors.Count, Is.EqualTo( 1 ) );
+      Assert.That( errors[ 0 ].getMessage( true ), Does.Contain( "gc-test.openplx" ) );
+      System.GC.KeepAlive( data );
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl( System.Runtime.CompilerServices.MethodImplOptions.NoInlining )]
+    private static System.WeakReference ReportErrorForGarbageCollectionTest( MapperData data )
+    {
+      var error = new FileDoesNotExistError( "gc-test.openplx" );
+      data.ReportError( error );
+      return new System.WeakReference( error );
     }
 
     [Test]
