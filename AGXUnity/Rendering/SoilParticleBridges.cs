@@ -18,8 +18,13 @@ namespace AGXUnity.Rendering
     private IAccelerator m_accelerator;
     private readonly bool m_allowAcceleration;
     public string Backend => m_accelerator == null ? "Managed" : "Burst Jobs";
-    public SoilParticleBridges( bool allowAcceleration = true ) { m_allowAcceleration = allowAcceleration; }
-    public void Dispose() { m_accelerator?.Dispose(); m_accelerator = null; }
+    public SoilParticleBridges( bool allowAcceleration = true ) {
+      m_allowAcceleration = allowAcceleration;
+      m_history = new SoilConnectionHistory( allowAcceleration );
+    }
+    public void Dispose() { m_accelerator?.Dispose(); m_accelerator = null; m_history.Dispose(); }
+    private readonly SoilConnectionHistory m_history;
+    public void ClearHistory() => m_history.Clear();
     [StructLayout( LayoutKind.Sequential )]
     public struct Pair { public uint A, B; }
     // GPU records retain the rock's physical radius for neighbor search, but its
@@ -38,7 +43,16 @@ namespace AGXUnity.Rendering
     private int[] m_next = new int[1024];
     private int[] m_levels = new int[1024];
 
-    public void Build( TerrainParticleSnapshotProvider.Particle[] particles, int count, float supportScale )
+    public void Build( TerrainParticleSnapshotProvider.Particle[] particles, int count, float supportScale, float hysteresis = 0 )
+    {
+      BuildNeighbors( particles, count, supportScale );
+      var pairs = Pairs;
+      int pairCount = Count;
+      m_history.Apply( particles, count, supportScale, hysteresis, ref pairs, ref pairCount );
+      Pairs = pairs; Count = pairCount;
+    }
+
+    private void BuildNeighbors( TerrainParticleSnapshotProvider.Particle[] particles, int count, float supportScale )
     {
       Count = 0;
       CandidateCount = 0;

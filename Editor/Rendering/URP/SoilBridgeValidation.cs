@@ -42,7 +42,25 @@ namespace AGXUnityEditor.Rendering
         Capture( shader, anchored, 1.5f, false, true, "rock-center-anchor", true );
         Capture( shader, anchored, 1.5f, true, true, "rock-center-perspective", true );
         Capture( shader, equal, 1.5f, true, false, "near-plane", false, true );
+        var triangle = new[] { Particle( new Vector3( -1.2f, -0.8f, 0 ), 0.2f ),
+                               Particle( new Vector3( 1.2f, -0.8f, 0 ), 0.2f ),
+                               Particle( new Vector3( 0, 1.6f, 0 ), 0.2f ) };
+        CheckFlatCenter( Capture( shader, triangle, 8, false, false, "triangle-flat-face", true ), 4.8f );
+        CheckFlatCenter( Capture( shader, triangle, 8, false, true, "triangle-flat-smoothed", true ), 4.8f );
+        var tetrahedron = new[] { triangle[0], triangle[1], triangle[2], Particle( new Vector3( 0, 0, 2 ), 0.2f ) };
+        CheckFlatCenter( Capture( shader, tetrahedron, 8, false, true, "tetrahedron-flat-face", true ), 4.8f );
+        Capture( shader, tetrahedron, 8, true, true, "tetrahedron-perspective", true );
+        Capture( shader, tetrahedron, 8, false, true, "tetrahedron-reverse", true,
+          cameraRotation: Quaternion.Euler( 0, 180, 0 ) );
+        Capture( shader, tetrahedron, 8, true, false, "tetrahedron-near-plane", false, true );
+        var unequalFace = (TerrainParticleSnapshotProvider.Particle[])triangle.Clone();
+        unequalFace[1].Radius = 0.35f;
+        Capture( shader, unequalFace, 8, true, true, "unequal-face", true );
+        unequalFace[2].RenderingEligible = SoilParticleBridges.CenterAnchor;
+        Capture( shader, unequalFace, 8, true, true, "face-center-anchor", true );
         var textureBaseline = Capture( shader, equal, 1.5f, false, true, "texture-baseline", true, readTexture: true );
+        CompareTexture( Capture( shader, equal, 1.5f, false, false, "texture-unfiltered", true, readTexture: true ),
+          textureBaseline, "maximum smoothing preserves texture detail", 0.00001f );
         var moved = (TerrainParticleSnapshotProvider.Particle[])equal.Clone();
         var translation = new Vector3( 0.37f, 0.19f, 0.43f );
         for ( int i = 0; i < moved.Length; ++i ) moved[i].Position += translation;
@@ -53,6 +71,19 @@ namespace AGXUnityEditor.Rendering
         for ( int i = 0; i < rotated.Length; ++i ) { rotated[i].Position = rotation*rotated[i].Position; rotated[i].Rotation = rotation; }
         CompareTexture( textureBaseline, Capture( shader, rotated, 1.5f, false, true, "texture-rotated", true,
           readTexture: true, cameraRotation: rotation ), "rotation" );
+        var faceTexture = Capture( shader, tetrahedron, 8, false, true, "face-texture-baseline", true, readTexture: true );
+        CompareTexture( Capture( shader, tetrahedron, 8, false, false, "face-texture-unfiltered", true, readTexture: true ),
+          faceTexture, "flat face smoothing preserves texture detail", 0.00001f );
+        var movedFaces = (TerrainParticleSnapshotProvider.Particle[])tetrahedron.Clone();
+        for ( int i = 0; i < movedFaces.Length; ++i ) movedFaces[i].Position += translation;
+        CompareTexture( faceTexture, Capture( shader, movedFaces, 8, false, true, "face-texture-translated", true,
+          readTexture: true, cameraOffset: translation ), "face translation" );
+        for ( int i = 0; i < movedFaces.Length; ++i ) {
+          movedFaces[i].Position = rotation*tetrahedron[i].Position; movedFaces[i].Rotation = rotation;
+        }
+        CompareTexture( faceTexture, Capture( shader, movedFaces, 8, false, true, "face-texture-rotated", true,
+          readTexture: true, cameraRotation: rotation ), "face rotation" );
+        BenchmarkFaces();
         var compiledMaterial = new Material( shader );
         try {
           for ( int pass = 0; pass < compiledMaterial.passCount; ++pass ) ShaderUtil.CompilePass( compiledMaterial, pass, true );
@@ -70,6 +101,53 @@ namespace AGXUnityEditor.Rendering
       File.WriteAllLines( Path.Combine( directory, "bridges.txt" ), s_results );
       foreach ( var result in s_results ) Debug.Log( result );
       EditorApplication.Exit( exit );
+    }
+
+    private static void BenchmarkFaces()
+    {
+      var particles = new TerrainParticleSnapshotProvider.Particle[8192];
+      for ( int i = 0; i < particles.Length; ++i ) {
+        particles[i].Position = new Vector3( (i%32)*0.095f, ((i/32)%8)*0.095f, (i/256)*0.095f );
+        particles[i].Id = (uint)(i+1);
+        particles[i].Radius = 0.04f+0.04f*(i%7)/6;
+        particles[i].RenderingEligible = SoilParticleSelection.IsIndividualParticle( (uint)i, 0.05 ) ? SoilParticleBridges.CenterAnchor : 1;
+      }
+      using var bridges = new SoilParticleBridges();
+      bridges.Build( particles, particles.Length, 1.5f );
+      using var faces = new SoilParticleFaces();
+      for ( int i = 0; i < 5; ++i ) faces.Build( particles.Length, bridges.Pairs, bridges.Count );
+      var timer = System.Diagnostics.Stopwatch.StartNew();
+      for ( int i = 0; i < 30; ++i ) faces.Build( particles.Length, bridges.Pairs, bridges.Count );
+      timer.Stop();
+      using var managed = new SoilParticleFaces( false );
+      managed.Build( particles.Length, bridges.Pairs, bridges.Count );
+      if ( managed.Count != faces.Count ) throw new Exception( "Managed/Burst face count mismatch" );
+      for ( int i = 0; i < faces.Count; ++i ) {
+        var a = managed.Faces[i]; var b = faces.Faces[i];
+        if ( a.A != b.A || a.B != b.B || a.C != b.C ) throw new Exception( "Managed/Burst face mismatch at " + i );
+      }
+      s_results.Add( $"Face build ({faces.Backend}): 8192 particles, {bridges.Count} pairs, {faces.Count} triangles, {timer.Elapsed.TotalMilliseconds/30:F4} ms CPU; exact managed match; GPU cost not measured" );
+      using var stable = new SoilParticleBridges();
+      stable.Build( particles, particles.Length, 1.5f, 0.05f );
+      using var managedStable = new SoilParticleBridges( false );
+      managedStable.Build( particles, particles.Length, 1.5f, 0.05f );
+      // Expand across several join thresholds while keeping previously joined
+      // edges within the release radius. Both backends must retain the same set.
+      for ( int i = 0; i < particles.Length; ++i ) particles[i].Position *= 1.01f;
+      for ( int i = 0; i < 5; ++i ) { bridges.Build( particles, particles.Length, 1.5f ); stable.Build( particles, particles.Length, 1.5f, 0.05f ); }
+      timer.Restart();
+      for ( int i = 0; i < 50; ++i ) bridges.Build( particles, particles.Length, 1.5f );
+      double withoutHistory = timer.Elapsed.TotalMilliseconds/50;
+      timer.Restart();
+      for ( int i = 0; i < 50; ++i ) stable.Build( particles, particles.Length, 1.5f, 0.05f );
+      double withHistory = timer.Elapsed.TotalMilliseconds/50;
+      managedStable.Build( particles, particles.Length, 1.5f, 0.05f );
+      var expected = new HashSet<ulong>();
+      for ( int i = 0; i < managedStable.Count; ++i ) expected.Add( ((ulong)managedStable.Pairs[i].A<<32)|managedStable.Pairs[i].B );
+      if ( expected.Count != stable.Count || stable.Count <= bridges.Count ) throw new Exception( "Hysteresis did not retain the expected dense fringe" );
+      for ( int i = 0; i < stable.Count; ++i )
+        if ( !expected.Remove( ((ulong)stable.Pairs[i].A<<32)|stable.Pairs[i].B ) ) throw new Exception( "Managed/Burst hysteresis mismatch or duplicate" );
+      s_results.Add( $"Hysteresis ({stable.Backend}): no history={withoutHistory:F4} ms; 5% history={withHistory:F4} ms; additional={withHistory-withoutHistory:F4} ms; fresh={bridges.Count}; retained={stable.Count}; exact managed match" );
     }
 
     private static TerrainParticleSnapshotProvider.Particle Particle( Vector3 position, float radius ) =>
@@ -95,6 +173,10 @@ namespace AGXUnityEditor.Rendering
       if ( builder.Count > 0 ) bridgeBuffer.SetData( builder.Pairs, 0, 0, builder.Count );
       var textures = new List<RenderTexture>();
       var raw = Targets( textures );
+      using var faces = new SoilParticleFaces();
+      faces.Build( particles.Length, builder.Pairs, builder.Count );
+      using var faceBuffer = new GraphicsBuffer( GraphicsBuffer.Target.Structured, Mathf.Max( 1, faces.Count ), 12 );
+      if ( faces.Count > 0 ) faceBuffer.SetData( faces.Faces, 0, 0, faces.Count );
       var depth = new RenderTexture( Size, Size, 24, RenderTextureFormat.Depth ); depth.Create(); textures.Add( depth );
       var properties = new MaterialPropertyBlock();
       properties.SetMatrix( "_SoilProjection", projection ); properties.SetMatrix( "_SoilInverseProjection", projection.inverse );
@@ -117,6 +199,10 @@ namespace AGXUnityEditor.Rendering
         while ( surfaceCount < particles.Length && particles[surfaceCount].RenderingEligible != SoilParticleBridges.CenterAnchor ) ++surfaceCount;
         command.DrawProcedural( Matrix4x4.identity, material, 0, MeshTopology.Triangles, 6, surfaceCount, properties );
         if ( builder.Count > 0 ) command.DrawProcedural( Matrix4x4.identity, material, 5, MeshTopology.Triangles, 6, builder.Count, properties );
+        if ( faces.Count > 0 ) {
+          properties.SetBuffer( "_SoilFaces", faceBuffer );
+          command.DrawProcedural( Matrix4x4.identity, material, 6, MeshTopology.Triangles, 6, faces.Count, properties );
+        }
         Graphics.ExecuteCommandBuffer( command ); command.Clear();
         var output = raw;
         if ( smooth ) {
@@ -162,7 +248,7 @@ namespace AGXUnityEditor.Rendering
         }
         if ( visible == 0 ) throw new Exception( name + ": no particles rendered" );
         if ( expectBridge && (builder.Count == 0 || values[(Size/2)*Size+Size/2].a < 0.5f) ) throw new Exception( name + ": central gap was not bridged" );
-        s_results.Add( $"PASS {name}: {visible} covered pixels within physical hull; {builder.Count} bridges" );
+        s_results.Add( $"PASS {name}: {visible} covered pixels within physical hull; {builder.Count} bridges; {faces.Count} faces" );
         return readTexture ? Read( output[3] ) : values;
       }
       finally {
@@ -189,7 +275,18 @@ namespace AGXUnityEditor.Rendering
     }
     private static RenderTargetIdentifier[] Identifiers( RenderTexture[] textures ) =>
       new[] { new RenderTargetIdentifier( textures[0] ), new RenderTargetIdentifier( textures[1] ), new RenderTargetIdentifier( textures[2] ), new RenderTargetIdentifier( textures[3] ) };
-    private static void CompareTexture( Color[] baseline, Color[] moved, string motion )
+    private static void CheckFlatCenter( Color[] pixels, float depth )
+    {
+      // This patch lies far from every sphere and pair hull: tubes alone leave it empty.
+      for ( int y = Size/2-3; y <= Size/2+3; ++y )
+        for ( int x = Size/2-3; x <= Size/2+3; ++x ) {
+          var pixel = pixels[y*Size+x];
+          if ( pixel.a < 0.5f || Mathf.Abs( pixel.r-depth ) > 0.0001f )
+            throw new Exception( "Expected a filled planar face at the center, depth " + depth );
+        }
+      s_results.Add( "PASS 7x7 interior patch is filled and planar, including after smoothing" );
+    }
+    private static void CompareTexture( Color[] baseline, Color[] moved, string motion, float tolerance = 0.015f )
     {
       int covered = 0; float minimum = 1, maximum = 0;
       for ( int i = 0; i < baseline.Length; ++i ) {
@@ -197,10 +294,10 @@ namespace AGXUnityEditor.Rendering
         if ( baseline[i].a < 0.5f ) continue;
         ++covered; minimum = Mathf.Min( minimum, baseline[i].r ); maximum = Mathf.Max( maximum, baseline[i].r );
         var delta = baseline[i]-moved[i];
-        if ( Mathf.Abs( delta.r )+Mathf.Abs( delta.g )+Mathf.Abs( delta.b ) > 0.015f ) throw new Exception( motion + ": texture slid relative to particles at pixel " + i );
+        if ( Mathf.Abs( delta.r )+Mathf.Abs( delta.g )+Mathf.Abs( delta.b ) > tolerance ) throw new Exception( motion + ": texture changed at pixel " + i );
       }
       if ( covered == 0 || maximum-minimum < 0.1f ) throw new Exception( "Texture test is empty or uniform" );
-      s_results.Add( $"PASS texture follows particle {motion}: {covered} nonuniform pixels, including smoothed bridges" );
+      s_results.Add( $"PASS texture comparison ({motion}): {covered} nonuniform pixels, including bridges" );
     }
     private static Color[] Read( RenderTexture target )
     {

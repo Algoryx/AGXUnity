@@ -50,8 +50,9 @@ pixel-identical shading even when the base colors match.
 **Texture Mapping = Particle** (the default) samples in each particle's local
 frame, so the pattern follows its simulated translation and rotation. Bridges
 blend samples from their two endpoints, including individual-rock center anchors.
-Texture color is filtered with the surface attributes while native colors still
-control material-boundary rejection. Changing neighbors and deforming bridges can
+Smoothing filters depth, normals and native particle color while preserving the
+texture color at each pixel, so increasing it does not blur texture detail. Native
+colors still control material-boundary rejection. Changing neighbors and deforming bridges can
 crossfade patterns; this is not a persistent UV mesh. **Texture Mapping = World**
 retains the stationary world projection for matching static terrain patterns.
 
@@ -61,7 +62,26 @@ Support scale is a **neighbor connection distance**, not a size multiplier.
 Two surface particles of the same material connect when their center distance is
 at most `SupportRadiusScale * (radiusA + radiusB)`. Their physical spheres are
 joined by the external tangent envelope (a capsule for equal radii; a tangent
-frustum with spherical end caps for unequal radii). This fills gaps between nearby
+frustum with spherical end caps for unequal radii). Every triple of mutually
+connected particles also contributes its two flat, external tangent triangles.
+These fill the interiors between connections rather than leaving a framework of
+tubes. Four mutually neighboring particles in a tetrahedron form a closed convex
+shape with flat faces and rounded physical sphere edges. Connections stay local:
+each of the three edges must satisfy the radius rule and share a material.
+**Connection Hysteresis** defaults to `0.05`: new connections use the support
+distance, while existing connections release only beyond 105% of that distance.
+This prevents small movements around the threshold from repeatedly removing and
+recreating faces. Try `0.1` for more tolerance, or `0` for the original threshold.
+It changes connectivity, not particle radius. Once released, a connection must
+return inside the original support distance to form again.
+History follows native particle IDs through reordering, drops missing particles
+and invalid material/anchor connections, and clears on disable, empty snapshots,
+unsupported/ordinary rendering, or connection-setting changes. The retention pass
+checks old edges only; it does not widen the spatial neighbor search. The optional
+Burst path uses persistent buffers and validates cached indices before ID lookup.
+The faces support unequal radii and individual-rock point anchors, and retain
+their planar depth while smoothing normals and native color. Spline-shaped dips
+are not currently added. This fills gaps between nearby
 particles without extending beyond their convex outer envelope. An isolated
 particle keeps exactly the same size at every support scale. Individually rendered
 rocks contribute **point anchors at their centers** rather than full spheres.
@@ -76,7 +96,7 @@ Sphere input uses the physical collision radius. Mesh input uses the unexpanded,
 rotated mesh; its connections use the physical collision spheres. Use sphere
 input when the collision envelope should determine the entire soil surface.
 Depth smoothing is clamped to the original front/back interval of each sphere or
-bridge. Mesh input retains its front depth while smoothing color and normals.
+bridge. Mesh input and tangent triangles retain their front depth while smoothing color and normals.
 At reduced reconstruction resolution, upsampling still approximates boundaries
 within a reconstruction pixel; use full resolution for close contact inspection.
 
@@ -170,8 +190,9 @@ surface is opaque and view-dependent, not an exportable triangle mesh.
 `Tests/Editor/SoilParticleSurfaceTests.cs` checks native hash vectors, strict
 thresholds, endpoint fractions, selection stability, GPU layouts, and bridge
 neighbor/material/containment rules. `SoilBridgeValidation.Run` checks the actual
-GPU sphere/bridge/filter output against 102 physical hull support directions per
-covered pixel, including unequal radii and near-plane intersections. It requires
+GPU sphere/bridge/face/filter output against 102 physical hull support directions per
+covered pixel, including unequal radii and near-plane intersections. It also checks
+filled planar triangle/tetrahedron interiors and face texture detail and motion. It requires
 a graphics device but no AGX license, and exits the isolated editor when done.
 The editor `SoilSurfaceValidation.Run` entry point exercises native grading,
 captures mode comparisons, checks partition endpoints, toggles settings and

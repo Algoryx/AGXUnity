@@ -192,7 +192,15 @@ namespace AGXUnityEditor.Rendering
         renderer.TextureMapping = TerrainParticleSurfaceRenderer.TextureMappingMode.Particle;
         Capture( camera, request, target, "particle-texture" );
         Record( $"Physical tangent bridges: {renderer.BridgeCount}; bridge buffer capacity: {renderer.BridgeBuffer?.count ?? 0}" );
+        Require( renderer.FaceCount > 0 && renderer.FaceBuffer != null, "Native soil contains filled local faces" );
+        Record( $"Local tangent faces: {renderer.FaceCount}; backend={renderer.FaceBackend}; buffer capacity={renderer.FaceBuffer.count}" );
         Require( renderer.IndividualCount == 0, "Fraction zero excludes no particles" );
+        float hysteresis = renderer.ConnectionHysteresis;
+        renderer.ConnectionHysteresis = 0;
+        Capture( camera, request, target, "hysteresis-disabled" );
+        renderer.ConnectionHysteresis = hysteresis;
+        Capture( camera, request, target, "hysteresis-restored" );
+        Require( renderer.ConnectionHysteresis == hysteresis && renderer.FaceCount > 0, "Runtime hysteresis settings rebuild connected faces" );
         example.Mixed(); Capture( camera, request, target, "sphere-mixed" );
         Require( renderer.SurfaceCount + renderer.IndividualCount == renderer.Snapshot.Count, "Disjoint complete partition" );
         Capture( camera, request, target, "mesh-mixed", TerrainParticleSurfaceRenderer.SurfaceInputMode.Mesh );
@@ -243,7 +251,8 @@ namespace AGXUnityEditor.Rendering
         Require( renderer.SurfaceCount == 0 && renderer.IndividualCount == 0, "Empty snapshot leaves no stale surface" );
         renderer.Snapshot.enabled = true; simulation.DoStep();
         renderer.enabled = false;
-        Require( renderer.SurfaceBuffer == null && renderer.BridgeBuffer == null && renderer.BridgeCount == 0, "Disable releases particle and bridge buffers" );
+        Require( renderer.SurfaceBuffer == null && renderer.BridgeBuffer == null && renderer.FaceBuffer == null &&
+          renderer.BridgeCount == 0 && renderer.FaceCount == 0, "Disable releases particle, bridge and face buffers" );
         renderer.enabled = true;
         Capture( camera, request, target, "reenabled" );
         Require( renderer.SurfaceCount > 0 && renderer.SurfaceBuffer != null, "Re-enable recreates resources" );
@@ -276,6 +285,7 @@ namespace AGXUnityEditor.Rendering
           "Managed allocation counter returns zero even for a known allocation on this Unity runtime; steady-state allocation totals are unverified. The native array wrapper is reacquired once per update." );
         Record( $"GPU particle/anchor buffer: {renderer.SurfaceBuffer?.count * 64} B; uploaded={renderer.UploadedParticleCount * 64} B/update." );
         Record( $"GPU bridge buffer: {renderer.BridgeBuffer?.count * 8} B; bridges={renderer.BridgeCount}; uploaded={renderer.BridgeCount * 8} B/update." );
+        Record( $"GPU face buffer: {renderer.FaceBuffer?.count * 12} B; triangles={renderer.FaceCount}; uploaded={renderer.FaceCount * 12} B/update." );
         Record( "960x640 reconstruction attachment working set: approximately 105.7 MB/terrain (3 attribute sets including half-precision texture color, plus input depth); half resolution approximately 26.4 MB. Render Graph may alias transient allocations. Full-precision texture-color fallback uses 120.4 MB / 30.1 MB." );
         foreach ( var message in ShaderUtil.GetShaderMessages( shader ) ) Record( "Shader after draws: " + message.message );
         Require( s_errors == 0, "No runtime or Render Graph errors" );
@@ -319,7 +329,8 @@ namespace AGXUnityEditor.Rendering
         s_perfCamera.targetTexture = null;
         s_perfTarget.Release(); Object.DestroyImmediate( s_perfTarget );
         s_perfRenderer.enabled = false;
-        Require( s_perfRenderer.SurfaceBuffer == null && s_perfRenderer.BridgeBuffer == null && !TerrainParticleSurfaceRenderer.Active.Contains( s_perfRenderer ), "Disable releases GPU buffers and registry entry" );
+        Require( s_perfRenderer.SurfaceBuffer == null && s_perfRenderer.BridgeBuffer == null && s_perfRenderer.FaceBuffer == null &&
+          !TerrainParticleSurfaceRenderer.Active.Contains( s_perfRenderer ), "Disable releases GPU buffers and registry entry" );
         Require( s_errors == 0, "No errors during profiling" );
         Record( "Integration checks completed." );
       }

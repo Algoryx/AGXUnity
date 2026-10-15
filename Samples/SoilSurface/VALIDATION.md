@@ -1,5 +1,96 @@
 # Validation results
 
+## Connection hysteresis (15 October 2026)
+
+`Connection Hysteresis` defaults to 0.05. Edges join at the existing support
+distance and release only beyond 105% of it. An edge outside the join threshold
+can only be retained if it existed in the previous rendered update. Faces inherit
+the stabilized edge graph. Physical sphere radii, particle motion and texture
+sampling are unchanged. This targets topology changes at the radius threshold;
+it does not freeze moving geometry or lighting.
+
+History stores particle IDs and validated cached indices, so packing/reordering
+does not attach old connections to unrelated particles. Missing IDs, incompatible
+materials, two-rock-anchor pairs and contained pairs are discarded. Empty input,
+disabled hysteresis, renderer disable and ordinary/fallback preparation clear the
+history. Support/hysteresis setting changes request a reset on the next pack.
+Optional Burst retention checks only existing edges; the neighbor grid is not
+widened. Persistent storage grows only when required and is released on disable.
+
+All 32 edit-mode tests passed, including managed/Burst jitter sequences,
+release/rejoin, disabled/reset history, reordering, replacement/removal, buffer
+growth, material and anchor rejection, and stable tetrahedron faces over 40
+alternating threshold crossings. D3D12 geometry, physical hull, texture detail and
+texture-motion regressions also passed.
+
+On the 8,192-particle lattice, a 1% expansion reduced fresh connections from
+101,086 to 99,918. With 5% hysteresis all 101,086 original connections persisted;
+every Burst pair matched the managed result, without duplicates. Neighbor search
+plus retention took 2.4665 ms compared with 1.6786 ms without history, an additional
+0.7879 ms over 50 warm iterations. This excludes face building and rendering.
+Retained edges can also retain more faces, so additional GPU work depends on the
+particle layout and hysteresis setting.
+
+Reports: `SoilHysteresisValidation/editmode-complete.xml` and `bridges.txt` in the
+task's visualization artifacts.
+The real URP grading integration also passed runtime hysteresis changes,
+multi-camera reuse, empty inputs, fallback, disable/re-enable and resource cleanup,
+with no runtime or Render Graph errors. Its report and captures are in
+`SoilHysteresisValidation/Native`.
+
+## Filled local faces (15 October 2026)
+
+Mutual-neighbor triples now contribute the two external tangent triangles of
+their physical spheres, alongside the existing sphere and pair envelopes. The
+radius rule applies to every edge, and material boundaries are retained. This
+fills triangular openings and gives four mutually neighboring, noncoplanar
+particles a closed convex shape. It does not construct a global hull over a pile.
+Unequal radii and individual-rock center anchors are supported. Faces retain
+their planar depth through smoothing; spline-shaped dips are not implemented.
+
+The D3D12 GPU checks passed filled 7x7 interior patches at the expected plane
+depth for triangles and tetrahedra, including maximum smoothing. Perspective,
+reverse views, near-plane clipping, unequal radii and center anchors passed the
+physical hull checks. Nonuniform face textures retained their detail and followed
+particle translation/rotation. All seven shader passes compiled without errors.
+The edit-mode suite passed 24/24 tests, including tetrahedron topology, unique
+face indices, pair-order independence, radius limits and material boundaries.
+
+Face enumeration uses reusable forward adjacency and an optional Burst job in
+the existing optional assembly. On the previous 8,192-particle lattice, 101,086
+pairs produce 385,503 index triangles. Every Burst triangle matched the managed
+fallback in the same order. Warm face enumeration and managed output copy took
+4.30 ms with Burst, compared with 15.40 ms for the initial managed implementation.
+These are additional CPU costs, not whole-frame timings. Dense local cliques can
+produce many faces; the dense benchmark's additional GPU cost was not measured.
+The GPU index buffer uses 12 bytes per triangle, rounded up to retained capacity.
+Buffers are reused between rendered updates and disposed when disabled.
+
+Results: `SoilFaceValidation/bridges.txt` and `editmode.xml` in the task's
+visualization artifacts. Earlier CPU/GPU timing tables predate filled faces.
+
+The real native grading/URP integration also passed, including multi-camera reuse,
+fallbacks, resizing, disable/re-enable and face-buffer cleanup, with no runtime or
+Render Graph errors. Its later state uploaded 15,253 faces for 1,756 particles and
+anchors; total CPU pack/upload was 1.3354 ms. The entire input pass (particles,
+pair envelopes and faces) measured 0.3444 ms GPU over 34 samples at 960x640. These
+scene measurements do not characterize the much denser synthetic lattice above.
+Integration reports and captures are in `SoilFaceValidation/Native`.
+
+## Texture detail under smoothing (15 October 2026)
+
+The geometry filter now copies the center texture color through each pass instead
+of averaging neighboring texture samples. Depth, normals and native particle
+color still use bilateral smoothing; bridge endpoint texture blending is retained.
+This also removes the per-neighbor albedo fetch from the filter loop.
+
+The Unity 6000.4 / D3D12 GPU regression compared unfiltered texture color with both
+filter passes at maximum Smoothing (2). All 3,580 covered, nonuniform pixels,
+including the bridge, matched within a summed RGB tolerance of 0.00001. Existing
+translation, rotation, physical hull, center-anchor and near-plane checks passed,
+and all six shader passes compiled without shader errors. Results are recorded in
+`SoilSmoothingValidation/bridges.txt` in the task's visualization artifacts.
+
 ## CPU optimization (15 October 2026)
 
 Physics-step callbacks now mark pending work without readback, neighbor queries,

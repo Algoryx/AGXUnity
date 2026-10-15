@@ -19,6 +19,8 @@ namespace AGXUnity.Rendering
     [SerializeField] private SurfaceInputMode m_surfaceInput;
     [SerializeField] private DisplayMode m_display = DisplayMode.Surface;
     [SerializeField] private float m_supportRadiusScale = 1.15f;
+    [SerializeField, Range( 0, 0.5f ), Tooltip( "Existing connections survive this fraction beyond the support distance. 0 disables hysteresis; 0.05 gives a 5% release margin." )]
+    private float m_connectionHysteresis = 0.05f;
     [SerializeField, Range( 0, 2 )] private float m_smoothing = 0.6f;
     [SerializeField] private float m_depthThreshold = 1;
     [SerializeField, Range( 0.25f, 1 )] private float m_resolutionScale = 1;
@@ -45,7 +47,16 @@ namespace AGXUnity.Rendering
         float next = SoilParticleSelection.Positive( value, m_supportRadiusScale );
         if ( next == m_supportRadiusScale ) return;
         m_supportRadiusScale = next;
+        m_resetConnectionHistory = true;
         m_dirty = true;
+      }
+    }
+    public float ConnectionHysteresis {
+      get => m_connectionHysteresis;
+      set {
+        float next = SoilParticleSelection.Range( value, 0, 0.5f, m_connectionHysteresis );
+        if ( next == m_connectionHysteresis ) return;
+        m_connectionHysteresis = next; m_resetConnectionHistory = true; m_dirty = true;
       }
     }
     public float Smoothing { get => m_smoothing; set => m_smoothing = SoilParticleSelection.Range( value, 0, 2, m_smoothing ); }
@@ -81,6 +92,9 @@ namespace AGXUnity.Rendering
     public TerrainParticleSnapshotProvider Snapshot { get; private set; }
     public GraphicsBuffer SurfaceBuffer { get; private set; }
     public GraphicsBuffer BridgeBuffer { get; private set; }
+    public GraphicsBuffer FaceBuffer { get; private set; }
+    public int FaceCount => m_faces.Count;
+    public string FaceBackend => m_faces.Backend;
     public int BridgeCount => m_bridges.Count;
     public string BridgeBackend => m_bridges.Backend;
     public int SurfaceCount { get; private set; }
@@ -99,7 +113,9 @@ namespace AGXUnity.Rendering
     private Matrix4x4[] m_individualMatrices = new Matrix4x4[1024];
     private uint m_version = uint.MaxValue;
     private readonly SoilParticleBridges m_bridges = new SoilParticleBridges();
+    private readonly SoilParticleFaces m_faces = new SoilParticleFaces();
     private bool m_dirty = true;
+    private bool m_resetConnectionHistory;
     private bool m_prepareSurface = true, m_hasPreparedSurface;
     private bool m_warned;
     private Material m_defaultMaterial;
@@ -140,6 +156,7 @@ namespace AGXUnity.Rendering
       if ( Snapshot.Count == 0 ) {
         SurfaceCount = IndividualCount = 0;
         m_bridges.Build( m_packed, 0, SupportRadiusScale );
+        m_faces.Build( 0, m_bridges.Pairs, 0 );
       }
     }
 
@@ -153,8 +170,12 @@ namespace AGXUnity.Rendering
       SurfaceBuffer = null;
       BridgeBuffer?.Dispose();
       BridgeBuffer = null;
+      FaceBuffer?.Dispose();
+      FaceBuffer = null;
+      m_faces.Build( 0, m_bridges.Pairs, 0 );
       m_bridges.Build( m_packed, 0, SupportRadiusScale );
       m_bridges.Dispose();
+      m_faces.Dispose();
       m_hasPreparedSurface = false;
       SurfaceCount = IndividualCount = 0;
       foreach ( var renderer in m_suppressed ) if ( renderer != null ) renderer.enabled = true;
@@ -166,6 +187,8 @@ namespace AGXUnity.Rendering
     private void OnValidate()
     {
       m_supportRadiusScale = SoilParticleSelection.Positive( m_supportRadiusScale, 1.15f );
+      m_connectionHysteresis = SoilParticleSelection.Range( m_connectionHysteresis, 0, 0.5f, 0.05f );
+      m_resetConnectionHistory = true;
       m_smoothing = SoilParticleSelection.Range( m_smoothing, 0, 2, 0.6f );
       m_depthThreshold = SoilParticleSelection.Positive( m_depthThreshold, 1 );
       m_resolutionScale = SoilParticleSelection.Range( m_resolutionScale, 0.25f, 1, 1 );
@@ -208,13 +231,24 @@ namespace AGXUnity.Rendering
           }
         }
         Array.Copy( m_anchors, 0, m_packed, SurfaceCount, IndividualCount );
-        m_bridges.Build( m_packed, m_prepareSurface && SurfaceCount > 0 ? UploadedParticleCount : 0, SupportRadiusScale );
+        // OnValidate can run on Unity's loading thread. Mutate native history
+        // only here, on the main thread before rebuilding connections.
+        if ( m_resetConnectionHistory ) { m_bridges.ClearHistory(); m_resetConnectionHistory = false; }
+        m_bridges.Build( m_packed, m_prepareSurface && SurfaceCount > 0 ? UploadedParticleCount : 0, SupportRadiusScale, ConnectionHysteresis );
+        m_faces.Build( UploadedParticleCount, m_bridges.Pairs, m_bridges.Count );
         if ( m_prepareSurface && SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders && SurfaceCount > 0 ) {
           if ( SurfaceBuffer == null || SurfaceBuffer.count < UploadedParticleCount ) {
             SurfaceBuffer?.Dispose();
             SurfaceBuffer = new GraphicsBuffer( GraphicsBuffer.Target.Structured, m_packed.Length, 64 );
           }
           SurfaceBuffer.SetData( m_packed, 0, 0, UploadedParticleCount );
+          if ( FaceCount > 0 ) {
+            if ( FaceBuffer == null || FaceBuffer.count < FaceCount ) {
+              FaceBuffer?.Dispose();
+              FaceBuffer = new GraphicsBuffer( GraphicsBuffer.Target.Structured, m_faces.Faces.Length, 12 );
+            }
+            FaceBuffer.SetData( m_faces.Faces, 0, 0, FaceCount );
+          }
           if ( BridgeCount > 0 ) {
             if ( BridgeBuffer == null || BridgeBuffer.count < BridgeCount ) {
               BridgeBuffer?.Dispose();

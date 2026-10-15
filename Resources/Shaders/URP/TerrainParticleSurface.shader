@@ -12,6 +12,7 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
     struct Particle { float3 position; float radius; float4 rotation; float4 color; uint id; uint eligible; int terrain; uint material; };
     StructuredBuffer<Particle> _SoilParticles;
     StructuredBuffer<uint2> _SoilBridges;
+    StructuredBuffer<uint3> _SoilFaces;
     TEXTURE2D(_SoilDepth); TEXTURE2D(_SoilColor); TEXTURE2D(_SoilNormal);
     TEXTURE2D(_SoilSceneDepth); TEXTURE2D(_SoilTexture);
     TEXTURE2D(_SoilAlbedo);
@@ -291,6 +292,61 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
                        float4(lerp(input.colorA, input.colorB, blend), 1), input.material, -(origin+last*direction).z, textureColor);
     }
 
+    struct FaceVaryings
+    {
+      float4 positionCS : SV_POSITION;
+      float3 eye : TEXCOORD0;
+      float3 barycentric : TEXCOORD1;
+      nointerpolation float3 normalWS : TEXCOORD2;
+      nointerpolation uint3 face : TEXCOORD3;
+    };
+    FaceVaryings FaceVertex(uint vertex : SV_VertexID, uint instance : SV_InstanceID)
+    {
+      uint3 face = _SoilFaces[instance];
+      Particle a = _SoilParticles[face.x], b = _SoilParticles[face.y], c = _SoilParticles[face.z];
+      float3 radii = float3(a.eligible == 2 ? 0 : a.radius, b.eligible == 2 ? 0 : b.radius, c.eligible == 2 ? 0 : c.radius);
+      float3 e = b.position-a.position, f = c.position-a.position;
+      // Solve dot(n,e)=ra-rb and dot(n,f)=ra-rc, then complete the
+      // unit normal on either side of the triangle's plane. These are the
+      // two common supporting planes of three unequal physical spheres.
+      float ee = dot(e,e), ef = dot(e,f), ff = dot(f,f);
+      float3 crossEF = cross(e,f);
+      float determinant = dot(crossEF,crossEF);
+      FaceVaryings output = (FaceVaryings)0;
+      output.face = face;
+      if (determinant <= max(ee*ff*1e-10, 1e-30)) { output.positionCS = float4(2,2,0,1); return output; }
+      float2 difference = radii.xx-radii.yz;
+      float3 baseNormal = ((difference.x*ff-difference.y*ef)*e + (difference.y*ee-difference.x*ef)*f)/determinant;
+      float remaining = 1-dot(baseNormal,baseNormal);
+      // No common tangent exists if one ball hides the third from both planes.
+      if (remaining <= 1e-8) { output.positionCS = float4(2,2,0,1); return output; }
+      float side = vertex < 3 ? 1 : -1;
+      float3 normal = baseNormal + side*sqrt(remaining/determinant)*crossEF;
+      uint corner = vertex%3;
+      float3 center = corner == 0 ? a.position : corner == 1 ? b.position : c.position;
+      float radius = corner == 0 ? radii.x : corner == 1 ? radii.y : radii.z;
+      float3 world = center+radius*normal;
+      output.eye = mul(_SoilView, float4(world,1)).xyz;
+      output.positionCS = mul(_SoilProjection, float4(output.eye,1));
+      output.barycentric = corner == 0 ? float3(1,0,0) : corner == 1 ? float3(0,1,0) : float3(0,0,1);
+      output.normalWS = normal;
+      return output;
+    }
+    InputOutput FaceFragment(FaceVaryings input)
+    {
+      Particle a = _SoilParticles[input.face.x], b = _SoilParticles[input.face.y], c = _SoilParticles[input.face.z];
+      float3 w = input.barycentric;
+      float3 world = mul(_SoilInverseView, float4(input.eye,1)).xyz;
+      float3 normal = normalize(input.normalWS);
+      float3 textureColor = w.x*ParticleTexture(world,normal,a.position,a.rotation)
+                          + w.y*ParticleTexture(world,normal,b.position,b.rotation)
+                          + w.z*ParticleTexture(world,normal,c.position,c.rotation);
+      // Retain planar geometry during filtering, as with physical mesh input.
+      return MakeInput(input.positionCS.xy*_SoilSize.zw, input.eye, normal,
+                       dot(w,float3(a.radius,b.radius,c.radius)),
+                       w.x*a.color+w.y*b.color+w.z*c.color, a.material, -input.eye.z, textureColor);
+    }
+
     AttributesOutput FilterFragment(FullscreenVaryings input)
     {
       float2 uv = input.positionCS.xy * _SoilSize.zw;
@@ -303,7 +359,6 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       float kernel = clamp(projectionScale * center.y * _SoilSmoothing / (perspective ? center.x : 1), 0, 24);
       float4 depthSum = 0, colorSum = 0;
       float3 normalSum = 0;
-      float3 albedoSum = 0;
       float weightSum = 0;
       [loop] for (int i=-12; i<=12; ++i) {
         float offset = i * max(kernel/6, 1);
@@ -319,7 +374,6 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
         float rangeWeight = pow(max(0, 1-depthDelta*depthDelta), 2);
         float w = rangeWeight * exp(-2*offset*offset/max(kernel*kernel, 1) - 2*depthDelta*depthDelta - 8*dot(colorDelta,colorDelta));
         depthSum += d*w; colorSum += c*w; normalSum += SampleNormal(sampleUV).xyz*w;
-        albedoSum += NormalizeCoverage(SAMPLE_TEXTURE2D_LOD(_SoilAlbedo, sampler_LinearClamp, sampleUV, 0)).rgb*w;
         weightSum += w;
       }
       AttributesOutput output;
@@ -330,7 +384,8 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       output.color = colorSum / max(weightSum, 1e-8);
       output.color.a = centerColor.a;
       output.normal = float4(normalize(normalSum + float3(0,0,1e-8)), centerNormal.a);
-      output.albedo = float4(albedoSum / max(weightSum, 1e-8), 1);
+      // Smooth geometry without blurring the particle-local texture detail.
+      output.albedo = float4(NormalizeCoverage(SAMPLE_TEXTURE2D_LOD(_SoilAlbedo, sampler_LinearClamp, uv, 0)).rgb, 1);
       return output;
     }
 
@@ -472,6 +527,15 @@ Shader "Hidden/AGXUnity/TerrainParticleSurface"
       HLSLPROGRAM
       #pragma vertex BridgeVertex
       #pragma fragment BridgeFragment
+      ENDHLSL
+    }
+    Pass
+    {
+      Name "ParticleFaces"
+      ZWrite On ZTest LEqual
+      HLSLPROGRAM
+      #pragma vertex FaceVertex
+      #pragma fragment FaceFragment
       ENDHLSL
     }
   }

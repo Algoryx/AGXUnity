@@ -19,6 +19,123 @@ namespace AGXUnityTesting.Editor
       Assert.AreEqual( 48, Marshal.OffsetOf<TerrainParticleSnapshotProvider.Particle>( "Id" ).ToInt32() );
       Assert.AreEqual( 60, Marshal.OffsetOf<TerrainParticleSnapshotProvider.Particle>( "MaterialIndex" ).ToInt32() );
       Assert.AreEqual( 8, Marshal.SizeOf<SoilParticleBridges.Pair>() );
+      Assert.AreEqual( 12, Marshal.SizeOf<SoilParticleFaces.Face>() );
+    }
+
+    [Test]
+    public void MutualNeighborsFillTetrahedronAndRespectRadiusAndMaterialBoundaries()
+    {
+      var particles = new[] {
+        new TerrainParticleSnapshotProvider.Particle { Position = Vector3.zero, Radius = 0.6f },
+        new TerrainParticleSnapshotProvider.Particle { Position = Vector3.right, Radius = 0.6f },
+        new TerrainParticleSnapshotProvider.Particle { Position = Vector3.up, Radius = 0.6f },
+        new TerrainParticleSnapshotProvider.Particle { Position = Vector3.forward, Radius = 0.6f }
+      };
+      using var bridges = new SoilParticleBridges( false );
+      using var faces = new SoilParticleFaces( false );
+      bridges.Build( particles, 4, 1.5f ); faces.Build( 4, bridges.Pairs, bridges.Count );
+      Assert.AreEqual( 4, faces.Count );
+      var unique = new HashSet<string>();
+      for ( int i = 0; i < faces.Count; ++i ) {
+        var f = faces.Faces[i]; Assert.Less( f.A, f.B ); Assert.Less( f.B, f.C );
+        Assert.IsTrue( unique.Add( $"{f.A},{f.B},{f.C}" ) );
+      }
+      System.Array.Reverse( bridges.Pairs, 0, bridges.Count );
+      faces.Build( 4, bridges.Pairs, bridges.Count ); Assert.AreEqual( 4, faces.Count );
+      particles[3].MaterialIndex = 1;
+      bridges.Build( particles, 4, 1.5f ); faces.Build( 4, bridges.Pairs, bridges.Count );
+      Assert.AreEqual( 1, faces.Count );
+      // Three short spokes are insufficient: every edge must meet the radius rule.
+      bridges.Build( particles, 4, 1 ); faces.Build( 4, bridges.Pairs, bridges.Count );
+      Assert.AreEqual( 0, faces.Count );
+      faces.Build( 0, bridges.Pairs, 0 ); Assert.AreEqual( 0, faces.Count );
+    }
+
+    [TestCase( false )]
+    [TestCase( true )]
+    public void ConnectionHysteresisRequiresJoiningBeforeHoldingAndRejoiningAfterRelease( bool accelerated )
+    {
+      var particles = new[] {
+        new TerrainParticleSnapshotProvider.Particle { Id = 10, Radius = 0.5f },
+        new TerrainParticleSnapshotProvider.Particle { Id = 20, Radius = 0.5f }
+      };
+      using var bridges = new SoilParticleBridges( accelerated );
+      void Check( float distance, int expected, float margin = 0.1f ) {
+        particles[1].Position = Vector3.right*distance;
+        bridges.Build( particles, 2, 1, margin ); Assert.AreEqual( expected, bridges.Count, $"distance={distance}, margin={margin}" );
+      }
+      Check( 1.04f, 0 ); Check( 0.99f, 1 );
+      for ( int i = 0; i < 20; ++i ) { Check( 1.04f, 1 ); Check( 0.99f, 1 ); }
+      Check( 1.11f, 0 ); Check( 1.04f, 0 ); Check( 0.99f, 1 );
+      Check( 1.04f, 0, 0 ); Check( 1.04f, 0 );
+      Check( 0.99f, 1 ); bridges.ClearHistory(); Check( 1.04f, 0 );
+      Check( 0.99f, 1 ); bridges.Build( particles, 0, 1, 0.1f ); Check( 1.04f, 0 );
+      Check( 0.99f, 1 ); bridges.Dispose(); Check( 1.04f, 0 );
+    }
+
+    [TestCase( false )]
+    [TestCase( true )]
+    public void HysteresisFollowsIdentityAndRejectsMissingParticlesAndMaterialChanges( bool accelerated )
+    {
+      var particles = new[] {
+        new TerrainParticleSnapshotProvider.Particle { Id = 10, Radius = 0.5f },
+        new TerrainParticleSnapshotProvider.Particle { Id = 20, Radius = 0.5f, Position = Vector3.right*0.99f },
+        new TerrainParticleSnapshotProvider.Particle { Id = 30, Radius = 0.5f, Position = Vector3.right*10 }
+      };
+      using var bridges = new SoilParticleBridges( accelerated );
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      var swap = particles[0]; particles[0] = particles[2]; particles[2] = swap;
+      particles[1].Position = Vector3.right*1.04f;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      Assert.AreEqual( 1u, bridges.Pairs[0].A ); Assert.AreEqual( 2u, bridges.Pairs[0].B );
+      particles[1].Id = 40;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 0, bridges.Count );
+      particles[1].Position = Vector3.right*0.99f;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      particles[1].Position = Vector3.right*1.04f; particles[1].MaterialIndex = 1;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 0, bridges.Count );
+      particles[1].MaterialIndex = 0;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 0, bridges.Count );
+      particles[1].Position = Vector3.right*0.99f;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      particles[1].Position = Vector3.right*1.04f;
+      particles[1].RenderingEligible = particles[2].RenderingEligible = SoilParticleBridges.CenterAnchor;
+      bridges.Build( particles, 3, 1, 0.1f ); Assert.AreEqual( 0, bridges.Count );
+    }
+
+    [TestCase( false )]
+    [TestCase( true )]
+    public void HysteresisKeepsTetrahedronFacesDuringThresholdJitter( bool accelerated )
+    {
+      var centers = new[] { new Vector3( 1, 1, 1 ), new Vector3( 1, -1, -1 ), new Vector3( -1, 1, -1 ), new Vector3( -1, -1, 1 ) };
+      var particles = new TerrainParticleSnapshotProvider.Particle[4];
+      for ( int i = 0; i < 4; ++i ) { particles[i].Id = (uint)(i+1); particles[i].Radius = 0.5f; }
+      using var bridges = new SoilParticleBridges( accelerated );
+      using var faces = new SoilParticleFaces( accelerated );
+      for ( int step = 0; step < 40; ++step ) {
+        float distance = step%2 == 0 ? 0.99f : 1.04f;
+        for ( int i = 0; i < 4; ++i ) particles[i].Position = centers[i]*(distance/Mathf.Sqrt( 8 ));
+        bridges.Build( particles, 4, 1, 0.1f ); faces.Build( 4, bridges.Pairs, bridges.Count );
+        Assert.AreEqual( 6, bridges.Count ); Assert.AreEqual( 4, faces.Count );
+      }
+    }
+
+    [TestCase( false )]
+    [TestCase( true )]
+    public void HysteresisSurvivesCapacityGrowthAndDropsRemovedIdentities( bool accelerated )
+    {
+      var particles = new TerrainParticleSnapshotProvider.Particle[2050];
+      for ( int i = 0; i < particles.Length; ++i ) {
+        particles[i].Id = (uint)(i+1); particles[i].Radius = 0.5f;
+        particles[i].Position = Vector3.right*(10+3*i);
+      }
+      particles[0].Position = Vector3.zero; particles[1].Position = Vector3.right*0.99f;
+      using var bridges = new SoilParticleBridges( accelerated );
+      bridges.Build( particles, 2, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      particles[1].Position = Vector3.right*1.04f;
+      bridges.Build( particles, particles.Length, 1, 0.1f ); Assert.AreEqual( 1, bridges.Count );
+      particles[0] = particles[2049];
+      bridges.Build( particles, 2049, 1, 0.1f ); Assert.AreEqual( 0, bridges.Count );
     }
 
     [TestCase( 0, 0, 0 )]
