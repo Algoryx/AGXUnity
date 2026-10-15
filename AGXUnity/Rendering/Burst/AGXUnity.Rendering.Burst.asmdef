@@ -1,0 +1,11 @@
+{
+  "name": "AGXUnity.Rendering.Burst",
+  "references": ["AGXUnity", "Unity.Burst", "Unity.Collections", "Unity.Mathematics"],
+  "includePlatforms": ["Editor", "LinuxStandalone64", "WindowsStandalone64"],
+  "defineConstraints": ["AGX_SOIL_BURST", "AGX_SOIL_COLLECTIONS"],
+  "versionDefines": [
+    {"name": "com.unity.burst", "expression": "[1.8.0,2.0.0)", "define": "AGX_SOIL_BURST"},
+    {"name": "com.unity.collections", "expression": "[2.0.0,7.0.0)", "define": "AGX_SOIL_COLLECTIONS"}
+  ],
+  "autoReferenced": true
+}
