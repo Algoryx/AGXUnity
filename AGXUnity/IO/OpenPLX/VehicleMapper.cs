@@ -52,9 +52,9 @@ namespace AGXUnity.IO.OpenPLX
         var ts = trackConnection.track_system();
 
         if ( ts == null )
-          Data.ErrorReporter.reportError( new MissingTrackSystemError( trackConnection ) );
+          Data.ReportError( new MissingTrackSystemError( trackConnection ) );
         else if ( m_connectionMap.TryGetValue( ts, out var connection ) && connection != null )
-          Data.ErrorReporter.reportError( new DuplicateTrackConnectionError( trackConnection, ts ) );
+          Data.ReportError( new DuplicateTrackConnectionError( trackConnection, ts ) );
         else
           m_connectionMap[ ts ] = trackConnection;
       }
@@ -153,16 +153,16 @@ namespace AGXUnity.IO.OpenPLX
 
       var wheels = system.track_wheels();
       if ( wheels.Count < 2 ) {
-        Data.ErrorReporter.reportError( new InsufficientTrackWheelsError( system ) );
+        Data.ReportError( new InsufficientTrackWheelsError( system ) );
         return;
       }
 
       var linkDesc = oTracks.link_description();
       if ( linkDesc.local_cm_transform().position().length() > 0.0001f )
-        Data.ErrorReporter.reportError( new LocalOffsetNotSupportedError( linkDesc.local_cm_transform().position() ) );
+        Data.ReportError( new LocalOffsetNotSupportedError( linkDesc.local_cm_transform().position() ) );
 
       if ( linkDesc.width() <= 0 || linkDesc.height() <= 0 ) {
-        Data.ErrorReporter.reportError( new InvalidLinkDescriptionError( linkDesc ) );
+        Data.ReportError( new InvalidLinkDescriptionError( linkDesc ) );
       }
       else {
         track.Width = (float)linkDesc.width();
@@ -218,7 +218,7 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var wheel in wheels ) {
         if ( !Data.BodyCache.TryGetValue( wheel.body(), out var parent ) ) {
-          Data.ErrorReporter.reportError( new MissingTrackWheelBodyError( wheel ) );
+          Data.ReportError( new MissingTrackWheelBodyError( wheel ) );
           continue;
         }
 
@@ -423,14 +423,14 @@ namespace AGXUnity.IO.OpenPLX
     private void MapElasticWheel( Wheels.ElasticWheel wheel )
     {
       if ( !Data.BodyCache.TryGetValue( wheel.tire(), out RigidBody tireBody ) ) {
-        Data.ErrorReporter.reportError( new InternalMapperError( wheel.tire(), "Failed to find mapped body for tire" ) );
+        Data.ReportError( new InternalMapperError( wheel.tire(), "Failed to find mapped body for tire" ) );
         return;
       }
 
       double outerRadius = wheel.tire().getNumber("outer_radius");
 
       if ( !Data.BodyCache.TryGetValue( wheel.rim(), out RigidBody rimBody ) ) {
-        Data.ErrorReporter.reportError( new InternalMapperError( wheel.rim(), "Failed to find mapped body for rim" ) );
+        Data.ReportError( new InternalMapperError( wheel.rim(), "Failed to find mapped body for rim" ) );
         return;
       }
       double innerRadius = wheel.rim().getNumber("radius");
@@ -503,7 +503,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( chassisBody != null && Data.BodyCache.ContainsKey( chassisBody ) )
         chassis = Data.BodyCache[ chassisBody ];
       else {
-        Data.ErrorReporter.reportError( new InvalidWheelChassisError( suspension ) );
+        Data.ReportError( new InvalidWheelChassisError( suspension ) );
         return false;
       }
 
@@ -520,7 +520,7 @@ namespace AGXUnity.IO.OpenPLX
       if ( attachmentBody != null && Data.BodyCache.ContainsKey( attachmentBody ) )
         wheel = Data.BodyCache[ attachmentBody ];
       else {
-        Data.ErrorReporter.reportError( new MissingWheelBodyError( suspension ) );
+        Data.ReportError( new MissingWheelBodyError( suspension ) );
         return false;
       }
 
@@ -578,7 +578,7 @@ namespace AGXUnity.IO.OpenPLX
       };
 
       if ( !mechanism.HasValue ) {
-        Data.ErrorReporter.reportError( new UnimplementedWarning( steering ) );
+        Data.ReportError( new UnimplementedWarning( steering ) );
         return false;
       }
 
@@ -589,12 +589,12 @@ namespace AGXUnity.IO.OpenPLX
       WheelJoint rightWheel, leftWheel;
 
       if ( !m_mappedWheels.TryGetValue( steering.right_suspension(), out rightWheel ) ) {
-        Data.ErrorReporter.reportError( new UnmappedWheelError( steering.right_suspension() ) );
+        Data.ReportError( new UnmappedWheelError( steering.right_suspension() ) );
         return false;
       }
 
       if ( !m_mappedWheels.TryGetValue( steering.left_suspension(), out leftWheel ) ) {
-        Data.ErrorReporter.reportError( new UnmappedWheelError( steering.left_suspension() ) );
+        Data.ReportError( new UnmappedWheelError( steering.left_suspension() ) );
         return false;
       }
 
