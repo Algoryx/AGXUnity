@@ -474,8 +474,6 @@ namespace AGXUnity.Model
         RenderingUtils.SetMainTexture( TerrainRenderer.sharedMaterial, Resources.Load<Texture2D>( "Default-Checker-Gray.png" ) );
       }
 
-      Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
-
       // Native terrain may change the number of PPGS iterations to default (25).
       // Override if we have solver settings set to the simulation.
       if ( Simulation.Instance.SolverSettings != null )
@@ -491,10 +489,11 @@ namespace AGXUnity.Model
       if ( TerrainProperties != null )
         TerrainProperties.Unregister( this );
 
-      if ( Simulation.HasInstance ) {
+      if ( RigidBody != null )
+        RigidBody.MassFromTerrain = false;
+
+      if ( Simulation.HasInstance )
         GetSimulation().remove( Native );
-        Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
-      }
       Native = null;
 
       base.OnDestroy();
@@ -598,6 +597,8 @@ namespace AGXUnity.Model
         Native.setCompaction( InitialCompaction );
 
       Simulation.Instance.Native.add( Native );
+      if ( isActiveAndEnabled )
+        Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
 
       var rb = RigidBody;
       if ( rb != null ) {
@@ -646,11 +647,11 @@ namespace AGXUnity.Model
           return;
 
         if ( RigidBody.Shapes.Any( s => s.EnableMassProperties ) ) {
-          Debug.LogWarning(
+          LogOnce.Warning(
             $"Movable terrain '{name}' is part of a RigidBody ('{rb.name}') which contains other colliders. " +
             $"Automatic mass calculations for this body will ignore these additional colliders. " +
             $"The recommended process for modelling terrain beds is to separate the terrain and the bed geometries while " +
-            $"into separate bodies locked together with the {nameof( KinematicLock )} component." );
+            $"into separate bodies locked together with the {nameof( KinematicLock )} component.", this );
         }
 
         RigidBody.UpdateMassProperties();
@@ -1093,8 +1094,18 @@ namespace AGXUnity.Model
       if ( Native.getEnable() == enable )
         return;
 
+      if ( RigidBody != null )
+        RigidBody.MassFromTerrain = enable && EnableDynamicMassUpdates;
+
       Native.setEnable( enable );
       Native.getGeometry().setEnable( enable );
+
+      if ( Simulation.HasInstance ) {
+        if ( enable )
+          Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
+        else
+          Simulation.Instance.StepCallbacks.PostStepForward -= OnPostStepForward;
+      }
     }
   }
 }

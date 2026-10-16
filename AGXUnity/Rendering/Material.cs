@@ -35,7 +35,7 @@ namespace AGXUnity.Rendering
       }
       else {
         if ( renderPipeline != RenderingUtils.PipelineType.BuiltIn )
-          Debug.LogWarning( "Unsupported render pipeline! Imported render materials might not work." );
+          LogOnce.Warning( "Unsupported render pipeline! Imported render materials might not work.", null );
 
         mat.shader = Shader.Find( "Standard" );
         if ( native.hasEmissiveColor() )

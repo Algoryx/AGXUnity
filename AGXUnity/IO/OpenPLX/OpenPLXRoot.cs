@@ -59,15 +59,15 @@ namespace AGXUnity.IO.OpenPLX
       // First, assume that the declaration given is relative and prepend it with the root name
       if ( m_openplxMap.TryGetValue( Native.getName() + "." + declaration, out Object obj ) )
         return obj;
-      // Second, assume that the declaration give is absolute
+      // Second, assume that the declaration given is absolute
       return m_openplxMap.GetValueOrDefault( declaration );
     }
 
     public GameObject FindMappedObject( string declaration )
     {
       if ( Native != null ) {
-        declaration = FindNestedNative( declaration ).getName();
-        if ( m_objectMap.ContainsKey( declaration ) )
+        declaration = FindNestedNative( declaration )?.getName();
+        if ( declaration != null && m_objectMap.ContainsKey( declaration ) )
           return m_objectMap[ declaration ];
         else
           return null;
