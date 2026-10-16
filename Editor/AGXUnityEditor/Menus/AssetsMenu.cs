@@ -81,6 +81,12 @@ namespace AGXUnityEditor
       return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainShovelSettings>( "deformable terrain shovel settings" );
     }
 
+    [MenuItem( "Assets/AGXUnity/Deformable Terrain Wheel Settings", priority = 700 )]
+    public static Object CrateDeformableTerrainWheelSettings()
+    {
+      return Selection.activeObject = Utils.AssetFactory.Create<DeformableTerrainWheelSettings>( "deformable terrain wheel settings" );
+    }
+
     [MenuItem( "Assets/AGXUnity/Track Properties", priority = 720 )]
     public static Object CreateTrackProperties()
     {

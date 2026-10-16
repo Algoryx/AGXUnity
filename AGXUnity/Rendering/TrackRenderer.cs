@@ -316,7 +316,7 @@ namespace AGXUnity.Rendering
                         Track.ThicnessVariation != track.ThicknessVariation ||
                        !Math.Approximately( Track.Width, track.Width ) ||
                        !Math.Approximately( Track.Thickness, track.Thickness ) ||
-                       !Math.Approximately( Track.InitialTensionDistance, track.InitialTensionDistance );
+                       !Math.Approximately( Track.InitialTensionDistance, track.TensionMode == Model.Track.TensionModes.Distance ? track.InitialTension : 0);
         if ( !reqUpdate ) {
           for ( int i = 0; !reqUpdate && i < TrackWheels.Length; ++i ) {
             var trackWheelDef = TrackWheels[ i ];
@@ -338,7 +338,7 @@ namespace AGXUnity.Rendering
           NumberOfNodes          = track.NumberOfNodes,
           Width                  = track.Width,
           Thickness              = track.Thickness,
-          InitialTensionDistance = track.InitialTensionDistance
+          InitialTensionDistance = track.TensionMode == Model.Track.TensionModes.Distance ? track.InitialTension : 0
         };
         TrackWheels = new TrackWheelDesc[ track.Wheels.Length ];
         for ( int i = 0; i < TrackWheels.Length; ++i ) {

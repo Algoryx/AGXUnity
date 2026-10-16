@@ -121,6 +121,9 @@ namespace AGXUnityTesting.Runtime
       var cartRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/cart");
       var rodRB = FindComponentByName<RigidBody>("inverted_pendulum/PendulumScene/rod");
 
+      // SNAP does not work properly for this model so allow model to "settle" manually until this is fixed
+      yield return TestUtils.SimulateSeconds( 1.0f );
+
       rodRB.Native.addForceAtLocalPosition( new agx.Vec3( 25, 0, 0 ), new agx.Vec3( 0, 0, 1 ) );
 
       yield return TestUtils.SimulateSeconds( 4.0f );
@@ -228,7 +231,7 @@ namespace AGXUnityTesting.Runtime
       var rod2RB = FindComponentByName<RigidBody>("differential_test/PendulumScene/pendulum2/rod");
       Assert.GreaterOrEqual( Mathf.Abs( rod1RB.AngularVelocity.z ), 0.1f );
       Assert.GreaterOrEqual( Mathf.Abs( rod2RB.AngularVelocity.z ), 0.1f );
-      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 0.0001f, "Gear gives similar and opposite AVs" );
+      Assert.AreEqual( rod1RB.AngularVelocity.z, -rod2RB.AngularVelocity.z, 1e-9f, "Gear gives similar and opposite AVs" );
     }
 
     [UnityTest]
@@ -671,7 +674,6 @@ namespace AGXUnityTesting.Runtime
     }
 
     [Test]
-    [Ignore( "TEMP: No runners have sufficient GPU support currently" )]
     public void TestDoubleDistanceDistortionLidarError()
     {
       var go = OpenPLXImporter.ImportOpenPLXFile<GameObject>(

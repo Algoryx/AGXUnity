@@ -129,6 +129,7 @@ namespace AGXUnity
     /// Get or set Young's modulus of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "This specifies the stiffness of the contact between the interacting geometries/bodies" )]
     public float YoungsModulus
     {
@@ -151,6 +152,7 @@ namespace AGXUnity
     /// Get or set surface viscosity of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "The viscosity of a surface material is the same thing as compliance but for friction in contacts" )]
     public Vector2 SurfaceViscosity
     {
@@ -175,6 +177,7 @@ namespace AGXUnity
     /// Get or set friction coefficients of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "The coefficients of friction in the friction frame (default: world frame)" )]
     public Vector2 FrictionCoefficients
     {
@@ -199,6 +202,7 @@ namespace AGXUnity
     /// Get or set restitution of this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "This defines the \"bounciness\" of a contact." )]
     public float Restitution
     {
@@ -244,6 +248,7 @@ namespace AGXUnity
     /// Adhesive force of the contacts with this contact material.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "Determines a force used for keeping colliding objects together" )]
     public float AdhesiveForce
     {
@@ -268,6 +273,7 @@ namespace AGXUnity
     /// at higher overlap, the (usual) contact force.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "Allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
     public float AdhesiveOverlap
     {
@@ -289,6 +295,7 @@ namespace AGXUnity
     /// <summary>
     /// Enable/disable contact area approach of contacts using this contact material.
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "If set to “true”, an approximation to the contact area will be geometrically computed for each contact involving this contact material. For each contact, its area will then be evenly distributed between its contact points. The contact compliance will be scaled with the inverse of the area for each contact point." )]
     public bool UseContactArea
     {
@@ -310,6 +317,7 @@ namespace AGXUnity
     /// <summary>
     /// Contact reduction mode, default Geometry.
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( " Specifies at which level the contact reduction algorithm should be run. None, Geometry, or Geometry and Rigidbody" )]
     public ContactReductionType ContactReductionMode
     {
@@ -331,6 +339,7 @@ namespace AGXUnity
     /// <summary>
     /// Contact reduction level when contact reduction is enabled (ContactReductionMode != None).
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [Tooltip( "Contact reduction level when contact reduction is enabled (ContactReductionMode != None)" )]
     public ContactReductionLevelType ContactReductionLevel
     {
@@ -364,6 +373,7 @@ namespace AGXUnity
     /// The primary (x) friction coefficient is used along the wire and the secondary (y) is
     /// along the contact edge on the object the wire interacts with.
     /// </summary>
+    [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
     [ClampAboveZeroInInspector( true )]
     [Tooltip( "Wire friction coefficients of this contact material, used by the contact nodes on a wire. The primary (x) friction coefficient is used along the wire and the secondary (y) is along the contact edge on the object the wire interacts with." )]
     public Vector2 WireFrictionCoefficients
@@ -378,6 +388,8 @@ namespace AGXUnity
         }
       }
     }
+
+    private bool IsNotTerrainWheelForceModel => ( FrictionModel != null ) ? FrictionModel.IsNotTerrainWheelForceModel : true;
 
     public ContactMaterial RestoreLocalDataFrom( agx.ContactMaterial contactMaterial )
     {
@@ -480,7 +492,13 @@ namespace AGXUnity
       m_contactMaterial = GetSimulation().getMaterialManager().getOrCreateContactMaterial( m1, m2 );
 
       if ( FrictionModel != null ) {
-        m_contactMaterial.setFrictionModel( FrictionModel.GetInitialized<FrictionModel>().Native );
+        if ( FrictionModel.Type == FrictionModel.EType.TerrainWheelForceModel ) {
+          agxTerrain.TerrainWheel.configureContactMaterial( m_contactMaterial );
+        }
+        else {
+          m_contactMaterial.setFrictionModel( FrictionModel.GetInitialized<FrictionModel>().Native );
+        }
+
         // When the user changes friction model type (enum = BoxFriction, ScaleBoxFriction etc.)
         // the friction model object will create a new native instance. We'll receive callbacks
         // when this happens so we can assign it to our native contact material.

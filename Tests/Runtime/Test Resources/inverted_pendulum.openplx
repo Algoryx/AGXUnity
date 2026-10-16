@@ -41,7 +41,6 @@ PendulumScene is Physics3D.System:
         connectors: prismatic.connectors
 
     hinge is Physics3D.Interactions.Hinge:
-        initial_angle: 0
         connectors: [cart.rotated_connector, rod.mate_connector]
 
     motor_input is Physics.Signals.LinearVelocity1DInput:
