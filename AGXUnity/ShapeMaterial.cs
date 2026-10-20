@@ -213,8 +213,9 @@ namespace AGXUnity
     protected override bool PerformMigration()
     {
       if ( m_serializationVersion < 3 ) {
-        m_attenuationBend /= Time.fixedDeltaTime;
-        m_attenuationStretch /= Time.fixedDeltaTime;
+        // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
+        m_attenuationBend *= 0.02;
+        m_attenuationStretch *= 0.02;
         return true;
       }
       return false;
