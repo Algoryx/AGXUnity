@@ -236,7 +236,7 @@ namespace AGXUnity.Model
     {
       if ( m_serializationVersion < 3 ) {
         // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
-        m_lockToReachMergeConditionAttenuation *= 0.02f;
+        m_lockToReachMergeConditionAttenuation *= 50.0f;
         return true;
       }
       return true;

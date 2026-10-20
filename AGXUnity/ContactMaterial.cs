@@ -533,7 +533,7 @@ namespace AGXUnity
     {
       if ( m_serializationVersion < 3 ) {
         // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz
-        m_attenuation *= 0.02f;
+        m_attenuation *= 50.0f;
         return true;
       }
       return false;
