@@ -1034,8 +1034,8 @@ namespace AGXUnity
       if ( m_serializationVersion < 3 ) {
         // Migrate from damping to attenuation
         // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
-        TraverseRowData( data => data.Attenuation *= 0.02, TranslationalDof.All );
-        TraverseRowData( data => data.Attenuation *= 0.02, RotationalDof.All );
+        TraverseRowData( data => data.Attenuation *= 0.02f, TranslationalDof.All );
+        TraverseRowData( data => data.Attenuation *= 0.02f, RotationalDof.All );
         return true;
       }
       return false;
