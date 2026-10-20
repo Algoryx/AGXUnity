@@ -205,18 +205,18 @@ namespace AGXUnity.IO.OpenPLX
       };
 
       // Find Imports
-      foreach(var document in OpenPlxContextInternal.fromContext( context ).documents() ) {
-        addIfValid(document.getPath());
+      foreach ( var document in OpenPlxContextInternal.fromContext( context ).documents() ) {
+        addIfValid( document.getPath() );
       }
 
       // Find references to paths in members
       var values = new std.OuterSymbolSet();
-      foreach(var registeredObject in context.getRegisteredObjects() ) {
+      foreach ( var registeredObject in context.getRegisteredObjects() ) {
         StringAnyPairVector entries = new();
         registeredObject.extractEntriesTo( entries );
-        foreach(var entry in entries ) {
-          if( entry.second.isString() && System.IO.File.Exists( entry.second.asString()) ) {
-            addIfValid(entry.second.asString());
+        foreach ( var entry in entries ) {
+          if ( entry.second.isString() && System.IO.File.Exists( entry.second.asString() ) ) {
+            addIfValid( entry.second.asString() );
           }
         }
       }

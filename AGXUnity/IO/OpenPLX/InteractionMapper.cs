@@ -49,12 +49,12 @@ namespace AGXUnity.IO.OpenPLX
       // Since redirected MCs can be placed in other places than the unique location derived by their
       // names, we need to add some unique identifier to avoid name collisions in the hierarchy.
       var mcObject = Data.CreateOpenPLXObject( mc.getName() );
-      if ( mc.HasTrait<Redirected>())
+      if ( mc.HasTrait<Redirected>() )
         mcObject.name = mcObject.name + $"_rd_#{mc.To32BitFnv1aHash()}";
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc.HasTrait<Redirected>() )
-        owner = mc.getObject(nameof(Redirected.redirected_parent));
+        owner = mc.getObject( nameof( Redirected.redirected_parent ) );
 
       openplx.Core.Object current = owner;
 

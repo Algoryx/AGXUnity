@@ -650,7 +650,7 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
-          if ( geometry.material().getTypeNameWithNamespace(".") != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
+          if ( geometry.material().getTypeNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
             if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
               Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
           }

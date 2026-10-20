@@ -182,8 +182,8 @@ namespace AGXUnity.IO.OpenPLX
       if ( oChassis == null && connection != null ) {
         var hinge = connection.hinge_1().mate();
         foreach ( var connector in hinge.connectors() ) {
-          if ( connector.HasTrait<Redirected>())
-            oChassis = connector.getDynamic(nameof(Redirected.redirected_parent)).asObject() as openplx.Physics3D.Bodies.RigidBody;
+          if ( connector.HasTrait<Redirected>() )
+            oChassis = connector.getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
           else
             oChassis = connector.getOwner() as openplx.Physics3D.Bodies.RigidBody;
 
@@ -494,7 +494,7 @@ namespace AGXUnity.IO.OpenPLX
 
       openplx.Physics3D.Bodies.RigidBody chassisBody = null;
 
-      if ( suspension.chassis_connector().HasTrait<Redirected>())
+      if ( suspension.chassis_connector().HasTrait<Redirected>() )
         chassisBody = suspension.chassis_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
       else if ( parent is openplx.Physics3D.System chassisSystem )
         chassisBody = suspension.attachment_connector().getOwner() as openplx.Physics3D.Bodies.RigidBody;
@@ -511,7 +511,7 @@ namespace AGXUnity.IO.OpenPLX
       var wheelParent = suspension.attachment_connector().getOwner();
       openplx.Physics3D.Bodies.RigidBody attachmentBody = null;
 
-      if ( suspension.attachment_connector().HasTrait<Redirected>())
+      if ( suspension.attachment_connector().HasTrait<Redirected>() )
         attachmentBody = suspension.chassis_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
       else if ( wheelParent is openplx.Physics3D.Bodies.RigidBody ab )
         attachmentBody = ab;

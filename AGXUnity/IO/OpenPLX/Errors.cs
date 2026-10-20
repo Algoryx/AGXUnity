@@ -100,7 +100,7 @@ namespace AGXUnity.IO.OpenPLX
     public UnimplementedWarning( openplx.Core.Object source )
       : base( source, AgxUnityOpenPLXErrors.Unimplemented )
     {
-      m_modelName = source.getTypeNameWithNamespace(".");
+      m_modelName = source.getTypeNameWithNamespace( "." );
     }
 
     protected override string createErrorMessage() => $"Mapping of model '{m_modelName}' is not implemented by the mapper";
