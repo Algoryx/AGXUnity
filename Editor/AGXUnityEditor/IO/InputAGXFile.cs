@@ -531,7 +531,7 @@ namespace AGXUnityEditor.IO
       var currentMaterials = ( from renderer in currentRenderers select renderer.sharedMaterial ).ToArray();
 
       var nativeGeometry = m_tree.GetGeometry( node.Parent.Uuid );
-      var toWorld        = nativeGeometry.getTransform();
+      var toWorld        = nativeShape.getLocalTransform() * nativeGeometry.getTransform();
       var toLocal        = shape.transform.worldToLocalMatrix;
       Mesh[] meshes      = MeshSplitter.Split( nativeRenderData.getVertexArray(),
                                                nativeRenderData.getIndexArray(),

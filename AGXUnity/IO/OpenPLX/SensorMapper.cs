@@ -69,7 +69,7 @@ namespace AGXUnity.IO.OpenPLX
             else if ( distortionAxis.dot( agx.Vec3.Z_AXIS() ) >= 0.95f )
               axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
             else {
-              Data.ErrorReporter.reportError( new NonPrincipalAxisError( gaussian.rotation_axis() ) );
+              Data.ReportError( new NonPrincipalAxisError( gaussian.rotation_axis() ) );
             }
 
             lidarComp.RayAngleGaussianNoises.Add( new LidarRayAngleGaussianNoise()
@@ -86,7 +86,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var dist in lidar.sensing_distortions() ) {
         if ( dist is LidarDetectionDistanceGaussianNoise gaussianDistanceNoise ) {
           if ( lidarComp.DistanceGaussianNoise.Enable == true ) {
-            Data.ErrorReporter.reportError( new MultipleDistanceDistortionsError( gaussianDistanceNoise ) );
+            Data.ReportError( new MultipleDistanceDistortionsError( gaussianDistanceNoise ) );
             continue;
           }
           lidarComp.DistanceGaussianNoise.Enable = true;

@@ -80,7 +80,7 @@ namespace AGXUnity.IO.OpenPLX
 
       if ( Math.Abs( mc.normal().normal() * main_axis_n - 1.0 ) < float.Epsilon ) {
         var errorData = BaseError.CreateErrorData(mc);
-        Data.ErrorReporter.reportError( new InvalidMateConnectorAxis( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, mc ) );
+        Data.ReportError( new InvalidMateConnectorAxis( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, mc ) );
       }
 
       var up = main_axis_n.cross(normal_n).normal();
@@ -151,7 +151,7 @@ namespace AGXUnity.IO.OpenPLX
         && mate_connector1 is not RedirectedMateConnector
         && mate_connector2 is not RedirectedMateConnector ) {
         var errorData = BaseError.CreateErrorData( interaction );
-        Data.ErrorReporter.reportError( new MissingConnectedBody( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, interaction ) );
+        Data.ReportError( new MissingConnectedBody( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, interaction ) );
       }
 
       return interactionCreator( frame2, frame1 );
@@ -448,7 +448,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       // TODO: Map more friction models
       if ( friction is not openplx.Physics.Interactions.Dissipation.DefaultDryFriction dryFriction ) {
-        Data.ErrorReporter.reportError( new UnsupportedFrictionModelError( friction ) );
+        Data.ReportError( new UnsupportedFrictionModelError( friction ) );
         return;
       }
 
@@ -577,7 +577,7 @@ namespace AGXUnity.IO.OpenPLX
         return;
 
       if ( Data.PrefabLocalData.ContactMaterials.Any( cm => ( cm.Material1 == sm1 && cm.Material2 == sm2 ) || ( cm.Material1 == sm2 && cm.Material2 == sm1 ) ) ) {
-        Data.ErrorReporter.reportError( new DuplicateMaterialPairForSurfaceContactModelDefinitionError( contactModel ) );
+        Data.ReportError( new DuplicateMaterialPairForSurfaceContactModelDefinitionError( contactModel ) );
         return;
       }
 
