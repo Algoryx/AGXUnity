@@ -1,9 +1,9 @@
 using agxopenplx;
 using openplx.Physics3D.Interactions;
+using openplx.Physics3D.Interactions.ConnectorProperties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using Connector = openplx.Physics.Interactions.Connector;
 using InteractionKey = std.PhysicsInteractionsConnectorVector;
@@ -49,12 +49,12 @@ namespace AGXUnity.IO.OpenPLX
       // Since redirected MCs can be placed in other places than the unique location derived by their
       // names, we need to add some unique identifier to avoid name collisions in the hierarchy.
       var mcObject = Data.CreateOpenPLXObject( mc.getName() );
-      if ( mc is RedirectedMateConnector )
+      if ( mc.HasTrait<Redirected>())
         mcObject.name = mcObject.name + $"_rd_#{mc.To32BitFnv1aHash()}";
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
-      if ( mc is RedirectedMateConnector redirected )
-        owner = redirected.redirected_parent();
+      if ( mc.HasTrait<Redirected>() )
+        owner = mc.getObject(nameof(Redirected.redirected_parent));
 
       openplx.Core.Object current = owner;
 
@@ -115,8 +115,11 @@ namespace AGXUnity.IO.OpenPLX
                                             Func<IFrame, IFrame, HingeClass> interactionCreator )
       where HingeClass : class
     {
-      Connector connector1 = interaction.connectors().Count >= 1 ? interaction.connectors()[0] : null;
-      Connector connector2 = interaction.connectors().Count >= 2 ? interaction.connectors()[1] : null;
+      var connectors = interaction.getDynamic( "connectors" ).asArray();
+      if ( connectors == null )
+        return null;
+      Connector connector1 = connectors.Count >= 1 ? connectors[0].asObject() as Connector : null;
+      Connector connector2 = connectors.Count >= 2 ? connectors[1].asObject() as Connector : null;
 
       var mate_connector1 = connector1 == null ? null : connector1 as MateConnector;
       var mate_connector2 = connector2 == null ? null : connector2 as MateConnector;
@@ -127,12 +130,14 @@ namespace AGXUnity.IO.OpenPLX
       var frame1 = mate_connector1 == null ? null : GOToIFrame(mappedMC1);
       var frame2 = mate_connector2 == null ? null : GOToIFrame(mappedMC2);
 
-      if ( mate_connector1 is RedirectedMateConnector redirected_connector1 ) {
-        RigidBody rb1 = redirected_connector1.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector1.redirected_parent() ];
+      if ( mate_connector1.HasTrait<Redirected>() ) {
+        var redirected_parent1 = mate_connector1.getObject(nameof(Redirected.redirected_parent));
+        RigidBody rb1 = redirected_parent1 == null ? null : Data.BodyCache[ redirected_parent1 ];
         frame1.SetParent( rb1?.gameObject, true );
       }
-      if ( mate_connector2 is RedirectedMateConnector redirected_connector2 ) {
-        RigidBody rb2 = redirected_connector2.redirected_parent() == null ? null : Data.BodyCache[ redirected_connector2.redirected_parent() ];
+      if ( mate_connector2.HasTrait<Redirected>() ) {
+        var redirected_parent2 = mate_connector2.getObject(nameof(Redirected.redirected_parent));
+        RigidBody rb2 = redirected_parent2 == null ? null : Data.BodyCache[ redirected_parent2 ];
         frame2.SetParent( rb2?.gameObject, true );
       }
 
@@ -148,8 +153,8 @@ namespace AGXUnity.IO.OpenPLX
       }
 
       if ( frame1.Parent == null && frame2.Parent == null
-        && mate_connector1 is not RedirectedMateConnector
-        && mate_connector2 is not RedirectedMateConnector ) {
+        && !mate_connector1.HasTrait<Redirected>()
+        && !mate_connector2.HasTrait<Redirected>() ) {
         var errorData = BaseError.CreateErrorData( interaction );
         Data.ReportError( new MissingConnectedBody( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, interaction ) );
       }
@@ -522,15 +527,15 @@ namespace AGXUnity.IO.OpenPLX
       var solveType = FrictionModel.ESolveType.Direct;
       var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");
       var approximateConeAnnotation = friction.findAnnotations("agx_approximate_cone_friction");
-      bool approximate_cone = approximateConeAnnotation.Count == 1 &&  approximateConeAnnotation[0].isTrue() ? true : false;
+      bool approximate_cone = approximateConeAnnotation.Count == 1 &&  approximateConeAnnotation[0].isBool() && approximateConeAnnotation[0].asBool();
       if ( solveTypeAnnotation.Count == 1 && solveTypeAnnotation[ 0 ].isString() ) {
-        if ( solveTypeAnnotation[ 0 ].isString( "SPLIT" ) )
+        if ( solveTypeAnnotation[ 0 ].asString() == "SPLIT" )
           solveType = FrictionModel.ESolveType.Split;
-        else if ( solveTypeAnnotation[ 0 ].isString( "DIRECT_AND_ITERATIVE" ) )
+        else if ( solveTypeAnnotation[ 0 ].asString() == "DIRECT_AND_ITERATIVE" )
           solveType = FrictionModel.ESolveType.DirectAndIterative;
-        else if ( solveTypeAnnotation[ 0 ].isString( "ITERATIVE" ) )
+        else if ( solveTypeAnnotation[ 0 ].asString() == "ITERATIVE" )
           solveType = FrictionModel.ESolveType.Iterative;
-        else if ( !solveTypeAnnotation[ 0 ].isString( "DIRECT" ) ) {
+        else if ( solveTypeAnnotation[ 0 ].asString() != "DIRECT" ) {
           // TODO: Add warning
           //SPDLOG_WARN( "AGX friction solve type annotation defaults to DIRECT, {} is not supported", friction_solve_type_annotation.front().asString() );
         }
