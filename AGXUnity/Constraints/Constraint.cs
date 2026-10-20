@@ -1033,8 +1033,8 @@ namespace AGXUnity
     {
       if ( m_serializationVersion < 3 ) {
         // Migrate from damping to attenuation
-        TraverseRowData( data => data.Attenuation *= Time.fixedDeltaTime, TranslationalDof.All );
-        TraverseRowData( data => data.Attenuation *= Time.fixedDeltaTime, RotationalDof.All );
+        TraverseRowData( data => data.Attenuation /= Time.fixedDeltaTime, TranslationalDof.All );
+        TraverseRowData( data => data.Attenuation /= Time.fixedDeltaTime, RotationalDof.All );
         return true;
       }
       return false;

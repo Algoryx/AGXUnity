@@ -213,8 +213,8 @@ namespace AGXUnity
     protected override bool PerformMigration()
     {
       if ( m_serializationVersion < 3 ) {
-        m_attenuationBend *= Time.fixedDeltaTime;
-        m_attenuationStretch *= Time.fixedDeltaTime;
+        m_attenuationBend /= Time.fixedDeltaTime;
+        m_attenuationStretch /= Time.fixedDeltaTime;
         return true;
       }
       return false;
