@@ -71,7 +71,7 @@ namespace AGXUnity.Deprecated
     }
 
     /// <summary>
-    /// Attenuation of this row in the elementary constraint. Paired with property Damping.
+    /// Attenuation of this row in the elementary constraint. Paired with property Attenuation.
     /// </summary>
     [SerializeField]
     [FormerlySerializedAs( "m_damping" )]
