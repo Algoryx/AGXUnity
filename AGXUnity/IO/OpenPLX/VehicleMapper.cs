@@ -512,7 +512,7 @@ namespace AGXUnity.IO.OpenPLX
       openplx.Physics3D.Bodies.RigidBody attachmentBody = null;
 
       if ( suspension.attachment_connector().HasTrait<Redirected>() )
-        attachmentBody = suspension.chassis_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
+        attachmentBody = suspension.attachment_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
       else if ( wheelParent is openplx.Physics3D.Bodies.RigidBody ab )
         attachmentBody = ab;
       else if ( wheelParent is Wheels.Base wheelModel )
