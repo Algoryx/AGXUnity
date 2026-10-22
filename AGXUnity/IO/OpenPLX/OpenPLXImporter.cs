@@ -92,12 +92,6 @@ namespace AGXUnity.IO.OpenPLX
       else
         ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
 
-      //if ( loadedModel != null && loadedModel.isTrait() ) {
-      //  ErrorReporter?.Invoke( new TraitNotImportableError( loadedModel ) );
-      //  loadedModel = null;
-      //}
-
-
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
         importedObject = mapper.MapObject( loadedModel, path, objectMap );
