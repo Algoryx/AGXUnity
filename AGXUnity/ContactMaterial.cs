@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity
 {
@@ -215,24 +216,25 @@ namespace AGXUnity
     }
 
     /// <summary>
-    /// Damping of the contact constraint, paired with property Damping.
+    /// Attenuation of the contact constraint, paired with property Attenuation.
     /// </summary>
     [SerializeField]
-    private float m_damping = 4.5f / 60.0f;
+    [FormerlySerializedAs( "m_damping" )]
+    private float m_attenuation = 4.5f;
 
     /// <summary>
-    /// Damping of the contact constraint. Default: 4.5 / 60 = 0.075.
+    /// Attenuation of the contact constraint. Default: 2.
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "This defines the time it should take for the solver to restore an overlap. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
-    public float Damping
+    [Tooltip( "This defines the number of integration steps the solver is given to satisfy the constraint. A higher value will lead to higher restoration forces as overlaps should be minimized faster" )]
+    public float Attenuation
     {
-      get { return m_damping; }
+      get { return m_attenuation; }
       set
       {
-        m_damping = value;
+        m_attenuation = value;
         if ( Native != null )
-          Native.setDamping( m_damping );
+          Native.setAttenuation( m_attenuation );
       }
     }
 
@@ -272,7 +274,7 @@ namespace AGXUnity
     /// </summary>
     [ClampAboveZeroInInspector( true )]
     [DynamicallyShowInInspector( nameof( IsNotTerrainWheelForceModel ) )]
-    [Tooltip( "allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
+    [Tooltip( "Allowed overlap from surface for resting contact. At this overlap, no force is applied. At lower overlap, the adhesion force will work, at higher overlap, the (usual) contact force" )]
     public float AdhesiveOverlap
     {
       get { return m_adhesiveOverlap; }
@@ -397,7 +399,7 @@ namespace AGXUnity
       FrictionCoefficients  = new Vector2( Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.PRIMARY_DIRECTION ) ),
                                            Convert.ToSingle( contactMaterial.getFrictionCoefficient( agx.ContactMaterial.FrictionDirection.SECONDARY_DIRECTION ) ) );
       Restitution           = Convert.ToSingle( contactMaterial.getRestitution() );
-      Damping               = Convert.ToSingle( contactMaterial.getDamping() );
+      Attenuation           = Convert.ToSingle( contactMaterial.getAttenuation() );
       AdhesiveForce         = Convert.ToSingle( contactMaterial.getAdhesion() );
       AdhesiveOverlap       = Convert.ToSingle( contactMaterial.getAdhesiveOverlap() );
       UseContactArea        = contactMaterial.getUseContactAreaApproach();
@@ -525,6 +527,16 @@ namespace AGXUnity
     {
       if ( Native != null )
         Native.setFrictionModel( frictionModel );
+    }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz
+        m_attenuation *= 50.0f;
+        return true;
+      }
+      return false;
     }
   }
 }

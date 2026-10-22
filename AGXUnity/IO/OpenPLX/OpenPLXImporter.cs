@@ -1,6 +1,7 @@
 using AGXUnity.Utils;
 using openplx;
 using openplx.Core.Api;
+using std;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -90,12 +91,6 @@ namespace AGXUnity.IO.OpenPLX
         loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data, objectMap );
       else
         ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
-
-      if ( loadedModel != null && loadedModel.getType().isTrait() ) {
-        ErrorReporter?.Invoke( new TraitNotImportableError( loadedModel ) );
-        loadedModel = null;
-      }
-
 
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
@@ -199,26 +194,24 @@ namespace AGXUnity.IO.OpenPLX
       HashSet<string> dependencies = new HashSet<string>();
       // TODO: This currently returns all openplx files in all bundles which can cause circular import dependencies.
       Action<string> addIfValid = (string path) => {
-        if(path != null && path.Length > 0 && path != obj.getType().getOwningDocument().getSourceId())
+        if(path != null && path.Length > 0 && path != obj.getTypeInfo().sourceId)
           dependencies.Add( path );
       };
 
       // Find Imports
-      var imports = obj.getType().getOwningDocument().findImports();
-      foreach ( var import in imports )
-        addIfValid( import.getPath() );
+      foreach ( var document in OpenPlxContextInternal.fromContext( context ).documents() ) {
+        addIfValid( document.getPath() );
+      }
 
       // Find references to paths in members
       var values = new std.OuterSymbolSet();
-      obj.getType().getOuterTreeRoot().collectValues( values );
-      foreach ( var val in values ) {
-        var boundValue = val.getBoundValue();
-        if ( boundValue == null )
-          continue;
-        if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
-          var path = boundValue.asConstant().getToken().lexeme().Trim('\"');
-          if ( System.IO.File.Exists( path ) )
-            addIfValid( path );
+      foreach ( var registeredObject in context.getRegisteredObjects() ) {
+        StringAnyPairVector entries = new();
+        registeredObject.extractEntriesTo( entries );
+        foreach ( var entry in entries ) {
+          if ( entry.second.isString() && System.IO.File.Exists( entry.second.asString() ) ) {
+            addIfValid( entry.second.asString() );
+          }
         }
       }
 

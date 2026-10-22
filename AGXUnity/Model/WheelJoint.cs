@@ -320,36 +320,36 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Set damping to all ordinary degrees of freedom (not including controllers)
+    /// Set attenuation to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
-    public void SetDamping( float damping )
+    /// <param name="attenuation">New attenuation.</param>
+    public void SetAttenuation( float attenuation )
     {
-      TraverseRowData( data => data.Damping = damping, Constraint.TranslationalDof.All );
-      TraverseRowData( data => data.Damping = damping, Constraint.RotationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, Constraint.TranslationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, Constraint.RotationalDof.All );
     }
 
     /// <summary>
-    /// Set damping to one or all translational ordinary degrees of freedom
+    /// Set attenuation to one or all translational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetDamping( float damping, Constraint.TranslationalDof dof )
+    public void SetAttenuation( float attenuation, Constraint.TranslationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>
-    /// Set damping to one or all rotational ordinary degrees of freedom
+    /// Set attenuation to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetDamping( float damping, Constraint.RotationalDof dof )
+    public void SetAttenuation( float attenuation, Constraint.RotationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>

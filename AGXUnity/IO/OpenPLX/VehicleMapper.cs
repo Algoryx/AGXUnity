@@ -3,6 +3,7 @@ using AGXUnity.Model;
 using AGXUnity.Rendering;
 using AGXUnity.Utils;
 using openplx.Physics3D.Interactions;
+using openplx.Physics3D.Interactions.ConnectorProperties;
 using System.Collections.Generic;
 using UnityEngine;
 using Steering = openplx.Vehicles.Steering;
@@ -181,8 +182,8 @@ namespace AGXUnity.IO.OpenPLX
       if ( oChassis == null && connection != null ) {
         var hinge = connection.hinge_1().mate();
         foreach ( var connector in hinge.connectors() ) {
-          if ( connector is RedirectedMateConnector redirected )
-            oChassis = redirected.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+          if ( connector.HasTrait<Redirected>() )
+            oChassis = connector.getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
           else
             oChassis = connector.getOwner() as openplx.Physics3D.Bodies.RigidBody;
 
@@ -275,8 +276,8 @@ namespace AGXUnity.IO.OpenPLX
         merge_props.LockToReachMergeConditionEnabled = lockToReachMergeConditionEnabled;
       if ( track_system.TryGetRealAnnotation( "agx_set_lock_to_reach_merge_condition_compliance", out float LockToReachMergeConditionCompliance ) )
         merge_props.LockToReachMergeConditionCompliance = LockToReachMergeConditionCompliance;
-      if ( track_system.TryGetRealAnnotation( "agx_set_lock_to_reach_merge_condition_relaxation_time", out float LockToReachMergeConditionDamping ) )
-        merge_props.LockToReachMergeConditionDamping = LockToReachMergeConditionDamping;
+      if ( track_system.TryGetRealAnnotation( "agx_set_lock_to_reach_merge_condition_attenuation", out float LockToReachMergeConditionAttenuation ) )
+        merge_props.LockToReachMergeConditionAttenuation = LockToReachMergeConditionAttenuation;
       if ( track_system.TryGetRealAnnotation( "agx_set_num_nodes_per_merge_segment", out float NumNodesPerMergeSegment ) )
         merge_props.NumNodesPerMergeSegment = (int)NumNodesPerMergeSegment;
       if ( track_system.TryGetRealAnnotation( "agx_set_max_angle_merge_condition", out float MaxAngleMergeCondition ) )
@@ -493,8 +494,8 @@ namespace AGXUnity.IO.OpenPLX
 
       openplx.Physics3D.Bodies.RigidBody chassisBody = null;
 
-      if ( suspension.chassis_connector() is RedirectedMateConnector crmc )
-        chassisBody = crmc.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+      if ( suspension.chassis_connector().HasTrait<Redirected>() )
+        chassisBody = suspension.chassis_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
       else if ( parent is openplx.Physics3D.System chassisSystem )
         chassisBody = suspension.attachment_connector().getOwner() as openplx.Physics3D.Bodies.RigidBody;
       else
@@ -510,8 +511,8 @@ namespace AGXUnity.IO.OpenPLX
       var wheelParent = suspension.attachment_connector().getOwner();
       openplx.Physics3D.Bodies.RigidBody attachmentBody = null;
 
-      if ( suspension.attachment_connector() is RedirectedMateConnector armc )
-        attachmentBody = armc.redirected_parent() as openplx.Physics3D.Bodies.RigidBody;
+      if ( suspension.attachment_connector().HasTrait<Redirected>() )
+        attachmentBody = suspension.attachment_connector().getDynamic( nameof( Redirected.redirected_parent ) ).asObject() as openplx.Physics3D.Bodies.RigidBody;
       else if ( wheelParent is openplx.Physics3D.Bodies.RigidBody ab )
         attachmentBody = ab;
       else if ( wheelParent is Wheels.Base wheelModel )
@@ -537,9 +538,9 @@ namespace AGXUnity.IO.OpenPLX
         wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Steering ).Enable = true;
 
       if ( suspension is Suspensions.SingleMate.LinearSpringDamper lsd ) {
-        var damping = InteractionMapper.MapDissipation(lsd.mate().spring_damping(), lsd.mate().spring_constant());
-        if ( damping.HasValue )
-          wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Damping = damping.Value;
+        var attenuation = InteractionMapper.MapDissipation(lsd.mate().spring_damping(), lsd.mate().spring_constant());
+        if ( attenuation.HasValue )
+          wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Attenuation = attenuation.Value;
         var compliance = InteractionMapper.MapFlexibility(lsd.mate().spring_constant());
         if ( compliance.HasValue )
           wheelJoint.GetController<LockController>( WheelJoint.WheelDimension.Suspension ).Compliance = compliance.Value;
@@ -554,7 +555,7 @@ namespace AGXUnity.IO.OpenPLX
         range.Compliance = rangeCompliance.Value;
       var rangeDamping = InteractionMapper.MapDissipation(suspension.range().dissipation(), suspension.range().flexibility());
       if ( rangeDamping.HasValue )
-        range.Damping = rangeDamping.Value;
+        range.Attenuation = rangeDamping.Value;
       range.Range = new RangeReal( (float)suspension.range().start(), (float)suspension.range().end() );
       range.ForceRange = new RangeReal( (float)suspension.range().min_effort(), (float)suspension.range().max_effort() );
 

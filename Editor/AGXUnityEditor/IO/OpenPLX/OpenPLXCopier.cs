@@ -1,6 +1,7 @@
 using AGXUnity.IO.OpenPLX;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace AGXUnityEditor.IO.OpenPLX
       var copiedDeps = new HashSet<string>();
 
       var openPLXAssets = AssetDatabase.FindAssets( "glob:\"*.openplx\"" );
+      openPLXAssets = openPLXAssets.Concat( AssetDatabase.FindAssets( "glob:\"*.plxz\"" ) ).ToArray();
       var num = 0;
       foreach ( var asset in openPLXAssets ) {
         var src = AssetDatabase.GUIDToAssetPath( asset );
@@ -66,7 +68,7 @@ namespace AGXUnityEditor.IO.OpenPLX
           }
 
           foreach ( var dep in dependencies ) {
-            if ( dep.EndsWith( ".openplx" ) )
+            if ( dep.EndsWith( ".openplx" ) || dep.EndsWith( ".plxz" ) )
               continue;
             var relative = Path.GetRelativePath( projectPath, dep );
             if ( !copiedDeps.Contains( relative ) ) {

@@ -24,13 +24,13 @@ namespace AGXUnity.Deprecated
     }
 
     /// <summary>
-    /// Get/set the damping of this controller (ignored for nonholonomic controllers).
+    /// Get/set the attenuation of this controller (ignored for nonholonomic controllers).
     /// </summary>
     [HideInInspector]
-    public float Damping
+    public float Attenuation
     {
-      get { return RowData[ 0 ].Damping; }
-      set { RowData[ 0 ].Damping = value; }
+      get { return RowData[ 0 ].Attenuation; }
+      set { RowData[ 0 ].Attenuation = value; }
     }
 
     /// <summary>
