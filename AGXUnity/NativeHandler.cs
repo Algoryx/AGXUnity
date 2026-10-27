@@ -22,14 +22,14 @@ namespace AGXUnity
       try {
         Configure();
       }
-      catch ( Exception e ) {
+      catch ( System.Exception e ) {
         Debug.LogException( e );
       }
     }
 
     ~InitShutdownAGXDynamics()
     {
-      m_ai.Dispose();
+      m_ai?.Dispose();
       m_ai = null;
     }
 
@@ -58,6 +58,14 @@ namespace AGXUnity
       if ( Application.isEditor ) {
         // This case is handled by AGXUnityEditor.Manager.
       }
+#if UNITY_ANDROID && !UNITY_EDITOR
+      else {
+        // Android native libraries are loaded by Unity; APK assets cannot be
+        // opened using desktop paths. Extract component metadata before any
+        // task/model creation and preserve externally configured license paths.
+        IO.AndroidRuntimeResources.Prepare();
+      }
+#else
       // Running build with environment set. Use default environment setup.
       // This can be useful to debug an application, being able to attach
       // to a process with AGX Dynamics + AGXUnity.
@@ -92,10 +100,16 @@ namespace AGXUnity
         if ( string.IsNullOrEmpty( envInstance.findComponent( "Referenced.agxEntity" ) ) )
           throw new AGXUnity.Exception( "Unable to find Components directory in RUNTIME_PATH." );
       }
+#endif
 
       agx.agxSWIG.setEntityCreationThreadSafe( true );
 
       m_ai = new agx.AutoInit();
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+      IO.AndroidRuntimeResources.LogLicenseStatus();
+      IO.AndroidRuntimeResources.ValidateGravityTasks();
+#endif
 
       agx.agxSWIG.setNumThreads( 4 );
 
@@ -137,9 +151,17 @@ namespace AGXUnity
       m_isAgx = null;
     }
 
-    public bool HasValidLicense { get; private set; }
+    private bool m_hasValidLicense;
+    public bool HasValidLicense
+    {
+      get {
+        // The editor can load its license after this handler is constructed.
+        ValidateLicense();
+        return m_hasValidLicense;
+      }
+    }
 
-    public bool Initialized { get { return m_isAgx != null && m_isAgx.Initialized; } }
+    public bool Initialized => m_isAgx != null && m_isAgx.Initialized;
 
     public void Register( ScriptComponent component )
     {
@@ -151,7 +173,7 @@ namespace AGXUnity
 
     public void ValidateLicense()
     {
-      HasValidLicense = m_isAgx.Initialized && LicenseManager.Runtime.isValid();
+      m_hasValidLicense = Initialized && LicenseManager.Runtime.isValid();
     }
 
     public void MakeMainThread()

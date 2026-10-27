@@ -1,6 +1,5 @@
 ﻿using AGXUnity;
 using AGXUnity.Model;
-using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using static AGXUnityEditor.InspectorGUI;
 using GUI = AGXUnity.Utils.GUI;
 using Object = UnityEngine.Object;
 
@@ -830,152 +828,152 @@ namespace AGXUnityEditor
       }
     }
 
-    private static void RenderLidarRayAngleGaussianNose( LidarRayAngleGaussianNoise noise )
-    {
-      using var _ = new GUILayout.HorizontalScope();
-      GUILayout.FlexibleSpace();
-      noise.Enable = EditorGUILayout.Toggle( noise.Enable, GUILayout.Width( 25 ) );
+    //private static void RenderLidarRayAngleGaussianNose( LidarRayAngleGaussianNoise noise )
+    //{
+    //  using var _ = new GUILayout.HorizontalScope();
+    //  GUILayout.FlexibleSpace();
+    //  noise.Enable = EditorGUILayout.Toggle( noise.Enable, GUILayout.Width( 25 ) );
 
-      using var enabledScope = new EditorGUI.DisabledScope(!noise.Enable);
-      var axis = noise.DistortionAxis;
-      var skin = InspectorEditor.Skin;
-      var xAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
-      var yAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
-      var zAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
+    //  using var enabledScope = new EditorGUI.DisabledScope(!noise.Enable);
+    //  var axis = noise.DistortionAxis;
+    //  var skin = InspectorEditor.Skin;
+    //  var xAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
+    //  var yAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
+    //  var zAxis = !EditorGUI.showMixedValue && axis == agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
 
-      if ( GUILayout.Toggle( xAxis, GUI.MakeLabel( "X", xAxis, "Apply distortion around X-axis." ),
-                              skin.GetButton( InspectorGUISkin.ButtonType.Left ),
-                              GUILayout.Width( 20 ) ) != xAxis )
-        noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
+    //  if ( GUILayout.Toggle( xAxis, GUI.MakeLabel( "X", xAxis, "Apply distortion around X-axis." ),
+    //                          skin.GetButton( InspectorGUISkin.ButtonType.Left ),
+    //                          GUILayout.Width( 20 ) ) != xAxis )
+    //    noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
 
-      if ( GUILayout.Toggle( yAxis, GUI.MakeLabel( "Y", yAxis, "Apply distortion around Y-axis." ),
-                              skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
-                              GUILayout.Width( 20 ) ) != yAxis )
-        noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
+    //  if ( GUILayout.Toggle( yAxis, GUI.MakeLabel( "Y", yAxis, "Apply distortion around Y-axis." ),
+    //                          skin.GetButton( InspectorGUISkin.ButtonType.Middle ),
+    //                          GUILayout.Width( 20 ) ) != yAxis )
+    //    noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
 
-      if ( GUILayout.Toggle( zAxis, GUI.MakeLabel( "Z", zAxis, "Apply distortion around Z-axis." ),
-                              skin.GetButton( InspectorGUISkin.ButtonType.Right ),
-                              GUILayout.Width( 20 ) ) != zAxis )
-        noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
-      GUILayout.Space( 5 );
+    //  if ( GUILayout.Toggle( zAxis, GUI.MakeLabel( "Z", zAxis, "Apply distortion around Z-axis." ),
+    //                          skin.GetButton( InspectorGUISkin.ButtonType.Right ),
+    //                          GUILayout.Width( 20 ) ) != zAxis )
+    //    noise.DistortionAxis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
+    //  GUILayout.Space( 5 );
 
-      var preWidth = EditorGUIUtility.labelWidth;
-      EditorGUIUtility.labelWidth = 25;
+    //  var preWidth = EditorGUIUtility.labelWidth;
+    //  EditorGUIUtility.labelWidth = 25;
 
-      noise.Mean =
-        EditorGUILayout.FloatField(
-          GUI.MakeLabel(
-            "<b>\u03BC</b>",
-            toolTip: "The mean of the gaussian distribution of the ray angle noise applied." ),
-          noise.Mean );
+    //  noise.Mean =
+    //    EditorGUILayout.FloatField(
+    //      GUI.MakeLabel(
+    //        "<b>\u03BC</b>",
+    //        toolTip: "The mean of the gaussian distribution of the ray angle noise applied." ),
+    //      noise.Mean );
 
-      GUILayout.Space( 5 );
+    //  GUILayout.Space( 5 );
 
-      noise.StandardDeviation =
-        Mathf.Max(
-          0.0f,
-          EditorGUILayout.FloatField(
-            GUI.MakeLabel(
-              "<b>\u03C3</b>",
-              toolTip: "The standard deviation of the gaussian distribution of the ray angle noise applied." ),
-            noise.StandardDeviation ) );
+    //  noise.StandardDeviation =
+    //    Mathf.Max(
+    //      0.0f,
+    //      EditorGUILayout.FloatField(
+    //        GUI.MakeLabel(
+    //          "<b>\u03C3</b>",
+    //          toolTip: "The standard deviation of the gaussian distribution of the ray angle noise applied." ),
+    //        noise.StandardDeviation ) );
 
-      EditorGUIUtility.labelWidth = preWidth;
-    }
+    //  EditorGUIUtility.labelWidth = preWidth;
+    //}
 
-    [InspectorDrawer( typeof( AGXUnity.Sensor.QOS ) )]
-    public static object QOSDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      var qos = wrapper.Get<AGXUnity.Sensor.QOS>( objects[0] );
-      var target = objects[0] as Object;
-      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ), InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
-        using var indent = new InspectorGUI.IndentScope();
-        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).durabilityPolicy != qos.durabilityPolicy ) ) )
-          qos.durabilityPolicy = (agxROS2.QOS_DURABILITY)EditorGUILayout.EnumPopup( "Durability Policy", qos.durabilityPolicy );
-        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).reliabilityPolicy != qos.reliabilityPolicy ) ) )
-          qos.reliabilityPolicy = (agxROS2.QOS_RELIABILITY)EditorGUILayout.EnumPopup( "Reliability Policy", qos.reliabilityPolicy );
-        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyPolicy != qos.historyPolicy ) ) )
-          qos.historyPolicy = (agxROS2.QOS_HISTORY)EditorGUILayout.EnumPopup( "History Policy", qos.historyPolicy );
-        using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyDepth != qos.historyDepth ) ) )
-          qos.historyDepth = (uint)EditorGUILayout.IntField( "History Depth", (int)qos.historyDepth );
-      }
+    //[InspectorDrawer( typeof( AGXUnity.Sensor.QOS ) )]
+    //public static object QOSDrawer( object[] objects, InvokeWrapper wrapper )
+    //{
+    //  var qos = wrapper.Get<AGXUnity.Sensor.QOS>( objects[0] );
+    //  var target = objects[0] as Object;
+    //  if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ), InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+    //    using var indent = new InspectorGUI.IndentScope();
+    //    using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).durabilityPolicy != qos.durabilityPolicy ) ) )
+    //      qos.durabilityPolicy = (agxROS2.QOS_DURABILITY)EditorGUILayout.EnumPopup( "Durability Policy", qos.durabilityPolicy );
+    //    using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).reliabilityPolicy != qos.reliabilityPolicy ) ) )
+    //      qos.reliabilityPolicy = (agxROS2.QOS_RELIABILITY)EditorGUILayout.EnumPopup( "Reliability Policy", qos.reliabilityPolicy );
+    //    using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyPolicy != qos.historyPolicy ) ) )
+    //      qos.historyPolicy = (agxROS2.QOS_HISTORY)EditorGUILayout.EnumPopup( "History Policy", qos.historyPolicy );
+    //    using ( new InspectorGUI.MixedValueScope( objects.Any( o => wrapper.Get<QOS>( o ).historyDepth != qos.historyDepth ) ) )
+    //      qos.historyDepth = (uint)EditorGUILayout.IntField( "History Depth", (int)qos.historyDepth );
+    //  }
 
-      return qos;
-    }
+    //  return qos;
+    //}
 
-    [InspectorDrawer( typeof( List<AGXUnity.Sensor.LidarRayAngleGaussianNoise> ) )]
-    public static object LidarRayAngleGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      var skin = InspectorEditor.Skin;
-      var buttonLayout = new GUILayoutOption[]
-      {
-        GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
-        GUILayout.Height( 1.0f * EditorGUIUtility.singleLineHeight )
-      };
-      var target = objects[0] as Object;
-      LidarRayAngleGaussianNoise insertElementBefore = null;
-      LidarRayAngleGaussianNoise insertElementAfter = null;
-      LidarRayAngleGaussianNoise eraseElement = null;
-      var data = wrapper.Get<List<AGXUnity.Sensor.LidarRayAngleGaussianNoise>>( objects[0] );
+    //[InspectorDrawer( typeof( List<AGXUnity.Sensor.LidarRayAngleGaussianNoise> ) )]
+    //public static object LidarRayAngleGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
+    //{
+    //  var skin = InspectorEditor.Skin;
+    //  var buttonLayout = new GUILayoutOption[]
+    //  {
+    //    GUILayout.Width( 1.0f * EditorGUIUtility.singleLineHeight ),
+    //    GUILayout.Height( 1.0f * EditorGUIUtility.singleLineHeight )
+    //  };
+    //  var target = objects[0] as Object;
+    //  LidarRayAngleGaussianNoise insertElementBefore = null;
+    //  LidarRayAngleGaussianNoise insertElementAfter = null;
+    //  LidarRayAngleGaussianNoise eraseElement = null;
+    //  var data = wrapper.Get<List<AGXUnity.Sensor.LidarRayAngleGaussianNoise>>( objects[0] );
 
-      if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
-                                 InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
-        foreach ( var noise in data ) {
-          using ( new GUILayout.HorizontalScope() ) {
-            RenderLidarRayAngleGaussianNose( noise );
+    //  if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+    //                             InspectorGUI.MakeLabel( wrapper.Member ) ) ) {
+    //    foreach ( var noise in data ) {
+    //      using ( new GUILayout.HorizontalScope() ) {
+    //        RenderLidarRayAngleGaussianNose( noise );
 
-            GUILayout.Space( 5 );
+    //        GUILayout.Space( 5 );
 
-            if ( InspectorGUI.Button( MiscIcon.EntryInsertBefore,
-                                      true,
-                                      "Insert new element before this.",
-                                      buttonLayout ) )
-              insertElementBefore = noise;
-            if ( InspectorGUI.Button( MiscIcon.EntryInsertAfter,
-                                      true,
-                                      "Insert new element after this.",
-                                      buttonLayout ) )
-              insertElementAfter = noise;
-            if ( InspectorGUI.Button( MiscIcon.EntryRemove,
-                                      true,
-                                      "Remove this element.",
-                                      buttonLayout ) )
-              eraseElement = noise;
-          }
+    //        if ( InspectorGUI.Button( MiscIcon.EntryInsertBefore,
+    //                                  true,
+    //                                  "Insert new element before this.",
+    //                                  buttonLayout ) )
+    //          insertElementBefore = noise;
+    //        if ( InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+    //                                  true,
+    //                                  "Insert new element after this.",
+    //                                  buttonLayout ) )
+    //          insertElementAfter = noise;
+    //        if ( InspectorGUI.Button( MiscIcon.EntryRemove,
+    //                                  true,
+    //                                  "Remove this element.",
+    //                                  buttonLayout ) )
+    //          eraseElement = noise;
+    //      }
 
-        }
+    //    }
 
-        InspectorGUI.Separator( 1.0f, 0.5f * EditorGUIUtility.singleLineHeight );
+    //    InspectorGUI.Separator( 1.0f, 0.5f * EditorGUIUtility.singleLineHeight );
 
-        if ( data.Count == 0 )
-          GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
+    //    if ( data.Count == 0 )
+    //      GUILayout.Label( GUI.MakeLabel( "Empty", true ), skin.Label );
 
-        bool addElementToList = false;
-        using ( new GUILayout.HorizontalScope() ) {
-          GUILayout.FlexibleSpace();
-          addElementToList = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
-                                                  true,
-                                                  "Add new element.",
-                                                  buttonLayout );
-        }
+    //    bool addElementToList = false;
+    //    using ( new GUILayout.HorizontalScope() ) {
+    //      GUILayout.FlexibleSpace();
+    //      addElementToList = InspectorGUI.Button( MiscIcon.EntryInsertAfter,
+    //                                              true,
+    //                                              "Add new element.",
+    //                                              buttonLayout );
+    //    }
 
-        LidarRayAngleGaussianNoise newObject = null;
-        if ( addElementToList || insertElementBefore != null || insertElementAfter != null )
-          newObject = new LidarRayAngleGaussianNoise();
+    //    LidarRayAngleGaussianNoise newObject = null;
+    //    if ( addElementToList || insertElementBefore != null || insertElementAfter != null )
+    //      newObject = new LidarRayAngleGaussianNoise();
 
-        if ( eraseElement != null )
-          data.Remove( eraseElement );
-        else if ( newObject != null ) {
-          if ( addElementToList || ( data.Count > 0 && insertElementAfter != null && insertElementAfter == data[ data.Count - 1 ] ) )
-            data.Add( newObject );
-          else if ( insertElementAfter != null )
-            data.Insert( data.IndexOf( insertElementAfter ) + 1, newObject );
-          else if ( insertElementBefore != null )
-            data.Insert( data.IndexOf( insertElementBefore ), newObject );
-        }
-      }
-      return null;
-    }
+    //    if ( eraseElement != null )
+    //      data.Remove( eraseElement );
+    //    else if ( newObject != null ) {
+    //      if ( addElementToList || ( data.Count > 0 && insertElementAfter != null && insertElementAfter == data[ data.Count - 1 ] ) )
+    //        data.Add( newObject );
+    //      else if ( insertElementAfter != null )
+    //        data.Insert( data.IndexOf( insertElementAfter ) + 1, newObject );
+    //      else if ( insertElementBefore != null )
+    //        data.Insert( data.IndexOf( insertElementBefore ), newObject );
+    //    }
+    //  }
+    //  return null;
+    //}
 
     [InspectorDrawer( typeof( List<string> ) )]
     public static object StringListDrawer( object[] objects, InvokeWrapper wrapper )
@@ -1456,176 +1454,176 @@ namespace AGXUnityEditor
       return null;
     }
 
-    public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
-    {
-      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
-      data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ChannelCount ) ), data.ChannelCount );
-      data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.BeamSpacing ) ), data.BeamSpacing );
-      data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.LidarMode ) ), data.LidarMode );
-    }
+    //public static void DrawOusterModelData( AGXUnity.Sensor.OusterData data )
+    //{
+    //  using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+    //  data.ChannelCount = (agxSensor.LidarModelOusterOS.ChannelCount)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ChannelCount ) ), data.ChannelCount );
+    //  data.BeamSpacing  = (agxSensor.LidarModelOusterOS.BeamSpacing)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.BeamSpacing ) ), data.BeamSpacing );
+    //  data.LidarMode    = (agxSensor.LidarModelOusterOS.LidarMode)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.LidarMode ) ), data.LidarMode );
+    //}
 
-    public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
-    {
-      bool isRuntime = EditorApplication.isPlayingOrWillChangePlaymode;
-      using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !isRuntime ) ) {
-        data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.Frequency ) ), data.Frequency );
-        data.FoVMode       = (GenericSweepData.FoVModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.FoVMode ) ), data.FoVMode );
-        if ( data.FoVMode == GenericSweepData.FoVModes.Centered ) {
-          data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoV ) ), data.HorizontalFoV );
-          data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoV ) ), data.VerticalFoV );
-        }
-        else if ( data.FoVMode == GenericSweepData.FoVModes.Window ) {
-          var newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoVWindow ) ), data.HorizontalFoVWindow );
-          if ( newWindow.MaxChanged || newWindow.MinChanged )
-            data.HorizontalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
-          newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoVWindow ) ), data.VerticalFoVWindow );
-          if ( newWindow.MaxChanged || newWindow.MinChanged )
-            data.VerticalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
-        }
-        data.ResolutionMode = (GenericSweepData.ResolutionModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ResolutionMode ) ), data.ResolutionMode );
-        if ( data.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint ) {
-          data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
-          data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
-        }
-        else if ( data.ResolutionMode == GenericSweepData.ResolutionModes.TotalPoints ) {
-          data.HorizontalResolutionTotal = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolutionTotal ) ), data.HorizontalResolutionTotal );
-          data.VerticalResolutionTotal   = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolutionTotal ) ), data.VerticalResolutionTotal );
-        }
+    //public static void DrawGenericSweepModelData( AGXUnity.Sensor.GenericSweepData data )
+    //{
+    //  bool isRuntime = EditorApplication.isPlayingOrWillChangePlaymode;
+    //  using ( new GUI.EnabledBlock( UnityEngine.GUI.enabled && !isRuntime ) ) {
+    //    data.Frequency     = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.Frequency ) ), data.Frequency );
+    //    data.FoVMode       = (GenericSweepData.FoVModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.FoVMode ) ), data.FoVMode );
+    //    if ( data.FoVMode == GenericSweepData.FoVModes.Centered ) {
+    //      data.HorizontalFoV = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoV ) ), data.HorizontalFoV );
+    //      data.VerticalFoV   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoV ) ), data.VerticalFoV );
+    //    }
+    //    else if ( data.FoVMode == GenericSweepData.FoVModes.Window ) {
+    //      var newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalFoVWindow ) ), data.HorizontalFoVWindow );
+    //      if ( newWindow.MaxChanged || newWindow.MinChanged )
+    //        data.HorizontalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+    //      newWindow = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.VerticalFoVWindow ) ), data.VerticalFoVWindow );
+    //      if ( newWindow.MaxChanged || newWindow.MinChanged )
+    //        data.VerticalFoVWindow = new RangeReal( newWindow.Min, newWindow.Max );
+    //    }
+    //    data.ResolutionMode = (GenericSweepData.ResolutionModes)EditorGUILayout.EnumPopup( FindGUIContentFor( data.GetType(), nameof( data.ResolutionMode ) ), data.ResolutionMode );
+    //    if ( data.ResolutionMode == GenericSweepData.ResolutionModes.DegreesPerPoint ) {
+    //      data.HorizontalResolution = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolution ) ), data.HorizontalResolution );
+    //      data.VerticalResolution   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolution ) ), data.VerticalResolution );
+    //    }
+    //    else if ( data.ResolutionMode == GenericSweepData.ResolutionModes.TotalPoints ) {
+    //      data.HorizontalResolutionTotal = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.HorizontalResolutionTotal ) ), data.HorizontalResolutionTotal );
+    //      data.VerticalResolutionTotal   = EditorGUILayout.IntField( FindGUIContentFor( data.GetType(), nameof( data.VerticalResolutionTotal ) ), data.VerticalResolutionTotal );
+    //    }
 
-      }
-      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
-      if ( result.MaxChanged || result.MinChanged )
-        data.Range = new RangeReal( result.Min, result.Max );
-      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
-      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
-    }
+    //  }
+    //  var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+    //  if ( result.MaxChanged || result.MinChanged )
+    //    data.Range = new RangeReal( result.Min, result.Max );
+    //  data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+    //  data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
+    //}
 
-    public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
-    {
-      data.Frequency     = Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ) );
-      data.FrameSize     = (uint)Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ) );
-      data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
-      data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
-      data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
-      data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
-      var delimiterText = EditorGUILayout.TextField( FindGUIContentFor(data.GetType(), "Delimiter"),  data.Delimiter.ToString() );
-      if ( char.TryParse( delimiterText, out var delimiter ) )
-        data.Delimiter = delimiter;
-      var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
-      if ( result.MaxChanged || result.MinChanged )
-        data.Range = new RangeReal( result.Min, result.Max );
-      data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
-      data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
-    }
+    //public static void DrawReadFromFileModelData( AGXUnity.Sensor.ReadFromFileData data )
+    //{
+    //  data.Frequency     = Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Frequency" ), data.Frequency ) );
+    //  data.FrameSize     = (uint)Mathf.Max( 1, EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "FrameSize" ), data.FrameSize ) );
+    //  data.FilePath      = EditorGUILayout.TextField( FindGUIContentFor( data.GetType(), "FilePath" ), data.FilePath );
+    //  data.TwoColumns    = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "TwoColumns" ), data.TwoColumns );
+    //  data.AnglesInDegrees = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "AnglesInDegrees" ), data.AnglesInDegrees );
+    //  data.FirstLineIsHeader   = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "FirstLineIsHeader" ), data.FirstLineIsHeader );
+    //  var delimiterText = EditorGUILayout.TextField( FindGUIContentFor(data.GetType(), "Delimiter"),  data.Delimiter.ToString() );
+    //  if ( char.TryParse( delimiterText, out var delimiter ) )
+    //    data.Delimiter = delimiter;
+    //  var result = InspectorGUI.RangeRealField( FindGUIContentFor( data.GetType(), nameof( data.Range ) ), data.Range );
+    //  if ( result.MaxChanged || result.MinChanged )
+    //    data.Range = new RangeReal( result.Min, result.Max );
+    //  data.BeamDivergence = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamDivergence ) ), data.BeamDivergence );
+    //  data.BeamExitRadius = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), nameof( data.BeamExitRadius ) ), data.BeamExitRadius );
+    //}
 
-    public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )
-    {
-      data.Downsample = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Downsample" ), data.Downsample );
-    }
+    //public static void DrawLivoxModelData( AGXUnity.Sensor.LivoxData data )
+    //{
+    //  data.Downsample = (uint)EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Downsample" ), data.Downsample );
+    //}
 
-    [InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
-    public static object ModelDataDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      if ( objects.Length != 1 ) {
-        InspectorGUI.WarningLabel( "Multi-select of ModelData Elements isn't supported." );
-        return null;
-      }
+    //[InspectorDrawer( typeof( AGXUnity.Sensor.IModelData ) )]
+    //public static object ModelDataDrawer( object[] objects, InvokeWrapper wrapper )
+    //{
+    //  if ( objects.Length != 1 ) {
+    //    InspectorGUI.WarningLabel( "Multi-select of ModelData Elements isn't supported." );
+    //    return null;
+    //  }
 
-      var data = wrapper.Get<AGXUnity.Sensor.IModelData>( objects[0] );
-      using ( new InspectorGUI.IndentScope() ) {
-        switch ( data ) {
-          case AGXUnity.Sensor.OusterData ousterData:
-            DrawOusterModelData( ousterData );
-            break;
-          case AGXUnity.Sensor.GenericSweepData sweepData:
-            DrawGenericSweepModelData( sweepData );
-            break;
-          case AGXUnity.Sensor.LivoxData livoxData:
-            DrawLivoxModelData( livoxData );
-            break;
-          case AGXUnity.Sensor.ReadFromFileData readFromFileData:
-            DrawReadFromFileModelData( readFromFileData );
-            break;
-        }
-      }
+    //  var data = wrapper.Get<AGXUnity.Sensor.IModelData>( objects[0] );
+    //  using ( new InspectorGUI.IndentScope() ) {
+    //    switch ( data ) {
+    //      case AGXUnity.Sensor.OusterData ousterData:
+    //        DrawOusterModelData( ousterData );
+    //        break;
+    //      case AGXUnity.Sensor.GenericSweepData sweepData:
+    //        DrawGenericSweepModelData( sweepData );
+    //        break;
+    //      case AGXUnity.Sensor.LivoxData livoxData:
+    //        DrawLivoxModelData( livoxData );
+    //        break;
+    //      case AGXUnity.Sensor.ReadFromFileData readFromFileData:
+    //        DrawReadFromFileModelData( readFromFileData );
+    //        break;
+    //    }
+    //  }
 
-      return null;
-    }
+    //  return null;
+    //}
 
-    [InspectorDrawer( typeof( AGXUnity.Sensor.LidarDistanceGaussianNoise ) )]
-    public static object LidarDistanceGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      var data = wrapper.Get<AGXUnity.Sensor.LidarDistanceGaussianNoise>( objects[0] );
-      data.Enable = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "Enable", " Distance Gaussian Noise" ), data.Enable );
-      if ( !data.Enable )
-        return null;
+    //[InspectorDrawer( typeof( AGXUnity.Sensor.LidarDistanceGaussianNoise ) )]
+    //public static object LidarDistanceGaussianNoiseDrawer( object[] objects, InvokeWrapper wrapper )
+    //{
+    //  var data = wrapper.Get<AGXUnity.Sensor.LidarDistanceGaussianNoise>( objects[0] );
+    //  data.Enable = EditorGUILayout.Toggle( FindGUIContentFor( data.GetType(), "Enable", " Distance Gaussian Noise" ), data.Enable );
+    //  if ( !data.Enable )
+    //    return null;
 
-      using ( new InspectorGUI.IndentScope() ) {
-        data.Mean                   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Mean" ), data.Mean );
-        data.StandardDeviationBase  = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationBase" ), data.StandardDeviationBase ), 0.0f );
-        data.StandardDeviationSlope = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationSlope" ), data.StandardDeviationSlope ), 0.0f );
-      }
+    //  using ( new InspectorGUI.IndentScope() ) {
+    //    data.Mean                   = EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "Mean" ), data.Mean );
+    //    data.StandardDeviationBase  = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationBase" ), data.StandardDeviationBase ), 0.0f );
+    //    data.StandardDeviationSlope = Mathf.Max( EditorGUILayout.FloatField( FindGUIContentFor( data.GetType(), "StandardDeviationSlope" ), data.StandardDeviationSlope ), 0.0f );
+    //  }
 
-      return null;
-    }
+    //  return null;
+    //}
 
-    [InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
-    public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
-    {
-      var target = objects[ 0 ] as Object;
+    //[InspectorDrawer( typeof( AGXUnity.Sensor.ImuAttachment ) )]
+    //public static object ImuAttachmentDrawer( object[] objects, InvokeWrapper wrapper )
+    //{
+    //  var target = objects[ 0 ] as Object;
 
-      if ( objects.Length != 1 ) {
-        InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
-        return null;
-      }
+    //  if ( objects.Length != 1 ) {
+    //    InspectorGUI.WarningLabel( "Multi-select of ImuAttachment Elements isn't supported." );
+    //    return null;
+    //  }
 
-      var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
-      using ( new InspectorGUI.IndentScope() ) {
-        data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
-        data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( GUI.MakeLabel(
-          "Cross Axis Sensitivity", false, "How measurements in one axis affects the other axes. Ratio 0 to 1." ),
-          data.CrossAxisSensitivity ) );
-        data.ZeroBias = EditorGUILayout.Vector3Field( GUI.MakeLabel(
-          "Zero Rate Bias", false, "Value reported per axis when there is no signal input (zero measurement)" ),
-          data.ZeroBias );
-        EditorGUI.BeginChangeCheck();
-        data.OutputFlags = OutputXYZGUI( data.OutputFlags );
-        if ( EditorGUI.EndChangeCheck() )
-          EditorUtility.SetDirty( target );
+    //  var data = wrapper.Get<AGXUnity.Sensor.ImuAttachment>( objects[0] );
+    //  using ( new InspectorGUI.IndentScope() ) {
+    //    data.TriaxialRange = TriaxialRangeDataGUI( data.TriaxialRange );
+    //    data.CrossAxisSensitivity = Mathf.Clamp01( EditorGUILayout.FloatField( GUI.MakeLabel(
+    //      "Cross Axis Sensitivity", false, "How measurements in one axis affects the other axes. Ratio 0 to 1." ),
+    //      data.CrossAxisSensitivity ) );
+    //    data.ZeroBias = EditorGUILayout.Vector3Field( GUI.MakeLabel(
+    //      "Zero Rate Bias", false, "Value reported per axis when there is no signal input (zero measurement)" ),
+    //      data.ZeroBias );
+    //    EditorGUI.BeginChangeCheck();
+    //    data.OutputFlags = OutputXYZGUI( data.OutputFlags );
+    //    if ( EditorGUI.EndChangeCheck() )
+    //      EditorUtility.SetDirty( target );
 
-        if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
-            GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
-          using ( new InspectorGUI.IndentScope() ) {
-            (data.EnableTotalGaussianNoise, data.TotalGaussianNoise) = OptionalVector3GUI(
-              data.EnableTotalGaussianNoise,
-              data.TotalGaussianNoise,
-              "Total Gaussian Noise",
-              "Base level noise in the measurement signal (RMS)" );
-            (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
-              data.EnableSignalScaling,
-              data.SignalScaling,
-              "Signal Scaling",
-              "Linear scaling to each axis of the triaxial signal" );
-            (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
-              data.EnableGaussianSpectralNoise,
-              data.GaussianSpectralNoise,
-              "Gaussian Spectral Noise",
-              "Gaussian noise dependent on the sample frequency" );
-            if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
-              (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
-              data.EnableLinearAccelerationEffects,
-              data.LinearAccelerationEffects,
-              "Linear Acceleration Effects",
-              "Offset to the zero rate bias depending on the linear acceleration" );
-            }
-          }
-        }
-      }
+    //    if ( InspectorGUI.Foldout( EditorData.Instance.GetData( target, wrapper.Member.Name ),
+    //        GUI.MakeLabel( "Modifiers", true, "Optional signal output modifiers" ) ) ) {
+    //      using ( new InspectorGUI.IndentScope() ) {
+    //        (data.EnableTotalGaussianNoise, data.TotalGaussianNoise) = OptionalVector3GUI(
+    //          data.EnableTotalGaussianNoise,
+    //          data.TotalGaussianNoise,
+    //          "Total Gaussian Noise",
+    //          "Base level noise in the measurement signal (RMS)" );
+    //        (data.EnableSignalScaling, data.SignalScaling) = OptionalVector3GUI(
+    //          data.EnableSignalScaling,
+    //          data.SignalScaling,
+    //          "Signal Scaling",
+    //          "Linear scaling to each axis of the triaxial signal" );
+    //        (data.EnableGaussianSpectralNoise, data.GaussianSpectralNoise) = OptionalVector3GUI(
+    //          data.EnableGaussianSpectralNoise,
+    //          data.GaussianSpectralNoise,
+    //          "Gaussian Spectral Noise",
+    //          "Gaussian noise dependent on the sample frequency" );
+    //        if ( data.Type == ImuAttachment.ImuAttachmentType.Gyroscope ) {
+    //          (data.EnableLinearAccelerationEffects, data.LinearAccelerationEffects) = OptionalVector3GUI(
+    //          data.EnableLinearAccelerationEffects,
+    //          data.LinearAccelerationEffects,
+    //          "Linear Acceleration Effects",
+    //          "Offset to the zero rate bias depending on the linear acceleration" );
+    //        }
+    //      }
+    //    }
+    //  }
 
-      InspectorGUI.Separator();
+    //  InspectorGUI.Separator();
 
-      return null;
-    }
+    //  return null;
+    //}
 
     private static (bool, Vector3) OptionalVector3GUI( bool toggle, Vector3 value, string label, string tooltip )
     {
@@ -1644,65 +1642,65 @@ namespace AGXUnityEditor
       return (toggle, value);
     }
 
-    private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
-    {
-      data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( GUI.MakeLabel(
-        "Sensor Measurement Range", false, "Measurement range - values outside of range will be truncated. Default units m/s^2, radians/s, T" ),
-        data.Mode );
+    //private static TriaxialRangeData TriaxialRangeDataGUI( TriaxialRangeData data )
+    //{
+    //  data.Mode = (TriaxialRangeData.ConfigurationMode)EditorGUILayout.EnumPopup( GUI.MakeLabel(
+    //    "Sensor Measurement Range", false, "Measurement range - values outside of range will be truncated. Default units m/s^2, radians/s, T" ),
+    //    data.Mode );
 
-      using ( new InspectorGUI.IndentScope() ) {
-        switch ( data.Mode ) {
-          case TriaxialRangeData.ConfigurationMode.MaxRange:
-            break;
-          case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
-            data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
-            break;
-          case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
-            data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
-            data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
-            data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
-            break;
-        }
-      }
-      return data;
-    }
+    //  using ( new InspectorGUI.IndentScope() ) {
+    //    switch ( data.Mode ) {
+    //      case TriaxialRangeData.ConfigurationMode.MaxRange:
+    //        break;
+    //      case TriaxialRangeData.ConfigurationMode.EqualAxisRanges:
+    //        data.EqualAxesRange = EditorGUILayout.Vector2Field( "XYZ range", data.EqualAxesRange );
+    //        break;
+    //      case TriaxialRangeData.ConfigurationMode.IndividualAxisRanges:
+    //        data.RangeX = EditorGUILayout.Vector2Field( "X axis range", data.RangeX );
+    //        data.RangeY = EditorGUILayout.Vector2Field( "Y axis range", data.RangeY );
+    //        data.RangeZ = EditorGUILayout.Vector2Field( "Z axis range", data.RangeZ );
+    //        break;
+    //    }
+    //  }
+    //  return data;
+    //}
 
-    private static OutputXYZ OutputXYZGUI( OutputXYZ state )
-    {
-      var skin = InspectorEditor.Skin;
+    //private static OutputXYZ OutputXYZGUI( OutputXYZ state )
+    //{
+    //  var skin = InspectorEditor.Skin;
 
-      using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
+    //  using var _ = new GUI.EnabledBlock( UnityEngine.GUI.enabled && !EditorApplication.isPlayingOrWillChangePlaymode );
 
-      using ( new EditorGUILayout.HorizontalScope() ) {
-        EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false, "Disabled during runtime" ),
-                                      InspectorEditor.Skin.LabelMiddleLeft );
+    //  using ( new EditorGUILayout.HorizontalScope() ) {
+    //    EditorGUILayout.PrefixLabel( GUI.MakeLabel( "Output values", false, "Disabled during runtime" ),
+    //                                  InspectorEditor.Skin.LabelMiddleLeft );
 
-        var xEnabled = state.HasFlag(OutputXYZ.X);
-        var yEnabled = state.HasFlag(OutputXYZ.Y);
-        var zEnabled = state.HasFlag(OutputXYZ.Z);
+    //    var xEnabled = state.HasFlag(OutputXYZ.X);
+    //    var yEnabled = state.HasFlag(OutputXYZ.Y);
+    //    var zEnabled = state.HasFlag(OutputXYZ.Z);
 
-        if ( GUILayout.Toggle( xEnabled,
-                               GUI.MakeLabel( "X",
-                                              xEnabled,
-                                              "Use sensor X value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Left ) ) != xEnabled )
-          state ^= OutputXYZ.X;
-        if ( GUILayout.Toggle( yEnabled,
-                               GUI.MakeLabel( "Y",
-                                              yEnabled,
-                                              "Use sensor y value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
-          state ^= OutputXYZ.Y;
-        if ( GUILayout.Toggle( zEnabled,
-                               GUI.MakeLabel( "Z",
-                                              zEnabled,
-                                              "Use sensor Z value in output" ),
-                               skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
-          state ^= OutputXYZ.Z;
-      }
+    //    if ( GUILayout.Toggle( xEnabled,
+    //                           GUI.MakeLabel( "X",
+    //                                          xEnabled,
+    //                                          "Use sensor X value in output" ),
+    //                           skin.GetButton( InspectorGUISkin.ButtonType.Left ) ) != xEnabled )
+    //      state ^= OutputXYZ.X;
+    //    if ( GUILayout.Toggle( yEnabled,
+    //                           GUI.MakeLabel( "Y",
+    //                                          yEnabled,
+    //                                          "Use sensor y value in output" ),
+    //                           skin.GetButton( InspectorGUISkin.ButtonType.Middle ) ) != yEnabled )
+    //      state ^= OutputXYZ.Y;
+    //    if ( GUILayout.Toggle( zEnabled,
+    //                           GUI.MakeLabel( "Z",
+    //                                          zEnabled,
+    //                                          "Use sensor Z value in output" ),
+    //                           skin.GetButton( InspectorGUISkin.ButtonType.Right ) ) != zEnabled )
+    //      state ^= OutputXYZ.Z;
+    //  }
 
-      return state;
-    }
+    //  return state;
+    //}
 
 
   }

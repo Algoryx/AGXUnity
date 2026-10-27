@@ -77,24 +77,24 @@ namespace AGXUnityEditor.Utils
       }
 
       bool assetDatabaseDirty = false;
-
+      //{
+      //  var assembly = GetAGXUnityAssembly();
+      //  var editorAssembly = Assembly.Load( Manager.AGXUnityEditorAssemblyName );
+      //  foreach ( var info in GetEditorFileInfos() ) {
+      //    var className            = GetClassName( info.Name );
+      //    var type                 = assembly.GetType( className, false );
+      //    var editorClassName      = "AGXUnityEditor.Editors." + GetClassName( type ) + "Editor";
+      //    var editorType           = editorAssembly.GetType( editorClassName, false );
+      //    var isEditorBaseMismatch = editorType != null && editorType.BaseType != typeof( InspectorEditor );
+      //    if ( !IsMatch( type ) || isEditorBaseMismatch ) {
+      //      Debug.Log( "Mismatching editor for class: " + className + ", removing custom editor." );
+      //      DeleteFile( info );
+      //      assetDatabaseDirty = true;
+      //    }
+      //  }
+      //}
       // Removing editors which classes has been removed.
-      {
-        var assembly = GetAGXUnityAssembly();
-        var editorAssembly = Assembly.Load( Manager.AGXUnityEditorAssemblyName );
-        foreach ( var info in GetEditorFileInfos() ) {
-          var className            = GetClassName( info.Name );
-          var type                 = assembly.GetType( className, false );
-          var editorClassName      = "AGXUnityEditor.Editors." + GetClassName( type ) + "Editor";
-          var editorType           = editorAssembly.GetType( editorClassName, false );
-          var isEditorBaseMismatch = editorType != null && editorType.BaseType != typeof( InspectorEditor );
-          if ( !IsMatch( type ) || isEditorBaseMismatch ) {
-            Debug.Log( "Mismatching editor for class: " + className + ", removing custom editor." );
-            DeleteFile( info );
-            assetDatabaseDirty = true;
-          }
-        }
-      }
+
 
       // Generating missing editors.
       {

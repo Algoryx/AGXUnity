@@ -1,4 +1,3 @@
-using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using System;
 using System.Diagnostics;
@@ -538,8 +537,8 @@ namespace AGXUnity
         ContactCallbacks.OnDestroy( this );
         if ( m_solverSettings != null )
           m_solverSettings.SetSimulation( null );
-        if ( SensorEnvironment.HasInstance )
-          SensorEnvironment.Instance.DisposeRT();
+        //if ( SensorEnvironment.HasInstance )
+        //  SensorEnvironment.Instance.DisposeRT();
         m_simulation.cleanup();
       }
       m_simulation = null;
@@ -550,8 +549,8 @@ namespace AGXUnity
       base.OnApplicationQuit();
 
       if ( m_simulation != null ) {
-        if ( SensorEnvironment.HasInstance )
-          SensorEnvironment.Instance.DisposeRT();
+        //if ( SensorEnvironment.HasInstance )
+        //  SensorEnvironment.Instance.DisposeRT();
         m_simulation.cleanup();
       }
     }
@@ -616,6 +615,8 @@ namespace AGXUnity
 
     private void FixedUpdate()
     {
+      if ( m_stepForwardTimer == null )
+        return;
       var doFixedStep = AutoSteppingMode == AutoSteppingModes.FixedUpdate &&
                         (
                           // First time step.
@@ -634,6 +635,8 @@ namespace AGXUnity
 
     private void Update()
     {
+      if ( m_stepForwardTimer == null )
+        return;
       // Resetting timer during AutoSteppingMode == FixedUpdate, flagging
       // that next call to FixedUpdate may step the simulation.
       if ( AutoSteppingMode != AutoSteppingModes.Update ) {
