@@ -1,9 +1,9 @@
-//using UnityEditor;
+using UnityEditor;
 
-//namespace AGXUnityEditor.Editors
-//{
-//  [CustomEditor( typeof( AGXUnity.Utils.DataSeries ) )]
-//  [CanEditMultipleObjects]
-//  public class AGXUnityUtilsDataSeriesEditor : InspectorEditor
-//  { }
-//}
+namespace AGXUnityEditor.Editors
+{
+ [CustomEditor( typeof( AGXUnity.Utils.DataSeries ) )]
+ [CanEditMultipleObjects]
+ public class AGXUnityUtilsDataSeriesEditor : InspectorEditor
+ { }
+}
