@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AGXUnity.Model
 {
@@ -119,21 +120,22 @@ namespace AGXUnity.Model
     }
 
     [SerializeField]
-    private float m_lockToReachMergeConditionDamping = 0.06f;
+    [FormerlySerializedAs( "m_lockToReachMergeConditionDamping" )]
+    private float m_lockToReachMergeConditionAttenuation = 3.0f;
 
     /// <summary>
     /// Damping of the hinge lock used to reach merge condition.
-    /// Default: 0.06
+    /// Default: 3
     /// </summary>
     [ClampAboveZeroInInspector( true )]
-    [Tooltip( "Damping of the hinge lock used to reach merge condition." )]
-    public float LockToReachMergeConditionDamping
+    [Tooltip( "Attenuation of the hinge lock used to reach merge condition." )]
+    public float LockToReachMergeConditionAttenuation
     {
-      get { return m_lockToReachMergeConditionDamping; }
+      get { return m_lockToReachMergeConditionAttenuation; }
       set
       {
-        m_lockToReachMergeConditionDamping = value;
-        Propagate( properties => properties.setLockToReachMergeConditionDamping( m_lockToReachMergeConditionDamping ) );
+        m_lockToReachMergeConditionAttenuation = value;
+        Propagate( properties => properties.setLockToReachMergeConditionAttenuation( m_lockToReachMergeConditionAttenuation ) );
       }
     }
 
@@ -229,5 +231,15 @@ namespace AGXUnity.Model
 
     [NonSerialized]
     private Track m_singleSynchronizeInstance = null;
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
+        m_lockToReachMergeConditionAttenuation *= 50.0f;
+        return true;
+      }
+      return true;
+    }
   }
 }

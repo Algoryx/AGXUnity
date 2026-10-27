@@ -45,37 +45,14 @@ namespace AGXUnity.IO.OpenPLX
     };
     public static ErrorData CreateErrorData( openplx.Core.Object source )
     {
-      var subName = source.getName().Substring(source.getName().LastIndexOf('.') + 1);
-
-      openplx.Token tok = null;
-      openplx.Document document = null;
-      if ( source.getOwner() != null ) {
-        var ownerType = source.getOwner().getType();
-        openplx.Node member = ownerType?.findFirstMember( subName );
-        if ( member != null ) {
-          tok = member.isVarDeclaration() ? member?.asVarDeclaration()?.getNameToken() : member?.asVarAssignment()?.getTargetSegments()?.Last();
-          document = member.isVarDeclaration() ? member?.asVarDeclaration()?.getOwningDocument() : member?.asVarAssignment()?.getOwningDocument();
-        }
-      }
-      else {
-        tok = source.getType().getNameToken();
-        document = source.getType().getOwningDocument();
-      }
-      if ( tok == null || document == null ) {
-        // Fallback to declaration of root model
-        var owner = source.getOwner();
-        while ( owner.getOwner() != null )
-          owner = owner.getOwner();
-        tok = owner.getType().getNameToken();
-        document = owner.getType().getOwningDocument();
-      }
+      var typeInfo = source.getTypeInfo();
       return new ErrorData
       {
-        fromLine    = (uint)tok.line,
-        toLine      = (uint)tok.line,
-        fromColumn  = (uint)tok.column,
-        toColumn    = (uint)tok.column,
-        sourceID    = document?.getSourceId(),
+        fromLine    = (uint)typeInfo.line,
+        toLine      = (uint)typeInfo.line,
+        fromColumn  = (uint)typeInfo.column,
+        toColumn    = (uint)typeInfo.column,
+        sourceID    = typeInfo.sourceId,
       };
     }
 
@@ -123,7 +100,7 @@ namespace AGXUnity.IO.OpenPLX
     public UnimplementedWarning( openplx.Core.Object source )
       : base( source, AgxUnityOpenPLXErrors.Unimplemented )
     {
-      m_modelName = source.getType().getNameWithNamespace( "." );
+      m_modelName = source.getTypeNameWithNamespace( "." );
     }
 
     protected override string createErrorMessage() => $"Mapping of model '{m_modelName}' is not implemented by the mapper";

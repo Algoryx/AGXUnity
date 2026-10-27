@@ -1,4 +1,5 @@
-﻿using AGXUnity.Utils;
+﻿using agxCable;
+using AGXUnity.Utils;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -516,7 +517,7 @@ namespace AGXUnity
     {
       if ( Native != null ) {
         Native.getCableProperties().setYoungsModulus( Convert.ToDouble( Properties[ dir ].YoungsModulus ), CableProperties.ToNative( dir ) );
-        Native.getCableProperties().setDamping( Convert.ToDouble( Properties[ dir ].Damping ), CableProperties.ToNative( dir ) );
+        Native.getCableProperties().setAttenuation( Convert.ToDouble( Properties[ dir ].Attenuation ), CableProperties.ToNative( dir ) );
         Native.getCableProperties().setPoissonsRatio( Convert.ToDouble( Properties[ dir ].PoissonsRatio ), CableProperties.ToNative( dir ) );
 
         var plasticityComponent = Native.getCablePlasticity();
@@ -565,6 +566,16 @@ namespace AGXUnity
       }
 
       return new PointCurve.SegmentationResult() { Error = float.PositiveInfinity, Successful = false };
+    }
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        foreach ( CableProperties.Direction dir in Enum.GetValues( typeof( CableProperties.Direction ) ) )
+          // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz
+          Properties[ dir ].Attenuation *= 50.0f;
+        return true;
+      }
+      return false;
     }
   }
 }
