@@ -38,7 +38,7 @@ namespace AGXUnity
 
       float translationalCompliance = 1.0E-3f / ( distVal * Mathf.Max( mass, 1.0f ) );
       float rotationalCompliance    = 1.0E-10f / ( Mathf.Max( mass, 1.0f ) );
-      
+
       float attenuation             = 50.0f / 6.0f;
 
       var rowParser = ConstraintUtils.ConstraintRowParser.Create( constraint.GetOrdinaryElementaryConstraints() );

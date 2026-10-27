@@ -176,5 +176,18 @@ namespace AGXUnity
     {
       OnPropertyUpdated( dir );
     }
+
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        // Migrate from damping to attenuation
+        // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
+        foreach ( Direction dir in (Direction[])Enum.GetValues( typeof( Direction ) ) ) {
+          m_properties[ (int)dir ].Attenuation *= 50.0f;
+        }
+        return true;
+      }
+      return false;
+    }
   }
 }
