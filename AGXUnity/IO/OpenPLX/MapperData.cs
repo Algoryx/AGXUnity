@@ -46,20 +46,29 @@ namespace AGXUnity.IO.OpenPLX
 
    public ErrorReporter ErrorReporter { get; set; } = null;
 
-   private ShapeMaterial m_defaultMaterial = null;
-   public ShapeMaterial DefaultMaterial
-   {
-     get
-     {
-       if ( m_defaultMaterial == null ) {
-         m_defaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
-         m_defaultMaterial.Density = 1000;
-         m_defaultMaterial.name = "Default";
-       }
-       return m_defaultMaterial;
-     }
-   }
-   public bool HasDefaultMaterial => m_defaultMaterial != null;
+    // The native reporter retains native errors, but not their managed SWIG callbacks.
+    private readonly List<Error> m_reportedErrors = new List<Error>();
+
+    public void ReportError( Error error )
+    {
+      m_reportedErrors.Add( error );
+      ErrorReporter.reportError( error );
+    }
+
+    private ShapeMaterial m_defaultMaterial = null;
+    public ShapeMaterial DefaultMaterial
+    {
+      get
+      {
+        if ( m_defaultMaterial == null ) {
+          m_defaultMaterial = ShapeMaterial.CreateInstance<ShapeMaterial>();
+          m_defaultMaterial.Density = 1000;
+          m_defaultMaterial.name = "Default";
+        }
+        return m_defaultMaterial;
+      }
+    }
+    public bool HasDefaultMaterial => m_defaultMaterial != null;
 
    public FrictionModel DefaultFriction { get; set; } = null;
 

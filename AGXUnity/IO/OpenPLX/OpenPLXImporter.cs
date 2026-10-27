@@ -1,6 +1,7 @@
 using AGXUnity.Utils;
 using openplx;
 using openplx.Core.Api;
+using std;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -80,27 +81,22 @@ namespace AGXUnity.IO.OpenPLX
      return casted;
    }
 
-   public UnityEngine.Object ImportOpenPLXFile( string path, string model = null )
-   {
-     var mapper = new OpenPLXUnityMapper(Options);
-     var transformed = TransformOpenPLXPath(path);
-     Object loadedModel = null;
-     if ( System.IO.File.Exists( transformed ) )
-       loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data );
-     else
-       ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
+    public UnityEngine.Object ImportOpenPLXFile( string path, string model = null )
+    {
+      var mapper = new OpenPLXUnityMapper(Options);
+      var transformed = TransformOpenPLXPath(path);
+      Object loadedModel = null;
+      Dictionary<string, Object> objectMap = new Dictionary<string, Object>();
+      if ( System.IO.File.Exists( transformed ) )
+        loadedModel = ParseOpenPLXSource( transformed, model, mapper.Data, objectMap );
+      else
+        ErrorReporter?.Invoke( new FileDoesNotExistError( transformed ) );
 
-     if ( loadedModel != null && loadedModel.getType().isTrait() ) {
-       ErrorReporter?.Invoke( new TraitNotImportableError( loadedModel ) );
-       loadedModel = null;
-     }
-
-
-     UnityEngine.Object importedObject = null;
-     if ( loadedModel != null ) {
-       importedObject = mapper.MapObject( loadedModel, path );
-       foreach ( var warning in mapper.Data.Warnings )
-         ErrorReporter?.Invoke( warning );
+      UnityEngine.Object importedObject = null;
+      if ( loadedModel != null ) {
+        importedObject = mapper.MapObject( loadedModel, path, objectMap );
+        foreach ( var warning in mapper.Data.Warnings )
+          ErrorReporter?.Invoke( warning );
 
        if ( importedObject == null || mapper.Data.ErrorReporter.getErrorCount() > 0 ) {
          foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
@@ -119,9 +115,11 @@ namespace AGXUnity.IO.OpenPLX
      else
        ErrorCallback?.Invoke();
 
-     GC.Collect();
-     return importedObject;
-   }
+      // Native error messages may call back into managed errors retained by the mapper.
+      GC.KeepAlive( mapper );
+      GC.Collect();
+      return importedObject;
+    }
 
    private static OpenPlxContext CreateContext( agxopenplx.AgxCache cache = null )
    {
@@ -146,11 +144,11 @@ namespace AGXUnity.IO.OpenPLX
      return context;
    }
 
-   public Object ParseOpenPLXSource( string source, string model = null, MapperData data = null )
-   {
-     var context = CreateContext(data?.AgxCache);
-     Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
-     var objs = context.getRegisteredObjects();
+    public Object ParseOpenPLXSource( string source, string model = null, MapperData data = null, Dictionary<string, Object> object_map = null )
+    {
+      var context = CreateContext(data?.AgxCache);
+      Object loadedObj = CoreSWIG.loadModelFromFile( source, model, context );
+      var objs = context.getRegisteredObjects();
 
      if ( context.hasErrors() ) {
        loadedObj = null;
@@ -163,8 +161,16 @@ namespace AGXUnity.IO.OpenPLX
          data.RegisteredDocuments.Add( dep );
      }
 
-     return loadedObj;
-   }
+      if ( object_map != null ) {
+        object_map.Clear();
+        var interalCtx = OpenPlxContextInternal.fromContext( context );
+        foreach ( var obj in interalCtx.getRegisteredObjects() ) {
+          object_map[ obj.getName() ] = obj;
+        }
+      }
+
+      return loadedObj;
+    }
 
    /// <summary>
    /// Attempts to find the dependencies required when loading a given OpenPLX-model from the provided file.
@@ -183,33 +189,31 @@ namespace AGXUnity.IO.OpenPLX
      return FindDependencies( obj, context );
    }
 
-   private static string[] FindDependencies( Object obj, OpenPlxContext context )
-   {
-     HashSet<string> dependencies = new HashSet<string>();
-     // TODO: This currently returns all openplx files in all bundles which can cause circular import dependencies.
-     Action<string> addIfValid = (string path) => {
-       if(path != null && path.Length > 0 && path != obj.getType().getOwningDocument().getSourceId())
-         dependencies.Add( path );
-     };
+    private static string[] FindDependencies( Object obj, OpenPlxContext context )
+    {
+      HashSet<string> dependencies = new HashSet<string>();
+      // TODO: This currently returns all openplx files in all bundles which can cause circular import dependencies.
+      Action<string> addIfValid = (string path) => {
+        if(path != null && path.Length > 0 && path != obj.getTypeInfo().sourceId)
+          dependencies.Add( path );
+      };
 
-     // Find Imports
-     var imports = obj.getType().getOwningDocument().findImports();
-     foreach ( var import in imports )
-       addIfValid( import.getPath() );
+      // Find Imports
+      foreach ( var document in OpenPlxContextInternal.fromContext( context ).documents() ) {
+        addIfValid( document.getPath() );
+      }
 
-     // Find references to paths in members
-     var values = new std.OuterSymbolSet();
-     obj.getType().getOuterTreeRoot().collectValues( values );
-     foreach ( var val in values ) {
-       var boundValue = val.getBoundValue();
-       if ( boundValue == null )
-         continue;
-       if ( boundValue.isConstant() && boundValue.asConstant().getToken().type == TokenType.String ) {
-         var path = boundValue.asConstant().getToken().lexeme().Trim('\"');
-         if ( System.IO.File.Exists( path ) )
-           addIfValid( path );
-       }
-     }
+      // Find references to paths in members
+      var values = new std.OuterSymbolSet();
+      foreach ( var registeredObject in context.getRegisteredObjects() ) {
+        StringAnyPairVector entries = new();
+        registeredObject.extractEntriesTo( entries );
+        foreach ( var entry in entries ) {
+          if ( entry.second.isString() && System.IO.File.Exists( entry.second.asString() ) ) {
+            addIfValid( entry.second.asString() );
+          }
+        }
+      }
 
      // Find bundle dependencies and add all files to dependencies
      var ic = OpenPlxContextInternal.fromContext( context );

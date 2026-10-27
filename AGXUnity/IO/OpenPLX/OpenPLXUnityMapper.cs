@@ -49,19 +49,19 @@ namespace AGXUnity.IO.OpenPLX
      VisualsMapper = new VisualsMapper( Data, Options );
    }
 
-   public UnityEngine.Object MapObject( Object obj, string path )
-   {
-     try {
-       if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
-         return MapSimulatable( obj, path );
-       else if ( obj is openplx.Physics.Optics.Material mat )
-         return VisualsMapper.MapVisualMaterial( mat );
-       else
-         Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
-     }
-     catch ( System.Exception e ) {
-       Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
-       Debug.LogException( e );
+    public UnityEngine.Object MapObject( Object obj, string path, Dictionary<string, Object> objectMap )
+    {
+      try {
+        if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
+          return MapSimulatable( obj, path, objectMap );
+        else if ( obj is openplx.Physics.Optics.Material mat )
+          return VisualsMapper.MapVisualMaterial( mat );
+        else
+          Data.ReportError( new UnmappableRootModelError( obj ) );
+      }
+      catch ( System.Exception e ) {
+        Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
+        Debug.LogException( e );
 
        foreach ( var go in Data.CreatedGameObjects ) {
          if ( Application.isEditor )
@@ -76,12 +76,12 @@ namespace AGXUnity.IO.OpenPLX
      return RootNode;
    }
 
-   private GameObject MapSimulatable( Object obj, string path )
-   {
-     Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
-     var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
-     rootComp.Native = obj;
-     Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
+    private GameObject MapSimulatable( Object obj, string path, Dictionary<string, Object> objectMap )
+    {
+      Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
+      var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
+      rootComp.ExternalInitialize( obj, objectMap );
+      Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
 
      if ( obj is openplx.Physics3D.System system )
        Utils.AddChild( Data.RootNode, MapSystem( system ), Data.ErrorReporter, system );
@@ -134,18 +134,18 @@ namespace AGXUnity.IO.OpenPLX
      return go;
    }
 
-   bool VerifyAssetPath( string path, openplx.Core.Object obj )
-   {
-     if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
-       var errorData = BaseError.CreateErrorData( obj );
-       Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
-       return false;
-     }
+    bool VerifyAssetPath( string path, openplx.Core.Object obj )
+    {
+      if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
+        var errorData = BaseError.CreateErrorData( obj );
+        Data.ReportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        return false;
+      }
 
-     if ( !System.IO.File.Exists( path ) ) {
-       Data.ErrorReporter.reportError( new FileDoesNotExistError( obj, path ) );
-       return false;
-     }
+      if ( !System.IO.File.Exists( path ) ) {
+        Data.ReportError( new FileDoesNotExistError( obj, path ) );
+        return false;
+      }
 
      return true;
    }
@@ -247,442 +247,442 @@ namespace AGXUnity.IO.OpenPLX
      mesh.name = objGeom.getName() + "_mesh";
      Data.MappedMeshes.Add( mesh );
 #endif
-     if ( mesh == null ) {
-       var errorData = BaseError.CreateErrorData( objGeom );
-       Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
-     }
-     else
-       meshComp.AddSourceObject( mesh );
-
-     return go;
-   }
-
-   private T CreateShapeHelper<T>( ref GameObject go )
-     where T : Shape
-   {
-     go = Factory.Create<T>();
-     Data.RegisterGameObject( go );
-     return go.GetComponent<T>();
-   }
-
-   GameObject MapCachedShape( agxCollide.Shape shape, Geometries.ContactGeometry geom )
-   {
-     var type = (agxCollide.Shape.Type)shape.getType();
-     GameObject go = null;
-
-     if ( type == agxCollide.Shape.Type.BOX ) {
-       var box = CreateShapeHelper<Box>(ref go);
-       box.HalfExtents = shape.asBox().getHalfExtents().ToVector3();
-     }
-     else if ( type == agxCollide.Shape.Type.CYLINDER ) {
-       var cylinder    = CreateShapeHelper<Cylinder>(ref go);
-       cylinder.Radius = Convert.ToSingle( shape.asCylinder().getRadius() );
-       cylinder.Height = Convert.ToSingle( shape.asCylinder().getHeight() );
-     }
-     else if ( type == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
-       var hollowCylinder       = CreateShapeHelper<HollowCylinder>( ref go );
-       hollowCylinder.Thickness = Convert.ToSingle( shape.asHollowCylinder().getThickness() );
-       hollowCylinder.Radius    = Convert.ToSingle( shape.asHollowCylinder().getOuterRadius() );
-       hollowCylinder.Height    = Convert.ToSingle( shape.asHollowCylinder().getHeight() );
-     }
-     else if ( type == agxCollide.Shape.Type.CONE ) {
-       var cone          = CreateShapeHelper < Cone >(ref go);
-       cone.BottomRadius = Convert.ToSingle( shape.asCone().getBottomRadius() );
-       cone.TopRadius    = Convert.ToSingle( shape.asCone().getTopRadius() );
-       cone.Height       = Convert.ToSingle( shape.asCone().getHeight() );
-     }
-     else if ( type == agxCollide.Shape.Type.HOLLOW_CONE ) {
-       var hollowCone          = CreateShapeHelper < HollowCone >(ref go);
-       hollowCone.Thickness    = Convert.ToSingle( shape.asHollowCone().getThickness() );
-       hollowCone.BottomRadius = Convert.ToSingle( shape.asHollowCone().getBottomOuterRadius() );
-       hollowCone.TopRadius    = Convert.ToSingle( shape.asHollowCone().getTopOuterRadius() );
-       hollowCone.Height       = Convert.ToSingle( shape.asHollowCone().getHeight() );
-     }
-     else if ( type == agxCollide.Shape.Type.CAPSULE ) {
-       var capsule    = CreateShapeHelper < Capsule >(ref go);
-       capsule.Radius = Convert.ToSingle( shape.asCapsule().getRadius() );
-       capsule.Height = Convert.ToSingle( shape.asCapsule().getHeight() );
-     }
-     else if ( type == agxCollide.Shape.Type.SPHERE ) {
-       var sphere    = CreateShapeHelper < Sphere >(ref go);
-       sphere.Radius = Convert.ToSingle( shape.asSphere().getRadius() );
-     }
-     else if ( type == agxCollide.Shape.Type.CONVEX ||
-               type == agxCollide.Shape.Type.TRIMESH ||
-               type == agxCollide.Shape.Type.HEIGHT_FIELD ) {
-       var mesh          = CreateShapeHelper < Collide.Mesh >(ref go);
-       var collisionData = shape.asMesh().getMeshData();
-       var nativeToWorld = shape.getTransform();
-       var meshToLocal   = mesh.transform.worldToLocalMatrix;
-
-       var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
-       meshSource.name = geom.getName();
-       if ( Options.HideMeshesInHierarchy )
-         meshSource.hideFlags    = HideFlags.HideInHierarchy;
-       Data.MappedMeshes.Add( meshSource );
-       mesh.AddSourceObject( meshSource );
-
-       //var meshes        = MeshSplitter.Split( collisionData.getVertices(),
-       //                                        collisionData.getIndices(),
-       //                                        v => v.ToHandedVector3()).Meshes;
-       //foreach ( var meshSource in meshes ) {
-       //  meshSource.name = geom.getName();
-       //  Data.CacheMappedMeshes.Add( meshSource );
-       //  mesh.AddSourceObject( meshSource );
-       //}
-     }
-     else {
-       Debug.LogWarning( "Unsupported shape type: " + type );
-       return null;
-     }
-
-     return go;
-   }
-
-   private bool ShapeIsMeshType( agxCollide.Shape shape )
-   {
-     var type = (agxCollide.Shape.Type)shape.getType();
-     return type == agxCollide.Shape.Type.CONVEX ||
-            type == agxCollide.Shape.Type.TRIMESH ||
-            type == agxCollide.Shape.Type.HEIGHT_FIELD;
-   }
-
-   GameObject MapContactGeometry( Geometries.ContactGeometry geom, bool addVisuals )
-   {
-     GameObject go = null;
-     var uuid_annots = geom.findAnnotations("agx_uuid");
-     foreach ( var uuid_annot in uuid_annots ) {
-       if ( uuid_annot.isString() ) {
-         var uuid = uuid_annot.asString();
-         var shape = Data.AgxCache.readCollisionShapeCS( uuid );
-         if ( shape != null ) {
-           if ( Options.IgnoreDisabledMeshes && !geom.enable_collisions() && ShapeIsMeshType( shape ) )
-             return null;
-
-           go = MapCachedShape( shape, geom );
-         }
-       }
-     }
-
-     if ( go == null ) {
-       go = geom switch
-       {
-         Geometries.Box box => CreateShape<Box, Geometries.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
-         Geometries.Cylinder cyl => CreateShape<Cylinder, Geometries.Cylinder>( cyl, ( bcyl, ucyl ) => {
-           ucyl.Radius = (float)bcyl.radius();
-           ucyl.Height = (float)bcyl.height();
-         } ),
-         Geometries.Sphere sphere => CreateShape<Sphere, Geometries.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
-         Geometries.Capsule cap => CreateShape<Capsule, Geometries.Capsule>( cap, ( bcap, ucap ) => {
-           ucap.Radius = (float)bcap.radius();
-           ucap.Height = (float)bcap.height();
-         } ),
-         Geometries.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
-         Geometries.ConvexMesh cm => MapConvex( cm ),
-         _ => null
-       };
-     }
-
-     if ( go == null ) {
-       // TODO: Robotics Links can have null contact geometries maybe?
-       if ( geom.GetType() == typeof( Geometries.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
-         return null;
-
-       // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
-       if ( geom is Geometries.ExternalTriMeshGeometry )
-         return null;
-
-       return Utils.ReportUnimplemented<GameObject>( geom, Data );
-     }
-
-     Data.RegisterOpenPLXObject( geom.getName(), go );
-
-     if ( addVisuals ) {
-       var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
-       var visual = visualGO.GetComponent<ShapeVisual>();
-       if ( visual != null )
-         visual.SetMaterial( Data.DefaultVisualMaterial );
-     }
-
-     Utils.MapLocalTransform( go.transform, geom.local_transform() );
-     var shapeComp = go.GetComponent<Shape>();
-     shapeComp.CollisionsEnabled = geom.enable_collisions();
-     shapeComp.EnableMassProperties = geom.include_in_mass_properties();
-
-     if ( !geom.material().is_default_material() )
-       if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
-         shapeComp.Material = sm;
-
-     Data.GeometryCache[ geom ] = shapeComp;
-     return go;
-   }
-
-   bool InertiaTensorIsSet( openplx.Math.Matrix3x3 inertia_tensor )
-   {
-     return inertia_tensor.e00() != 0.0
-         || inertia_tensor.e11() != 0.0
-         || inertia_tensor.e22() != 0.0;
-   }
-
-   bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, openplx.Math.AffineTransform cm )
-   {
-     if ( inertia.mass() > 0.0 )
-       mp.Mass.UserValue = (float)inertia.mass();
-
-     else if ( inertia.mass() < 0.0 ) {
-       var errorData = BaseError.CreateErrorData(inertia);
-       Data.ErrorReporter.reportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
-       return false;
-     }
-     var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
-     if ( cm_transform_is_set ) {
-       mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
-       if ( !cm.rotation().IsDefault() )
-         // TODO: Proper warning passed to importer
-         Debug.LogWarning( "AGXUnity does not support rotated Center of mass frames" );
-     }
-
-     var inertia_tensor = inertia.tensor();
-     var inertia_tensor_is_set = InertiaTensorIsSet(inertia_tensor);
-     if ( inertia_tensor_is_set ) {
-       mp.InertiaDiagonal.UserValue = new Vector3( (float)inertia_tensor.e00(), (float)inertia_tensor.e11(), (float)inertia_tensor.e22() );
-       mp.InertiaOffDiagonal.UserValue = new Vector3( (float)inertia_tensor.e01(), (float)inertia_tensor.e02(), (float)inertia_tensor.e12() );
-     }
-
-     mp.Mass.UseDefault = inertia.mass() <= 0.0;
-     mp.InertiaDiagonal.UseDefault = !inertia_tensor_is_set;
-     mp.InertiaOffDiagonal.UseDefault = !inertia_tensor_is_set;
-
-     mp.CenterOfMassOffset.UseDefault = !cm_transform_is_set;
-
-     return true;
-   }
-
-   GameObject MapBody( Bodies.RigidBody body )
-   {
-     GameObject rb = Factory.Create<RigidBody>();
-     Data.FrameCache[ body ] = rb;
-     Data.RegisterOpenPLXObject( body.getName(), rb );
-     var rbComp = rb.GetComponent<RigidBody>();
-     var kinematics = body.kinematics();
-     Utils.MapLocalTransform( rb.transform, kinematics.local_transform() );
-     MapMassProperties( rbComp.MassProperties, body.inertia(), kinematics.local_cm_transform() );
-
-     rbComp.MotionControl = body.is_dynamic() ? agx.RigidBody.MotionControl.DYNAMICS : agx.RigidBody.MotionControl.KINEMATICS;
-
-     var transform = openplx.Math.AffineTransform.create();
-     if ( body.getOwner() is openplx.Physics3D.System owningSystem )
-       transform = owningSystem.reduce_body_to_world_system_transform( body );
-
-     rbComp.LinearVelocity = transform.transform_vec3_vector( kinematics.initial_local_linear_velocity() ).ToHandedVector3();
-     rbComp.AngularVelocity = transform.transform_vec3_vector( kinematics.initial_local_angular_velocity() ).ToHandedVector3();
-
-     bool hasVisuals = false;
-
-     foreach ( var node in body.getValues<openplx.Visuals.Node>() ) {
-       hasVisuals = true;
-       Utils.AddChild( rb, VisualsMapper.MapVisualNode( node ), Data.ErrorReporter, node );
-     }
-
-     foreach ( var geom in body.getValues<Geometries.ContactGeometry>() )
-       Utils.AddChild( rb, MapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
-
-     Data.BodyCache[ body ] = rbComp;
-     return rb;
-   }
-
-   GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
-   {
-     var lockObject = Data.CreateOpenPLXObject( kinematicLock.getName() );
-     var lockComponent = lockObject.AddComponent<KinematicLock>();
-
-     foreach ( var body in kinematicLock.bodies() ) {
-       var rb = Data.BodyCache[ body ];
-       lockComponent.Add( rb );
-     }
-
-     return lockObject;
-   }
-
-   void MapShovel( openplx.Terrain.Shovel shovel )
-   {
-     var body = Data.BodyCache[shovel.body()];
-     var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
-
-     Data.RegisterOpenPLXObject( shovel.getName(), mapped.gameObject );
-
-     mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
-     mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
-     mapped.ToothDirection = Line.Create( body.gameObject, Vector3.zero, shovel.tooth_direction().ToHandedVector3() );
-     mapped.ToothDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.tooth_direction().ToHandedVector3() );
-
-     var settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
-     settings.NumberOfTeeth = (int)shovel.number_teeth();
-     settings.ToothLength = (float)shovel.tooth_length();
-     settings.ToothRadius = new RangeReal( (float)shovel.tooth_min_radius(), (float)shovel.tooth_max_radius() );
-     // TODO: Map AGX-specific shovel settings
-   }
-
-   void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
-   {
-     if ( Data.SystemCache.ContainsKey( system ) ) {
-       var sysGO = Data.SystemCache[ system ];
-       var cg = sysGO.GetOrCreateComponent<CollisionGroups>();
-       cg.AddGroup( collision_group.getName(), true );
-     }
-   }
-
-   void MapBodyToCollisionGroup( Bodies.Body body, CollisionGroup collision_group )
-   {
-     if ( Data.BodyCache.ContainsKey( body ) ) {
-       var rb = Data.BodyCache[body];
-       var cg = rb.gameObject.GetOrCreateComponent<CollisionGroups>();
-       cg.AddGroup( collision_group.getName(), true );
-     }
-   }
-
-   void MapGeometryToCollisionGroup( Geometries.ContactGeometry geometry, CollisionGroup collision_group )
-   {
-     if ( Data.GeometryCache.ContainsKey( geometry ) ) {
-       var shape = Data.GeometryCache[geometry];
-       var cg = shape.gameObject.GetOrCreateComponent<CollisionGroups>();
-       cg.AddGroup( collision_group.getName(), false );
-     }
-   }
-
-   void MapCollisionGroup( CollisionGroup collision_group )
-   {
-     foreach ( var system in collision_group.systems() )
-       if ( system is openplx.Physics3D.System system3d )
-         MapSystemToCollisionGroup( system3d, collision_group );
-
-     foreach ( var body in collision_group.bodies() )
-       if ( body is Bodies.Body body3d )
-         MapBodyToCollisionGroup( body3d, collision_group );
-
-     foreach ( var geometry in collision_group.geometries() )
-       if ( geometry is Geometries.ContactGeometry geometry3d )
-         MapGeometryToCollisionGroup( geometry3d, collision_group );
-   }
-
-   void MapDisabledPair( DisableCollisionPair pair )
-   {
-     Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
-   }
-
-   GameObject MapTerrain( openplx.Terrain.Terrain terrain )
-   {
-     GameObject terrainGO = Factory.Create<RigidBody>();
-     Data.FrameCache[ terrain ] = terrainGO;
-     Data.RegisterOpenPLXObject( terrain.getName(), terrainGO );
-     var rbComp = terrainGO.GetComponent<RigidBody>();
-     Utils.MapLocalTransform( terrainGO.transform, terrain.kinematics().local_transform() );
-     terrainGO.transform.rotation *= Quaternion.FromToRotation( Vector3.up, Vector3.forward );
-
-     rbComp.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
-
-     var terrainComp = terrainGO.AddComponent<MovableTerrain>();
-     terrainComp.PlacementMode = MovableTerrain.Placement.Manual;
-
-     terrainComp.ElementSize = (float)terrain.element_size();
-     terrainComp.MaximumDepth = (float)terrain.max_depth();
-     terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
-     terrainComp.MaxDepthAsInitialHeight = false;
-
-     var terrainMat = terrain.material();
-     if ( !terrainMat.is_default_terrain_material() ) {
-       if ( !Data.MaterialCache.TryGetValue( terrainMat, out var shapeMaterial ) ) {
-         shapeMaterial = InteractionMapper.MapMaterial( terrainMat );
-         Data.MaterialCache[ terrainMat ] = shapeMaterial;
-       }
-
-       if ( !Data.TerrainMaterialCache.TryGetValue( terrainMat, out var mappedTerrMat ) ) {
-         mappedTerrMat = ScriptableObject.CreateInstance<DeformableTerrainMaterial>();
-         var matAnnotation = terrainMat.findAnnotations("agx_terrain_material");
-         string matName = terrainMat.unique_name();
-         if ( matAnnotation.Count == 1 && matAnnotation[ 0 ].isString() ) {
-           matName = matAnnotation[ 0 ].asString();
-         }
-
-         mappedTerrMat.SetPresetNameAndUpdateValues( matName );
-         mappedTerrMat.name = terrainMat.getName()+"_TM";
-
-         Data.TerrainMaterialCache[ terrainMat ] = mappedTerrMat;
-         Data.MappedTerrainMaterials.Add( mappedTerrMat );
-       }
-
-       terrainComp.DefaultTerrainMaterial = mappedTerrMat;
-       terrainComp.Material = shapeMaterial;
-       terrainComp.ParticleMaterial = shapeMaterial;
-     }
-
-     if ( !Data.TerrainParticleRendererAdded ) {
-       Data.TerrainParticleRendererAdded = true;
-       var renderer = terrainGO.AddComponent<DeformableTerrainParticleRenderer>();
-       renderer.GranuleInstance = Resources.Load<GameObject>( "Debug/SphereRenderer" );
-     }
-
-     return terrainGO;
-   }
-
-   GameObject MapSystem( openplx.Physics3D.System system )
-   {
-     var s = MapSystemPass1( system );
-     MapSystemPass2( system );
-     // This method performs actual mapping of previously discovered tracks and is not recursive
-     VehicleMapper.MapTrackSystems();
-     MapSystemPass3( system );
-     MapSystemPass4( system );
-     MapSystemPass5( system );
-     return s;
-   }
-
-   GameObject MapSystemPass1( openplx.Physics3D.System system )
-   {
-     GameObject s = Data.CreateOpenPLXObject(system.getName());
-     Utils.MapLocalTransform( s.transform, system.local_transform() );
-
-     Data.SystemCache[ system ] = s;
-     Data.FrameCache[ system ] = s;
-
-     foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
-       Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
-
-     foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
-       foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
-         if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
-           if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
-             Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
-         }
-         else
-           Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
-       }
-     }
-
-     VehicleMapper.MapSystemPass1( system );
-
-     foreach ( var visual in system.getNonReferenceValues<openplx.Visuals.Node>() ) {
-       Utils.AddChild( s, VisualsMapper.MapVisualNode( visual ), Data.ErrorReporter, visual );
-     }
-
-     return s;
-   }
-
-   void MapSystemPass2( openplx.Physics3D.System system )
-   {
-     var s = Data.SystemCache[system];
-
-     foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
-       MapSystemPass2( subSystem );
+      if ( mesh == null ) {
+        var errorData = BaseError.CreateErrorData( objGeom );
+        Data.ReportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+      }
+      else
+        meshComp.AddSourceObject( mesh );
+
+      return go;
+    }
+
+    private T CreateShapeHelper<T>( ref GameObject go )
+      where T : Shape
+    {
+      go = Factory.Create<T>();
+      Data.RegisterGameObject( go );
+      return go.GetComponent<T>();
+    }
+
+    GameObject MapCachedShape( agxCollide.Shape shape, Geometries.ContactGeometry geom )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      GameObject go = null;
+
+      if ( type == agxCollide.Shape.Type.BOX ) {
+        var box = CreateShapeHelper<Box>(ref go);
+        box.HalfExtents = shape.asBox().getHalfExtents().ToVector3();
+      }
+      else if ( type == agxCollide.Shape.Type.CYLINDER ) {
+        var cylinder    = CreateShapeHelper<Cylinder>(ref go);
+        cylinder.Radius = Convert.ToSingle( shape.asCylinder().getRadius() );
+        cylinder.Height = Convert.ToSingle( shape.asCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CYLINDER ) {
+        var hollowCylinder       = CreateShapeHelper<HollowCylinder>( ref go );
+        hollowCylinder.Thickness = Convert.ToSingle( shape.asHollowCylinder().getThickness() );
+        hollowCylinder.Radius    = Convert.ToSingle( shape.asHollowCylinder().getOuterRadius() );
+        hollowCylinder.Height    = Convert.ToSingle( shape.asHollowCylinder().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONE ) {
+        var cone          = CreateShapeHelper < Cone >(ref go);
+        cone.BottomRadius = Convert.ToSingle( shape.asCone().getBottomRadius() );
+        cone.TopRadius    = Convert.ToSingle( shape.asCone().getTopRadius() );
+        cone.Height       = Convert.ToSingle( shape.asCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.HOLLOW_CONE ) {
+        var hollowCone          = CreateShapeHelper < HollowCone >(ref go);
+        hollowCone.Thickness    = Convert.ToSingle( shape.asHollowCone().getThickness() );
+        hollowCone.BottomRadius = Convert.ToSingle( shape.asHollowCone().getBottomOuterRadius() );
+        hollowCone.TopRadius    = Convert.ToSingle( shape.asHollowCone().getTopOuterRadius() );
+        hollowCone.Height       = Convert.ToSingle( shape.asHollowCone().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.CAPSULE ) {
+        var capsule    = CreateShapeHelper < Capsule >(ref go);
+        capsule.Radius = Convert.ToSingle( shape.asCapsule().getRadius() );
+        capsule.Height = Convert.ToSingle( shape.asCapsule().getHeight() );
+      }
+      else if ( type == agxCollide.Shape.Type.SPHERE ) {
+        var sphere    = CreateShapeHelper < Sphere >(ref go);
+        sphere.Radius = Convert.ToSingle( shape.asSphere().getRadius() );
+      }
+      else if ( type == agxCollide.Shape.Type.CONVEX ||
+                type == agxCollide.Shape.Type.TRIMESH ||
+                type == agxCollide.Shape.Type.HEIGHT_FIELD ) {
+        var mesh          = CreateShapeHelper < Collide.Mesh >(ref go);
+        var collisionData = shape.asMesh().getMeshData();
+        var nativeToWorld = shape.getTransform();
+        var meshToLocal   = mesh.transform.worldToLocalMatrix;
+
+        var meshSource = AGXMeshToUnityMesh( collisionData.getVertices(), collisionData.getIndices());
+        meshSource.name = geom.getName();
+        if ( Options.HideMeshesInHierarchy )
+          meshSource.hideFlags    = HideFlags.HideInHierarchy;
+        Data.MappedMeshes.Add( meshSource );
+        mesh.AddSourceObject( meshSource );
+
+        //var meshes        = MeshSplitter.Split( collisionData.getVertices(),
+        //                                        collisionData.getIndices(),
+        //                                        v => v.ToHandedVector3()).Meshes;
+        //foreach ( var meshSource in meshes ) {
+        //  meshSource.name = geom.getName();
+        //  Data.CacheMappedMeshes.Add( meshSource );
+        //  mesh.AddSourceObject( meshSource );
+        //}
+      }
+      else {
+        Debug.LogWarning( "Unsupported shape type: " + type );
+        return null;
+      }
+
+      return go;
+    }
+
+    private bool ShapeIsMeshType( agxCollide.Shape shape )
+    {
+      var type = (agxCollide.Shape.Type)shape.getType();
+      return type == agxCollide.Shape.Type.CONVEX ||
+             type == agxCollide.Shape.Type.TRIMESH ||
+             type == agxCollide.Shape.Type.HEIGHT_FIELD;
+    }
+
+    GameObject MapContactGeometry( Geometries.ContactGeometry geom, bool addVisuals )
+    {
+      GameObject go = null;
+      var uuid_annots = geom.findAnnotations("agx_uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeCS( uuid );
+          if ( shape != null ) {
+            if ( Options.IgnoreDisabledMeshes && !geom.enable_collisions() && ShapeIsMeshType( shape ) )
+              return null;
+
+            go = MapCachedShape( shape, geom );
+          }
+        }
+      }
+
+      if ( go == null ) {
+        go = geom switch
+        {
+          Geometries.Box box => CreateShape<Box, Geometries.Box>( box, ( bbox, ubox ) => ubox.HalfExtents =  bbox.size().ToVector3()/2 ),
+          Geometries.Cylinder cyl => CreateShape<Cylinder, Geometries.Cylinder>( cyl, ( bcyl, ucyl ) => {
+            ucyl.Radius = (float)bcyl.radius();
+            ucyl.Height = (float)bcyl.height();
+          } ),
+          Geometries.Sphere sphere => CreateShape<Sphere, Geometries.Sphere>( sphere, ( bsphere, usphere ) => usphere.Radius = (float)bsphere.radius() ),
+          Geometries.Capsule cap => CreateShape<Capsule, Geometries.Capsule>( cap, ( bcap, ucap ) => {
+            ucap.Radius = (float)bcap.radius();
+            ucap.Height = (float)bcap.height();
+          } ),
+          Geometries.ExternalTriMeshGeometry etm => MapExternalTriMesh( etm ),
+          Geometries.ConvexMesh cm => MapConvex( cm ),
+          _ => null
+        };
+      }
+
+      if ( go == null ) {
+        // TODO: Robotics Links can have null contact geometries maybe?
+        if ( geom.GetType() == typeof( Geometries.ContactGeometry ) && geom.getOwner() is openplx.Robotics.Links.RigidLink )
+          return null;
+
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( geom is Geometries.ExternalTriMeshGeometry )
+          return null;
+
+        return Utils.ReportUnimplemented<GameObject>( geom, Data );
+      }
+
+      Data.RegisterOpenPLXObject( geom.getName(), go );
+
+      if ( addVisuals ) {
+        var visualGO = ShapeVisual.Create( go.GetComponent<Shape>() );
+        var visual = visualGO.GetComponent<ShapeVisual>();
+        if ( visual != null )
+          visual.SetMaterial( Data.DefaultVisualMaterial );
+      }
+
+      Utils.MapLocalTransform( go.transform, geom.local_transform() );
+      var shapeComp = go.GetComponent<Shape>();
+      shapeComp.CollisionsEnabled = geom.enable_collisions();
+      shapeComp.EnableMassProperties = geom.include_in_mass_properties();
+
+      if ( !geom.material().is_default_material() )
+        if ( Data.MaterialCache.TryGetValue( geom.material(), out ShapeMaterial sm ) )
+          shapeComp.Material = sm;
+
+      Data.GeometryCache[ geom ] = shapeComp;
+      return go;
+    }
+
+    bool InertiaTensorIsSet( openplx.Math.Matrix3x3 inertia_tensor )
+    {
+      return inertia_tensor.e00() != 0.0
+          || inertia_tensor.e11() != 0.0
+          || inertia_tensor.e22() != 0.0;
+    }
+
+    bool MapMassProperties( MassProperties mp, Bodies.Inertia inertia, openplx.Math.AffineTransform cm )
+    {
+      if ( inertia.mass() > 0.0 )
+        mp.Mass.UserValue = (float)inertia.mass();
+
+      else if ( inertia.mass() < 0.0 ) {
+        var errorData = BaseError.CreateErrorData(inertia);
+        Data.ReportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
+        return false;
+      }
+      var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
+      if ( cm_transform_is_set ) {
+        mp.CenterOfMassOffset.UserValue = cm.position().ToHandedVector3();
+        if ( !cm.rotation().IsDefault() )
+          // TODO: Proper warning passed to importer
+          Debug.LogWarning( "AGXUnity does not support rotated Center of mass frames" );
+      }
+
+      var inertia_tensor = inertia.tensor();
+      var inertia_tensor_is_set = InertiaTensorIsSet(inertia_tensor);
+      if ( inertia_tensor_is_set ) {
+        mp.InertiaDiagonal.UserValue = new Vector3( (float)inertia_tensor.e00(), (float)inertia_tensor.e11(), (float)inertia_tensor.e22() );
+        mp.InertiaOffDiagonal.UserValue = new Vector3( (float)inertia_tensor.e01(), (float)inertia_tensor.e02(), (float)inertia_tensor.e12() );
+      }
+
+      mp.Mass.UseDefault = inertia.mass() <= 0.0;
+      mp.InertiaDiagonal.UseDefault = !inertia_tensor_is_set;
+      mp.InertiaOffDiagonal.UseDefault = !inertia_tensor_is_set;
+
+      mp.CenterOfMassOffset.UseDefault = !cm_transform_is_set;
+
+      return true;
+    }
+
+    GameObject MapBody( Bodies.RigidBody body )
+    {
+      GameObject rb = Factory.Create<RigidBody>();
+      Data.FrameCache[ body ] = rb;
+      Data.RegisterOpenPLXObject( body.getName(), rb );
+      var rbComp = rb.GetComponent<RigidBody>();
+      var kinematics = body.kinematics();
+      Utils.MapLocalTransform( rb.transform, kinematics.local_transform() );
+      MapMassProperties( rbComp.MassProperties, body.inertia(), kinematics.local_cm_transform() );
+
+      rbComp.MotionControl = body.is_dynamic() ? agx.RigidBody.MotionControl.DYNAMICS : agx.RigidBody.MotionControl.KINEMATICS;
+
+      var transform = openplx.Math.AffineTransform.create();
+      if ( body.getOwner() is openplx.Physics3D.System owningSystem )
+        transform = owningSystem.reduce_body_to_world_system_transform( body );
+
+      rbComp.LinearVelocity = transform.transform_vec3_vector( kinematics.initial_local_linear_velocity() ).ToHandedVector3();
+      rbComp.AngularVelocity = transform.transform_vec3_vector( kinematics.initial_local_angular_velocity() ).ToHandedVector3();
+
+      bool hasVisuals = false;
+
+      foreach ( var node in body.getValues<openplx.Visuals.Node>() ) {
+        hasVisuals = true;
+        Utils.AddChild( rb, VisualsMapper.MapVisualNode( node ), Data.ErrorReporter, node );
+      }
+
+      foreach ( var geom in body.getValues<Geometries.ContactGeometry>() )
+        Utils.AddChild( rb, MapContactGeometry( geom, !hasVisuals ), Data.ErrorReporter, geom );
+
+      Data.BodyCache[ body ] = rbComp;
+      return rb;
+    }
+
+    GameObject MapKinematicLock( openplx.Physics.KinematicLock kinematicLock )
+    {
+      var lockObject = Data.CreateOpenPLXObject( kinematicLock.getName() );
+      var lockComponent = lockObject.AddComponent<KinematicLock>();
+
+      foreach ( var body in kinematicLock.bodies() ) {
+        var rb = Data.BodyCache[ body ];
+        lockComponent.Add( rb );
+      }
+
+      return lockObject;
+    }
+
+    void MapShovel( openplx.Terrain.Shovel shovel )
+    {
+      var body = Data.BodyCache[shovel.body()];
+      var mapped = body.gameObject.AddComponent<DeformableTerrainShovel>();
+
+      Data.RegisterOpenPLXObject( shovel.getName(), mapped.gameObject );
+
+      mapped.TopEdge = Line.Create( body.gameObject, shovel.top_edge().start().ToHandedVector3(), shovel.top_edge().end().ToHandedVector3() );
+      mapped.CuttingEdge = Line.Create( body.gameObject, shovel.cutting_edge().start().ToHandedVector3(), shovel.cutting_edge().end().ToHandedVector3() );
+      mapped.ToothDirection = Line.Create( body.gameObject, Vector3.zero, shovel.tooth_direction().ToHandedVector3() );
+      mapped.ToothDirection.Start.LocalRotation = Quaternion.FromToRotation( Vector3.up, shovel.tooth_direction().ToHandedVector3() );
+
+      var settings = ScriptAsset.Create<DeformableTerrainShovelSettings>();
+      settings.NumberOfTeeth = (int)shovel.number_teeth();
+      settings.ToothLength = (float)shovel.tooth_length();
+      settings.ToothRadius = new RangeReal( (float)shovel.tooth_min_radius(), (float)shovel.tooth_max_radius() );
+      // TODO: Map AGX-specific shovel settings
+    }
+
+    void MapSystemToCollisionGroup( openplx.Physics3D.System system, CollisionGroup collision_group )
+    {
+      if ( Data.SystemCache.ContainsKey( system ) ) {
+        var sysGO = Data.SystemCache[ system ];
+        var cg = sysGO.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void MapBodyToCollisionGroup( Bodies.Body body, CollisionGroup collision_group )
+    {
+      if ( Data.BodyCache.ContainsKey( body ) ) {
+        var rb = Data.BodyCache[body];
+        var cg = rb.gameObject.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), true );
+      }
+    }
+
+    void MapGeometryToCollisionGroup( Geometries.ContactGeometry geometry, CollisionGroup collision_group )
+    {
+      if ( Data.GeometryCache.ContainsKey( geometry ) ) {
+        var shape = Data.GeometryCache[geometry];
+        var cg = shape.gameObject.GetOrCreateComponent<CollisionGroups>();
+        cg.AddGroup( collision_group.getName(), false );
+      }
+    }
+
+    void MapCollisionGroup( CollisionGroup collision_group )
+    {
+      foreach ( var system in collision_group.systems() )
+        if ( system is openplx.Physics3D.System system3d )
+          MapSystemToCollisionGroup( system3d, collision_group );
+
+      foreach ( var body in collision_group.bodies() )
+        if ( body is Bodies.Body body3d )
+          MapBodyToCollisionGroup( body3d, collision_group );
+
+      foreach ( var geometry in collision_group.geometries() )
+        if ( geometry is Geometries.ContactGeometry geometry3d )
+          MapGeometryToCollisionGroup( geometry3d, collision_group );
+    }
+
+    void MapDisabledPair( DisableCollisionPair pair )
+    {
+      Data.PrefabLocalData.AddDisabledPair( pair.group1().getName(), pair.group2().getName() );
+    }
+
+    GameObject MapTerrain( openplx.Terrain.Terrain terrain )
+    {
+      GameObject terrainGO = Factory.Create<RigidBody>();
+      Data.FrameCache[ terrain ] = terrainGO;
+      Data.RegisterOpenPLXObject( terrain.getName(), terrainGO );
+      var rbComp = terrainGO.GetComponent<RigidBody>();
+      Utils.MapLocalTransform( terrainGO.transform, terrain.kinematics().local_transform() );
+      terrainGO.transform.rotation *= Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+
+      rbComp.MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+
+      var terrainComp = terrainGO.AddComponent<MovableTerrain>();
+      terrainComp.PlacementMode = MovableTerrain.Placement.Manual;
+
+      terrainComp.ElementSize = (float)terrain.element_size();
+      terrainComp.MaximumDepth = (float)terrain.max_depth();
+      terrainComp.SizeCells = new Vector2Int( (int)terrain.num_elements_y(), (int)terrain.num_elements_x() );
+      terrainComp.MaxDepthAsInitialHeight = false;
+
+      var terrainMat = terrain.material();
+      if ( !terrainMat.is_default_terrain_material() ) {
+        if ( !Data.MaterialCache.TryGetValue( terrainMat, out var shapeMaterial ) ) {
+          shapeMaterial = InteractionMapper.MapMaterial( terrainMat );
+          Data.MaterialCache[ terrainMat ] = shapeMaterial;
+        }
+
+        if ( !Data.TerrainMaterialCache.TryGetValue( terrainMat, out var mappedTerrMat ) ) {
+          mappedTerrMat = ScriptableObject.CreateInstance<DeformableTerrainMaterial>();
+          var matAnnotation = terrainMat.findAnnotations("agx_terrain_material");
+          string matName = terrainMat.unique_name();
+          if ( matAnnotation.Count == 1 && matAnnotation[ 0 ].isString() ) {
+            matName = matAnnotation[ 0 ].asString();
+          }
+
+          mappedTerrMat.SetPresetNameAndUpdateValues( matName );
+          mappedTerrMat.name = terrainMat.getName()+"_TM";
+
+          Data.TerrainMaterialCache[ terrainMat ] = mappedTerrMat;
+          Data.MappedTerrainMaterials.Add( mappedTerrMat );
+        }
+
+        terrainComp.DefaultTerrainMaterial = mappedTerrMat;
+        terrainComp.Material = shapeMaterial;
+        terrainComp.ParticleMaterial = shapeMaterial;
+      }
+
+      if ( !Data.TerrainParticleRendererAdded ) {
+        Data.TerrainParticleRendererAdded = true;
+        var renderer = terrainGO.AddComponent<DeformableTerrainParticleRenderer>();
+        renderer.GranuleInstance = Resources.Load<GameObject>( "Debug/SphereRenderer" );
+      }
+
+      return terrainGO;
+    }
+
+    GameObject MapSystem( openplx.Physics3D.System system )
+    {
+      var s = MapSystemPass1( system );
+      MapSystemPass2( system );
+      // This method performs actual mapping of previously discovered tracks and is not recursive
+      VehicleMapper.MapTrackSystems();
+      MapSystemPass3( system );
+      MapSystemPass4( system );
+      MapSystemPass5( system );
+      return s;
+    }
+
+    GameObject MapSystemPass1( openplx.Physics3D.System system )
+    {
+      GameObject s = Data.CreateOpenPLXObject(system.getName());
+      Utils.MapLocalTransform( s.transform, system.local_transform() );
+
+      Data.SystemCache[ system ] = s;
+      Data.FrameCache[ system ] = s;
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        Utils.AddChild( s, MapSystemPass1( subSystem ), Data.ErrorReporter, subSystem );
+
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
+        foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
+          if ( geometry.material().getTypeNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
+            if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
+              Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
+          }
+          else
+            Data.MaterialCache[ geometry.material() ] = Data.DefaultMaterial;
+        }
+      }
+
+      VehicleMapper.MapSystemPass1( system );
+
+      foreach ( var visual in system.getNonReferenceValues<openplx.Visuals.Node>() ) {
+        Utils.AddChild( s, VisualsMapper.MapVisualNode( visual ), Data.ErrorReporter, visual );
+      }
+
+      return s;
+    }
+
+    void MapSystemPass2( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
+
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass2( subSystem );
 
      // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
-     foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
-       if ( !Data.BodyCache.ContainsKey( body ) ) {
-         if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
-           Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
-           continue;
-         }
+      foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
+        if ( !Data.BodyCache.ContainsKey( body ) ) {
+          if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
+            Data.ReportError( new RigidBodyOwnerNotSystemError( body ) );
+            continue;
+          }
 
          var parent = Data.SystemCache[ owningSystem ];
          Utils.AddChild( parent, MapBody( body ), Data.ErrorReporter, body );

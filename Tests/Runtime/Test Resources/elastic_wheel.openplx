@@ -16,7 +16,8 @@ Wheel is Vehicles.Wheels.ElasticWheel:
     width: 0.015
     rotational_axis: Math.Vec3.X_AXIS()
 
-WheelMC is Physics3D.Interactions.RedirectedMateConnector:
+WheelMC is Physics3D.Interactions.MateConnector:
+  with Physics3D.Interactions.ConnectorProperties.Redirected
   with Vehicles.Interfaces.UpForwardVectors 
   with Vehicles.Suspensions.Properties.WheelAxisFromUpForward
 

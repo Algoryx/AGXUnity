@@ -1,6 +1,7 @@
 using AGXUnity.IO.OpenPLX;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -35,13 +36,14 @@ namespace AGXUnityEditor.IO.OpenPLX
 
      var copiedDeps = new HashSet<string>();
 
-     var openPLXAssets = AssetDatabase.FindAssets( "glob:\"*.openplx\"" );
-     var num = 0;
-     foreach ( var asset in openPLXAssets ) {
-       var src = AssetDatabase.GUIDToAssetPath( asset );
-       if ( src.StartsWith( "Assets/" ) ) {
-         CopyAsset( src, openPLXTarDir );
-         num++;
+      var openPLXAssets = AssetDatabase.FindAssets( "glob:\"*.openplx\"" );
+      openPLXAssets = openPLXAssets.Concat( AssetDatabase.FindAssets( "glob:\"*.plxz\"" ) ).ToArray();
+      var num = 0;
+      foreach ( var asset in openPLXAssets ) {
+        var src = AssetDatabase.GUIDToAssetPath( asset );
+        if ( src.StartsWith( "Assets/" ) ) {
+          CopyAsset( src, openPLXTarDir );
+          num++;
 
          // TODO: this path should use the importer properties
          if ( src.StartsWith( "Assets/AGXUnity/OpenPLX" ) || src.EndsWith( "config.openplx" ) )
@@ -65,25 +67,25 @@ namespace AGXUnityEditor.IO.OpenPLX
            continue;
          }
 
-         foreach ( var dep in dependencies ) {
-           if ( dep.EndsWith( ".openplx" ) )
-             continue;
-           var relative = Path.GetRelativePath( projectPath, dep );
-           if ( !copiedDeps.Contains( relative ) ) {
-             CopyAsset( relative, openPLXTarDir );
-             copiedDeps.Add( relative );
-           }
-         }
-       }
-       else {
-         Debug.LogError( $"OpenPLX asset '{src}' is not in Assets directory" );
-         return;
-       }
-     }
-     Debug.Log( $"Copied {num} OpenPLX source files to '{openPLXTarDir}'" );
-     if ( copiedDeps.Count > 0 )
-       Debug.Log( $"Copied {copiedDeps.Count} OpenPLX dependencies to '{openPLXTarDir}'" );
-   }
+          foreach ( var dep in dependencies ) {
+            if ( dep.EndsWith( ".openplx" ) || dep.EndsWith( ".plxz" ) )
+              continue;
+            var relative = Path.GetRelativePath( projectPath, dep );
+            if ( !copiedDeps.Contains( relative ) ) {
+              CopyAsset( relative, openPLXTarDir );
+              copiedDeps.Add( relative );
+            }
+          }
+        }
+        else {
+          Debug.LogError( $"OpenPLX asset '{src}' is not in Assets directory" );
+          return;
+        }
+      }
+      Debug.Log( $"Copied {num} OpenPLX source files to '{openPLXTarDir}'" );
+      if ( copiedDeps.Count > 0 )
+        Debug.Log( $"Copied {copiedDeps.Count} OpenPLX dependencies to '{openPLXTarDir}'" );
+    }
 
    public static void CopyAsset( string assetPath, string targetDir )
    {

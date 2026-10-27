@@ -82,18 +82,18 @@ namespace AGXUnity.IO.OpenPLX
      if ( annots.IsEmpty )
        return false;
 
-     foreach ( var annot in annots ) {
-       if ( annot.isTrue() ) {
-         value = true;
-         return true;
-       }
-       if ( annot.isFalse() ) {
-         value = false;
-         return true;
-       }
-     }
-     return false;
-   }
+      foreach ( var annot in annots ) {
+        if ( annot.isBool() && annot.asBool() ) {
+          value = true;
+          return true;
+        }
+        if ( annot.isBool() && !annot.asBool() ) {
+          value = false;
+          return true;
+        }
+      }
+      return false;
+    }
 
    public static bool TryGetRealAnnotation( this openplx.Core.Object obj, string name, out float value )
    {

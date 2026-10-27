@@ -60,17 +60,17 @@ namespace AGXUnity.IO.OpenPLX
        foreach ( var dist in rayDistortions.ray_emission_distortions() ) {
          if ( dist is RayEmissionAngleGaussianNoise gaussian ) {
 
-           var distortionAxis = gaussian.rotation_axis().ToVec3();
-           agxSensor.LidarRayAngleGaussianNoise.Axis axis = 0;
-           if ( distortionAxis.dot( agx.Vec3.X_AXIS() ) >= 0.95f )
-             axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
-           else if ( distortionAxis.dot( agx.Vec3.Y_AXIS() ) >= 0.95f )
-             axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
-           else if ( distortionAxis.dot( agx.Vec3.Z_AXIS() ) >= 0.95f )
-             axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
-           else {
-             Data.ErrorReporter.reportError( new NonPrincipalAxisError( gaussian.rotation_axis() ) );
-           }
+            var distortionAxis = gaussian.rotation_axis().ToVec3();
+            agxSensor.LidarRayAngleGaussianNoise.Axis axis = 0;
+            if ( distortionAxis.dot( agx.Vec3.X_AXIS() ) >= 0.95f )
+              axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_X;
+            else if ( distortionAxis.dot( agx.Vec3.Y_AXIS() ) >= 0.95f )
+              axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Y;
+            else if ( distortionAxis.dot( agx.Vec3.Z_AXIS() ) >= 0.95f )
+              axis = agxSensor.LidarRayAngleGaussianNoise.Axis.AXIS_Z;
+            else {
+              Data.ReportError( new NonPrincipalAxisError( gaussian.rotation_axis() ) );
+            }
 
            lidarComp.RayAngleGaussianNoises.Add( new LidarRayAngleGaussianNoise()
            {
@@ -83,18 +83,18 @@ namespace AGXUnity.IO.OpenPLX
        }
      }
 
-     foreach ( var dist in lidar.sensing_distortions() ) {
-       if ( dist is LidarDetectionDistanceGaussianNoise gaussianDistanceNoise ) {
-         if ( lidarComp.DistanceGaussianNoise.Enable == true ) {
-           Data.ErrorReporter.reportError( new MultipleDistanceDistortionsError( gaussianDistanceNoise ) );
-           continue;
-         }
-         lidarComp.DistanceGaussianNoise.Enable = true;
-         lidarComp.DistanceGaussianNoise.Mean = (float)gaussianDistanceNoise.gaussian_distribution().mean();
-         lidarComp.DistanceGaussianNoise.StandardDeviationBase = (float)gaussianDistanceNoise.gaussian_distribution().standard_deviation();
-         lidarComp.DistanceGaussianNoise.StandardDeviationSlope = (float)gaussianDistanceNoise.standard_deviation_slope();
-       }
-     }
+      foreach ( var dist in lidar.sensing_distortions() ) {
+        if ( dist is LidarDetectionDistanceGaussianNoise gaussianDistanceNoise ) {
+          if ( lidarComp.DistanceGaussianNoise.Enable == true ) {
+            Data.ReportError( new MultipleDistanceDistortionsError( gaussianDistanceNoise ) );
+            continue;
+          }
+          lidarComp.DistanceGaussianNoise.Enable = true;
+          lidarComp.DistanceGaussianNoise.Mean = (float)gaussianDistanceNoise.gaussian_distribution().mean();
+          lidarComp.DistanceGaussianNoise.StandardDeviationBase = (float)gaussianDistanceNoise.gaussian_distribution().standard_deviation();
+          lidarComp.DistanceGaussianNoise.StandardDeviationSlope = (float)gaussianDistanceNoise.standard_deviation_slope();
+        }
+      }
 
      lidarComp.LidarFrame = Data.MateConnectorCache[ lidar.mate_connector_attachment() ];
 

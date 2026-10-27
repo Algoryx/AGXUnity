@@ -1,5 +1,6 @@
 using openplx;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Object = openplx.Core.Object;
 
@@ -21,70 +22,77 @@ namespace AGXUnity.IO.OpenPLX
    [field: SerializeField]
    public string OpenPLXModelName { get; set; }
 
-   // TODO: This is a workaround to the root object being prefixed with the bundle name but not the child objects. When this issue is fixed in OpenPLX, this should be removed
-   [HideInInspector]
-   public string PrunedNativeName
-   {
-     get
-     {
-       if ( Native == null )
-         throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
-       var prunedNativeName = Native.getName();
-       if ( prunedNativeName.Contains( "." ) )
-         prunedNativeName = prunedNativeName[ ( prunedNativeName.LastIndexOf( "." ) + 1 ).. ];
-       return prunedNativeName;
-     }
-   }
+    // TODO: This is a workaround to the root object being prefixed with the bundle name but not the child objects. When this issue is fixed in OpenPLX, this should be removed
+    [HideInInspector]
+    public string PrunedNativeName
+    {
+      get
+      {
+        if ( Native == null )
+          throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
+        return Native.getName().Split( '.' ).Last();
+      }
+    }
 
-   /// <summary>
-   /// In the editor the files will be located in the assets folder (Unless the path is absolute). In this case it is fine loading the path as is.
-   /// However, when the application is built, the OpenPLX file is copied to a corresponding directory in the build directory and the path of the
-   /// OpenPLX file needs to be updated accordingly.
-   /// </summary>
-   public string OpenPLXFile => OpenPLXImporter.TransformOpenPLXPath( OpenPLXAssetPath );
-   public Object Native { get; internal set; }
+    /// <summary>
+    /// In the editor the files will be located in the assets folder (Unless the path is absolute). In this case it is fine loading the path as is.
+    /// However, when the application is built, the OpenPLX file is copied to a corresponding directory in the build directory and the path of the
+    /// OpenPLX file needs to be updated accordingly.
+    /// </summary>
+    public string OpenPLXFile => OpenPLXImporter.TransformOpenPLXPath( OpenPLXAssetPath );
+    public Object Native { get; private set; }
 
-   public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
-   private Dictionary<string, GameObject> m_objectMap;
+    internal void ExternalInitialize( Object native, Dictionary<string, Object> openplxMap )
+    {
+      Native = native;
+      m_openplxMap = openplxMap;
+    }
 
-   public GameObject FindMappedObject( string declaration )
-   {
-     var relativeDeclaration = declaration.Replace( PrunedNativeName + ".", "" );
-     var nativeTarget = Native.getObject( relativeDeclaration );
-     if ( nativeTarget == null )
-       return null;
-     declaration = nativeTarget.getName();
-     if ( Native != null ) {
-       if ( m_objectMap.ContainsKey( declaration ) )
-         return m_objectMap[ declaration ];
-       else
-         return null;
-     }
-     else {
-       foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() )
-         if ( openPLXObj.SourceDeclarations.Contains( declaration ) )
-           return openPLXObj.gameObject;
-       return null;
-     }
-   }
+    public Dictionary<string, agx.Referenced> RuntimeMapped { get; private set; } = new Dictionary<string, agx.Referenced>();
+    private Dictionary<string, Object> m_openplxMap;
+    private Dictionary<string, GameObject> m_objectMap;
 
-   public object FindRuntimeMappedObject( string declaration )
-   {
-     return RuntimeMapped.GetValueOrDefault( declaration, null );
-   }
+    public Object FindNestedNative( string declaration )
+    {
+      if ( Native == null )
+        return null;
+      // First, assume that the declaration given is relative and prepend it with the root name
+      if ( m_openplxMap.TryGetValue( Native.getName() + "." + declaration, out Object obj ) )
+        return obj;
+      // Second, assume that the declaration given is absolute
+      return m_openplxMap.GetValueOrDefault( declaration );
+    }
 
-   public T FindRuntimeMappedObject<T>( string declaration )
-     where T : class
-   {
-     return RuntimeMapped.GetValueOrDefault( declaration, null ) as T;
-   }
+    public GameObject FindMappedObject( string declaration )
+    {
+      if ( Native != null ) {
+        declaration = FindNestedNative( declaration )?.getName();
+        if ( declaration != null && m_objectMap.ContainsKey( declaration ) )
+          return m_objectMap[ declaration ];
+        else
+          return null;
+      }
+      else {
+        foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() )
+          if ( openPLXObj.SourceDeclarations.Contains( declaration ) )
+            return openPLXObj.gameObject;
+        return null;
+      }
+    }
 
-   protected override bool Initialize()
-   {
-     if ( Native == null ) {
-       var importer = new OpenPLXImporter();
-       importer.ErrorReporter = ReportError;
-       Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName );
+    public object FindRuntimeMappedObject( string declaration ) => RuntimeMapped.GetValueOrDefault( declaration, null );
+
+    public T FindRuntimeMappedObject<T>( string declaration )
+      where T : class
+    => RuntimeMapped.GetValueOrDefault( declaration, null ) as T;
+
+    protected override bool Initialize()
+    {
+      if ( Native == null ) {
+        var importer = new OpenPLXImporter();
+        importer.ErrorReporter = ReportError;
+        m_openplxMap = new Dictionary<string, Object>();
+        Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName, null, m_openplxMap );
 
        if ( Native == null ) {
          Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
@@ -117,25 +125,25 @@ namespace AGXUnity.IO.OpenPLX
 
      RuntimeMapped = new Dictionary<string, agx.Referenced>();
 
-     agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System);
-     // TODO: Fix null return from this method
-     if ( powerline != null && powerline.get() != null ) {
-       Simulation.Instance.Native.add( powerline.get() );
-       foreach ( var (obj, constraint) in mapper.getMappedConstraints() ) {
-         Simulation.Instance.Native.add( constraint.get() );
-         RuntimeMapped.Add( obj.getName(), constraint.get() );
-       }
-       foreach ( var obj in powerline.getUnits() ) {
-         var objName = obj.getName();
-         if ( objName.StartsWith( PrunedNativeName + "." ) )
-           RuntimeMapped.Add( objName, obj.get() );
-       }
-       foreach ( var obj in powerline.getConnectors() ) {
-         var objName = obj.getName();
-         if ( objName.StartsWith( PrunedNativeName + "." ) )
-           RuntimeMapped.Add( objName, obj.get() );
-       }
-     }
+      agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System, Simulation.Instance.TimeStep);
+      // TODO: Fix null return from this method
+      if ( powerline != null && powerline.get() != null ) {
+        Simulation.Instance.Native.add( powerline.get() );
+        foreach ( var (obj, constraint) in mapper.getMappedConstraints() ) {
+          Simulation.Instance.Native.add( constraint.get() );
+          RuntimeMapped.Add( obj.getName(), constraint.get() );
+        }
+        foreach ( var obj in powerline.getUnits() ) {
+          var objName = obj.getName();
+          if ( objName.StartsWith( PrunedNativeName + "." ) )
+            RuntimeMapped.Add( objName, obj.get() );
+        }
+        foreach ( var obj in powerline.getConnectors() ) {
+          var objName = obj.getName();
+          if ( objName.StartsWith( PrunedNativeName + "." ) )
+            RuntimeMapped.Add( objName, obj.get() );
+        }
+      }
 
      return base.Initialize();
    }
