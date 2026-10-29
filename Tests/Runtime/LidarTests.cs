@@ -1,6 +1,7 @@
 #if AGXUNITY_HAS_SENSORS
 using AGXUnity;
 using AGXUnity.Collide;
+using AGXUnity.Rendering;
 using AGXUnity.Sensor;
 using NUnit.Framework;
 using System.Collections;
