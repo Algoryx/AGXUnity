@@ -220,27 +220,27 @@ namespace AGXUnity.IO.OpenPLX
       // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
       // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
 #if false
-     var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
-     var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
-     if ( source != null ) {
-       UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
+      var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
+      if ( source != null ) {
+        UnityEditor.SerializedObject s = new UnityEditor.SerializedObject(source);
 
-       var readable = s.FindProperty( "m_IsReadable" );
-       if ( !readable.boolValue ) {
-         Debug.LogWarning( $"Mesh at path '{assetPath}' was not readable. Marking the mesh as readable..." );
-         readable.boolValue = true;
-         s.ApplyModifiedProperties();
-       }
-       mesh = source;
-     }
-     else {
-       var agxMesh = agxUtil.agxUtilSWIG.createTrimesh( path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3() );
-       mesh = AGXMeshToUnityMesh( agxMesh.getMeshData().getVertices(), agxMesh.getMeshData().getIndices() );
-       mesh.name = objGeom.getName() + "_mesh";
-       Data.MappedMeshes.Add( mesh );
-     }
+        var readable = s.FindProperty( "m_IsReadable" );
+        if ( !readable.boolValue ) {
+          Debug.LogWarning( $"Mesh at path '{assetPath}' was not readable. Marking the mesh as readable..." );
+          readable.boolValue = true;
+          s.ApplyModifiedProperties();
+        }
+        mesh = source;
+      }
+      else {
+        var agxMesh = agxUtil.agxUtilSWIG.createTrimesh( path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3() );
+        mesh = AGXMeshToUnityMesh( agxMesh.getMeshData().getVertices(), agxMesh.getMeshData().getIndices() );
+        mesh.name = objGeom.getName() + "_mesh";
+        Data.MappedMeshes.Add( mesh );
+      }
 
-     meshComp.transform.localScale = objGeom.scale().ToVector3();
+      meshComp.transform.localScale = objGeom.scale().ToVector3();
 #else
       var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
       mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );

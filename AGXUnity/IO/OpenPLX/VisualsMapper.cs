@@ -146,7 +146,7 @@ namespace AGXUnity.IO.OpenPLX
         // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
         // TODO: This is only relevant when using editor assets which is currently disabled
 #if false
-       if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
+        if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
 #endif
         //foreach(var mat in visual.getValues<openplx.Visuals.Materials.>())
         var material = materialOverride ?? visual.material();
@@ -566,16 +566,16 @@ namespace AGXUnity.IO.OpenPLX
       // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
       // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
 #if false
-     var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
+      var assetPath = "Assets/" + System.IO.Path.GetRelativePath(Application.dataPath,path).Replace('\\','/');
 
-     var prefab = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab( UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ) );
+      var prefab = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab( UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>( assetPath ) );
 
-     var rot = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
-     var m = new Matrix4x4();
-     m.SetTRS( Vector3.zero, rot, Vector3.one );
-     prefab.transform.localPosition = m.MultiplyPoint( prefab.transform.localPosition );
-     //prefab.transform.localRotation = rot * prefab.transform.localRotation;
-     prefab.transform.SetParent( go.transform, false );
+      var rot = Quaternion.FromToRotation( Vector3.up, Vector3.forward );
+      var m = new Matrix4x4();
+      m.SetTRS( Vector3.zero, rot, Vector3.one );
+      prefab.transform.localPosition = m.MultiplyPoint( prefab.transform.localPosition );
+      //prefab.transform.localRotation = rot * prefab.transform.localRotation;
+      prefab.transform.SetParent( go.transform, false );
 #else
       var mf = go.AddComponent<MeshFilter>();
       var mr = go.AddComponent<MeshRenderer>();
