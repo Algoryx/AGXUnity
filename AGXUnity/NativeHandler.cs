@@ -154,7 +154,8 @@ namespace AGXUnity
     private bool m_hasValidLicense;
     public bool HasValidLicense
     {
-      get {
+      get
+      {
         // The editor can load its license after this handler is constructed.
         ValidateLicense();
         return m_hasValidLicense;

@@ -7,144 +7,144 @@ using UnityEngine;
 
 namespace AGXUnity.IO.OpenPLX
 {
- public class VisualsMapper
- {
-   private MapperData Data;
-   private MapperOptions Options;
+  public class VisualsMapper
+  {
+    private MapperData Data;
+    private MapperOptions Options;
 
-   private Material ColorBlitMat;
+    private Material ColorBlitMat;
 
-   public VisualsMapper( MapperData cache, MapperOptions options )
-   {
-     Data = cache;
-     Options = options;
+    public VisualsMapper( MapperData cache, MapperOptions options )
+    {
+      Data = cache;
+      Options = options;
 
-     ColorBlitMat = new Material( Shader.Find( "AGXUnity/ColorAlphaBlitter" ) );
-   }
+      ColorBlitMat = new Material( Shader.Find( "AGXUnity/ColorAlphaBlitter" ) );
+    }
 
-   private struct TextureData
-   {
-     public int width;
-     public int height;
-     public int format;
-     public byte[] data;
-   };
+    private struct TextureData
+    {
+      public int width;
+      public int height;
+      public int format;
+      public byte[] data;
+    };
 
-   Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
-   {
-     GameObject go = Data.CreateGameObject();
+    Tuple<GameObject, bool> MapCachedVisual( agxCollide.Shape shape, agx.AffineMatrix4x4 transform, openplx.Visuals.Geometries.Geometry visual )
+    {
+      GameObject go = Data.CreateGameObject();
 
-     var rd      = shape.getRenderData();
+      var rd      = shape.getRenderData();
 
-     var filter = go.AddComponent<MeshFilter>();
-     var renderer = go.AddComponent<MeshRenderer>();
+      var filter = go.AddComponent<MeshFilter>();
+      var renderer = go.AddComponent<MeshRenderer>();
 
-     renderer.enabled = rd.getShouldRender();
+      renderer.enabled = rd.getShouldRender();
 
-     // TODO: Should these be cached? Can they?
-     var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
-     if ( Options.HideMeshesInHierarchy )
-       mesh.hideFlags = HideFlags.HideInHierarchy;
-     mesh.name = visual.getName();
-     Data.MappedMeshes.Add( mesh );
-     filter.mesh = mesh;
+      // TODO: Should these be cached? Can they?
+      var mesh = AGXMeshToUnityMesh(rd.getVertexArray(),rd.getIndexArray());
+      if ( Options.HideMeshesInHierarchy )
+        mesh.hideFlags = HideFlags.HideInHierarchy;
+      mesh.name = visual.getName();
+      Data.MappedMeshes.Add( mesh );
+      filter.mesh = mesh;
 
-     var rm = rd.getRenderMaterial();
-     if ( rm != null ) {
-       if ( !Data.NativeMappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
-         mat = new Material( Shader.Find( "Standard" ) );
-         mat.RestoreLocalDataFrom( rm );
-         if ( rm.getName() != "" )
-           mat.name = $"{rm.getName()}#{rm.getHash()}";
-         else
-           mat.name = rm.getHash().ToString();
-         if ( Options.HideVisualMaterialsInHierarchy )
-           mat.hideFlags = HideFlags.HideInHierarchy;
-         Data.NativeMappedRenderMaterialCache[ rm.getHash() ] = mat;
-         Data.MappedMaterials.Add( mat );
-       }
+      var rm = rd.getRenderMaterial();
+      if ( rm != null ) {
+        if ( !Data.NativeMappedRenderMaterialCache.TryGetValue( rm.getHash(), out Material mat ) ) {
+          mat = new Material( Shader.Find( "Standard" ) );
+          mat.RestoreLocalDataFrom( rm );
+          if ( rm.getName() != "" )
+            mat.name = $"{rm.getName()}#{rm.getHash()}";
+          else
+            mat.name = rm.getHash().ToString();
+          if ( Options.HideVisualMaterialsInHierarchy )
+            mat.hideFlags = HideFlags.HideInHierarchy;
+          Data.NativeMappedRenderMaterialCache[ rm.getHash() ] = mat;
+          Data.MappedMaterials.Add( mat );
+        }
 
-       renderer.material = mat;
-       return Tuple.Create( go, true );
-     }
+        renderer.material = mat;
+        return Tuple.Create( go, true );
+      }
 
-     return Tuple.Create( go, false );
-   }
+      return Tuple.Create( go, false );
+    }
 
-   public GameObject MapVisualNode( openplx.Visuals.Node node, openplx.Physics.Optics.Material materialOverride = null )
-   {
-     GameObject go;
+    public GameObject MapVisualNode( openplx.Visuals.Node node, openplx.Physics.Optics.Material materialOverride = null )
+    {
+      GameObject go;
 
-     if ( node.HasTrait<openplx.Visuals.Materials.VisualMaterialOverrideTrait>() )
-       materialOverride = node.getDynamic( "material_override" ).asObject() as openplx.Physics.Optics.Material;
+      if ( node.HasTrait<openplx.Visuals.Materials.VisualMaterialOverrideTrait>() )
+        materialOverride = node.getDynamic( "material_override" ).asObject() as openplx.Physics.Optics.Material;
 
-     if ( node is openplx.Visuals.Geometries.Geometry geom )
-       go = MapVisualGeometry( geom, materialOverride );
-     else
-       go = Data.CreateOpenPLXObject( node.getName() );
+      if ( node is openplx.Visuals.Geometries.Geometry geom )
+        go = MapVisualGeometry( geom, materialOverride );
+      else
+        go = Data.CreateOpenPLXObject( node.getName() );
 
-     Utils.MapLocalTransform( go.transform, node.local_transform() );
+      Utils.MapLocalTransform( go.transform, node.local_transform() );
 
-     foreach ( var subnode in node.getValues<openplx.Visuals.Node>() )
-       Utils.AddChild( go, MapVisualNode( subnode, materialOverride ), Data.ErrorReporter, subnode );
+      foreach ( var subnode in node.getValues<openplx.Visuals.Node>() )
+        Utils.AddChild( go, MapVisualNode( subnode, materialOverride ), Data.ErrorReporter, subnode );
 
-     return go;
-   }
+      return go;
+    }
 
-   GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual, openplx.Physics.Optics.Material materialOverride = null )
-   {
-     GameObject go = null;
-     bool cachedMat = false;
-     var uuid_annots = visual.findAnnotations("agx_uuid");
-     foreach ( var uuid_annot in uuid_annots ) {
-       if ( uuid_annot.isString() ) {
-         var uuid = uuid_annot.asString();
-         var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
-         if ( shape != null )
-           (go, cachedMat) = MapCachedVisual( shape.first, shape.second, visual );
-       }
-     }
+    GameObject MapVisualGeometry( openplx.Visuals.Geometries.Geometry visual, openplx.Physics.Optics.Material materialOverride = null )
+    {
+      GameObject go = null;
+      bool cachedMat = false;
+      var uuid_annots = visual.findAnnotations("agx_uuid");
+      foreach ( var uuid_annot in uuid_annots ) {
+        if ( uuid_annot.isString() ) {
+          var uuid = uuid_annot.asString();
+          var shape = Data.AgxCache.readCollisionShapeAndTransformCS( uuid );
+          if ( shape != null )
+            (go, cachedMat) = MapCachedVisual( shape.first, shape.second, visual );
+        }
+      }
 
-     if ( go == null ) {
-       go = visual switch
-       {
-         openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
-         openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
-         openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
-         openplx.Visuals.Geometries.Base64TriMeshGeometry itmg => MapBase64TriMesh( itmg ),
-         openplx.Visuals.Geometries.ConvexMesh cm => MapConvex( cm ),
-         openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
-         _ => null
-       };
+      if ( go == null ) {
+        go = visual switch
+        {
+          openplx.Visuals.Geometries.Box box => GameObject.CreatePrimitive( PrimitiveType.Cube ),
+          openplx.Visuals.Geometries.Cylinder cyl => GameObject.CreatePrimitive( PrimitiveType.Cylinder ),
+          openplx.Visuals.Geometries.ExternalTriMeshGeometry etmg => MapExternalTriMesh( etmg ),
+          openplx.Visuals.Geometries.Base64TriMeshGeometry itmg => MapBase64TriMesh( itmg ),
+          openplx.Visuals.Geometries.ConvexMesh cm => MapConvex( cm ),
+          openplx.Visuals.Geometries.Sphere sphere => GameObject.CreatePrimitive( PrimitiveType.Sphere ),
+          _ => null
+        };
 
-       switch ( visual ) {
-         case openplx.Visuals.Geometries.Box box:
-           go.transform.localScale = box.size().ToVector3();
-           break;
-         case openplx.Visuals.Geometries.Cylinder cyl:
-           go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height()/2, (float)cyl.radius() );
-           break;
-         case openplx.Visuals.Geometries.Sphere sphere:
-           go.transform.localScale = Vector3.one * (float)sphere.radius();
-           break;
-         default:
-           break;
-       }
-     }
+        switch ( visual ) {
+          case openplx.Visuals.Geometries.Box box:
+            go.transform.localScale = box.size().ToVector3();
+            break;
+          case openplx.Visuals.Geometries.Cylinder cyl:
+            go.transform.localScale = new Vector3( (float)cyl.radius(), (float)cyl.height()/2, (float)cyl.radius() );
+            break;
+          case openplx.Visuals.Geometries.Sphere sphere:
+            go.transform.localScale = Vector3.one * (float)sphere.radius();
+            break;
+          default:
+            break;
+        }
+      }
 
-     if ( go == null ) {
-       // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
-       if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
-         return null;
+      if ( go == null ) {
+        // TODO: ExternalTriMeshes can fail if their paths are not valid dont report them as unimplemented.
+        if ( visual is openplx.Visuals.Geometries.ExternalTriMeshGeometry )
+          return null;
 
-       return Utils.ReportUnimplemented<GameObject>( visual, Data );
-     }
+        return Utils.ReportUnimplemented<GameObject>( visual, Data );
+      }
 
-     Data.RegisterOpenPLXObject( visual.getName(), go );
-     if ( !cachedMat ) {
-       // TODO: Find a better way to check whether to use material
-       // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
-       // TODO: This is only relevant when using editor assets which is currently disabled
+      Data.RegisterOpenPLXObject( visual.getName(), go );
+      if ( !cachedMat ) {
+        // TODO: Find a better way to check whether to use material
+        // When visuals are imported in the editor, the resulting object might be a prefab instance to another asset
+        // TODO: This is only relevant when using editor assets which is currently disabled
 #if false
        if ( visual.material().GetType() != typeof( openplx.Visuals.Materials.Material ) )
 #endif
@@ -577,18 +577,18 @@ namespace AGXUnity.IO.OpenPLX
      //prefab.transform.localRotation = rot * prefab.transform.localRotation;
      prefab.transform.SetParent( go.transform, false );
 #else
-     var mf = go.AddComponent<MeshFilter>();
-     var mr = go.AddComponent<MeshRenderer>();
+      var mf = go.AddComponent<MeshFilter>();
+      var mr = go.AddComponent<MeshRenderer>();
 
-     var mesh = new UnityEngine.Mesh();
+      var mesh = new UnityEngine.Mesh();
 
-     if ( Options.HideVisualMeshesInHierarchy )
-       mesh.hideFlags = HideFlags.HideInHierarchy;
+      if ( Options.HideVisualMeshesInHierarchy )
+        mesh.hideFlags = HideFlags.HideInHierarchy;
 
-     var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-     mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
-     mesh.name = objGeom.getName() + "_mesh";
-     Data.MappedMeshes.Add( mesh );
+      var source = agxUtil.agxUtilSWIG.createRenderData(path, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getVertexArray(), source.getIndexArray(), source.getTexCoordArray() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
 
       if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
@@ -597,27 +597,27 @@ namespace AGXUnity.IO.OpenPLX
       else
         mf.mesh = mesh;
 #endif
-     go.transform.localScale = objGeom.scale().ToVector3();
+      go.transform.localScale = objGeom.scale().ToVector3();
 
-     return go;
-   }
+      return go;
+    }
 
-   GameObject MapBase64TriMesh( openplx.Visuals.Geometries.Base64TriMeshGeometry objGeom )
-   {
-     GameObject go = Data.CreateGameObject();
+    GameObject MapBase64TriMesh( openplx.Visuals.Geometries.Base64TriMeshGeometry objGeom )
+    {
+      GameObject go = Data.CreateGameObject();
 
-     var mf = go.AddComponent<MeshFilter>();
-     var mr = go.AddComponent<MeshRenderer>();
+      var mf = go.AddComponent<MeshFilter>();
+      var mr = go.AddComponent<MeshRenderer>();
 
-     var mesh = new UnityEngine.Mesh();
-     mesh.name = objGeom.getName() + "_mesh";
-     Data.MappedMeshes.Add( mesh );
+      var mesh = new UnityEngine.Mesh();
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
 
-     var numVertices = objGeom.numVertices();
-     var numIndices = objGeom.numIndices();
+      var numVertices = objGeom.numVertices();
+      var numIndices = objGeom.numIndices();
 
-     bool hasPositions = false, hasNormals = false;
-     int uvSet = 0;
+      bool hasPositions = false, hasNormals = false;
+      int uvSet = 0;
 
       var attrTypes = new openplx.Visuals.Geometries.VertexAttributeType();
       foreach ( var attr in objGeom.attributes() ) {
@@ -631,18 +631,18 @@ namespace AGXUnity.IO.OpenPLX
             continue;
           }
 
-         var vertices = new Vector3[numVertices];
-         for ( int i = 0; i < numVertices; i++ ) {
-           vertices[ i ].x = -BitConverter.ToSingle( vertexBytes, i * 3 * sizeof( float ) );
-           vertices[ i ].y =  BitConverter.ToSingle( vertexBytes, ( i * 3 + 1 ) * sizeof( float ) );
-           vertices[ i ].z =  BitConverter.ToSingle( vertexBytes, ( i * 3 + 2 ) * sizeof( float ) );
-         }
-         mesh.vertices = vertices;
-         hasPositions = true;
-       }
-       else if ( attr.type() == attrTypes.Normal() ) {
-         if ( hasNormals )
-           continue; // TODO: Warn;
+          var vertices = new Vector3[numVertices];
+          for ( int i = 0; i < numVertices; i++ ) {
+            vertices[ i ].x = -BitConverter.ToSingle( vertexBytes, i * 3 * sizeof( float ) );
+            vertices[ i ].y =  BitConverter.ToSingle( vertexBytes, ( i * 3 + 1 ) * sizeof( float ) );
+            vertices[ i ].z =  BitConverter.ToSingle( vertexBytes, ( i * 3 + 2 ) * sizeof( float ) );
+          }
+          mesh.vertices = vertices;
+          hasPositions = true;
+        }
+        else if ( attr.type() == attrTypes.Normal() ) {
+          if ( hasNormals )
+            continue; // TODO: Warn;
 
           var normalBytes = Convert.FromBase64String(attr.data());
           if ( normalBytes.Length / sizeof( float ) / 3.0f != numVertices ) {
@@ -674,57 +674,57 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
-     var indexBytes = Convert.FromBase64String(objGeom.indexData());
+      var indexBytes = Convert.FromBase64String(objGeom.indexData());
 
       if ( !hasPositions || indexBytes.Length / sizeof( Int32 ) != numIndices ) {
         var errorData = BaseError.CreateErrorData(objGeom);
         Data.ReportError( new agxopenplx.InvalidBase64Mesh( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, objGeom ) );
       }
 
-     var indices = new int[numIndices];
-     for ( int i = 0; i < numIndices; i += 3 ) {
-       indices[ i ] = BitConverter.ToInt32( indexBytes, ( i + 2 ) * sizeof( int ) );
-       indices[ i + 1 ] = BitConverter.ToInt32( indexBytes, ( i + 1 ) * sizeof( int ) );
-       indices[ i + 2 ] = BitConverter.ToInt32( indexBytes, i * sizeof( int ) );
-     }
+      var indices = new int[numIndices];
+      for ( int i = 0; i < numIndices; i += 3 ) {
+        indices[ i ] = BitConverter.ToInt32( indexBytes, ( i + 2 ) * sizeof( int ) );
+        indices[ i + 1 ] = BitConverter.ToInt32( indexBytes, ( i + 1 ) * sizeof( int ) );
+        indices[ i + 2 ] = BitConverter.ToInt32( indexBytes, i * sizeof( int ) );
+      }
 
-     if ( numVertices > ushort.MaxValue )
-       mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-     mesh.triangles = indices;
+      if ( numVertices > ushort.MaxValue )
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+      mesh.triangles = indices;
 
-     mf.mesh = mesh;
+      mf.mesh = mesh;
 
-     // TODO: Add detailed option for visual mesh hiding
-     if ( Options.HideVisualMeshesInHierarchy )
-       mesh.hideFlags = HideFlags.HideInHierarchy;
+      // TODO: Add detailed option for visual mesh hiding
+      if ( Options.HideVisualMeshesInHierarchy )
+        mesh.hideFlags = HideFlags.HideInHierarchy;
 
-     return go;
-   }
+      return go;
+    }
 
-   GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex )
-   {
-     var go = Data.CreateOpenPLXObject(convex.getName());
-     var mr = go.AddComponent<MeshRenderer>();
-     var mf = go.AddComponent<MeshFilter>();
-     var mesh = MapConvex( convex.vertices(), convex.getName() );
+    GameObject MapConvex( openplx.Visuals.Geometries.ConvexMesh convex )
+    {
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var mr = go.AddComponent<MeshRenderer>();
+      var mf = go.AddComponent<MeshFilter>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() );
 
-     mf.mesh = mesh;
-     return mf.gameObject;
-   }
+      mf.mesh = mesh;
+      return mf.gameObject;
+    }
 
-   UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
-   {
-     var mesh = new UnityEngine.Mesh();
-     var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
+    UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
+    {
+      var mesh = new UnityEngine.Mesh();
+      var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
 
-     var md = source.getMeshData();
-     mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
-     mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+      var md = source.getMeshData();
+      mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
+      mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
 
-     mesh.name = name;
-     Data.MappedMeshes.Add( mesh );
+      mesh.name = name;
+      Data.MappedMeshes.Add( mesh );
 
-     return mesh;
-   }
- }
+      return mesh;
+    }
+  }
 }

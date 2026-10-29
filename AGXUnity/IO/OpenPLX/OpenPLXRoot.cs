@@ -6,21 +6,21 @@ using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.OpenPLX
 {
- [AddComponentMenu( "" )]
- [DisallowMultipleComponent]
- [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-root" )]
- public class OpenPLXRoot : ScriptComponent
- {
+  [AddComponentMenu( "" )]
+  [DisallowMultipleComponent]
+  [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-root" )]
+  public class OpenPLXRoot : ScriptComponent
+  {
 
-   /// <summary>
-   /// By default, objects have no reference to where their correesponding assets are located on disk since assets do not exist outside of the editor.
-   /// Since .openplx objects to require a reference to their source files (currently) to load we need to store the path to the corresponding OpenPLX file manually
-   /// This is set by the <seealso cref="OpenPLXImporter"/>.
-   /// </summary>
-   [field: SerializeField]
-   public string OpenPLXAssetPath { get; set; }
-   [field: SerializeField]
-   public string OpenPLXModelName { get; set; }
+    /// <summary>
+    /// By default, objects have no reference to where their correesponding assets are located on disk since assets do not exist outside of the editor.
+    /// Since .openplx objects to require a reference to their source files (currently) to load we need to store the path to the corresponding OpenPLX file manually
+    /// This is set by the <seealso cref="OpenPLXImporter"/>.
+    /// </summary>
+    [field: SerializeField]
+    public string OpenPLXAssetPath { get; set; }
+    [field: SerializeField]
+    public string OpenPLXModelName { get; set; }
 
     // TODO: This is a workaround to the root object being prefixed with the bundle name but not the child objects. When this issue is fixed in OpenPLX, this should be removed
     [HideInInspector]
@@ -94,36 +94,36 @@ namespace AGXUnity.IO.OpenPLX
         m_openplxMap = new Dictionary<string, Object>();
         Native = importer.ParseOpenPLXSource( OpenPLXFile, OpenPLXModelName == "" ? null : OpenPLXModelName, null, m_openplxMap );
 
-       if ( Native == null ) {
-         Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
-         return false;
-       }
-     }
+        if ( Native == null ) {
+          Debug.LogError( $"Failed to initialize OpenPLX object '{name}'", this );
+          return false;
+        }
+      }
 
-     m_objectMap = new Dictionary<string, GameObject>();
-     foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() )
-       foreach ( var decl in openPLXObj.SourceDeclarations )
-         m_objectMap.Add( decl, openPLXObj.gameObject );
+      m_objectMap = new Dictionary<string, GameObject>();
+      foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() )
+        foreach ( var decl in openPLXObj.SourceDeclarations )
+          m_objectMap.Add( decl, openPLXObj.gameObject );
 
-     var m_nativeMap = new std.StringReferenceLookup();
-     foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
-       foreach ( var decl in openPLXObj.SourceDeclarations ) {
-         var relative = decl.Replace( PrunedNativeName + ".", "" ).Trim();
+      var m_nativeMap = new std.StringReferenceLookup();
+      foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
+        foreach ( var decl in openPLXObj.SourceDeclarations ) {
+          var relative = decl.Replace( PrunedNativeName + ".", "" ).Trim();
 
-         var obj = Native.getObject( relative);
-         if ( obj == null )
-           continue;
-         var native = openPLXObj.FindCorrespondingNative( this, obj );
-         if ( native != null )
-           m_nativeMap.Add( new( obj.getName(), native ) );
-       }
-     }
+          var obj = Native.getObject( relative);
+          if ( obj == null )
+            continue;
+          var native = openPLXObj.FindCorrespondingNative( this, obj );
+          if ( native != null )
+            m_nativeMap.Add( new( obj.getName(), native ) );
+        }
+      }
 
-     var map = agxopenplx.AgxObjectMap.createPreMapped(m_nativeMap,agxopenplx.AgxObjectMapMode.Name);
-     var errorReporter = new ErrorReporter();
-     var mapper = new agxopenplx.OpenPlxDriveTrainMapper( errorReporter, map );
+      var map = agxopenplx.AgxObjectMap.createPreMapped(m_nativeMap,agxopenplx.AgxObjectMapMode.Name);
+      var errorReporter = new ErrorReporter();
+      var mapper = new agxopenplx.OpenPlxDriveTrainMapper( errorReporter, map );
 
-     RuntimeMapped = new Dictionary<string, agx.Referenced>();
+      RuntimeMapped = new Dictionary<string, agx.Referenced>();
 
       agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System, Simulation.Instance.TimeStep);
       // TODO: Fix null return from this method
@@ -145,12 +145,12 @@ namespace AGXUnity.IO.OpenPLX
         }
       }
 
-     return base.Initialize();
-   }
+      return base.Initialize();
+    }
 
-   private static void ReportError( Error error )
-   {
-     Debug.LogError( error.getMessage( true ) );
-   }
- }
+    private static void ReportError( Error error )
+    {
+      Debug.LogError( error.getMessage( true ) );
+    }
+  }
 }

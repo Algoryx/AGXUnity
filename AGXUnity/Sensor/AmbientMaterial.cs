@@ -44,13 +44,13 @@ namespace AGXUnity.Sensor
     }
 
     // These are used to dynamically show the ambient parameters based on chosen configuration type.
-  #pragma warning disable IDE0051
+#pragma warning disable IDE0051
     private bool HasVisibility => m_ambientType == ConfigurationType.Air || m_ambientType == ConfigurationType.Fog;
     private bool HasRate => m_ambientType == ConfigurationType.Snowfall || m_ambientType == ConfigurationType.Rainfall;
     private bool HasWavelength => m_ambientType == ConfigurationType.Snowfall || m_ambientType == ConfigurationType.Fog;
     private bool HasMaritimeness => m_ambientType == ConfigurationType.Fog;
     private bool HasTropicalness => m_ambientType == ConfigurationType.Rainfall;
-  #pragma warning restore IDE0051
+#pragma warning restore IDE0051
 
     [SerializeField]
     private float m_visibility = 7.44703f;

@@ -14,40 +14,40 @@ using Object = openplx.Core.Object;
 
 namespace AGXUnity.IO.OpenPLX
 {
- public struct MapperOptions
- {
-   public bool HideMeshesInHierarchy;
-   public bool IgnoreDisabledMeshes;
-   public bool RotateUp;
+  public struct MapperOptions
+  {
+    public bool HideMeshesInHierarchy;
+    public bool IgnoreDisabledMeshes;
+    public bool RotateUp;
 
-   public bool HideVisualMaterialsInHierarchy;
-   public bool HideTexturesInHierarchy;
-   public bool HideVisualMeshesInHierarchy;
- }
+    public bool HideVisualMaterialsInHierarchy;
+    public bool HideTexturesInHierarchy;
+    public bool HideVisualMeshesInHierarchy;
+  }
 
- public class OpenPLXUnityMapper
- {
-   public MapperData Data { get; } = new MapperData();
+  public class OpenPLXUnityMapper
+  {
+    public MapperData Data { get; } = new MapperData();
 
-   public GameObject RootNode => Data.RootNode;
+    public GameObject RootNode => Data.RootNode;
 
-   private InteractionMapper InteractionMapper { get; set; }
-   private VehicleMapper VehicleMapper { get; set; }
-   private SensorMapper SensorMapper { get; set; }
-   private VisualsMapper VisualsMapper { get; set; }
+    private InteractionMapper InteractionMapper { get; set; }
+    private VehicleMapper VehicleMapper { get; set; }
+    private SensorMapper SensorMapper { get; set; }
+    private VisualsMapper VisualsMapper { get; set; }
 
-   MapperOptions Options;
+    MapperOptions Options;
 
-   public OpenPLXUnityMapper( MapperOptions options = new MapperOptions() )
-   {
-     Data.ErrorReporter = new openplx.ErrorReporter();
-     Options = options;
+    public OpenPLXUnityMapper( MapperOptions options = new MapperOptions() )
+    {
+      Data.ErrorReporter = new openplx.ErrorReporter();
+      Options = options;
 
-     InteractionMapper = new InteractionMapper( Data );
-     VehicleMapper = new VehicleMapper( Data, InteractionMapper );
-     SensorMapper = new SensorMapper( Data );
-     VisualsMapper = new VisualsMapper( Data, Options );
-   }
+      InteractionMapper = new InteractionMapper( Data );
+      VehicleMapper = new VehicleMapper( Data, InteractionMapper );
+      SensorMapper = new SensorMapper( Data );
+      VisualsMapper = new VisualsMapper( Data, Options );
+    }
 
     public UnityEngine.Object MapObject( Object obj, string path, Dictionary<string, Object> objectMap )
     {
@@ -63,18 +63,18 @@ namespace AGXUnity.IO.OpenPLX
         Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
         Debug.LogException( e );
 
-       foreach ( var go in Data.CreatedGameObjects ) {
-         if ( Application.isEditor )
-           GameObject.DestroyImmediate( go );
-         else
-           GameObject.Destroy( go );
-       }
+        foreach ( var go in Data.CreatedGameObjects ) {
+          if ( Application.isEditor )
+            GameObject.DestroyImmediate( go );
+          else
+            GameObject.Destroy( go );
+        }
 
-       return null;
-     }
+        return null;
+      }
 
-     return RootNode;
-   }
+      return RootNode;
+    }
 
     private GameObject MapSimulatable( Object obj, string path, Dictionary<string, Object> objectMap )
     {
@@ -83,56 +83,56 @@ namespace AGXUnity.IO.OpenPLX
       rootComp.ExternalInitialize( obj, objectMap );
       Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
 
-     if ( obj is openplx.Physics3D.System system )
-       Utils.AddChild( Data.RootNode, MapSystem( system ), Data.ErrorReporter, system );
-     else if ( obj is Bodies.RigidBody body )
-       Utils.AddChild( Data.RootNode, MapBody( body ), Data.ErrorReporter, body );
+      if ( obj is openplx.Physics3D.System system )
+        Utils.AddChild( Data.RootNode, MapSystem( system ), Data.ErrorReporter, system );
+      else if ( obj is Bodies.RigidBody body )
+        Utils.AddChild( Data.RootNode, MapBody( body ), Data.ErrorReporter, body );
 
-     var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
-     MapSignals( obj, signals, obj.getName() );
+      var signals = Data.RootNode.AddComponent<OpenPLXSignals>();
+      MapSignals( obj, signals, obj.getName() );
 
-     if ( Options.RotateUp )
-       Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
+      if ( Options.RotateUp )
+        Data.RootNode.transform.rotation = Quaternion.FromToRotation( Vector3.forward, Vector3.up );
 
-     return Data.RootNode;
-   }
+      return Data.RootNode;
+    }
 
-   private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
-   {
-     foreach ( var (name, sigInterface) in obj.getEntries<openplx.Physics.Signals.SignalInterface>() ) {
-       var sigInt = new SignalInterface();
-       sigInt.Name = name;
-       sigInt.Path = prefix;
-       sigInt.Enabled = sigInterface.enable();
-       sigInt.Inputs = new List<InputTarget>();
-       foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
-         sigInt.Inputs.Add( new InputTarget( prefix + "." + name + "." + inpName, input ) );
-       sigInt.Outputs = new List<OutputSource>();
-       foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
-         sigInt.Outputs.Add( new OutputSource( prefix + "." + name + "." + outName, output ) );
+    private void MapSignals( Object obj, OpenPLXSignals signals, string prefix = "" )
+    {
+      foreach ( var (name, sigInterface) in obj.getEntries<openplx.Physics.Signals.SignalInterface>() ) {
+        var sigInt = new SignalInterface();
+        sigInt.Name = name;
+        sigInt.Path = prefix;
+        sigInt.Enabled = sigInterface.enable();
+        sigInt.Inputs = new List<InputTarget>();
+        foreach ( var (inpName, input) in sigInterface.getEntries<openplx.Physics.Signals.Input>() )
+          sigInt.Inputs.Add( new InputTarget( prefix + "." + name + "." + inpName, input ) );
+        sigInt.Outputs = new List<OutputSource>();
+        foreach ( var (outName, output) in sigInterface.getEntries<openplx.Physics.Signals.Output>() )
+          sigInt.Outputs.Add( new OutputSource( prefix + "." + name + "." + outName, output ) );
 
-       signals.RegisterInterface( sigInt );
-     }
+        signals.RegisterInterface( sigInt );
+      }
 
-     foreach ( var (name, subobject) in obj.getNonReferenceEntries<openplx.Core.Object>() )
-       MapSignals( subobject, signals, prefix + "." + name );
+      foreach ( var (name, subobject) in obj.getNonReferenceEntries<openplx.Core.Object>() )
+        MapSignals( subobject, signals, prefix + "." + name );
 
-     foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
-       signals.RegisterSignal( prefix + "." + name, output );
+      foreach ( var (name, output) in obj.getEntries<openplx.Physics.Signals.Output>() )
+        signals.RegisterSignal( prefix + "." + name, output );
 
-     foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
-       signals.RegisterSignal( prefix + "." + name, input );
-   }
+      foreach ( var (name, input) in obj.getEntries<openplx.Physics.Signals.Input>() )
+        signals.RegisterSignal( prefix + "." + name, input );
+    }
 
-   GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
-     where UnityType : Shape
-     where OpenPLXType : Geometries.ContactGeometry
-   {
-     GameObject go = Factory.Create<UnityType>();
-     Data.RegisterGameObject( go );
-     setup( openPLX, go.GetComponent<UnityType>() );
-     return go;
-   }
+    GameObject CreateShape<UnityType, OpenPLXType>( OpenPLXType openPLX, Action<OpenPLXType, UnityType> setup )
+      where UnityType : Shape
+      where OpenPLXType : Geometries.ContactGeometry
+    {
+      GameObject go = Factory.Create<UnityType>();
+      Data.RegisterGameObject( go );
+      setup( openPLX, go.GetComponent<UnityType>() );
+      return go;
+    }
 
     bool VerifyAssetPath( string path, openplx.Core.Object obj )
     {
@@ -147,78 +147,78 @@ namespace AGXUnity.IO.OpenPLX
         return false;
       }
 
-     return true;
-   }
+      return true;
+    }
 
-   UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices, agx.Vec2Vector uvs = null )
-   {
-     var outMesh = new UnityEngine.Mesh();
-     Vector3[] uVertices = new Vector3[vertices.Count];
-     for ( int i = 0; i < vertices.Count; i++ )
-       uVertices[ i ].Set( (float)-vertices[ i ].x, (float)vertices[ i ].y, (float)vertices[ i ].z );
-     outMesh.vertices = uVertices;
-     if ( vertices.Count > UInt16.MaxValue )
-       outMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+    UnityEngine.Mesh AGXMeshToUnityMesh( agx.Vec3Vector vertices, agx.UInt32Vector indices, agx.Vec2Vector uvs = null )
+    {
+      var outMesh = new UnityEngine.Mesh();
+      Vector3[] uVertices = new Vector3[vertices.Count];
+      for ( int i = 0; i < vertices.Count; i++ )
+        uVertices[ i ].Set( (float)-vertices[ i ].x, (float)vertices[ i ].y, (float)vertices[ i ].z );
+      outMesh.vertices = uVertices;
+      if ( vertices.Count > UInt16.MaxValue )
+        outMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
-     int[] uIndices = new int[indices.Count];
-     for ( int i = 0; i < indices.Count; i += 3 ) {
-       uIndices[ i ]     = (int)indices[ i ];
-       uIndices[ i + 1 ] = (int)indices[ i + 2 ];
-       uIndices[ i + 2 ] = (int)indices[ i + 1 ];
-     }
-     outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
+      int[] uIndices = new int[indices.Count];
+      for ( int i = 0; i < indices.Count; i += 3 ) {
+        uIndices[ i ]     = (int)indices[ i ];
+        uIndices[ i + 1 ] = (int)indices[ i + 2 ];
+        uIndices[ i + 2 ] = (int)indices[ i + 1 ];
+      }
+      outMesh.SetIndices( uIndices, MeshTopology.Triangles, 0 );
 
-     if ( uvs != null ) {
-       Vector2[] uUvs = new Vector2[uvs.Count];
-       for ( int i = 0; i < uvs.Count; i++ )
-         uUvs[ i ].Set( (float)uvs[ i ].x, (float)uvs[ i ].y );
-       outMesh.SetUVs( 0, uUvs );
-     }
+      if ( uvs != null ) {
+        Vector2[] uUvs = new Vector2[uvs.Count];
+        for ( int i = 0; i < uvs.Count; i++ )
+          uUvs[ i ].Set( (float)uvs[ i ].x, (float)uvs[ i ].y );
+        outMesh.SetUVs( 0, uUvs );
+      }
 
-     outMesh.RecalculateBounds();
-     outMesh.RecalculateNormals();
-     return outMesh;
-   }
+      outMesh.RecalculateBounds();
+      outMesh.RecalculateNormals();
+      return outMesh;
+    }
 
-   GameObject MapConvex( Geometries.ConvexMesh convex )
-   {
-     var go = Data.CreateOpenPLXObject(convex.getName());
-     var meshComp = go.AddComponent<AGXUnity.Collide.Mesh>();
-     var mesh = MapConvex( convex.vertices(), convex.getName() + "_mesh" );
+    GameObject MapConvex( Geometries.ConvexMesh convex )
+    {
+      var go = Data.CreateOpenPLXObject(convex.getName());
+      var meshComp = go.AddComponent<AGXUnity.Collide.Mesh>();
+      var mesh = MapConvex( convex.vertices(), convex.getName() + "_mesh" );
 
-     meshComp.AddSourceObject( mesh );
-     return go;
-   }
+      meshComp.AddSourceObject( mesh );
+      return go;
+    }
 
-   UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
-   {
-     var mesh = new UnityEngine.Mesh();
-     var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
+    UnityEngine.Mesh MapConvex( std.MathVec3Vector vertices, string name )
+    {
+      var mesh = new UnityEngine.Mesh();
+      var source = agxUtil.agxUtilSWIG.createConvex(new agx.Vec3Vector(vertices.Select(v => v.ToVec3()).ToArray()));
 
-     var md = source.getMeshData();
-     mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
-     mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
+      var md = source.getMeshData();
+      mesh.vertices = md.getVertices().Select( v => v.ToHandedVector3() ).ToArray();
+      mesh.SetIndices( md.getIndices().Select( i => (int)i ).ToArray(), MeshTopology.Triangles, 0 );
 
-     mesh.name = name;
-     Data.MappedMeshes.Add( mesh );
+      mesh.name = name;
+      Data.MappedMeshes.Add( mesh );
 
-     return mesh;
-   }
+      return mesh;
+    }
 
-   GameObject MapExternalTriMesh( Geometries.ExternalTriMeshGeometry objGeom )
-   {
-     string path = objGeom.path();
+    GameObject MapExternalTriMesh( Geometries.ExternalTriMeshGeometry objGeom )
+    {
+      string path = objGeom.path();
 
-     if ( !VerifyAssetPath( path, objGeom ) )
-       return null;
+      if ( !VerifyAssetPath( path, objGeom ) )
+        return null;
 
-     GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
-     Data.RegisterGameObject( go );
-     var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
+      GameObject go = Factory.Create<AGXUnity.Collide.Mesh>();
+      Data.RegisterGameObject( go );
+      var meshComp = go.GetComponent<AGXUnity.Collide.Mesh>();
 
-     UnityEngine.Mesh mesh;
-     // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
-     // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
+      UnityEngine.Mesh mesh;
+      // TODO: Unity's default importer is inconsistent about up axis, causing the rotation of the imported object to change depending on the asset.
+      // As far as I know, there's no way to know which axis is used as the up axis by the importer and thus we dont know what rotation to apply to the mesh.
 #if false
      var assetPath = "Assets/" + System.IO.Path.GetRelativePath( Application.dataPath, path ).Replace( '\\', '/' );
      var source = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>( assetPath );
@@ -242,10 +242,10 @@ namespace AGXUnity.IO.OpenPLX
 
      meshComp.transform.localScale = objGeom.scale().ToVector3();
 #else
-     var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
-     mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
-     mesh.name = objGeom.getName() + "_mesh";
-     Data.MappedMeshes.Add( mesh );
+      var source = agxUtil.agxUtilSWIG.createTrimesh(path, (uint)agxCollide.Trimesh.TrimeshOptionsFlags.REMOVE_DUPLICATE_VERTICES, new agx.Matrix3x3(objGeom.scale().ToVec3()));
+      mesh = AGXMeshToUnityMesh( source.getMeshData().getVertices(), source.getMeshData().getIndices() );
+      mesh.name = objGeom.getName() + "_mesh";
+      Data.MappedMeshes.Add( mesh );
 #endif
       if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
@@ -675,7 +675,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
         MapSystemPass2( subSystem );
 
-     // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
+      // Physics1D RotationalBodies are mapped at runtime by the RuntimeMapper
 
       foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
@@ -684,81 +684,81 @@ namespace AGXUnity.IO.OpenPLX
             continue;
           }
 
-         var parent = Data.SystemCache[ owningSystem ];
-         Utils.AddChild( parent, MapBody( body ), Data.ErrorReporter, body );
-       }
-     }
+          var parent = Data.SystemCache[ owningSystem ];
+          Utils.AddChild( parent, MapBody( body ), Data.ErrorReporter, body );
+        }
+      }
 
-     foreach ( var geom in system.getNonReferenceValues<Geometries.ContactGeometry>() )
-       Utils.AddChild( s, MapContactGeometry( geom, true ), Data.ErrorReporter, geom );
+      foreach ( var geom in system.getNonReferenceValues<Geometries.ContactGeometry>() )
+        Utils.AddChild( s, MapContactGeometry( geom, true ), Data.ErrorReporter, geom );
 
-     foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
-       Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
+      foreach ( var terr in system.getNonReferenceValues<openplx.Terrain.Terrain>() )
+        Utils.AddChild( s, MapTerrain( terr ), Data.ErrorReporter, terr );
 
-     VehicleMapper.MapSystemPass2( system );
-   }
+      VehicleMapper.MapSystemPass2( system );
+    }
 
-   void MapSystemPass3( openplx.Physics3D.System system )
-   {
-     var s = Data.SystemCache[system];
+    void MapSystemPass3( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
 
-     foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
-       MapSystemPass3( subSystem );
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass3( subSystem );
 
-     foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
-       InteractionMapper.MapMateConnector( mateConnector );
+      foreach ( var mateConnector in system.getNonReferenceValues<openplx.Physics3D.Interactions.MateConnector>() )
+        InteractionMapper.MapMateConnector( mateConnector );
 
-     foreach ( var body in system.getNonReferenceValues<openplx.Physics3D.Bodies.RigidBody>() )
-       foreach ( var mateConnector in body.getValues<openplx.Physics3D.Interactions.MateConnector>() )
-         InteractionMapper.MapMateConnector( mateConnector );
-   }
+      foreach ( var body in system.getNonReferenceValues<openplx.Physics3D.Bodies.RigidBody>() )
+        foreach ( var mateConnector in body.getValues<openplx.Physics3D.Interactions.MateConnector>() )
+          InteractionMapper.MapMateConnector( mateConnector );
+    }
 
-   void MapSystemPass4( openplx.Physics3D.System system )
-   {
-     var s = Data.SystemCache[system];
+    void MapSystemPass4( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
 
-     foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
-       MapSystemPass4( subSystem );
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass4( subSystem );
 
-     VehicleMapper.MapSystemPass4( system );
+      VehicleMapper.MapSystemPass4( system );
 
-     foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
-       Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
+      foreach ( var lidar in system.getNonReferenceValues<openplx.Sensors.LidarLogic>() )
+        Utils.AddChild( s, SensorMapper.MapLidar( lidar ), Data.ErrorReporter, lidar );
 
-     foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
-       Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
+      foreach ( var kinematicLock in system.getNonReferenceValues<openplx.Physics.KinematicLock>() )
+        Utils.AddChild( s, MapKinematicLock( kinematicLock ), Data.ErrorReporter, kinematicLock );
 
-     foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() )
-       if ( !Utils.IsRuntimeMapped( interaction ) && !VehicleMapper.HandledInteraction( interaction ) )
-         Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
+      foreach ( var interaction in system.getNonReferenceValues<openplx.Physics.Interactions.Interaction>() )
+        if ( !Utils.IsRuntimeMapped( interaction ) && !VehicleMapper.HandledInteraction( interaction ) )
+          Utils.AddChild( s, InteractionMapper.MapInteraction( interaction, system ), Data.ErrorReporter, interaction );
 
-     foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
-       InteractionMapper.MapContactModel( contactModel );
+      foreach ( var contactModel in system.getNonReferenceValues<openplx.Physics.Interactions.SurfaceContact.Model>() )
+        InteractionMapper.MapContactModel( contactModel );
 
-     foreach ( var shovel in system.getNonReferenceValues<openplx.Terrain.Shovel>() )
-       MapShovel( shovel );
+      foreach ( var shovel in system.getNonReferenceValues<openplx.Terrain.Shovel>() )
+        MapShovel( shovel );
 
-     // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
+      // Physics1D and Drivetrain interactions are mapped at runtime by the RuntimeMapper
 
-     foreach ( var collision_group in system.getNonReferenceValues<CollisionGroup>() )
-       MapCollisionGroup( collision_group );
+      foreach ( var collision_group in system.getNonReferenceValues<CollisionGroup>() )
+        MapCollisionGroup( collision_group );
 
 
-     foreach ( var rb in system.kinematically_controlled() )
-       Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
+      foreach ( var rb in system.kinematically_controlled() )
+        Data.BodyCache[ rb ].MotionControl = agx.RigidBody.MotionControl.KINEMATICS;
 
-     foreach ( var disabledPair in system.getNonReferenceValues<openplx.Simulation.DisableCollisionPair>() )
-       MapDisabledPair( disabledPair );
-   }
+      foreach ( var disabledPair in system.getNonReferenceValues<openplx.Simulation.DisableCollisionPair>() )
+        MapDisabledPair( disabledPair );
+    }
 
-   void MapSystemPass5( openplx.Physics3D.System system )
-   {
-     var s = Data.SystemCache[system];
+    void MapSystemPass5( openplx.Physics3D.System system )
+    {
+      var s = Data.SystemCache[system];
 
-     foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
-       MapSystemPass5( subSystem );
+      foreach ( var subSystem in system.getNonReferenceValues<openplx.Physics3D.System>() )
+        MapSystemPass5( subSystem );
 
-     VehicleMapper.MapSystemPass5( system );
-   }
- }
+      VehicleMapper.MapSystemPass5( system );
+    }
+  }
 }
