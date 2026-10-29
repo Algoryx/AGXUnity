@@ -462,28 +462,28 @@ namespace AGXUnityEditor
     //      return Selection.activeGameObject = GetOrCreateUniqueGameObject<SensorEnvironment>()?.gameObject;
     //    }
 
-    //    [MenuItem( "AGXUnity/Plot", priority = 66 )]
-    //    public static GameObject Plot()
-    //    {
-    //      var PlotObject = new GameObject("PlotObject");
-    //      PlotObject.AddComponent<AGXUnity.Utils.Plot>();
-    //      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
-    //      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+    [MenuItem( "AGXUnity/Plot", priority = 66 )]
+    public static GameObject Plot()
+    {
+      var PlotObject = new GameObject("PlotObject");
+      PlotObject.AddComponent<AGXUnity.Utils.Plot>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
+      PlotObject.AddComponent<AGXUnity.Utils.DataSeries>();
 
-    //#if USE_VISUAL_SCRIPTING
-    //      var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
-    //      var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
-    //      AssetDatabase.CopyAsset( plotAssetPath, targetAssetPath );
+#if USE_VISUAL_SCRIPTING
+      var plotAssetPath = AGXUnityEditor.IO.Utils.AGXUnityResourceDirectory + "/Plot/TemplatePlot.Asset";
+      var targetAssetPath = AssetDatabase.GenerateUniqueAssetPath("Assets/Plot.Asset");
+      AssetDatabase.CopyAsset( plotAssetPath, targetAssetPath );
 
-    //      AssetDatabase.SaveAssets();
-    //      AssetDatabase.Refresh();
+      AssetDatabase.SaveAssets();
+      AssetDatabase.Refresh();
 
-    //      var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
-    //      sm.nest.SwitchToMacro( AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>( targetAssetPath ) );
-    //#endif
+      var sm = PlotObject.AddComponent<Unity.VisualScripting.ScriptMachine>();
+      sm.nest.SwitchToMacro( AssetDatabase.LoadAssetAtPath<Unity.VisualScripting.ScriptGraphAsset>( targetAssetPath ) );
+#endif
 
-    //      return Selection.activeGameObject = PlotObject.gameObject;
-    //    }
+      return Selection.activeGameObject = PlotObject.gameObject;
+    }
 
     [MenuItem( "AGXUnity/Managers/Collision Groups Manager", validate = true )]
     private static bool CollisionGroupsManagerValidate()

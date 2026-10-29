@@ -26,9 +26,9 @@ namespace AGXUnityEditor.IO.OpenPLX
       }
 
       var targetDataPath =  targetExecutableFileInfo.Directory.FullName +
-                         Path.DirectorySeparatorChar +
-                         Path.GetFileNameWithoutExtension( targetExecutableFileInfo.Name ) +
-                         "_Data";
+                            Path.DirectorySeparatorChar +
+                            Path.GetFileNameWithoutExtension( targetExecutableFileInfo.Name ) +
+                            "_Data";
 
       var openPLXTarDir = $"{targetDataPath}{Path.DirectorySeparatorChar}OpenPLX";
 

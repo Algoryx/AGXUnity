@@ -1,6 +1,4 @@
-﻿using AGXUnity;
-using AGXUnity.Utils;
-using System;
+﻿using AGXUnity.Utils;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -80,7 +78,7 @@ namespace AGXUnityEditor
 
         envInstance.setEnableEmbeddedComponents( true );
 
-        //AGXUnity.IO.OpenPLX.OpenPLXImporter.BundleDirOverrides = AGX_OPENPLX_PATHS;
+        AGXUnity.IO.OpenPLX.OpenPLXImporter.BundleDirOverrides = AGX_OPENPLX_PATHS;
       }
       catch ( System.Exception ) {
         return false;
@@ -239,7 +237,7 @@ namespace AGXUnityEditor
       const int AGX_DEPENDENCIES = 0;
       const int AGXTERRAIN_DEPENDENCIES = 1;
       const int INSTALLED = 2;
-      //const int OPENPLX_DIR = 3;
+      const int OPENPLX_DIR = 3;
 
       Instance.AGX_DIR = agxDir;
 
@@ -258,12 +256,11 @@ namespace AGXUnityEditor
         new BinDirData()
         {
           CMakeKey = "CMAKE_INSTALL_PREFIX:PATH="
+        },
+        new BinDirData()
+        {
+          CMakeKey = "OPENPLX_BUNDLES_DIR:PATH="
         }
-        //,
-        //new BinDirData()
-        //{
-        //  CMakeKey = "OPENPLX_BUNDLES_DIR:PATH="
-        //}
       };
       using ( var stream = cmakeCache.OpenText() ) {
         var line = string.Empty;
@@ -305,7 +302,7 @@ namespace AGXUnityEditor
                                                             Path.DirectorySeparatorChar +
                                                             installPath );
 
-      //binData[ OPENPLX_DIR ].Directory = new DirectoryInfo( binData[ OPENPLX_DIR ].Value );
+      binData[ OPENPLX_DIR ].Directory = new DirectoryInfo( binData[ OPENPLX_DIR ].Value );
 
       if ( binData.Any( data => !data.IsOptional && ( data.Directory == null || !data.Directory.Exists ) ) ) {
         foreach ( var data in binData )
@@ -317,12 +314,12 @@ namespace AGXUnityEditor
       AGX_BIN_PATH        = ( from data in binData
                               where data.Directory != null
                               select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" )
-                             //.Append( $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" )
+                             .Append( $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" )
                              .ToArray();
       var installedBinDir = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64";
       AGX_PLUGIN_PATH     = $"{installedBinDir}{Path.DirectorySeparatorChar}plugins";
       AGX_DATA_DIR        = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
-      //AGX_OPENPLX_PATHS   = new string[] { $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}openplxbundles", $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
+      AGX_OPENPLX_PATHS   = new string[] { $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}openplxbundles", $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
       return true;
     }
 
@@ -330,7 +327,7 @@ namespace AGXUnityEditor
     {
       AGX_DIR           = agxDir;
       AGX_DATA_DIR      = $"{AGX_DIR}{Path.DirectorySeparatorChar}data";
-      //AGX_OPENPLX_PATHS = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}openplxbundles", $"{AGX_DIR}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
+      AGX_OPENPLX_PATHS = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}openplxbundles", $"{AGX_DIR}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
       AGX_BIN_PATH      = new string[] { $"{AGX_DIR}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" };
       AGX_PLUGIN_PATH   = $"{AGX_BIN_PATH[ 0 ]}{Path.DirectorySeparatorChar}plugins";
 
