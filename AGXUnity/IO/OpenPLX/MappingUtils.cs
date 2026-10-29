@@ -83,11 +83,11 @@ namespace AGXUnity.IO.OpenPLX
         return false;
 
       foreach ( var annot in annots ) {
-        if ( annot.isTrue() ) {
+        if ( annot.isBool() && annot.asBool() ) {
           value = true;
           return true;
         }
-        if ( annot.isFalse() ) {
+        if ( annot.isBool() && !annot.asBool() ) {
           value = false;
           return true;
         }

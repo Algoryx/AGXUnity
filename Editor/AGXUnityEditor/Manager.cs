@@ -780,6 +780,8 @@ namespace AGXUnityEditor
         var dataAndRuntimePath = AGXUnity.IO.Environment.Get( AGXUnity.IO.Environment.Variable.AGX_PLUGIN_PATH );
         envInstance.getFilePath( agxIO.Environment.Type.RESOURCE_PATH ).pushbackPath( dataAndRuntimePath + "/data" );
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( dataAndRuntimePath );
+
+        envInstance.setEnableEmbeddedComponents( true );
       }
       // Check if user would like to initialize AGX Dynamics with an
       // installed (or Algoryx developer) version.

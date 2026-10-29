@@ -49,15 +49,15 @@ namespace AGXUnity.IO.OpenPLX
       VisualsMapper = new VisualsMapper( Data, Options );
     }
 
-    public UnityEngine.Object MapObject( Object obj, string path )
+    public UnityEngine.Object MapObject( Object obj, string path, Dictionary<string, Object> objectMap )
     {
       try {
         if ( obj is openplx.Physics3D.System or Bodies.RigidBody )
-          return MapSimulatable( obj, path );
+          return MapSimulatable( obj, path, objectMap );
         else if ( obj is openplx.Physics.Optics.Material mat )
           return VisualsMapper.MapVisualMaterial( mat );
         else
-          Data.ErrorReporter.reportError( new UnmappableRootModelError( obj ) );
+          Data.ReportError( new UnmappableRootModelError( obj ) );
       }
       catch ( System.Exception e ) {
         Debug.LogError( "An exception ocurred while mapping the imported OpenPLX model. Please report this to the AGXUnity developers." );
@@ -76,11 +76,11 @@ namespace AGXUnity.IO.OpenPLX
       return RootNode;
     }
 
-    private GameObject MapSimulatable( Object obj, string path )
+    private GameObject MapSimulatable( Object obj, string path, Dictionary<string, Object> objectMap )
     {
       Data.RootNode = Data.CreateGameObject( System.IO.Path.GetFileNameWithoutExtension( path ) );
       var rootComp = Data.RootNode.AddComponent<OpenPLXRoot>();
-      rootComp.Native = obj;
+      rootComp.ExternalInitialize( obj, objectMap );
       Data.PrefabLocalData = Data.RootNode.AddComponent<SavedPrefabLocalData>();
 
       if ( obj is openplx.Physics3D.System system )
@@ -138,12 +138,12 @@ namespace AGXUnity.IO.OpenPLX
     {
       if ( !System.IO.Path.IsPathFullyQualified( path ) ) {
         var errorData = BaseError.CreateErrorData( obj );
-        Data.ErrorReporter.reportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        Data.ReportError( new agxopenplx.PathNotAbsolute( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
         return false;
       }
 
       if ( !System.IO.File.Exists( path ) ) {
-        Data.ErrorReporter.reportError( new FileDoesNotExistError( obj, path ) );
+        Data.ReportError( new FileDoesNotExistError( obj, path ) );
         return false;
       }
 
@@ -249,7 +249,7 @@ namespace AGXUnity.IO.OpenPLX
 #endif
       if ( mesh == null ) {
         var errorData = BaseError.CreateErrorData( objGeom );
-        Data.ErrorReporter.reportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
+        Data.ReportError( new InvalidObjFile( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, path ) );
       }
       else
         meshComp.AddSourceObject( mesh );
@@ -431,7 +431,7 @@ namespace AGXUnity.IO.OpenPLX
 
       else if ( inertia.mass() < 0.0 ) {
         var errorData = BaseError.CreateErrorData(inertia);
-        Data.ErrorReporter.reportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
+        Data.ReportError( new NegativeMass( errorData.fromLine, errorData.fromColumn, errorData.toLine, errorData.toColumn, errorData.sourceID, inertia ) );
         return false;
       }
       var cm_transform_is_set = !cm.position().IsDefault() || !cm.rotation().IsDefault();
@@ -650,7 +650,7 @@ namespace AGXUnity.IO.OpenPLX
 
       foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         foreach ( var geometry in body.getValues<Geometries.ContactGeometry>() ) {
-          if ( geometry.material().getType().getNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
+          if ( geometry.material().getTypeNameWithNamespace( "." ) != "Physics.Geometries.Material" || !geometry.material().isDefault( "density" ) ) {
             if ( !Data.MaterialCache.ContainsKey( geometry.material() ) )
               Data.MaterialCache[ geometry.material() ] = InteractionMapper.MapMaterial( geometry.material() );
           }
@@ -680,7 +680,7 @@ namespace AGXUnity.IO.OpenPLX
       foreach ( var body in system.getNonReferenceValues<Bodies.RigidBody>() ) {
         if ( !Data.BodyCache.ContainsKey( body ) ) {
           if ( body.getOwner() is not openplx.Physics3D.System owningSystem ) {
-            Data.ErrorReporter.reportError( new RigidBodyOwnerNotSystemError( body ) );
+            Data.ReportError( new RigidBodyOwnerNotSystemError( body ) );
             continue;
           }
 

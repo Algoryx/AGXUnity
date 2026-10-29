@@ -1,0 +1,6 @@
+BaseScene is Physics3D.System:
+  child is Physics3D.System:
+    `nested.backticks` is Physics3D.System
+
+  `backtick.child` is Physics3D.System:
+    `nested.backticks` is Physics3D.System

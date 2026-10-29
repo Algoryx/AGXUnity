@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static AGXUnity.Constraint;
 
 namespace AGXUnity.Model
 {
@@ -320,36 +321,36 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Set damping to all ordinary degrees of freedom (not including controllers)
+    /// Set attenuation to all ordinary degrees of freedom (not including controllers)
     /// of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
-    public void SetDamping( float damping )
+    /// <param name="attenuation">New attenuation.</param>
+    public void SetAttenuation( float attenuation )
     {
-      TraverseRowData( data => data.Damping = damping, Constraint.TranslationalDof.All );
-      TraverseRowData( data => data.Damping = damping, Constraint.RotationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, Constraint.TranslationalDof.All );
+      TraverseRowData( data => data.Attenuation = attenuation, Constraint.RotationalDof.All );
     }
 
     /// <summary>
-    /// Set damping to one or all translational ordinary degrees of freedom
+    /// Set attenuation to one or all translational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific translational degree of freedom or all.</param>
-    public void SetDamping( float damping, Constraint.TranslationalDof dof )
+    public void SetAttenuation( float attenuation, Constraint.TranslationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>
-    /// Set damping to one or all rotational ordinary degrees of freedom
+    /// Set attenuation to one or all rotational ordinary degrees of freedom
     /// (not including controllers) of this constraint.
     /// </summary>
-    /// <param name="damping">New damping.</param>
+    /// <param name="attenuation">New attenuation.</param>
     /// <param name="dof">Specific rotational degree of freedom or all.</param>
-    public void SetDamping( float damping, Constraint.RotationalDof dof )
+    public void SetAttenuation( float attenuation, Constraint.RotationalDof dof )
     {
-      TraverseRowData( data => data.Damping = damping, dof );
+      TraverseRowData( data => data.Attenuation = attenuation, dof );
     }
 
     /// <summary>
@@ -798,5 +799,16 @@ namespace AGXUnity.Model
     private void OnDrawGizmos() => DrawGizmos( Color.blue, false );
     private void OnDrawGizmosSelected() => DrawGizmos( Color.green, true );
 
+    protected override bool PerformMigration()
+    {
+      if ( m_serializationVersion < 3 ) {
+        // Migrate from damping to attenuation
+        // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz        
+        TraverseRowData( data => data.Attenuation *= 50.0f, TranslationalDof.All );
+        TraverseRowData( data => data.Attenuation *= 50.0f, RotationalDof.All );
+        return true;
+      }
+      return false;
+    }
   }
 }
