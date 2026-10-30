@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using agxROS2;
 using agxSensor;
 using AGXUnity.Utils;
@@ -260,7 +261,6 @@ namespace AGXUnity.Sensor
 
     public void PublishOutputs()
     {
-#if AGXUNITY_HAS_SENSORS
       float timestamp = (float)Simulation.Instance.Native.getTimeStamp();
 
       // Use the convertLidarOutput utility to create messages for enabled publishers
@@ -281,9 +281,7 @@ namespace AGXUnity.Sensor
           m_instanceIDPub = new PublisherSensorMsgsPointCloud2( InstanceIdTopic, QOS.CreateNative() );
         m_instanceIDPub.sendMessage( agxROS2SWIG.convertLidarOutput( m_instanceIdOutput.Native, timestamp, FrameID, true ) );
       }
-#else
-      LogOnce.Warning( "AGXUnity is built without Sensor Support. ROS2 Publisher will not publish data", this );
-#endif
     }
   }
 }
+#endif

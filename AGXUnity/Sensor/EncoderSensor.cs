@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using agxSensor;
 using AGXUnity.Model;
 using UnityEngine;
@@ -441,3 +442,4 @@ namespace AGXUnity.Sensor
     }
   }
 }
+#endif
