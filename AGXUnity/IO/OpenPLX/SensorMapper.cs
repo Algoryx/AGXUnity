@@ -1,8 +1,12 @@
-﻿using AGXUnity.Sensor;
+﻿using openplx.Sensors;
+using UnityEngine;
+
+#if AGXUNITY_HAS_SENSORS
+using AGXUnity.Sensor;
 using openplx.Sensors;
 using openplx.Sensors.Optics;
 using openplx.Sensors.Optics.Traits;
-using UnityEngine;
+#endif
 
 namespace AGXUnity.IO.OpenPLX
 {
@@ -17,6 +21,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject MapLidar( LidarLogic lidar )
     {
+#if AGXUNITY_HAS_SENSORS
       // TODO: OpenPLX LiDAR sensor mapping currently does not create any outputs and thus will not properly handle 
       var go = Data.CreateOpenPLXObject(lidar.getName());
 
@@ -104,6 +109,9 @@ namespace AGXUnity.IO.OpenPLX
       inclusion.Include = false;
 
       return go;
+#else
+      return null;
+#endif
     }
   }
 }

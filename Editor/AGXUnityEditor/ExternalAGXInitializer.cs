@@ -1,6 +1,4 @@
-﻿using AGXUnity;
-using AGXUnity.Utils;
-using System;
+﻿using AGXUnity.Utils;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -77,6 +75,8 @@ namespace AGXUnityEditor
         envInstance.getFilePath( agxIO.Environment.Type.RUNTIME_PATH ).pushbackPath( AGX_PLUGIN_PATH );
         envInstance.setEnableEmbeddedComponents( true );
 
+
+        envInstance.setEnableEmbeddedComponents( true );
 
         AGXUnity.IO.OpenPLX.OpenPLXImporter.BundleDirOverrides = AGX_OPENPLX_PATHS;
       }

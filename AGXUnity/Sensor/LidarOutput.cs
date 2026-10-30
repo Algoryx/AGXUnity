@@ -1,3 +1,4 @@
+#if AGX_HAS_SENSORS
 using agxSensor;
 using System;
 using System.Collections;
@@ -172,3 +173,4 @@ namespace AGXUnity.Sensor
     public void CopyTo( RtOutput.Field[] array, int arrayIndex ) => m_fields.CopyTo( array, arrayIndex );
   }
 }
+#endif
