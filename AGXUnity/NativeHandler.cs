@@ -107,7 +107,8 @@ namespace AGXUnity
       m_ai = new agx.AutoInit();
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-      IO.AndroidRuntimeResources.LogLicenseStatus();
+      if ( !IO.AndroidRuntimeResources.InitializeLicense() )
+        throw new AGXUnity.Exception( "AGX Android could not load or activate a license. Native task creation was stopped." );
       IO.AndroidRuntimeResources.ValidateGravityTasks();
 #endif
 
@@ -130,6 +131,7 @@ namespace AGXUnity
     {
       m_isAgx = new InitShutdownAGXDynamics();
 
+#if !UNITY_ANDROID || UNITY_EDITOR
       var searchForLicenses = !Application.isEditor &&
                               m_isAgx.Initialized &&
                               // External scripts could load licenses, even before AGX
@@ -137,6 +139,7 @@ namespace AGXUnity
                               !LicenseManager.UpdateLicenseInformation().IsValid;
       if ( searchForLicenses && !LicenseManager.LoadFile() )
         LicenseManager.ActivateEncryptedRuntime( IO.Environment.GetPlayerPluginPath( Application.dataPath ) );
+#endif
 
       // The environment probably hasn't been completely configured
       // when inside the editor so it's up to Manager to call

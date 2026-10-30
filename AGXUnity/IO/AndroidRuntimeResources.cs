@@ -12,16 +12,12 @@ namespace AGXUnity.IO
     public static void Prepare()
     {
       // Android's initial process directory may be read-only. Establish a
-      // writable working directory and copy the license before any AGX call,
+      // writable working directory and stage licensing before any AGX call,
       // including calls that load the native libraries and their initializers.
-      var license = Resources.Load<TextAsset>( "AGXAndroidLicense" );
-      if ( license == null )
-        throw new AGXUnity.Exception( "The packaged Assets/agx.lic is missing. Rebuild the Android player." );
       string workingDirectory = GetWorkingDirectory();
-      Directory.CreateDirectory( workingDirectory );
-      File.WriteAllBytes( Path.Combine( workingDirectory, "agx.lic" ), license.bytes );
+      bool hasSavedLicense = File.Exists( Path.Combine( workingDirectory, AndroidRuntimeLicense.ServiceFilename ) );
+      AndroidRuntimeLicense.Prepare( workingDirectory, hasSavedLicense ? null : ReadActivationBundle(), Application.identifier );
       Directory.SetCurrentDirectory( workingDirectory );
-      Debug.Log( "AGX Android license copied to working directory: " + workingDirectory );
 
       var archive = Resources.Load<TextAsset>( "AGXAndroidRuntime" );
       if ( archive == null )
@@ -63,6 +59,68 @@ namespace AGXUnity.IO
       if ( string.IsNullOrEmpty( header ) )
         throw new AGXUnity.Exception( "AGX Android gravity kernel metadata was not found after extraction." );
       Debug.Log( "AGX Android runtime metadata ready: " + root );
+    }
+
+    public static bool InitializeLicense()
+    {
+      string directory = GetWorkingDirectory();
+      bool success = AndroidRuntimeLicense.LoadOrActivate( directory,
+                                                          LicenseManager.LoadFile,
+                                                          (request, targetDirectory) => LicenseManager.ActivateEncryptedRuntime( request, targetDirectory ) );
+      // LicenseManager's activation workaround temporarily adds/removes the
+      // current directory. Restore our persistent resource path afterwards.
+      var paths = agxIO.Environment.instance().getFilePath( agxIO.Environment.Type.RESOURCE_PATH );
+      paths.removeFilePath( directory );
+      paths.pushfrontPath( directory );
+      LogLicenseStatus();
+      if ( !success ) {
+        string status = LicenseManager.LastOperationError;
+        if ( string.IsNullOrEmpty( status ) )
+          status = LicenseManager.Runtime.getStatus();
+        if ( string.IsNullOrEmpty( status ) )
+          status = "No valid license or runtime activation request was found in private app storage.";
+        bool hasSavedLicense = File.Exists( Path.Combine( directory, AndroidRuntimeLicense.ServiceFilename ) );
+        Debug.LogError( "AGX Android licensing failed: " + status +
+                        ( hasSavedLicense ? " The saved agx.lfx was preserved; inspect the rejected license before attempting recovery."
+                                          : " Runtime activation requires Internet access. Restart the app to retry after resolving the error." ) );
+      }
+      return success;
+    }
+
+    private static byte[] ReadActivationBundle()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+      // StreamingAssets live inside the APK. AssetManager provides synchronous
+      // access here, before native initialization, without blocking a web request
+      // that needs Unity's main thread to advance.
+      using ( var player = new AndroidJavaClass( "com.unity3d.player.UnityPlayer" ) )
+      using ( var activity = player.GetStatic<AndroidJavaObject>( "currentActivity" ) )
+      using ( var assets = activity.Call<AndroidJavaObject>( "getAssets" ) )
+      using ( var stream = assets.Call<AndroidJavaObject>( "open", AndroidRuntimeLicense.StreamingAssetPath ) ) {
+        IntPtr buffer = AndroidJNI.NewSByteArray( 4096 );
+        try {
+          using ( var javaBuffer = new AndroidJavaObject( buffer ) )
+          using ( var memory = new MemoryStream() ) {
+            // An explicit byte[] signature avoids treating the JNI array as a
+            // regular Java object when selecting the InputStream.read overload.
+            IntPtr read = AndroidJNIHelper.GetMethodID( stream.GetRawClass(), "read", "([B)I" );
+            byte[] bytes = new byte[ 4096 ];
+            int count;
+            while ( ( count = stream.Call<int>( read, javaBuffer ) ) > 0 ) {
+              Buffer.BlockCopy( AndroidJNI.FromSByteArray( buffer ), 0, bytes, 0, count );
+              memory.Write( bytes, 0, count );
+            }
+            return memory.ToArray();
+          }
+        }
+        finally {
+          AndroidJNI.DeleteLocalRef( buffer );
+          stream.Call( "close" );
+        }
+      }
+#else
+      return File.ReadAllBytes( Path.Combine( Application.streamingAssetsPath, AndroidRuntimeLicense.StreamingAssetPath ) );
+#endif
     }
 
     private static string GetWorkingDirectory()

@@ -1,7 +1,9 @@
+using AGXUnity.IO;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -12,8 +14,7 @@ namespace AGXUnityEditor.BuildTools
   public sealed class AndroidRuntimeResourcePackager : IPreprocessBuildWithReport
   {
     public const string AssetPath = "Assets/AGXUnity/Resources/AGXAndroidRuntime.bytes";
-    public const string LicenseSourcePath = "Assets/agx.lic";
-    public const string LicenseAssetPath = "Assets/AGXUnity/Resources/AGXAndroidLicense.bytes";
+    public const string ActivationAssetPath = "Assets/StreamingAssets/" + AndroidRuntimeLicense.StreamingAssetPath;
     public int callbackOrder => -1000;
 
     public void OnPreprocessBuild( BuildReport report )
@@ -24,16 +25,7 @@ namespace AGXUnityEditor.BuildTools
     [MenuItem( "AGXUnity/Build/Package Android Runtime Resources" )]
     public static void Package()
     {
-      // Package the project's license independently of the metadata cache so
-      // changes to Assets/agx.lic always reach the next Android build.
-      if ( !File.Exists( LicenseSourcePath ) )
-        throw new BuildFailedException( "Assets/agx.lic is missing. The Android player requires this license in its working directory." );
-      byte[] license = File.ReadAllBytes( LicenseSourcePath );
-      if ( !File.Exists( LicenseAssetPath ) || !File.ReadAllBytes( LicenseAssetPath ).SequenceEqual( license ) ) {
-        Directory.CreateDirectory( Path.GetDirectoryName( LicenseAssetPath ) );
-        File.WriteAllBytes( LicenseAssetPath, license );
-        AssetDatabase.ImportAsset( LicenseAssetPath, ImportAssetOptions.ForceSynchronousImport );
-      }
+      PackageLicense();
 
       string sourceRoot = FindSourceRoot();
       if ( sourceRoot == null ) {
@@ -69,6 +61,75 @@ namespace AGXUnityEditor.BuildTools
         AssetDatabase.ImportAsset( AssetPath, ImportAssetOptions.ForceSynchronousImport );
       }
       UnityEngine.Debug.Log( "Packaged " + count + " AGX Android component metadata files." );
+    }
+
+    /// <summary>Generates the project's Android activation bundle before the APK/AAB is built or signed.</summary>
+    public static void GenerateRuntimeActivation( int licenseId, string activationCode )
+    {
+      byte[] bundle = CreateRuntimeActivationBundle( licenseId, activationCode, AndroidApplicationIdentifier );
+      WriteAsset( ActivationAssetPath, bundle );
+      PackageLicense();
+    }
+
+    /// <summary>Encrypts locally; this does not contact the license server or consume an activation.</summary>
+    public static byte[] CreateRuntimeActivationBundle( int licenseId, string activationCode, string applicationIdentifier )
+    {
+      if ( string.IsNullOrWhiteSpace( applicationIdentifier ) )
+        throw new ArgumentException( "Set the Android application identifier before generating runtime activation." );
+      string staging = Path.Combine( Path.GetTempPath(), "AGXUnity-AndroidActivation-" + Guid.NewGuid().ToString( "N" ) );
+      Directory.CreateDirectory( staging );
+      try {
+        // This app-specific reference is packaged byte-for-byte with the request.
+        // ASCII-compatible content without CRLF or control characters also avoids
+        // Windows text-mode hashing differences when activating on Android.
+        string reference = Path.Combine( staging, AndroidRuntimeLicense.ReferenceFilename );
+        File.WriteAllText( reference, applicationIdentifier + "\n" + Guid.NewGuid().ToString( "N" ), new UTF8Encoding( false ) );
+        string request = null;
+        if ( !AGXUnity.LicenseManager.GenerateEncryptedRuntime( licenseId, activationCode, staging,
+                                                              AndroidRuntimeLicense.ReferenceFilename,
+                                                              filename => request = filename ) )
+          throw new InvalidOperationException( AGXUnity.LicenseManager.LastOperationError ?? "Android runtime activation generation failed." );
+        using ( var memory = new MemoryStream() ) {
+          using ( var zip = new ZipArchive( memory, ZipArchiveMode.Create, true ) ) {
+            WriteEntry( zip, reference, AndroidRuntimeLicense.ReferenceFilename );
+            WriteEntry( zip, request, AndroidRuntimeLicense.ActivationFilename );
+            using ( var target = zip.CreateEntry( AndroidRuntimeLicense.ApplicationIdFilename ).Open() ) {
+              byte[] identifier = Encoding.UTF8.GetBytes( applicationIdentifier );
+              target.Write( identifier, 0, identifier.Length );
+            }
+          }
+          byte[] bundle = memory.ToArray();
+          AndroidRuntimeLicense.ValidateActivationBundle( bundle, applicationIdentifier );
+          return bundle;
+        }
+      }
+      finally {
+        Directory.Delete( staging, true );
+      }
+    }
+
+    private static string AndroidApplicationIdentifier => PlayerSettings.GetApplicationIdentifier( UnityEditor.Build.NamedBuildTarget.Android );
+
+    private static void PackageLicense()
+    {
+      if ( !File.Exists( ActivationAssetPath ) )
+        throw new BuildFailedException( "No Android runtime activation is configured. Use AGXUnity > License > Runtime Activation Generator in Android mode before building. Expected bundle: " + ActivationAssetPath );
+      try {
+        AndroidRuntimeLicense.ValidateActivationBundle( File.ReadAllBytes( ActivationAssetPath ), AndroidApplicationIdentifier );
+      }
+      catch ( System.Exception e ) {
+        throw new BuildFailedException( "Invalid Android runtime activation bundle. " + e.Message );
+      }
+      PlayerSettings.Android.forceInternetPermission = true;
+    }
+
+    private static void WriteAsset( string path, byte[] bytes )
+    {
+      if ( File.Exists( path ) && File.ReadAllBytes( path ).SequenceEqual( bytes ) )
+        return;
+      Directory.CreateDirectory( Path.GetDirectoryName( path ) );
+      File.WriteAllBytes( path, bytes );
+      AssetDatabase.ImportAsset( path, ImportAssetOptions.ForceSynchronousImport );
     }
 
     private static void WriteEntry( ZipArchive zip, string file, string path )
