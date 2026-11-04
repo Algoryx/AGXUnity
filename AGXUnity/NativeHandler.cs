@@ -29,8 +29,17 @@ namespace AGXUnity
 
     ~InitShutdownAGXDynamics()
     {
+      m_sensorRuntimeAnchor?.Dispose();
+      m_sensorRuntimeAnchor = null;
       m_ai.Dispose();
       m_ai = null;
+    }
+
+    private agxSensor.Environment m_sensorRuntimeAnchor;
+
+    internal void EnsureSensorRuntime()
+    {
+      m_sensorRuntimeAnchor ??= new agxSensor.Environment();
     }
 
     /// <summary>
@@ -114,7 +123,7 @@ namespace AGXUnity
   {
     NativeHandler()
     {
-      m_isAgx = new InitShutdownAGXDynamics();
+      m_isAgx = new  InitShutdownAGXDynamics();
 
       var searchForLicenses = !Application.isEditor &&
                               m_isAgx.Initialized &&
@@ -213,6 +222,11 @@ namespace AGXUnity
       }
 
       return LicenseManager.Load( licenseStr );
+    }
+
+    public void EnsureSensorRuntime()
+    {
+      m_isAgx.EnsureSensorRuntime();
     }
 
     #region Singleton Stuff

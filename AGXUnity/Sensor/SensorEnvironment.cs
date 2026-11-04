@@ -134,7 +134,8 @@ namespace AGXUnity.Sensor
           RtMaterialInstance nativeMat = m_ambientMaterial?.GetInitialized<AmbientMaterial>()?.Native;
           if ( nativeMat == null )
             nativeMat = new RtMaterialInstance(); // Create a null instance to set unset the ambient mat
-          Native.getScene().setMaterial( nativeMat );
+          using var scene = Native.getScene(); // Use explicit disposal to avoid lifetime issues
+          scene.setMaterial( nativeMat );
         }
       }
     }
@@ -160,7 +161,8 @@ namespace AGXUnity.Sensor
       }
     }
 
-    private RtSurfaceMaterial InternalDefaultMaterial = null;
+    private RtSurfaceMaterial m_internalDefaultMaterial = null;
+    private bool m_ownsInternalDefaultMaterial = false;
 
     private uint m_currentOutputID = 1;
     private int m_currentEntityId = 0;
@@ -283,13 +285,13 @@ namespace AGXUnity.Sensor
 
     private RtShapeInstance CreateShapeInstance( RtShape rtShape, Quaternion rotation, Vector3 position, Vector3 scale, LidarSurfaceMaterialDefinition material )
     {
-      RtMaterialInstance rtMaterialInstance = null;
-      if ( material != null )
-        rtMaterialInstance = material.GetRtMaterial();
+      using RtMaterialInstance rtMaterialInstance =
+        material?.GetRtMaterial() ?? m_internalDefaultMaterial;
 
       Profiler.BeginSample( "CreateShapeInstance" );
-      RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? InternalDefaultMaterial, (RtEntityId)(++m_currentEntityId));
-      RtShapeInstance shapeInstance = RtShapeInstance.create(Native.getScene(), rtShape, data);
+      using RtInstanceData data = new RtInstanceData(rtMaterialInstance ?? m_internalDefaultMaterial, (RtEntityId)(++m_currentEntityId));
+      using var scene = Native.getScene(); // Use explicit disposal to avoid lifetime issues
+      RtShapeInstance shapeInstance = RtShapeInstance.create(scene, rtShape, data);
 
       shapeInstance.setTransform(
         new AffineMatrix4x4(
@@ -342,7 +344,7 @@ namespace AGXUnity.Sensor
 
       m_agxComponents.TryAdd( scriptComponent, false );
 
-      RtSurfaceMaterial rtMaterial = LidarSurfaceMaterial.FindClosestMaterial(scriptComponent.gameObject)?.GetRtMaterial() ?? InternalDefaultMaterial;
+      RtSurfaceMaterial rtMaterial = LidarSurfaceMaterial.FindClosestMaterial(scriptComponent.gameObject)?.GetRtMaterial() ?? m_internalDefaultMaterial;
 
       // Set material in the case where this material was added before initializing the SensorEnvironment object.
       // Any additional material handling added here should be added in LidarSurfaceMaterial.cs
@@ -485,18 +487,24 @@ namespace AGXUnity.Sensor
         Simulation.Instance.PreIntegratePositions = true;
       }
 
+      NativeHandler.Instance.EnsureSensorRuntime();
+
       // Default material
       if ( DefaultSurfaceMaterial != null )
-        InternalDefaultMaterial = DefaultSurfaceMaterial.GetInitialized<LidarSurfaceMaterialDefinition>().GetRtMaterial();
+        m_internalDefaultMaterial = DefaultSurfaceMaterial.GetInitialized<LidarSurfaceMaterialDefinition>().GetRtMaterial();
       else
-        InternalDefaultMaterial = RtLambertianOpaqueMaterial.create();
+      {
+        m_ownsInternalDefaultMaterial = true;  
+        m_internalDefaultMaterial = RtLambertianOpaqueMaterial.create();
+      }
 
       Native = agxSensor.Environment.getOrCreate( simulation );
 
       if ( AmbientMaterial != null ) {
         var ambMat = AmbientMaterial.GetInitialized<AmbientMaterial>().Native;
 
-        Native.getScene().setMaterial( ambMat );
+        using var scene = Native.getScene(); // Use explicit disposal to avoid lifetime issues
+        scene.setMaterial( ambMat );
       }
 
       FindValidComponents<MeshFilter>( true ).ForEach( RegisterMeshfilter );
@@ -679,6 +687,12 @@ namespace AGXUnity.Sensor
       }
 
       ScriptComponent.OnInitialized -= LateInitializeScriptComponent;
+
+      if ( m_ownsInternalDefaultMaterial )
+        m_internalDefaultMaterial?.Dispose();
+
+      m_internalDefaultMaterial = null;
+      m_ownsInternalDefaultMaterial = false;
 
       Native?.Dispose();
       Native = null;
