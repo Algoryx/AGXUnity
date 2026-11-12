@@ -1,6 +1,5 @@
 using AGXUnity.Utils;
 using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using GUI = AGXUnity.Utils.GUI;
@@ -11,9 +10,10 @@ namespace AGXUnityEditor.Windows
   {
     public static GenerateRuntimeLicenseActivationWindow Open()
     {
-      var window = GetWindowWithRect<GenerateRuntimeLicenseActivationWindow>( new Rect( 300, 300, 500, 352 ),
+      var window = GetWindowWithRect<GenerateRuntimeLicenseActivationWindow>( new Rect( 300, 300, 500, 420 ),
                                                                               true,
                                                                               "AGX Dynamics for Unity" );
+      window.m_android = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android;
       return window;
     }
 
@@ -71,6 +71,7 @@ namespace AGXUnityEditor.Windows
 
     public void Initialize( string buildDirectory, string referenceFile )
     {
+      m_android = false;
       BuildDirectory = buildDirectory;
       ReferenceFileInBuild = referenceFile;
     }
@@ -101,24 +102,31 @@ namespace AGXUnityEditor.Windows
 
       InspectorGUI.Separator( 1, 6 );
 
-      InspectorGUI.SelectFolder( GUI.MakeLabel( "Build directory" ),
+      m_android = EditorGUILayout.Toggle( GUI.MakeLabel( "Android player" ), m_android );
+      if ( m_android ) {
+        EditorGUILayout.LabelField( "Application identifier", PlayerSettings.GetApplicationIdentifier( UnityEditor.Build.NamedBuildTarget.Android ) );
+        EditorGUILayout.HelpBox( "Generate before building the APK/AAB. The encrypted request and its application-specific reference file are saved under Assets/StreamingAssets/AGXUnity. The device license is saved in private app storage and reused on later launches.", MessageType.Info );
+      }
+      else {
+        InspectorGUI.SelectFolder( GUI.MakeLabel( "Build directory" ),
+                                   BuildDirectory,
+                                   "Build directory",
+                                   newBuildDirectory => {
+                                     if ( !Directory.Exists( newBuildDirectory ) ) {
+                                       m_generationError = $"The build directory does not exist: {newBuildDirectory}";
+                                       return;
+                                     }
+                                     BuildDirectory = newBuildDirectory;
+                                     // Reset reference file if it doesn't exist in the new build directory hierarchy.
+                                     if ( !File.Exists( ReferenceFileInBuildFull ) )
+                                       m_referenceFileInBuild = string.Empty;
+                                   } );
+        InspectorGUI.SelectFile( GUI.MakeLabel( "Reference file" ),
+                                 ReferenceFileInBuild,
+                                 "Select reference file in build",
                                  BuildDirectory,
-                                 "Build directory",
-                                 newBuildDirectory => {
-                                   if ( !Directory.Exists( newBuildDirectory ) ) {
-                                     m_generationError = $"The build directory does not exist: {newBuildDirectory}";
-                                     return;
-                                   }
-                                   BuildDirectory = newBuildDirectory;
-                                   // Reset reference file if it doesn't exist in the new build directory hierarchy.
-                                   if ( !File.Exists( ReferenceFileInBuildFull ) )
-                                     m_referenceFileInBuild = string.Empty;
-                                 } );
-      InspectorGUI.SelectFile( GUI.MakeLabel( "Reference file" ),
-                               ReferenceFileInBuild,
-                               "Select reference file in build",
-                               BuildDirectory,
-                               newFilename => ReferenceFileInBuild = newFilename );
+                                 newFilename => ReferenceFileInBuild = newFilename );
+      }
 
       m_idPassword.Id = EditorGUILayout.TextField( GUI.MakeLabel( "Runtime License Id" ),
                                                    m_idPassword.Id,
@@ -136,19 +144,33 @@ namespace AGXUnityEditor.Windows
         GUILayout.Space( 3 );
         if ( GUILayout.Button( GUI.MakeLabel( "Generate", false, generateToolTip ) ) ) {
           m_generationError = null;
-          var generatedFilename = string.Empty;
-          if ( AGXUnity.LicenseManager.GenerateEncryptedRuntime( System.Convert.ToInt32( m_idPassword.Id ),
-                                                                 m_idPassword.Password,
-                                                                 BuildDirectory,
-                                                                 ReferenceFileInBuild,
-                                                                 filename => generatedFilename = filename ) ) {
-            EditorUtility.DisplayDialog( "Encrypted Runtime License",
-                                         $"Encrypted runtime successfully written to: {generatedFilename}",
-                                         "Ok" );
-            Close();
+          if ( m_android ) {
+            try {
+              BuildTools.AndroidRuntimeResourcePackager.GenerateRuntimeActivation( System.Convert.ToInt32( m_idPassword.Id ), m_idPassword.Password );
+              EditorUtility.DisplayDialog( "Android Runtime Activation",
+                                           "The runtime activation bundle is ready at " + BuildTools.AndroidRuntimeResourcePackager.ActivationAssetPath + ". Build the Android APK/AAB to include it. Internet access is enabled for first-launch activation.",
+                                           "Ok" );
+              Close();
+            }
+            catch ( System.Exception e ) {
+              m_generationError = e.Message;
+            }
           }
-          else
-            m_generationError = AGXUnity.LicenseManager.LastOperationError ?? "Runtime activation file generation failed. Check the license details and that the build directory is writable.";
+          else {
+            var generatedFilename = string.Empty;
+            if ( AGXUnity.LicenseManager.GenerateEncryptedRuntime( System.Convert.ToInt32( m_idPassword.Id ),
+                                                                   m_idPassword.Password,
+                                                                   BuildDirectory,
+                                                                   ReferenceFileInBuild,
+                                                                   filename => generatedFilename = filename ) ) {
+              EditorUtility.DisplayDialog( "Encrypted Runtime License",
+                                           $"Encrypted runtime successfully written to: {generatedFilename}",
+                                           "Ok" );
+              Close();
+            }
+            else
+              m_generationError = AGXUnity.LicenseManager.LastOperationError ?? "Runtime activation file generation failed. Check the license details and that the build directory is writable.";
+          }
         }
       }
       EditorGUILayout.EndScrollView();
@@ -158,8 +180,8 @@ namespace AGXUnityEditor.Windows
     {
       var idGiven = int.TryParse( m_idPassword.Id, out var id ) && id > 0;
       var passwordGiven = !string.IsNullOrWhiteSpace( m_idPassword.Password );
-      var directoryValid = Directory.Exists( BuildDirectory );
-      var fileExist = File.Exists( ReferenceFileInBuildFull );
+      var directoryValid = m_android || Directory.Exists( BuildDirectory );
+      var fileExist = m_android || File.Exists( ReferenceFileInBuildFull );
       var canGenerate = !AGXUnity.LicenseManager.IsBusy && !EditorApplication.isPlayingOrWillChangePlaymode;
       if ( !canGenerate )
         toolTip += "Wait for license operations to finish and exit play mode before generating.\n";
@@ -187,6 +209,8 @@ namespace AGXUnityEditor.Windows
     private string m_buildDirectory = string.Empty;
     private string m_referenceFileInBuild = string.Empty;
     private string m_generationError;
+    [SerializeField]
+    private bool m_android;
     private Vector2 m_scroll;
   }
 }

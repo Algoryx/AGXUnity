@@ -1,9 +1,9 @@
-using UnityEditor;
+//using UnityEditor;
 
-namespace AGXUnityEditor.Editors
-{
-  [CustomEditor( typeof( AGXUnity.Sensor.LidarSurfaceMaterial ) )]
-  [CanEditMultipleObjects]
-  public class AGXUnitySensorLidarSurfaceMaterialEditor : InspectorEditor
-  { }
-}
+//namespace AGXUnityEditor.Editors
+//{
+//  [CustomEditor( typeof( AGXUnity.Sensor.LidarSurfaceMaterial ) )]
+//  [CanEditMultipleObjects]
+//  public class AGXUnitySensorLidarSurfaceMaterialEditor : InspectorEditor
+//  { }
+//}

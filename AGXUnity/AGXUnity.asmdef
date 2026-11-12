@@ -5,6 +5,7 @@
         "Unity.InputSystem"
     ],
     "includePlatforms": [
+        "Android",
         "Editor",
         "LinuxStandalone64",
         "WindowsStandalone64"

@@ -11,7 +11,9 @@ namespace AGXUnityEditor
   {
     static Type[] s_ignored =
     {
+#if AGXUNITY_HAS_SENSORS
       typeof(AGXUnity.Sensor.LidarSensor)
+#endif
     };
 
     static ScriptIconManager()

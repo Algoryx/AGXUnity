@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using agxSensor;
 using AGXUnity.Model;
 using UnityEngine;
@@ -353,9 +354,9 @@ namespace AGXUnity.Sensor
     }
 
     private static Encoder CreateNativeEncoderFromConstraint( agx.Constraint nativeConstraint,
-                                                             EncoderModel model,
-                                                             TwoDofSample sampleTwoDof,
-                                                             WheelJointSample sampleWheelJoint )
+                                                              EncoderModel model,
+                                                              TwoDofSample sampleTwoDof,
+                                                              WheelJointSample sampleWheelJoint )
     {
       if ( nativeConstraint == null || model == null )
         return null;
@@ -441,3 +442,4 @@ namespace AGXUnity.Sensor
     }
   }
 }
+#endif

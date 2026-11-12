@@ -90,17 +90,23 @@ namespace AGXUnityEditor.Build
     [PostProcessBuild( 16 )]
     private static void OnPostProcessBuild( BuildTarget target, string targetPathFilename )
     {
+      // Android ARM64 libraries are packaged by Unity's PluginImporter. The
+      // desktop copier assumes an executable_Data folder and Windows/Linux
+      // Components directories, which do not exist in an Android APK build.
+      if ( target == BuildTarget.Android )
+        return;
+
       if ( !EditorSettings.Instance.BuildPlayer_CopyBinaries )
         return;
 
-#if UNITY_2023_3_OR_NEWER
-      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
-#else
-      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
-#endif
-      if ( !hasMonoRuntime )
-        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
-                                                          "AGX Dynamics for Unity won't work in build." );
+      //#if UNITY_2023_3_OR_NEWER
+      //      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( UnityEditor.Build.NamedBuildTarget.Standalone ) == ScriptingImplementation.Mono2x;
+      //#else
+      //      var hasMonoRuntime = PlayerSettings.GetScriptingBackend( BuildTargetGroup.Standalone ) == ScriptingImplementation.Mono2x;
+      //#endif
+      //      if ( !hasMonoRuntime )
+      //        throw new UnityEditor.Build.BuildFailedException( "Incompatible .NET Runtime. " +
+      //                                                          "AGX Dynamics for Unity won't work in build." );
 
       var nativeIs64Bit = agx.agxSWIG.isBuiltWith( agx.BuildConfiguration.USE_64BIT_ARCHITECTURE );
       if ( !nativeIs64Bit ) {
@@ -116,11 +122,11 @@ namespace AGXUnityEditor.Build
         target == BuildTarget.StandaloneLinux64;
 #endif
 
-      if ( !isValidTarget ) {
-        Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +
-                          $"Unsupported standalone build target {target.ToString().Color( Color.red )}." );
-        return;
-      }
+      //if ( !isValidTarget ) {
+      //  Debug.LogWarning( "AGXUnity: ".Color( Color.yellow ) +
+      //                    $"Unsupported standalone build target {target.ToString().Color( Color.red )}." );
+      //  return;
+      //}
 
       PostBuild( target, targetPathFilename );
     }

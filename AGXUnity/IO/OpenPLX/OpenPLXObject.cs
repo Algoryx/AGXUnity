@@ -1,7 +1,9 @@
 using AGXUnity.Collide;
 using AGXUnity.Model;
-using AGXUnity.Sensor;
 using AGXUnity.Utils;
+#if AGXUNITY_HAS_SENSORS
+using AGXUnity.Sensors;
+#endif
 using System.Collections.Generic;
 using UnityEngine;
 using Interactions = openplx.Physics3D.Interactions;
@@ -74,7 +76,9 @@ namespace AGXUnity.IO.OpenPLX
         openplx.Physics3D.Bodies.RigidBody => gameObject.GetInitializedComponent<RigidBody>().Native,
         openplx.Terrain.Terrain => gameObject.GetInitializedComponent<MovableTerrain>().Native,
         openplx.Terrain.Shovel => gameObject.GetInitializedComponent<DeformableTerrainShovel>().Native,
+#if AGXUNITY_HAS_SENSORS
         openplx.Sensors.SensorLogic => gameObject.GetInitializedComponent<LidarSensor>().Native,
+#endif
         openplx.Vehicles.Steering.Kinematic.Base => gameObject.GetInitializedComponent<Steering>().Native,
         openplx.Vehicles.Steering.Kinematic.Interactions.Base => gameObject.GetInitializedComponent<Steering>().Native,
         openplx.Vehicles.Suspensions.SingleMate.Base => gameObject.GetInitializedComponent<WheelJoint>().Native,

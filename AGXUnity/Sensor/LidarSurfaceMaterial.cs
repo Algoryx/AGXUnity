@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using agxSensor;
 using AGXUnity.Collide;
 using AGXUnity.Model;
@@ -69,3 +70,4 @@ namespace AGXUnity.Sensor
     }
   }
 }
+#endif

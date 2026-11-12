@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using System;
 using UnityEngine;
 
@@ -102,3 +103,4 @@ namespace AGXUnity.Sensor
     }
   }
 }
+#endif

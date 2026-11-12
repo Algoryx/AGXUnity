@@ -2,7 +2,9 @@ using AGXUnity;
 using AGXUnity.IO;
 using AGXUnity.IO.OpenPLX;
 using AGXUnity.Model;
+#if AGXUNITY_HAS_SENSORS
 using AGXUnity.Sensor;
+#endif
 using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
@@ -660,6 +662,7 @@ namespace AGXUnityTesting.Runtime
       Assert.That( terrain.GetSoilSimulationInterface().getNumSoilParticles(), Is.GreaterThan( 0 ), "After some time, the shovel should have dug up some particles" );
     }
 
+#if AGXUNITY_HAS_SENSORS
     [Test]
     public void TestValidLidarOK()
     {
@@ -672,6 +675,7 @@ namespace AGXUnityTesting.Runtime
       Assert.That( lidar.DistanceGaussianNoise.StandardDeviationBase, Is.EqualTo( 0.01f ) );
       Assert.That( lidar.DistanceGaussianNoise.StandardDeviationSlope, Is.EqualTo( 0.02f ) );
     }
+#endif
 
     [Test]
     public void TestDoubleDistanceDistortionLidarError()

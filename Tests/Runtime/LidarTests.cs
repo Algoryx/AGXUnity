@@ -1,3 +1,4 @@
+#if AGXUNITY_HAS_SENSORS
 using AGXUnity;
 using AGXUnity.Collide;
 using AGXUnity.Rendering;
@@ -1088,3 +1089,4 @@ namespace AGXUnityTesting.Runtime
     }
   }
 }
+#endif
