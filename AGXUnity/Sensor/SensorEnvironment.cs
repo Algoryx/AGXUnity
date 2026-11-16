@@ -492,9 +492,8 @@ namespace AGXUnity.Sensor
       // Default material
       if ( DefaultSurfaceMaterial != null )
         m_internalDefaultMaterial = DefaultSurfaceMaterial.GetInitialized<LidarSurfaceMaterialDefinition>().GetRtMaterial();
-      else
-      {
-        m_ownsInternalDefaultMaterial = true;  
+      else {
+        m_ownsInternalDefaultMaterial = true;
         m_internalDefaultMaterial = RtLambertianOpaqueMaterial.create();
       }
 
