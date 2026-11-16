@@ -3,6 +3,7 @@ using AGXUnity.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 namespace AGXUnity.Rendering
 {
