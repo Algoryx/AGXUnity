@@ -86,9 +86,9 @@ namespace AGXUnity.Model
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
       Terrain.terrainData = Instantiate( Terrain.terrainData );
-      if (gameObject.TryGetComponent<TerrainCollider>(out var collider)) {
+      if ( gameObject.TryGetComponent<TerrainCollider>( out var collider ) )
         collider.terrainData = Terrain.terrainData;
-      } else {
+      else {
         var temporaryCollider = gameObject.AddComponent<TerrainCollider>();
         temporaryCollider.terrainData = Terrain.terrainData;
         temporaryCollider.enabled = false;
