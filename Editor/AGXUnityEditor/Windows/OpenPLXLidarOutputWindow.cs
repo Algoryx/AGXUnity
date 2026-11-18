@@ -33,12 +33,22 @@ namespace AGXUnityEditor.Windows
     private long m_displayRead;
     private long m_frozenRead;
     private Vector2 m_scroll;
+    private Vector2 m_pageScroll;
+    private Vector2 m_fieldsScroll;
     private string m_fieldFilter = string.Empty;
     private string m_message = string.Empty;
     private int m_page;
     private int m_rowsPerPage = 25;
     private bool m_showFields = true;
     private bool m_showGizmoSettings;
+    private GUIStyle m_pageStyle;
+    private GUIStyle m_panelStyle;
+    private GUIStyle m_cellStyle;
+    private GUIStyle m_headerStyle;
+    private GUIStyle m_numberStyle;
+    private const float TableRowHeight = 22;
+    private const float IndexColumnWidth = 64;
+    private const float ValueColumnWidth = 170;
 
     [MenuItem( "AGXUnity/OpenPLX/Lidar Output Viewer" )]
     public static void Open()
@@ -101,147 +111,255 @@ namespace AGXUnityEditor.Windows
 
     private void OnGUI()
     {
-      EditorGUILayout.LabelField( "OpenPLX lidar outputs", EditorStyles.boldLabel );
-      EditorGUILayout.LabelField( "Browse the fields and sample window of a lidar output in your imported scene.", EditorStyles.wordWrappedLabel );
-      EditorGUILayout.BeginHorizontal();
-      EditorGUI.BeginChangeCheck();
-      var signals = (OpenPLXSignals)EditorGUILayout.ObjectField( "OpenPLX root", m_signals, typeof( OpenPLXSignals ), true );
-      if ( EditorGUI.EndChangeCheck() ) {
-        Disconnect();
-        m_signals = signals;
-        m_outputIndex = 0;
-      }
-      if ( GUILayout.Button( "Use selection", GUILayout.Width( 100 ) ) )
-        UseSelection();
-      EditorGUILayout.EndHorizontal();
-      if ( m_signals == null ) {
-        if ( m_reader != null || m_connecting )
-          Disconnect();
-        EditorGUILayout.HelpBox( "Select an imported OpenPLX scene instance containing OpenPLXSignals.", MessageType.Info );
-        return;
-      }
-
-      var outputs = m_signals.Outputs.Where( IsLidarOutput ).ToArray();
-      if ( outputs.Length == 0 ) {
-        if ( m_reader != null || m_connecting )
-          Disconnect();
-        EditorGUILayout.HelpBox( "No lidar outputs were found under this OpenPLX root. Declare a Sensors.Signals.LidarOutput in the model and reimport it.", MessageType.Info );
-        return;
-      }
-      m_outputIndex = Mathf.Clamp( m_outputIndex, 0, outputs.Length - 1 );
-      EditorGUI.BeginChangeCheck();
-      var outputIndex = EditorGUILayout.Popup( "Lidar output", m_outputIndex, outputs.Select( value => value.Name ).ToArray() );
-      if ( EditorGUI.EndChangeCheck() ) {
-        Disconnect();
-        m_outputIndex = outputIndex;
-      }
-
-      EditorGUILayout.BeginHorizontal();
-      using ( new EditorGUI.DisabledScope( !Application.isPlaying || !m_signals.gameObject.scene.IsValid() ) ) {
-        if ( GUILayout.Button( m_reader == null && !m_connecting ? "Connect" : "Reconnect" ) )
-          Connect( outputs[ m_outputIndex ] );
-        using ( new EditorGUI.DisabledScope( m_reader == null ) ) {
-          if ( GUILayout.Button( "Read now" ) )
-            ReadNow();
+      EnsureStyles();
+      var oldLabelWidth = EditorGUIUtility.labelWidth;
+      var oldFieldWidth = EditorGUIUtility.fieldWidth;
+      var oldWideMode = EditorGUIUtility.wideMode;
+      var oldIndent = EditorGUI.indentLevel;
+      try {
+        EditorGUIUtility.labelWidth = 150;
+        EditorGUIUtility.fieldWidth = 60;
+        EditorGUIUtility.wideMode = true;
+        EditorGUI.indentLevel = 0;
+        using ( var page = new EditorGUILayout.ScrollViewScope( m_pageScroll ) ) {
+          m_pageScroll = page.scrollPosition;
+          using ( new EditorGUILayout.VerticalScope( m_pageStyle ) )
+            DrawContents();
         }
-        using ( new EditorGUI.DisabledScope( m_reader == null && !m_connecting ) ) {
-          if ( GUILayout.Button( "Disconnect" ) )
+      }
+      finally {
+        EditorGUIUtility.labelWidth = oldLabelWidth;
+        EditorGUIUtility.fieldWidth = oldFieldWidth;
+        EditorGUIUtility.wideMode = oldWideMode;
+        EditorGUI.indentLevel = oldIndent;
+      }
+    }
+
+    private void EnsureStyles()
+    {
+      if ( m_panelStyle != null )
+        return;
+      m_pageStyle = new GUIStyle { padding = new RectOffset( 8, 8, 8, 8 ) };
+      m_panelStyle = new GUIStyle( EditorStyles.helpBox ) {
+        padding = new RectOffset( 10, 10, 8, 8 ), margin = new RectOffset( 0, 0, 0, 8 )
+      };
+      m_cellStyle = new GUIStyle( EditorStyles.label ) {
+        clipping = TextClipping.Clip, alignment = TextAnchor.MiddleLeft,
+        padding = new RectOffset( 6, 6, 2, 2 )
+      };
+      m_headerStyle = new GUIStyle( m_cellStyle ) { fontStyle = FontStyle.Bold };
+      m_numberStyle = new GUIStyle( m_cellStyle ) { alignment = TextAnchor.MiddleRight };
+    }
+
+    private void DrawContents()
+    {
+      GUILayout.Label( "OpenPLX lidar outputs", EditorStyles.boldLabel );
+      GUILayout.Label( "Browse the fields and sample window of a lidar output in your imported scene.", EditorStyles.wordWrappedLabel );
+      EditorGUILayout.Space( 8 );
+
+      using ( new EditorGUILayout.VerticalScope( m_panelStyle ) ) {
+        GUILayout.Label( "Source", EditorStyles.boldLabel );
+        EditorGUI.BeginChangeCheck();
+        var signals = (OpenPLXSignals)EditorGUILayout.ObjectField( "OpenPLX root", m_signals, typeof( OpenPLXSignals ), true );
+        if ( EditorGUI.EndChangeCheck() ) {
+          Disconnect();
+          m_signals = signals;
+          m_outputIndex = 0;
+        }
+        using ( new EditorGUILayout.HorizontalScope() ) {
+          GUILayout.FlexibleSpace();
+          if ( GUILayout.Button( "Use selection", GUILayout.Width( 120 ) ) )
+            UseSelection();
+        }
+        if ( m_signals == null ) {
+          if ( m_reader != null || m_connecting )
             Disconnect();
+          EditorGUILayout.HelpBox( "Select an imported OpenPLX scene instance containing OpenPLXSignals.", MessageType.Info );
+          return;
         }
-      }
-      EditorGUILayout.EndHorizontal();
-      if ( !Application.isPlaying ) {
-        EditorGUILayout.HelpBox( "Enter Play Mode, then Connect to read the selected output. Reading and gizmos stop when the window is closed.", MessageType.Info );
-        return;
-      }
-      if ( !string.IsNullOrEmpty( m_message ) )
-        EditorGUILayout.HelpBox( m_message, MessageType.Info );
-      if ( m_reader == null )
-        return;
-      var live = m_reader.Frame;
 
-      // Keep the rows and values stable between IMGUI's Layout/Repaint events,
-      // even when simulation steps resize or overwrite the live window.
+        var outputs = m_signals.Outputs.Where( IsLidarOutput ).ToArray();
+        if ( outputs.Length == 0 ) {
+          if ( m_reader != null || m_connecting )
+            Disconnect();
+          EditorGUILayout.HelpBox( "No lidar outputs were found under this OpenPLX root. Declare a Sensors.Signals.LidarOutput in the model and reimport it.", MessageType.Info );
+          return;
+        }
+        EditorGUILayout.Space( 4 );
+        m_outputIndex = Mathf.Clamp( m_outputIndex, 0, outputs.Length - 1 );
+        EditorGUI.BeginChangeCheck();
+        var outputIndex = EditorGUILayout.Popup( "Lidar output", m_outputIndex, outputs.Select( value => value.Name ).ToArray() );
+        if ( EditorGUI.EndChangeCheck() ) {
+          Disconnect();
+          m_outputIndex = outputIndex;
+        }
+
+        EditorGUILayout.Space( 6 );
+        using ( new EditorGUILayout.HorizontalScope() )
+        using ( new EditorGUI.DisabledScope( !Application.isPlaying || !m_signals.gameObject.scene.IsValid() ) ) {
+          if ( GUILayout.Button( m_reader == null && !m_connecting ? "Connect" : "Reconnect", GUILayout.Height( 24 ) ) )
+            Connect( outputs[ m_outputIndex ] );
+          using ( new EditorGUI.DisabledScope( m_reader == null ) ) {
+            if ( GUILayout.Button( "Read now", GUILayout.Height( 24 ) ) )
+              ReadNow();
+          }
+          using ( new EditorGUI.DisabledScope( m_reader == null && !m_connecting ) ) {
+            if ( GUILayout.Button( "Disconnect", GUILayout.Height( 24 ) ) )
+              Disconnect();
+          }
+        }
+        if ( !Application.isPlaying )
+          EditorGUILayout.HelpBox( "Enter Play Mode, then Connect to read the selected output. Reading and gizmos stop when the window is closed.", MessageType.Info );
+        else if ( !string.IsNullOrEmpty( m_message ) )
+          EditorGUILayout.HelpBox( m_message, MessageType.Info );
+      }
+      if ( !Application.isPlaying || m_reader == null )
+        return;
+
+      // Hold the displayed rows stable between IMGUI's Layout/Repaint events.
       if ( m_displayWindow == null || Event.current.type == EventType.Layout ) {
-        m_displayWindow = m_frozenWindow ?? live.Copy();
+        m_displayWindow = m_frozenWindow ?? m_reader.Frame.Copy();
         m_displayRead = m_frozenWindow != null ? m_frozenRead : m_readCount;
       }
-      DrawGizmoControls();
-      EditorGUILayout.BeginHorizontal();
-      if ( GUILayout.Button( m_frozenWindow == null ? "Freeze table" : "Resume live table", GUILayout.Width( 150 ) ) ) {
-        m_frozenWindow = m_frozenWindow == null ? m_displayWindow : null;
-        m_frozenRead = m_displayRead;
-      }
-      EditorGUILayout.LabelField( m_frozenWindow == null ? $"Live read {m_displayRead}" : $"Frozen read {m_frozenRead}; gizmos remain live" );
-      EditorGUILayout.EndHorizontal();
       var frame = m_displayWindow;
-      EditorGUILayout.LabelField( $"{frame.ArrayPath}[{frame.SampleCount}]   ·   {frame.Fields.Count} scalar fields   ·   {frame.RecordSize} bytes per sample" );
-      m_showFields = EditorGUILayout.Foldout( m_showFields, "Fields exposed by this output", true );
-      if ( m_showFields ) {
-        EditorGUILayout.LabelField( string.Join( ", ", frame.Fields.Select( field => field.Path + " (" + field.Type + ")" ) ), EditorStyles.wordWrappedLabel );
+      using ( new EditorGUILayout.VerticalScope( m_panelStyle ) ) {
+        GUILayout.Label( "Sample window", EditorStyles.boldLabel );
+        EditorGUILayout.LabelField( "Array", frame.ArrayPath );
+        EditorGUILayout.LabelField( "Samples", frame.SampleCount.ToString( "N0", CultureInfo.InvariantCulture ) );
+        EditorGUILayout.LabelField( "Fields per sample", frame.Fields.Count.ToString() );
+        EditorGUILayout.LabelField( "Bytes per sample", frame.RecordSize.ToString() );
+        EditorGUILayout.Space( 4 );
+        if ( GUILayout.Button( m_frozenWindow == null ? "Freeze table" : "Resume live table", GUILayout.Height( 24 ) ) ) {
+          m_frozenWindow = m_frozenWindow == null ? m_displayWindow : null;
+          m_frozenRead = m_displayRead;
+        }
+        GUILayout.Label( m_frozenWindow == null ? $"Live read {m_displayRead}" : $"Frozen read {m_frozenRead}. Point display remains live.",
+                         EditorStyles.wordWrappedLabel );
       }
+      DrawGizmoControls();
+      DrawFields( frame );
       DrawWindowValues( frame );
     }
 
     private void DrawGizmoControls()
     {
-      EditorGUI.BeginChangeCheck();
-      m_drawPoints = EditorGUILayout.Toggle( "Show 3D positions as gizmos", m_drawPoints );
-      m_showGizmoSettings = EditorGUILayout.Foldout( m_showGizmoSettings, "Gizmo appearance", true );
-      if ( m_showGizmoSettings ) {
-        m_maxPoints = Math.Max( 1, EditorGUILayout.IntField( "Maximum drawn points", m_maxPoints ) );
-        m_pointRadius = Mathf.Max( 0.001f, EditorGUILayout.FloatField( "Point radius", m_pointRadius ) );
-        m_pointColor = EditorGUILayout.ColorField( "Color", m_pointColor );
+      using ( new EditorGUILayout.VerticalScope( m_panelStyle ) ) {
+        GUILayout.Label( "Point display", EditorStyles.boldLabel );
+        EditorGUI.BeginChangeCheck();
+        m_drawPoints = EditorGUILayout.Toggle( "Draw 3D positions", m_drawPoints );
+        m_showGizmoSettings = EditorGUILayout.Foldout( m_showGizmoSettings, "Appearance", true );
+        if ( m_showGizmoSettings ) {
+          m_maxPoints = Math.Max( 1, EditorGUILayout.IntField( "Maximum drawn points", m_maxPoints ) );
+          m_pointRadius = Mathf.Max( 0.001f, EditorGUILayout.FloatField( "Point radius", m_pointRadius ) );
+          m_pointColor = EditorGUILayout.ColorField( "Color", m_pointColor );
+        }
+        if ( EditorGUI.EndChangeCheck() ) {
+          UpdatePoints( m_reader.Frame );
+          SceneView.RepaintAll();
+        }
+        if ( !string.IsNullOrEmpty( m_gizmoStatus ) )
+          EditorGUILayout.HelpBox( m_gizmoStatus, MessageType.Info );
       }
-      if ( EditorGUI.EndChangeCheck() ) {
-        UpdatePoints( m_reader.Frame );
-        SceneView.RepaintAll();
+    }
+
+    private void DrawFields( LidarSignalFrame frame )
+    {
+      using ( new EditorGUILayout.VerticalScope( m_panelStyle ) ) {
+        m_showFields = EditorGUILayout.Foldout( m_showFields, $"Output fields ({frame.Fields.Count})", true );
+        if ( !m_showFields )
+          return;
+        using ( var scroll = new EditorGUILayout.ScrollViewScope( m_fieldsScroll, GUILayout.Height( Mathf.Min( 200, ( frame.Fields.Count + 1 ) * TableRowHeight + 4 ) ) ) ) {
+          m_fieldsScroll = scroll.scrollPosition;
+          var table = GUILayoutUtility.GetRect( 300, ( frame.Fields.Count + 1 ) * TableRowHeight, GUILayout.ExpandWidth( true ) );
+          var fieldWidth = table.width - 170;
+          for ( int row = 0; row <= frame.Fields.Count; ++row ) {
+            var rect = new Rect( table.x, table.y + row * TableRowHeight, table.width, TableRowHeight );
+            DrawTableRowBackground( rect, row );
+            if ( row == 0 ) {
+              GUI.Label( Cell( rect, 0, fieldWidth ), "Field", m_headerStyle );
+              GUI.Label( Cell( rect, fieldWidth, 110 ), "Type", m_headerStyle );
+              GUI.Label( Cell( rect, fieldWidth + 110, 60 ), "Bytes", m_headerStyle );
+            }
+            else {
+              var field = frame.Fields[ row - 1 ];
+              GUI.Label( Cell( rect, 0, fieldWidth ), new GUIContent( field.Path, field.Path ), m_cellStyle );
+              GUI.Label( Cell( rect, fieldWidth, 110 ), field.Type.ToString(), m_cellStyle );
+              GUI.Label( Cell( rect, fieldWidth + 110, 60 ), field.ByteSize.ToString(), m_numberStyle );
+            }
+          }
+        }
       }
-      if ( !string.IsNullOrEmpty( m_gizmoStatus ) )
-        EditorGUILayout.LabelField( m_gizmoStatus, EditorStyles.wordWrappedLabel );
     }
 
     private void DrawWindowValues( LidarSignalFrame frame )
     {
-      EditorGUILayout.Space();
-      EditorGUILayout.LabelField( "Window values", EditorStyles.boldLabel );
-      m_fieldFilter = EditorGUILayout.TextField( "Filter fields", m_fieldFilter );
-      var fields = frame.Fields.Where( field => string.IsNullOrEmpty( m_fieldFilter ) ||
-                                               field.Path.IndexOf( m_fieldFilter, StringComparison.OrdinalIgnoreCase ) >= 0 ).ToArray();
-      EditorGUILayout.BeginHorizontal();
-      m_rowsPerPage = EditorGUILayout.IntPopup( "Rows per page", m_rowsPerPage, new[] { "25", "50", "100" }, new[] { 25, 50, 100 } );
-      var pages = Math.Max( 1, (int)( ( (long)frame.SampleCount + m_rowsPerPage - 1 ) / m_rowsPerPage ) );
-      m_page = Mathf.Clamp( m_page, 0, pages - 1 );
-      using ( new EditorGUI.DisabledScope( m_page == 0 ) )
-        if ( GUILayout.Button( "<", GUILayout.Width( 28 ) ) )
-          --m_page;
-      m_page = Mathf.Clamp( EditorGUILayout.IntField( m_page + 1, GUILayout.Width( 48 ) ) - 1, 0, pages - 1 );
-      GUILayout.Label( $"/ {pages}" );
-      using ( new EditorGUI.DisabledScope( m_page >= pages - 1 ) )
-        if ( GUILayout.Button( ">", GUILayout.Width( 28 ) ) )
-          ++m_page;
-      EditorGUILayout.EndHorizontal();
-      if ( frame.SampleCount == 0 ) {
-        EditorGUILayout.HelpBox( "This window is empty. Field information remains available.", MessageType.Info );
-        return;
-      }
+      using ( new EditorGUILayout.VerticalScope( m_panelStyle ) ) {
+        GUILayout.Label( "Window values", EditorStyles.boldLabel );
+        m_fieldFilter = EditorGUILayout.TextField( "Filter fields", m_fieldFilter );
+        m_rowsPerPage = EditorGUILayout.IntPopup( "Rows per page", m_rowsPerPage, new[] { "25", "50", "100" }, new[] { 25, 50, 100 } );
+        var fields = frame.Fields.Where( field => string.IsNullOrEmpty( m_fieldFilter ) ||
+                                                 field.Path.IndexOf( m_fieldFilter, StringComparison.OrdinalIgnoreCase ) >= 0 ).ToArray();
+        var pages = Math.Max( 1, (int)( ( (long)frame.SampleCount + m_rowsPerPage - 1 ) / m_rowsPerPage ) );
+        m_page = Mathf.Clamp( m_page, 0, pages - 1 );
+        EditorGUILayout.Space( 4 );
+        using ( new EditorGUILayout.HorizontalScope() ) {
+          GUILayout.FlexibleSpace();
+          using ( new EditorGUI.DisabledScope( m_page == 0 ) )
+            if ( GUILayout.Button( "Previous", GUILayout.Width( 70 ) ) )
+              --m_page;
+          GUILayout.Label( "Page", GUILayout.Width( 34 ) );
+          m_page = Mathf.Clamp( EditorGUILayout.IntField( m_page + 1, GUILayout.Width( 60 ) ) - 1, 0, pages - 1 );
+          GUILayout.Label( $"of {pages}", GUILayout.Width( 80 ) );
+          using ( new EditorGUI.DisabledScope( m_page >= pages - 1 ) )
+            if ( GUILayout.Button( "Next", GUILayout.Width( 70 ) ) )
+              ++m_page;
+          GUILayout.FlexibleSpace();
+        }
+        EditorGUILayout.Space( 4 );
+        if ( frame.SampleCount == 0 ) {
+          EditorGUILayout.HelpBox( "This window is empty. Field information remains available.", MessageType.Info );
+          return;
+        }
+        if ( fields.Length == 0 ) {
+          EditorGUILayout.HelpBox( "No fields match the filter.", MessageType.Info );
+          return;
+        }
 
-      m_scroll = EditorGUILayout.BeginScrollView( m_scroll );
-      EditorGUILayout.BeginHorizontal();
-      GUILayout.Label( "Index", EditorStyles.boldLabel, GUILayout.Width( 65 ) );
-      foreach ( var field in fields )
-        GUILayout.Label( new GUIContent( field.Path, field.ToString() ), EditorStyles.boldLabel, GUILayout.Width( 150 ) );
-      EditorGUILayout.EndHorizontal();
-      var end = (int)Math.Min( frame.SampleCount, (long)( m_page + 1 ) * m_rowsPerPage );
-      for ( int row = m_page * m_rowsPerPage; row < end; ++row ) {
-        EditorGUILayout.BeginHorizontal();
-        GUILayout.Label( row.ToString(), GUILayout.Width( 65 ) );
-        foreach ( var field in fields )
-          EditorGUILayout.SelectableLabel( Convert.ToString( frame.GetValue( row, field.Path ), CultureInfo.InvariantCulture ),
-                                          GUILayout.Width( 150 ), GUILayout.Height( EditorGUIUtility.singleLineHeight ) );
-        EditorGUILayout.EndHorizontal();
+        using ( var scroll = new EditorGUILayout.ScrollViewScope( m_scroll, GUILayout.Height( Mathf.Clamp( position.height * 0.45f, 180, 360 ) ) ) ) {
+          m_scroll = scroll.scrollPosition;
+          var start = m_page * m_rowsPerPage;
+          var end = (int)Math.Min( frame.SampleCount, (long)( m_page + 1 ) * m_rowsPerPage );
+          var table = GUILayoutUtility.GetRect( IndexColumnWidth + fields.Length * ValueColumnWidth,
+                                                ( end - start + 1 ) * TableRowHeight, GUILayout.ExpandWidth( true ) );
+          var header = new Rect( table.x, table.y, table.width, TableRowHeight );
+          DrawTableRowBackground( header, 0 );
+          GUI.Label( Cell( header, 0, IndexColumnWidth ), "Index", m_headerStyle );
+          for ( int column = 0; column < fields.Length; ++column )
+            GUI.Label( Cell( header, IndexColumnWidth + column * ValueColumnWidth, ValueColumnWidth ),
+                       new GUIContent( fields[ column ].Path, fields[ column ].ToString() ), m_headerStyle );
+
+          for ( int row = start; row < end; ++row ) {
+            var rect = new Rect( table.x, table.y + ( row - start + 1 ) * TableRowHeight, table.width, TableRowHeight );
+            DrawTableRowBackground( rect, row - start + 1 );
+            GUI.Label( Cell( rect, 0, IndexColumnWidth ), row.ToString(), m_numberStyle );
+            for ( int column = 0; column < fields.Length; ++column )
+              EditorGUI.SelectableLabel( Cell( rect, IndexColumnWidth + column * ValueColumnWidth, ValueColumnWidth ),
+                                         Convert.ToString( frame.GetValue( row, fields[ column ].Path ), CultureInfo.InvariantCulture ), m_numberStyle );
+          }
+        }
       }
-      EditorGUILayout.EndScrollView();
+    }
+
+    private static Rect Cell( Rect row, float offset, float width )
+      => new Rect( row.x + offset + 1, row.y + 1, width - 2, row.height - 2 );
+
+    private static void DrawTableRowBackground( Rect rect, int row )
+    {
+      var dark = EditorGUIUtility.isProSkin;
+      var color = row == 0 ? new Color( 0, 0, 0, dark ? 0.3f : 0.12f ) :
+                  row % 2 == 0 ? new Color( 0, 0, 0, dark ? 0.12f : 0.04f ) :
+                                 new Color( 1, 1, 1, dark ? 0.035f : 0.3f );
+      EditorGUI.DrawRect( rect, color );
     }
 
     private void Connect( OutputSource output )
