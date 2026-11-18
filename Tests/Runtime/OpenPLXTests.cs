@@ -6,6 +6,7 @@ using AGXUnity.Sensor;
 using AGXUnity.Utils;
 using NUnit.Framework;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -19,6 +20,25 @@ namespace AGXUnityTesting.Runtime
   [TestFixture]
   public class OpenPLXTests : AGXUnityFixture
   {
+    private List<string> m_originalAdditionalBundleDirs;
+
+    [SetUp]
+    public void IsolateAdditionalBundleDirectories()
+    {
+      // Imports in this fixture must use repository test resources, regardless
+      // of which optional examples or user bundles are configured in the editor.
+      m_originalAdditionalBundleDirs = OpenPLXSettings.Instance.AdditionalBundleDirs;
+      OpenPLXSettings.Instance.AdditionalBundleDirs = new List<string>();
+    }
+
+    [TearDown]
+    public void RestoreAdditionalBundleDirectories()
+    {
+      // Restore the original list, discarding directories added by tests such
+      // as TestBundleDirectory. These temporary settings are never saved.
+      OpenPLXSettings.Instance.AdditionalBundleDirs = m_originalAdditionalBundleDirs;
+    }
+
     private string TestDataFolder => "Assets/AGXUnity/Tests/Runtime/Test Resources";
     private T FindComponentByName<T>( string name ) where T : MonoBehaviour
     {
@@ -477,6 +497,11 @@ namespace AGXUnityTesting.Runtime
         Assert.That( sensor, Is.Not.Null );
         var sweep = sensor.ModelData as GenericSweepData;
         Assert.That( sweep, Is.Not.Null );
+        Assert.That( sweep.ResolutionMode, Is.EqualTo( GenericSweepData.ResolutionModes.TotalPoints ) );
+        Assert.That( sweep.HorizontalResolutionTotal, Is.EqualTo( 180 ),
+                     "Import the OpenPLX horizontal resolution as a point count." );
+        Assert.That( sweep.VerticalResolutionTotal, Is.EqualTo( 5 ),
+                     "Import the OpenPLX vertical resolution as a point count." );
         sensor.RemoveRayMisses = false;
         sweep.Frequency = scansPerStep / (float)Simulation.Instance.TimeStep;
 
@@ -493,9 +518,10 @@ namespace AGXUnityTesting.Runtime
           yield return TestUtils.Step();
           var samples = output.Read();
           sizes.Add( samples.Length );
+          Assert.That( samples.Length, Is.LessThanOrEqualTo( raysPerScan ),
+                       "The scan must fit the imported lidar resolution before reusing the destination." );
           Assert.That( output.ReadInto( reused ), Is.EqualTo( samples.Length ),
                        "ReadInto must use the current scan size." );
-          Assert.That( samples.Length, Is.LessThanOrEqualTo( raysPerScan ) );
         }
 
         Assert.That( sizes.Max(), Is.GreaterThan( 0 ), "The imported lidar must produce samples." );
