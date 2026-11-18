@@ -9,7 +9,8 @@ namespace AGXUnityTesting.Runtime
   public class LidarSignalFrameTests
   {
     private static SignalLayout ArrayLayout( int count, int stride, params SignalField[] fields )
-      => new SignalLayout {
+      => new SignalLayout
+      {
         BufferSize = count * stride,
         Children = new Dictionary<string, SignalLayout> {
           { "window", new SignalLayout {
@@ -27,8 +28,11 @@ namespace AGXUnityTesting.Runtime
       var window = layout.Children[ "window" ];
       window.Offset = 8;
       layout.BufferSize += 8;
-      window.Children.Add( "position3d", new SignalLayout {
-        Offset = 8, BufferSize = 12, Stride = 24,
+      window.Children.Add( "position3d", new SignalLayout
+      {
+        Offset = 8,
+        BufferSize = 12,
+        Stride = 24,
         Fields = new[] { new SignalField( "x", openplx.FieldType.Real, 4 ),
                          new SignalField( "y", openplx.FieldType.Real, 4, 4 ),
                          new SignalField( "z", openplx.FieldType.Real, 4, 8 ) }
@@ -75,13 +79,13 @@ namespace AGXUnityTesting.Runtime
                                       new SignalField( "normal.y", openplx.FieldType.Real, 4, 4 ),
                                       new SignalField( "normal.z", openplx.FieldType.Real, 4, 8 ) );
       var frame = new LidarSignalFrame();
-      frame.Update( layout, new byte[12] );
+      frame.Update( layout, new byte[ 12 ] );
       Assert.That( frame.FindPositionField(), Is.Null );
       layout.Children[ "window" ].Fields = new[] {
         new SignalField( "hit.position3d.z", openplx.FieldType.Real, 4, 8 ),
         new SignalField( "hit.position3d.x", openplx.FieldType.Real, 4 ),
         new SignalField( "hit.position3d.y", openplx.FieldType.Real, 4, 4 ) };
-      frame.Update( layout, new byte[12] );
+      frame.Update( layout, new byte[ 12 ] );
       Assert.That( frame.FindPositionField(), Is.EqualTo( "hit.position3d" ) );
     }
 
@@ -90,7 +94,7 @@ namespace AGXUnityTesting.Runtime
     {
       var frame = new LidarSignalFrame();
       var field = new SignalField( "distance", openplx.FieldType.Real, 4 );
-      frame.Update( ArrayLayout( 2, 4, field ), new byte[8] );
+      frame.Update( ArrayLayout( 2, 4, field ), new byte[ 8 ] );
       var version = frame.SchemaVersion;
       var descriptor = frame.FindField( "distance" );
       frame.Update( ArrayLayout( 0, 4, field ), Array.Empty<byte>() );
@@ -108,7 +112,7 @@ namespace AGXUnityTesting.Runtime
     public void AdaptsToAReorderedLayoutAndRejectsOldFieldDescriptors()
     {
       var frame = new LidarSignalFrame();
-      frame.Update( ArrayLayout( 1, 4, new SignalField( "distance", openplx.FieldType.Real, 4 ) ), new byte[4] );
+      frame.Update( ArrayLayout( 1, 4, new SignalField( "distance", openplx.FieldType.Real, 4 ) ), new byte[ 4 ] );
       var previous = frame.FindField( "distance" );
       var version = frame.SchemaVersion;
       var bytes = new byte[12];
@@ -145,14 +149,14 @@ namespace AGXUnityTesting.Runtime
     {
       var frame = new LidarSignalFrame();
       Assert.Throws<ArgumentException>( () => frame.Update(
-        ArrayLayout( 1, 4, new SignalField( "distance", openplx.FieldType.Real, 4, 1 ) ), new byte[4] ) );
+        ArrayLayout( 1, 4, new SignalField( "distance", openplx.FieldType.Real, 4, 1 ) ), new byte[ 4 ] ) );
       Assert.Throws<NotSupportedException>( () => frame.Update(
-        ArrayLayout( 1, 3, new SignalField( "distance", openplx.FieldType.Real, 3 ) ), new byte[3] ) );
+        ArrayLayout( 1, 3, new SignalField( "distance", openplx.FieldType.Real, 3 ) ), new byte[ 3 ] ) );
       Assert.Throws<ArgumentException>( () => frame.Update(
-        ArrayLayout( 2, 4, new SignalField( "distance", openplx.FieldType.Real, 4 ) ), new byte[4] ) );
+        ArrayLayout( 2, 4, new SignalField( "distance", openplx.FieldType.Real, 4 ) ), new byte[ 4 ] ) );
       var multiple = ArrayLayout( 1, 4, new SignalField( "x", openplx.FieldType.Real, 4 ) );
       multiple.Children.Add( "other", multiple.Children[ "window" ] );
-      Assert.Throws<NotSupportedException>( () => frame.Update( multiple, new byte[4] ) );
+      Assert.Throws<NotSupportedException>( () => frame.Update( multiple, new byte[ 4 ] ) );
     }
 
     [Test, Category( "Native" )]
@@ -185,7 +189,7 @@ namespace AGXUnityTesting.Runtime
           Buffer.BlockCopy( new[] { 2.0f, 3.0f, 5.0f }, 0, bytes, 0, 12 );
           marshalling.CopyBufferFrom( bytes, 0 );
           frame.ReadFrom( marshalling );
-          marshalling.CopyBufferFrom( new byte[12], 0 );
+          marshalling.CopyBufferFrom( new byte[ 12 ], 0 );
         }
       }
       Assert.That( frame.SampleCount, Is.EqualTo( 3 ) );

@@ -63,10 +63,16 @@ namespace AGXUnity.IO.OpenPLX
     /// <summary>Returns an independent snapshot for inspecting a window while live sampling continues.</summary>
     public LidarSignalFrame Copy()
     {
-      var snapshot = new LidarSignalFrame {
-        SampleCount = SampleCount, ByteCount = ByteCount, RecordSize = RecordSize,
-        ArrayPath = ArrayPath, SchemaVersion = SchemaVersion,
-        m_arrayOffset = m_arrayOffset, m_fields = m_fields, m_buffer = new byte[ByteCount]
+      var snapshot = new LidarSignalFrame
+      {
+        SampleCount = SampleCount,
+        ByteCount = ByteCount,
+        RecordSize = RecordSize,
+        ArrayPath = ArrayPath,
+        SchemaVersion = SchemaVersion,
+        m_arrayOffset = m_arrayOffset,
+        m_fields = m_fields,
+        m_buffer = new byte[ByteCount]
       };
       Buffer.BlockCopy( m_buffer, 0, snapshot.m_buffer, 0, ByteCount );
       // Field descriptions and their read-only collection are immutable.
@@ -115,7 +121,8 @@ namespace AGXUnity.IO.OpenPLX
       return checked(m_arrayOffset + sampleIndex * RecordSize + field.Offset);
     }
 
-    private long Signed( int offset, int size ) => size switch {
+    private long Signed( int offset, int size ) => size switch
+    {
       1 => (sbyte)m_buffer[ offset ],
       2 => BitConverter.ToInt16( m_buffer, offset ),
       4 => BitConverter.ToInt32( m_buffer, offset ),
@@ -123,7 +130,8 @@ namespace AGXUnity.IO.OpenPLX
       _ => throw new NotSupportedException( $"Unsupported integer size {size}." )
     };
 
-    private ulong Unsigned( int offset, int size ) => size switch {
+    private ulong Unsigned( int offset, int size ) => size switch
+    {
       1 => m_buffer[ offset ],
       2 => BitConverter.ToUInt16( m_buffer, offset ),
       4 => BitConverter.ToUInt32( m_buffer, offset ),

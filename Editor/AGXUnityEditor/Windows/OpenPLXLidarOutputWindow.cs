@@ -140,11 +140,15 @@ namespace AGXUnityEditor.Windows
       if ( m_panelStyle != null )
         return;
       m_pageStyle = new GUIStyle { padding = new RectOffset( 8, 8, 8, 8 ) };
-      m_panelStyle = new GUIStyle( EditorStyles.helpBox ) {
-        padding = new RectOffset( 10, 10, 8, 8 ), margin = new RectOffset( 0, 0, 0, 8 )
+      m_panelStyle = new GUIStyle( EditorStyles.helpBox )
+      {
+        padding = new RectOffset( 10, 10, 8, 8 ),
+        margin = new RectOffset( 0, 0, 0, 8 )
       };
-      m_cellStyle = new GUIStyle( EditorStyles.label ) {
-        clipping = TextClipping.Clip, alignment = TextAnchor.MiddleLeft,
+      m_cellStyle = new GUIStyle( EditorStyles.label )
+      {
+        clipping = TextClipping.Clip,
+        alignment = TextAnchor.MiddleLeft,
         padding = new RectOffset( 6, 6, 2, 2 )
       };
       m_headerStyle = new GUIStyle( m_cellStyle ) { fontStyle = FontStyle.Bold };
@@ -443,7 +447,7 @@ namespace AGXUnityEditor.Windows
       var limit = Math.Max( 1, m_maxPoints );
       var capacity = Math.Min( frame.SampleCount, limit );
       if ( m_points.Length < capacity )
-        m_points = new Vector3[capacity];
+        m_points = new Vector3[ capacity ];
       var skip = Math.Max( 1, (int)( ( (long)frame.SampleCount + limit - 1 ) / limit ) );
       var transform = m_sensor.GlobalTransform;
       for ( int index = 0; index < frame.SampleCount && m_pointCount < capacity; index += skip ) {
