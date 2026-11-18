@@ -96,7 +96,8 @@ namespace AGXUnityTesting.Runtime
         var native = (openplx.Physics.Signals.Output)fixture.Root.getObject( "distances" );
         var longer = new OutputSource( "Scene.controls.long_samples", native );
         var exact = new OutputSource( "Scene.controls.samples", native );
-        var signalInterface = new SignalInterface {
+        var signalInterface = new SignalInterface
+        {
           Outputs = new List<OutputSource> { longer, exact },
           Inputs = new List<InputTarget>()
         };

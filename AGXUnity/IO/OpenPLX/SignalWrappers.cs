@@ -241,7 +241,7 @@ namespace AGXUnity.IO.OpenPLX
     {
       var layout = Capture( marshalling );
       if ( m_buffer.Length < layout.BufferSize )
-        m_buffer = new byte[layout.BufferSize];
+        m_buffer = new byte[ layout.BufferSize ];
       return layout;
     }
 
