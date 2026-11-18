@@ -53,14 +53,32 @@ namespace AGXUnity.IO.OpenPLX
     private Dictionary<string, GameObject> m_objectMap;
 
     public Object FindNestedNative( string declaration )
+      => ResolveNativeDeclaration( Native, m_openplxMap, declaration );
+
+    internal static Object ResolveNativeDeclaration( Object root, IReadOnlyDictionary<string, Object> objectMap, string declaration )
     {
-      if ( Native == null )
+      if ( root == null || string.IsNullOrEmpty( declaration ) )
         return null;
+      var rootName = root.getName();
       // First, assume that the declaration given is relative and prepend it with the root name
-      if ( m_openplxMap.TryGetValue( Native.getName() + "." + declaration, out Object obj ) )
+      if ( objectMap.TryGetValue( rootName + "." + declaration, out Object obj ) )
         return obj;
-      // Second, assume that the declaration given is absolute
-      return m_openplxMap.GetValueOrDefault( declaration );
+      // Second, assume that the declaration given is absolute.
+      if ( objectMap.TryGetValue( declaration, out obj ) )
+        return obj;
+
+      // References (including signal interface aliases) aren't registered as
+      // separate objects. Resolve their declaration paths through the root.
+      var prefix = rootName + ".";
+      var relative = declaration.StartsWith( prefix, System.StringComparison.Ordinal ) ? declaration.Substring( prefix.Length ) : declaration;
+      if ( relative == declaration ) {
+        // Cached imports can retain the model name while omitting its bundle.
+        // Remove only a leading model prefix, never an occurrence inside a path.
+        var modelPrefix = rootName.Substring( rootName.LastIndexOf( '.' ) + 1 ) + ".";
+        if ( relative.StartsWith( modelPrefix, System.StringComparison.Ordinal ) )
+          relative = relative.Substring( modelPrefix.Length );
+      }
+      return root.getObject( relative );
     }
 
     public GameObject FindMappedObject( string declaration )
@@ -103,14 +121,12 @@ namespace AGXUnity.IO.OpenPLX
       m_objectMap = new Dictionary<string, GameObject>();
       foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() )
         foreach ( var decl in openPLXObj.SourceDeclarations )
-          m_objectMap.Add( decl, openPLXObj.gameObject );
+          m_objectMap[ FindNestedNative( decl )?.getName() ?? decl ] = openPLXObj.gameObject;
 
       var m_nativeMap = new std.StringReferenceLookup();
       foreach ( var openPLXObj in GetComponentsInChildren<OpenPLXObject>() ) {
         foreach ( var decl in openPLXObj.SourceDeclarations ) {
-          var relative = decl.Replace( PrunedNativeName + ".", "" ).Trim();
-
-          var obj = Native.getObject( relative);
+          var obj = FindNestedNative( decl );
           if ( obj == null )
             continue;
           var native = openPLXObj.FindCorrespondingNative( this, obj );

@@ -9,14 +9,14 @@ namespace AGXUnityTesting.Runtime.Aux
   {
     OpenPLXSignals signal = null;
 
-    InputTarget motor_input = null;
+    InputWrapper<double> motor_input = null;
     PDController pole;
 
     // Start is called before the first frame update
     protected override bool Initialize()
     {
       signal = gameObject.GetInitializedComponent<OpenPLXSignals>();
-      motor_input = signal.FindInputTarget( "PendulumScene.motor_input" );
+      motor_input = signal.FindInputTarget<double>( "PendulumScene.motor_input" );
 
       if ( motor_input == null )
         Debug.LogWarning( "Could not find motor input" );
@@ -25,14 +25,14 @@ namespace AGXUnityTesting.Runtime.Aux
 
       Simulation.Instance.StepCallbacks.SimulationPre += Pre;
 
-      hao = signal.FindOutputSource( "PendulumScene.hinge_angle_output" );
-      havo = signal.FindOutputSource( "PendulumScene.hinge_angular_velocity_output" );
+      hao = signal.FindOutputSource<float>( "PendulumScene.hinge_angle_output" );
+      havo = signal.FindOutputSource<float>( "PendulumScene.hinge_angular_velocity_output" );
 
       return true;
     }
 
-    OutputSource hao;
-    OutputSource havo;
+    OutputWrapper<float> hao;
+    OutputWrapper<float> havo;
 
     double ha = 0.0f;
     double hav = 0.0f;
@@ -41,8 +41,8 @@ namespace AGXUnityTesting.Runtime.Aux
     private void Pre()
     {
       try {
-        ha = hao.GetValue<double>();
-        hav = havo.GetValue<double>();
+        ha = hao.Read();
+        hav = havo.Read();
       }
       catch {
         return;
@@ -50,7 +50,13 @@ namespace AGXUnityTesting.Runtime.Aux
 
       u_pole = pole.Observe( ha, hav );
 
-      motor_input.SendSignal( u_pole );
+      motor_input.Write( u_pole );
+    }
+
+    protected override void OnDestroy()
+    {
+      base.OnDestroy();
+      Simulation.Instance.StepCallbacks.SimulationPre -= Pre;
     }
   }
 }

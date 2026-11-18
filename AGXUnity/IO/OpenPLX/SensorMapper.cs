@@ -17,7 +17,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject MapLidar( LidarLogic lidar )
     {
-      // TODO: OpenPLX LiDAR sensor mapping currently does not create any outputs and thus will not properly handle 
+      // OpenPLXSignals attaches and registers the configured outputs at runtime.
       var go = Data.CreateOpenPLXObject(lidar.getName());
 
       var lidarComp = go.AddComponent<LidarSensor>();
