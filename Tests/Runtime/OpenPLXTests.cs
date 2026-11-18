@@ -476,6 +476,36 @@ namespace AGXUnityTesting.Runtime
     }
 
     [UnityTest]
+    public IEnumerator TestDynamicLidarReaderUsesTheSignalInterface()
+    {
+      var instance = OpenPLXImporter.ImportOpenPLXFile<GameObject>(
+        "Assets/AGXUnity/lidar_signal_wrappers_test.openplx" );
+      Assert.That( instance, Is.Not.Null );
+      try {
+        yield return null;
+        yield return null;
+        var signals = instance.GetComponent<OpenPLXSignals>().GetInitialized<OpenPLXSignals>();
+        Assert.That( signals, Is.Not.Null );
+        var controls = signals.Interfaces.Single( value => value.Enabled && value.Name == "controls" );
+        var reader = new LidarSignalReader( controls.FindOutput( "samples" ) );
+        var frame = reader.Read();
+        Assert.That( frame.RecordSize, Is.EqualTo( 28 ) );
+        Assert.That( frame.FindPositionField(), Is.EqualTo( "position3d" ) );
+        Assert.That( frame.FindField( "timestamp" ), Is.Not.Null );
+        var observedSamples = false;
+        for ( int step = 0; step < 16; ++step ) {
+          yield return TestUtils.Step();
+          Assert.That( reader.Read(), Is.SameAs( frame ), "The reader reuses its managed frame." );
+          observedSamples |= frame.SampleCount > 0;
+        }
+        Assert.That( observedSamples, Is.True, "At least one sweep interval must hit the fixture's targets." );
+      }
+      finally {
+        Object.Destroy( instance );
+      }
+    }
+
+    [UnityTest]
     public IEnumerator TestImportedLidarOutputResizesAtOneScanPerStep()
     {
       yield return CheckImportedLidarOutputSizing( 1.0f, false );
