@@ -9,11 +9,10 @@ using Simulation = AGXUnity.Simulation;
 
 namespace AGXUnityEditor.Windows
 {
-  /// <summary>A small demonstration of browsing lidar data exposed by an OpenPLX interface.</summary>
-  public class OpenPLXLidarInterfaceWindow : EditorWindow
+  /// <summary>Browses the lidar outputs of an imported OpenPLX scene.</summary>
+  public class OpenPLXLidarOutputWindow : EditorWindow
   {
     [SerializeField] private OpenPLXSignals m_signals;
-    [SerializeField] private int m_interfaceIndex;
     [SerializeField] private int m_outputIndex;
     [SerializeField] private bool m_drawPoints = true;
     [SerializeField] private int m_maxPoints = 5000;
@@ -24,7 +23,6 @@ namespace AGXUnityEditor.Windows
     private LidarSensor m_sensor;
     private Simulation m_simulation;
     private bool m_connecting;
-    private string m_pendingInterface;
     private string m_pendingOutput;
     private long m_readCount;
     private Vector3[] m_points = Array.Empty<Vector3>();
@@ -42,10 +40,10 @@ namespace AGXUnityEditor.Windows
     private bool m_showFields = true;
     private bool m_showGizmoSettings;
 
-    [MenuItem( "AGXUnity/OpenPLX/Lidar Interface Viewer" )]
+    [MenuItem( "AGXUnity/OpenPLX/Lidar Output Viewer" )]
     public static void Open()
     {
-      var window = GetWindow<OpenPLXLidarInterfaceWindow>( "OpenPLX Lidar" );
+      var window = GetWindow<OpenPLXLidarOutputWindow>( "OpenPLX Lidar" );
       window.minSize = new Vector2( 550, 420 );
       if ( window.m_signals == null )
         window.UseSelection();
@@ -97,21 +95,21 @@ namespace AGXUnityEditor.Windows
       if ( signals != m_signals ) {
         Disconnect();
         m_signals = signals;
-        m_interfaceIndex = m_outputIndex = 0;
+        m_outputIndex = 0;
       }
     }
 
     private void OnGUI()
     {
-      EditorGUILayout.LabelField( "OpenPLX lidar interface", EditorStyles.boldLabel );
-      EditorGUILayout.LabelField( "Browse fields and the sample window exposed by your model's signal interface.", EditorStyles.wordWrappedLabel );
+      EditorGUILayout.LabelField( "OpenPLX lidar outputs", EditorStyles.boldLabel );
+      EditorGUILayout.LabelField( "Browse the fields and sample window of a lidar output in your imported scene.", EditorStyles.wordWrappedLabel );
       EditorGUILayout.BeginHorizontal();
       EditorGUI.BeginChangeCheck();
       var signals = (OpenPLXSignals)EditorGUILayout.ObjectField( "OpenPLX root", m_signals, typeof( OpenPLXSignals ), true );
       if ( EditorGUI.EndChangeCheck() ) {
         Disconnect();
         m_signals = signals;
-        m_interfaceIndex = m_outputIndex = 0;
+        m_outputIndex = 0;
       }
       if ( GUILayout.Button( "Use selection", GUILayout.Width( 100 ) ) )
         UseSelection();
@@ -123,27 +121,16 @@ namespace AGXUnityEditor.Windows
         return;
       }
 
-      var interfaces = m_signals.Interfaces.Where( value => value.Enabled && value.Outputs != null &&
-                                                          value.Outputs.Any( IsLidarOutput ) ).ToArray();
-      if ( interfaces.Length == 0 ) {
+      var outputs = m_signals.Outputs.Where( IsLidarOutput ).ToArray();
+      if ( outputs.Length == 0 ) {
         if ( m_reader != null || m_connecting )
           Disconnect();
-        EditorGUILayout.HelpBox( "No enabled interface exposes a lidar output. Add a LidarOutput reference to an enabled Physics.Signals.SignalInterface in the model and reimport it.", MessageType.Info );
+        EditorGUILayout.HelpBox( "No lidar outputs were found under this OpenPLX root. Declare a Sensors.Signals.LidarOutput in the model and reimport it.", MessageType.Info );
         return;
       }
-      m_interfaceIndex = Mathf.Clamp( m_interfaceIndex, 0, interfaces.Length - 1 );
-      EditorGUI.BeginChangeCheck();
-      var interfaceIndex = EditorGUILayout.Popup( "Interface", m_interfaceIndex, interfaces.Select( InterfaceKey ).ToArray() );
-      if ( EditorGUI.EndChangeCheck() ) {
-        Disconnect();
-        m_interfaceIndex = interfaceIndex;
-        m_outputIndex = 0;
-      }
-      var signalInterface = interfaces[ m_interfaceIndex ];
-      var outputs = signalInterface.Outputs.Where( IsLidarOutput ).ToArray();
       m_outputIndex = Mathf.Clamp( m_outputIndex, 0, outputs.Length - 1 );
       EditorGUI.BeginChangeCheck();
-      var outputIndex = EditorGUILayout.Popup( "Lidar output", m_outputIndex, outputs.Select( value => MemberName( value.Name ) ).ToArray() );
+      var outputIndex = EditorGUILayout.Popup( "Lidar output", m_outputIndex, outputs.Select( value => value.Name ).ToArray() );
       if ( EditorGUI.EndChangeCheck() ) {
         Disconnect();
         m_outputIndex = outputIndex;
@@ -152,7 +139,7 @@ namespace AGXUnityEditor.Windows
       EditorGUILayout.BeginHorizontal();
       using ( new EditorGUI.DisabledScope( !Application.isPlaying || !m_signals.gameObject.scene.IsValid() ) ) {
         if ( GUILayout.Button( m_reader == null && !m_connecting ? "Connect" : "Reconnect" ) )
-          Connect( signalInterface, outputs[ m_outputIndex ] );
+          Connect( outputs[ m_outputIndex ] );
         using ( new EditorGUI.DisabledScope( m_reader == null ) ) {
           if ( GUILayout.Button( "Read now" ) )
             ReadNow();
@@ -164,7 +151,7 @@ namespace AGXUnityEditor.Windows
       }
       EditorGUILayout.EndHorizontal();
       if ( !Application.isPlaying ) {
-        EditorGUILayout.HelpBox( "Enter Play Mode, then Connect to read the interface. Reading and gizmos stop when the window is closed.", MessageType.Info );
+        EditorGUILayout.HelpBox( "Enter Play Mode, then Connect to read the selected output. Reading and gizmos stop when the window is closed.", MessageType.Info );
         return;
       }
       if ( !string.IsNullOrEmpty( m_message ) )
@@ -257,13 +244,12 @@ namespace AGXUnityEditor.Windows
       EditorGUILayout.EndScrollView();
     }
 
-    private void Connect( SignalInterface signalInterface, OutputSource output )
+    private void Connect( OutputSource output )
     {
       Disconnect();
-      m_pendingInterface = InterfaceKey( signalInterface );
       m_pendingOutput = output.Name;
       m_connecting = true;
-      m_message = "Connecting to the signal interface...";
+      m_message = "Connecting to the lidar output...";
       // Leave OnGUI before initializing the imported hierarchy.
       EditorApplication.delayCall += CompleteConnection;
     }
@@ -278,9 +264,8 @@ namespace AGXUnityEditor.Windows
       try {
         if ( m_signals.GetInitialized<OpenPLXSignals>() == null )
           throw new InvalidOperationException( "OpenPLX signals failed to initialize. Check preceding initialization errors." );
-        // Resolve the exposed interface member; the reader discovers its window layout.
-        var signalInterface = m_signals.Interfaces.Single( value => value.Enabled && InterfaceKey( value ) == m_pendingInterface );
-        m_output = signalInterface.FindOutput( m_pendingOutput );
+        // Resolve the declaration directly; the reader discovers its window layout.
+        m_output = m_signals.FindOutputSource( m_pendingOutput );
         m_reader = new LidarSignalReader( m_output );
         var source = ( (openplx.Sensors.Signals.LidarOutput)m_output.Native ).source();
         var sourceObject = source != null ? m_signals.Root.FindMappedObject( source.getName() ) : null;
@@ -387,7 +372,7 @@ namespace AGXUnityEditor.Windows
       m_displayWindow = null;
       m_page = 0;
       m_scroll = Vector2.zero;
-      m_message = "Choose an interface member and Connect.";
+      m_message = "Choose a lidar output and Connect.";
       SceneView.RepaintAll();
     }
 
@@ -396,10 +381,5 @@ namespace AGXUnityEditor.Windows
     private static bool IsLidarOutput( OutputSource output )
       => output != null && ( output.Native is openplx.Sensors.Signals.LidarOutput ||
                              typeof( openplx.Sensors.Signals.LidarOutput ).IsAssignableFrom( output.Type ) );
-
-    private static string InterfaceKey( SignalInterface signalInterface )
-      => string.IsNullOrEmpty( signalInterface.Path ) ? signalInterface.Name : signalInterface.Path + "." + MemberName( signalInterface.Name );
-
-    private static string MemberName( string path ) => path.Substring( path.LastIndexOf( '.' ) + 1 );
   }
 }
