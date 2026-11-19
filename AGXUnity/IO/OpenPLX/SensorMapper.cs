@@ -17,7 +17,7 @@ namespace AGXUnity.IO.OpenPLX
 
     public GameObject MapLidar( LidarLogic lidar )
     {
-      // TODO: OpenPLX LiDAR sensor mapping currently does not create any outputs and thus will not properly handle 
+      // OpenPLXSignals attaches and registers the configured outputs at runtime.
       var go = Data.CreateOpenPLXObject(lidar.getName());
 
       var lidarComp = go.AddComponent<LidarSensor>();
@@ -43,8 +43,8 @@ namespace AGXUnity.IO.OpenPLX
           modelData.Frequency = (float)horizontalSweep.frequency();
 
           modelData.ResolutionMode = GenericSweepData.ResolutionModes.TotalPoints;
-          modelData.HorizontalResolution = horizontalSweep.horizontal_resolution();
-          modelData.VerticalResolution = horizontalSweep.vertical_resolution();
+          modelData.HorizontalResolutionTotal = checked((int)horizontalSweep.horizontal_resolution());
+          modelData.VerticalResolutionTotal = checked((int)horizontalSweep.vertical_resolution());
 
           modelData.FoVMode = GenericSweepData.FoVModes.Window;
           modelData.HorizontalFoVWindow = new RangeReal(

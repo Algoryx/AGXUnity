@@ -27,9 +27,10 @@ namespace AGXUnity.Model
         return needsReturnData ? Terrain.terrainData.GetHeights( 0, 0, resolution, resolution ) : null;
 
       Terrain.terrainData = Instantiate( Terrain.terrainData );
-      if (gameObject.TryGetComponent<TerrainCollider>(out var collider)) {
+      if ( gameObject.TryGetComponent<TerrainCollider>( out var collider ) ) {
         collider.terrainData = Terrain.terrainData;
-      } else {
+      }
+      else {
         var temporaryCollider = gameObject.AddComponent<TerrainCollider>();
         temporaryCollider.terrainData = Terrain.terrainData;
         temporaryCollider.enabled = false;

@@ -567,15 +567,5 @@ namespace AGXUnity
 
       return new PointCurve.SegmentationResult() { Error = float.PositiveInfinity, Successful = false };
     }
-    protected override bool PerformMigration()
-    {
-      if ( m_serializationVersion < 3 ) {
-        foreach ( CableProperties.Direction dir in Enum.GetValues( typeof( CableProperties.Direction ) ) )
-          // We can't access the simulations delta time or Unity's so we assume a dt of 0.02 or a frequency of 50hz
-          Properties[ dir ].Attenuation *= 50.0f;
-        return true;
-      }
-      return false;
-    }
   }
 }

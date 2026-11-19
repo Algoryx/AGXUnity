@@ -13,8 +13,22 @@ namespace AGXUnity.IO.OpenPLX
   [HelpURL( "https://us.download.algoryx.se/AGXUnity/documentation/current/editor_interface.html#openplx-import" )]
   public class OpenPLXObject : ScriptComponent
   {
-    agx.Constraint GetNativeConstraint() =>
-      GetComponent<Constraint>().GetInitialized().Native;
+    agx.Constraint GetNativeConstraint()
+    {
+      var constraint = GetComponent<Constraint>();
+      if ( constraint == null )
+        throw new System.InvalidOperationException(
+          $"OpenPLX object '{name}' ({string.Join( ", ", SourceDeclarations )}) has no Constraint component. " +
+          "Reimport the OpenPLX asset and check that its scene instance has the imported constraint components." );
+
+      var initialized = constraint.GetInitialized();
+      if ( initialized == null || initialized.Native == null )
+        throw new System.InvalidOperationException(
+          $"OpenPLX constraint '{name}' ({constraint.Type}) failed to initialize " +
+          $"(state: {constraint.State}, native created: {constraint.Native != null}). " +
+          "Check the preceding constraint and rigid-body initialization errors in the Console." );
+      return initialized.Native;
+    }
 
     agx.Constraint1DOF GetGeneric1DOFNative() =>
       GetComponent<Generic1DOFControlledConstraint>().GetInitialized().Native.asConstraint1DOF();
