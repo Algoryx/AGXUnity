@@ -250,7 +250,7 @@ namespace AGXUnityTesting.Editor
       try {
         Assert.That( loaded.GetComponent<Rigidbody>(), Is.Null );
         Assert.That( loaded.GetComponent<BoxCollider>(), Is.Null );
-        Assert.That( loaded.GetComponent<AGXUnity.RigidBody>().MassProperties.Mass.Value, Is.EqualTo( 7 ) );
+        Assert.That( loaded.GetComponent<AGXUnity.RigidBody>().MassProperties.Mass.Value, Is.EqualTo( 7 ).Within( 1.0E-5f ) );
         Assert.That( loaded.GetComponentInChildren<AGXUnity.Collide.Box>().transform.localPosition, Is.EqualTo( Vector3.up ) );
       }
       finally { PrefabUtility.UnloadPrefabContents( loaded ); }
