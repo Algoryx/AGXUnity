@@ -9,6 +9,12 @@ namespace AGXUnity
   {
     private agx.AutoInit m_ai = null;
 
+    // agxSensor.Environment cleans up GPU resources when the last instance is destroyed.
+    // In AGXUnity that will happen on the finalizer thread which might cause issues if other threads are
+    // creating objects at the same time. This variable ensures that there is at least one environment alive
+    // until we are shutting down AGX, where we assume that it will be safe to perform GPU cleanup.
+    private agxSensor.Environment m_sensorRuntimeAnchor;
+
     public bool Initialized { get; private set; }
 
     /// <summary>
@@ -29,9 +35,13 @@ namespace AGXUnity
 
     ~InitShutdownAGXDynamics()
     {
+      m_sensorRuntimeAnchor?.Dispose();
+      m_sensorRuntimeAnchor = null;
       m_ai.Dispose();
       m_ai = null;
     }
+
+    internal void EnsureSensorRuntime() => m_sensorRuntimeAnchor ??= new agxSensor.Environment();
 
     /// <summary>
     /// This method has to be called before the first call is made to AGX
@@ -214,6 +224,8 @@ namespace AGXUnity
 
       return LicenseManager.Load( licenseStr );
     }
+
+    public void EnsureSensorRuntime() => m_isAgx.EnsureSensorRuntime();
 
     #region Singleton Stuff
     private static NativeHandler s_instance = null;

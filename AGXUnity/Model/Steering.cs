@@ -1,6 +1,7 @@
 using agx;
 using AGXUnity.Utils;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 namespace AGXUnity.Model
 {
